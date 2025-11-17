@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { dmsHubRouter } from "./dmsHubRouter";
 import { integrationsRouter } from "./integrationsRouter";
+import { mioAgentRouter } from "./mioAgentRouter";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -136,6 +137,9 @@ export const appRouter = router({
   
   // Integrazioni - API Keys, Webhook, Monitoring
   integrations: integrationsRouter,
+
+  // MIO Agent - Log e Monitoraggio Agenti
+  mioAgent: mioAgentRouter,
 });
 
 export type AppRouter = typeof appRouter;
