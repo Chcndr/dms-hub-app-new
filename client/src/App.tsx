@@ -13,12 +13,11 @@ import RoutePage from "./pages/RoutePage";
 import VetrinePage from "./pages/VetrinePage";
 import HubOperatore from "./pages/HubOperatore";
 import DashboardPA from "./pages/DashboardPA";
-
+import mio from "./pages/mio";
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={HomePage} />
+      <Route path="/" sonnElement={'exact'} component={HomePage} />
       <Route path="/mappa" component={MapPage} />
       <Route path="/wallet" component={WalletPage} />
       <Route path="/civic" component={CivicPage} />
@@ -26,29 +25,23 @@ function Router() {
       <Route path="/vetrine" component={VetrinePage} />
       <Route path="/hub-operatore" component={HubOperatore} />
       <Route path="/dashboard-pa" component={DashboardPA} />
+      <Route path="/mio" component={mio} />
       <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider
-        defaultTheme="dark" // DMS theme: dark mode con palette ufficiale
-        // switchable
+        defaultTheme="dark"
       >
         <TooltipProvider>
           <Toaster />
           <Router />
-          <ChatWidget userRole="cliente" />
+          <ChatWidget userRole="client" />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
