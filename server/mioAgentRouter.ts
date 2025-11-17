@@ -8,6 +8,17 @@ import * as db from "./db";
  * - Stato task e job
  */
 export const mioAgentRouter = router({
+  // Inizializza lo schema del database (crea tabella se non esiste)
+  initSchema: publicProcedure.mutation(async () => {
+    try {
+      const result = await db.initMioAgentLogsTable();
+      return result;
+    } catch (error) {
+      console.error("Error initializing schema:", error);
+      throw new Error("Failed to initialize schema");
+    }
+  }),
+
   // Recupera tutti i log dal database
   getLogs: publicProcedure.query(async () => {
     try {
