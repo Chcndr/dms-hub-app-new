@@ -430,9 +430,6 @@ export default function DashboardPA() {
   const [chatInput, setChatInput] = useState('');
   const [appliedTccValue, setAppliedTccValue] = useState(1.50);
   
-  // Fetch real data from backend
-  const realData = useDashboardData();
-
   // Simula aggiornamento real-time
   useEffect(() => {
     const interval = setInterval(() => {
