@@ -44,7 +44,7 @@ const MIOAgent = () => {
                 <td>{task.type}</td>
                 <td>{task.status}</td>
               </tr>
-            ))
+            ))}
           </tbody>
         </table>
       )
