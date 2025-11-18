@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getMioAgentLogs } from '../../server/db';
+import { drizzle } from 'drizzle-orm/mysql2';
+import { desc } from 'drizzle-orm';
+import { mioAgentLogs } from '../../drizzle/schema';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow GET method
@@ -14,20 +16,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('[getLogs] Fetching logs with limit:', limit, 'offset:', offset);
 
-    const logs = await getMioAgentLogs();
+    // Check DATABASE_URL
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      return res.status(500).json({
+        success: false,
+        error: 'DATABASE_URL not configured'
+      });
+    }
+
+    // Create database connection
+    const db = drizzle(databaseUrl);
+
+    // Fetch logs
+    const logs = await db
+      .select()
+      .from(mioAgentLogs)
+      .orderBy(desc(mioAgentLogs.timestamp))
+      .limit(limit)
+      .offset(offset);
 
     console.log('[getLogs] Found', logs.length, 'logs');
 
+    // Parse JSON details field
+    const parsedLogs = logs.map(log => ({
+      ...log,
+      details: log.details ? JSON.parse(log.details) : null,
+    }));
+
     return res.status(200).json({
       success: true,
-      logs,
-      count: logs.length
+      logs: parsedLogs,
+      count: parsedLogs.length
     });
   } catch (error: any) {
     console.error('[getLogs] Error:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Failed to fetch logs'
+      error: error.message || 'Failed to fetch logs',
+      stack: error.stack
     });
   }
 }

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createMioAgentLog } from '../../server/db';
+import { drizzle } from 'drizzle-orm/mysql2';
+import { mioAgentLogs } from '../../drizzle/schema';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST method
@@ -29,25 +30,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('[createLog] Creating log:', { agent, action, status });
 
-    const result = await createMioAgentLog({
+    // Check DATABASE_URL
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      return res.status(500).json({
+        success: false,
+        error: 'DATABASE_URL not configured'
+      });
+    }
+
+    // Create database connection
+    const db = drizzle(databaseUrl);
+
+    // Insert log
+    const result = await db.insert(mioAgentLogs).values({
       agent,
       action,
       status,
-      message,
-      details
+      message: message || null,
+      details: details ? JSON.stringify(details) : null,
+      timestamp: new Date(),
     });
 
     console.log('[createLog] Log created:', result);
 
     return res.status(200).json({
       success: true,
-      log: result
+      log: {
+        id: result[0].insertId,
+        agent,
+        action,
+        status,
+        message,
+        details
+      }
     });
   } catch (error: any) {
     console.error('[createLog] Error:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Failed to create log'
+      error: error.message || 'Failed to create log',
+      stack: error.stack
     });
   }
 }
