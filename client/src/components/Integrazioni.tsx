@@ -166,6 +166,14 @@ function APIDashboard() {
         { method: 'GET', path: '/api/dmsHub/violations/list', description: 'Lista verbali' },
       ]
     },
+    {
+      category: 'MIO Agent',
+      endpoints: [
+        { method: 'POST', path: '/api/logs/initSchema', description: 'Inizializza tabella mio_agent_logs' },
+        { method: 'POST', path: '/api/logs/createLog', description: 'Crea nuovo log agente' },
+        { method: 'GET', path: '/api/logs/getLogs', description: 'Recupera log agenti' },
+      ]
+    },
   ];
 
   const getMethodColor = (method: string) => {
@@ -275,6 +283,30 @@ function APIDashboard() {
           data = await utils.client.dmsHub.violations.list.query();
           break;
           
+        // MIO AGENT - chiamate REST dirette
+        case '/api/logs/initSchema':
+          const initResponse = await fetch('/api/logs/initSchema', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          data = await initResponse.json();
+          break;
+        case '/api/logs/createLog':
+          const createResponse = await fetch('/api/logs/createLog', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsedBody),
+          });
+          data = await createResponse.json();
+          break;
+        case '/api/logs/getLogs':
+          const getResponse = await fetch('/api/logs/getLogs', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          data = await getResponse.json();
+          break;
+          
         default:
           throw new Error(`Endpoint non implementato: ${endpoint}`);
       }
@@ -345,7 +377,7 @@ function APIDashboard() {
           <CardHeader>
             <CardTitle className="text-[#e8fbff] flex items-center gap-2">
               <Code className="h-5 w-5 text-[#14b8a6]" />
-              Endpoint Disponibili (25+)
+              Endpoint Disponibili (28+)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
