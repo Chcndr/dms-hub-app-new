@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { trpc } from '@/lib/trpc';
+import { useOrchestrator, useAgentConversation, useAllConversations, mapAgentIdToBackend, formatTimestamp as formatOrchestratorTimestamp, type Message } from '@/hooks/useOrchestrator';
 import MobilityMap from '@/components/MobilityMap';
 import GestioneMercati from '@/components/GestioneMercati';
 import Integrazioni from '@/components/Integrazioni';
@@ -438,6 +439,61 @@ export default function DashboardPA() {
   const [showMultiAgentChat, setShowMultiAgentChat] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<'mio' | 'manus' | 'abacus' | 'zapier'>('mio');
   const [viewMode, setViewMode] = useState<'single' | 'quad'>('single');
+  
+  // Orchestrator state
+  const [mainChatInput, setMainChatInput] = useState('');
+  const [mainChatMessages, setMainChatMessages] = useState<Message[]>([]);
+  const [agentChatInput, setAgentChatInput] = useState('');
+  const orchestrator = useOrchestrator();
+  const selectedAgentConversation = useAgentConversation(mapAgentIdToBackend(selectedAgent));
+  const allConversations = useAllConversations();
+  
+  // Handler invio messaggio chat principale (mode: auto)
+  const handleMainChatSend = async () => {
+    if (!mainChatInput.trim() || orchestrator.isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now(),
+      sender: 'user',
+      content: mainChatInput,
+      timestamp: new Date(),
+    };
+
+    setMainChatMessages(prev => [...prev, userMessage]);
+    setMainChatInput('');
+
+    const response = await orchestrator.sendMessage({
+      message: mainChatInput,
+      mode: 'auto',
+    });
+
+    if (response) {
+      const agentMessage: Message = {
+        id: Date.now() + 1,
+        sender: response.agentsUsed[0] || 'mio_dev',
+        content: response.message,
+        timestamp: new Date(response.timestamp),
+      };
+      setMainChatMessages(prev => [...prev, agentMessage]);
+    }
+  };
+
+  // Handler invio messaggio agente singolo (mode: manual)
+  const handleAgentChatSend = async () => {
+    if (!agentChatInput.trim() || orchestrator.isLoading) return;
+
+    const targetAgent = mapAgentIdToBackend(selectedAgent);
+    setAgentChatInput('');
+
+    await orchestrator.sendMessage({
+      message: agentChatInput,
+      mode: 'manual',
+      targetAgent,
+    });
+
+    // Refetch conversazione per aggiornare UI
+    selectedAgentConversation.refetch();
+  };
   
   // Format timestamp for Guardian logs
   const formatTimestamp = (timestamp: string) => {
@@ -3244,28 +3300,64 @@ export default function DashboardPA() {
                         <div className="flex items-center gap-2">
                           <Brain className="h-5 w-5 text-purple-400" />
                           <span className="text-[#e8fbff] font-medium">MIO</span>
-                          <span className="text-xs text-[#e8fbff]/50">GPT-5 Coordinatore</span>
+                          <span className="text-xs text-[#e8fbff]/50">GPT-5 Coordinatore (Mode: Auto)</span>
                         </div>
-                        <span className="text-xs text-[#e8fbff]/50">0 messaggi</span>
+                        <span className="text-xs text-[#e8fbff]/50">{mainChatMessages.length} messaggi</span>
                       </div>
                       {/* Area messaggi */}
-                      <div className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto">
-                        <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
+                      <div className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto space-y-3">
+                        {mainChatMessages.length === 0 ? (
+                          <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio. Scrivi qualcosa per iniziare!</p>
+                        ) : (
+                          mainChatMessages.map((msg) => (
+                            <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-[80%] rounded-lg p-3 ${
+                                msg.sender === 'user' 
+                                  ? 'bg-[#8b5cf6] text-white' 
+                                  : 'bg-[#1a2332] text-[#e8fbff] border border-[#8b5cf6]/30'
+                              }`}>
+                                <div className="text-xs opacity-70 mb-1">
+                                  {msg.sender === 'user' ? 'Tu' : msg.sender.toUpperCase()} • {formatOrchestratorTimestamp(msg.timestamp)}
+                                </div>
+                                <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                        {orchestrator.isLoading && (
+                          <div className="flex justify-start">
+                            <div className="bg-[#1a2332] border border-[#8b5cf6]/30 rounded-lg p-3">
+                              <div className="text-sm text-[#e8fbff]/70">🤔 Orchestratore sta pensando...</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       {/* Input */}
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Messaggio da MIO..."
+                          placeholder="Messaggio per MIO (orchestratore decide agenti)..."
+                          value={mainChatInput}
+                          onChange={(e) => setMainChatInput(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && handleMainChatSend()}
                           className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
-                          disabled
+                          disabled={orchestrator.isLoading}
                         />
-                        <Button className="bg-[#10b981] hover:bg-[#059669]" disabled>
+                        <Button 
+                          onClick={handleMainChatSend}
+                          className="bg-[#10b981] hover:bg-[#059669]" 
+                          disabled={orchestrator.isLoading || !mainChatInput.trim()}
+                        >
                           <Send className="h-4 w-4" />
                         </Button>
                       </div>
+                      {orchestrator.error && (
+                        <p className="text-xs text-red-400 text-center">
+                          Errore: {orchestrator.error}
+                        </p>
+                      )}
                       <p className="text-xs text-[#e8fbff]/30 text-center">
-                        Chat in fase di sviluppo
+                        💡 Mode AUTO: L'orchestratore decide quali agenti usare in base al messaggio
                       </p>
                     </div>
                   </div>
@@ -3386,32 +3478,72 @@ export default function DashboardPA() {
                             {selectedAgent === 'zapier' && <Zap className="h-5 w-5 text-orange-400" />}
                             <span className="text-[#e8fbff] font-medium capitalize">{selectedAgent}</span>
                             <span className="text-xs text-[#e8fbff]/50">
-                              {selectedAgent === 'mio' && 'GPT-5 Coordinatore'}
-                              {selectedAgent === 'manus' && 'Operatore Esecutivo'}
-                              {selectedAgent === 'abacus' && 'Analisi Dati'}
-                              {selectedAgent === 'zapier' && 'Automazioni'}
+                              {selectedAgent === 'mio' && 'GPT-5 Coordinatore (Mode: Manual)'}
+                              {selectedAgent === 'manus' && 'Operatore Esecutivo (Mode: Manual)'}
+                              {selectedAgent === 'abacus' && 'Analisi Dati (Mode: Manual)'}
+                              {selectedAgent === 'zapier' && 'Automazioni (Mode: Manual)'}
                             </span>
                           </div>
-                          <span className="text-xs text-[#e8fbff]/50">0 messaggi</span>
+                          <span className="text-xs text-[#e8fbff]/50">
+                            {selectedAgentConversation.isLoading ? '...' : selectedAgentConversation.messages.length} messaggi
+                          </span>
                         </div>
                         {/* Area messaggi */}
-                        <div className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto">
-                          <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
+                        <div className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto space-y-3">
+                          {selectedAgentConversation.isLoading ? (
+                            <p className="text-[#e8fbff]/50 text-center text-sm">Caricamento...</p>
+                          ) : selectedAgentConversation.messages.length === 0 ? (
+                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio. Scrivi qualcosa per iniziare!</p>
+                          ) : (
+                            selectedAgentConversation.messages.map((msg) => (
+                              <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[80%] rounded-lg p-3 ${
+                                  msg.sender === 'user' 
+                                    ? 'bg-[#8b5cf6] text-white' 
+                                    : 'bg-[#1a2332] text-[#e8fbff] border border-[#8b5cf6]/30'
+                                }`}>
+                                  <div className="text-xs opacity-70 mb-1">
+                                    {msg.sender === 'user' ? 'Tu' : msg.sender.toUpperCase()} • {formatOrchestratorTimestamp(msg.timestamp)}
+                                  </div>
+                                  <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                          {orchestrator.isLoading && (
+                            <div className="flex justify-start">
+                              <div className="bg-[#1a2332] border border-[#8b5cf6]/30 rounded-lg p-3">
+                                <div className="text-sm text-[#e8fbff]/70">🤔 {selectedAgent.toUpperCase()} sta pensando...</div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         {/* Input */}
                         <div className="flex gap-2">
                           <input
                             type="text"
-                            placeholder={`Messaggio da ${selectedAgent}...`}
+                            placeholder={`Messaggio per ${selectedAgent} (mode manual)...`}
+                            value={agentChatInput}
+                            onChange={(e) => setAgentChatInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleAgentChatSend()}
                             className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
-                            disabled
+                            disabled={orchestrator.isLoading}
                           />
-                          <Button className="bg-[#10b981] hover:bg-[#059669]" disabled>
+                          <Button 
+                            onClick={handleAgentChatSend}
+                            className="bg-[#10b981] hover:bg-[#059669]" 
+                            disabled={orchestrator.isLoading || !agentChatInput.trim()}
+                          >
                             <Send className="h-4 w-4" />
                           </Button>
                         </div>
+                        {orchestrator.error && (
+                          <p className="text-xs text-red-400 text-center">
+                            Errore: {orchestrator.error}
+                          </p>
+                        )}
                         <p className="text-xs text-[#e8fbff]/30 text-center">
-                          Chat in fase di sviluppo
+                          🎯 Mode MANUAL: Parli direttamente con {selectedAgent.toUpperCase()}
                         </p>
                       </div>
                     )}
@@ -3426,24 +3558,29 @@ export default function DashboardPA() {
                                 <Brain className="h-4 w-4 text-purple-400" />
                                 <span className="text-purple-400">MIO</span>
                               </div>
-                              <span className="text-xs text-[#e8fbff]/50">GPT-5 Coordinatore</span>
+                              <span className="text-xs text-[#e8fbff]/50">
+                                {allConversations.conversations.mio_dev.length} msg
+                              </span>
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto">
-                              <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
+                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto space-y-2">
+                              {allConversations.conversations.mio_dev.length === 0 ? (
+                                <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
+                              ) : (
+                                allConversations.conversations.mio_dev.map((msg) => (
+                                  <div key={msg.id} className={`text-xs p-2 rounded ${
+                                    msg.sender === 'user' ? 'bg-[#8b5cf6]/20 text-right' : 'bg-[#1a2332]'
+                                  }`}>
+                                    <div className="opacity-70 mb-1">{msg.sender === 'user' ? 'Tu' : 'MIO'}</div>
+                                    <div className="text-[#e8fbff]">{msg.content.substring(0, 100)}...</div>
+                                  </div>
+                                ))
+                              )}
                             </div>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Messaggio da MIO..."
-                                className="flex-1 bg-[#0b1220] border border-[#8b5cf6]/30 rounded px-3 py-1.5 text-sm text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
-                                disabled
-                              />
-                              <Button size="sm" className="bg-[#10b981] hover:bg-[#059669]" disabled>
-                                <Send className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <p className="text-xs text-[#e8fbff]/30 text-center">
+                              Vista read-only
+                            </p>
                           </CardContent>
                         </Card>
 
@@ -3455,24 +3592,29 @@ export default function DashboardPA() {
                                 <Wrench className="h-4 w-4 text-blue-400" />
                                 <span className="text-blue-400">Manus</span>
                               </div>
-                              <span className="text-xs text-[#e8fbff]/50">Operatore Esecutivo</span>
+                              <span className="text-xs text-[#e8fbff]/50">
+                                {allConversations.conversations.manus_worker.length} msg
+                              </span>
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto">
-                              <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
+                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto space-y-2">
+                              {allConversations.conversations.manus_worker.length === 0 ? (
+                                <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
+                              ) : (
+                                allConversations.conversations.manus_worker.map((msg) => (
+                                  <div key={msg.id} className={`text-xs p-2 rounded ${
+                                    msg.sender === 'user' ? 'bg-[#3b82f6]/20 text-right' : 'bg-[#1a2332]'
+                                  }`}>
+                                    <div className="opacity-70 mb-1">{msg.sender === 'user' ? 'Tu' : 'MANUS'}</div>
+                                    <div className="text-[#e8fbff]">{msg.content.substring(0, 100)}...</div>
+                                  </div>
+                                ))
+                              )}
                             </div>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Messaggio da Manus..."
-                                className="flex-1 bg-[#0b1220] border border-[#3b82f6]/30 rounded px-3 py-1.5 text-sm text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#3b82f6]"
-                                disabled
-                              />
-                              <Button size="sm" className="bg-[#10b981] hover:bg-[#059669]" disabled>
-                                <Send className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <p className="text-xs text-[#e8fbff]/30 text-center">
+                              Vista read-only
+                            </p>
                           </CardContent>
                         </Card>
 
@@ -3484,24 +3626,29 @@ export default function DashboardPA() {
                                 <Calculator className="h-4 w-4 text-green-400" />
                                 <span className="text-green-400">Abacus</span>
                               </div>
-                              <span className="text-xs text-[#e8fbff]/50">Analisi Dati</span>
+                              <span className="text-xs text-[#e8fbff]/50">
+                                {allConversations.conversations.abacus.length} msg
+                              </span>
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto">
-                              <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
+                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto space-y-2">
+                              {allConversations.conversations.abacus.length === 0 ? (
+                                <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
+                              ) : (
+                                allConversations.conversations.abacus.map((msg) => (
+                                  <div key={msg.id} className={`text-xs p-2 rounded ${
+                                    msg.sender === 'user' ? 'bg-[#10b981]/20 text-right' : 'bg-[#1a2332]'
+                                  }`}>
+                                    <div className="opacity-70 mb-1">{msg.sender === 'user' ? 'Tu' : 'ABACUS'}</div>
+                                    <div className="text-[#e8fbff]">{msg.content.substring(0, 100)}...</div>
+                                  </div>
+                                ))
+                              )}
                             </div>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Messaggio da Abacus..."
-                                className="flex-1 bg-[#0b1220] border border-[#10b981]/30 rounded px-3 py-1.5 text-sm text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#10b981]"
-                                disabled
-                              />
-                              <Button size="sm" className="bg-[#10b981] hover:bg-[#059669]" disabled>
-                                <Send className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <p className="text-xs text-[#e8fbff]/30 text-center">
+                              Vista read-only
+                            </p>
                           </CardContent>
                         </Card>
 
@@ -3513,29 +3660,34 @@ export default function DashboardPA() {
                                 <Zap className="h-4 w-4 text-orange-400" />
                                 <span className="text-orange-400">Zapier</span>
                               </div>
-                              <span className="text-xs text-[#e8fbff]/50">Automazioni</span>
+                              <span className="text-xs text-[#e8fbff]/50">
+                                {allConversations.conversations.zapier.length} msg
+                              </span>
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto">
-                              <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
+                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto space-y-2">
+                              {allConversations.conversations.zapier.length === 0 ? (
+                                <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
+                              ) : (
+                                allConversations.conversations.zapier.map((msg) => (
+                                  <div key={msg.id} className={`text-xs p-2 rounded ${
+                                    msg.sender === 'user' ? 'bg-[#f59e0b]/20 text-right' : 'bg-[#1a2332]'
+                                  }`}>
+                                    <div className="opacity-70 mb-1">{msg.sender === 'user' ? 'Tu' : 'ZAPIER'}</div>
+                                    <div className="text-[#e8fbff]">{msg.content.substring(0, 100)}...</div>
+                                  </div>
+                                ))
+                              )}
                             </div>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Messaggio da Zapier..."
-                                className="flex-1 bg-[#0b1220] border border-[#f59e0b]/30 rounded px-3 py-1.5 text-sm text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#f59e0b]"
-                                disabled
-                              />
-                              <Button size="sm" className="bg-[#10b981] hover:bg-[#059669]" disabled>
-                                <Send className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <p className="text-xs text-[#e8fbff]/30 text-center">
+                              Vista read-only
+                            </p>
                           </CardContent>
                         </Card>
 
                         <p className="col-span-2 text-xs text-[#e8fbff]/30 text-center mt-2">
-                          Vista 4 Quadranti - Chat in fase di sviluppo
+                          👁️ Vista 4 Quadranti: Monitora tutte le conversazioni in tempo reale (polling 5s)
                         </p>
                       </div>
                     )}
