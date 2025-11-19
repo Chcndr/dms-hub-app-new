@@ -130,14 +130,14 @@ export default function GuardianEndpoints() {
     service.endpoints.map(endpoint => ({ ...endpoint, service }))
   );
 
-  const filteredEndpoints = allEndpoints.filter(({ endpoint, service }) => {
+  const filteredEndpoints = allEndpoints.filter((item) => {
     const matchesSearch = searchTerm === '' ||
-      endpoint.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      endpoint.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      endpoint.path.toLowerCase().includes(searchTerm.toLowerCase());
+      item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.path.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesService = selectedService === 'all' || service.id === selectedService;
-    const matchesRisk = selectedRisk === 'all' || endpoint.risk_level === selectedRisk;
+    const matchesService = selectedService === 'all' || item.service.id === selectedService;
+    const matchesRisk = selectedRisk === 'all' || item.risk_level === selectedRisk;
 
     return matchesSearch && matchesService && matchesRisk;
   });
@@ -210,19 +210,19 @@ export default function GuardianEndpoints() {
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="text-sm text-gray-600">Low Risk</div>
           <div className="text-2xl font-bold text-green-600">
-            {allEndpoints.filter(({ endpoint }) => endpoint.risk_level === 'low').length}
+            {allEndpoints.filter(item => item.risk_level === 'low').length}
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="text-sm text-gray-600">Medium Risk</div>
           <div className="text-2xl font-bold text-yellow-600">
-            {allEndpoints.filter(({ endpoint }) => endpoint.risk_level === 'medium').length}
+            {allEndpoints.filter(item => item.risk_level === 'medium').length}
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="text-sm text-gray-600">High Risk</div>
           <div className="text-2xl font-bold text-red-600">
-            {allEndpoints.filter(({ endpoint }) => endpoint.risk_level === 'high').length}
+            {allEndpoints.filter(item => item.risk_level === 'high').length}
           </div>
         </div>
       </div>
@@ -254,30 +254,30 @@ export default function GuardianEndpoints() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredEndpoints.map(({ endpoint, service }) => {
-                const permission = getAgentPermission(endpoint.id, selectedAgent);
+              {filteredEndpoints.map((item) => {
+                const permission = getAgentPermission(item.id, selectedAgent);
                 const canAccess = permission !== null;
 
                 return (
-                  <tr key={endpoint.id} className="hover:bg-gray-50">
+                  <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{endpoint.id}</div>
-                      <div className="text-sm text-gray-500">{endpoint.path}</div>
-                      <div className="text-xs text-gray-400 mt-1">{endpoint.description}</div>
+                      <div className="text-sm font-medium text-gray-900">{item.id}</div>
+                      <div className="text-sm text-gray-500">{item.path}</div>
+                      <div className="text-xs text-gray-400 mt-1">{item.description}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{service.display_name}</div>
-                      <div className="text-xs text-gray-500">{service.env}</div>
+                      <div className="text-sm text-gray-900">{item.service.display_name}</div>
+                      <div className="text-xs text-gray-500">{item.service.env}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {endpoint.method}
+                        {item.method}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full flex items-center gap-1 w-fit ${getRiskBadgeColor(endpoint.risk_level)}`}>
-                        {getRiskIcon(endpoint.risk_level)}
-                        {endpoint.risk_level}
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full flex items-center gap-1 w-fit ${getRiskBadgeColor(item.risk_level)}`}>
+                        {getRiskIcon(item.risk_level)}
+                        {item.risk_level}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -299,9 +299,9 @@ export default function GuardianEndpoints() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {endpoint.test?.enabled && (
+                      {item.test?.enabled && (
                         <button
-                          onClick={() => handleTestEndpoint(endpoint)}
+                          onClick={() => handleTestEndpoint(item)}
                           className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
                         >
                           <Play className="w-3 h-3" />
