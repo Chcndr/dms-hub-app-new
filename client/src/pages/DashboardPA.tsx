@@ -434,6 +434,18 @@ export default function DashboardPA() {
   // Guardian Logs for MIO Agent tab
   const [guardianLogs, setGuardianLogs] = useState<any[]>([]);
   
+  // Format timestamp for Guardian logs
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('it-IT', {
+      timeZone: 'Europe/Rome',
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }) + ' (ora locale)';
+  };
+  
   // Fetch Guardian logs
   useEffect(() => {
     const fetchGuardianLogs = async () => {
