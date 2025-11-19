@@ -92,10 +92,10 @@ export default function GuardianEndpoints() {
   };
 
   const getAgentPermission = (endpointId: string, agentId: string): AgentPermission | null => {
-    if (!permissionsData) return null;
+    if (!permissionsData || !permissionsData.agents) return null;
     const agent = permissionsData.agents.find(a => a.id === agentId);
-    if (!agent) return null;
-    return agent.permissions.find(p => p.endpoint_id === endpointId) || null;
+    if (!agent || !agent.rules) return null;
+    return agent.rules.find(p => p.endpoint_id === endpointId) || null;
   };
 
   const canAgentAccess = (endpoint: Endpoint, agentId: string): boolean => {
