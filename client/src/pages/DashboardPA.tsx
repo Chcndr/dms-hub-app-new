@@ -494,7 +494,16 @@ export default function DashboardPA() {
     return () => clearInterval(interval);
   }, []);
 
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  
+  // Read URL param ?tab=mio and set activeTab
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [location]);
 
   const QuickAccessButton = ({ href, icon, label, color = 'teal' }: any) => (
     <button
@@ -3245,10 +3254,11 @@ export default function DashboardPA() {
                     </a>
                   </div>
                   
-                  {/* Agent Tabs */}
-                  <div className="grid grid-cols-4 gap-2 pt-2">
-                    <button
-                      onClick={() => setSelectedAgent('mio')}
+                  {/* Agent Tabs - Solo visibili quando chat aperta */}
+                  {showMultiAgentChat && (
+                    <div className="grid grid-cols-4 gap-2 pt-2">
+                      <button
+                        onClick={() => setSelectedAgent('mio')}
                       className={`text-center p-3 rounded-lg border transition-all ${
                         selectedAgent === 'mio'
                           ? 'bg-[#8b5cf6]/20 border-[#8b5cf6]'
@@ -3294,8 +3304,9 @@ export default function DashboardPA() {
                       <Zap className="h-5 w-5 text-orange-400 mx-auto mb-1" />
                       <div className="text-xs text-[#e8fbff]/70">Zapier</div>
                       <div className="text-xs text-[#e8fbff]/50">Automazioni</div>
-                    </button>
-                  </div>
+                      </button>
+                    </div>
+                  )}
 
                   {/* Embedded Chat */}
                   {showMultiAgentChat && (

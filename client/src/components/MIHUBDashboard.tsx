@@ -258,40 +258,26 @@ export default function MIHUBDashboard() {
 
   return (
     <div className="h-full flex flex-col gap-4 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">MIHUB Control Center</h1>
-          <p className="text-muted-foreground">
-            Multi-Agent Coordination System
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <Button
-            variant={sharedView ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSharedView(!sharedView)}
-            className="gap-2"
-          >
-            {sharedView ? (
-              <>
-                <Eye className="h-4 w-4" />
-                Vista Condivisa
-              </>
-            ) : (
-              <>
-                <EyeOff className="h-4 w-4" />
-                Vista Privata
-              </>
-            )}
-          </Button>
-
-          <Badge variant="outline" className="gap-2">
-            <Users className="h-4 w-4" />
-            {AGENTS.length} Agenti Attivi
-          </Badge>
-        </div>
+      {/* Vista Condivisa Toggle */}
+      <div className="flex items-center justify-end gap-4">
+        <Button
+          variant={sharedView ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSharedView(!sharedView)}
+          className="gap-2"
+        >
+          {sharedView ? (
+            <>
+              <Eye className="h-4 w-4" />
+              Vista Condivisa
+            </>
+          ) : (
+            <>
+              <EyeOff className="h-4 w-4" />
+              Vista Privata
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Tabs per Mobile */}
