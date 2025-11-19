@@ -10,7 +10,7 @@ import {
   Building2, GraduationCap, Target, TrendingUpDown, Briefcase,
   Radio, CloudRain, Wind, UserCog, ClipboardCheck, Scale, Bell, BellRing,
   Navigation, Train, ParkingCircle, TrafficCone, FileBarChart, Plug, SettingsIcon, Euro, Newspaper, Rocket,
-  XCircle, Lightbulb, MessageSquare, Brain, Calculator
+  XCircle, Lightbulb, MessageSquare, Brain, Calculator, ExternalLink
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -433,6 +433,10 @@ export default function DashboardPA() {
   
   // Guardian Logs for MIO Agent tab
   const [guardianLogs, setGuardianLogs] = useState<any[]>([]);
+  
+  // Multi-Agent Chat state
+  const [showMultiAgentChat, setShowMultiAgentChat] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<'mio' | 'manus' | 'abacus' | 'zapier'>('mio');
   
   // Format timestamp for Guardian logs
   const formatTimestamp = (timestamp: string) => {
@@ -3222,40 +3226,115 @@ export default function DashboardPA() {
                     Control Center con 4 agenti che comunicano in real-time per coordinamento e auto-controllo.
                   </p>
                   <div className="flex gap-4">
+                    <Button 
+                      onClick={() => setShowMultiAgentChat(!showMultiAgentChat)}
+                      className="flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      {showMultiAgentChat ? 'Nascondi Chat' : 'Apri Chat Multi-Agente'}
+                    </Button>
                     <a 
                       href="/mihub" 
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1"
                     >
-                      <Button className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Apri Chat Multi-Agente
+                      <Button variant="outline" className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Vista 4 Quadranti
                       </Button>
                     </a>
                   </div>
+                  
+                  {/* Agent Tabs */}
                   <div className="grid grid-cols-4 gap-2 pt-2">
-                    <div className="text-center p-3 bg-[#8b5cf6]/10 rounded-lg border border-[#8b5cf6]/30">
+                    <button
+                      onClick={() => setSelectedAgent('mio')}
+                      className={`text-center p-3 rounded-lg border transition-all ${
+                        selectedAgent === 'mio'
+                          ? 'bg-[#8b5cf6]/20 border-[#8b5cf6]'
+                          : 'bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/15'
+                      }`}
+                    >
                       <Brain className="h-5 w-5 text-purple-400 mx-auto mb-1" />
                       <div className="text-xs text-[#e8fbff]/70">MIO</div>
                       <div className="text-xs text-[#e8fbff]/50">Coordinatore</div>
-                    </div>
-                    <div className="text-center p-3 bg-[#3b82f6]/10 rounded-lg border border-[#3b82f6]/30">
+                    </button>
+                    <button
+                      onClick={() => setSelectedAgent('manus')}
+                      className={`text-center p-3 rounded-lg border transition-all ${
+                        selectedAgent === 'manus'
+                          ? 'bg-[#3b82f6]/20 border-[#3b82f6]'
+                          : 'bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/15'
+                      }`}
+                    >
                       <Wrench className="h-5 w-5 text-blue-400 mx-auto mb-1" />
                       <div className="text-xs text-[#e8fbff]/70">Manus</div>
                       <div className="text-xs text-[#e8fbff]/50">Esecutivo</div>
-                    </div>
-                    <div className="text-center p-3 bg-[#10b981]/10 rounded-lg border border-[#10b981]/30">
+                    </button>
+                    <button
+                      onClick={() => setSelectedAgent('abacus')}
+                      className={`text-center p-3 rounded-lg border transition-all ${
+                        selectedAgent === 'abacus'
+                          ? 'bg-[#10b981]/20 border-[#10b981]'
+                          : 'bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/15'
+                      }`}
+                    >
                       <Calculator className="h-5 w-5 text-green-400 mx-auto mb-1" />
                       <div className="text-xs text-[#e8fbff]/70">Abacus</div>
                       <div className="text-xs text-[#e8fbff]/50">Analisi</div>
-                    </div>
-                    <div className="text-center p-3 bg-[#f59e0b]/10 rounded-lg border border-[#f59e0b]/30">
+                    </button>
+                    <button
+                      onClick={() => setSelectedAgent('zapier')}
+                      className={`text-center p-3 rounded-lg border transition-all ${
+                        selectedAgent === 'zapier'
+                          ? 'bg-[#f59e0b]/20 border-[#f59e0b]'
+                          : 'bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/15'
+                      }`}
+                    >
                       <Zap className="h-5 w-5 text-orange-400 mx-auto mb-1" />
                       <div className="text-xs text-[#e8fbff]/70">Zapier</div>
                       <div className="text-xs text-[#e8fbff]/50">Automazioni</div>
-                    </div>
+                    </button>
                   </div>
+
+                  {/* Embedded Chat */}
+                  {showMultiAgentChat && (
+                    <div className="mt-4 p-4 bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          {selectedAgent === 'mio' && <Brain className="h-5 w-5 text-purple-400" />}
+                          {selectedAgent === 'manus' && <Wrench className="h-5 w-5 text-blue-400" />}
+                          {selectedAgent === 'abacus' && <Calculator className="h-5 w-5 text-green-400" />}
+                          {selectedAgent === 'zapier' && <Zap className="h-5 w-5 text-orange-400" />}
+                          <span className="text-[#e8fbff] font-medium capitalize">{selectedAgent}</span>
+                          <span className="text-xs text-[#e8fbff]/50">
+                            {selectedAgent === 'mio' && 'GPT-5 Coordinatore'}
+                            {selectedAgent === 'manus' && 'Operatore Esecutivo'}
+                            {selectedAgent === 'abacus' && 'Analisi Dati'}
+                            {selectedAgent === 'zapier' && 'Automazioni'}
+                          </span>
+                        </div>
+                        <span className="text-xs text-[#e8fbff]/50">0 messaggi</span>
+                      </div>
+                      <div className="h-64 bg-[#0a0f1a] rounded-lg p-4 mb-3 overflow-y-auto">
+                        <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder={`Messaggio da ${selectedAgent}...`}
+                          className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
+                          disabled
+                        />
+                        <Button className="bg-[#10b981] hover:bg-[#059669]" disabled>
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-[#e8fbff]/30 mt-2 text-center">
+                        Chat in fase di sviluppo - Per ora usa la Vista 4 Quadranti
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
