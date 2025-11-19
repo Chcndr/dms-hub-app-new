@@ -2074,9 +2074,6 @@ export default function DashboardPA() {
 
           {/* TAB 11: DEBUG & DEV */}
           <TabsContent value="debug" className="space-y-6">
-            {/* Guardian Debug Stats */}
-            <GuardianDebugStats />
-            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="bg-[#1a2332] border-[#14b8a6]/30">
                 <CardHeader>
@@ -2177,6 +2174,9 @@ export default function DashboardPA() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Guardian Debug Stats */}
+            <GuardianDebugStats />
           </TabsContent>
 
           {/* TAB 13: QUALIFICAZIONE IMPRESE */}
