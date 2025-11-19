@@ -17,7 +17,7 @@ export interface Message {
   id: number;
   sender: 'user' | AgentId;
   content: string;
-  timestamp: Date;
+  timestamp: string; // ISO string
   metadata?: any;
 }
 
@@ -32,7 +32,7 @@ export interface OrchestratorResponse {
   message: string;
   agentsUsed: AgentId[];
   conversationId: string;
-  timestamp: Date;
+  timestamp: string; // ISO string
 }
 
 /**
@@ -166,7 +166,8 @@ export function useAllConversations(userId: string = 'user_dashboard') {
 /**
  * Formatta timestamp per visualizzazione
  */
-export function formatTimestamp(date: Date): string {
+export function formatTimestamp(timestamp: string | Date): string {
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
   return date.toLocaleString('it-IT', {
     timeZone: 'Europe/Rome',
     day: '2-digit',

@@ -456,7 +456,7 @@ export default function DashboardPA() {
       id: Date.now(),
       sender: 'user',
       content: mainChatInput,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     setMainChatMessages(prev => [...prev, userMessage]);
@@ -472,7 +472,7 @@ export default function DashboardPA() {
         id: Date.now() + 1,
         sender: response.agentsUsed[0] || 'mio_dev',
         content: response.message,
-        timestamp: new Date(response.timestamp),
+        timestamp: response.timestamp, // già ISO string
       };
       setMainChatMessages(prev => [...prev, agentMessage]);
     }
