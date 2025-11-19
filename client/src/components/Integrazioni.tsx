@@ -105,113 +105,57 @@ function APIDashboard() {
   const [testResult, setTestResult] = useState<any>(null);
   const [requestBody, setRequestBody] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [guardianEndpoints, setGuardianEndpoints] = useState<any[]>([]);
-  const [guardianLoading, setGuardianLoading] = useState(true);
+  const [apiEndpoints, setApiEndpoints] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const utils = trpc.useUtils();
   const { data: apiStats } = trpc.integrations.apiStats.today.useQuery();
 
-  // Fetch Guardian endpoints from MIO-hub
+  // Fetch ALL endpoints from MIO-hub api/index.json (single source of truth)
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/Chcndr/MIO-hub/master/api/index.json')
       .then(r => r.json())
       .then(data => {
-        // Extract all endpoints from all services
-        const allEndpoints = data.services?.flatMap((service: any) => 
-          service.endpoints?.map((ep: any) => ({
-            method: ep.method,
-            path: ep.path,
-            description: ep.description,
-            risk_level: ep.risk_level
-          })) || []
-        ) || [];
-        setGuardianEndpoints(allEndpoints);
-        setGuardianLoading(false);
+        // Group endpoints by category
+        const endpointsByCategory: { [key: string]: any[] } = {};
+        
+        data.services?.forEach((service: any) => {
+          service.endpoints?.forEach((ep: any) => {
+            const category = ep.category || 'Other';
+            if (!endpointsByCategory[category]) {
+              endpointsByCategory[category] = [];
+            }
+            endpointsByCategory[category].push({
+              id: ep.id,
+              method: ep.method,
+              path: ep.path,
+              description: ep.description,
+              risk_level: ep.risk_level,
+              enabled: ep.enabled,
+              test: ep.test,
+              service_id: service.id,
+              base_url: service.base_url
+            });
+          });
+        });
+        
+        // Convert to array format
+        const categorizedEndpoints = Object.entries(endpointsByCategory).map(([category, endpoints]) => ({
+          category,
+          endpoints
+        }));
+        
+        setApiEndpoints(categorizedEndpoints);
+        setLoading(false);
       })
       .catch(err => {
-        console.error('Error loading Guardian endpoints:', err);
-        setGuardianLoading(false);
+        console.error('Error loading endpoints from MIO-hub:', err);
+        setLoading(false);
       });
   }, []);
 
-  const apiEndpoints = [
-    {
-      category: 'Mercati',
-      endpoints: [
-        { method: 'POST', path: '/api/dmsHub/markets/importFromSlotEditor', description: 'Import JSON da Slot Editor v3 (manuale)' },
-        { method: 'POST', path: '/api/dmsHub/markets/importAuto', description: 'Import automatico da Slot Editor v3' },
-        { method: 'GET', path: '/api/dmsHub/markets/list', description: 'Lista mercati con statistiche' },
-        { method: 'GET', path: '/api/dmsHub/markets/getById', description: 'Dettagli mercato completo' },
-      ]
-    },
-    {
-      category: 'Posteggi',
-      endpoints: [
-        { method: 'GET', path: '/api/dmsHub/stalls/listByMarket', description: 'Lista posteggi per mercato' },
-        { method: 'POST', path: '/api/dmsHub/stalls/updateStatus', description: 'Aggiorna stato posteggio' },
-        { method: 'GET', path: '/api/dmsHub/stalls/getStatuses', description: 'Stati real-time' },
-      ]
-    },
-    {
-      category: 'Operatori',
-      endpoints: [
-        { method: 'GET', path: '/api/dmsHub/vendors/list', description: 'Lista operatori' },
-        { method: 'POST', path: '/api/dmsHub/vendors/create', description: 'Crea operatore' },
-        { method: 'PUT', path: '/api/dmsHub/vendors/update', description: 'Aggiorna operatore' },
-        { method: 'GET', path: '/api/dmsHub/vendors/getFullDetails', description: 'Dettagli completi (Polizia)' },
-      ]
-    },
-    {
-      category: 'Prenotazioni',
-      endpoints: [
-        { method: 'POST', path: '/api/dmsHub/bookings/create', description: 'Prenota posteggio' },
-        { method: 'GET', path: '/api/dmsHub/bookings/listActive', description: 'Prenotazioni attive' },
-        { method: 'POST', path: '/api/dmsHub/bookings/confirmCheckin', description: 'Conferma check-in' },
-        { method: 'DELETE', path: '/api/dmsHub/bookings/cancel', description: 'Cancella prenotazione' },
-      ]
-    },
-    {
-      category: 'Presenze',
-      endpoints: [
-        { method: 'POST', path: '/api/dmsHub/presences/checkout', description: 'Check-out operatore' },
-        { method: 'GET', path: '/api/dmsHub/presences/getTodayByMarket', description: 'Presenze oggi' },
-      ]
-    },
-    {
-      category: 'Controlli',
-      endpoints: [
-        { method: 'POST', path: '/api/dmsHub/inspections/create', description: 'Crea controllo Polizia' },
-        { method: 'GET', path: '/api/dmsHub/inspections/list', description: 'Lista controlli' },
-      ]
-    },
-    {
-      category: 'Verbali',
-      endpoints: [
-        { method: 'POST', path: '/api/dmsHub/violations/create', description: 'Emetti verbale' },
-        { method: 'GET', path: '/api/dmsHub/violations/list', description: 'Lista verbali' },
-      ]
-    },
-    {
-      category: 'MIO Agent',
-      endpoints: [
-        { method: 'POST', path: '/api/logs/initSchema', description: 'Inizializza tabella mio_agent_logs' },
-        { method: 'POST', path: '/api/logs/createLog', description: 'Crea nuovo log agente' },
-        { method: 'GET', path: '/api/logs/getLogs', description: 'Recupera log agenti' },
-      ]
-    },
-  ];
-
-  // Combine local endpoints with Guardian endpoints
-  const allEndpoints = [
-    ...apiEndpoints,
-    ...(guardianEndpoints.length > 0 ? [{
-      category: 'Guardian API',
-      endpoints: guardianEndpoints
-    }] : [])
-  ];
-
-  // Update total count
-  const totalEndpointsCount = apiEndpoints.reduce((sum, cat) => sum + cat.endpoints.length, 0) + guardianEndpoints.length;
+  // Total count from MIO-hub
+  const totalEndpointsCount = apiEndpoints.reduce((sum, cat) => sum + cat.endpoints.length, 0);
 
   const getMethodColor = (method: string) => {
     switch (method) {
@@ -223,12 +167,17 @@ function APIDashboard() {
     }
   };
 
-  const handleTestEndpoint = async (endpoint: string, customBody?: string) => {
-    setSelectedEndpoint(endpoint);
+  const handleTestEndpoint = async (endpointPath: string, customBody?: string) => {
+    setSelectedEndpoint(endpointPath);
     setTestResult(null);
     setIsLoading(true);
     
     const startTime = Date.now();
+    
+    // Find endpoint info from MIO-hub data
+    const endpointInfo = apiEndpoints
+      .flatMap(cat => cat.endpoints)
+      .find(ep => ep.path === endpointPath);
     
     try {
       let data: any = null;
@@ -345,7 +294,18 @@ function APIDashboard() {
           break;
           
         default:
-          throw new Error(`Endpoint non implementato: ${endpoint}`);
+          // Check if endpoint is defined in api/index.json but not implemented
+          if (endpointInfo) {
+            throw new Error(
+              `Endpoint non implementato (solo definito in api/index.json).\n` +
+              `ID: ${endpointInfo.id}\n` +
+              `Service: ${endpointInfo.service_id}\n` +
+              `Base URL: ${endpointInfo.base_url}\n` +
+              `Suggerimento: Implementare endpoint REST su Hetzner`
+            );
+          } else {
+            throw new Error(`Endpoint sconosciuto: ${endpointPath}`);
+          }
       }
       
       const endTime = Date.now();
@@ -418,12 +378,12 @@ function APIDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {guardianLoading && (
+            {loading && (
               <div className="text-center py-4 text-[#e8fbff]/60 text-sm">
-                Caricamento Guardian API...
+                Caricamento endpoint da MIO-hub...
               </div>
             )}
-            {allEndpoints.map((category, idx) => (
+            {apiEndpoints.map((category, idx) => (
               <div key={idx} className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#14b8a6]">{category.category}</h3>
                 {category.endpoints.map((endpoint, eidx) => (
@@ -436,7 +396,18 @@ function APIDashboard() {
                       {endpoint.method}
                     </Badge>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-mono text-[#e8fbff]/80 truncate">{endpoint.path}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-xs font-mono text-[#e8fbff]/80 truncate">{endpoint.path}</p>
+                        {endpoint.test?.enabled === false ? (
+                          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 border text-[10px]">
+                            Not Implemented
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 border text-[10px]">
+                            Implemented
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-xs text-[#e8fbff]/50">{endpoint.description}</p>
                     </div>
                     <Button
