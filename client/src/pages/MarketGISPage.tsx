@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { MapPin, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
@@ -269,27 +269,7 @@ export default function MarketGISPage() {
                 );
               }
               
-              // Calcola centro del poligono per posizionare il numero
-              const centerLat = positions.reduce((sum, [lat]) => sum + lat, 0) / positions.length;
-              const centerLng = positions.reduce((sum, [, lng]) => sum + lng, 0) / positions.length;
-              
-              // Crea DivIcon per il numero
-              const numberIcon = L.divIcon({
-                className: 'stall-number-label',
-                html: `<div style="
-                  background: white;
-                  border: 2px solid ${props.status === 'occupied' ? '#ef4444' : '#10b981'};
-                  border-radius: 4px;
-                  padding: 2px 6px;
-                  font-size: 12px;
-                  font-weight: bold;
-                  color: #1f2937;
-                  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                  white-space: nowrap;
-                ">${props.number}</div>`,
-                iconSize: [30, 20],
-                iconAnchor: [15, 10],
-              });
+              // Nessun DivIcon - usiamo Tooltip che scala con zoom
               
               return (
                 <React.Fragment key={`stall-${idx}`}>
@@ -327,16 +307,21 @@ export default function MarketGISPage() {
                         )}
                       </div>
                     </Popup>
+                    <Tooltip
+                      permanent
+                      direction="center"
+                      className="stall-number-tooltip"
+                    >
+                      <span style={{
+                        fontWeight: 'bold',
+                        fontSize: '11px',
+                        color: '#1f2937',
+                        textShadow: '0 0 3px white, 0 0 3px white, 0 0 3px white'
+                      }}>
+                        {props.number}
+                      </span>
+                    </Tooltip>
                   </Polygon>
-                  
-                  {/* Marker con numero al centro del rettangolo */}
-                  <Marker
-                    position={[centerLat, centerLng]}
-                    icon={numberIcon}
-                    eventHandlers={{
-                      click: () => setSelectedStall(props),
-                    }}
-                  />
                 </React.Fragment>
               );
             })}
