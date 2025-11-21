@@ -26,8 +26,8 @@ interface MarketMapData {
     features: Array<{
       type: string;
       geometry: {
-        type: string;
-        coordinates: [number, number];
+        type: 'Point' | 'Polygon';
+        coordinates: [number, number] | [number, number][][];
       };
       properties: {
         number: string;
