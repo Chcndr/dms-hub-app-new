@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { MapPin, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
+import { StallNumbersOverlay } from '@/components/StallNumbersOverlay';
 
 // Fix per icone marker Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -17,23 +18,6 @@ const DefaultIcon = L.icon({
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
-
-// CSS per tooltip trasparenti
-const tooltipStyle = document.createElement('style');
-tooltipStyle.innerHTML = `
-  .stall-number-tooltip {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-  }
-  .stall-number-tooltip::before {
-    display: none !important;
-  }
-`;
-if (typeof document !== 'undefined') {
-  document.head.appendChild(tooltipStyle);
-}
 
 interface MarketMapData {
   container: [number, number][];
@@ -325,24 +309,16 @@ export default function MarketGISPage() {
                         )}
                       </div>
                     </Popup>
-                    <Tooltip
-                      permanent
-                      direction="center"
-                      className="stall-number-tooltip"
-                    >
-                      <span style={{
-                        fontWeight: 'bold',
-                        fontSize: '6px',
-                        color: 'white',
-                        textShadow: '0 0 2px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)'
-                      }}>
-                        {props.number}
-                      </span>
-                    </Tooltip>
                   </Polygon>
                 </React.Fragment>
               );
             })}
+
+            {/* SVG Overlay per numeri scalabili */}
+            <StallNumbersOverlay 
+              features={mapData.stalls_geojson.features.filter(f => f.geometry.type === 'Polygon')} 
+              minZoom={16}
+            />
           </MapContainer>
         )}
       </div>
