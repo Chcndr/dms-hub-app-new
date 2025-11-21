@@ -216,6 +216,16 @@ export default function MarketGISPage() {
             {mapData.stalls_geojson.features.map((feature, idx) => {
               const props = feature.properties;
               
+              // Debug: log primo posteggio
+              if (idx === 0) {
+                console.log('🔍 Primo posteggio:', {
+                  type: feature.geometry.type,
+                  number: props.number,
+                  orientation: props.orientation,
+                  coordinates: feature.geometry.coordinates
+                });
+              }
+              
               // Converti coordinate Polygon in formato Leaflet [lat, lng][]
               let positions: [number, number][] = [];
               
