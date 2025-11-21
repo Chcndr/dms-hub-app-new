@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { drizzle } from 'drizzle-orm/mysql2';
-import mysql from 'mysql2/promise';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import { mioAgentLogs } from '../../drizzle/schema';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -40,8 +40,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Create MySQL connection
-    const connection = await mysql.createConnection(databaseUrl);
+    // Create Postgres connection
+    const connection = postgres(databaseUrl);
     const db = drizzle(connection);
 
     // Insert log
@@ -61,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       success: true,
       log: {
-        id: result[0].insertId,
+        id: result[0]?.id,
         agent,
         action,
         status,

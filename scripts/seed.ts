@@ -1,7 +1,9 @@
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "../drizzle/schema";
 
-const db = drizzle(process.env.DATABASE_URL!);
+const client = postgres(process.env.DATABASE_URL!);
+const db = drizzle(client);
 
 async function seed() {
   console.log("🌱 Starting seed (minimal for testing)...");

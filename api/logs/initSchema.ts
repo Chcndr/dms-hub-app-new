@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { drizzle } from 'drizzle-orm/mysql2';
-import mysql from 'mysql2/promise';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST method
@@ -23,21 +23,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log('[initSchema] DATABASE_URL found, connecting...');
     
-    // Create MySQL connection
-    const connection = await mysql.createConnection(databaseUrl);
+    // Create Postgres connection
+    const connection = postgres(databaseUrl);
     const db = drizzle(connection);
     
     console.log('[initSchema] Checking if table exists...');
     
-    // Check if table exists
-    const [rows] = await connection.query(`
+    // Check if table exists (Postgres)
+    const rows = await connection`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
-      WHERE table_schema = DATABASE() 
+      WHERE table_schema = 'public' 
       AND table_name = 'mio_agent_logs'
-    `);
+    `;
     
-    const tableExists = (rows as any)[0]?.count > 0;
+    const tableExists = rows[0]?.count > 0;
     
     console.log(`[initSchema] Table exists: ${tableExists}`);
     
@@ -52,22 +52,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log('[initSchema] Creating table...');
     
-    // Create table
-    await connection.query(`
+    // Create table (Postgres)
+    await connection`
       CREATE TABLE IF NOT EXISTS mio_agent_logs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        agent VARCHAR(100) NOT NULL COMMENT 'Nome agente (MIO, Manus, etc.)',
-        action VARCHAR(255) NOT NULL COMMENT 'Azione eseguita',
-        status ENUM('success', 'error', 'warning', 'info') NOT NULL COMMENT 'Stato operazione',
-        message TEXT COMMENT 'Messaggio descrittivo',
-        details TEXT COMMENT 'Dettagli aggiuntivi in formato JSON',
-        timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp evento',
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Data creazione record',
-        INDEX idx_agent (agent),
-        INDEX idx_status (status),
-        INDEX idx_timestamp (timestamp DESC)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Log degli agenti AI (MIO, Manus, etc.)'
-    `);
+        id SERIAL PRIMARY KEY,
+        agent VARCHAR(100) NOT NULL,
+        action VARCHAR(255) NOT NULL,
+        status VARCHAR(20) NOT NULL CHECK (status IN ('success', 'error', 'warning', 'info')),
+        message TEXT,
+        details TEXT,
+        timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_agent ON mio_agent_logs(agent);
+      CREATE INDEX IF NOT EXISTS idx_status ON mio_agent_logs(status);
+      CREATE INDEX IF NOT EXISTS idx_timestamp ON mio_agent_logs(timestamp DESC);
+    `;
     
     console.log('[initSchema] Table created successfully');
     

@@ -1,14 +1,16 @@
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { sql } from "drizzle-orm";
 
-const db = drizzle(process.env.DATABASE_URL!);
+const client = postgres(process.env.DATABASE_URL!);
+const db = drizzle(client);
 
 async function clean() {
   console.log("🧹 Cleaning database...");
 
   try {
-    // Disable foreign key checks
-    await db.execute(sql`SET FOREIGN_KEY_CHECKS = 0`);
+    // Disable foreign key checks (Postgres)
+    await db.execute(sql`SET session_replication_role = 'replica'`);
 
     // Truncate all tables (order doesn't matter with FK checks disabled)
     const tables = [
@@ -35,8 +37,8 @@ async function clean() {
       await db.execute(sql.raw(`TRUNCATE TABLE \`${table}\``));
     }
 
-    // Re-enable foreign key checks
-    await db.execute(sql`SET FOREIGN_KEY_CHECKS = 1`);
+    // Re-enable foreign key checks (Postgres)
+    await db.execute(sql`SET session_replication_role = 'origin'`);
 
     console.log("✅ Database cleaned successfully!");
   } catch (e) {

@@ -210,16 +210,17 @@ export const dmsHubRouter = router({
           lat: input.slotEditorData.center.lat.toString(),
           lng: input.slotEditorData.center.lng.toString(),
           active: 1,
-        }).onDuplicateKeyUpdate({
+        }).onConflictDoUpdate({
+          target: schema.markets.id,
           set: {
             name: input.marketName,
             address: input.address,
             lat: input.slotEditorData.center.lat.toString(),
             lng: input.slotEditorData.center.lng.toString(),
           },
-        });
+        }).returning();
 
-        const marketId = market.insertId;
+        const marketId = market[0].id;
 
         // 2. Salva geometria mercato
         await db.insert(schema.marketGeometry).values({
@@ -232,7 +233,8 @@ export const dmsHubRouter = router({
           gcpData: JSON.stringify(input.slotEditorData.gcp),
           pngUrl: input.slotEditorData.png.url,
           pngMetadata: JSON.stringify(input.slotEditorData.png.metadata),
-        }).onDuplicateKeyUpdate({
+        }).onConflictDoUpdate({
+          target: schema.marketGeometry.id,
           set: {
             containerGeojson: JSON.stringify(input.slotEditorData.container),
             pngUrl: input.slotEditorData.png.url,
@@ -335,7 +337,7 @@ export const dmsHubRouter = router({
           active: 1,
         });
 
-        const marketId = market.insertId;
+        const marketId = market[0].id;
 
         // 2. Salva geometria
         await db.insert(schema.marketGeometry).values({
