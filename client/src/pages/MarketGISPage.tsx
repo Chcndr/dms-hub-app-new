@@ -18,6 +18,23 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// CSS per tooltip trasparenti
+const tooltipStyle = document.createElement('style');
+tooltipStyle.innerHTML = `
+  .stall-number-tooltip {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  .stall-number-tooltip::before {
+    display: none !important;
+  }
+`;
+if (typeof document !== 'undefined') {
+  document.head.appendChild(tooltipStyle);
+}
+
 interface MarketMapData {
   container: [number, number][];
   center: { lat: number; lng: number };
@@ -159,6 +176,7 @@ export default function MarketGISPage() {
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={20}
             />
 
             {/* Contorno mercato - RIMOSSO come da richiesta utente */}
@@ -314,9 +332,9 @@ export default function MarketGISPage() {
                     >
                       <span style={{
                         fontWeight: 'bold',
-                        fontSize: '11px',
-                        color: '#1f2937',
-                        textShadow: '0 0 3px white, 0 0 3px white, 0 0 3px white'
+                        fontSize: '6px',
+                        color: 'white',
+                        textShadow: '0 0 2px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)'
                       }}>
                         {props.number}
                       </span>
