@@ -154,7 +154,7 @@ export default function MarketGISPage() {
         {mapData && (
           <MapContainer
             center={[mapData.center.lat, mapData.center.lng]}
-            zoom={20}
+            zoom={17}
             className="h-full w-full"
           >
             <TileLayer
