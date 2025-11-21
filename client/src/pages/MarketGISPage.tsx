@@ -153,7 +153,7 @@ export default function MarketGISPage() {
         {mapData && (
           <MapContainer
             center={[mapData.center.lat, mapData.center.lng]}
-            zoom={19}
+            zoom={20}
             className="h-full w-full"
           >
             <TileLayer
@@ -220,43 +220,75 @@ export default function MarketGISPage() {
                 );
               }
               
+              // Calcola centro del poligono per posizionare il numero
+              const centerLat = positions.reduce((sum, [lat]) => sum + lat, 0) / positions.length;
+              const centerLng = positions.reduce((sum, [, lng]) => sum + lng, 0) / positions.length;
+              
+              // Crea DivIcon per il numero
+              const numberIcon = L.divIcon({
+                className: 'stall-number-label',
+                html: `<div style="
+                  background: white;
+                  border: 2px solid ${props.status === 'occupied' ? '#ef4444' : '#10b981'};
+                  border-radius: 4px;
+                  padding: 2px 6px;
+                  font-size: 12px;
+                  font-weight: bold;
+                  color: #1f2937;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                  white-space: nowrap;
+                ">${props.number}</div>`,
+                iconSize: [30, 20],
+                iconAnchor: [15, 10],
+              });
+              
               return (
-                <Polygon
-                  key={`stall-${idx}`}
-                  positions={positions}
-                  pathOptions={{
-                    color: props.status === 'occupied' ? '#ef4444' : '#10b981',
-                    fillColor: props.status === 'occupied' ? '#ef4444' : '#10b981',
-                    fillOpacity: 0.4,
-                    weight: 2,
-                  }}
-                  eventHandlers={{
-                    click: () => setSelectedStall(props),
-                  }}
-                >
-                  <Popup>
-                    <div className="text-sm">
-                      <div className="font-semibold text-base mb-1">
-                        Piazzola #{props.number}
+                <React.Fragment key={`stall-${idx}`}>
+                  <Polygon
+                    positions={positions}
+                    pathOptions={{
+                      color: props.status === 'occupied' ? '#ef4444' : '#10b981',
+                      fillColor: props.status === 'occupied' ? '#ef4444' : '#10b981',
+                      fillOpacity: 0.4,
+                      weight: 2,
+                    }}
+                    eventHandlers={{
+                      click: () => setSelectedStall(props),
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-sm">
+                        <div className="font-semibold text-base mb-1">
+                          Piazzola #{props.number}
+                        </div>
+                        {props.dimensions && (
+                          <div className="text-gray-600">
+                            📏 {props.dimensions}
+                          </div>
+                        )}
+                        {props.status && (
+                          <div className="text-gray-600">
+                            🏷️ {props.status === 'free' ? 'Libera' : 'Occupata'}
+                          </div>
+                        )}
+                        {props.kind && (
+                          <div className="text-gray-600 text-xs mt-1">
+                            Tipo: {props.kind}
+                          </div>
+                        )}
                       </div>
-                      {props.dimensions && (
-                        <div className="text-gray-600">
-                          📏 {props.dimensions}
-                        </div>
-                      )}
-                      {props.status && (
-                        <div className="text-gray-600">
-                          🏷️ {props.status === 'free' ? 'Libera' : 'Occupata'}
-                        </div>
-                      )}
-                      {props.kind && (
-                        <div className="text-gray-600 text-xs mt-1">
-                          Tipo: {props.kind}
-                        </div>
-                      )}
-                    </div>
-                  </Popup>
-                </Polygon>
+                    </Popup>
+                  </Polygon>
+                  
+                  {/* Marker con numero al centro del rettangolo */}
+                  <Marker
+                    position={[centerLat, centerLng]}
+                    icon={numberIcon}
+                    eventHandlers={{
+                      click: () => setSelectedStall(props),
+                    }}
+                  />
+                </React.Fragment>
               );
             })}
           </MapContainer>
