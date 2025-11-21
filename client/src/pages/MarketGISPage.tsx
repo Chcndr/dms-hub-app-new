@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, LayersControl, Tooltip } from 'react-leaflet';
+import { ZoomFontUpdater } from '../components/ZoomFontUpdater';
 import L from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { MapPin, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
@@ -98,15 +99,15 @@ export default function MarketGISPage() {
 
   return (
     <>
-      <style>{`
-        /* Rimuovi background dai tooltip dei numeri */
+      {/* Style dinamico aggiornato da ZoomFontUpdater */}
+      <style id="dynamic-tooltip-style">{`
         .stall-number-tooltip.leaflet-tooltip {
           background: transparent !important;
           border: none !important;
           box-shadow: none !important;
           padding: 0 !important;
           color: white !important;
-          font-size: 11px !important;
+          font-size: 8px !important;
           font-weight: bold !important;
           text-shadow: 1px 1px 2px rgba(0,0,0,0.8) !important;
         }
@@ -207,6 +208,9 @@ export default function MarketGISPage() {
                 />
               </LayersControl.BaseLayer>
             </LayersControl>
+            
+            {/* Componente per aggiornare font size dinamicamente con zoom */}
+            <ZoomFontUpdater minZoom={16} baseFontSize={8} scaleFactor={1.3} />
 
             {/* Contorno mercato - RIMOSSO come da richiesta utente */}
             {/* {containerPolygon.length > 0 && (
