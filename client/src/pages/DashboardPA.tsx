@@ -3180,7 +3180,7 @@ export default function DashboardPA() {
             </div>
 
             {/* Mappa Interattiva Fermate */}
-            {realData.mobilityData.length > 0 && (
+            {true && (
               <Card className="bg-[#1a2332] border-[#3b82f6]/30">
                 <CardHeader>
                   <CardTitle className="text-[#e8fbff] flex items-center gap-2">
@@ -3191,7 +3191,7 @@ export default function DashboardPA() {
                 <CardContent>
                   <div className="h-[500px] rounded-lg overflow-hidden">
                     <MobilityMap
-                      stops={realData.mobilityData.map((m: any) => ({
+                      stops={(realData.mobilityData || []).map((m: any) => ({
                         id: m.id,
                         type: m.type,
                         stopName: m.stopName,
