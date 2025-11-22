@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
 import { Building2, Store, Wrench, MapPin, Phone, Mail, Clock, Plus, Edit, Trash2 } from 'lucide-react';
 import { MarketMapComponent } from './MarketMapComponent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+// TODO: Riscrivere completamente il componente per integrarlo perfettamente con le nuove API HUB
+// Per ora uso chiamate tRPC ma mantengo la struttura attuale
 
 // Mock data per ora - in futuro verrà sostituito con chiamate API
 const mockHubData = {
@@ -88,6 +92,11 @@ export default function GestioneHubNegozi() {
   const [selectedTab, setSelectedTab] = useState('anagrafica');
   const [mapData, setMapData] = useState<any>(null);
   const [stallsData, setStallsData] = useState<any[]>([]);
+
+  // Carica dati HUB reali da API
+  const hubLocationsQuery = trpc.dmsHub.hub.locations.list.useQuery();
+  const hubShopsQuery = trpc.dmsHub.hub.shops.list.useQuery({ hubId: 1 });
+  const hubServicesQuery = trpc.dmsHub.hub.services.list.useQuery({ hubId: 1 });
 
   // Carica dati mappa
   useEffect(() => {
