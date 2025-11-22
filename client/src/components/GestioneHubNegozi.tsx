@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Store, Wrench, MapPin, Phone, Mail, Clock, Plus, Edit, Trash2 } from 'lucide-react';
+import { MarketMapComponent } from './MarketMapComponent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -85,6 +86,37 @@ const mockServices = [
 
 export default function GestioneHubNegozi() {
   const [selectedTab, setSelectedTab] = useState('anagrafica');
+  const [mapData, setMapData] = useState<any>(null);
+  const [stallsData, setStallsData] = useState<any[]>([]);
+
+  // Carica dati mappa
+  useEffect(() => {
+    const loadMapData = async () => {
+      try {
+        const selectedMarketId = 1; // HUB Grosseto
+        
+        const [mapRes, stallsRes] = await Promise.all([
+          fetch('https://orchestratore.mio-hub.me/api/gis/market-map'),
+          fetch(`https://orchestratore.mio-hub.me/api/markets/${selectedMarketId}/stalls`)
+        ]);
+
+        const mapJson = await mapRes.json();
+        const stallsJson = await stallsRes.json();
+
+        if (mapJson.success && mapJson.data) {
+          setMapData(mapJson.data);
+        }
+
+        if (stallsJson.success && Array.isArray(stallsJson.data)) {
+          setStallsData(stallsJson.data);
+        }
+      } catch (error) {
+        console.error('Error loading map data:', error);
+      }
+    };
+
+    loadMapData();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     const colors = {
@@ -425,6 +457,34 @@ export default function GestioneHubNegozi() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Mappa HUB e Negozi */}
+      <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+        <CardHeader>
+          <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Mappa HUB Grosseto (Dati Reali)
+          </CardTitle>
+          <CardDescription className="text-[#e8fbff]/70">
+            Visualizzazione geografica dell'HUB e dei negozi/servizi collegati
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {mapData && stallsData.length > 0 ? (
+            <div className="h-[600px] rounded-lg overflow-hidden">
+              <MarketMapComponent
+                mapData={mapData}
+                stallsData={stallsData}
+                zoom={19}
+              />
+            </div>
+          ) : (
+            <div className="h-[600px] flex items-center justify-center bg-[#0b1220] rounded-lg">
+              <p className="text-[#e8fbff]/50">Caricamento mappa...</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
