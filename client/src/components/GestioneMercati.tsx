@@ -1,634 +1,660 @@
 import { useState, useEffect } from "react";
-import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
   MapPin, 
-  Upload, 
   Users, 
-  Calendar, 
-  AlertCircle,
-  CheckCircle,
-  Clock,
   Building2,
-  FileJson,
-  Loader2
+  Loader2,
+  FileText,
+  Edit,
+  Save,
+  X,
+  ArrowUpRight,
+  ArrowDownRight
 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { GISMap, GISMarker, MARKER_ICONS } from "@/components/GISMap";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+
+interface Market {
+  id: number;
+  code: string;
+  name: string;
+  municipality: string;
+  days: string;
+  total_stalls: number;
+  status: string;
+  gis_market_id: string;
+  latitude: string;
+  longitude: string;
+}
+
+interface Stall {
+  id: number;
+  market_id: number;
+  number: string;
+  gis_slot_id: string;
+  width: string;
+  depth: string;
+  type: string;
+  status: string;
+  orientation: string;
+  notes: string | null;
+  concession_id: number | null;
+  vendor_id: number | null;
+  concession_type: string | null;
+  vendor_business_name: string | null;
+  vendor_contact_name: string | null;
+}
+
+interface Vendor {
+  id: number;
+  code: string;
+  business_name: string;
+  vat_number: string;
+  contact_name: string;
+  phone: string;
+  email: string;
+  status: string;
+}
+
+interface Concession {
+  id: number;
+  market_id: number;
+  stall_id: number;
+  vendor_id: number;
+  type: string;
+  valid_from: string;
+  valid_to: string | null;
+  market_name: string;
+  stall_number: string;
+  vendor_business_name: string;
+  vendor_code: string;
+}
 
 /**
  * Componente Gestione Mercati
- * 
- * Sezione completa per gestione mercati, posteggi, operatori
- * Integrazione con Slot Editor v3 per import geometria
+ * Sistema completo per gestione mercati, posteggi e concessioni
  */
-
 export default function GestioneMercati() {
-  const [activeTab, setActiveTab] = useState("mercati");
-  const [selectedMarket, setSelectedMarket] = useState<number | null>(null);
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMarkets();
+  }, []);
+
+  const fetchMarkets = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/markets`);
+      const data = await response.json();
+      if (data.success) {
+        setMarkets(data.data);
+        if (data.data.length > 0 && !selectedMarket) {
+          setSelectedMarket(data.data[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching markets:', error);
+      toast.error('Errore nel caricamento dei mercati');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-[#14b8a6]" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (markets.length === 0) {
+    return (
+      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Building2 className="h-12 w-12 text-[#14b8a6] mb-4" />
+          <p className="text-[#e8fbff]/70 mb-4">Nessun mercato configurato</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Gestione Mercati</h2>
-          <p className="text-muted-foreground">
-            Sistema completo per gestione mercati, posteggi e operatori
-          </p>
-        </div>
-        <ImportSlotEditorDialog />
+      {/* Lista Mercati */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {markets.map((market) => (
+          <Card 
+            key={market.id} 
+            className={`cursor-pointer transition-all bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 hover:border-[#14b8a6] ${
+              selectedMarket?.id === market.id ? 'border-[#14b8a6] ring-2 ring-[#14b8a6]/50' : ''
+            }`}
+            onClick={() => setSelectedMarket(market)}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#e8fbff]">
+                <Building2 className="h-5 w-5 text-[#14b8a6]" />
+                {market.name}
+              </CardTitle>
+              <CardDescription className="text-[#e8fbff]/70">{market.municipality}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#e8fbff]/70">Codice</span>
+                  <Badge variant="secondary" className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30">
+                    {market.code}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#e8fbff]/70">Posteggi Totali</span>
+                  <Badge variant="secondary" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
+                    {market.total_stalls}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#e8fbff]/70">Giorni</span>
+                  <span className="text-xs text-[#e8fbff]">{market.days}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#e8fbff]/70">Stato</span>
+                  <Badge 
+                    variant="default" 
+                    className={market.status === 'active' 
+                      ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30" 
+                      : "bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30"}
+                  >
+                    {market.status === 'active' ? "Attivo" : "Inattivo"}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="mercati">
-            <Building2 className="mr-2 h-4 w-4" />
-            Mercati
-          </TabsTrigger>
-          <TabsTrigger value="posteggi">
-            <MapPin className="mr-2 h-4 w-4" />
-            Posteggi
-          </TabsTrigger>
-          <TabsTrigger value="operatori">
-            <Users className="mr-2 h-4 w-4" />
-            Operatori
-          </TabsTrigger>
-          <TabsTrigger value="prenotazioni">
-            <Calendar className="mr-2 h-4 w-4" />
-            Prenotazioni
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="mercati" className="space-y-4">
-          <MercatiList onSelectMarket={setSelectedMarket} />
-        </TabsContent>
-
-        <TabsContent value="posteggi" className="space-y-4">
-          <PosteggiMapView selectedMarket={selectedMarket} onSelectMarket={setSelectedMarket} />
-        </TabsContent>
-
-        <TabsContent value="operatori" className="space-y-4">
-          <OperatoriList />
-        </TabsContent>
-
-        <TabsContent value="prenotazioni" className="space-y-4">
-          <PrenotazioniList />
-        </TabsContent>
-      </Tabs>
+      {/* Dettaglio Mercato Selezionato */}
+      {selectedMarket && (
+        <MarketDetail market={selectedMarket} />
+      )}
     </div>
   );
 }
 
 /**
- * Dialog per import JSON da Slot Editor v3
+ * Dettaglio mercato con tab
  */
-function ImportSlotEditorDialog() {
-  const [open, setOpen] = useState(false);
-  const [jsonData, setJsonData] = useState("");
-  const [marketName, setMarketName] = useState("");
-  const [city, setCity] = useState("");
-  const [address, setAddress] = useState("");
+function MarketDetail({ market }: { market: Market }) {
+  const [activeTab, setActiveTab] = useState("anagrafica");
 
-  const utils = trpc.useUtils();
-  const importMutation = trpc.dmsHub.markets.importFromSlotEditor.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Mercato importato con successo!`, {
-        description: `${data.stallsCreated} posteggi, ${data.markersCreated} marker, ${data.areasCreated} aree`,
-      });
-      utils.dmsHub.markets.list.invalidate();
-      setOpen(false);
-      setJsonData("");
-      setMarketName("");
-      setCity("");
-      setAddress("");
-    },
-    onError: (error) => {
-      toast.error("Errore durante l'import", {
-        description: error.message,
-      });
-    },
-  });
+  return (
+    <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+      <CardHeader>
+        <CardTitle className="text-[#e8fbff]">Dettaglio: {market.name}</CardTitle>
+        <CardDescription className="text-[#e8fbff]/70">Gestisci anagrafica, posteggi e concessioni</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3 bg-[#0b1220]/50">
+            <TabsTrigger 
+              value="anagrafica"
+              className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Anagrafica
+            </TabsTrigger>
+            <TabsTrigger 
+              value="posteggi"
+              className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
+            >
+              <MapPin className="mr-2 h-4 w-4" />
+              Posteggi
+            </TabsTrigger>
+            <TabsTrigger 
+              value="concessioni"
+              className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Imprese / Concessioni
+            </TabsTrigger>
+          </TabsList>
 
-  const handleImport = () => {
-    if (!marketName || !city || !address || !jsonData) {
-      toast.error("Compila tutti i campi");
-      return;
-    }
+          <TabsContent value="anagrafica" className="space-y-4">
+            <AnagraficaTab market={market} />
+          </TabsContent>
 
+          <TabsContent value="posteggi" className="space-y-4">
+            <PosteggiTab marketId={market.id} />
+          </TabsContent>
+
+          <TabsContent value="concessioni" className="space-y-4">
+            <ConcessioniTab marketId={market.id} />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Tab Anagrafica Mercato
+ */
+function AnagraficaTab({ market }: { market: Market }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#e8fbff]/70">Codice</label>
+          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.code}</p>
+        </div>
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#e8fbff]/70">Nome</label>
+          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.name}</p>
+        </div>
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#e8fbff]/70">Comune</label>
+          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.municipality}</p>
+        </div>
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#e8fbff]/70">Giorni Mercato</label>
+          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.days}</p>
+        </div>
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#e8fbff]/70">Posteggi Totali</label>
+          <p className="text-lg font-semibold text-[#14b8a6] mt-1">{market.total_stalls}</p>
+        </div>
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#e8fbff]/70">Stato</label>
+          <Badge 
+            variant="default" 
+            className={`mt-1 ${market.status === 'active' 
+              ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30" 
+              : "bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30"}`}
+          >
+            {market.status === 'active' ? "Attivo" : "Inattivo"}
+          </Badge>
+        </div>
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#e8fbff]/70">Latitudine</label>
+          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.latitude}</p>
+        </div>
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#e8fbff]/70">Longitudine</label>
+          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.longitude}</p>
+        </div>
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20 col-span-2">
+          <label className="text-sm font-medium text-[#e8fbff]/70">GIS Market ID</label>
+          <p className="text-lg font-semibold text-[#8b5cf6] mt-1">{market.gis_market_id}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Tab Posteggi con tabella modificabile
+ */
+function PosteggiTab({ marketId }: { marketId: number }) {
+  const [stalls, setStalls] = useState<Stall[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editData, setEditData] = useState<Partial<Stall>>({});
+
+  useEffect(() => {
+    fetchStalls();
+  }, [marketId]);
+
+  const fetchStalls = async () => {
     try {
-      const slotEditorData = JSON.parse(jsonData);
-      importMutation.mutate({
-        marketName,
-        city,
-        address,
-        slotEditorData,
-      });
+      const response = await fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`);
+      const data = await response.json();
+      if (data.success) {
+        setStalls(data.data);
+      }
     } catch (error) {
-      toast.error("JSON non valido", {
-        description: "Verifica il formato del JSON esportato da Slot Editor v3",
-      });
+      console.error('Error fetching stalls:', error);
+      toast.error('Errore nel caricamento dei posteggi');
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Upload className="mr-2 h-4 w-4" />
-          Importa da Slot Editor v3
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Importa Mercato da Slot Editor v3</DialogTitle>
-          <DialogDescription>
-            Incolla il JSON esportato da Slot Editor v3 per creare un nuovo mercato con posteggi, marker e aree
-          </DialogDescription>
-        </DialogHeader>
+  const handleEdit = (stall: Stall) => {
+    setEditingId(stall.id);
+    setEditData({
+      type: stall.type,
+      status: stall.status,
+      notes: stall.notes
+    });
+  };
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="marketName">Nome Mercato *</Label>
-            <Input
-              id="marketName"
-              placeholder="es. Mercato Centrale Grosseto"
-              value={marketName}
-              onChange={(e) => setMarketName(e.target.value)}
-            />
-          </div>
+  const handleSave = async (stallId: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editData),
+      });
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="city">Città *</Label>
-              <Input
-                id="city"
-                placeholder="es. Grosseto"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Indirizzo *</Label>
-              <Input
-                id="address"
-                placeholder="es. Via Roma, 1"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="jsonData">JSON da Slot Editor v3 *</Label>
-            <Textarea
-              id="jsonData"
-              placeholder='{"container": {...}, "stalls": [...], ...}'
-              value={jsonData}
-              onChange={(e) => setJsonData(e.target.value)}
-              rows={12}
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              Copia il JSON completo esportato da Slot Editor v3 (include container, posteggi, marker, aree)
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Annulla
-            </Button>
-            <Button onClick={handleImport} disabled={importMutation.isPending}>
-              {importMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Importa Mercato
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/**
- * Lista mercati con statistiche
- */
-function MercatiList({ onSelectMarket }: { onSelectMarket: (id: number) => void }) {
-  const { data: markets, isLoading } = trpc.dmsHub.markets.list.useQuery();
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!markets || markets.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <FileJson className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground mb-4">Nessun mercato configurato</p>
-          <p className="text-sm text-muted-foreground">
-            Usa il pulsante "Importa da Slot Editor v3" per iniziare
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {markets.map((market) => (
-        <Card 
-          key={market.id} 
-          className="cursor-pointer hover:border-primary transition-colors"
-          onClick={() => onSelectMarket(market.id)}
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              {market.name}
-            </CardTitle>
-            <CardDescription>{market.city} - {market.address}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Posteggi Totali</span>
-                <Badge variant="secondary">{market.totalStalls}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Occupati</span>
-                <Badge variant="destructive">{market.occupiedStalls}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Liberi</span>
-                <Badge variant="default" className="bg-green-500">{market.freeStalls}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Stato</span>
-                <Badge variant={market.active === 1 ? "default" : "secondary"}>
-                  {market.active === 1 ? "Attivo" : "Inattivo"}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-/**
- * Vista mappa posteggi con dropdown mercati
- */
-function PosteggiMapView({ selectedMarket, onSelectMarket }: { selectedMarket: number | null, onSelectMarket: (id: number) => void }) {
-  const { data: markets } = trpc.dmsHub.markets.list.useQuery();
-  const { data: stalls, isLoading } = trpc.dmsHub.stalls.listByMarket.useQuery(
-    { marketId: selectedMarket! },
-    { enabled: !!selectedMarket }
-  );
-
-  // Se non c'è mercato selezionato, seleziona il primo automaticamente
-  useEffect(() => {
-    if (!selectedMarket && markets && markets.length > 0) {
-      onSelectMarket(markets[0].id);
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Posteggio aggiornato con successo');
+        fetchStalls();
+        setEditingId(null);
+        setEditData({});
+      } else {
+        toast.error('Errore nell\'aggiornamento');
+      }
+    } catch (error) {
+      console.error('Error updating stall:', error);
+      toast.error('Errore nell\'aggiornamento del posteggio');
     }
-  }, [selectedMarket, markets, onSelectMarket]);
+  };
 
-  if (isLoading || !stalls) {
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditData({});
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'occupato':
+        return 'bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30';
+      case 'libero':
+        return 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30';
+      case 'riservato':
+        return 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30';
+      default:
+        return 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30';
+    }
+  };
+
+  if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-[#14b8a6]" />
+      </div>
     );
   }
 
-  const selectedMarketData = markets?.find(m => m.id === selectedMarket);
+  const occupiedCount = stalls.filter(s => s.status === 'occupato').length;
+  const freeCount = stalls.filter(s => s.status === 'libero').length;
+  const reservedCount = stalls.filter(s => s.status === 'riservato').length;
 
   return (
     <div className="space-y-4">
-      {/* Header con titolo e dropdown */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Mappa Posteggi</CardTitle>
-              <CardDescription>
-                {stalls.length} posteggi totali
-              </CardDescription>
-            </div>
-            <select
-              value={selectedMarket || ''}
-              onChange={(e) => onSelectMarket(Number(e.target.value))}
-              className="px-4 py-2 rounded-lg border border-input bg-background text-sm"
-            >
-              {markets?.map((market) => (
-                <option key={market.id} value={market.id}>
-                  {market.name} - {market.city}
-                </option>
-              ))}
-            </select>
-          </div>
-        </CardHeader>
-      </Card>
+      {/* Statistiche Posteggi */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 p-4 rounded-lg">
+          <div className="text-sm text-[#ef4444] mb-1">Occupati</div>
+          <div className="text-3xl font-bold text-[#ef4444]">{occupiedCount}</div>
+        </div>
+        <div className="bg-[#10b981]/10 border border-[#10b981]/30 p-4 rounded-lg">
+          <div className="text-sm text-[#10b981] mb-1">Liberi</div>
+          <div className="text-3xl font-bold text-[#10b981]">{freeCount}</div>
+        </div>
+        <div className="bg-[#f59e0b]/10 border border-[#f59e0b]/30 p-4 rounded-lg">
+          <div className="text-sm text-[#f59e0b] mb-1">Riservati</div>
+          <div className="text-3xl font-bold text-[#f59e0b]">{reservedCount}</div>
+        </div>
+      </div>
 
-      {/* Mappa full-height */}
-      <GISMap
-          center={[
-            selectedMarketData?.lat ? Number(selectedMarketData.lat) : 42.7638,
-            selectedMarketData?.lng ? Number(selectedMarketData.lng) : 11.1139
-          ]}
-          zoom={18}
-          markers={stalls.map(stall => ({
-            id: stall.id,
-            position: [Number(stall.lat) || 42.7638, Number(stall.lng) || 11.1139] as [number, number],
-            type: stall.status === 'free' ? 'free' : 
-                  stall.status === 'occupied' ? 'occupied' :
-                  stall.status === 'booked' ? 'reserved' :
-                  stall.status === 'maintenance' ? 'maintenance' : 'blocked',
-            title: `Posteggio #${stall.number}`,
-            description: stall.category || 'Nessuna categoria',
-            data: {
-              'Area': stall.areaMq ? `${stall.areaMq} m²` : 'N/D',
-              'Stato': stall.status,
-            },
-          }))}
-        height="calc(100vh - 400px)"
-        className="rounded-lg overflow-hidden"
-      />
+      <div className="border border-[#14b8a6]/20 rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-[#0b1220]/50 border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
+              <TableHead className="text-[#e8fbff]/70">Numero</TableHead>
+              <TableHead className="text-[#e8fbff]/70">GIS Slot ID</TableHead>
+              <TableHead className="text-[#e8fbff]/70">Dimensioni</TableHead>
+              <TableHead className="text-[#e8fbff]/70">Tipo</TableHead>
+              <TableHead className="text-[#e8fbff]/70">Stato</TableHead>
+              <TableHead className="text-[#e8fbff]/70">Intestatario</TableHead>
+              <TableHead className="text-right text-[#e8fbff]/70">Azioni</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {stalls.map((stall) => (
+              <TableRow 
+                key={stall.id}
+                className="cursor-pointer hover:bg-[#14b8a6]/5 border-[#14b8a6]/10"
+              >
+                <TableCell className="font-medium text-[#e8fbff]">{stall.number}</TableCell>
+                <TableCell className="text-xs text-[#e8fbff]/70">{stall.gis_slot_id}</TableCell>
+                <TableCell className="text-sm text-[#e8fbff]">{stall.width}m × {stall.depth}m</TableCell>
+                <TableCell>
+                  {editingId === stall.id ? (
+                    <Select
+                      value={editData.type}
+                      onValueChange={(value) => setEditData({ ...editData, type: value })}
+                    >
+                      <SelectTrigger className="w-[120px] bg-[#0b1220] border-[#14b8a6]/30">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fisso">Fisso</SelectItem>
+                        <SelectItem value="spunta">Spunta</SelectItem>
+                        <SelectItem value="libero">Libero</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
+                      {stall.type}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === stall.id ? (
+                    <Select
+                      value={editData.status}
+                      onValueChange={(value) => setEditData({ ...editData, status: value })}
+                    >
+                      <SelectTrigger className="w-[120px] bg-[#0b1220] border-[#14b8a6]/30">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="libero">Libero</SelectItem>
+                        <SelectItem value="occupato">Occupato</SelectItem>
+                        <SelectItem value="riservato">Riservato</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="default" className={getStatusColor(stall.status)}>
+                      {stall.status}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {stall.vendor_business_name ? (
+                    <div>
+                      <p className="font-medium text-[#e8fbff]">{stall.vendor_business_name}</p>
+                      <p className="text-xs text-[#e8fbff]/70">{stall.vendor_contact_name}</p>
+                    </div>
+                  ) : (
+                    <span className="text-[#e8fbff]/50">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  {editingId === stall.id ? (
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleSave(stall.id)}
+                        className="bg-[#10b981]/20 hover:bg-[#10b981]/30 text-[#10b981] border-[#10b981]/30"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleCancel}
+                        className="bg-[#ef4444]/20 hover:bg-[#ef4444]/30 text-[#ef4444] border-[#ef4444]/30"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => handleEdit(stall)}
+                      className="hover:bg-[#14b8a6]/20 text-[#14b8a6]"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
 
 /**
- * Lista posteggi per mercato
+ * Tab Concessioni (solo lettura per ora)
  */
-function PosteggiList({ marketId }: { marketId: number }) {
-  const { data: stalls, isLoading } = trpc.dmsHub.stalls.listByMarket.useQuery({ marketId });
-  const utils = trpc.useUtils();
+function ConcessioniTab({ marketId }: { marketId: number }) {
+  const [concessions, setConcessions] = useState<Concession[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const updateStatusMutation = trpc.dmsHub.stalls.updateStatus.useMutation({
-    onSuccess: () => {
-      toast.success("Stato posteggio aggiornato");
-      utils.dmsHub.stalls.listByMarket.invalidate({ marketId });
-      utils.dmsHub.markets.list.invalidate();
-    },
-  });
+  useEffect(() => {
+    fetchData();
+  }, [marketId]);
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
+  const fetchData = async () => {
+    try {
+      const [concessionsRes, vendorsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/concessions?market_id=${marketId}`),
+        fetch(`${API_BASE_URL}/api/vendors`)
+      ]);
 
-  if (!stalls || stalls.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Nessun posteggio trovato</p>
-        </CardContent>
-      </Card>
-    );
-  }
+      const concessionsData = await concessionsRes.json();
+      const vendorsData = await vendorsRes.json();
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "free":
-        return <Badge className="bg-green-500"><CheckCircle className="mr-1 h-3 w-3" />Libero</Badge>;
-      case "occupied":
-        return <Badge variant="destructive"><AlertCircle className="mr-1 h-3 w-3" />Occupato</Badge>;
-      case "booked":
-        return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" />Prenotato</Badge>;
-      case "reserved":
-        return <Badge variant="outline">Riservato</Badge>;
-      case "maintenance":
-        return <Badge variant="secondary">Manutenzione</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
+      if (concessionsData.success) {
+        setConcessions(concessionsData.data);
+      }
+      if (vendorsData.success) {
+        setVendors(vendorsData.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Errore nel caricamento dei dati');
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Posteggi del Mercato</CardTitle>
-        <CardDescription>
-          {stalls.length} posteggi totali
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Mappa GIS Posteggi */}
-        <GISMap
-          center={[42.7638, 11.1139]} // Centro Italia (da sostituire con centro mercato reale)
-          zoom={18}
-          markers={stalls.map(stall => ({
-            id: stall.id,
-            position: [Number(stall.lat) || 42.7638, Number(stall.lng) || 11.1139] as [number, number],
-            type: stall.status === 'free' ? 'free' : 
-                  stall.status === 'occupied' ? 'occupied' :
-                  stall.status === 'booked' ? 'reserved' :
-                  stall.status === 'maintenance' ? 'maintenance' : 'blocked',
-            title: `Posteggio #${stall.number}`,
-            description: stall.category || 'Nessuna categoria',
-            data: {
-              'Area': stall.areaMq ? `${stall.areaMq} m²` : 'N/D',
-              'Stato': stall.status,
-            },
-          }))}
-          height="400px"
-        />
-
-        {/* Griglia Posteggi */}
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {stalls.map((stall) => (
-            <Card key={stall.id} className="p-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">#{stall.number}</span>
-                  {getStatusBadge(stall.status)}
-                </div>
-                {stall.category && (
-                  <p className="text-xs text-muted-foreground">{stall.category}</p>
-                )}
-                {stall.areaMq && (
-                  <p className="text-xs text-muted-foreground">{stall.areaMq} m²</p>
-                )}
-                <div className="flex gap-1 flex-wrap">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="text-xs h-7"
-                    onClick={() => updateStatusMutation.mutate({ stallId: stall.id, status: "free" })}
-                    disabled={updateStatusMutation.isPending}
-                  >
-                    Libera
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="text-xs h-7"
-                    onClick={() => updateStatusMutation.mutate({ stallId: stall.id, status: "maintenance" })}
-                    disabled={updateStatusMutation.isPending}
-                  >
-                    Manutenzione
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/**
- * Lista operatori
- */
-function OperatoriList() {
-  const { data: vendors, isLoading } = trpc.dmsHub.vendors.list.useQuery();
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!vendors || vendors.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Users className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground mb-4">Nessun operatore registrato</p>
-          <Button>
-            <Users className="mr-2 h-4 w-4" />
-            Aggiungi Operatore
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-[#14b8a6]" />
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Operatori Registrati</CardTitle>
-            <CardDescription>{vendors.length} operatori totali</CardDescription>
-          </div>
-          <Button>
-            <Users className="mr-2 h-4 w-4" />
-            Nuovo Operatore
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
+    <div className="space-y-6">
+      {/* Sezione Imprese */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 text-[#e8fbff]">Imprese Registrate</h3>
+        <div className="grid gap-4 md:grid-cols-2">
           {vendors.map((vendor) => (
-            <Card key={vendor.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">
-                    {vendor.firstName} {vendor.lastName}
-                  </p>
-                  {vendor.businessName && (
-                    <p className="text-sm text-muted-foreground">{vendor.businessName}</p>
-                  )}
-                  {vendor.businessType && (
-                    <Badge variant="outline" className="mt-1">{vendor.businessType}</Badge>
-                  )}
+            <Card key={vendor.id} className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+              <CardHeader>
+                <CardTitle className="text-base text-[#e8fbff]">{vendor.business_name}</CardTitle>
+                <CardDescription className="text-[#e8fbff]/70">{vendor.code}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-[#e8fbff]/70">P.IVA</span>
+                    <span className="font-medium text-[#e8fbff]">{vendor.vat_number}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#e8fbff]/70">Referente</span>
+                    <span className="font-medium text-[#e8fbff]">{vendor.contact_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#e8fbff]/70">Telefono</span>
+                    <span className="font-medium text-[#e8fbff]">{vendor.phone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#e8fbff]/70">Stato</span>
+                    <Badge 
+                      variant="default" 
+                      className={vendor.status === 'active' 
+                        ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30' 
+                        : 'bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30'}
+                    >
+                      {vendor.status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={vendor.status === "active" ? "default" : "secondary"}>
-                    {vendor.status === "active" ? "Attivo" : vendor.status}
-                  </Badge>
-                  <Button size="sm" variant="outline">Dettagli</Button>
-                </div>
-              </div>
+              </CardContent>
             </Card>
           ))}
         </div>
-      </CardContent>
-    </Card>
-  );
-}
+      </div>
 
-/**
- * Lista prenotazioni attive
- */
-function PrenotazioniList() {
-  const { data: bookings, isLoading } = trpc.dmsHub.bookings.listActive.useQuery();
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!bookings || bookings.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Nessuna prenotazione attiva</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Prenotazioni Attive</CardTitle>
-        <CardDescription>{bookings.length} prenotazioni in attesa</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {bookings.map((booking) => (
-            <Card key={booking.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">Posteggio #{booking.stallId}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Scade: {new Date(booking.expiresAt).toLocaleString("it-IT")}
-                  </p>
-                </div>
-                <Badge variant="secondary">
-                  <Clock className="mr-1 h-3 w-3" />
-                  {booking.status}
-                </Badge>
-              </div>
-            </Card>
-          ))}
+      {/* Sezione Concessioni */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 text-[#e8fbff]">Concessioni Attive</h3>
+        <div className="border border-[#14b8a6]/20 rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[#0b1220]/50 border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
+                <TableHead className="text-[#e8fbff]/70">Posteggio</TableHead>
+                <TableHead className="text-[#e8fbff]/70">Impresa</TableHead>
+                <TableHead className="text-[#e8fbff]/70">Tipo</TableHead>
+                <TableHead className="text-[#e8fbff]/70">Valida Dal</TableHead>
+                <TableHead className="text-[#e8fbff]/70">Valida Al</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {concessions.map((concession) => (
+                <TableRow key={concession.id} className="border-[#14b8a6]/10 hover:bg-[#14b8a6]/5">
+                  <TableCell className="font-medium text-[#e8fbff]">{concession.stall_number}</TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium text-[#e8fbff]">{concession.vendor_business_name}</p>
+                      <p className="text-xs text-[#e8fbff]/70">{concession.vendor_code}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
+                      {concession.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-[#e8fbff]">
+                    {new Date(concession.valid_from).toLocaleDateString('it-IT')}
+                  </TableCell>
+                  <TableCell className="text-[#e8fbff]">
+                    {concession.valid_to 
+                      ? new Date(concession.valid_to).toLocaleDateString('it-IT')
+                      : 'Indeterminato'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
