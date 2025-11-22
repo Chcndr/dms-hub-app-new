@@ -19,8 +19,7 @@ import {
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapContainer, TileLayer, Marker, Popup, Polygon, LayersControl, Tooltip, useMap } from 'react-leaflet';
-import { ZoomFontUpdater } from '../components/ZoomFontUpdater';
+import { MarketMapComponent } from './MarketMapComponent';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -142,6 +141,7 @@ export default function GestioneMercati() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchMarkets();
@@ -186,11 +186,61 @@ export default function GestioneMercati() {
     );
   }
 
+  // Filtra mercati in base alla ricerca
+  const filteredMarkets = markets.filter(market => 
+    market.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    market.municipality.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
+      {/* Barra di Ricerca */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Cerca mercato per nome o città..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 pl-10 bg-[#0b1220]/50 border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder:text-[#e8fbff]/50 focus:outline-none focus:border-[#14b8a6] focus:ring-2 focus:ring-[#14b8a6]/20"
+          />
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#14b8a6]/70"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        {searchQuery && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSearchQuery('')}
+            className="bg-[#0b1220]/50 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
+          >
+            <X className="h-4 w-4 mr-1" />
+            Cancella
+          </Button>
+        )}
+      </div>
+
+      {/* Risultati Ricerca */}
+      {searchQuery && (
+        <div className="text-sm text-[#e8fbff]/70">
+          {filteredMarkets.length} {filteredMarkets.length === 1 ? 'mercato trovato' : 'mercati trovati'}
+        </div>
+      )}
+
       {/* Lista Mercati */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {markets.map((market) => (
+        {filteredMarkets.map((market) => (
           <Card 
             key={market.id} 
             className={`cursor-pointer transition-all bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 hover:border-[#14b8a6] ${
@@ -654,149 +704,28 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
           </Button>
 
           {mapData && (
-            <MapContainer
-              center={marketCenter}
-              zoom={17}
-              className="h-full w-full"
-            >
-              <LayersControl position="topright">
-                <LayersControl.BaseLayer checked name="🗺️ Stradale">
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    maxZoom={21}
-                  />
-                </LayersControl.BaseLayer>
-                
-                <LayersControl.BaseLayer name="🛰️ Satellite">
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.esri.com">Esri</a>'
-                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                    maxZoom={21}
-                  />
-                </LayersControl.BaseLayer>
-                
-                <LayersControl.BaseLayer name="🌙 Dark Mode">
-                  <TileLayer
-                    attribution='&copy; <a href="https://carto.com">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    maxZoom={21}
-                  />
-                </LayersControl.BaseLayer>
-              </LayersControl>
-              
-              <ZoomFontUpdater minZoom={18} baseFontSize={8} scaleFactor={1.5} />
-              
-              {/* Controller per centrare mappa */}
-              <MapCenterController center={mapCenter} zoom={19} />
-
-              {/* Marker centro mercato */}
-              <Marker
-                position={marketCenter}
-                icon={L.divIcon({
-                  className: 'market-center-marker',
-                  html: `<div style="
-                    background: #ef4444;
-                    color: white;
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 18px;
-                    font-weight: bold;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-                    border: 3px solid white;
-                  ">M</div>`,
-                  iconSize: [32, 32],
-                  iconAnchor: [16, 16],
-                })}
-              >
-                <Popup>
-                  <div className="text-sm">
-                    <div className="font-semibold text-base mb-1">
-                      📍 Centro Mercato
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-
-              {/* Posteggi */}
-              {mapData.stalls_geojson.features.map((feature, idx) => {
-                const props = feature.properties;
-                const dbStall = stallsByNumber.get(props.number);
-                
-                if (feature.geometry.type !== 'Polygon') return null;
-                
-                const coords = feature.geometry.coordinates as [number, number][][];
-                const positions: [number, number][] = coords[0].map(
-                  ([lng, lat]: [number, number]) => [lat, lng]
-                );
-                
-                const fillColor = dbStall ? getMapFillColor(dbStall.status) : '#14b8a6';
-                
-                return (
-                  <React.Fragment key={`stall-${idx}`}>
-                    <Polygon
-                      positions={positions}
-                      pathOptions={{
-                        color: fillColor,
-                        fillColor: fillColor,
-                        fillOpacity: 0.7,
-                        weight: 2,
-                      }}
-                      eventHandlers={{
-                        click: () => {
-                          if (dbStall) {
-                            setSelectedStallId(dbStall.id);
-                            // Scroll alla riga nella tabella
-                            const row = document.querySelector(`[data-stall-id="${dbStall.id}"]`);
-                            row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }
-                        },
-                      }}
-                    >
-                      <Tooltip 
-                        permanent 
-                        direction="center" 
-                        className="stall-number-tooltip"
-                        opacity={1}
-                      >
-                        {props.number}
-                      </Tooltip>
-                      <Popup>
-                        <div className="text-sm">
-                          <div className="font-semibold text-base mb-2">
-                            Piazzola #{props.number}
-                          </div>
-                          {dbStall && (
-                            <>
-                              <div className="text-gray-600 mb-1">
-                                📏 {dbStall.width}m × {dbStall.depth}m
-                              </div>
-                              <div className="text-gray-600 mb-1">
-                                🏷️ Tipo: <strong>{dbStall.type}</strong>
-                              </div>
-                              <div className="text-gray-600 mb-1">
-                                🚦 Stato: <strong>{dbStall.status}</strong>
-                              </div>
-                              {dbStall.vendor_business_name && (
-                                <div className="text-gray-600 mt-2 pt-2 border-t">
-                                  <div className="font-semibold">Intestatario:</div>
-                                  <div>{dbStall.vendor_business_name}</div>
-                                  <div className="text-xs">{dbStall.vendor_contact_name}</div>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </Popup>
-                    </Polygon>
-                  </React.Fragment>
-                );
-              })}
-            </MapContainer>
+            <MarketMapComponent
+              mapData={mapData}
+              center={mapCenter}
+              zoom={19}
+              height="100%"
+              onStallClick={(stallNumber) => {
+                const dbStall = stallsByNumber.get(stallNumber);
+                if (dbStall) {
+                  setSelectedStallId(dbStall.id);
+                  // Scroll alla riga nella tabella
+                  const row = document.querySelector(`[data-stall-id="${dbStall.id}"]`);
+                  row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+              }}
+              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
+              stallsData={stalls.map(s => ({
+                number: s.number,
+                status: s.status,
+                type: s.type,
+                vendor_name: s.vendor_business_name || undefined
+              }))}
+            />
           )}
         </div>
       </div>
