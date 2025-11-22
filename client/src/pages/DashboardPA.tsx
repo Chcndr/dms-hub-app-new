@@ -1122,7 +1122,6 @@ export default function DashboardPA() {
                 {mapData && stallsData.length > 0 ? (
                   <MarketMapComponent
                     mapData={mapData}
-                    center={[42.7669, 11.2588]}
                     zoom={19}
                     height="400px"
                     stallsData={stallsData}
@@ -1243,7 +1242,6 @@ export default function DashboardPA() {
                 {mapData && stallsData.length > 0 ? (
                   <MarketMapComponent
                     mapData={mapData}
-                    center={[42.7669, 11.2588]}
                     zoom={19}
                     height="calc(100vh - 400px)"
                     stallsData={stallsData}
@@ -2763,7 +2761,6 @@ export default function DashboardPA() {
                 {mapData && stallsData.length > 0 ? (
                   <MarketMapComponent
                     mapData={mapData}
-                    center={[42.7669, 11.2588]}
                     zoom={19}
                     height="calc(100vh - 400px)"
                     stallsData={stallsData}
@@ -2947,7 +2944,6 @@ export default function DashboardPA() {
                 {mapData && stallsData.length > 0 ? (
                   <MarketMapComponent
                     mapData={mapData}
-                    center={[42.7669, 11.2588]}
                     zoom={19}
                     height="calc(100vh - 400px)"
                     stallsData={stallsData}
