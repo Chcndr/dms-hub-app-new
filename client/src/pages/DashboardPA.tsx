@@ -22,6 +22,7 @@ import GestioneMercati from '@/components/GestioneMercati';
 import GestioneHubNegozi from '@/components/GestioneHubNegozi';
 import Integrazioni from '@/components/Integrazioni';
 import { GISMap } from '@/components/GISMap';
+import { MarketMapComponent } from '@/components/MarketMapComponent';
 import MIOAgent from '@/components/MIOAgent';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -366,6 +367,11 @@ export default function DashboardPA() {
    const [activeTab, setActiveTab] = useState('overview');
   const [tccValue, setTccValue] = useState(0.20);
   
+  // Stati per MarketMapComponent
+  const [mapData, setMapData] = useState<any>(null);
+  const [stallsData, setStallsData] = useState<any[]>([]);
+  const [selectedMarketId] = useState(1); // Default: Mercato Grosseto
+  
   // Carbon Credits - Simulatore completo
   const [editableParams, setEditableParams] = useState({
     fundBalance: 125000,
@@ -414,6 +420,37 @@ export default function DashboardPA() {
     return (editableParams.tccSpent * tccValue).toFixed(0);
   };
 
+  // Carica dati mappa mercato
+  useEffect(() => {
+    const loadMapData = async () => {
+      try {
+        const [mapRes, stallsRes] = await Promise.all([
+          fetch('https://orchestratore.mio-hub.me/api/gis/market-map'),
+          fetch(`https://orchestratore.mio-hub.me/api/markets/${selectedMarketId}/stalls`)
+        ]);
+        
+        const mapJson = await mapRes.json();
+        const stallsJson = await stallsRes.json();
+        
+        if (mapJson.success) {
+          setMapData(mapJson.data);
+        }
+        if (stallsJson.success) {
+          setStallsData(stallsJson.data.map((s: any) => ({
+            number: s.number,
+            status: s.status,
+            type: s.type,
+            vendor_name: s.vendor_business_name || undefined
+          })));
+        }
+      } catch (error) {
+        console.error('Error loading map data:', error);
+      }
+    };
+    
+    loadMapData();
+  }, [selectedMarketId]);
+  
   // Fattore conversione: 1 TCC speso = 0.06 kg CO₂ risparmiati (media shopping locale vs e-commerce)
   const CO2_PER_TCC = 0.06;
   // 1 albero assorbe circa 22 kg CO₂ all'anno
@@ -1040,22 +1077,25 @@ export default function DashboardPA() {
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#14b8a6]" />
-                  Mappa Mercati Attivi
+                  Mappa Mercato Grosseto (Dati Reali)
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <GISMap
-                  center={[42.5, 12.5]}
-                  zoom={6}
-                  height="400px"
-                  markers={mockData.topMarkets.map((m, i) => ({
-                    id: i,
-                    position: [42.5 + (Math.random() - 0.5) * 10, 12.5 + (Math.random() - 0.5) * 10],
-                    type: 'market' as const,
-                    title: m.name,
-                    description: `Visite: ${m.visits.toLocaleString()} | Utenti: ${m.users.toLocaleString()}`,
-                  }))}
-                />
+                {mapData && stallsData.length > 0 ? (
+                  <MarketMapComponent
+                    mapData={mapData}
+                    center={[42.7669, 11.2588]}
+                    zoom={17}
+                    height="400px"
+                    stallsData={stallsData}
+                    onStallClick={(stallNumber) => console.log('Clicked stall:', stallNumber)}
+                    selectedStallNumber={null}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[400px] text-[#e8fbff]/50">
+                    Caricamento mappa...
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1146,27 +1186,30 @@ export default function DashboardPA() {
 
           {/* TAB 3: MERCATI */}
           <TabsContent value="markets" className="space-y-6">
-            {/* Mappa Italia Mercati */}
+            {/* Mappa Mercato Dettaglio */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#14b8a6]" />
-                  Mappa Italia - Tutti i Mercati
+                  Mappa Mercato Grosseto - Posteggi (Dati Reali)
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <GISMap
-                  center={[42.5, 12.5]}
-                  zoom={6}
-                  height="calc(100vh - 400px)"
-                  markers={mockData.topMarkets.map((m, i) => ({
-                    id: i,
-                    position: [42.5 + (Math.random() - 0.5) * 10, 12.5 + (Math.random() - 0.5) * 10],
-                    type: 'market' as const,
-                    title: m.name,
-                    description: `Visite: ${m.visits.toLocaleString()} | Utenti: ${m.users.toLocaleString()}`,
-                  }))}
-                />
+                {mapData && stallsData.length > 0 ? (
+                  <MarketMapComponent
+                    mapData={mapData}
+                    center={[42.7669, 11.2588]}
+                    zoom={17}
+                    height="calc(100vh - 400px)"
+                    stallsData={stallsData}
+                    onStallClick={(stallNumber) => console.log('Clicked stall:', stallNumber)}
+                    selectedStallNumber={null}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[calc(100vh-400px)] text-[#e8fbff]/50">
+                    Caricamento mappa...
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -2656,27 +2699,30 @@ export default function DashboardPA() {
               </CardContent>
             </Card>
 
-            {/* Mappa Segnalazioni Cluster */}
+            {/* Mappa Mercato */}
             <Card className="bg-[#1a2332] border-[#06b6d4]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#06b6d4]" />
-                  Mappa Segnalazioni Civiche
+                  Mappa Mercato Grosseto (Dati Reali)
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <GISMap
-                  center={[44.4949, 11.3426]}
-                  zoom={12}
-                  height="calc(100vh - 400px)"
-                  markers={mockData.civicReports.recent.map((report) => ({
-                    id: report.id,
-                    position: [44.4949 + (Math.random() - 0.5) * 0.1, 11.3426 + (Math.random() - 0.5) * 0.1],
-                    type: 'civic' as const,
-                    title: report.type,
-                    description: `${report.description} | ${report.location} | ${report.status}`,
-                  }))}
-                />
+                {mapData && stallsData.length > 0 ? (
+                  <MarketMapComponent
+                    mapData={mapData}
+                    center={[42.7669, 11.2588]}
+                    zoom={17}
+                    height="calc(100vh - 400px)"
+                    stallsData={stallsData}
+                    onStallClick={(stallNumber) => console.log('Clicked stall:', stallNumber)}
+                    selectedStallNumber={null}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[calc(100vh-400px)] text-[#e8fbff]/50">
+                    Caricamento mappa...
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -2830,27 +2876,30 @@ export default function DashboardPA() {
               </CardContent>
             </Card>
 
-            {/* Mappa Controlli Polizia */}
+            {/* Mappa Mercato */}
             <Card className="bg-[#1a2332] border-[#f59e0b]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#f59e0b]" />
-                  Mappa Posizioni Controlli
+                  Mappa Mercato Grosseto (Dati Reali)
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <GISMap
-                  center={[43.7696, 11.2558]}
-                  zoom={12}
-                  height="calc(100vh - 400px)"
-                  markers={mockData.inspections.upcoming.map((insp, i) => ({
-                    id: insp.id,
-                    position: [43.7696 + (Math.random() - 0.5) * 0.1, 11.2558 + (Math.random() - 0.5) * 0.1],
-                    type: 'civic' as const,
-                    title: insp.business,
-                    description: `${insp.type} | Ispettore: ${insp.inspector} | Data: ${insp.date}`,
-                  }))}
-                />
+                {mapData && stallsData.length > 0 ? (
+                  <MarketMapComponent
+                    mapData={mapData}
+                    center={[42.7669, 11.2588]}
+                    zoom={17}
+                    height="calc(100vh - 400px)"
+                    stallsData={stallsData}
+                    onStallClick={(stallNumber) => console.log('Clicked stall:', stallNumber)}
+                    selectedStallNumber={null}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[calc(100vh-400px)] text-[#e8fbff]/50">
+                    Caricamento mappa...
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
