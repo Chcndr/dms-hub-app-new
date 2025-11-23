@@ -422,6 +422,7 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
+  const [isSpuntaMode, setIsSpuntaMode] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -555,9 +556,21 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
           <div className="text-sm text-[#10b981] mb-1">Liberi</div>
           <div className="text-3xl font-bold text-[#10b981]">{freeCount}</div>
         </div>
-        <div className="bg-[#f59e0b]/10 border border-[#f59e0b]/30 p-4 rounded-lg">
+        <div className="bg-[#f59e0b]/10 border border-[#f59e0b]/30 p-4 rounded-lg relative">
           <div className="text-sm text-[#f59e0b] mb-1">Riservati</div>
           <div className="text-3xl font-bold text-[#f59e0b]">{reservedCount}</div>
+          <Button
+            size="sm"
+            variant={isSpuntaMode ? "default" : "outline"}
+            className={`absolute top-2 right-2 text-xs ${
+              isSpuntaMode 
+                ? 'bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white border-[#f59e0b]' 
+                : 'bg-transparent hover:bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50'
+            }`}
+            onClick={() => setIsSpuntaMode(!isSpuntaMode)}
+          >
+            ✓ Spunta
+          </Button>
         </div>
       </div>
 
@@ -718,6 +731,7 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
                 center={mapCenter}
                 zoom={19}
                 height="100%"
+                isSpuntaMode={isSpuntaMode}
                 onStallClick={(stallNumber) => {
                   const dbStall = stallsByNumber.get(stallNumber);
                   if (dbStall) {

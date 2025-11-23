@@ -59,6 +59,7 @@ interface MarketMapComponentProps {
     vendor_name?: string;
   }>;
   refreshKey?: number; // Key per forzare re-mount completo della mappa
+  isSpuntaMode?: boolean; // Modalità spunta per test dimensioni
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -103,7 +104,8 @@ export function MarketMapComponent({
   onStallClick,
   selectedStallNumber,
   stallsData = [],
-  refreshKey = 0
+  refreshKey = 0,
+  isSpuntaMode = false
 }: MarketMapComponentProps) {
   
   const mapCenter: [number, number] = center || [mapData.center.lat, mapData.center.lng];
@@ -322,60 +324,132 @@ export function MarketMapComponent({
                   
                   {/* Popup informativo */}
                   <Popup className="stall-popup" minWidth={250}>
-                    <div className="p-2">
-                      {/* Header */}
-                      <div className="font-bold text-lg mb-3 text-[#0b1220] border-b border-gray-200 pb-2">
-                        Posteggio #{props.number}
-                      </div>
-                      
-                      {/* Stato con badge colorato */}
-                      <div className="mb-2 flex items-center gap-2">
-                        <span className="text-gray-600 font-medium">Stato:</span>
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          displayStatus === 'libero' ? 'bg-green-100 text-green-700' :
-                          displayStatus === 'occupato' ? 'bg-red-100 text-red-700' :
-                          'bg-orange-100 text-orange-700'
-                        }`}>
-                          {getStallStatusLabel(displayStatus)}
-                        </span>
-                      </div>
-                      
-                      {/* Tipo posteggio */}
-                      {dbStall?.type && (
+                    {isSpuntaMode && displayStatus === 'riservato' ? (
+                      /* Popup Spunta per posteggi riservati */
+                      <div className="p-3">
+                        <div className="font-bold text-lg mb-3 text-[#0b1220] border-b border-gray-200 pb-2">
+                          ✓ Spunta Posteggio #{props.number}
+                        </div>
+                        
+                        {/* Stato */}
                         <div className="mb-2 flex items-center gap-2">
-                          <span className="text-gray-600 font-medium">Tipo:</span>
-                          <span className="text-gray-800 capitalize">{dbStall.type}</span>
+                          <span className="text-gray-600 font-medium">Stato:</span>
+                          <span className="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-700">
+                            {getStallStatusLabel(displayStatus)}
+                          </span>
                         </div>
-                      )}
-                      
-                      {/* Dimensioni */}
-                      {props.dimensions && (
-                        <div className="mb-2 flex items-center gap-2">
-                          <span className="text-gray-600 font-medium">Dimensioni:</span>
-                          <span className="text-gray-800">{props.dimensions}</span>
+                        
+                        {/* Tipo */}
+                        {dbStall?.type && (
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="text-gray-600 font-medium">Tipo:</span>
+                            <span className="text-gray-800 capitalize">{dbStall.type}</span>
+                          </div>
+                        )}
+                        
+                        {/* Dimensioni dettagliate */}
+                        {props.dimensions && (() => {
+                          const match = props.dimensions.match(/([\d.]+)m\s*×\s*([\d.]+)m/);
+                          const width = match ? parseFloat(match[1]).toFixed(2) : '-';
+                          const length = match ? parseFloat(match[2]).toFixed(2) : '-';
+                          const area = match ? (parseFloat(match[1]) * parseFloat(match[2])).toFixed(2) : '-';
+                          
+                          return (
+                            <div className="mb-3 bg-gray-50 p-3 rounded border border-gray-200">
+                              <div className="text-sm font-semibold text-gray-700 mb-2">📏 Dimensioni:</div>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Larghezza:</span>
+                                  <span className="font-medium text-gray-800">{width} m</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Lunghezza:</span>
+                                  <span className="font-medium text-gray-800">{length} m</span>
+                                </div>
+                                <div className="flex justify-between border-t border-gray-300 pt-1 mt-1">
+                                  <span className="text-gray-700 font-medium">Metratura:</span>
+                                  <span className="font-bold text-gray-900">{area} m²</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        
+                        {/* Canone di occupazione */}
+                        <div className="mb-3 bg-blue-50 p-3 rounded border border-blue-200">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-semibold text-blue-700">💶 Canone:</span>
+                            <span className="text-lg font-bold text-blue-900">€ 15,00</span>
+                          </div>
                         </div>
-                      )}
-                      
-                      {/* Intestatario */}
-                      {displayVendor !== '-' && (
-                        <div className="mb-3 flex items-center gap-2">
-                          <span className="text-gray-600 font-medium">Intestatario:</span>
-                          <span className="text-gray-800 font-semibold">{displayVendor}</span>
-                        </div>
-                      )}
-                      
-                      {/* Pulsante Visita Vetrina */}
-                      {dbStall?.vendor_name && (
-                        <a 
-                          href="/vetrine" 
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full text-center bg-[#14b8a6] hover:bg-[#0d9488] text-white font-medium py-2 px-4 rounded transition-colors"
+                        
+                        {/* Pulsante Conferma Assegnazione */}
+                        <button
+                          className="w-full bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white font-semibold py-2 px-4 rounded transition-colors"
+                          onClick={() => {
+                            alert('Funzione "Conferma Assegnazione" in sviluppo!');
+                          }}
                         >
-                          🏪 Visita Vetrina
-                        </a>
-                      )}
-                    </div>
+                          ✓ Conferma Assegnazione
+                        </button>
+                      </div>
+                    ) : (
+                      /* Popup normale */
+                      <div className="p-2">
+                        {/* Header */}
+                        <div className="font-bold text-lg mb-3 text-[#0b1220] border-b border-gray-200 pb-2">
+                          Posteggio #{props.number}
+                        </div>
+                        
+                        {/* Stato con badge colorato */}
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="text-gray-600 font-medium">Stato:</span>
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                            displayStatus === 'libero' ? 'bg-green-100 text-green-700' :
+                            displayStatus === 'occupato' ? 'bg-red-100 text-red-700' :
+                            'bg-orange-100 text-orange-700'
+                          }`}>
+                            {getStallStatusLabel(displayStatus)}
+                          </span>
+                        </div>
+                        
+                        {/* Tipo posteggio */}
+                        {dbStall?.type && (
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="text-gray-600 font-medium">Tipo:</span>
+                            <span className="text-gray-800 capitalize">{dbStall.type}</span>
+                          </div>
+                        )}
+                        
+                        {/* Dimensioni */}
+                        {props.dimensions && (
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="text-gray-600 font-medium">Dimensioni:</span>
+                            <span className="text-gray-800">{props.dimensions}</span>
+                          </div>
+                        )}
+                        
+                        {/* Intestatario */}
+                        {displayVendor !== '-' && (
+                          <div className="mb-3 flex items-center gap-2">
+                            <span className="text-gray-600 font-medium">Intestatario:</span>
+                            <span className="text-gray-800 font-semibold">{displayVendor}</span>
+                          </div>
+                        )}
+                        
+                        {/* Pulsante Visita Vetrina */}
+                        {dbStall?.vendor_name && (
+                          <a 
+                            href="/vetrine" 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full text-center bg-[#14b8a6] hover:bg-[#0d9488] text-white font-medium py-2 px-4 rounded transition-colors"
+                          >
+                            🏪 Visita Vetrina
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </Popup>
                 </Polygon>
               </React.Fragment>
