@@ -44,8 +44,10 @@ export interface TPERBusTime {
  * Ottiene tutte le fermate bus di Bologna
  */
 export async function getTPERStops(): Promise<TPERStop[]> {
-  try {
-    const response = await axios.get(`${TPER_OPENDATA_BASE}/tper-fermate-autobus/records`, {
+	  const url = `${TPER_OPENDATA_BASE}/tper-fermate-autobus/records`;
+	  console.log(`[TPER Service] Chiamata TPER Open Data: ${url}`);
+	  try {
+	    const response = await axios.get(url, {
       params: {
         limit: 5000, // Carichiamo tutte le fermate (max 5000 richieste/giorno)
         where: 'comune="BOLOGNA"',
@@ -65,10 +67,10 @@ export async function getTPERStops(): Promise<TPERStop[]> {
     }));
 
     return stops;
-  } catch (error) {
-    console.error('[TPER Service] Errore nel recupero delle fermate:', error);
-    throw new Error('Impossibile recuperare le fermate TPER');
-  }
+  } catch (error: any) {
+	    console.error('[TPER Service] Errore nel recupero delle fermate:', error.message);
+	    throw new Error('Impossibile recuperare le fermate TPER');
+	  }
 }
 
 /**
@@ -111,10 +113,10 @@ export async function getTPERBusTimes(stopCode: number, lineNumber: string): Pro
       nextArrival,
       status: nextArrival > 0 ? 'active' : 'suspended'
     };
-  } catch (error) {
-    console.error(`[TPER Service] Errore nel recupero orari per fermata ${stopCode}, linea ${lineNumber}:`, error);
-    return null;
-  }
+  } catch (error: any) {
+	    console.error(`[TPER Service] Errore nel recupero orari per fermata ${stopCode}, linea ${lineNumber}:`, error.message);
+	    return null;
+	  }
 }
 
 /**
@@ -147,10 +149,10 @@ export async function syncTPERData() {
 
     console.log(`[TPER Service] Sincronizzati ${mobilityData.length} dati mobilità`);
     return mobilityData;
-  } catch (error) {
-    console.error('[TPER Service] Errore durante la sincronizzazione:', error);
-    throw error;
-  }
+  } catch (error: any) {
+	    console.error('[TPER Service] Errore durante la sincronizzazione:', error.message);
+	    throw error;
+	  }
 }
 
 
@@ -181,8 +183,8 @@ export async function updateTPERRealtimeData() {
     }
 
     console.log('[TPER Service] Aggiornamento dati real-time completato');
-  } catch (error) {
-    console.error('[TPER Service] Errore durante l'aggiornamento real-time:', error);
-    throw error;
-  }
+  } catch (error: any) {
+	    console.error('[TPER Service] Errore durante l\'aggiornamento real-time:', error.message);
+	    throw error;
+	  }
 }

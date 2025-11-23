@@ -156,10 +156,13 @@ export const appRouter = router({
         const { mobilityData } = await import("../drizzle/schema");
         
         // Sincronizza i dati
-        const data = await syncTPERData();
+        console.log("Inizio sincronizzazione TPER...");
+	        const data = await syncTPERData();
+	        console.log(`Sincronizzazione TPER completata. Trovati ${data.length} record.`);
         
         // Salva nel database con un'unica query SQL per l'inserimento di massa (più stabile di Drizzle ORM per bulk insert)
         if (data.length > 0) {
+	          console.log(`Tentativo di inserimento di ${data.length} record.`);
           const db = await getDb();
           
           // 1. Costruisci la query di inserimento di massa
@@ -167,7 +170,8 @@ export const appRouter = router({
             `(${d.marketId}, '${d.type}', '${d.lineNumber}', '${d.lineName}', '${d.stopName}', '${d.lat}', '${d.lng}', '${d.status}', ${d.occupancy ?? 'NULL'}, ${d.nextArrival ?? 'NULL'}, NOW(), NOW())`
           ).join(', ');
           
-          const insertQuery = `
+          console.log("Inizio inserimento di massa nel DB...");
+	const insertQuery = `
             INSERT INTO mobility_data (market_id, type, line_number, line_name, stop_name, lat, lng, status, occupancy, next_arrival, updated_at, created_at)
             VALUES ${values}
             ON CONFLICT DO NOTHING;
