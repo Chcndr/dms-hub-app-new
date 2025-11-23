@@ -73,31 +73,18 @@ export function MapView({
 
   useEffect(() => {
     if (!window.google) {
-      const scriptUrl = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&libraries=places,drawing,geometry,visualization,marker`;
+      const script = document.createElement('script');
+      script.src = 'https://maps.googleapis.com/maps/api/js?v=weekly&libraries=places,geometry,drawing&callback=initMap';
+      document.head.appendChild(script);
       
-      fetch(scriptUrl, {
-        method: 'GET',
-        headers: { 'Origin': window.location.origin },
-      })
-        .then(response => {
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          return response.text();
-        })
-        .then(scriptContent => {
-          const script = document.createElement('script');
-          script.textContent = scriptContent;
-          document.head.appendChild(script);
-          
-          const checkGoogle = setInterval(() => {
-            if (window.google && window.google.maps) {
-              clearInterval(checkGoogle);
-              initMap();
-            }
-          }, 100);
-          
-          setTimeout(() => clearInterval(checkGoogle), 10000);
-        })
-        .catch(error => console.error('Failed to fetch Google Maps script:', error));
+      const checkGoogle = setInterval(() => {
+        if (window.google && window.google.maps) {
+          clearInterval(checkGoogle);
+          initMap();
+        }
+      }, 100);
+      
+      setTimeout(() => clearInterval(checkGoogle), 10000);
     } else {
       initMap();
     }
