@@ -3029,9 +3029,27 @@ export default function DashboardPA() {
           <TabsContent value="mobility" className="space-y-6">
             <Card className="bg-[#1a2332] border-[#3b82f6]/30">
               <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Train className="h-5 w-5 text-[#3b82f6]" />
-                  Trasporti Pubblici TPER (Bologna)
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2 justify-between">
+                  <div className="flex items-center gap-2">
+                    <Train className="h-5 w-5 text-[#3b82f6]" />
+                    Trasporti Pubblici TPER (Bologna)
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-[#3b82f6] hover:bg-[#3b82f6]/80 text-white"
+                    onClick={async () => {
+                      try {
+                        const result = await trpc.mobility.tper.sync.mutate();
+                        alert(`Sincronizzazione completata!\n${result.count} fermate TPER caricate nel database.`);
+                        window.location.reload();
+                      } catch (error) {
+                        console.error('Errore sincronizzazione TPER:', error);
+                        alert('Errore durante la sincronizzazione TPER');
+                      }
+                    }}
+                  >
+                    🔄 Sincronizza Dati TPER
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
