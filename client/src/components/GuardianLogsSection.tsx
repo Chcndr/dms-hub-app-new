@@ -22,8 +22,8 @@ export default function GuardianLogsSection() {
     },
   });
   
-  const guardianLogs = logsData?.data?.logs || [];
-  const logsStats = logsData?.data?.stats || null;
+  const guardianLogs = logsData?.logs || [];
+  const logsStats = logsData?.stats || null;
 
   // Calculate stats from Guardian logs
   const stats = logsStats ? {

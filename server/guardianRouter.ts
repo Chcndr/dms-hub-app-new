@@ -37,11 +37,8 @@ export const guardianRouter = router({
     const stats = getAPIStats();
     
     return {
-      success: true,
-      data: {
-        endpoints: inventory,
-        stats,
-      },
+      endpoints: inventory,
+      stats,
     };
   }),
 
@@ -61,11 +58,8 @@ export const guardianRouter = router({
       const stats = getLogStats();
       
       return {
-        success: true,
-        data: {
-          logs,
-          stats,
-        },
+        logs,
+        stats,
       };
     }),
 
@@ -183,11 +177,8 @@ export const guardianRouter = router({
     const logStats = getLogStats();
     
     return {
-      success: true,
-      data: {
-        api: apiStats,
-        logs: logStats,
-      },
+      api: apiStats,
+      logs: logStats,
     };
   }),
 });

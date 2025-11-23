@@ -33,12 +33,12 @@ export default function GuardianDebugSection() {
     },
   });
   
-  const errorLogs = logsData?.data?.logs || [];
-  const logsStats = logsData?.data?.stats || null;
+  const errorLogs = logsData?.logs || [];
+  const logsStats = logsData?.stats || null;
 
   // Query per tutti i log per calcolare anche i warning
   const { data: allLogsData } = trpc.guardian.logs.useQuery();
-  const allLogs = allLogsData?.data?.logs || [];
+  const allLogs = allLogsData?.logs || [];
   
   const warnLogs = allLogs.filter((log: any) => log.level === 'warn');
   const debugLogs = allLogs.filter((log: any) => log.level === 'debug');

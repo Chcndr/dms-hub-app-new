@@ -52,8 +52,8 @@ export default function GuardianIntegrations() {
   // Mutation per testare un endpoint
   const testEndpointMutation = trpc.guardian.testEndpoint.useMutation();
 
-  const endpoints = inventoryData?.data?.endpoints || [];
-  const stats = inventoryData?.data?.stats || null;
+  const endpoints = inventoryData?.endpoints || [];
+  const stats = inventoryData?.stats || null;
 
   // Filtra endpoint
   const filteredEndpoints = endpoints.filter((endpoint: any) => {
