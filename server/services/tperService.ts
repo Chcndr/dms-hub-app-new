@@ -55,7 +55,8 @@ export async function getTPERStops(): Promise<TPERStop[]> {
       }
     });
 
-    const stops: TPERStop[] = response.data.results.map((record: any) => ({
+    console.log(`[TPER Service] Risposta API TPER (Status: ${response.status}, Body: ${JSON.stringify(response.data).substring(0, 200)}...)`);
+	    const stops: TPERStop[] = response.data.results.map((record: any) => ({
       code: record.codice,
       lineCode: record.codice_linea,
       name: record.denominazione,
