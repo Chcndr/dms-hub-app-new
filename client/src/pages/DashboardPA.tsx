@@ -3039,7 +3039,7 @@ export default function DashboardPA() {
                     className="bg-[#3b82f6] hover:bg-[#3b82f6]/80 text-white"
                     onClick={async () => {
                       try {
-                        const result = await trpc.mobility.tper.sync.mutate();
+                        const result = await trpc.integrations.tper.sync.mutate();
                         alert(`Sincronizzazione completata!\n${result.count} fermate TPER caricate nel database.`);
                         window.location.reload();
                       } catch (error) {
