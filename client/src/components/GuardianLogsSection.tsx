@@ -12,7 +12,15 @@ import { trpc } from '@/lib/trpc';
 
 export default function GuardianLogsSection() {
   // Query Guardian logs dal backend MIHUB
-  const { data: logsData, isLoading: loading } = trpc.guardian.logs.useQuery();
+  const { data: logsData, isLoading: loading, error } = trpc.guardian.logs.useQuery(undefined, {
+    retry: 1,
+    onError: (err) => {
+      console.error('[GuardianLogsSection] Errore caricamento log:', err);
+    },
+    onSuccess: (data) => {
+      console.log('[GuardianLogsSection] Log caricati:', data);
+    },
+  });
   
   const guardianLogs = logsData?.data?.logs || [];
   const logsStats = logsData?.data?.stats || null;
@@ -126,7 +134,12 @@ export default function GuardianLogsSection() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {error ? (
+                <div className="text-center py-8 text-red-400">
+                  <p className="font-semibold mb-2">Errore nel caricamento dei log</p>
+                  <p className="text-sm text-[#e8fbff]/60">{error.message}</p>
+                </div>
+              ) : loading ? (
                 <div className="text-center py-8 text-[#e8fbff]/60">
                   <Activity className="h-8 w-8 animate-spin text-[#14b8a6] mx-auto mb-4" />
                   Caricamento log...

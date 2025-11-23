@@ -21,8 +21,16 @@ import { toast } from 'sonner';
 
 export default function GuardianDebugSection() {
   // Query Guardian logs filtrati per errori e warning
-  const { data: logsData, isLoading: loading, refetch } = trpc.guardian.logs.useQuery({
+  const { data: logsData, isLoading: loading, error, refetch } = trpc.guardian.logs.useQuery({
     level: 'error', // Filtra solo errori
+  }, {
+    retry: 1,
+    onError: (err) => {
+      console.error('[GuardianDebugSection] Errore caricamento log:', err);
+    },
+    onSuccess: (data) => {
+      console.log('[GuardianDebugSection] Log errori caricati:', data);
+    },
   });
   
   const errorLogs = logsData?.data?.logs || [];
@@ -78,6 +86,18 @@ export default function GuardianDebugSection() {
     refetch();
     toast.success('Log aggiornati');
   };
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <XCircle className="h-8 w-8 text-red-400 mx-auto mb-4" />
+          <p className="text-red-400 font-semibold mb-2">Errore nel caricamento dei log di debug</p>
+          <p className="text-[#e8fbff]/60 text-sm">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

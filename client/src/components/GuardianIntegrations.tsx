@@ -39,7 +39,15 @@ export default function GuardianIntegrations() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   // Query per ottenere l'inventario API da Guardian
-  const { data: inventoryData, isLoading: isLoadingInventory } = trpc.guardian.integrations.useQuery();
+  const { data: inventoryData, isLoading: isLoadingInventory, error: inventoryError } = trpc.guardian.integrations.useQuery(undefined, {
+    retry: 1,
+    onError: (err) => {
+      console.error('[GuardianIntegrations] Errore caricamento inventario:', err);
+    },
+    onSuccess: (data) => {
+      console.log('[GuardianIntegrations] Inventario caricato:', data);
+    },
+  });
   
   // Mutation per testare un endpoint
   const testEndpointMutation = trpc.guardian.testEndpoint.useMutation();
@@ -142,6 +150,18 @@ export default function GuardianIntegrations() {
     navigator.clipboard.writeText(path);
     toast.success('Path copiato negli appunti!');
   };
+
+  if (inventoryError) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-4" />
+          <p className="text-red-400 font-semibold mb-2">Errore nel caricamento dell'inventario API</p>
+          <p className="text-[#e8fbff]/60 text-sm">{inventoryError.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoadingInventory) {
     return (

@@ -24,6 +24,10 @@ import {
   initDemoLogs 
 } from './services/apiLogsService';
 
+// Inizializza log di demo all'avvio del server
+initDemoLogs();
+console.log('[Guardian Router] Log di demo inizializzati');
+
 export const guardianRouter = router({
   // ============================================================================
   // GET /api/guardian/integrations - Inventario API completo
