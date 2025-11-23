@@ -281,7 +281,7 @@ export function MarketMapComponent({
             }
             
             return (
-              <React.Fragment key={`stall-${idx}`}>
+              <React.Fragment key={`stall-${props.number}-${dbStall?.status || props.status}`}>
                 <Polygon
                   positions={positions}
                   pathOptions={{
@@ -309,28 +309,59 @@ export function MarketMapComponent({
                   </Tooltip>
                   
                   {/* Popup informativo */}
-                  <Popup>
-                    <div className="text-sm">
-                      <div className="font-semibold text-base mb-1">
-                        Piazzola #{props.number}
+                  <Popup className="stall-popup" minWidth={250}>
+                    <div className="p-2">
+                      {/* Header */}
+                      <div className="font-bold text-lg mb-3 text-[#0b1220] border-b border-gray-200 pb-2">
+                        Posteggio #{props.number}
                       </div>
+                      
+                      {/* Stato con badge colorato */}
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="text-gray-600 font-medium">Stato:</span>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          displayStatus === 'libero' ? 'bg-green-100 text-green-700' :
+                          displayStatus === 'occupato' ? 'bg-red-100 text-red-700' :
+                          'bg-orange-100 text-orange-700'
+                        }`}>
+                          {getStallStatusLabel(displayStatus)}
+                        </span>
+                      </div>
+                      
+                      {/* Tipo posteggio */}
+                      {dbStall?.type && (
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="text-gray-600 font-medium">Tipo:</span>
+                          <span className="text-gray-800 capitalize">{dbStall.type}</span>
+                        </div>
+                      )}
+                      
+                      {/* Dimensioni */}
                       {props.dimensions && (
-                        <div className="text-gray-600">
-                          📏 {props.dimensions}
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="text-gray-600 font-medium">Dimensioni:</span>
+                          <span className="text-gray-800">{props.dimensions}</span>
                         </div>
                       )}
-                      <div className="text-gray-600">
-                        🏷️ {displayStatus === 'free' ? 'Libera' : displayStatus === 'occupied' ? 'Occupata' : 'Riservata'}
-                      </div>
+                      
+                      {/* Intestatario */}
                       {displayVendor !== '-' && (
-                        <div className="text-gray-600 mt-1">
-                          👤 {displayVendor}
+                        <div className="mb-3 flex items-center gap-2">
+                          <span className="text-gray-600 font-medium">Intestatario:</span>
+                          <span className="text-gray-800 font-semibold">{displayVendor}</span>
                         </div>
                       )}
-                      {props.kind && (
-                        <div className="text-gray-600 text-xs mt-1">
-                          Tipo: {props.kind}
-                        </div>
+                      
+                      {/* Pulsante Visita Vetrina */}
+                      {dbStall?.vendor_name && (
+                        <a 
+                          href="/dashboard-pa#vetrine" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full text-center bg-[#14b8a6] hover:bg-[#0d9488] text-white font-medium py-2 px-4 rounded transition-colors"
+                        >
+                          🏪 Visita Vetrina
+                        </a>
                       )}
                     </div>
                   </Popup>
