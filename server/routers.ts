@@ -152,7 +152,12 @@ export const appRouter = router({
         // Salva nel database
         if (data.length > 0) {
           const db = await getDb();
-          await db.insert(mobilityData).values(data).onConflictDoNothing();
+          const chunkSize = 500;
+          for (let i = 0; i < data.length; i += chunkSize) {
+            const chunk = data.slice(i, i + chunkSize);
+            await db.insert(mobilityData).values(chunk).onConflictDoNothing();
+            console.log(`[TPER Router] Inserito chunk ${i / chunkSize + 1} di ${Math.ceil(data.length / chunkSize)}`);
+          }
         }
         
         return {
