@@ -21,12 +21,13 @@ import {
   getLogs, 
   getLogStats, 
   addLog, 
-  initDemoLogs 
+  initDemoLogs,
+  clearAllLogs 
 } from './services/apiLogsService';
 
-// Inizializza log di demo all'avvio del server
-initDemoLogs();
-console.log('[Guardian Router] Log di demo inizializzati');
+// Svuota i log di demo all'avvio del server
+clearAllLogs();
+console.log('[Guardian Router] Log di demo rimossi - sistema pronto per log reali');
 
 export const guardianRouter = router({
   // ============================================================================

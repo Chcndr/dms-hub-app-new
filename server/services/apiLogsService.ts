@@ -156,6 +156,14 @@ function generateLogId(): string {
 }
 
 /**
+ * Svuota tutti i log (rimuove i log di demo)
+ */
+export function clearAllLogs() {
+  logs.length = 0;
+  console.log('[API Logs Service] Tutti i log sono stati svuotati');
+}
+
+/**
  * Inizializza alcuni log di esempio per demo
  */
 export function initDemoLogs() {
