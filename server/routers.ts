@@ -158,15 +158,24 @@ export const appRouter = router({
         // Sincronizza i dati
         const data = await syncTPERData();
         
-        // Salva nel database
+        // Salva nel database con un'unica query SQL per l'inserimento di massa (più stabile di Drizzle ORM per bulk insert)
         if (data.length > 0) {
           const db = await getDb();
-          const chunkSize = 500;
-          for (let i = 0; i < data.length; i += chunkSize) {
-            const chunk = data.slice(i, i + chunkSize);
-            await db.insert(mobilityData).values(chunk).onConflictDoNothing();
-            console.log(`[TPER Router] Inserito chunk ${i / chunkSize + 1} di ${Math.ceil(data.length / chunkSize)}`);
-          }
+          
+          // 1. Costruisci la query di inserimento di massa
+          const values = data.map(d => 
+            `(${d.marketId}, '${d.type}', '${d.lineNumber}', '${d.lineName}', '${d.stopName}', '${d.lat}', '${d.lng}', '${d.status}', ${d.occupancy ?? 'NULL'}, ${d.nextArrival ?? 'NULL'}, NOW(), NOW())`
+          ).join(', ');
+          
+          const insertQuery = `
+            INSERT INTO mobility_data (market_id, type, line_number, line_name, stop_name, lat, lng, status, occupancy, next_arrival, updated_at, created_at)
+            VALUES ${values}
+            ON CONFLICT DO NOTHING;
+          `;
+          
+          // 2. Esegui la query raw
+          await db.execute(sql.raw(insertQuery));
+          console.log(`[TPER Router] Inserimento di massa completato per ${data.length} record.`);
         }
         
         // Aggiorna i dati real-time
