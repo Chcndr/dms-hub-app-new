@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { trpc } from '@/lib/trpc';
 import { useOrchestrator, useAgentConversation, useAllConversations, mapAgentIdToBackend, formatTimestamp as formatOrchestratorTimestamp, type Message } from '@/hooks/useOrchestrator';
-import MobilityMap from '@/components/MobilityMap';
+// import MobilityMap from '@/components/MobilityMap'; // Sostituito con GISMap
 import GestioneMercati from '@/components/GestioneMercati';
 import GestioneHubNegozi from '@/components/GestioneHubNegozi';
 import Integrazioni from '@/components/Integrazioni';
@@ -3208,23 +3208,23 @@ export default function DashboardPA() {
                 </CardHeader>
                 <CardContent>
                   <div className="h-[500px] rounded-lg overflow-hidden">
-                    <MobilityMap
-                      stops={(realData.mobilityData || []).map((m: any) => ({
+                    <GISMap
+                      markers={(realData.mobilityData || []).map((m: any) => ({
                         id: m.id,
-                        type: m.type,
-                        stopName: m.stopName,
-                        lineNumber: m.lineNumber,
-                        lineName: m.lineName,
-                        lat: m.lat,
-                        lng: m.lng,
-                        nextArrival: m.nextArrival,
-                        occupancy: m.occupancy,
-                        status: m.status,
-                        totalSpots: m.totalSpots,
-                        availableSpots: m.availableSpots
+                        position: [parseFloat(m.lat), parseFloat(m.lng)], // GISMap usa [lat, lng]
+                        title: m.stopName || m.lineName,
+                        type: m.type === 'bus' || m.type === 'tram' ? 'bus' : 'market', // Uso l'icona 'bus' o 'market' per default
+                        description: `Linea: ${m.lineNumber || 'N/A'} - Prossimo arrivo: ${m.nextArrival || 'N/A'} min`,
+                        data: {
+                          status: m.status,
+                          occupancy: m.occupancy,
+                          totalSpots: m.totalSpots,
+                          availableSpots: m.availableSpots
+                        }
                       }))}
-                      center={{ lat: 42.7606, lng: 11.1133 }}
-                      zoom={12}
+                      center={[44.493847, 11.390315]} // Centro su Bologna (coordinate TPER)
+                      zoom={13}
+                      showControls={true}
                     />
                   </div>
                 </CardContent>
