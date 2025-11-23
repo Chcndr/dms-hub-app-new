@@ -58,6 +58,7 @@ interface MarketMapComponentProps {
     type?: string;
     vendor_name?: string;
   }>;
+  refreshKey?: number; // Key per forzare re-mount completo della mappa
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -101,7 +102,8 @@ export function MarketMapComponent({
   height = '600px',
   onStallClick,
   selectedStallNumber,
-  stallsData = []
+  stallsData = [],
+  refreshKey = 0
 }: MarketMapComponentProps) {
   
   const mapCenter: [number, number] = center || [mapData.center.lat, mapData.center.lng];
@@ -151,6 +153,7 @@ export function MarketMapComponent({
       
       <div style={{ height, width: '100%' }}>
         <MapContainer
+          key={`map-${refreshKey}`}
           center={mapCenter}
           zoom={zoom}
           scrollWheelZoom={false}

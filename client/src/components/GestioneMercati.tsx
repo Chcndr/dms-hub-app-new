@@ -686,7 +686,7 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
 
           {mapData && (
             <MarketMapComponent
-              key={`map-refresh-${mapRefreshKey}`}
+              refreshKey={mapRefreshKey}
               mapData={mapData}
               center={mapCenter}
               zoom={19}
