@@ -321,14 +321,12 @@ function APIDashboard() {
       
       // Log del test su Guardian
       try {
-        await fetch('/api/trpc/guardian.testEndpoint', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: endpointPath,
-            method: endpointInfo?.method || 'GET',
-            params: parsedBody,
-          }),
+        await utils.client.guardian.logApiCall.mutate({
+          endpoint: endpointPath,
+          method: endpointInfo?.method || 'GET',
+          statusCode: 200,
+          responseTime: endTime - startTime,
+          params: parsedBody,
         });
       } catch (e) {
         console.error('[Guardian] Errore logging test:', e);
@@ -347,14 +345,13 @@ function APIDashboard() {
       
       // Log dell'errore su Guardian
       try {
-        await fetch('/api/trpc/guardian.testEndpoint', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: endpointPath,
-            method: endpointInfo?.method || 'GET',
-            params: parsedBody,
-          }),
+        await utils.client.guardian.logApiCall.mutate({
+          endpoint: endpointPath,
+          method: endpointInfo?.method || 'GET',
+          statusCode: 500,
+          responseTime: endTime - startTime,
+          error: error.message || 'Errore sconosciuto',
+          params: parsedBody,
         });
       } catch (e) {
         console.error('[Guardian] Errore logging test:', e);

@@ -103,10 +103,7 @@ export const guardianRouter = router({
             userEmail: 'guardian@system',
           });
           
-          return {
-            success: false,
-            error: 'Endpoint non trovato nell\'inventario API',
-          };
+          throw new Error('Endpoint non trovato nell\'inventario API');
         }
         
         // Log del successo
@@ -123,15 +120,12 @@ export const guardianRouter = router({
         });
         
         return {
-          success: true,
-          data: {
-            endpoint: apiInfo,
-            testResult: {
-              status: 200,
-              message: 'Test completato con successo',
-              responseTime: 42,
-              timestamp: new Date().toISOString(),
-            },
+          endpoint: apiInfo,
+          testResult: {
+            status: 200,
+            message: 'Test completato con successo',
+            responseTime: 42,
+            timestamp: new Date().toISOString(),
           },
         };
       } catch (error: any) {
@@ -151,11 +145,39 @@ export const guardianRouter = router({
           },
         });
         
-        return {
-          success: false,
-          error: error.message,
-        };
+        throw error;
       }
+    }),
+
+  // ============================================================================
+  // POST /api/guardian/logApiCall - Logga una chiamata API
+  // ============================================================================
+  logApiCall: publicProcedure
+    .input(z.object({
+      endpoint: z.string(),
+      method: z.string(),
+      statusCode: z.number().optional(),
+      responseTime: z.number().optional(),
+      error: z.string().optional(),
+      params: z.record(z.string(), z.any()).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { endpoint, method, statusCode, responseTime, error, params } = input;
+      
+      addLog({
+        level: error ? 'error' : 'info',
+        app: 'API_TEST',
+        type: error ? 'ERROR' : 'API_CALL',
+        endpoint,
+        method,
+        statusCode: statusCode || (error ? 500 : 200),
+        responseTime,
+        message: error || `API call: ${method} ${endpoint}`,
+        userEmail: 'user@dashboard',
+        details: params ? { params } : undefined,
+      });
+      
+      return { logged: true };
     }),
 
   // ============================================================================
@@ -165,7 +187,6 @@ export const guardianRouter = router({
     initDemoLogs();
     
     return {
-      success: true,
       message: 'Log di demo inizializzati',
     };
   }),
