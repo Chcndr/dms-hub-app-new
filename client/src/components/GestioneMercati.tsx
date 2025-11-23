@@ -421,6 +421,7 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
   const [selectedStallId, setSelectedStallId] = useState<number | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [mapRefreshKey, setMapRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -472,7 +473,8 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
       const data = await response.json();
       if (data.success) {
         toast.success('Posteggio aggiornato con successo');
-        fetchData(); // Ricarica dati
+        await fetchData(); // Ricarica dati
+        setMapRefreshKey(prev => prev + 1); // Forza re-render mappa
         setEditingId(null);
         setEditData({});
       } else {
@@ -684,7 +686,7 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
 
           {mapData && (
             <MarketMapComponent
-              key={`map-${stalls.map(s => `${s.number}-${s.status}`).join('-')}`}
+              key={`map-refresh-${mapRefreshKey}`}
               mapData={mapData}
               center={mapCenter}
               zoom={19}
