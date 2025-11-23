@@ -367,7 +367,7 @@ export function MarketMapComponent({
                       {/* Pulsante Visita Vetrina */}
                       {dbStall?.vendor_name && (
                         <a 
-                          href="/dashboard-pa#vetrine" 
+                          href="/vetrine" 
                           target="_blank"
                           rel="noopener noreferrer"
                           className="block w-full text-center bg-[#14b8a6] hover:bg-[#0d9488] text-white font-medium py-2 px-4 rounded transition-colors"
