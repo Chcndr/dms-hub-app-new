@@ -127,6 +127,8 @@ export async function syncTPERData() {
 
     // 2. Converto in formato mobility_data (SENZA chiamare Hello Bus)
     const mobilityData = stops.map(stop => ({
+      marketId: 1, // Assumiamo marketId di default 1 per Bologna
+
       type: 'bus',
       lineNumber: stop.lineCode,
       lineName: `Linea ${stop.lineCode}`,
@@ -134,8 +136,8 @@ export async function syncTPERData() {
       lat: stop.lat.toString(),
       lng: stop.lng.toString(),
       status: 'active', // Assumiamo tutte attive
-      nextArrival: null, // Non abbiamo dati real-time
-      occupancy: null, // TPER non fornisce dati di occupazione
+      nextArrival: undefined, // Non abbiamo dati real-time (lasciamo undefined per Drizzle)
+      occupancy: undefined, // TPER non fornisce dati di occupazione (lasciamo undefined per Drizzle)
       updatedAt: new Date()
     }));
 
