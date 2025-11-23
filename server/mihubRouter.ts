@@ -294,7 +294,7 @@ export const mihubRouter = router({
         return null;
       }
 
-      let value = item.value;
+      let value: any = item.value;
       if (item.valueType === "json") {
         try {
           value = JSON.parse(item.value);

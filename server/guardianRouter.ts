@@ -76,7 +76,7 @@ export const guardianRouter = router({
     .input(z.object({
       endpoint: z.string(),
       method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']),
-      params: z.record(z.any()).optional(),
+      params: z.record(z.string(), z.any()).optional(),
     }))
     .mutation(async ({ input }) => {
       const { endpoint, method, params } = input;
