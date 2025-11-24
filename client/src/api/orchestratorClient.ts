@@ -31,8 +31,8 @@ export interface OrchestratorResponse {
     type: string;
     provider?: string | null;
     statusCode?: number;
-    detail?: string;
-  };
+    message?: string;
+  } | null;
 }
 
 // ============================================================================
