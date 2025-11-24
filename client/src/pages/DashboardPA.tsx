@@ -26,6 +26,7 @@ import GuardianLogsSection from '@/components/GuardianLogsSection';
 import GuardianDebugSection from '@/components/GuardianDebugSection';
 import { MarketMapComponent } from '@/components/MarketMapComponent';
 import MIOAgent from '@/components/MIOAgent';
+import MIOAgentChat from '@/components/MIOAgentChat';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Hook per dati reali da backend
@@ -1135,11 +1136,11 @@ export default function DashboardPA() {
                     Caricamento mappa...
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </CardContent>            </Card>
+            </div>{/* Fine hidden - vecchia implementazione */}
           </TabsContent>
 
-          {/* TAB 2: CLIENTI */}
+          {/* TAB 25: CLIENTI */}
           <TabsContent value="users" className="space-y-6">
             {/* Mezzi di Trasporto */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
@@ -3472,7 +3473,13 @@ export default function DashboardPA() {
 
           {/* TAB 24: MIO AGENT */}
           <TabsContent value="mio" className="space-y-6">
-            {/* SEZIONE A: Chat Principale MIO (sempre visibile) */}
+            {/* SEZIONE NUOVA: MIO Agent Chat Orchestratore */}
+            <div className="h-[800px]">
+              <MIOAgentChat />
+            </div>
+            
+            {/* SEZIONE A: Chat Principale MIO (sempre visibile) - DEPRECATA */}
+            <div className="hidden">{/* Nascondo la vecchia implementazione */}
             <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
