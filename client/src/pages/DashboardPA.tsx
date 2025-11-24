@@ -16,16 +16,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { trpc } from '@/lib/trpc';
-import { useOrchestrator, useAgentConversation, useAllConversations, mapAgentIdToBackend, formatTimestamp as formatOrchestratorTimestamp, type Message } from '@/hooks/useOrchestrator';
-// import MobilityMap from '@/components/MobilityMap'; // Sostituito con GISMap
+import MobilityMap from '@/components/MobilityMap';
 import GestioneMercati from '@/components/GestioneMercati';
-import GestioneHubNegozi from '@/components/GestioneHubNegozi';
 import Integrazioni from '@/components/Integrazioni';
 import { GISMap } from '@/components/GISMap';
-import GuardianLogsSection from '@/components/GuardianLogsSection';
-import GuardianDebugSection from '@/components/GuardianDebugSection';
-import { MarketMapComponent } from '@/components/MarketMapComponent';
 import MIOAgent from '@/components/MIOAgent';
+import { callOrchestrator } from '@/api/orchestratorClient';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Hook per dati reali da backend
@@ -369,11 +365,6 @@ export default function DashboardPA() {
    const [activeTab, setActiveTab] = useState('overview');
   const [tccValue, setTccValue] = useState(0.20);
   
-  // Stati per MarketMapComponent
-  const [mapData, setMapData] = useState<any>(null);
-  const [stallsData, setStallsData] = useState<any[]>([]);
-  const [selectedMarketId] = useState(1); // Default: Mercato Grosseto
-  
   // Carbon Credits - Simulatore completo
   const [editableParams, setEditableParams] = useState({
     fundBalance: 125000,
@@ -422,68 +413,6 @@ export default function DashboardPA() {
     return (editableParams.tccSpent * tccValue).toFixed(0);
   };
 
-  // Carica dati mappa mercato
-  useEffect(() => {
-    const loadMapData = async () => {
-      try {
-        console.log('[VERCEL DEBUG] Starting map data fetch...');
-        console.log('[VERCEL DEBUG] GIS URL:', 'https://orchestratore.mio-hub.me/api/gis/market-map');
-        console.log('[VERCEL DEBUG] Stalls URL:', `https://orchestratore.mio-hub.me/api/markets/${selectedMarketId}/stalls`);
-        
-        const [mapRes, stallsRes] = await Promise.all([
-          fetch('https://orchestratore.mio-hub.me/api/gis/market-map'),
-          fetch(`https://orchestratore.mio-hub.me/api/markets/${selectedMarketId}/stalls`)
-        ]);
-        
-        console.log('[VERCEL DEBUG] GIS Response Status:', mapRes.status, mapRes.ok);
-        console.log('[VERCEL DEBUG] Stalls Response Status:', stallsRes.status, stallsRes.ok);
-        
-        const mapJson = await mapRes.json();
-        const stallsJson = await stallsRes.json();
-        
-        console.log('[VERCEL DEBUG] GIS JSON:', {
-          success: mapJson.success,
-          hasData: !!mapJson.data,
-          featureCount: mapJson.data?.stalls_geojson?.features?.length || 0
-        });
-        console.log('[VERCEL DEBUG] Stalls JSON:', {
-          success: stallsJson.success,
-          count: stallsJson.data?.length || stallsJson.count || 0
-        });
-        
-        if (mapJson.success) {
-          console.log('[VERCEL DEBUG] Setting mapData with', mapJson.data.stalls_geojson?.features?.length || 0, 'features');
-          setMapData(mapJson.data);
-        } else {
-          console.warn('[VERCEL DEBUG] GIS fetch failed - success=false');
-        }
-        
-        if (stallsJson.success) {
-          const stallsArray = stallsJson.data.map((s: any) => ({
-            number: s.number,
-            status: s.status,
-            type: s.type,
-            vendor_name: s.vendor_business_name || undefined
-          }));
-          console.log('[VERCEL DEBUG] Setting stallsData with', stallsArray.length, 'stalls');
-          setStallsData(stallsArray);
-        } else {
-          console.warn('[VERCEL DEBUG] Stalls fetch failed - success=false');
-        }
-        
-        console.log('[VERCEL DEBUG] Map data loading complete!');
-      } catch (error) {
-        console.error('[VERCEL DEBUG] Error loading map data:', error);
-        console.error('[VERCEL DEBUG] Error details:', {
-          message: (error as Error).message,
-          stack: (error as Error).stack
-        });
-      }
-    };
-    
-    loadMapData();
-  }, [selectedMarketId]);
-  
   // Fattore conversione: 1 TCC speso = 0.06 kg CO₂ risparmiati (media shopping locale vs e-commerce)
   const CO2_PER_TCC = 0.06;
   // 1 albero assorbe circa 22 kg CO₂ all'anno
@@ -511,60 +440,12 @@ export default function DashboardPA() {
   const [selectedAgent, setSelectedAgent] = useState<'mio' | 'manus' | 'abacus' | 'zapier'>('mio');
   const [viewMode, setViewMode] = useState<'single' | 'quad'>('single');
   
-  // Orchestrator state
-  const [mainChatInput, setMainChatInput] = useState('');
-  const [mainChatMessages, setMainChatMessages] = useState<Message[]>([]);
-  const [agentChatInput, setAgentChatInput] = useState('');
-  const orchestrator = useOrchestrator();
-  const selectedAgentConversation = useAgentConversation(mapAgentIdToBackend(selectedAgent));
-  const allConversations = useAllConversations();
-  
-  // Handler invio messaggio chat principale (mode: auto)
-  const handleMainChatSend = async () => {
-    if (!mainChatInput.trim() || orchestrator.isLoading) return;
-
-    const userMessage: Message = {
-      id: Date.now(),
-      sender: 'user',
-      content: mainChatInput,
-      timestamp: new Date().toISOString(),
-    };
-
-    setMainChatMessages(prev => [...prev, userMessage]);
-    setMainChatInput('');
-
-    const response = await orchestrator.sendMessage({
-      message: mainChatInput,
-      mode: 'auto',
-    });
-
-    if (response) {
-      const agentMessage: Message = {
-        id: Date.now() + 1,
-        sender: response.agentsUsed[0] || 'mio_dev',
-        content: response.message,
-        timestamp: response.timestamp, // già ISO string
-      };
-      setMainChatMessages(prev => [...prev, agentMessage]);
-    }
-  };
-
-  // Handler invio messaggio agente singolo (mode: manual)
-  const handleAgentChatSend = async () => {
-    if (!agentChatInput.trim() || orchestrator.isLoading) return;
-
-    const targetAgent = mapAgentIdToBackend(selectedAgent);
-    setAgentChatInput('');
-
-    await orchestrator.sendMessage({
-      message: agentChatInput,
-      mode: 'manual',
-      targetAgent,
-    });
-
-    // Refetch conversazione per aggiornare UI
-    selectedAgentConversation.refetch();
-  };
+  // MIO Agent Chat state (Fase 1)
+  const [mioMessages, setMioMessages] = useState<Array<{ role: 'user' | 'assistant' | 'system'; text: string; agent?: string }>>([]);
+  const [mioInputValue, setMioInputValue] = useState('');
+  const [mioLoading, setMioLoading] = useState(false);
+  const [mioError, setMioError] = useState<string | null>(null);
+  const [mioConversationId, setMioConversationId] = useState<string | null>(null);
   
   // Format timestamp for Guardian logs
   const formatTimestamp = (timestamp: string) => {
@@ -576,6 +457,59 @@ export default function DashboardPA() {
       hour: '2-digit',
       minute: '2-digit',
     }) + ' (ora locale)';
+  };
+  
+  // Handler per invio messaggio MIO (Fase 1)
+  const handleSendMio = async () => {
+    if (!mioInputValue.trim() || mioLoading) return;
+    
+    const text = mioInputValue.trim();
+    
+    // Aggiungi messaggio utente
+    setMioMessages(prev => [...prev, { role: 'user', text }]);
+    setMioInputValue('');
+    setMioLoading(true);
+    setMioError(null);
+    
+    try {
+      const response = await callOrchestrator({
+        mode: 'auto',
+        conversationId: mioConversationId,
+        message: text,
+        meta: { source: 'dashboard_main' },
+      });
+      
+      // Salva conversationId
+      if (response.conversationId) {
+        setMioConversationId(response.conversationId);
+      }
+      
+      if (response.success && response.message) {
+        // Aggiungi risposta agente
+        setMioMessages(prev => [
+          ...prev,
+          { role: 'assistant', agent: response.agent, text: response.message! },
+        ]);
+      } else if (response.error) {
+        // Mostra errore leggibile
+        const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
+        setMioMessages(prev => [
+          ...prev,
+          { role: 'system', text: `[Errore] ${errorMsg}` },
+        ]);
+        setMioError(errorMsg);
+      }
+    } catch (error) {
+      console.error('[MIO Agent] Error:', error);
+      const errorMsg = 'Errore di connessione al server';
+      setMioMessages(prev => [
+        ...prev,
+        { role: 'system', text: `[Errore] ${errorMsg}` },
+      ]);
+      setMioError(errorMsg);
+    } finally {
+      setMioLoading(false);
+    }
   };
   
   // Fetch Guardian logs
@@ -1043,17 +977,6 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Gestione Mercati</span>
             </button>
             <button
-              onClick={() => setActiveTab('hub-negozi')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'hub-negozi'
-                  ? 'bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg'
-                  : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
-              }`}
-            >
-              <Store className="h-6 w-6" />
-              <span className="text-xs font-medium">Gestione HUB</span>
-            </button>
-            <button
               onClick={() => setActiveTab('docs')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
                 activeTab === 'docs'
@@ -1110,31 +1033,22 @@ export default function DashboardPA() {
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#14b8a6]" />
-                  Mappa Mercato Grosseto (Dati Reali)
+                  Mappa Mercati Attivi
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  console.log('[VERCEL DEBUG] Rendering map - mapData:', !!mapData, 'stallsData.length:', stallsData.length);
-                  if (mapData) {
-                    console.log('[VERCEL DEBUG] mapData.stalls_geojson.features.length:', mapData.stalls_geojson?.features?.length || 0);
-                  }
-                  return null;
-                })()}
-                {mapData && stallsData.length > 0 ? (
-                  <MarketMapComponent
-                    mapData={mapData}
-                    zoom={19}
-                    height="400px"
-                    stallsData={stallsData}
-                    onStallClick={(stallNumber) => console.log('Clicked stall:', stallNumber)}
-                    selectedStallNumber={null}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-[400px] text-[#e8fbff]/50">
-                    Caricamento mappa...
-                  </div>
-                )}
+                <GISMap
+                  center={[42.5, 12.5]}
+                  zoom={6}
+                  height="400px"
+                  markers={mockData.topMarkets.map((m, i) => ({
+                    id: i,
+                    position: [42.5 + (Math.random() - 0.5) * 10, 12.5 + (Math.random() - 0.5) * 10],
+                    type: 'market' as const,
+                    title: m.name,
+                    description: `Visite: ${m.visits.toLocaleString()} | Utenti: ${m.users.toLocaleString()}`,
+                  }))}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -1225,36 +1139,27 @@ export default function DashboardPA() {
 
           {/* TAB 3: MERCATI */}
           <TabsContent value="markets" className="space-y-6">
-            {/* Mappa Mercato Dettaglio */}
+            {/* Mappa Italia Mercati */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#14b8a6]" />
-                  Mappa Mercato Grosseto - Posteggi (Dati Reali)
+                  Mappa Italia - Tutti i Mercati
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  console.log('[VERCEL DEBUG] Rendering map - mapData:', !!mapData, 'stallsData.length:', stallsData.length);
-                  if (mapData) {
-                    console.log('[VERCEL DEBUG] mapData.stalls_geojson.features.length:', mapData.stalls_geojson?.features?.length || 0);
-                  }
-                  return null;
-                })()}
-                {mapData && stallsData.length > 0 ? (
-                  <MarketMapComponent
-                    mapData={mapData}
-                    zoom={19}
-                    height="calc(100vh - 400px)"
-                    stallsData={stallsData}
-                    onStallClick={(stallNumber) => console.log('Clicked stall:', stallNumber)}
-                    selectedStallNumber={null}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-[calc(100vh-400px)] text-[#e8fbff]/50">
-                    Caricamento mappa...
-                  </div>
-                )}
+                <GISMap
+                  center={[42.5, 12.5]}
+                  zoom={6}
+                  height="calc(100vh - 400px)"
+                  markers={mockData.topMarkets.map((m, i) => ({
+                    id: i,
+                    position: [42.5 + (Math.random() - 0.5) * 10, 12.5 + (Math.random() - 0.5) * 10],
+                    type: 'market' as const,
+                    title: m.name,
+                    description: `Visite: ${m.visits.toLocaleString()} | Utenti: ${m.users.toLocaleString()}`,
+                  }))}
+                />
               </CardContent>
             </Card>
 
@@ -2126,7 +2031,7 @@ export default function DashboardPA() {
 
           {/* TAB 8: LOGS */}
           <TabsContent value="logs" className="space-y-6">
-            <GuardianLogsSection />
+            <LogsSection />
           </TabsContent>
 
           {/* TAB 9: AGENTE AI */}
@@ -2392,7 +2297,7 @@ export default function DashboardPA() {
             </Card>
 
             {/* Guardian Debug Stats */}
-            <GuardianDebugSection />
+            <GuardianDebugStats />
           </TabsContent>
 
           {/* TAB 13: QUALIFICAZIONE IMPRESE */}
@@ -2744,36 +2649,27 @@ export default function DashboardPA() {
               </CardContent>
             </Card>
 
-            {/* Mappa Mercato */}
+            {/* Mappa Segnalazioni Cluster */}
             <Card className="bg-[#1a2332] border-[#06b6d4]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#06b6d4]" />
-                  Mappa Mercato Grosseto (Dati Reali)
+                  Mappa Segnalazioni Civiche
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  console.log('[VERCEL DEBUG] Rendering map - mapData:', !!mapData, 'stallsData.length:', stallsData.length);
-                  if (mapData) {
-                    console.log('[VERCEL DEBUG] mapData.stalls_geojson.features.length:', mapData.stalls_geojson?.features?.length || 0);
-                  }
-                  return null;
-                })()}
-                {mapData && stallsData.length > 0 ? (
-                  <MarketMapComponent
-                    mapData={mapData}
-                    zoom={19}
-                    height="calc(100vh - 400px)"
-                    stallsData={stallsData}
-                    onStallClick={(stallNumber) => console.log('Clicked stall:', stallNumber)}
-                    selectedStallNumber={null}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-[calc(100vh-400px)] text-[#e8fbff]/50">
-                    Caricamento mappa...
-                  </div>
-                )}
+                <GISMap
+                  center={[44.4949, 11.3426]}
+                  zoom={12}
+                  height="calc(100vh - 400px)"
+                  markers={mockData.civicReports.recent.map((report) => ({
+                    id: report.id,
+                    position: [44.4949 + (Math.random() - 0.5) * 0.1, 11.3426 + (Math.random() - 0.5) * 0.1],
+                    type: 'civic' as const,
+                    title: report.type,
+                    description: `${report.description} | ${report.location} | ${report.status}`,
+                  }))}
+                />
               </CardContent>
             </Card>
 
@@ -2927,36 +2823,27 @@ export default function DashboardPA() {
               </CardContent>
             </Card>
 
-            {/* Mappa Mercato */}
+            {/* Mappa Controlli Polizia */}
             <Card className="bg-[#1a2332] border-[#f59e0b]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#f59e0b]" />
-                  Mappa Mercato Grosseto (Dati Reali)
+                  Mappa Posizioni Controlli
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  console.log('[VERCEL DEBUG] Rendering map - mapData:', !!mapData, 'stallsData.length:', stallsData.length);
-                  if (mapData) {
-                    console.log('[VERCEL DEBUG] mapData.stalls_geojson.features.length:', mapData.stalls_geojson?.features?.length || 0);
-                  }
-                  return null;
-                })()}
-                {mapData && stallsData.length > 0 ? (
-                  <MarketMapComponent
-                    mapData={mapData}
-                    zoom={19}
-                    height="calc(100vh - 400px)"
-                    stallsData={stallsData}
-                    onStallClick={(stallNumber) => console.log('Clicked stall:', stallNumber)}
-                    selectedStallNumber={null}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-[calc(100vh-400px)] text-[#e8fbff]/50">
-                    Caricamento mappa...
-                  </div>
-                )}
+                <GISMap
+                  center={[43.7696, 11.2558]}
+                  zoom={12}
+                  height="calc(100vh - 400px)"
+                  markers={mockData.inspections.upcoming.map((insp, i) => ({
+                    id: insp.id,
+                    position: [43.7696 + (Math.random() - 0.5) * 0.1, 11.2558 + (Math.random() - 0.5) * 0.1],
+                    type: 'civic' as const,
+                    title: insp.business,
+                    description: `${insp.type} | Ispettore: ${insp.inspector} | Data: ${insp.date}`,
+                  }))}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -3031,27 +2918,9 @@ export default function DashboardPA() {
           <TabsContent value="mobility" className="space-y-6">
             <Card className="bg-[#1a2332] border-[#3b82f6]/30">
               <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2 justify-between">
-                  <div className="flex items-center gap-2">
-                    <Train className="h-5 w-5 text-[#3b82f6]" />
-                    Trasporti Pubblici TPER (Bologna)
-                  </div>
-                  <Button
-                    size="sm"
-                    className="bg-[#3b82f6] hover:bg-[#3b82f6]/80 text-white"
-                    onClick={async () => {
-                      try {
-                        const result = await trpc.integrations.tper.sync.mutate();
-                        alert(`Sincronizzazione completata!\n${result.count} fermate TPER caricate nel database.`);
-                        window.location.reload();
-                      } catch (error) {
-                        console.error('Errore sincronizzazione TPER:', error);
-                        alert('Errore durante la sincronizzazione TPER');
-                      }
-                    }}
-                  >
-                    🔄 Sincronizza Dati TPER
-                  </Button>
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <Train className="h-5 w-5 text-[#3b82f6]" />
+                  Trasporti Pubblici TPER (Bologna)
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -3200,7 +3069,7 @@ export default function DashboardPA() {
             </div>
 
             {/* Mappa Interattiva Fermate */}
-            {true && (
+            {realData.mobilityData.length > 0 && (
               <Card className="bg-[#1a2332] border-[#3b82f6]/30">
                 <CardHeader>
                   <CardTitle className="text-[#e8fbff] flex items-center gap-2">
@@ -3210,23 +3079,23 @@ export default function DashboardPA() {
                 </CardHeader>
                 <CardContent>
                   <div className="h-[500px] rounded-lg overflow-hidden">
-                    <GISMap
-                      markers={(realData.mobilityData || []).map((m: any) => ({
+                    <MobilityMap
+                      stops={realData.mobilityData.map((m: any) => ({
                         id: m.id,
-                        position: [parseFloat(m.lat), parseFloat(m.lng)], // GISMap usa [lat, lng]
-                        title: m.stopName || m.lineName,
-                        type: m.type === 'bus' || m.type === 'tram' ? 'bus' : 'market', // Uso l'icona 'bus' o 'market' per default
-                        description: `Linea: ${m.lineNumber || 'N/A'} - Prossimo arrivo: ${m.nextArrival || 'N/A'} min`,
-                        data: {
-                          status: m.status,
-                          occupancy: m.occupancy,
-                          totalSpots: m.totalSpots,
-                          availableSpots: m.availableSpots
-                        }
+                        type: m.type,
+                        stopName: m.stopName,
+                        lineNumber: m.lineNumber,
+                        lineName: m.lineName,
+                        lat: m.lat,
+                        lng: m.lng,
+                        nextArrival: m.nextArrival,
+                        occupancy: m.occupancy,
+                        status: m.status,
+                        totalSpots: m.totalSpots,
+                        availableSpots: m.availableSpots
                       }))}
-                      center={[44.493847, 11.390315]} // Centro su Bologna (coordinate TPER)
-                      zoom={13}
-                      showControls={true}
+                      center={{ lat: 42.7606, lng: 11.1133 }}
+                      zoom={12}
                     />
                   </div>
                 </CardContent>
@@ -3268,24 +3137,10 @@ export default function DashboardPA() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <Card className="bg-[#0f1729] border-[#64748b]/20 hover:border-[#14b8a6]/50 transition-colors cursor-pointer" onClick={() => setLocation('/settings/api-tokens')}>
-                    <CardHeader>
-                      <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
-                        <Lock className="h-5 w-5 text-[#14b8a6]" />
-                        API & Agent Tokens
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-[#e8fbff]/70 text-sm">Gestione sicura delle API key per il sistema multi-agente</p>
-                      <p className="text-[#e8fbff]/50 text-xs mt-2">OpenAI, Gemini, GitHub, Vercel, TPER</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <div className="text-center py-8">
-                    <SettingsIcon className="h-12 w-12 text-[#64748b] mx-auto mb-3 opacity-50" />
-                    <p className="text-[#e8fbff]/50 text-sm">Altre impostazioni in sviluppo</p>
-                  </div>
+                <div className="text-center py-12">
+                  <SettingsIcon className="h-16 w-16 text-[#64748b] mx-auto mb-4" />
+                  <p className="text-[#e8fbff]/70 text-lg">Sezione Impostazioni in sviluppo</p>
+                  <p className="text-[#e8fbff]/50 text-sm mt-2">Configurazione dashboard, permessi utenti, preferenze visualizzazione</p>
                 </div>
               </CardContent>
             </Card>
@@ -3296,12 +3151,7 @@ export default function DashboardPA() {
             <GestioneMercati />
           </TabsContent>
 
-          {/* TAB 23: GESTIONE HUB / NEGOZI & SERVIZI */}
-          <TabsContent value="hub-negozi" className="space-y-6">
-            <GestioneHubNegozi />
-          </TabsContent>
-
-          {/* TAB 24: DOCUMENTAZIONE */}
+          {/* TAB 23: DOCUMENTAZIONE */}
           <TabsContent value="docs" className="space-y-6">
             <Card className="bg-[#1a2332] border-[#06b6d4]/30">
               <CardHeader>
@@ -3312,45 +3162,6 @@ export default function DashboardPA() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* Link al Repository Blueprint */}
-                  <Card className="bg-gradient-to-r from-[#06b6d4]/20 to-[#0891b2]/20 border-[#06b6d4]">
-                    <CardHeader>
-                      <CardTitle className="text-[#e8fbff] text-xl flex items-center gap-3">
-                        <svg className="h-6 w-6 text-[#06b6d4]" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                        </svg>
-                        📚 Blueprint Ufficiale DMS System
-                      </CardTitle>
-                      <p className="text-[#e8fbff]/70 text-sm mt-2">
-                        Documentazione completa e sempre aggiornata del sistema DMS Hub: architettura, API, modelli dati, roadmap e guide operative.
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <Button 
-                        className="w-full bg-[#06b6d4] hover:bg-[#0891b2] text-white font-semibold py-6 text-lg shadow-lg"
-                        onClick={() => window.open('https://github.com/Chcndr/dms-system-blueprint', '_blank')}
-                      >
-                        <svg className="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                        </svg>
-                        Apri Repository Blueprint
-                        <svg className="h-5 w-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </Button>
-                      <div className="mt-4 p-4 bg-[#0b1220] rounded-lg border border-[#06b6d4]/30">
-                        <div className="text-sm text-[#e8fbff]/70 mb-2">📂 Documenti principali disponibili:</div>
-                        <ul className="text-xs text-[#e8fbff]/60 space-y-1">
-                          <li>• <strong>MASTER_SYSTEM_PLAN.md</strong> - Piano generale del sistema</li>
-                          <li>• <strong>Architettura Centro Mobilità</strong> - Design scalabile per trasporti pubblici</li>
-                          <li>• <strong>Sistema Mercati + GIS</strong> - Integrazione Pepe GIS e mappe</li>
-                          <li>• <strong>API Documentation</strong> - Endpoint tRPC completi</li>
-                          <li>• <strong>Database Schema</strong> - 39 tabelle Drizzle/Postgres</li>
-                        </ul>
-                      </div>
-                    </CardContent>
-                  </Card>
-
                   {/* Indice Documenti */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card className="bg-[#0b1220] border-[#06b6d4]/30">
@@ -3494,34 +3305,50 @@ export default function DashboardPA() {
                         <div className="flex items-center gap-2">
                           <Brain className="h-5 w-5 text-purple-400" />
                           <span className="text-[#e8fbff] font-medium">MIO</span>
-                          <span className="text-xs text-[#e8fbff]/50">GPT-5 Coordinatore (Mode: Auto)</span>
+                          <span className="text-xs text-[#e8fbff]/50">GPT-5 Coordinatore</span>
+                          {mioConversationId && (
+                            <span className="text-xs text-[#e8fbff]/30">ID: {mioConversationId.slice(0, 8)}...</span>
+                          )}
                         </div>
-                        <span className="text-xs text-[#e8fbff]/50">{mainChatMessages.length} messaggi</span>
+                        <span className="text-xs text-[#e8fbff]/50">{mioMessages.length} messaggi</span>
                       </div>
                       {/* Area messaggi */}
                       <div className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto space-y-3">
-                        {mainChatMessages.length === 0 ? (
-                          <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio. Scrivi qualcosa per iniziare!</p>
+                        {mioMessages.length === 0 ? (
+                          <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
                         ) : (
-                          mainChatMessages.map((msg) => (
-                            <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`max-w-[80%] rounded-lg p-3 ${
-                                msg.sender === 'user' 
-                                  ? 'bg-[#8b5cf6] text-white' 
-                                  : 'bg-[#1a2332] text-[#e8fbff] border border-[#8b5cf6]/30'
-                              }`}>
-                                <div className="text-xs opacity-70 mb-1">
-                                  {msg.sender === 'user' ? 'Tu' : msg.sender.toUpperCase()} • {formatOrchestratorTimestamp(msg.timestamp)}
+                          mioMessages.map((msg, idx) => (
+                            <div
+                              key={idx}
+                              className={`p-3 rounded-lg ${
+                                msg.role === 'user'
+                                  ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 ml-8'
+                                  : msg.role === 'assistant'
+                                  ? 'bg-[#10b981]/20 border border-[#10b981]/30 mr-8'
+                                  : 'bg-[#ef4444]/20 border border-[#ef4444]/30'
+                              }`}
+                            >
+                              <div className="flex items-start gap-2">
+                                {msg.role === 'assistant' && (
+                                  <Brain className="h-4 w-4 text-purple-400 mt-0.5" />
+                                )}
+                                <div className="flex-1">
+                                  {msg.role === 'assistant' && msg.agent && (
+                                    <div className="text-xs text-[#e8fbff]/50 mb-1">
+                                      Agent: {msg.agent}
+                                    </div>
+                                  )}
+                                  <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
                                 </div>
-                                <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
                               </div>
                             </div>
                           ))
                         )}
-                        {orchestrator.isLoading && (
-                          <div className="flex justify-start">
-                            <div className="bg-[#1a2332] border border-[#8b5cf6]/30 rounded-lg p-3">
-                              <div className="text-sm text-[#e8fbff]/70">🤔 Orchestratore sta pensando...</div>
+                        {mioLoading && (
+                          <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                            <div className="flex items-center gap-2">
+                              <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                              <p className="text-[#e8fbff]/70 text-sm">MIO sta pensando...</p>
                             </div>
                           </div>
                         )}
@@ -3530,29 +3357,34 @@ export default function DashboardPA() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Messaggio per MIO (orchestratore decide agenti)..."
-                          value={mainChatInput}
-                          onChange={(e) => setMainChatInput(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleMainChatSend()}
+                          value={mioInputValue}
+                          onChange={(e) => setMioInputValue(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && !mioLoading) {
+                              handleSendMio();
+                            }
+                          }}
+                          placeholder="Messaggio a MIO..."
                           className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
-                          disabled={orchestrator.isLoading}
+                          disabled={mioLoading}
                         />
                         <Button 
-                          onClick={handleMainChatSend}
+                          onClick={handleSendMio}
                           className="bg-[#10b981] hover:bg-[#059669]" 
-                          disabled={orchestrator.isLoading || !mainChatInput.trim()}
+                          disabled={mioLoading || !mioInputValue.trim()}
                         >
-                          <Send className="h-4 w-4" />
+                          {mioLoading ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
-                      {orchestrator.error && (
-                        <p className="text-xs text-red-400 text-center">
-                          Errore: {orchestrator.error}
+                      {mioError && (
+                        <p className="text-xs text-[#ef4444] text-center">
+                          {mioError}
                         </p>
                       )}
-                      <p className="text-xs text-[#e8fbff]/30 text-center">
-                        💡 Mode AUTO: L'orchestratore decide quali agenti usare in base al messaggio
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -3672,72 +3504,32 @@ export default function DashboardPA() {
                             {selectedAgent === 'zapier' && <Zap className="h-5 w-5 text-orange-400" />}
                             <span className="text-[#e8fbff] font-medium capitalize">{selectedAgent}</span>
                             <span className="text-xs text-[#e8fbff]/50">
-                              {selectedAgent === 'mio' && 'GPT-5 Coordinatore (Mode: Manual)'}
-                              {selectedAgent === 'manus' && 'Operatore Esecutivo (Mode: Manual)'}
-                              {selectedAgent === 'abacus' && 'Analisi Dati (Mode: Manual)'}
-                              {selectedAgent === 'zapier' && 'Automazioni (Mode: Manual)'}
+                              {selectedAgent === 'mio' && 'GPT-5 Coordinatore'}
+                              {selectedAgent === 'manus' && 'Operatore Esecutivo'}
+                              {selectedAgent === 'abacus' && 'Analisi Dati'}
+                              {selectedAgent === 'zapier' && 'Automazioni'}
                             </span>
                           </div>
-                          <span className="text-xs text-[#e8fbff]/50">
-                            {selectedAgentConversation.isLoading ? '...' : selectedAgentConversation.messages.length} messaggi
-                          </span>
+                          <span className="text-xs text-[#e8fbff]/50">0 messaggi</span>
                         </div>
                         {/* Area messaggi */}
-                        <div className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto space-y-3">
-                          {selectedAgentConversation.isLoading ? (
-                            <p className="text-[#e8fbff]/50 text-center text-sm">Caricamento...</p>
-                          ) : selectedAgentConversation.messages.length === 0 ? (
-                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio. Scrivi qualcosa per iniziare!</p>
-                          ) : (
-                            selectedAgentConversation.messages.map((msg) => (
-                              <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] rounded-lg p-3 ${
-                                  msg.sender === 'user' 
-                                    ? 'bg-[#8b5cf6] text-white' 
-                                    : 'bg-[#1a2332] text-[#e8fbff] border border-[#8b5cf6]/30'
-                                }`}>
-                                  <div className="text-xs opacity-70 mb-1">
-                                    {msg.sender === 'user' ? 'Tu' : msg.sender.toUpperCase()} • {formatOrchestratorTimestamp(msg.timestamp)}
-                                  </div>
-                                  <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
-                                </div>
-                              </div>
-                            ))
-                          )}
-                          {orchestrator.isLoading && (
-                            <div className="flex justify-start">
-                              <div className="bg-[#1a2332] border border-[#8b5cf6]/30 rounded-lg p-3">
-                                <div className="text-sm text-[#e8fbff]/70">🤔 {selectedAgent.toUpperCase()} sta pensando...</div>
-                              </div>
-                            </div>
-                          )}
+                        <div className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto">
+                          <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
                         </div>
                         {/* Input */}
                         <div className="flex gap-2">
                           <input
                             type="text"
-                            placeholder={`Messaggio per ${selectedAgent} (mode manual)...`}
-                            value={agentChatInput}
-                            onChange={(e) => setAgentChatInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleAgentChatSend()}
+                            placeholder={`Messaggio da ${selectedAgent}...`}
                             className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
-                            disabled={orchestrator.isLoading}
+                            disabled
                           />
-                          <Button 
-                            onClick={handleAgentChatSend}
-                            className="bg-[#10b981] hover:bg-[#059669]" 
-                            disabled={orchestrator.isLoading || !agentChatInput.trim()}
-                          >
+                          <Button className="bg-[#10b981] hover:bg-[#059669]" disabled>
                             <Send className="h-4 w-4" />
                           </Button>
                         </div>
-                        {orchestrator.error && (
-                          <p className="text-xs text-red-400 text-center">
-                            Errore: {orchestrator.error}
-                          </p>
-                        )}
                         <p className="text-xs text-[#e8fbff]/30 text-center">
-                          🎯 Mode MANUAL: Parli direttamente con {selectedAgent.toUpperCase()}
+                          Chat in fase di sviluppo
                         </p>
                       </div>
                     )}
@@ -3752,29 +3544,24 @@ export default function DashboardPA() {
                                 <Brain className="h-4 w-4 text-purple-400" />
                                 <span className="text-purple-400">MIO</span>
                               </div>
-                              <span className="text-xs text-[#e8fbff]/50">
-                                {allConversations.conversations.mio_dev.length} msg
-                              </span>
+                              <span className="text-xs text-[#e8fbff]/50">GPT-5 Coordinatore</span>
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto space-y-2">
-                              {allConversations.conversations.mio_dev.length === 0 ? (
-                                <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
-                              ) : (
-                                allConversations.conversations.mio_dev.map((msg) => (
-                                  <div key={msg.id} className={`text-xs p-2 rounded ${
-                                    msg.sender === 'user' ? 'bg-[#8b5cf6]/20 text-right' : 'bg-[#1a2332]'
-                                  }`}>
-                                    <div className="opacity-70 mb-1">{msg.sender === 'user' ? 'Tu' : 'MIO'}</div>
-                                    <div className="text-[#e8fbff]">{msg.content.substring(0, 100)}...</div>
-                                  </div>
-                                ))
-                              )}
+                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto">
+                              <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
                             </div>
-                            <p className="text-xs text-[#e8fbff]/30 text-center">
-                              Vista read-only
-                            </p>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Messaggio da MIO..."
+                                className="flex-1 bg-[#0b1220] border border-[#8b5cf6]/30 rounded px-3 py-1.5 text-sm text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
+                                disabled
+                              />
+                              <Button size="sm" className="bg-[#10b981] hover:bg-[#059669]" disabled>
+                                <Send className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
 
@@ -3786,29 +3573,24 @@ export default function DashboardPA() {
                                 <Wrench className="h-4 w-4 text-blue-400" />
                                 <span className="text-blue-400">Manus</span>
                               </div>
-                              <span className="text-xs text-[#e8fbff]/50">
-                                {allConversations.conversations.manus_worker.length} msg
-                              </span>
+                              <span className="text-xs text-[#e8fbff]/50">Operatore Esecutivo</span>
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto space-y-2">
-                              {allConversations.conversations.manus_worker.length === 0 ? (
-                                <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
-                              ) : (
-                                allConversations.conversations.manus_worker.map((msg) => (
-                                  <div key={msg.id} className={`text-xs p-2 rounded ${
-                                    msg.sender === 'user' ? 'bg-[#3b82f6]/20 text-right' : 'bg-[#1a2332]'
-                                  }`}>
-                                    <div className="opacity-70 mb-1">{msg.sender === 'user' ? 'Tu' : 'MANUS'}</div>
-                                    <div className="text-[#e8fbff]">{msg.content.substring(0, 100)}...</div>
-                                  </div>
-                                ))
-                              )}
+                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto">
+                              <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
                             </div>
-                            <p className="text-xs text-[#e8fbff]/30 text-center">
-                              Vista read-only
-                            </p>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Messaggio da Manus..."
+                                className="flex-1 bg-[#0b1220] border border-[#3b82f6]/30 rounded px-3 py-1.5 text-sm text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#3b82f6]"
+                                disabled
+                              />
+                              <Button size="sm" className="bg-[#10b981] hover:bg-[#059669]" disabled>
+                                <Send className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
 
@@ -3820,29 +3602,24 @@ export default function DashboardPA() {
                                 <Calculator className="h-4 w-4 text-green-400" />
                                 <span className="text-green-400">Abacus</span>
                               </div>
-                              <span className="text-xs text-[#e8fbff]/50">
-                                {allConversations.conversations.abacus.length} msg
-                              </span>
+                              <span className="text-xs text-[#e8fbff]/50">Analisi Dati</span>
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto space-y-2">
-                              {allConversations.conversations.abacus.length === 0 ? (
-                                <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
-                              ) : (
-                                allConversations.conversations.abacus.map((msg) => (
-                                  <div key={msg.id} className={`text-xs p-2 rounded ${
-                                    msg.sender === 'user' ? 'bg-[#10b981]/20 text-right' : 'bg-[#1a2332]'
-                                  }`}>
-                                    <div className="opacity-70 mb-1">{msg.sender === 'user' ? 'Tu' : 'ABACUS'}</div>
-                                    <div className="text-[#e8fbff]">{msg.content.substring(0, 100)}...</div>
-                                  </div>
-                                ))
-                              )}
+                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto">
+                              <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
                             </div>
-                            <p className="text-xs text-[#e8fbff]/30 text-center">
-                              Vista read-only
-                            </p>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Messaggio da Abacus..."
+                                className="flex-1 bg-[#0b1220] border border-[#10b981]/30 rounded px-3 py-1.5 text-sm text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#10b981]"
+                                disabled
+                              />
+                              <Button size="sm" className="bg-[#10b981] hover:bg-[#059669]" disabled>
+                                <Send className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
 
@@ -3854,34 +3631,29 @@ export default function DashboardPA() {
                                 <Zap className="h-4 w-4 text-orange-400" />
                                 <span className="text-orange-400">Zapier</span>
                               </div>
-                              <span className="text-xs text-[#e8fbff]/50">
-                                {allConversations.conversations.zapier.length} msg
-                              </span>
+                              <span className="text-xs text-[#e8fbff]/50">Automazioni</span>
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto space-y-2">
-                              {allConversations.conversations.zapier.length === 0 ? (
-                                <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
-                              ) : (
-                                allConversations.conversations.zapier.map((msg) => (
-                                  <div key={msg.id} className={`text-xs p-2 rounded ${
-                                    msg.sender === 'user' ? 'bg-[#f59e0b]/20 text-right' : 'bg-[#1a2332]'
-                                  }`}>
-                                    <div className="opacity-70 mb-1">{msg.sender === 'user' ? 'Tu' : 'ZAPIER'}</div>
-                                    <div className="text-[#e8fbff]">{msg.content.substring(0, 100)}...</div>
-                                  </div>
-                                ))
-                              )}
+                            <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto">
+                              <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio</p>
                             </div>
-                            <p className="text-xs text-[#e8fbff]/30 text-center">
-                              Vista read-only
-                            </p>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Messaggio da Zapier..."
+                                className="flex-1 bg-[#0b1220] border border-[#f59e0b]/30 rounded px-3 py-1.5 text-sm text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#f59e0b]"
+                                disabled
+                              />
+                              <Button size="sm" className="bg-[#10b981] hover:bg-[#059669]" disabled>
+                                <Send className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
 
                         <p className="col-span-2 text-xs text-[#e8fbff]/30 text-center mt-2">
-                          👁️ Vista 4 Quadranti: Monitora tutte le conversazioni in tempo reale (polling 5s)
+                          Vista 4 Quadranti - Chat in fase di sviluppo
                         </p>
                       </div>
                     )}
