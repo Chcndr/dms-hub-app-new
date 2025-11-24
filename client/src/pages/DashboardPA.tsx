@@ -3268,10 +3268,24 @@ export default function DashboardPA() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <SettingsIcon className="h-16 w-16 text-[#64748b] mx-auto mb-4" />
-                  <p className="text-[#e8fbff]/70 text-lg">Sezione Impostazioni in sviluppo</p>
-                  <p className="text-[#e8fbff]/50 text-sm mt-2">Configurazione dashboard, permessi utenti, preferenze visualizzazione</p>
+                <div className="space-y-4">
+                  <Card className="bg-[#0f1729] border-[#64748b]/20 hover:border-[#14b8a6]/50 transition-colors cursor-pointer" onClick={() => setLocation('/settings/api-tokens')}>
+                    <CardHeader>
+                      <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
+                        <Lock className="h-5 w-5 text-[#14b8a6]" />
+                        API & Agent Tokens
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-[#e8fbff]/70 text-sm">Gestione sicura delle API key per il sistema multi-agente</p>
+                      <p className="text-[#e8fbff]/50 text-xs mt-2">OpenAI, Gemini, GitHub, Vercel, TPER</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <div className="text-center py-8">
+                    <SettingsIcon className="h-12 w-12 text-[#64748b] mx-auto mb-3 opacity-50" />
+                    <p className="text-[#e8fbff]/50 text-sm">Altre impostazioni in sviluppo</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
