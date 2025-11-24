@@ -57,7 +57,7 @@ const baseUrl =
 export async function callOrchestrator(
   payload: OrchestratorRequest
 ): Promise<OrchestratorResponse> {
-  const url = `${baseUrl}/mihub/orchestrator`;
+  const url = `${baseUrl}/api/mihub/orchestrator`;
 
   console.log("[OrchestratorClient] Chiamata a:", url);
   console.log("[OrchestratorClient] Payload:", payload);
