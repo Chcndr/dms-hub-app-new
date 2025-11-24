@@ -8,37 +8,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
-import { trpc } from '../lib/trpc';
+import { callOrchestrator, type OrchestratorRequest, type OrchestratorResponse } from '../api/orchestratorClient';
 
 // ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
+// OrchestratorRequest e OrchestratorResponse sono importati da orchestratorClient
 
-interface OrchestratorRequest {
-  mode: 'auto' | 'manual';
-  targetAgent?: 'mio' | 'dev' | 'manus_worker' | 'gemini_arch';
-  conversationId: string | null;
-  message: string;
-  meta?: {
-    source: string;
-    agentBox?: string;
-  };
-}
-
-interface OrchestratorError {
-  type: 'llm_rate_limit' | 'llm_provider_error' | 'llm_config_error' | 'unknown_error';
-  provider?: 'openai' | 'gemini';
-  statusCode?: number;
-  message: string;
-}
-
-interface OrchestratorResponse {
-  success: boolean;
-  conversationId?: string;
-  agent?: string;
-  message?: string;
-  error?: OrchestratorError;
-}
+// Type alias per l'errore orchestratore
+type OrchestratorError = NonNullable<OrchestratorResponse['error']>;
 
 interface Message {
   id: string;
@@ -140,9 +118,6 @@ export default function MIOAgentChat() {
 
   const singleChatEndRef = useRef<HTMLDivElement>(null);
 
-  // tRPC mutation for orchestrator
-  const orchestratorMutation = trpc.mihub.orchestrator.useMutation();
-
   // Auto-scroll to bottom
   useEffect(() => {
     singleChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -169,7 +144,7 @@ export default function MIOAgentChat() {
     setSingleError(null);
 
     try {
-      const data = await orchestratorMutation.mutateAsync({
+      const data = await callOrchestrator({
         mode: 'auto',
         conversationId: singleConversationId,
         message: singleInput,
@@ -255,7 +230,7 @@ export default function MIOAgentChat() {
     setQuadErrors((prev) => ({ ...prev, [agentId]: null }));
 
     try {
-      const data = await orchestratorMutation.mutateAsync({
+      const data = await callOrchestrator({
         mode: 'manual',
         targetAgent: agentId,
         conversationId: quadConversationIds[agentId],
