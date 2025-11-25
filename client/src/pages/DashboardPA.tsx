@@ -20,6 +20,7 @@ import MobilityMap from '@/components/MobilityMap';
 import GestioneMercati from '@/components/GestioneMercati';
 import Integrazioni from '@/components/Integrazioni';
 import { GISMap } from '@/components/GISMap';
+import { MarketMapComponent } from '@/components/MarketMapComponent';
 import MIOAgent from '@/components/MIOAgent';
 import { callOrchestrator } from '@/api/orchestratorClient';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -447,6 +448,13 @@ export default function DashboardPA() {
   const [mioError, setMioError] = useState<string | null>(null);
   const [mioConversationId, setMioConversationId] = useState<string | null>(null);
   
+  // GIS Map state (blocco ufficiale da GestioneMercati)
+  const [gisStalls, setGisStalls] = useState<any[]>([]);
+  const [gisMapData, setGisMapData] = useState<any | null>(null);
+  const [gisMapCenter, setGisMapCenter] = useState<[number, number] | null>(null);
+  const [gisMapRefreshKey, setGisMapRefreshKey] = useState(0);
+  const gisMarketId = 1; // Mercato Grosseto ID=1 (default)
+  
   // Format timestamp for Guardian logs
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -511,6 +519,37 @@ export default function DashboardPA() {
       setMioLoading(false);
     }
   };
+  
+  // Fetch GIS Map Data (blocco ufficiale da GestioneMercati)
+  useEffect(() => {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+    
+    const fetchGisData = async () => {
+      try {
+        const [stallsRes, mapRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/markets/${gisMarketId}/stalls`),
+          fetch(`${API_BASE_URL}/api/gis/market-map`)
+        ]);
+
+        const stallsData = await stallsRes.json();
+        const mapDataRes = await mapRes.json();
+
+        if (stallsData.success) {
+          setGisStalls(stallsData.data);
+        }
+        if (mapDataRes.success) {
+          setGisMapData(mapDataRes.data);
+          if (mapDataRes.data?.center) {
+            setGisMapCenter([mapDataRes.data.center.lat, mapDataRes.data.center.lng]);
+          }
+        }
+      } catch (error) {
+        console.error('[GIS Map] Error fetching data:', error);
+      }
+    };
+    
+    fetchGisData();
+  }, [gisMarketId]);
   
   // Fetch Guardian logs
   useEffect(() => {
@@ -1037,12 +1076,33 @@ export default function DashboardPA() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Mappa mock rimossa temporaneamente. Da sostituire con dati reali GIS. */}
-                <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
-                  <p className="text-center">
-                    La mappa panoramica sarà disponibile quando il modulo GIS sarà collegato a tutti i mercati.
-                  </p>
-                </div>
+                {gisMapData && gisStalls.length > 0 ? (
+                  <div className="h-[500px] rounded-lg overflow-hidden">
+                    {(() => {
+                      const stallsDataForMap = gisStalls.map(s => ({
+                        id: s.id,
+                        number: s.number,
+                        status: s.status,
+                        type: s.type,
+                        vendor_name: s.vendor_business_name || undefined
+                      }));
+                      return (
+                        <MarketMapComponent
+                          refreshKey={gisMapRefreshKey}
+                          mapData={gisMapData}
+                          center={gisMapCenter}
+                          zoom={18}
+                          height="100%"
+                          stallsData={stallsDataForMap}
+                        />
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
+                    <p>Caricamento mappa...</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1133,27 +1193,42 @@ export default function DashboardPA() {
 
           {/* TAB 3: MERCATI */}
           <TabsContent value="markets" className="space-y-6">
-            {/* Mappa Italia Mercati */}
+            {/* Mappa Mercato Grosseto (GIS UFFICIALE) */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#14b8a6]" />
-                  Mappa Italia - Tutti i Mercati
+                  Mappa Mercato Grosseto
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <GISMap
-                  center={[42.5, 12.5]}
-                  zoom={6}
-                  height="calc(100vh - 400px)"
-                  markers={mockData.topMarkets.map((m, i) => ({
-                    id: i,
-                    position: [42.5 + (Math.random() - 0.5) * 10, 12.5 + (Math.random() - 0.5) * 10],
-                    type: 'market' as const,
-                    title: m.name,
-                    description: `Visite: ${m.visits.toLocaleString()} | Utenti: ${m.users.toLocaleString()}`,
-                  }))}
-                />
+                {gisMapData && gisStalls.length > 0 ? (
+                  <div className="h-[500px] rounded-lg overflow-hidden">
+                    {(() => {
+                      const stallsDataForMap = gisStalls.map(s => ({
+                        id: s.id,
+                        number: s.number,
+                        status: s.status,
+                        type: s.type,
+                        vendor_name: s.vendor_business_name || undefined
+                      }));
+                      return (
+                        <MarketMapComponent
+                          refreshKey={gisMapRefreshKey}
+                          mapData={gisMapData}
+                          center={gisMapCenter}
+                          zoom={18}
+                          height="100%"
+                          stallsData={stallsDataForMap}
+                        />
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
+                    <p>Caricamento mappa...</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -2643,27 +2718,42 @@ export default function DashboardPA() {
               </CardContent>
             </Card>
 
-            {/* Mappa Segnalazioni Cluster */}
+            {/* Mappa Mercato Grosseto (GIS UFFICIALE) */}
             <Card className="bg-[#1a2332] border-[#06b6d4]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#06b6d4]" />
-                  Mappa Segnalazioni Civiche
+                  Mappa Mercato Grosseto
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <GISMap
-                  center={[44.4949, 11.3426]}
-                  zoom={12}
-                  height="calc(100vh - 400px)"
-                  markers={mockData.civicReports.recent.map((report) => ({
-                    id: report.id,
-                    position: [44.4949 + (Math.random() - 0.5) * 0.1, 11.3426 + (Math.random() - 0.5) * 0.1],
-                    type: 'civic' as const,
-                    title: report.type,
-                    description: `${report.description} | ${report.location} | ${report.status}`,
-                  }))}
-                />
+                {gisMapData && gisStalls.length > 0 ? (
+                  <div className="h-[500px] rounded-lg overflow-hidden">
+                    {(() => {
+                      const stallsDataForMap = gisStalls.map(s => ({
+                        id: s.id,
+                        number: s.number,
+                        status: s.status,
+                        type: s.type,
+                        vendor_name: s.vendor_business_name || undefined
+                      }));
+                      return (
+                        <MarketMapComponent
+                          refreshKey={gisMapRefreshKey}
+                          mapData={gisMapData}
+                          center={gisMapCenter}
+                          zoom={18}
+                          height="100%"
+                          stallsData={stallsDataForMap}
+                        />
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
+                    <p>Caricamento mappa...</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -2817,27 +2907,42 @@ export default function DashboardPA() {
               </CardContent>
             </Card>
 
-            {/* Mappa Controlli Polizia */}
+            {/* Mappa Mercato Grosseto (GIS UFFICIALE) */}
             <Card className="bg-[#1a2332] border-[#f59e0b]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[#f59e0b]" />
-                  Mappa Posizioni Controlli
+                  Mappa Mercato Grosseto
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <GISMap
-                  center={[43.7696, 11.2558]}
-                  zoom={12}
-                  height="calc(100vh - 400px)"
-                  markers={mockData.inspections.upcoming.map((insp, i) => ({
-                    id: insp.id,
-                    position: [43.7696 + (Math.random() - 0.5) * 0.1, 11.2558 + (Math.random() - 0.5) * 0.1],
-                    type: 'civic' as const,
-                    title: insp.business,
-                    description: `${insp.type} | Ispettore: ${insp.inspector} | Data: ${insp.date}`,
-                  }))}
-                />
+                {gisMapData && gisStalls.length > 0 ? (
+                  <div className="h-[500px] rounded-lg overflow-hidden">
+                    {(() => {
+                      const stallsDataForMap = gisStalls.map(s => ({
+                        id: s.id,
+                        number: s.number,
+                        status: s.status,
+                        type: s.type,
+                        vendor_name: s.vendor_business_name || undefined
+                      }));
+                      return (
+                        <MarketMapComponent
+                          refreshKey={gisMapRefreshKey}
+                          mapData={gisMapData}
+                          center={gisMapCenter}
+                          zoom={18}
+                          height="100%"
+                          stallsData={stallsDataForMap}
+                        />
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
+                    <p>Caricamento mappa...</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
