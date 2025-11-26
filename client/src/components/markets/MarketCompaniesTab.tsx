@@ -147,7 +147,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/markets/${marketId}/companies`);
+      const response = await fetch(`${API_BASE_URL}/api/markets/${marketId}/companies`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
       
@@ -167,7 +167,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
 
   const fetchConcessions = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/markets/${marketId}/concessions`);
+      const response = await fetch(`${API_BASE_URL}/api/markets/${marketId}/concessions`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
       
