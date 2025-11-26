@@ -343,7 +343,7 @@ function MarketDetail({ market }: { market: Market }) {
           </TabsContent>
 
           <TabsContent value="posteggi" className="space-y-4">
-            <PosteggiTab marketId={market.id} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} />
+            <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} />
           </TabsContent>
 
           <TabsContent value="concessioni" className="space-y-4">
@@ -413,9 +413,10 @@ function AnagraficaTab({ market }: { market: Market }) {
 /**
  * Tab Posteggi con tabella modificabile E MAPPA GIS
  */
-function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCenter: [number, number] }) {
+function PosteggiTab({ marketId, marketCode, marketCenter }: { marketId: number; marketCode: string; marketCenter: [number, number] }) {
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [mapData, setMapData] = useState<MarketMapData | null>(null);
+  const [concessionsByStallId, setConcessionsByStallId] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<Stall>>({});
@@ -431,18 +432,21 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
 
   const fetchData = async () => {
     try {
-      const [stallsRes, mapRes] = await Promise.all([
+      const [stallsRes, mapRes, concessionsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`),
-        fetch(`${API_BASE_URL}/api/gis/market-map`)
+        fetch(`${API_BASE_URL}/api/gis/market-map`),
+        fetch(`${API_BASE_URL}/api/markets/${marketCode}/stalls/concessions`)
       ]);
 
       const stallsData = await stallsRes.json();
       const mapDataRes = await mapRes.json();
+      const concessionsData = await concessionsRes.json();
 
       console.log('[DEBUG fetchData] Dati ricevuti:', {
         stallsCount: stallsData.data?.length,
         firstStall: stallsData.data?.[0],
-        mapDataExists: !!mapDataRes.data
+        mapDataExists: !!mapDataRes.data,
+        concessionsCount: concessionsData.data?.length
       });
 
       if (stallsData.success) {
@@ -452,6 +456,20 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
       if (mapDataRes.success) {
         setMapData(mapDataRes.data);
         console.log('[DEBUG fetchData] mapData aggiornato');
+      }
+      if (concessionsData.success && Array.isArray(concessionsData.data)) {
+        const map: Record<string, any> = {};
+        for (const row of concessionsData.data) {
+          map[row.stallId] = {
+            companyName: row.companyName,
+            tipoConcessione: row.tipoConcessione,
+            stato: row.stato,
+            validaDal: row.validaDal,
+            validaAl: row.validaAl
+          };
+        }
+        setConcessionsByStallId(map);
+        console.log('[DEBUG fetchData] concessioni caricate:', Object.keys(map).length);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -677,6 +695,7 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
                     <TableHead className="text-[#e8fbff]/70">Tipo</TableHead>
                     <TableHead className="text-[#e8fbff]/70">Stato</TableHead>
                     <TableHead className="text-[#e8fbff]/70">Intestatario</TableHead>
+                    <TableHead className="text-[#e8fbff]/70">Impresa / Concessione</TableHead>
                     <TableHead className="text-right text-[#e8fbff]/70">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -738,6 +757,16 @@ function PosteggiTab({ marketId, marketCenter }: { marketId: number; marketCente
                         {stall.vendor_business_name ? (
                           <div>
                             <p className="font-medium text-[#e8fbff] text-xs">{stall.vendor_business_name}</p>
+                          </div>
+                        ) : (
+                          <span className="text-[#e8fbff]/50 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {concessionsByStallId[stall.number] ? (
+                          <div>
+                            <p className="font-medium text-[#e8fbff] text-xs">{concessionsByStallId[stall.number].companyName}</p>
+                            <p className="text-[#e8fbff]/60 text-xs">{concessionsByStallId[stall.number].tipoConcessione}</p>
                           </div>
                         ) : (
                           <span className="text-[#e8fbff]/50 text-xs">-</span>
