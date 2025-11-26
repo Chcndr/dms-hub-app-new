@@ -138,17 +138,43 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   };
 
   const fetchCompanies = async () => {
-    const response = await fetch(`${API_BASE_URL}/markets/${marketId}/companies`);
-    if (!response.ok) throw new Error('Impossibile caricare le imprese');
-    const data = await response.json();
-    setCompanies(data.data || []);
+    try {
+      const response = await fetch(`${API_BASE_URL}/markets/${marketId}/companies`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const json = await response.json();
+      
+      if (!json.success || !Array.isArray(json.data)) {
+        console.error('[MarketCompaniesTab] fetchCompanies: formato risposta non valido', json);
+        throw new Error('Formato risposta non valido');
+      }
+      
+      console.log('[MarketCompaniesTab] fetchCompanies: caricati', json.data.length, 'imprese');
+      setCompanies(json.data);
+    } catch (err) {
+      console.error('[MarketCompaniesTab] fetchCompanies error:', err);
+      setError('Impossibile caricare le imprese');
+      setCompanies([]);
+    }
   };
 
   const fetchConcessions = async () => {
-    const response = await fetch(`${API_BASE_URL}/markets/${marketId}/concessions`);
-    if (!response.ok) throw new Error('Impossibile caricare le concessioni');
-    const data = await response.json();
-    setConcessions(data.data || []);
+    try {
+      const response = await fetch(`${API_BASE_URL}/markets/${marketId}/concessions`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const json = await response.json();
+      
+      if (!json.success || !Array.isArray(json.data)) {
+        console.error('[MarketCompaniesTab] fetchConcessions: formato risposta non valido', json);
+        throw new Error('Formato risposta non valido');
+      }
+      
+      console.log('[MarketCompaniesTab] fetchConcessions: caricate', json.data.length, 'concessioni');
+      setConcessions(json.data);
+    } catch (err) {
+      console.error('[MarketCompaniesTab] fetchConcessions error:', err);
+      setError('Impossibile caricare le concessioni');
+      setConcessions([]);
+    }
   };
 
   // Handlers
