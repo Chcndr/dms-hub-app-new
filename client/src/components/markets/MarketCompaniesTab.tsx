@@ -76,7 +76,9 @@ type ConcessionFormData = {
 // CONSTANTS
 // ============================================================================
 
-const API_BASE_URL = 'https://mihub.157-90-29-66.nip.io/api';
+import { MIHUB_API_BASE_URL } from '@/config/api';
+
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 const TIPO_CONCESSIONE_OPTIONS = [
   { value: 'fisso', label: 'Fisso' },

@@ -1,7 +1,9 @@
 // Logs & Guardian API Client
 // Collegamento al backend mihub-backend-rest
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+import { MIHUB_API_BASE_URL } from '@/config/api';
+
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 // ============================================================================
 // TYPES

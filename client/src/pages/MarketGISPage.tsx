@@ -66,7 +66,7 @@ export default function MarketGISPage() {
     
     try {
       // Chiamata all'endpoint backend
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+      const apiUrl = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io/api';
       const response = await fetch(`${apiUrl}/api/gis/market-map`);
       
       if (!response.ok) {

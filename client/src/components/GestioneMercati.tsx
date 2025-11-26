@@ -25,7 +25,9 @@ import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+import { MIHUB_API_BASE_URL } from '@/config/api';
+
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 // Fix per icone marker Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';

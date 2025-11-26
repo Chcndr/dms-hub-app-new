@@ -5,6 +5,7 @@ import { Store, Filter, Search, X } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { MarketMapComponent } from '@/components/MarketMapComponent';
 import 'leaflet/dist/leaflet.css';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // Fix per icone marker Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -19,7 +20,7 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const API_BASE_URL = 'https://orchestratore.mio-hub.me';
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 export default function MapPage() {
   const [mapData, setMapData] = useState<any>(null);
