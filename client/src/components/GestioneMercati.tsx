@@ -689,7 +689,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter }: { marketId: number;
         {/* Tabella Posteggi */}
         {!isMapExpanded && (
           <div className="border border-[#14b8a6]/20 rounded-lg overflow-hidden">
-            <div className="max-h-[540px] overflow-y-auto touch-pan-y">
+            <div className="max-h-[60vh] overflow-x-auto overflow-y-auto overscroll-y-contain touch-pan-y">
               <Table>
                 <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
                   <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
