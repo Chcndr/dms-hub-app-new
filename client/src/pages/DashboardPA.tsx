@@ -451,6 +451,27 @@ export default function DashboardPA() {
   const [mioError, setMioError] = useState<string | null>(null);
   const [mioConversationId, setMioConversationId] = useState<string | null>(null);
   
+  // Manus Agent Chat state
+  const [manusMessages, setManusMessages] = useState<Array<{ role: 'user' | 'assistant' | 'system'; text: string; agent?: string }>>([]);
+  const [manusInputValue, setManusInputValue] = useState('');
+  const [manusLoading, setManusLoading] = useState(false);
+  const [manusError, setManusError] = useState<string | null>(null);
+  const [manusConversationId, setManusConversationId] = useState<string | null>(null);
+  
+  // Abacus Agent Chat state
+  const [abacusMessages, setAbacusMessages] = useState<Array<{ role: 'user' | 'assistant' | 'system'; text: string; agent?: string }>>([]);
+  const [abacusInputValue, setAbacusInputValue] = useState('');
+  const [abacusLoading, setAbacusLoading] = useState(false);
+  const [abacusError, setAbacusError] = useState<string | null>(null);
+  const [abacusConversationId, setAbacusConversationId] = useState<string | null>(null);
+  
+  // Zapier Agent Chat state
+  const [zapierMessages, setZapierMessages] = useState<Array<{ role: 'user' | 'assistant' | 'system'; text: string; agent?: string }>>([]);
+  const [zapierInputValue, setZapierInputValue] = useState('');
+  const [zapierLoading, setZapierLoading] = useState(false);
+  const [zapierError, setZapierError] = useState<string | null>(null);
+  const [zapierConversationId, setZapierConversationId] = useState<string | null>(null);
+  
   // GIS Map state (blocco ufficiale da GestioneMercati)
   const [gisStalls, setGisStalls] = useState<any[]>([]);
   const [gisMapData, setGisMapData] = useState<any | null>(null);
@@ -520,6 +541,157 @@ export default function DashboardPA() {
       setMioError(errorMsg);
     } finally {
       setMioLoading(false);
+    }
+  };
+  
+  // Handler per invio messaggio Manus
+  const handleSendManus = async () => {
+    if (!manusInputValue.trim() || manusLoading) return;
+    
+    const text = manusInputValue.trim();
+    
+    setManusMessages(prev => [...prev, { role: 'user', text }]);
+    setManusInputValue('');
+    setManusLoading(true);
+    setManusError(null);
+    
+    try {
+      const response = await callOrchestrator({
+        mode: 'manual',
+        targetAgent: 'manus_worker',
+        conversationId: manusConversationId,
+        message: text,
+        meta: { source: 'dashboard_manus' },
+      });
+      
+      if (response.conversationId) {
+        setManusConversationId(response.conversationId);
+      }
+      
+      if (response.success && response.message) {
+        setManusMessages(prev => [
+          ...prev,
+          { role: 'assistant', agent: response.agent, text: response.message! },
+        ]);
+      } else if (response.error) {
+        const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
+        setManusMessages(prev => [
+          ...prev,
+          { role: 'system', text: `[Errore] ${errorMsg}` },
+        ]);
+        setManusError(errorMsg);
+      }
+    } catch (error) {
+      console.error('[Manus Agent] Error:', error);
+      const errorMsg = 'Errore di connessione al server';
+      setManusMessages(prev => [
+        ...prev,
+        { role: 'system', text: `[Errore] ${errorMsg}` },
+      ]);
+      setManusError(errorMsg);
+    } finally {
+      setManusLoading(false);
+    }
+  };
+  
+  // Handler per invio messaggio Abacus
+  const handleSendAbacus = async () => {
+    if (!abacusInputValue.trim() || abacusLoading) return;
+    
+    const text = abacusInputValue.trim();
+    
+    setAbacusMessages(prev => [...prev, { role: 'user', text }]);
+    setAbacusInputValue('');
+    setAbacusLoading(true);
+    setAbacusError(null);
+    
+    try {
+      // Per ora Abacus usa mode 'auto' perché non è ancora nell'orchestratore
+      // TODO: Aggiungere 'abacus' come targetAgent quando sarà implementato
+      const response = await callOrchestrator({
+        mode: 'auto',
+        conversationId: abacusConversationId,
+        message: text,
+        meta: { source: 'dashboard_abacus', agent: 'abacus' },
+      });
+      
+      if (response.conversationId) {
+        setAbacusConversationId(response.conversationId);
+      }
+      
+      if (response.success && response.message) {
+        setAbacusMessages(prev => [
+          ...prev,
+          { role: 'assistant', agent: response.agent, text: response.message! },
+        ]);
+      } else if (response.error) {
+        const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
+        setAbacusMessages(prev => [
+          ...prev,
+          { role: 'system', text: `[Errore] ${errorMsg}` },
+        ]);
+        setAbacusError(errorMsg);
+      }
+    } catch (error) {
+      console.error('[Abacus Agent] Error:', error);
+      const errorMsg = 'Errore di connessione al server';
+      setAbacusMessages(prev => [
+        ...prev,
+        { role: 'system', text: `[Errore] ${errorMsg}` },
+      ]);
+      setAbacusError(errorMsg);
+    } finally {
+      setAbacusLoading(false);
+    }
+  };
+  
+  // Handler per invio messaggio Zapier
+  const handleSendZapier = async () => {
+    if (!zapierInputValue.trim() || zapierLoading) return;
+    
+    const text = zapierInputValue.trim();
+    
+    setZapierMessages(prev => [...prev, { role: 'user', text }]);
+    setZapierInputValue('');
+    setZapierLoading(true);
+    setZapierError(null);
+    
+    try {
+      // Zapier usa mode 'auto' per ora
+      const response = await callOrchestrator({
+        mode: 'auto',
+        conversationId: zapierConversationId,
+        message: text,
+        meta: { source: 'dashboard_zapier', agent: 'zapier' },
+      });
+      
+      if (response.conversationId) {
+        setZapierConversationId(response.conversationId);
+      }
+      
+      if (response.success && response.message) {
+        setZapierMessages(prev => [
+          ...prev,
+          { role: 'assistant', agent: response.agent, text: response.message! },
+        ]);
+      } else if (response.error) {
+        const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
+        setZapierMessages(prev => [
+          ...prev,
+          { role: 'system', text: `[Errore] ${errorMsg}` },
+        ]);
+        setZapierError(errorMsg);
+      }
+    } catch (error) {
+      console.error('[Zapier Agent] Error:', error);
+      const errorMsg = 'Errore di connessione al server';
+      setZapierMessages(prev => [
+        ...prev,
+        { role: 'system', text: `[Errore] ${errorMsg}` },
+      ]);
+      setZapierError(errorMsg);
+    } finally {
+      setZapierLoading(false);
     }
   };
   
@@ -3561,27 +3733,233 @@ export default function DashboardPA() {
                               {selectedAgent === 'zapier' && 'Automazioni'}
                             </span>
                           </div>
-                          <span className="text-xs text-[#e8fbff]/50">0 messaggi</span>
+                          <span className="text-xs text-[#e8fbff]/50">
+                            {selectedAgent === 'mio' && `${mioMessages.length} messaggi`}
+                            {selectedAgent === 'manus' && `${manusMessages.length} messaggi`}
+                            {selectedAgent === 'abacus' && `${abacusMessages.length} messaggi`}
+                            {selectedAgent === 'zapier' && `${zapierMessages.length} messaggi`}
+                          </span>
                         </div>
                         {/* Area messaggi */}
                         <div className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto">
-                          <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
+                          {selectedAgent === 'mio' && mioMessages.length === 0 && (
+                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
+                          )}
+                          {selectedAgent === 'manus' && manusMessages.length === 0 && (
+                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
+                          )}
+                          {selectedAgent === 'abacus' && abacusMessages.length === 0 && (
+                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
+                          )}
+                          {selectedAgent === 'zapier' && zapierMessages.length === 0 && (
+                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
+                          )}
+                          
+                          {/* Messaggi MIO */}
+                          {selectedAgent === 'mio' && mioMessages.map((msg, idx) => (
+                            <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
+                              <div className={`p-3 rounded-lg ${
+                                msg.role === 'user' 
+                                  ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 ml-auto' 
+                                  : msg.role === 'system'
+                                  ? 'bg-red-500/10 border border-red-500/30'
+                                  : 'bg-[#10b981]/10 border border-[#10b981]/20'
+                              }`}>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                {msg.agent && (
+                                  <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Messaggi Manus */}
+                          {selectedAgent === 'manus' && manusMessages.map((msg, idx) => (
+                            <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
+                              <div className={`p-3 rounded-lg ${
+                                msg.role === 'user' 
+                                  ? 'bg-[#3b82f6]/20 border border-[#3b82f6]/30 ml-auto' 
+                                  : msg.role === 'system'
+                                  ? 'bg-red-500/10 border border-red-500/30'
+                                  : 'bg-[#10b981]/10 border border-[#10b981]/20'
+                              }`}>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                {msg.agent && (
+                                  <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Messaggi Abacus */}
+                          {selectedAgent === 'abacus' && abacusMessages.map((msg, idx) => (
+                            <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
+                              <div className={`p-3 rounded-lg ${
+                                msg.role === 'user' 
+                                  ? 'bg-[#10b981]/20 border border-[#10b981]/30 ml-auto' 
+                                  : msg.role === 'system'
+                                  ? 'bg-red-500/10 border border-red-500/30'
+                                  : 'bg-[#10b981]/10 border border-[#10b981]/20'
+                              }`}>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                {msg.agent && (
+                                  <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Messaggi Zapier */}
+                          {selectedAgent === 'zapier' && zapierMessages.map((msg, idx) => (
+                            <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
+                              <div className={`p-3 rounded-lg ${
+                                msg.role === 'user' 
+                                  ? 'bg-[#f59e0b]/20 border border-[#f59e0b]/30 ml-auto' 
+                                  : msg.role === 'system'
+                                  ? 'bg-red-500/10 border border-red-500/30'
+                                  : 'bg-[#10b981]/10 border border-[#10b981]/20'
+                              }`}>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                {msg.agent && (
+                                  <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Loading indicator */}
+                          {selectedAgent === 'mio' && mioLoading && (
+                            <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                              <div className="flex items-center gap-2">
+                                <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                                <p className="text-[#e8fbff]/70 text-sm">MIO sta pensando...</p>
+                              </div>
+                            </div>
+                          )}
+                          {selectedAgent === 'manus' && manusLoading && (
+                            <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                              <div className="flex items-center gap-2">
+                                <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                                <p className="text-[#e8fbff]/70 text-sm">Manus sta lavorando...</p>
+                              </div>
+                            </div>
+                          )}
+                          {selectedAgent === 'abacus' && abacusLoading && (
+                            <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                              <div className="flex items-center gap-2">
+                                <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                                <p className="text-[#e8fbff]/70 text-sm">Abacus sta analizzando...</p>
+                              </div>
+                            </div>
+                          )}
+                          {selectedAgent === 'zapier' && zapierLoading && (
+                            <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                              <div className="flex items-center gap-2">
+                                <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                                <p className="text-[#e8fbff]/70 text-sm">Zapier sta elaborando...</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         {/* Input */}
                         <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder={`Messaggio da ${selectedAgent}...`}
-                            className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
-                            disabled
-                          />
-                          <Button className="bg-[#10b981] hover:bg-[#059669]" disabled>
-                            <Send className="h-4 w-4" />
-                          </Button>
+                          {selectedAgent === 'mio' && (
+                            <>
+                              <input
+                                type="text"
+                                value={mioInputValue}
+                                onChange={(e) => setMioInputValue(e.target.value)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && !mioLoading) {
+                                    handleSendMio();
+                                  }
+                                }}
+                                placeholder="Messaggio a MIO..."
+                                className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
+                                disabled={mioLoading}
+                              />
+                              <Button 
+                                onClick={handleSendMio}
+                                className="bg-[#10b981] hover:bg-[#059669]" 
+                                disabled={mioLoading || !mioInputValue.trim()}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          {selectedAgent === 'manus' && (
+                            <>
+                              <input
+                                type="text"
+                                value={manusInputValue}
+                                onChange={(e) => setManusInputValue(e.target.value)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && !manusLoading) {
+                                    handleSendManus();
+                                  }
+                                }}
+                                placeholder="Messaggio a Manus..."
+                                className="flex-1 bg-[#0a0f1a] border border-[#3b82f6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#3b82f6]"
+                                disabled={manusLoading}
+                              />
+                              <Button 
+                                onClick={handleSendManus}
+                                className="bg-[#10b981] hover:bg-[#059669]" 
+                                disabled={manusLoading || !manusInputValue.trim()}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          {selectedAgent === 'abacus' && (
+                            <>
+                              <input
+                                type="text"
+                                value={abacusInputValue}
+                                onChange={(e) => setAbacusInputValue(e.target.value)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && !abacusLoading) {
+                                    handleSendAbacus();
+                                  }
+                                }}
+                                placeholder="Messaggio a Abacus..."
+                                className="flex-1 bg-[#0a0f1a] border border-[#10b981]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#10b981]"
+                                disabled={abacusLoading}
+                              />
+                              <Button 
+                                onClick={handleSendAbacus}
+                                className="bg-[#10b981] hover:bg-[#059669]" 
+                                disabled={abacusLoading || !abacusInputValue.trim()}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          {selectedAgent === 'zapier' && (
+                            <>
+                              <input
+                                type="text"
+                                value={zapierInputValue}
+                                onChange={(e) => setZapierInputValue(e.target.value)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && !zapierLoading) {
+                                    handleSendZapier();
+                                  }
+                                }}
+                                placeholder="Messaggio a Zapier..."
+                                className="flex-1 bg-[#0a0f1a] border border-[#f59e0b]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#f59e0b]"
+                                disabled={zapierLoading}
+                              />
+                              <Button 
+                                onClick={handleSendZapier}
+                                className="bg-[#10b981] hover:bg-[#059669]" 
+                                disabled={zapierLoading || !zapierInputValue.trim()}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
-                        <p className="text-xs text-[#e8fbff]/30 text-center">
-                          Chat in fase di sviluppo
-                        </p>
                       </div>
                     )}
 
