@@ -895,29 +895,12 @@ export default function DashboardPA() {
   useEffect(() => {
     const fetchGuardianLogs = async () => {
       try {
-        const response = await fetch('http://157.90.29.66:3000/api/abacus/sql/query', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sql: `SELECT 
-              timestamp, 
-              agent, 
-              endpoint as path, 
-              method, 
-              CASE WHEN success THEN 'allowed' ELSE 'denied' END as status,
-              risk as risk_level,
-              message as reason
-            FROM mio_agent_logs 
-            WHERE agent IN ('mio', 'manus', 'abacus', 'zapier')
-            ORDER BY timestamp DESC 
-            LIMIT 50`
-          })
-        });
-        const result = await response.json();
-        if (result.success && result.data?.rows) {
-          setGuardianLogs(result.data.rows);
+        const response = await fetch('/api/guardian/logs');
+        const logs = await response.json();
+        if (Array.isArray(logs)) {
+          setGuardianLogs(logs);
         } else {
-          console.error('Failed to fetch Guardian logs:', result.error);
+          console.error('Failed to fetch Guardian logs:', logs);
           setGuardianLogs([]);
         }
       } catch (error) {
