@@ -523,13 +523,16 @@ export default function DashboardPA() {
           { role: 'assistant', agent: response.agent, text: response.message! },
         ]);
       } else if (response.error) {
-        // Mostra errore leggibile
+        // Mostra errore leggibile con provider
+        const provider = response.error.provider ? ` (${response.error.provider.toUpperCase()})` : '';
+        const errorType = response.error.type || 'unknown';
         const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
+        const fullErrorMsg = `[Errore LLM${provider}] ${errorMsg}`;
         setMioMessages(prev => [
           ...prev,
-          { role: 'system', text: `[Errore] ${errorMsg}` },
+          { role: 'system', text: fullErrorMsg },
         ]);
-        setMioError(errorMsg);
+        setMioError(fullErrorMsg);
       }
     } catch (error) {
       console.error('[MIO Agent] Error:', error);
