@@ -695,6 +695,59 @@ export default function DashboardPA() {
     }
   };
   
+  // Carica storico chat dal backend quando cambia agente selezionato
+  useEffect(() => {
+    const loadConversationHistory = async () => {
+      const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
+      
+      // Determina quale conversationId e setter usare
+      let conversationId: string | null = null;
+      let setMessages: any = null;
+      
+      switch (selectedAgent) {
+        case 'mio':
+          conversationId = mioConversationId;
+          setMessages = setMioMessages;
+          break;
+        case 'manus':
+          conversationId = manusConversationId;
+          setMessages = setManusMessages;
+          break;
+        case 'abacus':
+          conversationId = abacusConversationId;
+          setMessages = setAbacusMessages;
+          break;
+        case 'zapier':
+          conversationId = zapierConversationId;
+          setMessages = setZapierMessages;
+          break;
+      }
+      
+      // Se non c'è conversationId, non c'è niente da caricare
+      if (!conversationId || !setMessages) return;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/mihub/orchestrator/conversations/${conversationId}`);
+        const data = await response.json();
+        
+        if (data.success && data.data?.messages) {
+          // Mappa i messaggi dal backend al formato frontend
+          const messages = data.data.messages.map((msg: any) => ({
+            role: msg.role,
+            text: msg.message,
+            agent: msg.agent,
+          }));
+          
+          setMessages(messages);
+        }
+      } catch (error) {
+        console.error(`[${selectedAgent}] Error loading conversation history:`, error);
+      }
+    };
+    
+    loadConversationHistory();
+  }, [selectedAgent, mioConversationId, manusConversationId, abacusConversationId, zapierConversationId]);
+  
   // Fetch GIS Map Data (blocco ufficiale da GestioneMercati)
   useEffect(() => {
     const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
