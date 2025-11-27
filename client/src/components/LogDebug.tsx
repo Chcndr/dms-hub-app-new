@@ -569,7 +569,7 @@ function IntegrationLogsTab() {
 function SystemStatusTab() {
   const [status, setStatus] = useState<SystemStatus>({
     backend: {
-      url: 'https://orchestratore.mio-hub.me',
+      url: 'https://mihub.157-90-29-66.nip.io',
       status: 'up',
       uptime: 99.8,
       lastCheck: new Date()

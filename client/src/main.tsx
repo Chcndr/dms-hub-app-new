@@ -41,7 +41,7 @@ queryClient.getMutationCache().subscribe(event => {
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: import.meta.env.VITE_TRPC_URL || "https://orchestratore.mio-hub.me",
+      url: import.meta.env.VITE_TRPC_URL || "https://mihub.157-90-29-66.nip.io",
       transformer: superjson,
       fetch(input, init) {
         return globalThis.fetch(input, {

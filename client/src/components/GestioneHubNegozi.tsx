@@ -244,8 +244,8 @@ export default function GestioneHubNegozi() {
         const selectedMarketId = 1; // HUB Grosseto
         
         const [mapRes, stallsRes] = await Promise.all([
-          fetch('https://orchestratore.mio-hub.me/api/gis/market-map'),
-          fetch(`https://orchestratore.mio-hub.me/api/markets/${selectedMarketId}/stalls`)
+          fetch('https://mihub.157-90-29-66.nip.io/api/gis/market-map'),
+          fetch(`https://mihub.157-90-29-66.nip.io/api/markets/${selectedMarketId}/stalls`)
         ]);
 
         const mapJson = await mapRes.json();
