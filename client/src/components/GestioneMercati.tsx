@@ -349,7 +349,7 @@ function MarketDetail({ market }: { market: Market }) {
           </TabsContent>
 
           <TabsContent value="concessioni" className="space-y-4">
-            <MarketCompaniesTab marketId="GRO001" stalls={[]} />
+            <MarketCompaniesTab marketId={market.id.toString()} stalls={[]} />
           </TabsContent>
         </Tabs>
       </CardContent>
