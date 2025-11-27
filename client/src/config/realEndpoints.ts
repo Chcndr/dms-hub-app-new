@@ -391,6 +391,201 @@ export const mobilityEndpoints: EndpointConfig[] = [
 ];
 
 /**
+ * CATEGORIA: ABACUS SQL
+ * Query database Neon PostgreSQL per analisi dati
+ */
+export const abacusSqlEndpoints: EndpointConfig[] = [
+  {
+    id: 'abacus-sql-query',
+    method: 'POST',
+    path: '/api/abacus/sql/query',
+    name: 'Execute SQL Query',
+    description: 'Esegui query SQL read-only (SELECT) sul database Neon PostgreSQL',
+    category: 'Abacus SQL',
+    exampleBody: {
+      sql: 'SELECT id, name, code FROM markets WHERE id = $1',
+      params: [1]
+    },
+    exampleResponse: {
+      success: true,
+      data: {
+        rows: [
+          {
+            id: 1,
+            name: 'Mercato Grosseto',
+            code: 'GR001'
+          }
+        ],
+        rowCount: 1,
+        fields: [
+          { name: 'id', dataTypeID: 23 },
+          { name: 'name', dataTypeID: 1043 },
+          { name: 'code', dataTypeID: 1043 }
+        ]
+      }
+    },
+    notes: '⚠️ Solo query SELECT permesse per sicurezza. Parametrizzate con $1, $2, etc.'
+  },
+  {
+    id: 'abacus-sql-count',
+    method: 'POST',
+    path: '/api/abacus/sql/count',
+    name: 'Count Rows',
+    description: 'Conta righe in una tabella con condizione WHERE opzionale',
+    category: 'Abacus SQL',
+    exampleBody: {
+      table: 'stalls',
+      where: 'market_id = $1 AND is_active = $2',
+      params: [1, true]
+    },
+    exampleResponse: {
+      success: true,
+      data: {
+        count: 160,
+        table: 'stalls',
+        where: 'market_id = $1 AND is_active = $2'
+      }
+    },
+    notes: 'Utile per statistiche rapide senza scrivere query complete.'
+  },
+  {
+    id: 'abacus-sql-tables',
+    method: 'GET',
+    path: '/api/abacus/sql/tables',
+    name: 'List Tables',
+    description: 'Lista tutte le tabelle disponibili nel database',
+    category: 'Abacus SQL',
+    exampleResponse: {
+      success: true,
+      data: {
+        tables: [
+          'markets',
+          'stalls',
+          'vendors',
+          'concessions',
+          'bookings',
+          'inspections',
+          'violations'
+        ]
+      }
+    },
+    notes: 'Mostra tutte le 52 tabelle del database Neon.'
+  },
+  {
+    id: 'abacus-sql-schema',
+    method: 'POST',
+    path: '/api/abacus/sql/schema',
+    name: 'Get Table Schema',
+    description: 'Ottieni lo schema (colonne, tipi, nullable) di una tabella',
+    category: 'Abacus SQL',
+    exampleBody: {
+      table: 'markets'
+    },
+    exampleResponse: {
+      success: true,
+      data: {
+        table: 'markets',
+        columns: [
+          {
+            column_name: 'id',
+            data_type: 'integer',
+            is_nullable: 'NO',
+            column_default: "nextval('markets_id_seq'::regclass)"
+          },
+          {
+            column_name: 'name',
+            data_type: 'character varying',
+            is_nullable: 'NO',
+            column_default: null
+          }
+        ]
+      }
+    },
+    notes: 'Utile per esplorare la struttura del database prima di scrivere query.'
+  }
+];
+
+/**
+ * CATEGORIA: ABACUS GITHUB
+ * Accesso repository GitHub via proxy MIHUB
+ */
+export const abacusGithubEndpoints: EndpointConfig[] = [
+  {
+    id: 'abacus-github-list',
+    method: 'POST',
+    path: '/api/abacus/github/list',
+    name: 'List Repository Files',
+    description: 'Lista file e directory in un repository GitHub',
+    category: 'Abacus GitHub',
+    exampleBody: {
+      owner: 'Chcndr',
+      repo: 'MIO-hub',
+      path: 'design'
+    },
+    exampleResponse: {
+      success: true,
+      data: [
+        {
+          name: 'backend-rest-hetzner.md',
+          path: 'design/backend-rest-hetzner.md',
+          type: 'file',
+          size: 15420
+        }
+      ]
+    },
+    notes: 'Proxy MIHUB per accedere a GitHub senza esporre token al frontend.'
+  },
+  {
+    id: 'abacus-github-get',
+    method: 'POST',
+    path: '/api/abacus/github/get',
+    name: 'Get File Content',
+    description: 'Leggi il contenuto di un file da repository GitHub',
+    category: 'Abacus GitHub',
+    exampleBody: {
+      owner: 'Chcndr',
+      repo: 'MIO-hub',
+      path: 'design/backend-rest-hetzner.md'
+    },
+    exampleResponse: {
+      success: true,
+      data: {
+        content: '# Backend REST Hetzner\n\nDocumentazione...',
+        encoding: 'utf-8',
+        sha: 'abc123def456'
+      }
+    },
+    notes: 'Restituisce contenuto decodificato in UTF-8.'
+  },
+  {
+    id: 'abacus-github-update',
+    method: 'POST',
+    path: '/api/abacus/github/update',
+    name: 'Create/Update File',
+    description: 'Crea o aggiorna un file in repository GitHub',
+    category: 'Abacus GitHub',
+    exampleBody: {
+      owner: 'Chcndr',
+      repo: 'MIO-hub',
+      path: 'design/new-doc.md',
+      content: '# New Documentation\n\nContent here...',
+      message: 'Add new documentation',
+      sha: 'abc123def456'
+    },
+    exampleResponse: {
+      success: true,
+      data: {
+        commit: {
+          sha: 'def789ghi012',
+          message: 'Add new documentation'
+        }
+      }
+    },
+    notes: '⚠️ Richiede SHA per aggiornamenti, omettere per creazione nuovi file.'
+  }
+];
+
+/**
  * TUTTI GLI ENDPOINT ORGANIZZATI
  */
 export const allRealEndpoints: EndpointConfig[] = [
@@ -399,6 +594,8 @@ export const allRealEndpoints: EndpointConfig[] = [
   ...vendorsEndpoints,
   ...concessionsEndpoints,
   ...gisEndpoints,
+  ...abacusSqlEndpoints,
+  ...abacusGithubEndpoints
   // ...mobilityEndpoints
 ];
 
