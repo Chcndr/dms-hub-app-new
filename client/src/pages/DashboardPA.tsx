@@ -891,33 +891,42 @@ export default function DashboardPA() {
     fetchGisData();
   }, [gisMarketId]);
   
-  // Fetch Guardian logs
+  // Fetch Guardian logs from Neon database via Abacus SQL
   useEffect(() => {
     const fetchGuardianLogs = async () => {
       try {
-        const response = await fetch('https://raw.githubusercontent.com/Chcndr/MIO-hub/master/logs/api-guardian.log');
-        const text = await response.text();
-        const logs = text
-          .trim()
-          .split('\n')
-          .filter(line => line.trim())
-          .map(line => {
-            try {
-              return JSON.parse(line);
-            } catch {
-              return null;
-            }
+        const response = await fetch('http://157.90.29.66:3000/api/abacus/sql/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sql: `SELECT 
+              timestamp, 
+              agent, 
+              endpoint as path, 
+              method, 
+              CASE WHEN success THEN 'allowed' ELSE 'denied' END as status,
+              risk as risk_level,
+              message as reason
+            FROM mio_agent_logs 
+            WHERE agent IN ('mio', 'manus', 'abacus', 'zapier')
+            ORDER BY timestamp DESC 
+            LIMIT 50`
           })
-          .filter(log => log !== null)
-          .reverse(); // Most recent first
-        setGuardianLogs(logs);
+        });
+        const result = await response.json();
+        if (result.success && result.data?.rows) {
+          setGuardianLogs(result.data.rows);
+        } else {
+          console.error('Failed to fetch Guardian logs:', result.error);
+          setGuardianLogs([]);
+        }
       } catch (error) {
         console.error('Failed to fetch Guardian logs:', error);
         setGuardianLogs([]);
       }
     };
     fetchGuardianLogs();
-    // Refresh every 10 seconds
+    // Refresh every 10 seconds for real-time updates
     const interval = setInterval(fetchGuardianLogs, 10000);
     return () => clearInterval(interval);
   }, []);
