@@ -551,8 +551,8 @@ function CompanyModal({ marketId, company, onClose, onSaved }: CompanyModalProps
 
     try {
       const url = company
-        ? `${API_BASE_URL}/markets/companies/${company.id}`
-        : `${API_BASE_URL}/markets/${marketId}/companies`;
+        ? `${API_BASE_URL}/api/markets/companies/${company.id}`
+        : `${API_BASE_URL}/api/markets/${marketId}/companies`;
 
       const method = company ? 'PUT' : 'POST';
 
@@ -743,8 +743,8 @@ function ConcessionModal({ marketId, concession, companies, stalls, onClose, onS
 
     try {
       const url = concession
-        ? `${API_BASE_URL}/markets/concessions/${concession.id}`
-        : `${API_BASE_URL}/markets/${marketId}/concessions`;
+        ? `${API_BASE_URL}/api/markets/concessions/${concession.id}`
+        : `${API_BASE_URL}/api/markets/${marketId}/concessions`;
 
       const method = concession ? 'PUT' : 'POST';
 
