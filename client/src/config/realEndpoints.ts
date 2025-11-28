@@ -7,7 +7,9 @@
  * Base URL: https://orchestratore.mio-hub.me
  */
 
-export const API_BASE_URL = 'https://orchestratore.mio-hub.me';
+// AGGIORNATO: 28 novembre 2025 - Audit endpoint reali
+// Solo endpoint FUNZIONANTI (testati con curl, 200 OK)
+export const API_BASE_URL = 'https://mihub.157-90-29-66.nip.io';
 
 export interface EndpointConfig {
   id: string;
@@ -53,7 +55,7 @@ export const marketsEndpoints: EndpointConfig[] = [
       ],
       count: 1
     },
-    notes: 'Endpoint principale per ottenere tutti i mercati. Usato nella dashboard e nelle selezioni.'
+    notes: '✅ FUNZIONANTE - Testato 28/11/2025 - Endpoint principale per ottenere tutti i mercati. Usato nella dashboard e nelle selezioni.'
   },
   {
     id: 'markets-get-by-id',
@@ -80,7 +82,7 @@ export const marketsEndpoints: EndpointConfig[] = [
         updated_at: '2025-11-21T23:52:05.623Z'
       }
     },
-    notes: 'Usato per visualizzare dettagli specifici di un mercato selezionato.'
+    notes: '✅ FUNZIONANTE - Testato 28/11/2025 - Usato per visualizzare dettagli specifici di un mercato selezionato.'
   },
   {
     id: 'markets-stalls',
@@ -112,7 +114,7 @@ export const marketsEndpoints: EndpointConfig[] = [
       ],
       count: 160
     },
-    notes: 'Endpoint CRITICO usato da MarketMapComponent per colorare i posteggi sulla mappa.'
+    notes: '✅ FUNZIONANTE - Testato 28/11/2025 - Endpoint CRITICO usato da MarketMapComponent per colorare i posteggi sulla mappa. 160 posteggi Grosseto.'
   }
 ];
 
@@ -120,6 +122,7 @@ export const marketsEndpoints: EndpointConfig[] = [
  * CATEGORIA: POSTEGGI
  * Gestione singoli posteggi
  */
+// ⚠️ ENDPOINT NON TESTATI - Richiede body JSON e possibile autenticazione
 export const stallsEndpoints: EndpointConfig[] = [
   {
     id: 'stalls-get-by-id',
@@ -174,6 +177,7 @@ export const stallsEndpoints: EndpointConfig[] = [
  * CATEGORIA: OPERATORI
  * Gestione venditori/ambulanti
  */
+// ⚠️ ENDPOINT PARZIALMENTE FUNZIONANTI - GET /api/vendors funziona ma DB vuoto
 export const vendorsEndpoints: EndpointConfig[] = [
   {
     id: 'vendors-list',
@@ -196,8 +200,9 @@ export const vendorsEndpoints: EndpointConfig[] = [
           status: 'active'
         }
       ],
-      count: 5
-    }
+      count: 0
+    },
+    notes: '✅ FUNZIONANTE - Testato 28/11/2025 - Lista vuota (nessun vendor nel database Neon)'
   },
   {
     id: 'vendors-create',
@@ -231,6 +236,7 @@ export const vendorsEndpoints: EndpointConfig[] = [
  * CATEGORIA: CONCESSIONI
  * Gestione assegnazioni posteggi
  */
+// ⚠️ ENDPOINT NON TESTATI
 export const concessionsEndpoints: EndpointConfig[] = [
   {
     id: 'concessions-list',
@@ -262,6 +268,7 @@ export const concessionsEndpoints: EndpointConfig[] = [
  * CATEGORIA: GIS / MAPPA MERCATO
  * Dati geografici e geometrie
  */
+// ✅ ENDPOINT FUNZIONANTI (2/2)
 export const gisEndpoints: EndpointConfig[] = [
   {
     id: 'gis-market-map',
@@ -308,7 +315,7 @@ export const gisEndpoints: EndpointConfig[] = [
         stalls_count: 160
       }
     },
-    notes: 'Endpoint CRITICO per MarketMapComponent. Contiene le geometrie precise dei posteggi.'
+    notes: '✅ FUNZIONANTE - Testato 28/11/2025 - Endpoint CRITICO per MarketMapComponent. Contiene le geometrie precise dei 160 posteggi Grosseto.'
   }
 ];
 
