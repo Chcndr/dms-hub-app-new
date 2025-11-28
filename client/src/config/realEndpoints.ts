@@ -9,6 +9,9 @@
 
 // AGGIORNATO: 28 novembre 2025 - Audit endpoint reali
 // Solo endpoint FUNZIONANTI (testati con curl, 200 OK)
+// ⚠️ ATTENZIONE: Endpoint /api/dmsHub/* NON DEPLOYATI su Hetzner production
+//    Backend Hetzner non ha commit fe1eab7, serve deploy manuale
+//    Runbook: docs/deploy/MIHUB_BACKEND_HETZNER_MANUALE.md
 export const API_BASE_URL = 'https://mihub.157-90-29-66.nip.io';
 
 export interface EndpointConfig {
@@ -229,6 +232,76 @@ export const vendorsEndpoints: EndpointConfig[] = [
         created_at: '2025-11-22T16:00:00.000Z'
       }
     }
+  }
+];
+
+/**
+ * CATEGORIA: CONCESSIONI
+ * Gestione assegnazioni posteggi
+ */
+// ⚠️ ENDPOINT NON TESTATI
+// ❌ ENDPOINT NON DEPLOYATI - Backend Hetzner non ha commit fe1eab7
+// Implementati in codice ma 404 NOT FOUND su production
+// Runbook deploy: docs/deploy/MIHUB_BACKEND_HETZNER_MANUALE.md
+export const dmsHubEndpoints: EndpointConfig[] = [
+  {
+    id: 'dmshub-markets-list',
+    method: 'GET',
+    path: '/api/dmsHub/markets/list',
+    description: 'Lista mercati (formato DMS Hub)',
+    mockResponse: {
+      success: true,
+      data: [{ id: 1, code: 'GR001', name: 'Mercato Grosseto' }],
+      count: 1
+    },
+    notes: '❌ NON DEPLOYATO - 404 NOT FOUND - Backend Hetzner non ha commit fe1eab7'
+  },
+  {
+    id: 'dmshub-markets-getbyid',
+    method: 'GET',
+    path: '/api/dmsHub/markets/getById',
+    description: 'Dettagli mercato per ID (formato DMS Hub)',
+    mockResponse: {
+      success: true,
+      data: { id: 1, code: 'GR001', name: 'Mercato Grosseto' }
+    },
+    notes: '❌ NON DEPLOYATO - 404 NOT FOUND - Backend Hetzner non ha commit fe1eab7'
+  },
+  {
+    id: 'dmshub-stalls-listbymarket',
+    method: 'GET',
+    path: '/api/dmsHub/stalls/listByMarket',
+    description: 'Lista posteggi per mercato (formato DMS Hub)',
+    mockResponse: {
+      success: true,
+      data: [],
+      count: 160
+    },
+    notes: '❌ NON DEPLOYATO - 404 NOT FOUND - Backend Hetzner non ha commit fe1eab7'
+  },
+  {
+    id: 'dmshub-vendors-list',
+    method: 'GET',
+    path: '/api/dmsHub/vendors/list',
+    description: 'Lista vendor/imprese (formato DMS Hub)',
+    mockResponse: {
+      success: true,
+      data: [],
+      count: 0
+    },
+    notes: '❌ NON DEPLOYATO - 404 NOT FOUND - Backend Hetzner non ha commit fe1eab7'
+  },
+  {
+    id: 'dmshub-concessions-list',
+    method: 'GET',
+    path: '/api/dmsHub/concessions/list',
+    description: 'Lista concessioni (formato DMS Hub)',
+    mockResponse: {
+      success: true,
+      data: [],
+      count: 0
+    },
+    notes: '❌ NON DEPLOYATO - 404 NOT FOUND - Backend Hetzner non ha commit fe1eab7'
   }
 ];
 
