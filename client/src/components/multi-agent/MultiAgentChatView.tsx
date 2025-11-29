@@ -97,7 +97,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, traces, showInput, onSendM
         {/* Area messaggi */}
         <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-auto space-y-2">
           {traces.length === 0 ? (
-            <p className="text-[#e8fbff]/50 text-center text-xs">Dialogo interno non ancora collegato agli agenti reali.</p>
+            <p className="text-[#e8fbff]/50 text-center text-xs">Nessun messaggio ancora.</p>
           ) : (
             traces.map((trace, idx) => (
               <div key={idx} className={`p-2 rounded ${config.bgColor} border ${config.borderColor}`}>
@@ -170,13 +170,17 @@ export const MultiAgentChatView: React.FC<MultiAgentChatViewProps> = ({
             key={agent}
             agent={agent}
             traces={getTracesForAgent(agent)}
-            showInput={false}
-            onSendMessage={undefined}
+            showInput={true}
+            onSendMessage={(message) => {
+              if (onSendMessage) {
+                onSendMessage(agent, message);
+              }
+            }}
           />
         ))}
 
         <p className="col-span-2 text-xs text-[#e8fbff]/30 text-center mt-2">
-          Vista 4 Quadranti - Dialoghi interni MIO ↔ Agenti (read-only)
+          Vista 4 Quadranti - Dialoghi interni MIO ↔ Agenti
         </p>
       </div>
     );

@@ -28,6 +28,7 @@ import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView'
 import { callOrchestrator } from '@/api/orchestratorClient';
 import { getLogs, getLogsStats, getGuardianHealth } from '@/api/logsClient';
 import { useInternalTraces } from '@/hooks/useInternalTraces';
+import { useConversationPersistence } from '@/hooks/useConversationPersistence';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Hook per dati reali da backend
@@ -472,7 +473,10 @@ export default function DashboardPA() {
   
   // Internal traces per Vista 4 agenti (dialoghi MIO ↔ Agenti)
   const [internalTracesMessages, setInternalTracesMessages] = useState<Array<{ from: string; to: string; message: string; timestamp: string; meta?: any }>>([]);
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  
+  // Persistenza conversazione (salva in localStorage)
+  const { conversationId: persistedConversationId, setConversationId: persistConversationId } = useConversationPersistence();
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(persistedConversationId);
   
   // Hook per fetching automatico internalTraces
   const { traces: fetchedTraces } = useInternalTraces(currentConversationId, 3000);
@@ -653,6 +657,7 @@ export default function DashboardPA() {
       if (response.conversationId) {
         setMioConversationId(response.conversationId);
         setCurrentConversationId(response.conversationId); // Per polling internalTraces
+        persistConversationId(response.conversationId); // Salva in localStorage per persistenza
       }
       
       if (response.success && response.message) {
