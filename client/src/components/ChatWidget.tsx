@@ -11,7 +11,7 @@ interface ChatMessage {
 }
 
 interface ChatWidgetProps {
-  userRole?: 'cliente' | 'operatore' | 'pa';
+  userRole?: 'cliente' | 'operatore' | 'pa' | 'super_admin' | 'owner';
   userId?: string;
   context?: {
     lat?: number;
@@ -21,14 +21,14 @@ interface ChatWidgetProps {
   };
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://8000-iot4ac202gehqh0qqxx5z-ce5d3831.manusvm.computer/api/v1';
+// Use MIO orchestrator endpoint
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mihub.157-90-29-66.nip.io';
 
 export default function ChatWidget({ userRole = 'cliente', userId, context }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
@@ -39,27 +39,6 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Load suggestions on open
-  useEffect(() => {
-    if (isOpen && suggestions.length === 0) {
-      loadSuggestions();
-    }
-  }, [isOpen]);
-
-  const loadSuggestions = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/suggest`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userRole, context }),
-      });
-      const data = await response.json();
-      setSuggestions(data.suggestions || []);
-    } catch (error) {
-      console.error('Error loading suggestions:', error);
-    }
-  };
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
@@ -75,27 +54,42 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
     setIsTyping(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/ai/chat`, {
+      // Call MIO orchestrator
+      const response = await fetch(`${API_BASE_URL}/api/mihub/orchestrator`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mode: 'auto',
           message: text,
-          userId,
-          userRole,
-          context,
-          history: messages,
+          meta: {
+            source: 'dashboard_widget',
+            page: window.location.pathname,
+            user_role: userRole,
+            user_id: userId,
+            context,
+          },
         }),
       });
 
       const data = await response.json();
 
-      // Add AI response
-      setMessages(prev => [...prev, data.message]);
-
-      // Update suggestions
-      if (data.suggestions) {
-        setSuggestions(data.suggestions);
+      let assistantContent = '';
+      if (data.success && data.message) {
+        // Extract clean message from MIO response
+        assistantContent = data.message;
+      } else if (data.error) {
+        assistantContent = `Errore: ${data.error.message || 'Errore sconosciuto'}`;
+      } else {
+        assistantContent = 'Risposta non valida dal server.';
       }
+
+      // Add AI response
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: assistantContent,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
       // Add error message
@@ -110,10 +104,6 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
     } finally {
       setIsTyping(false);
     }
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    sendMessage(suggestion);
   };
 
   if (!isOpen) {
@@ -137,9 +127,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
           <div>
             <h3 className="font-semibold text-white">DMS AI Assistant</h3>
             <p className="text-xs text-[#e8fbff]">
-              {userRole === 'cliente' && 'Assistente Clienti'}
-              {userRole === 'operatore' && 'Assistente Operatori'}
-              {userRole === 'pa' && 'Assistente PA'}
+              Powered by MIO
             </p>
           </div>
         </div>
@@ -206,23 +194,6 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
 
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Suggestions */}
-      {suggestions.length > 0 && messages.length === 0 && (
-        <div className="px-4 pb-2 overflow-x-auto">
-          <div className="flex gap-2 min-w-max pb-2">
-            {suggestions.map((suggestion, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className="text-sm md:text-xs px-4 py-2 md:px-3 md:py-1.5 bg-[#1a2332] hover:bg-[#2a3342] text-[#14b8a6] border border-[#14b8a6] rounded-full transition-colors whitespace-nowrap min-h-[44px] md:min-h-0"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Input */}
       <div className="p-4 border-t border-[#2a3342]">
