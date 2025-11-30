@@ -459,55 +459,22 @@ export default function DashboardPA() {
   const { conversationId: manusConversationId, setConversationId: setManusConversationId } = useConversationPersistence('manus-single');
   const { conversationId: abacusConversationId, setConversationId: setAbacusConversationId } = useConversationPersistence('abacus-single');
   const { conversationId: zapierConversationId, setConversationId: setZapierConversationId } = useConversationPersistence('zapier-single');
-  const { conversationId: gptdevConversationId, setConversationId: setGptdevConversationId } = useConversationPersistence('gptdev-single');
-  
-  // Hook per caricare messaggi da agent_logs
-  const {
-    messages: mioMessagesRaw,
-    setMessages: setMioMessagesRaw,
-    loading: mioLoading,
-    error: mioError,
-  } = useAgentLogs({
-    conversationId: mioMainConversationId,
-    agentName: 'mio',
-  });
-  
-  // Converti formato per compatibilità
-  const mioMessages = mioMessagesRaw.map(msg => ({
-    role: msg.role as 'user' | 'assistant',
-    text: msg.content,
-    agent: msg.agent_name
-  }));
-  
-  const setMioMessages = (updater: any) => {
-    if (typeof updater === 'function') {
-      setMioMessagesRaw(prev => {
-        const converted = prev.map(msg => ({
-          role: msg.role as 'user' | 'assistant',
-          text: msg.content,
-          agent: msg.agent_name
-        }));
-        const updated = updater(converted);
-        return updated.map((msg: any) => ({
-          id: `local-${Date.now()}-${Math.random()}`,
-          conversation_id: mioMainConversationId ?? '',
-          agent_name: msg.agent || 'mio',
-          role: msg.role,
-          content: msg.text,
-          created_at: new Date().toISOString()
-        }));
-      });
-    } else {
-      setMioMessagesRaw(updater.map((msg: any) => ({
-        id: `local-${Date.now()}-${Math.random()}`,
-        conversation_id: mioMainConversationId ?? '',
-        agent_name: msg.agent || 'mio',
-        role: msg.role,
-        content: msg.text,
-        created_at: new Date().toISOString()
-      })));
-    }
+  const { conversationId: gptdevConversationId, setConversationId: setGptdevConversationId } = useConversationPersistence('gptdev-single');  // STATO LOCALE per chat MIO principale (NO useAgentLogs)
+  type MioChatMessage = {
+    id: string;
+    role: 'user' | 'assistant' | 'system' | 'error';
+    content: string;
+    createdAt: string;
   };
+  
+  const [mioMessages, setMioMessages] = useState<MioChatMessage[]>([]);
+  const [mioSending, setMioSending] = useState(false);
+  const [mioSendError, setMioSendError] = useState<string | null>(null);
+  
+  // Variabili di compatibilità per non rompere il resto del codice
+  const mioLoading = false;
+  const mioError = null;  // Converti formato per compatibilità
+  // Rimosso: vecchia conversione mioMessages da useAgentLogs
   
   // Vista Singola Agenti - usa useAgentLogs separati per ogni agente
   // Hook separato per Manus (vista singola isolata)
@@ -580,9 +547,7 @@ export default function DashboardPA() {
   const [abacusInputValue, setAbacusInputValue] = useState('');
   const [zapierInputValue, setZapierInputValue] = useState('');
   
-  // State separati per invio (non confondere con loading da useAgentLogs)
-  const [mioSendingLoading, setMioSendingLoading] = useState(false);
-  const [mioSendingError, setMioSendingError] = useState<string | null>(null);
+  // Rimosso: mioSendingLoading e mioSendingError (ora usati mioSending e mioSendError)
   
   // Internal traces per Vista 4 agenti (dialoghi MIO ↔ Agenti)
   const [internalTracesMessages, setInternalTracesMessages] = useState<Array<{ from: string; to: string; message: string; timestamp: string; meta?: any }>>([]);
@@ -643,43 +608,97 @@ export default function DashboardPA() {
     }) + ' (ora locale)';
   };
   
-  // Handler per invio messaggio MIO (UNICA funzione che invia al backend)
+  // Handler per invio messaggio MIO (MINIMALE - mostra messaggi immediatamente)
   const handleSendMio = async () => {
-    console.log('[handleSendMio] ===== FUNCTION CALLED =====');
-    console.log('[handleSendMio] mioInputValue:', mioInputValue);
-    console.log('[handleSendMio] mioSendingLoading:', mioSendingLoading);
-    
-    const message = mioInputValue.trim();
-    console.log('[handleSendMio] trimmed message:', message);
-    console.log('[handleSendMio] message length:', message.length);
+    const text = mioInputValue.trim();
+    if (!text || mioSending) return;
 
-    if (!message) {
-      console.log('[handleSendMio] EARLY RETURN: message is empty');
-      return;
-    }
-    
-    if (mioSendingLoading) {
-      console.log('[handleSendMio] EARLY RETURN: already sending');
-      return;
-    }
+    console.log('[handleSendMio] Sending:', text);
+    setMioSendError(null);
+    setMioSending(true);
+    setMioInputValue('');
 
-    console.log('[handleSendMio] Setting loading to true...');
-    setMioSendingLoading(true);
-    setMioSendingError(null);
+    // 1. Aggiungi SUBITO il messaggio utente
+    const userMsg: MioChatMessage = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: text,
+      createdAt: new Date().toISOString(),
+    };
+    setMioMessages(prev => [...prev, userMsg]);
 
     try {
-      console.log('[handleSendMio] Calling sendMioMessage...');
-      await sendMioMessage(message, mioMainConversationId);
-      console.log('[handleSendMio] sendMioMessage completed successfully');
-      setMioInputValue('');
-      console.log('[handleSendMio] Input cleared');
-    } catch (err) {
-      console.error('[handleSendMio] ERROR:', err);
-      setMioSendingError(err instanceof Error ? err.message : String(err));
+      // 2. Chiama il backend
+      console.log('[handleSendMio] Calling /api/mihub/orchestrator...');
+      const res = await fetch('/api/mihub/orchestrator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          conversationId: mioMainConversationId,
+          mode: 'auto',
+          source: 'dashboard-pa-main',
+        }),
+      });
+
+      console.log('[handleSendMio] Response status:', res.status);
+
+      if (!res.ok) {
+        const errText = `HTTP ${res.status}`;
+        console.error('[handleSendMio] Error:', errText);
+        setMioSendError(errText);
+        
+        // Mostra errore nella chat
+        setMioMessages(prev => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            role: 'error',
+            content: `Errore chiamata orchestrator: ${errText}`,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+        return;
+      }
+
+      // 3. Estrai la risposta
+      const data = await res.json();
+      console.log('[handleSendMio] Response data:', data);
+
+      const replyText =
+        data?.message ??
+        data?.assistantMessage ??
+        data?.response ??
+        JSON.stringify(data);
+
+      // 4. Aggiungi la risposta di MIO
+      const assistantMsg: MioChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: replyText,
+        createdAt: new Date().toISOString(),
+      };
+      setMioMessages(prev => [...prev, assistantMsg]);
+      console.log('[handleSendMio] Success! Message added to chat');
+      
+    } catch (err: any) {
+      const msg = err?.message ?? 'Errore di rete';
+      console.error('[handleSendMio] Network error:', err);
+      setMioSendError(msg);
+      
+      // Mostra errore nella chat
+      setMioMessages(prev => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: 'error',
+          content: `Errore di rete: ${msg}`,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
     } finally {
-      console.log('[handleSendMio] Setting loading to false...');
-      setMioSendingLoading(false);
-      console.log('[handleSendMio] ===== FUNCTION COMPLETED =====');
+      setMioSending(false);
+      console.log('[handleSendMio] Completed');
     }
   };
   
@@ -3527,9 +3546,9 @@ export default function DashboardPA() {
                         {mioMessages.length === 0 ? (
                           <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
                         ) : (
-                          mioMessages.map((msg, idx) => (
+                          mioMessages.map((msg) => (
                             <div
-                              key={idx}
+                              key={msg.id}
                               className={`p-3 rounded-lg ${
                                 msg.role === 'user'
                                   ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 ml-8'
@@ -3543,12 +3562,10 @@ export default function DashboardPA() {
                                   <Brain className="h-4 w-4 text-purple-400 mt-0.5" />
                                 )}
                                 <div className="flex-1">
-                                  {msg.role === 'assistant' && msg.agent && (
-                                    <div className="text-xs text-[#e8fbff]/50 mb-1">
-                                      Agent: {msg.agent}
-                                    </div>
-                                  )}
-                                  <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                  <div className="text-xs text-[#e8fbff]/50 mb-1">
+                                    {msg.role === 'user' ? 'Tu' : msg.role === 'assistant' ? 'MIO' : 'Errore'}
+                                  </div>
+                                  <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
                                 </div>
                               </div>
                             </div>
@@ -3569,24 +3586,30 @@ export default function DashboardPA() {
                           type="text"
                           value={mioInputValue}
                           onChange={(e) => setMioInputValue(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' && !mioLoading) {
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey && !mioSending) {
+                              e.preventDefault();
                               handleSendMio();
                             }
                           }}
                           placeholder="Messaggio a MIO..."
                           className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
-                          disabled={mioLoading}
+                          disabled={mioSending}
                         />
                         <button
                           type="button"
                           onClick={handleSendMio}
-                          disabled={mioSendingLoading}
+                          disabled={mioSending}
                           className="bg-[#10b981] hover:bg-[#059669] px-4 py-2 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Invia
+                          {mioSending ? 'Invio...' : 'Invia'}
                         </button>
                       </div>
+                      {mioSendError && (
+                        <p className="text-xs text-[#ef4444] text-center">
+                          Errore MIO: {mioSendError}
+                        </p>
+                      )}
                       {mioError && (
                         <p className="text-xs text-[#ef4444] text-center">
                           {mioError}
