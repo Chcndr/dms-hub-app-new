@@ -502,27 +502,48 @@ export default function DashboardPA() {
     }
   };
   
-  // Vista Singola Agenti - usa useAgentLogs con selectedAgent
+  // Vista Singola Agenti - usa useAgentLogs separati per ogni agente
+  // Hook separato per Manus
   const {
-    messages: singleAgentMessagesRaw,
-    loading: singleAgentLoading,
-    error: singleAgentError,
+    messages: manusMessagesRaw,
   } = useAgentLogs({
     conversationId: mioMainConversationId,
-    agentName: selectedAgent,
+    agentName: 'manus',
   });
   
-  // Converti formato per compatibilità Vista singola
-  const singleAgentMessages = singleAgentMessagesRaw.map(msg => ({
+  const manusMessages = manusMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
     text: msg.content,
     agent: msg.agent_name
   }));
   
-  // Mantieni state separati per compatibilità con codice esistente
-  const manusMessages = selectedAgent === 'manus' ? singleAgentMessages : [];
-  const abacusMessages = selectedAgent === 'abacus' ? singleAgentMessages : [];
-  const zapierMessages = selectedAgent === 'zapier' ? singleAgentMessages : [];
+  // Hook separato per Abacus
+  const {
+    messages: abacusMessagesRaw,
+  } = useAgentLogs({
+    conversationId: mioMainConversationId,
+    agentName: 'abacus',
+  });
+  
+  const abacusMessages = abacusMessagesRaw.map(msg => ({
+    role: msg.role as 'user' | 'assistant',
+    text: msg.content,
+    agent: msg.agent_name
+  }));
+  
+  // Hook separato per Zapier
+  const {
+    messages: zapierMessagesRaw,
+  } = useAgentLogs({
+    conversationId: mioMainConversationId,
+    agentName: 'zapier',
+  });
+  
+  const zapierMessages = zapierMessagesRaw.map(msg => ({
+    role: msg.role as 'user' | 'assistant',
+    text: msg.content,
+    agent: msg.agent_name
+  }));
   
   const [manusInputValue, setManusInputValue] = useState('');
   const [abacusInputValue, setAbacusInputValue] = useState('');
