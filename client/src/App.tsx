@@ -56,7 +56,8 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
-          <ChatWidget userRole="client" />
+          {/* ChatWidget temporaneamente disattivato per stabilizzare chat principale MIO */}
+          {/* <ChatWidget userRole="client" /> */}
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

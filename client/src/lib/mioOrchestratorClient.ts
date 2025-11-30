@@ -2,8 +2,8 @@
  * Helper centralizzato per inviare messaggi a MIO Orchestrator
  * Usato sia dalla chat principale che dal ChatWidget
  * 
- * IMPORTANTE: Usa dominio custom orchestratore.mio-hub.me che punta
- * direttamente al backend Hetzner (proxy Vercel non funziona in produzione).
+ * IMPORTANTE: Usa path relativo /api/mihub/orchestrator che viene
+ * gestito dal proxy Vercel (vercel.json) verso il backend Hetzner.
  */
 
 export interface SendMioMessageResponse {
@@ -23,7 +23,7 @@ export async function sendMioMessage(
   content: string,
   conversationId: string | null
 ): Promise<SendMioMessageResponse> {
-  const res = await fetch('https://orchestratore.mio-hub.me/api/mihub/orchestrator', {
+  const res = await fetch('/api/mihub/orchestrator', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
