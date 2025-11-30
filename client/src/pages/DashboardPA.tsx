@@ -475,7 +475,7 @@ export default function DashboardPA() {
   const [internalTracesMessages, setInternalTracesMessages] = useState<Array<{ from: string; to: string; message: string; timestamp: string; meta?: any }>>([]);
   
   // Persistenza conversazione (salva in localStorage)
-  const { conversationId: persistedConversationId, setConversationId: persistConversationId } = useConversationPersistence();
+  const { conversationId: persistedConversationId, setConversationId: setPersistedConversationId } = useConversationPersistence();
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(persistedConversationId);
   
   // Sincronizza currentConversationId con persistedConversationId
@@ -665,7 +665,7 @@ export default function DashboardPA() {
       if (response.conversationId) {
         setMioConversationId(response.conversationId);
         setCurrentConversationId(response.conversationId); // Per polling internalTraces
-        persistConversationId(response.conversationId); // Salva in localStorage per persistenza
+        setPersistedConversationId(response.conversationId); // Salva in localStorage per persistenza
       }
       
       if (response.success && response.message) {
