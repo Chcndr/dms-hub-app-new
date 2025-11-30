@@ -17,7 +17,8 @@ interface ChatWidgetProps {
   };
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mihub.157-90-29-66.nip.io';
+// Usa path relativo per chiamare lo stesso dominio (come fa la chat principale)
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mihub.157-90-29-66.nip.io';
 
 export default function ChatWidget({ userRole = 'cliente', userId, context }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -69,7 +70,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
     try {
       console.log('[ChatWidget] Sending message with conversationId:', conversationId);
       
-      const response = await fetch(`${API_BASE_URL}/api/mihub/orchestrator`, {
+      const response = await fetch('/api/mihub/orchestrator', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
