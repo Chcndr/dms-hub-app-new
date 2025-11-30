@@ -41,11 +41,12 @@ export async function sendMioMessage(
 
   // Trasforma la risposta in messaggi
   const messages: MioChatMessage[] = [];
-  if (data.reply) {
+  const replyContent = data.message || data.reply; // Backend usa 'message' non 'reply'
+  if (replyContent) {
     messages.push({
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: data.reply,
+      content: replyContent,
       createdAt: new Date().toISOString(),
     });
   }
@@ -111,11 +112,12 @@ export async function sendAgentMessage(
   }
 
   // Aggiungi la risposta dell'agente
-  if (data.reply) {
+  const replyContent = data.message || data.reply; // Backend usa 'message' non 'reply'
+  if (replyContent) {
     pushMessage({
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: data.reply,
+      content: replyContent,
       createdAt: new Date().toISOString(),
       agent,
     });
