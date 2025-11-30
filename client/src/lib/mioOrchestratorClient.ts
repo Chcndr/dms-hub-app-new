@@ -57,61 +57,67 @@ export async function sendMioMessage(
 }
 
 /**
+ * Tipo per i messaggi degli agenti
+ */
+export interface AgentChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: string;
+  agent?: string;
+}
+
+/**
  * Helper per inviare messaggi diretti a un singolo agente
  * Usato dalle chat singole (GPT Dev, Manus, Abacus, Zapier)
  */
-export interface SendAgentMessageParams {
-  agent: 'gptdev' | 'manus' | 'abacus' | 'zapier';
-  text: string;
-  conversationId?: string;
-  mode?: 'manual' | 'auto';
-}
-
-export interface SendAgentMessageResult {
-  conversationId: string | null;
-  error: string | null;
-}
-
-export async function sendAgentMessage(params: SendAgentMessageParams): Promise<SendAgentMessageResult> {
-  const { agent, text, conversationId, mode = 'manual' } = params;
+export async function sendAgentMessage(
+  agent: 'gptdev' | 'manus' | 'abacus' | 'zapier',
+  text: string,
+  conversationId: string | null,
+  setConversationId: (id: string) => void,
+  pushMessage: (msg: AgentChatMessage) => void
+): Promise<void> {
+  const body: any = {
+    message: text,
+    mode: 'manual',
+    targetAgent: agent,
+  };
   
-  console.log('[sendAgentMessage] Sending', { agent, text, conversationId, mode });
+  if (conversationId) {
+    body.conversationId = conversationId;
+  }
 
-  try {
-    const requestBody: any = {
-      message: text,
-      mode,
-      agent, // Specifica quale agente deve rispondere
-      source: `dashboard-pa-${agent}-single`,
-    };
+  console.log('[sendAgentMessage] Request:', { agent, body });
 
-    // Invia conversationId solo se esiste (backend lo crea se manca)
-    if (conversationId) {
-      requestBody.conversationId = conversationId;
-    }
+  const res = await fetch('/api/mihub/orchestrator', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 
-    const res = await fetch('/api/mihub/orchestrator', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+  if (!res.ok) {
+    throw new Error(`orchestrator HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  console.log('[sendAgentMessage] Response:', data);
+
+  // Aggiorna conversationId se il backend ne ha restituito uno nuovo
+  const newConversationId = data.conversationId ?? conversationId ?? '';
+  if (newConversationId && newConversationId !== conversationId) {
+    console.log('[sendAgentMessage] Updating conversationId:', newConversationId);
+    setConversationId(newConversationId);
+  }
+
+  // Aggiungi la risposta dell'agente
+  if (data.reply) {
+    pushMessage({
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: data.reply,
+      createdAt: new Date().toISOString(),
+      agent,
     });
-
-    if (!res.ok) {
-      const errText = `HTTP ${res.status}`;
-      console.error('[sendAgentMessage] Error:', errText);
-      return { conversationId: null, error: errText };
-    }
-
-    const data = await res.json();
-    console.log('[sendAgentMessage] Response:', data);
-
-    return {
-      conversationId: data.conversationId || null,
-      error: null,
-    };
-  } catch (err: any) {
-    const msg = err?.message ?? 'Errore di rete';
-    console.error('[sendAgentMessage] Network error:', err);
-    return { conversationId: null, error: msg };
   }
 }

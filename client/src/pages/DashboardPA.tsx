@@ -26,7 +26,7 @@ import { LogsSectionReal, DebugSectionReal } from '@/components/LogsDebugReal';
 import GuardianLogsSection from '@/components/GuardianLogsSection';
 import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView';
 import { callOrchestrator } from '@/api/orchestratorClient';
-import { sendMioMessage, sendAgentMessage, MioChatMessage } from '@/lib/mioOrchestratorClient';
+import { sendMioMessage, sendAgentMessage, MioChatMessage, AgentChatMessage } from '@/lib/mioOrchestratorClient';
 import { getLogs, getLogsStats, getGuardianHealth } from '@/api/logsClient';
 import { useInternalTraces } from '@/hooks/useInternalTraces';
 import { useConversationPersistence } from '@/hooks/useConversationPersistence';
@@ -687,23 +687,35 @@ export default function DashboardPA() {
     const text = gptdevInputValue.trim();
     if (!text || gptdevLoading) return;
 
-    console.log('[handleSendGptdev] Sending:', text);
     setGptdevInputValue('');
 
-    const { conversationId: newConvId, error } = await sendAgentMessage({
-      agent: 'gptdev',
-      text,
-      conversationId: gptdevConversationId,
-      mode: 'manual',
-    });
+    // Aggiungi SUBITO il messaggio utente
+    const userMsg: AgentChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: text,
+      createdAt: new Date().toISOString(),
+    };
+    setGptdevMessages(prev => [...prev, userMsg]);
 
-    if (newConvId && newConvId !== gptdevConversationId) {
-      console.log('[handleSendGptdev] Saving new conversationId:', newConvId);
-      setGptdevConversationId(newConvId);
-    }
-
-    if (error) {
-      console.error('[handleSendGptdev] Error:', error);
+    try {
+      await sendAgentMessage(
+        'gptdev',
+        text,
+        gptdevConversationId,
+        setGptdevConversationId,
+        (msg) => setGptdevMessages(prev => [...prev, msg])
+      );
+    } catch (err: any) {
+      setGptdevMessages(prev => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'system',
+          content: `Errore: ${err.message}`,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
     }
   };
 
@@ -711,23 +723,34 @@ export default function DashboardPA() {
     const text = manusInputValue.trim();
     if (!text || manusLoading) return;
 
-    console.log('[handleSendManus] Sending:', text);
     setManusInputValue('');
 
-    const { conversationId: newConvId, error } = await sendAgentMessage({
-      agent: 'manus',
-      text,
-      conversationId: manusConversationId,
-      mode: 'manual',
-    });
+    const userMsg: AgentChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: text,
+      createdAt: new Date().toISOString(),
+    };
+    setManusMessages(prev => [...prev, userMsg]);
 
-    if (newConvId && newConvId !== manusConversationId) {
-      console.log('[handleSendManus] Saving new conversationId:', newConvId);
-      setManusConversationId(newConvId);
-    }
-
-    if (error) {
-      console.error('[handleSendManus] Error:', error);
+    try {
+      await sendAgentMessage(
+        'manus',
+        text,
+        manusConversationId,
+        setManusConversationId,
+        (msg) => setManusMessages(prev => [...prev, msg])
+      );
+    } catch (err: any) {
+      setManusMessages(prev => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'system',
+          content: `Errore: ${err.message}`,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
     }
   };
 
@@ -735,23 +758,34 @@ export default function DashboardPA() {
     const text = abacusInputValue.trim();
     if (!text || abacusLoading) return;
 
-    console.log('[handleSendAbacus] Sending:', text);
     setAbacusInputValue('');
 
-    const { conversationId: newConvId, error } = await sendAgentMessage({
-      agent: 'abacus',
-      text,
-      conversationId: abacusConversationId,
-      mode: 'manual',
-    });
+    const userMsg: AgentChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: text,
+      createdAt: new Date().toISOString(),
+    };
+    setAbacusMessages(prev => [...prev, userMsg]);
 
-    if (newConvId && newConvId !== abacusConversationId) {
-      console.log('[handleSendAbacus] Saving new conversationId:', newConvId);
-      setAbacusConversationId(newConvId);
-    }
-
-    if (error) {
-      console.error('[handleSendAbacus] Error:', error);
+    try {
+      await sendAgentMessage(
+        'abacus',
+        text,
+        abacusConversationId,
+        setAbacusConversationId,
+        (msg) => setAbacusMessages(prev => [...prev, msg])
+      );
+    } catch (err: any) {
+      setAbacusMessages(prev => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'system',
+          content: `Errore: ${err.message}`,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
     }
   };
 
@@ -759,23 +793,34 @@ export default function DashboardPA() {
     const text = zapierInputValue.trim();
     if (!text || zapierLoading) return;
 
-    console.log('[handleSendZapier] Sending:', text);
     setZapierInputValue('');
 
-    const { conversationId: newConvId, error } = await sendAgentMessage({
-      agent: 'zapier',
-      text,
-      conversationId: zapierConversationId,
-      mode: 'manual',
-    });
+    const userMsg: AgentChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: text,
+      createdAt: new Date().toISOString(),
+    };
+    setZapierMessages(prev => [...prev, userMsg]);
 
-    if (newConvId && newConvId !== zapierConversationId) {
-      console.log('[handleSendZapier] Saving new conversationId:', newConvId);
-      setZapierConversationId(newConvId);
-    }
-
-    if (error) {
-      console.error('[handleSendZapier] Error:', error);
+    try {
+      await sendAgentMessage(
+        'zapier',
+        text,
+        zapierConversationId,
+        setZapierConversationId,
+        (msg) => setZapierMessages(prev => [...prev, msg])
+      );
+    } catch (err: any) {
+      setZapierMessages(prev => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'system',
+          content: `Errore: ${err.message}`,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
     }
   };
   
