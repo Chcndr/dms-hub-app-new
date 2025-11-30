@@ -26,6 +26,7 @@ import { LogsSectionReal, DebugSectionReal } from '@/components/LogsDebugReal';
 import GuardianLogsSection from '@/components/GuardianLogsSection';
 import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView';
 import { callOrchestrator } from '@/api/orchestratorClient';
+import { sendMioMessage } from '@/lib/mioOrchestratorClient';
 import { getLogs, getLogsStats, getGuardianHealth } from '@/api/logsClient';
 import { useInternalTraces } from '@/hooks/useInternalTraces';
 import { useConversationPersistence } from '@/hooks/useConversationPersistence';
@@ -734,12 +735,7 @@ export default function DashboardPA() {
     setMioError(null);
     
     try {
-      const response = await callOrchestrator({
-        mode: 'auto',
-        conversationId: mioMainConversationId,
-        message: text,
-        meta: { source: 'dashboard_main' },
-      });
+      const response = await sendMioMessage(text, mioMainConversationId);
       
       // Salva conversationId
       if (response.conversationId) {
@@ -755,10 +751,8 @@ export default function DashboardPA() {
           { role: 'assistant', agent: response.agent, text: response.message! },
         ]);
         
-        // Processa internalTraces per Vista 4 agenti
-        if (response.internalTraces && response.internalTraces.length > 0) {
-          setInternalTracesMessages(prev => [...prev, ...response.internalTraces]);
-        }
+        // internalTraces vengono caricati automaticamente da useInternalTraces
+        // tramite polling su /api/mio/internal-traces
       } else if (response.error) {
         // Mostra errore leggibile con provider
         const provider = response.error.provider ? ` (${response.error.provider.toUpperCase()})` : '';

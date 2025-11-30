@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 import { useConversationPersistence } from '@/hooks/useConversationPersistence';
 import { useAgentLogs } from '@/hooks/useAgentLogs';
+import { sendMioMessage } from '@/lib/mioOrchestratorClient';
 
 interface ChatWidgetProps {
   userRole?: 'cliente' | 'operatore' | 'pa' | 'super_admin' | 'owner';
@@ -17,8 +18,7 @@ interface ChatWidgetProps {
   };
 }
 
-// TEMPORANEO: chiama direttamente backend Hetzner perché proxy Vercel non funziona
-const API_BASE_URL = 'https://mihub.157-90-29-66.nip.io';
+// Usa sendMioMessage che chiama /api/mihub/orchestrator tramite proxy Vercel
 
 export default function ChatWidget({ userRole = 'cliente', userId, context }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -70,24 +70,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
     try {
       console.log('[ChatWidget] Sending message with conversationId:', conversationId);
       
-      const response = await fetch(`${API_BASE_URL}/api/mihub/orchestrator`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          mode: 'auto',
-          conversationId: conversationId,
-          meta: {
-            source: 'dashboard_widget',
-            page: window.location.pathname,
-            user_role: userRole,
-            user_id: userId,
-            context,
-          },
-        }),
-      });
-
-      const data = await response.json();
+      const data = await sendMioMessage(text, conversationId);
       console.log('[ChatWidget] Received response:', data);
 
       // Il polling di useAgentLogs aggiornerà automaticamente i messaggi
