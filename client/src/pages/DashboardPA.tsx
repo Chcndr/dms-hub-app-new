@@ -28,7 +28,7 @@ import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView'
 import { callOrchestrator } from '@/api/orchestratorClient';
 import { sendMioMessage, sendAgentMessage, MioChatMessage, AgentChatMessage } from '@/lib/mioOrchestratorClient';
 import { getLogs, getLogsStats, getGuardianHealth } from '@/api/logsClient';
-import { useInternalTraces } from '@/hooks/useInternalTraces';
+// import { useInternalTraces } from '@/hooks/useInternalTraces'; // TODO: implementare hook
 import { useConversationPersistence } from '@/hooks/useConversationPersistence';
 import { useAgentLogs } from '@/hooks/useAgentLogs';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -595,7 +595,8 @@ export default function DashboardPA() {
   }, [persistedConversationId]);
 
   // Hook per fetching automatico internalTraces
-  const { traces: fetchedTraces } = useInternalTraces(currentConversationId, 3000);
+  // const { traces: fetchedTraces } = useInternalTraces(currentConversationId, 3000); // TODO: implementare hook
+  const fetchedTraces: any[] = []; // Placeholder
   
   // ELIMINATO: loadChatHistory() - causava 404 su endpoint inesistenti
   // useAgentLogs gestisce automaticamente il caricamento della cronologia
