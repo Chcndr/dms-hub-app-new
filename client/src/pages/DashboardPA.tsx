@@ -574,115 +574,8 @@ export default function DashboardPA() {
   // Hook per fetching automatico internalTraces
   const { traces: fetchedTraces } = useInternalTraces(currentConversationId, 3000);
   
-  // Carica cronologia chat all'apertura
-  useEffect(() => {
-    const loadChatHistory = async () => {
-      try {
-        // 1. Prova a caricare da localStorage (fallback immediato)
-        const localMioChat = localStorage.getItem('mihub_main_mio_chat');
-        const localInternalTraces = localStorage.getItem('mihub_internal_traces');
-        
-        if (localMioChat) {
-          try {
-            const parsedMioChat = JSON.parse(localMioChat);
-            if (Array.isArray(parsedMioChat) && parsedMioChat.length > 0) {
-              setMioMessages(parsedMioChat);
-            }
-          } catch (e) {
-            console.error('[Chat] Errore parsing localStorage MIO:', e);
-          }
-        }
-        
-        if (localInternalTraces) {
-          try {
-            const parsedTraces = JSON.parse(localInternalTraces);
-            if (Array.isArray(parsedTraces) && parsedTraces.length > 0) {
-              setInternalTracesMessages(parsedTraces);
-            }
-          } catch (e) {
-            console.error('[Chat] Errore parsing localStorage traces:', e);
-          }
-        }
-        
-        // 2. Prova a caricare da backend (opzionale, può fallire)
-        const apiBaseUrl = 'https://mihub.157-90-29-66.nip.io';
-        
-        try {
-          const mioResponse = await fetch(`${apiBaseUrl}/api/mihub/chats/mio_main`);
-          const mioData = await mioResponse.json();
-          if (mioData.success && mioData.messages.length > 0) {
-            const mioHistory = mioData.messages.map((msg: any) => ({
-              role: msg.agent === 'user' ? 'user' : 'assistant',
-              text: msg.content,
-              agent: msg.agent
-            }));
-            setMioMessages(mioHistory);
-            // Salva in localStorage per prossima volta
-            localStorage.setItem('mihub_main_mio_chat', JSON.stringify(mioHistory));
-          }
-        } catch (backendError) {
-          console.warn('[Chat] Backend non disponibile, uso localStorage:', backendError);
-        }
-
-        // Carica cronologia Abacus (room: abacus_single)
-        const abacusResponse = await fetch(`${apiBaseUrl}/api/mihub/chats/abacus_single`);
-        const abacusData = await abacusResponse.json();
-        if (abacusData.success && abacusData.messages.length > 0) {
-          const abacusHistory = abacusData.messages.map((msg: any) => ({
-            role: msg.agent === 'user' ? 'user' : 'assistant',
-            text: msg.content,
-            agent: msg.agent
-          }));
-          setAbacusMessages(abacusHistory);
-        }
-
-        // Carica cronologia Manus (room: manus_single)
-        const manusResponse = await fetch(`${apiBaseUrl}/api/mihub/chats/manus_single`);
-        const manusData = await manusResponse.json();
-        if (manusData.success && manusData.messages.length > 0) {
-          const manusHistory = manusData.messages.map((msg: any) => ({
-            role: msg.agent === 'user' ? 'user' : 'assistant',
-            text: msg.content,
-            agent: msg.agent
-          }));
-          setManusMessages(manusHistory);
-        }
-
-        // Carica cronologia Zapier (room: zapier_single)
-        const zapierResponse = await fetch(`${apiBaseUrl}/api/mihub/chats/zapier_single`);
-        const zapierData = await zapierResponse.json();
-        if (zapierData.success && zapierData.messages.length > 0) {
-          const zapierHistory = zapierData.messages.map((msg: any) => ({
-            role: msg.agent === 'user' ? 'user' : 'assistant',
-            text: msg.content,
-            agent: msg.agent
-          }));
-          setZapierMessages(zapierHistory);
-        }
-
-        console.log('[Chat] Cronologia caricata:', {
-          mio: mioData.messages.length,
-          abacus: abacusData.messages.length,
-          manus: manusData.messages.length,
-          zapier: zapierData.messages.length
-        });
-      } catch (error) {
-        console.error('[Chat] Errore caricamento cronologia:', error);
-      }
-    };
-
-    // Carica cronologia solo quando la chat è aperta
-    if (showMultiAgentChat) {
-      loadChatHistory();
-    }
-  }, [showMultiAgentChat]); // Esegui quando si apre la chat
-  
-  // Salva cronologia MIO in localStorage ogni volta che cambia
-  useEffect(() => {
-    if (mioMessages.length > 0) {
-      localStorage.setItem('mihub_main_mio_chat', JSON.stringify(mioMessages));
-    }
-  }, [mioMessages]);
+  // ELIMINATO: loadChatHistory() - causava 404 su endpoint inesistenti
+  // useAgentLogs gestisce automaticamente il caricamento della cronologia
   
   // Salva internalTraces in localStorage ogni volta che cambiano
   useEffect(() => {
@@ -727,9 +620,6 @@ export default function DashboardPA() {
     if (!mioInputValue.trim() || mioLoading) return;
     
     const text = mioInputValue.trim();
-    
-    // Aggiungi messaggio utente
-    setMioMessages(prev => [...prev, { role: 'user', text }]);
     setMioInputValue('');
     setMioLoading(true);
     setMioError(null);
@@ -737,42 +627,24 @@ export default function DashboardPA() {
     try {
       const response = await sendMioMessage(text, mioMainConversationId);
       
-      // Salva conversationId
+      // Salva conversationId per persistenza
       if (response.conversationId) {
         setMioConversationId(response.conversationId);
         setCurrentConversationId(response.conversationId); // Per polling internalTraces
-        setPersistedConversationId(response.conversationId); // Salva in localStorage per persistenza
+        setPersistedConversationId(response.conversationId); // Salva in localStorage
       }
       
-      if (response.success && response.message) {
-        // Aggiungi risposta agente (solo risposta finale MIO)
-        setMioMessages(prev => [
-          ...prev,
-          { role: 'assistant', agent: response.agent, text: response.message! },
-        ]);
-        
-        // internalTraces vengono caricati automaticamente da useInternalTraces
-        // tramite polling su /api/mio/internal-traces
-      } else if (response.error) {
-        // Mostra errore leggibile con provider
+      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
+      // Non manipolare manualmente mioMessages qui
+      
+      if (response.error) {
         const provider = response.error.provider ? ` (${response.error.provider.toUpperCase()})` : '';
-        const errorType = response.error.type || 'unknown';
-        const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
-        const fullErrorMsg = `[Errore LLM${provider}] ${errorMsg}`;
-        setMioMessages(prev => [
-          ...prev,
-          { role: 'system', text: fullErrorMsg },
-        ]);
-        setMioError(fullErrorMsg);
+        const errorMsg = response.error.message || 'Errore orchestratore';
+        setMioError(`[Errore LLM${provider}] ${errorMsg}`);
       }
     } catch (error) {
       console.error('[MIO Agent] Error:', error);
-      const errorMsg = 'Errore di connessione al server';
-      setMioMessages(prev => [
-        ...prev,
-        { role: 'system', text: `[Errore] ${errorMsg}` },
-      ]);
-      setMioError(errorMsg);
+      setMioError('Errore di connessione al server');
     } finally {
       setMioLoading(false);
     }
@@ -958,58 +830,8 @@ export default function DashboardPA() {
     }
   };
   
-  // Carica storico chat dal backend quando cambia agente selezionato
-  useEffect(() => {
-    const loadConversationHistory = async () => {
-      const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
-      
-      // Determina quale conversationId e setter usare
-      let conversationId: string | null = null;
-      let setMessages: any = null;
-      
-      switch (selectedAgent) {
-        case 'mio':
-          conversationId = mioMainConversationId;
-          setMessages = setMioMessages;
-          break;
-        case 'manus':
-          conversationId = mioMainConversationId;
-          setMessages = () => {}; // Non usato, useAgentLogs gestisce tutto
-          break;
-        case 'abacus':
-          conversationId = mioMainConversationId;
-          setMessages = () => {}; // Non usato, useAgentLogs gestisce tutto
-          break;
-        case 'zapier':
-          conversationId = mioMainConversationId;
-          setMessages = () => {}; // Non usato, useAgentLogs gestisce tutto
-          break;
-      }
-      
-      // Se non c'è conversationId, non c'è niente da caricare
-      if (!conversationId || !setMessages) return;
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/mihub/orchestrator/conversations/${conversationId}`);
-        const data = await response.json();
-        
-        if (data.success && data.data?.messages) {
-          // Mappa i messaggi dal backend al formato frontend
-          const messages = data.data.messages.map((msg: any) => ({
-            role: msg.role,
-            text: msg.message,
-            agent: msg.agent,
-          }));
-          
-          setMessages(messages);
-        }
-      } catch (error) {
-        console.error(`[${selectedAgent}] Error loading conversation history:`, error);
-      }
-    };
-    
-    loadConversationHistory();
-  }, [selectedAgent, mioMainConversationId]);
+  // ELIMINATO: loadConversationHistory() - causava 404 su endpoint inesistente
+  // useAgentLogs per ogni agente gestisce automaticamente il caricamento
   
   // Fetch GIS Map Data (blocco ufficiale da GestioneMercati)
   useEffect(() => {
