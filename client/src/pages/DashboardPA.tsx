@@ -446,7 +446,7 @@ export default function DashboardPA() {
   
   // Multi-Agent Chat state
   const [showMultiAgentChat, setShowMultiAgentChat] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<'mio' | 'manus' | 'abacus' | 'zapier'>('mio');
+  const [selectedAgent, setSelectedAgent] = useState<'gptdev' | 'manus' | 'abacus' | 'zapier'>('gptdev');
   const [viewMode, setViewMode] = useState<'single' | 'quad'>('single');
   
   // MIO Agent Chat state (Fase 1) - usa useAgentLogs
@@ -456,10 +456,10 @@ export default function DashboardPA() {
   const { conversationId: mioMainConversationId } = useConversationPersistence('mio-main');
   
   // Persistenza conversazioni separate per vista singola agenti
-  const { conversationId: manusConversationId } = useConversationPersistence('manus-single');
-  const { conversationId: abacusConversationId } = useConversationPersistence('abacus-single');
-  const { conversationId: zapierConversationId } = useConversationPersistence('zapier-single');
-  const { conversationId: gptdevConversationId } = useConversationPersistence('gptdev-single');
+  const { conversationId: manusConversationId, setConversationId: setManusConversationId } = useConversationPersistence('manus-single');
+  const { conversationId: abacusConversationId, setConversationId: setAbacusConversationId } = useConversationPersistence('abacus-single');
+  const { conversationId: zapierConversationId, setConversationId: setZapierConversationId } = useConversationPersistence('zapier-single');
+  const { conversationId: gptdevConversationId, setConversationId: setGptdevConversationId } = useConversationPersistence('gptdev-single');
   
   // Hook per caricare messaggi da agent_logs
   const {
@@ -555,6 +555,7 @@ export default function DashboardPA() {
   // Hook separato per GPT Developer (vista singola isolata)
   const {
     messages: gptdevMessagesRaw,
+    setMessages: setGptdevMessages,
     loading: gptdevLoading,
     error: gptdevError,
   } = useAgentLogs({
@@ -686,10 +687,7 @@ export default function DashboardPA() {
     
     const text = manusInputValue.trim();
     
-    setManusMessages(prev => [...prev, { role: 'user', text }]);
     setManusInputValue('');
-    setManusLoading(true);
-    setManusError(null);
     
     try {
       const response = await callOrchestrator({
@@ -697,36 +695,17 @@ export default function DashboardPA() {
         targetAgent: 'manus_worker',
         conversationId: manusConversationId,
         message: text,
-        meta: { source: 'dashboard_manus_single' },
+        meta: { source: 'dashboard_manus_single', agent: 'manus' },
       });
       
       if (response.conversationId) {
         setManusConversationId(response.conversationId);
       }
       
-      if (response.success && response.message) {
-        setManusMessages(prev => [
-          ...prev,
-          { role: 'assistant', agent: response.agent, text: response.message! },
-        ]);
-      } else if (response.error) {
-        const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
-        setManusMessages(prev => [
-          ...prev,
-          { role: 'system', text: `[Errore] ${errorMsg}` },
-        ]);
-        setManusError(errorMsg);
-      }
+      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
+      // Non manipolare manualmente manusMessages qui
     } catch (error) {
       console.error('[Manus Agent] Error:', error);
-      const errorMsg = 'Errore di connessione al server';
-      setManusMessages(prev => [
-        ...prev,
-        { role: 'system', text: `[Errore] ${errorMsg}` },
-      ]);
-      setManusError(errorMsg);
-    } finally {
-      setManusLoading(false);
     }
   };
   
@@ -736,10 +715,7 @@ export default function DashboardPA() {
     
     const text = abacusInputValue.trim();
     
-    setAbacusMessages(prev => [...prev, { role: 'user', text }]);
     setAbacusInputValue('');
-    setAbacusLoading(true);
-    setAbacusError(null);
     
     try {
       // Riconoscimento query SQL strutturate
@@ -784,29 +760,10 @@ export default function DashboardPA() {
         setAbacusConversationId(response.conversationId);
       }
       
-      if (response.success && response.message) {
-        setAbacusMessages(prev => [
-          ...prev,
-          { role: 'assistant', agent: response.agent, text: response.message! },
-        ]);
-      } else if (response.error) {
-        const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
-        setAbacusMessages(prev => [
-          ...prev,
-          { role: 'system', text: `[Errore] ${errorMsg}` },
-        ]);
-        setAbacusError(errorMsg);
-      }
+      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
+      // Non manipolare manualmente abacusMessages qui
     } catch (error) {
       console.error('[Abacus Agent] Error:', error);
-      const errorMsg = 'Errore di connessione al server';
-      setAbacusMessages(prev => [
-        ...prev,
-        { role: 'system', text: `[Errore] ${errorMsg}` },
-      ]);
-      setAbacusError(errorMsg);
-    } finally {
-      setAbacusLoading(false);
     }
   };
   
@@ -816,10 +773,7 @@ export default function DashboardPA() {
     
     const text = zapierInputValue.trim();
     
-    setZapierMessages(prev => [...prev, { role: 'user', text }]);
     setZapierInputValue('');
-    setZapierLoading(true);
-    setZapierError(null);
     
     try {
       // Zapier usa mode 'auto' per ora
@@ -834,29 +788,10 @@ export default function DashboardPA() {
         setZapierConversationId(response.conversationId);
       }
       
-      if (response.success && response.message) {
-        setZapierMessages(prev => [
-          ...prev,
-          { role: 'assistant', agent: response.agent, text: response.message! },
-        ]);
-      } else if (response.error) {
-        const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
-        setZapierMessages(prev => [
-          ...prev,
-          { role: 'system', text: `[Errore] ${errorMsg}` },
-        ]);
-        setZapierError(errorMsg);
-      }
+      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
+      // Non manipolare manualmente zapierMessages qui
     } catch (error) {
       console.error('[Zapier Agent] Error:', error);
-      const errorMsg = 'Errore di connessione al server';
-      setZapierMessages(prev => [
-        ...prev,
-        { role: 'system', text: `[Errore] ${errorMsg}` },
-      ]);
-      setZapierError(errorMsg);
-    } finally {
-      setZapierLoading(false);
     }
   };
   
@@ -866,10 +801,7 @@ export default function DashboardPA() {
     
     const text = gptdevInputValue.trim();
     
-    setGptdevMessages(prev => [...prev, { role: 'user', text }]);
     setGptdevInputValue('');
-    setGptdevLoading(true);
-    setGptdevError(null);
     
     try {
       const response = await callOrchestrator({
@@ -884,29 +816,10 @@ export default function DashboardPA() {
         setGptdevConversationId(response.conversationId);
       }
       
-      if (response.success && response.message) {
-        setGptdevMessages(prev => [
-          ...prev,
-          { role: 'assistant', agent: response.agent, text: response.message! },
-        ]);
-      } else if (response.error) {
-        const errorMsg = response.error.message || 'Errore orchestratore. Riprova più tardi.';
-        setGptdevMessages(prev => [
-          ...prev,
-          { role: 'system', text: `[Errore] ${errorMsg}` },
-        ]);
-        setGptdevError(errorMsg);
-      }
+      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
+      // Non manipolare manualmente gptdevMessages qui
     } catch (error) {
       console.error('[GPT Developer Agent] Error:', error);
-      const errorMsg = 'Errore di connessione al server';
-      setGptdevMessages(prev => [
-        ...prev,
-        { role: 'system', text: `[Errore] ${errorMsg}` },
-      ]);
-      setGptdevError(errorMsg);
-    } finally {
-      setGptdevLoading(false);
     }
   };
   
@@ -3931,7 +3844,6 @@ export default function DashboardPA() {
                         {/* Header chat singola */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            {selectedAgent === 'mio' && <Brain className="h-5 w-5 text-purple-400" />}
                             {selectedAgent === 'gptdev' && <Brain className="h-5 w-5 text-indigo-400" />}
                             {selectedAgent === 'manus' && <Wrench className="h-5 w-5 text-blue-400" />}
                             {selectedAgent === 'abacus' && <Calculator className="h-5 w-5 text-green-400" />}
@@ -3971,12 +3883,12 @@ export default function DashboardPA() {
                             <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
                           )}
                           
-                          {/* Messaggi MIO */}
-                          {selectedAgent === 'mio' && mioMessages.map((msg, idx) => (
+                          {/* Messaggi GPT Developer */}
+                          {selectedAgent === 'gptdev' && gptdevMessages.map((msg, idx) => (
                             <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                               <div className={`p-3 rounded-lg ${
                                 msg.role === 'user' 
-                                  ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 ml-auto' 
+                                  ? 'bg-indigo-500/20 border border-indigo-500/30 ml-auto' 
                                   : msg.role === 'system'
                                   ? 'bg-red-500/10 border border-red-500/30'
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
@@ -4044,11 +3956,11 @@ export default function DashboardPA() {
                           ))}
                           
                           {/* Loading indicator */}
-                          {selectedAgent === 'mio' && mioLoading && (
+                          {selectedAgent === 'gptdev' && gptdevLoading && (
                             <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
                               <div className="flex items-center gap-2">
                                 <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                                <p className="text-[#e8fbff]/70 text-sm">MIO sta pensando...</p>
+                                <p className="text-[#e8fbff]/70 text-sm">GPT Developer sta pensando...</p>
                               </div>
                             </div>
                           )}

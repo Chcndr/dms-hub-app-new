@@ -12,7 +12,7 @@
 // ============================================================================
 
 export type OrchestratorMode = "auto" | "manual";
-export type AgentId = "mio" | "dev" | "manus_worker" | "gemini_arch" | "abacus_sql";
+export type AgentId = "mio" | "dev" | "gptdev" | "manus_worker" | "gemini_arch" | "abacus_sql";
 
 export interface OrchestratorRequest {
   mode: OrchestratorMode;
