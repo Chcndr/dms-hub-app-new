@@ -1,48 +1,26 @@
 /**
  * Helper centralizzato per inviare messaggi a MIO Orchestrator
- * Usato sia dalla chat principale che dal ChatWidget
  * 
- * IMPORTANTE: Usa dominio diretto orchestratore.mio-hub.me perché
- * il proxy Vercel /api/mihub/orchestrator non funziona dal browser
- * (funziona da curl ma non da fetch nel browser, probabilmente CORS).
- * 
- * Versione: 2025-11-30 - Fix con dominio diretto
+ * Usa path relativo /api/mihub/orchestrator che viene gestito dal proxy Vercel.
+ * Nessuna chiamata diretta a https://mihub.157-90-29-66.nip.io dal browser.
  */
 
-export interface SendMioMessageResponse {
-  success: boolean;
-  agent: string;
-  message: string | null;
-  conversationId: string | null;
-  error?: {
-    type: string;
-    provider?: string | null;
-    statusCode?: number;
-    message?: string;
-  } | null;
-}
-
-export async function sendMioMessage(
-  content: string,
-  conversationId: string | null
-): Promise<SendMioMessageResponse> {
-  console.log('[sendMioMessage] Sending:', { content, conversationId });
-  const res = await fetch('https://orchestratore.mio-hub.me/api/mihub/orchestrator', {
+export async function sendMioMessage(message: string, conversationId: string) {
+  console.log('[sendMioMessage] Sending', { message, conversationId });
+  const res = await fetch('/api/mihub/orchestrator', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      message: content,
+      message,
       conversationId,
       mode: 'auto',
     }),
   });
 
   if (!res.ok) {
-    console.error('[sendMioMessage] HTTP error:', res.status, res.statusText);
+    console.error('[sendMioMessage] HTTP error', res.status);
     throw new Error(`HTTP ${res.status}`);
   }
 
-  const data = await res.json();
-  console.log('[sendMioMessage] Response:', data);
-  return data;
+  return res.json();
 }

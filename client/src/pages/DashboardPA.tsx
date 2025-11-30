@@ -643,185 +643,27 @@ export default function DashboardPA() {
     }) + ' (ora locale)';
   };
   
-  // Handler per invio messaggio MIO (Fase 1)
+  // Handler per invio messaggio MIO (UNICA funzione che invia al backend)
   const handleSendMio = async () => {
-    console.log('[handleSendMio] Called with:', { mioInputValue, mioLoading });
-    if (!mioInputValue.trim() || mioLoading) {
-      console.log('[handleSendMio] Blocked:', { isEmpty: !mioInputValue.trim(), isLoading: mioLoading });
-      return;
-    }
-    
-    const text = mioInputValue.trim();
-    setMioInputValue('');
+    console.log('[handleSendMio] called', mioInputValue);
+    const message = mioInputValue.trim();
+    if (!message || mioSendingLoading) return;
+
     setMioSendingLoading(true);
-    setMioSendingError(null);
-    
     try {
-      const response = await sendMioMessage(text, mioMainConversationId);
-      
-      // Salva conversationId per persistenza
-      if (response.conversationId) {
-        setCurrentConversationId(response.conversationId); // Per polling internalTraces
-        setPersistedConversationId(response.conversationId); // Salva in localStorage
-      }
-      
-      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
-      // Non manipolare manualmente mioMessages qui
-      
-      if (response.error) {
-        const provider = response.error.provider ? ` (${response.error.provider.toUpperCase()})` : '';
-        const errorMsg = response.error.message || 'Errore orchestratore';
-        setMioSendingError(`[Errore LLM${provider}] ${errorMsg}`);
-      }
-    } catch (error) {
-      console.error('[MIO Agent] Error:', error);
-      setMioSendingError('Errore di connessione al server');
+      await sendMioMessage(message, mioMainConversationId);
+      setMioInputValue(''); // svuota SOLO dopo che la POST è andata
+    } catch (err) {
+      console.error('[handleSendMio] error', err);
+      setMioSendingError(err instanceof Error ? err.message : String(err));
     } finally {
       setMioSendingLoading(false);
     }
   };
   
-  // Handler per invio messaggio Manus
-  const handleSendManus = async () => {
-    if (!manusInputValue.trim() || manusLoading) return;
-    
-    const text = manusInputValue.trim();
-    
-    setManusInputValue('');
-    
-    try {
-      const response = await callOrchestrator({
-        mode: 'manual',
-        targetAgent: 'manus_worker',
-        conversationId: manusConversationId,
-        message: text,
-        meta: { source: 'dashboard_manus_single', agent: 'manus' },
-      });
-      
-      if (response.conversationId) {
-        setManusConversationId(response.conversationId);
-      }
-      
-      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
-      // Non manipolare manualmente manusMessages qui
-    } catch (error) {
-      console.error('[Manus Agent] Error:', error);
-    }
-  };
-  
-  // Handler per invio messaggio Abacus
-  const handleSendAbacus = async () => {
-    if (!abacusInputValue.trim() || abacusLoading) return;
-    
-    const text = abacusInputValue.trim();
-    
-    setAbacusInputValue('');
-    
-    try {
-      // Riconoscimento query SQL strutturate
-      const lowerText = text.toLowerCase();
-      let targetAgent: 'abacus' | 'abacus_sql' = 'abacus';
-      let task: string | undefined;
-      let params: Record<string, any> | undefined;
-      
-      // Pattern 1: "quanti posteggi attivi" o "conta posteggi"
-      if (lowerText.includes('quanti posteggi') || lowerText.includes('conta posteggi')) {
-        targetAgent = 'abacus_sql';
-        task = 'count_active_stalls';
-        // Cerca market_code nel testo (es. "GR001", "Grosseto")
-        const marketCodeMatch = text.match(/\b([A-Z]{2}\d{3})\b/);
-        const marketCode = marketCodeMatch ? marketCodeMatch[1] : 'GR001'; // Default Grosseto
-        params = { market_code: marketCode };
-      }
-      // Pattern 2: "lista tabelle" o "list tables"
-      else if (lowerText.includes('lista tabelle') || lowerText.includes('list tables')) {
-        targetAgent = 'abacus_sql';
-        task = 'list_tables';
-      }
-      // Pattern 3: Query SQL diretta (inizia con SELECT)
-      else if (lowerText.startsWith('select ')) {
-        targetAgent = 'abacus_sql';
-        task = 'query_table';
-        params = { query: text, queryParams: [] };
-      }
-      
-      // Chiamata orchestrator
-      const response = await callOrchestrator({
-        mode: 'manual',
-        targetAgent,
-        conversationId: abacusConversationId,
-        message: text,
-        meta: { source: 'dashboard_abacus_single', agent: targetAgent },
-        task,
-        params,
-      });
-      
-      if (response.conversationId) {
-        setAbacusConversationId(response.conversationId);
-      }
-      
-      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
-      // Non manipolare manualmente abacusMessages qui
-    } catch (error) {
-      console.error('[Abacus Agent] Error:', error);
-    }
-  };
-  
-  // Handler per invio messaggio Zapier
-  const handleSendZapier = async () => {
-    if (!zapierInputValue.trim() || zapierLoading) return;
-    
-    const text = zapierInputValue.trim();
-    
-    setZapierInputValue('');
-    
-    try {
-      // Zapier usa mode 'auto' per ora
-      const response = await callOrchestrator({
-        mode: 'auto',
-        conversationId: zapierConversationId,
-        message: text,
-        meta: { source: 'dashboard_zapier_single', agent: 'zapier' },
-      });
-      
-      if (response.conversationId) {
-        setZapierConversationId(response.conversationId);
-      }
-      
-      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
-      // Non manipolare manualmente zapierMessages qui
-    } catch (error) {
-      console.error('[Zapier Agent] Error:', error);
-    }
-  };
-  
-  // Handler per invio messaggio GPT Developer
-  const handleSendGptdev = async () => {
-    if (!gptdevInputValue.trim() || gptdevLoading) return;
-    
-    const text = gptdevInputValue.trim();
-    
-    setGptdevInputValue('');
-    
-    try {
-      const response = await callOrchestrator({
-        mode: 'manual',
-        targetAgent: 'gptdev',
-        conversationId: gptdevConversationId,
-        message: text,
-        meta: { source: 'dashboard_gptdev_single', agent: 'gptdev' },
-      });
-      
-      if (response.conversationId) {
-        setGptdevConversationId(response.conversationId);
-      }
-      
-      // useAgentLogs aggiornerà automaticamente i messaggi tramite polling
-      // Non manipolare manualmente gptdevMessages qui
-    } catch (error) {
-      console.error('[GPT Developer Agent] Error:', error);
-    }
-  };
+  // RIMOSSI: handleSendManus, handleSendAbacus, handleSendZapier, handleSendGptdev
+  // Tutte le viste sotto (vista singola, vista 4 agenti) sono SOLO LETTURA
+  // L'UNICA funzione che invia messaggi è handleSendMio (chat principale)
   
   // ELIMINATO: loadConversationHistory() - causava 404 su endpoint inesistente
   // useAgentLogs per ogni agente gestisce automaticamente il caricamento
@@ -3992,100 +3834,24 @@ export default function DashboardPA() {
                         {/* Input */}
                         <div className="flex gap-2">
                           {selectedAgent === 'gptdev' && (
-                            <>
-                              <input
-                                type="text"
-                                value={gptdevInputValue}
-                                onChange={(e) => setGptdevInputValue(e.target.value)}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter' && !gptdevLoading) {
-                                    handleSendGptdev();
-                                  }
-                                }}
-                                placeholder="Messaggio a GPT Developer..."
-                                className="flex-1 bg-[#0a0f1a] border border-[#6366f1]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#6366f1]"
-                                disabled={gptdevLoading}
-                              />
-                              <Button 
-                                onClick={handleSendGptdev}
-                                className="bg-[#10b981] hover:bg-[#059669]" 
-                                disabled={gptdevLoading || !gptdevInputValue.trim()}
-                              >
-                                <Send className="h-4 w-4" />
-                              </Button>
-                            </>
+                            <div className="flex-1 bg-[#0a0f1a]/50 border border-[#6366f1]/20 rounded-lg px-4 py-2 text-[#e8fbff]/50 text-sm">
+                              🔒 Vista SOLO LETTURA - Invio messaggi disabilitato
+                            </div>
                           )}
                           {selectedAgent === 'manus' && (
-                            <>
-                              <input
-                                type="text"
-                                value={manusInputValue}
-                                onChange={(e) => setManusInputValue(e.target.value)}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter' && !manusLoading) {
-                                    handleSendManus();
-                                  }
-                                }}
-                                placeholder="Messaggio a Manus..."
-                                className="flex-1 bg-[#0a0f1a] border border-[#3b82f6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#3b82f6]"
-                                disabled={manusLoading}
-                              />
-                              <Button 
-                                onClick={handleSendManus}
-                                className="bg-[#10b981] hover:bg-[#059669]" 
-                                disabled={manusLoading || !manusInputValue.trim()}
-                              >
-                                <Send className="h-4 w-4" />
-                              </Button>
-                            </>
+                            <div className="flex-1 bg-[#0a0f1a]/50 border border-[#3b82f6]/20 rounded-lg px-4 py-2 text-[#e8fbff]/50 text-sm">
+                              🔒 Vista SOLO LETTURA - Invio messaggi disabilitato
+                            </div>
                           )}
                           {selectedAgent === 'abacus' && (
-                            <>
-                              <input
-                                type="text"
-                                value={abacusInputValue}
-                                onChange={(e) => setAbacusInputValue(e.target.value)}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter' && !abacusLoading) {
-                                    handleSendAbacus();
-                                  }
-                                }}
-                                placeholder="Messaggio a Abacus..."
-                                className="flex-1 bg-[#0a0f1a] border border-[#10b981]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#10b981]"
-                                disabled={abacusLoading}
-                              />
-                              <Button 
-                                onClick={handleSendAbacus}
-                                className="bg-[#10b981] hover:bg-[#059669]" 
-                                disabled={abacusLoading || !abacusInputValue.trim()}
-                              >
-                                <Send className="h-4 w-4" />
-                              </Button>
-                            </>
+                            <div className="flex-1 bg-[#0a0f1a]/50 border border-[#10b981]/20 rounded-lg px-4 py-2 text-[#e8fbff]/50 text-sm">
+                              🔒 Vista SOLO LETTURA - Invio messaggi disabilitato
+                            </div>
                           )}
                           {selectedAgent === 'zapier' && (
-                            <>
-                              <input
-                                type="text"
-                                value={zapierInputValue}
-                                onChange={(e) => setZapierInputValue(e.target.value)}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter' && !zapierLoading) {
-                                    handleSendZapier();
-                                  }
-                                }}
-                                placeholder="Messaggio a Zapier..."
-                                className="flex-1 bg-[#0a0f1a] border border-[#f59e0b]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#f59e0b]"
-                                disabled={zapierLoading}
-                              />
-                              <Button 
-                                onClick={handleSendZapier}
-                                className="bg-[#10b981] hover:bg-[#059669]" 
-                                disabled={zapierLoading || !zapierInputValue.trim()}
-                              >
-                                <Send className="h-4 w-4" />
-                              </Button>
-                            </>
+                            <div className="flex-1 bg-[#0a0f1a]/50 border border-[#f59e0b]/20 rounded-lg px-4 py-2 text-[#e8fbff]/50 text-sm">
+                              🔒 Vista SOLO LETTURA - Invio messaggi disabilitato
+                            </div>
                           )}
                         </div>
                       </div>
