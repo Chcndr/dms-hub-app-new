@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 // Tipi
-export type AgentType = 'mio' | 'manus' | 'abacus' | 'zapier';
+export type AgentType = 'mio' | 'manus' | 'abacus' | 'zapier' | 'gptdev';
 export type ViewMode = 'single' | 'multi';
 
 export interface InternalTrace {
@@ -32,6 +32,15 @@ const agentConfig = {
     borderColor: 'border-[#8b5cf6]/30',
     bgColor: 'bg-[#8b5cf6]/10',
     textColor: 'text-purple-400',
+  },
+  gptdev: {
+    name: 'GPT Developer',
+    subtitle: 'Sviluppatore AI',
+    icon: Brain,
+    color: 'indigo',
+    borderColor: 'border-[#6366f1]/30',
+    bgColor: 'bg-[#6366f1]/10',
+    textColor: 'text-indigo-400',
   },
   manus: {
     name: 'Manus',
@@ -165,7 +174,7 @@ export const MultiAgentChatView: React.FC<MultiAgentChatViewProps> = ({
   if (mode === 'multi') {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
-        {(['mio', 'manus', 'abacus', 'zapier'] as AgentType[]).map((agent) => (
+        {(['gptdev', 'manus', 'abacus', 'zapier'] as AgentType[]).map((agent) => (
           <AgentCard
             key={agent}
             agent={agent}

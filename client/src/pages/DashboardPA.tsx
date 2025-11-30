@@ -455,6 +455,12 @@ export default function DashboardPA() {
   // Persistenza conversazione per Chat principale MIO
   const { conversationId: mioMainConversationId } = useConversationPersistence('mio-main');
   
+  // Persistenza conversazioni separate per vista singola agenti
+  const { conversationId: manusConversationId } = useConversationPersistence('manus-single');
+  const { conversationId: abacusConversationId } = useConversationPersistence('abacus-single');
+  const { conversationId: zapierConversationId } = useConversationPersistence('zapier-single');
+  const { conversationId: gptdevConversationId } = useConversationPersistence('gptdev-single');
+  
   // Hook per caricare messaggi da agent_logs
   const {
     messages: mioMessagesRaw,
@@ -504,13 +510,13 @@ export default function DashboardPA() {
   };
   
   // Vista Singola Agenti - usa useAgentLogs separati per ogni agente
-  // Hook separato per Manus
+  // Hook separato per Manus (vista singola isolata)
   const {
     messages: manusMessagesRaw,
     loading: manusLoading,
     error: manusError,
   } = useAgentLogs({
-    conversationId: mioMainConversationId,
+    conversationId: manusConversationId,
     agentName: 'manus',
   });
   
@@ -520,13 +526,13 @@ export default function DashboardPA() {
     agent: msg.agent_name
   }));
   
-  // Hook separato per Abacus
+  // Hook separato per Abacus (vista singola isolata)
   const {
     messages: abacusMessagesRaw,
     loading: abacusLoading,
     error: abacusError,
   } = useAgentLogs({
-    conversationId: mioMainConversationId,
+    conversationId: abacusConversationId,
     agentName: 'abacus',
   });
   
@@ -536,15 +542,31 @@ export default function DashboardPA() {
     agent: msg.agent_name
   }));
   
-  // Hook separato per Zapier
+  // Hook separato per Zapier (vista singola isolata)
   const {
     messages: zapierMessagesRaw,
     loading: zapierLoading,
     error: zapierError,
   } = useAgentLogs({
-    conversationId: mioMainConversationId,
+    conversationId: zapierConversationId,
     agentName: 'zapier',
   });
+  
+  // Hook separato per GPT Developer (vista singola isolata)
+  const {
+    messages: gptdevMessagesRaw,
+    loading: gptdevLoading,
+    error: gptdevError,
+  } = useAgentLogs({
+    conversationId: gptdevConversationId,
+    agentName: 'gptdev',
+  });
+  
+  const gptdevMessages = gptdevMessagesRaw.map(msg => ({
+    role: msg.role as 'user' | 'assistant',
+    text: msg.content,
+    agent: msg.agent_name
+  }));
   
   const zapierMessages = zapierMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
@@ -669,9 +691,9 @@ export default function DashboardPA() {
       const response = await callOrchestrator({
         mode: 'manual',
         targetAgent: 'manus_worker',
-        conversationId: mioMainConversationId,
+        conversationId: manusConversationId,
         message: text,
-        meta: { source: 'dashboard_manus' },
+        meta: { source: 'dashboard_manus_single' },
       });
       
       if (response.conversationId) {
@@ -747,9 +769,9 @@ export default function DashboardPA() {
       const response = await callOrchestrator({
         mode: 'manual',
         targetAgent,
-        conversationId: mioMainConversationId,
+        conversationId: abacusConversationId,
         message: text,
-        meta: { source: 'dashboard_abacus', agent: targetAgent },
+        meta: { source: 'dashboard_abacus_single', agent: targetAgent },
         task,
         params,
       });
@@ -799,9 +821,9 @@ export default function DashboardPA() {
       // Zapier usa mode 'auto' per ora
       const response = await callOrchestrator({
         mode: 'auto',
-        conversationId: mioMainConversationId,
+        conversationId: zapierConversationId,
         message: text,
-        meta: { source: 'dashboard_zapier', agent: 'zapier' },
+        meta: { source: 'dashboard_zapier_single', agent: 'zapier' },
       });
       
       if (response.conversationId) {
