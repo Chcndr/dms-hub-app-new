@@ -628,17 +628,26 @@ export default function DashboardPA() {
     setMioMessages(prev => [...prev, userMsg]);
 
     try {
-      // 2. Chiama il backend
+      // 2. Chiama il backend (conversationId opzionale - il backend lo crea se manca)
       console.log('[handleSendMio] Calling /api/mihub/orchestrator...');
+      console.log('[handleSendMio] Current conversationId:', mioMainConversationId);
+      
+      const requestBody: any = {
+        message: text,
+        mode: 'auto',
+        source: 'dashboard-pa-main',
+      };
+      
+      // Invia conversationId solo se esiste E se non è il primo messaggio
+      // (il backend crea un nuovo conversationId alla prima chiamata)
+      if (mioMainConversationId && mioMessages.length > 0) {
+        requestBody.conversationId = mioMainConversationId;
+      }
+      
       const res = await fetch('/api/mihub/orchestrator', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          conversationId: mioMainConversationId,
-          mode: 'auto',
-          source: 'dashboard-pa-main',
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       console.log('[handleSendMio] Response status:', res.status);
@@ -664,6 +673,13 @@ export default function DashboardPA() {
       // 3. Estrai la risposta
       const data = await res.json();
       console.log('[handleSendMio] Response data:', data);
+
+      // Se il backend ha restituito un conversationId, salvalo
+      if (data?.conversationId && data.conversationId !== mioMainConversationId) {
+        console.log('[handleSendMio] Saving new conversationId:', data.conversationId);
+        // TODO: salvare in localStorage tramite useConversationPersistence
+        // Per ora lo loggo solo
+      }
 
       const replyText =
         data?.message ??
