@@ -506,6 +506,8 @@ export default function DashboardPA() {
   // Hook separato per Manus
   const {
     messages: manusMessagesRaw,
+    loading: manusLoading,
+    error: manusError,
   } = useAgentLogs({
     conversationId: mioMainConversationId,
     agentName: 'manus',
@@ -520,6 +522,8 @@ export default function DashboardPA() {
   // Hook separato per Abacus
   const {
     messages: abacusMessagesRaw,
+    loading: abacusLoading,
+    error: abacusError,
   } = useAgentLogs({
     conversationId: mioMainConversationId,
     agentName: 'abacus',
@@ -534,6 +538,8 @@ export default function DashboardPA() {
   // Hook separato per Zapier
   const {
     messages: zapierMessagesRaw,
+    loading: zapierLoading,
+    error: zapierError,
   } = useAgentLogs({
     conversationId: mioMainConversationId,
     agentName: 'zapier',
