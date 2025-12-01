@@ -471,7 +471,7 @@ export default function DashboardPA() {
   useEffect(() => {
     const ws = initMioWebSocket();
 
-    ws.onmessage = (event) => {
+    const handleMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
         console.log('[MIO WebSocket] Received:', data);
@@ -494,12 +494,15 @@ export default function DashboardPA() {
       }
     };
 
+    // Use addEventListener for more stable binding
+    ws.addEventListener('message', handleMessage);
+
     return () => {
-      // Cleanup on unmount
-      const currentWs = getMioWebSocket();
-      if (currentWs && currentWs.readyState === WebSocket.OPEN) {
-        currentWs.close();
-      }
+      // Remove listener on unmount
+      ws.removeEventListener('message', handleMessage);
+      
+      // Don't close WebSocket here to allow reconnection
+      // The WebSocket will auto-reconnect if needed
     };
   }, []);
   
