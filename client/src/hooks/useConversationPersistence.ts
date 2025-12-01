@@ -9,6 +9,15 @@ import { useState, useEffect } from 'react';
 
 const DEFAULT_STORAGE_KEY = 'mio_conversation_id';
 
+/**
+ * Valida il formato del conversationId
+ * Esclude ID client-side vecchi (formato conv_1234567890_...)
+ * Backend genera UUID v4 o formato specifico
+ */
+function isValidConversationId(id: string): boolean {
+  return !id.startsWith('conv_') && id.length > 10;
+}
+
 export interface ConversationPersistence {
   conversationId: string | null;
   setConversationId: (id: string) => void;
@@ -23,16 +32,20 @@ export function useConversationPersistence(storageKey?: string): ConversationPer
   const STORAGE_KEY = storageKey || DEFAULT_STORAGE_KEY;
   const [conversationId, setConversationIdState] = useState<string | null>(null);
 
-  // Carica conversation_id al mount (se esiste)
+  // Carica conversation_id al mount (se esiste e valido)
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    if (stored && isValidConversationId(stored)) {
       setConversationIdState(stored);
-      console.log('[Persistence] Restored conversation_id:', stored);
+      console.log('[Persistence] Restored valid conversation_id:', stored);
     } else {
+      if (stored) {
+        console.warn('[Persistence] Invalid conversation_id format, clearing:', stored);
+        localStorage.removeItem(STORAGE_KEY);
+      }
       // NON generare ID client-side! Il backend lo creerà alla prima chiamata
       setConversationIdState(null);
-      console.log('[Persistence] No conversation_id found, will be created by backend');
+      console.log('[Persistence] No valid conversation_id found, will be created by backend');
     }
   }, [STORAGE_KEY]);
 

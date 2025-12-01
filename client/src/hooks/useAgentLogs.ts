@@ -40,7 +40,7 @@ export function useAgentLogs({ conversationId, agentName, pollMs = 5000 }: UseAg
         });
         if (agentName) params.set('agent_name', agentName);
 
-        const res = await fetch(`/api/mio/agent-logs?${params.toString()}`);
+        const res = await fetch(`/api/mihub/agent-logs?${params.toString()}`);
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
