@@ -40,6 +40,13 @@ export async function sendMioMessage(
   if (data.error || data.success === false) {
     const errorMsg = data.error?.message || 'Unknown error';
     const errorCode = data.error?.statusCode || 500;
+    
+    // Se errore 404 "Conversation not found", cancella localStorage per auto-recovery
+    if (errorCode === 404 && errorMsg.includes('Conversation not found')) {
+      console.warn('[sendMioMessage] Invalid conversationId detected, clearing localStorage');
+      localStorage.removeItem('mio-main');
+    }
+    
     throw new Error(`orchestrator error ${errorCode}: ${errorMsg}`);
   }
 
@@ -115,6 +122,13 @@ export async function sendAgentMessage(
   if (data.error || data.success === false) {
     const errorMsg = data.error?.message || 'Unknown error';
     const errorCode = data.error?.statusCode || 500;
+    
+    // Se errore 404 "Conversation not found", cancella localStorage per auto-recovery
+    if (errorCode === 404 && errorMsg.includes('Conversation not found')) {
+      console.warn('[sendAgentMessage] Invalid conversationId detected, clearing localStorage');
+      localStorage.removeItem(`${agent}-single`);
+    }
+    
     throw new Error(`orchestrator error ${errorCode}: ${errorMsg}`);
   }
 

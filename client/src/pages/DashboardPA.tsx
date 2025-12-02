@@ -572,6 +572,61 @@ export default function DashboardPA() {
     agent: msg.agent_name
   }));
   
+  // FIX 2: Stati locali per UI ottimistica nelle chat singole agenti
+  const [gptdevLocalMessages, setGptdevLocalMessages] = useState<AgentChatMessage[]>([]);
+  const [manusLocalMessages, setManusLocalMessages] = useState<AgentChatMessage[]>([]);
+  const [abacusLocalMessages, setAbacusLocalMessages] = useState<AgentChatMessage[]>([]);
+  const [zapierLocalMessages, setZapierLocalMessages] = useState<AgentChatMessage[]>([]);
+
+  // Sincronizza polling data con stato locale
+  useEffect(() => {
+    if (gptdevMessagesRaw.length > 0) {
+      setGptdevLocalMessages(gptdevMessagesRaw.map(msg => ({
+        id: msg.id,
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        createdAt: msg.created_at,
+        agent: msg.agent_name
+      })));
+    }
+  }, [gptdevMessagesRaw]);
+
+  useEffect(() => {
+    if (manusMessagesRaw.length > 0) {
+      setManusLocalMessages(manusMessagesRaw.map(msg => ({
+        id: msg.id,
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        createdAt: msg.created_at,
+        agent: msg.agent_name
+      })));
+    }
+  }, [manusMessagesRaw]);
+
+  useEffect(() => {
+    if (abacusMessagesRaw.length > 0) {
+      setAbacusLocalMessages(abacusMessagesRaw.map(msg => ({
+        id: msg.id,
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        createdAt: msg.created_at,
+        agent: msg.agent_name
+      })));
+    }
+  }, [abacusMessagesRaw]);
+
+  useEffect(() => {
+    if (zapierMessagesRaw.length > 0) {
+      setZapierLocalMessages(zapierMessagesRaw.map(msg => ({
+        id: msg.id,
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        createdAt: msg.created_at,
+        agent: msg.agent_name
+      })));
+    }
+  }, [zapierMessagesRaw]);
+
   const [gptdevInputValue, setGptdevInputValue] = useState('');
   const [manusInputValue, setManusInputValue] = useState('');
   const [abacusInputValue, setAbacusInputValue] = useState('');
@@ -690,14 +745,14 @@ export default function DashboardPA() {
 
     setGptdevInputValue('');
 
-    // Aggiungi SUBITO il messaggio utente
+    // Aggiungi SUBITO il messaggio utente (UI ottimistica)
     const userMsg: AgentChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
       content: text,
       createdAt: new Date().toISOString(),
     };
-    setGptdevMessages(prev => [...prev, userMsg]);
+    setGptdevLocalMessages(prev => [...prev, userMsg]);
 
     try {
       await sendAgentMessage(
@@ -705,10 +760,10 @@ export default function DashboardPA() {
         text,
         gptdevConversationId,
         setGptdevConversationId,
-        (msg) => setGptdevMessages(prev => [...prev, msg])
+        (msg) => setGptdevLocalMessages(prev => [...prev, msg])
       );
     } catch (err: any) {
-      setGptdevMessages(prev => [
+      setGptdevLocalMessages(prev => [
         ...prev,
         {
           id: crypto.randomUUID(),
@@ -732,7 +787,7 @@ export default function DashboardPA() {
       content: text,
       createdAt: new Date().toISOString(),
     };
-    setManusMessages(prev => [...prev, userMsg]);
+    setManusLocalMessages(prev => [...prev, userMsg]);
 
     try {
       await sendAgentMessage(
@@ -740,10 +795,10 @@ export default function DashboardPA() {
         text,
         manusConversationId,
         setManusConversationId,
-        (msg) => setManusMessages(prev => [...prev, msg])
+        (msg) => setManusLocalMessages(prev => [...prev, msg])
       );
     } catch (err: any) {
-      setManusMessages(prev => [
+      setManusLocalMessages(prev => [
         ...prev,
         {
           id: crypto.randomUUID(),
@@ -767,7 +822,7 @@ export default function DashboardPA() {
       content: text,
       createdAt: new Date().toISOString(),
     };
-    setAbacusMessages(prev => [...prev, userMsg]);
+    setAbacusLocalMessages(prev => [...prev, userMsg]);
 
     try {
       await sendAgentMessage(
@@ -775,10 +830,10 @@ export default function DashboardPA() {
         text,
         abacusConversationId,
         setAbacusConversationId,
-        (msg) => setAbacusMessages(prev => [...prev, msg])
+        (msg) => setAbacusLocalMessages(prev => [...prev, msg])
       );
     } catch (err: any) {
-      setAbacusMessages(prev => [
+      setAbacusLocalMessages(prev => [
         ...prev,
         {
           id: crypto.randomUUID(),
@@ -802,7 +857,7 @@ export default function DashboardPA() {
       content: text,
       createdAt: new Date().toISOString(),
     };
-    setZapierMessages(prev => [...prev, userMsg]);
+    setZapierLocalMessages(prev => [...prev, userMsg]);
 
     try {
       await sendAgentMessage(
@@ -810,10 +865,10 @@ export default function DashboardPA() {
         text,
         zapierConversationId,
         setZapierConversationId,
-        (msg) => setZapierMessages(prev => [...prev, msg])
+        (msg) => setZapierLocalMessages(prev => [...prev, msg])
       );
     } catch (err: any) {
-      setZapierMessages(prev => [
+      setZapierLocalMessages(prev => [
         ...prev,
         {
           id: crypto.randomUUID(),
@@ -3887,7 +3942,7 @@ export default function DashboardPA() {
                           )}
                           
                           {/* Messaggi GPT Developer */}
-                          {selectedAgent === 'gptdev' && gptdevMessages.map((msg, idx) => (
+                          {selectedAgent === 'gptdev' && gptdevLocalMessages.map((msg, idx) => (
                             <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                               <div className={`p-3 rounded-lg ${
                                 msg.role === 'user' 
@@ -3896,7 +3951,7 @@ export default function DashboardPA() {
                                   ? 'bg-red-500/10 border border-red-500/30'
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
-                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
                                 {msg.agent && (
                                   <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
                                 )}
@@ -3905,7 +3960,7 @@ export default function DashboardPA() {
                           ))}
                           
                           {/* Messaggi Manus */}
-                          {selectedAgent === 'manus' && manusMessages.map((msg, idx) => (
+                          {selectedAgent === 'manus' && manusLocalMessages.map((msg, idx) => (
                             <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                               <div className={`p-3 rounded-lg ${
                                 msg.role === 'user' 
@@ -3914,7 +3969,7 @@ export default function DashboardPA() {
                                   ? 'bg-red-500/10 border border-red-500/30'
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
-                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
                                 {msg.agent && (
                                   <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
                                 )}
@@ -3923,7 +3978,7 @@ export default function DashboardPA() {
                           ))}
                           
                           {/* Messaggi Abacus */}
-                          {selectedAgent === 'abacus' && abacusMessages.map((msg, idx) => (
+                          {selectedAgent === 'abacus' && abacusLocalMessages.map((msg, idx) => (
                             <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                               <div className={`p-3 rounded-lg ${
                                 msg.role === 'user' 
@@ -3932,7 +3987,7 @@ export default function DashboardPA() {
                                   ? 'bg-red-500/10 border border-red-500/30'
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
-                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
                                 {msg.agent && (
                                   <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
                                 )}
@@ -3941,7 +3996,7 @@ export default function DashboardPA() {
                           ))}
                           
                           {/* Messaggi Zapier */}
-                          {selectedAgent === 'zapier' && zapierMessages.map((msg, idx) => (
+                          {selectedAgent === 'zapier' && zapierLocalMessages.map((msg, idx) => (
                             <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                               <div className={`p-3 rounded-lg ${
                                 msg.role === 'user' 
@@ -3950,7 +4005,7 @@ export default function DashboardPA() {
                                   ? 'bg-red-500/10 border border-red-500/30'
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
-                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
                                 {msg.agent && (
                                   <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
                                 )}
