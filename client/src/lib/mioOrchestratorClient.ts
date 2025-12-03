@@ -1,5 +1,6 @@
 /**
  * Tipo per i messaggi della chat MIO
+ * Force rebuild: 2025-12-03 07:16
  */
 export interface MioChatMessage {
   id: string;
