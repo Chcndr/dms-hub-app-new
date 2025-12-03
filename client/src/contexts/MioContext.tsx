@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 
 // 🔥 TABULA RASA: Context condiviso per MIO (Widget + Dashboard)
 
@@ -31,6 +31,53 @@ export function MioProvider({ children }: { children: ReactNode }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 🔥 PERSISTENZA: Carica cronologia al mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      // Leggi conversationId da localStorage
+      const storedId = localStorage.getItem('mioMainConversationId');
+      if (!storedId) return;
+
+      try {
+        const params = new URLSearchParams({
+          conversation_id: storedId,
+          agent_name: 'mio',
+          limit: '200',
+        });
+        
+        const response = await fetch(`/api/mio/agent-logs?${params.toString()}`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        if (data.logs && data.logs.length > 0) {
+          // Converti formato backend → MioMessage
+          const loadedMessages: MioMessage[] = data.logs.map((log: any) => ({
+            id: log.id,
+            role: log.role as 'user' | 'assistant' | 'system',
+            content: log.message || log.content || '',
+            createdAt: log.created_at,
+            agentName: log.agent_name,
+          }));
+          
+          setMessages(loadedMessages);
+          setConversationId(storedId);
+          console.log('🔥 [MioContext] Cronologia caricata:', loadedMessages.length, 'messaggi');
+        }
+      } catch (err) {
+        console.error('🔥 [MioContext] Errore caricamento cronologia:', err);
+      }
+    };
+
+    loadHistory();
+  }, []);
+
+  // 🔥 PERSISTENZA: Salva conversationId in localStorage quando cambia
+  useEffect(() => {
+    if (conversationId) {
+      localStorage.setItem('mioMainConversationId', conversationId);
+    }
+  }, [conversationId]);
 
   // 🔥 TABULA RASA: Funzione sendMessage condivisa
   const sendMessage = useCallback(async (text: string, meta: Record<string, any> = {}) => {
