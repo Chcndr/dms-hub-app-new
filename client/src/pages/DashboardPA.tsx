@@ -4045,9 +4045,9 @@ export default function DashboardPA() {
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
                                 <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
-                                {msg.agent && (
-                                  <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
-                                )}
+                                <p className="text-[#e8fbff]/50 text-xs mt-1">
+                                  da {msg.role === 'user' ? 'Utente' : (msg.agent || 'agente')}
+                                </p>
                               </div>
                             </div>
                           ))}
@@ -4063,9 +4063,9 @@ export default function DashboardPA() {
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
                                 <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
-                                {msg.agent && (
-                                  <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
-                                )}
+                                <p className="text-[#e8fbff]/50 text-xs mt-1">
+                                  da {msg.role === 'user' ? 'Utente' : (msg.agent || 'agente')}
+                                </p>
                               </div>
                             </div>
                           ))}
@@ -4081,9 +4081,9 @@ export default function DashboardPA() {
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
                                 <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
-                                {msg.agent && (
-                                  <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
-                                )}
+                                <p className="text-[#e8fbff]/50 text-xs mt-1">
+                                  da {msg.role === 'user' ? 'Utente' : (msg.agent || 'agente')}
+                                </p>
                               </div>
                             </div>
                           ))}
@@ -4099,9 +4099,9 @@ export default function DashboardPA() {
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
                                 <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
-                                {msg.agent && (
-                                  <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
-                                )}
+                                <p className="text-[#e8fbff]/50 text-xs mt-1">
+                                  da {msg.role === 'user' ? 'Utente' : (msg.agent || 'agente')}
+                                </p>
                               </div>
                             </div>
                           ))}
