@@ -449,22 +449,6 @@ export default function DashboardPA() {
   // Guardian Logs for MIO Agent tab
   const [guardianLogs, setGuardianLogs] = useState<any[]>([]);
   
-  // Load Guardian logs
-  useEffect(() => {
-    const fetchGuardianLogs = async () => {
-      try {
-        const response = await getLogs({ limit: 50 });
-        setGuardianLogs(response.logs || []);
-      } catch (err) {
-        console.error('Error loading Guardian logs:', err);
-      }
-    };
-    fetchGuardianLogs();
-    // Refresh every 10 seconds
-    const interval = setInterval(fetchGuardianLogs, 10000);
-    return () => clearInterval(interval);
-  }, []);
-  
   // Multi-Agent Chat state
   const [showMultiAgentChat, setShowMultiAgentChat] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<'gptdev' | 'manus' | 'abacus' | 'zapier'>('gptdev');
