@@ -4049,7 +4049,7 @@ export default function DashboardPA() {
                                   ? 'bg-red-500/10 border border-red-500/30'
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
-                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
                                 {msg.agent && (
                                   <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
                                 )}
@@ -4067,7 +4067,7 @@ export default function DashboardPA() {
                                   ? 'bg-red-500/10 border border-red-500/30'
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
-                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
                                 {msg.agent && (
                                   <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
                                 )}
@@ -4085,7 +4085,7 @@ export default function DashboardPA() {
                                   ? 'bg-red-500/10 border border-red-500/30'
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
-                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
                                 {msg.agent && (
                                   <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
                                 )}
@@ -4103,7 +4103,7 @@ export default function DashboardPA() {
                                   ? 'bg-red-500/10 border border-red-500/30'
                                   : 'bg-[#10b981]/10 border border-[#10b981]/20'
                               }`}>
-                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.text}</p>
+                                <p className="text-[#e8fbff] text-sm whitespace-pre-wrap">{msg.content}</p>
                                 {msg.agent && (
                                   <p className="text-[#e8fbff]/50 text-xs mt-1">da {msg.agent}</p>
                                 )}
