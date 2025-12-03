@@ -516,6 +516,7 @@ export default function DashboardPA() {
   // Questi hook gestiscono le 4 chat isolate (GPT Dev, Manus, Abacus, Zapier)
   const {
     messages: manusMessagesRaw,
+    setMessages: setManusMessages,
     loading: manusLoading,
     error: manusError,
   } = useAgentLogs({
@@ -525,13 +526,14 @@ export default function DashboardPA() {
   
   const manusMessages = manusMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
-    text: msg.content,
+    content: msg.content,
     agent: msg.agent_name
   }));
   
   // Hook separato per Abacus (vista singola isolata)
   const {
     messages: abacusMessagesRaw,
+    setMessages: setAbacusMessages,
     loading: abacusLoading,
     error: abacusError,
   } = useAgentLogs({
@@ -541,13 +543,14 @@ export default function DashboardPA() {
   
   const abacusMessages = abacusMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
-    text: msg.content,
+    content: msg.content,
     agent: msg.agent_name
   }));
   
   // Hook separato per Zapier (vista singola isolata)
   const {
     messages: zapierMessagesRaw,
+    setMessages: setZapierMessages,
     loading: zapierLoading,
     error: zapierError,
   } = useAgentLogs({
@@ -568,13 +571,13 @@ export default function DashboardPA() {
   
   const gptdevMessages = gptdevMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
-    text: msg.content,
+    content: msg.content,
     agent: msg.agent_name
   }));
   
   const zapierMessages = zapierMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
-    text: msg.content,
+    content: msg.content,
     agent: msg.agent_name
   }));
   
@@ -670,11 +673,13 @@ export default function DashboardPA() {
     setGptdevInputValue('');
 
     // 🔥 TABULA RASA: Aggiungi messaggio utente
-    const userMsg: AgentChatMessage = {
+    const userMsg = {
       id: crypto.randomUUID(),
-      role: 'user',
+      conversation_id: gptdevConversationId || '',
+      agent_name: 'gptdev',
+      role: 'user' as const,
       content: text,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     setGptdevMessages(prev => [...prev, userMsg]);
 
@@ -721,9 +726,11 @@ export default function DashboardPA() {
           ...prev,
           {
             id: crypto.randomUUID(),
-            role: 'assistant',
+            conversation_id: data.conversationId || gptdevConversationId || '',
+            agent_name: 'gptdev',
+            role: 'assistant' as const,
             content: replyContent,
-            createdAt: new Date().toISOString(),
+            created_at: new Date().toISOString(),
           },
         ]);
       }
@@ -733,9 +740,11 @@ export default function DashboardPA() {
         ...prev,
         {
           id: crypto.randomUUID(),
-          role: 'system',
+          conversation_id: gptdevConversationId || '',
+          agent_name: 'gptdev',
+          role: 'system' as const,
           content: `Errore: ${err.message}`,
-          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString(),
         },
       ]);
     }
@@ -748,11 +757,13 @@ export default function DashboardPA() {
     setManusInputValue('');
 
     // 🔥 TABULA RASA: Aggiungi messaggio utente
-    const userMsg: AgentChatMessage = {
+    const userMsg = {
       id: crypto.randomUUID(),
-      role: 'user',
+      conversation_id: manusConversationId || '',
+      agent_name: 'manus',
+      role: 'user' as const,
       content: text,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     setManusMessages(prev => [...prev, userMsg]);
 
@@ -799,9 +810,11 @@ export default function DashboardPA() {
           ...prev,
           {
             id: crypto.randomUUID(),
-            role: 'assistant',
+            conversation_id: data.conversationId || manusConversationId || '',
+            agent_name: 'manus',
+            role: 'assistant' as const,
             content: replyContent,
-            createdAt: new Date().toISOString(),
+            created_at: new Date().toISOString(),
           },
         ]);
       }
@@ -811,9 +824,11 @@ export default function DashboardPA() {
         ...prev,
         {
           id: crypto.randomUUID(),
-          role: 'system',
+          conversation_id: manusConversationId || '',
+          agent_name: 'manus',
+          role: 'system' as const,
           content: `Errore: ${err.message}`,
-          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString(),
         },
       ]);
     }
@@ -826,11 +841,13 @@ export default function DashboardPA() {
     setAbacusInputValue('');
 
     // 🔥 TABULA RASA: Aggiungi messaggio utente
-    const userMsg: AgentChatMessage = {
+    const userMsg = {
       id: crypto.randomUUID(),
-      role: 'user',
+      conversation_id: abacusConversationId || '',
+      agent_name: 'abacus',
+      role: 'user' as const,
       content: text,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     setAbacusMessages(prev => [...prev, userMsg]);
 
@@ -877,9 +894,11 @@ export default function DashboardPA() {
           ...prev,
           {
             id: crypto.randomUUID(),
-            role: 'assistant',
+            conversation_id: data.conversationId || abacusConversationId || '',
+            agent_name: 'abacus',
+            role: 'assistant' as const,
             content: replyContent,
-            createdAt: new Date().toISOString(),
+            created_at: new Date().toISOString(),
           },
         ]);
       }
@@ -889,9 +908,11 @@ export default function DashboardPA() {
         ...prev,
         {
           id: crypto.randomUUID(),
-          role: 'system',
+          conversation_id: abacusConversationId || '',
+          agent_name: 'abacus',
+          role: 'system' as const,
           content: `Errore: ${err.message}`,
-          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString(),
         },
       ]);
     }
@@ -904,11 +925,13 @@ export default function DashboardPA() {
     setZapierInputValue('');
 
     // 🔥 TABULA RASA: Aggiungi messaggio utente
-    const userMsg: AgentChatMessage = {
+    const userMsg = {
       id: crypto.randomUUID(),
-      role: 'user',
+      conversation_id: zapierConversationId || '',
+      agent_name: 'zapier',
+      role: 'user' as const,
       content: text,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     setZapierMessages(prev => [...prev, userMsg]);
 
@@ -955,9 +978,11 @@ export default function DashboardPA() {
           ...prev,
           {
             id: crypto.randomUUID(),
-            role: 'assistant',
+            conversation_id: data.conversationId || zapierConversationId || '',
+            agent_name: 'zapier',
+            role: 'assistant' as const,
             content: replyContent,
-            createdAt: new Date().toISOString(),
+            created_at: new Date().toISOString(),
           },
         ]);
       }
@@ -967,9 +992,11 @@ export default function DashboardPA() {
         ...prev,
         {
           id: crypto.randomUUID(),
-          role: 'system',
+          conversation_id: zapierConversationId || '',
+          agent_name: 'zapier',
+          role: 'system' as const,
           content: `Errore: ${err.message}`,
-          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString(),
         },
       ]);
     }
