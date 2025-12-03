@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { MioProvider } from "./contexts/MioContext";
 import ChatWidget from "./components/ChatWidget";
 import HomePage from "./pages/HomePage";
 import MapPage from "./pages/MapPage";
@@ -53,11 +54,13 @@ function App() {
       <ThemeProvider
         defaultTheme="dark"
       >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-          <ChatWidget userRole="client" />
-        </TooltipProvider>
+        <MioProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+            <ChatWidget userRole="client" />
+          </TooltipProvider>
+        </MioProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

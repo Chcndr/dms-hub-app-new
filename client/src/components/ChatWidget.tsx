@@ -3,9 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
-import { useConversationPersistence } from '@/hooks/useConversationPersistence';
-import { useAgentLogs } from '@/hooks/useAgentLogs';
-import { sendDirectMessageToHetzner } from '@/lib/DirectMioClient';
+import { useMio } from '@/contexts/MioContext';
+// 🔥 TABULA RASA: Usa Context condiviso!
 
 interface ChatWidgetProps {
   userRole?: 'cliente' | 'operatore' | 'pa' | 'super_admin' | 'owner';
@@ -23,22 +22,18 @@ interface ChatWidgetProps {
 export default function ChatWidget({ userRole = 'cliente', userId, context }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Persistenza conversazione
-  const { conversationId } = useConversationPersistence('mio-widget');
-  
-  // Hook per caricare messaggi da agent_logs
+  // 🔥 USA CONTEXT CONDIVISO!
   const {
     messages,
-    setMessages,
-    loading,
+    isLoading,
     error,
-  } = useAgentLogs({
-    conversationId,
-    // niente agentName: vedi tutti i messaggi collegati a quella conversazione
-  });
+    sendMessage: sendMioMessage,
+  } = useMio();
+  
+  // Alias per compatibilità
+  const loading = isLoading;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,61 +43,12 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
     scrollToBottom();
   }, [messages]);
 
+  // 🔥 USA LA FUNZIONE DEL CONTEXT!
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
-
-    // Push ottimistico
-    setMessages(prev => [
-      ...prev,
-      {
-        id: `local-${Date.now()}`,
-        conversation_id: conversationId ?? '',
-        agent_name: 'mio',
-        role: 'user',
-        content: text,
-        created_at: new Date().toISOString(),
-      },
-    ]);
     
     setInputMessage('');
-    setIsTyping(true);
-
-    try {
-      console.log('[ChatWidget] Sending message with conversationId:', conversationId);
-      
-      const data = await sendDirectMessageToHetzner(text, conversationId);
-      console.log('[ChatWidget] Received response:', data);
-
-      // Aggiungi la risposta direttamente ai messaggi
-      if (data.messages && data.messages.length > 0) {
-        setMessages(prev => [
-          ...prev,
-          ...data.messages.map(msg => ({
-            id: msg.id,
-            conversation_id: data.conversationId,
-            agent_name: 'mio',
-            role: msg.role,
-            content: msg.content,
-            created_at: msg.createdAt,
-          })),
-        ]);
-      }
-    } catch (error) {
-      console.error('[ChatWidget] Error sending message:', error);
-      setMessages(prev => [
-        ...prev,
-        {
-          id: `error-${Date.now()}`,
-          conversation_id: conversationId ?? '',
-          agent_name: 'system',
-          role: 'assistant',
-          content: 'Scusa, ho avuto un problema. Riprova tra poco! 😅',
-          created_at: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setIsTyping(false);
-    }
+    await sendMioMessage(text, { source: "chat_widget" });
   };
 
   if (!isOpen) {
@@ -187,7 +133,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
           </div>
         ))}
 
-        {isTyping && (
+        {isLoading && (
           <div className="flex gap-2 justify-start">
             <div className="w-8 h-8 rounded-full bg-[#14b8a6] flex items-center justify-center flex-shrink-0">
               <Bot className="w-5 h-5 text-white" />
@@ -216,7 +162,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
           />
           <Button
             onClick={() => sendMessage(inputMessage)}
-            disabled={!inputMessage.trim() || isTyping}
+            disabled={!inputMessage.trim() || isLoading}
             className="bg-[#14b8a6] hover:bg-[#0d9488] text-white"
           >
             <Send className="w-4 h-4" />

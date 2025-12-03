@@ -35,6 +35,7 @@ import { getLogs, getLogsStats, getGuardianHealth } from '@/api/logsClient';
 // import { useInternalTraces } from '@/hooks/useInternalTraces'; // TODO: implementare hook
 import { useConversationPersistence } from '@/hooks/useConversationPersistence';
 import { useAgentLogs } from '@/hooks/useAgentLogs';
+import { useMio } from '@/contexts/MioContext';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Hook per dati reali da backend
@@ -453,23 +454,24 @@ export default function DashboardPA() {
   const [selectedAgent, setSelectedAgent] = useState<'gptdev' | 'manus' | 'abacus' | 'zapier'>('gptdev');
   const [viewMode, setViewMode] = useState<'single' | 'quad'>('single');
   
-  // MIO Agent Chat state (Fase 1) - usa useAgentLogs
+  // 🔥 MIO Agent Chat state - USA CONTEXT CONDIVISO!
   const [mioInputValue, setMioInputValue] = useState('');
   
-  // Persistenza conversazione per Chat principale MIO
-  const { conversationId: mioMainConversationId, setConversationId: setMioMainConversationId } = useConversationPersistence('mio-main');
+  // 🔥 CONTEXT CONDIVISO: Stato MIO dal Context
+  const {
+    messages: mioMessages,
+    conversationId: mioMainConversationId,
+    isLoading: mioSending,
+    error: mioSendError,
+    sendMessage: sendMioMessage,
+    setConversationId: setMioMainConversationId,
+  } = useMio();
   
   // Persistenza conversazioni separate per vista singola agenti
   const { conversationId: manusConversationId, setConversationId: setManusConversationId } = useConversationPersistence('manus-single');
   const { conversationId: abacusConversationId, setConversationId: setAbacusConversationId } = useConversationPersistence('abacus-single');
   const { conversationId: zapierConversationId, setConversationId: setZapierConversationId } = useConversationPersistence('zapier-single');
   const { conversationId: gptdevConversationId, setConversationId: setGptdevConversationId } = useConversationPersistence('gptdev-single');
-  
-  // STATO LOCALE per chat MIO principale (NO useAgentLogs)
-  
-  const [mioMessages, setMioMessages] = useState<MioChatMessage[]>([]);
-  const [mioSending, setMioSending] = useState(false);
-  const [mioSendError, setMioSendError] = useState<string | null>(null);
   
   // Variabili di compatibilità per non rompere il resto del codice
   const mioLoading = false;
@@ -643,88 +645,16 @@ export default function DashboardPA() {
     }) + ' (ora locale)';
   };
   
-  // Handler per invio messaggio MIO (FASE 1 - STABILIZZATO)
-  // ---------------------------------------------------------
-  // 🔥 OPERAZIONE "TABULA RASA" - CHIAMATA INLINE DIRETTA
+  // 🔥 Handler per invio messaggio MIO - USA CONTEXT!
   // ---------------------------------------------------------
   const handleSendMio = async () => {
     const text = mioInputValue.trim();
     if (!text || mioSending) return;
 
-    setMioSending(true);
     setMioInputValue('');
 
-    // 1. UI Optimistic Update (mostra subito il messaggio utente)
-    const userMsg: MioChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: text,
-      createdAt: new Date().toISOString(),
-    };
-    setMioMessages(prev => [...prev, userMsg]);
-
-    try {
-      console.log("🔥 TABULA RASA: Inizio chiamata diretta...");
-      console.log("🔥 TABULA RASA: Message:", text);
-      console.log("🔥 TABULA RASA: Old ConversationId:", mioMainConversationId);
-      
-      // 2. CHIAMATA FETCH PURA (Nessun import, nessun wrapper)
-      const response = await fetch("https://orchestratore.mio-hub.me/api/mihub/orchestrator", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          mode: "auto",
-          message: text,
-          // 3. TRUCCO SALVAVITA: Passiamo NULL per forzare una nuova conversazione
-          // Se il vecchio ID era corrotto su Neon, questo risolve il 404.
-          conversationId: null, 
-          meta: { source: "dashboard_tabula_rasa" }
-        })
-      });
-
-      console.log("🔥 TABULA RASA: Status Response", response.status);
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error("🔥 TABULA RASA: Error Response Body:", errText);
-        throw new Error(`Server ha risposto ${response.status}: ${errText}`);
-      }
-
-      const data = await response.json();
-      console.log("🔥 TABULA RASA: Dati ricevuti", data);
-
-      // 4. Aggiornamento UI con risposta AI
-      // Nota: Salviamo il NUOVO conversationId che il server ci restituisce
-      if (data.conversationId) {
-        console.log("🔥 TABULA RASA: New ConversationId:", data.conversationId);
-        setMioMainConversationId(data.conversationId); 
-      }
-
-      const aiMsg: MioChatMessage = { 
-        id: crypto.randomUUID(),
-        role: 'assistant', 
-        content: data.message || data.reply || data.response || "Risposta vuota", 
-        createdAt: new Date().toISOString()
-      };
-      setMioMessages(prev => [...prev, aiMsg]);
-      
-      console.log("🔥 TABULA RASA: SUCCESS! ✅");
-
-    } catch (error: any) {
-      console.error("🔥 TABULA RASA ERROR:", error);
-      const errorMsg: MioChatMessage = { 
-        id: crypto.randomUUID(),
-        role: 'system', 
-        content: `🔥 TABULA RASA ERROR: ${error.message}`, 
-        createdAt: new Date().toISOString()
-      };
-      setMioMessages(prev => [...prev, errorMsg]);
-    } finally {
-      setMioSending(false);
-      console.log("🔥 TABULA RASA: Completed");
-    }
+    // 🔥 USA LA FUNZIONE DEL CONTEXT!
+    await sendMioMessage(text, { source: "dashboard_pa" });
   };
   // ---------------------------------------------------------
   // FINE BLOCCO TABULA RASA
