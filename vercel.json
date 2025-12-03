@@ -4,6 +4,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/mihub/:path*",
+      "destination": "https://orchestratore.mio-hub.me/api/mihub/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
