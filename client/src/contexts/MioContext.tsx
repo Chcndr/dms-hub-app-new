@@ -32,11 +32,30 @@ export function MioProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔥 PERSISTENZA: Carica cronologia al mount
+  // ♾️ CHAT ETERNA: Carica o genera conversation_id al mount
   useEffect(() => {
+    // Helper: Valida UUID v4
+    const isValidUUID = (uuid: string): boolean => {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
+    };
+
+    // 1. Cerca un ID esistente nel localStorage ("cassetto" del browser)
+    let storedId = localStorage.getItem('mihub_global_conversation_id');
+
+    // 2. Se non c'è (o è vecchio/invalido), ne crea uno NUOVO e lo salva PER SEMPRE
+    if (!storedId || !isValidUUID(storedId)) {
+      storedId = crypto.randomUUID(); // Genera UUID valido
+      localStorage.setItem('mihub_global_conversation_id', storedId);
+      console.log('♾️ [MioContext Chat Eterna] Nuovo conversation_id generato:', storedId);
+    } else {
+      console.log('♾️ [MioContext Chat Eterna] Conversation_id esistente caricato:', storedId);
+    }
+
+    // 3. Usa quell'ID. Punto.
+    setConversationId(storedId);
+
+    // 4. Carica cronologia dal backend
     const loadHistory = async () => {
-      // Leggi conversationId da localStorage
-      const storedId = localStorage.getItem('mioMainConversationId');
       if (!storedId) return;
 
       try {
@@ -72,10 +91,10 @@ export function MioProvider({ children }: { children: ReactNode }) {
     loadHistory();
   }, []);
 
-  // 🔥 PERSISTENZA: Salva conversationId in localStorage quando cambia
+  // ♾️ CHAT ETERNA: Salva conversationId in localStorage quando cambia
   useEffect(() => {
     if (conversationId) {
-      localStorage.setItem('mioMainConversationId', conversationId);
+      localStorage.setItem('mihub_global_conversation_id', conversationId);
     }
   }, [conversationId]);
 
