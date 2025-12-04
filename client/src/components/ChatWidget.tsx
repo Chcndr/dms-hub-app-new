@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -35,34 +35,10 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
   // Alias per compatibilità
   const loading = isLoading;
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // Scroll iniziale al mount (SEMPRE)
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => scrollToBottom(), 100);
-    }
-  }, []);
-
-  // Auto-scroll quando cambiano messaggi (SOLO se utente è già in fondo)
-  useEffect(() => {
-    const messagesDiv = messagesEndRef.current?.parentElement;
-    if (!messagesDiv) return;
-    
-    // Scrolla sempre se la chat è vuota o quasi vuota (primi messaggi)
-    if (messages.length <= 2) {
-      scrollToBottom();
-      return;
-    }
-    
-    const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-    
-    // Scrolla SOLO se l'utente è già vicino al fondo (previene effetto molla)
-    if (isNearBottom) {
-      scrollToBottom();
+  // Scroll istantaneo all'ultimo messaggio quando cambiano messaggi
+  useLayoutEffect(() => {
+    if (messages.length > 0 && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
     }
   }, [messages]);
 
@@ -109,7 +85,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-scroll p-4 space-y-4 widget-messages-container">
         {loading && messages.length === 0 && (
           <div className="text-center text-[#9bd6de] text-sm py-8">
             <Bot className="w-12 h-12 mx-auto mb-2 opacity-50 animate-pulse" />

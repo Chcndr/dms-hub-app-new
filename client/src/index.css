@@ -232,3 +232,33 @@ html, body {
 
 
 
+
+/* ===== OPERAZIONE SCROLL & STABILITÀ ===== */
+/* Fix layout shift e jitter causati da scrollbar appearance/disappearance */
+
+/* Forza scrollbar sempre visibile per evitare layout shift */
+.chat-messages-container,
+.multi-agent-chat-container,
+.widget-messages-container {
+  overflow-y: scroll !important; /* Non 'auto' - previene layout shift */
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+/* Previene horizontal overflow su elementi fixed */
+.fixed, [style*="position: fixed"] {
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+}
+
+/* Disabilita scroll su body quando modal/widget aperto */
+body.modal-open, body.widget-open {
+  overflow: hidden !important;
+}
+
+/* Assicura che tutti i message container abbiano box-sizing corretto */
+.message-container, [class*="message"] {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}

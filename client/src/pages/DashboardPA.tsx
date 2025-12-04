@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { 
   Users, TrendingUp, Store, ShoppingCart, Leaf, MapPin, 
@@ -1111,31 +1111,15 @@ export default function DashboardPA() {
     }
   };
 
-  // Scroll iniziale MIO al mount (SEMPRE)
-  useEffect(() => {
-    if (mioMessages.length > 0) {
-      setTimeout(() => scrollMioToBottom(), 100);
-    }
-  }, []);
-
-  // Auto-scroll MIO quando cambiano messaggi (SOLO se utente è già in fondo)
-  useEffect(() => {
-    const messagesDiv = mioMessagesRef.current;
-    if (!messagesDiv) return;
+  // Scroll MIO quando cambiano messaggi
+  useLayoutEffect(() => {
+    if (!mioMessagesRef.current || mioMessages.length === 0) return;
     
-    // Scrolla sempre se la chat è vuota o quasi vuota (primi messaggi)
-    if (mioMessages.length <= 2) {
-      scrollMioToBottom();
-      return;
-    }
-    
-    const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-    
-    // Scrolla SOLO se l'utente è già vicino al fondo (previene effetto molla)
-    if (isNearBottom) {
-      scrollMioToBottom();
-    }
+    // Scroll istantaneo all'ultimo messaggio
+    mioMessagesRef.current.scrollTo({
+      top: mioMessagesRef.current.scrollHeight,
+      behavior: 'auto' // Istantaneo, no animazione
+    });
   }, [mioMessages]);
 
   // Listener scroll MIO per bottone
@@ -3968,7 +3952,7 @@ export default function DashboardPA() {
                       </div>
                       {/* Area messaggi */}
                       <div className="relative">
-                        <div ref={mioMessagesRef} className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto space-y-3">
+                        <div ref={mioMessagesRef} className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-scroll space-y-3 chat-messages-container">
                         {mioMessages.length === 0 ? (
                           <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
                         ) : (
@@ -4194,7 +4178,7 @@ export default function DashboardPA() {
                         </div>
                         {/* Area messaggi */}
                         <div className="relative">
-                          <div ref={singleChatMessagesRef} className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-auto">
+                          <div ref={singleChatMessagesRef} className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-scroll chat-messages-container">
                           {selectedAgent === 'gptdev' && gptdevMessages.length === 0 && (
                             <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
                           )}
