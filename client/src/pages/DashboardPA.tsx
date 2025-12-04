@@ -666,6 +666,9 @@ export default function DashboardPA() {
 
     // 🔥 USA LA FUNZIONE DEL CONTEXT!
     await sendMioMessage(text, { source: "dashboard_pa" });
+    
+    // Forza scroll dopo invio messaggio
+    setTimeout(() => scrollMioToBottom(), 100);
   };
   // ---------------------------------------------------------
   // FINE BLOCCO TABULA RASA
@@ -1108,10 +1111,23 @@ export default function DashboardPA() {
     }
   };
 
+  // Scroll iniziale MIO al mount (SEMPRE)
+  useEffect(() => {
+    if (mioMessages.length > 0) {
+      setTimeout(() => scrollMioToBottom(), 100);
+    }
+  }, []);
+
   // Auto-scroll MIO quando cambiano messaggi (SOLO se utente è già in fondo)
   useEffect(() => {
     const messagesDiv = mioMessagesRef.current;
     if (!messagesDiv) return;
+    
+    // Scrolla sempre se la chat è vuota o quasi vuota (primi messaggi)
+    if (mioMessages.length <= 2) {
+      scrollMioToBottom();
+      return;
+    }
     
     const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
@@ -1121,20 +1137,6 @@ export default function DashboardPA() {
       scrollMioToBottom();
     }
   }, [mioMessages]);
-
-  // Scroll iniziale MIO al mount
-  useEffect(() => {
-    if (mioMessages.length > 0 && mioMessagesRef.current) {
-      setTimeout(() => {
-        if (mioMessagesRef.current) {
-          mioMessagesRef.current.scrollTo({
-            top: mioMessagesRef.current.scrollHeight,
-            behavior: 'instant' as ScrollBehavior
-          });
-        }
-      }, 300);
-    }
-  }, []);
 
   // Listener scroll MIO per bottone
   useEffect(() => {

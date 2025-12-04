@@ -72,28 +72,35 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, messages, loading }) => {
   const Icon = config.icon;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Scroll iniziale al mount (SEMPRE)
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }, 100);
+    }
+  }, []);
+
   // Auto-scroll quando arrivano nuovi messaggi (SOLO se utente è già in fondo)
   useEffect(() => {
     const messagesDiv = messagesEndRef.current?.parentElement;
     if (!messagesDiv) return;
     
+    // Scrolla sempre se la chat è vuota o quasi vuota (primi messaggi)
+    if (messages.length <= 2) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      return;
+    }
+    
     const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
     
     // Scrolla SOLO se l'utente è già vicino al fondo (previene effetto molla)
+    // USA 'auto' invece di 'smooth' per evitare loop infinito con 4 chat
     if (isNearBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
     }
   }, [messages]);
-
-  // Scroll iniziale al mount (per messaggi già esistenti)
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'instant' as ScrollBehavior });
-      }, 300);
-    }
-  }, []);
 
   return (
     <Card className={`bg-[#0a0f1a] ${config.borderColor}`}>

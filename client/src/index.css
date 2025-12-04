@@ -226,6 +226,14 @@ html, body {
   overflow-x: hidden !important; /* Previene scroll orizzontale */
   height: auto !important;
   min-height: 100vh;
+  max-width: 100vw !important; /* Limita larghezza massima */
+}
+
+/* Previeni overflow orizzontale da contenuto */
+* {
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 

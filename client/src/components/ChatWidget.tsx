@@ -39,10 +39,23 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Scroll iniziale al mount (SEMPRE)
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => scrollToBottom(), 100);
+    }
+  }, []);
+
   // Auto-scroll quando cambiano messaggi (SOLO se utente è già in fondo)
   useEffect(() => {
     const messagesDiv = messagesEndRef.current?.parentElement;
     if (!messagesDiv) return;
+    
+    // Scrolla sempre se la chat è vuota o quasi vuota (primi messaggi)
+    if (messages.length <= 2) {
+      scrollToBottom();
+      return;
+    }
     
     const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
