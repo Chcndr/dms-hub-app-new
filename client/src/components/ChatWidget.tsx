@@ -39,8 +39,18 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Auto-scroll quando cambiano messaggi (SOLO se utente è già in fondo)
   useEffect(() => {
-    scrollToBottom();
+    const messagesDiv = messagesEndRef.current?.parentElement;
+    if (!messagesDiv) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    
+    // Scrolla SOLO se l'utente è già vicino al fondo (previene effetto molla)
+    if (isNearBottom) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   // 🔥 USA LA FUNZIONE DEL CONTEXT!
@@ -65,7 +75,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
   }
 
   return (
-    <Card className="fixed z-[9999] bg-[#0b1220] border-[#14b8a6] flex flex-col md:w-96 md:h-[600px] md:rounded-lg md:shadow-2xl max-md:top-0 max-md:left-0 max-md:right-0 max-md:bottom-0 max-md:w-full max-md:h-[100dvh] max-md:rounded-none max-md:border-0" style={{ bottom: window.innerWidth >= 768 ? '1.5rem' : '0', right: window.innerWidth >= 768 ? '1.5rem' : '0', position: 'fixed', maxHeight: 'calc(100dvh - env(safe-area-inset-bottom))' }}>
+    <Card className="fixed z-[9999] bg-[#0b1220] border-[#14b8a6] flex flex-col md:w-96 md:h-[600px] md:rounded-lg md:shadow-2xl max-md:top-0 max-md:left-0 max-md:right-0 max-md:bottom-0 max-md:w-full max-md:h-[100dvh] max-md:rounded-none max-md:border-0" style={{ bottom: '1.5rem', right: '1.5rem', position: 'fixed', maxHeight: 'calc(100dvh - env(safe-area-inset-bottom))' }}>
       <div className="bg-[#14b8a6] p-4 flex items-center justify-between md:rounded-t-lg">
         <div className="flex items-center gap-2">
           <Bot className="w-5 h-5 text-white" />

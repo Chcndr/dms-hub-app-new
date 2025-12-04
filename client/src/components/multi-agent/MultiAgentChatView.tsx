@@ -72,9 +72,18 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, messages, loading }) => {
   const Icon = config.icon;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll quando arrivano nuovi messaggi
+  // Auto-scroll quando arrivano nuovi messaggi (SOLO se utente è già in fondo)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const messagesDiv = messagesEndRef.current?.parentElement;
+    if (!messagesDiv) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    
+    // Scrolla SOLO se l'utente è già vicino al fondo (previene effetto molla)
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   // Scroll iniziale al mount (per messaggi già esistenti)

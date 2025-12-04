@@ -1108,9 +1108,18 @@ export default function DashboardPA() {
     }
   };
 
-  // Auto-scroll MIO quando cambiano messaggi
+  // Auto-scroll MIO quando cambiano messaggi (SOLO se utente è già in fondo)
   useEffect(() => {
-    scrollMioToBottom();
+    const messagesDiv = mioMessagesRef.current;
+    if (!messagesDiv) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    
+    // Scrolla SOLO se l'utente è già vicino al fondo (previene effetto molla)
+    if (isNearBottom) {
+      scrollMioToBottom();
+    }
   }, [mioMessages]);
 
   // Scroll iniziale MIO al mount
@@ -1152,9 +1161,18 @@ export default function DashboardPA() {
     }
   };
 
-  // Auto-scroll chat singole quando cambiano messaggi
+  // Auto-scroll chat singole quando cambiano messaggi (SOLO se utente è già in fondo)
   useEffect(() => {
-    scrollSingleChatToBottom();
+    const messagesDiv = singleChatMessagesRef.current;
+    if (!messagesDiv) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    
+    // Scrolla SOLO se l'utente è già vicino al fondo (previene effetto molla)
+    if (isNearBottom) {
+      scrollSingleChatToBottom();
+    }
   }, [gptdevMessages, manusMessages, abacusMessages, zapierMessages, selectedAgent]);
 
   // Scroll iniziale chat singole al mount

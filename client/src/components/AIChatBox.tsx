@@ -166,9 +166,21 @@ export function AIChatBox({
     }
   };
 
-  // Auto-scroll when messages change (new message received)
+  // Auto-scroll when messages change (SOLO se utente è già in fondo)
   useEffect(() => {
-    scrollToBottom();
+    const viewport = scrollAreaRef.current?.querySelector(
+      '[data-radix-scroll-area-viewport]'
+    ) as HTMLDivElement;
+
+    if (!viewport) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = viewport;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+
+    // Scrolla SOLO se l'utente è già vicino al fondo (previene effetto molla)
+    if (isNearBottom) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   // Scroll iniziale al mount (per messaggi già esistenti)
