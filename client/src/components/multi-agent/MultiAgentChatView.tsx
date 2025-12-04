@@ -100,7 +100,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, messages, loading }) => {
                 }`}
               >
                 <div className="text-xs text-[#e8fbff]/50 mb-1">
-                  {msg.role === 'user' ? 'MIO' : config.name}
+                  {msg.role === 'user' ? 'Utente' : config.name}
                 </div>
                 <p className="text-xs text-[#e8fbff] whitespace-pre-wrap">{msg.content}</p>
                 <div className="text-xs text-[#e8fbff]/30 mt-1">
