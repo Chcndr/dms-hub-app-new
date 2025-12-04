@@ -28,6 +28,7 @@ import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView'
 import { callOrchestrator } from '@/api/orchestratorClient';
 import { sendAgentMessage, AgentChatMessage } from '@/lib/mioOrchestratorClient';
 import { sendDirectMessageToHetzner, DirectMioMessage } from '@/lib/DirectMioClient';
+import { sendToAgent } from '@/lib/agentHelper';
 
 // 👻 GHOSTBUSTER: MioChatMessage sostituito con DirectMioMessage
 type MioChatMessage = DirectMioMessage;
@@ -680,344 +681,61 @@ export default function DashboardPA() {
   const handleSendGptdev = async () => {
     const text = gptdevInputValue.trim();
     if (!text) return;
-
     setGptdevInputValue('');
 
-    // 🔥 TABULA RASA: Aggiungi messaggio utente
-    const userMsg = {
-      id: crypto.randomUUID(),
-      conversation_id: gptdevConversationId || '',
-      agent_name: 'gptdev',
-      role: 'user' as const,
-      content: text,  // Usa 'content' per match con AgentLogMessage interface
-      created_at: new Date().toISOString(),
-      pending: true,  // Flag per Optimistic UI
-    };
-    setGptdevMessages(prev => [...prev, userMsg]);
-
-    try {
-      // 🔥 TABULA RASA: Direct fetch con conversationId: null
-      const URL = "https://orchestratore.mio-hub.me/api/mihub/orchestrator";
-      const body = {
-        message: text,
-        mode: "manual",
-        targetAgent: "gptdev",
-        conversationId: gptdevConversationId, // Usa conversazione esistente
-      };
-
-      console.log("🔥 [handleSendGptdev] Chiamata partita verso", URL);
-      console.log("🔥 [handleSendGptdev] Payload:", body);
-
-      const response = await fetch(URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      console.log("🔥 [handleSendGptdev] Response status:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("🔥 [handleSendGptdev] HTTP ERROR:", response.status, errorText);
-        throw new Error(`HTTP Error ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("🔥 [handleSendGptdev] Response data:", data);
-
-      // Aggiorna conversationId se il backend ne ha restituito uno nuovo
-      if (data.conversationId) {
-        console.log("🔥 [handleSendGptdev] Updating conversationId:", data.conversationId);
-        setGptdevConversationId(data.conversationId);
-      }
-
-      // 🔥 FIX: Backend NON salva messaggi nel DB, quindi gestiamo tutto lato frontend
-      // Rimuovi flag pending dal messaggio utente
-      setGptdevMessages(prev => prev.map(msg => 
-        msg.pending ? { ...msg, pending: false } : msg
-      ));
-      
-      // Aggiungi risposta dell'agente manualmente
-      if (data.message) {
-        const assistantMsg = {
-          id: crypto.randomUUID(),
-          conversation_id: data.conversationId || gptdevConversationId || '',
-          agent_name: 'gptdev',
-          role: 'assistant' as const,
-          content: data.message,
-          created_at: new Date().toISOString(),
-        };
-        setGptdevMessages(prev => [...prev, assistantMsg]);
-      }
-    } catch (err: any) {
-      console.error("🔥 [handleSendGptdev] NETWORK ERROR:", err);
-      setGptdevMessages(prev => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          conversation_id: gptdevConversationId || '',
-          agent_name: 'gptdev',
-          role: 'system' as const,
-          content: `Errore: ${err.message}`,  // Usa 'content' per match con AgentLogMessage
-          created_at: new Date().toISOString(),
-        },
-      ]);
-    }
+    await sendToAgent({
+      targetAgent: 'gptdev',
+      message: text,
+      conversationId: gptdevConversationId,
+      mode: 'manual',
+      onUpdateMessages: setGptdevMessages,
+      onUpdateConversationId: setGptdevConversationId,
+    });
   };
 
   const handleSendManus = async () => {
     const text = manusInputValue.trim();
     if (!text) return;
-
     setManusInputValue('');
 
-    // 🔥 TABULA RASA: Aggiungi messaggio utente
-    const userMsg = {
-      id: crypto.randomUUID(),
-      conversation_id: manusConversationId || '',
-      agent_name: 'manus',
-      role: 'user' as const,
-      content: text,  // Usa 'content' per match con AgentLogMessage interface
-      created_at: new Date().toISOString(),
-      pending: true,  // Flag per Optimistic UI
-    };
-    setManusMessages(prev => [...prev, userMsg]);
-
-    try {
-      // 🔥 TABULA RASA: Direct fetch con conversationId: null
-      const URL = "https://orchestratore.mio-hub.me/api/mihub/orchestrator";
-      const body = {
-        message: text,
-        mode: "manual",
-        targetAgent: "manus",
-        conversationId: manusConversationId, // Usa conversazione esistente
-      };
-
-      console.log("🔥 [handleSendManus] Chiamata partita verso", URL);
-      console.log("🔥 [handleSendManus] Payload:", body);
-
-      const response = await fetch(URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      console.log("🔥 [handleSendManus] Response status:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("🔥 [handleSendManus] HTTP ERROR:", response.status, errorText);
-        throw new Error(`HTTP Error ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("🔥 [handleSendManus] Response data:", data);
-
-      // Aggiorna conversationId se il backend ne ha restituito uno nuovo
-      if (data.conversationId) {
-        console.log("🔥 [handleSendManus] Updating conversationId:", data.conversationId);
-        setManusConversationId(data.conversationId);
-      }
-
-      // 🔥 FIX: Backend NON salva messaggi nel DB, quindi gestiamo tutto lato frontend
-      setManusMessages(prev => prev.map(msg => msg.pending ? { ...msg, pending: false } : msg));
-      
-      // Aggiungi risposta dell'agente manualmente
-      if (data.message) {
-        const assistantMsg = {
-          id: crypto.randomUUID(),
-          conversation_id: data.conversationId || manusConversationId || '',
-          agent_name: 'manus',
-          role: 'assistant' as const,
-          content: data.message,
-          created_at: new Date().toISOString(),
-        };
-        setManusMessages(prev => [...prev, assistantMsg]);
-      }
-    } catch (err: any) {
-      console.error("🔥 [handleSendManus] NETWORK ERROR:", err);
-      setManusMessages(prev => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          conversation_id: manusConversationId || '',
-          agent_name: 'manus',
-          role: 'system' as const,
-          content: `Errore: ${err.message}`,  // Usa 'content' per match con AgentLogMessage
-          created_at: new Date().toISOString(),
-        },
-      ]);
-    }
+    await sendToAgent({
+      targetAgent: 'manus',
+      message: text,
+      conversationId: manusConversationId,
+      mode: 'manual',
+      onUpdateMessages: setManusMessages,
+      onUpdateConversationId: setManusConversationId,
+    });
   };
 
   const handleSendAbacus = async () => {
     const text = abacusInputValue.trim();
     if (!text) return;
-
     setAbacusInputValue('');
 
-    // 🔥 TABULA RASA: Aggiungi messaggio utente
-    const userMsg = {
-      id: crypto.randomUUID(),
-      conversation_id: abacusConversationId || '',
-      agent_name: 'abacus',
-      role: 'user' as const,
-      content: text,  // Usa 'content' per match con AgentLogMessage interface
-      created_at: new Date().toISOString(),
-      pending: true,  // Flag per Optimistic UI
-    };
-    setAbacusMessages(prev => [...prev, userMsg]);
-
-    try {
-      // 🔥 TABULA RASA: Direct fetch con conversationId: null
-      const URL = "https://orchestratore.mio-hub.me/api/mihub/orchestrator";
-      const body = {
-        message: text,
-        mode: "manual",
-        targetAgent: "abacus",
-        conversationId: abacusConversationId, // Usa conversazione esistente
-      };
-
-      console.log("🔥 [handleSendAbacus] Chiamata partita verso", URL);
-      console.log("🔥 [handleSendAbacus] Payload:", body);
-
-      const response = await fetch(URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      console.log("🔥 [handleSendAbacus] Response status:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("🔥 [handleSendAbacus] HTTP ERROR:", response.status, errorText);
-        throw new Error(`HTTP Error ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("🔥 [handleSendAbacus] Response data:", data);
-
-      // Aggiorna conversationId se il backend ne ha restituito uno nuovo
-      if (data.conversationId) {
-        console.log("🔥 [handleSendAbacus] Updating conversationId:", data.conversationId);
-        setAbacusConversationId(data.conversationId);
-      }
-
-      // 🔥 FIX: Backend NON salva messaggi nel DB, quindi gestiamo tutto lato frontend
-      setAbacusMessages(prev => prev.map(msg => msg.pending ? { ...msg, pending: false } : msg));
-      
-      // Aggiungi risposta dell'agente manualmente
-      if (data.message) {
-        const assistantMsg = {
-          id: crypto.randomUUID(),
-          conversation_id: data.conversationId || abacusConversationId || '',
-          agent_name: 'abacus',
-          role: 'assistant' as const,
-          content: data.message,
-          created_at: new Date().toISOString(),
-        };
-        setAbacusMessages(prev => [...prev, assistantMsg]);
-      }
-    } catch (err: any) {
-      console.error("🔥 [handleSendAbacus] NETWORK ERROR:", err);
-      setAbacusMessages(prev => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          conversation_id: abacusConversationId || '',
-          agent_name: 'abacus',
-          role: 'system' as const,
-          content: `Errore: ${err.message}`,  // Usa 'content' per match con AgentLogMessage
-          created_at: new Date().toISOString(),
-        },
-      ]);
-    }
+    await sendToAgent({
+      targetAgent: 'abacus',
+      message: text,
+      conversationId: abacusConversationId,
+      mode: 'manual',
+      onUpdateMessages: setAbacusMessages,
+      onUpdateConversationId: setAbacusConversationId,
+    });
   };
 
   const handleSendZapier = async () => {
     const text = zapierInputValue.trim();
     if (!text) return;
-
     setZapierInputValue('');
 
-    // 🔥 TABULA RASA: Aggiungi messaggio utente
-    const userMsg = {
-      id: crypto.randomUUID(),
-      conversation_id: zapierConversationId || '',
-      agent_name: 'zapier',
-      role: 'user' as const,
-      content: text,  // Usa 'content' per match con AgentLogMessage interface
-      created_at: new Date().toISOString(),
-      pending: true,  // Flag per Optimistic UI
-    };
-    setZapierMessages(prev => [...prev, userMsg]);
-
-    try {
-      // 🔥 TABULA RASA: Direct fetch con conversationId: null
-      const URL = "https://orchestratore.mio-hub.me/api/mihub/orchestrator";
-      const body = {
-        message: text,
-        mode: "manual",
-        targetAgent: "zapier",
-        conversationId: zapierConversationId, // Usa conversazione esistente
-      };
-
-      console.log("🔥 [handleSendZapier] Chiamata partita verso", URL);
-      console.log("🔥 [handleSendZapier] Payload:", body);
-
-      const response = await fetch(URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      console.log("🔥 [handleSendZapier] Response status:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("🔥 [handleSendZapier] HTTP ERROR:", response.status, errorText);
-        throw new Error(`HTTP Error ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("🔥 [handleSendZapier] Response data:", data);
-
-      // Aggiorna conversationId se il backend ne ha restituito uno nuovo
-      if (data.conversationId) {
-        console.log("🔥 [handleSendZapier] Updating conversationId:", data.conversationId);
-        setZapierConversationId(data.conversationId);
-      }
-
-      // 🔥 FIX: Backend NON salva messaggi nel DB, quindi gestiamo tutto lato frontend
-      setZapierMessages(prev => prev.map(msg => msg.pending ? { ...msg, pending: false } : msg));
-      
-      // Aggiungi risposta dell'agente manualmente
-      if (data.message) {
-        const assistantMsg = {
-          id: crypto.randomUUID(),
-          conversation_id: data.conversationId || zapierConversationId || '',
-          agent_name: 'zapier',
-          role: 'assistant' as const,
-          content: data.message,
-          created_at: new Date().toISOString(),
-        };
-        setZapierMessages(prev => [...prev, assistantMsg]);
-      }
-    } catch (err: any) {
-      console.error("🔥 [handleSendZapier] NETWORK ERROR:", err);
-      setZapierMessages(prev => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          conversation_id: zapierConversationId || '',
-          agent_name: 'zapier',
-          role: 'system' as const,
-          content: `Errore: ${err.message}`,  // Usa 'content' per match con AgentLogMessage
-          created_at: new Date().toISOString(),
-        },
-      ]);
-    }
+    await sendToAgent({
+      targetAgent: 'zapier',
+      message: text,
+      conversationId: zapierConversationId,
+      mode: 'manual',
+      onUpdateMessages: setZapierMessages,
+      onUpdateConversationId: setZapierConversationId,
+    });
   };
   
   // ELIMINATO: loadConversationHistory() - causava 404 su endpoint inesistente
