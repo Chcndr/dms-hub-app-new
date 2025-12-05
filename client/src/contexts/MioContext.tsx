@@ -32,11 +32,29 @@ export function MioProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔨 FORZATURA ID STORICO (Ripristino messaggi)
+  const FORCE_ID = 'dfab3001-0969-4d6d-93b5-e6f69eecb794';
+  
+  useEffect(() => {
+    const current = localStorage.getItem('mioMainConversationId');
+    if (current !== FORCE_ID) {
+      console.warn("⚠️ FORZATURA ID STORICO...");
+      localStorage.setItem('mioMainConversationId', FORCE_ID);
+      window.location.reload();
+    }
+  }, []);
+
   // 🔥 PERSISTENZA: Carica cronologia al mount
   useEffect(() => {
     const loadHistory = async () => {
       // Leggi conversationId da localStorage
       const storedId = localStorage.getItem('mioMainConversationId');
+      
+      // ✅ IMPOSTA conversationId SUBITO (anche se non ci sono messaggi)
+      if (storedId) {
+        setConversationId(storedId);
+      }
+      
       if (!storedId) return;
 
       try {
@@ -122,8 +140,8 @@ export function MioProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       console.log('🔥 [MioContext TABULA RASA] Dati ricevuti:', data);
 
-      // Aggiorna conversationId se nuovo
-      if (data.conversationId && data.conversationId !== conversationId) {
+      // ✅ NON sovrascrivere conversationId se ne abbiamo già uno
+      if (data.conversationId && !conversationId) {
         console.log('🔥 [MioContext TABULA RASA] Nuovo conversationId:', data.conversationId);
         setConversationId(data.conversationId);
       }
