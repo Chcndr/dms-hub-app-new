@@ -22,6 +22,7 @@ import GuardianDebug from "./pages/GuardianDebug";
 import MarketGISPage from "./pages/MarketGISPage";
 import LogDebugPage from "./pages/LogDebugPage";
 import APITokensPage from "./pages/APITokensPage";
+import CouncilPage from "./pages/CouncilPage";
 
 function Router() {
   return (
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/market-gis" component={MarketGISPage} />
       <Route path="/log-debug" component={LogDebugPage} />
       <Route path="/settings/api-tokens" component={APITokensPage} />
+      <Route path="/council" component={CouncilPage} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
