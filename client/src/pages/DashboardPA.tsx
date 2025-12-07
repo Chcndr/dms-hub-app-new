@@ -461,6 +461,9 @@ export default function DashboardPA() {
   // Guardian Logs for MIO Agent tab
   const [guardianLogs, setGuardianLogs] = useState<any[]>([]);
   
+  // Documentation Modal state
+  const [docModalContent, setDocModalContent] = useState<{ title: string; content: string } | null>(null);
+  
   // Multi-Agent Chat state
   const [showMultiAgentChat, setShowMultiAgentChat] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<'gptdev' | 'manus' | 'abacus' | 'zapier'>('gptdev');
@@ -944,6 +947,113 @@ export default function DashboardPA() {
     messagesDiv.addEventListener('scroll', handleScroll);
     return () => messagesDiv.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Documentation Modal handler
+  const openDocModal = (docKey: string) => {
+    const content: Record<string, { title: string; content: string }> = {
+      executive_summary: {
+        title: '🎯 Executive Summary',
+        content: `
+          <p>Il DMS Hub è un ecosistema integrato per la gestione dei mercati, della mobilità sostenibile e dei servizi civici. La piattaforma si compone di un backend centrale (MIO Hub), una dashboard per la Pubblica Amministrazione, un sistema di agenti AI specializzati e diverse applicazioni web per cittadini e operatori.</p>
+          <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Documentazione Completa su GitHub →</a></p>
+        `
+      },
+      architettura_tecnica: {
+        title: '🏭 Architettura Tecnica',
+        content: `
+          <ul>
+            <li><b>Frontend:</b> React, Vite, TypeScript, TailwindCSS (su Vercel)</li>
+            <li><b>Backend:</b> Node.js, Express, PM2 (su Hetzner)</li>
+            <li><b>Database:</b> PostgreSQL (Neon) - 39 tabelle</li>
+            <li><b>Agenti AI:</b> MIO (orchestrator), GPT Dev, Manus, Abacus, Zapier</li>
+            <li><b>Integrazioni:</b> GitHub, Zapier, Neon, LLM Council</li>
+          </ul>
+          <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/orchestratore-multi-agente.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Architettura Completa su GitHub →</a></p>
+        `
+      },
+      applicazioni_web: {
+        title: '📱 8 Applicazioni Web',
+        content: `
+          <p>L'ecosistema DMS Hub include 8 applicazioni web integrate:</p>
+          <ul>
+            <li><b>Dashboard PA:</b> Centro di controllo per la Pubblica Amministrazione</li>
+            <li><b>LLM Council:</b> Confronto e valutazione modelli AI</li>
+            <li><b>BUS Hub:</b> Gestione trasporto pubblico e Centro Mobilità</li>
+            <li><b>Core Map:</b> Mappa GIS interattiva con layer Pepe GIS</li>
+            <li><b>Sito Pubblico:</b> Portale per cittadini e operatori</li>
+            <li><b>Hub Operatore:</b> Gestione mercati e posteggi</li>
+            <li><b>Vetrine Digitali:</b> Showcase prodotti Made in Italy</li>
+            <li><b>Gestionale DMS:</b> Backoffice completo</li>
+          </ul>
+          <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Documentazione Completa su GitHub →</a></p>
+        `
+      },
+      integrazioni: {
+        title: '⭐ Sistema Integrazioni',
+        content: `
+          <p>Il sistema MIO Hub integra servizi esterni per funzionalità avanzate:</p>
+          <ul>
+            <li><b>LLM Council:</b> Confronto multi-modello AI (Gemini, GPT, Claude)</li>
+            <li><b>GitHub:</b> Gestione codice, CI/CD, deploy automatico</li>
+            <li><b>Zapier:</b> Automazione workflow e integrazioni business</li>
+            <li><b>Neon:</b> Database PostgreSQL serverless (39 tabelle)</li>
+            <li><b>TPER:</b> Integrazione trasporto pubblico Bologna</li>
+            <li><b>Pepe GIS:</b> Mappe interattive e layer geografici</li>
+          </ul>
+          <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/tree/master/07_guide_operative" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Guide Operative su GitHub →</a></p>
+        `
+      },
+      funzionalita_operative: {
+        title: '✅ Funzionalità Operative',
+        content: `
+          <p>Stato attuale delle funzionalità chiave del sistema:</p>
+          <ul>
+            <li><b>✅ Orchestratore Multi-Agente:</b> MIO agent operativo con Guardian logs</li>
+            <li><b>✅ Chat Agenti AI:</b> MIO, GPT Dev, Manus, Abacus, Zapier</li>
+            <li><b>✅ Dashboard PA:</b> Metriche real-time, grafici, analytics</li>
+            <li><b>✅ Backend API:</b> REST + tRPC su Hetzner (PM2)</li>
+            <li><b>✅ Database:</b> PostgreSQL Neon (39 tabelle)</li>
+            <li><b>✅ Deploy Automatico:</b> GitHub → Vercel (frontend) + Hetzner (backend)</li>
+            <li><b>⏳ Centro Mobilità:</b> Integrazione TPER in sviluppo</li>
+          </ul>
+          <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Stato Completo su GitHub →</a></p>
+        `
+      },
+      todo_prioritizzati: {
+        title: '📅 TODO Prioritizzati',
+        content: `
+          <p>Roadmap e priorità di sviluppo:</p>
+          <h4 class="text-cyan-400 font-semibold mt-3 mb-2">🔴 Alta Priorità</h4>
+          <ul>
+            <li>Completare integrazione Centro Mobilità TPER</li>
+            <li>Espandere Guardian logs con analytics avanzati</li>
+            <li>Implementare sistema notifiche real-time</li>
+          </ul>
+          <h4 class="text-yellow-400 font-semibold mt-3 mb-2">🟡 Media Priorità</h4>
+          <ul>
+            <li>Aggiungere dashboard metriche sostenibilità</li>
+            <li>Migliorare UI/UX vetrine digitali</li>
+            <li>Documentazione API completa</li>
+          </ul>
+          <h4 class="text-green-400 font-semibold mt-3 mb-2">🟢 Bassa Priorità</h4>
+          <ul>
+            <li>Ottimizzazione performance query database</li>
+            <li>Test automatici E2E</li>
+          </ul>
+          <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Roadmap Completa su GitHub →</a></p>
+        `
+      },
+      stato_progetto: {
+        title: '📋 Stato Progetto Aggiornato',
+        content: `<p>Documento completo con stato attuale, architettura, funzionalità operative, TODO prioritizzati e guide.</p>`
+      },
+      resoconto_ecosistema: {
+        title: '📊 Resoconto Completo Ecosistema',
+        content: `<p>Resoconto originale completo dell'ecosistema DMS Hub con tutte le 8 applicazioni web integrate.</p>`
+      }
+    };
+    setDocModalContent(content[docKey]);
+  };
 
   const QuickAccessButton = ({ href, icon, label, color = 'teal' }: any) => (
     <button
@@ -4474,122 +4584,6 @@ function LogsSection() {
   );
 }
 
-
-
-// Modale Documentazione
-const [docModalContent, setDocModalContent] = useState(null);
-
-const openDocModal = (docKey) => {
-  const content = {
-    executive_summary: {
-      title: '🎯 Executive Summary',
-      url: 'https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md',
-      content: `
-        <p>Il DMS Hub è un ecosistema integrato per la gestione dei mercati, della mobilità sostenibile e dei servizi civici. La piattaforma si compone di un backend centrale (MIO Hub), una dashboard per la Pubblica Amministrazione, un sistema di agenti AI specializzati e diverse applicazioni web per cittadini e operatori.</p>
-        <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Documentazione Completa su GitHub →</a></p>
-      `
-    },
-    architettura_tecnica: {
-      title: '🏭 Architettura Tecnica',
-      url: 'https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/orchestratore-multi-agente.md',
-      content: `
-        <ul>
-          <li><b>Frontend:</b> React, Vite, TypeScript, TailwindCSS (su Vercel)</li>
-          <li><b>Backend:</b> Node.js, Express, PM2 (su Hetzner)</li>
-          <li><b>Database:</b> PostgreSQL (Neon) - 39 tabelle</li>
-          <li><b>Agenti AI:</b> MIO (orchestrator), GPT Dev, Manus, Abacus, Zapier</li>
-          <li><b>Integrazioni:</b> GitHub, Zapier, Neon, LLM Council</li>
-        </ul>
-        <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/orchestratore-multi-agente.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Architettura Completa su GitHub →</a></p>
-      `
-    },
-    applicazioni_web: {
-      title: '📱 8 Applicazioni Web',
-      url: 'https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md',
-      content: `
-        <p>L'ecosistema DMS Hub include 8 applicazioni web integrate:</p>
-        <ul>
-          <li><b>Dashboard PA:</b> Centro di controllo per la Pubblica Amministrazione</li>
-          <li><b>LLM Council:</b> Confronto e valutazione modelli AI</li>
-          <li><b>BUS Hub:</b> Gestione trasporto pubblico e Centro Mobilità</li>
-          <li><b>Core Map:</b> Mappa GIS interattiva con layer Pepe GIS</li>
-          <li><b>Sito Pubblico:</b> Portale per cittadini e operatori</li>
-          <li><b>Hub Operatore:</b> Gestione mercati e posteggi</li>
-          <li><b>Vetrine Digitali:</b> Showcase prodotti Made in Italy</li>
-          <li><b>Gestionale DMS:</b> Backoffice completo</li>
-        </ul>
-        <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Documentazione Completa su GitHub →</a></p>
-      `
-    },
-    integrazioni: {
-      title: '⭐ Sistema Integrazioni',
-      url: 'https://github.com/Chcndr/dms-system-blueprint/tree/master/07_guide_operative',
-      content: `
-        <p>Il sistema MIO Hub integra servizi esterni per funzionalità avanzate:</p>
-        <ul>
-          <li><b>LLM Council:</b> Confronto multi-modello AI (Gemini, GPT, Claude)</li>
-          <li><b>GitHub:</b> Gestione codice, CI/CD, deploy automatico</li>
-          <li><b>Zapier:</b> Automazione workflow e integrazioni business</li>
-          <li><b>Neon:</b> Database PostgreSQL serverless (39 tabelle)</li>
-          <li><b>TPER:</b> Integrazione trasporto pubblico Bologna</li>
-          <li><b>Pepe GIS:</b> Mappe interattive e layer geografici</li>
-        </ul>
-        <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/tree/master/07_guide_operative" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Guide Operative su GitHub →</a></p>
-      `
-    },
-    funzionalita_operative: {
-      title: '✅ Funzionalità Operative',
-      url: 'https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md',
-      content: `
-        <p>Stato attuale delle funzionalità chiave del sistema:</p>
-        <ul>
-          <li><b>✅ Orchestratore Multi-Agente:</b> MIO agent operativo con Guardian logs</li>
-          <li><b>✅ Chat Agenti AI:</b> MIO, GPT Dev, Manus, Abacus, Zapier</li>
-          <li><b>✅ Dashboard PA:</b> Metriche real-time, grafici, analytics</li>
-          <li><b>✅ Backend API:</b> REST + tRPC su Hetzner (PM2)</li>
-          <li><b>✅ Database:</b> PostgreSQL Neon (39 tabelle)</li>
-          <li><b>✅ Deploy Automatico:</b> GitHub → Vercel (frontend) + Hetzner (backend)</li>
-          <li><b>⏳ Centro Mobilità:</b> Integrazione TPER in sviluppo</li>
-        </ul>
-        <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Stato Completo su GitHub →</a></p>
-      `
-    },
-    todo_prioritizzati: {
-      title: '📅 TODO Prioritizzati',
-      url: 'https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md',
-      content: `
-        <p>Roadmap e priorità di sviluppo:</p>
-        <h4 class="text-cyan-400 font-semibold mt-3 mb-2">🔴 Alta Priorità</h4>
-        <ul>
-          <li>Completare integrazione Centro Mobilità TPER</li>
-          <li>Espandere Guardian logs con analytics avanzati</li>
-          <li>Implementare sistema notifiche real-time</li>
-        </ul>
-        <h4 class="text-yellow-400 font-semibold mt-3 mb-2">🟡 Media Priorità</h4>
-        <ul>
-          <li>Aggiungere dashboard metriche sostenibilità</li>
-          <li>Migliorare UI/UX vetrine digitali</li>
-          <li>Documentazione API completa</li>
-        </ul>
-        <h4 class="text-green-400 font-semibold mt-3 mb-2">🟢 Bassa Priorità</h4>
-        <ul>
-          <li>Ottimizzazione performance query database</li>
-          <li>Test automatici E2E</li>
-        </ul>
-        <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Roadmap Completa su GitHub →</a></p>
-      `
-    },
-    stato_progetto: {
-        title: '📋 Stato Progetto Aggiornato',
-        content: `<p>Documento completo con stato attuale, architettura, funzionalità operative, TODO prioritizzati e guide.</p>`
-    },
-    resoconto_ecosistema: {
-        title: '📊 Resoconto Completo Ecosistema',
-        content: `<p>Resoconto originale completo dell'ecosistema DMS Hub con tutte le 8 applicazioni web integrate.</p>`
-    }
-  };
-  setDocModalContent(content[docKey]);
-};
 
 const DocModal: React.FC<{ content: { title: string; content: string } | null; onClose: () => void }> = ({ content, onClose }) => {
   if (!content) return null;
