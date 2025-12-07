@@ -326,6 +326,11 @@ export function DebugSectionReal() {
             <div className="text-[#14b8a6]">✓ GET /api/logs/getLogs - Ready</div>
             <div className="text-[#14b8a6]">✓ GET /api/logs/stats - Ready</div>
             <div className="text-[#14b8a6]">✓ GET /api/guardian/health - Ready</div>
+            <div className="text-[#8b5cf6] mt-4">$ Imprese & Qualificazioni API Status...</div>
+            <div className="text-[#14b8a6]">✓ GET /api/imprese - Ready</div>
+            <div className="text-[#14b8a6]">✓ GET /api/imprese/:id - Ready</div>
+            <div className="text-[#14b8a6]">✓ GET /api/qualificazioni - Ready</div>
+            <div className="text-[#14b8a6]">✓ GET /api/imprese/:id/qualificazioni - Ready</div>
             <div className="text-[#e8fbff]/50 mt-2">→ Test via tab Integrazioni</div>
           </div>
         </CardContent>

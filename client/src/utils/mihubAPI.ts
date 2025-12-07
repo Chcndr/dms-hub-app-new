@@ -303,8 +303,99 @@ export const mihubAPI = {
   },
 };
 
+/**
+ * Imprese & Qualificazioni API
+ */
+export const impreseAPI = {
+  /**
+   * Lista tutte le imprese
+   */
+  getImprese: async () => {
+    return fetchMIHUB<{
+      success: boolean;
+      data: Array<{
+        id: number;
+        ragione_sociale: string;
+        partita_iva: string;
+        codice_fiscale?: string;
+        comune?: string;
+        settore?: string;
+        created_at: string;
+        updated_at: string;
+      }>;
+      count: number;
+    }>('/api/imprese');
+  },
+
+  /**
+   * Dettagli singola impresa
+   */
+  getImpresaById: async (id: number) => {
+    return fetchMIHUB<{
+      success: boolean;
+      data: {
+        id: number;
+        ragione_sociale: string;
+        partita_iva: string;
+        codice_fiscale?: string;
+        comune?: string;
+        settore?: string;
+        created_at: string;
+        updated_at: string;
+      };
+    }>(`/api/imprese/${id}`);
+  },
+
+  /**
+   * Lista tutte le qualificazioni
+   */
+  getQualificazioni: async () => {
+    return fetchMIHUB<{
+      success: boolean;
+      data: Array<{
+        id: number;
+        impresa_id: number;
+        tipo: string;
+        ente_rilascio?: string;
+        data_rilascio?: string;
+        data_scadenza?: string;
+        stato: string;
+        numero_documento?: string;
+        note?: string;
+        created_at: string;
+        updated_at: string;
+      }>;
+      count: number;
+    }>('/api/qualificazioni');
+  },
+
+  /**
+   * Qualificazioni per impresa specifica
+   */
+  getQualificazioniByImpresa: async (impresaId: number) => {
+    return fetchMIHUB<{
+      success: boolean;
+      data: Array<{
+        id: number;
+        impresa_id: number;
+        tipo: string;
+        ente_rilascio?: string;
+        data_rilascio?: string;
+        data_scadenza?: string;
+        stato: string;
+        numero_documento?: string;
+        note?: string;
+        created_at: string;
+        updated_at: string;
+      }>;
+      count: number;
+    }>(`/api/imprese/${impresaId}/qualificazioni`);
+  },
+};
+
 export default {
   logs: logsAPI,
   guardian: guardianAPI,
   mihub: mihubAPI,
+  imprese: impreseAPI,
 };

@@ -106,9 +106,9 @@ export default function GuardianLogsSection() {
         </Card>
       </div>
 
-      {/* Tabs: System Logs + Guardian Logs */}
+      {/* Tabs: System Logs + Guardian Logs + Imprese Logs */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-[#1a2332] border border-[#14b8a6]/30">
+        <TabsList className="grid w-full grid-cols-4 bg-[#1a2332] border border-[#14b8a6]/30">
           <TabsTrigger value="all" className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white">
             Tutti i Log
           </TabsTrigger>
@@ -117,6 +117,9 @@ export default function GuardianLogsSection() {
           </TabsTrigger>
           <TabsTrigger value="guardian" className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white">
             Guardian Logs
+          </TabsTrigger>
+          <TabsTrigger value="imprese" className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white">
+            Imprese API
           </TabsTrigger>
         </TabsList>
 
@@ -293,6 +296,90 @@ export default function GuardianLogsSection() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Imprese API Logs Tab */}
+        <TabsContent value="imprese" className="mt-4">
+          <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+            <CardHeader>
+              <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                <Activity className="h-5 w-5 text-[#14b8a6]" />
+                Imprese & Qualificazioni API Logs
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const impreseLogs = guardianLogs.filter((log: any) => 
+                  log.endpoint?.includes('/api/imprese') || 
+                  log.endpoint?.includes('/api/qualificazioni')
+                );
+                return impreseLogs.length === 0 ? (
+                  <div className="text-center py-8 text-[#e8fbff]/60">
+                    <p className="mb-2">Nessun log per Imprese & Qualificazioni API.</p>
+                    <p className="text-xs text-[#e8fbff]/40">
+                      I log appariranno quando verranno effettuate chiamate agli endpoint:
+                    </p>
+                    <ul className="text-xs text-[#14b8a6] mt-2 space-y-1">
+                      <li>GET /api/imprese</li>
+                      <li>GET /api/imprese/:id</li>
+                      <li>GET /api/qualificazioni</li>
+                      <li>GET /api/imprese/:id/qualificazioni</li>
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                    {impreseLogs.map((log: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className={`p-3 rounded-lg border ${
+                          !log.success
+                            ? 'bg-[#ef4444]/10 border-[#ef4444]/30'
+                            : 'bg-[#0b1220] border-[#14b8a6]/20'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${getLevelBadge(log.success)}`}>
+                              {log.success ? 'SUCCESS' : 'ERROR'}
+                            </span>
+                            <span className="text-xs text-[#e8fbff]/70">{log.agent}</span>
+                            {log.statusCode && (
+                              <>
+                                <span className="text-xs text-[#e8fbff]/50">•</span>
+                                <span className={`text-xs font-mono ${
+                                  log.statusCode >= 200 && log.statusCode < 300 ? 'text-[#10b981]' :
+                                  log.statusCode >= 400 ? 'text-[#ef4444]' : 'text-[#f59e0b]'
+                                }`}>
+                                  {log.statusCode}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          <span className="text-xs text-[#e8fbff]/50">{formatTimestamp(log.timestamp)}</span>
+                        </div>
+                        <p className="text-sm text-[#e8fbff] mb-1 font-mono">{log.message}</p>
+                        {log.endpoint && (
+                          <div className="text-xs text-[#e8fbff]/50">
+                            {log.method} {log.endpoint}
+                          </div>
+                        )}
+                        {log.meta && (
+                          <details className="mt-2">
+                            <summary className="text-xs text-[#14b8a6] cursor-pointer hover:text-[#10b981]">
+                              Metadata
+                            </summary>
+                            <pre className="text-xs text-[#e8fbff]/60 mt-1 bg-[#0b1220] p-2 rounded overflow-x-auto">
+                              {JSON.stringify(log.meta, null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
