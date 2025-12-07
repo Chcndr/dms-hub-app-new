@@ -327,6 +327,7 @@ export default function GuardianLogsSection() {
                       <li>GET /api/imprese/:id</li>
                       <li>GET /api/qualificazioni</li>
                       <li>GET /api/imprese/:id/qualificazioni</li>
+                      <li>GET /api/imprese/:id/rating (Semaforo Conformità)</li>
                       <li>POST /api/admin/migrate-pdnd (Migration)</li>
                     </ul>
                   </div>
