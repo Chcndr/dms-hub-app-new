@@ -954,19 +954,36 @@ export default function DashboardPA() {
       executive_summary: {
         title: '🎯 Executive Summary',
         content: `
-          <p>Il DMS Hub è un ecosistema integrato per la gestione dei mercati, della mobilità sostenibile e dei servizi civici. La piattaforma si compone di un backend centrale (MIO Hub), una dashboard per la Pubblica Amministrazione, un sistema di agenti AI specializzati e diverse applicazioni web per cittadini e operatori.</p>
+          <p><b>Versione:</b> 3.1 (Fix Bug Critici) | <b>Ultimo Aggiornamento:</b> 7 Dicembre 2025</p>
+          <p class="mt-3">Il DMS Hub è un ecosistema integrato <b>operativo</b> per la gestione dei mercati, della mobilità sostenibile e dei servizi civici. La piattaforma si compone di:</p>
+          <ul class="mt-2">
+            <li>✅ <b>Frontend Dashboard PA</b> (React + Vite + TypeScript su Vercel)</li>
+            <li>✅ <b>Backend MIO Hub</b> (Node.js + Express su Hetzner)</li>
+            <li>✅ <b>5 Agenti AI Operativi</b> (MIO, GPT Dev, Manus, Abacus, Zapier)</li>
+            <li>✅ <b>Database PostgreSQL</b> (39 tabelle su Neon)</li>
+            <li>✅ <b>LLM Council</b> (Confronto multi-modello AI)</li>
+            <li>⏳ <b>8 Applicazioni Web</b> (2 operative, 6 in sviluppo)</li>
+          </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Documentazione Completa su GitHub →</a></p>
         `
       },
       architettura_tecnica: {
         title: '🏭 Architettura Tecnica',
         content: `
+          <p><b>Stack Tecnologico Operativo:</b></p>
+          <ul class="mt-2">
+            <li><b>Frontend:</b> React 18 + Vite + TypeScript + TailwindCSS (Vercel)</li>
+            <li><b>Backend:</b> Node.js + Express + PM2 (Hetzner VPS)</li>
+            <li><b>Database:</b> PostgreSQL 15 (Neon) - 39 tabelle</li>
+            <li><b>LLM Council:</b> Python/FastAPI + React (Hetzner)</li>
+            <li><b>Storage:</b> File system locale + GitHub logs</li>
+          </ul>
+          <p class="mt-3"><b>Domini Attivi:</b></p>
           <ul>
-            <li><b>Frontend:</b> React, Vite, TypeScript, TailwindCSS (su Vercel)</li>
-            <li><b>Backend:</b> Node.js, Express, PM2 (su Hetzner)</li>
-            <li><b>Database:</b> PostgreSQL (Neon) - 39 tabelle</li>
-            <li><b>Agenti AI:</b> MIO (orchestrator), GPT Dev, Manus, Abacus, Zapier</li>
-            <li><b>Integrazioni:</b> GitHub, Zapier, Neon, LLM Council</li>
+            <li>✅ <code>app.mio-hub.me</code> - Dashboard PA</li>
+            <li>✅ <code>api.mio-hub.me</code> - Backend API (porta 3000)</li>
+            <li>✅ <code>council.mio-hub.me</code> - LLM Council Frontend (porta 8002)</li>
+            <li>✅ <code>council-api.mio-hub.me</code> - LLM Council API (porta 8001)</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/orchestratore-multi-agente.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Architettura Completa su GitHub →</a></p>
         `
@@ -974,10 +991,14 @@ export default function DashboardPA() {
       applicazioni_web: {
         title: '📱 8 Applicazioni Web',
         content: `
-          <p>L'ecosistema DMS Hub include 8 applicazioni web integrate:</p>
+          <p><b>Stato delle Applicazioni Web:</b></p>
+          <p class="mt-2"><b class="text-green-400">✅ OPERATIVE (2/8):</b></p>
           <ul>
             <li><b>Dashboard PA:</b> Centro di controllo per la Pubblica Amministrazione</li>
-            <li><b>LLM Council:</b> Confronto e valutazione modelli AI</li>
+            <li><b>LLM Council:</b> Confronto e valutazione modelli AI (Gemini, GPT, Claude)</li>
+          </ul>
+          <p class="mt-3"><b class="text-yellow-400">⏳ IN SVILUPPO (6/8):</b></p>
+          <ul>
             <li><b>BUS Hub:</b> Gestione trasporto pubblico e Centro Mobilità</li>
             <li><b>Core Map:</b> Mappa GIS interattiva con layer Pepe GIS</li>
             <li><b>Sito Pubblico:</b> Portale per cittadini e operatori</li>
@@ -991,14 +1012,17 @@ export default function DashboardPA() {
       integrazioni: {
         title: '⭐ Sistema Integrazioni',
         content: `
-          <p>Il sistema MIO Hub integra servizi esterni per funzionalità avanzate:</p>
+          <p><b>Integrazioni Operative:</b></p>
+          <ul class="mt-2">
+            <li>✅ <b>LLM Council:</b> Confronto multi-modello AI (Gemini, GPT, Claude)</li>
+            <li>✅ <b>GitHub:</b> Gestione codice, CI/CD, deploy automatico</li>
+            <li>✅ <b>Zapier:</b> Automazione workflow e integrazioni business</li>
+            <li>✅ <b>Neon:</b> Database PostgreSQL serverless (39 tabelle)</li>
+            <li>✅ <b>Pepe GIS:</b> Mappe interattive e layer geografici</li>
+          </ul>
+          <p class="mt-3"><b>In Sviluppo:</b></p>
           <ul>
-            <li><b>LLM Council:</b> Confronto multi-modello AI (Gemini, GPT, Claude)</li>
-            <li><b>GitHub:</b> Gestione codice, CI/CD, deploy automatico</li>
-            <li><b>Zapier:</b> Automazione workflow e integrazioni business</li>
-            <li><b>Neon:</b> Database PostgreSQL serverless (39 tabelle)</li>
-            <li><b>TPER:</b> Integrazione trasporto pubblico Bologna</li>
-            <li><b>Pepe GIS:</b> Mappe interattive e layer geografici</li>
+            <li>⏳ <b>TPER:</b> Integrazione trasporto pubblico Bologna (Centro Mobilità)</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/tree/master/07_guide_operative" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Guide Operative su GitHub →</a></p>
         `
@@ -1006,15 +1030,24 @@ export default function DashboardPA() {
       funzionalita_operative: {
         title: '✅ Funzionalità Operative',
         content: `
-          <p>Stato attuale delle funzionalità chiave del sistema:</p>
+          <p><b>Funzionalità Operative (Aggiornato 07/12/2025):</b></p>
+          <ul class="mt-2">
+            <li>✅ <b>Orchestratore Multi-Agente:</b> MIO agent operativo (fix 07/12/2025)</li>
+            <li>✅ <b>5 Agenti AI:</b> MIO, GPT Dev, Manus, Abacus, Zapier (tutti operativi)</li>
+            <li>✅ <b>Guardian Logs:</b> Sistema di monitoring agenti (visibile in tab Logs)</li>
+            <li>✅ <b>Chat Multi-Agente:</b> Vista singola + 4 quadranti con auto-scroll</li>
+            <li>✅ <b>Dashboard PA:</b> Metriche real-time, grafici, analytics</li>
+            <li>✅ <b>Backend API:</b> REST + tRPC su Hetzner (PM2)</li>
+            <li>✅ <b>Database:</b> PostgreSQL Neon (39 tabelle)</li>
+            <li>✅ <b>Deploy Automatico:</b> GitHub → Vercel + Hetzner</li>
+            <li>✅ <b>LLM Council:</b> Confronto Gemini, GPT, Claude</li>
+          </ul>
+          <p class="mt-3"><b>Fix Recenti (07/12/2025):</b></p>
           <ul>
-            <li><b>✅ Orchestratore Multi-Agente:</b> MIO agent operativo con Guardian logs</li>
-            <li><b>✅ Chat Agenti AI:</b> MIO, GPT Dev, Manus, Abacus, Zapier</li>
-            <li><b>✅ Dashboard PA:</b> Metriche real-time, grafici, analytics</li>
-            <li><b>✅ Backend API:</b> REST + tRPC su Hetzner (PM2)</li>
-            <li><b>✅ Database:</b> PostgreSQL Neon (39 tabelle)</li>
-            <li><b>✅ Deploy Automatico:</b> GitHub → Vercel (frontend) + Hetzner (backend)</li>
-            <li><b>⏳ Centro Mobilità:</b> Integrazione TPER in sviluppo</li>
+            <li>✅ Bug duplicazione messaggi - RISOLTO</li>
+            <li>✅ Bug saveAgentLog - RISOLTO</li>
+            <li>✅ Bug tool_calls Gemini - RISOLTO</li>
+            <li>✅ Auto-scroll chat - RISOLTO</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Stato Completo su GitHub →</a></p>
         `
@@ -1022,10 +1055,11 @@ export default function DashboardPA() {
       todo_prioritizzati: {
         title: '📅 TODO Prioritizzati',
         content: `
-          <p>Roadmap e priorità di sviluppo:</p>
-          <h4 class="text-cyan-400 font-semibold mt-3 mb-2">🔴 Alta Priorità</h4>
+          <p><b>Roadmap Sviluppo (Aggiornato 07/12/2025):</b></p>
+          <h4 class="text-red-400 font-semibold mt-3 mb-2">🔴 Alta Priorità</h4>
           <ul>
             <li>Completare integrazione Centro Mobilità TPER</li>
+            <li>Verificare e completare le 6 applicazioni web in sviluppo</li>
             <li>Espandere Guardian logs con analytics avanzati</li>
             <li>Implementare sistema notifiche real-time</li>
           </ul>
@@ -1034,11 +1068,13 @@ export default function DashboardPA() {
             <li>Aggiungere dashboard metriche sostenibilità</li>
             <li>Migliorare UI/UX vetrine digitali</li>
             <li>Documentazione API completa</li>
+            <li>Configurare redirect domini www.mio-hub.me e mio-hub.me</li>
           </ul>
           <h4 class="text-green-400 font-semibold mt-3 mb-2">🟢 Bassa Priorità</h4>
           <ul>
             <li>Ottimizzazione performance query database</li>
             <li>Test automatici E2E</li>
+            <li>Refactoring codice legacy</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Roadmap Completa su GitHub →</a></p>
         `
