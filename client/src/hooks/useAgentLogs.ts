@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export interface AgentLogMessage {
   id: string;
@@ -14,12 +14,20 @@ interface UseAgentLogsOptions {
   conversationId: string | null;
   agentName?: string; // es. 'mio', 'abacus', 'manus', 'zapier'
   pollMs?: number;
+  useWebSocket?: boolean; // Abilita WebSocket (default: true)
 }
 
-export function useAgentLogs({ conversationId, agentName, pollMs = 5000 }: UseAgentLogsOptions) {
+export function useAgentLogs({ 
+  conversationId, 
+  agentName, 
+  pollMs = 30000, // Aumentato a 30s come fallback
+  useWebSocket = true 
+}: UseAgentLogsOptions) {
   const [messages, setMessages] = useState<AgentLogMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<number | undefined>();
 
   useEffect(() => {
     if (!conversationId) return;
@@ -69,17 +77,105 @@ export function useAgentLogs({ conversationId, agentName, pollMs = 5000 }: UseAg
       }
     };
 
-    // primo load al mount
+    // WebSocket connection
+    const connectWebSocket = () => {
+      if (!useWebSocket || !conversationId) return;
+
+      try {
+        // Determina URL WebSocket in base all'ambiente
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = window.location.hostname === 'localhost' 
+          ? 'localhost:8080' 
+          : 'api.mio-hub.me:8080';
+        const wsUrl = `${wsProtocol}//${wsHost}`;
+
+        console.log('[useAgentLogs] Connecting to WebSocket:', wsUrl);
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          console.log('[useAgentLogs] WebSocket connected');
+          // Subscribe to conversation
+          ws.send(JSON.stringify({
+            action: 'subscribe',
+            conversation_id: conversationId
+          }));
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('[useAgentLogs] WebSocket message:', data);
+
+            // Gestisci nuovo messaggio
+            if (data.action === 'new_message' && data.message) {
+              const newMessage: AgentLogMessage = {
+                id: `ws-${Date.now()}`,
+                conversation_id: data.conversation_id,
+                agent_name: data.message.agent_name,
+                role: data.message.role,
+                content: data.message.message,
+                created_at: data.message.timestamp || new Date().toISOString(),
+              };
+
+              setMessages(prev => {
+                // Evita duplicati
+                const exists = prev.some(msg => 
+                  msg.agent_name === newMessage.agent_name &&
+                  msg.content === newMessage.content &&
+                  Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 1000
+                );
+                if (exists) return prev;
+                return [...prev, newMessage];
+              });
+            }
+          } catch (err) {
+            console.error('[useAgentLogs] Error parsing WebSocket message:', err);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('[useAgentLogs] WebSocket error:', error);
+        };
+
+        ws.onclose = () => {
+          console.log('[useAgentLogs] WebSocket disconnected');
+          wsRef.current = null;
+
+          // Riconnetti dopo 5 secondi se non cancellato
+          if (!cancelled && useWebSocket) {
+            reconnectTimeoutRef.current = window.setTimeout(() => {
+              console.log('[useAgentLogs] Reconnecting WebSocket...');
+              connectWebSocket();
+            }, 5000);
+          }
+        };
+      } catch (error) {
+        console.error('[useAgentLogs] Error creating WebSocket:', error);
+      }
+    };
+
+    // Primo load al mount
     load();
 
-    // polling silenzioso (senza loading)
+    // Connetti WebSocket
+    if (useWebSocket) {
+      connectWebSocket();
+    }
+
+    // Polling silenzioso come fallback (ridotto a 30s)
     intervalId = window.setInterval(load, pollMs);
 
     return () => {
       cancelled = true;
       if (intervalId) window.clearInterval(intervalId);
+      if (reconnectTimeoutRef.current) window.clearTimeout(reconnectTimeoutRef.current);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
     };
-  }, [conversationId, agentName, pollMs]);
+  }, [conversationId, agentName, pollMs, useWebSocket]);
 
   return { messages, setMessages, loading, error };
 }
