@@ -47,6 +47,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      '/api/guardian': {
+        target: 'https://orchestratore.mio-hub.me',
+        changeOrigin: true,
+        secure: true,
+      },
     },
     allowedHosts: [
       ".manuspre.computer",
