@@ -31,7 +31,13 @@ export interface QualificazioneDTO {
 }
 
 // ============================================================================
-// DATI MOCK (da sostituire con chiamate API reali)
+// API CONFIGURATION
+// ============================================================================
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://157.90.29.66:3000';
+
+// ============================================================================
+// DATI MOCK (usati come fallback se API non disponibili)
 // ============================================================================
 
 const MOCK_IMPRESE: ImpresaDTO[] = [
@@ -202,25 +208,55 @@ export default function ImpreseQualificazioniPanel() {
   const [qualificazioni, setQualificazioni] = useState<QualificazioneDTO[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Carica lista imprese (mock per ora)
+  // Carica lista imprese da API
   useEffect(() => {
-    setLoading(true);
-    // Simula chiamata API
-    setTimeout(() => {
-      setImprese(MOCK_IMPRESE);
-      setLoading(false);
-    }, 300);
+    const fetchImprese = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/imprese`);
+        const data = await response.json();
+        if (data.success) {
+          setImprese(data.data);
+        } else {
+          // Fallback a dati mock
+          setImprese(MOCK_IMPRESE);
+        }
+      } catch (error) {
+        console.error('Error fetching imprese:', error);
+        // Fallback a dati mock
+        setImprese(MOCK_IMPRESE);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchImprese();
   }, []);
 
   // Carica qualificazioni quando si seleziona un'impresa
   useEffect(() => {
     if (selectedImpresa) {
-      setLoading(true);
-      // Simula chiamata API
-      setTimeout(() => {
-        setQualificazioni(MOCK_QUALIFICAZIONI[selectedImpresa.id_impresa] || []);
-        setLoading(false);
-      }, 200);
+      const fetchQualificazioni = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/imprese/${selectedImpresa.id}/qualificazioni`);
+          const data = await response.json();
+          if (data.success) {
+            setQualificazioni(data.data);
+          } else {
+            // Fallback a dati mock
+            setQualificazioni(MOCK_QUALIFICAZIONI[selectedImpresa.id_impresa] || []);
+          }
+        } catch (error) {
+          console.error('Error fetching qualificazioni:', error);
+          // Fallback a dati mock
+          setQualificazioni(MOCK_QUALIFICAZIONI[selectedImpresa.id_impresa] || []);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchQualificazioni();
+    } else {
+      setQualificazioni([]);
     }
   }, [selectedImpresa]);
 
