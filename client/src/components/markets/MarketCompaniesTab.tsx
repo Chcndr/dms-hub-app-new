@@ -55,11 +55,29 @@ type ConcessionRow = {
 };
 
 type CompanyFormData = {
+  // Identità
   denominazione: string;
   codice_fiscale: string;
   partita_iva: string;
+  numero_rea: string;
+  cciaa_sigla: string;
+  forma_giuridica: string;
+  stato_impresa: string;
+  
+  // Sede Legale
+  indirizzo_via: string;
+  indirizzo_civico: string;
+  indirizzo_cap: string;
+  indirizzo_provincia: string;
+  
+  // Contatti & Attività
+  pec: string;
   referente: string;
   telefono: string;
+  codice_ateco: string;
+  descrizione_ateco: string;
+  
+  // Legacy (mantenuto per compatibilità)
   stato: "active" | "suspended" | "closed";
 };
 
@@ -98,6 +116,24 @@ const STATO_COMPANY_OPTIONS = [
   { value: 'closed', label: 'Chiusa' },
 ];
 
+const FORMA_GIURIDICA_OPTIONS = [
+  { value: '', label: 'Seleziona...' },
+  { value: 'SRL', label: 'S.R.L. - Società a Responsabilità Limitata' },
+  { value: 'SPA', label: 'S.P.A. - Società per Azioni' },
+  { value: 'SNC', label: 'S.N.C. - Società in Nome Collettivo' },
+  { value: 'SAS', label: 'S.A.S. - Società in Accomandita Semplice' },
+  { value: 'DI', label: 'Ditta Individuale' },
+  { value: 'COOP', label: 'Cooperativa' },
+  { value: 'ALTRO', label: 'Altro' },
+];
+
+const STATO_IMPRESA_OPTIONS = [
+  { value: 'ATTIVA', label: 'Attiva' },
+  { value: 'CESSATA', label: 'Cessata' },
+  { value: 'IN_LIQUIDAZIONE', label: 'In Liquidazione' },
+  { value: 'SOSPESA', label: 'Sospesa' },
+];
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -118,6 +154,31 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   const [showConcessionModal, setShowConcessionModal] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<CompanyRow | null>(null);
   const [selectedConcession, setSelectedConcession] = useState<ConcessionRow | null>(null);
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchType, setSearchType] = useState<'impresa' | 'concessione'>('impresa');
+  
+  // Filtered data
+  const filteredCompanies = companies.filter(c => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      c.denominazione?.toLowerCase().includes(query) ||
+      c.code?.toLowerCase().includes(query) ||
+      c.partita_iva?.toLowerCase().includes(query)
+    );
+  });
+  
+  const filteredConcessions = concessions.filter(c => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      c.company_name?.toLowerCase().includes(query) ||
+      c.stall_code?.toLowerCase().includes(query) ||
+      c.tipo_concessione?.toLowerCase().includes(query)
+    );
+  });
 
   // Fetch data
   useEffect(() => {
@@ -258,8 +319,55 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       {/* Content */}
       {!loading && (
         <>
+          {/* Barra Ricerca */}
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mb-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={searchType === 'impresa' ? 'Cerca impresa per nome, P.IVA o CF...' : 'Cerca concessione per impresa, posteggio o tipo...'}
+                  className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setSearchType('impresa'); setSearchQuery(''); }}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    searchType === 'impresa'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4 inline mr-2" />
+                  Imprese
+                </button>
+                <button
+                  onClick={() => { setSearchType('concessione'); setSearchQuery(''); }}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    searchType === 'concessione'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  <FileText className="w-4 h-4 inline mr-2" />
+                  Concessioni
+                </button>
+              </div>
+            </div>
+            {searchQuery && (
+              <div className="mt-2 text-sm text-gray-400">
+                {searchType === 'impresa'
+                  ? `${filteredCompanies.length} imprese trovate`
+                  : `${filteredConcessions.length} concessioni trovate`
+                }
+              </div>
+            )}
+          </div>
+
           {/* Sezione Imprese */}
-          <section>
+          <section className={searchType === 'concessione' ? 'hidden' : ''}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 <Building2 className="w-5 h-5" />
@@ -287,7 +395,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {companies.map((company) => (
+                {filteredCompanies.map((company) => (
                   <CompanyCard
                     key={company.id}
                     company={company}
@@ -299,7 +407,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           </section>
 
           {/* Sezione Concessioni */}
-          <section>
+          <section className={searchType === 'impresa' ? 'hidden' : ''}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 <FileText className="w-5 h-5" />
@@ -358,7 +466,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700">
-                      {concessions.map((concession) => (
+                      {filteredConcessions.map((concession) => (
                         <ConcessionRow
                           key={concession.id}
                           concession={concession}
@@ -545,11 +653,29 @@ interface CompanyModalProps {
 
 function CompanyModal({ marketId, company, onClose, onSaved }: CompanyModalProps) {
   const [formData, setFormData] = useState<CompanyFormData>({
+    // Identità
     denominazione: company?.denominazione || '',
     codice_fiscale: company?.code || '',
     partita_iva: company?.partita_iva || '',
+    numero_rea: (company as any)?.numero_rea || '',
+    cciaa_sigla: (company as any)?.cciaa_sigla || '',
+    forma_giuridica: (company as any)?.forma_giuridica || '',
+    stato_impresa: (company as any)?.stato_impresa || 'ATTIVA',
+    
+    // Sede Legale
+    indirizzo_via: (company as any)?.indirizzo_via || '',
+    indirizzo_civico: (company as any)?.indirizzo_civico || '',
+    indirizzo_cap: (company as any)?.indirizzo_cap || '',
+    indirizzo_provincia: (company as any)?.indirizzo_provincia || '',
+    
+    // Contatti & Attività
+    pec: (company as any)?.pec || '',
     referente: company?.referente || '',
     telefono: company?.telefono || '',
+    codice_ateco: (company as any)?.codice_ateco || '',
+    descrizione_ateco: (company as any)?.descrizione_ateco || '',
+    
+    // Legacy
     stato: company?.stato || 'active',
   });
   const [saving, setSaving] = useState(false);
@@ -561,22 +687,46 @@ function CompanyModal({ marketId, company, onClose, onSaved }: CompanyModalProps
     setError(null);
 
     try {
-      // Map Italian fields to English backend schema
+      // Payload completo con campi PDND
       const payload = {
+        // Identità
+        denominazione: formData.denominazione,
+        codice_fiscale: formData.codice_fiscale,
+        partita_iva: formData.partita_iva,
+        numero_rea: formData.numero_rea,
+        cciaa_sigla: formData.cciaa_sigla,
+        forma_giuridica: formData.forma_giuridica,
+        stato_impresa: formData.stato_impresa,
+        
+        // Sede Legale
+        indirizzo_via: formData.indirizzo_via,
+        indirizzo_civico: formData.indirizzo_civico,
+        indirizzo_cap: formData.indirizzo_cap,
+        indirizzo_provincia: formData.indirizzo_provincia,
+        
+        // Contatti & Attività
+        pec: formData.pec,
+        referente: formData.referente,
+        telefono: formData.telefono,
+        codice_ateco: formData.codice_ateco,
+        descrizione_ateco: formData.descrizione_ateco,
+        
+        // Legacy (per compatibilità con vendors)
         code: formData.codice_fiscale,
         business_name: formData.denominazione,
         vat_number: formData.partita_iva,
         contact_name: formData.referente,
         phone: formData.telefono,
-        email: formData.referente, // Use referente as email if no separate email field
+        email: formData.pec || formData.referente,
         status: formData.stato,
       };
 
+      // Usa endpoint /api/imprese (nuovo) invece di /api/vendors
       const url = company
-        ? `${API_BASE_URL}/api/vendors/${company.id}`
-        : `${API_BASE_URL}/api/vendors`;
+        ? `${API_BASE_URL}/api/imprese/${company.id}`
+        : `${API_BASE_URL}/api/imprese`;
 
-      const method = company ? 'PATCH' : 'POST';
+      const method = company ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
@@ -612,7 +762,7 @@ function CompanyModal({ marketId, company, onClose, onSaved }: CompanyModalProps
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
             <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -620,93 +770,279 @@ function CompanyModal({ marketId, company, onClose, onSaved }: CompanyModalProps
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Denominazione <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.denominazione}
-              onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="es. Azienda Agricola Rossi SRL"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* GRUPPO 1: IDENTITÀ */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-700 pb-2">
+              Identità
+            </h4>
+            
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Codice Fiscale <span className="text-red-500">*</span>
+                Denominazione <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
-                value={formData.codice_fiscale}
-                onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value })}
+                value={formData.denominazione}
+                onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="es. 12345678901"
+                placeholder="es. Azienda Agricola Rossi SRL"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Partita IVA <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.partita_iva}
-                onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="es. IT12345678901"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Codice Fiscale <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.codice_fiscale}
+                  onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. V003"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Partita IVA <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.partita_iva}
+                  onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. IT34567890123"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Numero REA
+                </label>
+                <input
+                  type="text"
+                  value={formData.numero_rea}
+                  onChange={(e) => setFormData({ ...formData, numero_rea: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. GR-123456"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  CCIAA
+                </label>
+                <input
+                  type="text"
+                  value={formData.cciaa_sigla}
+                  onChange={(e) => setFormData({ ...formData, cciaa_sigla: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. GR"
+                  maxLength={5}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Forma Giuridica
+                </label>
+                <select
+                  value={formData.forma_giuridica}
+                  onChange={(e) => setFormData({ ...formData, forma_giuridica: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {FORMA_GIURIDICA_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Stato Impresa
+                </label>
+                <select
+                  value={formData.stato_impresa}
+                  onChange={(e) => setFormData({ ...formData, stato_impresa: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {STATO_IMPRESA_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* GRUPPO 2: SEDE LEGALE */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-700 pb-2">
+              Sede Legale
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Via
+                </label>
+                <input
+                  type="text"
+                  value={formData.indirizzo_via}
+                  onChange={(e) => setFormData({ ...formData, indirizzo_via: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. Via Roma"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Civico
+                </label>
+                <input
+                  type="text"
+                  value={formData.indirizzo_civico}
+                  onChange={(e) => setFormData({ ...formData, indirizzo_civico: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. 123"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  CAP
+                </label>
+                <input
+                  type="text"
+                  value={formData.indirizzo_cap}
+                  onChange={(e) => setFormData({ ...formData, indirizzo_cap: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. 58100"
+                  maxLength={5}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Provincia
+                </label>
+                <input
+                  type="text"
+                  value={formData.indirizzo_provincia}
+                  onChange={(e) => setFormData({ ...formData, indirizzo_provincia: e.target.value.toUpperCase() })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. GR"
+                  maxLength={2}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* GRUPPO 3: CONTATTI & ATTIVITÀ */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-700 pb-2">
+              Contatti & Attività
+            </h4>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Referente (Email)
+                PEC <span className="text-orange-500">*</span> <span className="text-xs text-gray-500">(Obbligatorio per PA)</span>
               </label>
               <input
                 type="email"
-                value={formData.referente}
-                onChange={(e) => setFormData({ ...formData, referente: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="es. mario.rossi@example.com"
+                required
+                value={formData.pec}
+                onChange={(e) => setFormData({ ...formData, pec: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-800 border border-orange-500/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="es. impresa@pec.it"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Referente (Email)
+                </label>
+                <input
+                  type="email"
+                  value={formData.referente}
+                  onChange={(e) => setFormData({ ...formData, referente: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. mario.rossi@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Telefono
+                </label>
+                <input
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. +39 333 1234567"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Codice ATECO
+                </label>
+                <input
+                  type="text"
+                  value={formData.codice_ateco}
+                  onChange={(e) => setFormData({ ...formData, codice_ateco: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. 47.11.10"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Descrizione ATECO
+                </label>
+                <input
+                  type="text"
+                  value={formData.descrizione_ateco}
+                  onChange={(e) => setFormData({ ...formData, descrizione_ateco: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="es. Commercio al dettaglio alimentare"
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Telefono
+                Stato (Legacy)
               </label>
-              <input
-                type="tel"
-                value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+              <select
+                value={formData.stato}
+                onChange={(e) => setFormData({ ...formData, stato: e.target.value as any })}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="es. +39 333 1234567"
-              />
+              >
+                {STATO_COMPANY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Stato
-            </label>
-            <select
-              value={formData.stato}
-              onChange={(e) => setFormData({ ...formData, stato: e.target.value as any })}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {STATO_COMPANY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4">
