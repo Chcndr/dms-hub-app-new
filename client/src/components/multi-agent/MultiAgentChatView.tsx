@@ -70,14 +70,17 @@ interface AgentCardProps {
 const AgentCard: React.FC<AgentCardProps> = ({ agent, messages, loading }) => {
   const config = agentConfig[agent];
   const Icon = config.icon;
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // ✅ AUTO-SCROLL ABILITATO - Scrolla automaticamente all'ultimo messaggio
+  // ✅ AUTO-SCROLL ABILITATO - Scrolla SOLO il container, mai la pagina
   useEffect(() => {
-    if (messagesEndRef.current && messages.length > 0) {
+    if (containerRef.current && messages.length > 0) {
       // Timeout per assicurarsi che il DOM sia aggiornato
       const timeoutId = setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        if (containerRef.current) {
+          // Scrolla direttamente il container usando scrollTop
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
       }, 100);
       return () => clearTimeout(timeoutId);
     }
@@ -96,7 +99,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, messages, loading }) => {
       </CardHeader>
       <CardContent className="space-y-3">
         {/* Area messaggi - SOLO LETTURA */}
-        <div className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-scroll space-y-2 multi-agent-chat-container">
+        <div ref={containerRef} className="h-64 bg-[#0b1220] rounded-lg p-3 overflow-y-scroll space-y-2 multi-agent-chat-container">
           {messages.length === 0 ? (
             <p className="text-[#e8fbff]/50 text-center text-xs">
               {loading ? 'Caricamento...' : 'Nessun messaggio ancora.'}
@@ -124,8 +127,6 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, messages, loading }) => {
                   </div>
                 </div>
               ))}
-              {/* Scroll anchor */}
-              <div ref={messagesEndRef} />
             </>
           )}
         </div>
