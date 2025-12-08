@@ -163,7 +163,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
       console.log('🔥 [MioContext TABULA RASA] Inizio chiamata diretta...');
       console.log('🔥 [MioContext TABULA RASA] ConversationId:', conversationId);
       
-      const response = await fetch("https://orchestratore.mio-hub.me/api/mihub/orchestrator", {
+      const response = await fetch("/api/mihub/orchestrator", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
