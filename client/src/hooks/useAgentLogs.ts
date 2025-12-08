@@ -86,8 +86,9 @@ export function useAgentLogs({
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsHost = window.location.hostname === 'localhost' 
           ? 'localhost:8080' 
-          : 'api.mio-hub.me:8080';
-        const wsUrl = `${wsProtocol}//${wsHost}`;
+          : 'api.mio-hub.me';
+        const wsPath = window.location.hostname === 'localhost' ? '' : '/ws';
+        const wsUrl = `${wsProtocol}//${wsHost}${wsPath}`;
 
         console.log('[useAgentLogs] Connecting to WebSocket:', wsUrl);
         const ws = new WebSocket(wsUrl);
