@@ -5,7 +5,7 @@
  * Base URL: https://orchestratore.mio-hub.me
  */
 
-const MIHUB_API_URL = import.meta.env.VITE_TRPC_URL || 'https://orchestratore.mio-hub.me';
+const MIHUB_API_URL = import.meta.env.VITE_TRPC_URL || 'https://api.mio-hub.me';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -97,7 +97,7 @@ export const logsAPI = {
     if (filters?.success !== undefined) params.append('success', filters.success.toString());
 
     const queryString = params.toString();
-    const url = `/api/logs/getLogs${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/mihub/logs${queryString ? `?${queryString}` : ''}`;
 
     return fetchMIHUB<{
       success: boolean;
