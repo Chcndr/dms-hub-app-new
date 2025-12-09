@@ -132,23 +132,46 @@ export default function MIHUBDashboard() {
     });
   }, [messages]);
 
-  const handleSendMessage = (agentId: string) => {
+  const handleSendMessage = async (agentId: string) => {
     const content = messageInputs[agentId]?.trim();
     if (!content) return;
 
-    sendMessage.mutate({
-      conversationId,
-      sender: agentId,
-      content,
-      messageType: "text",
-      // Se shared view è attivo, tutti vedono il messaggio
-      recipients: sharedView ? undefined : [agentId],
-    });
-
+    // Pulisci input immediatamente per UX migliore
     setMessageInputs(prev => ({
       ...prev,
       [agentId]: ""
     }));
+
+    try {
+      // Chiama direttamente l'orchestrator invece di sendMessage
+      const API_URL = import.meta.env.VITE_TRPC_URL || 'https://api.mio-hub.me';
+      const response = await fetch(`${API_URL}/api/mihub/orchestrator`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          agent: agentId,
+          message: content,
+          mode: 'multi-agent',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[MIHUBDashboard] Orchestrator response:', data);
+
+      // Aggiorna i messaggi dopo la risposta
+      refetch();
+    } catch (error) {
+      console.error('[MIHUBDashboard] Error calling orchestrator:', error);
+      // Mostra errore all'utente
+      alert('Errore nell\'invio del messaggio. Riprova.');
+    }
   };
 
   const getMessagesForAgent = (agentId: string) => {
