@@ -161,11 +161,21 @@ export default function MIHUBDashboard() {
         }),
       });
 
+      const data = await response.json();
+      
+      // 🔧 AUTO-RESET: Se conversazione non trovata (404), resetta localStorage e ricarica
+      if (!response.ok && (response.status === 404 || data.error?.statusCode === 404 || data.error?.message?.includes('Conversation not found'))) {
+        console.log('[MIHUBDashboard] 404 Conversation not found - Resetting localStorage...');
+        localStorage.removeItem('mio-conversation-id');
+        localStorage.removeItem('mio-thread-id');
+        window.location.reload();
+        return;
+      }
+      
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const data = await response.json();
       console.log('[MIHUBDashboard] Orchestrator response:', data);
 
       // Aggiorna i messaggi dopo la risposta
