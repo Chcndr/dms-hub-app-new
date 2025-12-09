@@ -9,8 +9,8 @@ export default async function handler(
   }
 
   try {
-    // Fetch logs from Neon via Abacus SQL endpoint
-    const response = await fetch('https://mihub.157-90-29-66.nip.io/api/abacus/sql/query', {
+    // Fetch logs from backend via Abacus SQL endpoint
+    const response = await fetch('https://api.mio-hub.me/api/abacus/sql/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
