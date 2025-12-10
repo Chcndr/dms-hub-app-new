@@ -506,6 +506,7 @@ export default function DashboardPA() {
   } = useAgentLogs({
     conversationId: gptdevConversationId,
     agentName: 'gptdev',
+    enablePolling: viewMode === 'quad', // 🔥 Polling solo in vista 4 agenti
   });
 
   const {
@@ -514,6 +515,7 @@ export default function DashboardPA() {
   } = useAgentLogs({
     conversationId: manusConversationId,
     agentName: 'manus',
+    enablePolling: viewMode === 'quad', // 🔥 Polling solo in vista 4 agenti
   });
 
   const {
@@ -522,6 +524,7 @@ export default function DashboardPA() {
   } = useAgentLogs({
     conversationId: abacusConversationId,
     agentName: 'abacus',
+    enablePolling: viewMode === 'quad', // 🔥 Polling solo in vista 4 agenti
   });
 
   const {
@@ -530,6 +533,7 @@ export default function DashboardPA() {
   } = useAgentLogs({
     conversationId: zapierConversationId,
     agentName: 'zapier',
+    enablePolling: viewMode === 'quad', // 🔥 Polling solo in vista 4 agenti
   });
 
   // ========== VISTA SINGOLA AGENTI - Usa conversationId separati ==========

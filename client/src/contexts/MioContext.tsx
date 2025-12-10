@@ -113,9 +113,10 @@ export function MioProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
 
-    // Push ottimistico
+    // Push ottimistico con ID temporaneo
+    const tempUserId = `temp-user-${Date.now()}`;
     const userMsg: MioMessage = {
-      id: crypto.randomUUID(),
+      id: tempUserId,
       role: 'user',
       content: text,
       createdAt: new Date().toISOString(),
@@ -155,17 +156,30 @@ export function MioProvider({ children }: { children: ReactNode }) {
         setConversationId(data.conversationId);
       }
 
-      // Aggiungi la risposta
-      const aiMsg: MioMessage = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: data.message || data.reply || data.response || "Risposta vuota",
-        createdAt: new Date().toISOString(),
-        agentName: data.agent || data.agentName || 'mio',
-        source: data.source,
-      };
-      
-      setMessages(prev => [...prev, aiMsg]);
+      // 🔥 RECONCILIAZIONE: Sostituisci messaggio temporaneo con quello reale dal server
+      setMessages(prev => {
+        // Rimuovi il messaggio temporaneo
+        const withoutTemp = prev.filter(m => m.id !== tempUserId);
+        
+        // Aggiungi messaggio utente reale (se il server lo restituisce)
+        // Altrimenti mantieni quello optimistic ma con flag "confirmed"
+        const userMsgConfirmed: MioMessage = {
+          ...userMsg,
+          id: data.userMessageId || tempUserId, // Usa ID reale se disponibile
+        };
+        
+        // Aggiungi la risposta
+        const aiMsg: MioMessage = {
+          id: data.assistantMessageId || crypto.randomUUID(),
+          role: 'assistant',
+          content: data.message || data.reply || data.response || "Risposta vuota",
+          createdAt: new Date().toISOString(),
+          agentName: data.agent || data.agentName || 'mio',
+          source: data.source,
+        };
+        
+        return [...withoutTemp, userMsgConfirmed, aiMsg];
+      });
       console.log('🔥 [MioContext TABULA RASA] SUCCESS! ✅');
 
     } catch (err: any) {

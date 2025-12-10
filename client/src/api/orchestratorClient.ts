@@ -65,20 +65,38 @@ export async function callOrchestrator(
   console.log("[OrchestratorClient] Chiamata a:", url);
   console.log("[OrchestratorClient] Payload:", payload);
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  // 🔥 Timeout aumentato a 60s per agenti lenti (Manus, Zapier)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 secondi
+  
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
 
   console.log("[OrchestratorClient] Status:", res.status);
 
-  // Prova sempre a parsare il JSON, anche per errori HTTP
-  // Il backend può rispondere con 4xx/5xx ma con body JSON valido
-  const data = (await res.json()) as OrchestratorResponse;
-  console.log("[OrchestratorClient] Risposta:", data);
+    // Prova sempre a parsare il JSON, anche per errori HTTP
+    // Il backend può rispondere con 4xx/5xx ma con body JSON valido
+    const data = (await res.json()) as OrchestratorResponse;
+    console.log("[OrchestratorClient] Risposta:", data);
 
-  return data;
+    return data;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    
+    if (error.name === 'AbortError') {
+      console.error("[OrchestratorClient] Timeout dopo 60s");
+      throw new Error("Timeout: L'agente non ha risposto entro 60 secondi");
+    }
+    
+    throw error;
+  }
 }

@@ -15,13 +15,15 @@ interface UseAgentLogsOptions {
   agentName?: string; // es. 'mio', 'abacus', 'manus', 'zapier'
   pollMs?: number;
   useWebSocket?: boolean; // Abilita WebSocket (default: true)
+  enablePolling?: boolean; // Abilita polling (default: false per stabilità)
 }
 
 export function useAgentLogs({ 
   conversationId, 
   agentName, 
   pollMs = 30000, // Aumentato a 30s come fallback
-  useWebSocket = true 
+  useWebSocket = true,
+  enablePolling = false // 🔥 DISABILITATO di default per stabilità
 }: UseAgentLogsOptions) {
   const [messages, setMessages] = useState<AgentLogMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -185,12 +187,15 @@ export function useAgentLogs({
     // Primo load al mount
     load();
 
-    // 🔥 POLLING E WEBSOCKET DISABILITATI PER STABILITÀ
-    // I messaggi si caricano SOLO al mount, nessun aggiornamento automatico
-    console.log('[useAgentLogs] Polling e WebSocket DISABILITATI - Caricamento solo al mount');
-    
+    // 🔥 POLLING CONDIZIONALE: Abilitato solo per vista 4 agenti
     let fallbackTimeout: number | undefined;
-    // Tutto disabilitato
+    
+    if (enablePolling) {
+      console.log('[useAgentLogs] Polling ABILITATO (vista 4 agenti)');
+      intervalId = window.setInterval(load, pollMs);
+    } else {
+      console.log('[useAgentLogs] Polling DISABILITATO - Caricamento solo al mount');
+    }
 
     return () => {
       cancelled = true;
