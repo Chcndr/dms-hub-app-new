@@ -73,7 +73,22 @@ export function useAgentLogs({
             const serverIds = new Set(serverMessages.map((m: AgentLogMessage) => m.id));
             
             // Mantieni solo i messaggi locali che NON sono nel server (pending o temporanei)
-            const localOnly = prev.filter(msg => !serverIds.has(msg.id));
+            const localOnly = prev.filter(msg => {
+              // Se il messaggio è nel server (per ID), rimuovilo
+              if (serverIds.has(msg.id)) return false;
+              
+              // Se il messaggio è pending, controlla se è un duplicato per contenuto
+              if (msg.pending) {
+                const hasDuplicate = serverMessages.some((serverMsg: AgentLogMessage) =>
+                  serverMsg.content === msg.content &&
+                  Math.abs(new Date(serverMsg.created_at).getTime() - new Date(msg.created_at).getTime()) < 2000
+                );
+                return !hasDuplicate; // Rimuovi se duplicato
+              }
+              
+              // Mantieni altri messaggi locali
+              return true;
+            });
             
             // Deduplica per contenuto + timestamp (per messaggi senza ID server)
             const deduped = serverMessages.filter((serverMsg: AgentLogMessage) => {
