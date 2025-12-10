@@ -508,6 +508,7 @@ export default function DashboardPA() {
     conversationId: viewMode === 'quad' ? gptdevConversationId : null, // 🔥 NULL se non in vista quad
     agentName: 'gptdev',
     enablePolling: viewMode === 'quad',
+    excludeUserMessages: true, // 🔥 BACKSTAGE: Solo coordinamento MIO ↔ Agenti
   });
 
   const {
@@ -517,6 +518,7 @@ export default function DashboardPA() {
     conversationId: viewMode === 'quad' ? manusConversationId : null, // 🔥 NULL se non in vista quad
     agentName: 'manus',
     enablePolling: viewMode === 'quad',
+    excludeUserMessages: true, // 🔥 BACKSTAGE: Solo coordinamento MIO ↔ Agenti
   });
 
   const {
@@ -526,6 +528,7 @@ export default function DashboardPA() {
     conversationId: viewMode === 'quad' ? abacusConversationId : null, // 🔥 NULL se non in vista quad
     agentName: 'abacus',
     enablePolling: viewMode === 'quad',
+    excludeUserMessages: true, // 🔥 BACKSTAGE: Solo coordinamento MIO ↔ Agenti
   });
 
   const {
@@ -535,6 +538,7 @@ export default function DashboardPA() {
     conversationId: viewMode === 'quad' ? zapierConversationId : null, // 🔥 NULL se non in vista quad
     agentName: 'zapier',
     enablePolling: viewMode === 'quad',
+    excludeUserMessages: true, // 🔥 BACKSTAGE: Solo coordinamento MIO ↔ Agenti
   });
 
   // ========== VISTA SINGOLA AGENTI - Usa conversationId separati ==========

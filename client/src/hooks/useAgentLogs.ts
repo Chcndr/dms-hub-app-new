@@ -16,6 +16,7 @@ interface UseAgentLogsOptions {
   pollMs?: number;
   useWebSocket?: boolean; // Abilita WebSocket (default: true)
   enablePolling?: boolean; // Abilita polling (default: false per stabilità)
+  excludeUserMessages?: boolean; // 🔥 VISTA 4 AGENTI: Esclude messaggi diretti dell'utente
 }
 
 export function useAgentLogs({ 
@@ -23,7 +24,8 @@ export function useAgentLogs({
   agentName, 
   pollMs = 30000, // Aumentato a 30s come fallback
   useWebSocket = true,
-  enablePolling = false // 🔥 DISABILITATO di default per stabilità
+  enablePolling = false, // 🔥 DISABILITATO di default per stabilità
+  excludeUserMessages = false // 🔥 VISTA 4 AGENTI: Esclude messaggi utente
 }: UseAgentLogsOptions) {
   const [messages, setMessages] = useState<AgentLogMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,6 +56,7 @@ export function useAgentLogs({
           limit: '200',
         });
         if (agentName) params.set('agent_name', agentName);
+        if (excludeUserMessages) params.set('exclude_user_messages', 'true'); // 🔥 VISTA 4 AGENTI
 
         const res = await fetch(`/api/mio/agent-logs?${params.toString()}`);
         if (!res.ok) {
