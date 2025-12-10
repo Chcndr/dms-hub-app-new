@@ -107,7 +107,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
   }, [conversationId]);
 
   // 🔥 TABULA RASA: Funzione sendMessage condivisa
-    const sendMessage = async (text: string, meta: Record<string, any> = {}) => {
+  const sendMessage = useCallback(async (text: string, meta: Record<string, any> = {}) => {
     const callId = `CALL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     console.log(`🔥 [MioContext] ${callId} - sendMessage INIZIO`, { text: text.substring(0, 50), meta });
     if (!text.trim()) return;
