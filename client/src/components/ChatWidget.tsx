@@ -23,6 +23,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isSubmittingRef = useRef(false); // 🔥 FLAG ANTI-DUPLICAZIONE
   
   // 🔥 USA CONTEXT CONDIVISO!
   const {
@@ -46,8 +47,23 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
     
+    // 🔥 ANTI-DUPLICAZIONE: Previeni chiamate multiple simultanee
+    if (isSubmittingRef.current) {
+      console.warn('⚠️ [ChatWidget] Tentativo di doppio submit bloccato!');
+      return;
+    }
+    
+    isSubmittingRef.current = true;
+    console.log('🔥 [ChatWidget] sendMessage chiamato con:', { text: text.substring(0, 50) });
+    
     setInputMessage('');
-    await sendMioMessage(text, { source: "chat_widget" });
+    
+    try {
+      await sendMioMessage(text, { source: "chat_widget" });
+      console.log('🔥 [ChatWidget] sendMessage completato con successo');
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   if (!isOpen) {
@@ -156,7 +172,12 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage(inputMessage)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(inputMessage);
+              }
+            }}
             placeholder="Scrivi un messaggio..."
             className="flex-1 bg-[#1a2332] border-[#2a3342] text-[#e8fbff] placeholder:text-[#6b7280]"
           />

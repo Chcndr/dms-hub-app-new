@@ -107,7 +107,9 @@ export function MioProvider({ children }: { children: ReactNode }) {
   }, [conversationId]);
 
   // 🔥 TABULA RASA: Funzione sendMessage condivisa
-  const sendMessage = useCallback(async (text: string, meta: Record<string, any> = {}) => {
+    const sendMessage = async (text: string, meta: Record<string, any> = {}) => {
+    const callId = `CALL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`🔥 [MioContext] ${callId} - sendMessage INIZIO`, { text: text.substring(0, 50), meta });
     if (!text.trim()) return;
 
     setIsLoading(true);
@@ -124,8 +126,8 @@ export function MioProvider({ children }: { children: ReactNode }) {
     setMessages(prev => [...prev, userMsg]);
 
     try {
-      console.log('🔥 [MioContext TABULA RASA] Inizio chiamata diretta...');
-      console.log('🔥 [MioContext TABULA RASA] ConversationId:', conversationId);
+      console.log(`🔥 [MioContext] ${callId} - Inizio chiamata diretta...`);
+      console.log(`🔥 [MioContext] ${callId} - ConversationId:`, conversationId);
       
       const response = await fetch("/api/mihub/orchestrator", {
         method: "POST",
@@ -140,7 +142,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
         })
       });
 
-      console.log('🔥 [MioContext TABULA RASA] Status Response:', response.status);
+      console.log(`🔥 [MioContext] ${callId} - Status Response:`, response.status);
 
       if (!response.ok) {
         const errText = await response.text();
@@ -148,11 +150,11 @@ export function MioProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
-      console.log('🔥 [MioContext TABULA RASA] Dati ricevuti:', data);
+      console.log(`🔥 [MioContext] ${callId} - Dati ricevuti:`, data);
 
       // ✅ NON sovrascrivere conversationId se ne abbiamo già uno
       if (data.conversationId && !conversationId) {
-        console.log('🔥 [MioContext TABULA RASA] Nuovo conversationId:', data.conversationId);
+        console.log(`🔥 [MioContext] ${callId} - Nuovo conversationId:`, data.conversationId);
         setConversationId(data.conversationId);
       }
 
@@ -180,10 +182,10 @@ export function MioProvider({ children }: { children: ReactNode }) {
         
         return [...withoutTemp, userMsgConfirmed, aiMsg];
       });
-      console.log('🔥 [MioContext TABULA RASA] SUCCESS! ✅');
+      console.log(`🔥 [MioContext] ${callId} - SUCCESS! ✅`);
 
     } catch (err: any) {
-      console.error('🔥 [MioContext TABULA RASA] ERROR:', err);
+      console.error(`🔥 [MioContext] ${callId} - ERROR:`, err);
       setError(err.message);
       
       // Messaggio di errore
