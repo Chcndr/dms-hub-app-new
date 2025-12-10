@@ -493,8 +493,11 @@ export default function DashboardPA() {
   const { conversationId: zapierConversationId, setConversationId: setZapierConversationId } = useConversationPersistence('zapier-single');
   const { conversationId: gptdevConversationId, setConversationId: setGptdevConversationId } = useConversationPersistence('gptdev-single');
   
-  // 🔥 Conversazione condivisa per Vista 4 Agenti (BACKSTAGE)
-  const { conversationId: multiAgentConversationId, setConversationId: setMultiAgentConversationId } = useConversationPersistence('multi-agent-coordination');
+  // 🔥 4 Conversazioni separate per MIO (una per ogni agente)
+  const { conversationId: mioManusConversationId, setConversationId: setMioManusConversationId } = useConversationPersistence('mio-manus-coordination');
+  const { conversationId: mioAbacusConversationId, setConversationId: setMioAbacusConversationId } = useConversationPersistence('mio-abacus-coordination');
+  const { conversationId: mioZapierConversationId, setConversationId: setMioZapierConversationId } = useConversationPersistence('mio-zapier-coordination');
+  const { conversationId: mioGptdevConversationId, setConversationId: setMioGptdevConversationId } = useConversationPersistence('mio-gptdev-coordination');
   
   // Variabili di compatibilità per non rompere il resto del codice
   const mioLoading = false;
@@ -508,40 +511,40 @@ export default function DashboardPA() {
     messages: gptdevQuadMessages,
     loading: gptdevQuadLoading,
   } = useAgentLogs({
-    conversationId: viewMode === 'quad' ? multiAgentConversationId : null, // 🔥 BACKSTAGE: Conversazione condivisa
+    conversationId: viewMode === 'quad' ? mioGptdevConversationId : null, // 🔥 Chat MIO ↔ GPT Dev (isolata)
     agentName: 'gptdev',
     enablePolling: viewMode === 'quad',
-    excludeUserMessages: true, // 🔥 BACKSTAGE: Solo coordinamento MIO ↔ Agenti
+    excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ GPT Dev
   });
 
   const {
     messages: manusQuadMessages,
     loading: manusQuadLoading,
   } = useAgentLogs({
-    conversationId: viewMode === 'quad' ? multiAgentConversationId : null, // 🔥 BACKSTAGE: Conversazione condivisa
+    conversationId: viewMode === 'quad' ? mioManusConversationId : null, // 🔥 Chat MIO ↔ Manus (isolata)
     agentName: 'manus',
     enablePolling: viewMode === 'quad',
-    excludeUserMessages: true, // 🔥 BACKSTAGE: Solo coordinamento MIO ↔ Agenti
+    excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Manus
   });
 
   const {
     messages: abacusQuadMessages,
     loading: abacusQuadLoading,
   } = useAgentLogs({
-    conversationId: viewMode === 'quad' ? multiAgentConversationId : null, // 🔥 BACKSTAGE: Conversazione condivisa
+    conversationId: viewMode === 'quad' ? mioAbacusConversationId : null, // 🔥 Chat MIO ↔ Abacus (isolata)
     agentName: 'abacus',
     enablePolling: viewMode === 'quad',
-    excludeUserMessages: true, // 🔥 BACKSTAGE: Solo coordinamento MIO ↔ Agenti
+    excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Abacus
   });
 
   const {
     messages: zapierQuadMessages,
     loading: zapierQuadLoading,
   } = useAgentLogs({
-    conversationId: viewMode === 'quad' ? multiAgentConversationId : null, // 🔥 BACKSTAGE: Conversazione condivisa
+    conversationId: viewMode === 'quad' ? mioZapierConversationId : null, // 🔥 Chat MIO ↔ Zapier (isolata)
     agentName: 'zapier',
     enablePolling: viewMode === 'quad',
-    excludeUserMessages: true, // 🔥 BACKSTAGE: Solo coordinamento MIO ↔ Agenti
+    excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Zapier
   });
 
   // ========== VISTA SINGOLA AGENTI - Usa conversationId separati ==========
