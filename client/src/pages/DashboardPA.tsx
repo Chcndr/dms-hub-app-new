@@ -890,6 +890,23 @@ export default function DashboardPA() {
     return () => clearTimeout(timeoutId);
   }, [mioMessages]);
 
+  // Scroll MIO al mount iniziale (quando la pagina viene aperta)
+  useEffect(() => {
+    if (!mioMessagesRef.current || mioMessages.length === 0) return;
+    
+    // Timeout più lungo per assicurarsi che tutto sia renderizzato
+    const timeoutId = setTimeout(() => {
+      if (mioMessagesRef.current) {
+        mioMessagesRef.current.scrollTo({
+          top: mioMessagesRef.current.scrollHeight,
+          behavior: 'auto' // Scroll istantaneo al mount
+        });
+      }
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, []); // Esegui solo una volta al mount
+
   // Listener scroll MIO per bottone
   useEffect(() => {
     const messagesDiv = mioMessagesRef.current;
