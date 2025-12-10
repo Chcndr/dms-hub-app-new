@@ -6,6 +6,7 @@
  */
 
 import { callOrchestrator, type AgentId, type OrchestratorMode } from '@/api/orchestratorClient';
+import { logsAPI } from '@/utils/mihubAPI';
 
 export interface AgentMessage {
   id: string;
@@ -62,12 +63,14 @@ export async function sendToAgent(params: SendToAgentParams): Promise<void> {
 
   try {
     // 2. Chiama orchestratore (centralizzato)
+    const startTime = Date.now();
     const response = await callOrchestrator({
       mode,
       targetAgent,
       message,
       conversationId,
     });
+    const durationMs = Date.now() - startTime;
 
     console.log(`[AgentHelper] Response from ${targetAgent}:`, response);
 
@@ -81,7 +84,32 @@ export async function sendToAgent(params: SendToAgentParams): Promise<void> {
       prev.map(msg => (msg.pending ? { ...msg, pending: false } : msg))
     );
 
-    // 5. Aggiungi risposta dell'agente
+    // 5. Registra log Guardian per GPT Dev
+    if (targetAgent === 'gptdev' || targetAgent === 'dev') {
+      try {
+        await logsAPI.createLog({
+          agent: 'gptdev',
+          endpoint: '/api/mihub/orchestrator',
+          method: 'POST',
+          statusCode: response.success ? 200 : 500,
+          success: response.success,
+          message: response.success 
+            ? `Orchestrator: ${mode} mode, agent: gptdev` 
+            : `Error: ${response.error?.message || 'Unknown error'}`,
+          meta: {
+            conversationId: response.conversationId,
+            mode,
+            durationMs,
+          },
+        });
+        console.log('[AgentHelper] Guardian log created for gptdev');
+      } catch (logError) {
+        console.error('[AgentHelper] Failed to create Guardian log:', logError);
+        // Non bloccare il flusso se il logging fallisce
+      }
+    }
+
+    // 6. Aggiungi risposta dell'agente
     if (response.message) {
       const assistantMsg: AgentMessage = {
         id: crypto.randomUUID(),
@@ -94,7 +122,7 @@ export async function sendToAgent(params: SendToAgentParams): Promise<void> {
       onUpdateMessages(prev => [...prev, assistantMsg]);
     }
 
-    // 6. Gestisci errori dal backend
+    // 7. Gestisci errori dal backend
     if (!response.success && response.error) {
       const errorMsg: AgentMessage = {
         id: crypto.randomUUID(),
