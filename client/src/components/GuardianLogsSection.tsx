@@ -17,7 +17,7 @@ export default function GuardianLogsSection() {
     queryKey: ['guardian-logs'],
     queryFn: () => logsAPI.getLogs({ limit: 100 }),
     retry: 1,
-    refetchInterval: false, // 🔥 POLLING DISABILITATO per evitare interferenze
+    refetchInterval: 30000, // 🔥 Polling ogni 30s (isolato dalla chat)
   });
 
   const guardianLogs = logsData?.logs || [];
@@ -27,7 +27,7 @@ export default function GuardianLogsSection() {
     queryKey: ['guardian-logs-stats'],
     queryFn: () => logsAPI.stats(),
     retry: 1,
-    refetchInterval: false, // 🔥 POLLING DISABILITATO per evitare interferenze
+    refetchInterval: 30000, // 🔥 Polling ogni 30s (isolato dalla chat)
   });
 
   // Calculate stats

@@ -498,42 +498,43 @@ export default function DashboardPA() {
   const mioError = null;  // Converti formato per compatibilità
   // Rimosso: vecchia conversione mioMessages da useAgentLogs
   
-  // ========== VISTA 4 AGENTI (READ-ONLY) - Usa conversazioni singole ==========
-  // Questi hook mostrano i messaggi diretti dell'utente agli agenti
+  // ========== VISTA 4 AGENTI (READ-ONLY) - LAZY LOAD ==========
+  // 🔥 CARICAMENTO CONDIZIONALE: Questi hook si attivano SOLO quando viewMode === 'quad'
+  // Questo previene duplicati al refresh quando si è in vista singola
   const {
     messages: gptdevQuadMessages,
     loading: gptdevQuadLoading,
   } = useAgentLogs({
-    conversationId: gptdevConversationId,
+    conversationId: viewMode === 'quad' ? gptdevConversationId : null, // 🔥 NULL se non in vista quad
     agentName: 'gptdev',
-    enablePolling: viewMode === 'quad', // 🔥 Polling solo in vista 4 agenti
+    enablePolling: viewMode === 'quad',
   });
 
   const {
     messages: manusQuadMessages,
     loading: manusQuadLoading,
   } = useAgentLogs({
-    conversationId: manusConversationId,
+    conversationId: viewMode === 'quad' ? manusConversationId : null, // 🔥 NULL se non in vista quad
     agentName: 'manus',
-    enablePolling: viewMode === 'quad', // 🔥 Polling solo in vista 4 agenti
+    enablePolling: viewMode === 'quad',
   });
 
   const {
     messages: abacusQuadMessages,
     loading: abacusQuadLoading,
   } = useAgentLogs({
-    conversationId: abacusConversationId,
+    conversationId: viewMode === 'quad' ? abacusConversationId : null, // 🔥 NULL se non in vista quad
     agentName: 'abacus',
-    enablePolling: viewMode === 'quad', // 🔥 Polling solo in vista 4 agenti
+    enablePolling: viewMode === 'quad',
   });
 
   const {
     messages: zapierQuadMessages,
     loading: zapierQuadLoading,
   } = useAgentLogs({
-    conversationId: zapierConversationId,
+    conversationId: viewMode === 'quad' ? zapierConversationId : null, // 🔥 NULL se non in vista quad
     agentName: 'zapier',
-    enablePolling: viewMode === 'quad', // 🔥 Polling solo in vista 4 agenti
+    enablePolling: viewMode === 'quad',
   });
 
   // ========== VISTA SINGOLA AGENTI - Usa conversationId separati ==========

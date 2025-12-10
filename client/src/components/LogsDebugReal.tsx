@@ -32,9 +32,9 @@ export function LogsSectionReal() {
       }
     };
     fetchLogs();
-    // 🔥 POLLING DISABILITATO per evitare interferenze
-    // const interval = setInterval(fetchLogs, 30000);
-    // return () => clearInterval(interval);
+    // 🔥 Polling ogni 30s (isolato dalla chat)
+    const interval = setInterval(fetchLogs, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Calculate stats from Guardian logs
@@ -219,9 +219,9 @@ export function DebugSectionReal() {
       }
     };
     fetchData();
-    // 🔥 POLLING DISABILITATO per evitare interferenze
-    // const interval = setInterval(fetchData, 30000);
-    // return () => clearInterval(interval);
+    // 🔥 Polling ogni 30s (isolato dalla chat)
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
