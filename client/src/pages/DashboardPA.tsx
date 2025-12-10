@@ -3983,7 +3983,11 @@ export default function DashboardPA() {
                   <p className="text-xs text-[#e8fbff]/50">Ultimi 50 eventi • Aggiornamento automatico ogni 10s</p>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {guardianLogs
-                      .filter(log => log.agent === 'mio')
+                      .filter(log => {
+                        // Mostra solo i logs di MIO quando parla con l'utente (non coordinamento)
+                        const conversationId = log.meta?.conversationId || '';
+                        return log.agent === 'mio' && (conversationId.includes('mio') || conversationId.includes('main'));
+                      })
                       .slice(0, 50)
                       .map((log, idx) => {
                       const statusColor = log.status === 'allowed' ? 'text-[#10b981]' : 'text-[#ef4444]';
@@ -4432,13 +4436,17 @@ export default function DashboardPA() {
                 <div className="space-y-3">
                   {guardianLogs
                     .filter(log => {
-                      // Vista 4 agenti: mostra tutti gli agenti (mio, manus, abacus, zapier, gptdev)
+                      // Vista 4 agenti: mostra tutti gli agenti TRANNE quelli in conversazioni singole
                       if (viewMode === 'quad') {
-                        return ['mio', 'manus', 'abacus', 'zapier', 'gptdev'].includes(log.agent);
+                        const conversationId = log.meta?.conversationId || '';
+                        const isSingleConversation = ['gptdev-single', 'manus-single', 'abacus-single', 'zapier-single'].includes(conversationId);
+                        return ['mio', 'manus', 'abacus', 'zapier', 'gptdev'].includes(log.agent) && !isSingleConversation;
                       }
-                      // Vista singola: mostra solo l'agente selezionato
+                      // Vista singola: mostra solo l'agente selezionato nella conversazione singola
                       if (viewMode === 'single' && selectedAgent) {
-                        return log.agent === selectedAgent;
+                        const conversationId = log.meta?.conversationId || '';
+                        const expectedConversationId = `${selectedAgent}-single`;
+                        return log.agent === selectedAgent && conversationId === expectedConversationId;
                       }
                       // Default: mostra tutti
                       return true;
