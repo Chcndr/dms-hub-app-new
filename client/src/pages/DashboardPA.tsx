@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { PanicButton } from '@/components/PanicButton';
 import { useLocation } from 'wouter';
 import { 
   Users, TrendingUp, Store, ShoppingCart, Leaf, MapPin, 
@@ -4666,6 +4667,7 @@ function LogsSection() {
           </Card>
         </TabsContent>
       </Tabs>
+      <PanicButton />
     </>
   );
 }
