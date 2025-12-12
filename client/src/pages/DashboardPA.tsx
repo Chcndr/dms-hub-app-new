@@ -488,11 +488,11 @@ export default function DashboardPA() {
     setConversationId: setMioMainConversationId,
   } = useMio();
   
-  // Persistenza conversazioni separate per vista singola agenti
-  const { conversationId: manusConversationId, setConversationId: setManusConversationId } = useConversationPersistence('manus-single');
-  const { conversationId: abacusConversationId, setConversationId: setAbacusConversationId } = useConversationPersistence('abacus-single');
-  const { conversationId: zapierConversationId, setConversationId: setZapierConversationId } = useConversationPersistence('zapier-single');
-  const { conversationId: gptdevConversationId, setConversationId: setGptdevConversationId } = useConversationPersistence('gptdev-single');
+  // 👥 DOPPIO CANALE - Vista Singola usa user-{agent}-direct
+  const { conversationId: manusConversationId, setConversationId: setManusConversationId } = useConversationPersistence('user-manus-direct');
+  const { conversationId: abacusConversationId, setConversationId: setAbacusConversationId } = useConversationPersistence('user-abacus-direct');
+  const { conversationId: zapierConversationId, setConversationId: setZapierConversationId } = useConversationPersistence('user-zapier-direct');
+  const { conversationId: gptdevConversationId, setConversationId: setGptdevConversationId } = useConversationPersistence('user-gptdev-direct');
   
   // 🔥 4 Conversazioni separate per MIO (una per ogni agente)
   const { conversationId: mioManusConversationId, setConversationId: setMioManusConversationId } = useConversationPersistence('mio-manus-coordination');
