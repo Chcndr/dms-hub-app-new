@@ -53,7 +53,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
 
   if (!isOpen) {
     return (
-      <>
+      <div>
         {/* Pulsante STOP flottante - sempre visibile quando isLoading */}
         {isLoading && (
           <button
@@ -84,7 +84,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
         >
           <MessageCircle className="w-6 h-6" />
         </button>
-      </>
+      </div>
     );
   }
 
