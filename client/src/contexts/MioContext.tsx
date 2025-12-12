@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 
 // 🔥 TABULA RASA: Context condiviso per MIO (Widget + Dashboard)
 
@@ -20,6 +20,7 @@ interface MioContextValue {
   
   // Azioni
   sendMessage: (text: string, meta?: Record<string, any>) => Promise<void>;
+  stopGeneration: () => void;
   clearMessages: () => void;
   setConversationId: (id: string | null) => void;
 }
@@ -31,6 +32,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 🔨 FORZATURA ID STORICO (Ripristino messaggi)
   const FORCE_ID = 'dfab3001-0969-4d6d-93b5-e6f69eecb794';
@@ -127,6 +129,9 @@ export function MioProvider({ children }: { children: ReactNode }) {
       console.log('🔥 [MioContext TABULA RASA] Inizio chiamata diretta...');
       console.log('🔥 [MioContext TABULA RASA] ConversationId:', conversationId);
       
+      // Crea nuovo AbortController per questa richiesta
+      abortControllerRef.current = new AbortController();
+      
       const response = await fetch("/api/mihub/orchestrator", {
         method: "POST",
         headers: {
@@ -137,7 +142,8 @@ export function MioProvider({ children }: { children: ReactNode }) {
           message: text,
           conversationId: conversationId, // Usa conversationId esistente o null per nuova
           meta: { ...meta, source: meta.source || "mio_context" }
-        })
+        }),
+        signal: abortControllerRef.current.signal
       });
 
       console.log('🔥 [MioContext TABULA RASA] Status Response:', response.status);
@@ -184,20 +190,41 @@ export function MioProvider({ children }: { children: ReactNode }) {
 
     } catch (err: any) {
       console.error('🔥 [MioContext TABULA RASA] ERROR:', err);
-      setError(err.message);
       
-      // Messaggio di errore
-      const errorMsg: MioMessage = {
-        id: crypto.randomUUID(),
-        role: 'system',
-        content: `🔥 TABULA RASA ERROR: ${err.message}`,
-        createdAt: new Date().toISOString(),
-      };
-      setMessages(prev => [...prev, errorMsg]);
+      // Se l'errore è dovuto all'abort, non mostrare errore
+      if (err.name === 'AbortError') {
+        console.log('🛑 [MioContext] Richiesta interrotta dall\'utente');
+        const stopMsg: MioMessage = {
+          id: crypto.randomUUID(),
+          role: 'system',
+          content: '⏸️ Generazione interrotta',
+          createdAt: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, stopMsg]);
+      } else {
+        setError(err.message);
+        
+        // Messaggio di errore
+        const errorMsg: MioMessage = {
+          id: crypto.randomUUID(),
+          role: 'system',
+          content: `🔥 TABULA RASA ERROR: ${err.message}`,
+          createdAt: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, errorMsg]);
+      }
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   }, [conversationId]);
+
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      console.log('🛑 [MioContext] Interruzione generazione...');
+      abortControllerRef.current.abort();
+    }
+  }, []);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -211,6 +238,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
     isLoading,
     error,
     sendMessage,
+    stopGeneration,
     clearMessages,
     setConversationId,
   };

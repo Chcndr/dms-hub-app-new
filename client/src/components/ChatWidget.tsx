@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, StopCircle } from 'lucide-react';
 import { useMio } from '@/contexts/MioContext';
 // 🔥 TABULA RASA: Usa Context condiviso!
 
@@ -30,6 +30,7 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
     isLoading,
     error,
     sendMessage: sendMioMessage,
+    stopGeneration,
   } = useMio();
   
   // Alias per compatibilità
@@ -164,16 +165,29 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage(inputMessage)}
+            onKeyPress={(e) => e.key === 'Enter' && !isLoading && sendMessage(inputMessage)}
             placeholder="Scrivi un messaggio..."
             className="flex-1 bg-[#1a2332] border-[#2a3342] text-[#e8fbff] placeholder:text-[#6b7280]"
           />
           <Button
             onClick={() => sendMessage(inputMessage)}
             disabled={!inputMessage.trim() || isLoading}
-            className="bg-[#14b8a6] hover:bg-[#0d9488] text-white"
+            className="bg-[#14b8a6] hover:bg-[#0d9488] text-white min-w-[44px]"
+            title="Invia messaggio"
           >
             <Send className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={stopGeneration}
+            disabled={!isLoading}
+            className={`min-w-[44px] transition-all ${
+              isLoading 
+                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse' 
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            }`}
+            title={isLoading ? "Interrompi generazione" : "Nessuna generazione in corso"}
+          >
+            <StopCircle className="w-4 h-4" />
           </Button>
         </div>
       </div>
