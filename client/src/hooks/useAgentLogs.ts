@@ -6,6 +6,7 @@ export interface AgentLogMessage {
   agent_name: string;
   role: 'user' | 'assistant' | string;
   content: string;
+  sender?: string;  // 🔥 FIX: Campo sender per distinguere MIO da Utente
   created_at: string;
   pending?: boolean;  // Flag per messaggi locali non ancora confermati dal server
 }

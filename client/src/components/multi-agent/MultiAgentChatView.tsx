@@ -10,6 +10,7 @@ export interface AgentMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   agent_name: string;
+  sender?: string;  // 🔥 FIX: Aggiunto campo sender per distinguere MIO da Utente
   created_at: string;
 }
 
@@ -116,7 +117,10 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, messages, loading }) => {
                   }`}
                 >
                   <div className="text-xs text-[#e8fbff]/50 mb-1">
-                    {msg.role === 'user' ? 'Utente' : config.name}
+                    {msg.role === 'user' 
+                      ? (msg.sender === 'mio' ? 'MIO' : 'Utente')  // 🔥 FIX: Distingue MIO da Utente usando sender
+                      : config.name
+                    }
                   </div>
                   <p className="text-xs text-[#e8fbff] whitespace-pre-wrap">{msg.content}</p>
                   <div className="text-xs text-[#e8fbff]/30 mt-1">
