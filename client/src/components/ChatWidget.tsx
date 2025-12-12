@@ -53,22 +53,38 @@ export default function ChatWidget({ userRole = 'cliente', userId, context }: Ch
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => {
-          setIsOpen(true);
-          // Scroll automatico agli ultimi messaggi dopo l'apertura
-          setTimeout(() => {
-            if (messagesEndRef.current) {
-              messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-            }
-          }, 300);
-        }}
-        className="fixed z-[9999] w-14 h-14 bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
-        style={{ bottom: '1.5rem', right: '1.5rem', position: 'fixed' }}
-        aria-label="Apri chat AI"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </button>
+      <>
+        {/* Pulsante STOP flottante - sempre visibile quando isLoading */}
+        {isLoading && (
+          <button
+            onClick={stopGeneration}
+            className="fixed z-[10000] w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 animate-pulse"
+            style={{ bottom: '5.5rem', right: '1.5rem', position: 'fixed' }}
+            aria-label="Interrompi generazione"
+            title="Interrompi generazione in corso"
+          >
+            <StopCircle className="w-6 h-6" />
+          </button>
+        )}
+        
+        {/* Pulsante chat normale */}
+        <button
+          onClick={() => {
+            setIsOpen(true);
+            // Scroll automatico agli ultimi messaggi dopo l'apertura
+            setTimeout(() => {
+              if (messagesEndRef.current) {
+                messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+              }
+            }, 300);
+          }}
+          className="fixed z-[9999] w-14 h-14 bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+          style={{ bottom: '1.5rem', right: '1.5rem', position: 'fixed' }}
+          aria-label="Apri chat AI"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
+      </>
     );
   }
 
