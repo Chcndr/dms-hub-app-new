@@ -11,7 +11,7 @@ import {
   Building2, GraduationCap, Target, TrendingUpDown, Briefcase,
   Radio, CloudRain, Wind, UserCog, ClipboardCheck, Scale, Bell, BellRing,
   Navigation, Train, ParkingCircle, TrafficCone, FileBarChart, Plug, SettingsIcon, Euro, Newspaper, Rocket,
-  XCircle, Lightbulb, MessageSquare, Brain, Calculator, ExternalLink
+  XCircle, Lightbulb, MessageSquare, Brain, Calculator, ExternalLink, StopCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -3892,7 +3892,23 @@ export default function DashboardPA() {
                             <span className="text-xs text-[#e8fbff]/30">ID: {mioMainConversationId.slice(0, 8)}...</span>
                           )}
                         </div>
-                        <span className="text-xs text-[#e8fbff]/50">{mioMessages.length} messaggi</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-[#e8fbff]/50">{mioMessages.length} messaggi</span>
+                          {/* Pulsante STOP sempre visibile */}
+                          <button
+                            onClick={stopGeneration}
+                            disabled={!isLoading}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                              isLoading
+                                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse cursor-pointer'
+                                : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'
+                            }`}
+                            title={isLoading ? 'Interrompi tutti gli agenti' : 'Nessuna elaborazione in corso'}
+                          >
+                            <StopCircle className="h-4 w-4" />
+                            <span className="text-sm">STOP</span>
+                          </button>
+                        </div>
                       </div>
                       {/* Area messaggi */}
                       <div className="relative">
