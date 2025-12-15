@@ -4179,24 +4179,24 @@ export default function DashboardPA() {
                             <button
                               onClick={stopGeneration}
                               disabled={
-                                (selectedAgent === 'gptdev' && !gptdevSending && !gptdevLoading) ||
-                                (selectedAgent === 'manus' && !manusSending && !manusLoading) ||
-                                (selectedAgent === 'abacus' && !abacusSending && !abacusLoading) ||
-                                (selectedAgent === 'zapier' && !zapierSending && !zapierLoading)
+                                (selectedAgent === 'gptdev' && !gptdevSending) ||
+                                (selectedAgent === 'manus' && !manusSending) ||
+                                (selectedAgent === 'abacus' && !abacusSending) ||
+                                (selectedAgent === 'zapier' && !zapierSending)
                               }
                               className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-2 text-xs ${
-                                (selectedAgent === 'gptdev' && (gptdevSending || gptdevLoading)) ||
-                                (selectedAgent === 'manus' && (manusSending || manusLoading)) ||
-                                (selectedAgent === 'abacus' && (abacusSending || abacusLoading)) ||
-                                (selectedAgent === 'zapier' && (zapierSending || zapierLoading))
+                                (selectedAgent === 'gptdev' && gptdevSending) ||
+                                (selectedAgent === 'manus' && manusSending) ||
+                                (selectedAgent === 'abacus' && abacusSending) ||
+                                (selectedAgent === 'zapier' && zapierSending)
                                   ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse cursor-pointer'
                                   : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'
                               }`}
                               title={
-                                (selectedAgent === 'gptdev' && (gptdevSending || gptdevLoading)) ||
-                                (selectedAgent === 'manus' && (manusSending || manusLoading)) ||
-                                (selectedAgent === 'abacus' && (abacusSending || abacusLoading)) ||
-                                (selectedAgent === 'zapier' && (zapierSending || zapierLoading))
+                                (selectedAgent === 'gptdev' && gptdevSending) ||
+                                (selectedAgent === 'manus' && manusSending) ||
+                                (selectedAgent === 'abacus' && abacusSending) ||
+                                (selectedAgent === 'zapier' && zapierSending)
                                   ? 'Interrompi agente'
                                   : 'Nessuna elaborazione in corso'
                               }
@@ -4307,7 +4307,7 @@ export default function DashboardPA() {
                           ))}
                           
                           {/* Loading indicator */}
-                          {selectedAgent === 'gptdev' && (gptdevSending || gptdevLoading) && (
+                          {selectedAgent === 'gptdev' && gptdevSending && (
                             <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
                               <div className="flex items-center gap-2">
                                 <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
@@ -4315,7 +4315,7 @@ export default function DashboardPA() {
                               </div>
                             </div>
                           )}
-                          {selectedAgent === 'manus' && (manusSending || manusLoading) && (
+                          {selectedAgent === 'manus' && manusSending && (
                             <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
                               <div className="flex items-center gap-2">
                                 <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
@@ -4323,7 +4323,7 @@ export default function DashboardPA() {
                               </div>
                             </div>
                           )}
-                          {selectedAgent === 'abacus' && (abacusSending || abacusLoading) && (
+                          {selectedAgent === 'abacus' && abacusSending && (
                             <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
                               <div className="flex items-center gap-2">
                                 <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
@@ -4331,7 +4331,7 @@ export default function DashboardPA() {
                               </div>
                             </div>
                           )}
-                          {selectedAgent === 'zapier' && (zapierSending || zapierLoading) && (
+                          {selectedAgent === 'zapier' && zapierSending && (
                             <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
                               <div className="flex items-center gap-2">
                                 <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
