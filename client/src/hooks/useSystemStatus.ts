@@ -20,7 +20,7 @@ export function useSystemStatus(pollInterval: number = 30000): SystemStatusResul
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-      const response = await fetch('/api/mihub/health', {
+      const response = await fetch('/api/system/health', {
         signal: controller.signal,
         method: 'GET',
       });
