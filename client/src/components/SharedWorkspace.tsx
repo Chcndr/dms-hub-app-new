@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Tldraw, TLEditorComponents, TLUiOverrides, useEditor } from 'tldraw';
+import { Tldraw, TLEditorComponents, TLUiOverrides, useEditor, exportToBlob } from 'tldraw';
 import 'tldraw/tldraw.css';
 import { Maximize2, Minimize2, Save, Download } from 'lucide-react';
 
@@ -113,31 +113,33 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
     if (!editorRef.current) return;
 
     try {
-      // Ottieni tutte le shape della pagina corrente
-      const shapeIds = editorRef.current.getCurrentPageShapeIds();
-      if (shapeIds.size === 0) {
-        alert('Nessuna forma sulla lavagna da esportare!');
+      // 1. Seleziona tutte le shape per l'export
+      const shapeIds = Array.from(editorRef.current.getCurrentPageShapeIds());
+      if (shapeIds.length === 0) {
+        alert("La lavagna \u00e8 vuota!");
         return;
       }
       
-      // Esporta la lavagna come PNG usando toImage()
-      const { blob } = await editorRef.current.toImage([...shapeIds], {
+      // 2. Genera il Blob PNG usando exportToBlob da tldraw
+      const blob = await exportToBlob({
+        editor: editorRef.current,
+        ids: shapeIds,
         format: 'png',
-        background: true, // Include sfondo
-        scale: 2, // 2x resolution per qualità migliore
+        opts: { background: true },
       });
       
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `lavagna-${effectiveConversationId}-${Date.now()}.png`;
-      link.click();
+      // 3. Scarica il file
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shared-workspace-${new Date().toISOString().slice(0,10)}.png`;
+      a.click();
+      window.URL.revokeObjectURL(url);
       
-      URL.revokeObjectURL(url);
       console.log('[SharedWorkspace] Exported as PNG');
     } catch (error) {
       console.error('[SharedWorkspace] Export failed:', error);
-      alert('Errore durante l\'export: ' + error);
+      alert("Errore durante l'export dell'immagine.");
     }
   };
 
