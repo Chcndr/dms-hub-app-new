@@ -135,84 +135,88 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
   const overrides: TLUiOverrides = {
     // Possiamo nascondere/modificare elementi UI
   };
-
   // API viene esposta in onMount callback (vedi Tldraw onMount)
 
   return (
-    <div 
-      ref={containerRef}
-      className="relative w-full h-[600px] bg-[#0a0a0a] rounded-lg border border-[#14b8a6]/20 overflow-hidden"
-    >
-      {/* Header con pulsanti */}
-      <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
-        <button
-          onClick={handleManualSave}
-          className="px-3 py-1.5 bg-[#14b8a6]/20 hover:bg-[#14b8a6]/30 border border-[#14b8a6]/30 rounded-lg text-[#14b8a6] text-xs font-medium flex items-center gap-2 transition-colors"
-          title="Save Now"
-        >
-          <Save className="h-3.5 w-3.5" />
-          Save
-        </button>
-
-        <button
-          onClick={handleExport}
-          className="px-3 py-1.5 bg-[#8b5cf6]/20 hover:bg-[#8b5cf6]/30 border border-[#8b5cf6]/30 rounded-lg text-[#8b5cf6] text-xs font-medium flex items-center gap-2 transition-colors"
-          title="Export Snapshot"
-        >
-          <Download className="h-3.5 w-3.5" />
-          Export
-        </button>
-
-        <button
-          onClick={toggleFullscreen}
-          className="px-3 py-1.5 bg-[#3b82f6]/20 hover:bg-[#3b82f6]/30 border border-[#3b82f6]/30 rounded-lg text-[#3b82f6] text-xs font-medium flex items-center gap-2 transition-colors"
-          title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-        >
-          {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-          Fullscreen
-        </button>
+    <div className="w-full space-y-2">
+      {/* Header con titolo e pulsanti - FUORI dalla lavagna */}
+      <div className="flex items-center justify-between px-4 py-2 bg-[#0a0a0a]/50 rounded-lg border border-[#14b8a6]/20">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-medium text-[#14b8a6]">Shared Workspace</h3>
+          {/* Status indicator */}
+          {isSaving && (
+            <span className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 rounded text-[#14b8a6] text-xs">
+              Saving...
+            </span>
+          )}
+          {lastSaved && !isSaving && (
+            <span className="px-2 py-1 bg-[#10b981]/20 border border-[#10b981]/30 rounded text-[#10b981] text-xs">
+              Saved {lastSaved.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+        
+        {/* Pulsanti azione */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleManualSave}
+            className="px-3 py-1.5 bg-[#14b8a6]/20 hover:bg-[#14b8a6]/30 border border-[#14b8a6]/30 rounded-lg text-[#14b8a6] text-xs font-medium flex items-center gap-2 transition-colors"
+            title="Save Now"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save
+          </button>
+          <button
+            onClick={handleExport}
+            className="px-3 py-1.5 bg-[#8b5cf6]/20 hover:bg-[#8b5cf6]/30 border border-[#8b5cf6]/30 rounded-lg text-[#8b5cf6] text-xs font-medium flex items-center gap-2 transition-colors"
+            title="Export Snapshot"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export
+          </button>
+          <button
+            onClick={toggleFullscreen}
+            className="px-3 py-1.5 bg-[#3b82f6]/20 hover:bg-[#3b82f6]/30 border border-[#3b82f6]/30 rounded-lg text-[#3b82f6] text-xs font-medium flex items-center gap-2 transition-colors"
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+            Fullscreen
+          </button>
+        </div>
       </div>
 
-      {/* Status indicator */}
-      {isSaving && (
-        <div className="absolute top-2 left-2 z-10 px-3 py-1.5 bg-[#14b8a6]/20 border border-[#14b8a6]/30 rounded-lg text-[#14b8a6] text-xs font-medium">
-          Saving...
-        </div>
-      )}
-
-      {lastSaved && !isSaving && (
-        <div className="absolute top-2 left-2 z-10 px-3 py-1.5 bg-[#10b981]/20 border border-[#10b981]/30 rounded-lg text-[#10b981] text-xs font-medium">
-          Saved {lastSaved.toLocaleTimeString()}
-        </div>
-      )}
-
-      {/* tldraw canvas */}
-      <Tldraw
-        onMount={(editor) => {
-          editorRef.current = editor;
-          
-          // Esponi API globale per gli agenti
-          (window as any).sharedWorkspaceAPI = {
-            addShape: (shape: any) => {
-              if (!editorRef.current) return;
-              editorRef.current.createShape(shape);
-            },
-            getSnapshot: () => {
-              if (!editorRef.current) return null;
-              return editorRef.current.store.getSnapshot();
-            },
-            loadSnapshot: (snapshot: any) => {
-              if (!editorRef.current) return;
-              editorRef.current.store.loadSnapshot(snapshot);
-            },
-          };
-          
-          console.log('[SharedWorkspace] API exposed to window.sharedWorkspaceAPI');
-          loadWorkspaceState();
-        }}
-        components={components}
-        overrides={overrides}
-      />
+      {/* Canvas tldraw - SENZA pulsanti sovrapposti */}
+      <div 
+        ref={containerRef}
+        className="relative w-full h-[600px] bg-[#0a0a0a] rounded-lg border border-[#14b8a6]/20 overflow-hidden"
+      >
+        <Tldraw
+          onMount={(editor) => {
+            editorRef.current = editor;
+            
+            // Esponi API globale per gli agenti
+            (window as any).sharedWorkspaceAPI = {
+              addShape: (shape: any) => {
+                if (!editorRef.current) return;
+                editorRef.current.createShape(shape);
+              },
+              getSnapshot: () => {
+                if (!editorRef.current) return null;
+                return editorRef.current.store.getSnapshot();
+              },
+              loadSnapshot: (snapshot: any) => {
+                if (!editorRef.current) return;
+                editorRef.current.store.loadSnapshot(snapshot);
+              },
+            };
+            
+            console.log('[SharedWorkspace] API exposed to window.sharedWorkspaceAPI');
+            loadWorkspaceState();
+          }}
+          components={components}
+          overrides={overrides}
+        />
+      </div>
     </div>
   );
 }
