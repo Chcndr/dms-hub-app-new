@@ -207,9 +207,11 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
             
             // Esponi API globale per gli agenti
             (window as any).sharedWorkspaceAPI = {
-              addShape: (shape: any) => {
+              addShape: async (shape: any) => {
                 if (!editorRef.current) return;
                 editorRef.current.createShape(shape);
+                // Salva automaticamente dopo aver aggiunto la forma
+                await handleAutoSave();
               },
               getSnapshot: () => {
                 if (!editorRef.current) return null;
