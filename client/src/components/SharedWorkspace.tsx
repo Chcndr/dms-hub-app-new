@@ -195,6 +195,9 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       });
       
       console.log('[SharedWorkspace] Image uploaded:', file.name);
+      
+      // Salva immediatamente per evitare che l'auto-reload cancelli l'immagine
+      handleAutoSave();
     };
     reader.readAsDataURL(file);
     
