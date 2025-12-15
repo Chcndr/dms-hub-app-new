@@ -94,6 +94,17 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
     loadWorkspaceState();
   }, [effectiveConversationId, loadWorkspaceState]);
 
+  // Auto-reload ogni 5 secondi per caricare shapes aggiunte dagli agenti
+  useEffect(() => {
+    const autoReloadInterval = window.setInterval(() => {
+      loadWorkspaceState();
+    }, 5000);
+
+    return () => {
+      window.clearInterval(autoReloadInterval);
+    };
+  }, [effectiveConversationId, loadWorkspaceState]);
+
   const handleManualSave = async () => {
     await handleAutoSave();
   };
