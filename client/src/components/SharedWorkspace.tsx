@@ -232,12 +232,13 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       </div>
 
       {/* tldraw Canvas */}
-      <div className="absolute inset-0 pt-12">
+      <div className="absolute inset-0 pt-12" style={{ width: '100%', height: 'calc(100% - 48px)' }}>
         <Tldraw
           onMount={handleMount}
           components={components}
           overrides={overrides}
           inferDarkMode
+          autoFocus={false}
         />
       </div>
     </div>
