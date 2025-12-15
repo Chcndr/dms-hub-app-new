@@ -705,6 +705,7 @@ function CompanyModal({ marketId, company, onClose, onSaved }: CompanyModalProps
         indirizzo_civico: formData.indirizzo_civico,
         indirizzo_cap: formData.indirizzo_cap,
         indirizzo_provincia: formData.indirizzo_provincia,
+        comune: formData.comune,
         
         // Contatti & Attività
         pec: formData.pec,
