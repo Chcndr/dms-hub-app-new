@@ -237,8 +237,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
           onMount={handleMount}
           components={components}
           overrides={overrides}
-          // Dark theme
-          className="tldraw-dark-theme"
+          inferDarkMode
         />
       </div>
     </div>
