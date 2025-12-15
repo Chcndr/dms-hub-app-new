@@ -467,7 +467,7 @@ export default function DashboardPA() {
   const [docModalContent, setDocModalContent] = useState<{ title: string; content: string } | null>(null);
   
   // Multi-Agent Chat state
-  const [showMultiAgentChat, setShowMultiAgentChat] = useState(false);
+  const [showMultiAgentChat, setShowMultiAgentChat] = useState(true);  // 🎯 FIX: Mostra Vista 4 Agenti di default
   const [selectedAgent, setSelectedAgent] = useState<'mio' | 'gptdev' | 'manus' | 'abacus' | 'zapier'>('gptdev');
   const [viewMode, setViewMode] = useState<'single' | 'quad'>('quad');  // 🎯 FIX: Vista 4 Agenti come default
   
@@ -3941,11 +3941,16 @@ export default function DashboardPA() {
                                   <Brain className="h-4 w-4 text-purple-400 mt-0.5" />
                                 )}
                                 <div className="flex-1">
-                                  <div className="text-xs text-[#e8fbff]/50 mb-1">
-                                    {msg.role === 'user' ? 'Tu' : msg.role === 'assistant' ? (
-                                      msg.agentName ? `${msg.agentName.toUpperCase()}` : 'MIO'
-                                    ) : 'Errore'}
-                                    {msg.source && <span className="ml-2 text-[#e8fbff]/30">({msg.source})</span>}
+                                  <div className="text-xs text-[#e8fbff]/50 mb-1 flex items-center justify-between">
+                                    <span>
+                                      {msg.role === 'user' ? 'Tu' : msg.role === 'assistant' ? (
+                                        msg.agentName ? `${msg.agentName.toUpperCase()}` : 'MIO'
+                                      ) : 'Errore'}
+                                      {msg.source && <span className="ml-2 text-[#e8fbff]/30">({msg.source})</span>}
+                                    </span>
+                                    <span className="text-[#e8fbff]/30">
+                                      {new Date(msg.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
                                   </div>
                                   <p className="text-[#e8fbff] text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">{msg.content}</p>
                                 </div>
