@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Tldraw, TLEditorComponents, TLUiOverrides, useEditor, exportToBlob, AssetRecordType } from 'tldraw';
 import 'tldraw/tldraw.css';
-import { Maximize2, Minimize2, Save, Download, Upload } from 'lucide-react';
+import { Maximize2, Minimize2, Save, Download, Upload, RefreshCw } from 'lucide-react';
 
 interface SharedWorkspaceProps {
   conversationId?: string;
@@ -14,13 +14,11 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
   
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveIntervalRef = useRef<number | undefined>();
-  const autoReloadIntervalRef = useRef<number | undefined>();
 
   // Memoizza loadWorkspaceState per evitare re-render
   const loadWorkspaceState = useCallback(async () => {
@@ -97,21 +95,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
     loadWorkspaceState();
   }, [effectiveConversationId, loadWorkspaceState]);
 
-  // Auto-reload ogni 5 secondi per caricare shapes aggiunte dagli agenti
-  useEffect(() => {
-    autoReloadIntervalRef.current = window.setInterval(() => {
-      // NON ricaricare se stiamo uploadando un'immagine
-      if (!isUploadingImage) {
-        loadWorkspaceState();
-      }
-    }, 5000);
-
-    return () => {
-      if (autoReloadIntervalRef.current) {
-        window.clearInterval(autoReloadIntervalRef.current);
-      }
-    };
-  }, [effectiveConversationId, loadWorkspaceState, isUploadingImage]);
+  // Auto-reload RIMOSSO - Caricamento solo manuale con pulsante Load
 
   const handleManualSave = async () => {
     await handleAutoSave();
@@ -169,10 +153,6 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
     reader.onload = async () => {
       const src = reader.result as string;
       
-      // BLOCCA AUTO-RELOAD durante upload
-      setIsUploadingImage(true);
-      console.log('[SharedWorkspace] Auto-reload blocked for image upload');
-      
       // Crea l'asset
       const assetId = AssetRecordType.createId();
       const imageWidth = 200; // Default width
@@ -207,13 +187,9 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       
       console.log('[SharedWorkspace] Image uploaded:', file.name);
       
-      // AWAIT salvataggio completo
+      // Salvataggio automatico
       await handleAutoSave();
       console.log('[SharedWorkspace] Image saved to database');
-      
-      // SBLOCCA AUTO-RELOAD dopo salvataggio
-      setIsUploadingImage(false);
-      console.log('[SharedWorkspace] Auto-reload unblocked');
     };
     reader.readAsDataURL(file);
     
@@ -272,6 +248,14 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
           >
             <Save className="h-3.5 w-3.5" />
             Save
+          </button>
+          <button
+            onClick={loadWorkspaceState}
+            className="px-3 py-1.5 bg-[#06b6d4]/20 hover:bg-[#06b6d4]/30 border border-[#06b6d4]/30 rounded-lg text-[#06b6d4] text-xs font-medium flex items-center gap-2 transition-colors"
+            title="Load from Database"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Load
           </button>
           <input
             type="file"
