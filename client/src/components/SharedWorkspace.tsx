@@ -38,7 +38,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
 
   const loadWorkspaceState = async () => {
     try {
-      const response = await fetch(`/api/workspace/load?conversationId=${conversationId}`);
+      const response = await fetch(`https://api.mio-hub.me/api/workspace/load?conversationId=${conversationId}`);
       if (response.ok) {
         const data = await response.json();
         if (data.snapshot && editorRef.current) {
@@ -58,7 +58,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       setIsSaving(true);
       const snapshot = editorRef.current.store.getSnapshot();
       
-      const response = await fetch('/api/workspace/save', {
+      const response = await fetch('https://api.mio-hub.me/api/workspace/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
