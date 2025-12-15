@@ -14,6 +14,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
   
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<any>(null);
@@ -99,7 +100,10 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
   // Auto-reload ogni 5 secondi per caricare shapes aggiunte dagli agenti
   useEffect(() => {
     autoReloadIntervalRef.current = window.setInterval(() => {
-      loadWorkspaceState();
+      // NON ricaricare se stiamo uploadando un'immagine
+      if (!isUploadingImage) {
+        loadWorkspaceState();
+      }
     }, 5000);
 
     return () => {
@@ -107,7 +111,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
         window.clearInterval(autoReloadIntervalRef.current);
       }
     };
-  }, [effectiveConversationId, loadWorkspaceState]);
+  }, [effectiveConversationId, loadWorkspaceState, isUploadingImage]);
 
   const handleManualSave = async () => {
     await handleAutoSave();
@@ -165,11 +169,9 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
     reader.onload = async () => {
       const src = reader.result as string;
       
-      // PAUSA AUTO-RELOAD durante upload
-      if (autoReloadIntervalRef.current) {
-        window.clearInterval(autoReloadIntervalRef.current);
-        console.log('[SharedWorkspace] Auto-reload paused for image upload');
-      }
+      // BLOCCA AUTO-RELOAD durante upload
+      setIsUploadingImage(true);
+      console.log('[SharedWorkspace] Auto-reload blocked for image upload');
       
       // Crea l'asset
       const assetId = AssetRecordType.createId();
@@ -209,11 +211,9 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       await handleAutoSave();
       console.log('[SharedWorkspace] Image saved to database');
       
-      // RIPRENDI AUTO-RELOAD dopo salvataggio
-      autoReloadIntervalRef.current = window.setInterval(() => {
-        loadWorkspaceState();
-      }, 5000);
-      console.log('[SharedWorkspace] Auto-reload resumed');
+      // SBLOCCA AUTO-RELOAD dopo salvataggio
+      setIsUploadingImage(false);
+      console.log('[SharedWorkspace] Auto-reload unblocked');
     };
     reader.readAsDataURL(file);
     
