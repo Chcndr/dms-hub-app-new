@@ -10,13 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Navigation, ArrowLeft, Leaf, Clock, MapPin, TrendingUp, Car, Bike, Footprints, Bus, Loader2 } from 'lucide-react';
+import { Navigation, ArrowLeft, Leaf, Clock, MapPin, TrendingUp, Car, Bike, Footprints, Bus, Loader2, Store, CheckCircle, XCircle, AlertCircle, Filter, Search, Send } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { Link, useLocation } from 'wouter';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 // import MobilityMap from '@/components/MobilityMap'; // Rimosso - non più utilizzato
 import { trpc } from '@/lib/trpc';
+import { MarketMapComponent } from '@/components/MarketMapComponent';
 
 interface RouteStop {
   name: string;
@@ -42,6 +43,15 @@ export default function RoutePage() {
   const [routeOptions, setRouteOptions] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  
+  // GIS Map state
+  const [gisStalls, setGisStalls] = useState<any[]>([]);
+  const [gisMapData, setGisMapData] = useState<any | null>(null);
+  const [gisMapCenter, setGisMapCenter] = useState<[number, number] | null>(null);
+  const [gisMapRefreshKey, setGisMapRefreshKey] = useState(0);
+  const [gisSearchQuery, setGisSearchQuery] = useState('');
+  const [gisStatusFilter, setGisStatusFilter] = useState<string>('all');
+  const gisMarketId = 1; // Mercato Grosseto ID=1
   // State rimossi - navigazione gestita da app native
   // const [navigationActive, setNavigationActive] = useState(false);
   // const [directions, setDirections] = useState<any>(null);
@@ -70,6 +80,67 @@ export default function RoutePage() {
       toast.success('Destinazione caricata!');
     }
   }, [location]);
+
+  // Fetch GIS Map Data
+  useEffect(() => {
+    const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
+    
+    const fetchGisData = async () => {
+      try {
+        const [stallsRes, mapRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/markets/${gisMarketId}/stalls`),
+          fetch(`${API_BASE_URL}/api/gis/market-map`)
+        ]);
+
+        const stallsData = await stallsRes.json();
+        const mapDataRes = await mapRes.json();
+
+        if (stallsData.success) {
+          setGisStalls(stallsData.data);
+        }
+        if (mapDataRes.success) {
+          setGisMapData(mapDataRes.data);
+          if (mapDataRes.data?.center) {
+            setGisMapCenter([mapDataRes.data.center.lat, mapDataRes.data.center.lng]);
+          }
+        }
+      } catch (error) {
+        console.error('[GIS Map] Error fetching data:', error);
+      }
+    };
+    
+    fetchGisData();
+  }, [gisMarketId]);
+
+  // Filtered stalls based on search and status
+  const filteredGisStalls = gisStalls.filter(stall => {
+    // Filter by status
+    if (gisStatusFilter !== 'all' && stall.status !== gisStatusFilter) {
+      return false;
+    }
+    
+    // Filter by search query
+    if (gisSearchQuery) {
+      const query = gisSearchQuery.toLowerCase();
+      return (
+        // Posteggio
+        stall.number?.toLowerCase().includes(query) ||
+        stall.gis_slot_id?.toLowerCase().includes(query) ||
+        // Impresa
+        stall.vendor_business_name?.toLowerCase().includes(query) ||
+        // Mercato (hardcoded per ora - Grosseto)
+        'grosseto'.includes(query) ||
+        'mercato grosseto'.includes(query) ||
+        'toscana'.includes(query) ||
+        // Giorno mercato
+        'giovedì'.includes(query) ||
+        'giovedi'.includes(query) ||
+        'thursday'.includes(query)
+      );
+    }
+    
+    return true;
+  });
 
   // Funzione per rilevare posizione utente
   const getUserLocation = () => {
@@ -572,6 +643,211 @@ export default function RoutePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Mappa GIS Mercato - Sempre Visibile */}
+          {/* Barra Ricerca e Filtri */}
+          <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                {/* Input Ricerca */}
+                <div className="flex-1">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Cerca mercato, posteggio, impresa..."
+                      value={gisSearchQuery}
+                      onChange={(e) => setGisSearchQuery(e.target.value)}
+                      className="w-full px-4 py-3 pl-10 pr-12 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/40 focus:outline-none focus:border-[#14b8a6] transition-colors"
+                    />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#14b8a6]/60" />
+                    <button className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#14b8a6] hover:bg-[#14b8a6]/80 rounded-md transition-colors">
+                      <Send className="h-4 w-4 text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filtri Posteggi */}
+                <div className="flex gap-2 flex-wrap">
+                  <button 
+                    onClick={() => setGisStatusFilter('all')}
+                    className={`px-4 py-2 rounded-lg border font-medium text-sm transition-colors ${
+                      gisStatusFilter === 'all' 
+                        ? 'border-[#14b8a6] bg-[#14b8a6] text-white' 
+                        : 'border-[#14b8a6]/30 bg-[#14b8a6]/10 text-[#14b8a6] hover:bg-[#14b8a6]/20'
+                    }`}
+                  >
+                    Tutti
+                  </button>
+                  <button 
+                    onClick={() => setGisStatusFilter('libero')}
+                    className={`px-4 py-2 rounded-lg border font-medium text-sm transition-colors ${
+                      gisStatusFilter === 'libero'
+                        ? 'border-[#10b981] bg-[#10b981] text-white'
+                        : 'border-[#10b981]/30 bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/20'
+                    }`}
+                  >
+                    Liberi
+                  </button>
+                  <button 
+                    onClick={() => setGisStatusFilter('occupato')}
+                    className={`px-4 py-2 rounded-lg border font-medium text-sm transition-colors ${
+                      gisStatusFilter === 'occupato'
+                        ? 'border-[#ef4444] bg-[#ef4444] text-white'
+                        : 'border-[#ef4444]/30 bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20'
+                    }`}
+                  >
+                    Occupati
+                  </button>
+                  <button 
+                    onClick={() => setGisStatusFilter('riservato')}
+                    className={`px-4 py-2 rounded-lg border font-medium text-sm transition-colors ${
+                      gisStatusFilter === 'riservato'
+                        ? 'border-[#f59e0b] bg-[#f59e0b] text-white'
+                        : 'border-[#f59e0b]/30 bg-[#f59e0b]/10 text-[#f59e0b] hover:bg-[#f59e0b]/20'
+                    }`}
+                  >
+                    Riservati
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Statistiche Mercato */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-[#e8fbff]/60">Posteggi Totali</p>
+                    <p className="text-2xl font-bold text-[#e8fbff]">{gisStalls.length}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-[#14b8a6]/20 flex items-center justify-center">
+                    <Store className="h-6 w-6 text-[#14b8a6]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-[#1a2332] border-[#10b981]/30">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-[#e8fbff]/60">Liberi</p>
+                    <p className="text-2xl font-bold text-[#10b981]">{gisStalls.filter(s => s.status === 'libero').length}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-[#10b981]/20 flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-[#10b981]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-[#1a2332] border-[#ef4444]/30">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-[#e8fbff]/60">Occupati</p>
+                    <p className="text-2xl font-bold text-[#ef4444]">{gisStalls.filter(s => s.status === 'occupato').length}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-[#ef4444]/20 flex items-center justify-center">
+                    <XCircle className="h-6 w-6 text-[#ef4444]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-[#e8fbff]/60">Riservati</p>
+                    <p className="text-2xl font-bold text-[#f59e0b]">{gisStalls.filter(s => s.status === 'riservato').length}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-[#f59e0b]/20 flex items-center justify-center">
+                    <AlertCircle className="h-6 w-6 text-[#f59e0b]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mappa GIS */}
+          <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+            <CardHeader>
+              <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-[#14b8a6]" />
+                Pianta Mercato Grosseto - GIS Interattiva
+                {plan && userLocation && (
+                  <span className="ml-2 text-sm font-normal text-[#10b981]">
+                    • Percorso Attivo
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {gisMapData && gisStalls.length > 0 ? (
+                <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden aspect-square max-w-4xl mx-auto" style={{ height: 'auto', minHeight: '800px' }}>
+                  <MarketMapComponent
+                    refreshKey={gisMapRefreshKey}
+                    mapData={gisMapData}
+                    center={gisMapCenter}
+                    zoom={17}
+                    height="100%"
+                    stallsData={filteredGisStalls.map(s => ({
+                      id: s.id,
+                      number: s.number,
+                      status: s.status,
+                      type: s.type,
+                      vendor_name: s.vendor_business_name || undefined,
+                      impresa_id: s.impresa_id || undefined
+                    }))}
+                    onStallClick={(stallNumber) => console.log('Stall clicked:', stallNumber)}
+                    routeConfig={plan && userLocation ? {
+                      enabled: true,
+                      userLocation: { lat: userLocation.lat, lng: userLocation.lng },
+                      destination: gisMapCenter ? { lat: gisMapCenter[0], lng: gisMapCenter[1] } : { lat: 42.7634, lng: 11.1139 },
+                      mode: mode === 'walk' ? 'walking' : mode === 'bike' ? 'cycling' : 'driving'
+                    } : undefined}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[600px] text-[#e8fbff]/60">
+                  <div className="text-center">
+                    <MapPin className="h-12 w-12 mx-auto mb-4 text-[#14b8a6]/40" />
+                    <p>Caricamento mappa GIS...</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Legenda */}
+          <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+            <CardHeader>
+              <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
+                <Filter className="h-4 w-4 text-[#14b8a6]" />
+                Legenda Mappa
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-[#10b981]"></div>
+                  <span className="text-sm text-[#e8fbff]/80">Posteggio Libero</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-[#ef4444]"></div>
+                  <span className="text-sm text-[#e8fbff]/80">Posteggio Occupato</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-[#f59e0b]"></div>
+                  <span className="text-sm text-[#e8fbff]/80">Posteggio Riservato</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-[#64748b]"></div>
+                  <span className="text-sm text-[#e8fbff]/80">Non Assegnabile</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
       </div>
     </div>
   );
