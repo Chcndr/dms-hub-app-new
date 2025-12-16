@@ -4687,7 +4687,7 @@ export default function DashboardPA() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-[#e8fbff]/60">Posteggi Totali</p>
-                      <p className="text-2xl font-bold text-[#e8fbff]">186</p>
+                      <p className="text-2xl font-bold text-[#e8fbff]">{gisStalls.length}</p>
                     </div>
                     <div className="w-12 h-12 rounded-full bg-[#14b8a6]/20 flex items-center justify-center">
                       <Store className="h-6 w-6 text-[#14b8a6]" />
@@ -4700,7 +4700,7 @@ export default function DashboardPA() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-[#e8fbff]/60">Liberi</p>
-                      <p className="text-2xl font-bold text-[#10b981]">45</p>
+                      <p className="text-2xl font-bold text-[#10b981]">{gisStalls.filter(s => s.status === 'libero').length}</p>
                     </div>
                     <div className="w-12 h-12 rounded-full bg-[#10b981]/20 flex items-center justify-center">
                       <CheckCircle className="h-6 w-6 text-[#10b981]" />
@@ -4713,7 +4713,7 @@ export default function DashboardPA() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-[#e8fbff]/60">Occupati</p>
-                      <p className="text-2xl font-bold text-[#ef4444]">128</p>
+                      <p className="text-2xl font-bold text-[#ef4444]">{gisStalls.filter(s => s.status === 'occupato').length}</p>
                     </div>
                     <div className="w-12 h-12 rounded-full bg-[#ef4444]/20 flex items-center justify-center">
                       <XCircle className="h-6 w-6 text-[#ef4444]" />
@@ -4726,7 +4726,7 @@ export default function DashboardPA() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-[#e8fbff]/60">Riservati</p>
-                      <p className="text-2xl font-bold text-[#f59e0b]">13</p>
+                      <p className="text-2xl font-bold text-[#f59e0b]">{gisStalls.filter(s => s.status === 'riservato').length}</p>
                     </div>
                     <div className="w-12 h-12 rounded-full bg-[#f59e0b]/20 flex items-center justify-center">
                       <AlertCircle className="h-6 w-6 text-[#f59e0b]" />
@@ -5082,7 +5082,7 @@ function LogsSection() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-[#e8fbff]/60">Posteggi Totali</p>
-                      <p className="text-2xl font-bold text-[#e8fbff]">186</p>
+                      <p className="text-2xl font-bold text-[#e8fbff]">{gisStalls.length}</p>
                     </div>
                     <div className="w-12 h-12 rounded-full bg-[#14b8a6]/20 flex items-center justify-center">
                       <Store className="h-6 w-6 text-[#14b8a6]" />
@@ -5095,7 +5095,7 @@ function LogsSection() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-[#e8fbff]/60">Liberi</p>
-                      <p className="text-2xl font-bold text-[#10b981]">45</p>
+                      <p className="text-2xl font-bold text-[#10b981]">{gisStalls.filter(s => s.status === 'libero').length}</p>
                     </div>
                     <div className="w-12 h-12 rounded-full bg-[#10b981]/20 flex items-center justify-center">
                       <CheckCircle className="h-6 w-6 text-[#10b981]" />
@@ -5108,7 +5108,7 @@ function LogsSection() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-[#e8fbff]/60">Occupati</p>
-                      <p className="text-2xl font-bold text-[#ef4444]">128</p>
+                      <p className="text-2xl font-bold text-[#ef4444]">{gisStalls.filter(s => s.status === 'occupato').length}</p>
                     </div>
                     <div className="w-12 h-12 rounded-full bg-[#ef4444]/20 flex items-center justify-center">
                       <XCircle className="h-6 w-6 text-[#ef4444]" />
@@ -5121,7 +5121,7 @@ function LogsSection() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-[#e8fbff]/60">Riservati</p>
-                      <p className="text-2xl font-bold text-[#f59e0b]">13</p>
+                      <p className="text-2xl font-bold text-[#f59e0b]">{gisStalls.filter(s => s.status === 'riservato').length}</p>
                     </div>
                     <div className="w-12 h-12 rounded-full bg-[#f59e0b]/20 flex items-center justify-center">
                       <AlertCircle className="h-6 w-6 text-[#f59e0b]" />
