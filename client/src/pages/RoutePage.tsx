@@ -331,15 +331,11 @@ export default function RoutePage() {
     
     const travelMode = travelModeMap[mode] || 'walking';
     
-    // Estrai numero posteggio dalla destinazione (se presente)
-    const stallMatch = destination.match(/Posteggio #(\d+)/);
-    const stallNumber = stallMatch ? stallMatch[1] : '';
+    // URL Google Maps per navigazione nativa
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${destLat},${destLng}&travelmode=${travelMode}`;
     
-    // URL mappa GIS con routing (usa travelMode mappato)
-    const mapUrl = `/mappa?route=true&userLat=${userLocation.lat}&userLng=${userLocation.lng}&destLat=${destLat}&destLng=${destLng}&mode=${travelMode}${stallNumber ? `&stallNumber=${stallNumber}` : ''}`;
-    
-    // Redirect a mappa GIS
-    window.location.href = mapUrl;
+    // Apri Google Maps in nuova tab/app nativa
+    window.open(mapsUrl, '_blank');
     
     toast.success('🧭 Navigazione avviata! +' + plan.creditsEarned + ' crediti al completamento');
   };
@@ -361,7 +357,7 @@ export default function RoutePage() {
         </div>
       </header>
 
-      <div className="container py-6 max-w-2xl space-y-6">
+      <div className="container py-6 max-w-4xl space-y-6">
         {/* Form Pianificazione */}
         <Card>
           <CardHeader>
@@ -784,7 +780,7 @@ export default function RoutePage() {
             </CardHeader>
             <CardContent>
               {gisMapData && gisStalls.length > 0 ? (
-                <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden aspect-square max-w-4xl mx-auto" style={{ height: 'auto', minHeight: '800px' }}>
+                <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden" style={{ height: '800px' }}>
                   <MarketMapComponent
                     refreshKey={gisMapRefreshKey}
                     mapData={gisMapData}
