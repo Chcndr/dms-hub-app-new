@@ -4641,6 +4641,33 @@ export default function DashboardPA() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* TAB: MAPPA GIS */}
+          <TabsContent value="mappa" className="space-y-6">
+            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+              <CardContent className="pt-6">
+                <div className="text-center py-12">
+                  <MapPin className="h-16 w-16 text-[#14b8a6]/40 mx-auto mb-4" />
+                  <p className="text-[#e8fbff]/60 text-lg">Mappa GIS</p>
+                  <p className="text-sm text-[#e8fbff]/40 mt-2">Contenuto da implementare</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB: GESTIONE HUB */}
+          <TabsContent value="workspace" className="space-y-6">
+            <Card className="bg-[#1a2332] border-[#06b6d4]/30">
+              <CardContent className="pt-6">
+                <div className="text-center py-12">
+                  <Globe className="h-16 w-16 text-[#06b6d4]/40 mx-auto mb-4" />
+                  <p className="text-[#e8fbff]/60 text-lg">Gestione HUB</p>
+                  <p className="text-sm text-[#e8fbff]/40 mt-2">Contenuto da definire</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
         </Tabs>
       </div>
       
