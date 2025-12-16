@@ -22,6 +22,7 @@ import GestioneMercati from '@/components/GestioneMercati';
 import Integrazioni from '@/components/Integrazioni';
 import { GISMap } from '@/components/GISMap';
 import { MarketMapComponent } from '@/components/MarketMapComponent';
+import { MapModal } from '@/components/MapModal';
 import MIOAgent from '@/components/MIOAgent';
 import { LogsSectionReal, DebugSectionReal } from '@/components/LogsDebugReal';
 import GuardianLogsSection from '@/components/GuardianLogsSection';
@@ -394,6 +395,7 @@ export default function DashboardPA() {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [realtimeData, setRealtimeData] = useState(mockData.realtime);
    const [activeTab, setActiveTab] = useState('overview');
+  const [mapModalOpen, setMapModalOpen] = useState(false);
   const [tccValue, setTccValue] = useState(0.20);
   
   // Carbon Credits - Simulatore completo
@@ -1276,7 +1278,13 @@ export default function DashboardPA() {
           <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">Accesso Rapido Applicativi</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-3">
             <QuickAccessButton href="/" icon={<Store className="h-5 w-5" />} label="Home" />
-            <QuickAccessButton href="/mappa" icon={<MapPin className="h-5 w-5" />} label="Mappa" />
+            <button
+              onClick={() => setMapModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]"
+            >
+              <MapPin className="h-5 w-5" />
+              <span className="text-sm font-medium">Mappa</span>
+            </button>
             <QuickAccessButton href="/wallet" icon={<Leaf className="h-5 w-5" />} label="Wallet" />
             <QuickAccessButton href="/route" icon={<TrendingUp className="h-5 w-5" />} label="Route" />
             <QuickAccessButton href="/civic" icon={<AlertCircle className="h-5 w-5" />} label="Segnala" />
@@ -1649,6 +1657,28 @@ export default function DashboardPA() {
             >
               <Bot className="h-6 w-6" />
               <span className="text-xs font-medium">MIO Agent</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('mappa')}
+              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                activeTab === 'mappa'
+                  ? 'bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg'
+                  : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
+              }`}
+            >
+              <MapPin className="h-6 w-6" />
+              <span className="text-xs font-medium">Mappa GIS</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('workspace')}
+              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                activeTab === 'workspace'
+                  ? 'bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg'
+                  : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
+              }`}
+            >
+              <Globe className="h-6 w-6" />
+              <span className="text-xs font-medium">Workspace</span>
             </button>
             <button
               onClick={() => window.location.href = '/council'}
@@ -4837,8 +4867,34 @@ function LogsSection() {
             </CardContent>
           </Card>
         </TabsContent>
+          {/* TAB: MAPPA GIS (placeholder vuoto) */}
+          <TabsContent value="mappa" className="space-y-6">
+            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+              <CardContent className="pt-6">
+                <div className="text-center py-12">
+                  <MapPin className="h-16 w-16 text-[#14b8a6]/40 mx-auto mb-4" />
+                  <p className="text-[#e8fbff]/60 text-lg">Tab Mappa GIS</p>
+                  <p className="text-sm text-[#e8fbff]/40 mt-2">Contenuto da collegare</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB: WORKSPACE (placeholder vuoto) */}
+          <TabsContent value="workspace" className="space-y-6">
+            <Card className="bg-[#1a2332] border-[#06b6d4]/30">
+              <CardContent className="pt-6">
+                <div className="text-center py-12">
+                  <Globe className="h-16 w-16 text-[#06b6d4]/40 mx-auto mb-4" />
+                  <p className="text-[#e8fbff]/60 text-lg">Tab Workspace</p>
+                  <p className="text-sm text-[#e8fbff]/40 mt-2">Contenuto da definire</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
       </Tabs>
       <PanicButton />
+      <MapModal isOpen={mapModalOpen} onClose={() => setMapModalOpen(false)} />
     </>
   );
 }
