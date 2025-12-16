@@ -130,7 +130,7 @@ export default function VetrinePage() {
 
   // Vista dettaglio impresa
   if (selectedImpresa) {
-    const rating = selectedImpresa.rating || 4.5; // Default rating se non presente
+    const rating = Number(selectedImpresa.rating) || 4.5; // Default rating se non presente
 
     return (
       <div className="min-h-screen bg-background">
@@ -407,7 +407,7 @@ export default function VetrinePage() {
                   </div>
                   <div className="flex items-center gap-1 text-amber-500">
                     <Star className="h-4 w-4 fill-current" />
-                    <span className="text-sm font-semibold">{(impresa.rating || 4.5).toFixed(1)}</span>
+                    <span className="text-sm font-semibold">{(Number(impresa.rating) || 4.5).toFixed(1)}</span>
                   </div>
                 </div>
               </CardHeader>
