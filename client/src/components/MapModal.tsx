@@ -16,7 +16,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0b1220]/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] bg-[#0b1220]/95 backdrop-blur-sm">
       <div className="h-full w-full overflow-y-auto">
         <div className="min-h-full p-4 md:p-6">
           {/* Header */}
