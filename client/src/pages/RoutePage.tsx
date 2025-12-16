@@ -361,8 +361,20 @@ export default function RoutePage() {
                 <div className="grid grid-cols-2 gap-2">
                   {routeOptions.map((option, idx) => (
                     <button
-                      key={idx}
-                      onClick={() => setMode(option.mode)}
+                      key={option.mode}
+                      onClick={() => {
+                        setMode(option.mode);
+                        // Aggiorna plan con i valori della modalità selezionata
+                        if (plan) {
+                          setPlan({
+                            ...plan,
+                            totalDistance: option.distance,
+                            totalTime: option.duration,
+                            co2Saved: option.co2_saved,
+                            creditsEarned: option.credits
+                          });
+                        }
+                      }}
                       className={`p-3 border rounded-lg text-left transition-all ${
                         mode === option.mode
                           ? 'border-primary bg-primary/10'
