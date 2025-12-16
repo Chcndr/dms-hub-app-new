@@ -1393,15 +1393,26 @@ function ConcessionModal({ marketId, concession, companies, stalls, onClose, onS
 
     try {
       const url = concession
-        ? `${API_BASE_URL}/api/markets/concessions/${concession.id}`
-        : `${API_BASE_URL}/api/markets/${marketId}/concessions`;
+        ? `${API_BASE_URL}/api/concessions/${concession.id}`
+        : `${API_BASE_URL}/api/concessions`;
 
-      const method = concession ? 'PUT' : 'POST';
+      const method = concession ? 'PATCH' : 'POST';
+
+      // Map frontend field names to backend API field names
+      const payload = {
+        impresa_id: formData.company_id,  // company_id → impresa_id
+        stall_id: formData.stall_id,
+        market_id: marketId,
+        type: formData.tipo_concessione,  // tipo_concessione → type
+        valid_from: formData.valida_dal,  // valida_dal → valid_from
+        valid_to: formData.valida_al || null,  // valida_al → valid_to
+        notes: null
+      };
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
