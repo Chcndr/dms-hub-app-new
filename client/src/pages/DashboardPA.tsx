@@ -11,7 +11,8 @@ import {
   Building2, GraduationCap, Target, TrendingUpDown, Briefcase,
   Radio, CloudRain, Wind, UserCog, ClipboardCheck, Scale, Bell, BellRing,
   Navigation, Train, ParkingCircle, TrafficCone, FileBarChart, Plug, SettingsIcon, Euro, Newspaper, Rocket,
-  XCircle, Lightbulb, MessageSquare, Brain, Calculator, ExternalLink, StopCircle
+  XCircle, Lightbulb, MessageSquare, Brain, Calculator, ExternalLink, StopCircle,
+  Search, Filter
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
