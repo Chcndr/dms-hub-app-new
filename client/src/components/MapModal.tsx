@@ -12,6 +12,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'free' | 'occupied' | 'reserved'>('all');
 
+  console.log('[MapModal] isOpen:', isOpen);
   if (!isOpen) return null;
 
   return (

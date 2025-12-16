@@ -1279,7 +1279,10 @@ export default function DashboardPA() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-3">
             <QuickAccessButton href="/" icon={<Store className="h-5 w-5" />} label="Home" />
             <button
-              onClick={() => setMapModalOpen(true)}
+              onClick={() => {
+                console.log('[DEBUG] Opening MapModal...');
+                setMapModalOpen(true);
+              }}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]"
             >
               <MapPin className="h-5 w-5" />
