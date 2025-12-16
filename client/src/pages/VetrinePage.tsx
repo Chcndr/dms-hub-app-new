@@ -392,15 +392,13 @@ export default function VetrinePage() {
                     </a>
                   </Button>
                 )}
-                {selectedImpresa.indirizzo && (
-                  <Button 
-                    variant="outline"
-                    onClick={() => handleNavigate(selectedImpresa)}
-                  >
-                    <Navigation className="h-4 w-4 mr-2" />
-                    Come Arrivare
-                  </Button>
-                )}
+                <Button 
+                  variant="outline"
+                  onClick={() => handleNavigate(selectedImpresa)}
+                >
+                  <Navigation className="h-4 w-4 mr-2" />
+                  Come Arrivare
+                </Button>
               </div>
             </CardContent>
           </Card>
