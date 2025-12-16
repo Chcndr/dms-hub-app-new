@@ -23,6 +23,17 @@ L.Marker.prototype.options.icon = DefaultIcon;
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
 export default function MapPage() {
+  // Redirect a Dashboard PA tab Mappa GIS se non è routing
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const route = params.get('route');
+    
+    // Se non è routing, redirect a Dashboard PA
+    if (route !== 'true') {
+      window.location.href = '/dashboard-pa?tab=mappa';
+    }
+  }, []);
+
   const [mapData, setMapData] = useState<any>(null);
   const [stallsData, setStallsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

@@ -395,7 +395,10 @@ export default function DashboardPA() {
   
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [realtimeData, setRealtimeData] = useState(mockData.realtime);
-   const [activeTab, setActiveTab] = useState('overview');
+   // Leggi tab da URL params (es. ?tab=mappa)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabFromUrl = urlParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'overview');
 
   const [tccValue, setTccValue] = useState(0.20);
   

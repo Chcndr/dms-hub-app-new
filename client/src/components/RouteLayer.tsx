@@ -33,7 +33,7 @@ export function RouteLayer({ userLocation, destination, mode }: RouteLayerProps)
       lineOptions: {
         styles: [
           {
-            color: mode === 'walking' ? '#10b981' : mode === 'cycling' ? '#3b82f6' : '#ef4444',
+            color: '#10b981',
             opacity: 0.8,
             weight: 6
           }
