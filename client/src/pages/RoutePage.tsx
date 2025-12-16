@@ -48,13 +48,23 @@ export default function RoutePage() {
   
   const mobilityData = trpc.mobility.list.useQuery();
 
-  // Auto-carica indirizzo da URL params
+  // Auto-carica destinazione da URL params (coordinate o indirizzo)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const destinationLat = params.get('destinationLat');
+    const destinationLng = params.get('destinationLng');
+    const destinationName = params.get('destinationName');
+    const marketName = params.get('marketName');
     const address = params.get('address');
     const shopName = params.get('name');
     
-    if (address) {
+    if (destinationLat && destinationLng) {
+      // Coordinate GPS dirette
+      const name = destinationName || marketName || 'Destinazione';
+      setDestination(`${name} (${destinationLat}, ${destinationLng})`);
+      toast.success(`🎯 Destinazione caricata: ${name}`);
+    } else if (address) {
+      // Indirizzo testuale (fallback)
       setDestination(shopName ? `${shopName} - ${address}` : address);
       toast.success('Destinazione caricata!');
     }

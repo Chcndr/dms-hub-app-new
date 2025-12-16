@@ -130,12 +130,33 @@ export default function VetrinePage() {
     toast.success(`Prodotto "${product.name}" prenotato! Ritira in negozio.`);
   };
 
-  const handleNavigate = (impresa: Impresa) => {
-    if (impresa.indirizzo) {
-      // Integrazione ShoppingRoute - apre pagina route con indirizzo
-      navigate(`/route?destination=${encodeURIComponent(impresa.indirizzo)}`);
-    } else {
-      toast.error('Indirizzo non disponibile');
+  const handleNavigate = async (impresa: Impresa) => {
+    try {
+      // Carica coordinate posteggio dall'API
+      const response = await fetch(`${API_BASE_URL}/api/markets/1/stalls`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Trova posteggio dell'impresa
+        const stall = result.data.find((s: any) => s.impresa_id === impresa.id);
+        
+        if (stall && stall.latitude && stall.longitude) {
+          // Passa coordinate GPS + info negozio
+          const params = new URLSearchParams({
+            destinationLat: stall.latitude.toString(),
+            destinationLng: stall.longitude.toString(),
+            destinationName: `${impresa.denominazione} - Posteggio #${stall.number}`,
+            marketName: 'Mercato Grosseto'
+          });
+          navigate(`/route?${params.toString()}`);
+        } else {
+          // Fallback: usa solo indirizzo
+          navigate(`/route?destination=${encodeURIComponent(impresa.indirizzo || '')}`);
+        }
+      }
+    } catch (error) {
+      console.error('Errore caricamento coordinate:', error);
+      toast.error('Errore nel calcolo del percorso');
     }
   };
 
