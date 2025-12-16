@@ -4655,9 +4655,12 @@ export default function DashboardPA() {
                       <input
                         type="text"
                         placeholder="Cerca mercato, posteggio, impresa..."
-                        className="w-full px-4 py-3 pl-10 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/40 focus:outline-none focus:border-[#14b8a6] transition-colors"
+                        className="w-full px-4 py-3 pl-10 pr-12 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/40 focus:outline-none focus:border-[#14b8a6] transition-colors"
                       />
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#14b8a6]/60" />
+                      <button className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#14b8a6] hover:bg-[#14b8a6]/80 rounded-md transition-colors">
+                        <Send className="h-4 w-4 text-white" />
+                      </button>
                     </div>
                   </div>
 
@@ -4746,7 +4749,7 @@ export default function DashboardPA() {
               </CardHeader>
               <CardContent>
                 {gisMapData && gisStalls.length > 0 ? (
-                  <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden" style={{ height: '600px' }}>
+                  <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden aspect-square max-w-4xl mx-auto" style={{ height: 'auto', minHeight: '800px' }}>
                     <MarketMapComponent
                       refreshKey={gisMapRefreshKey}
                       mapData={gisMapData}
@@ -5050,9 +5053,12 @@ function LogsSection() {
                       <input
                         type="text"
                         placeholder="Cerca mercato, posteggio, impresa..."
-                        className="w-full px-4 py-3 pl-10 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/40 focus:outline-none focus:border-[#14b8a6] transition-colors"
+                        className="w-full px-4 py-3 pl-10 pr-12 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/40 focus:outline-none focus:border-[#14b8a6] transition-colors"
                       />
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#14b8a6]/60" />
+                      <button className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#14b8a6] hover:bg-[#14b8a6]/80 rounded-md transition-colors">
+                        <Send className="h-4 w-4 text-white" />
+                      </button>
                     </div>
                   </div>
 
@@ -5141,7 +5147,7 @@ function LogsSection() {
               </CardHeader>
               <CardContent>
                 {gisMapData && gisStalls.length > 0 ? (
-                  <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden" style={{ height: '600px' }}>
+                  <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden aspect-square max-w-4xl mx-auto" style={{ height: 'auto', minHeight: '800px' }}>
                     <MarketMapComponent
                       refreshKey={gisMapRefreshKey}
                       mapData={gisMapData}
