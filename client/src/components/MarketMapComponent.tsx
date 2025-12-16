@@ -134,6 +134,7 @@ export function MarketMapComponent({
   // DEBUG: Log stallsData
   console.log('[DEBUG MarketMapComponent] stallsData length:', stallsData.length);
   console.log('[DEBUG MarketMapComponent] stallsData sample:', stallsData.slice(0, 5));
+  console.log('[DEBUG MarketMapComponent] impresa_id check:', stallsData.filter(s => s.vendor_name).map(s => ({ number: s.number, vendor: s.vendor_name, impresa_id: s.impresa_id })));
   console.log('[DEBUG MarketMapComponent] stallsByNumber keys sample:', Array.from(stallsByNumber.keys()).slice(0, 10));
   
   // Funzione per determinare il colore in base allo stato
