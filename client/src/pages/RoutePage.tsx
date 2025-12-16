@@ -260,11 +260,15 @@ export default function RoutePage() {
     
     const travelMode = travelModeMap[mode] || 'walking';
     
-    // URL Google Maps con navigazione attiva
-    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${destLat},${destLng}&travelmode=${travelMode}`;
+    // Estrai numero posteggio dalla destinazione (se presente)
+    const stallMatch = destination.match(/Posteggio #(\d+)/);
+    const stallNumber = stallMatch ? stallMatch[1] : '';
     
-    // Apri Google Maps (o Apple Maps su iOS)
-    window.open(mapsUrl, '_blank');
+    // URL mappa GIS con routing
+    const mapUrl = `/mappa?route=true&userLat=${userLocation.lat}&userLng=${userLocation.lng}&destLat=${destLat}&destLng=${destLng}&mode=${mode}${stallNumber ? `&stallNumber=${stallNumber}` : ''}`;
+    
+    // Redirect a mappa GIS
+    window.location.href = mapUrl;
     
     toast.success('🧭 Navigazione avviata! +' + plan.creditsEarned + ' crediti al completamento');
   };

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polygon, LayersControl, Tooltip, useMap } from 'react-leaflet';
 import { ZoomFontUpdater } from './ZoomFontUpdater';
+import { RouteLayer } from './RouteLayer';
 import { getStallMapFillColor, getStallStatusLabel } from '@/lib/stallStatus';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -63,6 +64,12 @@ interface MarketMapComponentProps {
   refreshKey?: number; // Key per forzare re-mount completo della mappa
   isSpuntaMode?: boolean; // Modalità spunta per test dimensioni
   onConfirmAssignment?: (stallId: number) => Promise<void>; // Callback per confermare assegnazione
+  routeConfig?: { // Configurazione routing (opzionale)
+    enabled: boolean;
+    userLocation: { lat: number; lng: number };
+    destination: { lat: number; lng: number };
+    mode: 'walking' | 'cycling' | 'driving';
+  };
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -109,7 +116,8 @@ export function MarketMapComponent({
   stallsData = [],
   refreshKey = 0,
   isSpuntaMode = false,
-  onConfirmAssignment
+  onConfirmAssignment,
+  routeConfig
 }: MarketMapComponentProps) {
   
   const mapCenter: [number, number] = center || [mapData.center.lat, mapData.center.lng];
@@ -208,6 +216,15 @@ export function MarketMapComponent({
           
           {/* Controller per centrare mappa programmaticamente */}
           {center && <MapCenterController center={center} zoom={zoom} />}
+          
+          {/* Routing layer (opzionale) */}
+          {routeConfig?.enabled && (
+            <RouteLayer
+              userLocation={routeConfig.userLocation}
+              destination={routeConfig.destination}
+              mode={routeConfig.mode}
+            />
+          )}
 
           {/* Marker rosso "M" al centro mercato */}
           <Marker

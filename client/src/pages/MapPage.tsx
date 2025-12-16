@@ -28,7 +28,33 @@ export default function MapPage() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedStallNumber, setSelectedStallNumber] = useState<string | null>(null);
+  const [routeConfig, setRouteConfig] = useState<any>(null);
 
+  // Leggi parametri URL per routing
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const route = params.get('route');
+    const userLat = params.get('userLat');
+    const userLng = params.get('userLng');
+    const destLat = params.get('destLat');
+    const destLng = params.get('destLng');
+    const mode = params.get('mode') as 'walking' | 'cycling' | 'driving';
+    const stallNumber = params.get('stallNumber');
+    
+    if (route === 'true' && userLat && userLng && destLat && destLng) {
+      setRouteConfig({
+        enabled: true,
+        userLocation: { lat: parseFloat(userLat), lng: parseFloat(userLng) },
+        destination: { lat: parseFloat(destLat), lng: parseFloat(destLng) },
+        mode: mode || 'walking'
+      });
+      
+      if (stallNumber) {
+        setSelectedStallNumber(stallNumber);
+      }
+    }
+  }, []);
+  
   useEffect(() => {
     // Carica dati mappa mercato da API reali
     const loadMapData = async () => {
@@ -92,8 +118,8 @@ export default function MapPage() {
         {mapData && stallsData.length > 0 ? (
           <MarketMapComponent
             mapData={mapData}
-            center={[42.7669, 11.2588]}
-            zoom={17}
+            center={routeConfig?.destination ? [routeConfig.destination.lat, routeConfig.destination.lng] : [42.7669, 11.2588]}
+            zoom={routeConfig?.enabled ? 16 : 17}
             height="100%"
             stallsData={stallsData}
             onStallClick={(stallNumber) => {
@@ -101,6 +127,7 @@ export default function MapPage() {
               console.log('Clicked stall:', stallNumber);
             }}
             selectedStallNumber={selectedStallNumber}
+            routeConfig={routeConfig}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
