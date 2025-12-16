@@ -1683,7 +1683,7 @@ export default function DashboardPA() {
           </div>
         </div>
 
-        <Tabs value={activeTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 
           {/* TAB 1: OVERVIEW */}
           <TabsContent value="overview" className="space-y-6">
