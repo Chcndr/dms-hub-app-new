@@ -59,28 +59,45 @@ export default function MapPage() {
     // Carica dati mappa mercato da API reali
     const loadMapData = async () => {
       try {
+        console.log('[MapPage] Loading map data from API...');
+        console.log('[MapPage] API Base URL:', API_BASE_URL);
+        
         const [mapRes, stallsRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/gis/market-map`),
           fetch(`${API_BASE_URL}/api/markets/1/stalls`)
         ]);
         
+        console.log('[MapPage] Map API response status:', mapRes.status);
+        console.log('[MapPage] Stalls API response status:', stallsRes.status);
+        
         const mapJson = await mapRes.json();
         const stallsJson = await stallsRes.json();
         
+        console.log('[MapPage] Map API response:', mapJson);
+        console.log('[MapPage] Stalls API response:', stallsJson);
+        
         if (mapJson.success) {
+          console.log('[MapPage] Setting map data:', mapJson.data);
           setMapData(mapJson.data);
+        } else {
+          console.warn('[MapPage] Map API returned success=false:', mapJson);
         }
+        
         if (stallsJson.success) {
-          setStallsData(stallsJson.data.map((s: any) => ({
+          const mappedStalls = stallsJson.data.map((s: any) => ({
             number: s.number,
             status: s.status,
             type: s.type,
             vendor_name: s.vendor_business_name || undefined,
             impresa_id: s.impresa_id || undefined
-          })));
+          }));
+          console.log('[MapPage] Setting stalls data:', mappedStalls.length, 'stalls');
+          setStallsData(mappedStalls);
+        } else {
+          console.warn('[MapPage] Stalls API returned success=false:', stallsJson);
         }
       } catch (error) {
-        console.error('Error loading map data:', error);
+        console.error('[MapPage] Error loading map data:', error);
       } finally {
         setLoading(false);
       }
