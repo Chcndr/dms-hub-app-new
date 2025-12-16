@@ -142,18 +142,22 @@ export default function RoutePage() {
 
       // Chiama API routing
       const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const requestPayload = {
+        start: {
+          lat: userLocation.lat,
+          lng: userLocation.lng
+        },
+        destination: destinationPayload,
+        mode: apiMode,
+        includeTPL: mode === 'transit'
+      };
+      
+      console.log('[DEBUG] API Request:', requestPayload);
+      
       const response = await fetch(`${API_URL}/api/routing/calculate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          start: {
-            lat: userLocation.lat,
-            lng: userLocation.lng
-          },
-          destination: destinationPayload,
-          mode: apiMode,
-          includeTPL: mode === 'transit'
-        })
+        body: JSON.stringify(requestPayload)
       });
 
       if (!response.ok) {
@@ -161,6 +165,8 @@ export default function RoutePage() {
       }
 
       const data = await response.json();
+      
+      console.log('[DEBUG] API Response:', data);
 
       if (!data.success) {
         throw new Error(data.error || 'Errore calcolo percorso');
@@ -168,6 +174,7 @@ export default function RoutePage() {
 
       // Converti risposta API in RoutePlan
       const route = data.route;
+      console.log('[DEBUG] Route Summary:', route.summary);
       const plan: RoutePlan = {
         stops: [
           {
