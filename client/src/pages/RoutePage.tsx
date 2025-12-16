@@ -124,7 +124,8 @@ export default function RoutePage() {
       const apiMode = modeMap[mode] || 'walking';
 
       // Chiama API routing
-      const response = await fetch('http://157.90.29.66:3000/api/routing/calculate', {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const response = await fetch(`${API_URL}/api/routing/calculate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -172,7 +173,7 @@ export default function RoutePage() {
       const options = await Promise.all(
         modes.map(async (m) => {
           try {
-            const res = await fetch('http://157.90.29.66:3000/api/routing/calculate', {
+            const res = await fetch(`${API_URL}/api/routing/calculate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
