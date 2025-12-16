@@ -49,7 +49,8 @@ export default function MapPage() {
             number: s.number,
             status: s.status,
             type: s.type,
-            vendor_name: s.vendor_business_name || undefined
+            vendor_name: s.vendor_business_name || undefined,
+            impresa_id: s.impresa_id || undefined
           })));
         }
       } catch (error) {

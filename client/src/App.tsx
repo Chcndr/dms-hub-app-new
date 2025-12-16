@@ -32,6 +32,7 @@ function Router() {
       <Route path="/wallet" component={WalletPage} />
       <Route path="/civic" component={CivicPage} />
       <Route path="/route" component={RoutePage} />
+      <Route path="/vetrine/:id" component={VetrinePage} />
       <Route path="/vetrine" component={VetrinePage} />
       <Route path="/hub-operatore" component={HubOperatore} />
       <Route path="/dashboard-pa" component={DashboardPA} />

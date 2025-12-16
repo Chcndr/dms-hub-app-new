@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRoute, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +14,17 @@ import {
   Mail,
   Leaf,
   Award,
+  Facebook,
+  Instagram,
+  Globe,
+  MessageCircle,
+  Navigation,
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { toast } from 'sonner';
+import { MIHUB_API_BASE_URL } from '@/config/api';
+
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 interface Product {
   id: string;
@@ -24,91 +33,105 @@ interface Product {
   image?: string;
 }
 
-interface Shop {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  rating: number;
-  certifications: string[];
-  address: string;
-  phone: string;
-  email: string;
-  products: Product[];
+interface Impresa {
+  id: number;
+  denominazione: string;
+  partita_iva?: string;
+  codice_fiscale?: string;
+  settore?: string;
+  comune?: string;
+  indirizzo?: string;
+  telefono?: string;
+  email?: string;
+  pec?: string;
+  rappresentante_legale?: string;
+  // Campi vetrina (da aggiungere al database)
+  vetrina_immagine_principale?: string;
+  vetrina_gallery?: string[];
+  vetrina_descrizione?: string;
+  social_facebook?: string;
+  social_instagram?: string;
+  social_website?: string;
+  social_whatsapp?: string;
+  rating?: number;
+  products?: Product[];
 }
 
-const mockShops: Shop[] = [
-  {
-    id: '1',
-    name: 'Mercato Esperanto - Posteggio 12',
-    category: 'Alimentari BIO',
-    description: 'Prodotti biologici e a km0 direttamente dal produttore',
-    rating: 4.8,
-    certifications: ['BIO', 'KM0', 'Fair Trade'],
-    address: 'Via Roma 12, Grosseto',
-    phone: '+39 0564 123456',
-    email: 'info@mercato-esperanto.it',
-    products: [
-      { id: 'p1', name: 'Pomodori BIO', price: 3.5 },
-      { id: 'p2', name: 'Zucchine KM0', price: 2.8 },
-      { id: 'p3', name: 'Insalata mista', price: 2.0 },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Bottega del Riuso',
-    category: 'Usato/Riparato',
-    description: 'Abbigliamento e oggetti di seconda mano, economia circolare',
-    rating: 4.6,
-    certifications: ['Usato/Riparato', 'Economia Circolare'],
-    address: 'Piazza Dante 5, Grosseto',
-    phone: '+39 0564 789012',
-    email: 'contatto@bottegadelriuso.it',
-    products: [
-      { id: 'p4', name: 'Giacca vintage', price: 25.0 },
-      { id: 'p5', name: 'Borsa in pelle', price: 18.0 },
-      { id: 'p6', name: 'Scarpe ricondizionate', price: 30.0 },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Libreria Indipendente',
-    category: 'Cultura',
-    description: 'Libri nuovi e usati, eventi culturali e presentazioni',
-    rating: 4.9,
-    certifications: ['Artigianale', 'Locale'],
-    address: 'Via Mazzini 23, Grosseto',
-    phone: '+39 0564 345678',
-    email: 'info@libreriaindipendente.it',
-    products: [
-      { id: 'p7', name: 'Romanzo italiano', price: 15.0 },
-      { id: 'p8', name: 'Saggio sostenibilità', price: 18.0 },
-      { id: 'p9', name: 'Libro usato', price: 8.0 },
-    ],
-  },
-];
-
 export default function VetrinePage() {
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
+  const [, params] = useRoute('/vetrine/:id');
+  const [, navigate] = useLocation();
+  const [imprese, setImprese] = useState<Impresa[]>([]);
+  const [selectedImpresa, setSelectedImpresa] = useState<Impresa | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simula caricamento negozi
-    setShops(mockShops);
-  }, []);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        if (params?.id) {
+          // Carica impresa singola
+          const response = await fetch(`${API_BASE_URL}/api/imprese/${params.id}`);
+          const result = await response.json();
+          if (result.success && result.data) {
+            setSelectedImpresa(result.data);
+          } else {
+            toast.error('Impresa non trovata');
+            navigate('/vetrine');
+          }
+        } else {
+          // Carica lista imprese
+          const response = await fetch(`${API_BASE_URL}/api/imprese`);
+          const result = await response.json();
+          if (result.success) {
+            setImprese(result.data || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        toast.error('Errore nel caricamento dei dati');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const filteredShops = shops.filter(
-    (shop) =>
-      shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shop.category.toLowerCase().includes(searchQuery.toLowerCase())
+    loadData();
+  }, [params?.id]);
+
+  const filteredImprese = imprese.filter(
+    (impresa) =>
+      impresa.denominazione.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (impresa.settore && impresa.settore.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleBookProduct = (product: Product) => {
     toast.success(`Prodotto "${product.name}" prenotato! Ritira in negozio.`);
   };
 
-  if (selectedShop) {
+  const handleNavigate = (impresa: Impresa) => {
+    if (impresa.indirizzo) {
+      // Integrazione ShoppingRoute - apre pagina route con indirizzo
+      navigate(`/route?destination=${encodeURIComponent(impresa.indirizzo)}`);
+    } else {
+      toast.error('Indirizzo non disponibile');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Caricamento vetrina...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Vista dettaglio impresa
+  if (selectedImpresa) {
+    const rating = selectedImpresa.rating || 4.5; // Default rating se non presente
+
     return (
       <div className="min-h-screen bg-background">
         {/* Header */}
@@ -118,111 +141,223 @@ export default function VetrinePage() {
               variant="ghost"
               size="icon"
               className="text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={() => setSelectedShop(null)}
+              onClick={() => navigate('/vetrine')}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
               <Store className="h-6 w-6" />
-              <h1 className="text-lg font-bold">Dettaglio Negozio</h1>
+              <h1 className="text-lg font-bold">Vetrina Negozio</h1>
             </div>
           </div>
         </header>
 
         <div className="container py-6 max-w-4xl space-y-6">
+          {/* Immagine Principale */}
+          {selectedImpresa.vetrina_immagine_principale && (
+            <div className="w-full h-64 rounded-lg overflow-hidden shadow-lg">
+              <img
+                src={selectedImpresa.vetrina_immagine_principale}
+                alt={selectedImpresa.denominazione}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
           {/* Info Negozio */}
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-2xl">{selectedShop.name}</CardTitle>
-                  <CardDescription className="mt-1">{selectedShop.category}</CardDescription>
+                  <CardTitle className="text-2xl">{selectedImpresa.denominazione}</CardTitle>
+                  <CardDescription className="mt-1">{selectedImpresa.settore || 'Commercio'}</CardDescription>
                 </div>
                 <div className="flex items-center gap-1 text-amber-500">
                   <Star className="h-5 w-5 fill-current" />
-                  <span className="font-semibold">{selectedShop.rating}</span>
+                  <span className="font-semibold">{rating.toFixed(1)}</span>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-muted-foreground">{selectedShop.description}</p>
+              {/* Descrizione */}
+              {selectedImpresa.vetrina_descrizione && (
+                <p className="text-muted-foreground">{selectedImpresa.vetrina_descrizione}</p>
+              )}
 
-              {/* Certificazioni */}
-              <div className="flex flex-wrap gap-2">
-                {selectedShop.certifications.map((cert) => (
-                  <Badge key={cert} variant="secondary" className="bg-green-100 text-green-800">
+              {/* Certificazioni/Badge */}
+              {selectedImpresa.settore && (
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
                     <Leaf className="h-3 w-3 mr-1" />
-                    {cert}
+                    {selectedImpresa.settore}
                   </Badge>
-                ))}
-              </div>
+                </div>
+              )}
 
               {/* Contatti */}
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>{selectedShop.address}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-4 w-4" />
-                  <span>{selectedShop.phone}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  <span>{selectedShop.email}</span>
-                </div>
+                {selectedImpresa.indirizzo && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span>{selectedImpresa.indirizzo}, {selectedImpresa.comune}</span>
+                  </div>
+                )}
+                {selectedImpresa.telefono && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="h-4 w-4" />
+                    <a href={`tel:${selectedImpresa.telefono}`} className="hover:text-primary">
+                      {selectedImpresa.telefono}
+                    </a>
+                  </div>
+                )}
+                {selectedImpresa.email && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    <a href={`mailto:${selectedImpresa.email}`} className="hover:text-primary">
+                      {selectedImpresa.email}
+                    </a>
+                  </div>
+                )}
               </div>
+
+              {/* Social Media */}
+              {(selectedImpresa.social_facebook || selectedImpresa.social_instagram || 
+                selectedImpresa.social_website || selectedImpresa.social_whatsapp) && (
+                <div className="pt-4 border-t">
+                  <h3 className="text-sm font-semibold mb-3">Seguici su:</h3>
+                  <div className="flex gap-3">
+                    {selectedImpresa.social_facebook && (
+                      <a
+                        href={selectedImpresa.social_facebook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                      >
+                        <Facebook className="h-5 w-5" />
+                      </a>
+                    )}
+                    {selectedImpresa.social_instagram && (
+                      <a
+                        href={selectedImpresa.social_instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 transition-colors"
+                      >
+                        <Instagram className="h-5 w-5" />
+                      </a>
+                    )}
+                    {selectedImpresa.social_website && (
+                      <a
+                        href={selectedImpresa.social_website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                      >
+                        <Globe className="h-5 w-5" />
+                      </a>
+                    )}
+                    {selectedImpresa.social_whatsapp && (
+                      <a
+                        href={`https://wa.me/${selectedImpresa.social_whatsapp.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                      >
+                        <MessageCircle className="h-5 w-5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Azioni */}
               <div className="grid grid-cols-2 gap-3 pt-4">
-                <Button variant="outline">
-                  <Phone className="h-4 w-4 mr-2" />
-                  Chiama
-                </Button>
-                <Button variant="outline">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Come Arrivare
-                </Button>
+                {selectedImpresa.telefono && (
+                  <Button variant="outline" asChild>
+                    <a href={`tel:${selectedImpresa.telefono}`}>
+                      <Phone className="h-4 w-4 mr-2" />
+                      Chiama
+                    </a>
+                  </Button>
+                )}
+                {selectedImpresa.indirizzo && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleNavigate(selectedImpresa)}
+                  >
+                    <Navigation className="h-4 w-4 mr-2" />
+                    Come Arrivare
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Prodotti */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Prodotti</CardTitle>
-              <CardDescription>Catalogo disponibile</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {selectedShop.products.map((product) => (
-                  <div
-                    key={product.id}
-                    className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-semibold">{product.name}</h3>
-                      <span className="text-lg font-bold text-primary">
-                        €{product.price.toFixed(2)}
-                      </span>
-                    </div>
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleBookProduct(product)}
+          {/* Gallery Immagini */}
+          {selectedImpresa.vetrina_gallery && selectedImpresa.vetrina_gallery.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Galleria Prodotti</CardTitle>
+                <CardDescription>Le nostre specialità</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {selectedImpresa.vetrina_gallery.map((imageUrl, index) => (
+                    <div
+                      key={index}
+                      className="aspect-square rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
                     >
-                      Prenota
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                      <img
+                        src={imageUrl}
+                        alt={`Prodotto ${index + 1}`}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Prodotti (se presenti) */}
+          {selectedImpresa.products && selectedImpresa.products.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Prodotti</CardTitle>
+                <CardDescription>Catalogo disponibile</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedImpresa.products.map((product) => (
+                    <div
+                      key={product.id}
+                      className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="font-semibold">{product.name}</h3>
+                        <span className="text-lg font-bold text-primary">
+                          €{product.price.toFixed(2)}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleBookProduct(product)}
+                      >
+                        Prenota
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     );
   }
 
+  // Vista lista imprese
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -256,41 +391,49 @@ export default function VetrinePage() {
           </CardContent>
         </Card>
 
-        {/* Lista Negozi */}
+        {/* Lista Imprese */}
         <div className="space-y-4">
-          {filteredShops.map((shop) => (
+          {filteredImprese.map((impresa) => (
             <Card
-              key={shop.id}
+              key={impresa.id}
               className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setSelectedShop(shop)}
+              onClick={() => navigate(`/vetrine/${impresa.id}`)}
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle>{shop.name}</CardTitle>
-                    <CardDescription>{shop.category}</CardDescription>
+                    <CardTitle>{impresa.denominazione}</CardTitle>
+                    <CardDescription>{impresa.settore || 'Commercio'}</CardDescription>
                   </div>
                   <div className="flex items-center gap-1 text-amber-500">
                     <Star className="h-4 w-4 fill-current" />
-                    <span className="text-sm font-semibold">{shop.rating}</span>
+                    <span className="text-sm font-semibold">{(impresa.rating || 4.5).toFixed(1)}</span>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">{shop.description}</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {impresa.vetrina_descrizione || `${impresa.denominazione} - ${impresa.comune}`}
+                </p>
                 <div className="flex flex-wrap gap-2">
-                  {shop.certifications.map((cert) => (
-                    <Badge key={cert} variant="secondary" className="text-xs">
-                      {cert}
+                  {impresa.settore && (
+                    <Badge variant="secondary" className="text-xs">
+                      {impresa.settore}
                     </Badge>
-                  ))}
+                  )}
+                  {impresa.comune && (
+                    <Badge variant="outline" className="text-xs">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {impresa.comune}
+                    </Badge>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {filteredShops.length === 0 && (
+        {filteredImprese.length === 0 && (
           <Card>
             <CardContent className="pt-6 text-center text-muted-foreground">
               <Store className="h-12 w-12 mx-auto mb-3 opacity-50" />

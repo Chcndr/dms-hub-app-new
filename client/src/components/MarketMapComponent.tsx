@@ -58,6 +58,7 @@ interface MarketMapComponentProps {
     status: string;
     type?: string;
     vendor_name?: string;
+    impresa_id?: number;
   }>;
   refreshKey?: number; // Key per forzare re-mount completo della mappa
   isSpuntaMode?: boolean; // Modalità spunta per test dimensioni
@@ -457,9 +458,9 @@ export function MarketMapComponent({
                         )}
                         
                         {/* Pulsante Visita Vetrina */}
-                        {dbStall?.vendor_name && (
+                        {dbStall?.vendor_name && dbStall?.impresa_id && (
                           <a 
-                            href="/vetrine" 
+                            href={`/vetrine/${dbStall.impresa_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="block w-full text-center bg-[#14b8a6] hover:bg-[#0d9488] text-white font-medium py-2 px-4 rounded transition-colors"
