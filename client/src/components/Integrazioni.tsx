@@ -349,6 +349,24 @@ function APIDashboard() {
           data = await qualificazioniByImpresaResponse.json();
           break;
           
+        // SHOPPING ROUTE - chiamate REST dirette
+        case '/api/routing/calculate':
+          const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+          const routingResponse = await fetch(`${API_URL}/api/routing/calculate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsedBody),
+          });
+          data = await routingResponse.json();
+          break;
+        case '/api/routing/tpl-stops':
+          const tplStopsResponse = await fetch(`${API_URL}/api/routing/tpl-stops?${new URLSearchParams(parsedBody)}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          data = await tplStopsResponse.json();
+          break;
+          
         default:
           // Check if endpoint is defined in api/index.json but not implemented
           if (endpointInfo) {
