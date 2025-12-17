@@ -3884,22 +3884,31 @@ export default function DashboardPA() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Card className="bg-[#0b1220] border-[#06b6d4]/30">
                       <CardHeader>
-                        <CardTitle className="text-[#e8fbff] text-lg">📘 Blueprint DMS Sistema</CardTitle>
+                        <CardTitle className="text-[#e8fbff] text-lg">📘 System Blueprint (Auto-generato)</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <p className="text-[#e8fbff]/70 text-sm mb-4">
-                          Documentazione ufficiale completa del sistema DMS/MIO-HUB: architettura, backend, GIS, guide operative e procedure di deploy.
+                          Blueprint auto-generato del sistema: 94 endpoint API, 50 tabelle DB, struttura progetto completa. Sempre aggiornato!
                         </p>
                         <div className="text-xs text-[#e8fbff]/50 mb-4">
-                          📍 Repository GitHub ufficiale
+                          🤖 Auto-generato: {new Date().toLocaleDateString('it-IT')}
                         </div>
-                        <Button 
-                          className="w-full bg-[#06b6d4] hover:bg-[#06b6d4]/80 text-white"
-                          onClick={() => window.open('https://github.com/Chcndr/dms-system-blueprint/blob/main/01_architettura/MASTER_SYSTEM_PLAN.md', '_blank')}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Apri Blueprint DMS
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            className="flex-1 bg-[#06b6d4] hover:bg-[#06b6d4]/80 text-white"
+                            onClick={() => window.open('/BLUEPRINT.md', '_blank')}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Apri Blueprint
+                          </Button>
+                          <Button 
+                            className="flex-1 bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white"
+                            onClick={() => window.open('https://github.com/Chcndr/dms-hub-app-new/blob/master/BLUEPRINT.md', '_blank')}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            GitHub
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                     <Card className="bg-[#0b1220] border-[#06b6d4]/30">

@@ -466,3 +466,11 @@ async function main() {
 }
 
 main();
+
+// Copy BLUEPRINT.md to public/ for serving
+const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
+if (!fs.existsSync(PUBLIC_DIR)) {
+  fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+}
+fs.copyFileSync(BLUEPRINT_PATH, path.join(PUBLIC_DIR, 'BLUEPRINT.md'));
+console.log('   ✅ BLUEPRINT.md copied to public/');
