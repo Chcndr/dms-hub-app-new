@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { addLog } from "../services/apiLogsService";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -33,6 +34,55 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // 👁️ GLOBAL REST MONITORING MIDDLEWARE - Logs ALL /api/* requests
+  app.use("/api", (req, res, next) => {
+    const start = Date.now();
+    const originalSend = res.send;
+    const originalJson = res.json;
+    
+    // Intercept response to get status code
+    const logRequest = (statusCode: number) => {
+      const duration = Date.now() - start;
+      const userAgent = req.get('user-agent') || 'unknown';
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      
+      // Skip logging Guardian endpoints to avoid infinite loops
+      if (!req.path.includes('/guardian/') && !req.path.includes('/logs/')) {
+        addLog({
+          level: statusCode >= 400 ? 'error' : 'info',
+          app: 'REST',
+          type: statusCode >= 400 ? 'ERROR' : 'API_CALL',
+          endpoint: req.originalUrl,
+          method: req.method,
+          statusCode,
+          responseTime: duration,
+          message: `${req.method} ${req.originalUrl} - ${statusCode}`,
+          userEmail: 'system', // REST endpoints don't have user context here
+          details: {
+            userAgent,
+            ip,
+            query: req.query,
+            body: req.method === 'POST' ? '(body hidden)' : undefined,
+          },
+        });
+      }
+    };
+    
+    // Override res.send
+    res.send = function(data) {
+      logRequest(res.statusCode);
+      return originalSend.call(this, data);
+    };
+    
+    // Override res.json
+    res.json = function(data) {
+      logRequest(res.statusCode);
+      return originalJson.call(this, data);
+    };
+    
+    next();
+  });
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   
