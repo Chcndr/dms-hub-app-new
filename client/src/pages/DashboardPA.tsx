@@ -1322,7 +1322,7 @@ export default function DashboardPA() {
             <QuickAccessButton href="/vetrine" icon={<Store className="h-5 w-5" />} label="Vetrine" />
             <QuickAccessButton href="/hub-operatore" icon={<Activity className="h-5 w-5" />} label="Hub Operatore" color="orange" />
             <button
-              onClick={() => window.open('https://chcndr.github.io/dms-gemello-core/tools/bus_hub.html', '_blank')}
+              onClick={() => setActiveTab('reports')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
             >
               <Wrench className="h-5 w-5" />
@@ -3795,11 +3795,12 @@ export default function DashboardPA() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <FileBarChart className="h-16 w-16 text-[#a855f7] mx-auto mb-4" />
-                  <p className="text-[#e8fbff]/70 text-lg">Sezione Report in sviluppo</p>
-                  <p className="text-[#e8fbff]/50 text-sm mt-2">Generazione report PDF/CSV, export dati, analytics avanzati</p>
-                </div>
+                <iframe 
+                  src="/bus-hub/bus_hub.html" 
+                  className="w-full border-0 rounded-lg"
+                  style={{ height: 'calc(100vh - 250px)', minHeight: '600px' }}
+                  title="BUS HUB Workflow"
+                />
               </CardContent>
             </Card>
           </TabsContent>
