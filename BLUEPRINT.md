@@ -1,51 +1,288 @@
-> # Blueprint Progetto: dms-hub-app-new
+# 📘 DMS Hub System Blueprint
 
-**Autore:** Manus AI
-**Data:** 16 Dicembre 2025
-
----
-
-## 1. Architettura Generale
-
-L'applicazione segue un'architettura full-stack moderna basata su:
-
-- **Frontend:** React (con Vite) e TypeScript
-- **UI Framework:** shadcn/ui e Tailwind CSS
-- **Backend:** tRPC per API type-safe
-- **Database:** Non specificato (presumibilmente SQL)
-- **Deployment:** Vercel
-
-## 2. Componenti Chiave
-
-- **`DashboardPA.tsx`**: Componente principale che funge da cruscotto per l'amministrazione pubblica. Gestisce lo stato globale dell'interfaccia, inclusa la navigazione tra i vari tab e il caricamento dei dati principali.
-- **`MarketMapComponent.tsx`**: Componente riutilizzabile per la visualizzazione di mappe GIS interattive basate su Leaflet. Accetta dati GeoJSON e un elenco di posteggi per il rendering.
-- **`Tabs` (shadcn/ui)**: Utilizzato per organizzare i contenuti in sezioni navigabili.
-
-## 3. Funzionalità Implementate
-
-### Tab "Mappa GIS"
-
-- **Visualizzazione Mappa:** Mappa interattiva del mercato di Grosseto con posteggi colorati in base allo stato.
-- **Statistiche:** Card riassuntive con il conteggio dei posteggi totali, liberi, occupati e riservati.
-- **Filtri e Ricerca:** Interfaccia predisposta per filtri e ricerca (logica non ancora implementata).
-- **Legenda:** Spiegazione chiara dei colori utilizzati sulla mappa.
-
-### Tab "Gestione HUB"
-
-- **Placeholder:** Tab creato con un segnaposto, pronto per future implementazioni.
+> **Auto-generated:** 17 dicembre 2025 alle ore 15:30  
+> **Generator:** `scripts/generate_blueprint.cjs`
 
 ---
 
-## 4. Flusso Dati
+## 🎯 System Overview
 
-1.  `DashboardPA` carica i dati `gisMapData` e `gisStalls` al mount del componente.
-2.  Questi dati vengono passati come props a `MarketMapComponent` sia nel tab "Overview" che nel nuovo tab "Mappa GIS".
-3.  Lo stato `activeTab` gestisce quale `TabsContent` è visibile, garantendo che la mappa venga renderizzata solo quando il tab corrispondente è attivo.
+**DMS Hub** è il sistema centrale per la gestione della Rete Mercati Made in Italy, con:
+
+- **94 endpoint API** (TRPC + REST)
+- **50 tabelle database**
+- **Full Observability** con Guardian monitoring
+- **Multi-agent orchestration** (MIO, Guardian, Zapier, ecc.)
 
 ---
 
-## 5. Note Tecniche e Sfide
+## 🗄️ Database Schema
 
-- **Gestione dei Tab:** La sfida principale è stata la corretta integrazione di `TabsContent` custom all'interno della struttura del componente `<Tabs>` di shadcn/ui, che richiede una gerarchia specifica. Il problema è stato risolto assicurando che tutti i `TabsContent` fossero figli diretti di `<Tabs>` e utilizzando la prop `onValueChange` per sincronizzare lo stato.
-- **Errori di Build:** La risoluzione di errori di build su Vercel ha richiesto l'invalidamento della cache tramite un commit forzato.
-- **Import Mancanti:** Un errore di runtime (`Search is not defined`) è stato causato dalla mancanza di un import di icone da `lucide-react`, evidenziando l'importanza di un controllo attento delle dipendenze.
+### Tables (50)
+
+| Variable Name | Table Name |
+|---------------|------------|
+| `users` | `users` |
+| `extendedUsers` | `extended_users` |
+| `markets` | `markets` |
+| `shops` | `shops` |
+| `transactions` | `transactions` |
+| `checkins` | `checkins` |
+| `carbonCreditsConfig` | `carbon_credits_config` |
+| `fundTransactions` | `fund_transactions` |
+| `reimbursements` | `reimbursements` |
+| `civicReports` | `civic_reports` |
+| `products` | `products` |
+| `productTracking` | `product_tracking` |
+| `carbonFootprint` | `carbon_footprint` |
+| `ecocredits` | `ecocredits` |
+| `auditLogs` | `audit_logs` |
+| `systemLogs` | `system_logs` |
+| `userAnalytics` | `user_analytics` |
+| `sustainabilityMetrics` | `sustainability_metrics` |
+| `notifications` | `notifications` |
+| `inspections` | `inspections` |
+| `businessAnalytics` | `business_analytics` |
+| `mobilityData` | `mobility_data` |
+| `marketGeometry` | `market_geometry` |
+| `stalls` | `stalls` |
+| `vendors` | `vendors` |
+| `concessions` | `concessions` |
+| `vendorDocuments` | `vendor_documents` |
+| `bookings` | `bookings` |
+| `vendorPresences` | `vendor_presences` |
+| `inspectionsDetailed` | `inspections_detailed` |
+| `violations` | `violations` |
+| `concessionPayments` | `concession_payments` |
+| `customMarkers` | `custom_markers` |
+| `customAreas` | `custom_areas` |
+| `apiKeys` | `api_keys` |
+| `apiMetrics` | `api_metrics` |
+| `webhooks` | `webhooks` |
+| `webhookLogs` | `webhook_logs` |
+| `externalConnections` | `external_connections` |
+| `mioAgentLogs` | `mio_agent_logs` |
+| `hubLocations` | `hub_locations` |
+| `hubShops` | `hub_shops` |
+| `hubServices` | `hub_services` |
+| `agentTasks` | `agent_tasks` |
+| `agentProjects` | `agent_projects` |
+| `agentBrain` | `agent_brain` |
+| `systemEvents` | `system_events` |
+| `dataBag` | `data_bag` |
+| `agentMessages` | `agent_messages` |
+| `agentContext` | `agent_context` |
+
+---
+
+## 🔌 API Endpoints
+
+### Services (4)
+
+### undefined
+
+**Base URL:** `undefined`  
+**Endpoints:** 68
+
+**Breakdown:** POST: 11, GET: 57
+
+### undefined
+
+**Base URL:** `undefined`  
+**Endpoints:** 4
+
+**Breakdown:** POST: 2, GET: 2
+
+### undefined
+
+**Base URL:** `undefined`  
+**Endpoints:** 14
+
+**Breakdown:** GET: 8, POST: 6
+
+### undefined
+
+**Base URL:** `undefined`  
+**Endpoints:** 8
+
+**Breakdown:** GET: 5, PUT: 1, POST: 1, DELETE: 1
+
+---
+
+## 📁 Project Structure
+
+### Server
+
+```
+server/
+  📁 _core
+    📄 context.ts
+    📄 cookies.ts
+    📄 dataApi.ts
+    📄 env.ts
+    📄 imageGeneration.ts
+    📄 index.ts
+    📄 llm.ts
+    📄 map.ts
+    📄 notification.ts
+    📄 oauth.ts
+    📄 sdk.ts
+    📄 systemRouter.ts
+    📄 trpc.ts
+    📁 types
+    📄 vite.ts
+    📄 voiceTranscription.ts
+  📁 api
+    📁 github
+  📄 db.ts
+  📄 dmsHubRouter.ts
+  📄 eventBus.ts
+  📄 guardianRouter.ts
+  📄 index.ts
+  📄 integrationsRouter.ts
+  📁 logs
+  📄 mihubRouter.ts
+  📄 mioAgentRouter.ts
+  📄 routers.ts
+  📁 services
+    📄 apiInventoryService.ts
+    📄 apiLogsService.ts
+    📄 tperService.ts
+  📄 storage.ts
+```
+
+### Client
+
+```
+client/src/
+  📄 App.tsx
+  📁 _core
+    📁 hooks
+  📁 api
+    📄 logsClient.ts
+    📄 orchestratorClient.ts
+  📁 components
+    📄 AIChatBox.tsx
+    📄 APIDashboardV2.tsx
+    📄 BottomNav.tsx
+    📄 ChatWidget.tsx
+    📄 ConnessioniV2.tsx
+    📄 DashboardLayout.tsx
+    📄 DashboardLayoutSkeleton.tsx
+    📄 ErrorBoundary.tsx
+    📄 GISMap.tsx
+    📄 GestioneHubNegozi.tsx
+    📄 GestioneMercati.tsx
+    📄 GuardianDebugSection.tsx
+    📄 GuardianIntegrations.tsx
+    📄 GuardianLogsSection.tsx
+    📄 HomeButtons.tsx
+    📄 ImpreseQualificazioniPanel.tsx
+    📄 Integrazioni.tsx
+    📄 LogDebug.tsx
+    📄 LogsDebugReal.tsx
+    📄 MIHUBDashboard.tsx
+    📄 MIOAgent.tsx
+    📄 MIOLogs.tsx
+    📄 ManusDialog.tsx
+    📄 Map.tsx
+    📄 MapModal.tsx
+    📄 MarketMapComponent.tsx
+    📄 MessageContent.tsx
+    📄 MobilityMap.tsx
+    📄 PanicButton.tsx
+    📄 RouteLayer.tsx
+    📄 SharedWorkspace.tsx
+    📄 SharedWorkspace_old.tsx
+    📄 ShopModal.tsx
+    📄 StallNumbersOverlay.tsx
+    📄 ZoomFontUpdater.tsx
+    📁 markets
+    📁 mio
+    📁 multi-agent
+    📁 ui
+  📁 config
+    📄 api.ts
+    📄 links.ts
+    📄 realEndpoints.ts
+  📄 const.ts
+  📁 contexts
+    📄 MioContext.tsx
+    📄 ThemeContext.tsx
+  📁 hooks
+    📄 useAgentLogs.ts
+    📄 useComposition.ts
+    📄 useConversationPersistence.ts
+    📄 useInternalTraces.ts
+    📄 useMobile.tsx
+    📄 useOrchestrator.ts
+    📄 usePersistFn.ts
+    📄 useSystemStatus.ts
+  📁 lib
+    📄 DirectMioClient.ts
+    📄 agentHelper.ts
+    📄 mioOrchestratorClient.ts
+    📄 stallStatus.ts
+    📄 trpc.ts
+    📄 utils.ts
+  📄 main.tsx
+  📁 pages
+    📄 APITokensPage.tsx
+    📄 CivicPage.tsx
+    📄 ComponentShowcase.tsx
+    📄 CouncilPage.tsx
+    📄 DashboardPA.tsx
+    📄 GuardianDebug.tsx
+    📄 GuardianEndpoints.tsx
+    📄 GuardianLogs.tsx
+    📄 Home.tsx
+    📄 HomePage.tsx
+    📄 HubOperatore.tsx
+    📄 LogDebugPage.tsx
+    📄 MIHUBPage.tsx
+    📄 MapPage.tsx
+    📄 MarketGISPage.tsx
+    📄 NotFound.tsx
+    📄 RoutePage.tsx
+    📄 VetrinePage.tsx
+    📄 WalletPage.tsx
+    📁 api
+    📄 mio.tsx
+  📁 utils
+    📄 api.ts
+    📄 mihubAPI.ts
+```
+
+### Scripts
+
+- `generate_blueprint.cjs`
+- `seed.js`
+- `sync_api_docs.cjs`
+
+---
+
+## 🤖 Agent Library
+
+La cartella `.mio-agents/` contiene la conoscenza condivisa per gli agenti AI:
+
+- **system_prompts.md** - Prompt e personalità degli agenti
+- **tools_definition.json** - Tool disponibili per gli agenti
+- **api_reference_for_agents.md** - Riferimento API semplificato
+
+---
+
+## 🔄 Aggiornamento
+
+Per aggiornare questo blueprint e la documentazione:
+
+```bash
+npm run docs:update
+```
+
+Questo comando esegue:
+1. `sync_api_docs.cjs` - Aggiorna `index.json` con endpoint reali
+2. `generate_blueprint.cjs` - Rigenera questo file e `.mio-agents/`
+
+---
+
+**Generated by Manus AI** 🤖

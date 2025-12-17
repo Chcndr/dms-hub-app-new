@@ -1,0 +1,50 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-12-17T20:30:24.064Z",
+  "tools": [
+    {
+      "name": "guardian.logs",
+      "description": "Recupera log centralizzati del sistema",
+      "endpoint": "/api/trpc/guardian.logs",
+      "method": "GET",
+      "params": {
+        "limit": "number",
+        "level": "string (info|error|warn)"
+      }
+    },
+    {
+      "name": "guardian.stats",
+      "description": "Statistiche complete del sistema",
+      "endpoint": "/api/trpc/guardian.stats",
+      "method": "GET"
+    },
+    {
+      "name": "dmsHub.markets.list",
+      "description": "Lista tutti i mercati",
+      "endpoint": "/api/trpc/dmsHub.markets.list",
+      "method": "GET"
+    },
+    {
+      "name": "dmsHub.markets.create",
+      "description": "Crea nuovo mercato",
+      "endpoint": "/api/trpc/dmsHub.markets.create",
+      "method": "POST",
+      "params": {
+        "name": "string",
+        "location": "string",
+        "category": "string"
+      }
+    },
+    {
+      "name": "mihub.orchestrator.run",
+      "description": "Esegue orchestrazione multi-agent",
+      "endpoint": "/api/mihub/orchestrator",
+      "method": "POST",
+      "params": {
+        "agent": "string",
+        "mode": "auto|manual",
+        "task": "string"
+      }
+    }
+  ]
+}
