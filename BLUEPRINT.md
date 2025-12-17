@@ -12,7 +12,7 @@
 - **94 endpoint API** (TRPC + REST)
 - **50 tabelle database**
 - **Full Observability** con Guardian monitoring
-- **Multi-agent orchestration** (MIO V2.0, Guardian, Zapier, ecc.)
+- **Multi-agent orchestration** (MIO V2.0, GPT Dev Gemini Edition, Guardian, ecc.)
 
 ---
 
@@ -261,7 +261,7 @@ client/src/
 
 ---
 
-## 🤖 Agent Library (V2.0 - Hardcore Edition)
+## 🤖 Agent Library (V2.1 - Gemini Edition)
 
 La cartella `.mio-agents/` contiene la conoscenza condivisa per gli agenti AI:
 
