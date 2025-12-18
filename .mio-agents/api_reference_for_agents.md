@@ -1,6 +1,6 @@
 # API Reference for AI Agents
 
-> Auto-generated: 17/12/2025, 15:30:24  
+> Auto-generated: 17/12/2025, 22:24:24  
 > Total Endpoints: 94
 
 ## Quick Reference

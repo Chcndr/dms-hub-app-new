@@ -1,6 +1,6 @@
 # 📘 DMS Hub System Blueprint
 
-> **Auto-generated:** 17 dicembre 2025 alle ore 15:30  
+> **Auto-generated:** 17 dicembre 2025 alle ore 22:24  
 > **Generator:** `scripts/generate_blueprint.cjs`
 
 ---
@@ -258,6 +258,7 @@ client/src/
 - `generate_blueprint.cjs`
 - `seed.js`
 - `sync_api_docs.cjs`
+- `test_agents_capabilities.cjs`
 
 ---
 

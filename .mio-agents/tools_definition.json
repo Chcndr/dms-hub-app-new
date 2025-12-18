@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "lastUpdated": "2025-12-17T22:00:00.000Z",
+  "version": "1.0.0",
+  "lastUpdated": "2025-12-18T03:24:24.198Z",
   "tools": [
     {
       "name": "guardian.logs",
@@ -44,65 +44,6 @@
         "agent": "string",
         "mode": "auto|manual",
         "task": "string"
-      }
-    },
-    {
-      "name": "browser.navigate",
-      "description": "Naviga a un URL specifico usando browser headless (Puppeteer)",
-      "agent": "manus",
-      "method": "POST",
-      "params": {
-        "url": "string (URL completo con https://)",
-        "waitUntil": "string (optional: networkidle2, load, domcontentloaded)",
-        "timeout": "number (optional: timeout in ms, default 30000)"
-      }
-    },
-    {
-      "name": "browser.screenshot",
-      "description": "Cattura screenshot di una pagina web o elemento specifico",
-      "agent": "manus",
-      "method": "POST",
-      "params": {
-        "url": "string (optional: se null usa pagina corrente)",
-        "selector": "string (optional: CSS selector per screenshot elemento)",
-        "fullPage": "boolean (optional: true per screenshot pagina intera)"
-      }
-    },
-    {
-      "name": "browser.click",
-      "description": "Clicca su un elemento della pagina web corrente",
-      "agent": "manus",
-      "method": "POST",
-      "params": {
-        "selector": "string (CSS selector dell'elemento da cliccare)",
-        "waitForNavigation": "boolean (optional: aspetta navigazione dopo click)"
-      }
-    },
-    {
-      "name": "browser.extractText",
-      "description": "Estrae testo da un elemento specifico della pagina",
-      "agent": "manus",
-      "method": "POST",
-      "params": {
-        "selector": "string (CSS selector dell'elemento)"
-      }
-    },
-    {
-      "name": "browser.fillForm",
-      "description": "Compila un form con valori specificati",
-      "agent": "manus",
-      "method": "POST",
-      "params": {
-        "fields": "array (es: [{selector: '#email', value: 'test@example.com'}])"
-      }
-    },
-    {
-      "name": "browser.getContent",
-      "description": "Ottiene tutto il contenuto testuale visibile di una pagina web. Restituisce testo pulito senza tag HTML, ideale per estrarre informazioni (titoli, notizie, prezzi) usando l'intelligenza dell'LLM. Non richiede CSS selectors.",
-      "agent": "manus",
-      "method": "POST",
-      "params": {
-        "url": "string (optional: se omesso usa pagina corrente)"
       }
     }
   ]
