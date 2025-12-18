@@ -45,6 +45,31 @@
         "mode": "auto|manual",
         "task": "string"
       }
+    },
+    {
+      "name": "browser_navigate",
+      "description": "Naviga su una URL specifica usando browser headless",
+      "parameters": {
+        "url": "string",
+        "waitUntil": "string (optional)",
+        "timeout": "number (optional)"
+      }
+    },
+    {
+      "name": "browser_screenshot",
+      "description": "Cattura uno screenshot della pagina corrente o di una URL specifica",
+      "parameters": {
+        "url": "string (optional)",
+        "fullPage": "boolean (optional)",
+        "selector": "string (optional)"
+      }
+    },
+    {
+      "name": "browser_click",
+      "description": "Clicca su un elemento della pagina web corrente",
+      "parameters": {
+        "selector": "string"
+      }
     }
   ]
 }
