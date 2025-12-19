@@ -66,7 +66,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
         const params = new URLSearchParams({
           conversation_id: storedId,
           agent_name: 'mio',
-          limit: '200',
+          limit: '500',  // Massimo consentito dal backend
         });
         
         const response = await fetch(`/api/mio/agent-logs?${params.toString()}`);
