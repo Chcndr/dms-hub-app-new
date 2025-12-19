@@ -35,7 +35,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // 🔨 FORZATURA ID STORICO (Ripristino messaggi)
-  const FORCE_ID = 'dfab3001-0969-4d6d-93b5-e6f69eecb794';
+  const FORCE_ID = 'mio-main';
   
   useEffect(() => {
     const current = localStorage.getItem('mioMainConversationId');
