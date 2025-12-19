@@ -54,7 +54,7 @@ export function useAgentLogs({
         
         const params = new URLSearchParams({
           conversation_id: conversationId,
-          limit: '200',
+          // Nessun limite - carica tutti i messaggi dal database
         });
         if (agentName) params.set('agent_name', agentName);
         if (excludeUserMessages) params.set('exclude_user_messages', 'true'); // 🔥 VISTA 4 AGENTI
