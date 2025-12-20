@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Tldraw, TLEditorComponents, TLUiOverrides, useEditor, exportToBlob, AssetRecordType } from 'tldraw';
+import { Tldraw, TLEditorComponents, TLUiOverrides, useEditor, exportToBlob, AssetRecordType, getSnapshot, loadSnapshot } from 'tldraw';
 import 'tldraw/tldraw.css';
 import { Maximize2, Minimize2, Save, Download, Upload, RefreshCw } from 'lucide-react';
 
@@ -31,12 +31,15 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
         if (data.data?.snapshot && editorRef.current) {
           const snapshot = data.data.snapshot;
           
-          // 🔧 FIX: Filtra asset con dimensioni invalide (w=0, h=0, o undefined)
-          if (snapshot.store) {
+          // 🔧 FIX: Converti dal vecchio formato {store, schema} al nuovo formato {document, session}
+          // Il nuovo formato tldraw usa loadSnapshot(store, { document, session })
+          if (snapshot.store && !snapshot.document) {
+            console.log('[SharedWorkspace] Converting old snapshot format to new format');
+            
+            // Filtra asset con dimensioni invalide
             const filteredStore: Record<string, any> = {};
             const assetsToRemove: string[] = [];
             
-            // Prima passa: identifica asset invalidi
             for (const [key, value] of Object.entries(snapshot.store)) {
               if (key.startsWith('asset:')) {
                 const asset = value as any;
@@ -49,7 +52,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
               filteredStore[key] = value;
             }
             
-            // Seconda passa: rimuovi shape che referenziano asset invalidi
+            // Rimuovi shape che referenziano asset invalidi
             for (const [key, value] of Object.entries(filteredStore)) {
               if (key.startsWith('shape:')) {
                 const shape = value as any;
@@ -60,11 +63,22 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
               }
             }
             
-            snapshot.store = filteredStore;
+            // Converti al nuovo formato
+            const newSnapshot = {
+              document: filteredStore,
+              session: undefined // Non abbiamo session state
+            };
+            
+            // Usa la nuova API loadSnapshot
+            loadSnapshot(editorRef.current.store, newSnapshot);
+          } else if (snapshot.document) {
+            // Già nel nuovo formato
+            loadSnapshot(editorRef.current.store, snapshot);
+          } else {
+            // Fallback al vecchio metodo
+            editorRef.current.store.loadSnapshot(snapshot);
           }
           
-          // Carica lo snapshot filtrato nel editor
-          editorRef.current.store.loadSnapshot(snapshot);
           console.log('[SharedWorkspace] Snapshot loaded successfully from database');
         } else {
           console.log('[SharedWorkspace] No snapshot found in response');
@@ -83,7 +97,9 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
 
     try {
       setIsSaving(true);
-      const snapshot = editorRef.current.store.getSnapshot();
+      // 🔧 FIX: Usa la nuova API getSnapshot per ottenere il formato corretto
+      const { document, session } = getSnapshot(editorRef.current.store);
+      const snapshot = { document, session };
       
       console.log('[SharedWorkspace] Saving workspace for conversationId:', effectiveConversationId);
       const response = await fetch('https://api.mio-hub.me/api/workspace/save', {
