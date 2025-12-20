@@ -46,6 +46,7 @@ export function useAgentLogs({
     let isFirstLoad = true;
 
     const load = async () => {
+      console.log('[useAgentLogs] Loading messages:', { conversationId, agentName, excludeUserMessages });
       try {
         // Loading solo al primo caricamento, non durante polling
         if (isFirstLoad) {
@@ -56,6 +57,7 @@ export function useAgentLogs({
           conversation_id: conversationId,
           limit: '500',  // Massimo consentito dal backend
         });
+        console.log('[useAgentLogs] Initial params:', params.toString());
         if (agentName) params.set('agent_name', agentName);
         if (excludeUserMessages) {
           params.set('exclude_user_messages', 'true'); // 🔥 VISTA 4 AGENTI
@@ -65,11 +67,14 @@ export function useAgentLogs({
         }
 
         // 🚀 TUBO DIRETTO DATABASE→FRONTEND (bypassa Hetzner)
-        const res = await fetch(`/api/mihub/get-messages?${params.toString()}`);
+        const url = `/api/mihub/get-messages?${params.toString()}`;
+        console.log('[useAgentLogs] Fetching:', url);
+        const res = await fetch(url);
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
         const data = await res.json();
+        console.log('[useAgentLogs] Response data:', data);
 
         if (!cancelled) {
           // 🔥 DEDUPLICAZIONE: Merge intelligente tra messaggi locali e server
