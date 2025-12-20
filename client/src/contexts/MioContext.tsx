@@ -64,7 +64,8 @@ export function MioProvider({ children }: { children: ReactNode }) {
 
       try {
         // 🚀 TUBO DRITTO - Connessione diretta database → frontend (bypassa Hetzner)
-        const response = await fetch(`/api/mihub/get-messages?conversation_id=mio-main&mode=auto&limit=500`);
+        // 🔥 FIX: Rimosso mode=auto per caricare TUTTI i messaggi (user e assistant)
+        const response = await fetch(`/api/mihub/get-messages?conversation_id=mio-main&limit=500`);
         if (!response.ok) return;
         
         const data = await response.json();
@@ -190,7 +191,8 @@ export function MioProvider({ children }: { children: ReactNode }) {
           const finalId = data.conversationId || conversationId;
           if (finalId) {
             console.log('🔄 [MioContext] Polling post-invio per nuove risposte...');
-            const response = await fetch(`/api/mihub/get-messages?conversation_id=${finalId}&mode=auto&limit=500`);
+            // 🔥 FIX: Rimosso mode=auto per caricare TUTTI i messaggi
+            const response = await fetch(`/api/mihub/get-messages?conversation_id=${finalId}&limit=500`);
             if (response.ok) {
               const pollData = await response.json();
               const rawMessages = pollData.messages || pollData.logs || [];
