@@ -30,19 +30,20 @@ export function useConversationPersistence(storageKey?: string): ConversationPer
       setConversationIdState(stored);
       console.log('[Persistence] Restored conversation_id:', stored);
     } else {
-      // ✅ FIX: Per conversazioni di coordinamento, usa il nome della key come ID
-      if (STORAGE_KEY.includes('coordination')) {
-        const fixedId = STORAGE_KEY;  // es. "mio-manus-coordination"
+      // 🔥 FIX: Per TUTTE le conversazioni con storageKey definita, usa la key come ID fisso
+      // Questo include sia coordinamento (mio-manus-coordination) che chat singole (user-gptdev-direct)
+      if (storageKey) {
+        const fixedId = storageKey;  // es. "user-gptdev-direct" o "mio-manus-coordination"
         localStorage.setItem(STORAGE_KEY, fixedId);
         setConversationIdState(fixedId);
-        console.log('[Persistence] Created fixed coordination ID:', fixedId);
+        console.log('[Persistence] Created fixed ID from storageKey:', fixedId);
       } else {
-        // Per chat singole, rimane null finché non viene creato dal backend
+        // Solo per il default (mio_conversation_id) rimane null finché non viene creato
         setConversationIdState(null);
         console.log('[Persistence] No conversation_id found, will be created by backend');
       }
     }
-  }, [STORAGE_KEY]);
+  }, [STORAGE_KEY, storageKey]);
 
   // Salva conversation_id in localStorage
   const setConversationId = (id: string) => {
