@@ -74,7 +74,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
           const loadedMessages: MioMessage[] = rawMessages.map((log: any) => ({
             id: log.id,
             role: log.role as 'user' | 'assistant' | 'system',
-            content: log.content || log.message || '',  // 🔥 FIX: Preferisci content (agent_messages)
+            content: log.message || log.content || '',  // 🔥 FIX: Preferisci message (agent_messages)
             createdAt: log.created_at,
             agentName: log.agent_name || log.agent || log.sender,  // 🔥 FIX: Fallback multipli
           }));
