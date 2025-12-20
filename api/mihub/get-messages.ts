@@ -63,7 +63,7 @@ export default async function handler(
           FROM agent_messages
           WHERE conversation_id = ${conversation_id}
             AND agent = ${agent_name}
-            AND (${mode}::varchar IS NULL OR mode = ${mode})
+            AND (${mode || null}::varchar IS NULL OR mode = ${mode || null})
           ORDER BY created_at ASC
           LIMIT ${parseInt(limit as string)}
         `;
@@ -81,7 +81,7 @@ export default async function handler(
             mode
           FROM agent_messages
           WHERE conversation_id = ${conversation_id}
-            AND (${mode}::varchar IS NULL OR mode = ${mode})
+            AND (${mode || null}::varchar IS NULL OR mode = ${mode || null})
           ORDER BY created_at ASC
           LIMIT ${parseInt(limit as string)}
         `;
