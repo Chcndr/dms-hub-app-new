@@ -3,6 +3,9 @@
  * 
  * Funzione centralizzata per inviare messaggi agli agenti.
  * Elimina duplicazione codice e standardizza tutte le chiamate.
+ * 
+ * ⚠️ IMPORTANTE: NON usa Optimistic UI per evitare duplicati.
+ * I messaggi vengono mostrati SOLO dopo il reload dal database.
  */
 
 import { callOrchestrator, type AgentId, type OrchestratorMode } from '@/api/orchestratorClient';
@@ -26,10 +29,42 @@ export interface SendToAgentParams {
   conversationId?: string | null;
   /** Mode: "direct" = chat diretta, "auto" = via MIO */
   mode?: OrchestratorMode;
-  /** Callback per aggiornare i messaggi */
-  onUpdateMessages: (updater: (prev: AgentMessage[]) => AgentMessage[]) => void;
+  /** Callback per aggiornare i messaggi con i nuovi dal database */
+  onUpdateMessages: (messages: AgentMessage[]) => void;
   /** Callback per aggiornare conversation ID */
   onUpdateConversationId: (id: string) => void;
+  /** Callback per mostrare errori */
+  onError?: (error: string) => void;
+}
+
+/**
+ * Ricarica messaggi dal database
+ */
+async function reloadMessages(conversationId: string): Promise<AgentMessage[]> {
+  const params = new URLSearchParams({
+    conversation_id: conversationId,
+    limit: '500',
+  });
+  
+  const url = `/api/mihub/get-messages?${params.toString()}`;
+  const res = await fetch(url);
+  
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  
+  const data = await res.json();
+  const rawMessages = data.messages || data.data || data.logs || [];
+  
+  return rawMessages.map((msg: any) => ({
+    id: msg.id,
+    conversation_id: msg.conversation_id,
+    agent_name: msg.agent_name || msg.agent,
+    role: msg.role,
+    content: msg.content || msg.message,
+    created_at: msg.created_at,
+    pending: false
+  }));
 }
 
 /**
@@ -46,22 +81,11 @@ export async function sendToAgent(params: SendToAgentParams): Promise<void> {
     mode = 'direct', // Default: chiamata diretta
     onUpdateMessages,
     onUpdateConversationId,
+    onError,
   } = params;
 
-  // 1. Aggiungi messaggio utente (Optimistic UI)
-  const userMsg: AgentMessage = {
-    id: crypto.randomUUID(),
-    conversation_id: conversationId || '',
-    agent_name: targetAgent,
-    role: 'user',
-    content: message,
-    created_at: new Date().toISOString(),
-    pending: true,
-  };
-  onUpdateMessages(prev => [...prev, userMsg]);
-
   try {
-    // 2. Chiama orchestratore (centralizzato)
+    // 1. Chiama orchestratore (centralizzato)
     const response = await callOrchestrator({
       mode,
       targetAgent,
@@ -71,55 +95,31 @@ export async function sendToAgent(params: SendToAgentParams): Promise<void> {
 
     console.log(`[AgentHelper] Response from ${targetAgent}:`, response);
 
-    // 3. Aggiorna conversation ID se nuovo
+    // 2. Aggiorna conversation ID se nuovo
+    const finalConversationId = response.conversationId || conversationId;
     if (response.conversationId) {
       onUpdateConversationId(response.conversationId);
     }
 
-    // 4. Rimuovi flag pending dal messaggio utente
-    onUpdateMessages(prev =>
-      prev.map(msg => (msg.pending ? { ...msg, pending: false } : msg))
-    );
-
-    // 5. Aggiungi risposta dell'agente
-    if (response.message) {
-      const assistantMsg: AgentMessage = {
-        id: crypto.randomUUID(),
-        conversation_id: response.conversationId || conversationId || '',
-        agent_name: targetAgent,
-        role: 'assistant',
-        content: response.message,
-        created_at: new Date().toISOString(),
-      };
-      onUpdateMessages(prev => [...prev, assistantMsg]);
+    // 3. Ricarica messaggi dal database
+    if (finalConversationId) {
+      const messages = await reloadMessages(finalConversationId);
+      onUpdateMessages(messages);
     }
 
-    // 6. Gestisci errori dal backend
+    // 4. Gestisci errori dal backend
     if (!response.success && response.error) {
-      const errorMsg: AgentMessage = {
-        id: crypto.randomUUID(),
-        conversation_id: conversationId || '',
-        agent_name: targetAgent,
-        role: 'system',
-        content: `❌ Errore: ${response.error.message || 'Errore sconosciuto'}`,
-        created_at: new Date().toISOString(),
-      };
-      onUpdateMessages(prev => [...prev, errorMsg]);
+      const errorMessage = `❌ Errore: ${response.error.message || 'Errore sconosciuto'}`;
+      console.error(`[AgentHelper] Backend error for ${targetAgent}:`, errorMessage);
+      if (onError) {
+        onError(errorMessage);
+      }
     }
   } catch (err: any) {
     console.error(`[AgentHelper] Network error for ${targetAgent}:`, err);
-
-    // Rimuovi pending e aggiungi messaggio di errore
-    onUpdateMessages(prev => [
-      ...prev.map(msg => (msg.pending ? { ...msg, pending: false } : msg)),
-      {
-        id: crypto.randomUUID(),
-        conversation_id: conversationId || '',
-        agent_name: targetAgent,
-        role: 'system',
-        content: `❌ Errore di rete: ${err.message}`,
-        created_at: new Date().toISOString(),
-      },
-    ]);
+    const errorMessage = `❌ Errore di rete: ${err.message}`;
+    if (onError) {
+      onError(errorMessage);
+    }
   }
 }

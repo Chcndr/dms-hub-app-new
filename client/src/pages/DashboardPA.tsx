@@ -805,7 +805,7 @@ export default function DashboardPA() {
         message: text,
         conversationId: gptdevConversationId,
         mode: 'direct',
-        onUpdateMessages: setGptdevMessages,
+        onUpdateMessages: (messages) => setGptdevMessages(messages),
         onUpdateConversationId: setGptdevConversationId,
       });
     } finally {
@@ -825,7 +825,7 @@ export default function DashboardPA() {
         message: text,
         conversationId: manusConversationId,
         mode: 'direct',
-        onUpdateMessages: setManusMessages,
+        onUpdateMessages: (messages) => setManusMessages(messages),
         onUpdateConversationId: setManusConversationId,
       });
     } finally {
@@ -845,7 +845,7 @@ export default function DashboardPA() {
         message: text,
         conversationId: abacusConversationId,
         mode: 'direct',
-        onUpdateMessages: setAbacusMessages,
+        onUpdateMessages: (messages) => setAbacusMessages(messages),
         onUpdateConversationId: setAbacusConversationId,
       });
     } finally {
@@ -865,7 +865,7 @@ export default function DashboardPA() {
         message: text,
         conversationId: zapierConversationId,
         mode: 'direct',
-        onUpdateMessages: setZapierMessages,
+        onUpdateMessages: (messages) => setZapierMessages(messages),
         onUpdateConversationId: setZapierConversationId,
       });
     } finally {
