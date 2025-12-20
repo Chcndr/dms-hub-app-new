@@ -16,6 +16,7 @@ export interface AgentMessage {
   agent_name: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  sender?: string;  // FIX: Campo sender per distinguere MIO da Utente nelle chat singole
   created_at: string;
   pending?: boolean;
 }
@@ -62,6 +63,7 @@ async function reloadMessages(conversationId: string): Promise<AgentMessage[]> {
     agent_name: msg.agent_name || msg.agent,
     role: msg.role,
     content: msg.content || msg.message,
+    sender: msg.sender,  // FIX: Include sender per mostrare Tu invece di MIO
     created_at: msg.created_at,
     pending: false
   }));
