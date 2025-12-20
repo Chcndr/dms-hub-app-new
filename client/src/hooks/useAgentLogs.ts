@@ -62,9 +62,8 @@ export function useAgentLogs({
         if (excludeUserMessages) {
           params.set('exclude_user_messages', 'true'); // 🔥 VISTA 4 AGENTI
           params.set('mode', 'auto'); // Vista 4 Agenti mostra solo coordinamento MIO
-        } else {
-          params.set('mode', 'direct'); // Chat singola mostra solo messaggi diretti
         }
+        // 🔥 Chat singole NON usano filtro mode, caricano TUTTI i messaggi del conversation_id
 
         // 🚀 TUBO DIRETTO DATABASE→FRONTEND (bypassa Hetzner)
         const url = `/api/mihub/get-messages?${params.toString()}`;
