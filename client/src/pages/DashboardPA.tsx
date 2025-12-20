@@ -579,7 +579,7 @@ export default function DashboardPA() {
     role: msg.role as 'user' | 'assistant',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
-    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente
+    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
     created_at: msg.created_at,  // 🕒 FIX: Aggiungo timestamp per mostrare orario
     pending: msg.pending  // Preserva flag pending per Optimistic UI
   }));
@@ -600,7 +600,7 @@ export default function DashboardPA() {
     role: msg.role as 'user' | 'assistant',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
-    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente
+    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
     created_at: msg.created_at,  // 🕒 FIX: Aggiungo timestamp per mostrare orario
     pending: msg.pending  // Preserva flag pending per Optimistic UI
   }));
@@ -633,7 +633,7 @@ export default function DashboardPA() {
     role: msg.role as 'user' | 'assistant',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
-    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente
+    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
     created_at: msg.created_at,  // 🕒 FIX: Aggiungo timestamp per mostrare orario
     pending: msg.pending  // Preserva flag pending per Optimistic UI
   }));
@@ -642,7 +642,7 @@ export default function DashboardPA() {
     role: msg.role as 'user' | 'assistant',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
-    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente
+    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
     created_at: msg.created_at,  // 🕒 FIX: Aggiungo timestamp per mostrare orario
     pending: msg.pending  // Preserva flag pending per Optimistic UI
   }));
