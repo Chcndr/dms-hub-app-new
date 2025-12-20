@@ -37,6 +37,7 @@ import { sendDirectMessageToHetzner, DirectMioMessage } from '@/lib/DirectMioCli
 import { sendToAgent } from '@/lib/agentHelper';
 
 // 👻 GHOSTBUSTER: MioChatMessage sostituito con DirectMioMessage
+// 🔥 FORCE REBUILD: 2024-12-20 12:46 - Fix agentName filter removed from single chats
 type MioChatMessage = DirectMioMessage;
 import { getLogs, getLogsStats, getGuardianHealth } from '@/api/logsClient';
 // import { useInternalTraces } from '@/hooks/useInternalTraces'; // TODO: implementare hook
