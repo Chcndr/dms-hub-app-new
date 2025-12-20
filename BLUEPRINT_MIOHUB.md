@@ -12,7 +12,7 @@
 4. [Architettura Sistema Chat](#-architettura-sistema-chat)
 5. [Schema Database agent_messages](#-schema-database-agent_messages)
 6. [Flusso Messaggi e Mode](#-flusso-messaggi-e-mode)
-7. [Problema Attuale da Risolvere](#-problema-attuale-da-risolvere)
+7. [Logica di Rendering Frontend](#-logica-di-rendering-frontend)
 8. [File Chiave da Conoscere](#-file-chiave-da-conoscere)
 9. [Comandi Utili](#-comandi-utili)
 10. [Agenti del Sistema](#-agenti-del-sistema)
@@ -70,17 +70,6 @@ ssh -i /home/ubuntu/.ssh/manus_hetzner_key root@157.90.29.66
 ssh -i /home/ubuntu/.ssh/manus_hetzner_key root@157.90.29.66 'cd /root/mihub-backend-rest && git pull && pm2 restart mihub-backend'
 ```
 
-### Chiave SSH Completa
-```
------BEGIN OPENSSH PRIVATE KEY-----
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACDYmV0JbMCVf7TqpHagOyg/opOnuTLfcJFTYggyUA7TLgAAAJBU74tKVO+L
-SgAAAAtzc2gtZWQyNTUxOQAAACDYmV0JbMCVf7TqpHagOyg/opOnuTLfcJFTYggyUA7TLg
-AAAEA2XDYJ1in4gla0GwevUqHSp5YyFUF4qB8ErgVga4QsodiZXQlswJV/tOqkdqA7KD+i
-k6e5Mt9wkVNiCDJQDtMuAAAADW1hbnVzQHNhbmRib3g=
------END OPENSSH PRIVATE KEY-----
-```
-
 ---
 
 ## 💾 DATABASE NEON POSTGRESQL
@@ -92,18 +81,6 @@ k6e5Mt9wkVNiCDJQDtMuAAAADW1hbnVzQHNhbmRib3g=
 | **User** | `neondb_owner` |
 | **Password** | `npg_lYG6JQ5Krtsi` |
 | **SSL** | `require` |
-
-### Connessione Node.js
-```javascript
-const { Pool } = require('pg');
-const pool = new Pool({
-  host: 'ep-bold-silence-adftsojg-pooler.c-2.us-east-1.aws.neon.tech',
-  database: 'neondb',
-  user: 'neondb_owner',
-  password: 'npg_lYG6JQ5Krtsi',
-  ssl: { rejectUnauthorized: false }
-});
-```
 
 ---
 
@@ -119,38 +96,6 @@ const pool = new Pool({
 | **Chat Singola GPT Dev** | Chat diretta con GPT Dev | `direct` | `user-gptdev-direct` |
 | **Chat Singola Zapier** | Chat diretta con Zapier | `direct` | `user-zapier-direct` |
 
-### Flusso Mode AUTO (User → MIO)
-```
-User scrive a MIO
-  ↓
-Messaggio salvato: mio-main, mode='auto', sender='user'
-  ↓
-MIO processa e delega a Manus
-  ↓
-Messaggio salvato: mio-manus-coordination, mode='auto', sender='mio'
-  ↓
-Manus risponde
-  ↓
-Risposta salvata: mio-manus-coordination, mode='auto', sender='manus'
-Risposta salvata: mio-main, mode='auto', sender='manus' (doppio canale)
-  ↓
-MIO elabora e risponde
-  ↓
-Risposta salvata: mio-main, mode='auto', sender='mio'
-```
-
-### Flusso Mode DIRECT (User → Agente)
-```
-User scrive direttamente a Manus
-  ↓
-Messaggio salvato: user-manus-direct, mode='direct', sender='user'
-  ↓
-Manus risponde
-  ↓
-Risposta salvata: user-manus-direct, mode='direct', sender='manus'
-Risposta salvata: mio-main, mode='direct', sender='manus' (doppio canale)
-```
-
 ---
 
 ## 📊 SCHEMA DATABASE agent_messages
@@ -158,53 +103,87 @@ Risposta salvata: mio-main, mode='direct', sender='manus' (doppio canale)
 ```sql
 CREATE TABLE agent_messages (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  conversation_id   varchar NOT NULL,
-  sender            varchar NOT NULL,
-  recipient         varchar,
-  role              varchar NOT NULL,  -- 'user' | 'assistant'
-  message           text NOT NULL,
-  agent             varchar,
+  conversation_id   varchar NOT NULL,    -- ID conversazione
+  sender            varchar NOT NULL,    -- Chi ha inviato: 'user', 'mio', 'manus', 'abacus', 'gptdev', 'zapier'
+  recipient         varchar,             -- Destinatario (opzionale)
+  role              varchar NOT NULL,    -- 'user' | 'assistant'
+  message           text NOT NULL,       -- Contenuto del messaggio
+  agent             varchar,             -- Agente che ha risposto
   mode              varchar DEFAULT 'auto',  -- 'auto' | 'direct'
-  meta              jsonb,
-  tool_call_id      varchar,
-  tool_name         varchar,
-  tool_args         jsonb,
-  error             boolean,
+  meta              jsonb,               -- Metadati aggiuntivi
+  tool_call_id      varchar,             -- ID chiamata tool (se presente)
+  tool_name         varchar,             -- Nome tool usato
+  tool_args         jsonb,               -- Argomenti tool
+  error             boolean,             -- Flag errore
   created_at        timestamptz DEFAULT NOW()
 );
 ```
 
-### Valori Mode
-- `'auto'`: Coordinamento MIO (visibile in Chat MIO + Vista 4 Agenti)
-- `'direct'`: Chat diretta User→Agente (visibile solo in Chat Singola)
+### Valori Campi Chiave
+
+| Campo | Valori Possibili | Descrizione |
+|-------|------------------|-------------|
+| **sender** | `user`, `mio`, `manus`, `abacus`, `gptdev`, `zapier` | Chi ha inviato il messaggio |
+| **role** | `user`, `assistant` | Ruolo nel contesto LLM |
+| **mode** | `auto`, `direct` | Modalità di routing |
+| **agent** | `null`, `mio`, `manus`, `abacus`, `gptdev`, `zapier` | Agente che ha processato |
 
 ---
 
-## 🔴 PROBLEMA ATTUALE DA RISOLVERE
+## 🔄 FLUSSO MESSAGGI E MODE
 
-### Sintomo
-- Le risposte degli agenti NON appaiono nel frontend
-- I messaggi utente appaiono ma senza risposte
-- Nel database le risposte ESISTONO
+### Flusso Mode AUTO (User → MIO → Agente)
 
-### Causa Identificata
-Il frontend chiama `get-messages?mode=auto` ma alcune risposte vengono salvate con `mode=direct` o `mode=NULL`, quindi vengono filtrate.
+```
+1. User scrive a MIO
+   └→ Salvato: mio-main, sender='user', role='user', mode='auto'
 
-### Modifiche Fatte (20 Dic 2024)
-1. **Backend `database.js`**: Aggiunto parametro `mode` a `addMessage` e `saveDirectMessage`
-2. **Backend `orchestrator.js`**: Corretto `conversationId` per usare quello passato invece di generarne uno nuovo
-3. **Frontend `MioContext.tsx`**: Rimosso filtro `mode=auto` dalla chiamata `get-messages`
+2. MIO analizza e delega a Manus
+   └→ Salvato: mio-manus-coordination, sender='mio', role='user', mode='auto'
 
-### Stato Attuale
-- ✅ Backend salva messaggi con mode corretto
-- ✅ API curl funziona e restituisce risposte
-- ❌ Frontend ancora non mostra le risposte (da verificare)
+3. Manus risponde
+   └→ Salvato: mio-manus-coordination, sender='manus', role='assistant', mode='auto'
+   └→ Salvato: mio-main, sender='manus', role='assistant', mode='auto'
 
-### Prossimi Passi
-1. Verificare che il deploy Vercel sia completato
-2. Testare dal frontend se le risposte appaiono
-3. Se non funziona, controllare la console del browser per errori JavaScript
-4. Verificare che `get-messages` restituisca tutti i messaggi (user + assistant)
+4. MIO elabora e risponde all'utente
+   └→ Salvato: mio-main, sender='mio', role='assistant', mode='auto'
+```
+
+### Flusso Mode DIRECT (User → Agente)
+
+```
+1. User scrive direttamente a Manus
+   └→ Salvato: user-manus-direct, sender='user', role='user', mode='direct'
+
+2. Manus risponde
+   └→ Salvato: user-manus-direct, sender='manus', role='assistant', mode='direct'
+```
+
+---
+
+## 🎨 LOGICA DI RENDERING FRONTEND
+
+### Chat Principale MIO
+
+**File**: `DashboardPA.tsx` (riga 4102)
+
+```tsx
+<span>da {msg.role === 'user' ? 'Tu' : msg.agentName?.toUpperCase() || 'MIO'}</span>
+```
+
+- Se `role === 'user'`, mostra **"Tu"**
+- Altrimenti, mostra il nome dell'agente (es. "MANUS") o "MIO" come fallback
+
+### Vista Singola (GPT Dev, Manus, Abacus, Zapier)
+
+**File**: `DashboardPA.tsx` (riga 4368)
+
+```tsx
+<span>da {msg.role === 'user' ? 'Tu' : (msg.agent || 'agente')}</span>
+```
+
+- Se `role === 'user'`, mostra **"Tu"**
+- Altrimenti, mostra il nome dell'agente (es. "gptdev") o "agente" come fallback
 
 ---
 
@@ -225,6 +204,7 @@ Il frontend chiama `get-messages?mode=auto` ma alcune risposte vengono salvate c
 | File | Descrizione |
 |------|-------------|
 | `api/mihub/get-messages.ts` | Endpoint Vercel per recuperare messaggi dal database |
+| `api/mihub/orchestrator-proxy.ts` | Proxy per inoltrare messaggi all'orchestratore Hetzner |
 | `client/src/contexts/MioContext.tsx` | Context React per chat MIO, gestisce invio/ricezione messaggi |
 | `client/src/hooks/useAgentLogs.ts` | Hook per caricare messaggi agenti (Vista 4 + Chat Singole) |
 | `client/src/pages/DashboardPA.tsx` | Pagina principale dashboard con tutte le chat |
@@ -261,13 +241,13 @@ const pool = new Pool({
 });
 
 async function check() {
-  const result = await pool.query(\`
+  const result = await pool.query(\"
     SELECT conversation_id, sender, role, mode, LEFT(message, 50) as msg, created_at 
     FROM agent_messages 
     WHERE created_at > NOW() - INTERVAL '10 minutes'
     ORDER BY created_at DESC
     LIMIT 20
-  \`);
+  \");
   console.log(result.rows);
   await pool.end();
 }
@@ -291,31 +271,6 @@ ssh -i /home/ubuntu/.ssh/manus_hetzner_key root@157.90.29.66 'pm2 logs mihub-bac
 | **Abacus** | ✅ OK | Query SQL, accesso database PostgreSQL/Neon |
 | **GPT Dev** | ✅ OK | Accesso repository GitHub, lettura file, operazioni Git |
 | **Zapier** | ❌ Errore | Chiave API invalida (da configurare) |
-
----
-
-## 📝 COMMIT RECENTI IMPORTANTI
-
-### Backend (mihub-backend-rest)
-- `d2fa791` - Fix: Add mode parameter to database.js addMessage and saveDirectMessage
-- `d879ee6` - Fix: Use passed conversationId instead of generating new one
-- `3582397` - Fix: Generate unique conversation IDs for direct mode agents
-
-### Frontend (dms-hub-app-new)
-- `5e57256` - Fix: Remove mode=auto filter from get-messages calls
-- `98539d4` - Fix: Add temporary polling after message send
-- `f884124` - Fix: Correzione tipi TypeScript - OrchestratorMode e AgentId
-
----
-
-## 📚 REPORT UTILI NELLA SANDBOX
-
-| File | Descrizione |
-|------|-------------|
-| `/home/ubuntu/SCHEMA_GRAFICO_FLUSSO_MODE.md` | Diagrammi Mermaid del flusso messaggi |
-| `/home/ubuntu/REPORT_FINALE_SISTEMA_MODE.md` | Report dettagliato implementazione mode |
-| `/home/ubuntu/blueprint_sistema_mode_aggiornato.md` | Blueprint sistema mode |
-| `/home/ubuntu/ANALISI_BUG_CONVERSATION_ID.md` | Analisi bug conversation_id |
 
 ---
 
