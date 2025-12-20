@@ -24,7 +24,7 @@ export interface SendToAgentParams {
   message: string;
   /** Conversation ID esistente (opzionale) */
   conversationId?: string | null;
-  /** Mode: "manual" = direct, "auto" = via MIO */
+  /** Mode: "direct" = chat diretta, "auto" = via MIO */
   mode?: OrchestratorMode;
   /** Callback per aggiornare i messaggi */
   onUpdateMessages: (updater: (prev: AgentMessage[]) => AgentMessage[]) => void;
@@ -43,7 +43,7 @@ export async function sendToAgent(params: SendToAgentParams): Promise<void> {
     targetAgent,
     message,
     conversationId,
-    mode = 'manual', // Default: chiamata diretta
+    mode = 'direct', // Default: chiamata diretta
     onUpdateMessages,
     onUpdateConversationId,
   } = params;

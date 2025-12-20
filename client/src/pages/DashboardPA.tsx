@@ -796,7 +796,7 @@ export default function DashboardPA() {
         targetAgent: 'gptdev',
         message: text,
         conversationId: gptdevConversationId,
-        mode: 'manual',
+        mode: 'direct',
         onUpdateMessages: setGptdevMessages,
         onUpdateConversationId: setGptdevConversationId,
       });
@@ -816,7 +816,7 @@ export default function DashboardPA() {
         targetAgent: 'manus',
         message: text,
         conversationId: manusConversationId,
-        mode: 'manual',
+        mode: 'direct',
         onUpdateMessages: setManusMessages,
         onUpdateConversationId: setManusConversationId,
       });
@@ -836,7 +836,7 @@ export default function DashboardPA() {
         targetAgent: 'abacus',
         message: text,
         conversationId: abacusConversationId,
-        mode: 'manual',
+        mode: 'direct',
         onUpdateMessages: setAbacusMessages,
         onUpdateConversationId: setAbacusConversationId,
       });
@@ -856,7 +856,7 @@ export default function DashboardPA() {
         targetAgent: 'zapier',
         message: text,
         conversationId: zapierConversationId,
-        mode: 'manual',
+        mode: 'direct',
         onUpdateMessages: setZapierMessages,
         onUpdateConversationId: setZapierConversationId,
       });
