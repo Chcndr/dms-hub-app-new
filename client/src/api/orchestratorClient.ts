@@ -11,8 +11,8 @@
 // TYPES
 // ============================================================================
 
-export type OrchestratorMode = "auto" | "manual";
-export type AgentId = "mio" | "dev" | "gptdev" | "manus_worker" | "gemini_arch" | "abacus_sql";
+export type OrchestratorMode = "auto" | "direct";
+export type AgentId = "mio" | "dev" | "gptdev" | "manus" | "manus_worker" | "zapier" | "abacus" | "abacus_sql" | "gemini_arch";
 
 export interface OrchestratorRequest {
   mode: OrchestratorMode;
