@@ -28,6 +28,7 @@ import MIOAgent from '@/components/MIOAgent';
 import { LogsSectionReal, DebugSectionReal } from '@/components/LogsDebugReal';
 import GuardianLogsSection from '@/components/GuardianLogsSection';
 import ImpreseQualificazioniPanel from '@/components/ImpreseQualificazioniPanel';
+import { MarketCompaniesTab } from '@/components/markets/MarketCompaniesTab';
 import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView';
 import { SharedWorkspace } from '@/components/SharedWorkspace';
 import NotificationsPanel from '@/components/NotificationsPanel';
@@ -3771,9 +3772,49 @@ export default function DashboardPA() {
             <GestioneMercati />
           </TabsContent>
 
-          {/* TAB 23: IMPRESE & QUALIFICAZIONI */}
+          {/* TAB 23: IMPRESE & CONCESSIONI */}
           <TabsContent value="imprese" className="space-y-6">
-            <ImpreseQualificazioniPanel />
+            {/* Statistiche Imprese */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <Card className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border-cyan-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-cyan-400 text-sm mb-1">
+                    <Building2 className="w-4 h-4" />
+                    Imprese Totali
+                  </div>
+                  <div className="text-2xl font-bold text-white">--</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-emerald-400 text-sm mb-1">
+                    <FileText className="w-4 h-4" />
+                    Concessioni Attive
+                  </div>
+                  <div className="text-2xl font-bold text-white">--</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-purple-400 text-sm mb-1">
+                    <Users className="w-4 h-4" />
+                    Comuni Coperti
+                  </div>
+                  <div className="text-2xl font-bold text-white">--</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-orange-400 text-sm mb-1">
+                    <TrendingUp className="w-4 h-4" />
+                    Media Concess./Impresa
+                  </div>
+                  <div className="text-2xl font-bold text-white">--</div>
+                </CardContent>
+              </Card>
+            </div>
+            {/* Componente Imprese & Concessioni */}
+            <MarketCompaniesTab marketId="ALL" stalls={[]} />
           </TabsContent>
 
           {/* TAB 24: DOCUMENTAZIONE */}

@@ -290,6 +290,29 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   };
 
   const fetchConcessions = async () => {
+    // Se marketId è "ALL", carica tutte le concessioni
+    if (marketId === 'ALL') {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/concessions`);
+        if (!response.ok) {
+          // Se l'endpoint non esiste, non mostrare errore
+          console.log('[MarketCompaniesTab] fetchConcessions ALL: endpoint non disponibile');
+          setConcessions([]);
+          return;
+        }
+        const json = await response.json();
+        if (json.success && Array.isArray(json.data)) {
+          setConcessions(json.data);
+        } else {
+          setConcessions([]);
+        }
+      } catch (err) {
+        console.log('[MarketCompaniesTab] fetchConcessions ALL: nessuna concessione globale');
+        setConcessions([]);
+      }
+      return;
+    }
+    
     try {
       const response = await fetch(`${API_BASE_URL}/api/markets/${marketId}/concessions`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
