@@ -8,6 +8,8 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { addLog } from "../services/apiLogsService";
+import { getDb } from "../db";
+import * as schema from "../../drizzle/schema";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -26,6 +28,37 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
     }
   }
   throw new Error(`No available port found starting from ${startPort}`);
+}
+
+/**
+ * Salva la metrica API REST nel database per statistiche persistenti
+ */
+async function saveRestApiMetric(data: {
+  endpoint: string;
+  method: string;
+  statusCode: number;
+  responseTime: number;
+  errorMessage?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}) {
+  try {
+    const db = await getDb();
+    if (!db) return;
+    
+    await db.insert(schema.apiMetrics).values({
+      endpoint: data.endpoint,
+      method: data.method,
+      statusCode: data.statusCode,
+      responseTime: data.responseTime,
+      errorMessage: data.errorMessage || null,
+      ipAddress: data.ipAddress || null,
+      userAgent: data.userAgent || null,
+    });
+  } catch (error) {
+    // Non bloccare la richiesta se il logging fallisce
+    console.error('[REST API Metrics] Errore salvataggio metrica:', error);
+  }
 }
 
 async function startServer() {
@@ -47,8 +80,13 @@ async function startServer() {
       const userAgent = req.get('user-agent') || 'unknown';
       const ip = req.ip || req.socket.remoteAddress || 'unknown';
       
-      // Skip logging Guardian endpoints to avoid infinite loops
-      if (!req.path.includes('/guardian/') && !req.path.includes('/logs/')) {
+      // Skip logging Guardian and apiStats endpoints to avoid infinite loops
+      if (!req.path.includes('/guardian/') && 
+          !req.path.includes('/logs/') && 
+          !req.path.includes('apiStats') &&
+          !req.path.includes('integrations.apiStats')) {
+        
+        // Log in memoria (per Guardian real-time)
         addLog({
           level: statusCode >= 400 ? 'error' : 'info',
           app: 'REST',
@@ -65,6 +103,16 @@ async function startServer() {
             query: req.query,
             body: req.method === 'POST' ? '(body hidden)' : undefined,
           },
+        });
+        
+        // Salva nel database (per statistiche persistenti)
+        saveRestApiMetric({
+          endpoint: req.originalUrl,
+          method: req.method,
+          statusCode,
+          responseTime: duration,
+          ipAddress: ip,
+          userAgent,
         });
       }
     };

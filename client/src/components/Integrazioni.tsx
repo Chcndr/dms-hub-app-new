@@ -349,6 +349,85 @@ function APIDashboard() {
           data = await qualificazioniByImpresaResponse.json();
           break;
           
+        // WALLET / PAGOPA - chiamate tRPC
+        case '/api/trpc/wallet.stats':
+          data = await utils.client.wallet.stats.query();
+          break;
+        case '/api/trpc/wallet.list':
+          data = await utils.client.wallet.list.query();
+          break;
+        case '/api/trpc/wallet.getById':
+          data = await utils.client.wallet.getById.query(parsedBody);
+          break;
+        case '/api/trpc/wallet.getByImpresa':
+          data = await utils.client.wallet.getByImpresa.query(parsedBody);
+          break;
+        case '/api/trpc/wallet.create':
+          data = await utils.client.wallet.create.mutate(parsedBody);
+          break;
+        case '/api/trpc/wallet.updateStatus':
+          data = await utils.client.wallet.updateStatus.mutate(parsedBody);
+          break;
+        case '/api/trpc/wallet.transazioni':
+          data = await utils.client.wallet.transazioni.query(parsedBody);
+          break;
+        case '/api/trpc/wallet.ricarica':
+          data = await utils.client.wallet.ricarica.mutate(parsedBody);
+          break;
+        case '/api/trpc/wallet.decurtazione':
+          data = await utils.client.wallet.decurtazione.mutate(parsedBody);
+          break;
+        case '/api/trpc/wallet.generaAvvisoPagopa':
+          data = await utils.client.wallet.generaAvvisoPagopa.mutate(parsedBody);
+          break;
+        case '/api/trpc/wallet.avviaPagamentoPagopa':
+          data = await utils.client.wallet.avviaPagamentoPagopa.mutate(parsedBody);
+          break;
+        case '/api/trpc/wallet.verificaPagamento':
+          data = await utils.client.wallet.verificaPagamento.query(parsedBody);
+          break;
+        case '/api/trpc/wallet.generaPdfAvviso':
+          data = await utils.client.wallet.generaPdfAvviso.query(parsedBody);
+          break;
+        case '/api/trpc/wallet.generaPdfQuietanza':
+          data = await utils.client.wallet.generaPdfQuietanza.query(parsedBody);
+          break;
+        case '/api/trpc/wallet.avvisiPagopa':
+          data = await utils.client.wallet.avvisiPagopa.query(parsedBody);
+          break;
+        case '/api/trpc/wallet.tariffe':
+          data = await utils.client.wallet.tariffe.query(parsedBody);
+          break;
+        case '/api/trpc/wallet.upsertTariffa':
+          data = await utils.client.wallet.upsertTariffa.mutate(parsedBody);
+          break;
+        case '/api/trpc/wallet.verificaSaldoPresenza':
+          data = await utils.client.wallet.verificaSaldoPresenza.mutate(parsedBody);
+          break;
+        case '/api/trpc/wallet.ricercaPagamentiGiornalieri':
+          data = await utils.client.wallet.ricercaPagamentiGiornalieri.query(parsedBody);
+          break;
+        case '/api/trpc/wallet.reportMovimenti':
+          data = await utils.client.wallet.reportMovimenti.query(parsedBody);
+          break;
+          
+        // GUARDIAN - chiamate tRPC
+        case '/api/trpc/guardian.integrations':
+          data = await utils.client.guardian.integrations.query();
+          break;
+        case '/api/trpc/guardian.logs':
+          data = await utils.client.guardian.logs.query(parsedBody);
+          break;
+        case '/api/trpc/guardian.stats':
+          data = await utils.client.guardian.stats.query();
+          break;
+        case '/api/trpc/guardian.testEndpoint':
+          data = await utils.client.guardian.testEndpoint.mutate(parsedBody);
+          break;
+        case '/api/trpc/guardian.logApiCall':
+          data = await utils.client.guardian.logApiCall.mutate(parsedBody);
+          break;
+          
         // SHOPPING ROUTE - chiamate REST dirette
         case '/api/routing/calculate':
           const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';

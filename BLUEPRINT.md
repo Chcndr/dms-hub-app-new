@@ -1,8 +1,8 @@
 # 📘 DMS Hub System Blueprint
 
-> **Auto-generated:** 22 dicembre 2024 alle ore 17:00  
+> **Auto-generated:** 22 dicembre 2024 alle ore 18:30  
 > **Generator:** `scripts/generate_blueprint.cjs`  
-> **Last Update:** Wallet/PagoPA UI + API Inventory + Imprese
+> **Last Update:** Sistema Guardian completo + 127 endpoint + Persistenza metriche DB
 
 ---
 
@@ -10,7 +10,7 @@
 
 **DMS Hub** è il sistema centrale per la gestione della Rete Mercati Made in Italy, con:
 
-- **122+ endpoint API** (TRPC + REST)
+- **127 endpoint API** (TRPC + REST) - Inventario su GitHub MIO-hub/api/index.json
 - **72 tabelle database**
 - **Full Observability** con Guardian monitoring
 - **Multi-agent orchestration** (MIO, Guardian, Zapier, ecc.)
@@ -106,7 +106,7 @@
 | **mobility** | 1 | Dati mobilità TPER |
 | **integrations** | 2 | TPER Bologna |
 | **dms** | 30+ | Gestione mercati DMS |
-| **guardian** | 4 | Monitoring e debug |
+| **guardian** | 5 | Monitoring, logging e statistiche real-time |
 | **mihub** | 11 | Multi-agent system |
 | **wallet** | 20 | 💳 Wallet/PagoPA |
 | **imprese** | 6 | 🏢 Imprese & Qualificazioni |
@@ -411,14 +411,100 @@ Il sistema calcola automaticamente un rating di conformità per ogni impresa:
 
 ---
 
+## 👁️ Sistema Guardian (Monitoring)
+
+Il sistema Guardian fornisce osservabilità completa su tutte le API e operazioni del sistema.
+
+### Architettura
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   tRPC Call     │────▶│   Middleware    │────▶│   Database      │
+│   REST Call     │     │   (logging)     │     │   api_metrics   │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+        │                       │                       │
+        │                       ▼                       │
+        │               ┌─────────────────┐             │
+        └──────────────▶│   In-Memory     │◀────────────┘
+                        │   apiLogsService│
+                        └─────────────────┘
+                                │
+                                ▼
+                        ┌─────────────────┐
+                        │   Guardian UI   │
+                        │   (real-time)   │
+                        └─────────────────┘
+```
+
+### Componenti
+
+| Componente | File | Funzione |
+|------------|------|----------|
+| **Middleware tRPC** | `server/_core/trpc.ts` | Logga TUTTE le chiamate tRPC |
+| **Middleware REST** | `server/_core/index.ts` | Logga TUTTE le chiamate REST /api/* |
+| **In-Memory Store** | `server/services/apiLogsService.ts` | Cache real-time (max 1000 log) |
+| **Database Store** | `drizzle/schema.ts` → `api_metrics` | Persistenza per statistiche |
+| **Guardian Router** | `server/guardianRouter.ts` | API per UI e debug |
+
+### API Endpoints Guardian (5 endpoint)
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `guardian.integrations` | GET | Inventario API completo |
+| `guardian.logs` | GET | Log centralizzati (filtri: level, app, limit) |
+| `guardian.stats` | GET | Statistiche sistema (API + Log) |
+| `guardian.testEndpoint` | POST | Proxy per test endpoint |
+| `guardian.logApiCall` | POST | Log manuale chiamata API |
+
+### Statistiche Real-Time
+
+La tabella `api_metrics` memorizza:
+
+```sql
+CREATE TABLE api_metrics (
+  id SERIAL PRIMARY KEY,
+  api_key_id INTEGER REFERENCES api_keys(id),
+  endpoint VARCHAR(255) NOT NULL,
+  method VARCHAR(10) NOT NULL,
+  status_code INTEGER NOT NULL,
+  response_time INTEGER NOT NULL,  -- millisecondi
+  ip_address VARCHAR(50),
+  user_agent TEXT,
+  error_message TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Query Statistiche
+
+```typescript
+// Statistiche oggi
+const stats = await db.select({
+  totalRequests: sql`COUNT(*)`,
+  avgResponseTime: sql`AVG(response_time)`,
+  successCount: sql`SUM(CASE WHEN status_code < 400 THEN 1 ELSE 0 END)`,
+  errorCount: sql`SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END)`,
+})
+.from(apiMetrics)
+.where(gte(apiMetrics.createdAt, today));
+```
+
+### Inventario Endpoint (Single Source of Truth)
+
+Gli endpoint sono catalogati in:
+- **GitHub**: `Chcndr/MIO-hub/api/index.json` (127 endpoint)
+- La UI legge da questo file per mostrare la lista completa
+
+---
+
 ## 🔗 Sezione Integrazioni (API Dashboard)
 
 La sezione Integrazioni nella Dashboard PA mostra:
 
 ### Tab API Dashboard
-- **122+ endpoint** catalogati per categoria
+- **127 endpoint** catalogati per categoria (da MIO-hub/api/index.json)
 - API Playground per test interattivo
-- Statistiche utilizzo (richieste oggi, tempo medio, success rate, errori)
+- Statistiche utilizzo real-time (da tabella `api_metrics`)
 
 ### Tab Connessioni
 - Lista connessioni esterne configurate
