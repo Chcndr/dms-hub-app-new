@@ -692,7 +692,7 @@ function CompanyModal({ marketId, company, onClose, onSaved }: CompanyModalProps
     
     // Contatti & Attività
     pec: (company as any)?.pec || '',
-    referente: company?.referente || '',
+    referente: (company as any)?.email || '',
     telefono: company?.telefono || '',
     codice_ateco: (company as any)?.codice_ateco || '',
     descrizione_ateco: (company as any)?.descrizione_ateco || '',
@@ -780,7 +780,7 @@ function CompanyModal({ marketId, company, onClose, onSaved }: CompanyModalProps
         vat_number: formData.partita_iva,
         contact_name: formData.referente,
         phone: formData.telefono,
-        email: formData.pec || formData.referente,
+        email: formData.referente,
         status: formData.stato,
       };
 
@@ -1051,14 +1051,14 @@ function CompanyModal({ marketId, company, onClose, onSaved }: CompanyModalProps
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Referente (Email)
+                  Email
                 </label>
                 <input
                   type="email"
                   value={formData.referente}
                   onChange={(e) => setFormData({ ...formData, referente: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="es. mario.rossi@example.com"
+                  placeholder="es. checchi@me.com"
                 />
               </div>
 
