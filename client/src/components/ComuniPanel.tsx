@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Plus, Edit, Trash2, Phone, Mail, Globe, MapPin, Users, ChevronDown, ChevronUp, Save, X } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, Phone, Mail, Globe, MapPin, Users, ChevronDown, ChevronUp, Save, X, Search } from 'lucide-react';
 
 const API_BASE_URL = 'https://orchestratore.mio-hub.me';
 
@@ -60,6 +60,7 @@ export default function ComuniPanel() {
   const [editingComune, setEditingComune] = useState<Comune | null>(null);
   const [editingSettore, setEditingSettore] = useState<Settore | null>(null);
   const [expandedSettori, setExpandedSettori] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form state per comune
   const [comuneForm, setComuneForm] = useState({
@@ -255,6 +256,18 @@ export default function ComuniPanel() {
     return TIPI_SETTORE.find(t => t.value === tipo)?.label || tipo;
   };
 
+  // Filtra comuni in base alla ricerca
+  const filteredComuni = comuni.filter(comune => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      comune.nome?.toLowerCase().includes(query) ||
+      comune.provincia?.toLowerCase().includes(query) ||
+      comune.regione?.toLowerCase().includes(query) ||
+      comune.cap?.toLowerCase().includes(query)
+    );
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -293,15 +306,44 @@ export default function ComuniPanel() {
         <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
           <h3 className="text-lg font-medium text-white mb-4">Comuni Registrati</h3>
           
-          {comuni.length === 0 ? (
+          {/* Barra di ricerca */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cerca per nome, provincia, regione o CAP..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          
+          {filteredComuni.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <Building2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Nessun comune registrato</p>
-              <p className="text-sm">Clicca "Nuovo Comune" per iniziare</p>
+              {searchQuery ? (
+                <>
+                  <p>Nessun comune trovato per "{searchQuery}"</p>
+                  <p className="text-sm">Prova con un altro termine di ricerca</p>
+                </>
+              ) : (
+                <>
+                  <p>Nessun comune registrato</p>
+                  <p className="text-sm">Clicca "Nuovo Comune" per iniziare</p>
+                </>
+              )}
             </div>
           ) : (
-            <div className="space-y-3">
-              {comuni.map(comune => (
+            <div className="space-y-3 max-h-[500px] overflow-y-auto">
+              {filteredComuni.map(comune => (
                 <div
                   key={comune.id}
                   onClick={() => setSelectedComune(comune)}
