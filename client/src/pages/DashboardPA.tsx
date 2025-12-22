@@ -31,6 +31,7 @@ import ImpreseQualificazioniPanel from '@/components/ImpreseQualificazioniPanel'
 import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView';
 import { SharedWorkspace } from '@/components/SharedWorkspace';
 import NotificationsPanel from '@/components/NotificationsPanel';
+import ComuniPanel from '@/components/ComuniPanel';
 import { MessageContent } from '@/components/MessageContent';
 import { callOrchestrator } from '@/api/orchestratorClient';
 import { sendAgentMessage, AgentChatMessage } from '@/lib/mioOrchestratorClient';
@@ -1578,15 +1579,15 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Segnalazioni & IoT</span>
             </button>
             <button
-              onClick={() => setActiveTab('business-users')}
+              onClick={() => setActiveTab('comuni')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'business-users'
+                activeTab === 'comuni'
                   ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg'
                   : 'bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]'
               }`}
             >
-              <UserCog className="h-6 w-6" />
-              <span className="text-xs font-medium">Utenti Imprese</span>
+              <Building2 className="h-6 w-6" />
+              <span className="text-xs font-medium">Comuni</span>
             </button>
             <button
               onClick={() => setActiveTab('inspections')}
@@ -3395,64 +3396,9 @@ export default function DashboardPA() {
             </Card>
           </TabsContent>
 
-          {/* TAB 15: UTENTI IMPRESE */}
-          <TabsContent value="business-users" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-br from-[#8b5cf6]/20 to-[#8b5cf6]/5 border-[#8b5cf6]/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-[#e8fbff] text-sm">Totali</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold text-[#8b5cf6]">{mockData.businessUsers.total}</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-[#10b981]/20 to-[#10b981]/5 border-[#10b981]/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-[#e8fbff] text-sm">Attive</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold text-[#10b981]">{mockData.businessUsers.active}</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-[#ef4444]/20 to-[#ef4444]/5 border-[#ef4444]/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-[#e8fbff] text-sm">Inattive</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold text-[#ef4444]">{mockData.businessUsers.inactive}</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-[#e8fbff] text-sm">Revenue Totale</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#14b8a6]">€{mockData.businessUsers.byCategory.reduce((sum, c) => sum + c.revenue, 0).toLocaleString()}</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff]">Top Imprese per Vendite</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {mockData.businessUsers.topUsers.map((user, idx) => (
-                    <div key={idx} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between">
-                      <div>
-                        <div className="text-[#e8fbff] font-semibold">{user.name}</div>
-                        <div className="text-sm text-[#e8fbff]/70">Rating: {user.rating} ⭐</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-[#10b981]">{user.sales}</div>
-                        <div className="text-xs text-[#e8fbff]/50">{user.credits} TCC</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          {/* TAB 15: COMUNI */}
+          <TabsContent value="comuni" className="space-y-6">
+            <ComuniPanel />
           </TabsContent>
 
           {/* TAB 16: CONTROLLI/SANZIONI */}
