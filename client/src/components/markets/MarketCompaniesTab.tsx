@@ -238,15 +238,46 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         throw new Error('Formato risposta non valido');
       }
       
-      // Map imprese fields to frontend schema
+      // Map imprese fields to frontend schema - include ALL fields
       const mappedData = json.data.map((v: any) => ({
+        // Campi base per la visualizzazione nella lista
         id: v.id,
-        code: v.codice_fiscale, // Usa CF come code
+        code: v.codice_fiscale,
         denominazione: v.denominazione,
         partita_iva: v.partita_iva,
-        referente: v.rappresentante_legale_nome + ' ' + v.rappresentante_legale_cognome,
+        referente: (v.rappresentante_legale_nome && v.rappresentante_legale_cognome) 
+          ? `${v.rappresentante_legale_nome} ${v.rappresentante_legale_cognome}` 
+          : (v.email || ''),
         telefono: v.telefono,
         stato: v.stato_impresa,
+        // Tutti gli altri campi per il modal di modifica
+        numero_rea: v.numero_rea,
+        cciaa_sigla: v.cciaa_sigla,
+        forma_giuridica: v.forma_giuridica,
+        stato_impresa: v.stato_impresa,
+        indirizzo_via: v.indirizzo_via,
+        indirizzo_civico: v.indirizzo_civico,
+        indirizzo_cap: v.indirizzo_cap,
+        indirizzo_provincia: v.indirizzo_provincia,
+        comune: v.comune,
+        pec: v.pec,
+        email: v.email,
+        codice_ateco: v.codice_ateco,
+        descrizione_ateco: v.descrizione_ateco,
+        rappresentante_legale_cognome: v.rappresentante_legale_cognome,
+        rappresentante_legale_nome: v.rappresentante_legale_nome,
+        rappresentante_legale_cf: v.rappresentante_legale_cf,
+        rappresentante_legale_data_nascita: v.rappresentante_legale_data_nascita,
+        rappresentante_legale_luogo_nascita: v.rappresentante_legale_luogo_nascita,
+        rappresentante_legale_residenza_via: v.rappresentante_legale_residenza_via,
+        rappresentante_legale_residenza_civico: v.rappresentante_legale_residenza_civico,
+        rappresentante_legale_residenza_cap: v.rappresentante_legale_residenza_cap,
+        rappresentante_legale_residenza_comune: v.rappresentante_legale_residenza_comune,
+        rappresentante_legale_residenza_provincia: v.rappresentante_legale_residenza_provincia,
+        capitale_sociale: v.capitale_sociale,
+        numero_addetti: v.numero_addetti,
+        sito_web: v.sito_web,
+        data_iscrizione_ri: v.data_iscrizione_ri,
       }));
       
       console.log('[MarketCompaniesTab] fetchCompanies: caricati', mappedData.length, 'imprese');
