@@ -2,7 +2,7 @@
 
 > **Auto-generated:** 22 dicembre 2024 alle ore 18:30  
 > **Generator:** `scripts/generate_blueprint.cjs`  
-> **Last Update:** Sistema Guardian completo + 127 endpoint + Persistenza metriche DB
+> **Last Update:** Sistema Integrazioni completo + Sync Status reale + Tab Secrets + 127 endpoint
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## 🗄️ Database Schema
 
-### Tables (72)
+### Tables (75)
 
 | Variable Name | Table Name |
 |---------------|------------|
@@ -84,6 +84,9 @@
 | `walletTransazioni` | `wallet_transazioni` |
 | `tariffePosteggio` | `tariffe_posteggio` |
 | `avvisiPagopa` | `avvisi_pagopa` |
+| `syncConfig` | `sync_config` |
+| `syncJobs` | `sync_jobs` |
+| `syncLogs` | `sync_logs` |
 
 ---
 
@@ -110,6 +113,7 @@
 | **mihub** | 11 | Multi-agent system |
 | **wallet** | 20 | 💳 Wallet/PagoPA |
 | **imprese** | 6 | 🏢 Imprese & Qualificazioni |
+| **sync** | 5 | 🔄 Sincronizzazione gestionale |
 
 ---
 
@@ -499,27 +503,47 @@ Gli endpoint sono catalogati in:
 
 ## 🔗 Sezione Integrazioni (API Dashboard)
 
-La sezione Integrazioni nella Dashboard PA mostra:
+La sezione Integrazioni nella Dashboard PA è il centro di controllo per tutte le API e integrazioni esterne.
 
 ### Tab API Dashboard
 - **127 endpoint** catalogati per categoria (da MIO-hub/api/index.json)
-- API Playground per test interattivo
+- API Playground per test interattivo con path tRPC corretti
 - Statistiche utilizzo real-time (da tabella `api_metrics`)
+- Badge Auto Test / Manual Test per ogni endpoint
 
 ### Tab Connessioni
-- Lista connessioni esterne configurate
+- Lista connessioni esterne configurate (DMS Legacy, Pepe GIS, ecc.)
 - Health check automatico
+- Data Owner per ogni integrazione
 
 ### Tab API Keys
-- Gestione chiavi API
-- Creazione/revoca chiavi
+- Gestione chiavi API per autenticare applicazioni esterne
+- Creazione/revoca/rigenerazione chiavi
+- Statistiche utilizzo per chiave
 
 ### Tab Webhook
-- Configurazione webhook
+- Configurazione webhook per notifiche real-time
 - Log chiamate webhook
 
-### Tab Sync Status
-- Stato sincronizzazione servizi esterni
+### Tab Secrets (🆕 Nuovo)
+- Gestione credenziali per servizi esterni
+- Categorie: LLM, GitHub, Database, Cloud, Auth, Payment, Deploy, Mobility
+- Indicatore presenza/assenza per ogni secret
+- Spostato da Impostazioni per centralizzare la gestione API
+
+### Tab Sync Status (🆕 Ora Reale)
+- Sincronizzazione con gestionale esterno (Heroku)
+- **Tabelle database**: `sync_config`, `sync_jobs`, `sync_logs`
+- **API endpoints**:
+  - `sync.status` - Stato sincronizzazione
+  - `sync.jobs` - Lista job recenti
+  - `sync.logs` - Log dettagliati per job
+  - `sync.trigger` - Avvia sync manuale
+  - `sync.updateConfig` - Salva configurazione
+  - `sync.getConfig` - Ottieni configurazione
+- **Modalità simulazione** quando gestionale non configurato
+- Configurazione: frequenza, modalità (bidirezionale/unidirezionale), entità
+- Entità sincronizzabili: operatori, presenze, concessioni, pagamenti, documenti, mercati, posteggi
 
 ---
 

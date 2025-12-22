@@ -418,7 +418,7 @@ Il sistema calcola automaticamente un rating di conformità per ogni impresa:
 
 ### Overview
 
-La sezione **Integrazioni** nella Dashboard PA mostra **122+ endpoint API** catalogati per categoria.
+La sezione **Integrazioni** nella Dashboard PA è il centro di controllo per tutte le API e integrazioni esterne. Mostra **127 endpoint API** catalogati per categoria.
 
 ### Categorie API
 
@@ -437,30 +437,58 @@ La sezione **Integrazioni** nella Dashboard PA mostra **122+ endpoint API** cata
 | **mobility** | 1 | Dati mobilità TPER |
 | **integrations** | 2 | TPER Bologna |
 | **dms** | 30+ | Gestione mercati DMS |
-| **guardian** | 4 | Monitoring e debug |
+| **guardian** | 5 | Monitoring e debug |
 | **mihub** | 11 | Multi-agent system |
 | **wallet** | 20 | 💳 Wallet/PagoPA |
 | **imprese** | 6 | 🏢 Imprese & Qualificazioni |
+| **sync** | 5 | 🔄 Sincronizzazione gestionale |
 
-### Tab Disponibili
+### Tab Disponibili (6)
 
 | Tab | Funzione |
 |-----|----------|
-| **API Dashboard** | Lista 122+ endpoint, API Playground, Statistiche utilizzo |
-| **Connessioni** | Lista connessioni esterne, Health check |
-| **API Keys** | Gestione chiavi API |
+| **API Dashboard** | Lista 127 endpoint, API Playground con test tRPC, Statistiche utilizzo real-time |
+| **Connessioni** | Lista connessioni esterne (DMS Legacy, Pepe GIS), Health check, Data Owner |
+| **API Keys** | Gestione chiavi API per applicazioni esterne |
 | **Webhook** | Configurazione webhook, Log chiamate |
-| **Sync Status** | Stato sincronizzazione servizi |
+| **Secrets** 🆕 | Gestione credenziali servizi esterni (LLM, GitHub, E-FIL, ecc.) |
+| **Sync Status** 🆕 | Sincronizzazione gestionale Heroku (ora reale, non mock) |
+
+### Sync Status - Sistema Reale
+
+**Tabelle Database:**
+- `sync_config` - Configurazione sincronizzazione
+- `sync_jobs` - Job di sincronizzazione
+- `sync_logs` - Log dettagliati
+
+**API Endpoints Sync (5):**
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `sync.status` | GET | Stato sincronizzazione |
+| `sync.jobs` | GET | Lista job recenti |
+| `sync.logs` | GET | Log dettagliati per job |
+| `sync.trigger` | POST | Avvia sync manuale |
+| `sync.updateConfig` | POST | Salva configurazione |
+| `sync.getConfig` | GET | Ottieni configurazione |
+
+**Funzionalità:**
+- Modalità simulazione quando gestionale non configurato
+- Statistiche real-time (ultimo sync, prossimo sync, totale sincronizzati, errori)
+- Configurazione frequenza (5 min - 1 ora)
+- Modalità bidirezionale/unidirezionale
+- Entità: operatori, presenze, concessioni, pagamenti, documenti, mercati, posteggi
 
 ### File Chiave
 
 | File | Descrizione |
 |------|-------------|
-| `server/services/apiInventoryService.ts` | Inventario 122+ endpoint |
-| `client/src/components/APIDashboardV2.tsx` | UI API Dashboard |
-| `client/src/components/Integrazioni.tsx` | Pagina Integrazioni |
+| `server/services/apiInventoryService.ts` | Inventario 127 endpoint |
+| `server/integrationsRouter.ts` | Router con sync, apiKeys, webhook |
+| `client/src/components/Integrazioni.tsx` | Pagina Integrazioni (6 tab) |
+| `drizzle/schema.ts` | Tabelle sync_config, sync_jobs, sync_logs |
+| `Chcndr/MIO-hub/api/index.json` | Single source of truth endpoint |
 
 ---
 
-*Documento aggiornato il 22 Dicembre 2024 ore 17:00 - Manus AI*
+*Documento aggiornato il 22 Dicembre 2024 ore 19:00 - Manus AI*
 *Da allegare all'inizio di ogni nuova sessione di lavoro*
