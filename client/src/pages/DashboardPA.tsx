@@ -4878,13 +4878,13 @@ export default function DashboardPA() {
                     </button>
                   </div>
 
-                  {/* Pulsante Crea Nuovo Mercato */}
+                  {/* Pulsante BUS HUB */}
                   <Button
                     onClick={() => setShowBusHubEditor(true)}
-                    className="bg-[#10b981] hover:bg-[#059669] text-white font-medium px-6"
+                    className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-medium px-6"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Crea Nuovo Mercato
+                    <Bus className="h-4 w-4 mr-2" />
+                    BUS HUB
                   </Button>
                 </div>
               </CardContent>
@@ -5304,13 +5304,13 @@ function LogsSection() {
                     </button>
                   </div>
 
-                  {/* Pulsante Crea Nuovo Mercato */}
+                  {/* Pulsante BUS HUB */}
                   <Button
                     onClick={() => setShowBusHubEditor(true)}
-                    className="bg-[#10b981] hover:bg-[#059669] text-white font-medium px-6"
+                    className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-medium px-6"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Crea Nuovo Mercato
+                    <Bus className="h-4 w-4 mr-2" />
+                    BUS HUB
                   </Button>
                 </div>
               </CardContent>
