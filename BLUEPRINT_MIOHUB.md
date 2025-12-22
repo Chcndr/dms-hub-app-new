@@ -1,4 +1,4 @@
-# 🔑 BLUEPRINT MIO HUB - AGGIORNATO 22 DICEMBRE 2024
+# 🔑 BLUEPRINT MIO HUB - AGGIORNATO 22 DICEMBRE 2024 (v2)
 
 **DOCUMENTO DI CONTESTO PER NUOVE SESSIONI MANUS**
 
@@ -16,6 +16,9 @@
 8. [File Chiave da Conoscere](#-file-chiave-da-conoscere)
 9. [Comandi Utili](#-comandi-utili)
 10. [Agenti del Sistema](#-agenti-del-sistema)
+11. [Wallet / PagoPA](#-wallet--pagopa)
+12. [Imprese & Qualificazioni](#-imprese--qualificazioni)
+13. [API Inventory (Integrazioni)](#-api-inventory-integrazioni)
 
 ---
 
@@ -210,6 +213,10 @@ CREATE TABLE agent_messages (
 | `client/src/pages/DashboardPA.tsx` | Pagina principale dashboard con tutte le chat |
 | `client/src/api/orchestratorClient.ts` | Client per chiamare backend orchestrator |
 | `client/src/lib/agentHelper.ts` | Helper per invio messaggi agli agenti |
+| `client/src/components/WalletPanel.tsx` | 🆕 UI gestione wallet operatori |
+| `server/walletRouter.ts` | 🆕 API wallet (20 endpoint) |
+| `server/services/efilPagopaService.ts` | 🆕 Integrazione E-FIL PagoPA |
+| `server/services/apiInventoryService.ts` | 🆕 Inventario 122+ endpoint API |
 
 ---
 
@@ -274,7 +281,7 @@ ssh -i /home/ubuntu/.ssh/manus_hetzner_key root@157.90.29.66 'pm2 logs mihub-bac
 
 ---
 
-## 💳 WALLET / PAGOPA (NEW)
+## 💳 WALLET / PAGOPA
 
 ### Overview
 
@@ -284,7 +291,7 @@ Sistema di borsellino elettronico prepagato per operatori mercatali con integraz
 
 | File | Descrizione |
 |------|-------------|
-| `server/walletRouter.ts` | API tRPC per gestione wallet |
+| `server/walletRouter.ts` | API tRPC per gestione wallet (20 endpoint) |
 | `server/services/efilPagopaService.ts` | Integrazione SOAP E-FIL |
 | `client/src/components/WalletPanel.tsx` | UI gestione wallet |
 | `.env.efil.example` | Configurazione E-FIL |
@@ -297,6 +304,57 @@ Sistema di borsellino elettronico prepagato per operatori mercatali con integraz
 | `wallet_transazioni` | Storico movimenti |
 | `tariffe_posteggio` | Tariffe per tipo posteggio |
 | `avvisi_pagopa` | Avvisi PagoPA generati |
+
+### API Endpoint Wallet (20)
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `wallet.stats` | GET | Statistiche dashboard |
+| `wallet.list` | GET | Lista wallet |
+| `wallet.getById` | GET | Dettaglio wallet |
+| `wallet.getByImpresa` | GET | Wallet per impresa |
+| `wallet.create` | POST | Crea wallet |
+| `wallet.updateStatus` | POST | Aggiorna stato |
+| `wallet.transazioni` | GET | Storico transazioni |
+| `wallet.ricarica` | POST | Ricarica wallet |
+| `wallet.decurtazione` | POST | Decurtazione |
+| `wallet.generaAvvisoPagopa` | POST | Genera avviso PagoPA |
+| `wallet.pagamentoSpontaneo` | POST | Pagamento immediato |
+| `wallet.verificaPagamento` | GET | Verifica IUV |
+| `wallet.generaPdfAvviso` | GET | PDF avviso |
+| `wallet.generaPdfQuietanza` | GET | PDF quietanza |
+| `wallet.avvisiPagopa` | GET | Lista avvisi |
+| `wallet.tariffe` | GET | Tariffe posteggio |
+| `wallet.verificaSaldoPresenza` | POST | Verifica saldo check-in |
+| `wallet.ricercaPagamentiGiornalieri` | GET | Ricerca pagamenti |
+| `wallet.reportRiconciliazione` | GET | Report riconciliazione |
+| `wallet.reportMercato` | GET | Report per mercato |
+
+### UI WalletPanel
+
+**Tab Wallet Operatori:**
+- Statistiche: wallet attivi, saldo basso, bloccati, saldo totale
+- Lista wallet con ricerca e filtri
+- Dettaglio wallet con saldo, giorni coperti, transazioni
+- Dialog "Genera Avviso PagoPA":
+  - Input importo + bottoni suggeriti (€50, €100, €250, €500, €1000)
+  - Preview nuovo saldo e giorni coperti
+  - Generazione IUV e Codice Avviso (18 cifre)
+  - Copia negli appunti, Download PDF, Paga Ora
+- Dialog "Pagamento Immediato" con redirect checkout
+
+**Tab PagoPA:**
+- Statistiche: totale incassato, pagati, in attesa, scaduti
+- Lista avvisi con stato (EMESSO, PAGATO, SCADUTO)
+- Azioni: Download PDF, Paga Ora, Scarica Quietanza
+
+**Tab Tariffe:**
+- Lista tariffe per tipo posteggio
+- CRUD tariffe
+
+**Tab Riconciliazione:**
+- Report ricariche/decurtazioni
+- Sincronizzazione E-FIL
 
 ### Servizi E-FIL
 
@@ -319,7 +377,7 @@ Sistema di borsellino elettronico prepagato per operatori mercatali con integraz
 6. Se bloccato: rifiuta check-in
 ```
 
-### Configurazione
+### Configurazione E-FIL
 
 ```bash
 EFIL_BASE_URL=https://test.plugnpay.efil.it/plugnpay
@@ -327,9 +385,82 @@ EFIL_USERNAME=<user>
 EFIL_PASSWORD=<pass>
 EFIL_APPLICATION_CODE=<fornito da E-FIL>
 EFIL_ID_GESTIONALE=DMS-GROSSETO
+DMS_PAGOPA_RETURN_URL=https://miohub.app/payments/return
+DMS_PAGOPA_CALLBACK_URL=https://miohub.app/api/wallet/callback
 ```
 
 ---
 
-*Documento aggiornato il 22 Dicembre 2024 - Manus AI*
+## 🏢 IMPRESE & QUALIFICAZIONI
+
+### API Endpoint Imprese (6)
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `imprese.list` | GET | Lista imprese con filtri |
+| `imprese.getById` | GET | Dettaglio impresa |
+| `qualificazioni.list` | GET | Lista qualificazioni |
+| `imprese.qualificazioni` | GET | Qualificazioni impresa |
+| `imprese.rating` | GET | Semaforo Conformità |
+| `imprese.migratePdnd` | POST | Migrazione PDND |
+
+### Semaforo Conformità
+
+Il sistema calcola automaticamente un rating di conformità per ogni impresa:
+
+- 🟢 **VERDE** - Tutti i documenti in regola
+- 🟡 **GIALLO** - Documenti in scadenza (< 30 giorni)
+- 🔴 **ROSSO** - Documenti scaduti o mancanti
+
+---
+
+## 🔗 API INVENTORY (INTEGRAZIONI)
+
+### Overview
+
+La sezione **Integrazioni** nella Dashboard PA mostra **122+ endpoint API** catalogati per categoria.
+
+### Categorie API
+
+| Categoria | Endpoint | Descrizione |
+|-----------|----------|-------------|
+| **analytics** | 7 | Statistiche piattaforma |
+| **system** | 5 | Health check, auth, config |
+| **carbon** | 3 | Crediti di carbonio |
+| **logs** | 2 | Log di sistema |
+| **users** | 1 | Statistiche utenti |
+| **sustainability** | 1 | Metriche sostenibilità |
+| **businesses** | 1 | Attività commerciali |
+| **inspections** | 1 | Ispezioni e violazioni |
+| **notifications** | 1 | Notifiche |
+| **civic** | 1 | Segnalazioni civiche |
+| **mobility** | 1 | Dati mobilità TPER |
+| **integrations** | 2 | TPER Bologna |
+| **dms** | 30+ | Gestione mercati DMS |
+| **guardian** | 4 | Monitoring e debug |
+| **mihub** | 11 | Multi-agent system |
+| **wallet** | 20 | 💳 Wallet/PagoPA |
+| **imprese** | 6 | 🏢 Imprese & Qualificazioni |
+
+### Tab Disponibili
+
+| Tab | Funzione |
+|-----|----------|
+| **API Dashboard** | Lista 122+ endpoint, API Playground, Statistiche utilizzo |
+| **Connessioni** | Lista connessioni esterne, Health check |
+| **API Keys** | Gestione chiavi API |
+| **Webhook** | Configurazione webhook, Log chiamate |
+| **Sync Status** | Stato sincronizzazione servizi |
+
+### File Chiave
+
+| File | Descrizione |
+|------|-------------|
+| `server/services/apiInventoryService.ts` | Inventario 122+ endpoint |
+| `client/src/components/APIDashboardV2.tsx` | UI API Dashboard |
+| `client/src/components/Integrazioni.tsx` | Pagina Integrazioni |
+
+---
+
+*Documento aggiornato il 22 Dicembre 2024 ore 17:00 - Manus AI*
 *Da allegare all'inizio di ogni nuova sessione di lavoro*
