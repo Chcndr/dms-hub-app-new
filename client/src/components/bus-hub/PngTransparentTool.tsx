@@ -71,6 +71,8 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
   const [satMin, setSatMin] = useState(25);
   const [valMin, setValMin] = useState(25);
   const [keepDigits, setKeepDigits] = useState(true);
+  const [removeWhiteBg, setRemoveWhiteBg] = useState(false); // Per immagini con sfondo bianco
+  const [whiteTolerance, setWhiteTolerance] = useState(95); // Soglia bianco (0-100)
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState<string>('');
   const [logs, setLogs] = useState<string[]>([]);
@@ -131,14 +133,30 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
     const HMAX = hueMax;
     const SMIN = satMin / 100;
     const VMIN = valMin / 100;
+    const WHITE_THRESH = (whiteTolerance / 100) * 255; // Soglia per considerare bianco
 
     for (let i = 0; i < d.length; i += 4) {
-      const hsv = rgb2hsv(d[i], d[i + 1], d[i + 2]);
-      let keep = hsv.h >= HMIN && hsv.h <= HMAX && hsv.s >= SMIN && hsv.v >= VMIN;
+      const R = d[i], G = d[i + 1], B = d[i + 2];
+      const hsv = rgb2hsv(R, G, B);
+      let keep = false;
       
-      // Mantieni numeri scuri
+      if (removeWhiteBg) {
+        // Modalità rimozione sfondo bianco: rimuovi pixel bianchi/chiari
+        const isWhite = R > WHITE_THRESH && G > WHITE_THRESH && B > WHITE_THRESH;
+        const isNearWhite = (R + G + B) / 3 > WHITE_THRESH;
+        keep = !isWhite && !isNearWhite;
+        
+        // Mantieni sempre i pixel scuri (linee, numeri, bordi)
+        const lum = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+        if (lum < 180) keep = true; // Mantieni tutto ciò che non è bianco
+      } else {
+        // Modalità standard: mantieni solo i verdi
+        keep = hsv.h >= HMIN && hsv.h <= HMAX && hsv.s >= SMIN && hsv.v >= VMIN;
+      }
+      
+      // Mantieni numeri scuri (sempre attivo se selezionato)
       if (keepDigits) {
-        const lum = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+        const lum = 0.2126 * R + 0.7152 * G + 0.0722 * B;
         if (lum < 90) keep = true;
       }
       
@@ -146,7 +164,7 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
     }
 
     dctx.putImageData(imgData, 0, 0);
-  }, [image, rotationAngle, hueMin, hueMax, satMin, valMin, keepDigits]);
+  }, [image, rotationAngle, hueMin, hueMax, satMin, valMin, keepDigits, removeWhiteBg, whiteTolerance]);
 
   // Ridisegna quando cambiano i parametri
   useEffect(() => {
@@ -392,6 +410,38 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
                 Mantieni numeri scuri
               </Label>
             </div>
+
+            {/* Modalità Sfondo Bianco */}
+            <div className="pt-2 border-t border-[#14b8a6]/20">
+              <div className="flex items-center space-x-2 mb-2">
+                <Checkbox
+                  id="removeWhiteBg"
+                  checked={removeWhiteBg}
+                  onCheckedChange={(checked) => setRemoveWhiteBg(checked as boolean)}
+                />
+                <Label htmlFor="removeWhiteBg" className="text-[#f59e0b]/80 text-sm cursor-pointer">
+                  Modalità sfondo bianco
+                </Label>
+              </div>
+              {removeWhiteBg && (
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <Label className="text-[#e8fbff]/80">Soglia bianco</Label>
+                    <span className="text-[#f59e0b]">{whiteTolerance}%</span>
+                  </div>
+                  <Slider
+                    value={[whiteTolerance]}
+                    onValueChange={([v]) => setWhiteTolerance(v)}
+                    min={70}
+                    max={100}
+                    step={1}
+                  />
+                  <p className="text-xs text-[#e8fbff]/40 mt-1">
+                    Rimuove lo sfondo bianco mantenendo linee e contenuti
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Azioni */}
@@ -449,18 +499,18 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
         </CardContent>
       </Card>
 
-      {/* Area Canvas */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Area Canvas - Occupa tutto lo spazio disponibile */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
         {/* Canvas Originale */}
-        <Card className="bg-[#0f2330] border-[#14b8a6]/30">
-          <CardHeader className="pb-2">
+        <Card className="bg-[#0f2330] border-[#14b8a6]/30 flex flex-col min-h-0">
+          <CardHeader className="pb-2 flex-shrink-0">
             <CardTitle className="text-[#14b8a6] text-sm flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
               Originale
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-2">
-            <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 aspect-square flex items-center justify-center overflow-hidden">
+          <CardContent className="p-2 flex-1 min-h-0">
+            <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 h-full flex items-center justify-center overflow-hidden">
               <canvas
                 ref={srcCanvasRef}
                 className="max-w-full max-h-full object-contain"
@@ -471,15 +521,15 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
         </Card>
 
         {/* Canvas Risultato */}
-        <Card className="bg-[#0f2330] border-[#14b8a6]/30">
-          <CardHeader className="pb-2">
+        <Card className="bg-[#0f2330] border-[#14b8a6]/30 flex flex-col min-h-0">
+          <CardHeader className="pb-2 flex-shrink-0">
             <CardTitle className="text-[#14b8a6] text-sm flex items-center gap-2">
               <FileImage className="h-4 w-4" />
               Risultato (Trasparenza Applicata)
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-2">
-            <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 aspect-square flex items-center justify-center overflow-hidden">
+          <CardContent className="p-2 flex-1 min-h-0">
+            <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 h-full flex items-center justify-center overflow-hidden">
               <canvas
                 ref={dstCanvasRef}
                 className="max-w-full max-h-full object-contain"

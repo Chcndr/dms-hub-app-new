@@ -4826,21 +4826,20 @@ export default function DashboardPA() {
 
           {/* TAB: MAPPA GIS */}
           <TabsContent value="mappa" className="space-y-6">
-            {/* BUS HUB Editor Modal */}
-            {showBusHubEditor && (
-              <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-                <div className="bg-[#0b1220] rounded-xl border border-[#14b8a6]/30 w-full max-w-7xl h-[90vh] overflow-hidden">
-                  <BusHubEditor
-                    onClose={() => setShowBusHubEditor(false)}
-                    onSaveComplete={(marketId) => {
-                      console.log('Mercato salvato con ID:', marketId);
-                      setGisMapRefreshKey(prev => prev + 1);
-                      setShowBusHubEditor(false);
-                    }}
-                  />
-                </div>
+            {/* BUS HUB Editor - Schermo Intero (sostituisce completamente la tab) */}
+            {showBusHubEditor ? (
+              <div className="fixed inset-0 z-[100] bg-[#0b1220]">
+                <BusHubEditor
+                  onClose={() => setShowBusHubEditor(false)}
+                  onSaveComplete={(marketId) => {
+                    console.log('Mercato salvato con ID:', marketId);
+                    setGisMapRefreshKey(prev => prev + 1);
+                    setShowBusHubEditor(false);
+                  }}
+                />
               </div>
-            )}
+            ) : (
+            <>
 
             {/* Barra Ricerca, Filtri e Pulsante Crea Mercato */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
@@ -5015,6 +5014,8 @@ export default function DashboardPA() {
                 </div>
               </CardContent>
             </Card>
+            </>
+            )}
           </TabsContent>
 
           {/* TAB: GESTIONE HUB */}
@@ -5251,21 +5252,20 @@ function LogsSection() {
         </TabsContent>
           {/* TAB: MAPPA GIS */}
           <TabsContent value="mappa" className="space-y-6">
-            {/* BUS HUB Editor Modal */}
-            {showBusHubEditor && (
-              <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-                <div className="bg-[#0b1220] rounded-xl border border-[#14b8a6]/30 w-full max-w-7xl h-[90vh] overflow-hidden">
-                  <BusHubEditor
-                    onClose={() => setShowBusHubEditor(false)}
-                    onSaveComplete={(marketId) => {
-                      console.log('Mercato salvato con ID:', marketId);
-                      setGisMapRefreshKey(prev => prev + 1);
-                      setShowBusHubEditor(false);
-                    }}
-                  />
-                </div>
+            {/* BUS HUB Editor - Schermo Intero (sostituisce completamente la tab) */}
+            {showBusHubEditor ? (
+              <div className="fixed inset-0 z-[100] bg-[#0b1220]">
+                <BusHubEditor
+                  onClose={() => setShowBusHubEditor(false)}
+                  onSaveComplete={(marketId) => {
+                    console.log('Mercato salvato con ID:', marketId);
+                    setGisMapRefreshKey(prev => prev + 1);
+                    setShowBusHubEditor(false);
+                  }}
+                />
               </div>
-            )}
+            ) : (
+            <>
 
             {/* Barra Ricerca, Filtri e Pulsante Crea Mercato */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
@@ -5440,6 +5440,8 @@ function LogsSection() {
                 </div>
               </CardContent>
             </Card>
+            </>
+            )}
           </TabsContent>
 
           {/* TAB: GESTIONE HUB (placeholder vuoto) */}
