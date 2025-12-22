@@ -33,6 +33,7 @@ import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView'
 import { SharedWorkspace } from '@/components/SharedWorkspace';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import ComuniPanel from '@/components/ComuniPanel';
+import WalletPanel from '@/components/WalletPanel';
 import { MessageContent } from '@/components/MessageContent';
 import { callOrchestrator } from '@/api/orchestratorClient';
 import { sendAgentMessage, AgentChatMessage } from '@/lib/mioOrchestratorClient';
@@ -405,6 +406,9 @@ export default function DashboardPA() {
   const [activeTab, setActiveTab] = useState(tabFromUrl || 'dashboard');
   const [dashboardSubTab, setDashboardSubTab] = useState<'overview' | 'mercati'>('overview');
   const [sistemaSubTab, setSistemaSubTab] = useState<'logs' | 'debug'>('logs');
+  const [walletSubTab, setWalletSubTab] = useState<'wallet' | 'pagopa'>('wallet');
+  const [walletSearch, setWalletSearch] = useState('');
+  const [selectedWallet, setSelectedWallet] = useState<number | null>(null);
 
   const [tccValue, setTccValue] = useState(0.20);
   
@@ -2013,108 +2017,9 @@ export default function DashboardPA() {
             </Card>
           </TabsContent>
 
-          {/* TAB: WALLET / PAGOPA */}
+          {/* TAB: WALLET / PAGOPA - Borsellino Elettronico Prepagato */}
           <TabsContent value="wallet" className="space-y-6">
-            {/* Statistiche Pagamenti */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="bg-[#1a2332] border-[#3b82f6]/30">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <Euro className="h-8 w-8 text-[#3b82f6]" />
-                    <div>
-                      <p className="text-sm text-[#e8fbff]/70">Totale Incassato</p>
-                      <p className="text-2xl font-bold text-[#3b82f6]">€ 45.230</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-[#1a2332] border-[#10b981]/30">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-8 w-8 text-[#10b981]" />
-                    <div>
-                      <p className="text-sm text-[#e8fbff]/70">Pagamenti Completati</p>
-                      <p className="text-2xl font-bold text-[#10b981]">156</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-[#1a2332] border-[#f59e0b]/30">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-8 w-8 text-[#f59e0b]" />
-                    <div>
-                      <p className="text-sm text-[#e8fbff]/70">In Attesa</p>
-                      <p className="text-2xl font-bold text-[#f59e0b]">23</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-[#1a2332] border-[#ef4444]/30">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-8 w-8 text-[#ef4444]" />
-                    <div>
-                      <p className="text-sm text-[#e8fbff]/70">Scaduti</p>
-                      <p className="text-2xl font-bold text-[#ef4444]">5</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Lista Pagamenti */}
-            <Card className="bg-[#1a2332] border-[#3b82f6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Euro className="h-5 w-5 text-[#3b82f6]" />
-                  Pagamenti Recenti - PagoPA
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#10b981]/30">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[#e8fbff] font-semibold">Canone Mercatale - Posteggio 45</p>
-                        <p className="text-sm text-[#e8fbff]/70">Alimentari Rossi & C. - 20/12/2025</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[#10b981] font-bold">€ 350,00</p>
-                        <span className="text-xs bg-[#10b981]/20 text-[#10b981] px-2 py-1 rounded">PAGATO</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#f59e0b]/30">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[#e8fbff] font-semibold">Canone Mercatale - Posteggio 78</p>
-                        <p className="text-sm text-[#e8fbff]/70">Bio Market Italia - Scadenza: 25/12/2025</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[#f59e0b] font-bold">€ 420,00</p>
-                        <span className="text-xs bg-[#f59e0b]/20 text-[#f59e0b] px-2 py-1 rounded">IN ATTESA</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#ef4444]/30">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[#e8fbff] font-semibold">Sanzione - Occupazione abusiva</p>
-                        <p className="text-sm text-[#e8fbff]/70">Calzature Neri - Scaduto: 15/12/2025</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[#ef4444] font-bold">€ 150,00</p>
-                        <span className="text-xs bg-[#ef4444]/20 text-[#ef4444] px-2 py-1 rounded">SCADUTO</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-[#e8fbff]/50">Integrazione PagoPA in fase di configurazione</p>
-                </div>
-              </CardContent>
-            </Card>
+            <WalletPanel />
           </TabsContent>
 
           {/* TAB 4: PRODOTTI */}

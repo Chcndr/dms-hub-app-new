@@ -3,6 +3,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import * as schema from "../drizzle/schema";
+import { walletRouter } from "./walletRouter";
 
 /**
  * Helper per logging automatico di tutte le operazioni
@@ -782,19 +783,125 @@ export const dmsHubRouter = router({
         .orderBy(desc(schema.bookings.createdAt));
     }),
 
-    // Conferma check-in
+    // Conferma check-in con verifica saldo wallet
     confirmCheckin: publicProcedure
       .input(z.object({
         bookingId: z.number(),
         vendorId: z.number(),
         lat: z.string().optional(),
         lng: z.string().optional(),
+        skipWalletCheck: z.boolean().optional(), // Per casi speciali (es. prima presenza gratuita)
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
 
         const now = new Date();
+
+        // Ottieni info booking
+        const [booking] = await db.select().from(schema.bookings)
+          .where(eq(schema.bookings.id, input.bookingId));
+
+        if (!booking) throw new Error("Booking not found");
+
+        // Ottieni info posteggio per il mercato e tipo
+        const [stall] = await db.select().from(schema.stalls)
+          .where(eq(schema.stalls.id, booking.stallId));
+
+        if (!stall) throw new Error("Stall not found");
+
+        // Ottieni info vendor per l'impresa
+        const [vendor] = await db.select().from(schema.vendors)
+          .where(eq(schema.vendors.id, input.vendorId));
+
+        // ============================================
+        // VERIFICA SALDO WALLET (se abilitato)
+        // ============================================
+        if (!input.skipWalletCheck && vendor) {
+          // Cerca wallet dell'impresa
+          const [wallet] = await db.select().from(schema.operatoreWallet)
+            .where(eq(schema.operatoreWallet.impresaId, vendor.id));
+
+          if (wallet) {
+            // Verifica stato wallet
+            if (wallet.status === "BLOCCATO") {
+              throw new Error("WALLET_BLOCCATO: Impossibile effettuare il check-in. Il wallet è bloccato per saldo insufficiente. Effettuare una ricarica.");
+            }
+
+            if (wallet.status === "SOSPESO") {
+              throw new Error("WALLET_SOSPESO: Impossibile effettuare il check-in. Il wallet è sospeso. Contattare l'ufficio mercati.");
+            }
+
+            // Ottieni tariffa posteggio
+            const tipoPosteggio = stall.type || "STANDARD";
+            const [tariffa] = await db.select().from(schema.tariffePosteggio)
+              .where(and(
+                eq(schema.tariffePosteggio.mercatoId, stall.marketId),
+                eq(schema.tariffePosteggio.tipoPosteggio, tipoPosteggio)
+              ));
+
+            const importoRichiesto = tariffa?.tariffaGiornaliera || 0;
+
+            // Verifica saldo sufficiente
+            if (importoRichiesto > 0 && wallet.saldo < importoRichiesto) {
+              throw new Error(
+                `SALDO_INSUFFICIENTE: Saldo wallet insufficiente. ` +
+                `Richiesto: €${(importoRichiesto / 100).toFixed(2)}, ` +
+                `Disponibile: €${(wallet.saldo / 100).toFixed(2)}. ` +
+                `Effettuare una ricarica per procedere.`
+              );
+            }
+
+            // Se c'è tariffa, effettua decurtazione automatica
+            if (importoRichiesto > 0) {
+              const saldoPrecedente = wallet.saldo;
+              const saldoSuccessivo = saldoPrecedente - importoRichiesto;
+
+              // Inserisci transazione decurtazione
+              await db.insert(schema.walletTransazioni).values({
+                walletId: wallet.id,
+                tipo: "DECURTAZIONE",
+                importo: -importoRichiesto,
+                saldoPrecedente,
+                saldoSuccessivo,
+                mercatoId: stall.marketId,
+                posteggioId: stall.id,
+                descrizione: `Presenza mercato - Posteggio ${stall.code || stall.id}`,
+                operatoreId: "SYSTEM",
+              });
+
+              // Aggiorna saldo wallet
+              const nuovoStatus = saldoSuccessivo <= wallet.saldoMinimo ? "BLOCCATO" : wallet.status;
+              await db.update(schema.operatoreWallet)
+                .set({
+                  saldo: saldoSuccessivo,
+                  totaleDecurtato: wallet.totaleDecurtato + importoRichiesto,
+                  ultimaDecurtazione: now,
+                  updatedAt: now,
+                  status: nuovoStatus,
+                })
+                .where(eq(schema.operatoreWallet.id, wallet.id));
+
+              console.log(
+                `[Wallet] Decurtazione automatica: Wallet ${wallet.id}, ` +
+                `Importo €${(importoRichiesto / 100).toFixed(2)}, ` +
+                `Nuovo saldo €${(saldoSuccessivo / 100).toFixed(2)}`
+              );
+
+              // Se wallet bloccato dopo decurtazione, notifica
+              if (nuovoStatus === "BLOCCATO") {
+                console.log(
+                  `[Wallet] ATTENZIONE: Wallet ${wallet.id} bloccato dopo decurtazione. ` +
+                  `Prossima presenza richiederà ricarica.`
+                );
+              }
+            }
+          }
+        }
+
+        // ============================================
+        // PROCEDI CON CHECK-IN
+        // ============================================
 
         // Aggiorna booking
         await db.update(schema.bookings)
@@ -804,21 +911,15 @@ export const dmsHubRouter = router({
           })
           .where(eq(schema.bookings.id, input.bookingId));
 
-        // Ottieni info booking
-        const [booking] = await db.select().from(schema.bookings)
-          .where(eq(schema.bookings.id, input.bookingId));
-
-        if (!booking) throw new Error("Booking not found");
-
         // Crea presenza
-        await db.insert(schema.vendorPresences).values({
+        const [presence] = await db.insert(schema.vendorPresences).values({
           vendorId: input.vendorId,
           stallId: booking.stallId,
           bookingId: input.bookingId,
           checkinTime: now,
           lat: input.lat || null,
           lng: input.lng || null,
-        });
+        }).returning();
 
         // Aggiorna stato posteggio
         await db.update(schema.stalls)
@@ -832,10 +933,10 @@ export const dmsHubRouter = router({
           input.bookingId,
           null,
           { status: "pending" },
-          { status: "confirmed", vendorId: input.vendorId }
+          { status: "confirmed", vendorId: input.vendorId, presenceId: presence?.id }
         );
 
-        return { success: true };
+        return { success: true, presenceId: presence?.id };
       }),
 
     // Cancella prenotazione

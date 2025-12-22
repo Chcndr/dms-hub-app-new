@@ -7,6 +7,7 @@ import { integrationsRouter } from "./integrationsRouter";
 import { mioAgentRouter } from "./mioAgentRouter";
 import { mihubRouter } from "./mihubRouter";
 import { guardianRouter } from "./guardianRouter";
+import { walletRouter } from "./walletRouter";
 import { sql } from "drizzle-orm/sql";
 
 export const appRouter = router({
@@ -212,6 +213,9 @@ export const appRouter = router({
 
   // GUARDIAN - API Monitoring & Debug
   guardian: guardianRouter,
+
+  // WALLET - Borsellino Elettronico Operatori Mercatali + PagoPA
+  wallet: walletRouter,
 });
 
 export type AppRouter = typeof appRouter;

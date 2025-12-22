@@ -822,3 +822,109 @@ export type InsertAgentMessage = typeof agentMessages.$inferInsert;
 
 export type AgentContext = typeof agentContext.$inferSelect;
 export type InsertAgentContext = typeof agentContext.$inferInsert;
+
+
+// ============================================
+// WALLET OPERATORI MERCATO - Borsellino Elettronico Prepagato
+// ============================================
+
+// Enum per tipo transazione wallet
+export const walletTransactionTypeEnum = pgEnum("wallet_transaction_type", ["RICARICA", "DECURTAZIONE", "RIMBORSO", "CORREZIONE"]);
+
+// Enum per stato wallet
+export const walletStatusEnum = pgEnum("wallet_status", ["ATTIVO", "BLOCCATO", "SOSPESO"]);
+
+// Wallet per ogni impresa/operatore
+export const operatoreWallet = pgTable("operatore_wallet", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  impresaId: integer("impresa_id").notNull(), // FK verso tabella imprese
+  saldo: integer("saldo").default(0).notNull(), // Saldo in centesimi (€10.50 = 1050)
+  saldoMinimo: integer("saldo_minimo").default(0).notNull(), // Soglia minima per blocco
+  status: walletStatusEnum("status").default("ATTIVO").notNull(),
+  ultimaRicarica: timestamp("ultima_ricarica"),
+  ultimaDecurtazione: timestamp("ultima_decurtazione"),
+  totaleRicaricato: integer("totale_ricaricato").default(0).notNull(), // Totale storico ricariche
+  totaleDecurtato: integer("totale_decurtato").default(0).notNull(), // Totale storico decurtazioni
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  impresaIdx: index("wallet_impresa_idx").on(table.impresaId),
+}));
+
+// Transazioni wallet (ricariche e decurtazioni)
+export const walletTransazioni = pgTable("wallet_transazioni", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  walletId: integer("wallet_id").notNull().references(() => operatoreWallet.id),
+  tipo: walletTransactionTypeEnum("tipo").notNull(),
+  importo: integer("importo").notNull(), // In centesimi (positivo per ricariche, negativo per decurtazioni)
+  saldoPrecedente: integer("saldo_precedente").notNull(), // Saldo prima della transazione
+  saldoSuccessivo: integer("saldo_successivo").notNull(), // Saldo dopo la transazione
+  riferimento: varchar("riferimento", { length: 255 }), // IUV PagoPA o ID presenza
+  descrizione: text("descrizione"),
+  dataOperazione: timestamp("data_operazione").defaultNow().notNull(),
+  operatoreId: varchar("operatore_id", { length: 255 }), // Chi ha effettuato l'operazione
+  // Campi PagoPA per ricariche
+  iuvPagopa: varchar("iuv_pagopa", { length: 50 }),
+  ricevutaTelematica: text("ricevuta_telematica"), // JSON della RT
+  // Campi presenza per decurtazioni
+  presenzaId: integer("presenza_id"), // FK verso tabella presenze/spunta
+  posteggioId: integer("posteggio_id"), // FK verso stalls
+  mercatoId: integer("mercato_id"), // FK verso markets
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  walletIdx: index("transazioni_wallet_idx").on(table.walletId),
+  dataIdx: index("transazioni_data_idx").on(table.dataOperazione),
+  iuvIdx: index("transazioni_iuv_idx").on(table.iuvPagopa),
+}));
+
+// Tariffe posteggio per tipo
+export const tariffePosteggio = pgTable("tariffe_posteggio", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  mercatoId: integer("mercato_id").references(() => markets.id),
+  tipoPosteggio: varchar("tipo_posteggio", { length: 100 }).notNull(), // ALIMENTARE, NON_ALIMENTARE, PRODUTTORE, ecc.
+  tariffaGiornaliera: integer("tariffa_giornaliera").notNull(), // In centesimi
+  tariffaSettimanale: integer("tariffa_settimanale"), // Opzionale
+  tariffaMensile: integer("tariffa_mensile"), // Opzionale
+  tariffaAnnuale: integer("tariffa_annuale"), // Opzionale
+  descrizione: text("descrizione"),
+  validoDal: timestamp("valido_dal").defaultNow().notNull(),
+  validoAl: timestamp("valido_al"), // NULL = sempre valido
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  mercatoIdx: index("tariffe_mercato_idx").on(table.mercatoId),
+}));
+
+// Avvisi PagoPA generati
+export const avvisiPagopa = pgTable("avvisi_pagopa", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  walletId: integer("wallet_id").notNull().references(() => operatoreWallet.id),
+  impresaId: integer("impresa_id").notNull(),
+  iuv: varchar("iuv", { length: 50 }).notNull().unique(), // Identificativo Univoco Versamento
+  importo: integer("importo").notNull(), // In centesimi
+  causale: varchar("causale", { length: 255 }).notNull(),
+  stato: varchar("stato", { length: 50 }).default("GENERATO").notNull(), // GENERATO, PAGATO, SCADUTO, ANNULLATO
+  dataGenerazione: timestamp("data_generazione").defaultNow().notNull(),
+  dataScadenza: timestamp("data_scadenza"),
+  dataPagamento: timestamp("data_pagamento"),
+  ricevutaTelematica: text("ricevuta_telematica"), // JSON della RT
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  iuvIdx: index("avvisi_iuv_idx").on(table.iuv),
+  walletIdx: index("avvisi_wallet_idx").on(table.walletId),
+  statoIdx: index("avvisi_stato_idx").on(table.stato),
+}));
+
+// Export types for Wallet tables
+export type OperatoreWallet = typeof operatoreWallet.$inferSelect;
+export type InsertOperatoreWallet = typeof operatoreWallet.$inferInsert;
+
+export type WalletTransazione = typeof walletTransazioni.$inferSelect;
+export type InsertWalletTransazione = typeof walletTransazioni.$inferInsert;
+
+export type TariffaPosteggio = typeof tariffePosteggio.$inferSelect;
+export type InsertTariffaPosteggio = typeof tariffePosteggio.$inferInsert;
+
+export type AvvisoPagopa = typeof avvisiPagopa.$inferSelect;
+export type InsertAvvisoPagopa = typeof avvisiPagopa.$inferInsert;
