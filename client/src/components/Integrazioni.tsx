@@ -319,7 +319,7 @@ function APIDashboard() {
           
         // IMPRESE & QUALIFICAZIONI - chiamate REST dirette
         case '/api/imprese':
-          const impreseResponse = await fetch('http://157.90.29.66:3000/api/imprese', {
+          const impreseResponse = await fetch('https://orchestratore.mio-hub.me/api/imprese', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
@@ -327,14 +327,14 @@ function APIDashboard() {
           break;
         case '/api/imprese/:id':
           const impresaId = parsedBody.id || 1;
-          const impresaResponse = await fetch(`http://157.90.29.66:3000/api/imprese/${impresaId}`, {
+          const impresaResponse = await fetch(`https://orchestratore.mio-hub.me/api/imprese/${impresaId}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
           data = await impresaResponse.json();
           break;
         case '/api/qualificazioni':
-          const qualificazioniResponse = await fetch('http://157.90.29.66:3000/api/qualificazioni', {
+          const qualificazioniResponse = await fetch('https://orchestratore.mio-hub.me/api/qualificazioni', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
@@ -342,7 +342,7 @@ function APIDashboard() {
           break;
         case '/api/imprese/:id/qualificazioni':
           const impresaIdForQual = parsedBody.id || 1;
-          const qualificazioniByImpresaResponse = await fetch(`http://157.90.29.66:3000/api/imprese/${impresaIdForQual}/qualificazioni`, {
+          const qualificazioniByImpresaResponse = await fetch(`https://orchestratore.mio-hub.me/api/imprese/${impresaIdForQual}/qualificazioni`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
