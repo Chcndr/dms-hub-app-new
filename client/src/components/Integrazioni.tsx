@@ -587,37 +587,87 @@ function APIDashboard() {
   };
   
   const loadExampleJSON = () => {
-    const exampleJSON = {
-      "stalls_geojson": {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "properties": {
-              "id": "stall_1",
-              "type": "stall",
-              "dimensions": "4m × 8m",
-              "rotation": 0,
-              "scale": 1,
-              "color": "#14b8a6",
-              "label": "Posteggio 1"
-            },
-            "geometry": {
-              "type": "Point",
-              "coordinates": [11.1093, 42.7635]
-            }
-          }
-        ]
+    // Mappa esempi JSON per endpoint
+    const examplesByEndpoint: Record<string, any> = {
+      // LOCATIONS
+      '/api/trpc/dmsHub.locations.delete': { id: 1 },
+      '/api/trpc/dmsHub.locations.getById': { id: 1 },
+      '/api/trpc/dmsHub.locations.update': { id: 1, name: 'HUB Aggiornato', address: 'Via Nuova 123' },
+      '/api/trpc/dmsHub.locations.create': { name: 'Nuovo HUB', address: 'Via Test 123', city: 'Grosseto', lat: 42.7635, lng: 11.1093 },
+      
+      // MARKETS
+      '/api/trpc/dmsHub.markets.getById': { id: 1 },
+      '/api/trpc/dmsHub.markets.importAuto': {
+        stalls_geojson: { type: 'FeatureCollection', features: [] },
+        markers_geojson: { type: 'FeatureCollection', features: [] },
+        areas_geojson: { type: 'FeatureCollection', features: [] },
+        marketName: 'Mercato Test',
+        city: 'Grosseto',
+        address: 'Via Test 123'
       },
-      "markers_geojson": { "type": "FeatureCollection", "features": [] },
-      "areas_geojson": { "type": "FeatureCollection", "features": [] },
-      "marketName": "Mercato Test API",
-      "city": "Grosseto",
-      "address": "Via Test 123"
+      
+      // STALLS
+      '/api/trpc/dmsHub.stalls.listByMarket': { marketId: 1 },
+      '/api/trpc/dmsHub.stalls.updateStatus': { stallId: 1, status: 'available' },
+      '/api/trpc/dmsHub.stalls.getStatuses': { marketId: 1 },
+      
+      // VENDORS
+      '/api/trpc/dmsHub.vendors.create': { name: 'Mario Rossi', fiscalCode: 'RSSMRA80A01H501Z', email: 'mario@test.it' },
+      '/api/trpc/dmsHub.vendors.update': { id: 1, name: 'Mario Rossi Aggiornato' },
+      '/api/trpc/dmsHub.vendors.getFullDetails': { id: 1 },
+      
+      // BOOKINGS
+      '/api/trpc/dmsHub.bookings.create': { vendorId: 1, stallId: 1, marketId: 1, date: new Date().toISOString().split('T')[0] },
+      '/api/trpc/dmsHub.bookings.listActive': { marketId: 1 },
+      '/api/trpc/dmsHub.bookings.confirmCheckin': { bookingId: 1 },
+      '/api/trpc/dmsHub.bookings.cancel': { bookingId: 1 },
+      
+      // PRESENCES
+      '/api/trpc/dmsHub.presences.checkout': { presenceId: 1 },
+      '/api/trpc/dmsHub.presences.getTodayByMarket': { marketId: 1 },
+      
+      // INSPECTIONS
+      '/api/trpc/dmsHub.inspections.create': { vendorId: 1, marketId: 1, notes: 'Controllo di routine' },
+      
+      // VIOLATIONS
+      '/api/trpc/dmsHub.violations.create': { inspectionId: 1, type: 'MINOR', description: 'Violazione minore' },
+      
+      // WALLET
+      '/api/trpc/wallet.getById': { id: 1 },
+      '/api/trpc/wallet.getByImpresa': { impresaId: 1 },
+      '/api/trpc/wallet.create': { impresaId: 1, saldoIniziale: 100 },
+      '/api/trpc/wallet.updateStatus': { id: 1, stato: 'attivo' },
+      '/api/trpc/wallet.transazioni': { walletId: 1 },
+      '/api/trpc/wallet.ricarica': { walletId: 1, importo: 50, causale: 'Ricarica test' },
+      '/api/trpc/wallet.decurtazione': { walletId: 1, importo: 10, causale: 'Decurtazione test' },
+      '/api/trpc/wallet.generaAvvisoPagopa': { walletId: 1, importo: 100 },
+      '/api/trpc/wallet.avviaPagamentoPagopa': { walletId: 1, importo: 100 },
+      '/api/trpc/wallet.verificaPagamento': { iuv: 'TEST123456789' },
+      '/api/trpc/wallet.generaPdfAvviso': { iuv: 'TEST123456789' },
+      '/api/trpc/wallet.generaPdfQuietanza': { iuv: 'TEST123456789' },
+      '/api/trpc/wallet.avvisiPagopa': { walletId: 1 },
+      '/api/trpc/wallet.tariffe': { marketId: 1 },
+      '/api/trpc/wallet.upsertTariffa': { marketId: 1, tipoPosteggio: 'standard', tariffa: 15 },
+      '/api/trpc/wallet.verificaSaldoPresenza': { walletId: 1, marketId: 1 },
+      '/api/trpc/wallet.ricercaPagamentiGiornalieri': { data: new Date().toISOString().split('T')[0] },
+      '/api/trpc/wallet.reportMovimenti': { walletId: 1, dataInizio: '2024-01-01', dataFine: '2024-12-31' },
+      
+      // GUARDIAN
+      '/api/trpc/guardian.logs': { level: 'info', limit: 10 },
+      '/api/trpc/guardian.testEndpoint': { url: 'https://api.example.com/test', method: 'GET' },
+      '/api/trpc/guardian.logApiCall': { endpoint: '/test', method: 'GET', statusCode: 200, responseTime: 100 },
+      
+      // IMPRESE
+      '/api/imprese/:id': { id: 1 },
+      '/api/imprese/:id/qualificazioni': { id: 1 },
+      '/api/imprese/:id/rating': { id: 1 },
     };
     
-    setRequestBody(JSON.stringify(exampleJSON, null, 2));
-    toast.success('JSON esempio caricato!');
+    // Cerca esempio per endpoint selezionato
+    const example = examplesByEndpoint[selectedEndpoint] || { marketId: 1, id: 1 };
+    
+    setRequestBody(JSON.stringify(example, null, 2));
+    toast.success('JSON esempio caricato per: ' + selectedEndpoint.split('/').pop());
   };
 
   return (
