@@ -402,7 +402,9 @@ export default function DashboardPA() {
    // Leggi tab da URL params (es. ?tab=mappa)
   const urlParams = new URLSearchParams(window.location.search);
   const tabFromUrl = urlParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tabFromUrl || 'overview');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'dashboard');
+  const [dashboardSubTab, setDashboardSubTab] = useState<'overview' | 'mercati'>('overview');
+  const [sistemaSubTab, setSistemaSubTab] = useState<'logs' | 'debug'>('logs');
 
   const [tccValue, setTccValue] = useState(0.20);
   
@@ -1426,15 +1428,15 @@ export default function DashboardPA() {
           <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">Sezioni Dashboard</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => setActiveTab('dashboard')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'overview'
+                activeTab === 'dashboard'
                   ? 'bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg'
                   : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
               }`}
             >
               <BarChart3 className="h-6 w-6" />
-              <span className="text-xs font-medium">Overview</span>
+              <span className="text-xs font-medium">Dashboard</span>
             </button>
             <button
               onClick={() => setActiveTab('users')}
@@ -1448,15 +1450,15 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Clienti</span>
             </button>
             <button
-              onClick={() => setActiveTab('markets')}
+              onClick={() => setActiveTab('wallet')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'markets'
-                  ? 'bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg'
-                  : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
+                activeTab === 'wallet'
+                  ? 'bg-[#3b82f6] border-[#3b82f6] text-white shadow-lg'
+                  : 'bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/20 text-[#3b82f6]'
               }`}
             >
-              <Store className="h-6 w-6" />
-              <span className="text-xs font-medium">Mercati</span>
+              <Euro className="h-6 w-6" />
+              <span className="text-xs font-medium">Wallet/PagoPA</span>
             </button>
             <button
               onClick={() => setActiveTab('products')}
@@ -1514,15 +1516,15 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Real-time</span>
             </button>
             <button
-              onClick={() => setActiveTab('logs')}
+              onClick={() => setActiveTab('sistema')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'logs'
+                activeTab === 'sistema'
                   ? 'bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg'
                   : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
               }`}
             >
-              <FileText className="h-6 w-6" />
-              <span className="text-xs font-medium">Logs</span>
+              <Terminal className="h-6 w-6" />
+              <span className="text-xs font-medium">Sistema</span>
             </button>
             <button
               onClick={() => setActiveTab('ai')}
@@ -1547,15 +1549,15 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Sicurezza</span>
             </button>
             <button
-              onClick={() => setActiveTab('debug')}
+              onClick={() => setActiveTab('ssosuap')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'debug'
+                activeTab === 'ssosuap'
                   ? 'bg-[#f59e0b] border-[#f59e0b] text-white shadow-lg'
                   : 'bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]'
               }`}
             >
-              <Terminal className="h-6 w-6" />
-              <span className="text-xs font-medium">Debug</span>
+              <FileText className="h-6 w-6" />
+              <span className="text-xs font-medium">SSO SUAP</span>
             </button>
             <button
               onClick={() => setActiveTab('businesses')}
@@ -1747,8 +1749,35 @@ export default function DashboardPA() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 
-          {/* TAB 1: OVERVIEW */}
-          <TabsContent value="overview" className="space-y-6">
+          {/* TAB: DASHBOARD (Overview + Mercati unificati) */}
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* Sotto-tab interni */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setDashboardSubTab('overview')}
+                className={`px-4 py-2 rounded-lg border transition-all ${
+                  dashboardSubTab === 'overview'
+                    ? 'bg-[#14b8a6] border-[#14b8a6] text-white'
+                    : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
+                }`}
+              >
+                <span className="text-sm font-medium">Overview</span>
+              </button>
+              <button
+                onClick={() => setDashboardSubTab('mercati')}
+                className={`px-4 py-2 rounded-lg border transition-all ${
+                  dashboardSubTab === 'mercati'
+                    ? 'bg-[#14b8a6] border-[#14b8a6] text-white'
+                    : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
+                }`}
+              >
+                <span className="text-sm font-medium">Mercati</span>
+              </button>
+            </div>
+
+            {/* Contenuto Overview */}
+            {dashboardSubTab === 'overview' && (
+              <div className="space-y-6">
             {/* Crescita Utenti */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
               <CardHeader>
@@ -1811,6 +1840,93 @@ export default function DashboardPA() {
                 )}
               </CardContent>
             </Card>
+              </div>
+            )}
+
+            {/* Contenuto Mercati */}
+            {dashboardSubTab === 'mercati' && (
+              <div className="space-y-6">
+                {/* Mappa Mercato Grosseto (GIS UFFICIALE) */}
+                <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-[#14b8a6]" />
+                      Mappa Mercato Grosseto
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {gisMapData && gisStalls.length > 0 ? (
+                      <div className="h-[500px] rounded-lg overflow-hidden">
+                        {(() => {
+                          const stallsDataForMap = gisStalls.map(s => ({
+                            id: s.id,
+                            number: s.number,
+                            status: s.status,
+                            type: s.type,
+                            vendor_name: s.vendor_business_name || undefined,
+                            impresa_id: s.impresa_id || undefined
+                          }));
+                          return (
+                            <MarketMapComponent
+                              refreshKey={gisMapRefreshKey}
+                              mapData={gisMapData}
+                              center={gisMapCenter}
+                              zoom={18}
+                              height="100%"
+                              stallsData={stallsDataForMap}
+                            />
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
+                        <p>Caricamento mappa...</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <Store className="h-5 w-5 text-[#14b8a6]" />
+                      Ranking Mercati Più Frequentati
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {mockData.topMarkets.map((market, i) => (
+                      <div key={i} className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 hover:border-[#14b8a6]/50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl font-bold text-[#14b8a6]">#{market.rank}</span>
+                            <span className="text-[#e8fbff] font-semibold">{market.name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            {[...Array(5)].map((_, j) => (
+                              <span key={j} className={j < market.rank ? 'text-[#f59e0b]' : 'text-[#e8fbff]/20'}>⭐</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="text-[#e8fbff]/70">Visite</span>
+                            <p className="text-[#14b8a6] font-semibold">{market.visits.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <span className="text-[#e8fbff]/70">Utenti Unici</span>
+                            <p className="text-[#14b8a6] font-semibold">{market.users.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <span className="text-[#e8fbff]/70">Durata Media</span>
+                            <p className="text-[#14b8a6] font-semibold">{market.duration} min</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </TabsContent>
 
           {/* TAB 2: CLIENTI */}
@@ -1897,85 +2013,106 @@ export default function DashboardPA() {
             </Card>
           </TabsContent>
 
-          {/* TAB 3: MERCATI */}
-          <TabsContent value="markets" className="space-y-6">
-            {/* Mappa Mercato Grosseto (GIS UFFICIALE) */}
-            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+          {/* TAB: WALLET / PAGOPA */}
+          <TabsContent value="wallet" className="space-y-6">
+            {/* Statistiche Pagamenti */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="bg-[#1a2332] border-[#3b82f6]/30">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <Euro className="h-8 w-8 text-[#3b82f6]" />
+                    <div>
+                      <p className="text-sm text-[#e8fbff]/70">Totale Incassato</p>
+                      <p className="text-2xl font-bold text-[#3b82f6]">€ 45.230</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-[#1a2332] border-[#10b981]/30">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-8 w-8 text-[#10b981]" />
+                    <div>
+                      <p className="text-sm text-[#e8fbff]/70">Pagamenti Completati</p>
+                      <p className="text-2xl font-bold text-[#10b981]">156</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-8 w-8 text-[#f59e0b]" />
+                    <div>
+                      <p className="text-sm text-[#e8fbff]/70">In Attesa</p>
+                      <p className="text-2xl font-bold text-[#f59e0b]">23</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-[#1a2332] border-[#ef4444]/30">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-8 w-8 text-[#ef4444]" />
+                    <div>
+                      <p className="text-sm text-[#e8fbff]/70">Scaduti</p>
+                      <p className="text-2xl font-bold text-[#ef4444]">5</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Lista Pagamenti */}
+            <Card className="bg-[#1a2332] border-[#3b82f6]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-[#14b8a6]" />
-                  Mappa Mercato Grosseto
+                  <Euro className="h-5 w-5 text-[#3b82f6]" />
+                  Pagamenti Recenti - PagoPA
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {gisMapData && gisStalls.length > 0 ? (
-                  <div className="h-[500px] rounded-lg overflow-hidden">
-                    {(() => {
-                      const stallsDataForMap = gisStalls.map(s => ({
-                        id: s.id,
-                        number: s.number,
-                        status: s.status,
-                        type: s.type,
-                        vendor_name: s.vendor_business_name || undefined,
-                        impresa_id: s.impresa_id || undefined
-                      }));
-                      return (
-                        <MarketMapComponent
-                          refreshKey={gisMapRefreshKey}
-                          mapData={gisMapData}
-                          center={gisMapCenter}
-                          zoom={18}
-                          height="100%"
-                          stallsData={stallsDataForMap}
-                        />
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
-                    <p>Caricamento mappa...</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Store className="h-5 w-5 text-[#14b8a6]" />
-                  Ranking Mercati Più Frequentati
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {mockData.topMarkets.map((market, i) => (
-                  <div key={i} className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 hover:border-[#14b8a6]/50 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl font-bold text-[#14b8a6]">#{market.rank}</span>
-                        <span className="text-[#e8fbff] font-semibold">{market.name}</span>
-                      </div>
-                      <div className="flex gap-1">
-                        {[...Array(5)].map((_, j) => (
-                          <span key={j} className={j < market.rank ? 'text-[#f59e0b]' : 'text-[#e8fbff]/20'}>⭐</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="space-y-3">
+                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#10b981]/30">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[#e8fbff]/70">Visite</span>
-                        <p className="text-[#14b8a6] font-semibold">{market.visits.toLocaleString()}</p>
+                        <p className="text-[#e8fbff] font-semibold">Canone Mercatale - Posteggio 45</p>
+                        <p className="text-sm text-[#e8fbff]/70">Alimentari Rossi & C. - 20/12/2025</p>
                       </div>
-                      <div>
-                        <span className="text-[#e8fbff]/70">Utenti Unici</span>
-                        <p className="text-[#14b8a6] font-semibold">{market.users.toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <span className="text-[#e8fbff]/70">Durata Media</span>
-                        <p className="text-[#14b8a6] font-semibold">{market.duration} min</p>
+                      <div className="text-right">
+                        <p className="text-[#10b981] font-bold">€ 350,00</p>
+                        <span className="text-xs bg-[#10b981]/20 text-[#10b981] px-2 py-1 rounded">PAGATO</span>
                       </div>
                     </div>
                   </div>
-                ))}
+                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#f59e0b]/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[#e8fbff] font-semibold">Canone Mercatale - Posteggio 78</p>
+                        <p className="text-sm text-[#e8fbff]/70">Bio Market Italia - Scadenza: 25/12/2025</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[#f59e0b] font-bold">€ 420,00</p>
+                        <span className="text-xs bg-[#f59e0b]/20 text-[#f59e0b] px-2 py-1 rounded">IN ATTESA</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#ef4444]/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[#e8fbff] font-semibold">Sanzione - Occupazione abusiva</p>
+                        <p className="text-sm text-[#e8fbff]/70">Calzature Neri - Scaduto: 15/12/2025</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[#ef4444] font-bold">€ 150,00</p>
+                        <span className="text-xs bg-[#ef4444]/20 text-[#ef4444] px-2 py-1 rounded">SCADUTO</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-[#e8fbff]/50">Integrazione PagoPA in fase di configurazione</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -2805,9 +2942,41 @@ export default function DashboardPA() {
             </Card>
           </TabsContent>
 
-          {/* TAB 8: LOGS */}
-          <TabsContent value="logs" className="space-y-6">
-            <GuardianLogsSection />
+          {/* TAB: SISTEMA (Logs + Debug unificati) */}
+          <TabsContent value="sistema" className="space-y-6">
+            {/* Sotto-tab interni */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setSistemaSubTab('logs')}
+                className={`px-4 py-2 rounded-lg border transition-all ${
+                  sistemaSubTab === 'logs'
+                    ? 'bg-[#06b6d4] border-[#06b6d4] text-white'
+                    : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
+                }`}
+              >
+                <span className="text-sm font-medium">Logs</span>
+              </button>
+              <button
+                onClick={() => setSistemaSubTab('debug')}
+                className={`px-4 py-2 rounded-lg border transition-all ${
+                  sistemaSubTab === 'debug'
+                    ? 'bg-[#06b6d4] border-[#06b6d4] text-white'
+                    : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
+                }`}
+              >
+                <span className="text-sm font-medium">Debug</span>
+              </button>
+            </div>
+
+            {/* Contenuto Logs */}
+            {sistemaSubTab === 'logs' && (
+              <GuardianLogsSection />
+            )}
+
+            {/* Contenuto Debug */}
+            {sistemaSubTab === 'debug' && (
+              <DebugSectionReal />
+            )}
           </TabsContent>
 
           {/* TAB 9: AGENTE AI */}
@@ -2969,9 +3138,120 @@ export default function DashboardPA() {
             </Card>
           </TabsContent>
 
-          {/* TAB 11: DEBUG & DEV */}
-          <TabsContent value="debug" className="space-y-6">
-            <DebugSectionReal />
+          {/* TAB: SSO SUAP - Pratiche Ente Sussidiario */}
+          <TabsContent value="ssosuap" className="space-y-6">
+            {/* Statistiche Pratiche */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-8 w-8 text-[#f59e0b]" />
+                    <div>
+                      <p className="text-sm text-[#e8fbff]/70">Pratiche Totali</p>
+                      <p className="text-2xl font-bold text-[#f59e0b]">234</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-[#1a2332] border-[#3b82f6]/30">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-8 w-8 text-[#3b82f6]" />
+                    <div>
+                      <p className="text-sm text-[#e8fbff]/70">In Lavorazione</p>
+                      <p className="text-2xl font-bold text-[#3b82f6]">18</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-[#1a2332] border-[#10b981]/30">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-8 w-8 text-[#10b981]" />
+                    <div>
+                      <p className="text-sm text-[#e8fbff]/70">Approvate</p>
+                      <p className="text-2xl font-bold text-[#10b981]">198</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-[#1a2332] border-[#ef4444]/30">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-8 w-8 text-[#ef4444]" />
+                    <div>
+                      <p className="text-sm text-[#e8fbff]/70">Rigettate</p>
+                      <p className="text-2xl font-bold text-[#ef4444]">18</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Lista Pratiche SUAP */}
+            <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+              <CardHeader>
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-[#f59e0b]" />
+                  Pratiche SUAP Recenti - Ente Sussidiario
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[#e8fbff] font-semibold">SCIA Commercio - Subingresso</p>
+                        <p className="text-sm text-[#e8fbff]/70">Alimentari Rossi & C. - Prot. 2025/12345</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs bg-[#3b82f6]/20 text-[#3b82f6] px-2 py-1 rounded">IN LAVORAZIONE</span>
+                        <p className="text-sm text-[#e8fbff]/50 mt-1">20/12/2025</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#10b981]/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[#e8fbff] font-semibold">SCIA Commercio - Nuova Attività</p>
+                        <p className="text-sm text-[#e8fbff]/70">Bio Market Italia - Prot. 2025/12340</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs bg-[#10b981]/20 text-[#10b981] px-2 py-1 rounded">APPROVATA</span>
+                        <p className="text-sm text-[#e8fbff]/50 mt-1">18/12/2025</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#f59e0b]/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[#e8fbff] font-semibold">SCIA Commercio - Voltura</p>
+                        <p className="text-sm text-[#e8fbff]/70">Calzature Neri - Prot. 2025/12338</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs bg-[#f59e0b]/20 text-[#f59e0b] px-2 py-1 rounded">INTEGRAZIONE RICHIESTA</span>
+                        <p className="text-sm text-[#e8fbff]/50 mt-1">15/12/2025</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-[#0b1220] rounded-lg border border-[#ef4444]/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[#e8fbff] font-semibold">SCIA Commercio - Subingresso</p>
+                        <p className="text-sm text-[#e8fbff]/70">Casalinghi Gialli - Prot. 2025/12330</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs bg-[#ef4444]/20 text-[#ef4444] px-2 py-1 rounded">RIGETTATA</span>
+                        <p className="text-sm text-[#e8fbff]/50 mt-1">10/12/2025</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-[#e8fbff]/50">Integrazione SSO SUAP - Ente Sussidiario in fase di configurazione</p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* TAB 13: QUALIFICAZIONE IMPRESE */}
