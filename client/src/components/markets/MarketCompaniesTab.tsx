@@ -20,7 +20,10 @@ import {
   Loader2,
   FileText,
   Calendar,
-  MapPin
+  MapPin,
+  FileCheck,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 
 // ============================================================================
@@ -111,6 +114,18 @@ type ConcessionFormData = {
   stato: string;
 };
 
+type QualificazioneRow = {
+  id: string;
+  company_id: string;
+  company_name: string;
+  tipo: string;
+  ente_rilascio: string;
+  data_rilascio: string;
+  data_scadenza: string;
+  stato: 'ATTIVA' | 'SCADUTA' | 'IN_VERIFICA';
+  note?: string;
+};
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -167,6 +182,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   // State
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [concessions, setConcessions] = useState<ConcessionRow[]>([]);
+  const [qualificazioni, setQualificazioni] = useState<QualificazioneRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -175,10 +191,11 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   const [showConcessionModal, setShowConcessionModal] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<CompanyRow | null>(null);
   const [selectedConcession, setSelectedConcession] = useState<ConcessionRow | null>(null);
+  const [selectedCompanyForQualif, setSelectedCompanyForQualif] = useState<CompanyRow | null>(null);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState<'impresa' | 'concessione'>('impresa');
+  const [searchType, setSearchType] = useState<'impresa' | 'concessione' | 'qualificazione'>('impresa');
   
   // Filtered data
   const filteredCompanies = companies.filter(c => {
@@ -200,6 +217,20 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       c.tipo_concessione?.toLowerCase().includes(query)
     );
   });
+  
+  // Qualificazioni filtrate per impresa selezionata
+  const filteredQualificazioni = qualificazioni.filter(q => {
+    if (selectedCompanyForQualif) {
+      return q.company_id === selectedCompanyForQualif.id;
+    }
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      q.company_name?.toLowerCase().includes(query) ||
+      q.tipo?.toLowerCase().includes(query) ||
+      q.ente_rilascio?.toLowerCase().includes(query)
+    );
+  });
 
   // Fetch data
   useEffect(() => {
@@ -219,6 +250,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       await Promise.all([
         fetchCompanies(),
         fetchConcessions(),
+        fetchQualificazioni(),
       ]);
     } catch (err: any) {
       setError(err.message || 'Errore durante il caricamento dei dati');
@@ -332,6 +364,98 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
     }
   };
 
+  // Fetch qualificazioni (mock data per ora)
+  const fetchQualificazioni = async () => {
+    // Mock data per le qualificazioni - in futuro collegare a API
+    const mockQualificazioni: QualificazioneRow[] = [
+      {
+        id: '101',
+        company_id: companies[0]?.id || '1',
+        company_name: 'Alimentari Rossi & C.',
+        tipo: 'CONCESSIONE MERCATO',
+        ente_rilascio: 'Comune di Grosseto',
+        data_rilascio: '2023-01-15',
+        data_scadenza: '2025-01-15',
+        stato: 'ATTIVA',
+        note: 'Concessione per area mercato coperto settore alimentare'
+      },
+      {
+        id: '102',
+        company_id: companies[0]?.id || '1',
+        company_name: 'Alimentari Rossi & C.',
+        tipo: 'DURC',
+        ente_rilascio: 'INPS',
+        data_rilascio: '2024-11-01',
+        data_scadenza: '2025-02-01',
+        stato: 'ATTIVA',
+        note: 'Documento Unico Regolarità Contributiva'
+      },
+      {
+        id: '103',
+        company_id: companies[0]?.id || '1',
+        company_name: 'Alimentari Rossi & C.',
+        tipo: 'ISO 9001',
+        ente_rilascio: 'Bureau Veritas',
+        data_rilascio: '2022-06-10',
+        data_scadenza: '2025-06-10',
+        stato: 'ATTIVA',
+        note: 'Certificazione qualità sistema gestione'
+      },
+      {
+        id: '201',
+        company_id: companies[1]?.id || '2',
+        company_name: 'Bio Market Italia',
+        tipo: 'HACCP',
+        ente_rilascio: 'ASL Grosseto',
+        data_rilascio: '2024-03-20',
+        data_scadenza: '2026-03-20',
+        stato: 'ATTIVA',
+        note: 'Certificazione igiene alimentare'
+      },
+      {
+        id: '202',
+        company_id: companies[1]?.id || '2',
+        company_name: 'Bio Market Italia',
+        tipo: 'DURC',
+        ente_rilascio: 'INPS',
+        data_rilascio: '2024-10-15',
+        data_scadenza: '2024-12-01',
+        stato: 'IN_VERIFICA',
+        note: 'In attesa di rinnovo'
+      },
+      {
+        id: '301',
+        company_id: companies[2]?.id || '3',
+        company_name: 'Distribuzione Emilia S.p.A.',
+        tipo: 'CONCESSIONE MERCATO',
+        ente_rilascio: 'Comune di Grosseto',
+        data_rilascio: '2021-05-10',
+        data_scadenza: '2024-11-30',
+        stato: 'SCADUTA',
+        note: 'Necessario rinnovo urgente'
+      },
+      {
+        id: '302',
+        company_id: companies[2]?.id || '3',
+        company_name: 'Distribuzione Emilia S.p.A.',
+        tipo: 'ISO 14001',
+        ente_rilascio: 'TÜV Italia',
+        data_rilascio: '2023-09-01',
+        data_scadenza: '2026-09-01',
+        stato: 'ATTIVA',
+        note: 'Certificazione ambientale'
+      },
+    ];
+    
+    // Aggiorna i company_name con i dati reali se disponibili
+    const qualifWithNames = mockQualificazioni.map(q => {
+      const company = companies.find(c => c.denominazione === q.company_name);
+      return company ? { ...q, company_id: company.id } : q;
+    });
+    
+    setQualificazioni(qualifWithNames);
+  };
+
   // Handlers
   const handleOpenCompanyModal = (company?: CompanyRow) => {
     setSelectedCompany(company || null);
@@ -402,13 +526,19 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={searchType === 'impresa' ? 'Cerca impresa per nome, P.IVA o CF...' : 'Cerca concessione per impresa, posteggio o tipo...'}
+                  placeholder={
+                    searchType === 'impresa' 
+                      ? 'Cerca impresa per nome, P.IVA o CF...' 
+                      : searchType === 'concessione'
+                        ? 'Cerca concessione per impresa, posteggio o tipo...'
+                        : 'Cerca qualificazione per impresa, tipo o ente...'
+                  }
                   className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setSearchType('impresa'); setSearchQuery(''); }}
+                  onClick={() => { setSearchType('impresa'); setSearchQuery(''); setSelectedCompanyForQualif(null); }}
                   className={`px-4 py-2 rounded-lg transition-colors ${
                     searchType === 'impresa'
                       ? 'bg-blue-600 text-white'
@@ -419,7 +549,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                   Imprese
                 </button>
                 <button
-                  onClick={() => { setSearchType('concessione'); setSearchQuery(''); }}
+                  onClick={() => { setSearchType('concessione'); setSearchQuery(''); setSelectedCompanyForQualif(null); }}
                   className={`px-4 py-2 rounded-lg transition-colors ${
                     searchType === 'concessione'
                       ? 'bg-blue-600 text-white'
@@ -429,20 +559,33 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                   <FileText className="w-4 h-4 inline mr-2" />
                   Concessioni
                 </button>
+                <button
+                  onClick={() => { setSearchType('qualificazione'); setSearchQuery(''); setSelectedCompanyForQualif(null); }}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    searchType === 'qualificazione'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  <FileCheck className="w-4 h-4 inline mr-2" />
+                  Qualificazioni
+                </button>
               </div>
             </div>
             {searchQuery && (
               <div className="mt-2 text-sm text-gray-400">
                 {searchType === 'impresa'
                   ? `${filteredCompanies.length} imprese trovate`
-                  : `${filteredConcessions.length} concessioni trovate`
+                  : searchType === 'concessione'
+                    ? `${filteredConcessions.length} concessioni trovate`
+                    : `${filteredQualificazioni.length} qualificazioni trovate`
                 }
               </div>
             )}
           </div>
 
           {/* Sezione Imprese */}
-          <section className={searchType === 'concessione' ? 'hidden' : ''}>
+          <section className={searchType !== 'impresa' ? 'hidden' : ''}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 <Building2 className="w-5 h-5" />
@@ -482,7 +625,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           </section>
 
           {/* Sezione Concessioni */}
-          <section className={searchType === 'impresa' ? 'hidden' : ''}>
+          <section className={searchType !== 'concessione' ? 'hidden' : ''}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 <FileText className="w-5 h-5" />
@@ -553,6 +696,88 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                 </div>
               </div>
             )}
+          </section>
+
+          {/* Sezione Qualificazioni */}
+          <section className={searchType !== 'qualificazione' ? 'hidden' : ''}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Lista Imprese per selezionare */}
+              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5" />
+                  Seleziona Impresa
+                </h3>
+                <p className="text-sm text-gray-400 mb-4">Clicca su un'impresa per visualizzare le sue qualificazioni</p>
+                <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                  {companies.map((company) => (
+                    <div
+                      key={company.id}
+                      onClick={() => setSelectedCompanyForQualif(company)}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedCompanyForQualif?.id === company.id
+                          ? 'bg-purple-600/30 border border-purple-500'
+                          : 'bg-gray-900/50 hover:bg-gray-800 border border-transparent'
+                      }`}
+                    >
+                      <div className="font-medium text-white">{company.denominazione}</div>
+                      <div className="text-sm text-gray-400">P.IVA: {company.partita_iva}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Qualificazioni dell'impresa selezionata */}
+              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                  <FileCheck className="w-5 h-5" />
+                  Qualificazioni
+                </h3>
+                {!selectedCompanyForQualif ? (
+                  <div className="text-center py-16 text-gray-400">
+                    <FileCheck className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                    <p>Seleziona un'impresa per visualizzare le qualificazioni</p>
+                  </div>
+                ) : filteredQualificazioni.length === 0 ? (
+                  <div className="text-center py-16 text-gray-400">
+                    <AlertCircle className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                    <p>Nessuna qualificazione trovata per {selectedCompanyForQualif.denominazione}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                    {filteredQualificazioni.map((qual) => (
+                      <div key={qual.id} className="bg-gray-900/50 rounded-lg p-4 border border-gray-700">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="font-medium text-white">{qual.tipo}</div>
+                          {qual.stato === 'ATTIVA' && (
+                            <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" /> Attiva
+                            </span>
+                          )}
+                          {qual.stato === 'SCADUTA' && (
+                            <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" /> Scaduta
+                            </span>
+                          )}
+                          {qual.stato === 'IN_VERIFICA' && (
+                            <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> In Verifica
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-400 space-y-1">
+                          <div>Ente: {qual.ente_rilascio}</div>
+                          <div className="flex gap-4">
+                            <span>Rilascio: {new Date(qual.data_rilascio).toLocaleDateString('it-IT')}</span>
+                            <span>Scadenza: {new Date(qual.data_scadenza).toLocaleDateString('it-IT')}</span>
+                          </div>
+                          {qual.note && <div className="text-gray-500 italic mt-2">{qual.note}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
         </>
       )}
