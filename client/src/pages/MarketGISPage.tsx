@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, LayersControl, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, LayersControl, Tooltip, useMap } from 'react-leaflet';
 import { ZoomFontUpdater } from '../components/ZoomFontUpdater';
 import L from 'leaflet';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,17 @@ interface Market {
   total_stalls: number;
   latitude: string;
   longitude: string;
+}
+
+// Componente per centrare la mappa quando cambiano le coordinate
+function SetViewOnChange({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+  return null;
 }
 
 export default function MarketGISPage() {
@@ -295,6 +306,8 @@ export default function MarketGISPage() {
             zoom={17}
             className="h-full w-full"
           >
+            {/* Componente per centrare la mappa quando cambia il mercato */}
+            <SetViewOnChange center={[mapData.center.lat, mapData.center.lng]} />
             <LayersControl position="topright">
               <LayersControl.BaseLayer checked name="🗺️ Stradale">
                 <TileLayer
