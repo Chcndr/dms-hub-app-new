@@ -458,7 +458,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
     try {
       const [stallsRes, mapRes, concessionsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`),
-        fetch(`${API_BASE_URL}/api/gis/market-map`),
+        fetch(`${API_BASE_URL}/api/gis/market-map/${marketId}`),
         fetch(`${API_BASE_URL}/api/markets/${marketCode}/stalls/concessions`)
       ]);
 
