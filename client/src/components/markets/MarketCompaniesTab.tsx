@@ -152,7 +152,7 @@ const STATO_COMPANY_OPTIONS = [
   { value: 'closed', label: 'Chiusa' },
 ];
 
-const FORMA_GIURIDICA_OPTIONS = [
+export const FORMA_GIURIDICA_OPTIONS = [
   { value: '', label: 'Seleziona...' },
   { value: 'SRL', label: 'S.R.L. - Società a Responsabilità Limitata' },
   { value: 'SPA', label: 'S.P.A. - Società per Azioni' },
@@ -163,7 +163,7 @@ const FORMA_GIURIDICA_OPTIONS = [
   { value: 'ALTRO', label: 'Altro' },
 ];
 
-const STATO_IMPRESA_OPTIONS = [
+export const STATO_IMPRESA_OPTIONS = [
   { value: 'ATTIVA', label: 'Attiva' },
   { value: 'CESSATA', label: 'Cessata' },
   { value: 'IN_LIQUIDAZIONE', label: 'In Liquidazione' },

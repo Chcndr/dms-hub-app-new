@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MarketMapComponent } from './MarketMapComponent';
-import { MarketCompaniesTab, CompanyModal, CompanyRow } from './markets/MarketCompaniesTab';
+import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData, FORMA_GIURIDICA_OPTIONS, STATO_IMPRESA_OPTIONS } from './markets/MarketCompaniesTab';
 import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL_STATUS_OPTIONS } from '@/lib/stallStatus';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -829,6 +829,306 @@ function CompanyDetailCard({
 }
 
 /**
+ * Form inline per modifica impresa (38 campi) - versione compatta per colonna destra
+ */
+function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
+  company: CompanyRow & Record<string, any>;
+  marketId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [formData, setFormData] = useState<CompanyFormData>({
+    denominazione: company?.denominazione || '',
+    codice_fiscale: company?.code || company?.codice_fiscale || '',
+    partita_iva: company?.partita_iva || '',
+    numero_rea: company?.numero_rea || '',
+    cciaa_sigla: company?.cciaa_sigla || '',
+    forma_giuridica: company?.forma_giuridica || '',
+    stato_impresa: company?.stato_impresa || 'ATTIVA',
+    indirizzo_via: company?.indirizzo_via || '',
+    indirizzo_civico: company?.indirizzo_civico || '',
+    indirizzo_cap: company?.indirizzo_cap || '',
+    indirizzo_provincia: company?.indirizzo_provincia || '',
+    comune: company?.comune || '',
+    pec: company?.pec || '',
+    referente: company?.referente || '',
+    telefono: company?.telefono || '',
+    codice_ateco: company?.codice_ateco || '',
+    descrizione_ateco: company?.descrizione_ateco || '',
+    stato: company?.stato || 'active',
+    rappresentante_legale_cognome: company?.rappresentante_legale_cognome || '',
+    rappresentante_legale_nome: company?.rappresentante_legale_nome || '',
+    rappresentante_legale_cf: company?.rappresentante_legale_cf || '',
+    rappresentante_legale_data_nascita: company?.rappresentante_legale_data_nascita || '',
+    rappresentante_legale_luogo_nascita: company?.rappresentante_legale_luogo_nascita || '',
+    rappresentante_legale_residenza_via: company?.rappresentante_legale_residenza_via || '',
+    rappresentante_legale_residenza_civico: company?.rappresentante_legale_residenza_civico || '',
+    rappresentante_legale_residenza_cap: company?.rappresentante_legale_residenza_cap || '',
+    rappresentante_legale_residenza_comune: company?.rappresentante_legale_residenza_comune || '',
+    rappresentante_legale_residenza_provincia: company?.rappresentante_legale_residenza_provincia || '',
+    capitale_sociale: company?.capitale_sociale?.toString() || '',
+    numero_addetti: company?.numero_addetti?.toString() || '',
+    sito_web: company?.sito_web || '',
+    data_iscrizione_ri: company?.data_iscrizione_ri || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = {
+        ...formData,
+        capitale_sociale: formData.capitale_sociale ? parseFloat(formData.capitale_sociale) : null,
+        numero_addetti: formData.numero_addetti ? parseInt(formData.numero_addetti) : null,
+        code: formData.codice_fiscale,
+        business_name: formData.denominazione,
+        vat_number: formData.partita_iva,
+        contact_name: formData.referente,
+        phone: formData.telefono,
+        email: formData.referente,
+      };
+      const response = await fetch(`${API_BASE_URL}/api/imprese/${company.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Errore durante il salvataggio');
+      }
+      onSaved();
+    } catch (err: any) {
+      setError(err.message || 'Errore durante il salvataggio');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputClass = "w-full px-2 py-1.5 text-xs bg-[#1a2332] border border-[#14b8a6]/30 rounded text-[#e8fbff] focus:outline-none focus:ring-1 focus:ring-[#14b8a6]";
+  const labelClass = "block text-[10px] font-medium text-[#e8fbff]/70 mb-1";
+  const sectionClass = "text-[10px] font-semibold text-[#14b8a6] uppercase tracking-wide border-b border-[#14b8a6]/20 pb-1 mb-2";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded p-2 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+          <p className="text-red-400 text-[10px]">{error}</p>
+        </div>
+      )}
+
+      {/* IDENTITÀ */}
+      <div>
+        <h4 className={sectionClass}>Identità</h4>
+        <div className="space-y-2">
+          <div>
+            <label className={labelClass}>Denominazione *</label>
+            <input type="text" required value={formData.denominazione} onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })} className={inputClass} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Codice Fiscale *</label>
+              <input type="text" required value={formData.codice_fiscale} onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Partita IVA *</label>
+              <input type="text" required value={formData.partita_iva} onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Numero REA</label>
+              <input type="text" value={formData.numero_rea} onChange={(e) => setFormData({ ...formData, numero_rea: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>CCIAA</label>
+              <input type="text" value={formData.cciaa_sigla} onChange={(e) => setFormData({ ...formData, cciaa_sigla: e.target.value })} className={inputClass} maxLength={5} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Forma Giuridica</label>
+              <select value={formData.forma_giuridica} onChange={(e) => setFormData({ ...formData, forma_giuridica: e.target.value })} className={inputClass}>
+                {FORMA_GIURIDICA_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Stato Impresa</label>
+              <select value={formData.stato_impresa} onChange={(e) => setFormData({ ...formData, stato_impresa: e.target.value })} className={inputClass}>
+                {STATO_IMPRESA_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SEDE LEGALE */}
+      <div>
+        <h4 className={sectionClass}>Sede Legale</h4>
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <label className={labelClass}>Via</label>
+              <input type="text" value={formData.indirizzo_via} onChange={(e) => setFormData({ ...formData, indirizzo_via: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Civico</label>
+              <input type="text" value={formData.indirizzo_civico} onChange={(e) => setFormData({ ...formData, indirizzo_civico: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className={labelClass}>CAP</label>
+              <input type="text" value={formData.indirizzo_cap} onChange={(e) => setFormData({ ...formData, indirizzo_cap: e.target.value })} className={inputClass} maxLength={5} />
+            </div>
+            <div>
+              <label className={labelClass}>Comune</label>
+              <input type="text" value={formData.comune} onChange={(e) => setFormData({ ...formData, comune: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Provincia</label>
+              <input type="text" value={formData.indirizzo_provincia} onChange={(e) => setFormData({ ...formData, indirizzo_provincia: e.target.value.toUpperCase() })} className={inputClass} maxLength={2} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CONTATTI & ATTIVITÀ */}
+      <div>
+        <h4 className={sectionClass}>Contatti & Attività</h4>
+        <div className="space-y-2">
+          <div>
+            <label className={labelClass}>PEC</label>
+            <input type="email" value={formData.pec} onChange={(e) => setFormData({ ...formData, pec: e.target.value })} className={inputClass} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Email</label>
+              <input type="email" value={formData.referente} onChange={(e) => setFormData({ ...formData, referente: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Telefono</label>
+              <input type="tel" value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Codice ATECO</label>
+              <input type="text" value={formData.codice_ateco} onChange={(e) => setFormData({ ...formData, codice_ateco: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Descrizione ATECO</label>
+              <input type="text" value={formData.descrizione_ateco} onChange={(e) => setFormData({ ...formData, descrizione_ateco: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* RAPPRESENTANTE LEGALE */}
+      <div>
+        <h4 className={sectionClass}>Rappresentante Legale</h4>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Cognome</label>
+              <input type="text" value={formData.rappresentante_legale_cognome} onChange={(e) => setFormData({ ...formData, rappresentante_legale_cognome: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Nome</label>
+              <input type="text" value={formData.rappresentante_legale_nome} onChange={(e) => setFormData({ ...formData, rappresentante_legale_nome: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Codice Fiscale</label>
+            <input type="text" value={formData.rappresentante_legale_cf} onChange={(e) => setFormData({ ...formData, rappresentante_legale_cf: e.target.value })} className={inputClass} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Data Nascita</label>
+              <input type="date" value={formData.rappresentante_legale_data_nascita} onChange={(e) => setFormData({ ...formData, rappresentante_legale_data_nascita: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Luogo Nascita</label>
+              <input type="text" value={formData.rappresentante_legale_luogo_nascita} onChange={(e) => setFormData({ ...formData, rappresentante_legale_luogo_nascita: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* RESIDENZA RAPPRESENTANTE */}
+      <div>
+        <h4 className={sectionClass}>Residenza Rappresentante</h4>
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <label className={labelClass}>Via</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_via} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_via: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Civico</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_civico} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_civico: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className={labelClass}>CAP</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_cap} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_cap: e.target.value })} className={inputClass} maxLength={5} />
+            </div>
+            <div>
+              <label className={labelClass}>Comune</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_comune} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_comune: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Provincia</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_provincia} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_provincia: e.target.value.toUpperCase() })} className={inputClass} maxLength={2} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* DATI ECONOMICI */}
+      <div>
+        <h4 className={sectionClass}>Dati Economici</h4>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Capitale Sociale (€)</label>
+              <input type="number" step="0.01" value={formData.capitale_sociale} onChange={(e) => setFormData({ ...formData, capitale_sociale: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Numero Addetti</label>
+              <input type="number" value={formData.numero_addetti} onChange={(e) => setFormData({ ...formData, numero_addetti: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Sito Web</label>
+            <input type="url" value={formData.sito_web} onChange={(e) => setFormData({ ...formData, sito_web: e.target.value })} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Data Iscrizione RI</label>
+            <input type="date" value={formData.data_iscrizione_ri} onChange={(e) => setFormData({ ...formData, data_iscrizione_ri: e.target.value })} className={inputClass} />
+          </div>
+        </div>
+      </div>
+
+      {/* PULSANTI */}
+      <div className="flex gap-2 pt-2 border-t border-[#14b8a6]/20">
+        <Button type="button" variant="outline" size="sm" onClick={onClose} className="flex-1 text-xs border-[#14b8a6]/30 text-[#e8fbff]/70 hover:bg-[#14b8a6]/10">
+          Annulla
+        </Button>
+        <Button type="submit" size="sm" disabled={saving} className="flex-1 text-xs bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white">
+          {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+          Salva
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/**
  * Tab Posteggi con NUOVO LAYOUT:
  * - Mappa rettangolare in alto (full width)
  * - Sotto: Lista posteggi a sinistra (con scroll) + Scheda impresa a destra
@@ -1280,8 +1580,42 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
           </div>
         </div>
 
-        {/* Scheda Impresa - Pulsante per aprire il modal completo */}
-        <div className="h-[450px] flex flex-col bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10 overflow-hidden">
+        {/* Scheda Impresa - Form inline o preview */}
+        <div className="h-[450px] flex flex-col bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10 overflow-hidden relative">
+          {/* Modal inline per modifica impresa */}
+          {showCompanyModal && selectedCompanyForModal && (
+            <div className="absolute inset-0 z-10 bg-[#0b1220] flex flex-col">
+              <div className="sticky top-0 bg-[#0b1220] border-b border-[#14b8a6]/20 px-4 py-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-[#e8fbff]">Modifica Impresa</h3>
+                <button
+                  onClick={() => {
+                    setShowCompanyModal(false);
+                    setSelectedCompanyForModal(null);
+                  }}
+                  className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                <CompanyInlineForm
+                  company={selectedCompanyForModal}
+                  marketId={marketCode}
+                  onClose={() => {
+                    setShowCompanyModal(false);
+                    setSelectedCompanyForModal(null);
+                  }}
+                  onSaved={() => {
+                    setShowCompanyModal(false);
+                    setSelectedCompanyForModal(null);
+                    fetchData();
+                    toast.success('Impresa aggiornata con successo');
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          
           {!selectedStall ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6">
               <MapPin className="h-12 w-12 text-[#14b8a6]/30 mb-4" />
@@ -1412,23 +1746,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
         </div>
       </div>
 
-      {/* Modal Modifica Impresa (completo con 38 campi) */}
-      {showCompanyModal && (
-        <CompanyModal
-          marketId={marketCode}
-          company={selectedCompanyForModal}
-          onClose={() => {
-            setShowCompanyModal(false);
-            setSelectedCompanyForModal(null);
-          }}
-          onSaved={() => {
-            setShowCompanyModal(false);
-            setSelectedCompanyForModal(null);
-            fetchData(); // Ricarica i dati
-            toast.success('Impresa aggiornata con successo');
-          }}
-        />
-      )}
+
     </div>
   );
 }
