@@ -154,7 +154,8 @@ export default function GestioneMercati() {
 
   const fetchMarkets = async () => {
     try {
-     const mapResponse = await fetch(`${API_BASE_URL}/api/gis/market-map/${market.id}`);st data = await response.json();
+     const response = await fetch(`${API_BASE_URL}/api/markets`);
+      const data = await response.json();
       if (data.success) {
         setMarkets(data.data);
         if (data.data.length > 0 && !selectedMarket) {
