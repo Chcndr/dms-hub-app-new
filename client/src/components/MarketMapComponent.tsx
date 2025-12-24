@@ -237,8 +237,8 @@ export function MarketMapComponent({
             />
           )}
 
-          {/* Marker rosso "M" al centro mercato (nascosto in modalità routing) */}
-          {!routeConfig?.enabled && (
+          {/* Marker rosso "M" al centro mercato (nascosto in modalità routing e in vista Italia) */}
+          {!routeConfig?.enabled && !showItalyView && (
             <Marker
               position={mapCenter}
               icon={L.divIcon({
