@@ -327,6 +327,7 @@ function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Mark
   const [stalls, setStalls] = useState<Stall[]>([]);
   // Stato per Vista Italia / Vista Mercato: 'italia' | 'mercato'
   const [viewMode, setViewMode] = useState<'italia' | 'mercato'>('italia');
+  const [viewTrigger, setViewTrigger] = useState(0); // Trigger per forzare flyTo
 
   // Carica i posteggi al mount del componente
   useEffect(() => {
@@ -370,6 +371,7 @@ function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Mark
                 if (activeTab === 'posteggi') {
                   e.preventDefault();
                   setViewMode(viewMode === 'italia' ? 'mercato' : 'italia');
+                  setViewTrigger(prev => prev + 1); // Forza flyTo
                 } else {
                   // Primo click: vai al tab posteggi con vista Italia
                   setViewMode('italia');
@@ -396,7 +398,7 @@ function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Mark
           </TabsContent>
 
           <TabsContent value="posteggi" className="space-y-4">
-            <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} stalls={stalls} setStalls={setStalls} allMarkets={allMarkets} viewMode={viewMode} setViewMode={setViewMode} />
+            <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} stalls={stalls} setStalls={setStalls} allMarkets={allMarkets} viewMode={viewMode} setViewMode={setViewMode} viewTrigger={viewTrigger} setViewTrigger={setViewTrigger} />
           </TabsContent>
 
           <TabsContent value="concessioni" className="space-y-4">
@@ -1149,7 +1151,7 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
  * - Mappa rettangolare in alto (full width)
  * - Sotto: Lista posteggi a sinistra (con scroll) + Scheda impresa a destra
  */
-function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, allMarkets, viewMode, setViewMode }: { marketId: number; marketCode: string; marketCenter: [number, number]; stalls: Stall[]; setStalls: React.Dispatch<React.SetStateAction<Stall[]>>; allMarkets: Market[]; viewMode: 'italia' | 'mercato'; setViewMode: React.Dispatch<React.SetStateAction<'italia' | 'mercato'>> }) {
+function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, allMarkets, viewMode, setViewMode, viewTrigger, setViewTrigger }: { marketId: number; marketCode: string; marketCenter: [number, number]; stalls: Stall[]; setStalls: React.Dispatch<React.SetStateAction<Stall[]>>; allMarkets: Market[]; viewMode: 'italia' | 'mercato'; setViewMode: React.Dispatch<React.SetStateAction<'italia' | 'mercato'>>; viewTrigger: number; setViewTrigger: React.Dispatch<React.SetStateAction<number>> }) {
   const [mapData, setMapData] = useState<MarketMapData | null>(null);
   const [concessionsByStallId, setConcessionsByStallId] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
@@ -1470,9 +1472,11 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 longitude: parseFloat(m.longitude)
               }))}
               showItalyView={viewMode === 'italia'}
+              viewTrigger={viewTrigger}
               onMarketClick={(clickedMarketId) => {
-                // Quando clicchi su un marker, passa a vista mercato
+                // Quando clicchi su un marker, passa a vista mercato e triggera flyTo
                 setViewMode('mercato');
+                setViewTrigger(prev => prev + 1);
               }}
             />
           );

@@ -74,20 +74,21 @@ interface MarketMapComponentProps {
   allMarkets?: Array<{ id: number; name: string; latitude: number; longitude: number }>;
   onMarketClick?: (marketId: number) => void;
   showItalyView?: boolean;
+  viewTrigger?: number; // Trigger per forzare flyTo quando cambia vista
 }
 
 // Controller per centrare la mappa programmaticamente
-function MapCenterController({ center, zoom }: { center: [number, number]; zoom?: number }) {
+function MapCenterController({ center, zoom, trigger }: { center: [number, number]; zoom?: number; trigger?: number }) {
   const map = useMap();
   
   useEffect(() => {
     if (center) {
       map.flyTo(center, zoom || map.getZoom(), {
-        duration: 0.5,
-        easeLinearity: 0.25
+        duration: 2,
+        easeLinearity: 0.1
       });
     }
-  }, [center, zoom, map]);
+  }, [center, zoom, trigger, map]);
   
   return null;
 }
@@ -125,7 +126,8 @@ export function MarketMapComponent({
   // Props per Vista Italia (Gemello Digitale)
   allMarkets = [],
   onMarketClick,
-  showItalyView = false
+  showItalyView = false,
+  viewTrigger = 0
 }: MarketMapComponentProps) {
   
   // Se showItalyView è true e non c'è un center specifico, usa coordinate Italia
@@ -193,6 +195,8 @@ export function MarketMapComponent({
           zoom={zoom}
           scrollWheelZoom={false}
           doubleClickZoom={false}
+          zoomDelta={0.5}
+          zoomSnap={0.5}
           className="h-full w-full"
           style={{ height: '100%', width: '100%' }}
         >
@@ -226,7 +230,7 @@ export function MarketMapComponent({
           <ZoomFontUpdater minZoom={18} baseFontSize={8} scaleFactor={1.5} />
           
           {/* Controller per centrare mappa programmaticamente */}
-          {center && <MapCenterController center={center} zoom={zoom} />}
+          {center && <MapCenterController center={center} zoom={zoom} trigger={viewTrigger} />}
           
           {/* Routing layer (opzionale) */}
           {routeConfig?.enabled && (
