@@ -360,9 +360,11 @@ function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Mark
               value="anagrafica"
               className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
               onClick={() => {
-                // Reset selezione posteggio quando si cambia tab
+                // Reset selezione posteggio e viewMode quando si cambia tab
                 setSelectedStallId(null);
                 setSelectedStallCenter(null);
+                // Reset viewMode a 'italia' così quando torni al tab posteggi parte da Vista Italia
+                setViewMode('italia');
               }}
             >
               <FileText className="mr-2 h-4 w-4" />
@@ -395,9 +397,11 @@ function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Mark
               value="concessioni"
               className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
               onClick={() => {
-                // Reset selezione posteggio quando si cambia tab
+                // Reset selezione posteggio e viewMode quando si cambia tab
                 setSelectedStallId(null);
                 setSelectedStallCenter(null);
+                // Reset viewMode a 'italia' così quando torni al tab posteggi parte da Vista Italia
+                setViewMode('italia');
               }}
             >
               <Users className="mr-2 h-4 w-4" />
