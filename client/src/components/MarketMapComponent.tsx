@@ -419,6 +419,12 @@ export function MarketMapComponent({
           {mapData && mapData.stalls_geojson.features.map((feature, idx) => {
             const props = feature.properties;
             
+            // SKIP: Non renderizzare il poligono "area" del mercato (macchia verde)
+            // Serve solo per calcolare i bounds, non deve essere visualizzato
+            if (props.kind === 'area') {
+              return null;
+            }
+            
             if (idx === 0) {
               console.log('[VERCEL DEBUG] First feature:', {
                 type: feature.geometry.type,
