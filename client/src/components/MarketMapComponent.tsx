@@ -275,6 +275,45 @@ export function MarketMapComponent({
             </Marker>
           )}
 
+          {/* Marker "M" per tutti i mercati (Vista Italia) */}
+          {allMarkets.length > 0 && allMarkets.map((market) => (
+            <Marker
+              key={`market-${market.id}`}
+              position={[market.latitude, market.longitude]}
+              icon={L.divIcon({
+                className: 'market-center-marker',
+                html: `<div style="
+                  background: #ef4444;
+                  color: white;
+                  width: 32px;
+                  height: 32px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 18px;
+                  font-weight: bold;
+                  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                  border: 3px solid white;
+                  cursor: pointer;
+                ">M</div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+              })}
+              eventHandlers={{
+                click: () => onMarketClick?.(market.id)
+              }}
+            >
+              <Popup>
+                <div className="text-sm">
+                  <div className="font-semibold text-base mb-1">📍 {market.name}</div>
+                  <div className="text-gray-600">Lat: {market.latitude.toFixed(6)}</div>
+                  <div className="text-gray-600">Lng: {market.longitude.toFixed(6)}</div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+
           {/* Piazzole (stalls) */}
           {(() => {
             console.log('[VERCEL DEBUG] MarketMapComponent - Rendering', mapData.stalls_geojson.features.length, 'stalls');
