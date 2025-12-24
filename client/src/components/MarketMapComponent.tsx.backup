@@ -46,18 +46,8 @@ interface MapData {
   };
 }
 
-// Interfaccia Market per la vista Italia
-interface MarketInfo {
-  id: number;
-  code: string;
-  name: string;
-  municipality: string;
-  latitude: string;
-  longitude: string;
-}
-
 interface MarketMapComponentProps {
-  mapData?: MapData; // Reso opzionale per vista Italia
+  mapData: MapData;
   center?: [number, number];
   zoom?: number;
   height?: string;
@@ -80,10 +70,6 @@ interface MarketMapComponentProps {
     destination: { lat: number; lng: number };
     mode: 'walking' | 'cycling' | 'driving';
   };
-  // NUOVE PROPS per Vista Italia (Gemello Digitale)
-  allMarkets?: MarketInfo[]; // Lista di tutti i mercati per mostrare marker multipli
-  onMarketClick?: (market: MarketInfo) => void; // Callback quando si clicca su un marker mercato
-  showItalyView?: boolean; // Se true, mostra vista Italia iniziale
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -131,34 +117,16 @@ export function MarketMapComponent({
   refreshKey = 0,
   isSpuntaMode = false,
   onConfirmAssignment,
-  routeConfig,
-  allMarkets = [],
-  onMarketClick,
-  showItalyView = false
+  routeConfig
 }: MarketMapComponentProps) {
   
-  // Coordinate centro Italia per vista nazionale
-  const ITALY_CENTER: [number, number] = [42.5, 12.5];
-  const ITALY_ZOOM = 6;
-  
-  // Determina il centro della mappa
-  // Se showItalyView è true e non c'è un center specifico, usa Italia
-  // Altrimenti usa center passato o mapData.center
-  const mapCenter: [number, number] = center 
-    ? center 
-    : (showItalyView 
-        ? ITALY_CENTER 
-        : (mapData?.center ? [mapData.center.lat, mapData.center.lng] : ITALY_CENTER));
+  const mapCenter: [number, number] = center || [mapData.center.lat, mapData.center.lng];
   
   console.log('[DEBUG MarketMapComponent] RICEVUTO:', {
     refreshKey,
     stallsDataLength: stallsData.length,
     firstStall: stallsData[0],
-    mapDataFeaturesCount: mapData?.stalls_geojson?.features?.length || 0,
-    allMarketsCount: allMarkets.length,
-    showItalyView,
-    center,
-    mapCenter
+    mapDataFeaturesCount: mapData.stalls_geojson.features.length
   });
   
   // Mappa stallsData per accesso rapido
@@ -258,8 +226,8 @@ export function MarketMapComponent({
             />
           )}
 
-          {/* Marker rosso "M" al centro mercato (nascosto in modalità routing e in vista Italia con mercati multipli) */}
-          {!routeConfig?.enabled && !showItalyView && mapData && (
+          {/* Marker rosso "M" al centro mercato (nascosto in modalità routing) */}
+          {!routeConfig?.enabled && (
             <Marker
               position={mapCenter}
               icon={L.divIcon({
@@ -298,73 +266,12 @@ export function MarketMapComponent({
             </Marker>
           )}
 
-          {/* Marker "M" per tutti i mercati (Vista Italia / Gemello Digitale) */}
-          {allMarkets.length > 0 && allMarkets.map((market) => (
-            <Marker
-              key={`market-${market.id}`}
-              position={[parseFloat(market.latitude), parseFloat(market.longitude)]}
-              icon={L.divIcon({
-                className: 'market-center-marker',
-                html: `<div style="
-                  background: #ef4444;
-                  color: white;
-                  width: 32px;
-                  height: 32px;
-                  border-radius: 50%;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-size: 18px;
-                  font-weight: bold;
-                  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-                  border: 3px solid white;
-                  cursor: pointer;
-                ">M</div>`,
-                iconSize: [32, 32],
-                iconAnchor: [16, 16],
-              })}
-              eventHandlers={{
-                click: () => {
-                  console.log('[MarketMapComponent] Click su marker mercato:', market.name);
-                  if (onMarketClick) {
-                    onMarketClick(market);
-                  }
-                }
-              }}
-            >
-              <Popup>
-                <div className="text-sm">
-                  <div className="font-semibold text-base mb-1">
-                    🏪 {market.name}
-                  </div>
-                  <div className="text-gray-600">
-                    {market.municipality}
-                  </div>
-                  <div className="text-gray-500 text-xs mt-1">
-                    Codice: {market.code}
-                  </div>
-                  <button 
-                    className="mt-2 w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white text-xs font-medium py-1.5 px-3 rounded transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onMarketClick) {
-                        onMarketClick(market);
-                      }
-                    }}
-                  >
-                    🔍 Vai al Mercato
-                  </button>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-
-          {/* Piazzole (stalls) - renderizzate solo se mapData esiste */}
-          {mapData && mapData.stalls_geojson && (() => {
+          {/* Piazzole (stalls) */}
+          {(() => {
             console.log('[VERCEL DEBUG] MarketMapComponent - Rendering', mapData.stalls_geojson.features.length, 'stalls');
             return null;
           })()}
-          {mapData && mapData.stalls_geojson && mapData.stalls_geojson.features.map((feature, idx) => {
+          {mapData.stalls_geojson.features.map((feature, idx) => {
             const props = feature.properties;
             
             if (idx === 0) {

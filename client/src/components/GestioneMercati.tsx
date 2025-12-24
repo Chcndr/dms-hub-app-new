@@ -313,7 +313,7 @@ export default function GestioneMercati() {
 
       {/* Dettaglio Mercato Selezionato */}
       {selectedMarket && (
-        <MarketDetail market={selectedMarket} />
+        <MarketDetail market={selectedMarket} allMarkets={markets} />
       )}
     </div>
   );
@@ -322,7 +322,7 @@ export default function GestioneMercati() {
 /**
  * Dettaglio mercato con tab
  */
-function MarketDetail({ market }: { market: Market }) {
+function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Market[] }) {
   const [activeTab, setActiveTab] = useState("anagrafica");
   const [stalls, setStalls] = useState<Stall[]>([]);
 
@@ -381,7 +381,7 @@ function MarketDetail({ market }: { market: Market }) {
           </TabsContent>
 
           <TabsContent value="posteggi" className="space-y-4">
-            <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} stalls={stalls} setStalls={setStalls} />
+            <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} stalls={stalls} setStalls={setStalls} allMarkets={allMarkets} />
           </TabsContent>
 
           <TabsContent value="concessioni" className="space-y-4">
@@ -1134,7 +1134,7 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
  * - Mappa rettangolare in alto (full width)
  * - Sotto: Lista posteggi a sinistra (con scroll) + Scheda impresa a destra
  */
-function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: { marketId: number; marketCode: string; marketCenter: [number, number]; stalls: Stall[]; setStalls: React.Dispatch<React.SetStateAction<Stall[]>> }) {
+function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, allMarkets }: { marketId: number; marketCode: string; marketCenter: [number, number]; stalls: Stall[]; setStalls: React.Dispatch<React.SetStateAction<Stall[]>>; allMarkets: Market[] }) {
   const [mapData, setMapData] = useState<MarketMapData | null>(null);
   const [concessionsByStallId, setConcessionsByStallId] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
@@ -1142,6 +1142,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
   const [editData, setEditData] = useState<Partial<Stall>>({});
   const [selectedStallId, setSelectedStallId] = useState<number | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+  const [mapZoom, setMapZoom] = useState<number>(6); // Inizia con zoom Italia
+  const [showItalyView, setShowItalyView] = useState<boolean>(true); // Inizia con vista Italia
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const [isSpuntaMode, setIsSpuntaMode] = useState(false);
@@ -1416,7 +1418,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
           {isMapExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </Button>
 
-        {mapData && (() => {
+        {(() => {
           const stallsDataForMap = stalls.map(s => ({
             id: s.id,
             number: s.number,
@@ -1424,12 +1426,24 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
             type: s.type,
             vendor_name: s.vendor_business_name || undefined
           }));
+          
+          // Handler per click su marker mercato (Vista Italia)
+          const handleMarketClick = (clickedMarket: { id: number; latitude: string; longitude: string }) => {
+            console.log('[PosteggiTab] Click su mercato:', clickedMarket);
+            // Disattiva vista Italia
+            setShowItalyView(false);
+            // Imposta il centro sul mercato cliccato
+            setMapCenter([parseFloat(clickedMarket.latitude), parseFloat(clickedMarket.longitude)]);
+            // Imposta zoom alto per vedere i posteggi
+            setMapZoom(19);
+          };
+          
           return (
             <MarketMapComponent
               refreshKey={mapRefreshKey}
-              mapData={mapData}
-              center={mapCenter}
-              zoom={19}
+              mapData={showItalyView ? undefined : mapData}
+              center={showItalyView ? undefined : (mapCenter || marketCenter)}
+              zoom={showItalyView ? 6 : mapZoom}
               height="100%"
               isSpuntaMode={isSpuntaMode}
               onConfirmAssignment={handleConfirmAssignment}
@@ -1447,7 +1461,10 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
                 }
               }}
               selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
-              stallsData={stallsDataForMap}
+              stallsData={showItalyView ? [] : stallsDataForMap}
+              allMarkets={showItalyView ? allMarkets : []}
+              onMarketClick={handleMarketClick}
+              showItalyView={showItalyView}
             />
           );
         })()}

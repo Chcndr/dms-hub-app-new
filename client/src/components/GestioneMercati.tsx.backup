@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,13 +15,18 @@ import {
   X,
   Maximize2,
   Minimize2,
-  Send
+  Send,
+  Phone,
+  Mail,
+  User,
+  ExternalLink,
+  AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MarketMapComponent } from './MarketMapComponent';
-import { MarketCompaniesTab } from './markets/MarketCompaniesTab';
+import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData, FORMA_GIURIDICA_OPTIONS, STATO_IMPRESA_OPTIONS } from './markets/MarketCompaniesTab';
 import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL_STATUS_OPTIONS } from '@/lib/stallStatus';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -72,6 +77,7 @@ interface Stall {
   concession_type: string | null;
   vendor_business_name: string | null;
   vendor_contact_name: string | null;
+  impresa_id: number | null;
 }
 
 interface Vendor {
@@ -121,21 +127,28 @@ interface MarketMapData {
   };
 }
 
-/**
- * Componente per centrare la mappa su un posteggio
- */
-function MapCenterController({ center, zoom }: { center: [number, number] | null; zoom?: number }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (center) {
-      map.flyTo(center, zoom || 19, {
-        duration: 1.0
-      });
-    }
-  }, [center, zoom, map]);
-  
-  return null;
+// Interfaccia per i dati completi dell'impresa
+interface CompanyDetails {
+  id: string;
+  code: string;
+  denominazione: string;
+  partita_iva?: string;
+  codice_fiscale?: string;
+  numero_rea?: string;
+  cciaa_sigla?: string;
+  forma_giuridica?: string;
+  stato_impresa?: string;
+  indirizzo_via?: string;
+  indirizzo_civico?: string;
+  indirizzo_cap?: string;
+  indirizzo_provincia?: string;
+  comune?: string;
+  pec?: string;
+  referente?: string;
+  telefono?: string;
+  codice_ateco?: string;
+  descrizione_ateco?: string;
+  stato?: string;
 }
 
 /**
@@ -435,8 +448,691 @@ function AnagraficaTab({ market }: { market: Market }) {
   );
 }
 
+// Costanti per i select del form impresa
+const FORMA_GIURIDICA_OPTIONS = [
+  { value: '', label: 'Seleziona...' },
+  { value: 'SRL', label: 'S.R.L.' },
+  { value: 'SPA', label: 'S.P.A.' },
+  { value: 'SNC', label: 'S.N.C.' },
+  { value: 'SAS', label: 'S.A.S.' },
+  { value: 'DI', label: 'Ditta Individuale' },
+  { value: 'COOP', label: 'Cooperativa' },
+  { value: 'ALTRO', label: 'Altro' },
+];
+
+const STATO_IMPRESA_OPTIONS = [
+  { value: 'Attiva', label: 'Attiva' },
+  { value: 'Cessata', label: 'Cessata' },
+  { value: 'In Liquidazione', label: 'In Liquidazione' },
+  { value: 'Sospesa', label: 'Sospesa' },
+];
+
 /**
- * Tab Posteggi con tabella modificabile E MAPPA GIS
+ * Componente Scheda Impresa - mostra il form completo di modifica impresa
+ * come nel tab Imprese/Concessioni
+ */
+function CompanyDetailCard({ 
+  stall, 
+  concessionData,
+  onClose 
+}: { 
+  stall: Stall | null;
+  concessionData: any;
+  onClose: () => void;
+}) {
+  const [companyData, setCompanyData] = useState<CompanyDetails | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    denominazione: '',
+    codice_fiscale: '',
+    partita_iva: '',
+    numero_rea: '',
+    cciaa_sigla: '',
+    forma_giuridica: '',
+    stato_impresa: 'Attiva',
+    indirizzo_via: '',
+    indirizzo_civico: '',
+    indirizzo_cap: '',
+    indirizzo_provincia: '',
+    comune: '',
+    pec: '',
+    referente: '',
+    telefono: '',
+    codice_ateco: '',
+    descrizione_ateco: '',
+  });
+
+  // Carica i dati dell'impresa quando cambia il posteggio selezionato
+  useEffect(() => {
+    if (stall?.vendor_id) {
+      fetchCompanyData(stall.vendor_id);
+    } else if (concessionData?.companyId) {
+      fetchCompanyData(concessionData.companyId);
+    } else {
+      setCompanyData(null);
+    }
+  }, [stall?.vendor_id, concessionData?.companyId]);
+
+  const fetchCompanyData = async (companyId: number | string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/imprese/${companyId}`);
+      const data = await response.json();
+      if (data.success && data.data) {
+        setCompanyData(data.data);
+        setFormData({
+          denominazione: data.data.denominazione || '',
+          codice_fiscale: data.data.codice_fiscale || '',
+          partita_iva: data.data.partita_iva || '',
+          numero_rea: data.data.numero_rea || '',
+          cciaa_sigla: data.data.cciaa_sigla || '',
+          forma_giuridica: data.data.forma_giuridica || '',
+          stato_impresa: data.data.stato_impresa || 'Attiva',
+          indirizzo_via: data.data.indirizzo_via || '',
+          indirizzo_civico: data.data.indirizzo_civico || '',
+          indirizzo_cap: data.data.indirizzo_cap || '',
+          indirizzo_provincia: data.data.indirizzo_provincia || '',
+          comune: data.data.comune || '',
+          pec: data.data.pec || '',
+          referente: data.data.email || data.data.referente || '',
+          telefono: data.data.telefono || '',
+          codice_ateco: data.data.codice_ateco || '',
+          descrizione_ateco: data.data.descrizione_ateco || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching company data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!companyData?.id) return;
+    setSaving(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/imprese/${companyData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Impresa aggiornata con successo');
+      } else {
+        toast.error('Errore durante il salvataggio');
+      }
+    } catch (error) {
+      console.error('Error saving company:', error);
+      toast.error('Errore durante il salvataggio');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!stall) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10">
+        <MapPin className="h-12 w-12 text-[#14b8a6]/30 mb-4" />
+        <p className="text-[#e8fbff]/50 text-sm">
+          Seleziona un posteggio dalla lista per visualizzare i dettagli dell'impresa
+        </p>
+      </div>
+    );
+  }
+
+  const hasCompany = stall.vendor_business_name || concessionData;
+
+  if (!hasCompany) {
+    return (
+      <div className="h-full flex flex-col bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10">
+        <div className="flex items-center justify-between p-4 border-b border-[#14b8a6]/20">
+          <h3 className="text-sm font-semibold text-[#e8fbff]">
+            Posteggio {stall.number}
+          </h3>
+          <button onClick={onClose} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+          <Building2 className="h-12 w-12 text-[#10b981]/30 mb-4" />
+          <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30 mb-2">
+            {getStallStatusLabel(stall.status)}
+          </Badge>
+          <p className="text-[#e8fbff]/50 text-sm">
+            Nessuna impresa associata a questo posteggio
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10">
+        <Loader2 className="h-8 w-8 animate-spin text-[#14b8a6]" />
+        <p className="text-[#e8fbff]/50 text-sm mt-2">Caricamento dati impresa...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full flex flex-col bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-3 border-b border-[#14b8a6]/20 bg-[#14b8a6]/5">
+        <div>
+          <h3 className="text-sm font-semibold text-[#e8fbff]">
+            Modifica Impresa
+          </h3>
+        </div>
+        <button onClick={onClose} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Form Content - scrollabile */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* IDENTITÀ */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wide border-b border-[#14b8a6]/20 pb-1">
+            Identità
+          </h4>
+          
+          <div>
+            <label className="block text-xs text-[#e8fbff]/70 mb-1">Denominazione *</label>
+            <input
+              type="text"
+              value={formData.denominazione}
+              onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })}
+              className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Codice Fiscale *</label>
+              <input
+                type="text"
+                value={formData.codice_fiscale}
+                onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Partita IVA *</label>
+              <input
+                type="text"
+                value={formData.partita_iva}
+                onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Numero REA</label>
+              <input
+                type="text"
+                value={formData.numero_rea}
+                onChange={(e) => setFormData({ ...formData, numero_rea: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+                placeholder="es. GR-123456"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">CCIAA</label>
+              <input
+                type="text"
+                value={formData.cciaa_sigla}
+                onChange={(e) => setFormData({ ...formData, cciaa_sigla: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+                placeholder="es. GR"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Forma Giuridica</label>
+              <select
+                value={formData.forma_giuridica}
+                onChange={(e) => setFormData({ ...formData, forma_giuridica: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+              >
+                {FORMA_GIURIDICA_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Stato Impresa</label>
+              <select
+                value={formData.stato_impresa}
+                onChange={(e) => setFormData({ ...formData, stato_impresa: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+              >
+                {STATO_IMPRESA_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* SEDE LEGALE */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wide border-b border-[#14b8a6]/20 pb-1">
+            Sede Legale
+          </h4>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Via</label>
+              <input
+                type="text"
+                value={formData.indirizzo_via}
+                onChange={(e) => setFormData({ ...formData, indirizzo_via: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Civico</label>
+              <input
+                type="text"
+                value={formData.indirizzo_civico}
+                onChange={(e) => setFormData({ ...formData, indirizzo_civico: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">CAP</label>
+              <input
+                type="text"
+                value={formData.indirizzo_cap}
+                onChange={(e) => setFormData({ ...formData, indirizzo_cap: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+                maxLength={5}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Provincia</label>
+              <input
+                type="text"
+                value={formData.indirizzo_provincia}
+                onChange={(e) => setFormData({ ...formData, indirizzo_provincia: e.target.value.toUpperCase() })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+                maxLength={2}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs text-[#e8fbff]/70 mb-1">Comune</label>
+            <input
+              type="text"
+              value={formData.comune}
+              onChange={(e) => setFormData({ ...formData, comune: e.target.value })}
+              className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+            />
+          </div>
+        </div>
+
+        {/* CONTATTI & ATTIVITÀ */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wide border-b border-[#14b8a6]/20 pb-1">
+            Contatti & Attività
+          </h4>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Email/Referente</label>
+              <input
+                type="email"
+                value={formData.referente}
+                onChange={(e) => setFormData({ ...formData, referente: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">Telefono</label>
+              <input
+                type="tel"
+                value={formData.telefono}
+                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer con pulsante Salva */}
+      <div className="p-3 border-t border-[#14b8a6]/20 bg-[#0b1220]/50">
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
+        >
+          {saving ? (
+            <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Salvataggio...</>
+          ) : (
+            <><Save className="h-4 w-4 mr-2" /> Salva Modifiche</>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Form inline per modifica impresa (38 campi) - versione compatta per colonna destra
+ */
+function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
+  company: CompanyRow & Record<string, any>;
+  marketId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [formData, setFormData] = useState<CompanyFormData>({
+    denominazione: company?.denominazione || '',
+    codice_fiscale: company?.code || company?.codice_fiscale || '',
+    partita_iva: company?.partita_iva || '',
+    numero_rea: company?.numero_rea || '',
+    cciaa_sigla: company?.cciaa_sigla || '',
+    forma_giuridica: company?.forma_giuridica || '',
+    stato_impresa: company?.stato_impresa || 'ATTIVA',
+    indirizzo_via: company?.indirizzo_via || '',
+    indirizzo_civico: company?.indirizzo_civico || '',
+    indirizzo_cap: company?.indirizzo_cap || '',
+    indirizzo_provincia: company?.indirizzo_provincia || '',
+    comune: company?.comune || '',
+    pec: company?.pec || '',
+    referente: company?.referente || '',
+    telefono: company?.telefono || '',
+    codice_ateco: company?.codice_ateco || '',
+    descrizione_ateco: company?.descrizione_ateco || '',
+    stato: company?.stato || 'active',
+    rappresentante_legale_cognome: company?.rappresentante_legale_cognome || '',
+    rappresentante_legale_nome: company?.rappresentante_legale_nome || '',
+    rappresentante_legale_cf: company?.rappresentante_legale_cf || '',
+    rappresentante_legale_data_nascita: company?.rappresentante_legale_data_nascita || '',
+    rappresentante_legale_luogo_nascita: company?.rappresentante_legale_luogo_nascita || '',
+    rappresentante_legale_residenza_via: company?.rappresentante_legale_residenza_via || '',
+    rappresentante_legale_residenza_civico: company?.rappresentante_legale_residenza_civico || '',
+    rappresentante_legale_residenza_cap: company?.rappresentante_legale_residenza_cap || '',
+    rappresentante_legale_residenza_comune: company?.rappresentante_legale_residenza_comune || '',
+    rappresentante_legale_residenza_provincia: company?.rappresentante_legale_residenza_provincia || '',
+    capitale_sociale: company?.capitale_sociale?.toString() || '',
+    numero_addetti: company?.numero_addetti?.toString() || '',
+    sito_web: company?.sito_web || '',
+    data_iscrizione_ri: company?.data_iscrizione_ri || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = {
+        ...formData,
+        capitale_sociale: formData.capitale_sociale ? parseFloat(formData.capitale_sociale) : null,
+        numero_addetti: formData.numero_addetti ? parseInt(formData.numero_addetti) : null,
+        code: formData.codice_fiscale,
+        business_name: formData.denominazione,
+        vat_number: formData.partita_iva,
+        contact_name: formData.referente,
+        phone: formData.telefono,
+        email: formData.referente,
+      };
+      const response = await fetch(`${API_BASE_URL}/api/imprese/${company.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Errore durante il salvataggio');
+      }
+      onSaved();
+    } catch (err: any) {
+      setError(err.message || 'Errore durante il salvataggio');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputClass = "w-full px-2 py-1.5 text-xs bg-[#1a2332] border border-[#14b8a6]/30 rounded text-[#e8fbff] focus:outline-none focus:ring-1 focus:ring-[#14b8a6]";
+  const labelClass = "block text-[10px] font-medium text-[#e8fbff]/70 mb-1";
+  const sectionClass = "text-[10px] font-semibold text-[#14b8a6] uppercase tracking-wide border-b border-[#14b8a6]/20 pb-1 mb-2";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded p-2 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+          <p className="text-red-400 text-[10px]">{error}</p>
+        </div>
+      )}
+
+      {/* IDENTITÀ */}
+      <div>
+        <h4 className={sectionClass}>Identità</h4>
+        <div className="space-y-2">
+          <div>
+            <label className={labelClass}>Denominazione *</label>
+            <input type="text" required value={formData.denominazione} onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })} className={inputClass} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Codice Fiscale *</label>
+              <input type="text" required value={formData.codice_fiscale} onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Partita IVA *</label>
+              <input type="text" required value={formData.partita_iva} onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Numero REA</label>
+              <input type="text" value={formData.numero_rea} onChange={(e) => setFormData({ ...formData, numero_rea: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>CCIAA</label>
+              <input type="text" value={formData.cciaa_sigla} onChange={(e) => setFormData({ ...formData, cciaa_sigla: e.target.value })} className={inputClass} maxLength={5} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Forma Giuridica</label>
+              <select value={formData.forma_giuridica} onChange={(e) => setFormData({ ...formData, forma_giuridica: e.target.value })} className={inputClass}>
+                {FORMA_GIURIDICA_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Stato Impresa</label>
+              <select value={formData.stato_impresa} onChange={(e) => setFormData({ ...formData, stato_impresa: e.target.value })} className={inputClass}>
+                {STATO_IMPRESA_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SEDE LEGALE */}
+      <div>
+        <h4 className={sectionClass}>Sede Legale</h4>
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <label className={labelClass}>Via</label>
+              <input type="text" value={formData.indirizzo_via} onChange={(e) => setFormData({ ...formData, indirizzo_via: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Civico</label>
+              <input type="text" value={formData.indirizzo_civico} onChange={(e) => setFormData({ ...formData, indirizzo_civico: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className={labelClass}>CAP</label>
+              <input type="text" value={formData.indirizzo_cap} onChange={(e) => setFormData({ ...formData, indirizzo_cap: e.target.value })} className={inputClass} maxLength={5} />
+            </div>
+            <div>
+              <label className={labelClass}>Comune</label>
+              <input type="text" value={formData.comune} onChange={(e) => setFormData({ ...formData, comune: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Provincia</label>
+              <input type="text" value={formData.indirizzo_provincia} onChange={(e) => setFormData({ ...formData, indirizzo_provincia: e.target.value.toUpperCase() })} className={inputClass} maxLength={2} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CONTATTI & ATTIVITÀ */}
+      <div>
+        <h4 className={sectionClass}>Contatti & Attività</h4>
+        <div className="space-y-2">
+          <div>
+            <label className={labelClass}>PEC</label>
+            <input type="email" value={formData.pec} onChange={(e) => setFormData({ ...formData, pec: e.target.value })} className={inputClass} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Email</label>
+              <input type="email" value={formData.referente} onChange={(e) => setFormData({ ...formData, referente: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Telefono</label>
+              <input type="tel" value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Codice ATECO</label>
+              <input type="text" value={formData.codice_ateco} onChange={(e) => setFormData({ ...formData, codice_ateco: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Descrizione ATECO</label>
+              <input type="text" value={formData.descrizione_ateco} onChange={(e) => setFormData({ ...formData, descrizione_ateco: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* RAPPRESENTANTE LEGALE */}
+      <div>
+        <h4 className={sectionClass}>Rappresentante Legale</h4>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Cognome</label>
+              <input type="text" value={formData.rappresentante_legale_cognome} onChange={(e) => setFormData({ ...formData, rappresentante_legale_cognome: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Nome</label>
+              <input type="text" value={formData.rappresentante_legale_nome} onChange={(e) => setFormData({ ...formData, rappresentante_legale_nome: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Codice Fiscale</label>
+            <input type="text" value={formData.rappresentante_legale_cf} onChange={(e) => setFormData({ ...formData, rappresentante_legale_cf: e.target.value })} className={inputClass} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Data Nascita</label>
+              <input type="date" value={formData.rappresentante_legale_data_nascita} onChange={(e) => setFormData({ ...formData, rappresentante_legale_data_nascita: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Luogo Nascita</label>
+              <input type="text" value={formData.rappresentante_legale_luogo_nascita} onChange={(e) => setFormData({ ...formData, rappresentante_legale_luogo_nascita: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* RESIDENZA RAPPRESENTANTE */}
+      <div>
+        <h4 className={sectionClass}>Residenza Rappresentante</h4>
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <label className={labelClass}>Via</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_via} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_via: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Civico</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_civico} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_civico: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className={labelClass}>CAP</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_cap} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_cap: e.target.value })} className={inputClass} maxLength={5} />
+            </div>
+            <div>
+              <label className={labelClass}>Comune</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_comune} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_comune: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Provincia</label>
+              <input type="text" value={formData.rappresentante_legale_residenza_provincia} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_provincia: e.target.value.toUpperCase() })} className={inputClass} maxLength={2} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* DATI ECONOMICI */}
+      <div>
+        <h4 className={sectionClass}>Dati Economici</h4>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Capitale Sociale (€)</label>
+              <input type="number" step="0.01" value={formData.capitale_sociale} onChange={(e) => setFormData({ ...formData, capitale_sociale: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Numero Addetti</label>
+              <input type="number" value={formData.numero_addetti} onChange={(e) => setFormData({ ...formData, numero_addetti: e.target.value })} className={inputClass} />
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Sito Web</label>
+            <input type="url" value={formData.sito_web} onChange={(e) => setFormData({ ...formData, sito_web: e.target.value })} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Data Iscrizione RI</label>
+            <input type="date" value={formData.data_iscrizione_ri} onChange={(e) => setFormData({ ...formData, data_iscrizione_ri: e.target.value })} className={inputClass} />
+          </div>
+        </div>
+      </div>
+
+      {/* PULSANTI */}
+      <div className="flex gap-2 pt-2 border-t border-[#14b8a6]/20">
+        <Button type="button" variant="outline" size="sm" onClick={onClose} className="flex-1 text-xs border-[#14b8a6]/30 text-[#e8fbff]/70 hover:bg-[#14b8a6]/10">
+          Annulla
+        </Button>
+        <Button type="submit" size="sm" disabled={saving} className="flex-1 text-xs bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white">
+          {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+          Salva
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * Tab Posteggi con NUOVO LAYOUT:
+ * - Mappa rettangolare in alto (full width)
+ * - Sotto: Lista posteggi a sinistra (con scroll) + Scheda impresa a destra
  */
 function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: { marketId: number; marketCode: string; marketCenter: [number, number]; stalls: Stall[]; setStalls: React.Dispatch<React.SetStateAction<Stall[]>> }) {
   const [mapData, setMapData] = useState<MarketMapData | null>(null);
@@ -449,6 +1145,9 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const [isSpuntaMode, setIsSpuntaMode] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [selectedCompanyForModal, setSelectedCompanyForModal] = useState<CompanyRow | null>(null);
+  const listContainerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchData();
@@ -600,11 +1299,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
       const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
       
       setMapCenter([centerLat, centerLng]);
-      toast.success(`Centrato su posteggio ${stall.number}`);
     }
   };
-
-  // Funzioni di mappatura stati spostate in @/lib/stallStatus
 
   if (loading) {
     return (
@@ -620,6 +1316,9 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
 
   // Crea una mappa per lookup veloce stall by number
   const stallsByNumber = new Map(stalls.map(s => [s.number, s]));
+
+  // Trova il posteggio selezionato
+  const selectedStall = stalls.find(s => s.id === selectedStallId) || null;
 
   return (
     <div className="space-y-4">
@@ -706,193 +1405,334 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls }: 
         </div>
       )}
 
-      {/* Layout Tabella + Mappa */}
-      <div className={`grid ${isMapExpanded ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-        {/* Tabella Posteggi */}
-        {!isMapExpanded && (
-          <div className="border border-[#14b8a6]/20 rounded-lg">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
-                  <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
-                    <TableHead className="text-[#e8fbff]/70">N°</TableHead>
-                    <TableHead className="text-[#e8fbff]/70">Tipo</TableHead>
-                    <TableHead className="text-[#e8fbff]/70">Stato</TableHead>
-                    <TableHead className="text-[#e8fbff]/70">Intestatario</TableHead>
-                    <TableHead className="text-[#e8fbff]/70">Impresa / Concessione</TableHead>
-                    <TableHead className="text-right text-[#e8fbff]/70">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stalls.map((stall) => (
-                    <TableRow 
-                      key={stall.id}
-                      className={`cursor-pointer hover:bg-[#14b8a6]/10 border-[#14b8a6]/10 ${
-                        selectedStallId === stall.id ? 'bg-[#14b8a6]/20' : ''
-                      }`}
-                      onClick={() => handleRowClick(stall)}
-                    >
-                      <TableCell className="font-medium text-[#e8fbff]">{stall.number}</TableCell>
-                      <TableCell>
-                        {editingId === stall.id ? (
-                          <Select
-                            value={editData.type}
-                            onValueChange={(value) => setEditData({ ...editData, type: value })}
-                          >
-                            <SelectTrigger className="w-[100px] bg-[#0b1220] border-[#14b8a6]/30">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="fisso">Fisso</SelectItem>
-                              <SelectItem value="spunta">Spunta</SelectItem>
-                              <SelectItem value="libero">Libero</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Badge variant="outline" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
-                            {stall.type}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingId === stall.id ? (
-                          <Select
-                            value={editData.status}
-                            onValueChange={(value) => setEditData({ ...editData, status: value })}
-                          >
-                            <SelectTrigger className="w-[100px] bg-[#0b1220] border-[#14b8a6]/30">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {STALL_STATUS_OPTIONS.map(option => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Badge variant="default" className={`${getStallStatusClasses(stall.status)} text-xs`}>
-                            {getStallStatusLabel(stall.status)}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {stall.vendor_business_name ? (
-                          <div>
-                            <p className="font-medium text-[#e8fbff] text-xs">{stall.vendor_business_name}</p>
-                          </div>
-                        ) : (
-                          <span className="text-[#e8fbff]/50 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {concessionsByStallId[stall.number] ? (
-                          <div>
-                            <p className="font-medium text-[#e8fbff] text-xs">{concessionsByStallId[stall.number].companyName}</p>
-                            <p className="text-[#e8fbff]/60 text-xs">{concessionsByStallId[stall.number].tipoConcessione}</p>
-                          </div>
-                        ) : (
-                          <span className="text-[#e8fbff]/50 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {editingId === stall.id ? (
-                          <div className="flex justify-end gap-1">
-                            <Button 
-                              size="sm" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSave(stall.id);
-                              }}
-                              className="bg-[#10b981]/20 hover:bg-[#10b981]/30 text-[#10b981] border-[#10b981]/30 h-7 w-7 p-0"
-                            >
-                              <Save className="h-3 w-3" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCancel();
-                              }}
-                              className="bg-[#ef4444]/20 hover:bg-[#ef4444]/30 text-[#ef4444] border-[#ef4444]/30 h-7 w-7 p-0"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
+      {/* NUOVO LAYOUT: Mappa in alto (rettangolare) */}
+      <div className={`relative border border-[#14b8a6]/20 rounded-lg overflow-hidden ${isMapExpanded ? 'h-[850px]' : 'h-[600px]'}`}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="absolute top-2 right-2 z-[1000] bg-[#0b1220]/90 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
+          onClick={() => setIsMapExpanded(!isMapExpanded)}
+        >
+          {isMapExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
+
+        {mapData && (() => {
+          const stallsDataForMap = stalls.map(s => ({
+            id: s.id,
+            number: s.number,
+            status: s.status,
+            type: s.type,
+            vendor_name: s.vendor_business_name || undefined
+          }));
+          return (
+            <MarketMapComponent
+              refreshKey={mapRefreshKey}
+              mapData={mapData}
+              center={mapCenter}
+              zoom={19}
+              height="100%"
+              isSpuntaMode={isSpuntaMode}
+              onConfirmAssignment={handleConfirmAssignment}
+              onStallClick={(stallNumber) => {
+                const dbStall = stallsByNumber.get(stallNumber);
+                if (dbStall) {
+                  setSelectedStallId(dbStall.id);
+                  // Scroll alla riga nella lista
+                  setTimeout(() => {
+                    const row = document.querySelector(`[data-stall-id="${dbStall.id}"]`);
+                    if (row && listContainerRef.current) {
+                      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }, 100);
+                }
+              }}
+              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
+              stallsData={stallsDataForMap}
+            />
+          );
+        })()}
+      </div>
+
+      {/* NUOVO LAYOUT: Lista posteggi (sinistra) + Scheda impresa (destra) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Lista Posteggi con scroll interno */}
+        <div className="border border-[#14b8a6]/20 rounded-lg overflow-hidden">
+          <div className="bg-[#0b1220]/50 px-4 py-2 border-b border-[#14b8a6]/20">
+            <h3 className="text-sm font-semibold text-[#e8fbff]">Lista Posteggi</h3>
+          </div>
+          <div ref={listContainerRef} className="max-h-[400px] overflow-y-auto">
+            <Table>
+              <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
+                <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
+                  <TableHead className="text-[#e8fbff]/70 text-xs">N°</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs">Tipo</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs">Stato</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs">Intestatario</TableHead>
+                  <TableHead className="text-right text-[#e8fbff]/70 text-xs">Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stalls.map((stall) => (
+                  <TableRow 
+                    key={stall.id}
+                    data-stall-id={stall.id}
+                    className={`cursor-pointer hover:bg-[#14b8a6]/10 border-[#14b8a6]/10 ${
+                      selectedStallId === stall.id ? 'bg-[#14b8a6]/20' : ''
+                    }`}
+                    onClick={() => handleRowClick(stall)}
+                  >
+                    <TableCell className="font-medium text-[#e8fbff] text-sm">{stall.number}</TableCell>
+                    <TableCell>
+                      {editingId === stall.id ? (
+                        <Select
+                          value={editData.type}
+                          onValueChange={(value) => setEditData({ ...editData, type: value })}
+                        >
+                          <SelectTrigger className="w-[80px] bg-[#0b1220] border-[#14b8a6]/30 h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fisso">Fisso</SelectItem>
+                            <SelectItem value="spunta">Spunta</SelectItem>
+                            <SelectItem value="libero">Libero</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="outline" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
+                          {stall.type}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingId === stall.id ? (
+                        <Select
+                          value={editData.status}
+                          onValueChange={(value) => setEditData({ ...editData, status: value })}
+                        >
+                          <SelectTrigger className="w-[100px] bg-[#0b1220] border-[#14b8a6]/30 h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STALL_STATUS_OPTIONS.map(option => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="default" className={`${getStallStatusClasses(stall.status)} text-xs`}>
+                          {getStallStatusLabel(stall.status)}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {stall.vendor_business_name ? (
+                        <p className="font-medium text-[#e8fbff] text-xs truncate max-w-[120px]">{stall.vendor_business_name}</p>
+                      ) : concessionsByStallId[stall.number] ? (
+                        <p className="font-medium text-[#e8fbff] text-xs truncate max-w-[120px]">{concessionsByStallId[stall.number].companyName}</p>
+                      ) : (
+                        <span className="text-[#e8fbff]/50 text-xs">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {editingId === stall.id ? (
+                        <div className="flex justify-end gap-1">
                           <Button 
                             size="sm" 
-                            variant="ghost" 
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleEdit(stall);
+                              handleSave(stall.id);
                             }}
-                            className="hover:bg-[#14b8a6]/20 text-[#14b8a6] h-7 w-7 p-0"
+                            className="bg-[#10b981]/20 hover:bg-[#10b981]/30 text-[#10b981] border-[#10b981]/30 h-6 w-6 p-0"
                           >
-                            <Edit className="h-3 w-3" />
+                            <Save className="h-3 w-3" />
                           </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancel();
+                            }}
+                            className="bg-[#ef4444]/20 hover:bg-[#ef4444]/30 text-[#ef4444] border-[#ef4444]/30 h-6 w-6 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(stall);
+                          }}
+                          className="hover:bg-[#14b8a6]/20 text-[#14b8a6] h-6 w-6 p-0"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        )}
+        </div>
 
-        {/* Mappa GIS */}
-        <div className={`relative border border-[#14b8a6]/20 rounded-lg overflow-hidden ${isMapExpanded ? 'h-[800px]' : 'h-[600px]'}`}>
-          <Button
-            size="sm"
-            variant="outline"
-            className="absolute top-2 right-2 z-[1000] bg-[#0b1220]/90 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
-            onClick={() => setIsMapExpanded(!isMapExpanded)}
-          >
-            {isMapExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </Button>
+        {/* Scheda Impresa - Form inline o preview */}
+        <div className="h-[450px] flex flex-col bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10 overflow-hidden relative">
+          {/* Modal inline per modifica impresa */}
+          {showCompanyModal && selectedCompanyForModal && (
+            <CompanyModal
+              marketId={marketCode}
+              company={selectedCompanyForModal}
+              inline={true}
+              onClose={() => {
+                setShowCompanyModal(false);
+                setSelectedCompanyForModal(null);
+              }}
+              onSaved={() => {
+                setShowCompanyModal(false);
+                setSelectedCompanyForModal(null);
+                fetchData();
+                toast.success('Impresa aggiornata con successo');
+              }}
+            />
+          )}
+          
+          {!selectedStall ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-6">
+              <MapPin className="h-12 w-12 text-[#14b8a6]/30 mb-4" />
+              <p className="text-[#e8fbff]/50 text-sm">
+                Seleziona un posteggio dalla lista o dalla mappa per visualizzare i dettagli dell'impresa
+              </p>
+            </div>
+          ) : !selectedStall.vendor_business_name && !concessionsByStallId[selectedStall.number] ? (
+            <div className="h-full flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b border-[#14b8a6]/20">
+                <h3 className="text-sm font-semibold text-[#e8fbff]">
+                  Posteggio {selectedStall.number}
+                </h3>
+                <button onClick={() => setSelectedStallId(null)} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+                <Building2 className="h-12 w-12 text-[#10b981]/30 mb-4" />
+                <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30 mb-2">
+                  {getStallStatusLabel(selectedStall.status)}
+                </Badge>
+                <p className="text-[#e8fbff]/50 text-sm">
+                  Nessuna impresa associata a questo posteggio
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b border-[#14b8a6]/20 bg-[#14b8a6]/5">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#e8fbff]">
+                    Posteggio {selectedStall.number}
+                  </h3>
+                  <Badge className={`${getStallStatusClasses(selectedStall.status)} text-xs mt-1`}>
+                    {getStallStatusLabel(selectedStall.status)}
+                  </Badge>
+                </div>
+                <button onClick={() => setSelectedStallId(null)} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* Nome Impresa */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building2 className="h-4 w-4 text-[#14b8a6]" />
+                    <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Impresa</span>
+                  </div>
+                  <p className="text-[#e8fbff] font-semibold">
+                    {concessionsByStallId[selectedStall.number]?.companyName || selectedStall.vendor_business_name || 'N/A'}
+                  </p>
+                </div>
 
-          {mapData && (() => {
-            const stallsDataForMap = stalls.map(s => ({
-              id: s.id,
-              number: s.number,
-              status: s.status,
-              type: s.type,
-              vendor_name: s.vendor_business_name || undefined
-            }));
-            console.log('[DEBUG render] Passando a MarketMapComponent:', {
-              refreshKey: mapRefreshKey,
-              stallsDataLength: stallsDataForMap.length,
-              firstStall: stallsDataForMap[0],
-              mapDataExists: !!mapData
-            });
-            return (
-              <MarketMapComponent
-                refreshKey={mapRefreshKey}
-                mapData={mapData}
-                center={mapCenter}
-                zoom={19}
-                height="100%"
-                isSpuntaMode={isSpuntaMode}
-                onConfirmAssignment={handleConfirmAssignment}
-                onStallClick={(stallNumber) => {
-                  const dbStall = stallsByNumber.get(stallNumber);
-                  if (dbStall) {
-                    setSelectedStallId(dbStall.id);
-                    // Scroll alla riga nella tabella
-                    const row = document.querySelector(`[data-stall-id="${dbStall.id}"]`);
-                    row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }
-                }}
-                selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
-                stallsData={stallsDataForMap}
-              />
-            );
-          })()}
+                {/* Tipo Concessione */}
+                {concessionsByStallId[selectedStall.number]?.tipoConcessione && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="h-4 w-4 text-[#8b5cf6]" />
+                      <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Concessione</span>
+                    </div>
+                    <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
+                      {concessionsByStallId[selectedStall.number].tipoConcessione}
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Referente */}
+                {selectedStall.vendor_contact_name && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="h-4 w-4 text-[#f59e0b]" />
+                      <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Referente</span>
+                    </div>
+                    <p className="text-[#e8fbff] text-sm">{selectedStall.vendor_contact_name}</p>
+                  </div>
+                )}
+
+                {/* Tipo Posteggio */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4 text-[#8b5cf6]" />
+                    <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Tipo Posteggio</span>
+                  </div>
+                  <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
+                    {selectedStall.type}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Pulsante per aprire il modal completo */}
+              <div className="p-4 border-t border-[#14b8a6]/20 bg-[#0b1220]/50">
+                <Button
+                  onClick={async () => {
+                    // Carica i dati completi dell'impresa e apri il modal
+                    const companyId = selectedStall.impresa_id || concessionsByStallId[selectedStall.number]?.companyId;
+                    if (companyId) {
+                      try {
+                        const response = await fetch(`${API_BASE_URL}/api/imprese/${companyId}`);
+                        const data = await response.json();
+                        if (data.success && data.data) {
+                          setSelectedCompanyForModal({
+                            id: data.data.id,
+                            code: data.data.codice_fiscale || data.data.code,
+                            denominazione: data.data.denominazione,
+                            partita_iva: data.data.partita_iva,
+                            referente: data.data.referente || data.data.email,
+                            telefono: data.data.telefono,
+                            stato: data.data.stato || 'active',
+                            ...data.data
+                          });
+                          setShowCompanyModal(true);
+                        }
+                      } catch (error) {
+                        console.error('Error loading company:', error);
+                        toast.error('Errore nel caricamento dell\'impresa');
+                      }
+                    }
+                  }}
+                  className="w-full bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
+                >
+                  <Edit className="h-4 w-4 mr-2" /> Modifica Impresa (38 campi)
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+
     </div>
   );
 }
