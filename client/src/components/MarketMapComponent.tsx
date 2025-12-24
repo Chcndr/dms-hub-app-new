@@ -128,7 +128,8 @@ export function MarketMapComponent({
   showItalyView = false
 }: MarketMapComponentProps) {
   
-  const mapCenter: [number, number] = center || [mapData.center.lat, mapData.center.lng];
+  // Se showItalyView è true e non c'è un center specifico, usa coordinate Italia
+  const mapCenter: [number, number] = center || (showItalyView ? [42.5, 12.5] : [mapData.center.lat, mapData.center.lng]);
   
   console.log('[DEBUG MarketMapComponent] RICEVUTO:', {
     refreshKey,
