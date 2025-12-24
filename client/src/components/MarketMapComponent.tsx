@@ -121,7 +121,11 @@ export function MarketMapComponent({
   refreshKey = 0,
   isSpuntaMode = false,
   onConfirmAssignment,
-  routeConfig
+  routeConfig,
+  // Props per Vista Italia (Gemello Digitale)
+  allMarkets = [],
+  onMarketClick,
+  showItalyView = false
 }: MarketMapComponentProps) {
   
   const mapCenter: [number, number] = center || [mapData.center.lat, mapData.center.lng];
