@@ -76,6 +76,7 @@ interface MarketMapComponentProps {
   showItalyView?: boolean;
   viewTrigger?: number; // Trigger per forzare flyTo quando cambia vista
   marketCenterFixed?: [number, number]; // Centro fisso del mercato per marker M (non si sposta con selezione posteggio)
+  selectedStallCenter?: [number, number]; // Centro del posteggio selezionato per pan mappa
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -144,6 +145,33 @@ function MapCenterController({ center, zoom, trigger, bounds, isMarketView }: Ma
   return null;
 }
 
+// Controller per centrare mappa su posteggio selezionato (pan senza animazione lunga)
+function StallCenterController({ stallCenter }: { stallCenter?: [number, number] }) {
+  const map = useMap();
+  const lastCenterRef = React.useRef<string | null>(null);
+  
+  useEffect(() => {
+    if (!stallCenter) return;
+    
+    // Crea una chiave unica per questo centro
+    const centerKey = `${stallCenter[0].toFixed(6)},${stallCenter[1].toFixed(6)}`;
+    
+    // Evita di ri-centrare se è lo stesso punto
+    if (lastCenterRef.current === centerKey) return;
+    lastCenterRef.current = centerKey;
+    
+    console.log('[StallCenterController] Centrando su posteggio:', stallCenter);
+    
+    // Pan veloce verso il posteggio con zoom appropriato
+    map.flyTo(stallCenter, 19, {
+      duration: 0.8, // Animazione veloce
+      easeLinearity: 0.5
+    });
+  }, [stallCenter, map]);
+  
+  return null;
+}
+
 /**
  * Componente Mappa GIS Riusabile
  * 
@@ -179,7 +207,8 @@ export function MarketMapComponent({
   onMarketClick,
   showItalyView = false,
   viewTrigger = 0,
-  marketCenterFixed
+  marketCenterFixed,
+  selectedStallCenter
 }: MarketMapComponentProps) {
   
   // Se showItalyView è true e non c'è un center specifico, usa coordinate Italia
@@ -316,7 +345,7 @@ export function MarketMapComponent({
           {/* Componente per aggiornare font size dinamicamente con zoom */}
           <ZoomFontUpdater minZoom={18} baseFontSize={8} scaleFactor={1.5} />
           
-          {/* Controller per centrare mappa programmaticamente */}
+          {/* Controller per centrare mappa programmaticamente (cambio vista Italia/Mercato) */}
           <MapCenterController 
             center={mapCenter} 
             zoom={zoom} 
@@ -324,6 +353,9 @@ export function MarketMapComponent({
             bounds={marketBounds || undefined}
             isMarketView={!showItalyView}
           />
+          
+          {/* Controller per centrare su posteggio selezionato dalla lista */}
+          <StallCenterController stallCenter={selectedStallCenter} />
           
           {/* Routing layer (opzionale) */}
           {routeConfig?.enabled && (
@@ -426,11 +458,15 @@ export function MarketMapComponent({
           {mapData && mapData.stalls_geojson.features.map((feature, idx) => {
             const props = feature.properties;
             
-            // SKIP: Non renderizzare il poligono "area" del mercato (macchia verde)
-            // Serve solo per calcolare i bounds, non deve essere visualizzato
-            // Filtra per kind='area' OPPURE se non ha numero posteggio (probabilmente è un'area)
-            if (props.kind === 'area' || props.type === 'mercato' || !props.number) {
-              console.log('[DEBUG] Skipping non-stall feature:', props);
+            // SKIP: Renderizza SOLO i posteggi (kind='slot' con numero)
+            // Filtra via tutti gli altri poligoni (area mercato, confini, ecc.)
+            // Questo elimina la macchia verde/gialla/rosa
+            const isValidStall = props.kind === 'slot' && props.number;
+            if (!isValidStall) {
+              // Log solo se ha proprietà interessanti (non loggare ogni feature vuota)
+              if (props.kind || props.type || props.number) {
+                console.log('[DEBUG] Skipping non-slot feature:', props.kind, props.type, props.number);
+              }
               return null;
             }
             
@@ -478,15 +514,21 @@ export function MarketMapComponent({
               console.log('[VERCEL DEBUG] First polygon color:', fillColor);
             }
             
+            // Colore blu ciano per posteggio selezionato
+            const selectedColor = '#00bcd4'; // Ciano
+            const actualFillColor = isSelected ? selectedColor : fillColor;
+            const actualBorderColor = isSelected ? '#0097a7' : fillColor; // Bordo più scuro se selezionato
+            
             return (
               <React.Fragment key={`stall-${props.number}-${dbStall?.status || props.status}`}>
                 <Polygon
                   positions={positions}
+                  className={isSelected ? 'selected-stall-pulse' : ''}
                   pathOptions={{
-                    color: fillColor,
-                    fillColor: fillColor,
+                    color: actualBorderColor,
+                    fillColor: actualFillColor,
                     fillOpacity: isSelected ? 0.9 : 0.7,
-                    weight: isSelected ? 3 : 2,
+                    weight: isSelected ? 4 : 2,
                   }}
                   eventHandlers={{
                     click: () => {

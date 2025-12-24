@@ -262,3 +262,34 @@ body.modal-open, body.widget-open {
   box-sizing: border-box !important;
   max-width: 100% !important;
 }
+
+
+/* ===== ANIMAZIONE POSTEGGIO SELEZIONATO ===== */
+/* Effetto pulsante per il posteggio selezionato sulla mappa */
+@keyframes stall-pulse {
+  0%, 100% {
+    stroke-width: 4;
+    stroke-opacity: 1;
+    fill-opacity: 0.9;
+  }
+  50% {
+    stroke-width: 6;
+    stroke-opacity: 0.8;
+    fill-opacity: 0.7;
+  }
+}
+
+.selected-stall-pulse {
+  animation: stall-pulse 1.5s ease-in-out infinite;
+}
+
+/* Effetto glow per il posteggio selezionato */
+.selected-stall-pulse path {
+  filter: drop-shadow(0 0 8px #00bcd4) drop-shadow(0 0 16px #00bcd4);
+}
+
+/* Leaflet polygon con classe selected */
+.leaflet-interactive.selected-stall-pulse {
+  animation: stall-pulse 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px #00bcd4) drop-shadow(0 0 12px rgba(0, 188, 212, 0.5));
+}

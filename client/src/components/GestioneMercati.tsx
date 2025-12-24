@@ -1158,7 +1158,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<Stall>>({});
   const [selectedStallId, setSelectedStallId] = useState<number | null>(null);
-  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+  const [selectedStallCenter, setSelectedStallCenter] = useState<[number, number] | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const [isSpuntaMode, setIsSpuntaMode] = useState(false);
@@ -1315,7 +1315,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
       const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
       
-      setMapCenter([centerLat, centerLng]);
+      setSelectedStallCenter([centerLat, centerLng]);
     }
   };
 
@@ -1445,7 +1445,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             <MarketMapComponent
               refreshKey={mapRefreshKey}
               mapData={mapData}  // Passa sempre mapData così i posteggi sono visibili durante l'animazione
-              center={viewMode === 'mercato' ? (mapCenter || marketCenter) : [42.5, 12.5] as [number, number]}
+              center={viewMode === 'mercato' ? marketCenter : [42.5, 12.5] as [number, number]}
               zoom={viewMode === 'mercato' ? 17 : 6}
               height="100%"
               isSpuntaMode={isSpuntaMode}
@@ -1474,6 +1474,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
               showItalyView={viewMode === 'italia'}
               viewTrigger={viewTrigger}
               marketCenterFixed={marketCenter}
+              selectedStallCenter={selectedStallCenter || undefined}
               onMarketClick={(clickedMarketId) => {
                 // Quando clicchi su un marker, passa a vista mercato e triggera flyTo
                 setViewMode('mercato');
