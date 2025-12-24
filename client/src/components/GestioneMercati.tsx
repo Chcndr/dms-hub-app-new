@@ -325,6 +325,8 @@ export default function GestioneMercati() {
 function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Market[] }) {
   const [activeTab, setActiveTab] = useState("anagrafica");
   const [stalls, setStalls] = useState<Stall[]>([]);
+  // Stato per Vista Italia / Vista Mercato: 'italia' | 'mercato'
+  const [viewMode, setViewMode] = useState<'italia' | 'mercato'>('italia');
 
   // Carica i posteggi al mount del componente
   useEffect(() => {
@@ -363,9 +365,22 @@ function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Mark
             <TabsTrigger 
               value="posteggi"
               className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
+              onClick={(e) => {
+                // Se siamo già nel tab posteggi, toggle tra vista Italia e vista Mercato
+                if (activeTab === 'posteggi') {
+                  e.preventDefault();
+                  setViewMode(viewMode === 'italia' ? 'mercato' : 'italia');
+                } else {
+                  // Primo click: vai al tab posteggi con vista Italia
+                  setViewMode('italia');
+                }
+              }}
             >
               <MapPin className="mr-2 h-4 w-4" />
-              Posteggi
+              {activeTab === 'posteggi' 
+                ? (viewMode === 'italia' ? 'Vista Mercato' : 'Vista Italia')
+                : 'Vista Italia'
+              }
             </TabsTrigger>
             <TabsTrigger 
               value="concessioni"
@@ -381,7 +396,7 @@ function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Mark
           </TabsContent>
 
           <TabsContent value="posteggi" className="space-y-4">
-            <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} stalls={stalls} setStalls={setStalls} allMarkets={allMarkets} />
+            <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} stalls={stalls} setStalls={setStalls} allMarkets={allMarkets} viewMode={viewMode} setViewMode={setViewMode} />
           </TabsContent>
 
           <TabsContent value="concessioni" className="space-y-4">
@@ -1134,7 +1149,7 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
  * - Mappa rettangolare in alto (full width)
  * - Sotto: Lista posteggi a sinistra (con scroll) + Scheda impresa a destra
  */
-function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, allMarkets }: { marketId: number; marketCode: string; marketCenter: [number, number]; stalls: Stall[]; setStalls: React.Dispatch<React.SetStateAction<Stall[]>>; allMarkets: Market[] }) {
+function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, allMarkets, viewMode, setViewMode }: { marketId: number; marketCode: string; marketCenter: [number, number]; stalls: Stall[]; setStalls: React.Dispatch<React.SetStateAction<Stall[]>>; allMarkets: Market[]; viewMode: 'italia' | 'mercato'; setViewMode: React.Dispatch<React.SetStateAction<'italia' | 'mercato'>> }) {
   const [mapData, setMapData] = useState<MarketMapData | null>(null);
   const [concessionsByStallId, setConcessionsByStallId] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
@@ -1427,9 +1442,9 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           return (
             <MarketMapComponent
               refreshKey={mapRefreshKey}
-              mapData={mapData}
-              center={mapCenter}
-              zoom={19}
+              mapData={viewMode === 'mercato' ? mapData : null}
+              center={viewMode === 'mercato' ? mapCenter : null}
+              zoom={viewMode === 'mercato' ? 19 : 6}
               height="100%"
               isSpuntaMode={isSpuntaMode}
               onConfirmAssignment={handleConfirmAssignment}
@@ -1454,6 +1469,11 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 latitude: parseFloat(m.latitude),
                 longitude: parseFloat(m.longitude)
               }))}
+              showItalyView={viewMode === 'italia'}
+              onMarketClick={(clickedMarketId) => {
+                // Quando clicchi su un marker, passa a vista mercato
+                setViewMode('mercato');
+              }}
             />
           );
         })()}
