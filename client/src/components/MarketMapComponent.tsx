@@ -104,11 +104,18 @@ function MapCenterController({ center, zoom, trigger, bounds, isMarketView }: Ma
       if (isMarketView && bounds) {
         // Vista Mercato: usa fitBounds con i corner del mercato
         console.log('[MapCenterController] Avvio flyToBounds verso bounds mercato');
-        map.flyToBounds(bounds, {
+        // Calcola il livello di zoom ottimale per i bounds
+        const targetZoom = map.getBoundsZoom(bounds, false, [30, 30]);
+        // Forza uno zoom leggermente maggiore (+1) per garantire visibilità numeri
+        // ma non superare maxZoom 19
+        const forcedZoom = Math.min(targetZoom + 1, 19);
+        
+        console.log('[MapCenterController] Zoom calcolato:', targetZoom, 'Zoom forzato:', forcedZoom);
+
+        // Usa flyTo al centro dei bounds con lo zoom forzato
+        map.flyTo(bounds.getCenter(), forcedZoom, {
           duration: 6,
-          easeLinearity: 0.25,
-          padding: [30, 30], // Padding per non tagliare i bordi
-          maxZoom: 19 // Limite massimo zoom
+          easeLinearity: 0.25
         });
       } else if (center) {
         // Vista Italia: usa flyTo con centro e zoom fisso
