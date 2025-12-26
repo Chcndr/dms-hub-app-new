@@ -1754,7 +1754,7 @@ function ConcessionModal({ marketId, concession, companies, stalls, onClose, onS
               >
                 <option value="">Seleziona posteggio...</option>
                 {stalls.map((stall) => (
-                  <option key={stall.id} value={stall.code}>
+                  <option key={stall.id} value={stall.id}>
                     {stall.code}
                   </option>
                 ))}
