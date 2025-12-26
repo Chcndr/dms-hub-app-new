@@ -1654,6 +1654,17 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Integrazioni</span>
             </button>
             <button
+              onClick={() => setActiveTab('docs')}
+              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                activeTab === 'docs'
+                  ? 'bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg'
+                  : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
+              }`}
+            >
+              <FileText className="h-6 w-6" />
+              <span className="text-xs font-medium">Documentazione</span>
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
                 activeTab === 'settings'
