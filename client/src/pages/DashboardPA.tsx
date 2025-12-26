@@ -3882,11 +3882,42 @@ export default function DashboardPA() {
 
           {/* TAB 19: REPORT & DOCUMENTAZIONE */}
           <TabsContent value="reports" className="space-y-6">
-            <Card className="bg-[#1a2332] border-[#a855f7]/30">
+            {/* SEZIONE REPORT INTERATTIVO (Sito Integrato) */}
+            <Card className="bg-[#1a2332] border-[#a855f7]/30 overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-[#a855f7]" />
+                    Analisi Sistema MioHub - Report Interattivo
+                  </CardTitle>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-[#a855f7] text-[#a855f7] hover:bg-[#a855f7]/10"
+                    onClick={() => window.open('/report/index.html', '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Apri a schermo intero
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="w-full h-[800px] bg-black/20">
+                  <iframe 
+                    src="/report/index.html" 
+                    className="w-full h-full border-0"
+                    title="MioHub Analysis Report"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* SEZIONE DOCUMENTAZIONE */}
+            <Card className="bg-[#1a2332] border-[#06b6d4]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <FileBarChart className="h-5 w-5 text-[#a855f7]" />
-                  Report & Documentazione Sistema
+                  <FileText className="h-5 w-5 text-[#06b6d4]" />
+                  Documentazione Tecnica & Blueprint
                 </CardTitle>
               </CardHeader>
               <CardContent>
