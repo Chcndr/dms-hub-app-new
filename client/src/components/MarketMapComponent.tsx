@@ -111,7 +111,7 @@ function MapCenterController({ center, zoom, trigger, bounds, isMarketView }: Ma
         const targetZoom = map.getBoundsZoom(bounds, false, [30, 30]);
         // Forza uno zoom leggermente maggiore (+1) per garantire visibilità numeri
         // ma non superare maxZoom 19
-        const forcedZoom = Math.min(targetZoom + 1, 19);
+        const forcedZoom = Math.min(targetZoom, 19);
         
         console.log('[MapCenterController] Zoom calcolato:', targetZoom, 'Zoom forzato:', forcedZoom);
 
@@ -724,17 +724,7 @@ export function MarketMapComponent({
                           </a>
                         )}
 
-                        {/* Pulsante Vai a Vetrina Editor (Sempre visibile se c'è ID) */}
-                        {props.id && (
-                          <a 
-                            href={`https://editor.mihub.it/stall/${props.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block w-full text-center bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-medium py-2 px-4 rounded transition-colors"
-                          >
-                            ✏️ Vai a Vetrina Editor
-                          </a>
-                        )}
+
                       </div>
                     )}
                   </Popup>
