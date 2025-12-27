@@ -45,6 +45,8 @@ export type CompanyRow = {
   referente?: string;
   telefono?: string;
   stato?: "active" | "suspended" | "closed";
+  concessioni?: { id: number; mercato: string; posteggio_code: string; data_scadenza: string; stato: string }[];
+  autorizzazioni?: { id: number; numero: string; ente: string; stato: string }[];
 };
 
 type ConcessionRow = {
@@ -292,6 +294,8 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           : (v.email || ''),
         telefono: v.telefono,
         stato: v.stato_impresa,
+        concessioni: v.concessioni_attive || [],
+        autorizzazioni: v.autorizzazioni_attive || [],
         // Tutti gli altri campi per il modal di modifica
         numero_rea: v.numero_rea,
         cciaa_sigla: v.cciaa_sigla,
@@ -843,6 +847,24 @@ function CompanyCard({ company, onEdit }: CompanyCardProps) {
             <span className="text-gray-300">{company.telefono}</span>
           </div>
         )}
+        
+        {/* Badge Concessioni e Autorizzazioni */}
+        <div className="flex flex-wrap gap-2 pt-2">
+          {company.autorizzazioni && company.autorizzazioni.length > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-md">
+              <FileBadge className="w-3 h-3" />
+              Autorizzato
+            </span>
+          )}
+          
+          {company.concessioni && company.concessioni.map((conc, idx) => (
+            <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-md">
+              <MapPin className="w-3 h-3" />
+              {conc.mercato}: {conc.posteggio_code}
+            </span>
+          ))}
+        </div>
+
         <div className="flex items-center gap-2 pt-2">
           {getStatoBadge(company.stato)}
         </div>
