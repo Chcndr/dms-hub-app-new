@@ -348,7 +348,20 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         }
         const json = await response.json();
         if (json.success && Array.isArray(json.data)) {
-          setConcessions(json.data);
+          const mappedData = json.data.map((c: any) => ({
+            id: c.id,
+            stall_id: c.stall_id,
+            stall_code: c.stall_number || c.stall_code || 'N/A',
+            company_id: c.vendor_id || c.company_id,
+            company_name: c.vendor_business_name || c.company_name || 'N/A',
+            tipo_concessione: c.type || c.tipo_concessione || 'N/A',
+            valida_dal: c.valid_from || c.valida_dal,
+            valida_al: c.valid_to || c.valida_al,
+            stato: c.status || (
+              (c.valid_to && new Date(c.valid_to) < new Date()) ? 'SCADUTA' : 'ATTIVA'
+            )
+          }));
+          setConcessions(mappedData);
         } else {
           setConcessions([]);
         }
@@ -370,7 +383,22 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       }
       
       console.log('[MarketCompaniesTab] fetchConcessions: caricate', json.data.length, 'concessioni');
-      setConcessions(json.data);
+      
+      const mappedData = json.data.map((c: any) => ({
+        id: c.id,
+        stall_id: c.stall_id,
+        stall_code: c.stall_number || c.stall_code || 'N/A',
+        company_id: c.vendor_id || c.company_id,
+        company_name: c.vendor_business_name || c.company_name || 'N/A',
+        tipo_concessione: c.type || c.tipo_concessione || 'N/A',
+        valida_dal: c.valid_from || c.valida_dal,
+        valida_al: c.valid_to || c.valida_al,
+        stato: c.status || (
+          (c.valid_to && new Date(c.valid_to) < new Date()) ? 'SCADUTA' : 'ATTIVA'
+        )
+      }));
+      
+      setConcessions(mappedData);
     } catch (err) {
       console.error('[MarketCompaniesTab] fetchConcessions error:', err);
       setError('Impossibile caricare le concessioni');
