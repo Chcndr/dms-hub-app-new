@@ -116,14 +116,14 @@ function MapCenterController({ center, zoom, trigger, bounds, isMarketView }: Ma
 
         // Usa flyTo al centro dei bounds con lo zoom forzato
         map.flyTo(bounds.getCenter(), forcedZoom, {
-          duration: 6,
+          duration: 1.5,
           easeLinearity: 0.25
         });
       } else if (center) {
         // Vista Italia: usa flyTo con centro e zoom fisso
         console.log('[MapCenterController] Avvio flyTo verso Italia:', center, 'zoom:', zoom);
         map.flyTo(center, zoom || 6, {
-          duration: 6,
+          duration: 1.5,
           easeLinearity: 0.25
         });
       }
@@ -144,7 +144,7 @@ function MapCenterController({ center, zoom, trigger, bounds, isMarketView }: Ma
       setTimeout(() => {
         isAnimatingRef.current = false;
         map.off('moveend', onMoveEnd);
-      }, 7000);
+      }, 2000);
     }
     
     // Aggiorna sempre il ref del trigger

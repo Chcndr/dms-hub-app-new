@@ -1320,7 +1320,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
     if (selectedStallId === stall.id) {
       setSelectedStallId(null);
       setSelectedStallCenter(null);
-      // Rimosso setViewTrigger per evitare reload/distacco. Il reset è solo visivo (rimozione highlight).
+      // Ripristino reset vista ma con animazione ottimizzata (vedi MarketMapComponent)
+      setViewTrigger(prev => prev + 1);
       return;
     }
     

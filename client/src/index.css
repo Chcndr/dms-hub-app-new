@@ -269,16 +269,16 @@ body.modal-open, body.widget-open {
 /* Colore: Magenta/Fucsia flash (#ff00ff) per massima visibilità */
 @keyframes stall-flash {
   0%, 100% {
-    stroke-width: 5;
+    stroke: #ff00ff;
+    stroke-width: 4px;
     stroke-opacity: 1;
-    fill-opacity: 1;
-    filter: drop-shadow(0 0 10px #ff00ff) drop-shadow(0 0 20px #ff00ff);
+    fill-opacity: 0.9;
   }
   50% {
-    stroke-width: 8;
+    stroke: #ffffff;
+    stroke-width: 6px;
     stroke-opacity: 1;
-    fill-opacity: 0.6;
-    filter: drop-shadow(0 0 20px #ff00ff) drop-shadow(0 0 40px #ff00ff) drop-shadow(0 0 60px #ff00ff);
+    fill-opacity: 0.4;
   }
 }
 
@@ -289,5 +289,5 @@ body.modal-open, body.widget-open {
 /* Leaflet polygon con classe selected - forza animazione */
 .leaflet-interactive.selected-stall-pulse {
   animation: stall-flash 0.8s ease-in-out infinite !important;
-  filter: drop-shadow(0 0 15px #ff00ff) drop-shadow(0 0 30px rgba(255, 0, 255, 0.7)) !important;
+  /* Rimosso filter pesante per performance su iPad */
 }
