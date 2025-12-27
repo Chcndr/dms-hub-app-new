@@ -241,6 +241,15 @@ export function MarketMapComponent({
   // Se mapData è null (vista Italia), usa coordinate Italia come fallback
   const mapCenter: [number, number] = center || (showItalyView || !mapData ? [42.5, 12.5] : [mapData.center.lat, mapData.center.lng]);
   
+  // Stato locale per tracciare se l'animazione è in corso
+  const [isMapAnimating, setIsMapAnimating] = React.useState(false);
+  const { setAnimating } = useAnimation();
+
+  // Sincronizza stato locale con contesto globale
+  React.useEffect(() => {
+    setAnimating(isMapAnimating);
+  }, [isMapAnimating, setAnimating]);
+
   // Calcola bounds dinamici dal GeoJSON (area mercato o tutti i posteggi)
   const marketBounds = React.useMemo(() => {
     if (!mapData?.stalls_geojson?.features?.length) return null;
@@ -482,8 +491,7 @@ export function MarketMapComponent({
             return null;
           })()}
           {/* Layer Macchia Verde (Area Mercato) - Renderizza PRIMA dei posteggi */}
-          {/* NASCONDI L'AREA VERDE DURANTE L'ANIMAZIONE per evitare glitch grafici */}
-          {mapData && !showItalyView && !isMapAnimating && mapData.stalls_geojson.features
+          {mapData && !showItalyView && mapData.stalls_geojson.features
             .filter(f => (f.properties?.kind === 'area' || f.properties?.type === 'mercato') && f.geometry.type === 'Polygon')
             .map((feature, idx) => (
               <Polygon

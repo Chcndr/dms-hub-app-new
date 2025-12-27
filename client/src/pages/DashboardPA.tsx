@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { PanicButton } from '@/components/PanicButton';
 import { useLocation } from 'wouter';
+import { useAnimation } from '@/contexts/AnimationContext';
 import { 
   Users, TrendingUp, Store, ShoppingCart, Leaf, MapPin, 
   Activity, BarChart3, PieChart, ArrowUpRight, ArrowDownRight, ArrowDown,
@@ -955,8 +956,12 @@ export default function DashboardPA() {
   }, []);
   
   // Simula aggiornamento real-time
+  const { isAnimating } = useAnimation();
+
   useEffect(() => {
     const interval = setInterval(() => {
+      if (isAnimating) return; // PAUSA se c'è animazione mappa in corso
+      
       setRealtimeData(prev => ({
         ...prev,
         activeUsers: prev.activeUsers + Math.floor(Math.random() * 10 - 5),
@@ -965,7 +970,7 @@ export default function DashboardPA() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isAnimating]);
 
   const [location, setLocation] = useLocation();
   
