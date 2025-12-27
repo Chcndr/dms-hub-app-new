@@ -31,6 +31,7 @@ import GuardianLogsSection from '@/components/GuardianLogsSection';
 import ImpreseQualificazioniPanel from '@/components/ImpreseQualificazioniPanel';
 import { MarketCompaniesTab } from '@/components/markets/MarketCompaniesTab';
 import { NativeReportComponent } from '@/components/NativeReportComponent';
+import { LegacyReportCards } from '@/components/LegacyReportCards';
 import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView';
 import { SharedWorkspace } from '@/components/SharedWorkspace';
 import NotificationsPanel from '@/components/NotificationsPanel';
@@ -3888,7 +3889,17 @@ export default function DashboardPA() {
 
           {/* TAB 19: REPORT & DOCUMENTAZIONE */}
           <TabsContent value="reports" className="space-y-6">
-            <NativeReportComponent />
+            {/* Sezione Originale Ripristinata: Card e Link Documentazione */}
+            <LegacyReportCards />
+            
+            {/* Nuova Sezione: Navigatore Interattivo (Append, non Replace) */}
+            <div className="pt-8 border-t border-[#1e293b]">
+              <h3 className="text-xl font-bold text-[#e8fbff] mb-4 flex items-center gap-2">
+                <Activity className="h-6 w-6 text-[#a855f7]" />
+                Navigatore Interattivo Analisi
+              </h3>
+              <NativeReportComponent />
+            </div>
           </TabsContent>
 
           {/* TAB 20: INTEGRAZIONI */}
