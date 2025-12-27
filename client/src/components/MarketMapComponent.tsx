@@ -482,7 +482,8 @@ export function MarketMapComponent({
             return null;
           })()}
           {/* Layer Macchia Verde (Area Mercato) - Renderizza PRIMA dei posteggi */}
-          {mapData && !showItalyView && mapData.stalls_geojson.features
+          {/* NASCONDI L'AREA VERDE DURANTE L'ANIMAZIONE per evitare glitch grafici */}
+          {mapData && !showItalyView && !isMapAnimating && mapData.stalls_geojson.features
             .filter(f => (f.properties?.kind === 'area' || f.properties?.type === 'mercato') && f.geometry.type === 'Polygon')
             .map((feature, idx) => (
               <Polygon
@@ -565,8 +566,8 @@ export function MarketMapComponent({
             
             // Se selezionato, forza colori molto evidenti
             const actualFillColor = isSelected ? selectedColor : fillColor;
-            // NESSUN BORDO se selezionato, solo colore di riempimento che pulsa
-            const actualBorderColor = isSelected ? 'transparent' : fillColor; 
+            // BORDO DELLO STESSO COLORE se selezionato, per mantenere dimensioni
+            const actualBorderColor = isSelected ? selectedColor : fillColor; 
             
             return (
               <React.Fragment key={`stall-${props.number}-${dbStall?.status || props.status}`}>
@@ -577,7 +578,7 @@ export function MarketMapComponent({
                     color: actualBorderColor,
                     fillColor: actualFillColor,
                     fillOpacity: isSelected ? 0.9 : 0.7,
-                    weight: isSelected ? 0 : 2, // Peso 0 per rimuovere bordo
+                    weight: isSelected ? 4 : 2, // Peso 4 per bordo visibile ma integrato
                     // Forza dashArray nullo se selezionato
                     dashArray: isSelected ? undefined : undefined 
                   }}
