@@ -290,3 +290,22 @@ body.modal-open, body.widget-open {
   stroke-width: 0 !important;
   vector-effect: non-scaling-stroke; /* Ottimizzazione rendering */
 }
+
+/* ===== LEAFLET POPUP CUSTOMIZATION (DARK THEME) ===== */
+/* Rimuove il bordo bianco e lo sfondo di default */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+/* Rimuove il pulsante di chiusura di default di Leaflet (usiamo il nostro nel componente) */
+.leaflet-popup-close-button {
+  display: none !important;
+}

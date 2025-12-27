@@ -251,6 +251,16 @@ export function MarketMapComponent({
   // Rimosso stato locale ridondante che causava loop
   // L'animazione è gestita direttamente da MapCenterController tramite useAnimation
 
+  // Ref per gestire la chiusura automatica dei popup
+  const mapRef = React.useRef<L.Map | null>(null);
+
+  // Effetto per chiudere i popup quando cambia la selezione (se diverso da quello corrente)
+  useEffect(() => {
+    if (mapRef.current && selectedStallNumber) {
+      mapRef.current.closePopup();
+    }
+  }, [selectedStallNumber]);
+
   // Calcola bounds dinamici dal GeoJSON (area mercato o tutti i posteggi)
   const marketBounds = React.useMemo(() => {
     if (!mapData?.stalls_geojson?.features?.length) return null;
@@ -351,6 +361,7 @@ export function MarketMapComponent({
           zoomSnap={0.5}
           className="h-full w-full"
           style={{ height: '100%', width: '100%' }}
+          ref={mapRef}
         >
           <LayersControl position="topright">
             <LayersControl.BaseLayer checked name="🗺️ Stradale">
@@ -574,22 +585,24 @@ export function MarketMapComponent({
             const selectedColor = '#ff00ff'; // Magenta/Fucsia
             
             // Se selezionato, forza colori molto evidenti
-            const actualFillColor = isSelected ? selectedColor : fillColor;
+            // FIX: Assicura che isSelected sia booleano puro per evitare flickering
+            const isTrulySelected = Number(selectedStallNumber) === Number(props.number);
+            const actualFillColor = isTrulySelected ? selectedColor : fillColor;
             // BORDO DELLO STESSO COLORE se selezionato, per mantenere dimensioni
-            const actualBorderColor = isSelected ? selectedColor : fillColor; 
+            const actualBorderColor = isTrulySelected ? selectedColor : fillColor; 
             
             return (
               <React.Fragment key={`stall-${props.number}-${dbStall?.status || props.status}`}>
                 <Polygon
                   positions={positions}
-                  className={isSelected ? 'selected-stall-glow' : ''}
+                  className={isTrulySelected ? 'selected-stall-glow' : ''}
                   pathOptions={{
                     color: actualBorderColor,
                     fillColor: actualFillColor,
-                    fillOpacity: isSelected ? 0.9 : 0.7,
-                    weight: isSelected ? 4 : 2, // Peso 4 per bordo visibile ma integrato
+                    fillOpacity: isTrulySelected ? 0.9 : 0.7,
+                    weight: isTrulySelected ? 4 : 2, // Peso 4 per bordo visibile ma integrato
                     // Forza dashArray nullo se selezionato
-                    dashArray: isSelected ? undefined : undefined 
+                    dashArray: isTrulySelected ? undefined : undefined 
                   }}
                   eventHandlers={{
                     click: () => {
