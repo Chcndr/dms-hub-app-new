@@ -1294,12 +1294,19 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         console.log('[DEBUG handleConfirmAssignment] Posteggio assegnato:', stallId);
         toast.success('Posteggio assegnato con successo!');
         
-        // Disattiva modalità spunta
-        setIsSpuntaMode(false);
+        // Aggiorna SOLO lo stato locale per evitare reload mappa
+        setStalls(prevStalls => 
+          prevStalls.map(s => 
+            s.id === stallId ? { ...s, status: 'occupato' } : s
+          )
+        );
         
-        // Ricarica dati e aggiorna mappa
-        await fetchData();
-        setMapRefreshKey(prev => prev + 1);
+        // NON disattivare modalità spunta per permettere assegnazioni multiple
+        // setIsSpuntaMode(false); 
+        
+        // NON ricaricare tutta la mappa per mantenere zoom e posizione
+        // await fetchData();
+        // setMapRefreshKey(prev => prev + 1);
       } else {
         toast.error('Errore nell\'assegnazione del posteggio');
       }
