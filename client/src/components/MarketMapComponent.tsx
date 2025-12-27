@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polygon, LayersControl, Tooltip
 import { ZoomFontUpdater } from './ZoomFontUpdater';
 import { RouteLayer } from './RouteLayer';
 import { getStallMapFillColor, getStallStatusLabel } from '@/lib/stallStatus';
+import { calculatePolygonDimensions } from '@/lib/geodesic';
 import { useAnimation } from '@/contexts/AnimationContext';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -649,28 +650,26 @@ export function MarketMapComponent({
                           </div>
                         )}
                         
-                        {/* Dimensioni dettagliate */}
-                        {props.dimensions && (() => {
-                          // Supporta sia 'x' che '×'
-                          const match = props.dimensions.match(/([\d.]+)\s*m?\s*[x×]\s*([\d.]+)\s*m?/i);
-                          const width = match ? parseFloat(match[1]).toFixed(2) : '-';
-                          const length = match ? parseFloat(match[2]).toFixed(2) : '-';
+                        {/* Dimensioni dettagliate (Calcolate Geodeticamente) */}
+                        {(() => {
+                          // Calcola dimensioni reali dai punti del poligono
+                          const dims = calculatePolygonDimensions(positions);
                           
                           return (
                             <div className="mb-3 bg-gray-50 p-3 rounded border border-gray-200">
-                              <div className="text-sm font-semibold text-gray-700 mb-2">📏 Dimensioni:</div>
+                              <div className="text-sm font-semibold text-gray-700 mb-2">📏 Dimensioni (Stimate):</div>
                               <div className="space-y-1 text-sm">
                                 <div className="flex justify-between">
                                   <span className="text-gray-600">Larghezza:</span>
-                                  <span className="font-medium text-gray-800">{width} m</span>
+                                  <span className="font-medium text-gray-800">{dims.width} m</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-gray-600">Lunghezza:</span>
-                                  <span className="font-medium text-gray-800">{length} m</span>
+                                  <span className="font-medium text-gray-800">{dims.height} m</span>
                                 </div>
                                 <div className="flex justify-between border-t border-gray-300 pt-1 mt-1">
-                                  <span className="text-gray-700 font-medium">Metratura:</span>
-                                  <span className="font-bold text-gray-900">{area} m²</span>
+                                  <span className="text-gray-700 font-medium">Superficie:</span>
+                                  <span className="font-bold text-gray-900">{dims.area} m²</span>
                                 </div>
                               </div>
                             </div>
@@ -681,7 +680,14 @@ export function MarketMapComponent({
                         <div className="mb-3 bg-blue-50 p-3 rounded border border-blue-200">
                           <div className="flex justify-between items-center">
                             <span className="text-sm font-semibold text-blue-700">💶 Canone:</span>
-                            <span className="text-lg font-bold text-blue-900">€ 15,00</span>
+                            <div className="flex items-center bg-white px-2 py-1 rounded border border-blue-300">
+                              <span className="text-gray-500 mr-1">€</span>
+                              <input 
+                                type="text" 
+                                defaultValue="15,00"
+                                className="w-16 text-right font-bold text-blue-900 outline-none bg-transparent"
+                              />
+                            </div>
                           </div>
                         </div>
                         
