@@ -1102,7 +1102,7 @@ Vista compliance imprese.
 | `/api/imprese` | GET | Lista imprese | imprese |
 | `/api/imprese/:id` | GET | Dettaglio impresa | imprese |
 | `/api/qualificazioni` | GET | Lista qualificazioni | qualificazioni |
-| `/api/imprese/:id/qualificazioni` | GET | Qualificazioni impresa | qualificazioni |
+| `/api/imprese/:id/qualificazioni` | GET/POST | Qualificazioni impresa | qualificazioni |
 | `/api/markets` | GET | Lista mercati | markets |
 | `/api/markets/:id` | GET | Dettaglio mercato | markets |
 | `/api/markets/:id/stalls` | GET | Posteggi mercato | stalls |

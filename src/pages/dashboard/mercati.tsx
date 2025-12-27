@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { MarketTariffSettings } from '@/components/MarketTariffSettings';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -242,6 +243,16 @@ export default function MercatiPage() {
               <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
                 {stalls.length} piazzole
               </p>
+            </div>
+            
+            <div style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              zIndex: 1,
+              width: '320px'
+            }}>
+              <MarketTariffSettings marketId={selectedMarket.id} marketName={selectedMarket.name} />
             </div>
             <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
           </>
