@@ -196,6 +196,8 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   const [selectedCompany, setSelectedCompany] = useState<CompanyRow | null>(null);
   const [selectedConcession, setSelectedConcession] = useState<ConcessionRow | null>(null);
   const [selectedCompanyForQualif, setSelectedCompanyForQualif] = useState<CompanyRow | null>(null);
+  const [showQualificazioneModal, setShowQualificazioneModal] = useState(false);
+  const [selectedQualificazione, setSelectedQualificazione] = useState<QualificazioneRow | null>(null);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -222,6 +224,21 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
     );
   });
   
+  const handleOpenQualificazioneModal = (qualificazione?: QualificazioneRow) => {
+    setSelectedQualificazione(qualificazione || null);
+    setShowQualificazioneModal(true);
+  };
+
+  const handleCloseQualificazioneModal = () => {
+    setShowQualificazioneModal(false);
+    setSelectedQualificazione(null);
+  };
+
+  const handleQualificazioneSaved = async () => {
+    await fetchQualificazioni();
+    handleCloseQualificazioneModal();
+  };
+
   // Qualificazioni filtrate per impresa selezionata
   const filteredQualificazioni = qualificazioni.filter(q => {
     if (selectedCompanyForQualif) {
@@ -738,10 +755,21 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
 
               {/* Qualificazioni dell'impresa selezionata */}
               <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-                  <FileCheck className="w-5 h-5" />
-                  Qualificazioni
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <FileCheck className="w-5 h-5" />
+                    Qualificazioni
+                  </h3>
+                  {selectedCompanyForQualif && (
+                    <button
+                      onClick={() => handleOpenQualificazioneModal()}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Nuova
+                    </button>
+                  )}
+                </div>
                 {!selectedCompanyForQualif ? (
                   <div className="text-center py-16 text-gray-400">
                     <FileCheck className="w-16 h-16 mx-auto mb-4 opacity-30" />
@@ -819,6 +847,164 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           onSaved={handleConcessionSaved}
         />
       )}
+
+      {showQualificazioneModal && selectedCompanyForQualif && (
+        <QualificazioneModal
+          company={selectedCompanyForQualif}
+          qualificazione={selectedQualificazione}
+          onClose={handleCloseQualificazioneModal}
+          onSaved={handleQualificazioneSaved}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// QUALIFICAZIONE MODAL
+// ============================================================================
+
+interface QualificazioneModalProps {
+  company: CompanyRow;
+  qualificazione: QualificazioneRow | null;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function QualificazioneModal({ company, qualificazione, onClose, onSaved }: QualificazioneModalProps) {
+  const [formData, setFormData] = useState({
+    tipo: qualificazione?.tipo || '',
+    ente_rilascio: qualificazione?.ente_rilascio || '',
+    data_rilascio: qualificazione?.data_rilascio || '',
+    data_scadenza: qualificazione?.data_scadenza || '',
+    stato: qualificazione?.stato || 'ATTIVA',
+    note: qualificazione?.note || ''
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+
+    try {
+      // Simulazione salvataggio (dato che l'API qualificazioni non è ancora implementata completamente)
+      // In produzione, qui ci sarebbe una chiamata fetch POST/PUT
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // TODO: Implementare chiamata API reale
+      console.log('Salvataggio qualificazione:', { ...formData, company_id: company.id });
+      
+      onSaved();
+    } catch (err: any) {
+      setError(err.message || 'Errore durante il salvataggio');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-md w-full p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-white">
+            {qualificazione ? 'Modifica Qualificazione' : 'Nuova Qualificazione'}
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Tipo</label>
+            <select
+              required
+              value={formData.tipo}
+              onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="">Seleziona tipo...</option>
+              <option value="DURC">DURC</option>
+              <option value="ISO 9001">ISO 9001</option>
+              <option value="ISO 14001">ISO 14001</option>
+              <option value="HACCP">HACCP</option>
+              <option value="CONCESSIONE MERCATO">CONCESSIONE MERCATO</option>
+              <option value="ALTRO">ALTRO</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Ente Rilascio</label>
+            <input
+              type="text"
+              required
+              value={formData.ente_rilascio}
+              onChange={(e) => setFormData({ ...formData, ente_rilascio: e.target.value })}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Data Rilascio</label>
+              <input
+                type="date"
+                required
+                value={formData.data_rilascio}
+                onChange={(e) => setFormData({ ...formData, data_rilascio: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Data Scadenza</label>
+              <input
+                type="date"
+                value={formData.data_scadenza}
+                onChange={(e) => setFormData({ ...formData, data_scadenza: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Stato</label>
+            <select
+              value={formData.stato}
+              onChange={(e) => setFormData({ ...formData, stato: e.target.value })}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="ATTIVA">ATTIVA</option>
+              <option value="IN_VERIFICA">IN VERIFICA</option>
+              <option value="SCADUTA">SCADUTA</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            >
+              Annulla
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Salvataggio...' : 'Salva'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
