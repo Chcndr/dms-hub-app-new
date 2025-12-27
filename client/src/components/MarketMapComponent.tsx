@@ -744,17 +744,72 @@ export function MarketMapComponent({
                           </div>
 
                           {/* Dimensioni Ricche */}
-                          {props.dimensions && (() => {
-                            // Supporta sia 'x' che '×'
-                            const match = props.dimensions.match(/([\d.]+)\s*m?\s*[x×]\s*([\d.]+)\s*m?/i);
-                            const width = match ? parseFloat(match[1]).toFixed(2) : '-';
-                            const length = match ? parseFloat(match[2]).toFixed(2) : '-';
-                            const area = match ? (parseFloat(match[1]) * parseFloat(match[2])).toFixed(2) : '-';
+                          {(() => {
+                            // Funzione di formattazione intelligente
+                            const smartFormat = (val: number) => {
+                              if (isNaN(val)) return '-';
+                              // Se è molto vicino a un intero (es. 3.999 o 4.001), arrotonda all'intero
+                              if (Math.abs(val - Math.round(val)) < 0.05) {
+                                return Math.round(val).toString();
+                              }
+                              // Altrimenti usa 2 decimali
+                              return val.toFixed(2);
+                            };
+
+                            let width = '-';
+                            let length = '-';
+                            let area = '-';
+                            let hasDimensions = false;
+
+                            // 1. Prova a parsare le dimensioni dal DB
+                            if (props.dimensions) {
+                              const match = props.dimensions.match(/([\d.]+)\s*m?\s*[x×]\s*([\d.]+)\s*m?/i);
+                              if (match) {
+                                const w = parseFloat(match[1]);
+                                const l = parseFloat(match[2]);
+                                width = smartFormat(w);
+                                length = smartFormat(l);
+                                area = smartFormat(w * l);
+                                hasDimensions = true;
+                              }
+                            }
+
+                            // 2. Fallback: Calcolo geometrico se mancano i dati DB
+                            if (!hasDimensions && positions.length > 0) {
+                              try {
+                                // Calcola la bounding box del poligono
+                                const lats = positions.map(p => p[0]);
+                                const lngs = positions.map(p => p[1]);
+                                const minLat = Math.min(...lats);
+                                const maxLat = Math.max(...lats);
+                                const minLng = Math.min(...lngs);
+                                const maxLng = Math.max(...lngs);
+
+                                // Converti gradi in metri (approssimazione locale)
+                                // 1 grado lat ~= 111km, 1 grado lng ~= 111km * cos(lat)
+                                const latDiff = maxLat - minLat;
+                                const lngDiff = maxLng - minLng;
+                                const latMeters = latDiff * 111320;
+                                const lngMeters = lngDiff * 40075000 * Math.cos(minLat * Math.PI / 180) / 360;
+
+                                const w = Math.min(latMeters, lngMeters);
+                                const l = Math.max(latMeters, lngMeters);
+                                
+                                width = smartFormat(w);
+                                length = smartFormat(l);
+                                area = smartFormat(w * l);
+                                hasDimensions = true;
+                              } catch (e) {
+                                console.warn('Errore calcolo dimensioni geometriche:', e);
+                              }
+                            }
+
+                            if (!hasDimensions) return null;
                             
                             return (
                               <div className="bg-[#1e293b] p-3 rounded border border-gray-700">
                                 <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
-                                  <span>📏 Dimensioni</span>
+                                  <span>📏 Dimensioni {props.dimensions ? '' : '(Stimate)'}</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
