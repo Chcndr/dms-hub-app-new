@@ -13,6 +13,7 @@ import RoutePage from "./pages/RoutePage";
 import VetrinePage from "./pages/VetrinePage";
 import HubOperatore from "./pages/HubOperatore";
 import DashboardPA from "./pages/DashboardPA";
+import PagoPADashboard from "./pages/PagoPADashboard";
 import MioPage from "./pages/mio";
 import MIHUBPage from "./pages/MIHUBPage";
 import GuardianEndpoints from "./pages/GuardianEndpoints";
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/vetrine" component={VetrinePage} />
       <Route path="/hub-operatore" component={HubOperatore} />
       <Route path="/dashboard-pa" component={DashboardPA} />
+      <Route path="/dashboard/pagopa" component={PagoPADashboard} />
       <Route path="/mio" component={MioPage} />
       <Route path="/mihub" component={MIHUBPage} />
       <Route path="/guardian/endpoints" component={GuardianEndpoints} />
