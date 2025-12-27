@@ -997,3 +997,20 @@ export type InsertSyncJob = typeof syncJobs.$inferInsert;
 
 export type SyncLog = typeof syncLogs.$inferSelect;
 export type InsertSyncLog = typeof syncLogs.$inferInsert;
+
+// ============================================
+// AUTORIZZAZIONI (Nuovo Modulo)
+// ============================================
+
+export const autorizzazioni = pgTable("autorizzazioni", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  numeroAutorizzazione: varchar("numero_autorizzazione", { length: 50 }).notNull(),
+  enteRilascio: varchar("ente_rilascio", { length: 100 }).notNull(),
+  dataRilascio: timestamp("data_rilascio").notNull(),
+  dataScadenza: timestamp("data_scadenza"),
+  stato: varchar("stato", { length: 20 }).default("ATTIVA"),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

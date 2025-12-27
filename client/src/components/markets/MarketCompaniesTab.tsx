@@ -23,8 +23,10 @@ import {
   MapPin,
   FileCheck,
   CheckCircle,
-  Clock
+  Clock,
+  FileBadge // Icona per Autorizzazioni
 } from 'lucide-react';
+import { MarketAutorizzazioniTab } from './MarketAutorizzazioniTab';
 
 // ============================================================================
 // TYPES
@@ -195,7 +197,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState<'impresa' | 'concessione' | 'qualificazione'>('impresa');
+  const [searchType, setSearchType] = useState<'impresa' | 'concessione' | 'qualificazione' | 'autorizzazione'>('impresa');
   
   // Filtered data
   const filteredCompanies = companies.filter(c => {
@@ -517,18 +519,30 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                   <FileText className="w-4 h-4 inline mr-2" />
                   Concessioni
                 </button>
-                <button
-                  onClick={() => { setSearchType('qualificazione'); setSearchQuery(''); setSelectedCompanyForQualif(null); }}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    searchType === 'qualificazione'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  <FileCheck className="w-4 h-4 inline mr-2" />
-                  Qualificazioni
-                </button>
-              </div>
+          <button
+            onClick={() => setSearchType('qualificazione')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+              searchType === 'qualificazione'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+            }`}
+          >
+            <FileCheck className="w-4 h-4" />
+            Qualificazioni
+          </button>
+          
+          <button
+            onClick={() => setSearchType('autorizzazione')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+              searchType === 'autorizzazione'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+            }`}
+          >
+            <FileBadge className="w-4 h-4" />
+            Autorizzazioni
+          </button>
+        </div>
             </div>
             {searchQuery && (
               <div className="mt-2 text-sm text-gray-400">
@@ -738,6 +752,13 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
             </div>
           </section>
         </>
+      )}
+
+      {searchType === 'autorizzazione' && (
+        <MarketAutorizzazioniTab 
+          companies={companies} 
+          searchQuery={searchQuery} 
+        />
       )}
 
       {/* Modals */}
