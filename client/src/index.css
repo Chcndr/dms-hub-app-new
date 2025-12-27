@@ -264,31 +264,40 @@ body.modal-open, body.widget-open {
 }
 
 
-/* ===== ANIMAZIONE POSTEGGIO SELEZIONATO (NEON GLOW) ===== */
-/* Effetto retroilluminato fuxia senza bordi */
-@keyframes stall-neon-glow {
-  0%, 100% {
-    fill-opacity: 0.9;
-    filter: drop-shadow(0 0 8px #ff00ff) drop-shadow(0 0 15px #ff00ff);
+/* ===== ANIMAZIONE POSTEGGIO SELEZIONATO (PULSING) ===== */
+/* Animazione semplice e robusta per Leaflet */
+@keyframes stall-pulse {
+  0% {
+    fill-opacity: 0.4;
+    stroke-width: 2px;
+    stroke-opacity: 0.6;
   }
   50% {
-    fill-opacity: 0.5;
-    filter: drop-shadow(0 0 4px #ff00ff) drop-shadow(0 0 8px #ff00ff);
+    fill-opacity: 0.9;
+    stroke-width: 6px;
+    stroke-opacity: 1;
+  }
+  100% {
+    fill-opacity: 0.4;
+    stroke-width: 2px;
+    stroke-opacity: 0.6;
   }
 }
 
 .selected-stall-glow {
-  animation: stall-neon-glow 1.2s ease-in-out infinite !important;
-  stroke: none !important; /* Assicura nessun bordo */
-  stroke-width: 0 !important;
+  /* Importante: stroke e fill sono gestiti da Leaflet, qui animiamo solo le proprietà supportate */
+  animation: stall-pulse 1.5s ease-in-out infinite !important;
+  /* Colore fucsia forzato per sicurezza */
+  stroke: #ff00ff !important;
+  fill: #ff00ff !important;
 }
 
 /* Leaflet polygon con classe selected - forza animazione */
 .leaflet-interactive.selected-stall-glow {
-  animation: stall-neon-glow 1.2s ease-in-out infinite !important;
-  stroke: none !important;
-  stroke-width: 0 !important;
-  vector-effect: non-scaling-stroke; /* Ottimizzazione rendering */
+  animation: stall-pulse 1.5s ease-in-out infinite !important;
+  stroke: #ff00ff !important;
+  fill: #ff00ff !important;
+  vector-effect: non-scaling-stroke;
 }
 
 /* ===== LEAFLET POPUP CUSTOMIZATION (DARK THEME) ===== */
