@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { QrReader } from 'react-qr-reader';
+import { toast } from 'sonner';
 import { 
   BarChart3, 
   QrCode, 
@@ -14,12 +16,21 @@ import {
   LogOut,
   Camera,
   CheckCircle2,
-  XCircle
+  XCircle,
+  RefreshCw
 } from 'lucide-react';
 
 export default function HubOperatore() {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
+  
+  // Stati per QR Scanner e Carbon Credits
+  const [isScanning, setIsScanning] = useState(false);
+  const [scannedData, setScannedData] = useState<string | null>(null);
+  const [amount, setAmount] = useState<string>('');
+  const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
+  const [calculatedCredits, setCalculatedCredits] = useState(0);
+  const [co2Saved, setCo2Saved] = useState(0);
 
   // Mock data operatore
   const operatore = {
@@ -36,16 +47,59 @@ export default function HubOperatore() {
     co2Risparmiata: 2.8,
   };
 
+  // Calcolo automatico crediti
+  useEffect(() => {
+    const val = parseFloat(amount) || 0;
+    // Formula base: 1€ = 1 credit. Bonus 20% per ogni certificazione.
+    const multiplier = 1 + (selectedCerts.length * 0.2);
+    const credits = Math.floor(val * multiplier);
+    setCalculatedCredits(credits);
+    // Stima CO2: 1 credit = 0.05kg CO2
+    setCo2Saved(parseFloat((credits * 0.05).toFixed(2)));
+  }, [amount, selectedCerts]);
+
   const handleCheckIn = () => {
     const now = new Date().toLocaleTimeString('it-IT');
     setCheckInTime(now);
     setIsCheckedIn(true);
-    // TODO: Call API POST /vendor/checkin
+    toast.success('Check-in effettuato con successo');
   };
 
   const handleCheckOut = () => {
     setIsCheckedIn(false);
-    // TODO: Call API POST /vendor/checkout
+    toast.info('Check-out effettuato');
+  };
+
+  const toggleCert = (cert: string) => {
+    setSelectedCerts(prev => 
+      prev.includes(cert) ? prev.filter(c => c !== cert) : [...prev, cert]
+    );
+  };
+
+  const handleScanResult = (result: any, error: any) => {
+    if (result) {
+      setScannedData(result?.text);
+      setIsScanning(false);
+      toast.success('QR Code cliente rilevato!');
+    }
+    if (error) {
+      // Ignora errori di scansione continua
+    }
+  };
+
+  const handleAssignCredits = () => {
+    if (!scannedData && !window.confirm('Nessun cliente scansionato. Assegnare come "Cliente Anonimo"?')) {
+      return;
+    }
+    
+    toast.success(`${calculatedCredits} Carbon Credits assegnati!`, {
+      description: `CO₂ Risparmiata: ${co2Saved} kg`
+    });
+    
+    // Reset form
+    setAmount('');
+    setSelectedCerts([]);
+    setScannedData(null);
   };
 
   return (
@@ -190,18 +244,54 @@ export default function HubOperatore() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Scanner Placeholder */}
-                <div className="aspect-square bg-[#0b1220] rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-[#334155]">
-                  <Camera className="w-16 h-16 text-[#94a3b8] mb-4" />
-                  <p className="text-[#94a3b8] text-center">
-                    Camera QR Scanner
-                    <br />
-                    <span className="text-sm">(Implementazione in corso)</span>
-                  </p>
-                  <Button className="mt-4 bg-[#f97316] hover:bg-[#ea580c]">
-                    <Camera className="w-4 h-4 mr-2" />
-                    Attiva Camera
-                  </Button>
+                {/* Scanner Section */}
+                <div className="aspect-square bg-[#0b1220] rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-[#334155] overflow-hidden relative">
+                  {isScanning ? (
+                    <>
+                      <QrReader
+                        onResult={handleScanResult}
+                        constraints={{ facingMode: 'environment' }}
+                        className="w-full h-full object-cover"
+                      />
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="absolute bottom-4 z-10"
+                        onClick={() => setIsScanning(false)}
+                      >
+                        Ferma Scansione
+                      </Button>
+                    </>
+                  ) : scannedData ? (
+                    <div className="text-center p-4">
+                      <CheckCircle2 className="w-16 h-16 text-[#10b981] mx-auto mb-4" />
+                      <p className="text-[#e8fbff] font-medium mb-2">Cliente Identificato</p>
+                      <code className="bg-[#1e293b] px-2 py-1 rounded text-xs text-[#94a3b8]">{scannedData}</code>
+                      <Button 
+                        className="mt-4 bg-[#f97316] hover:bg-[#ea580c] w-full"
+                        onClick={() => { setScannedData(null); setIsScanning(true); }}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Nuova Scansione
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Camera className="w-16 h-16 text-[#94a3b8] mb-4" />
+                      <p className="text-[#94a3b8] text-center">
+                        Camera QR Scanner
+                        <br />
+                        <span className="text-sm">Inquadra il QR code del cliente</span>
+                      </p>
+                      <Button 
+                        className="mt-4 bg-[#f97316] hover:bg-[#ea580c]"
+                        onClick={() => setIsScanning(true)}
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        Attiva Camera
+                      </Button>
+                    </>
+                  )}
                 </div>
 
                 {/* Form Assegnazione Carbon Credit */}
@@ -214,27 +304,42 @@ export default function HubOperatore() {
                       type="number" 
                       step="0.01"
                       placeholder="0.00"
-                      className="w-full mt-1 px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff]"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm text-[#94a3b8] mb-2 block">Certificazioni Prodotto</label>
+                    <label className="text-sm text-[#94a3b8] mb-2 block">Certificazioni Prodotto (+20% cad.)</label>
                     <div className="flex flex-wrap gap-2">
-                      <Badge className="bg-[#10b981] hover:bg-[#059669] cursor-pointer">BIO</Badge>
-                      <Badge className="bg-[#14b8a6] hover:bg-[#0d9488] cursor-pointer">KM0</Badge>
-                      <Badge className="bg-[#f59e0b] hover:bg-[#d97706] cursor-pointer">Fair Trade</Badge>
-                      <Badge className="bg-[#8b5cf6] hover:bg-[#7c3aed] cursor-pointer">DOP</Badge>
+                      {['BIO', 'KM0', 'Fair Trade', 'DOP'].map(cert => (
+                        <Badge 
+                          key={cert}
+                          onClick={() => toggleCert(cert)}
+                          className={`cursor-pointer transition-all ${
+                            selectedCerts.includes(cert) 
+                              ? 'bg-[#14b8a6] hover:bg-[#0d9488] ring-2 ring-white/20' 
+                              : 'bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8]'
+                          }`}
+                        >
+                          {cert}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="p-3 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-md">
+                  <div className="p-3 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-md transition-all">
                     <p className="text-sm text-[#94a3b8]">Carbon Credit Calcolati</p>
-                    <p className="text-2xl font-bold text-[#14b8a6]">0 credits</p>
-                    <p className="text-xs text-[#94a3b8] mt-1">CO₂ risparmiata: 0 kg</p>
+                    <p className="text-2xl font-bold text-[#14b8a6]">{calculatedCredits} credits</p>
+                    <p className="text-xs text-[#94a3b8] mt-1">CO₂ risparmiata: {co2Saved} kg</p>
                   </div>
 
-                  <Button className="w-full bg-[#10b981] hover:bg-[#059669]">
+                  <Button 
+                    className="w-full bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleAssignCredits}
+                    disabled={!amount || parseFloat(amount) <= 0}
+                  >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Conferma Assegnazione
                   </Button>

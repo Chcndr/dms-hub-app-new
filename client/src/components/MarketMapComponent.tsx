@@ -4,7 +4,7 @@ import { ZoomFontUpdater } from './ZoomFontUpdater';
 import { RouteLayer } from './RouteLayer';
 import { getStallMapFillColor, getStallStatusLabel } from '@/lib/stallStatus';
 import { calculatePolygonDimensions } from '@/lib/geodesic';
-import { useAnimation } from '@/contexts/AnimationContext';
+import { useMapAnimation } from '@/hooks/useMapAnimation';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -89,93 +89,12 @@ interface MapControllerProps {
   center: [number, number];
   zoom?: number;
   trigger?: number;
-  bounds?: L.LatLngBoundsExpression; // Bounds per fitBounds dinamico
-  isMarketView?: boolean; // true = vista mercato, false = vista Italia
+  bounds?: L.LatLngBoundsExpression;
+  isMarketView?: boolean;
 }
 
-function MapCenterController({ center, zoom, trigger, bounds, isMarketView }: MapControllerProps) {
-  const map = useMap();
-  const lastTriggerRef = React.useRef<number | undefined>(undefined);
-  const isAnimatingRef = React.useRef(false);
-  const { setAnimating } = useAnimation(); // Usa direttamente il context qui
-  
-  useEffect(() => {
-    // Esegui flyTo/fitBounds solo quando trigger cambia (e non è il primo mount)
-    if (lastTriggerRef.current !== undefined && 
-        trigger !== lastTriggerRef.current && 
-        !isAnimatingRef.current) {
-      
-      isAnimatingRef.current = true;
-      setAnimating(true); // Notifica inizio animazione
-      
-      if (isMarketView && bounds) {
-        // Vista Mercato: usa fitBounds con i corner del mercato
-        console.log('[MapCenterController] Avvio flyToBounds verso bounds mercato');
-        // Calcola il livello di zoom ottimale per i bounds con padding minimo
-        const targetZoom = map.getBoundsZoom(bounds, false, [10, 10]);
-        // Aggiunge mezzo scatto di zoom per avvicinare Modena senza rompere Grosseto
-        const forcedZoom = Math.min(targetZoom + 0.5, 19);
-        
-        console.log('[MapCenterController] Zoom calcolato:', targetZoom, 'Zoom forzato:', forcedZoom);
-
-        // Usa flyTo al centro dei bounds con lo zoom forzato
-        // Calcola la distanza di zoom per decidere la durata
-        const currentZoom = map.getZoom();
-        const zoomDiff = Math.abs(forcedZoom - currentZoom);
-        
-        // Se la differenza di zoom è grande (es. da Italia a Mercato), usa animazione lenta (6s)
-        // Se è piccola (es. reset da posteggio), usa animazione veloce (1.5s)
-        const dynamicDuration = zoomDiff > 4 ? 6 : 1.5;
-        
-        console.log('[MapCenterController] Zoom diff:', zoomDiff, 'Duration:', dynamicDuration);
-
-        map.flyTo(bounds.getCenter(), forcedZoom, {
-          duration: dynamicDuration,
-          easeLinearity: 0.25
-        });
-      } else if (center) {
-        // Vista Italia: usa flyTo con centro e zoom fisso
-        console.log('[MapCenterController] Avvio flyTo verso Italia:', center, 'zoom:', zoom);
-        
-        // Anche per tornare all'Italia, se siamo vicini (mercato) ci mettiamo 6s, se siamo già lontani meno
-        const currentZoom = map.getZoom();
-        const targetZoom = zoom || 6;
-        const zoomDiff = Math.abs(targetZoom - currentZoom);
-        const dynamicDuration = zoomDiff > 4 ? 6 : 2;
-
-        map.flyTo(center, targetZoom, {
-          duration: dynamicDuration,
-          easeLinearity: 0.25
-        });
-      }
-      
-      // Listener per quando l'animazione finisce
-      const onMoveEnd = () => {
-        console.log('[MapCenterController] Animazione completata, mappa stabile');
-        isAnimatingRef.current = false;
-        setAnimating(false); // Notifica fine animazione
-        map.off('moveend', onMoveEnd);
-      };
-      
-      // Aspetta un po' prima di aggiungere il listener (per evitare trigger immediato)
-      setTimeout(() => {
-        map.on('moveend', onMoveEnd);
-      }, 100);
-      
-      // Fallback timeout nel caso moveend non si triggeri (aumentato a 7s per coprire animazione lunga)
-      setTimeout(() => {
-        if (isAnimatingRef.current) {
-          isAnimatingRef.current = false;
-          setAnimating(false); // Notifica fine animazione (fallback)
-          map.off('moveend', onMoveEnd);
-        }
-      }, 7000);
-    }
-    
-    // Aggiorna sempre il ref del trigger
-    lastTriggerRef.current = trigger;
-  }, [center, zoom, trigger, bounds, isMarketView, map, setAnimating]);
-  
+function MapCenterController(props: MapControllerProps) {
+  useMapAnimation(props);
   return null;
 }
 

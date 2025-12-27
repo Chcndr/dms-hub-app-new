@@ -1,6 +1,6 @@
 # 📘 DMS Hub System Blueprint
 
-> **Auto-generated:** 17 dicembre 2025 alle ore 22:24  
+> **Auto-generated:** 27 dicembre 2025 alle ore 01:19  
 > **Generator:** `scripts/generate_blueprint.cjs`
 
 ---
@@ -9,8 +9,8 @@
 
 **DMS Hub** è il sistema centrale per la gestione della Rete Mercati Made in Italy, con:
 
-- **94 endpoint API** (TRPC + REST)
-- **50 tabelle database**
+- **0 endpoint API** (TRPC + REST)
+- **57 tabelle database**
 - **Full Observability** con Guardian monitoring
 - **Multi-agent orchestration** (MIO, Guardian, Zapier, ecc.)
 
@@ -18,7 +18,7 @@
 
 ## 🗄️ Database Schema
 
-### Tables (50)
+### Tables (57)
 
 | Variable Name | Table Name |
 |---------------|------------|
@@ -72,40 +72,19 @@
 | `dataBag` | `data_bag` |
 | `agentMessages` | `agent_messages` |
 | `agentContext` | `agent_context` |
+| `operatoreWallet` | `operatore_wallet` |
+| `walletTransazioni` | `wallet_transazioni` |
+| `tariffePosteggio` | `tariffe_posteggio` |
+| `avvisiPagopa` | `avvisi_pagopa` |
+| `syncConfig` | `sync_config` |
+| `syncJobs` | `sync_jobs` |
+| `syncLogs` | `sync_logs` |
 
 ---
 
 ## 🔌 API Endpoints
 
-### Services (4)
-
-### undefined
-
-**Base URL:** `undefined`  
-**Endpoints:** 68
-
-**Breakdown:** POST: 11, GET: 57
-
-### undefined
-
-**Base URL:** `undefined`  
-**Endpoints:** 4
-
-**Breakdown:** POST: 2, GET: 2
-
-### undefined
-
-**Base URL:** `undefined`  
-**Endpoints:** 14
-
-**Breakdown:** GET: 8, POST: 6
-
-### undefined
-
-**Base URL:** `undefined`  
-**Endpoints:** 8
-
-**Breakdown:** GET: 5, PUT: 1, POST: 1, DELETE: 1
+### Services (0)
 
 ---
 
@@ -147,8 +126,10 @@ server/
   📁 services
     📄 apiInventoryService.ts
     📄 apiLogsService.ts
+    📄 efilPagopaService.ts
     📄 tperService.ts
   📄 storage.ts
+  📄 walletRouter.ts
 ```
 
 ### Client
@@ -166,6 +147,7 @@ client/src/
     📄 APIDashboardV2.tsx
     📄 BottomNav.tsx
     📄 ChatWidget.tsx
+    📄 ComuniPanel.tsx
     📄 ConnessioniV2.tsx
     📄 DashboardLayout.tsx
     📄 DashboardLayoutSkeleton.tsx
@@ -181,7 +163,6 @@ client/src/
     📄 Integrazioni.tsx
     📄 LogDebug.tsx
     📄 LogsDebugReal.tsx
-    📄 MIHUBDashboard.tsx
     📄 MIOAgent.tsx
     📄 MIOLogs.tsx
     📄 ManusDialog.tsx
@@ -190,13 +171,16 @@ client/src/
     📄 MarketMapComponent.tsx
     📄 MessageContent.tsx
     📄 MobilityMap.tsx
+    📄 NotificationsPanel.tsx
     📄 PanicButton.tsx
     📄 RouteLayer.tsx
     📄 SharedWorkspace.tsx
     📄 SharedWorkspace_old.tsx
     📄 ShopModal.tsx
     📄 StallNumbersOverlay.tsx
+    📄 WalletPanel.tsx
     📄 ZoomFontUpdater.tsx
+    📁 bus-hub
     📁 markets
     📁 mio
     📁 multi-agent
@@ -207,6 +191,7 @@ client/src/
     📄 realEndpoints.ts
   📄 const.ts
   📁 contexts
+    📄 AnimationContext.tsx
     📄 MioContext.tsx
     📄 ThemeContext.tsx
   📁 hooks
@@ -214,6 +199,7 @@ client/src/
     📄 useComposition.ts
     📄 useConversationPersistence.ts
     📄 useInternalTraces.ts
+    📄 useMapAnimation.ts
     📄 useMobile.tsx
     📄 useOrchestrator.ts
     📄 usePersistFn.ts
@@ -221,6 +207,7 @@ client/src/
   📁 lib
     📄 DirectMioClient.ts
     📄 agentHelper.ts
+    📄 geodesic.ts
     📄 mioOrchestratorClient.ts
     📄 stallStatus.ts
     📄 trpc.ts
@@ -239,7 +226,6 @@ client/src/
     📄 HomePage.tsx
     📄 HubOperatore.tsx
     📄 LogDebugPage.tsx
-    📄 MIHUBPage.tsx
     📄 MapPage.tsx
     📄 MarketGISPage.tsx
     📄 NotFound.tsx

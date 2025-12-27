@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
@@ -165,7 +166,33 @@ async function startServer() {
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    // Serve static files with specific cache control
+    // 1. Assets with hash in filename -> Cache forever
+    app.use("/assets", express.static(path.resolve(import.meta.dirname, "../public/assets"), {
+      maxAge: "1y",
+      immutable: true
+    }));
+
+    // 2. Everything else (including index.html) -> No Cache
+    app.use(express.static(path.resolve(import.meta.dirname, "../public"), {
+      setHeaders: (res, path) => {
+        if (path.endsWith("index.html")) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          res.setHeader("Pragma", "no-cache");
+          res.setHeader("Expires", "0");
+        }
+      }
+    }));
+
+    // Fallback for SPA routing: serve index.html for unknown routes
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api")) return next();
+      
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.sendFile(path.resolve(import.meta.dirname, "../public/index.html"));
+    });
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");

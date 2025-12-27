@@ -1353,8 +1353,9 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-[#14b8a6]" />
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-[#14b8a6]" />
+        <p className="text-[#e8fbff]/70 animate-pulse">Caricamento mappa e posteggi in corso...</p>
       </div>
     );
   }
@@ -1853,8 +1854,9 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-[#14b8a6]" />
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-[#14b8a6]" />
+        <p className="text-[#e8fbff]/70 animate-pulse">Caricamento mappa e posteggi in corso...</p>
       </div>
     );
   }

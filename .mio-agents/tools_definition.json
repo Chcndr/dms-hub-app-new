@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-12-18T03:24:24.198Z",
+  "lastUpdated": "2025-12-27T06:19:33.758Z",
   "tools": [
     {
       "name": "guardian.logs",
@@ -44,31 +44,6 @@
         "agent": "string",
         "mode": "auto|manual",
         "task": "string"
-      }
-    },
-    {
-      "name": "browser_navigate",
-      "description": "Naviga su una URL specifica usando browser headless",
-      "parameters": {
-        "url": "string",
-        "waitUntil": "string (optional)",
-        "timeout": "number (optional)"
-      }
-    },
-    {
-      "name": "browser_screenshot",
-      "description": "Cattura uno screenshot della pagina corrente o di una URL specifica",
-      "parameters": {
-        "url": "string (optional)",
-        "fullPage": "boolean (optional)",
-        "selector": "string (optional)"
-      }
-    },
-    {
-      "name": "browser_click",
-      "description": "Clicca su un elemento della pagina web corrente",
-      "parameters": {
-        "selector": "string"
       }
     }
   ]

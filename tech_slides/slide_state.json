@@ -1,0 +1,52 @@
+{
+  "project_info": {
+    "title": "1. Gestione Mercati (Markets Module)",
+    "created": 1766818483.8950725,
+    "last_updated": 1766818597.7644398,
+    "total_slides": 5
+  },
+  "slides": {
+    "tech_markets": "edited",
+    "tech_gis": "edited",
+    "tech_wallet": "edited",
+    "tech_agents": "edited",
+    "tech_integrations": "edited"
+  },
+  "outline": [
+    {
+      "id": "tech_markets",
+      "title": "1. Gestione Mercati (Markets Module)",
+      "summary": "Dettagli tecnici del modulo Gestione Mercati.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "tech_gis",
+      "title": "2. GIS & Mappe (Geospatial Module)",
+      "summary": "Dettagli tecnici del modulo GIS e Mappe.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "tech_wallet",
+      "title": "3. Wallet & Finanza (Financial Module)",
+      "summary": "Dettagli tecnici del modulo Wallet e Finanza.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "tech_agents",
+      "title": "4. MIO Agent & Orchestration (AI Module)",
+      "summary": "Dettagli tecnici del modulo AI e Agenti.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "tech_integrations",
+      "title": "5. Integrazioni Esterne (Connectivity Module)",
+      "summary": "Dettagli tecnici del modulo Integrazioni.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    }
+  ]
+}

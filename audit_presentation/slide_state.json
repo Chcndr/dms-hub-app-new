@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "title": "Audit Sistema DMS Hub & Aggiornamento Blueprint",
+    "created": 1766817765.8093889,
+    "last_updated": 1766817925.2821167,
+    "total_slides": 7
+  },
+  "slides": {
+    "title_slide": "edited",
+    "ecosystem_overview": "edited",
+    "core_business": "edited",
+    "integrations": "edited",
+    "discrepancies": "edited",
+    "blueprint_updates": "edited",
+    "next_steps": "edited"
+  },
+  "outline": [
+    {
+      "id": "title_slide",
+      "title": "Audit Sistema DMS Hub & Aggiornamento Blueprint",
+      "summary": "Titolo della presentazione, sottotitolo e data.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "ecosystem_overview",
+      "title": "1. Un Ecosistema Vasto e Complesso",
+      "summary": "Panoramica della complessità del sistema (DB, API, Frontend).",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "core_business",
+      "title": "2. Core Business Solido e Strutturato",
+      "summary": "Dettagli sulla gestione mercati, flussi operativi e wallet.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "integrations",
+      "title": "3. Integrazioni Avanzate e Multi-Agent",
+      "summary": "Focus su TPER, Guardian e orchestrazione AI.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "discrepancies",
+      "title": "4. Risoluzione Discrepanze e Focus",
+      "summary": "Analisi delle discrepanze risolte (QR Scanner, Sync, Slot Editor).",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "blueprint_updates",
+      "title": "Aggiornamenti al BLUEPRINT.md",
+      "summary": "Sintesi delle modifiche apportate al documento Blueprint.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "next_steps",
+      "title": "Prossimi Passi",
+      "summary": "Roadmap per validazione, configurazione e sviluppo futuro.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    }
+  ]
+}
