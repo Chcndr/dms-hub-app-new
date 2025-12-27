@@ -1320,8 +1320,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
     if (selectedStallId === stall.id) {
       setSelectedStallId(null);
       setSelectedStallCenter(null);
-      // Forza ritorno alla vista mercato originale (fitBounds)
-      setViewTrigger(prev => prev + 1);
+      // Rimosso setViewTrigger per evitare reload/distacco. Il reset è solo visivo (rimozione highlight).
       return;
     }
     
