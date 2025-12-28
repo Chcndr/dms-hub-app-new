@@ -247,6 +247,13 @@ export default function WalletPanel() {
           >
             <CreditCard className="mr-2 h-4 w-4" /> Storico PagoPA
           </Button>
+          <Button 
+            variant={subTab === 'riconciliazione' ? 'default' : 'outline'}
+            onClick={() => setSubTab('riconciliazione')}
+            className={subTab === 'riconciliazione' ? 'bg-[#3b82f6]' : 'border-slate-700 text-slate-300'}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Riconciliazione
+          </Button>
         </div>
       </div>
 
@@ -361,6 +368,26 @@ export default function WalletPanel() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {subTab === 'pagopa' && (
+        <div className="text-center py-12 text-slate-400 bg-[#1e293b] rounded-lg border border-slate-700">
+          <CreditCard className="h-12 w-12 mx-auto mb-4 text-slate-600" />
+          <h3 className="text-lg font-medium text-white">Storico Transazioni PagoPA</h3>
+          <p className="max-w-md mx-auto mt-2">
+            Qui verranno visualizzati tutti gli avvisi di pagamento generati e il loro stato (Pagato, Scaduto, Annullato).
+          </p>
+        </div>
+      )}
+
+      {subTab === 'riconciliazione' && (
+        <div className="text-center py-12 text-slate-400 bg-[#1e293b] rounded-lg border border-slate-700">
+          <RefreshCw className="h-12 w-12 mx-auto mb-4 text-slate-600" />
+          <h3 className="text-lg font-medium text-white">Riconciliazione Incassi</h3>
+          <p className="max-w-md mx-auto mt-2">
+            Area riservata per il caricamento dei flussi XML di rendicontazione e l'allineamento automatico dei wallet.
+          </p>
         </div>
       )}
 
