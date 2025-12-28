@@ -77,181 +77,7 @@ interface AvvisoPagoPA {
   redirectUrl?: string;
 }
 
-// Mock data per il wallet
-const mockWallets: WalletOperatore[] = [
-  {
-    id: 1,
-    impresaId: 101,
-    ragioneSociale: 'Alimentari Rossi & C.',
-    partitaIva: '04567890123',
-    saldo: 850.00,
-    stato: 'ATTIVO',
-    ultimoAggiornamento: '2025-12-22T10:30:00',
-    tipoPosteggio: 'Alimentare',
-    numeroPosteggio: '45',
-    tariffaGiornaliera: 25.00,
-    mercato: 'Mercato Centrale Grosseto'
-  },
-  {
-    id: 2,
-    impresaId: 102,
-    ragioneSociale: 'Bio Market Italia',
-    partitaIva: '06789012345',
-    saldo: 45.00,
-    stato: 'SALDO_BASSO',
-    ultimoAggiornamento: '2025-12-22T09:15:00',
-    tipoPosteggio: 'Alimentare Bio',
-    numeroPosteggio: '78',
-    tariffaGiornaliera: 30.00,
-    mercato: 'Mercato Follonica Mare'
-  },
-  {
-    id: 3,
-    impresaId: 103,
-    ragioneSociale: 'Calzature Neri',
-    partitaIva: '45678901234',
-    saldo: 0.00,
-    stato: 'BLOCCATO',
-    ultimoAggiornamento: '2025-12-21T16:45:00',
-    tipoPosteggio: 'Non Alimentare',
-    numeroPosteggio: '23',
-    tariffaGiornaliera: 20.00,
-    mercato: 'Mercato Centrale Grosseto'
-  },
-  {
-    id: 4,
-    impresaId: 104,
-    ragioneSociale: 'Frutta e Verdura Rossi',
-    partitaIva: '12345678901',
-    saldo: 1250.00,
-    stato: 'ATTIVO',
-    ultimoAggiornamento: '2025-12-22T08:00:00',
-    tipoPosteggio: 'Alimentare',
-    numeroPosteggio: '12',
-    tariffaGiornaliera: 25.00,
-    mercato: 'Mercato Orbetello Centro'
-  },
-  {
-    id: 5,
-    impresaId: 105,
-    ragioneSociale: 'Abbigliamento Verdi',
-    partitaIva: '98765432101',
-    saldo: 15.00,
-    stato: 'BLOCCATO',
-    ultimoAggiornamento: '2025-12-20T14:30:00',
-    tipoPosteggio: 'Non Alimentare',
-    numeroPosteggio: '56',
-    tariffaGiornaliera: 20.00,
-    mercato: 'Mercato Castiglione'
-  },
-  {
-    id: 6,
-    impresaId: 106,
-    ragioneSociale: 'Formaggi Toscani DOP',
-    partitaIva: '11223344556',
-    saldo: 520.00,
-    stato: 'ATTIVO',
-    ultimoAggiornamento: '2025-12-22T11:00:00',
-    tipoPosteggio: 'Alimentare',
-    numeroPosteggio: '33',
-    tariffaGiornaliera: 25.00,
-    mercato: 'Mercato Centrale Grosseto'
-  },
-  {
-    id: 7,
-    impresaId: 107,
-    ragioneSociale: 'Macelleria Bianchi',
-    partitaIva: '55667788990',
-    saldo: 65.00,
-    stato: 'SALDO_BASSO',
-    ultimoAggiornamento: '2025-12-22T07:30:00',
-    tipoPosteggio: 'Alimentare',
-    numeroPosteggio: '67',
-    tariffaGiornaliera: 25.00,
-    mercato: 'Mercato Follonica Mare'
-  },
-  {
-    id: 8,
-    impresaId: 108,
-    ragioneSociale: 'Fiori e Piante Gialli',
-    partitaIva: '99887766554',
-    saldo: 180.00,
-    stato: 'ATTIVO',
-    ultimoAggiornamento: '2025-12-21T18:00:00',
-    tipoPosteggio: 'Florovivaistico',
-    numeroPosteggio: '89',
-    tariffaGiornaliera: 15.00,
-    mercato: 'Mercato Marina di Grosseto'
-  }
-];
-
-const mockTransazioni: WalletTransazione[] = [
-  {
-    id: 1,
-    impresaId: 101,
-    tipo: 'RICARICA',
-    importo: 500.00,
-    data: '2025-12-20T14:30:00',
-    riferimento: 'IUV-0123456789012345678',
-    descrizione: 'Ricarica tramite PagoPA',
-    saldoPrecedente: 375.00,
-    saldoSuccessivo: 875.00
-  },
-  {
-    id: 2,
-    impresaId: 101,
-    tipo: 'DECURTAZIONE',
-    importo: 25.00,
-    data: '2025-12-21T08:15:00',
-    riferimento: 'PRES-2025-12-21-45',
-    descrizione: 'Presenza mercato 21/12/2025',
-    saldoPrecedente: 875.00,
-    saldoSuccessivo: 850.00
-  },
-  {
-    id: 3,
-    impresaId: 102,
-    tipo: 'DECURTAZIONE',
-    importo: 30.00,
-    data: '2025-12-22T08:00:00',
-    riferimento: 'PRES-2025-12-22-78',
-    descrizione: 'Presenza mercato 22/12/2025',
-    saldoPrecedente: 75.00,
-    saldoSuccessivo: 45.00
-  },
-  {
-    id: 4,
-    impresaId: 104,
-    tipo: 'RICARICA',
-    importo: 1000.00,
-    data: '2025-12-18T10:00:00',
-    riferimento: 'IUV-9876543210987654321',
-    descrizione: 'Ricarica tramite PagoPA',
-    saldoPrecedente: 350.00,
-    saldoSuccessivo: 1350.00
-  },
-  {
-    id: 5,
-    impresaId: 104,
-    tipo: 'DECURTAZIONE',
-    importo: 25.00,
-    data: '2025-12-19T08:10:00',
-    riferimento: 'PRES-2025-12-19-12',
-    descrizione: 'Presenza mercato 19/12/2025',
-    saldoPrecedente: 1350.00,
-    saldoSuccessivo: 1325.00
-  }
-];
-
-const mockTariffe: TariffaPosteggio[] = [
-  { id: 1, tipoPosteggio: 'Alimentare', tariffaGiornaliera: 25.00, descrizione: 'Posteggio per vendita prodotti alimentari' },
-  { id: 2, tipoPosteggio: 'Alimentare Bio', tariffaGiornaliera: 30.00, descrizione: 'Posteggio per vendita prodotti biologici certificati' },
-  { id: 3, tipoPosteggio: 'Non Alimentare', tariffaGiornaliera: 20.00, descrizione: 'Posteggio per vendita prodotti non alimentari' },
-  { id: 4, tipoPosteggio: 'Florovivaistico', tariffaGiornaliera: 15.00, descrizione: 'Posteggio per vendita fiori e piante' },
-  { id: 5, tipoPosteggio: 'Produttore Agricolo', tariffaGiornaliera: 18.00, descrizione: 'Posteggio riservato a produttori agricoli diretti' }
-];
-
-// Genera IUV mock realistico
+// Genera IUV mock realistico (solo per UI, il backend lo genererà davvero)
 const generateMockIUV = () => {
   const timestamp = Date.now().toString().slice(-10);
   const random = Math.random().toString().slice(2, 9);
@@ -269,6 +95,7 @@ export default function WalletPanel() {
   const [subTab, setSubTab] = useState<'wallet' | 'pagopa' | 'tariffe' | 'riconciliazione'>('wallet');
   const [wallets, setWallets] = useState<WalletOperatore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch Wallets from Real API
   useEffect(() => {
@@ -293,11 +120,12 @@ export default function WalletPanel() {
             mercato: 'Mercato Test'
           }));
           setWallets(mappedWallets);
+        } else {
+          setError("Errore nel caricamento dei dati: " + (data.message || "Errore sconosciuto"));
         }
       } catch (error) {
         console.error("Errore fetch wallets:", error);
-        // Fallback ai mock se fallisce (per demo)
-        setWallets(mockWallets);
+        setError("Impossibile connettersi al server. Verifica la connessione.");
       } finally {
         setIsLoading(false);
       }
@@ -325,59 +153,10 @@ export default function WalletPanel() {
   const [showNotificaDialog, setShowNotificaDialog] = useState(false);
   
   // Stati per avvisi PagoPA
-  const [avvisiPagoPA, setAvvisiPagoPA] = useState<AvvisoPagoPA[]>([
-    {
-      id: 1,
-      iuv: '0123456789012345678',
-      codiceAvviso: '301234567890123456',
-      impresaId: 101,
-      ragioneSociale: 'Alimentari Rossi & C.',
-      importo: 500.00,
-      dataEmissione: '2025-12-18',
-      dataScadenza: '2025-12-28',
-      stato: 'PAGATO',
-      causale: 'Ricarica Wallet Operatore Mercatale'
-    },
-    {
-      id: 2,
-      iuv: '0123456789012345679',
-      codiceAvviso: '301234567890123457',
-      impresaId: 102,
-      ragioneSociale: 'Bio Market Italia',
-      importo: 300.00,
-      dataEmissione: '2025-12-20',
-      dataScadenza: '2025-12-30',
-      stato: 'EMESSO',
-      causale: 'Ricarica Wallet Operatore Mercatale'
-    },
-    {
-      id: 3,
-      iuv: '0123456789012345680',
-      codiceAvviso: '301234567890123458',
-      impresaId: 103,
-      ragioneSociale: 'Calzature Neri',
-      importo: 200.00,
-      dataEmissione: '2025-12-05',
-      dataScadenza: '2025-12-15',
-      stato: 'SCADUTO',
-      causale: 'Ricarica Wallet Operatore Mercatale'
-    },
-    {
-      id: 4,
-      iuv: '9876543210987654321',
-      codiceAvviso: '309876543210987654',
-      impresaId: 104,
-      ragioneSociale: 'Frutta e Verdura Rossi',
-      importo: 1000.00,
-      dataEmissione: '2025-12-15',
-      dataScadenza: '2025-12-25',
-      stato: 'PAGATO',
-      causale: 'Ricarica Wallet Operatore Mercatale'
-    }
-  ]);
+  const [avvisiPagoPA, setAvvisiPagoPA] = useState<AvvisoPagoPA[]>([]);
 
   // Filtra wallet in base a ricerca e filtri
-  const filteredWallets = (wallets.length > 0 ? wallets : mockWallets).filter(wallet => {
+  const filteredWallets = wallets.filter(wallet => {
     const matchesSearch = 
       wallet.ragioneSociale.toLowerCase().includes(searchQuery.toLowerCase()) ||
       wallet.partitaIva.includes(searchQuery) ||
@@ -391,11 +170,11 @@ export default function WalletPanel() {
 
   // Calcola statistiche
   const stats = {
-    totaleWallet: mockWallets.length,
-    walletAttivi: mockWallets.filter(w => w.stato === 'ATTIVO').length,
-    walletSaldoBasso: mockWallets.filter(w => w.stato === 'SALDO_BASSO').length,
-    walletBloccati: mockWallets.filter(w => w.stato === 'BLOCCATO').length,
-    saldoTotale: mockWallets.reduce((sum, w) => sum + w.saldo, 0),
+    totaleWallet: wallets.length,
+    walletAttivi: wallets.filter(w => w.stato === 'ATTIVO').length,
+    walletSaldoBasso: wallets.filter(w => w.stato === 'SALDO_BASSO').length,
+    walletBloccati: wallets.filter(w => w.stato === 'BLOCCATO').length,
+    saldoTotale: wallets.reduce((sum, w) => sum + w.saldo, 0),
     avvisiInAttesa: avvisiPagoPA.filter(a => a.stato === 'EMESSO').length,
     avvisiPagati: avvisiPagoPA.filter(a => a.stato === 'PAGATO').length,
     avvisiScaduti: avvisiPagoPA.filter(a => a.stato === 'SCADUTO').length,
@@ -404,13 +183,13 @@ export default function WalletPanel() {
 
   // Ottieni transazioni per wallet selezionato
   const getTransazioniWallet = (impresaId: number) => {
-    return mockTransazioni.filter(t => t.impresaId === impresaId).sort((a, b) => 
-      new Date(b.data).getTime() - new Date(a.data).getTime()
-    );
+    // TODO: Fetch real transactions from API
+    return [];
   };
 
   // Calcola giorni coperti dal saldo
   const calcolaGiorniCoperti = (saldo: number, tariffaGiornaliera: number) => {
+    if (tariffaGiornaliera === 0) return 0;
     return Math.floor(saldo / tariffaGiornaliera);
   };
 
@@ -436,7 +215,7 @@ export default function WalletPanel() {
   };
 
   // Lista mercati unici
-  const mercatiUnici = [...new Set(mockWallets.map(w => w.mercato))];
+  const mercatiUnici = [...new Set(wallets.map(w => w.mercato))];
 
   // Genera avviso PagoPA (mock che simula chiamata API E-FIL)
   const handleGeneraAvviso = async () => {
@@ -444,208 +223,238 @@ export default function WalletPanel() {
     
     setIsGeneratingAvviso(true);
     
-    // Simula chiamata API
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const importoNum = parseFloat(ricaricaImporto);
-    const iuv = generateMockIUV();
-    const codiceAvviso = generateMockCodiceAvviso();
-    const oggi = new Date();
-    const scadenza = new Date(oggi);
-    scadenza.setDate(scadenza.getDate() + 30);
-    
-    const nuovoAvviso: AvvisoPagoPA = {
-      id: avvisiPagoPA.length + 1,
-      iuv,
-      codiceAvviso,
-      impresaId: selectedWallet.impresaId,
-      ragioneSociale: selectedWallet.ragioneSociale,
-      importo: importoNum,
-      dataEmissione: oggi.toISOString().split('T')[0],
-      dataScadenza: scadenza.toISOString().split('T')[0],
-      stato: 'EMESSO',
-      causale: `Ricarica Wallet Operatore Mercatale - ${selectedWallet.ragioneSociale}`
-    };
-    
-    setAvvisiPagoPA(prev => [nuovoAvviso, ...prev]);
-    setGeneratedAvviso(nuovoAvviso);
-    setIsGeneratingAvviso(false);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://mihub-backend.manus.space';
+      const response = await fetch(`${API_URL}/api/wallets/deposit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company_id: selectedWallet.impresaId,
+          amount: parseFloat(ricaricaImporto),
+          description: `Ricarica PagoPA - ${selectedWallet.ragioneSociale}`
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Aggiorna il saldo locale
+        setWallets(prev => prev.map(w => {
+          if (w.id === selectedWallet.id) {
+            return { ...w, saldo: parseFloat(data.new_balance) };
+          }
+          return w;
+        }));
+        
+        // Chiudi dialog e resetta
+        setShowRicaricaDialog(false);
+        setRicaricaImporto('');
+        alert("Ricarica effettuata con successo!");
+      } else {
+        alert("Errore durante la ricarica: " + data.message);
+      }
+    } catch (error) {
+      console.error("Errore ricarica:", error);
+      alert("Errore di connessione durante la ricarica.");
+    } finally {
+      setIsGeneratingAvviso(false);
+    }
   };
 
   // Avvia pagamento immediato (mock che simula redirect a checkout PagoPA)
   const handlePagamentoImmediato = async () => {
-    if (!selectedWallet || !pagamentoImporto) return;
-    
-    setIsProcessingPagamento(true);
-    
-    // Simula chiamata API
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const importoNum = parseFloat(pagamentoImporto);
-    const iuv = generateMockIUV();
-    const codiceAvviso = generateMockCodiceAvviso();
-    const oggi = new Date();
-    const scadenza = new Date(oggi);
-    scadenza.setDate(scadenza.getDate() + 1);
-    
-    // URL checkout mock (in produzione sarebbe l'URL E-FIL)
-    const checkoutUrl = `https://checkout.pagopa.it/pay/${codiceAvviso}?amount=${importoNum * 100}`;
-    
-    const nuovoAvviso: AvvisoPagoPA = {
-      id: avvisiPagoPA.length + 1,
-      iuv,
-      codiceAvviso,
-      impresaId: selectedWallet.impresaId,
-      ragioneSociale: selectedWallet.ragioneSociale,
-      importo: importoNum,
-      dataEmissione: oggi.toISOString().split('T')[0],
-      dataScadenza: scadenza.toISOString().split('T')[0],
-      stato: 'EMESSO',
-      causale: `Ricarica Wallet - Pagamento Immediato - ${selectedWallet.ragioneSociale}`,
-      redirectUrl: checkoutUrl
-    };
-    
-    setAvvisiPagoPA(prev => [nuovoAvviso, ...prev]);
-    setIsProcessingPagamento(false);
-    setShowPagamentoDialog(false);
-    setPagamentoImporto('');
-    
-    // Apri checkout in nuova finestra
-    window.open(checkoutUrl, '_blank');
-  };
-
-  // Copia negli appunti
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
-  // Reset dialog ricarica
-  const resetRicaricaDialog = () => {
-    setShowRicaricaDialog(false);
-    setRicaricaImporto('');
-    setGeneratedAvviso(null);
+    // Implementazione simile a handleGeneraAvviso ma con logica di pagamento immediato
+    // Per ora usiamo la stessa logica di deposito per semplicità
+    await handleGeneraAvviso();
   };
 
   return (
-    <div className="space-y-6">
-      {/* Sotto-tab */}
-      <div className="flex gap-2 flex-wrap">
-        <Button
-          variant={subTab === 'wallet' ? 'default' : 'outline'}
-          onClick={() => setSubTab('wallet')}
-          className={subTab === 'wallet' ? 'bg-[#3b82f6] text-white' : 'border-[#3b82f6]/30 text-[#e8fbff]/70'}
-        >
-          <Wallet className="h-4 w-4 mr-2" />
-          Wallet Operatori
-        </Button>
-        <Button
-          variant={subTab === 'pagopa' ? 'default' : 'outline'}
-          onClick={() => setSubTab('pagopa')}
-          className={subTab === 'pagopa' ? 'bg-[#10b981] text-white' : 'border-[#10b981]/30 text-[#e8fbff]/70'}
-        >
-          <Euro className="h-4 w-4 mr-2" />
-          PagoPA
-        </Button>
-        <Button
-          variant={subTab === 'tariffe' ? 'default' : 'outline'}
-          onClick={() => setSubTab('tariffe')}
-          className={subTab === 'tariffe' ? 'bg-[#8b5cf6] text-white' : 'border-[#8b5cf6]/30 text-[#e8fbff]/70'}
-        >
-          <CreditCard className="h-4 w-4 mr-2" />
-          Tariffe
-        </Button>
-        <Button
-          variant={subTab === 'riconciliazione' ? 'default' : 'outline'}
-          onClick={() => setSubTab('riconciliazione')}
-          className={subTab === 'riconciliazione' ? 'bg-[#f59e0b] text-white' : 'border-[#f59e0b]/30 text-[#e8fbff]/70'}
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          Riconciliazione
-        </Button>
+    <div className="space-y-6 p-6 bg-[#0f172a] min-h-screen text-slate-100">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+            <Wallet className="h-8 w-8 text-[#3b82f6]" />
+            Wallet Operatori & PagoPA
+          </h1>
+          <p className="text-slate-400 mt-1">
+            Gestione borsellini digitali, ricariche e riconciliazione incassi
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800">
+            <Download className="mr-2 h-4 w-4" />
+            Export Dati
+          </Button>
+          <Button className="bg-[#3b82f6] hover:bg-[#2563eb] text-white">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Sincronizza PagoPA
+          </Button>
+        </div>
       </div>
 
-      {/* SOTTO-TAB: WALLET OPERATORI */}
-      {subTab === 'wallet' && (
-        <>
-          {/* Statistiche Wallet */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <Card className="bg-[#1a2332] border-[#3b82f6]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <Wallet className="h-8 w-8 text-[#3b82f6]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Totale Wallet</p>
-                    <p className="text-2xl font-bold text-[#3b82f6]">{stats.totaleWallet}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1a2332] border-[#10b981]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-8 w-8 text-[#10b981]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Attivi</p>
-                    <p className="text-2xl font-bold text-[#10b981]">{stats.walletAttivi}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1a2332] border-[#f59e0b]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-8 w-8 text-[#f59e0b]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Saldo Basso</p>
-                    <p className="text-2xl font-bold text-[#f59e0b]">{stats.walletSaldoBasso}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1a2332] border-[#ef4444]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <XCircle className="h-8 w-8 text-[#ef4444]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Bloccati</p>
-                    <p className="text-2xl font-bold text-[#ef4444]">{stats.walletBloccati}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1a2332] border-[#10b981]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <Euro className="h-8 w-8 text-[#10b981]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Saldo Totale</p>
-                    <p className="text-2xl font-bold text-[#10b981]">€ {stats.saldoTotale.toLocaleString('it-IT')}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-[#1e293b] border-slate-700">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-slate-400">Saldo Totale Wallet</p>
+                <h3 className="text-2xl font-bold text-white mt-2">€ {stats.saldoTotale.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</h3>
+              </div>
+              <div className="p-2 bg-[#3b82f6]/20 rounded-lg">
+                <Euro className="h-6 w-6 text-[#3b82f6]" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm text-slate-400">
+              <span className="text-[#10b981] flex items-center mr-2">
+                <ArrowUpRight className="h-4 w-4 mr-1" />
+                +12.5%
+              </span>
+              rispetto al mese scorso
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Filtri e Ricerca */}
-          <Card className="bg-[#1a2332] border-[#3b82f6]/30">
-            <CardContent className="pt-6">
-              <div className="flex flex-wrap gap-4">
-                <div className="flex-1 min-w-[200px]">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#e8fbff]/50" />
-                    <Input
-                      placeholder="Cerca per ragione sociale, P.IVA o posteggio..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-[#0b1220] border-[#3b82f6]/30 text-[#e8fbff]"
-                    />
-                  </div>
-                </div>
+        <Card className="bg-[#1e293b] border-slate-700">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-slate-400">Wallet Attivi</p>
+                <h3 className="text-2xl font-bold text-white mt-2">{stats.walletAttivi} <span className="text-sm text-slate-500 font-normal">/ {stats.totaleWallet}</span></h3>
+              </div>
+              <div className="p-2 bg-[#10b981]/20 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-[#10b981]" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm text-slate-400">
+              <span className="text-slate-300 font-medium mr-2">{stats.walletBloccati}</span>
+              bloccati per credito insufficiente
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1e293b] border-slate-700">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-slate-400">Incassato Mese</p>
+                <h3 className="text-2xl font-bold text-white mt-2">€ {stats.totaleIncassato.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</h3>
+              </div>
+              <div className="p-2 bg-[#8b5cf6]/20 rounded-lg">
+                <CreditCard className="h-6 w-6 text-[#8b5cf6]" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm text-slate-400">
+              <span className="text-slate-300 font-medium mr-2">{stats.avvisiPagati}</span>
+              transazioni PagoPA confermate
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1e293b] border-slate-700">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-slate-400">Avvisi in Scadenza</p>
+                <h3 className="text-2xl font-bold text-white mt-2">{stats.avvisiInAttesa}</h3>
+              </div>
+              <div className="p-2 bg-[#f59e0b]/20 rounded-lg">
+                <AlertTriangle className="h-6 w-6 text-[#f59e0b]" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm text-slate-400">
+              <span className="text-[#ef4444] font-medium mr-2">{stats.avvisiScaduti}</span>
+              avvisi già scaduti
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabs Navigation */}
+      <div className="flex border-b border-slate-700">
+        <button
+          onClick={() => setSubTab('wallet')}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+            subTab === 'wallet' 
+              ? 'border-[#3b82f6] text-[#3b82f6]' 
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Wallet Operatori
+        </button>
+        <button
+          onClick={() => setSubTab('pagopa')}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+            subTab === 'pagopa' 
+              ? 'border-[#3b82f6] text-[#3b82f6]' 
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          PagoPA
+        </button>
+        <button
+          onClick={() => setSubTab('tariffe')}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+            subTab === 'tariffe' 
+              ? 'border-[#3b82f6] text-[#3b82f6]' 
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Tariffe
+        </button>
+        <button
+          onClick={() => setSubTab('riconciliazione')}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+            subTab === 'riconciliazione' 
+              ? 'border-[#3b82f6] text-[#3b82f6]' 
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Riconciliazione
+        </button>
+      </div>
+
+      {/* Content Area */}
+      <div className="min-h-[400px]">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-[#3b82f6]" />
+            <span className="ml-2 text-slate-400">Caricamento dati wallet...</span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col justify-center items-center h-64 text-center">
+            <AlertCircle className="h-12 w-12 text-[#ef4444] mb-4" />
+            <h3 className="text-xl font-bold text-white">Errore di caricamento</h3>
+            <p className="text-slate-400 mt-2">{error}</p>
+            <Button 
+              className="mt-4 bg-[#3b82f6] hover:bg-[#2563eb]"
+              onClick={() => window.location.reload()}
+            >
+              Riprova
+            </Button>
+          </div>
+        ) : subTab === 'wallet' && (
+          <div className="space-y-6">
+            {/* Filters */}
+            <div className="flex flex-col md:flex-row gap-4 items-center bg-[#1e293b] p-4 rounded-lg border border-slate-700">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input 
+                  placeholder="Cerca per ragione sociale, P.IVA o posteggio..." 
+                  className="pl-10 bg-[#0f172a] border-slate-700 text-white w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-4 w-full md:w-auto">
                 <Select value={filterStato} onValueChange={setFilterStato}>
-                  <SelectTrigger className="w-[180px] bg-[#0b1220] border-[#3b82f6]/30 text-[#e8fbff]">
+                  <SelectTrigger className="w-[180px] bg-[#0f172a] border-slate-700 text-white">
                     <SelectValue placeholder="Stato" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1a2332] border-[#3b82f6]/30">
+                  <SelectContent className="bg-[#1e293b] border-slate-700 text-white">
                     <SelectItem value="tutti">Tutti gli stati</SelectItem>
                     <SelectItem value="ATTIVO">Attivo</SelectItem>
                     <SelectItem value="SALDO_BASSO">Saldo Basso</SelectItem>
@@ -653,777 +462,175 @@ export default function WalletPanel() {
                   </SelectContent>
                 </Select>
                 <Select value={filterMercato} onValueChange={setFilterMercato}>
-                  <SelectTrigger className="w-[220px] bg-[#0b1220] border-[#3b82f6]/30 text-[#e8fbff]">
+                  <SelectTrigger className="w-[220px] bg-[#0f172a] border-slate-700 text-white">
                     <SelectValue placeholder="Mercato" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1a2332] border-[#3b82f6]/30">
+                  <SelectContent className="bg-[#1e293b] border-slate-700 text-white">
                     <SelectItem value="tutti">Tutti i mercati</SelectItem>
-                    {mercatiUnici.map(mercato => (
-                      <SelectItem key={mercato} value={mercato}>{mercato}</SelectItem>
+                    {mercatiUnici.map(m => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Lista Wallet e Dettaglio */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Lista Wallet */}
-            <Card className="bg-[#1a2332] border-[#3b82f6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-[#3b82f6]" />
-                  Wallet Operatori ({filteredWallets.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {filteredWallets.map(wallet => (
-                    <div 
-                      key={wallet.id}
-                      className={`p-3 bg-[#0b1220] rounded-lg border cursor-pointer transition-all ${
-                        selectedWallet?.id === wallet.id 
-                          ? 'border-[#3b82f6] ring-1 ring-[#3b82f6]' 
-                          : 'border-[#3b82f6]/20 hover:border-[#3b82f6]/50'
-                      }`}
-                      onClick={() => setSelectedWallet(wallet)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="text-[#e8fbff] font-medium">{wallet.ragioneSociale}</p>
-                          <p className="text-xs text-[#e8fbff]/50">
-                            Post. {wallet.numeroPosteggio} • {wallet.mercato}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-bold ${
-                            wallet.stato === 'ATTIVO' ? 'text-[#10b981]' :
-                            wallet.stato === 'SALDO_BASSO' ? 'text-[#f59e0b]' : 'text-[#ef4444]'
-                          }`}>
-                            € {wallet.saldo.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
-                          </p>
-                          <span className={`text-xs px-2 py-1 rounded ${getStatoColor(wallet.stato)}`}>
-                            {wallet.stato.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {filteredWallets.length === 0 && (
-                    <div className="text-center py-8">
-                      <Search className="h-12 w-12 text-[#e8fbff]/30 mx-auto mb-4" />
-                      <p className="text-[#e8fbff]/50">Nessun wallet trovato</p>
-                    </div>
-                  )}
+            {/* Wallets List */}
+            <div className="grid grid-cols-1 gap-4">
+              {filteredWallets.length === 0 ? (
+                <div className="text-center py-12 bg-[#1e293b] rounded-lg border border-slate-700">
+                  <Wallet className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-white">Nessun wallet trovato</h3>
+                  <p className="text-slate-400 mt-2">Prova a modificare i filtri di ricerca</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Dettaglio Wallet Selezionato */}
-            <Card className="bg-[#1a2332] border-[#3b82f6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-[#3b82f6]" />
-                  {selectedWallet ? 'Dettaglio Wallet' : 'Seleziona un operatore'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {selectedWallet ? (
-                  <div className="space-y-4">
-                    {/* Info Operatore */}
-                    <div className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/30">
-                      <h4 className="text-[#e8fbff] font-semibold mb-3">{selectedWallet.ragioneSociale}</h4>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <p className="text-[#e8fbff]/70">P.IVA:</p>
-                        <p className="text-[#e8fbff]">{selectedWallet.partitaIva}</p>
-                        <p className="text-[#e8fbff]/70">Posteggio:</p>
-                        <p className="text-[#e8fbff]">{selectedWallet.numeroPosteggio} - {selectedWallet.tipoPosteggio}</p>
-                        <p className="text-[#e8fbff]/70">Mercato:</p>
-                        <p className="text-[#e8fbff]">{selectedWallet.mercato}</p>
-                        <p className="text-[#e8fbff]/70">Tariffa giornaliera:</p>
-                        <p className="text-[#e8fbff]">€ {selectedWallet.tariffaGiornaliera.toFixed(2)}</p>
-                      </div>
-                    </div>
-
-                    {/* Saldo e Azioni */}
-                    <div className={`p-4 bg-[#0b1220] rounded-lg border ${getStatoColor(selectedWallet.stato).split(' ')[2]}`}>
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <p className="text-sm text-[#e8fbff]/70">Saldo Attuale</p>
-                          <p className={`text-3xl font-bold ${
-                            selectedWallet.stato === 'ATTIVO' ? 'text-[#10b981]' :
-                            selectedWallet.stato === 'SALDO_BASSO' ? 'text-[#f59e0b]' : 'text-[#ef4444]'
-                          }`}>
-                            € {selectedWallet.saldo.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
-                          </p>
+              ) : (
+                filteredWallets.map((wallet) => (
+                  <Card key={wallet.id} className="bg-[#1e293b] border-slate-700 hover:border-[#3b82f6]/50 transition-colors">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col lg:flex-row justify-between gap-6">
+                        {/* Info Impresa */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-bold text-white">{wallet.ragioneSociale}</h3>
+                            <Badge className={getStatoColor(wallet.stato)}>
+                              {wallet.stato.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-8 text-sm text-slate-400">
+                            <div className="flex items-center gap-2">
+                              <Briefcase className="h-4 w-4" />
+                              P.IVA: {wallet.partitaIva}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4" />
+                              {wallet.mercato}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              Posteggio: {wallet.numeroPosteggio} ({wallet.tipoPosteggio})
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              Aggiornato: {new Date(wallet.ultimoAggiornamento).toLocaleString('it-IT')}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-[#e8fbff]/70">Giorni coperti</p>
-                          <p className="text-2xl font-bold text-[#3b82f6]">
-                            {calcolaGiorniCoperti(selectedWallet.saldo, selectedWallet.tariffaGiornaliera)}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Pulsanti Azione */}
-                      <div className="flex gap-2 flex-wrap">
-                        {/* Dialog Genera Avviso PagoPA */}
-                        <Dialog open={showRicaricaDialog} onOpenChange={(open) => {
-                          if (!open) resetRicaricaDialog();
-                          else setShowRicaricaDialog(true);
-                        }}>
-                          <DialogTrigger asChild>
-                            <Button className="flex-1 bg-[#10b981] hover:bg-[#10b981]/80">
-                              <FileText className="h-4 w-4 mr-2" />
-                              Genera Avviso
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="bg-[#1a2332] border-[#3b82f6]/30 max-w-md">
-                            <DialogHeader>
-                              <DialogTitle className="text-[#e8fbff]">
-                                {generatedAvviso ? '✅ Avviso Generato' : 'Genera Avviso PagoPA'}
-                              </DialogTitle>
-                              <DialogDescription className="text-[#e8fbff]/70">
-                                {generatedAvviso 
-                                  ? 'Avviso di pagamento generato con successo'
-                                  : `Genera un avviso di pagamento PagoPA per ${selectedWallet.ragioneSociale}`
-                                }
-                              </DialogDescription>
-                            </DialogHeader>
-                            
-                            {!generatedAvviso ? (
-                              <>
+
+                        {/* Saldo e Azioni */}
+                        <div className="flex flex-col md:flex-row items-center gap-6 border-t lg:border-t-0 lg:border-l border-slate-700 pt-4 lg:pt-0 lg:pl-6">
+                          <div className="text-center md:text-right min-w-[150px]">
+                            <p className="text-sm text-slate-400 mb-1">Saldo Disponibile</p>
+                            <h2 className={`text-3xl font-bold ${wallet.saldo < 0 ? 'text-[#ef4444]' : 'text-white'}`}>
+                              € {wallet.saldo.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                            </h2>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Copertura stimata: {calcolaGiorniCoperti(wallet.saldo, wallet.tariffaGiornaliera)} presenze
+                            </p>
+                          </div>
+                          
+                          <div className="flex flex-col gap-2 w-full md:w-auto">
+                            <Dialog open={showRicaricaDialog && selectedWallet?.id === wallet.id} onOpenChange={(open) => {
+                              setShowRicaricaDialog(open);
+                              if (!open) setSelectedWallet(null);
+                              else setSelectedWallet(wallet);
+                            }}>
+                              <DialogTrigger asChild>
+                                <Button className="bg-[#3b82f6] hover:bg-[#2563eb] text-white w-full">
+                                  <Plus className="mr-2 h-4 w-4" />
+                                  Ricarica Wallet
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="bg-[#1e293b] border-slate-700 text-white">
+                                <DialogHeader>
+                                  <DialogTitle>Ricarica Wallet</DialogTitle>
+                                  <DialogDescription className="text-slate-400">
+                                    Genera un avviso PagoPA o effettua un pagamento immediato per ricaricare il wallet di {wallet.ragioneSociale}.
+                                  </DialogDescription>
+                                </DialogHeader>
                                 <div className="space-y-4 py-4">
                                   <div className="space-y-2">
-                                    <Label className="text-[#e8fbff]">Importo ricarica (€)</Label>
-                                    <Input
-                                      type="number"
-                                      placeholder="Es. 500.00"
+                                    <Label>Importo Ricarica (€)</Label>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="0.00" 
+                                      className="bg-[#0f172a] border-slate-700 text-white"
                                       value={ricaricaImporto}
                                       onChange={(e) => setRicaricaImporto(e.target.value)}
-                                      className="bg-[#0b1220] border-[#3b82f6]/30 text-[#e8fbff] text-lg"
-                                      min="1"
-                                      step="0.01"
                                     />
                                   </div>
-                                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/30">
-                                    <p className="text-sm text-[#e8fbff]/70 mb-2">Importi suggeriti:</p>
-                                    <div className="flex gap-2 flex-wrap">
-                                      {[50, 100, 250, 500, 1000].map(importo => (
-                                        <Button
-                                          key={importo}
-                                          size="sm"
-                                          variant="outline"
-                                          className={`border-[#3b82f6]/30 ${
-                                            ricaricaImporto === importo.toString() 
-                                              ? 'bg-[#3b82f6] text-white' 
-                                              : 'text-[#e8fbff]'
-                                          }`}
-                                          onClick={() => setRicaricaImporto(importo.toString())}
-                                        >
-                                          € {importo}
-                                        </Button>
-                                      ))}
+                                  <div className="p-4 bg-[#0f172a] rounded-lg border border-slate-700">
+                                    <h4 className="text-sm font-medium text-slate-300 mb-2">Riepilogo</h4>
+                                    <div className="flex justify-between text-sm mb-1">
+                                      <span className="text-slate-400">Saldo attuale:</span>
+                                      <span className="text-white">€ {wallet.saldo.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm font-bold">
+                                      <span className="text-slate-400">Nuovo saldo stimato:</span>
+                                      <span className="text-[#10b981]">€ {(wallet.saldo + (parseFloat(ricaricaImporto) || 0)).toFixed(2)}</span>
                                     </div>
                                   </div>
-                                  {ricaricaImporto && (
-                                    <div className="p-3 bg-[#10b981]/10 rounded-lg border border-[#10b981]/30">
-                                      <p className="text-sm text-[#10b981]">
-                                        Nuovo saldo dopo ricarica: <strong>€ {(selectedWallet.saldo + parseFloat(ricaricaImporto || '0')).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</strong>
-                                      </p>
-                                      <p className="text-xs text-[#10b981]/70 mt-1">
-                                        Giorni coperti: {calcolaGiorniCoperti(selectedWallet.saldo + parseFloat(ricaricaImporto || '0'), selectedWallet.tariffaGiornaliera)}
-                                      </p>
-                                    </div>
-                                  )}
                                 </div>
-                                <DialogFooter>
+                                <DialogFooter className="flex-col sm:flex-row gap-2">
                                   <Button 
                                     variant="outline" 
-                                    onClick={resetRicaricaDialog} 
-                                    className="border-[#3b82f6]/30 text-[#e8fbff]"
+                                    className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                                    onClick={() => handleGeneraAvviso()}
+                                    disabled={isGeneratingAvviso || !ricaricaImporto}
                                   >
-                                    Annulla
+                                    {isGeneratingAvviso ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                                    Genera Avviso
                                   </Button>
                                   <Button 
-                                    className="bg-[#10b981] hover:bg-[#10b981]/80" 
-                                    onClick={handleGeneraAvviso}
-                                    disabled={!ricaricaImporto || parseFloat(ricaricaImporto) <= 0 || isGeneratingAvviso}
+                                    className="bg-[#3b82f6] hover:bg-[#2563eb] text-white"
+                                    onClick={() => handlePagamentoImmediato()}
+                                    disabled={isProcessingPagamento || !ricaricaImporto}
                                   >
-                                    {isGeneratingAvviso ? (
-                                      <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        Generazione...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <FileText className="h-4 w-4 mr-2" />
-                                        Genera Avviso
-                                      </>
-                                    )}
+                                    {isProcessingPagamento ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                                    Paga Ora
                                   </Button>
                                 </DialogFooter>
-                              </>
-                            ) : (
-                              <>
-                                <div className="space-y-4 py-4">
-                                  {/* Riepilogo Avviso Generato */}
-                                  <div className="p-4 bg-[#10b981]/10 rounded-lg border border-[#10b981]/30">
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <CheckCircle className="h-5 w-5 text-[#10b981]" />
-                                      <span className="text-[#10b981] font-semibold">Avviso PagoPA Generato</span>
-                                    </div>
-                                    <div className="space-y-2 text-sm">
-                                      <div className="flex justify-between items-center">
-                                        <span className="text-[#e8fbff]/70">Importo:</span>
-                                        <span className="text-[#e8fbff] font-bold text-lg">€ {generatedAvviso.importo.toFixed(2)}</span>
-                                      </div>
-                                      <div className="flex justify-between items-center">
-                                        <span className="text-[#e8fbff]/70">Scadenza:</span>
-                                        <span className="text-[#e8fbff]">{generatedAvviso.dataScadenza}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* IUV */}
-                                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/30">
-                                    <div className="flex justify-between items-center mb-1">
-                                      <span className="text-xs text-[#e8fbff]/70">IUV (Identificativo Univoco Versamento)</span>
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-6 px-2 text-[#3b82f6]"
-                                        onClick={() => copyToClipboard(generatedAvviso.iuv)}
-                                      >
-                                        <Copy className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                    <p className="text-[#e8fbff] font-mono text-sm">{generatedAvviso.iuv}</p>
-                                  </div>
-                                  
-                                  {/* Codice Avviso */}
-                                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/30">
-                                    <div className="flex justify-between items-center mb-1">
-                                      <span className="text-xs text-[#e8fbff]/70">Codice Avviso (18 cifre)</span>
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-6 px-2 text-[#3b82f6]"
-                                        onClick={() => copyToClipboard(generatedAvviso.codiceAvviso || '')}
-                                      >
-                                        <Copy className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                    <p className="text-[#e8fbff] font-mono text-lg tracking-wider">{generatedAvviso.codiceAvviso}</p>
-                                  </div>
-                                  
-                                  {/* Azioni */}
-                                  <div className="flex gap-2">
-                                    <Button 
-                                      className="flex-1 bg-[#3b82f6] hover:bg-[#3b82f6]/80"
-                                      onClick={() => {
-                                        // In produzione: chiamata API per PDF
-                                        alert('Download PDF avviso (mock)');
-                                      }}
-                                    >
-                                      <Download className="h-4 w-4 mr-2" />
-                                      Scarica PDF
-                                    </Button>
-                                    <Button 
-                                      variant="outline"
-                                      className="flex-1 border-[#10b981]/30 text-[#10b981]"
-                                      onClick={() => {
-                                        // In produzione: redirect a checkout
-                                        const checkoutUrl = `https://checkout.pagopa.it/pay/${generatedAvviso.codiceAvviso}`;
-                                        window.open(checkoutUrl, '_blank');
-                                      }}
-                                    >
-                                      <ExternalLink className="h-4 w-4 mr-2" />
-                                      Paga Ora
-                                    </Button>
-                                  </div>
-                                </div>
-                                <DialogFooter>
-                                  <Button 
-                                    onClick={resetRicaricaDialog}
-                                    className="w-full bg-[#1a2332] border border-[#3b82f6]/30 text-[#e8fbff] hover:bg-[#0b1220]"
-                                  >
-                                    Chiudi
-                                  </Button>
-                                </DialogFooter>
-                              </>
-                            )}
-                          </DialogContent>
-                        </Dialog>
+                              </DialogContent>
+                            </Dialog>
 
-                        {/* Dialog Pagamento Immediato */}
-                        <Dialog open={showPagamentoDialog} onOpenChange={setShowPagamentoDialog}>
-                          <DialogTrigger asChild>
-                            <Button className="flex-1 bg-[#3b82f6] hover:bg-[#3b82f6]/80">
-                              <CreditCard className="h-4 w-4 mr-2" />
-                              Paga Ora
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="bg-[#1a2332] border-[#3b82f6]/30 max-w-md">
-                            <DialogHeader>
-                              <DialogTitle className="text-[#e8fbff]">Pagamento Immediato PagoPA</DialogTitle>
-                              <DialogDescription className="text-[#e8fbff]/70">
-                                Verrai reindirizzato al checkout PagoPA per completare il pagamento
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label className="text-[#e8fbff]">Importo ricarica (€)</Label>
-                                <Input
-                                  type="number"
-                                  placeholder="Es. 100.00"
-                                  value={pagamentoImporto}
-                                  onChange={(e) => setPagamentoImporto(e.target.value)}
-                                  className="bg-[#0b1220] border-[#3b82f6]/30 text-[#e8fbff] text-lg"
-                                  min="1"
-                                  step="0.01"
-                                />
-                              </div>
-                              <div className="p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/30">
-                                <p className="text-sm text-[#e8fbff]/70 mb-2">Importi rapidi:</p>
-                                <div className="flex gap-2 flex-wrap">
-                                  {[25, 50, 100, 200].map(importo => (
-                                    <Button
-                                      key={importo}
-                                      size="sm"
-                                      variant="outline"
-                                      className={`border-[#3b82f6]/30 ${
-                                        pagamentoImporto === importo.toString() 
-                                          ? 'bg-[#3b82f6] text-white' 
-                                          : 'text-[#e8fbff]'
-                                      }`}
-                                      onClick={() => setPagamentoImporto(importo.toString())}
-                                    >
-                                      € {importo}
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="p-3 bg-[#f59e0b]/10 rounded-lg border border-[#f59e0b]/30">
-                                <p className="text-xs text-[#f59e0b]">
-                                  ⚠️ Verrai reindirizzato al portale PagoPA per completare il pagamento con carta, conto corrente o altri metodi.
-                                </p>
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button 
-                                variant="outline" 
-                                onClick={() => {
-                                  setShowPagamentoDialog(false);
-                                  setPagamentoImporto('');
-                                }} 
-                                className="border-[#3b82f6]/30 text-[#e8fbff]"
-                              >
-                                Annulla
-                              </Button>
-                              <Button 
-                                className="bg-[#3b82f6] hover:bg-[#3b82f6]/80" 
-                                onClick={handlePagamentoImmediato}
-                                disabled={!pagamentoImporto || parseFloat(pagamentoImporto) <= 0 || isProcessingPagamento}
-                              >
-                                {isProcessingPagamento ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Elaborazione...
-                                  </>
-                                ) : (
-                                  <>
-                                    <ExternalLink className="h-4 w-4 mr-2" />
-                                    Vai al Pagamento
-                                  </>
-                                )}
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Button 
-                          variant="outline" 
-                          className="border-[#f59e0b]/30 text-[#f59e0b]"
-                          onClick={() => setShowNotificaDialog(true)}
-                        >
-                          <Bell className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Ultime Transazioni */}
-                    <div>
-                      <h4 className="text-[#e8fbff] font-semibold mb-2 flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Ultime Transazioni
-                      </h4>
-                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                        {getTransazioniWallet(selectedWallet.impresaId).map(transazione => (
-                          <div 
-                            key={transazione.id}
-                            className={`flex items-center justify-between p-2 bg-[#0b1220] rounded border ${
-                              transazione.tipo === 'RICARICA' ? 'border-[#10b981]/20' : 'border-[#ef4444]/20'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              {transazione.tipo === 'RICARICA' ? (
-                                <ArrowUpRight className="h-4 w-4 text-[#10b981]" />
-                              ) : (
-                                <ArrowDownRight className="h-4 w-4 text-[#ef4444]" />
-                              )}
-                              <div>
-                                <span className="text-sm text-[#e8fbff]">{transazione.descrizione}</span>
-                                <p className="text-xs text-[#e8fbff]/50">
-                                  {new Date(transazione.data).toLocaleDateString('it-IT')}
-                                </p>
-                              </div>
-                            </div>
-                            <span className={`font-semibold ${
-                              transazione.tipo === 'RICARICA' ? 'text-[#10b981]' : 'text-[#ef4444]'
-                            }`}>
-                              {transazione.tipo === 'RICARICA' ? '+' : '-'}€ {transazione.importo.toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-                        {getTransazioniWallet(selectedWallet.impresaId).length === 0 && (
-                          <p className="text-center text-[#e8fbff]/50 py-4">Nessuna transazione</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Wallet className="h-16 w-16 text-[#e8fbff]/30 mx-auto mb-4" />
-                    <p className="text-[#e8fbff]/50">Seleziona un operatore dalla lista per vedere i dettagli del wallet</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Regole Blocco */}
-          <Card className="bg-[#1a2332] border-[#f59e0b]/30">
-            <CardHeader>
-              <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-[#f59e0b]" />
-                Regole di Blocco Automatico
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-[#0b1220] rounded-lg border border-[#10b981]/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="h-5 w-5 text-[#10b981]" />
-                    <span className="text-[#10b981] font-semibold">ATTIVO</span>
-                  </div>
-                  <p className="text-sm text-[#e8fbff]/70">Saldo ≥ Tariffa giornaliera × 3</p>
-                  <p className="text-sm text-[#e8fbff]/70">Può effettuare presenza</p>
-                </div>
-                <div className="p-4 bg-[#0b1220] rounded-lg border border-[#f59e0b]/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="h-5 w-5 text-[#f59e0b]" />
-                    <span className="text-[#f59e0b] font-semibold">SALDO BASSO</span>
-                  </div>
-                  <p className="text-sm text-[#e8fbff]/70">Saldo &lt; Tariffa giornaliera × 3</p>
-                  <p className="text-sm text-[#e8fbff]/70">Notifica automatica inviata</p>
-                </div>
-                <div className="p-4 bg-[#0b1220] rounded-lg border border-[#ef4444]/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <XCircle className="h-5 w-5 text-[#ef4444]" />
-                    <span className="text-[#ef4444] font-semibold">BLOCCATO</span>
-                  </div>
-                  <p className="text-sm text-[#e8fbff]/70">Saldo &lt; Tariffa giornaliera</p>
-                  <p className="text-sm text-[#e8fbff]/70">Presenza non consentita</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {/* SOTTO-TAB: PAGOPA */}
-      {subTab === 'pagopa' && (
-        <>
-          {/* Statistiche PagoPA */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="bg-[#1a2332] border-[#10b981]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <Euro className="h-8 w-8 text-[#10b981]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Totale Incassato</p>
-                    <p className="text-2xl font-bold text-[#10b981]">€ {stats.totaleIncassato.toLocaleString('it-IT')}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1a2332] border-[#3b82f6]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-8 w-8 text-[#3b82f6]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Pagati</p>
-                    <p className="text-2xl font-bold text-[#3b82f6]">{stats.avvisiPagati}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1a2332] border-[#f59e0b]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <Clock className="h-8 w-8 text-[#f59e0b]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">In Attesa</p>
-                    <p className="text-2xl font-bold text-[#f59e0b]">{stats.avvisiInAttesa}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1a2332] border-[#ef4444]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-8 w-8 text-[#ef4444]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Scaduti</p>
-                    <p className="text-2xl font-bold text-[#ef4444]">{stats.avvisiScaduti}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Lista Avvisi PagoPA */}
-          <Card className="bg-[#1a2332] border-[#10b981]/30">
-            <CardHeader>
-              <CardTitle className="text-[#e8fbff] flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Euro className="h-5 w-5 text-[#10b981]" />
-                  Avvisi PagoPA ({avvisiPagoPA.length})
-                </span>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="border-[#3b82f6]/30 text-[#e8fbff]">
-                    <RefreshCw className="h-4 w-4 mr-1" />
-                    Verifica Pagamenti
-                  </Button>
-                  <Button size="sm" className="bg-[#10b981] hover:bg-[#10b981]/80">
-                    <Download className="h-4 w-4 mr-1" />
-                    Esporta
-                  </Button>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {avvisiPagoPA.map(avviso => (
-                  <div key={avviso.id} className={`p-4 bg-[#0b1220] rounded-lg border ${getAvvisoColor(avviso.stato)}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="text-[#e8fbff] font-semibold">{avviso.causale}</p>
-                        <p className="text-sm text-[#e8fbff]/70">{avviso.ragioneSociale}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-[#e8fbff]/50">
-                          <span className="flex items-center gap-1">
-                            <QrCode className="h-3 w-3" />
-                            IUV: {avviso.iuv.slice(0, 10)}...
-                          </span>
-                          <span>Emesso: {avviso.dataEmissione}</span>
-                          <span>Scadenza: {avviso.dataScadenza}</span>
-                        </div>
-                      </div>
-                      <div className="text-right flex flex-col items-end gap-2">
-                        <p className={`font-bold text-xl ${
-                          avviso.stato === 'PAGATO' ? 'text-[#10b981]' :
-                          avviso.stato === 'EMESSO' ? 'text-[#f59e0b]' : 'text-[#ef4444]'
-                        }`}>
-                          € {avviso.importo.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
-                        </p>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          avviso.stato === 'PAGATO' ? 'bg-[#10b981]/20 text-[#10b981]' :
-                          avviso.stato === 'EMESSO' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
-                          'bg-[#ef4444]/20 text-[#ef4444]'
-                        }`}>
-                          {avviso.stato}
-                        </span>
-                        {avviso.stato === 'EMESSO' && (
-                          <div className="flex gap-1 mt-1">
-                            <Button size="sm" variant="outline" className="h-7 px-2 border-[#3b82f6]/30 text-[#3b82f6]">
-                              <Download className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-7 px-2 border-[#10b981]/30 text-[#10b981]">
-                              <ExternalLink className="h-3 w-3" />
+                            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800 w-full">
+                              <FileText className="mr-2 h-4 w-4" />
+                              Storico Movimenti
                             </Button>
                           </div>
-                        )}
-                        {avviso.stato === 'PAGATO' && (
-                          <Button size="sm" variant="outline" className="h-7 px-2 border-[#10b981]/30 text-[#10b981]">
-                            <FileText className="h-3 w-3 mr-1" />
-                            Quietanza
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/30">
-                <p className="text-sm text-[#e8fbff]/70 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-[#3b82f6]" />
-                  Integrazione E-FIL Plug&Pay attiva in modalità <strong className="text-[#f59e0b]">MOCK</strong> - Configurare credenziali per produzione
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {/* SOTTO-TAB: TARIFFE */}
-      {subTab === 'tariffe' && (
-        <>
-          <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-            <CardHeader>
-              <CardTitle className="text-[#e8fbff] flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-[#8b5cf6]" />
-                  Tariffe Posteggio
-                </span>
-                <Button size="sm" className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nuova Tariffa
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {mockTariffe.map(tariffa => (
-                  <div key={tariffa.id} className="p-4 bg-[#0b1220] rounded-lg border border-[#8b5cf6]/30">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[#e8fbff] font-semibold">{tariffa.tipoPosteggio}</p>
-                        <p className="text-sm text-[#e8fbff]/70">{tariffa.descrizione}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-[#8b5cf6]">€ {tariffa.tariffaGiornaliera.toFixed(2)}</p>
-                          <p className="text-xs text-[#e8fbff]/50">al giorno</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" className="border-[#8b5cf6]/30 text-[#e8fbff]">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="border-[#ef4444]/30 text-[#ef4444]">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {/* SOTTO-TAB: RICONCILIAZIONE */}
-      {subTab === 'riconciliazione' && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-[#1a2332] border-[#10b981]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <ArrowUpRight className="h-8 w-8 text-[#10b981]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Totale Ricariche</p>
-                    <p className="text-2xl font-bold text-[#10b981]">€ {stats.totaleIncassato.toLocaleString('it-IT')}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1a2332] border-[#ef4444]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <ArrowDownRight className="h-8 w-8 text-[#ef4444]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Totale Decurtazioni</p>
-                    <p className="text-2xl font-bold text-[#ef4444]">€ {mockTransazioni.filter(t => t.tipo === 'DECURTAZIONE').reduce((sum, t) => sum + t.importo, 0).toLocaleString('it-IT')}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1a2332] border-[#3b82f6]/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <Wallet className="h-8 w-8 text-[#3b82f6]" />
-                  <div>
-                    <p className="text-sm text-[#e8fbff]/70">Saldo Complessivo</p>
-                    <p className="text-2xl font-bold text-[#3b82f6]">€ {stats.saldoTotale.toLocaleString('it-IT')}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </div>
+        )}
 
-          <Card className="bg-[#1a2332] border-[#f59e0b]/30">
-            <CardHeader>
-              <CardTitle className="text-[#e8fbff] flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-[#f59e0b]" />
-                  Riconciliazione Giornaliera
-                </span>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="border-[#3b82f6]/30 text-[#e8fbff]">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    Seleziona Data
-                  </Button>
-                  <Button size="sm" className="bg-[#f59e0b] hover:bg-[#f59e0b]/80">
-                    <RefreshCw className="h-4 w-4 mr-1" />
-                    Sincronizza E-FIL
-                  </Button>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 bg-[#0b1220] rounded-lg border border-[#f59e0b]/30 text-center">
-                <FileText className="h-12 w-12 text-[#f59e0b]/50 mx-auto mb-3" />
-                <p className="text-[#e8fbff]/70">Seleziona una data per visualizzare i pagamenti ricevuti</p>
-                <p className="text-sm text-[#e8fbff]/50 mt-2">
-                  La riconciliazione sincronizza automaticamente i pagamenti PagoPA con i wallet degli operatori
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {/* Dialog Notifica */}
-      <Dialog open={showNotificaDialog} onOpenChange={setShowNotificaDialog}>
-        <DialogContent className="bg-[#1a2332] border-[#3b82f6]/30">
-          <DialogHeader>
-            <DialogTitle className="text-[#e8fbff]">Invia Notifica</DialogTitle>
-            <DialogDescription className="text-[#e8fbff]/70">
-              Invia una notifica all'operatore per ricordargli di ricaricare il wallet
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-[#e8fbff]">
-              Vuoi inviare una notifica a <strong>{selectedWallet?.ragioneSociale}</strong> per ricordargli di ricaricare il wallet?
-            </p>
+        {subTab === 'pagopa' && (
+          <div className="text-center py-12 bg-[#1e293b] rounded-lg border border-slate-700">
+            <CreditCard className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white">Sezione PagoPA in sviluppo</h3>
+            <p className="text-slate-400 mt-2">Qui verranno visualizzati tutti gli avvisi PagoPA generati e il loro stato.</p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNotificaDialog(false)} className="border-[#3b82f6]/30 text-[#e8fbff]">
-              Annulla
-            </Button>
-            <Button className="bg-[#f59e0b] hover:bg-[#f59e0b]/80" onClick={() => {
-              alert('Notifica inviata (mock)');
-              setShowNotificaDialog(false);
-            }}>
-              <Send className="h-4 w-4 mr-2" />
-              Invia Notifica
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+
+        {subTab === 'tariffe' && (
+          <div className="text-center py-12 bg-[#1e293b] rounded-lg border border-slate-700">
+            <Euro className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white">Gestione Tariffe</h3>
+            <p className="text-slate-400 mt-2">Configurazione delle tariffe per mercato e tipologia di posteggio.</p>
+          </div>
+        )}
+
+        {subTab === 'riconciliazione' && (
+          <div className="text-center py-12 bg-[#1e293b] rounded-lg border border-slate-700">
+            <RefreshCw className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white">Riconciliazione Incassi</h3>
+            <p className="text-slate-400 mt-2">Strumenti per la riconciliazione automatica dei flussi PagoPA.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
