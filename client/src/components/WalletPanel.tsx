@@ -267,6 +267,44 @@ const generateMockCodiceAvviso = () => {
 
 export default function WalletPanel() {
   const [subTab, setSubTab] = useState<'wallet' | 'pagopa' | 'tariffe' | 'riconciliazione'>('wallet');
+  const [wallets, setWallets] = useState<WalletOperatore[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch Wallets from Real API
+  useEffect(() => {
+    const fetchWallets = async () => {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'https://mihub-backend.manus.space';
+        const response = await fetch(`${API_URL}/api/wallets`);
+        const data = await response.json();
+        if (data.success) {
+          // Mappa i dati dal DB al formato UI
+          const mappedWallets = data.data.map((w: any) => ({
+            id: w.id,
+            impresaId: w.company_id,
+            ragioneSociale: w.ragione_sociale || 'Impresa Sconosciuta',
+            partitaIva: w.partita_iva || 'N/A',
+            saldo: parseFloat(w.balance),
+            stato: parseFloat(w.balance) > 0 ? 'ATTIVO' : 'BLOCCATO', // Logica semplificata
+            ultimoAggiornamento: w.updated_at,
+            tipoPosteggio: 'Generico', // Da arricchire
+            numeroPosteggio: 'N/A',
+            tariffaGiornaliera: 0,
+            mercato: 'Mercato Test'
+          }));
+          setWallets(mappedWallets);
+        }
+      } catch (error) {
+        console.error("Errore fetch wallets:", error);
+        // Fallback ai mock se fallisce (per demo)
+        setWallets(mockWallets);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWallets();
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWallet, setSelectedWallet] = useState<WalletOperatore | null>(null);
   const [filterStato, setFilterStato] = useState<string>('tutti');
@@ -339,7 +377,7 @@ export default function WalletPanel() {
   ]);
 
   // Filtra wallet in base a ricerca e filtri
-  const filteredWallets = mockWallets.filter(wallet => {
+  const filteredWallets = (wallets.length > 0 ? wallets : mockWallets).filter(wallet => {
     const matchesSearch = 
       wallet.ragioneSociale.toLowerCase().includes(searchQuery.toLowerCase()) ||
       wallet.partitaIva.includes(searchQuery) ||
