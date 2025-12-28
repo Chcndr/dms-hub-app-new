@@ -1,4 +1,4 @@
-# 🔑 BLUEPRINT MIO HUB - AGGIORNATO 22 DICEMBRE 2024 (v2)
+# 🔑 BLUEPRINT MIO HUB - AGGIORNATO 29 DICEMBRE 2025 (v3)
 
 **DOCUMENTO DI CONTESTO PER NUOVE SESSIONI MANUS**
 
@@ -6,19 +6,64 @@
 
 ## 📋 INDICE
 
-1. [Repository e Deploy](#-repository-e-deploy)
-2. [Accesso Server Hetzner](#-accesso-server-hetzner)
-3. [Database Neon PostgreSQL](#-database-neon-postgresql)
-4. [Architettura Sistema Chat](#-architettura-sistema-chat)
-5. [Schema Database agent_messages](#-schema-database-agent_messages)
-6. [Flusso Messaggi e Mode](#-flusso-messaggi-e-mode)
-7. [Logica di Rendering Frontend](#-logica-di-rendering-frontend)
-8. [File Chiave da Conoscere](#-file-chiave-da-conoscere)
-9. [Comandi Utili](#-comandi-utili)
-10. [Agenti del Sistema](#-agenti-del-sistema)
-11. [Wallet / PagoPA](#-wallet--pagopa)
-12. [Imprese & Qualificazioni](#-imprese--qualificazioni)
-13. [API Inventory (Integrazioni)](#-api-inventory-integrazioni)
+1. [Aggiornamento 29 Dicembre (Spunta & Storico)](#-aggiornamento-29-dicembre-2025-sessione-notturna---spunta--storico)
+2. [Repository e Deploy](#-repository-e-deploy)
+3. [Accesso Server Hetzner](#-accesso-server-hetzner)
+4. [Database Neon PostgreSQL](#-database-neon-postgresql)
+5. [Architettura Sistema Chat](#-architettura-sistema-chat)
+6. [Schema Database agent_messages](#-schema-database-agent_messages)
+7. [Flusso Messaggi e Mode](#-flusso-messaggi-e-mode)
+8. [Logica di Rendering Frontend](#-logica-di-rendering-frontend)
+9. [File Chiave da Conoscere](#-file-chiave-da-conoscere)
+10. [Comandi Utili](#-comandi-utili)
+11. [Agenti del Sistema](#-agenti-del-sistema)
+12. [Wallet / PagoPA](#-wallet--pagopa)
+13. [Imprese & Qualificazioni](#-imprese--qualificazioni)
+14. [API Inventory (Integrazioni)](#-api-inventory-integrazioni)
+
+---
+
+## 💡 AGGIORNAMENTO 29 DICEMBRE 2025 (SESSIONE NOTTURNA - SPUNTA & STORICO)
+
+### ✅ Nuove Funzionalità Implementate
+
+1.  **Wallet Spunta Specifico per Mercato**
+    -   **Architettura**: I wallet di tipo `SPUNTA` non sono più unici per azienda, ma specifici per ogni coppia `(Azienda, Mercato)`.
+    -   **Motivazione**: I pagamenti della spunta devono confluire nelle casse specifiche del comune che gestisce quel mercato.
+    -   **Visualizzazione**: Nella lista imprese, il badge "Spunta" mostra il saldo del wallet relativo al mercato che si sta visualizzando.
+
+2.  **Domanda Spunta**
+    -   **Nuovo Flusso**: Aggiunto pulsante "Domanda Spunta" nel tab Autorizzazioni.
+    -   **Funzionamento**: Permette di creare un nuovo wallet spunta per un'impresa in uno specifico mercato, simulando la richiesta di partecipazione alla spunta.
+
+3.  **Fix Storico PagoPA**
+    -   **Problema**: Crash della pagina storico dovuto a conflitti di nomi (`History` vs `window.history`) e dati sporchi.
+    -   **Soluzione**: Rinominato componente in `HistoryIcon`, blindato il rendering delle date e filtrati i dati non validi.
+
+4.  **Indicatori Visivi (Semafori)**
+    -   **Lista Imprese**: Aggiunti semafori (Verde/Rosso) e importi per:
+        -   Concessioni (Posteggi)
+        -   Wallet Spunta (Ricaricabile)
+    -   **Logica**: € 0.00 è considerato "Da Pagare" (Rosso) per le concessioni, mentre per la spunta dipende dal saldo positivo/negativo.
+
+### 📐 Architettura Wallet Spunta
+
+```mermaid
+graph TD
+    A[Impresa] -->|Ha Molti| W[Wallets]
+    M[Mercato] -->|Gestisce| W
+    
+    subgraph "Tipologie Wallet"
+        W1[Wallet Concessione] -->|1 per Posteggio| P[Posteggio]
+        W2[Wallet Spunta] -->|1 per Mercato| M
+    end
+    
+    subgraph "Flusso Domanda Spunta"
+        User[Utente] -->|Click 'Domanda Spunta'| FE[Frontend]
+        FE -->|POST /api/wallets/init| BE[Backend]
+        BE -->|Crea Wallet type='SPUNTA' market_id=X| DB[(Database)]
+    end
+```
 
 ---
 
@@ -471,13 +516,6 @@ La sezione **Integrazioni** nella Dashboard PA è il centro di controllo per tut
 | `sync.updateConfig` | POST | Salva configurazione |
 | `sync.getConfig` | GET | Ottieni configurazione |
 
-**Funzionalità:**
-- Modalità simulazione quando gestionale non configurato
-- Statistiche real-time (ultimo sync, prossimo sync, totale sincronizzati, errori)
-- Configurazione frequenza (5 min - 1 ora)
-- Modalità bidirezionale/unidirezionale
-- Entità: operatori, presenze, concessioni, pagamenti, documenti, mercati, posteggi
-
 ### File Chiave
 
 | File | Descrizione |
@@ -490,5 +528,5 @@ La sezione **Integrazioni** nella Dashboard PA è il centro di controllo per tut
 
 ---
 
-*Documento aggiornato il 22 Dicembre 2024 ore 19:00 - Manus AI*
+*Documento aggiornato il 29 Dicembre 2025 - Manus AI*
 *Da allegare all'inizio di ogni nuova sessione di lavoro*
