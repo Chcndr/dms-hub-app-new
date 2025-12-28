@@ -59,6 +59,8 @@ interface Market {
   gis_market_id: string;
   latitude: string;
   longitude: string;
+  cost_per_sqm?: number;
+  annual_market_days?: number;
 }
 
 interface Stall {
@@ -313,7 +315,7 @@ export default function GestioneMercati() {
 
       {/* Dettaglio Mercato Selezionato */}
       {selectedMarket && (
-        <MarketDetail market={selectedMarket} allMarkets={markets} />
+        <MarketDetail market={selectedMarket} allMarkets={markets} onUpdate={fetchMarkets} />
       )}
     </div>
   );
@@ -322,7 +324,7 @@ export default function GestioneMercati() {
 /**
  * Dettaglio mercato con tab
  */
-function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Market[] }) {
+function MarketDetail({ market, allMarkets, onUpdate }: { market: Market; allMarkets: Market[]; onUpdate: () => void }) {
   const [activeTab, setActiveTab] = useState("anagrafica");
   const [stalls, setStalls] = useState<Stall[]>([]);
   // Stato per Vista Italia / Vista Mercato: 'italia' | 'mercato'
@@ -410,7 +412,7 @@ function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Mark
           </TabsList>
 
           <TabsContent value="anagrafica" className="space-y-4">
-            <AnagraficaTab market={market} />
+            <AnagraficaTab market={market} onUpdate={onUpdate} />
           </TabsContent>
 
           <TabsContent value="posteggi" className="space-y-4">
@@ -429,52 +431,143 @@ function MarketDetail({ market, allMarkets }: { market: Market; allMarkets: Mark
 /**
  * Tab Anagrafica Mercato
  */
-function AnagraficaTab({ market }: { market: Market }) {
+function AnagraficaTab({ market, onUpdate }: { market: Market; onUpdate: () => void }) {
+  const [formData, setFormData] = useState({
+    days: market.days || '',
+    cost_per_sqm: market.cost_per_sqm || 0,
+    annual_market_days: market.annual_market_days || 52
+  });
+  const [saving, setSaving] = useState(false);
+
+  // Aggiorna il form quando cambia il mercato selezionato
+  useEffect(() => {
+    setFormData({
+      days: market.days || '',
+      cost_per_sqm: market.cost_per_sqm || 0,
+      annual_market_days: market.annual_market_days || 52
+    });
+  }, [market]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/markets/${market.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        toast.success('Dati mercato aggiornati con successo');
+        onUpdate();
+      } else {
+        throw new Error('Errore durante il salvataggio');
+      }
+    } catch (error) {
+      console.error('Error updating market:', error);
+      toast.error('Errore durante il salvataggio delle modifiche');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium text-[#e8fbff]">Dati Generali e Tariffe</h3>
+        <Button 
+          onClick={handleSave} 
+          disabled={saving}
+          className="bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Salvataggio...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              Salva Modifiche
+            </>
+          )}
+        </Button>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#e8fbff]/70">Codice</label>
-          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.code}</p>
+        {/* Campi Sola Lettura */}
+        <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
+          <label className="text-sm font-medium text-[#e8fbff]/50">Codice</label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.code}</p>
         </div>
-        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#e8fbff]/70">Nome</label>
-          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.name}</p>
+        <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
+          <label className="text-sm font-medium text-[#e8fbff]/50">Nome</label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.name}</p>
         </div>
-        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#e8fbff]/70">Comune</label>
-          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.municipality}</p>
+        <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
+          <label className="text-sm font-medium text-[#e8fbff]/50">Comune</label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.municipality}</p>
         </div>
-        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#e8fbff]/70">Giorni Mercato</label>
-          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.days}</p>
+        <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
+          <label className="text-sm font-medium text-[#e8fbff]/50">Posteggi Totali</label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.total_stalls}</p>
         </div>
-        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#e8fbff]/70">Posteggi Totali</label>
-          <p className="text-lg font-semibold text-[#14b8a6] mt-1">{market.total_stalls}</p>
+
+        {/* Campi Modificabili - Configurazione Mercato */}
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/30 ring-1 ring-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#14b8a6]">Giorno Settimanale</label>
+          <input
+            type="text"
+            value={formData.days}
+            onChange={(e) => setFormData({ ...formData, days: e.target.value })}
+            className="w-full mt-2 px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
+            placeholder="Es. Lunedì"
+          />
         </div>
-        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#e8fbff]/70">Stato</label>
-          <Badge 
-            variant="default" 
-            className={`mt-1 ${market.status === 'active' 
-              ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30" 
-              : "bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30"}`}
-          >
-            {market.status === 'active' ? "Attivo" : "Inattivo"}
-          </Badge>
+
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/30 ring-1 ring-[#14b8a6]/20">
+          <label className="text-sm font-medium text-[#14b8a6]">Giorni/Anno (per calcolo canone)</label>
+          <input
+            type="number"
+            value={formData.annual_market_days}
+            onChange={(e) => setFormData({ ...formData, annual_market_days: parseInt(e.target.value) || 0 })}
+            className="w-full mt-2 px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
+            placeholder="Es. 52"
+          />
         </div>
-        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#e8fbff]/70">Latitudine</label>
-          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.latitude}</p>
+
+        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/30 ring-1 ring-[#14b8a6]/20 col-span-2">
+          <label className="text-sm font-medium text-[#14b8a6]">Costo al mq (€)</label>
+          <div className="relative mt-2">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#e8fbff]/50">€</span>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.cost_per_sqm}
+              onChange={(e) => setFormData({ ...formData, cost_per_sqm: parseFloat(e.target.value) || 0 })}
+              className="w-full pl-8 pr-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
+              placeholder="0.00"
+            />
+          </div>
+          <p className="text-xs text-[#e8fbff]/50 mt-2">
+            Utilizzato per il calcolo automatico del canone unico (Costo mq × Mq Posteggio × Giorni Anno)
+          </p>
         </div>
-        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#e8fbff]/70">Longitudine</label>
-          <p className="text-lg font-semibold text-[#e8fbff] mt-1">{market.longitude}</p>
+
+        {/* Altri Dati Tecnici */}
+        <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
+          <label className="text-sm font-medium text-[#e8fbff]/50">Latitudine</label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.latitude}</p>
         </div>
-        <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/20 col-span-2">
-          <label className="text-sm font-medium text-[#e8fbff]/70">GIS Market ID</label>
-          <p className="text-lg font-semibold text-[#8b5cf6] mt-1">{market.gis_market_id}</p>
+        <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
+          <label className="text-sm font-medium text-[#e8fbff]/50">Longitudine</label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.longitude}</p>
+        </div>
+        <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10 col-span-2">
+          <label className="text-sm font-medium text-[#e8fbff]/50">GIS Market ID</label>
+          <p className="text-lg font-semibold text-[#8b5cf6]/70 mt-1">{market.gis_market_id}</p>
         </div>
       </div>
     </div>
