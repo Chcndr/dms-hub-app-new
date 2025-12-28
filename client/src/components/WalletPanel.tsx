@@ -108,7 +108,13 @@ export default function WalletPanel() {
             };
           }
 
-          const typeNormalized = row.type ? row.type.toUpperCase().trim() : 'SPUNTA';
+          let typeNormalized = row.type ? row.type.toUpperCase().trim() : 'SPUNTA';
+          
+          // Se mancano i dati del posteggio, forziamo il tipo a SPUNTA
+          if (!row.stall_number && !row.market_name) {
+            typeNormalized = 'SPUNTA';
+          }
+
           const wallet: WalletItem = {
             id: row.id,
             type: typeNormalized as 'SPUNTA' | 'CONCESSIONE',
@@ -182,14 +188,16 @@ export default function WalletPanel() {
         }
       });
 
-      // Sort by date desc safely
-      allTx.sort((a, b) => {
+      // Filter out invalid transactions and sort safely
+      const validTx = allTx.filter(tx => tx && typeof tx === 'object');
+      
+      validTx.sort((a, b) => {
         const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
         const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
         return dateB - dateA;
       });
       
-      setTransactions(allTx);
+      setTransactions(validTx);
     } catch (err) {
       console.error("Error fetching transactions", err);
     } finally {
@@ -461,8 +469,8 @@ export default function WalletPanel() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700">
-                      {transactions.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-slate-800/50">
+                      {transactions.map((tx, idx) => (
+                        <tr key={tx.id || idx} className="hover:bg-slate-800/50">
                           <td className="px-4 py-3">
                             {tx.created_at ? new Date(tx.created_at).toLocaleDateString('it-IT', {
                               day: '2-digit', month: '2-digit', year: 'numeric',
@@ -519,7 +527,15 @@ export default function WalletPanel() {
               {selectedWallet?.type !== 'SPUNTA' ? 'Pagamento Canone Concessione' : 'Ricarica Credito Spunta'}
             </DialogTitle>
             <DialogDescription className="text-slate-400">
-              {selectedCompany} - {selectedWallet?.type !== 'SPUNTA' ? `Posteggio ${selectedWallet?.stall_number} (${selectedWallet?.market_name})` : 'Borsellino Ricaricabile'}
+              {selectedCompany}
+              {selectedWallet?.type !== 'SPUNTA' && (
+                <>
+                  {' - '}
+                  {selectedWallet?.stall_number ? `Posteggio ${selectedWallet.stall_number}` : 'Posteggio N/A'}
+                  {selectedWallet?.market_name ? ` (${selectedWallet.market_name})` : ''}
+                </>
+              )}
+              {selectedWallet?.type === 'SPUNTA' && ' - Borsellino Ricaricabile'}
             </DialogDescription>
           </DialogHeader>
 
