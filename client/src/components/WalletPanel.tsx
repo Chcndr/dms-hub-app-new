@@ -157,8 +157,8 @@ export default function WalletPanel() {
     setAnnualFeeData(null);
     setShowDepositDialog(true);
 
-    // Se è una concessione, calcola subito il dovuto
-    if (wallet.type === 'CONCESSIONE') {
+    // Se NON è SPUNTA, assumiamo sia CONCESSIONE (logica più robusta)
+    if (wallet.type !== 'SPUNTA') {
       setIsCalculating(true);
       try {
         const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
@@ -192,7 +192,7 @@ export default function WalletPanel() {
         body: JSON.stringify({
           wallet_id: selectedWallet.id,
           amount: parseFloat(depositAmount),
-          description: selectedWallet.type === 'CONCESSIONE' 
+          description: selectedWallet.type !== 'SPUNTA' 
             ? `Pagamento Canone Annuo - ${selectedWallet.market_name} - Posteggio ${selectedWallet.stall_number}`
             : `Ricarica Credito Spunta`
         })
@@ -290,25 +290,26 @@ export default function WalletPanel() {
                       
                       {/* Wallet Spunta (Sempre Visibile) */}
                       {company.spunta_wallet ? (
-                        <div className="flex items-center gap-4 bg-[#0f172a] p-3 rounded-lg border border-slate-700">
-                          <div className="text-right">
-                            <p className="text-xs text-slate-400 uppercase font-bold">Credito Spunta</p>
-                            <p className={`text-xl font-bold ${company.spunta_wallet.balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                              € {company.spunta_wallet.balance.toFixed(2)}
-                            </p>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            className="bg-[#3b82f6] hover:bg-[#2563eb]"
-                            onClick={() => handleOpenDeposit(company.spunta_wallet!, company.ragione_sociale)}
-                          >
-                            <Plus className="h-4 w-4" /> Ricarica
-                          </Button>
+                        <div className="text-right">
+                          <p className="text-xs text-slate-400 uppercase font-bold">Credito Spunta</p>
+                          <p className={`text-xl font-bold ${company.spunta_wallet.balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                            € {company.spunta_wallet.balance.toFixed(2)}
+                          </p>
                         </div>
                       ) : (
                         <Badge variant="outline" className="border-yellow-500 text-yellow-500">
                           Wallet Spunta Non Attivo
                         </Badge>
+                      )}
+                      
+                      {company.spunta_wallet && (
+                        <Button 
+                          size="sm" 
+                          className="bg-[#3b82f6] hover:bg-[#2563eb] ml-4"
+                          onClick={() => handleOpenDeposit(company.spunta_wallet!, company.ragione_sociale)}
+                        >
+                          <Plus className="h-4 w-4" /> Ricarica
+                        </Button>
                       )}
                     </div>
                   </CardHeader>
@@ -336,9 +337,9 @@ export default function WalletPanel() {
                                   <span className="text-slate-300 font-medium">Posteggio {wallet.stall_number}</span>
                                 </div>
                                 <div className="text-sm text-slate-500 flex gap-4">
-                                  <span>Area: {wallet.stall_area} mq</span>
-                                  <span>Tariffa: € {wallet.cost_per_sqm}/mq</span>
-                                  <span>Giorni: {wallet.annual_market_days}/anno</span>
+                                  <span>Area: {isNaN(wallet.stall_area || NaN) ? '-' : wallet.stall_area} mq</span>
+                                  <span>Tariffa: {isNaN(wallet.cost_per_sqm || NaN) ? '-' : `€ ${wallet.cost_per_sqm}/mq`}</span>
+                                  <span>Giorni: {isNaN(wallet.annual_market_days || NaN) ? '-' : `${wallet.annual_market_days}/anno`}</span>
                                 </div>
                               </div>
                               
@@ -397,15 +398,15 @@ export default function WalletPanel() {
         <DialogContent className="bg-[#1e293b] border-slate-700 text-white sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {selectedWallet?.type === 'CONCESSIONE' ? 'Pagamento Canone Concessione' : 'Ricarica Credito Spunta'}
+              {selectedWallet?.type !== 'SPUNTA' ? 'Pagamento Canone Concessione' : 'Ricarica Credito Spunta'}
             </DialogTitle>
             <DialogDescription className="text-slate-400">
-              {selectedCompany} - {selectedWallet?.type === 'CONCESSIONE' ? `Posteggio ${selectedWallet?.stall_number} (${selectedWallet?.market_name})` : 'Borsellino Ricaricabile'}
+              {selectedCompany} - {selectedWallet?.type !== 'SPUNTA' ? `Posteggio ${selectedWallet?.stall_number} (${selectedWallet?.market_name})` : 'Borsellino Ricaricabile'}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-6 space-y-6">
-            {selectedWallet?.type === 'CONCESSIONE' ? (
+            {selectedWallet?.type !== 'SPUNTA' ? (
               isCalculating ? (
                 <div className="flex justify-center py-4"><Loader2 className="animate-spin h-8 w-8 text-blue-500" /></div>
               ) : annualFeeData ? (
@@ -428,7 +429,7 @@ export default function WalletPanel() {
                   </div>
                 </div>
               ) : (
-                <p className="text-red-400 text-center">Impossibile calcolare il canone. Dati mancanti.</p>
+                <p className="text-red-400 text-center">Impossibile calcolare il canone. Dati mancanti (Area, Tariffa o Giorni).</p>
               )
             ) : (
               <div className="space-y-2">
