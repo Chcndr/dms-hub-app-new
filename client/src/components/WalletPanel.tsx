@@ -108,9 +108,10 @@ export default function WalletPanel() {
             };
           }
 
+          const typeNormalized = row.type ? row.type.toUpperCase().trim() : 'SPUNTA';
           const wallet: WalletItem = {
             id: row.id,
-            type: row.type.toUpperCase(),
+            type: typeNormalized as 'SPUNTA' | 'CONCESSIONE',
             balance: parseFloat(row.balance),
             status: row.status,
             market_name: row.market_name,
@@ -122,7 +123,7 @@ export default function WalletPanel() {
             updated_at: row.updated_at
           };
 
-          if (row.type === 'SPUNTA') {
+          if (typeNormalized === 'SPUNTA') {
             acc[row.company_id].spunta_wallet = wallet;
           } else {
             acc[row.company_id].concession_wallets.push(wallet);
