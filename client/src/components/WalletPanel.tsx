@@ -110,7 +110,7 @@ export default function WalletPanel() {
 
           const wallet: WalletItem = {
             id: row.id,
-            type: row.type,
+            type: row.type.toUpperCase(),
             balance: parseFloat(row.balance),
             status: row.status,
             market_name: row.market_name,
