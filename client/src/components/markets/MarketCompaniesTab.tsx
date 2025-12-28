@@ -45,7 +45,7 @@ export type CompanyRow = {
   referente?: string;
   telefono?: string;
   stato?: "active" | "suspended" | "closed";
-  concessioni?: { id: number; mercato: string; posteggio_code: string; data_scadenza: string; stato: string }[];
+  concessioni?: { id: number; mercato: string; posteggio_code: string; data_scadenza: string; stato: string; wallet_balance?: number }[];
   autorizzazioni?: { id: number; numero: string; ente: string; stato: string }[];
 };
 
@@ -299,7 +299,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         throw new Error('Formato risposta non valido');
       }
       
-      // Map imprese fields to frontend schema - include ALL fields
+        // Map imprese fields to frontend schema - include ALL fields
       const mappedData = json.data.map((v: any) => ({
         // Campi base per la visualizzazione nella lista
         id: v.id,
@@ -311,7 +311,10 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           : (v.email || ''),
         telefono: v.telefono,
         stato: v.stato_impresa,
-        concessioni: v.concessioni_attive || [],
+        concessioni: (v.concessioni_attive || []).map((c: any) => ({
+          ...c,
+          wallet_balance: c.wallet_balance !== undefined ? Number(c.wallet_balance) : undefined
+        })),
         autorizzazioni: v.autorizzazioni_attive || [],
         // Tutti gli altri campi per il modal di modifica
         numero_rea: v.numero_rea,
@@ -1107,12 +1110,25 @@ function CompanyCard({ company, qualificazioni = [], onEdit, onViewQualificazion
             </span>
           )}
           
-          {company.concessioni && company.concessioni.map((conc, idx) => (
-            <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-md">
-              <MapPin className="w-3 h-3" />
-              {conc.mercato}: {conc.posteggio_code}
-            </span>
-          ))}
+          {company.concessioni && company.concessioni.map((conc, idx) => {
+            const hasBalance = conc.wallet_balance !== undefined;
+            const isPaid = hasBalance && conc.wallet_balance! > 0;
+            
+            return (
+              <span key={idx} className="inline-flex items-center gap-2 px-2 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-md">
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {conc.mercato}: {conc.posteggio_code}
+                </div>
+                {hasBalance && (
+                  <div className={`flex items-center gap-1 pl-2 border-l border-blue-400/20 ${isPaid ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className={`w-2 h-2 rounded-full ${isPaid ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className="font-bold">€ {conc.wallet_balance!.toFixed(2)}</span>
+                  </div>
+                )}
+              </span>
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-2 pt-2">

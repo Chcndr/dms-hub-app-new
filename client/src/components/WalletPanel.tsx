@@ -182,8 +182,12 @@ export default function WalletPanel() {
         }
       });
 
-      // Sort by date desc
-      allTx.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Sort by date desc safely
+      allTx.sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      });
       
       setTransactions(allTx);
     } catch (err) {
@@ -396,11 +400,11 @@ export default function WalletPanel() {
                               
                               <div className="text-right min-w-[120px]">
                                 <p className="text-xs text-slate-400">Saldo Wallet</p>
-                                <p className={`text-lg font-bold ${wallet.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                <p className={`text-lg font-bold ${wallet.balance > 0 ? 'text-green-500' : 'text-red-500'}`}>
                                   € {wallet.balance.toFixed(2)}
                                 </p>
-                                <p className={`text-xs ${wallet.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                  {wallet.balance >= 0 ? 'In Regola' : 'Da Pagare'}
+                                <p className={`text-xs ${wallet.balance > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                  {wallet.balance > 0 ? 'In Regola' : 'Da Pagare'}
                                 </p>
                               </div>
 
@@ -460,10 +464,10 @@ export default function WalletPanel() {
                       {transactions.map((tx) => (
                         <tr key={tx.id} className="hover:bg-slate-800/50">
                           <td className="px-4 py-3">
-                            {new Date(tx.created_at).toLocaleDateString('it-IT', {
+                            {tx.created_at ? new Date(tx.created_at).toLocaleDateString('it-IT', {
                               day: '2-digit', month: '2-digit', year: 'numeric',
                               hour: '2-digit', minute: '2-digit'
-                            })}
+                            }) : '-'}
                           </td>
                           <td className="px-4 py-3 font-medium text-white">
                             {tx.description || 'Movimento Wallet'}
