@@ -669,6 +669,38 @@ export function MarketMapComponent({
                             );
                           })()}
                           
+                          {/* Intestatario (se presente) */}
+                          {displayVendor !== '-' && (
+                            <div className="bg-[#1e293b] p-3 rounded border border-gray-700">
+                              <div className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider">IMPRESA INTESTATARIA</div>
+                              <div className="font-medium text-white flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-indigo-900/50 flex items-center justify-center text-indigo-400 text-xs border border-indigo-800">
+                                  {displayVendor.charAt(0)}
+                                </div>
+                                <span className="truncate">{displayVendor}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Pulsante Visita Vetrina (se presente) */}
+                          {(dbStall?.vendor_name || props.vendor_name) && (
+                            <Link 
+                              href={(() => {
+                                const companyId = dbStall?.impresa_id || props.impresa_id || props.company_id;
+                                if (!companyId) {
+                                  const name = dbStall?.vendor_name || props.vendor_name;
+                                  if (name) return `/vetrine?q=${encodeURIComponent(name)}`;
+                                  return '/vetrine';
+                                }
+                                return `/vetrine/${companyId}`;
+                              })()}
+                              className="flex items-center justify-center gap-2 w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white font-medium py-2.5 px-4 rounded transition-all hover:shadow-[0_0_15px_rgba(20,184,166,0.3)] text-sm cursor-pointer"
+                            >
+                              <span>🏪</span>
+                              <span>Visita Vetrina</span>
+                            </Link>
+                          )}
+
                           {/* Canone di occupazione */}
                           <div className="bg-[#1e3a8a]/20 p-3 rounded border border-[#1e3a8a]/50">
                             <div className="flex justify-between items-center">
