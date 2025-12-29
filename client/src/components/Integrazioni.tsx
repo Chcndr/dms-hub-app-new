@@ -252,6 +252,155 @@ function APIDashboard() {
             test: true,
             service_id: 'mihub-backend-rest',
             base_url: 'https://orchestratore.mio-hub.me'
+          },
+          // R1 - Import & Ingestion
+          {
+            id: 'suap.import',
+            method: 'POST',
+            path: '/api/suap/import',
+            description: 'Import pratica da XML/ZIP (idempotente)',
+            risk_level: 'medium',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.pratiche.refresh',
+            method: 'POST',
+            path: '/api/suap/pratiche/:id/refresh',
+            description: 'Refresh dati pratica',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.pratiche.stato',
+            method: 'POST',
+            path: '/api/suap/pratiche/:id/stato',
+            description: 'Cambio stato pratica (workflow)',
+            risk_level: 'high',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          // R1 - Document Vault
+          {
+            id: 'suap.documenti.upload',
+            method: 'POST',
+            path: '/api/suap/pratiche/:id/documenti',
+            description: 'Upload documento in vault S3',
+            risk_level: 'medium',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.documenti.list',
+            method: 'GET',
+            path: '/api/suap/pratiche/:id/documenti',
+            description: 'Lista documenti pratica',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.documenti.download',
+            method: 'GET',
+            path: '/api/suap/documenti/:docId/download',
+            description: 'Download documento (presigned URL)',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          // R1 - Audit Trail
+          {
+            id: 'suap.eventi.list',
+            method: 'GET',
+            path: '/api/suap/pratiche/:id/eventi',
+            description: 'Audit trail completo pratica',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          // R1 - Checks & Verifiche
+          {
+            id: 'suap.checks.create',
+            method: 'POST',
+            path: '/api/suap/pratiche/:id/checks',
+            description: 'Registra verifica manuale/automatica',
+            risk_level: 'medium',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.checks.list',
+            method: 'GET',
+            path: '/api/suap/pratiche/:id/checks',
+            description: 'Lista verifiche pratica',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          // R1 - Azioni Workflow
+          {
+            id: 'suap.azioni.create',
+            method: 'POST',
+            path: '/api/suap/pratiche/:id/azioni',
+            description: 'Crea azione workflow',
+            risk_level: 'medium',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.azioni.list',
+            method: 'GET',
+            path: '/api/suap/pratiche/:id/azioni',
+            description: 'Lista azioni pratica',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          // R1 - Regole Engine
+          {
+            id: 'suap.regole.list',
+            method: 'GET',
+            path: '/api/suap/regole',
+            description: 'Lista regole configurate per ente',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.regole.update',
+            method: 'PUT',
+            path: '/api/suap/regole/:checkCode',
+            description: 'Aggiorna configurazione regola',
+            risk_level: 'high',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
           }
         );
 
