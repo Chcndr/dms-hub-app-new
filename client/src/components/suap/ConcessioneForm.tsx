@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Printer, Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,9 +13,13 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.m
 
 export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () => void, onSubmit: (data: any) => void }) {
   const [formData, setFormData] = useState({
-    // Dati Generali
-    numero_concessione: '2025/' + Math.floor(Math.random() * 1000),
-    data_rilascio: new Date().toISOString().split('T')[0],
+    // Dati Generali (Frontespizio)
+    numero_protocollo: '449021/2024',
+    data_protocollazione: new Date().toISOString().split('T')[0],
+    oggetto: 'RILASCIO CONCESSIONE OCCUPAZIONE SUOLO PUBBLICO VALIDO PER IL MERCATO PERIODICO SPECIALIZZATO NON ALIMENTARE LA PIAZZOLA',
+    numero_file: '2',
+    
+    // Dati Concessione
     durata_anni: '12',
     data_scadenza: '',
     tipo_concessione: 'subingresso', // nuova, subingresso, conversione
@@ -75,7 +80,7 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
   };
 
   const calculateExpiry = (years: string) => {
-    const date = new Date(formData.data_rilascio);
+    const date = new Date(formData.data_protocollazione);
     date.setFullYear(date.getFullYear() + parseInt(years));
     setFormData(prev => ({
       ...prev,
@@ -97,31 +102,54 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
           Generazione Atto di Concessione
         </CardTitle>
         <CardDescription className="text-[#e8fbff]/60">
-          Rilascio Concessione Decennale/Dodicennale per Posteggio
+          Frontespizio Documento Informatico e Concessione
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-8">
           
-          {/* DATI ATTO */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label className="text-[#e8fbff]">Numero Concessione</Label>
-              <Input 
-                value={formData.numero_concessione}
-                readOnly
-                className="bg-[#020817]/50 border-[#1e293b] text-[#e8fbff]/60"
-              />
+          {/* DATI GENERALI (FRONTESPIZIO) */}
+          <div className="space-y-4 border-b border-[#1e293b] pb-6">
+            <h3 className="text-lg font-semibold text-[#e8fbff]">Dati Generali (Frontespizio)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Numero / Anno PG</Label>
+                <Input 
+                  value={formData.numero_protocollo}
+                  onChange={(e) => setFormData({...formData, numero_protocollo: e.target.value})}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Data Protocollazione</Label>
+                <Input 
+                  type="date"
+                  value={formData.data_protocollazione}
+                  onChange={(e) => setFormData({...formData, data_protocollazione: e.target.value})}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Numero File</Label>
+                <Input 
+                  value={formData.numero_file}
+                  onChange={(e) => setFormData({...formData, numero_file: e.target.value})}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[#e8fbff]">Data Rilascio</Label>
-              <Input 
-                type="date"
-                value={formData.data_rilascio}
-                onChange={(e) => setFormData({...formData, data_rilascio: e.target.value})}
-                className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+              <Label className="text-[#e8fbff]">Oggetto</Label>
+              <Textarea 
+                value={formData.oggetto}
+                onChange={(e) => setFormData({...formData, oggetto: e.target.value})}
+                className="bg-[#020817] border-[#1e293b] text-[#e8fbff] min-h-[80px]"
               />
             </div>
+          </div>
+
+          {/* DATI CONCESSIONE */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Durata (Anni)</Label>
               <Select value={formData.durata_anni} onValueChange={calculateExpiry}>
