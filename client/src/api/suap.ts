@@ -3,7 +3,7 @@
  * Gestione pratiche amministrative e integrazione PDND
  */
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const baseUrl = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
 
 export interface SuapPratica {
   id: number;
