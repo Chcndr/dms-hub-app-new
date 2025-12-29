@@ -352,38 +352,79 @@ export default function WalletPanel() {
                         <p className="text-sm text-slate-400 mt-1">P.IVA: {company.partita_iva}</p>
                       </div>
                       
-                      {/* Wallet Spunta List */}
-                      <div className="flex flex-col gap-2 items-end">
+                      {/* Wallet Spunta Summary Badge */}
+                      <div className="text-right">
                         {company.spunta_wallets && company.spunta_wallets.length > 0 ? (
-                          company.spunta_wallets.map(wallet => (
-                            <div key={wallet.id} className="flex items-center gap-4">
-                              <div className="text-right">
-                                <p className="text-xs text-slate-400 uppercase font-bold">
-                                  Spunta {wallet.market_name || 'Generico'}
-                                </p>
-                                <p className={`text-lg font-bold ${wallet.balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                                  € {wallet.balance.toFixed(2)}
-                                </p>
-                              </div>
-                              <Button 
-                                size="sm" 
-                                className="bg-[#3b82f6] hover:bg-[#2563eb]"
-                                onClick={() => handleOpenDeposit(wallet, company.ragione_sociale)}
-                              >
-                                <Plus className="h-4 w-4" /> Ricarica
-                              </Button>
-                            </div>
-                          ))
-                        ) : (
                           <Badge variant="outline" className="border-yellow-500 text-yellow-500">
-                            Nessun Wallet Spunta Attivo
+                            {company.spunta_wallets.length} Wallet Spunta Attivi
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-slate-700 text-slate-500">
+                            Nessun Wallet Spunta
                           </Badge>
                         )}
                       </div>
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="pt-4">
+                  <CardContent className="pt-4 space-y-4">
+                    {/* Sezione Wallet Spunta */}
+                    <Collapsible defaultOpen={company.spunta_wallets.length > 0}>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" className="w-full flex justify-between items-center text-slate-300 hover:text-white hover:bg-slate-800 mb-2">
+                          <span className="flex items-center gap-2 text-yellow-500">
+                            <Wallet className="h-4 w-4" />
+                            Portafogli Spunta ({company.spunta_wallets.length})
+                          </span>
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-3">
+                        {company.spunta_wallets.length > 0 ? (
+                          company.spunta_wallets.map(wallet => (
+                            <div key={wallet.id} className="flex flex-col md:flex-row justify-between items-center p-4 bg-[#0f172a] rounded-lg border border-slate-700 gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
+                                    {wallet.market_name || 'Generico'}
+                                  </Badge>
+                                  <span className="text-slate-300 font-medium">Credito Spunta</span>
+                                </div>
+                                <div className="text-sm text-slate-400">
+                                  ID Wallet: #{wallet.id}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+                                <div className="text-right">
+                                  <p className="text-xs text-slate-400 uppercase font-bold">Saldo Wallet</p>
+                                  <p className={`text-xl font-bold ${wallet.balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                    € {wallet.balance.toFixed(2)}
+                                  </p>
+                                  <p className={`text-xs ${wallet.balance < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                    {wallet.balance < 0 ? 'Da Ricaricare' : 'In Regola'}
+                                  </p>
+                                </div>
+
+                                <Button 
+                                  variant="outline"
+                                  className="border-slate-600 hover:bg-slate-800 text-white gap-2"
+                                  onClick={() => handleOpenDeposit(wallet, company.ragione_sociale)}
+                                >
+                                  <Plus className="h-4 w-4" /> Ricarica
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-4 text-slate-500 bg-[#0f172a] rounded-lg border border-slate-800 border-dashed">
+                            Nessun wallet spunta attivo per questa impresa
+                          </div>
+                        )}
+                      </CollapsibleContent>
+                    </Collapsible>
+
+                    {/* Sezione Concessioni */}
                     <Collapsible>
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" className="w-full flex justify-between items-center text-slate-300 hover:text-white hover:bg-slate-800">
