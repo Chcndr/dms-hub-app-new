@@ -160,284 +160,19 @@ function APIDashboard() {
           });
         });
         
-        // Add SUAP endpoints manually (until added to index.json)
-        if (!endpointsByCategory['SUAP & PDND']) {
-          endpointsByCategory['SUAP & PDND'] = [];
-        }
-        endpointsByCategory['SUAP & PDND'].push(
-          {
-            id: 'imprese.list',
-            method: 'GET',
-            path: '/api/imprese',
-            description: 'Lista Imprese PDND',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'imprese.detail',
-            method: 'GET',
-            path: '/api/imprese/:id',
-            description: 'Dettaglio Impresa PDND',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'qualificazioni.list',
-            method: 'GET',
-            path: '/api/qualificazioni',
-            description: 'Lista Qualificazioni',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.stats',
-            method: 'GET',
-            path: '/api/suap/stats',
-            description: 'Statistiche generali pratiche SUAP',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.pratiche.list',
-            method: 'GET',
-            path: '/api/suap/pratiche',
-            description: 'Lista pratiche con filtri',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.pratiche.detail',
-            method: 'GET',
-            path: '/api/suap/pratiche/:id',
-            description: 'Dettaglio pratica con timeline ed eventi',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.pratiche.create',
-            method: 'POST',
-            path: '/api/suap/pratiche',
-            description: 'Ingestione nuova pratica',
-            risk_level: 'medium',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.pratiche.evaluate',
-            method: 'POST',
-            path: '/api/suap/pratiche/:id/valuta',
-            description: 'Esecuzione motore regole',
-            risk_level: 'medium',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          // R1 - Import & Ingestion
-          {
-            id: 'suap.import',
-            method: 'POST',
-            path: '/api/suap/import',
-            description: 'Import pratica da XML/ZIP (idempotente)',
-            risk_level: 'medium',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.pratiche.refresh',
-            method: 'POST',
-            path: '/api/suap/pratiche/:id/refresh',
-            description: 'Refresh dati pratica',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.pratiche.stato',
-            method: 'POST',
-            path: '/api/suap/pratiche/:id/stato',
-            description: 'Cambio stato pratica (workflow)',
-            risk_level: 'high',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          // R1 - Document Vault
-          {
-            id: 'suap.documenti.upload',
-            method: 'POST',
-            path: '/api/suap/pratiche/:id/documenti',
-            description: 'Upload documento in vault S3',
-            risk_level: 'medium',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.documenti.list',
-            method: 'GET',
-            path: '/api/suap/pratiche/:id/documenti',
-            description: 'Lista documenti pratica',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.documenti.download',
-            method: 'GET',
-            path: '/api/suap/documenti/:docId/download',
-            description: 'Download documento (presigned URL)',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          // R1 - Audit Trail
-          {
-            id: 'suap.eventi.list',
-            method: 'GET',
-            path: '/api/suap/pratiche/:id/eventi',
-            description: 'Audit trail completo pratica',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          // R1 - Checks & Verifiche
-          {
-            id: 'suap.checks.create',
-            method: 'POST',
-            path: '/api/suap/pratiche/:id/checks',
-            description: 'Registra verifica manuale/automatica',
-            risk_level: 'medium',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.checks.list',
-            method: 'GET',
-            path: '/api/suap/pratiche/:id/checks',
-            description: 'Lista verifiche pratica',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          // R1 - Azioni Workflow
-          {
-            id: 'suap.azioni.create',
-            method: 'POST',
-            path: '/api/suap/pratiche/:id/azioni',
-            description: 'Crea azione workflow',
-            risk_level: 'medium',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.azioni.list',
-            method: 'GET',
-            path: '/api/suap/pratiche/:id/azioni',
-            description: 'Lista azioni pratica',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          // R1 - Regole Engine
-          {
-            id: 'suap.regole.list',
-            method: 'GET',
-            path: '/api/suap/regole',
-            description: 'Lista regole configurate per ente',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'suap.regole.update',
-            method: 'PUT',
-            path: '/api/suap/regole/:checkCode',
-            description: 'Aggiorna configurazione regola',
-            risk_level: 'high',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          }
-        );
-
-        // Add GIS & Abacus endpoints
-        if (!endpointsByCategory['GIS & Abacus']) {
-          endpointsByCategory['GIS & Abacus'] = [];
-        }
-        endpointsByCategory['GIS & Abacus'].push(
-          {
-            id: 'gis.markets',
-            method: 'GET',
-            path: '/api/gis/markets',
-            description: 'GeoJSON Mercati',
-            risk_level: 'low',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          },
-          {
-            id: 'abacus.sql.query',
-            method: 'POST',
-            path: '/api/abacus/sql/query',
-            description: 'Esecuzione Query SQL (Admin)',
-            risk_level: 'high',
-            enabled: true,
-            test: true,
-            service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
-          }
-        );
-
-        // Add System & Workspace endpoints
+        // NOTE: SUAP & GIS endpoints are now loaded automatically from MIO-hub/api/index.json
+        // See: https://github.com/Chcndr/MIO-hub/blob/master/api/index.json
+        // To add new endpoints, update index.json in MIO-hub repository
+        
+        // All endpoints are now loaded automatically from MIO-hub/api/index.json
+        // No hardcoded endpoints needed here
+        
+        // Legacy fallback only for endpoints not yet in index.json
         if (!endpointsByCategory['System & Workspace']) {
           endpointsByCategory['System & Workspace'] = [];
         }
-        endpointsByCategory['System & Workspace'].push(
+        // System endpoints that may not be in index.json yet
+        const systemEndpoints = [
           {
             id: 'system.status',
             method: 'GET',
@@ -471,7 +206,14 @@ function APIDashboard() {
             service_id: 'mihub-backend-rest',
             base_url: 'https://orchestratore.mio-hub.me'
           }
-        );
+        ];
+        // Add system endpoints only if not already present from index.json
+        systemEndpoints.forEach(ep => {
+          const existingIds = endpointsByCategory['System & Workspace']?.map((e: any) => e.id) || [];
+          if (!existingIds.includes(ep.id)) {
+            endpointsByCategory['System & Workspace'].push(ep);
+          }
+        });
 
         // Convert to array format
         const categorizedEndpoints = Object.entries(endpointsByCategory).map(([category, endpoints]) => ({

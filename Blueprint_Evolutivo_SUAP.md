@@ -471,7 +471,50 @@ L'import è idempotente grazie al vincolo `UNIQUE (ente_id, cui)`:
 
 ---
 
-## 8. Roadmap Futura (Post-R1)
+## 8. Regole di Sviluppo
+
+### 8.1 Gestione Endpoint API
+
+**REGOLA FONDAMENTALE:** Tutti i nuovi endpoint devono essere aggiunti al file `MIO-hub/api/index.json` su GitHub.
+
+**NON** aggiungere endpoint hardcoded in `Integrazioni.tsx` o altri file frontend.
+
+**Procedura per aggiungere nuovi endpoint:**
+
+| Step | Azione | Comando |
+|------|--------|--------|
+| 1 | Clonare il repository MIO-hub | `gh repo clone Chcndr/MIO-hub` |
+| 2 | Modificare `api/index.json` | Aggiungere il nuovo service/endpoint |
+| 3 | Incrementare il campo `version` | Es. da 4 a 5 |
+| 4 | Aggiornare `last_updated` | Data corrente (YYYY-MM-DD) |
+| 5 | Commit e push | `git commit -m "feat(api): Add [nome] endpoints" && git push` |
+
+**Struttura endpoint in index.json:**
+
+```json
+{
+  "id": "suap.pratiche.list",
+  "method": "GET",
+  "path": "/api/suap/pratiche",
+  "category": "SUAP & Ente Sussidiario",
+  "description": "Lista pratiche con filtri",
+  "risk_level": "low",
+  "require_auth": true,
+  "enabled": true,
+  "test": {
+    "enabled": true,
+    "expected_status": 200
+  }
+}
+```
+
+**Repository:** https://github.com/Chcndr/MIO-hub/blob/master/api/index.json
+
+**Totale Endpoint Attuale:** 150 (di cui 23 SUAP)
+
+---
+
+## 9. Roadmap Futura (Post-R1)
 
 ### Release 2 (R2) - Integrazione PDND
 
