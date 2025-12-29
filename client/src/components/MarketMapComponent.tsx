@@ -617,22 +617,36 @@ export function MarketMapComponent({
                           
                           {/* Dimensioni (Priorità DB, poi Geometria) */}
                           {(() => {
-                            // 1. Prova a parsare le dimensioni dal DB (es. "4x3")
+                            // Funzione di formattazione intelligente
+                            const smartFormat = (val: number) => {
+                              if (isNaN(val)) return '-';
+                              if (Math.abs(val - Math.round(val)) < 0.05) {
+                                return Math.round(val).toString();
+                              }
+                              return val.toFixed(2);
+                            };
+
                             let widthStr = '-';
                             let lengthStr = '-';
                             let areaStr = '-';
                             let isEstimated = true;
 
-                            if (props.dimensions) {
+                            // 1. Prova a parsare le dimensioni dal DB (priorità assoluta)
+                            // Controlla sia props.dimensions (dal GeoJSON) che dbStall.dimensions (dal DB aggiornato)
+                            const dimensionsSource = dbStall?.dimensions || props.dimensions;
+
+                            if (dimensionsSource) {
                               // Regex migliorata: supporta virgole, punti, spazi extra e formati vari (es. "4,00 x 3,00", "4x3", "4.00 X 3.00")
                               // Sostituisce virgole con punti prima del parsing
-                              const normalized = props.dimensions.replace(/,/g, '.');
+                              const normalized = dimensionsSource.replace(/,/g, '.');
                               const match = normalized.match(/([\d.]+)\s*m?\s*[x×*]\s*([\d.]+)\s*m?/i);
                               
                               if (match) {
-                                widthStr = parseFloat(match[1]).toFixed(2);
-                                lengthStr = parseFloat(match[2]).toFixed(2);
-                                areaStr = (parseFloat(widthStr) * parseFloat(lengthStr)).toFixed(2);
+                                const w = parseFloat(match[1]);
+                                const l = parseFloat(match[2]);
+                                widthStr = smartFormat(w);
+                                lengthStr = smartFormat(l);
+                                areaStr = smartFormat(w * l);
                                 isEstimated = false; // Dimensioni ufficiali da DB
                               }
                             }
