@@ -355,11 +355,17 @@ export default function WalletPanel() {
                       {/* Wallet Summary Badge */}
                       <div className="text-right flex flex-col items-end gap-1">
                         <Badge variant="outline" className="border-white text-white bg-white/10">
-                          WALLET: {company.spunta_wallets.length + company.concession_wallets.length}
+                          WALLET: {
+                            // Escludiamo i wallet generici (senza market_name) dal conteggio
+                            company.spunta_wallets.filter(w => w.market_name).length + 
+                            company.concession_wallets.length
+                          }
                         </Badge>
                         <div className="text-sm font-bold text-white">
                           TOTALE: € {
-                            (company.spunta_wallets.reduce((acc, w) => acc + w.balance, 0) + 
+                            (company.spunta_wallets
+                              .filter(w => w.market_name) // Escludiamo saldo wallet generici
+                              .reduce((acc, w) => acc + w.balance, 0) + 
                              company.concession_wallets.reduce((acc, w) => acc + w.balance, 0)).toFixed(2)
                           }
                         </div>
@@ -374,7 +380,7 @@ export default function WalletPanel() {
                         <Button variant="ghost" className="w-full flex justify-between items-center text-slate-300 hover:text-white hover:bg-slate-800 mb-2">
                           <span className="flex items-center gap-2 text-yellow-500">
                             <Wallet className="h-4 w-4" />
-                            Portafogli Spunta ({company.spunta_wallets.length})
+                            Portafogli Spunta ({company.spunta_wallets.filter(w => w.market_name).length})
                           </span>
                           <ChevronDown className="h-4 w-4" />
                         </Button>
@@ -386,15 +392,17 @@ export default function WalletPanel() {
                               <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
                                   {wallet.market_name ? (
-                                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
-                                      {wallet.market_name}
-                                    </Badge>
+                                    <>
+                                      <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
+                                        {wallet.market_name}
+                                      </Badge>
+                                      <span className="text-slate-300 font-medium">Credito Spunta</span>
+                                    </>
                                   ) : (
                                     <Badge variant="outline" className="bg-white/10 text-white border-white/20">
                                       GENERICO
                                     </Badge>
                                   )}
-                                  <span className="text-slate-300 font-medium">Credito Spunta</span>
                                 </div>
                                 <div className="text-sm text-slate-400">
                                   ID Wallet: #{wallet.id}

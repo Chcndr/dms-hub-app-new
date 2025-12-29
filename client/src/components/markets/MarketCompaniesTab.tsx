@@ -50,6 +50,7 @@ export type CompanyRow = {
   concessioni?: { id: number; mercato: string; posteggio_code: string; data_scadenza: string; stato: string; wallet_balance?: number }[];
   autorizzazioni?: { id: number; numero: string; ente: string; stato: string }[];
   spunta_wallets?: { id: number; market_id: number; market_name: string; balance: number }[];
+  qualificazioni?: { id: number; type: string; status: string; start_date: string; end_date: string }[];
 };
 
 type ConcessionRow = {
@@ -314,12 +315,14 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           : (v.email || ''),
         telefono: v.telefono,
         stato: v.stato_impresa,
-        concessioni: (v.concessioni_attive || []).map((c: any) => ({
-          ...c,
-          wallet_balance: c.wallet_balance !== undefined ? Number(c.wallet_balance) : undefined
-        })),
-        autorizzazioni: v.autorizzazioni_attive || [],
-        spunta_wallets: v.spunta_wallets || [],
+	        concessioni: (v.concessioni_attive || []).map((c: any) => ({
+	          ...c,
+	          wallet_balance: c.wallet_balance !== undefined ? Number(c.wallet_balance) : undefined
+	        })),
+	        autorizzazioni: v.autorizzazioni_attive || [],
+	        spunta_wallets: v.spunta_wallets || [],
+            // Mappiamo le qualificazioni dal backend (nuovo campo aggiunto in v3.1)
+            qualificazioni: v.qualificazioni || [],
         // Tutti gli altri campi per il modal di modifica
         numero_rea: v.numero_rea,
         cciaa_sigla: v.cciaa_sigla,
@@ -1036,6 +1039,9 @@ interface CompanyCardProps {
 }
 
 function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQualificazioni }: CompanyCardProps) {
+  // Usiamo le qualificazioni passate come prop (dal fetch dettagliato) se presenti,
+  // altrimenti usiamo quelle incorporate nell'oggetto company (dal fetch lista)
+  const displayQualificazioni = qualificazioni.length > 0 ? qualificazioni : (company.qualificazioni || []);
   // Filtra i wallet spunta da visualizzare
   // Se siamo in un mercato specifico, mettiamo quello corrente per primo, poi gli altri
   const sortedSpuntaWallets = React.useMemo(() => {
@@ -1130,30 +1136,30 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
             </span>
           )}
 
-          {/* Semaforo Qualificazioni */}
-          {onViewQualificazioni && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewQualificazioni();
-              }}
-              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-md transition-colors ${
-                qualificazioni.length === 0
-                  ? 'text-gray-400 bg-gray-400/10 border-gray-400/20 hover:bg-gray-400/20'
-                  : qualificazioni.some(q => q.stato === 'SCADUTA')
-                    ? 'text-red-400 bg-red-400/10 border-red-400/20 hover:bg-red-400/20'
-                    : qualificazioni.some(q => q.stato === 'IN_VERIFICA')
-                      ? 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20 hover:bg-yellow-400/20'
-                      : 'text-green-400 bg-green-400/10 border-green-400/20 hover:bg-green-400/20'
-              }`}
-              title="Clicca per gestire le qualificazioni"
-            >
-              <FileCheck className="w-3 h-3" />
-              {qualificazioni.length === 0 ? 'No Qualifiche' : 
-               qualificazioni.some(q => q.stato === 'SCADUTA') ? 'Qualifiche Scadute' :
-               qualificazioni.some(q => q.stato === 'IN_VERIFICA') ? 'In Verifica' : 'Qualificato'}
-            </button>
-          )}
+	          {/* Semaforo Qualificazioni */}
+	          {onViewQualificazioni && (
+	            <button
+	              onClick={(e) => {
+	                e.stopPropagation();
+	                onViewQualificazioni();
+	              }}
+	              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-md transition-colors ${
+	                displayQualificazioni.length === 0
+	                  ? 'text-gray-400 bg-gray-400/10 border-gray-400/20 hover:bg-gray-400/20'
+	                  : displayQualificazioni.some(q => (q.status || q.stato) === 'SCADUTA')
+	                    ? 'text-red-400 bg-red-400/10 border-red-400/20 hover:bg-red-400/20'
+	                    : displayQualificazioni.some(q => (q.status || q.stato) === 'IN_VERIFICA')
+	                      ? 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20 hover:bg-yellow-400/20'
+	                      : 'text-green-400 bg-green-400/10 border-green-400/20 hover:bg-green-400/20'
+	              }`}
+	              title="Clicca per gestire le qualificazioni"
+	            >
+	              <FileCheck className="w-3 h-3" />
+	              {displayQualificazioni.length === 0 ? 'No Qualifiche' : 
+	               displayQualificazioni.some(q => (q.status || q.stato) === 'SCADUTA') ? 'Qualifiche Scadute' :
+	               displayQualificazioni.some(q => (q.status || q.stato) === 'IN_VERIFICA') ? 'In Verifica' : 'Qualificato'}
+	            </button>
+	          )}
 
           {company.autorizzazioni && company.autorizzazioni.length > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-md">
