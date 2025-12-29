@@ -7,7 +7,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Terminal, Shield, Activity } from 'lucide-react';
+import { Terminal, Shield, Activity, HeartPulse } from 'lucide-react';
+import HealthDashboard from './HealthDashboard';
 import { useQuery } from '@tanstack/react-query';
 import { logsAPI } from '@/utils/mihubAPI';
 
@@ -106,9 +107,13 @@ export default function GuardianLogsSection() {
         </Card>
       </div>
 
-      {/* Tabs: System Logs + Guardian Logs + Imprese Logs */}
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-[#1a2332] border border-[#14b8a6]/30">
+      {/* Tabs: Health Monitor + Logs */}
+      <Tabs defaultValue="health" className="w-full">
+        <TabsList className="grid w-full grid-cols-5 bg-[#1a2332] border border-[#14b8a6]/30">
+          <TabsTrigger value="health" className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white">
+            <HeartPulse className="h-4 w-4 mr-1" />
+            Health
+          </TabsTrigger>
           <TabsTrigger value="all" className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white">
             Tutti i Log
           </TabsTrigger>
@@ -122,6 +127,11 @@ export default function GuardianLogsSection() {
             Imprese API
           </TabsTrigger>
         </TabsList>
+
+        {/* Health Monitor Tab */}
+        <TabsContent value="health" className="mt-4">
+          <HealthDashboard />
+        </TabsContent>
 
         {/* All Logs Tab */}
         <TabsContent value="all" className="mt-4">

@@ -514,7 +514,166 @@ L'import è idempotente grazie al vincolo `UNIQUE (ente_id, cui)`:
 
 ---
 
-## 9. Roadmap Futura (Post-R1)
+## 9. Sistema di Monitoraggio (Health Check)
+
+### 9.1 Architettura Health Monitor
+
+Il sistema di monitoraggio centralizzato verifica lo stato di tutti i servizi ogni 30 secondi e genera alert automatici.
+
+**Endpoint Backend:**
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/api/health` | GET | Ping semplice (uptime) |
+| `/api/health/full` | GET | Check completo tutti i servizi |
+| `/api/health/history` | GET | Storico ultimi N check |
+
+**Servizi Monitorati:**
+
+| Servizio | Cosa Verifica | Soglia Latenza |
+|----------|---------------|----------------|
+| `database` | Connessione PostgreSQL (Neon) | 500ms |
+| `storage` | Configurazione S3 | 1000ms |
+| `backend` | Self-check server | 100ms |
+| `guardian` | Endpoint Guardian API | 500ms |
+| `mio_agent` | Endpoint MIO Agent | 1000ms |
+| `pdnd` | Raggiungibilità PDND | 2000ms |
+| `frontend` | Vercel deployment | 500ms |
+
+**Stati Possibili:**
+
+| Stato | Significato | Colore UI |
+|-------|-------------|----------|
+| `ok` | Servizio operativo, latenza normale | 🟢 Verde |
+| `slow` | Servizio operativo, latenza elevata | 🟡 Giallo |
+| `down` | Servizio non raggiungibile | 🔴 Rosso |
+
+### 9.2 Alert Automatici
+
+Quando un servizio cambia stato, viene generato un alert:
+
+| Livello | Trigger | Azione |
+|---------|---------|--------|
+| `warning` | Servizio passa da `ok` a `slow` | Log + UI badge |
+| `critical` | Servizio passa a `down` | Log + UI badge + (futuro: email) |
+
+### 9.3 UI Health Dashboard
+
+La dashboard è accessibile da **Sistema → Tab "Health"** e mostra:
+
+1. **Stato Generale:** Operativo / Degradato / Critico
+2. **Summary Cards:** Servizi Online, Lenti, Offline
+3. **Griglia Servizi:** Stato dettagliato di ogni servizio
+4. **Alert Attivi:** Lista problemi correnti
+5. **Storico Check:** Timeline ultimi 20 check
+
+**File Coinvolti:**
+
+| File | Repository | Descrizione |
+|------|------------|-------------|
+| `routes/health-monitor.js` | mihub-backend-rest | Endpoint backend |
+| `components/HealthDashboard.tsx` | dms-hub-app-new | UI frontend |
+| `components/GuardianLogsSection.tsx` | dms-hub-app-new | Container con tab |
+
+---
+
+## 10. Regole per Nuovi Agenti AI
+
+### 10.1 Principi Fondamentali
+
+> **ATTENZIONE:** Queste regole sono OBBLIGATORIE per qualsiasi agente AI che lavora su questo progetto.
+
+**Prima di scrivere QUALSIASI codice:**
+
+1. **LEGGI QUESTO BLUEPRINT** - Contiene l'architettura, lo stato attuale e le convenzioni.
+2. **VERIFICA L'ARCHITETTURA** - Il sistema usa DUE backend separati (vedi sezione 2).
+3. **NON CREARE PROGETTI PARALLELI** - Lavora sui repository esistenti.
+4. **CHIEDI SE HAI DUBBI** - Meglio una domanda in più che un disastro.
+
+### 10.2 Architettura da Rispettare
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    ARCHITETTURA MIOHUB                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐      ┌─────────────────────────────────┐  │
+│  │    FRONTEND     │      │           BACKEND               │  │
+│  │                 │      │                                 │  │
+│  │  Vercel         │ ───► │  Hetzner                        │  │
+│  │  dms-hub-app-new│      │  mihub-backend-rest             │  │
+│  │                 │      │  orchestratore.mio-hub.me       │  │
+│  └─────────────────┘      └─────────────────────────────────┘  │
+│                                        │                        │
+│                                        ▼                        │
+│                           ┌─────────────────────────────────┐  │
+│                           │         DATABASE                │  │
+│                           │                                 │  │
+│                           │  Neon (PostgreSQL)              │  │
+│                           └─────────────────────────────────┘  │
+│                                                                 │
+│  Repository GitHub:                                            │
+│  • Chcndr/dms-hub-app-new (Frontend)                          │
+│  • Chcndr/mihub-backend-rest (Backend)                        │
+│  • Chcndr/MIO-hub (Configurazioni, API index)                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 10.3 Checklist Prima di Iniziare
+
+| # | Verifica | Comando/Azione |
+|---|----------|----------------|
+| 1 | Clona i repository necessari | `gh repo clone Chcndr/dms-hub-app-new` |
+| 2 | Verifica che il backend sia attivo | `curl https://orchestratore.mio-hub.me/api/health` |
+| 3 | Leggi il Blueprint | Questo file |
+| 4 | Identifica dove va il codice | Frontend → `dms-hub-app-new`, Backend → `mihub-backend-rest` |
+| 5 | Verifica endpoint esistenti | `MIO-hub/api/index.json` |
+
+### 10.4 Cosa NON Fare (Errori Comuni)
+
+| ❌ NON FARE | ✅ FARE INVECE |
+|-------------|----------------|
+| Creare un nuovo progetto Manus WebDev | Usare i repository esistenti |
+| Hardcodare endpoint nel frontend | Aggiungerli a `MIO-hub/api/index.json` |
+| Modificare lo schema DB senza documentare | Aggiornare questo Blueprint |
+| Ignorare l'architettura a due backend | Rispettare la separazione Frontend/Backend |
+| Duplicare codice già esistente | Verificare cosa c'è prima |
+| Fare modifiche senza push su GitHub | Sempre commit + push |
+
+### 10.5 Procedura per Nuove Funzionalità
+
+1. **Analisi:** Leggi il Blueprint, verifica cosa esiste già.
+2. **Pianificazione:** Identifica i file da modificare (Frontend e/o Backend).
+3. **Sviluppo Backend:** Se serve, aggiungi endpoint in `mihub-backend-rest`.
+4. **Sviluppo Frontend:** Modifica `dms-hub-app-new`.
+5. **Aggiorna API Index:** Aggiungi nuovi endpoint a `MIO-hub/api/index.json`.
+6. **Aggiorna Blueprint:** Documenta le modifiche qui.
+7. **Push:** Commit e push su tutti i repository modificati.
+8. **Test:** Verifica che tutto funzioni.
+
+### 10.6 File Critici da NON Eliminare
+
+| File | Repository | Motivo |
+|------|------------|--------|
+| `Blueprint_Evolutivo_SUAP.md` | dms-hub-app-new | Documentazione architettura |
+| `api/index.json` | MIO-hub | Registro endpoint |
+| `routes/suap.js` | mihub-backend-rest | API SUAP |
+| `src/modules/suap/service.js` | mihub-backend-rest | Logica business SUAP |
+| `components/GuardianLogsSection.tsx` | dms-hub-app-new | Sistema logs |
+| `components/HealthDashboard.tsx` | dms-hub-app-new | Monitoraggio |
+| `components/Integrazioni.tsx` | dms-hub-app-new | Catalogo API |
+
+### 10.7 Comunicazione con l'Utente
+
+- **Sempre informare** l'utente prima di creare nuovi file/progetti.
+- **Sempre chiedere** se non sei sicuro dell'architettura.
+- **Sempre aggiornare** il Blueprint dopo modifiche significative.
+- **Mai assumere** che qualcosa non esista senza verificare.
+
+---
+
+## 11. Roadmap Futura (Post-R1)
 
 ### Release 2 (R2) - Integrazione PDND
 
