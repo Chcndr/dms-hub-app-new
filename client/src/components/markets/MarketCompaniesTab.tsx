@@ -49,6 +49,7 @@ export type CompanyRow = {
   stato?: "active" | "suspended" | "closed";
   concessioni?: { id: number; mercato: string; posteggio_code: string; data_scadenza: string; stato: string; wallet_balance?: number }[];
   autorizzazioni?: { id: number; numero: string; ente: string; stato: string }[];
+  spunta_wallets?: { id: number; market_id: number; market_name: string; balance: number }[];
 };
 
 type ConcessionRow = {
@@ -318,6 +319,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           wallet_balance: c.wallet_balance !== undefined ? Number(c.wallet_balance) : undefined
         })),
         autorizzazioni: v.autorizzazioni_attive || [],
+        spunta_wallets: v.spunta_wallets || [],
         // Tutti gli altri campi per il modal di modifica
         numero_rea: v.numero_rea,
         cciaa_sigla: v.cciaa_sigla,
@@ -1034,10 +1036,21 @@ interface CompanyCardProps {
 }
 
 function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQualificazioni }: CompanyCardProps) {
-  // Trova il wallet spunta per questo mercato
-  const spuntaWallet = company.spunta_wallets?.find(w => 
-    marketId !== 'ALL' && w.market_id === Number(marketId)
-  );
+  // Filtra i wallet spunta da visualizzare
+  // Se siamo in un mercato specifico, mettiamo quello corrente per primo, poi gli altri
+  const sortedSpuntaWallets = React.useMemo(() => {
+    if (!company.spunta_wallets || company.spunta_wallets.length === 0) return [];
+    
+    if (marketId && marketId !== 'ALL') {
+      const currentId = Number(marketId);
+      return [...company.spunta_wallets].sort((a, b) => {
+        if (a.market_id === currentId) return -1;
+        if (b.market_id === currentId) return 1;
+        return 0;
+      });
+    }
+    return company.spunta_wallets;
+  }, [company.spunta_wallets, marketId]);
   const getStatoBadge = (stato?: string) => {
     switch (stato) {
       case 'active':
@@ -1089,16 +1102,21 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
         
         {/* Badge Concessioni, Autorizzazioni e Qualificazioni */}
         <div className="flex flex-wrap gap-2 pt-2">
-          {/* Wallet Spunta Badge */}
-          {spuntaWallet ? (
-            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-md ${
-              spuntaWallet.balance >= 0 
-                ? 'bg-green-500/10 text-green-400 border-green-500/20' 
-                : 'bg-red-500/10 text-red-400 border-red-500/20'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${spuntaWallet.balance >= 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-              Spunta: € {Number(spuntaWallet.balance).toFixed(2)}
-            </span>
+          {/* Wallet Spunta Badges */}
+          {sortedSpuntaWallets.length > 0 ? (
+            sortedSpuntaWallets.map((wallet) => (
+              <span 
+                key={wallet.id}
+                className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-md ${
+                  wallet.balance >= 0 
+                    ? 'bg-green-500/10 text-green-400 border-green-500/20' 
+                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                } ${marketId && Number(marketId) === wallet.market_id ? 'ring-1 ring-blue-500/50' : ''}`}
+              >
+                <div className={`w-2 h-2 rounded-full ${wallet.balance >= 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+                Spunta {wallet.market_name}: € {Number(wallet.balance).toFixed(2)}
+              </span>
+            ))
           ) : (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-md bg-gray-500/10 text-gray-500 border-gray-500/20">
               <div className="w-2 h-2 rounded-full bg-gray-500" />

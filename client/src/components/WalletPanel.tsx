@@ -54,7 +54,7 @@ interface CompanyWallets {
   company_id: number;
   ragione_sociale: string;
   partita_iva: string;
-  spunta_wallet?: WalletItem;
+  spunta_wallets: WalletItem[];
   concession_wallets: WalletItem[];
 }
 
@@ -104,6 +104,7 @@ export default function WalletPanel() {
               company_id: row.company_id,
               ragione_sociale: row.ragione_sociale || 'Impresa Sconosciuta',
               partita_iva: row.partita_iva || 'N/A',
+              spunta_wallets: [],
               concession_wallets: []
             };
           }
@@ -130,7 +131,7 @@ export default function WalletPanel() {
           };
 
           if (typeNormalized === 'SPUNTA') {
-            acc[row.company_id].spunta_wallet = wallet;
+            acc[row.company_id].spunta_wallets.push(wallet);
           } else {
             acc[row.company_id].concession_wallets.push(wallet);
           }
@@ -171,7 +172,7 @@ export default function WalletPanel() {
       // Collect all wallet IDs
       const walletIds: number[] = [];
       companies.forEach(c => {
-        if (c.spunta_wallet) walletIds.push(c.spunta_wallet.id);
+        c.spunta_wallets.forEach(w => walletIds.push(w.id));
         c.concession_wallets.forEach(w => walletIds.push(w.id));
       });
 
@@ -351,29 +352,34 @@ export default function WalletPanel() {
                         <p className="text-sm text-slate-400 mt-1">P.IVA: {company.partita_iva}</p>
                       </div>
                       
-                      {/* Wallet Spunta (Sempre Visibile) */}
-                      {company.spunta_wallet ? (
-                        <div className="text-right">
-                          <p className="text-xs text-slate-400 uppercase font-bold">Credito Spunta</p>
-                          <p className={`text-xl font-bold ${company.spunta_wallet.balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                            € {company.spunta_wallet.balance.toFixed(2)}
-                          </p>
-                        </div>
-                      ) : (
-                        <Badge variant="outline" className="border-yellow-500 text-yellow-500">
-                          Wallet Spunta Non Attivo
-                        </Badge>
-                      )}
-                      
-                      {company.spunta_wallet && (
-                        <Button 
-                          size="sm" 
-                          className="bg-[#3b82f6] hover:bg-[#2563eb] ml-4"
-                          onClick={() => handleOpenDeposit(company.spunta_wallet!, company.ragione_sociale)}
-                        >
-                          <Plus className="h-4 w-4" /> Ricarica
-                        </Button>
-                      )}
+                      {/* Wallet Spunta List */}
+                      <div className="flex flex-col gap-2 items-end">
+                        {company.spunta_wallets && company.spunta_wallets.length > 0 ? (
+                          company.spunta_wallets.map(wallet => (
+                            <div key={wallet.id} className="flex items-center gap-4">
+                              <div className="text-right">
+                                <p className="text-xs text-slate-400 uppercase font-bold">
+                                  Spunta {wallet.market_name || 'Generico'}
+                                </p>
+                                <p className={`text-lg font-bold ${wallet.balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                  € {wallet.balance.toFixed(2)}
+                                </p>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                className="bg-[#3b82f6] hover:bg-[#2563eb]"
+                                onClick={() => handleOpenDeposit(wallet, company.ragione_sociale)}
+                              >
+                                <Plus className="h-4 w-4" /> Ricarica
+                              </Button>
+                            </div>
+                          ))
+                        ) : (
+                          <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+                            Nessun Wallet Spunta Attivo
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   
