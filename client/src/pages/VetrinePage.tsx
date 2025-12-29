@@ -72,10 +72,18 @@ interface Impresa {
 
 export default function VetrinePage() {
   const [, params] = useRoute('/vetrine/:id');
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [imprese, setImprese] = useState<Impresa[]>([]);
   const [selectedImpresa, setSelectedImpresa] = useState<Impresa | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Estrai query param 'q' dall'URL
+  const getQueryParam = (name: string) => {
+    const search = window.location.search;
+    const params = new URLSearchParams(search);
+    return params.get(name) || '';
+  };
+
+  const [searchQuery, setSearchQuery] = useState(getQueryParam('q'));
   const [loading, setLoading] = useState(true);
   
   // Stati modal modifica
@@ -106,7 +114,20 @@ export default function VetrinePage() {
           const response = await fetch(`${API_BASE_URL}/api/imprese`);
           const result = await response.json();
           if (result.success) {
-            setImprese(result.data || []);
+            const data = result.data || [];
+            setImprese(data);
+            
+            // Se c'è una query 'q' e troviamo una corrispondenza esatta o unica, selezionala
+            const query = getQueryParam('q');
+            if (query) {
+              const matches = data.filter((i: Impresa) => 
+                i.denominazione.toLowerCase().includes(query.toLowerCase())
+              );
+              // Se c'è esattamente un risultato, apri direttamente la vetrina
+              if (matches.length === 1) {
+                setSelectedImpresa(matches[0]);
+              }
+            }
           }
         }
       } catch (error) {
