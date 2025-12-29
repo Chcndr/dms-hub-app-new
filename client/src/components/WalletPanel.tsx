@@ -352,17 +352,17 @@ export default function WalletPanel() {
                         <p className="text-sm text-slate-400 mt-1">P.IVA: {company.partita_iva}</p>
                       </div>
                       
-                      {/* Wallet Spunta Summary Badge */}
-                      <div className="text-right">
-                        {company.spunta_wallets && company.spunta_wallets.length > 0 ? (
-                          <Badge variant="outline" className="border-yellow-500 text-yellow-500">
-                            {company.spunta_wallets.length} Wallet Spunta Attivi
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="border-slate-700 text-slate-500">
-                            Nessun Wallet Spunta
-                          </Badge>
-                        )}
+                      {/* Wallet Summary Badge */}
+                      <div className="text-right flex flex-col items-end gap-1">
+                        <Badge variant="outline" className="border-white text-white bg-white/10">
+                          WALLET: {company.spunta_wallets.length + company.concession_wallets.length}
+                        </Badge>
+                        <div className="text-sm font-bold text-white">
+                          TOTALE: € {
+                            (company.spunta_wallets.reduce((acc, w) => acc + w.balance, 0) + 
+                             company.concession_wallets.reduce((acc, w) => acc + w.balance, 0)).toFixed(2)
+                          }
+                        </div>
                       </div>
                     </div>
                   </CardHeader>
@@ -398,11 +398,11 @@ export default function WalletPanel() {
                               <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
                                 <div className="text-right">
                                   <p className="text-xs text-slate-400 uppercase font-bold">Saldo Wallet</p>
-                                  <p className={`text-xl font-bold ${wallet.balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                  <p className={`text-xl font-bold ${wallet.balance <= 0 ? 'text-red-500' : 'text-green-500'}`}>
                                     € {wallet.balance.toFixed(2)}
                                   </p>
-                                  <p className={`text-xs ${wallet.balance < 0 ? 'text-red-400' : 'text-green-400'}`}>
-                                    {wallet.balance < 0 ? 'Da Ricaricare' : 'In Regola'}
+                                  <p className={`text-xs ${wallet.balance <= 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                    {wallet.balance <= 0 ? 'Da Ricaricare' : 'In Regola'}
                                   </p>
                                 </div>
 
@@ -428,7 +428,7 @@ export default function WalletPanel() {
                     <Collapsible>
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" className="w-full flex justify-between items-center text-slate-300 hover:text-white hover:bg-slate-800">
-                          <span className="flex items-center gap-2">
+                          <span className="flex items-center gap-2 text-blue-400">
                             <Store className="h-4 w-4" />
                             Concessioni Attive ({company.concession_wallets.length})
                           </span>

@@ -1113,8 +1113,8 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
                   <div className="w-2 h-2 rounded-full bg-yellow-500" />
                   Spunta {wallet.market_name}
                 </div>
-                <div className={`flex items-center gap-1 pl-2 border-l border-yellow-400/20 ${wallet.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  <div className={`w-2 h-2 rounded-full ${wallet.balance >= 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+                <div className={`flex items-center gap-1 pl-2 border-l border-yellow-400/20 ${wallet.balance > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <div className={`w-2 h-2 rounded-full ${wallet.balance > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
                   <span className="font-bold">€ {Number(wallet.balance).toFixed(2)}</span>
                 </div>
               </span>
