@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Activity, FileText, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { getSuapStats, createSuapPratica, evaluateSuapPratica, SuapStats } from '@/api/suap';
+import SciaForm from '@/components/suap/SciaForm';
+import ConcessioneForm from '@/components/suap/ConcessioneForm';
 import { toast } from 'sonner';
 import { Link } from 'wouter';
 
@@ -11,6 +13,8 @@ export default function SuapDashboard({ embedded = false }: { embedded?: boolean
   const [loading, setLoading] = useState(true);
   // const { toast } = useToast(); // Replaced by sonner import
   const [simulating, setSimulating] = useState(false);
+  const [showSciaForm, setShowSciaForm] = useState(false);
+  const [showConcessioneForm, setShowConcessioneForm] = useState(false);
 
   const handleSimulation = async () => {
     setSimulating(true);
@@ -77,16 +81,53 @@ export default function SuapDashboard({ embedded = false }: { embedded?: boolean
               Lista Pratiche
             </Button>
           </Link>
-          <Button 
-            className="bg-[#00f0ff] text-black hover:bg-[#00f0ff]/90"
-            onClick={handleSimulation}
-            disabled={simulating}
-          >
-            <Activity className={`mr-2 h-4 w-4 ${simulating ? 'animate-spin' : ''}`} />
-            {simulating ? 'Simulazione...' : 'Nuova Simulazione'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              className="bg-[#00f0ff] text-black hover:bg-[#00f0ff]/90"
+              onClick={() => setShowSciaForm(true)}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Nuova SCIA
+            </Button>
+            <Button 
+              className="bg-[#e8fbff] text-black hover:bg-[#e8fbff]/90"
+              onClick={() => setShowConcessioneForm(true)}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Concessione
+            </Button>
+          </div>
         </div>
       </div>
+      )}
+
+      {showSciaForm && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl my-8">
+            <SciaForm 
+              onCancel={() => setShowSciaForm(false)} 
+              onSubmit={async (data) => {
+                setShowSciaForm(false);
+                toast.success("SCIA Inviata", { description: "Protocollo generato con successo" });
+                // Qui chiameremo l'API reale
+              }} 
+            />
+          </div>
+        </div>
+      )}
+
+      {showConcessioneForm && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl my-8">
+            <ConcessioneForm 
+              onCancel={() => setShowConcessioneForm(false)} 
+              onSubmit={async (data) => {
+                setShowConcessioneForm(false);
+                toast.success("Concessione Rilasciata", { description: `N. ${data.numero_concessione}` });
+              }} 
+            />
+          </div>
+        </div>
       )}
 
       {/* KPI Cards */}
