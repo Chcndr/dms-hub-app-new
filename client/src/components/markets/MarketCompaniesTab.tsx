@@ -1107,13 +1107,17 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
             sortedSpuntaWallets.map((wallet) => (
               <span 
                 key={wallet.id}
-                className={`inline-flex items-center gap-2 px-2 py-1 text-xs font-medium text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 rounded-md ${marketId && Number(marketId) === wallet.market_id ? 'ring-1 ring-yellow-500/50' : ''}`}
+                className={`inline-flex items-center gap-2 px-2 py-1 text-xs font-medium rounded-md ${
+                  wallet.market_name 
+                    ? 'text-yellow-400 bg-yellow-400/10 border border-yellow-400/20' 
+                    : 'text-white bg-white/10 border border-white/20'
+                } ${marketId && Number(marketId) === wallet.market_id ? 'ring-1 ring-yellow-500/50' : ''}`}
               >
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                  Spunta {wallet.market_name}
+                  <div className={`w-2 h-2 rounded-full ${wallet.market_name ? 'bg-yellow-500' : 'bg-white'}`} />
+                  {wallet.market_name ? `Spunta ${wallet.market_name}` : 'GENERICO'}
                 </div>
-                <div className={`flex items-center gap-1 pl-2 border-l border-yellow-400/20 ${wallet.balance > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <div className={`flex items-center gap-1 pl-2 border-l ${wallet.market_name ? 'border-yellow-400/20' : 'border-white/20'} ${wallet.balance > 0 ? 'text-green-400' : 'text-red-400'}`}>
                   <div className={`w-2 h-2 rounded-full ${wallet.balance > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
                   <span className="font-bold">€ {Number(wallet.balance).toFixed(2)}</span>
                 </div>

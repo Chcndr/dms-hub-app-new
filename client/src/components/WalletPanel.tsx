@@ -369,7 +369,7 @@ export default function WalletPanel() {
                   
                   <CardContent className="pt-4 space-y-4">
                     {/* Sezione Wallet Spunta */}
-                    <Collapsible defaultOpen={company.spunta_wallets.length > 0}>
+                    <Collapsible defaultOpen={false}>
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" className="w-full flex justify-between items-center text-slate-300 hover:text-white hover:bg-slate-800 mb-2">
                           <span className="flex items-center gap-2 text-yellow-500">
@@ -384,10 +384,16 @@ export default function WalletPanel() {
                           company.spunta_wallets.map(wallet => (
                             <div key={wallet.id} className="flex flex-col md:flex-row justify-between items-center p-4 bg-[#0f172a] rounded-lg border border-slate-700 gap-4">
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
-                                    {wallet.market_name || 'Generico'}
-                                  </Badge>
+                                  <div className="flex items-center gap-2 mb-1">
+                                  {wallet.market_name ? (
+                                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
+                                      {wallet.market_name}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="bg-white/10 text-white border-white/20">
+                                      GENERICO
+                                    </Badge>
+                                  )}
                                   <span className="text-slate-300 font-medium">Credito Spunta</span>
                                 </div>
                                 <div className="text-sm text-slate-400">
