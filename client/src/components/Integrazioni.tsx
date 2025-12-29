@@ -160,6 +160,170 @@ function APIDashboard() {
           });
         });
         
+        // Add SUAP endpoints manually (until added to index.json)
+        if (!endpointsByCategory['SUAP & PDND']) {
+          endpointsByCategory['SUAP & PDND'] = [];
+        }
+        endpointsByCategory['SUAP & PDND'].push(
+          {
+            id: 'imprese.list',
+            method: 'GET',
+            path: '/api/imprese',
+            description: 'Lista Imprese PDND',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'imprese.detail',
+            method: 'GET',
+            path: '/api/imprese/:id',
+            description: 'Dettaglio Impresa PDND',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'qualificazioni.list',
+            method: 'GET',
+            path: '/api/qualificazioni',
+            description: 'Lista Qualificazioni',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.stats',
+            method: 'GET',
+            path: '/api/suap/stats',
+            description: 'Statistiche generali pratiche SUAP',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.pratiche.list',
+            method: 'GET',
+            path: '/api/suap/pratiche',
+            description: 'Lista pratiche con filtri',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.pratiche.detail',
+            method: 'GET',
+            path: '/api/suap/pratiche/:id',
+            description: 'Dettaglio pratica con timeline ed eventi',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.pratiche.create',
+            method: 'POST',
+            path: '/api/suap/pratiche',
+            description: 'Ingestione nuova pratica',
+            risk_level: 'medium',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'suap.pratiche.evaluate',
+            method: 'POST',
+            path: '/api/suap/pratiche/:id/valuta',
+            description: 'Esecuzione motore regole',
+            risk_level: 'medium',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          }
+        );
+
+        // Add GIS & Abacus endpoints
+        if (!endpointsByCategory['GIS & Abacus']) {
+          endpointsByCategory['GIS & Abacus'] = [];
+        }
+        endpointsByCategory['GIS & Abacus'].push(
+          {
+            id: 'gis.markets',
+            method: 'GET',
+            path: '/api/gis/markets',
+            description: 'GeoJSON Mercati',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'abacus.sql.query',
+            method: 'POST',
+            path: '/api/abacus/sql/query',
+            description: 'Esecuzione Query SQL (Admin)',
+            risk_level: 'high',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          }
+        );
+
+        // Add System & Workspace endpoints
+        if (!endpointsByCategory['System & Workspace']) {
+          endpointsByCategory['System & Workspace'] = [];
+        }
+        endpointsByCategory['System & Workspace'].push(
+          {
+            id: 'system.status',
+            method: 'GET',
+            path: '/api/system/status',
+            description: 'Stato del sistema e servizi',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'workspace.list',
+            method: 'GET',
+            path: '/api/workspace/files',
+            description: 'Lista file workspace condiviso',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          },
+          {
+            id: 'chats.list',
+            method: 'GET',
+            path: '/api/mihub/chats',
+            description: 'Storico chat agenti',
+            risk_level: 'low',
+            enabled: true,
+            test: true,
+            service_id: 'mihub-backend-rest',
+            base_url: 'https://orchestratore.mio-hub.me'
+          }
+        );
+
         // Convert to array format
         const categorizedEndpoints = Object.entries(endpointsByCategory).map(([category, endpoints]) => ({
           category,
@@ -389,6 +553,86 @@ function APIDashboard() {
           data = await testEndpointResponse.json();
           break;
           
+        // SUAP & PDND - chiamate REST dirette
+        case '/api/suap/stats':
+          const suapStatsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/stats`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
+          });
+          data = await suapStatsRes.json();
+          break;
+        case '/api/suap/pratiche':
+          const suapListRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/pratiche?${new URLSearchParams(parsedBody)}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
+          });
+          data = await suapListRes.json();
+          break;
+        case '/api/suap/pratiche/:id':
+          const suapId = parsedBody.id || 1;
+          const suapDetailRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/pratiche/${suapId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
+          });
+          data = await suapDetailRes.json();
+          break;
+        case '/api/suap/pratiche': // POST
+          const suapCreateRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/pratiche`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
+            body: JSON.stringify(parsedBody),
+          });
+          data = await suapCreateRes.json();
+          break;
+        case '/api/suap/pratiche/:id/valuta':
+          const suapEvalId = parsedBody.id || 1;
+          const suapEvalRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/pratiche/${suapEvalId}/valuta`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
+          });
+          data = await suapEvalRes.json();
+          break;
+
+        // SYSTEM & WORKSPACE
+        case '/api/system/status':
+          const sysStatusRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/system/status`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          data = await sysStatusRes.json();
+          break;
+        case '/api/workspace/files':
+          const wsFilesRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/workspace/files`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          data = await wsFilesRes.json();
+          break;
+        case '/api/mihub/chats':
+          const chatsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/mihub/chats`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          data = await chatsRes.json();
+          break;
+
+        // GIS & ABACUS
+        case '/api/gis/markets':
+          const gisRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/gis/markets`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          data = await gisRes.json();
+          break;
+        case '/api/abacus/sql/query':
+          const abacusRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/abacus/sql/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-agent-id': 'dev' }, // Requires auth
+            body: JSON.stringify(parsedBody),
+          });
+          data = await abacusRes.json();
+          break;
+
         // IMPRESE & QUALIFICAZIONI - chiamate REST dirette
         case '/api/imprese':
           const impreseResponse = await fetch('https://orchestratore.mio-hub.me/api/imprese', {
@@ -595,6 +839,17 @@ function APIDashboard() {
       '/api/trpc/dmsHub.locations.update': { id: 1, name: 'HUB Aggiornato', address: 'Via Nuova 123' },
       '/api/trpc/dmsHub.locations.create': { name: 'Nuovo HUB', address: 'Via Test 123', city: 'Grosseto', lat: 42.7635, lng: 11.1093 },
       
+      // SUAP
+      '/api/suap/pratiche': { stato: 'RECEIVED' }, // GET filter example
+      '/api/suap/pratiche/:id': { id: 1 },
+      '/api/suap/pratiche/:id/valuta': { id: 1 },
+      '/api/suap/pratiche': { // POST example
+        cui: 'SUAP-2025-0001',
+        tipo_pratica: 'SCIA_A',
+        richiedente_cf: 'RSSMRA80A01H501U',
+        richiedente_nome: 'Mario Rossi'
+      },
+
       // MARKETS
       '/api/trpc/dmsHub.markets.getById': { id: 1 },
       '/api/trpc/dmsHub.markets.importAuto': {

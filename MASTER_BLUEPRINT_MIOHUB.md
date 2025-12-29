@@ -401,3 +401,232 @@ I wallet di tipo "Spunta" sono strettamente legati al mercato di riferimento.
     *   I wallet con `market_id` NULL sono considerati "GENERICI" e mostrati separatamente (badge bianco).
 
 ---
+
+---
+
+## 🚀 MODULO SSO SUAP (Ente Sussidiario Automatizzato)
+
+### 1. Obiettivo
+Automatizzare il ruolo di Ente Sussidiario nel processo SUAP, gestendo l'istruttoria delle pratiche (es. Subingressi, SCIA) attraverso l'integrazione con PDND e l'uso dei dati interni (DMS).
+
+### 2. Architettura Dati (Schema Database)
+
+#### Tabella `suap_pratiche`
+| Colonna | Tipo | Descrizione |
+| :--- | :--- | :--- |
+| `id` | UUID | Identificativo interno univoco |
+| `cui` | VARCHAR | Codice Univoco Istanza (da PDND) |
+| `tipo_pratica` | VARCHAR | Es. "SCIA Subingresso", "Voltura", "Rinnovo" |
+| `stato` | VARCHAR | Stati: `RECEIVED`, `PRECHECK`, `EVALUATED`, `APPROVED`, `REJECTED`, `INTEGRATION_REQ` |
+| `richiedente_cf` | VARCHAR | Codice Fiscale del richiedente |
+| `impresa_id` | UUID | FK verso tabella `imprese` (se mappabile) |
+| `data_presentazione` | TIMESTAMP | Data di protocollo/presentazione |
+| `esito_automatico` | VARCHAR | `AUTO_OK`, `AUTO_KO`, `REVIEW_NEEDED` |
+| `score` | INT | Punteggio calcolato dal motore decisionale |
+
+#### Tabella `suap_checks` (Checklist Automatica)
+| Colonna | Tipo | Descrizione |
+| :--- | :--- | :--- |
+| `id` | UUID | PK |
+| `pratica_id` | UUID | FK verso `suap_pratiche` |
+| `check_code` | VARCHAR | Es. `CHECK_DURC`, `CHECK_CANONE`, `CHECK_PRESENZE` |
+| `esito` | BOOLEAN | `true` (passato), `false` (fallito) |
+| `dettaglio` | JSONB | Dati grezzi del controllo (es. "Scadenza DURC: 2024-12-31") |
+| `fonte` | VARCHAR | Es. "PDND", "DMS_PRESENZE", "DMS_PAGAMENTI" |
+
+#### Tabella `suap_eventi` (Timeline)
+| Colonna | Tipo | Descrizione |
+| :--- | :--- | :--- |
+| `id` | UUID | PK |
+| `pratica_id` | UUID | FK verso `suap_pratiche` |
+| `tipo_evento` | VARCHAR | Es. `INGESTION`, `STATUS_CHANGE`, `INTEGRATION_SENT` |
+| `descrizione` | TEXT | Descrizione leggibile dell'evento |
+| `timestamp` | TIMESTAMP | Data e ora evento |
+| `operatore` | VARCHAR | Utente o "SYSTEM" |
+
+### 3. API Backend (Nuovi Endpoint)
+
+*   `GET /api/suap/pratiche`: Lista paginata con filtri (stato, tipo, data).
+*   `GET /api/suap/pratiche/:id`: Dettaglio completo (include checks ed eventi).
+*   `POST /api/suap/pratiche/:id/valuta`: Esegue il motore decisionale (ricalcola score e checks).
+*   `POST /api/suap/pratiche/:id/azione`: Esegue azioni di workflow (es. Approva, Richiedi Integrazione).
+*   `GET /api/suap/stats`: Restituisce i contatori per la dashboard (Totali, Lavorazione, Approvate, Rigettate).
+
+### 4. Interfaccia Utente (Frontend)
+
+#### Dashboard (`SuapDashboard.tsx`)
+*   **KPI Cards:** 4 card in alto (Totali, In Lavorazione, Approvate, Rigettate) con colori distintivi.
+*   **Lista Recenti:** Tabella semplificata delle ultime pratiche arrivate.
+
+#### Lista Pratiche (`SuapListPage.tsx`)
+*   Tabella completa con filtri avanzati.
+*   Badge di stato colorati (es. Verde per APPROVATA, Giallo per IN LAVORAZIONE).
+
+#### Dettaglio Pratica (`SuapDetailPage.tsx`)
+*   **Header:** Dati principali (CUI, Richiedente, Tipo).
+*   **Checklist:** Lista dei controlli automatici con icone (✅/❌) e dettagli espandibili.
+*   **Timeline:** Cronologia degli eventi.
+*   **Azioni:** Pulsanti per l'operatore (basati sullo stato attuale).
+
+### 5. Integrazioni Esterne
+*   **PDND (Catalogo SSU):** Polling o Webhook per ricevere nuove pratiche.
+*   **SSO:** Autenticazione operatori (già presente, da estendere se serve SPID per cittadini).
+
+---
+
+## 💎 AGGIORNAMENTI ARCHITETTURALI "FUTURE-PROOF" (SSO SUAP)
+
+### 1. Supporto Multi-Ente (Tenant Isolation)
+Tutte le tabelle del modulo SUAP includeranno la colonna `ente_id` (UUID) per supportare nativamente la gestione di più comuni/enti nello stesso database.
+*   `suap_pratiche` -> `ente_id`
+*   `suap_config` -> `ente_id` (configurazione regole specifiche per ente)
+
+### 2. Event Sourcing "Leggero"
+Nella tabella `suap_eventi`, oltre ai metadati, verrà salvato il **payload raw** (JSON) delle comunicazioni con PDND/DMS.
+*   Colonna `payload_raw` (JSONB): Per audit, debug e riproducibilità degli errori.
+*   Colonna `correlation_id`: Per tracciare una transazione attraverso più sistemi.
+
+### 3. UX Upgrade: SLA & Evidenze
+*   **SLA Clock:** Nella dashboard e nel dettaglio pratica, un indicatore visivo (countdown) mostrerà i giorni rimanenti alla scadenza normativa (30/60 gg), colorandosi progressivamente (Verde -> Giallo -> Rosso).
+*   **Drawer Evidenze:** Cliccando su un esito della checklist (es. "DURC Irregolare"), si aprirà un pannello laterale ("Drawer") che mostra:
+    *   Fonte del dato (es. INPS/PDND).
+    *   Timestamp esatto della verifica.
+    *   JSON di risposta originale (l'evidenza tecnica).
+    *   Motivazione leggibile generata dal sistema.
+
+### 4. Operational Runbook (Bozza)
+*   **Log Strutturati:** Ogni log deve includere `[CUI: ...] [Ente: ...]` per facilitare la ricerca.
+*   **Gestione Segreti:** Token PDND e certificati gestiti via variabili d'ambiente (Vault), mai nel codice o nel DB in chiaro.
+*   **Idempotenza:** Le API di scrittura (es. `/valuta`, `/azione`) devono essere idempotenti (gestione `Idempotency-Key` nell'header o check su stato pratica).
+
+---
+
+## 🛡️ ENTERPRISE UPGRADE (Sicurezza, Dati e Affidabilità)
+
+### 1. Data Retention & Privacy
+*   **Payload Raw:** I dati JSON grezzi in `suap_eventi` verranno conservati per **180 giorni** (configurabile), poi archiviati o eliminati.
+*   **Access Control:** L'accesso alla colonna `payload_raw` sarà limitato al ruolo `AUDITOR` o `ADMIN`.
+*   **Masking:** I campi sensibili (es. PII non necessari) verranno mascherati prima del salvataggio se non essenziali per l'audit.
+
+### 2. Strategia Migrazioni DB
+*   **Tool:** Utilizzeremo script SQL versionati (es. `V1__init_suap.sql`) eseguiti all'avvio o via pipeline CI/CD.
+*   **Naming:** `V{version}__{description}.sql`.
+*   **Vincoli:** Ogni migrazione deve essere reversibile (o avere uno script di rollback).
+
+### 3. Idempotenza "Hard"
+*   **Vincoli DB:** Unique constraint su `(ente_id, cui)` nella tabella `suap_pratiche` per evitare duplicati.
+*   **API:** Le chiamate critiche (es. invio esito) richiederanno un header `Idempotency-Key`. Il backend verificherà se quella chiave è già stata processata.
+
+### 4. Performance & Explainability
+*   **Materialized View:** La UI leggerà da una vista ottimizzata (`suap_pratiche_view`) che aggrega stato, score e ultimo evento, aggiornata in near-real-time, lasciando la tabella eventi per l'audit.
+*   **Explainability Standard:** Ogni esito (OK/KO) salverà un oggetto strutturato:
+    ```json
+    {
+      "outcome_code": "KO_DURC",
+      "reasons": ["DURC_EXPIRED", "PAYMENTS_MISSING"],
+      "human_summary": "Il DURC risulta scaduto e mancano pagamenti del canone.",
+      "evidence_refs": ["evt_123", "chk_456"]
+    }
+    ```
+
+---
+
+## 🧩 COMPLETAMENTO DATA MODEL & OPERATIVITÀ (v3.2)
+
+### 1. Nuove Tabelle Core (Mancanti in v3.1)
+
+#### Tabella `suap_decisioni` (Audit Decisionale)
+| Colonna | Tipo | Descrizione |
+| :--- | :--- | :--- |
+| `id` | UUID | PK |
+| `pratica_id` | UUID | FK |
+| `outcome_code` | VARCHAR | `AUTO_OK`, `AUTO_KO`, `MANUAL_OK`, `INTEGRATION_REQ` |
+| `score` | INT | Punteggio calcolato al momento della decisione |
+| `reasons` | JSONB | Array di codici errore/warning (es. `["DURC_KO", "FEE_MISSING"]`) |
+| `human_summary` | TEXT | Spiegazione generata per l'operatore |
+| `approved_by` | VARCHAR | Utente o "SYSTEM" |
+| `created_at` | TIMESTAMP | Data decisione |
+
+#### Tabella `suap_azioni` (Workflow Operativo)
+| Colonna | Tipo | Descrizione |
+| :--- | :--- | :--- |
+| `id` | UUID | PK |
+| `pratica_id` | UUID | FK |
+| `tipo_azione` | VARCHAR | `SEND_OUTCOME`, `REQUEST_INTEGRATION`, `ADD_NOTE`, `ASSIGN` |
+| `payload` | JSONB | Dati dell'azione (es. testo nota, destinatario assegnazione) |
+| `status` | VARCHAR | `PENDING`, `COMPLETED`, `FAILED` (per gestione asincrona) |
+| `idempotency_key` | VARCHAR | Chiave univoca per evitare doppi invii |
+
+#### Tabella `suap_documenti` (Gestione Allegati)
+| Colonna | Tipo | Descrizione |
+| :--- | :--- | :--- |
+| `id` | UUID | PK |
+| `pratica_id` | UUID | FK |
+| `file_name` | VARCHAR | Nome originale file |
+| `file_hash` | VARCHAR | Hash SHA-256 per integrità |
+| `storage_path` | VARCHAR | Percorso su S3/MinIO o URL PDND |
+| `metadata` | JSONB | Metadati extra (MIME type, size, autore) |
+
+#### Tabella `suap_regole` (Rules Engine Configurabile)
+| Colonna | Tipo | Descrizione |
+| :--- | :--- | :--- |
+| `id` | UUID | PK |
+| `ente_id` | UUID | FK (Regole specifiche per ente) |
+| `check_code` | VARCHAR | Es. `CHECK_DURC` |
+| `tipo` | VARCHAR | `HARD` (bloccante), `SOFT` (punteggio) |
+| `peso` | INT | Punteggio sottratto se fallisce (per SOFT) |
+| `enabled` | BOOLEAN | Attiva/Disattiva regola |
+
+### 2. Endpoint Operativi Aggiuntivi
+*   `POST /api/suap/pratiche/:id/refresh`: Forza il ricalcolo dei check (es. dopo aver pagato).
+*   `POST /api/suap/pratiche/:id/invia-esito`: Invia l'esito finale al SUAP (asincrono via `suap_azioni`).
+*   `POST /api/suap/pratiche/:id/richiesta-integrazione`: Invia richiesta documenti mancanti.
+
+### 3. Job Queue (Concettuale)
+Le azioni verso l'esterno (PDND, Mail) non avvengono nel thread della richiesta HTTP, ma vengono salvate in `suap_azioni` con stato `PENDING`. Un worker (cron o processo separato) le preleva ed esegue con logica di retry esponenziale.
+
+---
+
+## 🔌 API INVENTORY (INTEGRAZIONI)
+
+### Regola di Visibilità (Visibility First)
+**Tutti i nuovi endpoint creati nel backend DEVONO essere esposti e testabili nella sezione 'Integrazioni' del frontend (`Integrazioni.tsx`).**
+
+Se gli endpoint non sono ancora presenti nel file `api/index.json` ufficiale (gestito centralmente), **DEVONO essere aggiunti manualmente** nel componente React `Integrazioni.tsx` all'interno del `useEffect` che carica la lista, e gestiti nello `switch` case di `handleTestEndpoint`.
+
+### Inventario Endpoint Attivi (Aggiornato 29 Dicembre)
+
+#### 1. SUAP & PDND (Nuovo Modulo)
+| Endpoint | Metodo | Descrizione | Stato |
+|----------|--------|-------------|-------|
+| `/api/suap/stats` | GET | Statistiche generali pratiche | ✅ Integrato |
+| `/api/suap/pratiche` | GET | Lista pratiche con filtri | ✅ Integrato |
+| `/api/suap/pratiche/:id` | GET | Dettaglio pratica con timeline | ✅ Integrato |
+| `/api/suap/pratiche` | POST | Ingestione nuova pratica | ✅ Integrato |
+| `/api/suap/pratiche/:id/valuta` | POST | Esecuzione motore regole | ✅ Integrato |
+| `/api/imprese` | GET | Lista Imprese PDND | ✅ Integrato |
+| `/api/qualificazioni` | GET | Lista Qualificazioni | ✅ Integrato |
+
+#### 2. System & Workspace
+| Endpoint | Metodo | Descrizione | Stato |
+|----------|--------|-------------|-------|
+| `/api/system/status` | GET | Health check servizi | ✅ Integrato |
+| `/api/workspace/files` | GET | File condivisi | ✅ Integrato |
+| `/api/mihub/chats` | GET | Storico chat agenti | ✅ Integrato |
+
+#### 3. GIS & Abacus
+| Endpoint | Metodo | Descrizione | Stato |
+|----------|--------|-------------|-------|
+| `/api/gis/markets` | GET | GeoJSON Mercati | ✅ Integrato |
+| `/api/abacus/sql/query` | POST | Query SQL Admin | ✅ Integrato |
+
+#### 4. DMS Hub Core
+| Modulo | Endpoint Principali | Stato |
+|--------|---------------------|-------|
+| **Markets** | `/api/dmsHub/markets/*` | ✅ Integrato |
+| **Stalls** | `/api/dmsHub/stalls/*` | ✅ Integrato |
+| **Vendors** | `/api/dmsHub/vendors/*` | ✅ Integrato |
+| **Bookings** | `/api/dmsHub/bookings/*` | ✅ Integrato |
+| **Wallet** | `/api/trpc/wallet.*` | ✅ Integrato |
+
+---

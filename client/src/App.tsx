@@ -23,6 +23,9 @@ import MarketGISPage from "./pages/MarketGISPage";
 import LogDebugPage from "./pages/LogDebugPage";
 import APITokensPage from "./pages/APITokensPage";
 import CouncilPage from "./pages/CouncilPage";
+import SuapDashboard from "./pages/suap/SuapDashboard";
+import SuapList from "./pages/suap/SuapList";
+import SuapDetail from "./pages/suap/SuapDetail";
 
 function Router() {
   return (
@@ -44,6 +47,9 @@ function Router() {
       <Route path="/log-debug" component={LogDebugPage} />
       <Route path="/settings/api-tokens" component={APITokensPage} />
       <Route path="/council" component={CouncilPage} />
+      <Route path="/suap" component={SuapDashboard} />
+      <Route path="/suap/list" component={SuapList} />
+      <Route path="/suap/detail/:id" component={SuapDetail} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
