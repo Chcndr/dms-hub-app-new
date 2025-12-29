@@ -762,9 +762,15 @@ export function MarketMapComponent({
                             let area = '-';
                             let hasDimensions = false;
 
-                            // 1. Prova a parsare le dimensioni dal DB
-                            if (props.dimensions) {
-                              const match = props.dimensions.match(/([\d.]+)\s*m?\s*[x×]\s*([\d.]+)\s*m?/i);
+                            // 1. Prova a parsare le dimensioni dal DB (priorità assoluta)
+                            // Controlla sia props.dimensions (dal GeoJSON) che dbStall.dimensions (dal DB aggiornato)
+                            const dimensionsSource = dbStall?.dimensions || props.dimensions;
+                            
+                            if (dimensionsSource) {
+                              // Supporta formati con virgola o punto, e vari separatori (x, *, X)
+                              const normalized = dimensionsSource.replace(/,/g, '.');
+                              const match = normalized.match(/([\d.]+)\s*m?\s*[x×*]\s*([\d.]+)\s*m?/i);
+                              
                               if (match) {
                                 const w = parseFloat(match[1]);
                                 const l = parseFloat(match[2]);
@@ -810,7 +816,7 @@ export function MarketMapComponent({
                             return (
                               <div className="bg-[#1e293b] p-3 rounded border border-gray-700">
                                 <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
-                                  <span>📏 Dimensioni {props.dimensions ? '' : '(Stimate)'}</span>
+                                  <span>📏 Dimensioni {(dbStall?.dimensions || props.dimensions) ? '' : '(Stimate)'}</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
@@ -844,14 +850,22 @@ export function MarketMapComponent({
                           )}
                           
                           {/* Pulsante Visita Vetrina */}
-                          {dbStall?.vendor_name && (
+                          {(dbStall?.vendor_name || props.vendor_name) && (
                             <a 
                               href={(() => {
-                                // DEBUG: Log per capire perché non trova l'ID
-                                if (!dbStall?.impresa_id) {
-                                  console.warn(`[DEBUG] Impresa ID mancante per posteggio ${props.number}`, dbStall);
+                                // Logica robusta per trovare l'ID impresa
+                                // 1. Cerca in dbStall (dati live)
+                                // 2. Cerca in props (dati GeoJSON)
+                                const companyId = dbStall?.impresa_id || props.impresa_id || props.company_id;
+                                
+                                if (!companyId) {
+                                  console.warn(`[DEBUG] Impresa ID mancante per posteggio ${props.number}`, { dbStall, props });
+                                  // Fallback alla ricerca per nome se manca l'ID (meglio di niente)
+                                  const name = dbStall?.vendor_name || props.vendor_name;
+                                  if (name) return `/vetrine?q=${encodeURIComponent(name)}`;
+                                  return '/vetrine';
                                 }
-                                return dbStall?.impresa_id ? `/vetrine/${dbStall.impresa_id}` : '/vetrine';
+                                return `/vetrine/${companyId}`;
                               })()}
                               target="_blank"
                               rel="noopener noreferrer"
