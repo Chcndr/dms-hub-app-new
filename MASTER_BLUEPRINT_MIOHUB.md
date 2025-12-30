@@ -1,632 +1,629 @@
-# 🔑 BLUEPRINT MIO HUB - AGGIORNATO 29 DICEMBRE 2025 (v3.1)
+# 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-**DOCUMENTO DI CONTESTO PER NUOVE SESSIONI MANUS**
+> **Versione:** 3.2.0  
+> **Data:** 30 Dicembre 2025  
+> **Autore:** Sistema documentato da Manus AI  
+> **Stato:** PRODUZIONE
 
 ---
 
 ## 📋 INDICE
 
-1. [Aggiornamento 29 Dicembre (Spunta & Storico)](#-aggiornamento-29-dicembre-2025-sessione-notturna---spunta--storico)
-2. [Repository e Deploy](#-repository-e-deploy)
-3. [Accesso Server Hetzner](#-accesso-server-hetzner)
-4. [Database Neon PostgreSQL](#-database-neon-postgresql)
-5. [Architettura Sistema Chat](#-architettura-sistema-chat)
-6. [Schema Database agent_messages](#-schema-database-agent_messages)
-7. [Flusso Messaggi e Mode](#-flusso-messaggi-e-mode)
-8. [Logica di Rendering Frontend](#-logica-di-rendering-frontend)
-9. [File Chiave da Conoscere](#-file-chiave-da-conoscere)
-10. [Comandi Utili](#-comandi-utili)
-11. [Agenti del Sistema](#-agenti-del-sistema)
-12. [Wallet / PagoPA](#-wallet--pagopa)
-13. [Imprese & Qualificazioni](#-imprese--qualificazioni)
-14. [API Inventory (Integrazioni)](#-api-inventory-integrazioni)
+1. [Panoramica Sistema](#panoramica-sistema)
+2. [Architettura Completa](#architettura-completa)
+3. [Repository GitHub](#repository-github)
+4. [Servizi e Componenti](#servizi-e-componenti)
+5. [MIO Agent - Sistema Multi-Agente](#mio-agent---sistema-multi-agente)
+6. [Knowledge Base DMS](#knowledge-base-dms)
+7. [Guardian - Sistema di Monitoraggio](#guardian---sistema-di-monitoraggio)
+8. [Database e Storage](#database-e-storage)
+9. [API Endpoints](#api-endpoints)
+10. [Deploy e CI/CD](#deploy-e-cicd)
+11. [Credenziali e Accessi](#credenziali-e-accessi)
+12. [Troubleshooting](#troubleshooting)
+13. [Regole per Agenti AI](#regole-per-agenti-ai)
 
 ---
 
-## 💡 AGGIORNAMENTO 29 DICEMBRE 2025 (SESSIONE NOTTURNA - SPUNTA & STORICO)
+## 🎯 PANORAMICA SISTEMA
 
-### ✅ Nuove Funzionalità Implementate
+### Cos'è MIO HUB?
 
-1.  **UI Wallet & Spunta (Refactoring Completo)**
-    -   **Wallet Chiusi di Default**: Le sezioni "Portafogli Spunta" e "Concessioni" nel pannello di dettaglio partono chiuse per pulizia.
-    -   **Wallet Generico**: I wallet senza mercato associato sono etichettati come **"GENERICO"** (Badge Bianco), distinti da quelli di mercato (Badge Giallo).
-    -   **Semafori Intelligenti**:
-        -   **Verde**: Saldo > € 0.00
-        -   **Rosso**: Saldo <= € 0.00 (Da Pagare/Ricaricare)
-    -   **Header Riepilogativo**: Mostra il numero totale di wallet e la somma totale dei saldi in bianco.
+**MIO HUB** è un ecosistema digitale per la gestione dei mercati ambulanti italiani. Include:
 
-2.  **Wallet Spunta Specifico per Mercato**
-    -   **Architettura**: I wallet di tipo `SPUNTA` non sono più unici per azienda, ma specifici per ogni coppia `(Azienda, Mercato)`.
-    -   **Motivazione**: I pagamenti della spunta devono confluire nelle casse specifiche del comune che gestisce quel mercato.
-    -   **Visualizzazione**: Nella lista imprese, il badge "Spunta" mostra il saldo del wallet relativo al mercato che si sta visualizzando.
+- **DMS HUB** - Dashboard principale per Pubblica Amministrazione
+- **MIO Agent** - Sistema multi-agente AI per automazione
+- **Guardian** - Sistema di logging e monitoraggio API
+- **Gestionale** - Backend per operazioni CRUD
 
-3.  **Domanda Spunta**
-    -   **Nuovo Flusso**: Aggiunto pulsante "Domanda Spunta" nel tab Autorizzazioni.
-    -   **Funzionamento**: Permette di creare un nuovo wallet spunta per un'impresa in uno specifico mercato.
-    -   **UX**: La modale mostra esplicitamente il Mercato e il Comune di riferimento per evitare errori.
-    -   **Nota**: Per le imprese con molti wallet spunta, la visualizzazione è filtrata per mostrare solo quello pertinente al mercato corrente.
+### Stack Tecnologico
 
-4.  **Fix Storico PagoPA**
-    -   **Problema**: Crash della pagina storico dovuto a conflitti di nomi (`History` vs `window.history`) e dati sporchi.
-    -   **Soluzione**: Rinominato componente in `HistoryIcon`, blindato il rendering delle date e filtrati i dati non validi.
+| Layer | Tecnologia |
+|-------|------------|
+| **Frontend** | React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui |
+| **Backend** | Node.js + Express + tRPC |
+| **Database** | PostgreSQL (Neon) |
+| **AI/LLM** | Google Gemini API |
+| **Hosting Frontend** | Vercel |
+| **Hosting Backend** | Hetzner VPS (157.90.29.66) |
+| **CI/CD** | GitHub Actions + PM2 |
 
-5.  **Indicatori Visivi (Semafori)**
-    -   **Lista Imprese**: Aggiunti semafori (Verde/Rosso) e importi per:
-        -   Concessioni (Posteggi)
-        -   Wallet Spunta (Ricaricabile)
-    -   **Logica**: € 0.00 è considerato "Da Pagare" (Rosso) per le concessioni, mentre per la spunta dipende dal saldo positivo/negativo.
+---
 
-6.  **Fix Backend Qualificazioni (v3.1)**
-    -   **Problema**: Il badge delle qualificazioni nella lista imprese non si aggiornava automaticamente.
-    -   **Soluzione**: Modificata la query principale `/api/imprese` per includere una subquery che recupera le qualificazioni 62	    -   **Stato**: Committato su `mihub-backend-rest` (master).
-63	
-64	7.  **Fix Dimensioni Posteggi & Popup (v3.1)**
-65	    -   **Problema**: Dimensioni posteggi mancanti o stimate erroneamente, popup spunta incompleto.
-66	    -   **Soluzione Dimensioni**: Implementata logica a cascata (Priority Fallback):
-67	        1.  **DB**: Cerca dimensioni ufficiali nel database (`width` x `depth`).
-68	        2.  **GeoJSON**: Se mancano, cerca nelle proprietà del file mappa.
-69	        3.  **Stima**: Se mancano entrambe, calcola geometricamente dal poligono (Label "STIMATE").
-70	    -   **Soluzione Popup Spunta**:
-71	        -   Aggiunta visualizzazione **Impresa Intestataria**.
-72	        -   Aggiunto pulsante **"Visita Vetrina"** (Link interno SPA).
-73	        -   Allineata logica dimensioni a quella standard.
-74	
-75	### 📐 Architettura Wallet Spunta
-```mermaid
-graph TD
-    A[Impresa] -->|Ha Molti| W[Wallets]
-    M[Mercato] -->|Gestisce| W
-    
-    subgraph "Tipologie Wallet"
-        W1[Wallet Concessione] -->|1 per Posteggio| P[Posteggio]
-        W2[Wallet Spunta] -->|1 per Mercato| M
-    end
-    
-    subgraph "Flusso Domanda Spunta"
-        User[Utente] -->|Click 'Domanda Spunta'| FE[Frontend]
-        FE -->|POST /api/wallets/init| BE[Backend]
-        BE -->|Crea Wallet type='SPUNTA' market_id=X| DB[(Database)]
-    end
+## 🏛️ ARCHITETTURA COMPLETA
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              INTERNET                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        │                           │                           │
+        ▼                           ▼                           ▼
+┌───────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│   VERCEL      │         │  HETZNER VPS    │         │   NEON DB       │
+│               │         │  157.90.29.66   │         │                 │
+│ dms-hub-app-  │ ◄─────► │                 │ ◄─────► │  PostgreSQL     │
+│ new.vercel.app│  API    │ orchestratore.  │  SQL    │  (Serverless)   │
+│               │         │ mio-hub.me      │         │                 │
+│ ┌───────────┐ │         │ ┌─────────────┐ │         │ ┌─────────────┐ │
+│ │ React App │ │         │ │ Express API │ │         │ │ 542 mercati │ │
+│ │ + tRPC    │ │         │ │ + PM2       │ │         │ │ + logs      │ │
+│ │ client    │ │         │ │             │ │         │ │ + agents    │ │
+│ └───────────┘ │         │ └─────────────┘ │         │ └─────────────┘ │
+└───────────────┘         └─────────────────┘         └─────────────────┘
+        │                           │
+        │                           │
+        ▼                           ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                         MODULI INTERNI BACKEND                             │
+│                                                                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   GUARDIAN   │  │  MIO AGENT   │  │    LOGS      │  │   HEALTH     │  │
+│  │              │  │              │  │              │  │   MONITOR    │  │
+│  │ /api/guardian│  │ /api/mihub/  │  │ /api/logs/*  │  │ /api/health/ │  │
+│  │ - health     │  │ orchestrator │  │ - createLog  │  │ - full       │  │
+│  │ - testEndpoint│ │ - chats      │  │ - getLogs    │  │ - history    │  │
+│  │ - logs       │  │ - messages   │  │ - stats      │  │ - alerts     │  │
+│  │ - permissions│  │              │  │              │  │              │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
+│                           │                                               │
+│                           ▼                                               │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │                    ORCHESTRATORE MIO                                │  │
+│  │                                                                     │  │
+│  │   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐           │  │
+│  │   │   MIO   │   │ GPT Dev │   │  Manus  │   │ Abacus  │           │  │
+│  │   │ (GPT-5) │──►│ GitHub  │   │ Server  │   │  SQL    │           │  │
+│  │   │Coordina │   │  Code   │   │  PM2    │   │ Query   │           │  │
+│  │   └─────────┘   └─────────┘   └─────────┘   └─────────┘           │  │
+│  │        │                                          │                │  │
+│  │        │        ┌─────────┐                       │                │  │
+│  │        └───────►│ Zapier  │◄──────────────────────┘                │  │
+│  │                 │ Email   │                                        │  │
+│  │                 │WhatsApp │                                        │  │
+│  │                 │Calendar │                                        │  │
+│  │                 └─────────┘                                        │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 REPOSITORY E DEPLOY
+## 📁 REPOSITORY GITHUB
 
-### Frontend (Vercel)
-| Campo | Valore |
-|-------|--------|
-| **Repository** | `https://github.com/Chcndr/dms-hub-app-new` |
-| **Branch** | `master` |
-| **URL Produzione** | `https://dms-hub-app-new.vercel.app` |
-| **Deploy** | Automatico su push a master |
-| **Framework** | Vite + React + TypeScript + TailwindCSS |
+| Repository | Descrizione | URL |
+|------------|-------------|-----|
+| **dms-hub-app-new** | Frontend React + tRPC | https://github.com/Chcndr/dms-hub-app-new |
+| **mihub-backend-rest** | Backend Express + API | https://github.com/Chcndr/mihub-backend-rest |
+| **dms-system-blueprint** | Documentazione sistema | https://github.com/Chcndr/dms-system-blueprint |
+| **mio-hub-implementation-deploy** | Script deploy | https://github.com/Chcndr/mio-hub-implementation-deploy |
 
-### Backend (Hetzner)
-| Campo | Valore |
-|-------|--------|
-| **Repository** | `https://github.com/Chcndr/mihub-backend-rest` |
-| **Branch** | `master` |
-| **URL Produzione** | `https://orchestratore.mio-hub.me` |
-| **Deploy** | Manuale: `git pull` + `pm2 restart` |
-| **Framework** | Node.js + Express |
+### Struttura Repository Principale
 
-### Flusso di Lavoro OBBLIGATORIO
 ```
-1. Modifiche locali nel sandbox
-2. git add -A && git commit -m "messaggio" && git push origin master
-3. Per backend: SSH su Hetzner → git pull → pm2 restart mihub-backend
-4. Per frontend: Vercel fa deploy automatico
-```
+dms-hub-app-new/
+├── client/                 # Frontend React
+│   ├── src/
+│   │   ├── pages/         # Pagine dashboard
+│   │   ├── components/    # Componenti UI
+│   │   └── lib/           # Utilities
+│   └── public/            # Asset statici
+├── server/                 # Backend tRPC (Vercel)
+│   ├── routers.ts         # Router principale
+│   ├── guardianRouter.ts  # Guardian API
+│   └── services/          # Servizi business
+└── shared/                 # Tipi condivisi
 
-**⚠️ MAI modificare direttamente sul server Hetzner!**
-
----
-
-## 🖥️ ACCESSO SERVER HETZNER
-
-| Campo | Valore |
-|-------|--------|
-| **IP** | `157.90.29.66` |
-| **User** | `root` |
-| **Chiave SSH** | `/home/ubuntu/.ssh/manus_hetzner_key` |
-| **Percorso Backend** | `/root/mihub-backend-rest` |
-
-### Comando SSH
-```bash
-ssh -i /home/ubuntu/.ssh/manus_hetzner_key root@157.90.29.66
-```
-
-### Deploy Backend (dopo push su GitHub)
-```bash
-ssh -i /home/ubuntu/.ssh/manus_hetzner_key root@157.90.29.66 'cd /root/mihub-backend-rest && git pull && pm2 restart mihub-backend'
+mihub-backend-rest/
+├── routes/
+│   ├── orchestrator.js    # MIO Agent orchestratore
+│   ├── guardian.js        # Guardian API
+│   ├── health-monitor.js  # Health check
+│   ├── logs.js            # Sistema logging
+│   └── integrations.js    # Integrazioni esterne
+├── src/
+│   └── modules/
+│       └── orchestrator/  # Logica multi-agente
+│           ├── llm.js     # Chiamate Gemini
+│           ├── database.js # DB orchestratore
+│           └── *.js       # Tool agenti
+└── index.js               # Entry point
 ```
 
 ---
 
-## 💾 DATABASE NEON POSTGRESQL
+## 🤖 MIO AGENT - SISTEMA MULTI-AGENTE
 
-| Campo | Valore |
-|-------|--------|
-| **Host** | `ep-bold-silence-adftsojg-pooler.c-2.us-east-1.aws.neon.tech` |
-| **Database** | `neondb` |
-| **User** | `neondb_owner` |
-| **Password** | `npg_lYG6JQ5Krtsi` |
-| **SSL** | `require` |
+### Cos'è MIO Agent?
 
----
+MIO Agent è un **sistema multi-agente interno** che coordina 5 agenti AI specializzati. **NON è un servizio esterno** su un sottodominio separato.
 
-## 🏗️ ARCHITETTURA SISTEMA CHAT
+### Endpoint Principale
 
-### Viste Frontend
-| Vista | Descrizione | Mode | Conversation ID |
-|-------|-------------|------|-----------------|
-| **Chat MIO** | Chat principale con orchestratore | `auto` | `mio-main` |
-| **Vista 4 Agenti** | Mostra coordinamento MIO→Agenti | `auto` | `mio-{agent}-coordination` |
-| **Chat Singola Manus** | Chat diretta con Manus | `direct` | `user-manus-direct` |
-| **Chat Singola Abacus** | Chat diretta con Abacus | `direct` | `user-abacus-direct` |
-| **Chat Singola GPT Dev** | Chat diretta con GPT Dev | `direct` | `user-gptdev-direct` |
-| **Chat Singola Zapier** | Chat diretta con Zapier | `direct` | `user-zapier-direct` |
+```
+POST https://orchestratore.mio-hub.me/api/mihub/orchestrator
+```
 
----
+### I 5 Agenti
 
-## 📊 SCHEMA DATABASE agent_messages
+| Agente | Ruolo | Capabilities |
+|--------|-------|--------------|
+| **MIO** | Coordinatore (GPT-5) | Smista task, coordina agenti |
+| **GPT Dev** | Sviluppatore | GitHub, commit, PR, codice |
+| **Manus** | Operatore | SSH, PM2, file system, server |
+| **Abacus** | Analista | Query SQL, analisi dati |
+| **Zapier** | Automazioni | Email, WhatsApp, Calendar, Gmail |
+
+### Modalità di Funzionamento
+
+```javascript
+// Mode AUTO - MIO decide quale agente usare
+POST /api/mihub/orchestrator
+{
+  "mode": "auto",
+  "message": "Quanti mercati ci sono nel database?"
+}
+// MIO smista ad Abacus
+
+// Mode DIRECT - Chiama agente specifico
+POST /api/mihub/orchestrator
+{
+  "mode": "direct",
+  "targetAgent": "manus",
+  "message": "Mostra lo stato di PM2"
+}
+```
+
+### Tabelle Database
 
 ```sql
+-- Messaggi degli agenti
 CREATE TABLE agent_messages (
-  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  conversation_id   varchar NOT NULL,    -- ID conversazione
-  sender            varchar NOT NULL,    -- Chi ha inviato: 'user', 'mio', 'manus', 'abacus', 'gptdev', 'zapier'
-  recipient         varchar,             -- Destinatario (opzionale)
-  role              varchar NOT NULL,    -- 'user' | 'assistant'
-  message           text NOT NULL,       -- Contenuto del messaggio
-  agent             varchar,             -- Agente che ha risposto
-  mode              varchar DEFAULT 'auto',  -- 'auto' | 'direct'
-  meta              jsonb,               -- Metadati aggiuntivi
-  tool_call_id      varchar,             -- ID chiamata tool (se presente)
-  tool_name         varchar,             -- Nome tool usato
-  tool_args         jsonb,               -- Argomenti tool
-  error             boolean,             -- Flag errore
-  created_at        timestamptz DEFAULT NOW()
+  id SERIAL PRIMARY KEY,
+  conversation_id VARCHAR(255),
+  sender VARCHAR(50),
+  recipient VARCHAR(50),
+  agent VARCHAR(50),
+  role VARCHAR(20),
+  message TEXT,
+  meta JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Log delle chiamate
+CREATE TABLE mio_agent_logs (
+  id SERIAL PRIMARY KEY,
+  timestamp TIMESTAMP DEFAULT NOW(),
+  agent VARCHAR(50),
+  service_id VARCHAR(100),
+  endpoint VARCHAR(255),
+  method VARCHAR(10),
+  status_code INTEGER,
+  risk VARCHAR(20),
+  success BOOLEAN,
+  message TEXT,
+  meta_json JSONB
 );
 ```
 
-### Valori Campi Chiave
+### 📚 Knowledge Base DMS (v1.0 - 30/12/2025)
 
-| Campo | Valori Possibili | Descrizione |
-|-------|------------------|-------------|
-| **sender** | `user`, `mio`, `manus`, `abacus`, `gptdev`, `zapier` | Chi ha inviato il messaggio |
-| **role** | `user`, `assistant` | Ruolo nel contesto LLM |
-| **mode** | `auto`, `direct` | Modalità di routing |
-| **agent** | `null`, `mio`, `manus`, `abacus`, `gptdev`, `zapier` | Agente che ha processato |
+MIO Agent include una **Knowledge Base completa** con riassunti di 30 documenti PDF strategici del sistema DMS.
+
+**File sorgente:** `mihub-backend-rest/src/modules/orchestrator/llm.js` (righe 249-480)
+
+**Commit:** `0741226 - 🧠 Expand MIO Knowledge Base with 30 DMS documents`
+
+#### Documenti Inclusi nella Knowledge Base
+
+| Categoria | Documenti |
+|-----------|----------|
+| **Strategici** | ANALISI E SOLUZIONE DMS, HUB NAZIONALE, DOSSIER NAZIONALE, PROGETTO NAZIONALE, **TPASS** |
+| **Normativi** | BOLKESTEIN, ONCE ONLY SINGLE DIGITAL GATEWAY, PASSAPORTO DIGITALE EUROPEO |
+| **Tecnici** | DMS AL CENTRO DI TUTTO, GEMELLO DMS, PRESENTAZIONE DMS, APP ASSISTENTE |
+| **Carbon Credit** | CARBON CREDIT DMS, CARBON CREDIT LOGICA, DMS ECC, EQUILIBRIO ECOSOSTENIBILE, RIEQUILIBRIO |
+| **Regionali** | DMS E CLUST-ER (Emilia-Romagna), HUB URBANI E DI PROSSIMITÀ, COSTI PA |
+| **Operativi** | RELAZIONE CONTROLLI, USATO TRAFFICO RIMANENZE, DMS SSET (InfoCamere) |
+
+#### Dati Chiave nel System Prompt
+
+| Dato | Valore |
+|------|--------|
+| Negozi chiusi (2003-2023) | 190.000+ |
+| Ambulanti persi | 24.000 (-25.6%) |
+| Imprese ambulanti straniere | 53% |
+| E-commerce Italia 2023 | €54.2 miliardi |
+| Costo attuale PA/anno | €1.2 miliardi |
+| Risparmio con DMS | €1.08 miliardi/anno |
+
+#### Formula TPASS/TCO₂
+
+```
+TCO₂ (€) = PCF (kgCO₂e) × (ETS_anchor €/t ÷ 1000) × PM
+```
+
+- **PCF**: Product Carbon Footprint (impronta carbonica)
+- **ETS_anchor**: Prezzo ETS (€80-100/tonnellata)
+- **PM**: Policy Multiplier (default 1.0)
+
+#### Gettito Potenziale TPASS
+
+| Scenario | Volume TPASS/anno | Ricavi DMS |
+|----------|-------------------|------------|
+| Italia | 100M | €5,97M |
+| UE Top-5 | 600M | €32,28M |
+| UE-27 | 1 miliardo | €54,60M |
 
 ---
 
-## 🔄 FLUSSO MESSAGGI E MODE
+## 🛡️ GUARDIAN - SISTEMA DI MONITORAGGIO
 
-### Flusso Mode AUTO (User → MIO → Agente)
+### Cos'è Guardian?
 
-```
-1. User scrive a MIO
-   └→ Salvato: mio-main, sender='user', role='user', mode='auto'
+Guardian è un **modulo interno del backend** che gestisce:
+- Logging centralizzato di tutte le chiamate API
+- Test endpoint (API Playground)
+- Permessi degli agenti
+- Statistiche di utilizzo
 
-2. MIO analizza e delega a Manus
-   └→ Salvato: mio-manus-coordination, sender='mio', role='user', mode='auto'
+### Endpoint Guardian
 
-3. Manus risponde
-   └→ Salvato: mio-manus-coordination, sender='manus', role='assistant', mode='auto'
-   └→ Salvato: mio-main, sender='manus', role='assistant', mode='auto'
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/api/guardian/health` | GET | Health check Guardian |
+| `/api/guardian/debug/testEndpoint` | POST | Testa un endpoint API |
+| `/api/guardian/logs` | GET | Recupera log agenti |
+| `/api/guardian/permissions` | GET | Permessi agenti |
+| `/api/logs/createLog` | POST | Crea nuovo log |
+| `/api/logs/getLogs` | GET | Lista log con filtri |
+| `/api/logs/stats` | GET | Statistiche log |
 
-4. MIO elabora e risponde all'utente
-   └→ Salvato: mio-main, sender='mio', role='assistant', mode='auto'
-```
+### Esempio Test Endpoint
 
-### Flusso Mode DIRECT (User → Agente)
+```javascript
+POST /api/guardian/debug/testEndpoint
+{
+  "serviceId": "test.api",
+  "method": "GET",
+  "path": "/api/health",
+  "headers": {}
+}
 
-```
-1. User scrive direttamente a Manus
-   └→ Salvato: user-manus-direct, sender='user', role='user', mode='direct'
-
-2. Manus risponde
-   └→ Salvato: user-manus-direct, sender='manus', role='assistant', mode='direct'
+// Response
+{
+  "success": true,
+  "request": { "method": "GET", "url": "...", "headers": {...} },
+  "response": { "statusCode": 200, "durationMs": 42, "body": {...} }
+}
 ```
 
 ---
 
-## 🎨 LOGICA DI RENDERING FRONTEND
+## 💾 DATABASE E STORAGE
 
-### Chat Principale MIO
+### Database Neon (PostgreSQL)
 
-**File**: `DashboardPA.tsx` (riga 4102)
+**Connection String:** Vedi variabile `DATABASE_URL` o `NEON_POSTGRES_URL`
 
-```tsx
-<span>da {msg.role === 'user' ? 'Tu' : msg.agentName?.toUpperCase() || 'MIO'}</span>
-```
+### Tabelle Principali
 
-- Se `role === 'user'`, mostra **"Tu"**
-- Altrimenti, mostra il nome dell'agente (es. "MANUS") o "MIO" come fallback
+| Tabella | Descrizione | Records (stima) |
+|---------|-------------|-----------------|
+| `markets` | Mercati | 542 |
+| `vendors` | Operatori | ~2000 |
+| `stalls` | Posteggi | ~5000 |
+| `concessions` | Concessioni | ~3000 |
+| `agent_messages` | Chat agenti | ~400 |
+| `mio_agent_logs` | Log API | ~1200 |
+| `suap_eventi` | Eventi SUAP | variabile |
 
-### Vista Singola (GPT Dev, Manus, Abacus, Zapier)
+### Storage S3
 
-**File**: `DashboardPA.tsx` (riga 4368)
-
-```tsx
-<span>da {msg.role === 'user' ? 'Tu' : (msg.agent || 'agente')}</span>
-```
-
-- Se `role === 'user'`, mostra **"Tu"**
-- Altrimenti, mostra il nome dell'agente (es. "gptdev") o "agente" come fallback
-
----
-
-## 📁 FILE CHIAVE DA CONOSCERE
-
-### Backend (mihub-backend-rest)
-
-| File | Descrizione |
-|------|-------------|
-| `routes/orchestrator.js` | Endpoint principale `/api/mihub/orchestrator`, routing messaggi |
-| `utils/direct_saver.js` | Salvataggio diretto messaggi nel database |
-| `src/modules/orchestrator/database.js` | Funzioni database: `addMessage`, `saveDirectMessage`, `createConversation` |
-| `src/modules/orchestrator/llm.js` | Chiamate agli agenti LLM (MIO, Manus, Abacus, GPT Dev) |
-| `config/database.js` | Configurazione connessione PostgreSQL |
-| `routes/imprese.js` | API Imprese (Fix Qualificazioni v3.1) |
-
-### Frontend (dms-hub-app-new)
-
-| File | Descrizione |
-|------|-------------|
-| `src/components/DashboardPA.tsx` | Dashboard principale, logica chat e routing |
-| `src/components/markets/WalletPanel.tsx` | Pannello Wallet (Spunta/Concessioni) |
-| `src/components/markets/MarketCompaniesTab.tsx` | Lista Imprese con Badges |
-| `src/components/markets/MarketAutorizzazioniTab.tsx` | Tab Autorizzazioni (Domanda Spunta) |
+- **Provider:** Cloudflare R2 (compatibile S3)
+- **Stato:** In configurazione
+- **Uso:** Documenti, allegati, export
 
 ---
 
-## 💻 COMANDI UTILI
+## 🔌 API ENDPOINTS
 
-### Avvio Server Backend (Locale)
+### Endpoint Index (153 endpoint totali)
+
+Gli endpoint sono documentati in:
+```
+/home/ubuntu/dms-hub-app-new/client/public/api-index.json
+```
+
+### Categorie Principali
+
+| Categoria | Prefisso | Esempi |
+|-----------|----------|--------|
+| **DMS Hub** | `/api/trpc/dmsHub.*` | bookings, inspections, locations |
+| **Guardian** | `/api/guardian/*` | health, logs, testEndpoint |
+| **MIO Hub** | `/api/mihub/*` | orchestrator, chats, messages |
+| **Logs** | `/api/logs/*` | createLog, getLogs, stats |
+| **Health** | `/api/health/*` | full, history, alerts |
+| **GIS** | `/api/gis/*` | market-map |
+| **Imprese** | `/api/imprese/*` | qualificazioni, rating |
+
+---
+
+## 🚀 DEPLOY E CI/CD
+
+### ⚠️ REGOLA FONDAMENTALE
+
+```
+╔═══════════════════════════════════════════════════════════════════╗
+║  NON FARE MAI SSH MANUALE PER DEPLOY!                             ║
+║  Il sistema è AUTO-DEPLOY tramite GitHub Actions                  ║
+╚═══════════════════════════════════════════════════════════════════╝
+```
+
+### Flusso Deploy
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   COMMIT    │────►│    PUSH     │────►│   GITHUB    │────►│   DEPLOY    │
+│   locale    │     │   GitHub    │     │   Actions   │     │ automatico  │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+                                              │
+                    ┌─────────────────────────┼─────────────────────────┐
+                    │                         │                         │
+                    ▼                         ▼                         ▼
+            ┌─────────────┐           ┌─────────────┐           ┌─────────────┐
+            │   VERCEL    │           │   HETZNER   │           │    NEON     │
+            │  Frontend   │           │   Backend   │           │  Database   │
+            │  (auto)     │           │  (webhook)  │           │  (migrate)  │
+            └─────────────┘           └─────────────┘           └─────────────┘
+```
+
+### Procedura Corretta
+
 ```bash
-cd mihub-backend-rest
-npm install
-npm start
-```
-
-### Avvio Frontend (Locale)
-```bash
-cd dms-hub-app-new
-npm install
-npm run dev
-```
-
-### Git Sync (Standard)
-```bash
+# 1. Modifica codice
+# 2. Commit
 git add .
-git commit -m "Update"
+git commit -m "feat: descrizione modifica"
+
+# 3. Push (triggera auto-deploy)
 git push origin master
+
+# 4. Verifica (dopo 2-3 minuti)
+curl https://orchestratore.mio-hub.me/api/health
 ```
 
 ---
 
-## 🤖 AGENTI DEL SISTEMA
+## 🔐 CREDENZIALI E ACCESSI
 
-| Agente | Ruolo | Capability |
-|--------|-------|------------|
-| **MIO** | Orchestratore | Routing, Sintesi, Gestione Contesto |
-| **MANUS** | Esecutore Tecnico | Coding, Deploy, Debugging, Shell |
-| **ABACUS** | Analista Dati | SQL, Analisi, Reportistica |
-| **GPT DEV** | Sviluppatore | Code Generation, Refactoring |
-| **ZAPIER** | Automazione | Integrazioni Esterne (Email, Calendar) |
+### Variabili d'Ambiente Backend
 
----
+| Variabile | Descrizione |
+|-----------|-------------|
+| `DATABASE_URL` | Connection string Neon |
+| `GEMINI_API_KEY` | API key Google Gemini |
+| `GITHUB_TOKEN` | Token GitHub per GPT Dev |
+| `SSH_PRIVATE_KEY` | Chiave SSH per Manus |
+| `ZAPIER_WEBHOOK_URL` | Webhook Zapier |
+| `VERCEL_TOKEN` | Token deploy Vercel |
 
-## 💳 WALLET / PAGOPA
+### Accessi Server
 
-### Struttura Dati
-- **Tabella**: `wallets`
-- **Campi**: `id`, `company_id`, `market_id` (per Spunta), `concession_id` (per Concessioni), `balance`, `type` ('SPUNTA', 'CONCESSIONE').
-
-### Logica Colori
-- **Verde**: Saldo positivo (> 0)
-- **Rosso**: Saldo negativo o zero (<= 0)
-- **Giallo**: Badge identificativo "Spunta"
-- **Blu**: Badge identificativo "Concessione"
-- **Bianco**: Badge identificativo "Generico"
+| Risorsa | Accesso |
+|---------|---------|
+| **Hetzner VPS** | SSH con chiave (solo per emergenze) |
+| **Neon Dashboard** | https://console.neon.tech |
+| **Vercel Dashboard** | https://vercel.com/dashboard |
+| **GitHub** | https://github.com/Chcndr |
 
 ---
 
-## 🏢 IMPRESE & QUALIFICAZIONI
+## 🔧 TROUBLESHOOTING
 
-### Badge Qualificazioni
-- **Logica**: Il badge "Qualificato" appare se l'impresa ha almeno una qualificazione attiva.
-- **Dati**: Recuperati via subquery in `GET /api/imprese` (v3.1).
-- **Tabella**: `qualificazioni` (`company_id`, `type`, `status`, `start_date`, `end_date`).
+### Health Monitor mostra servizi Offline
 
----
+| Servizio | Problema | Soluzione |
+|----------|----------|-----------|
+| Guardian | Era configurato su URL esterno inesistente | ✅ Fixato v2.1.0 - ora check interno |
+| MIO Agent | Era configurato su URL esterno inesistente | ✅ Fixato v2.1.0 - ora check interno |
+| S3 | Non configurato | Configurare quando necessario |
+| PDND | Non configurato | Normale - per uso futuro |
 
-## 🔌 API INVENTORY (INTEGRAZIONI)
+### Backend non risponde
 
-### MIO Hub Core
-- `POST /api/mihub/orchestrator`: Endpoint unico per messaggi chat.
-- `GET /api/imprese`: Lista imprese con aggregati (wallet, concessioni, qualificazioni).
-- `POST /api/wallets/init`: Creazione nuovi wallet (Spunta/Concessione).
-- `POST /api/wallets/recharge`: Ricarica wallet (simulazione PagoPA).
+```bash
+# Verifica stato PM2 (solo emergenza)
+ssh user@157.90.29.66 "pm2 status"
 
----
+# Riavvia (solo emergenza)
+ssh user@157.90.29.66 "pm2 restart mihub-backend"
+```
 
-## 📐 ARCHITETTURA FLUSSO DATI (DEFINITIVA v3.2)
+### Frontend non si aggiorna
 
-Questa sezione definisce il "contratto" unico per il flusso dei dati tra Database, Backend e Frontend. Ogni modifica futura DEVE rispettare questo schema.
-
-### 1. Dimensioni Posteggi (Stalls)
-
-Il calcolo delle dimensioni NON deve mai essere stimato dal frontend se i dati esistono nel DB.
-
-*   **Database (`stalls`)**:
-    *   `width` (numeric): Larghezza in metri (es. 4.00).
-    *   `depth` (numeric): Profondità in metri (es. 7.60).
-    *   `area_mq` (numeric): Superficie in mq (es. 30.40).
-*   **Backend (`GET /api/markets/:id/stalls`)**:
-    *   Deve restituire un campo `dimensions` formattato come stringa `"WxD"` (es. `"4.00 x 7.60"`).
-    *   Logica SQL: `CONCAT(ROUND(width, 2), ' x ', ROUND(depth, 2)) as dimensions`.
-*   **Frontend (`MarketMapComponent`)**:
-    *   **Priorità 1**: Usa `dbStall.dimensions` (dal backend).
-    *   **Priorità 2**: Usa `props.dimensions` (dal GeoJSON, solo se il DB è vuoto).
-    *   **Priorità 3 (Fallback)**: Calcolo geometrico (DA EVITARE, mostra etichetta "Stimate").
-
-### 2. Link Vetrina (Showcase)
-
-Il collegamento tra un posteggio e la vetrina dell'impresa deve essere deterministico.
-
-*   **Database**:
-    *   `vendors.impresa_id`: Chiave esterna che punta alla tabella `imprese`.
-    *   `concessions.vendor_id`: Collega il posteggio al venditore.
-*   **Backend**:
-    *   La query `/api/markets/:id/stalls` esegue una JOIN tra `stalls` -> `concessions` -> `vendors`.
-    *   Restituisce `impresa_id` per ogni posteggio occupato.
-*   **Frontend**:
-    *   Il link è: `/vetrine/{impresa_id}`.
-    *   Se `impresa_id` è nullo ma c'è un nome impresa, fallback a `/vetrine?q={nome_impresa}`.
-
-### 3. Wallet Spunta (Market-Specific)
-
-I wallet di tipo "Spunta" sono strettamente legati al mercato di riferimento.
-
-*   **Database (`wallets`)**:
-    *   `type`: 'SPUNTA'
-    *   `market_id`: ID del mercato (OBBLIGATORIO per tipo Spunta).
-    *   `company_id`: ID dell'impresa.
-*   **Logica di Visualizzazione**:
-    *   Nella lista imprese di un mercato (es. Modena), si deve mostrare SOLO il saldo del wallet con `market_id` corrispondente a Modena.
-    *   I wallet con `market_id` NULL sono considerati "GENERICI" e mostrati separatamente (badge bianco).
+1. Verifica deploy Vercel: https://vercel.com/dashboard
+2. Controlla build logs
+3. Forza rebuild: push commit vuoto
 
 ---
 
----
+## 🤖 REGOLE PER AGENTI AI
 
-## 🚀 MODULO SSO SUAP (Ente Sussidiario Automatizzato)
+### ❌ NON FARE MAI
 
-### 1. Obiettivo
-Automatizzare il ruolo di Ente Sussidiario nel processo SUAP, gestendo l'istruttoria delle pratiche (es. Subingressi, SCIA) attraverso l'integrazione con PDND e l'uso dei dati interni (DMS).
+1. **NON** fare SSH manuale per deploy
+2. **NON** modificare file direttamente sul server
+3. **NON** creare nuovi repository paralleli
+4. **NON** hardcodare URL endpoint nel frontend
+5. **NON** modificare senza leggere prima questo Blueprint
 
-### 2. Architettura Dati (Schema Database)
+### ✅ FARE SEMPRE
 
-#### Tabella `suap_pratiche`
-| Colonna | Tipo | Descrizione |
-| :--- | :--- | :--- |
-| `id` | UUID | Identificativo interno univoco |
-| `cui` | VARCHAR | Codice Univoco Istanza (da PDND) |
-| `tipo_pratica` | VARCHAR | Es. "SCIA Subingresso", "Voltura", "Rinnovo" |
-| `stato` | VARCHAR | Stati: `RECEIVED`, `PRECHECK`, `EVALUATED`, `APPROVED`, `REJECTED`, `INTEGRATION_REQ` |
-| `richiedente_cf` | VARCHAR | Codice Fiscale del richiedente |
-| `impresa_id` | UUID | FK verso tabella `imprese` (se mappabile) |
-| `data_presentazione` | TIMESTAMP | Data di protocollo/presentazione |
-| `esito_automatico` | VARCHAR | `AUTO_OK`, `AUTO_KO`, `REVIEW_NEEDED` |
-| `score` | INT | Punteggio calcolato dal motore decisionale |
+1. **LEGGERE** questo Blueprint prima di ogni modifica
+2. **USARE** git commit + push per deploy
+3. **VERIFICARE** api-index.json per endpoint
+4. **TESTARE** con /api/health/full dopo modifiche
+5. **DOCUMENTARE** ogni modifica significativa
 
-#### Tabella `suap_checks` (Checklist Automatica)
-| Colonna | Tipo | Descrizione |
-| :--- | :--- | :--- |
-| `id` | UUID | PK |
-| `pratica_id` | UUID | FK verso `suap_pratiche` |
-| `check_code` | VARCHAR | Es. `CHECK_DURC`, `CHECK_CANONE`, `CHECK_PRESENZE` |
-| `esito` | BOOLEAN | `true` (passato), `false` (fallito) |
-| `dettaglio` | JSONB | Dati grezzi del controllo (es. "Scadenza DURC: 2024-12-31") |
-| `fonte` | VARCHAR | Es. "PDND", "DMS_PRESENZE", "DMS_PAGAMENTI" |
+### Checklist Pre-Modifica
 
-#### Tabella `suap_eventi` (Timeline)
-| Colonna | Tipo | Descrizione |
-| :--- | :--- | :--- |
-| `id` | UUID | PK |
-| `pratica_id` | UUID | FK verso `suap_pratiche` |
-| `tipo_evento` | VARCHAR | Es. `INGESTION`, `STATUS_CHANGE`, `INTEGRATION_SENT` |
-| `descrizione` | TEXT | Descrizione leggibile dell'evento |
-| `timestamp` | TIMESTAMP | Data e ora evento |
-| `operatore` | VARCHAR | Utente o "SYSTEM" |
-
-### 3. API Backend (Nuovi Endpoint)
-
-*   `GET /api/suap/pratiche`: Lista paginata con filtri (stato, tipo, data).
-*   `GET /api/suap/pratiche/:id`: Dettaglio completo (include checks ed eventi).
-*   `POST /api/suap/pratiche/:id/valuta`: Esegue il motore decisionale (ricalcola score e checks).
-*   `POST /api/suap/pratiche/:id/azione`: Esegue azioni di workflow (es. Approva, Richiedi Integrazione).
-*   `GET /api/suap/stats`: Restituisce i contatori per la dashboard (Totali, Lavorazione, Approvate, Rigettate).
-
-### 4. Interfaccia Utente (Frontend)
-
-#### Dashboard (`SuapDashboard.tsx`)
-*   **KPI Cards:** 4 card in alto (Totali, In Lavorazione, Approvate, Rigettate) con colori distintivi.
-*   **Lista Recenti:** Tabella semplificata delle ultime pratiche arrivate.
-
-#### Lista Pratiche (`SuapListPage.tsx`)
-*   Tabella completa con filtri avanzati.
-*   Badge di stato colorati (es. Verde per APPROVATA, Giallo per IN LAVORAZIONE).
-
-#### Dettaglio Pratica (`SuapDetailPage.tsx`)
-*   **Header:** Dati principali (CUI, Richiedente, Tipo).
-*   **Checklist:** Lista dei controlli automatici con icone (✅/❌) e dettagli espandibili.
-*   **Timeline:** Cronologia degli eventi.
-*   **Azioni:** Pulsanti per l'operatore (basati sullo stato attuale).
-
-### 5. Integrazioni Esterne
-*   **PDND (Catalogo SSU):** Polling o Webhook per ricevere nuove pratiche.
-*   **SSO:** Autenticazione operatori (già presente, da estendere se serve SPID per cittadini).
+- [ ] Ho letto il Blueprint?
+- [ ] Ho verificato l'architettura esistente?
+- [ ] Sto usando i repository corretti?
+- [ ] Il mio deploy usa git push (non SSH)?
+- [ ] Ho aggiornato la documentazione?
 
 ---
 
-## 💎 AGGIORNAMENTI ARCHITETTURALI "FUTURE-PROOF" (SSO SUAP)
+## 📊 STATO ATTUALE SISTEMA
 
-### 1. Supporto Multi-Ente (Tenant Isolation)
-Tutte le tabelle del modulo SUAP includeranno la colonna `ente_id` (UUID) per supportare nativamente la gestione di più comuni/enti nello stesso database.
-*   `suap_pratiche` -> `ente_id`
-*   `suap_config` -> `ente_id` (configurazione regole specifiche per ente)
+### Servizi Online ✅
 
-### 2. Event Sourcing "Leggero"
-Nella tabella `suap_eventi`, oltre ai metadati, verrà salvato il **payload raw** (JSON) delle comunicazioni con PDND/DMS.
-*   Colonna `payload_raw` (JSONB): Per audit, debug e riproducibilità degli errori.
-*   Colonna `correlation_id`: Per tracciare una transazione attraverso più sistemi.
+| Servizio | URL | Stato |
+|----------|-----|-------|
+| Frontend | https://dms-hub-app-new.vercel.app | ✅ Online |
+| Backend | https://orchestratore.mio-hub.me | ✅ Online |
+| Database | Neon PostgreSQL | ✅ Online |
+| MIO Agent | /api/mihub/orchestrator | ✅ Funzionante |
+| Guardian | /api/guardian/* | ✅ Funzionante |
 
-### 3. UX Upgrade: SLA & Evidenze
-*   **SLA Clock:** Nella dashboard e nel dettaglio pratica, un indicatore visivo (countdown) mostrerà i giorni rimanenti alla scadenza normativa (30/60 gg), colorandosi progressivamente (Verde -> Giallo -> Rosso).
-*   **Drawer Evidenze:** Cliccando su un esito della checklist (es. "DURC Irregolare"), si aprirà un pannello laterale ("Drawer") che mostra:
-    *   Fonte del dato (es. INPS/PDND).
-    *   Timestamp esatto della verifica.
-    *   JSON di risposta originale (l'evidenza tecnica).
-    *   Motivazione leggibile generata dal sistema.
+### Statistiche
 
-### 4. Operational Runbook (Bozza)
-*   **Log Strutturati:** Ogni log deve includere `[CUI: ...] [Ente: ...]` per facilitare la ricerca.
-*   **Gestione Segreti:** Token PDND e certificati gestiti via variabili d'ambiente (Vault), mai nel codice o nel DB in chiaro.
-*   **Idempotenza:** Le API di scrittura (es. `/valuta`, `/azione`) devono essere idempotenti (gestione `Idempotency-Key` nell'header o check su stato pratica).
+- **Endpoint totali:** 153
+- **Mercati nel DB:** 542
+- **Log totali:** 1232
+- **Agenti attivi:** 5 (MIO, GPT Dev, Manus, Abacus, Zapier)
+- **Secrets configurati:** 10/10
 
 ---
 
-## 🛡️ ENTERPRISE UPGRADE (Sicurezza, Dati e Affidabilità)
+## 📚 DOCUMENTAZIONE CORRELATA
 
-### 1. Data Retention & Privacy
-*   **Payload Raw:** I dati JSON grezzi in `suap_eventi` verranno conservati per **180 giorni** (configurabile), poi archiviati o eliminati.
-*   **Access Control:** L'accesso alla colonna `payload_raw` sarà limitato al ruolo `AUDITOR` o `ADMIN`.
-*   **Masking:** I campi sensibili (es. PII non necessari) verranno mascherati prima del salvataggio se non essenziali per l'audit.
+Questo Blueprint unificato si integra con la documentazione esistente nel repository:
 
-### 2. Strategia Migrazioni DB
-*   **Tool:** Utilizzeremo script SQL versionati (es. `V1__init_suap.sql`) eseguiti all'avvio o via pipeline CI/CD.
-*   **Naming:** `V{version}__{description}.sql`.
-*   **Vincoli:** Ogni migrazione deve essere reversibile (o avere uno script di rollback).
+### LIVE_SYSTEM_DEC2025/
 
-### 3. Idempotenza "Hard"
-*   **Vincoli DB:** Unique constraint su `(ente_id, cui)` nella tabella `suap_pratiche` per evitare duplicati.
-*   **API:** Le chiamate critiche (es. invio esito) richiederanno un header `Idempotency-Key`. Il backend verificherà se quella chiave è già stata processata.
+Documentazione del sistema funzionante in produzione:
 
-### 4. Performance & Explainability
-*   **Materialized View:** La UI leggerà da una vista ottimizzata (`suap_pratiche_view`) che aggrega stato, score e ultimo evento, aggiornata in near-real-time, lasciando la tabella eventi per l'audit.
-*   **Explainability Standard:** Ogni esito (OK/KO) salverà un oggetto strutturato:
-    ```json
-    {
-      "outcome_code": "KO_DURC",
-      "reasons": ["DURC_EXPIRED", "PAYMENTS_MISSING"],
-      "human_summary": "Il DURC risulta scaduto e mancano pagamenti del canone.",
-      "evidence_refs": ["evt_123", "chk_456"]
-    }
-    ```
+| Cartella | Contenuto |
+|----------|----------|
+| `01_ARCHITECTURE/` | Architettura "8 Isole", flusso dati, deployment |
+| `02_BACKEND_CORE/` | API map, LLM Engine, sistema tools |
+| `03_DATABASE_SCHEMA/` | Schema PostgreSQL, query, migrazioni |
+| `04_FRONTEND_DASHBOARD/` | 27 tabs dashboard, componenti, state management |
 
----
+### 00_LEGACY_ARCHIVE/
 
-## 🧩 COMPLETAMENTO DATA MODEL & OPERATIVITÀ (v3.2)
+Archivio storico con 87 documenti Markdown:
 
-### 1. Nuove Tabelle Core (Mancanti in v3.1)
+| Cartella | Contenuto |
+|----------|----------|
+| `01_architettura/` | MASTER_SYSTEM_PLAN, AS-IS/TO-BE, integrazioni |
+| `01_architettura/legacy/` | Documentazione teorica vecchia |
+| `01_architettura/legacy/root_legacy/` | CREDENZIALI, BACKEND_UFFICIALE, GIS_SYSTEM |
+| `07_guide_operative/` | Guide deploy e troubleshooting |
 
-#### Tabella `suap_decisioni` (Audit Decisionale)
-| Colonna | Tipo | Descrizione |
-| :--- | :--- | :--- |
-| `id` | UUID | PK |
-| `pratica_id` | UUID | FK |
-| `outcome_code` | VARCHAR | `AUTO_OK`, `AUTO_KO`, `MANUAL_OK`, `INTEGRATION_REQ` |
-| `score` | INT | Punteggio calcolato al momento della decisione |
-| `reasons` | JSONB | Array di codici errore/warning (es. `["DURC_KO", "FEE_MISSING"]`) |
-| `human_summary` | TEXT | Spiegazione generata per l'operatore |
-| `approved_by` | VARCHAR | Utente o "SYSTEM" |
-| `created_at` | TIMESTAMP | Data decisione |
+### ROADMAP_2025/
 
-#### Tabella `suap_azioni` (Workflow Operativo)
-| Colonna | Tipo | Descrizione |
-| :--- | :--- | :--- |
-| `id` | UUID | PK |
-| `pratica_id` | UUID | FK |
-| `tipo_azione` | VARCHAR | `SEND_OUTCOME`, `REQUEST_INTEGRATION`, `ADD_NOTE`, `ASSIGN` |
-| `payload` | JSONB | Dati dell'azione (es. testo nota, destinatario assegnazione) |
-| `status` | VARCHAR | `PENDING`, `COMPLETED`, `FAILED` (per gestione asincrona) |
-| `idempotency_key` | VARCHAR | Chiave univoca per evitare doppi invii |
+Piano sviluppo organizzato per quarter:
 
-#### Tabella `suap_documenti` (Gestione Allegati)
-| Colonna | Tipo | Descrizione |
-| :--- | :--- | :--- |
-| `id` | UUID | PK |
-| `pratica_id` | UUID | FK |
-| `file_name` | VARCHAR | Nome originale file |
-| `file_hash` | VARCHAR | Hash SHA-256 per integrità |
-| `storage_path` | VARCHAR | Percorso su S3/MinIO o URL PDND |
-| `metadata` | JSONB | Metadati extra (MIME type, size, autore) |
-
-#### Tabella `suap_regole` (Rules Engine Configurabile)
-| Colonna | Tipo | Descrizione |
-| :--- | :--- | :--- |
-| `id` | UUID | PK |
-| `ente_id` | UUID | FK (Regole specifiche per ente) |
-| `check_code` | VARCHAR | Es. `CHECK_DURC` |
-| `tipo` | VARCHAR | `HARD` (bloccante), `SOFT` (punteggio) |
-| `peso` | INT | Punteggio sottratto se fallisce (per SOFT) |
-| `enabled` | BOOLEAN | Attiva/Disattiva regola |
-
-### 2. Endpoint Operativi Aggiuntivi
-*   `POST /api/suap/pratiche/:id/refresh`: Forza il ricalcolo dei check (es. dopo aver pagato).
-*   `POST /api/suap/pratiche/:id/invia-esito`: Invia l'esito finale al SUAP (asincrono via `suap_azioni`).
-*   `POST /api/suap/pratiche/:id/richiesta-integrazione`: Invia richiesta documenti mancanti.
-
-### 3. Job Queue (Concettuale)
-Le azioni verso l'esterno (PDND, Mail) non avvengono nel thread della richiesta HTTP, ma vengono salvate in `suap_azioni` con stato `PENDING`. Un worker (cron o processo separato) le preleva ed esegue con logica di retry esponenziale.
+| Quarter | Obiettivi Principali |
+|---------|---------------------|
+| **Q1 2025** | TAB Clienti/Prodotti, PDND, performance <2s |
+| **Q2 2025** | TAB Sostenibilità/TPAS, IoT, 1000+ utenti |
+| **Q3-Q4 2025** | Carbon Credits blockchain, TPER, 10.000+ utenti |
 
 ---
 
-## 🔌 API INVENTORY (INTEGRAZIONI)
+## 📝 CHANGELOG
 
-### Regola di Visibilità (Visibility First)
-**Tutti i nuovi endpoint creati nel backend DEVONO essere esposti e testabili nella sezione 'Integrazioni' del frontend (`Integrazioni.tsx`).**
+### v3.2.0 (30/12/2025) - "Knowledge Base DMS Completa"
+- ✅ **Creata Knowledge Base DMS** con 30 documenti PDF strategici
+- ✅ Letti e riassunti tutti i PDF dalla pagina SPOT del sito DMS
+- ✅ Integrato documento **TPASS** (155 pagine) - sistema TCO₂/TCC
+- ✅ Aggiornato system prompt MIO in `llm.js` (commit `0741226`)
+- ✅ Deploy automatico su Hetzner con git pull + PM2 restart
+- ✅ MIO Agent ora risponde con dati precisi su TPASS, Carbon Credit, Bolkestein, etc.
+- ✅ Formula TCO₂ integrata nel system prompt
+- File creati: `DMS_KNOWLEDGE_BASE.md` (152KB, 2640 righe)
 
-Se gli endpoint non sono ancora presenti nel file `api/index.json` ufficiale (gestito centralmente), **DEVONO essere aggiunti manualmente** nel componente React `Integrazioni.tsx` all'interno del `useEffect` che carica la lista, e gestiti nello `switch` case di `handleTestEndpoint`.
+### v3.1.0 (30/12/2025) - "Collaudo MIO Agent + Fix Dipendenze"
+- ✅ Collaudo completo MIO Agent (tutti gli agenti funzionanti)
+- ✅ Fix orchestratorClient.ts - gestione errori non-JSON (rate limiting, timeout)
+- ✅ Fix duplicati frontend - sistema "fingerprint" anti-duplicati
+- ✅ Fix sezione "Attività Agenti Recente" - carica da agent_messages
+- ✅ Fix ordinamento messaggi - parametro `order=desc` in get-messages.ts
+- ✅ Fix dipendenze backend - aggiunti @aws-sdk/client-s3, @aws-sdk/s3-request-presigner, adm-zip, xml2js
+- ✅ Test completati: MIO coordinamento, Zapier, GPT Dev, Abacus, Manus
+- Sistema operativo all'85%+
 
-### Inventario Endpoint Attivi (Aggiornato 29 Dicembre)
+### v3.0.0 (30/12/2025)
+- Creato Blueprint unificato
+- Documentata architettura completa
+- Chiarito che Guardian e MIO Agent sono moduli interni
+- Fixato Health Monitor (v2.1.0)
+- Integrato riferimenti a documentazione legacy
 
-#### 1. SUAP & PDND (Nuovo Modulo)
-| Endpoint | Metodo | Descrizione | Stato |
-|----------|--------|-------------|-------|
-| `/api/suap/stats` | GET | Statistiche generali pratiche | ✅ Integrato |
-| `/api/suap/pratiche` | GET | Lista pratiche con filtri | ✅ Integrato |
-| `/api/suap/pratiche/:id` | GET | Dettaglio pratica con timeline | ✅ Integrato |
-| `/api/suap/pratiche` | POST | Ingestione nuova pratica | ✅ Integrato |
-| `/api/suap/pratiche/:id/valuta` | POST | Esecuzione motore regole | ✅ Integrato |
-| `/api/imprese` | GET | Lista Imprese PDND | ✅ Integrato |
-| `/api/qualificazioni` | GET | Lista Qualificazioni | ✅ Integrato |
+### v2.2.0 (21/12/2025)
+- Fix duplicazione messaggi chat singole
+- Fix visualizzazione risposte agenti
+- Nuovi conversation_id (`user-{agent}-direct`)
+- Sistema Doppio Canale FRONTSTAGE/BACKSTAGE
 
-#### 2. System & Workspace
-| Endpoint | Metodo | Descrizione | Stato |
-|----------|--------|-------------|-------|
-| `/api/system/status` | GET | Health check servizi | ✅ Integrato |
-| `/api/workspace/files` | GET | File condivisi | ✅ Integrato |
-| `/api/mihub/chats` | GET | Storico chat agenti | ✅ Integrato |
+### v2.1.0 (12/12/2025)
+- Documentazione LIVE_SYSTEM_DEC2025 completa
+- ROADMAP_2025 organizzata per quarter
+- Endpoint `/api/guardian/logs` per dashboard
+- Riorganizzazione completa repository
 
-#### 3. GIS & Abacus
-| Endpoint | Metodo | Descrizione | Stato |
-|----------|--------|-------------|-------|
-| `/api/gis/markets` | GET | GeoJSON Mercati | ✅ Integrato |
-| `/api/abacus/sql/query` | POST | Query SQL Admin | ✅ Integrato |
-
-#### 4. DMS Hub Core
-| Modulo | Endpoint Principali | Stato |
-|--------|---------------------|-------|
-| **Markets** | `/api/dmsHub/markets/*` | ✅ Integrato |
-| **Stalls** | `/api/dmsHub/stalls/*` | ✅ Integrato |
-| **Vendors** | `/api/dmsHub/vendors/*` | ✅ Integrato |
-| **Bookings** | `/api/dmsHub/bookings/*` | ✅ Integrato |
-| **Wallet** | `/api/trpc/wallet.*` | ✅ Integrato |
+### v2.0.0 (11/12/2025) - "Operazione Specchio Reale"
+- Separazione documentazione legacy da sistema live
+- Implementato Health Monitor
+- Aggiunto sistema logging Guardian
+- Integrazione completa MIO Agent
 
 ---
+
+## 🔗 LINK RAPIDI
+
+### Produzione
+- **Dashboard PA:** https://dms-hub-app-new.vercel.app/dashboard-pa
+- **Backend API:** https://orchestratore.mio-hub.me
+- **Health Check:** https://orchestratore.mio-hub.me/api/health/full
+
+### Repository GitHub
+- **Frontend:** https://github.com/Chcndr/dms-hub-app-new
+- **Backend:** https://github.com/Chcndr/mihub-backend-rest
+- **Blueprint:** https://github.com/Chcndr/dms-system-blueprint
+
+### Documentazione Esterna
+- **PDND:** https://docs.pdnd.italia.it
+- **Neon PostgreSQL:** https://neon.tech/docs
+- **Google Gemini:** https://ai.google.dev/docs
+
+---
+
+> **Nota:** Questo documento è la fonte di verità per il sistema MIO HUB.
+> Ogni agente AI deve leggerlo prima di effettuare modifiche.
+> Per documentazione dettagliata, consultare le cartelle LIVE_SYSTEM_DEC2025 e 00_LEGACY_ARCHIVE.
