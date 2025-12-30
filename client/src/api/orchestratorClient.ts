@@ -81,12 +81,46 @@ export async function callOrchestrator(
     
     clearTimeout(timeoutId);
 
-  console.log("[OrchestratorClient] Status:", res.status);
+    console.log("[OrchestratorClient] Status:", res.status);
 
-    // Prova sempre a parsare il JSON, anche per errori HTTP
-    // Il backend può rispondere con 4xx/5xx ma con body JSON valido
-    const data = (await res.json()) as OrchestratorResponse;
+    // 🔥 FIX: Verifica Content-Type prima di parsare JSON
+    const contentType = res.headers.get("content-type") || "";
+    
+    // Se non è JSON, leggi come testo e genera errore user-friendly
+    if (!contentType.includes("application/json")) {
+      const textResponse = await res.text();
+      console.error("[OrchestratorClient] Risposta non-JSON:", textResponse);
+      
+      // Gestisci errori comuni
+      if (textResponse.includes("Too many requests") || res.status === 429) {
+        throw new Error("Troppe richieste. Attendi qualche secondo e riprova.");
+      }
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        throw new Error("Server temporaneamente non disponibile. Riprova tra poco.");
+      }
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("Accesso non autorizzato all'orchestratore.");
+      }
+      
+      throw new Error(`Errore server: ${textResponse.substring(0, 100)}`);
+    }
+
+    // Prova a parsare il JSON
+    let data: OrchestratorResponse;
+    try {
+      data = await res.json();
+    } catch (parseError) {
+      console.error("[OrchestratorClient] Errore parsing JSON:", parseError);
+      throw new Error("Risposta malformata dal server. Riprova.");
+    }
+    
     console.log("[OrchestratorClient] Risposta:", data);
+
+    // 🔥 FIX: Gestisci errori nel body JSON
+    if (!data.success && data.error) {
+      const errorMessage = data.error.message || data.error.type || "Errore sconosciuto";
+      throw new Error(errorMessage);
+    }
 
     return data;
   } catch (error: any) {
@@ -95,6 +129,11 @@ export async function callOrchestrator(
     if (error.name === 'AbortError') {
       console.error("[OrchestratorClient] Timeout dopo 60s");
       throw new Error("Timeout: L'agente non ha risposto entro 60 secondi");
+    }
+    
+    // 🔥 FIX: Gestisci errori di rete
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error("Impossibile connettersi al server. Verifica la connessione.");
     }
     
     throw error;
