@@ -154,10 +154,33 @@ export function MioProvider({ children }: { children: ReactNode }) {
                 agentName: log.agent_name || log.agent || log.sender,
               }));
               
-              // 🔧 FIX: Merge intelligente - aggiungi solo messaggi nuovi, non sovrascrivere
+              // 🔧 FIX: Merge intelligente - confronta ID, contenuto E timestamp per evitare duplicati
               setMessages(prev => {
                 const existingIds = new Set(prev.map(m => m.id));
-                const newMessages = serverMessages.filter(m => !existingIds.has(m.id));
+                // 🔥 FIX DUPLICATI: Crea anche un set di "fingerprint" basato su contenuto+ruolo+timestamp approssimato
+                const existingFingerprints = new Set(prev.map(m => {
+                  const timestamp = new Date(m.createdAt).getTime();
+                  // Arrotonda timestamp a 10 secondi per tolleranza
+                  const roundedTime = Math.floor(timestamp / 10000);
+                  return `${m.role}:${m.content?.substring(0, 50)}:${roundedTime}`;
+                }));
+                
+                const newMessages = serverMessages.filter(m => {
+                  // Salta se ID già esiste
+                  if (existingIds.has(m.id)) return false;
+                  
+                  // 🔥 Salta se contenuto+ruolo+timestamp simile già esiste (evita duplicati con ID diversi)
+                  const timestamp = new Date(m.createdAt).getTime();
+                  const roundedTime = Math.floor(timestamp / 10000);
+                  const fingerprint = `${m.role}:${m.content?.substring(0, 50)}:${roundedTime}`;
+                  if (existingFingerprints.has(fingerprint)) {
+                    console.log('🚫 [MioContext] Skipping duplicate by fingerprint:', fingerprint.substring(0, 30));
+                    return false;
+                  }
+                  
+                  return true;
+                });
+                
                 if (newMessages.length > 0) {
                   console.log('✅ [MioContext] Aggiunti', newMessages.length, 'nuovi messaggi dal polling');
                   // Ordina per timestamp
