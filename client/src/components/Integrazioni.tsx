@@ -1846,13 +1846,12 @@ function SecretsManager() {
     setSaving(true);
     
     try {
-      const response = await fetch(`/admin/secrets`, {
+      const response = await fetch(`/api/mihub/secrets/${envVar}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          key: envVar,
           value: value.trim()
         }),
       });
