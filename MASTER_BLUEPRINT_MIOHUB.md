@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.2.4  
+> **Versione:** 3.2.5  
 > **Data:** 1 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -575,8 +575,15 @@ Piano sviluppo organizzato per quarter:
 
 ## 📝 CHANGELOG
 
-### v3.2.4 (01/01/2026) - "Fix Chat MIO - Messaggi Recenti"
-- ✅ **Fix getMessages** - Ora mostra gli ultimi 100 messaggi invece dei primi 20
+### v3.2.5 (01/01/2026) - "Fix Chat MIO - Endpoint Vercel TUBO DIRETTO"
+- ✅ **Fix get-messages.ts (Vercel)** - Endpoint TUBO DIRETTO database→frontend
+- ✅ Cambiato default order da ASC a DESC per recuperare messaggi recenti
+- ✅ Cambiato default limit da 200 a 100
+- ✅ Array invertito per mantenere ordine cronologico nel frontend
+- ✅ Commit: `d201d36` - "🐛 Fix get-messages: show latest 100 messages"
+
+### v3.2.4 (01/01/2026) - "Fix Chat MIO - Messaggi Recenti (Backend Hetzner)"
+- ✅ **Fix getMessages (Hetzner)** - Ora mostra gli ultimi 100 messaggi invece dei primi 20
 - ✅ Cambiato ORDER BY da ASC a DESC per recuperare messaggi recenti
 - ✅ Array invertito per mantenere ordine cronologico nel frontend
 - ✅ Commit: `2b20f99` - "🐛 Fix getMessages: show latest 100 messages"
