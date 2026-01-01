@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.2.3  
+> **Versione:** 3.2.4  
 > **Data:** 1 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -574,6 +574,12 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 📝 CHANGELOG
+
+### v3.2.4 (01/01/2026) - "Fix Chat MIO - Messaggi Recenti"
+- ✅ **Fix getMessages** - Ora mostra gli ultimi 100 messaggi invece dei primi 20
+- ✅ Cambiato ORDER BY da ASC a DESC per recuperare messaggi recenti
+- ✅ Array invertito per mantenere ordine cronologico nel frontend
+- ✅ Commit: `2b20f99` - "🐛 Fix getMessages: show latest 100 messages"
 
 ### v3.2.3 (01/01/2026) - "Fix Abacus + save_memory + zapierToolExecutor"
 - ✅ **Fix Abacus prompt** - Aggiunta sezione FORBIDDEN COLUMNS in inglese
