@@ -50,7 +50,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
       try {
         // 🚀 TUBO DRITTO - Connessione diretta database → frontend (via Vercel API)
         console.log('🔥 [MioContext] Caricamento messaggi da:', MIO_MAIN_CONVERSATION_ID);
-        const response = await fetch(`/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}&limit=500`);
+        const response = await fetch(`/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}`);
         if (!response.ok) {
           console.error('🔥 [MioContext] Errore API:', response.status);
           return;
@@ -141,7 +141,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
       setTimeout(async () => {
         try {
           console.log('🔄 [MioContext] Polling post-invio per nuove risposte...');
-          const response = await fetch(`/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}&limit=500`);
+          const response = await fetch(`/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}`);
           if (response.ok) {
             const pollData = await response.json();
             const rawMessages = pollData.messages || pollData.logs || [];
