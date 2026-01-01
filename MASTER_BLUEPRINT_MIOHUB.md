@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.2.2  
+> **Versione:** 3.2.3  
 > **Data:** 1 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -574,6 +574,15 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 📝 CHANGELOG
+
+### v3.2.3 (01/01/2026) - "Fix Abacus + save_memory + zapierToolExecutor"
+- ✅ **Fix Abacus prompt** - Aggiunta sezione FORBIDDEN COLUMNS in inglese
+- ✅ Colonna `denominazione` NON `nome_impresa` (che non esiste)
+- ✅ **Fix save_memory** - Implementato in zapierToolExecutor
+- ✅ **Fix execute_sql_query** - Implementato in zapierToolExecutor
+- ✅ Migliorato messaggio errore tool non implementati
+- ✅ Commit: `f2923fc` - "🐛 Fix Abacus: FORBIDDEN COLUMNS section"
+- ✅ Commit: `6e7d4e8` - "🐛 Fix save_memory in zapierToolExecutor"
 
 ### v3.2.2 (01/01/2026) - "Fix MIO Prompt - Tool Obbligatori + English Rules"
 - ✅ **Fix prompt MIO** - Rafforzate regole per uso obbligatorio dei tool
