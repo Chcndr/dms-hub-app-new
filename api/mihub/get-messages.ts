@@ -22,7 +22,8 @@ export default async function handler(
   }
 
   try {
-    const { conversation_id, agent_name, mode, limit = '200', order = 'asc' } = req.query;
+    // 🔥 FIX 01/01/2026: Default DESC per mostrare messaggi recenti, poi inverti nel frontend
+    const { conversation_id, agent_name, mode, limit = '100', order = 'desc' } = req.query;
     const orderDir = order === 'desc' ? 'DESC' : 'ASC';
 
     // Validazione
@@ -90,9 +91,12 @@ export default async function handler(
 
       console.log('[get-messages] Found', messages.length, 'messages');
 
+      // 🔥 FIX: Se order=desc, inverti per avere ordine cronologico nel frontend
+      const orderedMessages = order === 'desc' ? [...messages].reverse() : messages;
+
       return res.status(200).json({
         success: true,
-        messages: messages,  // 🔥 FIX: Usa 'messages' invece di 'logs'
+        messages: orderedMessages,  // 🔥 FIX: Messaggi in ordine cronologico
         pagination: {
           total: messages.length,
           limit: parseInt(limit as string),
