@@ -78,6 +78,9 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
     // Motivazione SCIA
     motivazione_scia: 'subingresso',
     
+    // Motivo Subingresso (visibile solo se motivazione_scia = subingresso)
+    motivo_subingresso: 'acquisto',
+    
     // Ruolo dichiarante
     ruolo_dichiarante: 'titolare',
     
@@ -432,6 +435,34 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
               </div>
             </RadioGroup>
           </div>
+
+          {/* MOTIVO SUBINGRESSO - Visibile solo se motivazione è subingresso */}
+          {formData.motivazione_scia === 'subingresso' && (
+            <div className="space-y-4 p-4 bg-[#020817] rounded-lg border border-[#1e293b]">
+              <h3 className="text-lg font-semibold text-[#00f0ff]">
+                Motivo del Subingresso
+              </h3>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Seleziona il motivo *</Label>
+                <Select 
+                  value={formData.motivo_subingresso || 'acquisto'} 
+                  onValueChange={(value) => setFormData({...formData, motivo_subingresso: value})}
+                >
+                  <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
+                    <SelectValue placeholder="Seleziona motivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="acquisto">Acquisto azienda / ramo d'azienda</SelectItem>
+                    <SelectItem value="affitto">Affitto ramo d'azienda</SelectItem>
+                    <SelectItem value="donazione">Donazione</SelectItem>
+                    <SelectItem value="successione">Successione ereditaria</SelectItem>
+                    <SelectItem value="fusione">Fusione / Scissione societaria</SelectItem>
+                    <SelectItem value="conferimento">Conferimento in società</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
           {/* TIPOLOGIA ATTIVITÀ */}
           <div className="space-y-4 p-4 bg-[#020817] rounded-lg border border-[#1e293b]">
