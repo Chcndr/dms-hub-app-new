@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.7.0  
+> **Versione:** 3.9.0  
 > **Data:** 2 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -654,6 +654,33 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 📝 CHANGELOG
+
+### v3.9.0 (02/01/2026) - SSO SUAP Fix Mapping Campi + UI Uniformata
+- ✅ **Fix Critico Mapping Campi Form→Backend** - I dati del form SCIA ora vengono salvati correttamente:
+  - Form usa: `ragione_sociale_sub`, `nome_sub`, `cf_cedente`, `mercato`, `posteggio`
+  - Backend vuole: `sub_ragione_sociale`, `sub_nome`, `ced_cf`, `mercato_nome`, `posteggio_numero`
+  - Corretta mappatura di 50+ campi in `handleSciaSubmit`
+  - Aggiunto `data_presentazione` che mancava
+  - Conversione `tipologia_attivita` → `settore_merceologico` (alimentare/non_alimentare/misto)
+- ✅ **Colori Card Uniformati** - Stile coerente con le altre pagine:
+  - Card: da `#0a1628` (blu scuro) a `#1e293b` (grigio scuro)
+  - Bordi: da `#1e293b` a `#334155`
+  - Icone sezioni: da `#00f0ff` (cyan) a `#14b8a6` (teal)
+- ✅ **Sezione Delegato Migliorata** - Ora appare se:
+  - `ruolo_dichiarante` ≠ "titolare", OPPURE
+  - Esistono dati delegato (`del_cf` o `del_nome`)
+- ✅ **Visualizzazione Mercato/Posteggio Intelligente** - Workaround per dati storici:
+  - Se `mercato_nome` è vuoto, mostra `mercato_id` come nome
+  - Se `posteggio_numero` è vuoto, mostra `posteggio_id` come numero
+  - Nasconde ID se già usato come valore principale
+- ✅ **Tutte le Sezioni Sempre Visibili** - Rimosse condizioni che nascondevano sezioni vuote:
+  - Dati Posteggio e Mercato: sempre visibile
+  - Dati Cedente: sempre visibile (per subingresso)
+  - Residenza Subentrante: sempre visibile
+  - Sede Impresa Subentrante: sempre visibile
+  - Estremi Atto Notarile: sempre visibile
+- File modificati: SuapPanel.tsx
+- Commit: 6446a1c, ec7f842
 
 ### v3.8.0 (02/01/2026) - SSO SUAP Navigazione Tab + Valutazione Reale
 - ✅ **Navigazione Tab** - Ristrutturato SuapPanel.tsx con 3 tab (come Gestione Mercati):
