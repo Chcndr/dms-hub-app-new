@@ -977,4 +977,4 @@
 ## Bug Fix - Batch 02/01/2026 (sera 3)
 
 - [x] Date picker funziona ora
-- [x] Semaforo qualificazioni mostra Scaduta anche quando data_scadenza è nel futuro - corretto confronto date con fuso orario
+- [x] Semaforo qualificazioni mostra Scaduta anche quando data_scadenza è nel futuro - ora calcola stato SOLO dalla data, ignora DB
