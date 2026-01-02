@@ -73,8 +73,20 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
   const [loadingStalls, setLoadingStalls] = useState(false);
   const [loadingImpresa, setLoadingImpresa] = useState(false);
 
+  // Genera numero protocollo SCIA automatico
+  const generateProtocollo = () => {
+    const year = new Date().getFullYear();
+    const random = Math.floor(Math.random() * 9000) + 1000;
+    return `SCIA-${year}-${random}`;
+  };
+
   // Form data
   const [formData, setFormData] = useState({
+    // Dati Protocollo SCIA
+    numero_protocollo: generateProtocollo(),
+    data_presentazione: new Date().toISOString().split('T')[0],
+    comune_presentazione: 'MODENA',
+    
     // Motivazione SCIA
     motivazione_scia: 'subingresso',
     
@@ -399,6 +411,40 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-8">
           
+          {/* DATI PROTOCOLLO SCIA */}
+          <div className="space-y-4 p-4 bg-[#020817] rounded-lg border border-[#00f0ff]/30">
+            <h3 className="text-lg font-semibold text-[#00f0ff]">
+              Dati Pratica SCIA
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Numero Protocollo</Label>
+                <Input 
+                  value={formData.numero_protocollo}
+                  onChange={(e) => setFormData({...formData, numero_protocollo: e.target.value})}
+                  className="bg-[#020817] border-[#00f0ff]/50 text-[#00f0ff] font-mono font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Data Presentazione</Label>
+                <Input 
+                  type="date"
+                  value={formData.data_presentazione}
+                  onChange={(e) => setFormData({...formData, data_presentazione: e.target.value})}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Comune Presentazione</Label>
+                <Input 
+                  value={formData.comune_presentazione || 'MODENA'}
+                  onChange={(e) => setFormData({...formData, comune_presentazione: e.target.value})}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* MOTIVAZIONE SCIA */}
           <div className="space-y-4 p-4 bg-[#020817] rounded-lg border border-[#1e293b]">
             <h3 className="text-lg font-semibold text-[#00f0ff]">
