@@ -1,23 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Printer, Search } from 'lucide-react';
+import { FileText, Printer, Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
 
+// Tipi per i dati dal database
+interface Market {
+  id: number;
+  code: string;
+  name: string;
+  municipality: string;
+  days: string;
+  total_stalls: number;
+  status: string;
+}
+
+interface Stall {
+  id: number;
+  market_id: number;
+  number: string;
+  width: string;
+  depth: string;
+  dimensions: string;
+  area_mq: string;
+  type: string;
+  status: string;
+  vendor_business_name?: string;
+}
+
 export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () => void, onSubmit: (data: any) => void }) {
+  // Stati per dati dal database
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [stalls, setStalls] = useState<Stall[]>([]);
+  const [selectedMarketId, setSelectedMarketId] = useState<number | null>(null);
+  const [loadingMarkets, setLoadingMarkets] = useState(true);
+  const [loadingStalls, setLoadingStalls] = useState(false);
+  const [loadingImpresa, setLoadingImpresa] = useState(false);
+
   const [formData, setFormData] = useState({
     // Dati Generali (Frontespizio)
-    numero_protocollo: '449021/2024',
+    numero_protocollo: '',
     data_protocollazione: new Date().toISOString().split('T')[0],
     oggetto: 'RILASCIO CONCESSIONE OCCUPAZIONE SUOLO PUBBLICO VALIDO PER IL MERCATO PERIODICO SPECIALIZZATO NON ALIMENTARE LA PIAZZOLA',
-    numero_file: '2',
+    numero_file: '',
     
     // Dati Concessione
     durata_anni: '12',
@@ -36,27 +68,95 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
     residenza_cap: '',
     
     // Posteggio
-    mercato: 'Modena - Novi Sad',
-    ubicazione: 'Piazza VIII Agosto e Zone Adiacenti',
+    mercato: '',
+    mercato_id: '',
+    ubicazione: '',
     posteggio: '',
-    fila: '1',
-    mq: '39',
-    dimensioni_lineari: '6 x 6.5',
-    giorno: 'Sabato',
-    attrezzature: 'Banco e automezzo',
+    posteggio_id: '',
+    fila: '',
+    mq: '',
+    dimensioni_lineari: '',
+    giorno: '',
+    attrezzature: '',
     merceologia: 'Non Alimentare',
     
     // Dati Economici
-    canone_unico: '851,76',
+    canone_unico: '',
     
     // Riferimenti
     scia_precedente_numero: '',
     scia_precedente_data: '',
-    scia_precedente_comune: 'BOLOGNA'
+    scia_precedente_comune: ''
   });
 
+  // Carica mercati all'avvio
+  useEffect(() => {
+    const fetchMarkets = async () => {
+      try {
+        setLoadingMarkets(true);
+        const res = await fetch(`${API_URL}/api/markets`);
+        const json = await res.json();
+        
+        if (json.success && json.data) {
+          setMarkets(json.data);
+        } else {
+          console.error('Errore caricamento mercati:', json);
+        }
+      } catch (error) {
+        console.error('Errore fetch mercati:', error);
+        toast.error('Errore caricamento mercati');
+      } finally {
+        setLoadingMarkets(false);
+      }
+    };
+    
+    fetchMarkets();
+  }, []);
+
+  // Carica posteggi quando cambia mercato
+  useEffect(() => {
+    if (!selectedMarketId) {
+      setStalls([]);
+      return;
+    }
+
+    const fetchStalls = async () => {
+      try {
+        setLoadingStalls(true);
+        const res = await fetch(`${API_URL}/api/markets/${selectedMarketId}/stalls`);
+        const json = await res.json();
+        
+        if (json.success && json.data) {
+          // Ordina posteggi per numero
+          const sortedStalls = json.data.sort((a: Stall, b: Stall) => {
+            const numA = parseInt(a.number) || 0;
+            const numB = parseInt(b.number) || 0;
+            return numA - numB;
+          });
+          setStalls(sortedStalls);
+        } else {
+          console.error('Errore caricamento posteggi:', json);
+        }
+      } catch (error) {
+        console.error('Errore fetch posteggi:', error);
+        toast.error('Errore caricamento posteggi');
+      } finally {
+        setLoadingStalls(false);
+      }
+    };
+    
+    fetchStalls();
+  }, [selectedMarketId]);
+
+  // Lookup Concessionario per CF/P.IVA
   const handleLookup = async () => {
+    if (!formData.cf_concessionario) {
+      toast.error('Inserire Codice Fiscale');
+      return;
+    }
+
     try {
+      setLoadingImpresa(true);
       const res = await fetch(`${API_URL}/api/imprese?codice_fiscale=${formData.cf_concessionario}`);
       const json = await res.json();
       
@@ -64,10 +164,14 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
         const data = json.data[0];
         setFormData(prev => ({
           ...prev,
-          ragione_sociale: data.denominazione,
-          residenza_comune: data.comune,
-          residenza_via: `${data.indirizzo_via} ${data.indirizzo_civico}`,
-          residenza_cap: data.cap || ''
+          ragione_sociale: data.denominazione || '',
+          nome: data.rappresentante_legale_nome || '',
+          cognome: data.rappresentante_legale_cognome || '',
+          data_nascita: data.rappresentante_legale_data_nascita ? data.rappresentante_legale_data_nascita.split('T')[0] : '',
+          luogo_nascita: data.rappresentante_legale_luogo_nascita || '',
+          residenza_via: data.rappresentante_legale_residenza_via ? `${data.rappresentante_legale_residenza_via} ${data.rappresentante_legale_residenza_civico || ''}`.trim() : `${data.indirizzo_via || ''} ${data.indirizzo_civico || ''}`.trim(),
+          residenza_comune: data.rappresentante_legale_residenza_comune || data.comune || '',
+          residenza_cap: data.rappresentante_legale_residenza_cap || data.cap || ''
         }));
         toast.success('Concessionario trovato!', { description: data.denominazione });
       } else {
@@ -76,6 +180,43 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
     } catch (error) {
       console.error(error);
       toast.error('Errore ricerca', { description: 'Impossibile contattare il server' });
+    } finally {
+      setLoadingImpresa(false);
+    }
+  };
+
+  // Handler cambio mercato
+  const handleMarketChange = (marketId: string) => {
+    const market = markets.find(m => m.id === parseInt(marketId));
+    setSelectedMarketId(parseInt(marketId));
+    setFormData(prev => ({
+      ...prev,
+      mercato: market?.name || '',
+      mercato_id: marketId,
+      ubicazione: market?.municipality || '',
+      giorno: market?.days || '',
+      // Reset posteggio quando cambia mercato
+      posteggio: '',
+      posteggio_id: '',
+      mq: '',
+      dimensioni_lineari: ''
+    }));
+  };
+
+  // Handler cambio posteggio - Auto-popola dimensioni
+  const handleStallChange = (stallId: string) => {
+    const stall = stalls.find(s => s.id === parseInt(stallId));
+    if (stall) {
+      setFormData(prev => ({
+        ...prev,
+        posteggio: stall.number,
+        posteggio_id: stallId,
+        mq: stall.area_mq || '',
+        dimensioni_lineari: stall.dimensions || `${stall.width} x ${stall.depth}`
+      }));
+      toast.success(`Posteggio ${stall.number} selezionato`, { 
+        description: `${stall.area_mq} mq - ${stall.dimensions || `${stall.width} x ${stall.depth}`}` 
+      });
     }
   };
 
@@ -117,6 +258,7 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 <Input 
                   value={formData.numero_protocollo}
                   onChange={(e) => setFormData({...formData, numero_protocollo: e.target.value})}
+                  placeholder="Es. 449021/2024"
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                 />
               </div>
@@ -134,6 +276,7 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 <Input 
                   value={formData.numero_file}
                   onChange={(e) => setFormData({...formData, numero_file: e.target.value})}
+                  placeholder="Es. 2"
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                 />
               </div>
@@ -190,8 +333,13 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                   onChange={(e) => setFormData({...formData, cf_concessionario: e.target.value.toUpperCase()})}
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                 />
-                <Button type="button" onClick={handleLookup} variant="secondary">
-                  <Search className="w-4 h-4" />
+                <Button 
+                  type="button" 
+                  onClick={handleLookup} 
+                  variant="secondary"
+                  disabled={loadingImpresa}
+                >
+                  {loadingImpresa ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 </Button>
               </div>
               <Input 
@@ -272,15 +420,28 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
           <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
             <h3 className="text-sm font-semibold text-[#e8fbff]">Dati Posteggio</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* DROPDOWN MERCATI DINAMICO */}
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Mercato</Label>
-                <Input value={formData.mercato} readOnly className="bg-[#020817]/50 border-[#1e293b] text-[#e8fbff]/60" />
+                <Label className="text-[#e8fbff]">Mercato *</Label>
+                <Select onValueChange={handleMarketChange} disabled={loadingMarkets}>
+                  <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
+                    <SelectValue placeholder={loadingMarkets ? "Caricamento..." : "Seleziona Mercato"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {markets.map(m => (
+                      <SelectItem key={m.id} value={m.id.toString()}>
+                        {m.name} ({m.municipality})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Ubicazione</Label>
                 <Input 
                   value={formData.ubicazione} 
                   onChange={(e) => setFormData({...formData, ubicazione: e.target.value})}
+                  placeholder="Auto-popolato dal mercato"
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
                 />
               </div>
@@ -292,19 +453,32 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 <Input 
                   value={formData.fila} 
                   onChange={(e) => setFormData({...formData, fila: e.target.value})}
+                  placeholder="Es. A, B, C"
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
                 />
               </div>
+              {/* DROPDOWN POSTEGGI FILTRATO */}
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Posteggio</Label>
-                <Select onValueChange={(val) => setFormData({...formData, posteggio: val})}>
+                <Label className="text-[#e8fbff]">Posteggio *</Label>
+                <Select 
+                  onValueChange={handleStallChange} 
+                  disabled={!selectedMarketId || loadingStalls}
+                >
                   <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-                    <SelectValue placeholder="Seleziona..." />
+                    <SelectValue placeholder={
+                      !selectedMarketId 
+                        ? "Prima seleziona mercato" 
+                        : loadingStalls 
+                          ? "Caricamento..." 
+                          : "Seleziona Posteggio"
+                    } />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="16">16</SelectItem>
-                    <SelectItem value="A01">A01</SelectItem>
-                    <SelectItem value="A02">A02</SelectItem>
+                  <SelectContent className="max-h-60">
+                    {stalls.map(s => (
+                      <SelectItem key={s.id} value={s.id.toString()}>
+                        {s.number} - {s.area_mq} mq {s.vendor_business_name ? `(${s.vendor_business_name})` : '(Libero)'}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -313,7 +487,9 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 <Input 
                   value={formData.mq} 
                   onChange={(e) => setFormData({...formData, mq: e.target.value})}
-                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
+                  placeholder="Auto-popolato"
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]" 
+                  readOnly
                 />
               </div>
               <div className="space-y-2">
@@ -321,7 +497,9 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 <Input 
                   value={formData.dimensioni_lineari} 
                   onChange={(e) => setFormData({...formData, dimensioni_lineari: e.target.value})}
-                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
+                  placeholder="Auto-popolato"
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]" 
+                  readOnly
                 />
               </div>
             </div>
@@ -332,16 +510,25 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 <Input 
                   value={formData.attrezzature} 
                   onChange={(e) => setFormData({...formData, attrezzature: e.target.value})}
+                  placeholder="Es. Banco e automezzo"
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Merceologia</Label>
-                <Input 
-                  value={formData.merceologia} 
-                  onChange={(e) => setFormData({...formData, merceologia: e.target.value})}
-                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
-                />
+                <Select 
+                  value={formData.merceologia}
+                  onValueChange={(val) => setFormData({...formData, merceologia: val})}
+                >
+                  <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
+                    <SelectValue placeholder="Seleziona..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Alimentare">Alimentare</SelectItem>
+                    <SelectItem value="Non Alimentare">Non Alimentare</SelectItem>
+                    <SelectItem value="Misto">Misto</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -372,6 +559,7 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 <Input 
                   value={formData.canone_unico} 
                   onChange={(e) => setFormData({...formData, canone_unico: e.target.value})}
+                  placeholder="Da Wallet/PagoPA"
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
                 />
               </div>

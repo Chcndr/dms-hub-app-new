@@ -1,26 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Search, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
 
-const MOCK_MERCATI = {
-  'modena': {
-    nome: 'Mercato Novi Sad',
-    comune: 'Modena',
-    posteggi: ['A01', 'A02', 'B01', 'B05', '1/16']
-  }
-};
+// Tipi per i dati dal database
+interface Market {
+  id: number;
+  code: string;
+  name: string;
+  municipality: string;
+  days: string;
+  total_stalls: number;
+  status: string;
+}
+
+interface Stall {
+  id: number;
+  market_id: number;
+  number: string;
+  width: string;
+  depth: string;
+  dimensions: string;
+  area_mq: string;
+  type: string;
+  status: string;
+  vendor_business_name?: string;
+}
 
 export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void, onSubmit: (data: any) => void }) {
-  const [step, setStep] = useState(1);
+  // Stati per dati dal database
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [stalls, setStalls] = useState<Stall[]>([]);
+  const [selectedMarketId, setSelectedMarketId] = useState<number | null>(null);
+  const [loadingMarkets, setLoadingMarkets] = useState(true);
+  const [loadingStalls, setLoadingStalls] = useState(false);
+  const [loadingImpresa, setLoadingImpresa] = useState(false);
+
+  // Form data
   const [formData, setFormData] = useState({
     // Sezione A - Subentrante
     cf_subentrante: '',
@@ -32,7 +55,7 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
     residenza_via_sub: '',
     residenza_comune_sub: '',
     residenza_cap_sub: '',
-    qualita_sub: 'titolare', // titolare o legale_rappresentante
+    qualita_sub: 'titolare',
     sede_via_sub: '',
     sede_comune_sub: '',
     sede_cap_sub: '',
@@ -47,13 +70,15 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
 
     // Sezione C - Posteggio
     mercato: '',
+    mercato_id: '',
     posteggio: '',
+    posteggio_id: '',
     fila: '',
     dimensioni_mq: '',
-    dimensioni_lineari: '', // es. 6 x 6.5
+    dimensioni_lineari: '',
     settore: '',
-    merceologia: 'non_alimentare', // alimentare, non_alimentare, misto
-    attrezzature: 'banco_automezzo', // banco, automezzo, banco_automezzo
+    merceologia: 'non_alimentare',
+    attrezzature: 'banco_automezzo',
 
     // Sezione D - Atto
     notaio: '',
@@ -61,8 +86,74 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
     data_atto: ''
   });
 
+  // Carica mercati all'avvio
+  useEffect(() => {
+    const fetchMarkets = async () => {
+      try {
+        setLoadingMarkets(true);
+        const res = await fetch(`${API_URL}/api/markets`);
+        const json = await res.json();
+        
+        if (json.success && json.data) {
+          setMarkets(json.data);
+        } else {
+          console.error('Errore caricamento mercati:', json);
+        }
+      } catch (error) {
+        console.error('Errore fetch mercati:', error);
+        toast.error('Errore caricamento mercati');
+      } finally {
+        setLoadingMarkets(false);
+      }
+    };
+    
+    fetchMarkets();
+  }, []);
+
+  // Carica posteggi quando cambia mercato
+  useEffect(() => {
+    if (!selectedMarketId) {
+      setStalls([]);
+      return;
+    }
+
+    const fetchStalls = async () => {
+      try {
+        setLoadingStalls(true);
+        const res = await fetch(`${API_URL}/api/markets/${selectedMarketId}/stalls`);
+        const json = await res.json();
+        
+        if (json.success && json.data) {
+          // Ordina posteggi per numero
+          const sortedStalls = json.data.sort((a: Stall, b: Stall) => {
+            const numA = parseInt(a.number) || 0;
+            const numB = parseInt(b.number) || 0;
+            return numA - numB;
+          });
+          setStalls(sortedStalls);
+        } else {
+          console.error('Errore caricamento posteggi:', json);
+        }
+      } catch (error) {
+        console.error('Errore fetch posteggi:', error);
+        toast.error('Errore caricamento posteggi');
+      } finally {
+        setLoadingStalls(false);
+      }
+    };
+    
+    fetchStalls();
+  }, [selectedMarketId]);
+
+  // Lookup Subentrante per CF/P.IVA
   const handleLookupSubentrante = async () => {
+    if (!formData.cf_subentrante) {
+      toast.error('Inserire Codice Fiscale o P.IVA');
+      return;
+    }
+
     try {
+      setLoadingImpresa(true);
       const res = await fetch(`${API_URL}/api/imprese?codice_fiscale=${formData.cf_subentrante}`);
       const json = await res.json();
       
@@ -70,24 +161,40 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
         const data = json.data[0];
         setFormData(prev => ({
           ...prev,
-          ragione_sociale_sub: data.denominazione,
-          sede_comune_sub: data.comune,
-          sede_via_sub: `${data.indirizzo_via} ${data.indirizzo_civico}`,
+          ragione_sociale_sub: data.denominazione || '',
+          nome_sub: data.rappresentante_legale_nome || '',
+          cognome_sub: data.rappresentante_legale_cognome || '',
+          data_nascita_sub: data.rappresentante_legale_data_nascita ? data.rappresentante_legale_data_nascita.split('T')[0] : '',
+          luogo_nascita_sub: data.rappresentante_legale_luogo_nascita || '',
+          residenza_via_sub: data.rappresentante_legale_residenza_via ? `${data.rappresentante_legale_residenza_via} ${data.rappresentante_legale_residenza_civico || ''}`.trim() : '',
+          residenza_comune_sub: data.rappresentante_legale_residenza_comune || '',
+          residenza_cap_sub: data.rappresentante_legale_residenza_cap || '',
+          sede_via_sub: `${data.indirizzo_via || ''} ${data.indirizzo_civico || ''}`.trim(),
+          sede_comune_sub: data.comune || '',
           sede_cap_sub: data.cap || '',
-          pec_sub: data.pec
+          pec_sub: data.pec || ''
         }));
-        toast.success('Impresa trovata nel DB!', { description: data.denominazione });
+        toast.success('Impresa trovata!', { description: data.denominazione });
       } else {
         toast.error('Impresa non trovata', { description: 'Inserire i dati manualmente' });
       }
     } catch (error) {
       console.error(error);
       toast.error('Errore ricerca', { description: 'Impossibile contattare il server' });
+    } finally {
+      setLoadingImpresa(false);
     }
   };
 
+  // Lookup Cedente per CF/P.IVA
   const handleLookupCedente = async () => {
+    if (!formData.cf_cedente) {
+      toast.error('Inserire Codice Fiscale Cedente');
+      return;
+    }
+
     try {
+      setLoadingImpresa(true);
       const res = await fetch(`${API_URL}/api/imprese?codice_fiscale=${formData.cf_cedente}`);
       const json = await res.json();
       
@@ -95,15 +202,50 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
         const data = json.data[0];
         setFormData(prev => ({
           ...prev,
-          ragione_sociale_ced: data.denominazione
+          ragione_sociale_ced: data.denominazione || ''
         }));
-        toast.success('Cedente trovato nel DB!', { description: data.denominazione });
+        toast.success('Cedente trovato!', { description: data.denominazione });
       } else {
         toast.error('Cedente non trovato', { description: 'Inserire i dati manualmente' });
       }
     } catch (error) {
       console.error(error);
       toast.error('Errore ricerca', { description: 'Impossibile contattare il server' });
+    } finally {
+      setLoadingImpresa(false);
+    }
+  };
+
+  // Handler cambio mercato
+  const handleMarketChange = (marketId: string) => {
+    const market = markets.find(m => m.id === parseInt(marketId));
+    setSelectedMarketId(parseInt(marketId));
+    setFormData(prev => ({
+      ...prev,
+      mercato: market?.name || '',
+      mercato_id: marketId,
+      // Reset posteggio quando cambia mercato
+      posteggio: '',
+      posteggio_id: '',
+      dimensioni_mq: '',
+      dimensioni_lineari: ''
+    }));
+  };
+
+  // Handler cambio posteggio - Auto-popola dimensioni
+  const handleStallChange = (stallId: string) => {
+    const stall = stalls.find(s => s.id === parseInt(stallId));
+    if (stall) {
+      setFormData(prev => ({
+        ...prev,
+        posteggio: stall.number,
+        posteggio_id: stallId,
+        dimensioni_mq: stall.area_mq || '',
+        dimensioni_lineari: stall.dimensions || `${stall.width} x ${stall.depth}`
+      }));
+      toast.success(`Posteggio ${stall.number} selezionato`, { 
+        description: `${stall.area_mq} mq - ${stall.dimensions || `${stall.width} x ${stall.depth}`}` 
+      });
     }
   };
 
@@ -143,8 +285,13 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
                     placeholder="Es. RSSMRA..."
                     className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                   />
-                  <Button type="button" onClick={handleLookupSubentrante} variant="secondary">
-                    <Search className="w-4 h-4" />
+                  <Button 
+                    type="button" 
+                    onClick={handleLookupSubentrante} 
+                    variant="secondary"
+                    disabled={loadingImpresa}
+                  >
+                    {loadingImpresa ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                   </Button>
                 </div>
               </div>
@@ -267,8 +414,13 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
                     placeholder="Es. VRDLGI..."
                     className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                   />
-                  <Button type="button" onClick={handleLookupCedente} variant="secondary">
-                    <Search className="w-4 h-4" />
+                  <Button 
+                    type="button" 
+                    onClick={handleLookupCedente} 
+                    variant="secondary"
+                    disabled={loadingImpresa}
+                  >
+                    {loadingImpresa ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                   </Button>
                 </div>
               </div>
@@ -318,42 +470,69 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
               C. Dati Posteggio e Mercato
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* DROPDOWN MERCATI DINAMICO */}
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Mercato</Label>
-                <Select onValueChange={(val) => setFormData({...formData, mercato: val})}>
+                <Label className="text-[#e8fbff]">Mercato *</Label>
+                <Select onValueChange={handleMarketChange} disabled={loadingMarkets}>
                   <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-                    <SelectValue placeholder="Seleziona Mercato" />
+                    <SelectValue placeholder={loadingMarkets ? "Caricamento..." : "Seleziona Mercato"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="modena">Modena - Novi Sad</SelectItem>
-                    <SelectItem value="altro">Altro</SelectItem>
+                    {markets.map(m => (
+                      <SelectItem key={m.id} value={m.id.toString()}>
+                        {m.name} ({m.municipality})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* DROPDOWN POSTEGGI FILTRATO */}
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Numero Posteggio</Label>
-                <Select onValueChange={(val) => setFormData({...formData, posteggio: val})}>
+                <Label className="text-[#e8fbff]">Numero Posteggio *</Label>
+                <Select 
+                  onValueChange={handleStallChange} 
+                  disabled={!selectedMarketId || loadingStalls}
+                >
                   <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-                    <SelectValue placeholder="Seleziona Posteggio" />
+                    <SelectValue placeholder={
+                      !selectedMarketId 
+                        ? "Prima seleziona un mercato" 
+                        : loadingStalls 
+                          ? "Caricamento..." 
+                          : "Seleziona Posteggio"
+                    } />
                   </SelectTrigger>
-                  <SelectContent>
-                    {MOCK_MERCATI.modena.posteggi.map(p => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                  <SelectContent className="max-h-60">
+                    {stalls.map(s => (
+                      <SelectItem key={s.id} value={s.id.toString()}>
+                        {s.number} - {s.area_mq} mq {s.vendor_business_name ? `(${s.vendor_business_name})` : '(Libero)'}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             
-            {/* Dettagli Posteggio */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-               <div className="space-y-2">
+            {/* Dettagli Posteggio - AUTO-POPOLATI */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Fila</Label>
+                <Input 
+                  value={formData.fila}
+                  onChange={(e) => setFormData({...formData, fila: e.target.value})}
+                  placeholder="Es. A, B, C"
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Dimensioni (MQ)</Label>
                 <Input 
                   value={formData.dimensioni_mq}
                   onChange={(e) => setFormData({...formData, dimensioni_mq: e.target.value})}
-                  placeholder="Es. 39"
-                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                  placeholder="Auto-popolato"
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
+                  readOnly
                 />
               </div>
               <div className="space-y-2">
@@ -361,29 +540,29 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
                 <Input 
                   value={formData.dimensioni_lineari}
                   onChange={(e) => setFormData({...formData, dimensioni_lineari: e.target.value})}
-                  placeholder="Es. 6 x 6.5"
-                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                  placeholder="Auto-popolato"
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
+                  readOnly
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Attrezzature</Label>
-                <Select onValueChange={(val) => setFormData({...formData, attrezzature: val})}>
-                  <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-                    <SelectValue placeholder="Seleziona..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="banco">Solo Banco</SelectItem>
-                    <SelectItem value="automezzo">Solo Automezzo</SelectItem>
-                    <SelectItem value="banco_automezzo">Banco e Automezzo</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input 
+                  value={formData.attrezzature}
+                  onChange={(e) => setFormData({...formData, attrezzature: e.target.value})}
+                  placeholder="Es. Banco e automezzo"
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Merceologia</Label>
-                <Select onValueChange={(val) => setFormData({...formData, merceologia: val})}>
+                <Select 
+                  value={formData.merceologia}
+                  onValueChange={(val) => setFormData({...formData, merceologia: val})}
+                >
                   <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
                     <SelectValue placeholder="Seleziona..." />
                   </SelectTrigger>
