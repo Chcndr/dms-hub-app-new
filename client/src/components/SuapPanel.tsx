@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
-  FileText, CheckCircle2, XCircle, Clock, Loader2, ArrowLeft, 
+  FileText, CheckCircle2, XCircle, Clock, Loader2, 
   Search, Filter, Eye, Play, User, Building2, MapPin, FileCheck, Users,
-  Plus
+  Plus, LayoutDashboard, List, FileSearch, AlertCircle, TrendingUp
 } from 'lucide-react';
 import { 
   getSuapStats, getSuapPratiche, getSuapPraticaById, 
@@ -20,8 +22,6 @@ import { toast } from 'sonner';
 // ============================================================================
 // TIPI
 // ============================================================================
-
-type ViewMode = 'dashboard' | 'list' | 'detail';
 
 interface SuapPraticaFull extends SuapPratica {
   timeline: SuapEvento[];
@@ -106,22 +106,52 @@ function DataSection({ title, icon: Icon, children }: { title: string; icon: Rea
 }
 
 function DataField({ label, value }: { label: string; value?: string | number | null }) {
-  if (!value) return null;
   return (
     <div>
-      <p className="text-xs text-[#e8fbff]/50 uppercase tracking-wider">{label}</p>
-      <p className="text-sm text-[#e8fbff] mt-0.5">{value}</p>
+      <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
+      <p className="text-[#e8fbff] font-medium">{value || '-'}</p>
     </div>
   );
 }
 
-function formatDate(dateString?: string | null) {
-  if (!dateString) return null;
-  try {
-    return new Date(dateString).toLocaleDateString('it-IT');
-  } catch {
-    return dateString;
-  }
+function getStatoBadge(stato: string) {
+  const variants: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
+    'RECEIVED': { bg: 'bg-yellow-500/20', text: 'text-yellow-400', icon: <Clock className="w-3 h-3" /> },
+    'IN_LAVORAZIONE': { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: <Loader2 className="w-3 h-3 animate-spin" /> },
+    'EVALUATED': { bg: 'bg-purple-500/20', text: 'text-purple-400', icon: <FileSearch className="w-3 h-3" /> },
+    'APPROVED': { bg: 'bg-green-500/20', text: 'text-green-400', icon: <CheckCircle2 className="w-3 h-3" /> },
+    'REJECTED': { bg: 'bg-red-500/20', text: 'text-red-400', icon: <XCircle className="w-3 h-3" /> },
+  };
+  const v = variants[stato] || variants['RECEIVED'];
+  return (
+    <Badge className={`${v.bg} ${v.text} border-0 gap-1`}>
+      {v.icon}
+      {stato}
+    </Badge>
+  );
+}
+
+function formatDate(dateStr?: string | null) {
+  if (!dateStr) return '-';
+  return new Date(dateStr).toLocaleDateString('it-IT');
+}
+
+function formatDateTime(dateStr?: string | null) {
+  if (!dateStr) return '-';
+  return new Date(dateStr).toLocaleString('it-IT');
+}
+
+function timeAgo(dateStr?: string | null) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (minutes < 60) return `${minutes} min fa`;
+  if (hours < 24) return `${hours} ore fa`;
+  return `${days} giorni fa`;
 }
 
 // ============================================================================
@@ -129,260 +159,190 @@ function formatDate(dateString?: string | null) {
 // ============================================================================
 
 export default function SuapPanel() {
-  // Stati principali
-  const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
+  // State
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'lista' | 'dettaglio'>('dashboard');
   const [stats, setStats] = useState<SuapStats | null>(null);
   const [pratiche, setPratiche] = useState<SuapPratica[]>([]);
   const [selectedPratica, setSelectedPratica] = useState<SuapPraticaFull | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingPratiche, setLoadingPratiche] = useState(true);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [evaluating, setEvaluating] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showSciaForm, setShowSciaForm] = useState(false);
   const [showConcessioneForm, setShowConcessioneForm] = useState(false);
-  const [search, setSearch] = useState('');
 
-  const ENTE_ID = '00000000-0000-0000-0000-000000000001';
-
-  // Carica statistiche
+  // Carica dati iniziali
   useEffect(() => {
-    async function loadStats() {
-      try {
-        const data = await getSuapStats(ENTE_ID);
-        setStats(data);
-      } catch (error) {
-        console.error('Failed to load stats', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadStats();
+    loadData();
   }, []);
 
-  // Carica pratiche
-  useEffect(() => {
-    loadPratiche();
-  }, []);
-
-  async function loadPratiche() {
-    setLoadingPratiche(true);
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const data = await getSuapPratiche(ENTE_ID);
-      // Ordina per data di creazione (più recenti prima)
-      const sorted = data.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      const [statsData, praticheData] = await Promise.all([
+        getSuapStats(),
+        getSuapPratiche()
+      ]);
+      setStats(statsData);
+      // Ordina per data creazione (più recenti prima)
+      const sorted = praticheData.sort((a, b) => 
+        new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
       );
       setPratiche(sorted);
     } catch (error) {
-      console.error('Failed to load pratiche', error);
-      setPratiche([]);
+      console.error('Error loading SUAP data:', error);
+      toast.error('Errore nel caricamento dei dati');
     } finally {
-      setLoadingPratiche(false);
+      setLoading(false);
     }
-  }
+  };
 
-  // Carica dettaglio pratica
-  async function loadPraticaDetail(id: string) {
-    setLoadingDetail(true);
+  const loadPraticaDetail = async (id: number) => {
+    setLoading(true);
     try {
-      const data = await getSuapPraticaById(id, ENTE_ID);
-      setSelectedPratica(data as SuapPraticaFull);
-      setViewMode('detail');
+      const pratica = await getSuapPraticaById(id);
+      setSelectedPratica(pratica as SuapPraticaFull);
+      setActiveTab('dettaglio');
     } catch (error) {
-      console.error('Failed to load pratica detail', error);
-      toast.error('Errore caricamento pratica');
+      console.error('Error loading pratica:', error);
+      toast.error('Errore nel caricamento della pratica');
     } finally {
-      setLoadingDetail(false);
+      setLoading(false);
     }
-  }
+  };
 
-  // Valuta pratica
-  async function handleEvaluate() {
-    if (!selectedPratica) return;
-    setEvaluating(true);
-    try {
-      await evaluateSuapPratica(selectedPratica.id, ENTE_ID);
-      toast.success('Valutazione completata');
-      await loadPraticaDetail(selectedPratica.id);
-      await loadPratiche();
-      const newStats = await getSuapStats(ENTE_ID);
-      setStats(newStats);
-    } catch (error) {
-      console.error('Evaluation failed', error);
-      toast.error('Errore durante la valutazione');
-    } finally {
-      setEvaluating(false);
-    }
-  }
-
-  // Handler per submit SCIA
-  const handleSciaSubmit = async (data: any) => {
+  const handleSciaSubmit = async (formData: any) => {
+    setLoading(true);
     try {
       const praticaData = {
-        tipo_pratica: `SCIA ${data.tipo_segnalazione || data.motivazione_scia || 'Subingresso'}`.toUpperCase(),
-        richiedente_nome: data.ragione_sociale_sub || `${data.nome_sub || ''} ${data.cognome_sub || ''}`.trim() || 'Non specificato',
-        richiedente_cf: data.cf_subentrante || 'NON_SPECIFICATO',
-        oggetto: `${(data.tipo_segnalazione || data.motivazione_scia || 'Subingresso').toUpperCase()} - Mercato: ${data.mercato || 'N/D'} - Posteggio: ${data.posteggio || 'N/D'}`,
-        numero_protocollo: data.numero_protocollo,
-        data_presentazione: data.data_presentazione,
-        comune_presentazione: data.comune_presentazione,
-        tipo_segnalazione: data.tipo_segnalazione,
-        motivo_subingresso: data.motivo_subingresso,
-        settore_merceologico: data.settore_merceologico,
-        ruolo_dichiarante: data.ruolo_dichiarante,
-        sub_ragione_sociale: data.ragione_sociale_sub,
-        sub_nome: data.nome_sub,
-        sub_cognome: data.cognome_sub,
-        sub_data_nascita: data.data_nascita_sub,
-        sub_luogo_nascita: data.luogo_nascita_sub,
-        sub_residenza_via: data.residenza_sub,
-        sub_residenza_comune: data.comune_residenza_sub,
-        sub_residenza_cap: data.cap_residenza_sub,
-        sub_sede_via: data.sede_impresa_sub,
-        sub_sede_comune: data.comune_sede_sub,
-        sub_sede_provincia: data.provincia_sede_sub,
-        sub_sede_cap: data.cap_sede_sub,
-        sub_pec: data.pec_sub,
-        sub_telefono: data.telefono_sub,
-        ced_cf: data.cf_cedente,
-        ced_ragione_sociale: data.ragione_sociale_cedente,
-        ced_nome: data.nome_cedente,
-        ced_cognome: data.cognome_cedente,
-        ced_data_nascita: data.data_nascita_cedente,
-        ced_luogo_nascita: data.luogo_nascita_cedente,
-        ced_residenza_via: data.residenza_cedente,
-        ced_residenza_comune: data.comune_cedente,
-        ced_residenza_cap: data.cap_cedente,
-        ced_pec: data.pec_cedente,
-        ced_scia_precedente: data.scia_precedente,
-        ced_data_presentazione: data.data_presentazione_cedente,
-        ced_comune_presentazione: data.comune_presentazione_cedente,
-        mercato_id: data.mercato,
-        mercato_nome: data.mercato_nome,
-        posteggio_id: data.posteggio,
-        posteggio_numero: data.posteggio_numero,
-        ubicazione_mercato: data.ubicazione_mercato,
-        giorno_mercato: data.giorno_mercato,
-        fila: data.fila,
-        dimensioni_mq: data.dimensioni_mq,
-        dimensioni_lineari: data.dimensioni_lineari,
-        attrezzature: data.attrezzature,
-        notaio_rogante: data.notaio,
-        numero_repertorio: data.repertorio,
-        data_atto: data.data_atto,
-        del_nome: data.delegato_nome,
-        del_cognome: data.delegato_cognome,
-        del_cf: data.delegato_cf,
-        del_data_nascita: data.delegato_data_nascita,
-        del_luogo_nascita: data.delegato_luogo_nascita,
-        del_qualifica: data.delegato_qualifica,
-        del_residenza_via: data.delegato_residenza,
-        del_residenza_comune: data.delegato_comune,
-        del_residenza_cap: data.delegato_cap
+        tipo_pratica: `SCIA ${formData.tipo_segnalazione?.toUpperCase() || 'SUBINGRESSO'}`,
+        richiedente_cf: formData.cf_piva || 'NON_SPECIFICATO',
+        richiedente_nome: formData.ragione_sociale || 'Non specificato',
+        oggetto: `SCIA ${formData.tipo_segnalazione || 'Subingresso'} - ${formData.ragione_sociale || 'N/A'}`,
+        // Dati pratica
+        numero_protocollo: formData.numero_protocollo,
+        comune_presentazione: formData.comune_presentazione,
+        tipo_segnalazione: formData.tipo_segnalazione,
+        motivo_subingresso: formData.motivo_subingresso,
+        settore_merceologico: formData.settore_merceologico,
+        ruolo_dichiarante: formData.ruolo_dichiarante,
+        // Dati subentrante
+        sub_ragione_sociale: formData.ragione_sociale,
+        sub_nome: formData.nome,
+        sub_cognome: formData.cognome,
+        sub_data_nascita: formData.data_nascita,
+        sub_luogo_nascita: formData.luogo_nascita,
+        sub_residenza_via: formData.residenza_via,
+        sub_residenza_comune: formData.residenza_comune,
+        sub_residenza_cap: formData.residenza_cap,
+        sub_sede_via: formData.sede_via,
+        sub_sede_comune: formData.sede_comune,
+        sub_sede_provincia: formData.sede_provincia,
+        sub_sede_cap: formData.sede_cap,
+        sub_pec: formData.pec,
+        sub_telefono: formData.telefono,
+        // Dati cedente
+        ced_cf: formData.cedente_cf,
+        ced_ragione_sociale: formData.cedente_ragione_sociale,
+        ced_nome: formData.cedente_nome,
+        ced_cognome: formData.cedente_cognome,
+        ced_data_nascita: formData.cedente_data_nascita,
+        ced_luogo_nascita: formData.cedente_luogo_nascita,
+        ced_residenza_via: formData.cedente_residenza_via,
+        ced_residenza_comune: formData.cedente_residenza_comune,
+        ced_residenza_cap: formData.cedente_residenza_cap,
+        ced_pec: formData.cedente_pec,
+        ced_scia_precedente: formData.cedente_scia_precedente,
+        ced_data_presentazione: formData.cedente_data_presentazione,
+        ced_comune_presentazione: formData.cedente_comune_presentazione,
+        // Dati mercato/posteggio
+        mercato_id: formData.mercato_id,
+        mercato_nome: formData.mercato_nome,
+        posteggio_id: formData.posteggio_id,
+        posteggio_numero: formData.posteggio_numero,
+        ubicazione_mercato: formData.ubicazione_mercato,
+        giorno_mercato: formData.giorno_mercato,
+        fila: formData.fila,
+        dimensioni_mq: formData.dimensioni_mq,
+        dimensioni_lineari: formData.dimensioni_lineari,
+        attrezzature: formData.attrezzature,
+        // Dati atto notarile
+        notaio_rogante: formData.notaio_rogante,
+        numero_repertorio: formData.numero_repertorio,
+        data_atto: formData.data_atto,
+        // Dati delegato
+        del_nome: formData.delegato_nome,
+        del_cognome: formData.delegato_cognome,
+        del_cf: formData.delegato_cf,
+        del_data_nascita: formData.delegato_data_nascita,
+        del_luogo_nascita: formData.delegato_luogo_nascita,
+        del_qualifica: formData.delegato_qualifica,
+        del_residenza_via: formData.delegato_residenza_via,
+        del_residenza_comune: formData.delegato_residenza_comune,
+        del_residenza_cap: formData.delegato_residenza_cap,
       };
-      
-      const newPratica = await createSuapPratica(ENTE_ID, praticaData);
+
+      await createSuapPratica(praticaData);
+      toast.success('SCIA creata con successo!');
       setShowSciaForm(false);
-      toast.success("SCIA Inviata con successo!", { 
-        description: `Protocollo: ${newPratica.cui || data.numero_protocollo}` 
-      });
-      
-      await loadPratiche();
-      const newStats = await getSuapStats(ENTE_ID);
-      setStats(newStats);
+      loadData();
     } catch (error: any) {
-      console.error('Errore creazione SCIA:', error);
-      toast.error("Errore Creazione SCIA", { 
-        description: error?.message?.includes('Failed') 
-          ? "Impossibile contattare il server. Riprova tra poco." 
-          : error?.message || 'Errore sconosciuto'
-      });
+      console.error('Error creating SCIA:', error);
+      toast.error(error.message || 'Errore nella creazione della SCIA');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Formatta la data relativa
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    
-    if (diffMins < 1) return 'Adesso';
-    if (diffMins < 60) return `${diffMins} min fa`;
-    if (diffHours < 24) return `${diffHours} ore fa`;
-    if (diffDays < 7) return `${diffDays} giorni fa`;
-    return date.toLocaleDateString('it-IT');
-  };
-
-  // Mappa stato a colore badge
-  const getStatoBadge = (stato: string) => {
-    const colors: Record<string, string> = {
-      'RECEIVED': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      'PRECHECK': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      'EVALUATED': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      'APPROVED': 'bg-green-500/20 text-green-400 border-green-500/30',
-      'REJECTED': 'bg-red-500/20 text-red-400 border-red-500/30',
-      'IN_LAVORAZIONE': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-      'INTEGRATION_NEEDED': 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-    };
-    return colors[stato] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  const handleEvaluate = async () => {
+    if (!selectedPratica) return;
+    setLoading(true);
+    try {
+      await evaluateSuapPratica(selectedPratica.id);
+      toast.success('Valutazione avviata');
+      await loadPraticaDetail(selectedPratica.id);
+    } catch (error) {
+      console.error('Error evaluating pratica:', error);
+      toast.error('Errore nella valutazione');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Filtra pratiche
   const filteredPratiche = pratiche.filter(p => {
-    if (!search) return true;
-    const query = search.toLowerCase();
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
     return (
-      p.cui?.toLowerCase().includes(query) ||
-      p.richiedente_nome?.toLowerCase().includes(query) ||
-      p.richiedente_cf?.toLowerCase().includes(query) ||
-      p.tipo_pratica?.toLowerCase().includes(query)
+      p.cui?.toLowerCase().includes(q) ||
+      p.richiedente_nome?.toLowerCase().includes(q) ||
+      p.richiedente_cf?.toLowerCase().includes(q) ||
+      p.tipo_pratica?.toLowerCase().includes(q)
     );
   });
 
-  // Torna indietro
-  const goBack = () => {
-    if (viewMode === 'detail') {
-      setViewMode('list');
-      setSelectedPratica(null);
-    } else if (viewMode === 'list') {
-      setViewMode('dashboard');
-    }
-  };
-
   // ============================================================================
-  // RENDER: DASHBOARD VIEW
+  // RENDER
   // ============================================================================
 
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      {/* Header con pulsanti */}
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-[#e8fbff]">SSO SUAP</h2>
-          <p className="text-[#e8fbff]/60 text-sm">Gestione pratiche amministrative e integrazione PDND</p>
+          <p className="text-gray-400">Gestione automatizzata pratiche amministrative e integrazione PDND</p>
         </div>
         <div className="flex gap-2">
           <Button 
-            variant="outline" 
-            className="border-[#e8fbff]/20 text-[#e8fbff] hover:bg-[#e8fbff]/10"
-            onClick={() => setViewMode('list')}
+            onClick={() => setShowSciaForm(true)}
+            className="bg-[#00f0ff] text-[#0a1628] hover:bg-[#00d4e0]"
           >
             <FileText className="mr-2 h-4 w-4" />
-            Lista Pratiche
-          </Button>
-          <Button 
-            className="bg-[#00f0ff] text-black hover:bg-[#00f0ff]/90"
-            onClick={() => setShowSciaForm(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
             Nuova SCIA
           </Button>
           <Button 
-            className="bg-[#e8fbff] text-black hover:bg-[#e8fbff]/90"
             onClick={() => setShowConcessioneForm(true)}
+            variant="outline"
+            className="border-[#1e293b] text-[#e8fbff] hover:bg-[#1e293b]"
           >
             <CheckCircle2 className="mr-2 h-4 w-4" />
             Concessione
@@ -390,320 +350,299 @@ export default function SuapPanel() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-[#0a1628] border-[#1e293b]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[#e8fbff]/80">Totale Pratiche</CardTitle>
-            <FileText className="h-4 w-4 text-[#00f0ff]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[#e8fbff]">{stats?.total || 0}</div>
-            <p className="text-xs text-[#e8fbff]/60">+20.1% dal mese scorso</p>
-          </CardContent>
-        </Card>
+      {/* Tabs di navigazione */}
+      <Tabs 
+        value={activeTab} 
+        onValueChange={(v) => setActiveTab(v as 'dashboard' | 'lista' | 'dettaglio')}
+      >
+        <TabsList className="grid w-full grid-cols-3 bg-[#0b1220]/50">
+          <TabsTrigger 
+            value="dashboard"
+            className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
+          >
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger 
+            value="lista"
+            className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
+          >
+            <List className="mr-2 h-4 w-4" />
+            Lista Pratiche
+          </TabsTrigger>
+          <TabsTrigger 
+            value="dettaglio"
+            className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
+            disabled={!selectedPratica}
+          >
+            <FileSearch className="mr-2 h-4 w-4" />
+            Dettaglio Pratica
+          </TabsTrigger>
+        </TabsList>
 
-        <Card className="bg-[#0a1628] border-[#1e293b]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[#e8fbff]/80">In Lavorazione</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[#e8fbff]">{stats?.in_lavorazione || 0}</div>
-            <p className="text-xs text-[#e8fbff]/60">Richiedono attenzione</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#0a1628] border-[#1e293b]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[#e8fbff]/80">Approvate Auto</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[#e8fbff]">{stats?.approvate || 0}</div>
-            <p className="text-xs text-[#e8fbff]/60">Processate automaticamente</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#0a1628] border-[#1e293b]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[#e8fbff]/80">Rigettate / Bloccate</CardTitle>
-            <XCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[#e8fbff]">{stats?.rigettate || 0}</div>
-            <p className="text-xs text-[#e8fbff]/60">Anomalie rilevate</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity & Alerts */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 bg-[#0a1628] border-[#1e293b]">
-          <CardHeader>
-            <CardTitle className="text-[#e8fbff]">Attività Recente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {loadingPratiche ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#00f0ff]" />
-                  <span className="ml-2 text-[#e8fbff]/60">Caricamento pratiche...</span>
+        {/* ================================================================== */}
+        {/* TAB DASHBOARD */}
+        {/* ================================================================== */}
+        <TabsContent value="dashboard" className="space-y-6 mt-6">
+          {/* Statistiche */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border-cyan-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-cyan-400 text-sm mb-1">
+                  <FileText className="w-4 h-4" />
+                  Totale Pratiche
                 </div>
-              ) : pratiche.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 mx-auto text-[#e8fbff]/20 mb-4" />
-                  <p className="text-[#e8fbff]/60">Nessuna pratica presente</p>
-                  <p className="text-sm text-[#e8fbff]/40 mt-2">
-                    Clicca su "Nuova SCIA" per creare la prima pratica
-                  </p>
+                <div className="text-2xl font-bold text-white">{stats?.totale || 0}</div>
+                <p className="text-xs text-gray-500">+20.1% dal mese scorso</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border-yellow-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-yellow-400 text-sm mb-1">
+                  <Clock className="w-4 h-4" />
+                  In Lavorazione
+                </div>
+                <div className="text-2xl font-bold text-white">{stats?.in_lavorazione || 0}</div>
+                <p className="text-xs text-gray-500">Richiedono attenzione</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-green-400 text-sm mb-1">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Approvate Auto
+                </div>
+                <div className="text-2xl font-bold text-white">{stats?.approvate || 0}</div>
+                <p className="text-xs text-gray-500">Processate automaticamente</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-red-400 text-sm mb-1">
+                  <XCircle className="w-4 h-4" />
+                  Rigettate / Bloccate
+                </div>
+                <div className="text-2xl font-bold text-white">{stats?.rigettate || 0}</div>
+                <p className="text-xs text-gray-500">Anomalie rilevate</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Attività Recente e Stato Integrazioni */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Attività Recente */}
+            <Card className="bg-[#0a1628] border-[#1e293b]">
+              <CardHeader>
+                <CardTitle className="text-[#e8fbff]">Attività Recente</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#00f0ff]" />
+                  </div>
+                ) : pratiche.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                    <p>Nessuna pratica presente</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pratiche.slice(0, 5).map((pratica) => (
+                      <div 
+                        key={pratica.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-[#0b1220] hover:bg-[#0f172a] cursor-pointer transition-colors"
+                        onClick={() => loadPraticaDetail(pratica.id)}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-[#e8fbff]">{pratica.tipo_pratica}</span>
+                            {getStatoBadge(pratica.stato)}
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {pratica.richiedente_nome} - {pratica.richiedente_cf}
+                          </p>
+                        </div>
+                        <span className="text-xs text-gray-500">{timeAgo(pratica.created_at)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Stato Integrazioni */}
+            <Card className="bg-[#0a1628] border-[#1e293b]">
+              <CardHeader>
+                <CardTitle className="text-[#e8fbff]">Stato Integrazioni</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-[#e8fbff]">PDND Interoperabilità</span>
+                  </div>
+                  <span className="text-sm text-gray-500">Online</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-[#e8fbff]">INPS DURC OnLine</span>
+                  </div>
+                  <span className="text-sm text-gray-500">Online</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-[#e8fbff]">Agenzia Entrate</span>
+                  </div>
+                  <span className="text-sm text-gray-500">Latenza Alta</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ================================================================== */}
+        {/* TAB LISTA PRATICHE */}
+        {/* ================================================================== */}
+        <TabsContent value="lista" className="space-y-4 mt-6">
+          {/* Barra ricerca e filtri */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Cerca per CUI, Richiedente o CF..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-[#0a1628] border-[#1e293b] text-[#e8fbff]"
+              />
+            </div>
+            <Button variant="outline" className="border-[#1e293b] text-[#e8fbff]">
+              <Filter className="mr-2 h-4 w-4" />
+              Filtri Avanzati
+            </Button>
+          </div>
+
+          {/* Tabella pratiche */}
+          <Card className="bg-[#0a1628] border-[#1e293b]">
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#00f0ff]" />
+                </div>
+              ) : filteredPratiche.length === 0 ? (
+                <div className="text-center py-16 text-gray-500">
+                  <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                  <p>Nessuna pratica trovata</p>
                 </div>
               ) : (
-                pratiche.slice(0, 5).map((pratica) => (
-                  <div 
-                    key={pratica.id} 
-                    className="flex items-center cursor-pointer hover:bg-[#1e293b]/30 p-2 rounded-lg transition-colors"
-                    onClick={() => loadPraticaDetail(pratica.id)}
-                  >
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium leading-none text-[#e8fbff]">
-                          {pratica.tipo_pratica}
-                        </p>
-                        <Badge variant="outline" className={getStatoBadge(pratica.stato)}>
-                          {pratica.stato}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-[#e8fbff]/60">
-                        {pratica.richiedente_nome} - {pratica.richiedente_cf}
-                      </p>
-                    </div>
-                    <div className="ml-auto font-medium text-[#e8fbff]/60 text-sm">
-                      {formatRelativeTime(pratica.created_at)}
-                    </div>
-                  </div>
-                ))
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-[#1e293b] hover:bg-transparent">
+                      <TableHead className="text-gray-400">CUI</TableHead>
+                      <TableHead className="text-gray-400">Tipo</TableHead>
+                      <TableHead className="text-gray-400">Richiedente</TableHead>
+                      <TableHead className="text-gray-400">Data</TableHead>
+                      <TableHead className="text-gray-400">Stato</TableHead>
+                      <TableHead className="text-gray-400">Score</TableHead>
+                      <TableHead className="text-gray-400">Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPratiche.map((pratica) => (
+                      <TableRow 
+                        key={pratica.id} 
+                        className="border-[#1e293b] hover:bg-[#0f172a] cursor-pointer"
+                        onClick={() => loadPraticaDetail(pratica.id)}
+                      >
+                        <TableCell className="text-[#e8fbff] font-medium">{pratica.cui}</TableCell>
+                        <TableCell className="text-[#e8fbff]">{pratica.tipo_pratica}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-[#e8fbff]">{pratica.richiedente_nome}</p>
+                            <p className="text-xs text-gray-500">{pratica.richiedente_cf}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-400">{formatDate(pratica.data_presentazione)}</TableCell>
+                        <TableCell>{getStatoBadge(pratica.stato)}</TableCell>
+                        <TableCell className="text-[#00f0ff]">{pratica.score || 0}/100</TableCell>
+                        <TableCell>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            className="text-[#00f0ff] hover:bg-[#00f0ff]/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              loadPraticaDetail(pratica.id);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        <Card className="col-span-3 bg-[#0a1628] border-[#1e293b]">
-          <CardHeader>
-            <CardTitle className="text-[#e8fbff]">Stato Integrazioni</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+        {/* ================================================================== */}
+        {/* TAB DETTAGLIO PRATICA */}
+        {/* ================================================================== */}
+        <TabsContent value="dettaglio" className="space-y-6 mt-6">
+          {!selectedPratica ? (
+            <Card className="bg-[#0a1628] border-[#1e293b]">
+              <CardContent className="py-16 text-center">
+                <FileSearch className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+                <p className="text-gray-500">Seleziona una pratica dalla lista per visualizzare i dettagli</p>
+                <Button 
+                  className="mt-4"
+                  variant="outline"
+                  onClick={() => setActiveTab('lista')}
+                >
+                  Vai alla Lista Pratiche
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Header pratica */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-sm text-[#e8fbff]">PDND Interoperabilità</span>
+                <div>
+                  <h3 className="text-xl font-bold text-[#e8fbff] flex items-center gap-3">
+                    {selectedPratica.cui}
+                    {getStatoBadge(selectedPratica.stato)}
+                  </h3>
+                  <p className="text-gray-400">
+                    {selectedPratica.tipo_pratica} - {selectedPratica.richiedente_nome} ({selectedPratica.richiedente_cf})
+                  </p>
                 </div>
-                <span className="text-xs text-[#e8fbff]/60">Online</span>
+                <Button 
+                  onClick={handleEvaluate}
+                  disabled={loading}
+                  className="bg-[#00f0ff] text-[#0a1628] hover:bg-[#00d4e0]"
+                >
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                  Esegui Valutazione
+                </Button>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-sm text-[#e8fbff]">INPS DURC OnLine</span>
-                </div>
-                <span className="text-xs text-[#e8fbff]/60">Online</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                  <span className="text-sm text-[#e8fbff]">Agenzia Entrate</span>
-                </div>
-                <span className="text-xs text-[#e8fbff]/60">Latenza Alta</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
 
-  // ============================================================================
-  // RENDER: LIST VIEW
-  // ============================================================================
+              {/* Dati Pratica SCIA */}
+              <DataSection title="Dati Pratica SCIA" icon={FileText}>
+                <DataField label="Numero Protocollo" value={selectedPratica.numero_protocollo || selectedPratica.cui} />
+                <DataField label="Data Presentazione" value={formatDate(selectedPratica.data_presentazione)} />
+                <DataField label="Comune Presentazione" value={selectedPratica.comune_presentazione} />
+                <DataField label="Tipo Segnalazione" value={selectedPratica.tipo_segnalazione} />
+                <DataField label="Motivo Subingresso" value={selectedPratica.motivo_subingresso} />
+                <DataField label="Settore Merceologico" value={selectedPratica.settore_merceologico} />
+                <DataField label="Ruolo Dichiarante" value={selectedPratica.ruolo_dichiarante} />
+              </DataSection>
 
-  const renderList = () => (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-[#e8fbff]/60 hover:text-[#e8fbff]"
-            onClick={goBack}
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold text-[#e8fbff]">Lista Pratiche</h2>
-            <p className="text-[#e8fbff]/60 text-sm">Elenco completo delle istanze ricevute</p>
-          </div>
-        </div>
-        <Button 
-          className="bg-[#00f0ff] text-black hover:bg-[#00f0ff]/90"
-          onClick={() => setShowSciaForm(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nuova SCIA
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-[#e8fbff]/40" />
-          <Input 
-            placeholder="Cerca per CUI, Richiedente o CF..." 
-            className="pl-10 bg-[#0a1628] border-[#1e293b] text-[#e8fbff]"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <Button variant="outline" className="border-[#e8fbff]/20 text-[#e8fbff]">
-          <Filter className="mr-2 h-4 w-4" />
-          Filtri Avanzati
-        </Button>
-      </div>
-
-      {/* Table */}
-      <Card className="bg-[#0a1628] border-[#1e293b]">
-        <CardContent className="p-0">
-          <div className="relative w-full overflow-auto">
-            <table className="w-full caption-bottom text-sm text-left">
-              <thead className="[&_tr]:border-b [&_tr]:border-[#1e293b]">
-                <tr className="border-b border-[#1e293b] transition-colors hover:bg-[#1e293b]/50">
-                  <th className="h-12 px-4 align-middle font-medium text-[#e8fbff]/60">CUI</th>
-                  <th className="h-12 px-4 align-middle font-medium text-[#e8fbff]/60">Tipo</th>
-                  <th className="h-12 px-4 align-middle font-medium text-[#e8fbff]/60">Richiedente</th>
-                  <th className="h-12 px-4 align-middle font-medium text-[#e8fbff]/60">Data</th>
-                  <th className="h-12 px-4 align-middle font-medium text-[#e8fbff]/60">Stato</th>
-                  <th className="h-12 px-4 align-middle font-medium text-[#e8fbff]/60">Score</th>
-                  <th className="h-12 px-4 align-middle font-medium text-[#e8fbff]/60">Azioni</th>
-                </tr>
-              </thead>
-              <tbody className="[&_tr:last-child]:border-0">
-                {loadingPratiche ? (
-                  <tr>
-                    <td colSpan={7} className="p-4 text-center text-[#e8fbff]/60">
-                      <Loader2 className="h-6 w-6 animate-spin inline mr-2" />
-                      Caricamento...
-                    </td>
-                  </tr>
-                ) : filteredPratiche.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="p-4 text-center text-[#e8fbff]/60">Nessuna pratica trovata</td>
-                  </tr>
-                ) : (
-                  filteredPratiche.map((p) => (
-                    <tr key={p.id} className="border-b border-[#1e293b] transition-colors hover:bg-[#1e293b]/50">
-                      <td className="p-4 font-medium text-[#e8fbff]">{p.cui}</td>
-                      <td className="p-4 text-[#e8fbff]">{p.tipo_pratica}</td>
-                      <td className="p-4 text-[#e8fbff]">
-                        <div>{p.richiedente_nome}</div>
-                        <div className="text-xs text-[#e8fbff]/40">{p.richiedente_cf}</div>
-                      </td>
-                      <td className="p-4 text-[#e8fbff]">{new Date(p.data_presentazione).toLocaleDateString('it-IT')}</td>
-                      <td className="p-4">
-                        <Badge variant="outline" className={getStatoBadge(p.stato)}>
-                          {p.stato}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-[#e8fbff]">
-                        {p.score !== undefined && p.score !== null ? (
-                          <span className={p.score >= 80 ? 'text-green-400' : p.score >= 50 ? 'text-yellow-400' : 'text-red-400'}>
-                            {p.score}/100
-                          </span>
-                        ) : <span className="text-[#e8fbff]/40">0/100</span>}
-                      </td>
-                      <td className="p-4">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-[#00f0ff] hover:text-[#00f0ff]/80 hover:bg-[#00f0ff]/10"
-                          onClick={() => loadPraticaDetail(p.id)}
-                          disabled={loadingDetail}
-                        >
-                          {loadingDetail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  // ============================================================================
-  // RENDER: DETAIL VIEW
-  // ============================================================================
-
-  const renderDetail = () => {
-    if (!selectedPratica) return null;
-    
-    const hasSciaData = selectedPratica.sub_nome || selectedPratica.sub_cognome || selectedPratica.mercato_nome || selectedPratica.ced_cf;
-
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-[#e8fbff]/60 hover:text-[#e8fbff]"
-              onClick={goBack}
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </Button>
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-[#e8fbff]">{selectedPratica.cui}</h2>
-                <Badge variant="outline" className={getStatoBadge(selectedPratica.stato)}>
-                  {selectedPratica.stato}
-                </Badge>
-              </div>
-              <p className="text-[#e8fbff]/60 text-sm">
-                {selectedPratica.tipo_pratica} - {selectedPratica.richiedente_nome} ({selectedPratica.richiedente_cf})
-              </p>
-            </div>
-          </div>
-          <Button 
-            onClick={handleEvaluate} 
-            disabled={evaluating || selectedPratica.stato === 'APPROVED' || selectedPratica.stato === 'REJECTED'}
-            className="bg-[#00f0ff] text-black hover:bg-[#00f0ff]/90"
-          >
-            {evaluating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-            Esegui Valutazione
-          </Button>
-        </div>
-
-        {/* Dati SCIA Completi */}
-        {hasSciaData && (
-          <div className="space-y-6">
-            {/* Dati Pratica */}
-            <DataSection title="Dati Pratica SCIA" icon={FileCheck}>
-              <DataField label="Numero Protocollo" value={selectedPratica.numero_protocollo || selectedPratica.cui} />
-              <DataField label="Data Presentazione" value={formatDate(selectedPratica.data_presentazione)} />
-              <DataField label="Comune Presentazione" value={selectedPratica.comune_presentazione} />
-              <DataField label="Tipo Segnalazione" value={selectedPratica.tipo_segnalazione} />
-              <DataField label="Motivo Subingresso" value={selectedPratica.motivo_subingresso} />
-              <DataField label="Settore Merceologico" value={selectedPratica.settore_merceologico} />
-              <DataField label="Ruolo Dichiarante" value={selectedPratica.ruolo_dichiarante} />
-            </DataSection>
-
-            {/* Dati Subentrante */}
-            {(selectedPratica.sub_nome || selectedPratica.sub_cognome || selectedPratica.sub_ragione_sociale) && (
+              {/* Dati Subentrante */}
               <DataSection title="Dati Subentrante (Cessionario)" icon={User}>
-                <DataField label="Ragione Sociale" value={selectedPratica.sub_ragione_sociale} />
+                <DataField label="Ragione Sociale" value={selectedPratica.sub_ragione_sociale || selectedPratica.richiedente_nome} />
                 <DataField label="Nome" value={selectedPratica.sub_nome} />
                 <DataField label="Cognome" value={selectedPratica.sub_cognome} />
                 <DataField label="Codice Fiscale" value={selectedPratica.richiedente_cf} />
@@ -712,140 +651,156 @@ export default function SuapPanel() {
                 <DataField label="PEC" value={selectedPratica.sub_pec} />
                 <DataField label="Telefono" value={selectedPratica.sub_telefono} />
               </DataSection>
-            )}
 
-            {/* Dati Cedente */}
-            {(selectedPratica.ced_nome || selectedPratica.ced_cognome || selectedPratica.ced_cf) && (
-              <DataSection title="Dati Cedente (Dante Causa)" icon={Users}>
-                <DataField label="Codice Fiscale" value={selectedPratica.ced_cf} />
-                <DataField label="Ragione Sociale" value={selectedPratica.ced_ragione_sociale} />
-                <DataField label="Nome" value={selectedPratica.ced_nome} />
-                <DataField label="Cognome" value={selectedPratica.ced_cognome} />
-                <DataField label="SCIA Precedente N. Prot." value={selectedPratica.ced_scia_precedente} />
-              </DataSection>
-            )}
+              {/* Dati Cedente */}
+              {selectedPratica.ced_cf && (
+                <DataSection title="Dati Cedente (Dante Causa)" icon={Users}>
+                  <DataField label="Codice Fiscale" value={selectedPratica.ced_cf} />
+                  <DataField label="Ragione Sociale" value={selectedPratica.ced_ragione_sociale} />
+                  <DataField label="Nome" value={selectedPratica.ced_nome} />
+                  <DataField label="Cognome" value={selectedPratica.ced_cognome} />
+                  <DataField label="Data di Nascita" value={formatDate(selectedPratica.ced_data_nascita)} />
+                  <DataField label="Luogo di Nascita" value={selectedPratica.ced_luogo_nascita} />
+                  <DataField label="PEC" value={selectedPratica.ced_pec} />
+                  <DataField label="SCIA Precedente N. Prot." value={selectedPratica.ced_scia_precedente} />
+                  <DataField label="Data Presentazione" value={formatDate(selectedPratica.ced_data_presentazione)} />
+                </DataSection>
+              )}
 
-            {/* Dati Atto Notarile */}
-            {(selectedPratica.notaio_rogante || selectedPratica.numero_repertorio) && (
-              <DataSection title="Estremi Atto Notarile" icon={FileText}>
-                <DataField label="Notaio Rogante" value={selectedPratica.notaio_rogante} />
-                <DataField label="N. Repertorio" value={selectedPratica.numero_repertorio} />
-                <DataField label="Data Atto" value={formatDate(selectedPratica.data_atto)} />
-              </DataSection>
-            )}
-          </div>
-        )}
+              {/* Dati Mercato e Posteggio */}
+              {selectedPratica.mercato_nome && (
+                <DataSection title="Dati Posteggio e Mercato" icon={MapPin}>
+                  <DataField label="Mercato" value={selectedPratica.mercato_nome} />
+                  <DataField label="Numero Posteggio" value={selectedPratica.posteggio_numero} />
+                  <DataField label="Ubicazione" value={selectedPratica.ubicazione_mercato} />
+                  <DataField label="Giorno Mercato" value={selectedPratica.giorno_mercato} />
+                  <DataField label="Fila" value={selectedPratica.fila} />
+                  <DataField label="Dimensioni (MQ)" value={selectedPratica.dimensioni_mq} />
+                  <DataField label="Dimensioni Lineari" value={selectedPratica.dimensioni_lineari} />
+                  <DataField label="Attrezzature" value={selectedPratica.attrezzature} />
+                </DataSection>
+              )}
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Left Column: Checks */}
-          <div className="md:col-span-2 space-y-6">
-            <Card className="bg-[#0a1628] border-[#1e293b]">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff]">Controlli Automatici</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {selectedPratica.checks.length === 0 ? (
-                    <p className="text-[#e8fbff]/40 italic">Nessun controllo eseguito ancora.</p>
-                  ) : (
-                    selectedPratica.checks.map((check) => (
-                      <div key={check.id} className="flex items-center justify-between p-3 rounded-lg bg-[#1e293b]/30 border border-[#1e293b]">
-                        <div className="flex items-center gap-3">
-                          {check.esito ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <XCircle className="h-5 w-5 text-red-500" />
-                          )}
-                          <div>
-                            <p className="text-sm font-medium text-[#e8fbff]">{check.check_code}</p>
-                            <p className="text-xs text-[#e8fbff]/60">Fonte: {check.fonte}</p>
+              {/* Estremi Atto Notarile */}
+              {selectedPratica.notaio_rogante && (
+                <DataSection title="Estremi Atto Notarile" icon={FileCheck}>
+                  <DataField label="Notaio Rogante" value={selectedPratica.notaio_rogante} />
+                  <DataField label="N. Repertorio" value={selectedPratica.numero_repertorio} />
+                  <DataField label="Data Atto" value={formatDate(selectedPratica.data_atto)} />
+                </DataSection>
+              )}
+
+              {/* Controlli e Punteggio */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Controlli Automatici */}
+                <Card className="bg-[#0a1628] border-[#1e293b]">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff]">Controlli Automatici</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedPratica.checks && selectedPratica.checks.length > 0 ? (
+                      <div className="space-y-3">
+                        {selectedPratica.checks.map((check, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-[#0b1220]">
+                            <div className="flex items-center gap-2">
+                              {check.esito === 'PASS' ? (
+                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                              ) : (
+                                <XCircle className="h-5 w-5 text-red-500" />
+                              )}
+                              <div>
+                                <p className="text-[#e8fbff] font-medium">{check.tipo_check}</p>
+                                <p className="text-xs text-gray-500">Fonte: {check.fonte}</p>
+                              </div>
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {new Date(check.data_check).toLocaleTimeString('it-IT')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">Nessun controllo eseguito ancora.</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Punteggio Affidabilità */}
+                <Card className="bg-[#0a1628] border-[#1e293b]">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff]">Punteggio Affidabilità</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center justify-center py-8">
+                    <div className="relative w-32 h-32">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle
+                          cx="64" cy="64" r="56"
+                          stroke="#1e293b"
+                          strokeWidth="12"
+                          fill="none"
+                        />
+                        <circle
+                          cx="64" cy="64" r="56"
+                          stroke={selectedPratica.score >= 70 ? '#22c55e' : selectedPratica.score >= 40 ? '#eab308' : '#ef4444'}
+                          strokeWidth="12"
+                          fill="none"
+                          strokeDasharray={`${(selectedPratica.score || 0) * 3.52} 352`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-3xl font-bold text-[#e8fbff]">{selectedPratica.score || 0}</span>
+                      </div>
+                    </div>
+                    <p className="mt-4 text-gray-500">
+                      Basato su {selectedPratica.checks?.length || 0} controlli effettuati
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Timeline Eventi */}
+              <Card className="bg-[#0a1628] border-[#1e293b]">
+                <CardHeader>
+                  <CardTitle className="text-[#e8fbff]">Timeline Eventi</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedPratica.timeline && selectedPratica.timeline.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedPratica.timeline.map((evento, idx) => (
+                        <div key={idx} className="flex gap-4">
+                          <div className="flex flex-col items-center">
+                            <div className="w-3 h-3 rounded-full bg-[#00f0ff]" />
+                            {idx < selectedPratica.timeline.length - 1 && (
+                              <div className="w-0.5 h-full bg-[#1e293b] my-1" />
+                            )}
+                          </div>
+                          <div className="flex-1 pb-4">
+                            <p className="text-xs text-gray-500">{formatDateTime(evento.data_evento)}</p>
+                            <p className="text-[#e8fbff] font-medium">{evento.tipo_evento}</p>
+                            <p className="text-sm text-gray-400">{evento.descrizione}</p>
                           </div>
                         </div>
-                        <div className="text-xs text-[#e8fbff]/40">
-                          {new Date(check.created_at).toLocaleTimeString()}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#0a1628] border-[#1e293b]">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff]">Documentazione</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center h-32 border-2 border-dashed border-[#1e293b] rounded-lg">
-                  <p className="text-[#e8fbff]/40">Nessun documento allegato</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column: Score & Timeline */}
-          <div className="space-y-6">
-            <Card className="bg-[#0a1628] border-[#1e293b]">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff]">Punteggio Affidabilità</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center justify-center py-8">
-                <div className="relative flex items-center justify-center h-32 w-32 rounded-full border-8 border-[#1e293b]">
-                  <span className="text-4xl font-bold text-[#e8fbff]">{selectedPratica.score ?? 0}</span>
-                </div>
-                <p className="mt-4 text-sm text-[#e8fbff]/60 text-center">
-                  Basato su {selectedPratica.checks.length} controlli effettuati
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#0a1628] border-[#1e293b]">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff]">Timeline Eventi</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative border-l border-[#1e293b] ml-2 space-y-6">
-                  {selectedPratica.timeline.map((event) => (
-                    <div key={event.id} className="ml-6 relative">
-                      <div className="absolute -left-[29px] h-3 w-3 rounded-full bg-[#00f0ff] border-2 border-[#0a1628]" />
-                      <p className="text-xs text-[#e8fbff]/40 mb-1">
-                        {new Date(event.created_at).toLocaleString()}
-                      </p>
-                      <p className="text-sm font-medium text-[#e8fbff]">{event.tipo_evento}</p>
-                      <p className="text-xs text-[#e8fbff]/60 mt-1">{event.descrizione}</p>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  };
+                  ) : (
+                    <p className="text-gray-500 italic">Nessun evento registrato.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
 
-  // ============================================================================
-  // RENDER PRINCIPALE
-  // ============================================================================
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00f0ff]" />
-        <span className="ml-3 text-[#e8fbff]">Caricamento SUAP...</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6 p-6">
       {/* Modal Form SCIA */}
       {showSciaForm && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-4xl my-8">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0a1628] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <SciaForm 
-              onCancel={() => setShowSciaForm(false)} 
-              onSubmit={handleSciaSubmit} 
+              onSubmit={handleSciaSubmit}
+              onCancel={() => setShowSciaForm(false)}
+              isLoading={loading}
             />
           </div>
         </div>
@@ -853,23 +808,18 @@ export default function SuapPanel() {
 
       {/* Modal Form Concessione */}
       {showConcessioneForm && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-4xl my-8">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0a1628] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <ConcessioneForm 
-              onCancel={() => setShowConcessioneForm(false)} 
-              onSubmit={async (data) => {
+              onSubmit={() => {
                 setShowConcessioneForm(false);
-                toast.success("Concessione Rilasciata", { description: `N. ${data.numero_concessione}` });
-              }} 
+                loadData();
+              }}
+              onCancel={() => setShowConcessioneForm(false)}
             />
           </div>
         </div>
       )}
-
-      {/* Contenuto principale basato sulla vista */}
-      {viewMode === 'dashboard' && renderDashboard()}
-      {viewMode === 'list' && renderList()}
-      {viewMode === 'detail' && renderDetail()}
     </div>
   );
 }
