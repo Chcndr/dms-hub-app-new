@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.3.0  
-> **Data:** 1 Gennaio 2026  
+> **Versione:** 3.4.0  
+> **Data:** 2 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -592,6 +592,20 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 📝 CHANGELOG
+
+### v3.4.0 (02/01/2026) - SSO SUAP Form SCIA Dinamici
+- SciaForm.tsx v2 - Completamente riscritto con dropdown dinamici
+- Motivazione SCIA - 6 opzioni: Subingresso, Cessazione, Sospensione, Ripresa, Modifica RS, Variazione
+- Tipologia Attivita - Alimentare / Non Alimentare / Misto
+- Ruolo Dichiarante - Titolare / Legale Rappresentante / Curatore / Erede / Altro
+- Ricerca Subentrante - Cerca per CF, P.IVA o Nome/Denominazione
+- Auto-compilazione Cedente - Quando selezioni posteggio occupato carica dati titolare da impresa_id
+- Dropdown Mercati - Carica dinamicamente da /api/markets
+- Dropdown Posteggi - Filtrato per mercato da /api/markets/:id/stalls
+- Auto-popolamento - MQ, Dimensioni, Ubicazione, Giorno mercato
+- Filtro Anti-Scan - Middleware per bloccare log di scansioni/attacchi bot
+- File modificati: SciaForm.tsx, ConcessioneForm.tsx, apiLogger.js
+- Commit: 4d9558c, ad0e170
 
 ### v3.3.0 (01/01/2026) - "Fix Agenti e Routing Intelligente"
 - ✅ **Fix Abacus conteggio mercati:** Era 542 (contava stalls), ora 2 (conta markets)
