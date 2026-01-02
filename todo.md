@@ -934,3 +934,11 @@
 - [x] Verificare componente GISMap in Overview
 - [x] Sostituito placeholder con GISMap reale
 - [x] Testare visualizzazione mappa in Overview dopo reload
+
+
+## 2 Gennaio 2026 - Miglioramenti Modal Concessioni
+
+- [ ] Aggiungere campo Mercato nel modal "Nuova Concessione" con preselzione del mercato corrente
+- [ ] Permettere cambio mercato tramite dropdown
+- [ ] Filtrare posteggi per mostrare solo quelli liberi (non già assegnati a concessioni attive)
+- [ ] Caricare posteggi dinamicamente quando si cambia mercato

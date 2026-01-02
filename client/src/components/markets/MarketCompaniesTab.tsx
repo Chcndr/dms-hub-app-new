@@ -864,9 +864,11 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       {showConcessionModal && (
         <ConcessionModal
           marketId={marketId}
+          marketName={marketName}
           concession={selectedConcession}
           companies={companies}
           stalls={stalls}
+          concessions={concessions}
           onClose={handleCloseConcessionModal}
           onSaved={handleConcessionSaved}
           onDeleted={handleConcessionSaved}
@@ -2143,15 +2145,17 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
 
 interface ConcessionModalProps {
   marketId: string;
+  marketName?: string;
   concession: ConcessionRow | null;
   companies: CompanyRow[];
   stalls: { id: string; code: string }[];
+  concessions: ConcessionRow[];  // Per filtrare posteggi già occupati
   onClose: () => void;
   onSaved: () => void;
   onDeleted?: () => void;
 }
 
-function ConcessionModal({ marketId, concession, companies, stalls, onClose, onSaved, onDeleted }: ConcessionModalProps) {
+function ConcessionModal({ marketId, marketName, concession, companies, stalls, concessions, onClose, onSaved, onDeleted }: ConcessionModalProps) {
   const [formData, setFormData] = useState<ConcessionFormData>({
     company_id: concession?.company_id || '',
     stall_id: concession?.stall_id || '',
@@ -2258,6 +2262,16 @@ function ConcessionModal({ marketId, concession, companies, stalls, onClose, onS
             </div>
           )}
 
+          {/* Campo Mercato - solo visualizzazione */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Mercato
+            </label>
+            <div className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-400">
+              {marketName || `Mercato ID: ${marketId}`}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -2281,6 +2295,18 @@ function ConcessionModal({ marketId, concession, companies, stalls, onClose, onS
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Posteggio <span className="text-red-500">*</span>
+                <span className="text-gray-500 font-normal ml-2">
+                  ({(() => {
+                    // Calcola posteggi occupati (con concessione attiva)
+                    const occupiedStallIds = new Set(
+                      concessions
+                        .filter(c => c.stato === 'ATTIVA' && c.stall_id !== concession?.stall_id)
+                        .map(c => c.stall_id)
+                    );
+                    const freeCount = stalls.filter(s => !occupiedStallIds.has(s.id)).length;
+                    return `${freeCount} liberi su ${stalls.length}`;
+                  })()})
+                </span>
               </label>
               <select
                 required
@@ -2289,11 +2315,30 @@ function ConcessionModal({ marketId, concession, companies, stalls, onClose, onS
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Seleziona posteggio...</option>
-                {stalls.map((stall) => (
-                  <option key={stall.id} value={stall.id}>
-                    {stall.code}
-                  </option>
-                ))}
+                {(() => {
+                  // Filtra solo posteggi liberi (non occupati da concessioni attive)
+                  // Esclude il posteggio corrente dalla lista degli occupati (per modifica)
+                  const occupiedStallIds = new Set(
+                    concessions
+                      .filter(c => c.stato === 'ATTIVA' && c.stall_id !== concession?.stall_id)
+                      .map(c => c.stall_id)
+                  );
+                  
+                  return stalls
+                    .filter(stall => !occupiedStallIds.has(stall.id))
+                    .sort((a, b) => {
+                      // Ordina numericamente se possibile
+                      const numA = parseInt(a.code, 10);
+                      const numB = parseInt(b.code, 10);
+                      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                      return a.code.localeCompare(b.code);
+                    })
+                    .map((stall) => (
+                      <option key={stall.id} value={stall.id}>
+                        {stall.code}
+                      </option>
+                    ));
+                })()}
               </select>
             </div>
           </div>
