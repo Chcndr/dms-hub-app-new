@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.9.1  
+> **Versione:** 3.10.0  
 > **Data:** 2 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -654,6 +654,35 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 📝 CHANGELOG
+
+### v3.10.0 (02/01/2026) - SciaForm Autocomplete e Filtri Intelligenti
+- ✅ **Autocomplete Impresa** - Ricerca intelligente mentre digiti:
+  - Dropdown suggerimenti dopo 2+ caratteri
+  - Cerca per nome, CF o P.IVA
+  - Max 10 suggerimenti ordinati per rilevanza
+  - Badge impresa selezionata con pulsante X per deselezionare
+  - Auto-popola dati subentrante quando selezionata
+- ✅ **Filtro Mercati per Impresa** - Dopo selezione impresa:
+  - Mostra solo mercati dove l'impresa ha posteggi
+  - Indicatore "(N mercati dell'impresa)" nel label
+  - Se impresa non ha posteggi, mostra tutti i mercati
+- ✅ **Filtro Posteggi per Impresa** - Dopo selezione mercato:
+  - Mostra solo posteggi intestati all'impresa selezionata
+  - Indicatore "(N posteggi dell'impresa)" nel label
+  - Carica posteggi da API `/api/markets/{id}/stalls`
+- ✅ **Capitalizzazione Automatica** - Tutti i campi nome/cognome/via:
+  - Funzione `capitalizeWords()` per maiuscole automatiche
+  - CF e P.IVA sempre maiuscolo
+  - PEC sempre minuscolo
+  - Provincia maiuscolo (2 lettere)
+- ✅ **Colori Uniformati** - Stile coerente con pagina Imprese:
+  - Card principale: `bg-[#0f172a]` (grigio scuro)
+  - Bordi: `border-[#334155]`
+  - Input: `bg-[#0b1220]`
+  - Titoli sezioni: `text-[#14b8a6]` (teal)
+  - Protocollo: bordo `#14b8a6/30`
+- File modificati: SciaForm.tsx
+- Commit: f43943b
 
 ### v3.9.1 (02/01/2026) - SSO SUAP Fix Critico ENTE_ID
 - ✅ **Fix Critico Chiamate API** - Tutte le funzioni API richiedevano `enteId` ma non veniva passato:
