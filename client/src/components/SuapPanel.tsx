@@ -89,10 +89,10 @@ interface SuapPraticaFull extends SuapPratica {
 
 function DataSection({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <Card className="bg-[#0a1628] border-[#1e293b]">
+    <Card className="bg-[#1e293b] border-[#334155]">
       <CardHeader className="pb-3">
         <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
-          <Icon className="h-5 w-5 text-[#00f0ff]" />
+          <Icon className="h-5 w-5 text-[#14b8a6]" />
           {title}
         </CardTitle>
       </CardHeader>
@@ -438,7 +438,7 @@ export default function SuapPanel() {
           {/* Attività Recente e Stato Integrazioni */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Attività Recente */}
-            <Card className="bg-[#0a1628] border-[#1e293b]">
+            <Card className="bg-[#1e293b] border-[#334155]">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff]">Attività Recente</CardTitle>
               </CardHeader>
@@ -478,7 +478,7 @@ export default function SuapPanel() {
             </Card>
 
             {/* Stato Integrazioni */}
-            <Card className="bg-[#0a1628] border-[#1e293b]">
+            <Card className="bg-[#1e293b] border-[#334155]">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff]">Stato Integrazioni</CardTitle>
               </CardHeader>
@@ -521,7 +521,7 @@ export default function SuapPanel() {
                 placeholder="Cerca per CUI, Richiedente o CF..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#0a1628] border-[#1e293b] text-[#e8fbff]"
+                className="pl-10 bg-[#1e293b] border-[#334155] text-[#e8fbff]"
               />
             </div>
             <Button variant="outline" className="border-[#1e293b] text-[#e8fbff]">
@@ -531,7 +531,7 @@ export default function SuapPanel() {
           </div>
 
           {/* Tabella pratiche */}
-          <Card className="bg-[#0a1628] border-[#1e293b]">
+          <Card className="bg-[#1e293b] border-[#334155]">
             <CardContent className="p-0">
               {loading ? (
                 <div className="flex items-center justify-center py-16">
@@ -600,7 +600,7 @@ export default function SuapPanel() {
         {/* ================================================================== */}
         <TabsContent value="dettaglio" className="space-y-6 mt-6">
           {!selectedPratica ? (
-            <Card className="bg-[#0a1628] border-[#1e293b]">
+            <Card className="bg-[#1e293b] border-[#334155]">
               <CardContent className="py-16 text-center">
                 <FileSearch className="w-16 h-16 mx-auto mb-4 text-gray-600" />
                 <p className="text-gray-500">Seleziona una pratica dalla lista per visualizzare i dettagli</p>
@@ -661,10 +661,12 @@ export default function SuapPanel() {
 
               {/* Dati Posteggio e Mercato - SEMPRE VISIBILE */}
               <DataSection title="Dati Posteggio e Mercato" icon={MapPin}>
-                <DataField label="Mercato" value={selectedPratica.mercato_nome} />
-                <DataField label="ID Mercato" value={selectedPratica.mercato_id} />
-                <DataField label="Numero Posteggio" value={selectedPratica.posteggio_numero} />
-                <DataField label="ID Posteggio" value={selectedPratica.posteggio_id} />
+                {/* mercato_id contiene il nome se mercato_nome è vuoto (bug nel salvataggio) */}
+                <DataField label="Mercato" value={selectedPratica.mercato_nome || selectedPratica.mercato_id} />
+                <DataField label="ID Mercato" value={selectedPratica.mercato_nome ? selectedPratica.mercato_id : '-'} />
+                {/* posteggio_id contiene il numero se posteggio_numero è vuoto */}
+                <DataField label="Numero Posteggio" value={selectedPratica.posteggio_numero || selectedPratica.posteggio_id} />
+                <DataField label="ID Posteggio" value={selectedPratica.posteggio_numero ? selectedPratica.posteggio_id : '-'} />
                 <DataField label="Ubicazione" value={selectedPratica.ubicazione_mercato} />
                 <DataField label="Giorno Mercato" value={selectedPratica.giorno_mercato} />
                 <DataField label="Fila" value={selectedPratica.fila} />
@@ -705,8 +707,9 @@ export default function SuapPanel() {
                 <DataField label="CAP" value={selectedPratica.sub_sede_cap} />
               </DataSection>
 
-              {/* Dati Delegato/Procuratore - Solo se ruolo != titolare */}
-              {selectedPratica.ruolo_dichiarante && selectedPratica.ruolo_dichiarante.toLowerCase() !== 'titolare' && (
+              {/* Dati Delegato/Procuratore - Mostra se ruolo != titolare OPPURE se ci sono dati delegato */}
+              {((selectedPratica.ruolo_dichiarante && selectedPratica.ruolo_dichiarante.toLowerCase() !== 'titolare') || 
+                selectedPratica.del_cf || selectedPratica.del_nome) && (
                 <DataSection title="Dati Delegato / Procuratore" icon={User}>
                   <DataField label="Nome" value={selectedPratica.del_nome} />
                   <DataField label="Cognome" value={selectedPratica.del_cognome} />
@@ -730,7 +733,7 @@ export default function SuapPanel() {
               {/* Controlli e Punteggio */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Controlli Automatici */}
-                <Card className="bg-[#0a1628] border-[#1e293b]">
+                <Card className="bg-[#1e293b] border-[#334155]">
                   <CardHeader>
                     <CardTitle className="text-[#e8fbff]">Controlli Automatici</CardTitle>
                   </CardHeader>
@@ -777,7 +780,7 @@ export default function SuapPanel() {
                 </Card>
 
                 {/* Punteggio Affidabilità */}
-                <Card className="bg-[#0a1628] border-[#1e293b]">
+                <Card className="bg-[#1e293b] border-[#334155]">
                   <CardHeader>
                     <CardTitle className="text-[#e8fbff]">Punteggio Affidabilità</CardTitle>
                   </CardHeader>
@@ -839,7 +842,7 @@ export default function SuapPanel() {
               </div>
 
               {/* Timeline Eventi */}
-              <Card className="bg-[#0a1628] border-[#1e293b]">
+              <Card className="bg-[#1e293b] border-[#334155]">
                 <CardHeader>
                   <CardTitle className="text-[#e8fbff]">Timeline Eventi</CardTitle>
                 </CardHeader>
@@ -875,7 +878,7 @@ export default function SuapPanel() {
       {/* Modal Form SCIA */}
       {showSciaForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a1628] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#1e293b] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <SciaForm 
               onSubmit={handleSciaSubmit}
               onCancel={() => setShowSciaForm(false)}
@@ -888,7 +891,7 @@ export default function SuapPanel() {
       {/* Modal Form Concessione */}
       {showConcessioneForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a1628] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#1e293b] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <ConcessioneForm 
               onSubmit={() => {
                 setShowConcessioneForm(false);
