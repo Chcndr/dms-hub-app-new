@@ -212,61 +212,66 @@ export default function SuapPanel() {
   const handleSciaSubmit = async (formData: any) => {
     setLoading(true);
     try {
+      // Mappa i nomi dei campi dal form SciaForm ai nomi del backend
+      // Form usa: ragione_sociale_sub, nome_sub, cf_cedente, mercato, posteggio
+      // Backend vuole: sub_ragione_sociale, sub_nome, ced_cf, mercato_nome, posteggio_numero
       const praticaData = {
-        tipo_pratica: `SCIA ${formData.tipo_segnalazione?.toUpperCase() || 'SUBINGRESSO'}`,
-        richiedente_cf: formData.cf_piva || 'NON_SPECIFICATO',
-        richiedente_nome: formData.ragione_sociale || 'Non specificato',
-        oggetto: `SCIA ${formData.tipo_segnalazione || 'Subingresso'} - ${formData.ragione_sociale || 'N/A'}`,
+        tipo_pratica: `SCIA ${formData.motivazione_scia?.toUpperCase() || 'SUBINGRESSO'}`,
+        richiedente_cf: formData.cf_subentrante || 'NON_SPECIFICATO',
+        richiedente_nome: formData.ragione_sociale_sub || `${formData.nome_sub} ${formData.cognome_sub}` || 'Non specificato',
+        oggetto: `SCIA ${formData.motivazione_scia || 'Subingresso'} - ${formData.ragione_sociale_sub || formData.nome_sub || 'N/A'}`,
         // Dati pratica
         numero_protocollo: formData.numero_protocollo,
+        data_presentazione: formData.data_presentazione,
         comune_presentazione: formData.comune_presentazione,
-        tipo_segnalazione: formData.tipo_segnalazione,
+        tipo_segnalazione: formData.motivazione_scia,  // form usa motivazione_scia
         motivo_subingresso: formData.motivo_subingresso,
-        settore_merceologico: formData.settore_merceologico,
+        settore_merceologico: formData.tipologia_attivita === 'alimentare' ? 'Alimentare' : 
+                              formData.tipologia_attivita === 'misto' ? 'Misto' : 'Non Alimentare',
         ruolo_dichiarante: formData.ruolo_dichiarante,
-        // Dati subentrante
-        sub_ragione_sociale: formData.ragione_sociale,
-        sub_nome: formData.nome,
-        sub_cognome: formData.cognome,
-        sub_data_nascita: formData.data_nascita,
-        sub_luogo_nascita: formData.luogo_nascita,
-        sub_residenza_via: formData.residenza_via,
-        sub_residenza_comune: formData.residenza_comune,
-        sub_residenza_cap: formData.residenza_cap,
-        sub_sede_via: formData.sede_via,
-        sub_sede_comune: formData.sede_comune,
-        sub_sede_provincia: formData.sede_provincia,
-        sub_sede_cap: formData.sede_cap,
-        sub_pec: formData.pec,
-        sub_telefono: formData.telefono,
-        // Dati cedente
-        ced_cf: formData.cedente_cf,
-        ced_ragione_sociale: formData.cedente_ragione_sociale,
-        ced_nome: formData.cedente_nome,
-        ced_cognome: formData.cedente_cognome,
-        ced_data_nascita: formData.cedente_data_nascita,
-        ced_luogo_nascita: formData.cedente_luogo_nascita,
-        ced_residenza_via: formData.cedente_residenza_via,
-        ced_residenza_comune: formData.cedente_residenza_comune,
-        ced_residenza_cap: formData.cedente_residenza_cap,
-        ced_pec: formData.cedente_pec,
-        ced_scia_precedente: formData.cedente_scia_precedente,
-        ced_data_presentazione: formData.cedente_data_presentazione,
-        ced_comune_presentazione: formData.cedente_comune_presentazione,
-        // Dati mercato/posteggio
+        // Dati subentrante (form usa suffisso _sub)
+        sub_ragione_sociale: formData.ragione_sociale_sub,
+        sub_nome: formData.nome_sub,
+        sub_cognome: formData.cognome_sub,
+        sub_data_nascita: formData.data_nascita_sub,
+        sub_luogo_nascita: formData.luogo_nascita_sub,
+        sub_residenza_via: formData.residenza_via_sub,
+        sub_residenza_comune: formData.residenza_comune_sub,
+        sub_residenza_cap: formData.residenza_cap_sub,
+        sub_sede_via: formData.sede_via_sub,
+        sub_sede_comune: formData.sede_comune_sub,
+        sub_sede_provincia: formData.sede_provincia_sub,
+        sub_sede_cap: formData.sede_cap_sub,
+        sub_pec: formData.pec_sub,
+        sub_telefono: formData.telefono_sub,
+        // Dati cedente (form usa suffisso _ced e cf_cedente)
+        ced_cf: formData.cf_cedente,
+        ced_ragione_sociale: formData.ragione_sociale_ced,
+        ced_nome: formData.nome_ced,
+        ced_cognome: formData.cognome_ced,
+        ced_data_nascita: formData.data_nascita_ced,
+        ced_luogo_nascita: formData.luogo_nascita_ced,
+        ced_residenza_via: formData.residenza_via_ced,
+        ced_residenza_comune: formData.residenza_comune_ced,
+        ced_residenza_cap: formData.residenza_cap_ced,
+        ced_pec: formData.pec_ced,
+        ced_scia_precedente: formData.scia_precedente_protocollo,
+        ced_data_presentazione: formData.scia_precedente_data,
+        ced_comune_presentazione: formData.scia_precedente_comune,
+        // Dati mercato/posteggio (form usa mercato e posteggio come nomi)
         mercato_id: formData.mercato_id,
-        mercato_nome: formData.mercato_nome,
+        mercato_nome: formData.mercato,  // form usa 'mercato' non 'mercato_nome'
         posteggio_id: formData.posteggio_id,
-        posteggio_numero: formData.posteggio_numero,
+        posteggio_numero: formData.posteggio,  // form usa 'posteggio' non 'posteggio_numero'
         ubicazione_mercato: formData.ubicazione_mercato,
         giorno_mercato: formData.giorno_mercato,
         fila: formData.fila,
         dimensioni_mq: formData.dimensioni_mq,
         dimensioni_lineari: formData.dimensioni_lineari,
         attrezzature: formData.attrezzature,
-        // Dati atto notarile
-        notaio_rogante: formData.notaio_rogante,
-        numero_repertorio: formData.numero_repertorio,
+        // Dati atto notarile (form usa notaio e repertorio)
+        notaio_rogante: formData.notaio,  // form usa 'notaio' non 'notaio_rogante'
+        numero_repertorio: formData.repertorio,  // form usa 'repertorio' non 'numero_repertorio'
         data_atto: formData.data_atto,
         // Dati delegato
         del_nome: formData.delegato_nome,
@@ -279,6 +284,8 @@ export default function SuapPanel() {
         del_residenza_comune: formData.delegato_residenza_comune,
         del_residenza_cap: formData.delegato_residenza_cap,
       };
+
+      console.log('Dati pratica da inviare:', praticaData);  // Debug
 
       await createSuapPratica(praticaData);
       toast.success('SCIA creata con successo!');
