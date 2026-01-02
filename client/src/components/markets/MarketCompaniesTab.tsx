@@ -958,10 +958,20 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="">Seleziona tipo...</option>
-              <option value="DURC">DURC</option>
-              <option value="ISO 9001">ISO 9001</option>
-              <option value="ISO 14001">ISO 14001</option>
-              <option value="HACCP">HACCP</option>
+              {/* Requisiti Obbligatori */}
+              <option value="DURC">DURC - Regolarità Contributiva</option>
+              <option value="ONORABILITA">ONORABILITA - Requisiti Morali (Art. 71 D.Lgs. 59/2010)</option>
+              <option value="ANTIMAFIA">ANTIMAFIA - Dichiarazione (Art. 67 D.Lgs. 159/2011)</option>
+              {/* Certificazioni Alimentari */}
+              <option value="HACCP">HACCP - Sicurezza Alimentare</option>
+              <option value="SAB">SAB - Somministrazione Alimenti e Bevande</option>
+              <option value="REC">REC - Registro Esercenti Commercio</option>
+              <option value="CORSO_ALIMENTARE">CORSO ALIMENTARE - Formazione Regionale</option>
+              {/* Certificazioni Qualità */}
+              <option value="ISO 9001">ISO 9001 - Qualità</option>
+              <option value="ISO 14001">ISO 14001 - Ambiente</option>
+              <option value="ISO 22000">ISO 22000 - Sicurezza Alimentare</option>
+              {/* Altro */}
               <option value="CONCESSIONE MERCATO">CONCESSIONE MERCATO</option>
               <option value="ALTRO">ALTRO</option>
             </select>
