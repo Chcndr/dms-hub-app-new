@@ -2,13 +2,13 @@
 
 **Data Inizio:** 2 Gennaio 2026  
 **Autore:** Manus AI  
-**Stato:** IN CORSO
+**Stato:** COMPLETATO v2
 
 ---
 
 ## 🎯 OBIETTIVO
 
-Implementare dropdown dinamici nella sezione SSO SUAP connessi al database esistente.
+Implementare dropdown dinamici nella sezione SSO SUAP connessi al database esistente, con auto-compilazione dati e campi motivazione SCIA.
 
 ---
 
@@ -21,118 +21,64 @@ Implementare dropdown dinamici nella sezione SSO SUAP connessi al database esist
 
 ---
 
-## 📂 FILE DA MODIFICARE
+## 📂 FILE MODIFICATI
 
 | File | Descrizione | Stato |
 |------|-------------|-------|
-| `client/src/components/suap/SciaForm.tsx` | Form SCIA Subingresso | 🔧 In corso |
-| `client/src/pages/suap/SuapDashboard.tsx` | Dashboard SUAP | ⏳ Da verificare |
+| `client/src/components/suap/SciaForm.tsx` | Form SCIA Subingresso | ✅ Completato |
+| `client/src/components/suap/ConcessioneForm.tsx` | Form Concessione | ✅ Completato |
 
 ---
 
-## 🔄 MODIFICHE EFFETTUATE
+## 🔄 MODIFICHE EFFETTUATE v2
 
-### 1. SciaForm.tsx - Dropdown Mercati Dinamico
+### 1. Campi Motivazione SCIA (Nuovi)
 
-**PRIMA:**
-```tsx
-const MOCK_MERCATI = {
-  'modena': {
-    nome: 'Mercato Novi Sad',
-    comune: 'Modena',
-    posteggi: ['A01', 'A02', 'B01', 'B05', '1/16']
-  }
-};
+Aggiunta sezione "Tipo di Segnalazione" con RadioGroup:
+- Subingresso
+- Cessazione
+- Sospensione
+- Ripresa Attività
+- Modifica Ragione Sociale
+- Variazione
 
-<Select onValueChange={(val) => setFormData({...formData, mercato: val})}>
-  <SelectContent>
-    <SelectItem value="modena">Modena - Novi Sad</SelectItem>
-    <SelectItem value="altro">Altro</SelectItem>
-  </SelectContent>
-</Select>
-```
+### 2. Tipologia Attività e Ruolo Dichiarante (Nuovi)
 
-**DOPO:**
-```tsx
-// Stato per mercati e posteggi dal database
-const [markets, setMarkets] = useState<Market[]>([]);
-const [stalls, setStalls] = useState<Stall[]>([]);
-const [selectedMarketId, setSelectedMarketId] = useState<number | null>(null);
+- **Settore Merceologico**: Alimentare / Non Alimentare / Misto
+- **Ruolo Dichiarante**: Titolare / Legale Rappresentante / Curatore Fallimentare / Erede / Altro
 
-// Carica mercati all'avvio
-useEffect(() => {
-  fetch(`${API_URL}/api/markets`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) setMarkets(data.data);
-    });
-}, []);
+### 3. Ricerca Subentrante Migliorata
 
-// Carica posteggi quando cambia mercato
-useEffect(() => {
-  if (selectedMarketId) {
-    fetch(`${API_URL}/api/markets/${selectedMarketId}/stalls`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setStalls(data.data);
-      });
-  }
-}, [selectedMarketId]);
+La ricerca ora funziona per:
+- **Codice Fiscale** (16 caratteri)
+- **Partita IVA** (11 cifre)
+- **Denominazione/Nome** (ricerca parziale)
 
-<Select onValueChange={(val) => {
-  const market = markets.find(m => m.id === parseInt(val));
-  setSelectedMarketId(parseInt(val));
-  setFormData({...formData, mercato: market?.name || ''});
-}}>
-  <SelectContent>
-    {markets.map(m => (
-      <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-```
+### 4. Auto-compilazione Cedente da Posteggio
 
----
+Quando si seleziona un posteggio occupato:
+1. Carica automaticamente i dati dell'impresa associata (`impresa_id`)
+2. Popola TUTTI i campi del Cedente:
+   - CF/P.IVA
+   - Ragione Sociale
+   - Nome/Cognome
+   - Data/Luogo Nascita
+   - Residenza completa
+   - PEC
 
-### 2. SciaForm.tsx - Dropdown Posteggi Filtrato
+### 5. Dati Cedente Completi (Nuovi campi)
 
-**PRIMA:**
-```tsx
-<Select onValueChange={(val) => setFormData({...formData, posteggio: val})}>
-  <SelectContent>
-    {MOCK_MERCATI.modena.posteggi.map(p => (
-      <SelectItem key={p} value={p}>{p}</SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-```
+Aggiunti campi mancanti per il Cedente:
+- Nome, Cognome
+- Data di Nascita, Luogo di Nascita
+- Residenza Via, Comune, CAP
+- PEC
 
-**DOPO:**
-```tsx
-<Select onValueChange={(val) => {
-  const stall = stalls.find(s => s.id === parseInt(val));
-  setFormData({
-    ...formData, 
-    posteggio: stall?.number || '',
-    dimensioni_mq: stall?.area_mq || '',
-    dimensioni_lineari: stall?.dimensions || ''
-  });
-}}>
-  <SelectContent>
-    {stalls.map(s => (
-      <SelectItem key={s.id} value={s.id.toString()}>
-        {s.number} - {s.area_mq} mq
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-```
+### 6. Ubicazione e Giorno Mercato
 
----
-
-### 3. Auto-popolamento Dimensioni
-
-Quando l'utente seleziona un posteggio, i campi MQ e Dimensioni vengono popolati automaticamente dai dati del database.
+Auto-popolati quando si seleziona il mercato:
+- `ubicazione_mercato` → dal campo `municipality`
+- `giorno_mercato` → dal campo `days`
 
 ---
 
@@ -141,8 +87,9 @@ Quando l'utente seleziona un posteggio, i campi MQ e Dimensioni vengono popolati
 | Endpoint | Metodo | Descrizione |
 |----------|--------|-------------|
 | `/api/markets` | GET | Lista mercati |
-| `/api/markets/:id/stalls` | GET | Posteggi di un mercato |
-| `/api/imprese?codice_fiscale=XXX` | GET | Ricerca impresa |
+| `/api/markets/:id/stalls` | GET | Posteggi di un mercato (con impresa_id) |
+| `/api/imprese` | GET | Lista tutte le imprese (per ricerca locale) |
+| `/api/imprese/:id` | GET | Dettaglio impresa (per auto-compilazione cedente) |
 
 ---
 
@@ -151,6 +98,11 @@ Quando l'utente seleziona un posteggio, i campi MQ e Dimensioni vengono popolati
 - [x] Dropdown mercati dinamico (SciaForm.tsx)
 - [x] Dropdown posteggi filtrato per mercato (SciaForm.tsx)
 - [x] Auto-popolamento MQ e dimensioni (SciaForm.tsx)
+- [x] **Ricerca Subentrante per CF/P.IVA/Nome** (SciaForm.tsx)
+- [x] **Auto-compilazione Cedente da posteggio** (SciaForm.tsx)
+- [x] **Campi Motivazione SCIA** (SciaForm.tsx)
+- [x] **Tipologia Attività e Ruolo Dichiarante** (SciaForm.tsx)
+- [x] **Dati Cedente completi** (SciaForm.tsx)
 - [x] Dropdown mercati dinamico (ConcessioneForm.tsx)
 - [x] Dropdown posteggi filtrato per mercato (ConcessioneForm.tsx)
 - [x] Auto-popolamento MQ e dimensioni (ConcessioneForm.tsx)
@@ -161,6 +113,7 @@ Quando l'utente seleziona un posteggio, i campi MQ e Dimensioni vengono popolati
 
 ## 📝 NOTE
 
-- Il campo "Attrezzature" rimane come dropdown statico (banco/automezzo/banco_automezzo)
+- Il campo "Attrezzature" è ora libero (input text) come richiesto
 - Il canone NON viene calcolato qui - è già presente in Wallet/PagoPA
 - I dati del rappresentante legale vengono popolati dalla tabella `imprese`
+- La ricerca imprese avviene lato client per performance (tutte le imprese caricate all'avvio)
