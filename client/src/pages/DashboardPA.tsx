@@ -24,7 +24,7 @@ import GestioneMercati from '@/components/GestioneMercati';
 import Integrazioni from '@/components/Integrazioni';
 import { GISMap } from '@/components/GISMap';
 import { MarketMapComponent } from '@/components/MarketMapComponent';
-import SuapDashboard from '@/pages/suap/SuapDashboard';
+import SuapPanel from '@/components/SuapPanel';
 
 import MIOAgent from '@/components/MIOAgent';
 import { LogsSectionReal, DebugSectionReal } from '@/components/LogsDebugReal';
@@ -3082,7 +3082,7 @@ export default function DashboardPA() {
 
           {/* TAB: SSO SUAP - Pratiche Ente Sussidiario */}
           <TabsContent value="ssosuap" className="space-y-6">
-            <SuapDashboard embedded={false} />
+            <SuapPanel />
           </TabsContent>
 
           {/* TAB 13: QUALIFICAZIONE IMPRESE */}
