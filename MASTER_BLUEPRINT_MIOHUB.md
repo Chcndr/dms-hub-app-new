@@ -18,10 +18,11 @@
 7. [Guardian - Sistema di Monitoraggio](#guardian---sistema-di-monitoraggio)
 8. [Database e Storage](#database-e-storage)
 9. [API Endpoints](#api-endpoints)
-10. [Deploy e CI/CD](#deploy-e-cicd)
-11. [Credenziali e Accessi](#credenziali-e-accessi)
-12. [Troubleshooting](#troubleshooting)
-13. [Regole per Agenti AI](#regole-per-agenti-ai)
+10. [SSO SUAP - Modulo SCIA](#sso-suap---modulo-scia)
+11. [Deploy e CI/CD](#deploy-e-cicd)
+12. [Credenziali e Accessi](#credenziali-e-accessi)
+13. [Troubleshooting](#troubleshooting)
+14. [Regole per Agenti AI](#regole-per-agenti-ai)
 
 ---
 
@@ -341,7 +342,7 @@ POST /api/guardian/debug/testEndpoint
 
 **Connection String:** Vedi variabile `DATABASE_URL` o `NEON_POSTGRES_URL`
 
-### Tabelle Principali (Dati Reali - 1 Gennaio 2026)
+### Tabelle Principali (Dati Reali - 2 Gennaio 2026)
 
 | Tabella | Descrizione | Records |
 |---------|-------------|-----------------||
@@ -352,6 +353,7 @@ POST /api/guardian/debug/testEndpoint
 | `concessions` | Concessioni | **23** |
 | `agent_messages` | Chat agenti | ~500 |
 | `mio_agent_logs` | Log API | ~1500 |
+| `suap_pratiche` | Pratiche SUAP | **9** |
 | `suap_eventi` | Eventi SUAP | variabile |
 
 **Totale tabelle nel database:** 81
@@ -384,6 +386,66 @@ Gli endpoint sono documentati in:
 | **Health** | `/api/health/*` | full, history, alerts |
 | **GIS** | `/api/gis/*` | market-map |
 | **Imprese** | `/api/imprese/*` | qualificazioni, rating |
+| **SUAP** | `/api/suap/*` | pratiche, stats, evaluate |
+
+---
+
+## 📋 SSO SUAP - MODULO SCIA
+
+### Cos'è SSO SUAP?
+
+Il modulo **SSO SUAP** (Sportello Unico Attività Produttive) gestisce le pratiche SCIA per il commercio su aree pubbliche. Include:
+
+- **Dashboard SUAP** - Panoramica pratiche con statistiche
+- **Form SCIA Guidato** - Compilazione assistita con dropdown dinamici
+- **Valutazione Automatica** - Controlli PDND integrati
+- **Gestione Pratiche** - Lista, dettaglio, timeline eventi
+
+### Struttura Tabella `suap_pratiche` (69 colonne)
+
+| Categoria | Campi Principali |
+|-----------|------------------|
+| **Pratica** | id, ente_id, cui, tipo_pratica, stato, data_presentazione, numero_protocollo, comune_presentazione |
+| **Tipologia** | tipo_segnalazione, motivo_subingresso, settore_merceologico, ruolo_dichiarante |
+| **Subentrante** | richiedente_cf, sub_ragione_sociale, sub_nome, sub_cognome, sub_data_nascita, sub_luogo_nascita, sub_residenza_*, sub_sede_*, sub_pec, sub_telefono |
+| **Cedente** | ced_cf, ced_ragione_sociale, ced_nome, ced_cognome, ced_data_nascita, ced_residenza_*, ced_pec, ced_scia_precedente |
+| **Mercato** | mercato_id, mercato_nome, posteggio_id, posteggio_numero, ubicazione_mercato, giorno_mercato, fila, dimensioni_mq, dimensioni_lineari, attrezzature |
+| **Atto Notarile** | notaio_rogante, numero_repertorio, data_atto |
+| **Delegato** | del_nome, del_cognome, del_cf, del_data_nascita, del_luogo_nascita, del_qualifica, del_residenza_* |
+| **Valutazione** | esito_automatico, score, created_at, updated_at |
+
+### API Endpoints SUAP
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/api/suap/pratiche` | GET | Lista pratiche con filtri |
+| `/api/suap/pratiche` | POST | Crea nuova pratica SCIA |
+| `/api/suap/pratiche/:id` | GET | Dettaglio pratica con timeline e checks |
+| `/api/suap/pratiche/:id/evaluate` | POST | Esegui valutazione automatica |
+| `/api/suap/stats` | GET | Statistiche dashboard |
+
+### Form SCIA - Sezioni
+
+1. **Dati Pratica SCIA** - Numero protocollo (auto-generato SCIA-YYYY-NNNN), data e comune presentazione
+2. **Tipo di Segnalazione** - Subingresso, Cessazione, Sospensione, Ripresa, Modifica RS, Variazione
+3. **Tipologia Attività** - Settore merceologico (Alimentare/Non Alimentare/Misto), Ruolo dichiarante
+4. **Dati Delegato** (condizionale) - Appare se ruolo ≠ Titolare
+5. **Dati Subentrante** - CF/P.IVA con ricerca automatica, dati anagrafici, residenza, sede impresa
+6. **Dati Cedente** - Compilazione automatica da posteggio selezionato
+7. **Dati Posteggio e Mercato** - Dropdown dinamici con dati reali
+8. **Estremi Atto Notarile** - Notaio, repertorio, data
+
+### File Principali
+
+| File | Descrizione |
+|------|-------------|
+| `client/src/pages/suap/SuapDashboard.tsx` | Dashboard principale SUAP |
+| `client/src/pages/suap/SuapDetail.tsx` | Dettaglio pratica con tutti i dati |
+| `client/src/pages/suap/SuapList.tsx` | Lista pratiche con filtri |
+| `client/src/components/suap/SciaForm.tsx` | Form compilazione SCIA guidato |
+| `client/src/api/suap.ts` | Client API SUAP |
+| `mihub-backend-rest/src/modules/suap/service.js` | Service backend SUAP |
+| `mihub-backend-rest/routes/suap.js` | Routes API SUAP |
 
 ---
 
@@ -546,8 +608,8 @@ fi
 ### Statistiche
 
 - **Endpoint totali:** 153
-- **Mercati nel DB:** 542
-- **Log totali:** 1232
+- **Mercati nel DB:** 2
+- **Log totali:** ~1500
 - **Agenti attivi:** 5 (MIO, GPT Dev, Manus, Abacus, Zapier)
 - **Secrets configurati:** 10/10
 
