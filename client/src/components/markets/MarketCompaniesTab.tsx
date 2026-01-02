@@ -15,6 +15,7 @@ import {
   Building2, 
   Plus, 
   Edit, 
+  Edit2,
   X, 
   AlertCircle, 
   Loader2,
@@ -24,7 +25,8 @@ import {
   FileCheck,
   CheckCircle,
   Clock,
-  FileBadge // Icona per Autorizzazioni
+  FileBadge, // Icona per Autorizzazioni
+  Trash2
 } from 'lucide-react';
 import { MarketAutorizzazioniTab } from './MarketAutorizzazioniTab';
 
@@ -792,24 +794,31 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                 ) : (
                   <div className="space-y-3 max-h-[500px] overflow-y-auto">
                     {filteredQualificazioni.map((qual) => (
-                      <div key={qual.id} className="bg-gray-900/50 rounded-lg p-4 border border-gray-700">
+                      <div 
+                        key={qual.id} 
+                        className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 cursor-pointer hover:border-purple-500/50 hover:bg-gray-800/50 transition-all group"
+                        onClick={() => handleOpenQualificazioneModal(qual)}
+                      >
                         <div className="flex items-start justify-between mb-2">
-                          <div className="font-medium text-white">{qual.tipo}</div>
-                          {qual.stato === 'ATTIVA' && (
-                            <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400 flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3" /> Attiva
-                            </span>
-                          )}
-                          {qual.stato === 'SCADUTA' && (
-                            <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400 flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3" /> Scaduta
-                            </span>
-                          )}
-                          {qual.stato === 'IN_VERIFICA' && (
-                            <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400 flex items-center gap-1">
-                              <Clock className="w-3 h-3" /> In Verifica
-                            </span>
-                          )}
+                          <div className="font-medium text-white group-hover:text-purple-300 transition-colors">{qual.tipo}</div>
+                          <div className="flex items-center gap-2">
+                            {qual.stato === 'ATTIVA' && (
+                              <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400 flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" /> Attiva
+                              </span>
+                            )}
+                            {qual.stato === 'SCADUTA' && (
+                              <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" /> Scaduta
+                              </span>
+                            )}
+                            {qual.stato === 'IN_VERIFICA' && (
+                              <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400 flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> In Verifica
+                              </span>
+                            )}
+                            <Edit2 className="w-4 h-4 text-gray-500 group-hover:text-purple-400 transition-colors" />
+                          </div>
                         </div>
                         <div className="text-sm text-gray-400 space-y-1">
                           <div>Ente: {qual.ente_rilascio}</div>
@@ -818,6 +827,9 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                             <span>Scadenza: {new Date(qual.data_scadenza).toLocaleDateString('it-IT')}</span>
                           </div>
                           {qual.note && <div className="text-gray-500 italic mt-2">{qual.note}</div>}
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Clicca per modificare o eliminare
                         </div>
                       </div>
                     ))}
@@ -884,16 +896,31 @@ interface QualificazioneModalProps {
 }
 
 function QualificazioneModal({ company, qualificazione, onClose, onSaved }: QualificazioneModalProps) {
+  // Helper per formattare date per input type="date"
+  const formatDateForInput = (dateValue: string | null | undefined): string => {
+    if (!dateValue) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return dateValue;
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
+  };
+
   const [formData, setFormData] = useState({
     tipo: qualificazione?.tipo || '',
     ente_rilascio: qualificazione?.ente_rilascio || '',
-    data_rilascio: qualificazione?.data_rilascio || '',
-    data_scadenza: qualificazione?.data_scadenza || '',
+    data_rilascio: formatDateForInput(qualificazione?.data_rilascio),
+    data_scadenza: formatDateForInput(qualificazione?.data_scadenza),
     stato: qualificazione?.stato || 'ATTIVA',
     note: qualificazione?.note || ''
   });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -906,10 +933,6 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
         : `${API_BASE_URL}/api/imprese/${company.id}/qualificazioni`;
 
       const method = qualificazione ? 'PUT' : 'POST';
-
-      if (method === 'PUT') {
-        throw new Error('Modifica non ancora supportata');
-      }
 
       const response = await fetch(url, {
         method,
@@ -927,6 +950,31 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
       setError(err.message || 'Errore durante il salvataggio');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!qualificazione) return;
+    setDeleting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/imprese/${company.id}/qualificazioni/${qualificazione.id}`,
+        { method: 'DELETE' }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Errore durante l\'eliminazione');
+      }
+      
+      onSaved();
+    } catch (err: any) {
+      setError(err.message || 'Errore durante l\'eliminazione');
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -1023,21 +1071,59 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
             </select>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
-            >
-              Annulla
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
-            >
-              {saving ? 'Salvataggio...' : 'Salva'}
-            </button>
+          <div className="flex justify-between pt-4">
+            {/* Pulsante Elimina - solo in modifica */}
+            {qualificazione && !showDeleteConfirm && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Elimina
+              </button>
+            )}
+            
+            {/* Conferma eliminazione */}
+            {showDeleteConfirm && (
+              <div className="flex items-center gap-2">
+                <span className="text-red-400 text-sm">Confermi?</span>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {deleting ? 'Eliminazione...' : 'Sì, elimina'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-3 py-1 text-gray-400 hover:text-white text-sm transition-colors"
+                >
+                  No
+                </button>
+              </div>
+            )}
+            
+            {!qualificazione && <div />}
+            
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                type="submit"
+                disabled={saving || showDeleteConfirm}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                {saving ? 'Salvataggio...' : 'Salva'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -1307,6 +1393,27 @@ export interface CompanyModalProps {
   inline?: boolean; // Se true, usa posizionamento inline invece di fixed
 }
 
+// Helper function per formattare le date ISO in YYYY-MM-DD per input type="date"
+const formatDateForInput = (dateValue: string | null | undefined): string => {
+  if (!dateValue) return '';
+  // Se è già nel formato YYYY-MM-DD, restituiscilo
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return dateValue;
+  // Altrimenti prova a parsare e formattare
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return '';
+    return date.toISOString().split('T')[0];
+  } catch {
+    return '';
+  }
+};
+
+// Helper function per capitalizzare le parole (prima lettera maiuscola)
+const capitalizeWords = (str: string): string => {
+  if (!str) return '';
+  return str.toLowerCase().replace(/(?:^|\s|')\S/g, (match) => match.toUpperCase());
+};
+
 export function CompanyModal({ marketId, company, onClose, onSaved, inline = false }: CompanyModalProps) {
   const [formData, setFormData] = useState<CompanyFormData>({
     // Identità
@@ -1336,7 +1443,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
     rappresentante_legale_cognome: (company as any)?.rappresentante_legale_cognome || '',
     rappresentante_legale_nome: (company as any)?.rappresentante_legale_nome || '',
     rappresentante_legale_cf: (company as any)?.rappresentante_legale_cf || '',
-    rappresentante_legale_data_nascita: (company as any)?.rappresentante_legale_data_nascita || '',
+    rappresentante_legale_data_nascita: formatDateForInput((company as any)?.rappresentante_legale_data_nascita),
     rappresentante_legale_luogo_nascita: (company as any)?.rappresentante_legale_luogo_nascita || '',
     
     // Residenza Rappresentante
@@ -1350,7 +1457,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
     capitale_sociale: (company as any)?.capitale_sociale?.toString() || '',
     numero_addetti: (company as any)?.numero_addetti?.toString() || '',
     sito_web: (company as any)?.sito_web || '',
-    data_iscrizione_ri: (company as any)?.data_iscrizione_ri || '',
+    data_iscrizione_ri: formatDateForInput((company as any)?.data_iscrizione_ri),
     
     // Legacy
     stato: company?.stato || 'active',
@@ -1631,7 +1738,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.indirizzo_via}
-                  onChange={(e) => setFormData({ ...formData, indirizzo_via: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, indirizzo_via: capitalizeWords(e.target.value) })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Via Roma"
                 />
@@ -1689,7 +1796,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 type="text"
                 required={!company}
                 value={formData.comune}
-                onChange={(e) => setFormData({ ...formData, comune: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, comune: capitalizeWords(e.target.value) })}
                 className={`w-full px-3 py-2 bg-gray-800 border ${!company ? 'border-orange-500/50' : 'border-gray-700'} rounded-lg text-white focus:outline-none focus:ring-2 ${!company ? 'focus:ring-orange-500' : 'focus:ring-blue-500'}`}
                 placeholder="es. Grosseto"
               />
@@ -1804,7 +1911,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_cognome}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_cognome: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_cognome: capitalizeWords(e.target.value) })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Rossi"
                 />
@@ -1817,7 +1924,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_nome}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_nome: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_nome: capitalizeWords(e.target.value) })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Mario"
                 />
@@ -1858,7 +1965,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_luogo_nascita}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_luogo_nascita: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_luogo_nascita: capitalizeWords(e.target.value) })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Grosseto"
                 />
@@ -1880,7 +1987,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_residenza_via}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_via: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_via: capitalizeWords(e.target.value) })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Via Verdi"
                 />
@@ -1922,7 +2029,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_residenza_comune}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_comune: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_comune: capitalizeWords(e.target.value) })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Grosseto"
                 />
