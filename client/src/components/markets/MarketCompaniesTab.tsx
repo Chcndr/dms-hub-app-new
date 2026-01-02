@@ -2298,12 +2298,18 @@ function ConcessionModal({ marketId, marketName, concession, companies, stalls, 
                 <span className="text-gray-500 font-normal ml-2">
                   ({(() => {
                     // Calcola posteggi occupati (con concessione attiva)
+                    // NOTA: stall_id può essere numero o stringa, quindi convertiamo tutto a stringa
                     const occupiedStallIds = new Set(
                       concessions
-                        .filter(c => c.stato === 'ATTIVA' && c.stall_id !== concession?.stall_id)
-                        .map(c => c.stall_id)
+                        .filter(c => {
+                          const isActive = c.stato === 'ATTIVA' || 
+                            (!c.stato && c.valida_al && new Date(c.valida_al) >= new Date());
+                          const isCurrentStall = concession && String(c.stall_id) === String(concession.stall_id);
+                          return isActive && !isCurrentStall;
+                        })
+                        .map(c => String(c.stall_id))
                     );
-                    const freeCount = stalls.filter(s => !occupiedStallIds.has(s.id)).length;
+                    const freeCount = stalls.filter(s => !occupiedStallIds.has(String(s.id))).length;
                     return `${freeCount} liberi su ${stalls.length}`;
                   })()})
                 </span>
@@ -2318,14 +2324,26 @@ function ConcessionModal({ marketId, marketName, concession, companies, stalls, 
                 {(() => {
                   // Filtra solo posteggi liberi (non occupati da concessioni attive)
                   // Esclude il posteggio corrente dalla lista degli occupati (per modifica)
+                  // NOTA: stall_id può essere numero o stringa, quindi convertiamo tutto a stringa
                   const occupiedStallIds = new Set(
                     concessions
-                      .filter(c => c.stato === 'ATTIVA' && c.stall_id !== concession?.stall_id)
-                      .map(c => c.stall_id)
+                      .filter(c => {
+                        // Considera ATTIVA o concessioni senza stato esplicito ma con valid_to futuro
+                        const isActive = c.stato === 'ATTIVA' || 
+                          (!c.stato && c.valida_al && new Date(c.valida_al) >= new Date());
+                        // Esclude il posteggio corrente se stiamo modificando
+                        const isCurrentStall = concession && String(c.stall_id) === String(concession.stall_id);
+                        return isActive && !isCurrentStall;
+                      })
+                      .map(c => String(c.stall_id))  // Converti a stringa per confronto
                   );
                   
+                  console.log('[ConcessionModal] occupiedStallIds:', Array.from(occupiedStallIds));
+                  console.log('[ConcessionModal] stalls sample:', stalls.slice(0, 3));
+                  console.log('[ConcessionModal] concessions sample:', concessions.slice(0, 3));
+                  
                   return stalls
-                    .filter(stall => !occupiedStallIds.has(stall.id))
+                    .filter(stall => !occupiedStallIds.has(String(stall.id)))  // Converti anche stall.id a stringa
                     .sort((a, b) => {
                       // Ordina numericamente se possibile
                       const numA = parseInt(a.code, 10);

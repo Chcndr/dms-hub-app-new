@@ -938,7 +938,7 @@
 
 ## 2 Gennaio 2026 - Miglioramenti Modal Concessioni
 
-- [ ] Aggiungere campo Mercato nel modal "Nuova Concessione" con preselzione del mercato corrente
-- [ ] Permettere cambio mercato tramite dropdown
-- [ ] Filtrare posteggi per mostrare solo quelli liberi (non già assegnati a concessioni attive)
-- [ ] Caricare posteggi dinamicamente quando si cambia mercato
+- [x] Aggiungere campo Mercato nel modal "Nuova Concessione" con preselzione del mercato corrente
+- [ ] Permettere cambio mercato tramite dropdown (non implementato - mercato è in sola visualizzazione)
+- [x] Filtrare posteggi per mostrare solo quelli liberi (non già assegnati a concessioni attive)
+- [ ] Caricare posteggi dinamicamente quando si cambia mercato (non necessario - mercato fisso)
