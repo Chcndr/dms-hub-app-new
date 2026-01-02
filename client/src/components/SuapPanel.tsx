@@ -640,7 +640,7 @@ export default function SuapPanel() {
                 <DataField label="Ruolo Dichiarante" value={selectedPratica.ruolo_dichiarante} />
               </DataSection>
 
-              {/* Dati Subentrante */}
+              {/* Dati Subentrante - Anagrafica */}
               <DataSection title="Dati Subentrante (Cessionario)" icon={User}>
                 <DataField label="Ragione Sociale" value={selectedPratica.sub_ragione_sociale || selectedPratica.richiedente_nome} />
                 <DataField label="Nome" value={selectedPratica.sub_nome} />
@@ -652,7 +652,26 @@ export default function SuapPanel() {
                 <DataField label="Telefono" value={selectedPratica.sub_telefono} />
               </DataSection>
 
-              {/* Dati Cedente */}
+              {/* Residenza Subentrante */}
+              {(selectedPratica.sub_residenza_via || selectedPratica.sub_residenza_comune) && (
+                <DataSection title="Residenza Subentrante" icon={MapPin}>
+                  <DataField label="Via/Indirizzo" value={selectedPratica.sub_residenza_via} />
+                  <DataField label="Comune" value={selectedPratica.sub_residenza_comune} />
+                  <DataField label="CAP" value={selectedPratica.sub_residenza_cap} />
+                </DataSection>
+              )}
+
+              {/* Sede Impresa Subentrante */}
+              {(selectedPratica.sub_sede_via || selectedPratica.sub_sede_comune) && (
+                <DataSection title="Sede Impresa Subentrante" icon={Building2}>
+                  <DataField label="Via/Indirizzo" value={selectedPratica.sub_sede_via} />
+                  <DataField label="Comune" value={selectedPratica.sub_sede_comune} />
+                  <DataField label="Provincia" value={selectedPratica.sub_sede_provincia} />
+                  <DataField label="CAP" value={selectedPratica.sub_sede_cap} />
+                </DataSection>
+              )}
+
+              {/* Dati Cedente - Anagrafica */}
               {selectedPratica.ced_cf && (
                 <DataSection title="Dati Cedente (Dante Causa)" icon={Users}>
                   <DataField label="Codice Fiscale" value={selectedPratica.ced_cf} />
@@ -663,7 +682,32 @@ export default function SuapPanel() {
                   <DataField label="Luogo di Nascita" value={selectedPratica.ced_luogo_nascita} />
                   <DataField label="PEC" value={selectedPratica.ced_pec} />
                   <DataField label="SCIA Precedente N. Prot." value={selectedPratica.ced_scia_precedente} />
-                  <DataField label="Data Presentazione" value={formatDate(selectedPratica.ced_data_presentazione)} />
+                  <DataField label="Data Presentazione SCIA Prec." value={formatDate(selectedPratica.ced_data_presentazione)} />
+                  <DataField label="Comune Presentazione SCIA Prec." value={selectedPratica.ced_comune_presentazione} />
+                </DataSection>
+              )}
+
+              {/* Residenza Cedente */}
+              {(selectedPratica.ced_residenza_via || selectedPratica.ced_residenza_comune) && (
+                <DataSection title="Residenza Cedente" icon={MapPin}>
+                  <DataField label="Via/Indirizzo" value={selectedPratica.ced_residenza_via} />
+                  <DataField label="Comune" value={selectedPratica.ced_residenza_comune} />
+                  <DataField label="CAP" value={selectedPratica.ced_residenza_cap} />
+                </DataSection>
+              )}
+
+              {/* Dati Delegato/Procuratore */}
+              {selectedPratica.del_cf && (
+                <DataSection title="Dati Delegato / Procuratore" icon={User}>
+                  <DataField label="Nome" value={selectedPratica.del_nome} />
+                  <DataField label="Cognome" value={selectedPratica.del_cognome} />
+                  <DataField label="Codice Fiscale" value={selectedPratica.del_cf} />
+                  <DataField label="Data di Nascita" value={formatDate(selectedPratica.del_data_nascita)} />
+                  <DataField label="Luogo di Nascita" value={selectedPratica.del_luogo_nascita} />
+                  <DataField label="Qualifica" value={selectedPratica.del_qualifica} />
+                  <DataField label="Residenza Via" value={selectedPratica.del_residenza_via} />
+                  <DataField label="Residenza Comune" value={selectedPratica.del_residenza_comune} />
+                  <DataField label="Residenza CAP" value={selectedPratica.del_residenza_cap} />
                 </DataSection>
               )}
 
@@ -700,27 +744,41 @@ export default function SuapPanel() {
                   <CardContent>
                     {selectedPratica.checks && selectedPratica.checks.length > 0 ? (
                       <div className="space-y-3">
-                        {selectedPratica.checks.map((check, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-[#0b1220]">
-                            <div className="flex items-center gap-2">
-                              {check.esito === 'PASS' ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                              ) : (
-                                <XCircle className="h-5 w-5 text-red-500" />
-                              )}
-                              <div>
-                                <p className="text-[#e8fbff] font-medium">{check.tipo_check}</p>
-                                <p className="text-xs text-gray-500">Fonte: {check.fonte}</p>
+                        {selectedPratica.checks.map((check, idx) => {
+                          // Gestisce sia boolean che string per esito
+                          const isPassed = check.esito === true || check.esito === 'PASS' || check.esito === 'true';
+                          const checkName = check.tipo_check || check.check_code || 'Controllo';
+                          const checkTime = check.data_check || check.created_at;
+                          
+                          return (
+                            <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-[#0b1220]">
+                              <div className="flex items-center gap-2">
+                                {isPassed ? (
+                                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                ) : (
+                                  <XCircle className="h-5 w-5 text-red-500" />
+                                )}
+                                <div>
+                                  <p className="text-[#e8fbff] font-medium">{checkName}</p>
+                                  <p className="text-xs text-gray-500">Fonte: {check.fonte}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className={`text-xs font-medium ${isPassed ? 'text-green-400' : 'text-red-400'}`}>
+                                  {isPassed ? 'PASS' : 'FAIL'}
+                                </span>
+                                {checkTime && (
+                                  <p className="text-xs text-gray-500">
+                                    {formatDateTime(checkTime)}
+                                  </p>
+                                )}
                               </div>
                             </div>
-                            <span className="text-xs text-gray-500">
-                              {new Date(check.data_check).toLocaleTimeString('it-IT')}
-                            </span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
-                      <p className="text-gray-500 italic">Nessun controllo eseguito ancora.</p>
+                      <p className="text-gray-500 italic">Nessun controllo eseguito ancora. Clicca "Esegui Valutazione" per avviare i controlli.</p>
                     )}
                   </CardContent>
                 </Card>
@@ -731,30 +789,58 @@ export default function SuapPanel() {
                     <CardTitle className="text-[#e8fbff]">Punteggio Affidabilità</CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col items-center justify-center py-8">
-                    <div className="relative w-32 h-32">
-                      <svg className="w-full h-full transform -rotate-90">
-                        <circle
-                          cx="64" cy="64" r="56"
-                          stroke="#1e293b"
-                          strokeWidth="12"
-                          fill="none"
-                        />
-                        <circle
-                          cx="64" cy="64" r="56"
-                          stroke={selectedPratica.score >= 70 ? '#22c55e' : selectedPratica.score >= 40 ? '#eab308' : '#ef4444'}
-                          strokeWidth="12"
-                          fill="none"
-                          strokeDasharray={`${(selectedPratica.score || 0) * 3.52} 352`}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-3xl font-bold text-[#e8fbff]">{selectedPratica.score || 0}</span>
-                      </div>
-                    </div>
-                    <p className="mt-4 text-gray-500">
-                      Basato su {selectedPratica.checks?.length || 0} controlli effettuati
-                    </p>
+                    {(() => {
+                      // Calcola statistiche dai controlli
+                      const checks = selectedPratica.checks || [];
+                      const totalChecks = checks.length;
+                      const passedChecks = checks.filter(c => 
+                        c.esito === true || c.esito === 'PASS' || c.esito === 'true'
+                      ).length;
+                      const failedChecks = totalChecks - passedChecks;
+                      const score = selectedPratica.score || 0;
+                      const scoreColor = score >= 70 ? '#22c55e' : score >= 40 ? '#eab308' : '#ef4444';
+                      
+                      return (
+                        <>
+                          <div className="relative w-32 h-32">
+                            <svg className="w-full h-full transform -rotate-90">
+                              <circle
+                                cx="64" cy="64" r="56"
+                                stroke="#1e293b"
+                                strokeWidth="12"
+                                fill="none"
+                              />
+                              <circle
+                                cx="64" cy="64" r="56"
+                                stroke={scoreColor}
+                                strokeWidth="12"
+                                fill="none"
+                                strokeDasharray={`${score * 3.52} 352`}
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-3xl font-bold text-[#e8fbff]">{score}</span>
+                            </div>
+                          </div>
+                          <div className="mt-4 text-center">
+                            {totalChecks > 0 ? (
+                              <>
+                                <p className="text-gray-400">
+                                  <span className="text-green-400 font-medium">{passedChecks}</span> superati / 
+                                  <span className="text-red-400 font-medium"> {failedChecks}</span> falliti
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  su {totalChecks} controlli totali
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-gray-500">Nessun controllo effettuato</p>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               </div>

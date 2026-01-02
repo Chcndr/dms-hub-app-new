@@ -33,9 +33,12 @@ export interface SuapCheck {
   id: number;
   pratica_id: number;
   check_code: string;
-  esito: boolean;
+  tipo_check?: string;  // alias per check_code
+  esito: boolean | string;  // può essere boolean o 'PASS'/'FAIL'
   fonte: string;
+  data_check?: string;  // timestamp del controllo
   created_at: string;
+  dettaglio?: any;
 }
 
 export interface SuapStats {
