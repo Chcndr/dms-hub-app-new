@@ -541,8 +541,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
   const mostraAutorizzazionePrecedente = ['subingresso', 'conversione', 'rinnovo', 'voltura'].includes(formData.tipo_concessione);
 
   return (
-    <div className="min-h-screen bg-[#0b1220] p-4 md:p-6 lg:p-8">
-    <Card className="bg-[#0a1628] border-[#1e293b] w-full max-w-[1400px] mx-auto">
+    <Card className="bg-[#0a1628] border-[#1e293b] w-full p-4">
       <CardHeader>
         <CardTitle className="text-[#e8fbff] flex items-center gap-2">
           <FileText className="text-[#00f0ff]" />
@@ -1270,6 +1269,5 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
         </form>
       </CardContent>
     </Card>
-    </div>
   );
 }

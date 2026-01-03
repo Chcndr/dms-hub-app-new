@@ -1534,9 +1534,9 @@ export default function SuapPanel() {
         </div>
       )}
 
-      {/* Form Concessione a schermo intero */}
+      {/* Form Concessione - Modal allargato senza overlay */}
       {showConcessioneForm && (
-        <div className="fixed inset-0 z-50 bg-[#0b1220] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-[#0b1220] overflow-y-auto p-4">
           <ConcessioneForm 
             onSubmit={(savedConcessione) => {
               setShowConcessioneForm(false);
