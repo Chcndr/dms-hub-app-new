@@ -25,10 +25,11 @@ import {
   FileCheck,
   CheckCircle,
   Clock,
-  FileBadge, // Icona per Autorizzazioni
+  FileBadge,
   Trash2,
   Eye,
-  XCircle
+  XCircle,
+  Users
 } from 'lucide-react';
 import { MarketAutorizzazioniTab } from './MarketAutorizzazioniTab';
 
@@ -146,12 +147,45 @@ export type CompanyFormData = {
 };
 
 type ConcessionFormData = {
-  company_id: string;
-  stall_id: string;
-  tipo_concessione: string;
-  valida_dal: string;
-  valida_al: string;
-  stato: string;
+  // Dati base (corrispondono a campi DB)
+  company_id: string;           // → impresa_id (via vendor)
+  stall_id: string;             // → stall_id
+  tipo_concessione: string;     // → tipo_concessione
+  type: string;                 // → type (fisso/spunta/temporanea)
+  valida_dal: string;           // → valid_from
+  valida_al: string;            // → valid_to
+  stato: string;                // → stato
+  
+  // Dati Generali - Frontespizio (campi DB)
+  numero_protocollo: string;    // → numero_protocollo
+  data_protocollazione: string; // → data_protocollazione
+  oggetto: string;              // → oggetto
+  
+  // Tipo e Durata (campi DB)
+  durata_anni: string;          // → durata_anni
+  data_decorrenza: string;      // → data_decorrenza
+  
+  // Dati Concessionario (campi DB)
+  partita_iva: string;          // → partita_iva
+  cf_concessionario: string;    // → cf_concessionario
+  ragione_sociale: string;      // → ragione_sociale
+  nome: string;                 // → nome
+  cognome: string;              // → cognome
+  
+  // Dati Posteggio (campi DB)
+  ubicazione: string;           // → ubicazione
+  fila: string;                 // → fila
+  mq: string;                   // → mq
+  dimensioni_lineari: string;   // → dimensioni_lineari
+  giorno: string;               // → giorno
+  settore_merceologico: string; // → settore_merceologico
+  comune_rilascio: string;      // → comune_rilascio
+  
+  // Note (campo DB)
+  notes: string;                // → notes
+  
+  // Riferimento SCIA (campo DB)
+  scia_id: string;              // → scia_id
 };
 
 type QualificazioneRow = {
@@ -2519,14 +2553,51 @@ interface ConcessionModalProps {
 }
 
 function ConcessionModal({ marketId, marketName, concession, companies, stalls, concessions, onClose, onSaved, onDeleted }: ConcessionModalProps) {
+  // Inizializza form con campi che corrispondono esattamente al database
   const [formData, setFormData] = useState<ConcessionFormData>({
+    // Dati base
     company_id: concession?.company_id || '',
     stall_id: concession?.stall_id || '',
-    tipo_concessione: concession?.tipo_concessione || 'fisso',
+    tipo_concessione: concession?.tipo_concessione || 'subingresso',
+    type: concession?.type || 'fisso',
     valida_dal: concession?.valida_dal?.split('T')[0] || '',
     valida_al: concession?.valida_al?.split('T')[0] || '',
     stato: concession?.stato || 'ATTIVA',
+    
+    // Dati Generali - Frontespizio
+    numero_protocollo: concession?.numero_protocollo || '',
+    data_protocollazione: concession?.data_protocollazione?.split('T')[0] || new Date().toISOString().split('T')[0],
+    oggetto: concession?.oggetto || '',
+    
+    // Tipo e Durata
+    durata_anni: concession?.durata_anni?.toString() || '10',
+    data_decorrenza: concession?.data_decorrenza?.split('T')[0] || '',
+    
+    // Dati Concessionario
+    partita_iva: concession?.partita_iva || '',
+    cf_concessionario: concession?.cf_concessionario || '',
+    ragione_sociale: concession?.ragione_sociale || '',
+    nome: concession?.nome || '',
+    cognome: concession?.cognome || '',
+    
+    // Dati Posteggio
+    ubicazione: concession?.ubicazione || '',
+    fila: concession?.fila || '',
+    mq: concession?.mq?.toString() || '',
+    dimensioni_lineari: concession?.dimensioni_lineari || '',
+    giorno: concession?.giorno || '',
+    settore_merceologico: concession?.settore_merceologico || 'Alimentare',
+    comune_rilascio: concession?.comune_rilascio || '',
+    
+    // Note
+    notes: concession?.notes || '',
+    
+    // Riferimento SCIA
+    scia_id: concession?.scia_id?.toString() || '',
   });
+  
+  // Stato per sezione attiva del form (tabs)
+  const [activeSection, setActiveSection] = useState<number>(1);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -2572,15 +2643,48 @@ function ConcessionModal({ marketId, marketName, concession, companies, stalls, 
 
       const method = concession ? 'PATCH' : 'POST';
 
-      // Map frontend field names to backend API field names
+      // Map frontend field names to backend API field names (corrispondenza esatta con DB)
       const payload = {
-        impresa_id: formData.company_id,  // company_id → impresa_id
+        // Dati base
+        impresa_id: formData.company_id,
         stall_id: formData.stall_id,
         market_id: marketId,
-        type: formData.tipo_concessione,  // tipo_concessione → type
-        valid_from: formData.valida_dal,  // valida_dal → valid_from
-        valid_to: formData.valida_al || null,  // valida_al → valid_to
-        notes: null
+        type: formData.type,                    // fisso/spunta/temporanea
+        valid_from: formData.valida_dal || formData.data_decorrenza,
+        valid_to: formData.valida_al || null,
+        stato: formData.stato,
+        
+        // Dati Generali - Frontespizio
+        numero_protocollo: formData.numero_protocollo || null,
+        data_protocollazione: formData.data_protocollazione || null,
+        oggetto: formData.oggetto || null,
+        
+        // Tipo e Durata
+        tipo_concessione: formData.tipo_concessione,  // subingresso/nuova/rinnovo/etc
+        durata_anni: formData.durata_anni ? parseInt(formData.durata_anni) : null,
+        data_decorrenza: formData.data_decorrenza || null,
+        
+        // Dati Concessionario
+        partita_iva: formData.partita_iva || null,
+        cf_concessionario: formData.cf_concessionario || null,
+        ragione_sociale: formData.ragione_sociale || null,
+        nome: formData.nome || null,
+        cognome: formData.cognome || null,
+        
+        // Dati Posteggio
+        ubicazione: formData.ubicazione || null,
+        fila: formData.fila || null,
+        mq: formData.mq ? parseFloat(formData.mq) : null,
+        dimensioni_lineari: formData.dimensioni_lineari || null,
+        giorno: formData.giorno || null,
+        settore_merceologico: formData.settore_merceologico || 'Alimentare',
+        comune_rilascio: formData.comune_rilascio || null,
+        
+        // Note
+        notes: formData.notes || null,
+        
+        // Riferimento SCIA (se presente)
+        scia_id: formData.scia_id ? parseInt(formData.scia_id) : null
       };
 
       const response = await fetch(url, {
@@ -2602,193 +2706,436 @@ function ConcessionModal({ marketId, marketName, concession, companies, stalls, 
     }
   };
 
+  // Calcola data scadenza automatica quando cambia durata o data decorrenza
+  const calcolaDataScadenza = (dataDecorrenza: string, durataAnni: string) => {
+    if (!dataDecorrenza || !durataAnni) return '';
+    const data = new Date(dataDecorrenza);
+    data.setFullYear(data.getFullYear() + parseInt(durataAnni));
+    return data.toISOString().split('T')[0];
+  };
+
+  // Auto-popola dati concessionario quando si seleziona impresa
+  const handleCompanyChange = (companyId: string) => {
+    const company = companies.find(c => c.id === companyId);
+    if (company) {
+      setFormData({
+        ...formData,
+        company_id: companyId,
+        partita_iva: company.partita_iva || '',
+        cf_concessionario: company.codice_fiscale || '',
+        ragione_sociale: company.denominazione || '',
+      });
+    } else {
+      setFormData({ ...formData, company_id: companyId });
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-gray-900 border-b border-gray-700 px-6 py-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">
-            {concession ? 'Modifica Concessione' : 'Nuova Concessione'}
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
+      <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-6xl w-full max-h-[95vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-gray-900 border-b border-gray-700 px-6 py-4 flex items-center justify-between z-10">
+          <div className="flex items-center gap-3">
+            <FileText className="w-6 h-6 text-amber-500" />
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                {concession ? `Modifica Concessione #${concession.id}` : 'Nuova Concessione'}
+              </h3>
+              <p className="text-sm text-gray-400">{marketName || `Mercato ID: ${marketId}`}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        {/* Tabs di navigazione */}
+        <div className="sticky top-[73px] bg-gray-900 border-b border-gray-700 px-6 py-2 z-10">
+          <div className="flex gap-2 overflow-x-auto">
+            {[
+              { id: 1, label: 'Dati Generali', icon: FileText },
+              { id: 2, label: 'Tipo e Durata', icon: Calendar },
+              { id: 3, label: 'Concessionario', icon: Users },
+              { id: 4, label: 'Posteggio', icon: MapPin },
+              { id: 5, label: 'Note', icon: FileText },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveSection(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  activeSection === tab.id
+                    ? 'bg-amber-500/20 text-amber-500 border border-amber-500/50'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6">
           {error && (
-            <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 flex items-start gap-2">
+            <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 flex items-start gap-2 mb-6">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-red-400 text-sm">{error}</p>
             </div>
           )}
 
-          {/* Campo Mercato - solo visualizzazione */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Mercato
-            </label>
-            <div className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-400">
-              {marketName || `Mercato ID: ${marketId}`}
+          {/* SEZIONE 1: Dati Generali (Frontespizio) */}
+          {activeSection === 1 && (
+            <div className="space-y-6">
+              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                <h4 className="text-amber-500 font-semibold mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Frontespizio Documento
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Numero / Anno PG</label>
+                    <input
+                      type="text"
+                      value={formData.numero_protocollo}
+                      onChange={(e) => setFormData({ ...formData, numero_protocollo: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Es. 449021/2024"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Data Protocollazione</label>
+                    <input
+                      type="date"
+                      value={formData.data_protocollazione}
+                      onChange={(e) => setFormData({ ...formData, data_protocollazione: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Comune Rilascio</label>
+                    <input
+                      type="text"
+                      value={formData.comune_rilascio}
+                      onChange={(e) => setFormData({ ...formData, comune_rilascio: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Es. Grosseto"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Oggetto</label>
+                  <textarea
+                    value={formData.oggetto}
+                    onChange={(e) => setFormData({ ...formData, oggetto: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 min-h-[80px]"
+                    placeholder="Oggetto della concessione..."
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Impresa <span className="text-red-500">*</span>
-              </label>
-              <select
-                required
-                value={formData.company_id}
-                onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Seleziona impresa...</option>
-                {companies.map((company) => (
-                  <option key={company.id} value={company.id}>
-                    {company.denominazione}
-                  </option>
-                ))}
-              </select>
+          {/* SEZIONE 2: Tipo e Durata Concessione */}
+          {activeSection === 2 && (
+            <div className="space-y-6">
+              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                <h4 className="text-amber-500 font-semibold mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Tipo e Durata Concessione
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Tipo Concessione <span className="text-red-500">*</span></label>
+                    <select
+                      required
+                      value={formData.tipo_concessione}
+                      onChange={(e) => setFormData({ ...formData, tipo_concessione: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      {TIPO_CONCESSIONE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Tipo Posteggio</label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="fisso">Fisso</option>
+                      <option value="spunta">Spunta</option>
+                      <option value="temporanea">Temporanea</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Durata (Anni)</label>
+                    <select
+                      value={formData.durata_anni}
+                      onChange={(e) => {
+                        const newDurata = e.target.value;
+                        const newScadenza = calcolaDataScadenza(formData.data_decorrenza || formData.valida_dal, newDurata);
+                        setFormData({ ...formData, durata_anni: newDurata, valida_al: newScadenza });
+                      }}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      {[1,2,3,4,5,6,7,8,9,10,12,15,20].map(n => (
+                        <option key={n} value={n}>{n} Anni</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Data Decorrenza</label>
+                    <input
+                      type="date"
+                      value={formData.data_decorrenza || formData.valida_dal}
+                      onChange={(e) => {
+                        const newDecorrenza = e.target.value;
+                        const newScadenza = calcolaDataScadenza(newDecorrenza, formData.durata_anni);
+                        setFormData({ ...formData, data_decorrenza: newDecorrenza, valida_dal: newDecorrenza, valida_al: newScadenza });
+                      }}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Data Scadenza (auto)</label>
+                    <input
+                      type="date"
+                      value={formData.valida_al}
+                      onChange={(e) => setFormData({ ...formData, valida_al: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Stato <span className="text-red-500">*</span></label>
+                    <select
+                      required
+                      value={formData.stato}
+                      onChange={(e) => setFormData({ ...formData, stato: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      {STATO_CONCESSIONE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Posteggio <span className="text-red-500">*</span>
-                <span className="text-gray-500 font-normal ml-2">
-                  ({(() => {
-                    // Calcola posteggi occupati (con qualsiasi concessione, attiva o scaduta)
-                    // NOTA: stall_id può essere numero o stringa, quindi convertiamo tutto a stringa
-                    const occupiedStallIds = new Set(
-                      concessions
-                        .filter(c => {
-                          // Esclude il posteggio corrente se stiamo modificando
-                          const isCurrentStall = concession && String(c.stall_id) === String(concession.stall_id);
-                          return !isCurrentStall;  // Escludi TUTTI i posteggi con concessione
+          {/* SEZIONE 3: Dati Concessionario */}
+          {activeSection === 3 && (
+            <div className="space-y-6">
+              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                <h4 className="text-amber-500 font-semibold mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Dati Concessionario
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Cerca Impresa <span className="text-red-500">*</span></label>
+                    <select
+                      required
+                      value={formData.company_id}
+                      onChange={(e) => handleCompanyChange(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="">Seleziona impresa...</option>
+                      {companies.map((company) => (
+                        <option key={company.id} value={company.id}>
+                          {company.denominazione} - P.IVA: {company.partita_iva || 'N/A'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Partita IVA</label>
+                    <input
+                      type="text"
+                      value={formData.partita_iva}
+                      onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Partita IVA"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Codice Fiscale</label>
+                    <input
+                      type="text"
+                      value={formData.cf_concessionario}
+                      onChange={(e) => setFormData({ ...formData, cf_concessionario: e.target.value.toUpperCase() })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Codice Fiscale"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Ragione Sociale</label>
+                    <input
+                      type="text"
+                      value={formData.ragione_sociale}
+                      onChange={(e) => setFormData({ ...formData, ragione_sociale: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Ragione Sociale"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Nome</label>
+                    <input
+                      type="text"
+                      value={formData.nome}
+                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Nome"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Cognome</label>
+                    <input
+                      type="text"
+                      value={formData.cognome}
+                      onChange={(e) => setFormData({ ...formData, cognome: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Cognome"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SEZIONE 4: Dati Posteggio */}
+          {activeSection === 4 && (
+            <div className="space-y-6">
+              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                <h4 className="text-amber-500 font-semibold mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Dati Posteggio
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Posteggio <span className="text-red-500">*</span></label>
+                    <select
+                      required
+                      value={formData.stall_id}
+                      onChange={(e) => setFormData({ ...formData, stall_id: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="">Seleziona posteggio...</option>
+                      {stalls
+                        .sort((a, b) => {
+                          const numA = parseInt(a.code, 10);
+                          const numB = parseInt(b.code, 10);
+                          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                          return a.code.localeCompare(b.code);
                         })
-                        .map(c => String(c.stall_id))
-                    );
-                    const freeCount = stalls.filter(s => !occupiedStallIds.has(String(s.id))).length;
-                    return `${freeCount} liberi su ${stalls.length}`;
-                  })()})
-                </span>
-              </label>
-              <select
-                required
-                value={formData.stall_id}
-                onChange={(e) => setFormData({ ...formData, stall_id: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Seleziona posteggio...</option>
-                {(() => {
-                  // Filtra solo posteggi liberi (senza alcuna concessione, attiva o scaduta)
-                  // NOTA: stall_id può essere numero o stringa, quindi convertiamo tutto a stringa
-                  const occupiedStallIds = new Set(
-                    concessions
-                      .filter(c => {
-                        // Esclude il posteggio corrente se stiamo modificando
-                        const isCurrentStall = concession && String(c.stall_id) === String(concession.stall_id);
-                        return !isCurrentStall;  // Escludi TUTTI i posteggi con concessione
-                      })
-                      .map(c => String(c.stall_id))  // Converti a stringa per confronto
-                  );
-                  
-                  return stalls
-                    .filter(stall => !occupiedStallIds.has(String(stall.id)))  // Converti anche stall.id a stringa
-                    .sort((a, b) => {
-                      // Ordina numericamente se possibile
-                      const numA = parseInt(a.code, 10);
-                      const numB = parseInt(b.code, 10);
-                      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-                      return a.code.localeCompare(b.code);
-                    })
-                    .map((stall) => (
-                      <option key={stall.id} value={stall.id}>
-                        {stall.code}
-                      </option>
-                    ));
-                })()}
-              </select>
+                        .map((stall) => (
+                          <option key={stall.id} value={stall.id}>{stall.code}</option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Fila</label>
+                    <input
+                      type="text"
+                      value={formData.fila}
+                      onChange={(e) => setFormData({ ...formData, fila: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Es. A, B, C"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">MQ</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.mq}
+                      onChange={(e) => setFormData({ ...formData, mq: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Es. 12.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Dimensioni (m x m)</label>
+                    <input
+                      type="text"
+                      value={formData.dimensioni_lineari}
+                      onChange={(e) => setFormData({ ...formData, dimensioni_lineari: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Es. 3x4"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Giorno</label>
+                    <input
+                      type="text"
+                      value={formData.giorno}
+                      onChange={(e) => setFormData({ ...formData, giorno: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Es. Lunedì, Giovedì"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Settore Merceologico</label>
+                    <select
+                      value={formData.settore_merceologico}
+                      onChange={(e) => setFormData({ ...formData, settore_merceologico: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="Alimentare">Alimentare</option>
+                      <option value="Non Alimentare">Non Alimentare</option>
+                      <option value="Misto">Misto</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Ubicazione</label>
+                  <input
+                    type="text"
+                    value={formData.ubicazione}
+                    onChange={(e) => setFormData({ ...formData, ubicazione: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="Ubicazione del posteggio nel mercato"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Tipo Concessione <span className="text-red-500">*</span>
-              </label>
-              <select
-                required
-                value={formData.tipo_concessione}
-                onChange={(e) => setFormData({ ...formData, tipo_concessione: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {TIPO_CONCESSIONE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+          {/* SEZIONE 5: Note */}
+          {activeSection === 5 && (
+            <div className="space-y-6">
+              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                <h4 className="text-amber-500 font-semibold mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Note e Prescrizioni
+                </h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Note / Prescrizioni</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 min-h-[200px]"
+                    placeholder="Eventuali prescrizioni o note..."
+                  />
+                </div>
+                {formData.scia_id && (
+                  <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <p className="text-sm text-blue-400">
+                      <strong>Collegata a SCIA:</strong> #{formData.scia_id}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Stato <span className="text-red-500">*</span>
-              </label>
-              <select
-                required
-                value={formData.stato}
-                onChange={(e) => setFormData({ ...formData, stato: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {STATO_CONCESSIONE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Valida Dal
-              </label>
-              <input
-                type="date"
-                value={formData.valida_dal}
-                onChange={(e) => setFormData({ ...formData, valida_dal: e.target.value })}
-                onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                onFocus={(e) => e.stopPropagation()}
-                onBlur={(e) => e.stopPropagation()}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 relative z-[100]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Valida Al
-              </label>
-              <input
-                type="date"
-                value={formData.valida_al}
-                onChange={(e) => setFormData({ ...formData, valida_al: e.target.value })}
-                onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                onFocus={(e) => e.stopPropagation()}
-                onBlur={(e) => e.stopPropagation()}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 relative z-[100]"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-4">
-            {/* Pulsante Elimina - solo in modifica */}
+          {/* Footer con pulsanti */}
+          <div className="flex items-center justify-between pt-6 mt-6 border-t border-gray-700">
             {concession && (
               <button
                 type="button"
@@ -2814,10 +3161,10 @@ function ConcessionModal({ marketId, marketName, concession, companies, stalls, 
               <button
                 type="submit"
                 disabled={saving || deleting}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {saving ? 'Salvataggio...' : 'Salva'}
+                {saving ? 'Salvataggio...' : 'Salva Concessione'}
               </button>
             </div>
           </div>
