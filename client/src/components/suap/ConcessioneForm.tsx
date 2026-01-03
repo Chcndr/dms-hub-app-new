@@ -1025,7 +1025,12 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
               {/* DROPDOWN MERCATI DINAMICO */}
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Mercato *</Label>
-                <Select value={selectedMarketId?.toString() || ''} onValueChange={handleMarketChange} disabled={loadingMarkets}>
+                <Select 
+                  key={`market-select-${markets.length}-${selectedMarketId || 'none'}`}
+                  value={selectedMarketId?.toString() || ''} 
+                  onValueChange={handleMarketChange} 
+                  disabled={loadingMarkets}
+                >
                   <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
                     <SelectValue placeholder={loadingMarkets ? "Caricamento..." : "Seleziona Mercato"} />
                   </SelectTrigger>
@@ -1063,6 +1068,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Posteggio *</Label>
                 <Select 
+                  key={`stall-select-${stalls.length}-${selectedStallId || 'none'}`}
                   value={selectedStallId?.toString() || ''}
                   onValueChange={handleStallChange} 
                   disabled={!selectedMarketId || loadingStalls}
