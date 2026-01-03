@@ -20,6 +20,8 @@ interface Market {
   days: string;
   total_stalls: number;
   status: string;
+  cost_per_sqm?: string;
+  annual_market_days?: number;
 }
 
 interface Stall {
@@ -33,6 +35,9 @@ interface Stall {
   type: string;
   status: string;
   vendor_business_name?: string;
+  impresa_id?: number;
+  valid_from?: string;
+  valid_to?: string;
 }
 
 export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () => void, onSubmit: (data: any) => void }) {
@@ -40,9 +45,11 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
   const [markets, setMarkets] = useState<Market[]>([]);
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [selectedMarketId, setSelectedMarketId] = useState<number | null>(null);
+  const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [loadingStalls, setLoadingStalls] = useState(false);
   const [loadingImpresa, setLoadingImpresa] = useState(false);
+  const [loadingCedente, setLoadingCedente] = useState(false);
 
   const [formData, setFormData] = useState({
     // Dati Generali (Frontespizio)
@@ -53,19 +60,37 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
     
     // Dati Concessione
     durata_anni: '12',
+    data_decorrenza: new Date().toISOString().split('T')[0],
     data_scadenza: '',
-    tipo_concessione: 'subingresso', // nuova, subingresso, conversione
+    tipo_concessione: 'subingresso', // nuova, subingresso, conversione, rinnovo, voltura
+    sottotipo_conversione: '', // tipo_b_a, merceologia, dimensioni
     
     // Concessionario
     cf_concessionario: '',
+    partita_iva: '',
     ragione_sociale: '',
+    qualita: 'legale rappresentante', // titolare, legale rappresentante
     nome: '',
     cognome: '',
     data_nascita: '',
     luogo_nascita: '',
     residenza_via: '',
     residenza_comune: '',
+    residenza_provincia: '',
     residenza_cap: '',
+    // Sede Legale (nuovi campi)
+    sede_legale_via: '',
+    sede_legale_comune: '',
+    sede_legale_provincia: '',
+    sede_legale_cap: '',
+    
+    // Cedente (solo per subingresso)
+    cedente_cf: '',
+    cedente_ragione_sociale: '',
+    cedente_impresa_id: '',
+    autorizzazione_precedente_pg: '',
+    autorizzazione_precedente_data: '',
+    autorizzazione_precedente_intestatario: '',
     
     // Posteggio
     mercato: '',
@@ -77,8 +102,18 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
     mq: '',
     dimensioni_lineari: '',
     giorno: '',
+    tipo_posteggio: '',
     attrezzature: '',
     merceologia: 'Non Alimentare',
+    limitazioni_merceologia: '',
+    
+    // Conversione (nuovi campi)
+    merceologia_precedente: '',
+    merceologia_nuova: '',
+    dimensioni_precedenti: '',
+    dimensioni_nuove: '',
+    mq_precedenti: '',
+    mq_nuovi: '',
     
     // Dati Economici
     canone_unico: '',
@@ -86,7 +121,11 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
     // Riferimenti
     scia_precedente_numero: '',
     scia_precedente_data: '',
-    scia_precedente_comune: ''
+    scia_precedente_comune: '',
+    
+    // Allegati
+    planimetria_allegata: false,
+    prescrizioni: ''
   });
 
   // Carica mercati all'avvio
@@ -165,13 +204,20 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
         setFormData(prev => ({
           ...prev,
           ragione_sociale: data.denominazione || '',
+          partita_iva: data.partita_iva || '',
           nome: data.rappresentante_legale_nome || '',
           cognome: data.rappresentante_legale_cognome || '',
           data_nascita: data.rappresentante_legale_data_nascita ? data.rappresentante_legale_data_nascita.split('T')[0] : '',
           luogo_nascita: data.rappresentante_legale_luogo_nascita || '',
           residenza_via: data.rappresentante_legale_residenza_via ? `${data.rappresentante_legale_residenza_via} ${data.rappresentante_legale_residenza_civico || ''}`.trim() : `${data.indirizzo_via || ''} ${data.indirizzo_civico || ''}`.trim(),
           residenza_comune: data.rappresentante_legale_residenza_comune || data.comune || '',
-          residenza_cap: data.rappresentante_legale_residenza_cap || data.cap || ''
+          residenza_provincia: data.rappresentante_legale_residenza_provincia || data.indirizzo_provincia || '',
+          residenza_cap: data.rappresentante_legale_residenza_cap || data.indirizzo_cap || '',
+          // Sede Legale
+          sede_legale_via: data.indirizzo_via ? `${data.indirizzo_via} ${data.indirizzo_civico || ''}`.trim() : '',
+          sede_legale_comune: data.comune || '',
+          sede_legale_provincia: data.indirizzo_provincia || '',
+          sede_legale_cap: data.indirizzo_cap || ''
         }));
         toast.success('Concessionario trovato!', { description: data.denominazione });
       } else {
@@ -185,10 +231,43 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
     }
   };
 
+  // Lookup Cedente per CF (solo per subingresso)
+  const handleLookupCedente = async () => {
+    if (!formData.cedente_cf) {
+      toast.error('Inserire Codice Fiscale Cedente');
+      return;
+    }
+
+    try {
+      setLoadingCedente(true);
+      const res = await fetch(`${API_URL}/api/imprese?codice_fiscale=${formData.cedente_cf}`);
+      const json = await res.json();
+      
+      if (json.success && json.data && json.data.length > 0) {
+        const data = json.data[0];
+        setFormData(prev => ({
+          ...prev,
+          cedente_ragione_sociale: data.denominazione || '',
+          cedente_impresa_id: data.id?.toString() || '',
+          autorizzazione_precedente_intestatario: data.denominazione || ''
+        }));
+        toast.success('Cedente trovato!', { description: data.denominazione });
+      } else {
+        toast.error('Cedente non trovato', { description: 'Inserire i dati manualmente' });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Errore ricerca cedente', { description: 'Impossibile contattare il server' });
+    } finally {
+      setLoadingCedente(false);
+    }
+  };
+
   // Handler cambio mercato
   const handleMarketChange = (marketId: string) => {
     const market = markets.find(m => m.id === parseInt(marketId));
     setSelectedMarketId(parseInt(marketId));
+    setSelectedMarket(market || null);
     setFormData(prev => ({
       ...prev,
       mercato: market?.name || '',
@@ -199,20 +278,31 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
       posteggio: '',
       posteggio_id: '',
       mq: '',
-      dimensioni_lineari: ''
+      dimensioni_lineari: '',
+      tipo_posteggio: '',
+      canone_unico: ''
     }));
   };
 
-  // Handler cambio posteggio - Auto-popola dimensioni
+  // Handler cambio posteggio - Auto-popola dimensioni e calcola canone
   const handleStallChange = (stallId: string) => {
     const stall = stalls.find(s => s.id === parseInt(stallId));
     if (stall) {
+      // Calcola canone se disponibili i dati
+      let canone = '';
+      if (selectedMarket?.cost_per_sqm && selectedMarket?.annual_market_days && stall.area_mq) {
+        const canoneAnnuo = parseFloat(stall.area_mq) * parseFloat(selectedMarket.cost_per_sqm) * selectedMarket.annual_market_days;
+        canone = canoneAnnuo.toFixed(2);
+      }
+      
       setFormData(prev => ({
         ...prev,
         posteggio: stall.number,
         posteggio_id: stallId,
         mq: stall.area_mq || '',
-        dimensioni_lineari: stall.dimensions || `${stall.width} x ${stall.depth}`
+        dimensioni_lineari: stall.dimensions || `${stall.width} x ${stall.depth}`,
+        tipo_posteggio: stall.type || '',
+        canone_unico: canone
       }));
       toast.success(`Posteggio ${stall.number} selezionato`, { 
         description: `${stall.area_mq} mq - ${stall.dimensions || `${stall.width} x ${stall.depth}`}` 
@@ -221,7 +311,7 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
   };
 
   const calculateExpiry = (years: string) => {
-    const date = new Date(formData.data_protocollazione);
+    const date = new Date(formData.data_decorrenza || formData.data_protocollazione);
     date.setFullYear(date.getFullYear() + parseInt(years));
     setFormData(prev => ({
       ...prev,
@@ -230,10 +320,27 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
     }));
   };
 
+  // Ricalcola scadenza quando cambia data decorrenza
+  const handleDecorrenzaChange = (dataDecorrenza: string) => {
+    const date = new Date(dataDecorrenza);
+    date.setFullYear(date.getFullYear() + parseInt(formData.durata_anni));
+    setFormData(prev => ({
+      ...prev,
+      data_decorrenza: dataDecorrenza,
+      data_scadenza: date.toISOString().split('T')[0]
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
   };
+
+  // Verifica se mostrare sezioni condizionali
+  const mostraCedente = formData.tipo_concessione === 'subingresso';
+  const mostraConversione = formData.tipo_concessione === 'conversione';
+  const mostraScia = formData.tipo_concessione === 'subingresso';
+  const mostraAutorizzazionePrecedente = ['subingresso', 'conversione', 'rinnovo', 'voltura'].includes(formData.tipo_concessione);
 
   return (
     <Card className="bg-[#0a1628] border-[#1e293b] max-w-4xl mx-auto max-h-[90vh] overflow-y-auto">
@@ -291,41 +398,84 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
             </div>
           </div>
 
-          {/* DATI CONCESSIONE */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label className="text-[#e8fbff]">Durata (Anni)</Label>
-              <Select value={formData.durata_anni} onValueChange={calculateExpiry}>
-                <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10 Anni</SelectItem>
-                  <SelectItem value="12">12 Anni</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-             <div className="space-y-2">
-              <Label className="text-[#e8fbff]">Tipo Concessione</Label>
-              <Select value={formData.tipo_concessione} onValueChange={(val) => setFormData({...formData, tipo_concessione: val})}>
-                <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nuova">Nuova Concessione</SelectItem>
-                  <SelectItem value="subingresso">Subingresso</SelectItem>
-                  <SelectItem value="conversione">Conversione</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* TIPO E DURATA CONCESSIONE */}
+          <div className="space-y-4 border-b border-[#1e293b] pb-6">
+            <h3 className="text-lg font-semibold text-[#e8fbff]">Tipo e Durata Concessione</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Tipo Concessione *</Label>
+                <Select value={formData.tipo_concessione} onValueChange={(val) => setFormData({...formData, tipo_concessione: val, sottotipo_conversione: ''})}>
+                  <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nuova">Nuova Autorizzazione</SelectItem>
+                    <SelectItem value="subingresso">Subingresso</SelectItem>
+                    <SelectItem value="conversione">Conversione</SelectItem>
+                    <SelectItem value="rinnovo">Rinnovo</SelectItem>
+                    <SelectItem value="voltura">Voltura</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Sottotipo Conversione - visibile solo se tipo = conversione */}
+              {mostraConversione && (
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">Sottotipo Conversione *</Label>
+                  <Select value={formData.sottotipo_conversione} onValueChange={(val) => setFormData({...formData, sottotipo_conversione: val})}>
+                    <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
+                      <SelectValue placeholder="Seleziona..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tipo_b_a">Tipo B → Tipo A</SelectItem>
+                      <SelectItem value="merceologia">Cambio Merceologia</SelectItem>
+                      <SelectItem value="dimensioni">Cambio Dimensioni</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Durata (Anni)</Label>
+                <Select value={formData.durata_anni} onValueChange={calculateExpiry}>
+                  <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 Anni</SelectItem>
+                    <SelectItem value="12">12 Anni</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Data Decorrenza</Label>
+                <Input 
+                  type="date"
+                  value={formData.data_decorrenza}
+                  onChange={(e) => handleDecorrenzaChange(e.target.value)}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Data Scadenza (auto)</Label>
+                <Input 
+                  type="date"
+                  value={formData.data_scadenza}
+                  readOnly
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
+                />
+              </div>
             </div>
           </div>
 
           {/* CONCESSIONARIO */}
           <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
-            <h3 className="text-sm font-semibold text-[#e8fbff]">Dati Concessionario</h3>
+            <h3 className="text-sm font-semibold text-[#e8fbff]">Dati Concessionario (Subentrante)</h3>
             
-            {/* Riga 1: CF e Ragione Sociale */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Riga 1: CF, P.IVA e Ragione Sociale */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex gap-2">
                 <Input 
                   placeholder="Codice Fiscale"
@@ -343,6 +493,12 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 </Button>
               </div>
               <Input 
+                placeholder="Partita IVA"
+                value={formData.partita_iva}
+                onChange={(e) => setFormData({...formData, partita_iva: e.target.value})}
+                className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+              />
+              <Input 
                 placeholder="Ragione Sociale"
                 value={formData.ragione_sociale}
                 onChange={(e) => setFormData({...formData, ragione_sociale: e.target.value})}
@@ -350,8 +506,20 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
               />
             </div>
 
-            {/* Riga 2: Dati Personali */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Riga 2: Qualità e Dati Personali */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Qualità</Label>
+                <Select value={formData.qualita} onValueChange={(val) => setFormData({...formData, qualita: val})}>
+                  <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="titolare">Titolare</SelectItem>
+                    <SelectItem value="legale rappresentante">Legale Rappresentante</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
                <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Nome</Label>
                 <Input 
@@ -388,7 +556,7 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
             </div>
 
             {/* Riga 3: Residenza */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Residenza (Via/Piazza)</Label>
                 <Input 
@@ -406,6 +574,16 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 />
               </div>
               <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Provincia</Label>
+                <Input 
+                  value={formData.residenza_provincia}
+                  onChange={(e) => setFormData({...formData, residenza_provincia: e.target.value.toUpperCase()})}
+                  placeholder="Es. BO"
+                  maxLength={2}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label className="text-[#e8fbff]">CAP</Label>
                 <Input 
                   value={formData.residenza_cap}
@@ -414,7 +592,184 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 />
               </div>
             </div>
+
+            {/* Riga 4: Sede Legale */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Sede Legale (Via)</Label>
+                <Input 
+                  value={formData.sede_legale_via}
+                  onChange={(e) => setFormData({...formData, sede_legale_via: e.target.value})}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Comune</Label>
+                <Input 
+                  value={formData.sede_legale_comune}
+                  onChange={(e) => setFormData({...formData, sede_legale_comune: e.target.value})}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Provincia</Label>
+                <Input 
+                  value={formData.sede_legale_provincia}
+                  onChange={(e) => setFormData({...formData, sede_legale_provincia: e.target.value.toUpperCase()})}
+                  placeholder="Es. BO"
+                  maxLength={2}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">CAP</Label>
+                <Input 
+                  value={formData.sede_legale_cap}
+                  onChange={(e) => setFormData({...formData, sede_legale_cap: e.target.value})}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+            </div>
           </div>
+
+          {/* CEDENTE - Solo per Subingresso */}
+          {mostraCedente && (
+            <div className="space-y-4 border p-4 rounded-lg border-[#14b8a6]/30 bg-[#14b8a6]/5">
+              <h3 className="text-sm font-semibold text-[#14b8a6]">Dati Cedente (Solo per Subingresso)</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="Codice Fiscale Cedente"
+                    value={formData.cedente_cf}
+                    onChange={(e) => setFormData({...formData, cedente_cf: e.target.value.toUpperCase()})}
+                    className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                  />
+                  <Button 
+                    type="button" 
+                    onClick={handleLookupCedente} 
+                    variant="secondary"
+                    disabled={loadingCedente}
+                  >
+                    {loadingCedente ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <Input 
+                  placeholder="Ragione Sociale Cedente"
+                  value={formData.cedente_ragione_sociale}
+                  onChange={(e) => setFormData({...formData, cedente_ragione_sociale: e.target.value})}
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+              
+              {/* Autorizzazione Precedente */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">Autorizzazione Prec. PG</Label>
+                  <Input 
+                    value={formData.autorizzazione_precedente_pg}
+                    onChange={(e) => setFormData({...formData, autorizzazione_precedente_pg: e.target.value})}
+                    placeholder="Es. 123456/2020"
+                    className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">Data Autorizzazione Prec.</Label>
+                  <Input 
+                    type="date"
+                    value={formData.autorizzazione_precedente_data}
+                    onChange={(e) => setFormData({...formData, autorizzazione_precedente_data: e.target.value})}
+                    className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">Intestatario Prec.</Label>
+                  <Input 
+                    value={formData.autorizzazione_precedente_intestatario}
+                    onChange={(e) => setFormData({...formData, autorizzazione_precedente_intestatario: e.target.value})}
+                    className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CONVERSIONE - Solo per Conversione */}
+          {mostraConversione && formData.sottotipo_conversione && (
+            <div className="space-y-4 border p-4 rounded-lg border-[#f59e0b]/30 bg-[#f59e0b]/5">
+              <h3 className="text-sm font-semibold text-[#f59e0b]">Dati Conversione</h3>
+              
+              {formData.sottotipo_conversione === 'merceologia' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[#e8fbff]">Merceologia Precedente</Label>
+                    <Select value={formData.merceologia_precedente} onValueChange={(val) => setFormData({...formData, merceologia_precedente: val})}>
+                      <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
+                        <SelectValue placeholder="Seleziona..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Alimentare">Alimentare</SelectItem>
+                        <SelectItem value="Non Alimentare">Non Alimentare</SelectItem>
+                        <SelectItem value="Misto">Misto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[#e8fbff]">Merceologia Nuova</Label>
+                    <Select value={formData.merceologia_nuova} onValueChange={(val) => setFormData({...formData, merceologia_nuova: val})}>
+                      <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
+                        <SelectValue placeholder="Seleziona..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Alimentare">Alimentare</SelectItem>
+                        <SelectItem value="Non Alimentare">Non Alimentare</SelectItem>
+                        <SelectItem value="Misto">Misto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              {formData.sottotipo_conversione === 'dimensioni' && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[#e8fbff]">MQ Precedenti</Label>
+                    <Input 
+                      value={formData.mq_precedenti}
+                      onChange={(e) => setFormData({...formData, mq_precedenti: e.target.value})}
+                      className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[#e8fbff]">Dimensioni Prec. (m x m)</Label>
+                    <Input 
+                      value={formData.dimensioni_precedenti}
+                      onChange={(e) => setFormData({...formData, dimensioni_precedenti: e.target.value})}
+                      placeholder="Es. 4 x 6"
+                      className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[#e8fbff]">MQ Nuovi</Label>
+                    <Input 
+                      value={formData.mq_nuovi}
+                      onChange={(e) => setFormData({...formData, mq_nuovi: e.target.value})}
+                      className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[#e8fbff]">Dimensioni Nuove (m x m)</Label>
+                    <Input 
+                      value={formData.dimensioni_nuove}
+                      onChange={(e) => setFormData({...formData, dimensioni_nuove: e.target.value})}
+                      placeholder="Es. 5 x 8"
+                      className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* POSTEGGIO */}
           <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
@@ -447,7 +802,7 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Fila</Label>
                 <Input 
@@ -502,9 +857,29 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                   readOnly
                 />
               </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Giorno</Label>
+                <Input 
+                  value={formData.giorno} 
+                  onChange={(e) => setFormData({...formData, giorno: e.target.value})}
+                  placeholder="Auto-popolato"
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]" 
+                  readOnly
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Tipo Posteggio</Label>
+                <Input 
+                  value={formData.tipo_posteggio} 
+                  onChange={(e) => setFormData({...formData, tipo_posteggio: e.target.value})}
+                  placeholder="Auto-popolato (fisso/spunta)"
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]" 
+                  readOnly
+                />
+              </div>
                <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Attrezzature</Label>
                 <Input 
@@ -531,38 +906,89 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
                 </Select>
               </div>
             </div>
+            
+            <div className="space-y-2">
+              <Label className="text-[#e8fbff]">Limitazioni Merceologia</Label>
+              <Input 
+                value={formData.limitazioni_merceologia} 
+                onChange={(e) => setFormData({...formData, limitazioni_merceologia: e.target.value})}
+                placeholder="Es. Esclusi prodotti ittici"
+                className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
+              />
+            </div>
           </div>
 
-          {/* RIFERIMENTI E CANONE */}
+          {/* RIFERIMENTI SCIA E CANONE */}
           <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
             <h3 className="text-sm font-semibold text-[#e8fbff]">Riferimenti e Canone</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[#e8fbff]">SCIA Precedente N.</Label>
-                <Input 
-                  value={formData.scia_precedente_numero} 
-                  onChange={(e) => setFormData({...formData, scia_precedente_numero: e.target.value})}
-                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
-                />
+            
+            {/* SCIA - Solo per Subingresso */}
+            {mostraScia && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b border-[#1e293b]">
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">SCIA Precedente N.</Label>
+                  <Input 
+                    value={formData.scia_precedente_numero} 
+                    onChange={(e) => setFormData({...formData, scia_precedente_numero: e.target.value})}
+                    className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">Data SCIA</Label>
+                  <Input 
+                    type="date"
+                    value={formData.scia_precedente_data} 
+                    onChange={(e) => setFormData({...formData, scia_precedente_data: e.target.value})}
+                    className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">Comune SCIA</Label>
+                  <Input 
+                    value={formData.scia_precedente_comune} 
+                    onChange={(e) => setFormData({...formData, scia_precedente_comune: e.target.value})}
+                    className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Data SCIA</Label>
-                <Input 
-                  type="date"
-                  value={formData.scia_precedente_data} 
-                  onChange={(e) => setFormData({...formData, scia_precedente_data: e.target.value})}
-                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
-                />
-              </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Canone Annuo (€)</Label>
                 <Input 
                   value={formData.canone_unico} 
                   onChange={(e) => setFormData({...formData, canone_unico: e.target.value})}
-                  placeholder="Da Wallet/PagoPA"
+                  placeholder="Auto-calcolato o da Wallet/PagoPA"
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]" 
                 />
               </div>
+            </div>
+          </div>
+
+          {/* ALLEGATI E PRESCRIZIONI */}
+          <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
+            <h3 className="text-sm font-semibold text-[#e8fbff]">Allegati e Prescrizioni</h3>
+            
+            <div className="flex items-center gap-4">
+              <input 
+                type="checkbox"
+                id="planimetria"
+                checked={formData.planimetria_allegata}
+                onChange={(e) => setFormData({...formData, planimetria_allegata: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="planimetria" className="text-[#e8fbff]">Planimetria Allegata</Label>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-[#e8fbff]">Prescrizioni</Label>
+              <Textarea 
+                value={formData.prescrizioni}
+                onChange={(e) => setFormData({...formData, prescrizioni: e.target.value})}
+                placeholder="Eventuali prescrizioni o note..."
+                className="bg-[#020817] border-[#1e293b] text-[#e8fbff] min-h-[80px]"
+              />
             </div>
           </div>
 
