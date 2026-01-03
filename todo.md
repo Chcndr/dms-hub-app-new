@@ -1002,3 +1002,12 @@
 - [ ] Giorno mercato non si compila automaticamente
 - [ ] Canone unico non si calcola automaticamente
 
+
+## BUG Form Concessione (3 Gen 2026 - 17:40)
+
+- [ ] Provincia residenza non popolata dalla SCIA
+- [ ] Tipo Posteggio mostra "spunta" invece di "fisso" (concessione deve essere sempre fisso)
+- [ ] Merceologia non auto-compilata dalla SCIA
+- [ ] Canone Annuo non calcolato/popolato
+- [ ] Errore "Failed to create concession" al salvataggio
+

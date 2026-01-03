@@ -1444,6 +1444,139 @@ export const dmsHubRouter = router({
         }),
     }),
   }),
+
+  // ============================================
+  // CONCESSIONI - Gestione concessioni posteggi
+  // ============================================
+  
+  concessions: router({
+    // Lista concessioni
+    list: publicProcedure
+      .input(z.object({
+        marketId: z.number().optional(),
+        vendorId: z.number().optional(),
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        
+        let query = db.select().from(schema.concessions);
+        
+        if (input?.marketId) {
+          query = query.where(eq(schema.concessions.marketId, input.marketId)) as any;
+        }
+        if (input?.vendorId) {
+          query = query.where(eq(schema.concessions.vendorId, input.vendorId)) as any;
+        }
+        if (input?.status) {
+          query = query.where(eq(schema.concessions.status, input.status)) as any;
+        }
+        
+        return await query.orderBy(desc(schema.concessions.createdAt));
+      }),
+    
+    // Dettaglio concessione
+    getById: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        
+        const [concession] = await db.select().from(schema.concessions)
+          .where(eq(schema.concessions.id, input));
+        
+        return concession || null;
+      }),
+    
+    // Crea concessione (chiamato dal form SUAP)
+    create: publicProcedure
+      .input(z.object({
+        vendorId: z.number(),
+        stallId: z.number().optional(),
+        marketId: z.number(),
+        concessionNumber: z.string(),
+        type: z.string(), // subingresso, nuova, conversione
+        startDate: z.string(),
+        endDate: z.string().optional(),
+        status: z.string().optional(),
+        fee: z.number().optional(),
+        paymentStatus: z.string().optional(),
+        notes: z.string().optional(),
+        // Dati aggiuntivi dal form
+        sciaId: z.number().optional(),
+        impresaId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        
+        const [concession] = await db.insert(schema.concessions).values({
+          vendorId: input.vendorId,
+          stallId: input.stallId || null,
+          marketId: input.marketId,
+          concessionNumber: input.concessionNumber,
+          type: input.type,
+          startDate: new Date(input.startDate),
+          endDate: input.endDate ? new Date(input.endDate) : null,
+          status: input.status || "active",
+          fee: input.fee || null,
+          paymentStatus: input.paymentStatus || "pending",
+          notes: input.notes || null,
+        }).returning();
+        
+        await logAction("CREATE_CONCESSION", "concession", concession.id, null, null, concession);
+        
+        // Se c'è una SCIA collegata, aggiorna lo stato della pratica
+        if (input.sciaId) {
+          await db.update(schema.suapPratiche)
+            .set({ 
+              stato: "approvata",
+              concessione_id: concession.id,
+              concessione_numero: concession.concessionNumber,
+            })
+            .where(eq(schema.suapPratiche.id, input.sciaId));
+        }
+        
+        return { success: true, concessionId: concession.id, concession };
+      }),
+    
+    // Aggiorna concessione
+    update: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.string().optional(),
+        endDate: z.string().optional(),
+        fee: z.number().optional(),
+        paymentStatus: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        
+        const { id, ...updateData } = input;
+        
+        const [oldConcession] = await db.select().from(schema.concessions)
+          .where(eq(schema.concessions.id, id));
+        
+        const updateValues: any = { updatedAt: new Date() };
+        if (updateData.status) updateValues.status = updateData.status;
+        if (updateData.endDate) updateValues.endDate = new Date(updateData.endDate);
+        if (updateData.fee !== undefined) updateValues.fee = updateData.fee;
+        if (updateData.paymentStatus) updateValues.paymentStatus = updateData.paymentStatus;
+        if (updateData.notes !== undefined) updateValues.notes = updateData.notes;
+        
+        const [updated] = await db.update(schema.concessions)
+          .set(updateValues)
+          .where(eq(schema.concessions.id, id))
+          .returning();
+        
+        await logAction("UPDATE_CONCESSION", "concession", id, null, oldConcession, updated);
+        
+        return { success: true, concession: updated };
+      }),
+  }),
 });
 
 export type DmsHubRouter = typeof dmsHubRouter;

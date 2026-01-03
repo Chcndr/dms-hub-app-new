@@ -353,7 +353,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
                 posteggio_id: targetStall.id.toString(),
                 mq: targetStall.area_mq || '',
                 dimensioni_lineari: targetStall.dimensions || '',
-                tipo_posteggio: targetStall.type || ''
+                tipo_posteggio: 'fisso' // Concessione è sempre fisso, mai spunta
               }));
             }
           }
@@ -439,12 +439,15 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
     setSelectedStallId(parseInt(stallId));
     const stall = stalls.find(s => s.id === parseInt(stallId));
     if (stall) {
-      // Calcola canone se disponibili i dati
-      let canone = '';
+      // Calcola canone se disponibili i dati, altrimenti usa quello dalla SCIA
+      let canone = formData.canone_unico || initialData?.canone_unico || '';
       if (selectedMarket?.cost_per_sqm && selectedMarket?.annual_market_days && stall.area_mq) {
         const canoneAnnuo = parseFloat(stall.area_mq) * parseFloat(selectedMarket.cost_per_sqm) * selectedMarket.annual_market_days;
         canone = canoneAnnuo.toFixed(2);
       }
+      
+      // Preserva la merceologia da initialData se presente
+      const merceologia = formData.merceologia || initialData?.merceologia || '';
       
       setFormData(prev => ({
         ...prev,
@@ -452,7 +455,8 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
         posteggio_id: stallId,
         mq: stall.area_mq || '',
         dimensioni_lineari: stall.dimensions || `${stall.width} x ${stall.depth}`,
-        tipo_posteggio: stall.type || '',
+        tipo_posteggio: 'fisso', // Concessione è sempre fisso, mai spunta
+        merceologia: merceologia,
         canone_unico: canone
       }));
       toast.success(`Posteggio ${stall.number} selezionato`, { 
@@ -505,12 +509,13 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
         ...formData,
         market_id: selectedMarketId,
         stall_id: selectedStallId,
+        valid_from: formData.data_decorrenza,
         valid_to: formData.data_scadenza,
         impresa_id: selectedImpresaId || null,
         scia_id: initialData?.scia_id || null
       };
       
-      const response = await fetch(`${API_URL}/api/concessions/full`, {
+      const response = await fetch(`${API_URL}/api/concessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -76,6 +76,8 @@ interface SuapPraticaFull extends SuapPratica {
   dimensioni_mq?: number;
   dimensioni_lineari?: string;
   attrezzature?: string;
+  canone_annuo?: number;
+  settore_merceologico?: string;
   notaio_rogante?: string;
   numero_repertorio?: string;
   data_atto?: string;
@@ -728,7 +730,9 @@ export default function SuapPanel() {
                         dimensioni_lineari: selectedPratica.dimensioni_lineari || '',
                         giorno: selectedPratica.giorno_mercato || '',
                         attrezzature: selectedPratica.attrezzature || '',
+                        tipo_posteggio: 'fisso', // Concessione è sempre fisso, mai spunta
                         merceologia: selectedPratica.settore_merceologico || 'Non Alimentare',
+                        canone_unico: selectedPratica.canone_annuo?.toString() || '',
                         // SCIA riferimento
                         scia_precedente_numero: selectedPratica.ced_scia_precedente || '',
                         scia_precedente_data: selectedPratica.ced_data_presentazione?.split('T')[0] || '',
