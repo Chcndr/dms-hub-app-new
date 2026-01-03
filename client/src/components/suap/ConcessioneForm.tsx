@@ -595,7 +595,22 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
         toast.success('Concessione salvata con successo!');
         onSubmit(result.data);
       } else {
-        toast.error(`Errore: ${result.error || 'Impossibile salvare la concessione'}`);
+        // Gestione errori specifici
+        const errorMsg = result.error || 'Impossibile salvare la concessione';
+        
+        if (errorMsg.toLowerCase().includes('overlapping') || errorMsg.toLowerCase().includes('conflict')) {
+          toast.error('Concessione già esistente per questo posteggio', {
+            description: 'Il posteggio selezionato ha già una concessione attiva. Per un subingresso, la concessione precedente deve essere prima chiusa o scaduta.',
+            duration: 8000
+          });
+        } else if (errorMsg.toLowerCase().includes('required')) {
+          toast.error('Dati mancanti', {
+            description: 'Verifica di aver compilato tutti i campi obbligatori (mercato, posteggio, date)',
+            duration: 6000
+          });
+        } else {
+          toast.error(`Errore: ${errorMsg}`);
+        }
       }
     } catch (error) {
       console.error('Errore salvataggio concessione:', error);
