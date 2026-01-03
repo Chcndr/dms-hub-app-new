@@ -1534,27 +1534,25 @@ export default function SuapPanel() {
         </div>
       )}
 
-      {/* Modal Form Concessione */}
+      {/* Form Concessione a schermo intero */}
       {showConcessioneForm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-2">
-          <div className="bg-[#0b1220] rounded-lg w-[98vw] max-w-[1600px] max-h-[95vh] overflow-y-auto border border-[#1e293b]">
-            <ConcessioneForm 
-              onSubmit={(savedConcessione) => {
-                setShowConcessioneForm(false);
-                setConcessionePreData(null);
-                loadConcessioni(); // Ricarica solo le concessioni
-                setActiveTab('concessioni'); // Vai al tab concessioni
-                toast.success('Concessione salvata!', { 
-                  description: `N. ${savedConcessione?.numero_protocollo || savedConcessione?.id}` 
-                });
-              }}
-              onCancel={() => {
-                setShowConcessioneForm(false);
-                setConcessionePreData(null);
-              }}
-              initialData={concessionePreData}
-            />
-          </div>
+        <div className="fixed inset-0 z-50 bg-[#0b1220] overflow-y-auto">
+          <ConcessioneForm 
+            onSubmit={(savedConcessione) => {
+              setShowConcessioneForm(false);
+              setConcessionePreData(null);
+              loadConcessioni(); // Ricarica solo le concessioni
+              setActiveTab('concessioni'); // Vai al tab concessioni
+              toast.success('Concessione salvata!', { 
+                description: `N. ${savedConcessione?.numero_protocollo || savedConcessione?.id}` 
+              });
+            }}
+            onCancel={() => {
+              setShowConcessioneForm(false);
+              setConcessionePreData(null);
+            }}
+            initialData={concessionePreData}
+          />
         </div>
       )}
     </div>
