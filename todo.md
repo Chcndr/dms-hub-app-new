@@ -1011,3 +1011,11 @@
 - [ ] Canone Annuo non calcolato/popolato
 - [ ] Errore "Failed to create concession" al salvataggio
 
+
+## BUG Form Concessione (3 Gen 2026 - 18:20) - URGENTE
+
+- [ ] Canone unico non calcolato automaticamente nel form da SCIA (funziona nel form manuale)
+- [ ] Errore "Overlapping concession exists for this stall" - gestire meglio
+- [ ] Verificare coerenza tra Gestione Mercati e SSO SUAP (stessa tabella concessions)
+- [ ] Dati mancanti nella concessione #31 (Nome, Cognome, P.IVA, CF vuoti)
+

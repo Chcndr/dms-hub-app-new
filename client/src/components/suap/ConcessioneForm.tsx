@@ -386,6 +386,24 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
             if (targetStall) {
               // Setta l'ID per il Select
               setSelectedStallId(targetStall.id);
+              
+              // Calcola canone unico se disponibili i dati del mercato
+              let canone = initialData?.canone_unico || '';
+              if (selectedMarket?.cost_per_sqm && selectedMarket?.annual_market_days && targetStall.area_mq) {
+                const canoneAnnuo = parseFloat(targetStall.area_mq) * parseFloat(selectedMarket.cost_per_sqm) * selectedMarket.annual_market_days;
+                canone = canoneAnnuo.toFixed(2);
+                console.log('[ConcessioneForm] Canone calcolato:', canone, '(', targetStall.area_mq, 'mq x', selectedMarket.cost_per_sqm, '€/mq x', selectedMarket.annual_market_days, 'giorni)');
+              } else {
+                console.log('[ConcessioneForm] Canone non calcolato - dati mancanti:', {
+                  cost_per_sqm: selectedMarket?.cost_per_sqm,
+                  annual_market_days: selectedMarket?.annual_market_days,
+                  area_mq: targetStall.area_mq
+                });
+              }
+              
+              // Preserva la merceologia da initialData se presente
+              const merceologia = initialData?.merceologia || '';
+              
               // Auto-compila i dati del posteggio
               setFormData(prev => ({
                 ...prev,
@@ -393,8 +411,16 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
                 posteggio_id: targetStall.id.toString(),
                 mq: targetStall.area_mq || '',
                 dimensioni_lineari: targetStall.dimensions || '',
-                tipo_posteggio: 'fisso' // Concessione è sempre fisso, mai spunta
+                tipo_posteggio: 'fisso', // Concessione è sempre fisso, mai spunta
+                canone_unico: canone,
+                merceologia: merceologia
               }));
+              
+              if (canone) {
+                toast.success(`Posteggio ${targetStall.number} pre-selezionato`, { 
+                  description: `Canone annuo: €${canone}` 
+                });
+              }
             }
           }
         } else {
@@ -409,7 +435,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
     };
     
     fetchStalls();
-  }, [selectedMarketId, initialData]);
+  }, [selectedMarketId, selectedMarket, initialData]);
 
   // Seleziona impresa dall'autocomplete (Concessionario)
   const selectImpresa = (impresa: Impresa) => {
