@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { ConcessionForm } from './ConcessionForm';
 import { 
   Building2, 
   Plus, 
@@ -976,13 +977,12 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       )}
 
       {showConcessionModal && (
-        <ConcessionModal
+        <ConcessionForm
           marketId={marketId}
           marketName={marketName}
           concession={selectedConcession}
           companies={companies}
           stalls={stalls}
-          concessions={concessions}
           onClose={handleCloseConcessionModal}
           onSaved={handleConcessionSaved}
           onDeleted={handleConcessionSaved}
@@ -2730,16 +2730,17 @@ function ConcessionModal({ marketId, marketName, concession, companies, stalls, 
     }
   };
 
+  // Design identico alla SCIA - tutte le sezioni in verticale scrollabile
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-6xl w-full max-h-[95vh] overflow-y-auto">
-        {/* Header */}
+      <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-5xl w-full max-h-[95vh] overflow-y-auto">
+        {/* Header sticky */}
         <div className="sticky top-0 bg-gray-900 border-b border-gray-700 px-6 py-4 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
             <FileText className="w-6 h-6 text-amber-500" />
             <div>
               <h3 className="text-lg font-semibold text-white">
-                {concession ? `Modifica Concessione #${concession.id}` : 'Nuova Concessione'}
+                {concession ? `Concessione #${concession.id}` : 'Nuova Concessione'}
               </h3>
               <p className="text-sm text-gray-400">{marketName || `Mercato ID: ${marketId}`}</p>
             </div>
@@ -2749,59 +2750,30 @@ function ConcessionModal({ marketId, marketName, concession, companies, stalls, 
           </button>
         </div>
 
-        {/* Tabs di navigazione */}
-        <div className="sticky top-[73px] bg-gray-900 border-b border-gray-700 px-6 py-2 z-10">
-          <div className="flex gap-2 overflow-x-auto">
-            {[
-              { id: 1, label: 'Dati Generali', icon: FileText },
-              { id: 2, label: 'Tipo e Durata', icon: Calendar },
-              { id: 3, label: 'Concessionario', icon: Users },
-              { id: 4, label: 'Posteggio', icon: MapPin },
-              { id: 5, label: 'Note', icon: FileText },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveSection(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeSection === tab.id
-                    ? 'bg-amber-500/20 text-amber-500 border border-amber-500/50'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 flex items-start gap-2 mb-6">
+            <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-red-400 text-sm">{error}</p>
             </div>
           )}
 
-          {/* SEZIONE 1: Dati Generali (Frontespizio) */}
-          {activeSection === 1 && (
-            <div className="space-y-6">
-              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                <h4 className="text-amber-500 font-semibold mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Frontespizio Documento
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Numero / Anno PG</label>
-                    <input
-                      type="text"
-                      value={formData.numero_protocollo}
-                      onChange={(e) => setFormData({ ...formData, numero_protocollo: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      placeholder="Es. 449021/2024"
-                    />
+          {/* SEZIONE 1: Dati Generali */}
+          <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50">
+            <h4 className="text-cyan-400 font-semibold mb-6 flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Dati Generali
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
+              <div>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Numero Protocollo</label>
+                <input
+                  type="text"
+                  value={formData.numero_protocollo}
+                  onChange={(e) => setFormData({ ...formData, numero_protocollo: e.target.value })}
+                  className="w-full bg-transparent border-b border-gray-700 text-white py-2 focus:outline-none focus:border-cyan-500"
+                  placeholder="Es. 449021/2024"
+                />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Data Protocollazione</label>
