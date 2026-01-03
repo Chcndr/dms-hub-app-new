@@ -264,6 +264,46 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
+          
+          // AUTO-RICERCA IMPRESA: Se c'è CF o P.IVA in initialData, cerca l'impresa e popola i campi
+          if (initialData?.cf_concessionario || initialData?.partita_iva) {
+            const searchValue = (initialData.cf_concessionario || initialData.partita_iva || '').toUpperCase();
+            console.log('[ConcessioneForm] Cercando impresa con CF/PIVA:', searchValue);
+            
+            const foundImpresa = impreseJson.data.find((i: Impresa) => 
+              i.codice_fiscale?.toUpperCase() === searchValue ||
+              i.partita_iva === searchValue.replace(/\D/g, '') ||
+              i.codice_fiscale?.toUpperCase().includes(searchValue) ||
+              searchValue.includes(i.codice_fiscale?.toUpperCase() || '')
+            );
+            
+            if (foundImpresa) {
+              console.log('[ConcessioneForm] Impresa trovata:', foundImpresa.denominazione);
+              // Popola i campi con i dati dell'impresa (inclusi provincia e CAP)
+              setFormData(prev => ({
+                ...prev,
+                cf_concessionario: foundImpresa.codice_fiscale || prev.cf_concessionario,
+                partita_iva: foundImpresa.partita_iva || prev.partita_iva,
+                ragione_sociale: foundImpresa.denominazione || prev.ragione_sociale,
+                nome: foundImpresa.rappresentante_legale_nome || prev.nome,
+                cognome: foundImpresa.rappresentante_legale_cognome || prev.cognome,
+                data_nascita: foundImpresa.rappresentante_legale_data_nascita ? foundImpresa.rappresentante_legale_data_nascita.split('T')[0] : prev.data_nascita,
+                luogo_nascita: foundImpresa.rappresentante_legale_luogo_nascita || prev.luogo_nascita,
+                residenza_via: foundImpresa.rappresentante_legale_residenza_via ? `${foundImpresa.rappresentante_legale_residenza_via} ${foundImpresa.rappresentante_legale_residenza_civico || ''}`.trim() : prev.residenza_via,
+                residenza_comune: foundImpresa.rappresentante_legale_residenza_comune || foundImpresa.comune || prev.residenza_comune,
+                residenza_provincia: foundImpresa.rappresentante_legale_residenza_provincia || foundImpresa.indirizzo_provincia || prev.residenza_provincia,
+                residenza_cap: foundImpresa.rappresentante_legale_residenza_cap || foundImpresa.indirizzo_cap || prev.residenza_cap,
+                sede_legale_via: foundImpresa.indirizzo_via ? `${foundImpresa.indirizzo_via} ${foundImpresa.indirizzo_civico || ''}`.trim() : prev.sede_legale_via,
+                sede_legale_comune: foundImpresa.comune || prev.sede_legale_comune,
+                sede_legale_provincia: foundImpresa.indirizzo_provincia || prev.sede_legale_provincia,
+                sede_legale_cap: foundImpresa.indirizzo_cap || prev.sede_legale_cap
+              }));
+              setSelectedImpresaId(foundImpresa.id);
+              toast.success('Impresa trovata e dati completati', { description: foundImpresa.denominazione });
+            } else {
+              console.log('[ConcessioneForm] Impresa non trovata nel database');
+            }
+          }
         }
       } catch (error) {
         console.error('Errore fetch dati:', error);
