@@ -125,6 +125,7 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
     
     // Sezione A - Subentrante
     cf_subentrante: '',
+    partita_iva_sub: '',
     ragione_sociale_sub: '',
     nome_sub: '',
     cognome_sub: '',
@@ -154,6 +155,7 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
     
     // Sezione B - Cedente
     cf_cedente: '',
+    partita_iva_ced: '',
     ragione_sociale_ced: '',
     nome_ced: '',
     cognome_ced: '',
@@ -397,7 +399,8 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
   const populateSubentranteData = (impresa: Impresa) => {
     setFormData(prev => ({
       ...prev,
-      cf_subentrante: impresa.codice_fiscale || impresa.partita_iva || '',
+      cf_subentrante: impresa.codice_fiscale || '',
+      partita_iva_sub: impresa.partita_iva || '',
       ragione_sociale_sub: impresa.denominazione || '',
       nome_sub: impresa.rappresentante_legale_nome || '',
       cognome_sub: impresa.rappresentante_legale_cognome || '',
@@ -419,7 +422,8 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
     setSelectedCedente(impresa); // Salva il cedente selezionato per filtrare mercati/posteggi
     setFormData(prev => ({
       ...prev,
-      cf_cedente: impresa.codice_fiscale || impresa.partita_iva || '',
+      cf_cedente: impresa.codice_fiscale || '',
+      partita_iva_ced: impresa.partita_iva || '',
       ragione_sociale_ced: impresa.denominazione || '',
       nome_ced: impresa.rappresentante_legale_nome || '',
       cognome_ced: impresa.rappresentante_legale_cognome || '',
@@ -845,20 +849,19 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
               A. Dati Subentrante
             </h3>
             
-            {/* Riga 1: CF/P.IVA/Denominazione e Ricerca con Autocomplete */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Riga 1: Cerca Impresa, P.IVA, CF e Ragione Sociale */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2 relative" ref={searchRef}>
-                <Label className="text-[#e8fbff]">CF / P.IVA / Denominazione *</Label>
+                <Label className="text-[#e8fbff]">Cerca Impresa *</Label>
                 <div className="flex gap-2">
                   <Input 
-                    value={formData.cf_subentrante}
+                    value={searchQuery}
                     onChange={(e) => {
                       const val = e.target.value.toUpperCase();
-                      setFormData({...formData, cf_subentrante: val});
                       setSearchQuery(val);
                     }}
-                    onFocus={() => formData.cf_subentrante.length >= 2 && setShowSuggestions(true)}
-                    placeholder="Es. RSSMRA... o 01234567890 o Nome Impresa"
+                    onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
+                    placeholder="P.IVA / CF / Nome"
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                   />
                   <Button 
@@ -888,16 +891,33 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
                       >
                         <p className="font-medium text-[#e8fbff]">{impresa.denominazione}</p>
                         <p className="text-sm text-[#e8fbff]/60">
-                          {impresa.codice_fiscale || impresa.partita_iva} • {impresa.comune}
+                          P.IVA: {impresa.partita_iva || '-'} | CF: {impresa.codice_fiscale || '-'}
                         </p>
                       </button>
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-[#e8fbff]/40">Digita per cercare o clicca la lente</p>
               </div>
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Ragione Sociale / Denominazione</Label>
+                <Label className="text-[#e8fbff]">Partita IVA</Label>
+                <Input 
+                  value={formData.partita_iva_sub}
+                  onChange={(e) => setFormData({...formData, partita_iva_sub: e.target.value.toUpperCase()})}
+                  placeholder="01234567890"
+                  className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Codice Fiscale</Label>
+                <Input 
+                  value={formData.cf_subentrante}
+                  onChange={(e) => setFormData({...formData, cf_subentrante: e.target.value.toUpperCase()})}
+                  placeholder="RSSMRA..."
+                  className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Ragione Sociale</Label>
                 <Input 
                   value={formData.ragione_sociale_sub}
                   onChange={(e) => setFormData({...formData, ragione_sociale_sub: e.target.value})}
@@ -1042,20 +1062,19 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
               I dati del cedente vengono compilati automaticamente quando selezioni un posteggio occupato
             </p>
             
-            {/* Riga 1: CF e Ricerca manuale con Autocomplete */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Riga 1: Cerca Cedente, P.IVA, CF e Ragione Sociale */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2 relative" ref={searchCedenteRef}>
-                <Label className="text-[#e8fbff]">CF / P.IVA / Denominazione Cedente *</Label>
+                <Label className="text-[#e8fbff]">Cerca Cedente *</Label>
                 <div className="flex gap-2">
                   <Input 
-                    value={formData.cf_cedente}
+                    value={cedenteSearchQuery}
                     onChange={(e) => {
                       const val = e.target.value.toUpperCase();
-                      setFormData({...formData, cf_cedente: val});
                       setCedenteSearchQuery(val);
                     }}
-                    onFocus={() => formData.cf_cedente.length >= 2 && setShowCedenteSuggestions(true)}
-                    placeholder="Es. VRDLGI... o 01234567890 o Nome Impresa"
+                    onFocus={() => cedenteSearchQuery.length >= 2 && setShowCedenteSuggestions(true)}
+                    placeholder="P.IVA / CF / Nome"
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                   />
                   <Button 
@@ -1084,13 +1103,30 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
                       >
                         <p className="font-medium text-[#e8fbff]">{impresa.denominazione}</p>
                         <p className="text-sm text-[#e8fbff]/60">
-                          {impresa.codice_fiscale || impresa.partita_iva} • {impresa.comune}
+                          P.IVA: {impresa.partita_iva || '-'} | CF: {impresa.codice_fiscale || '-'}
                         </p>
                       </button>
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-[#e8fbff]/40">Digita per cercare o clicca la lente</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Partita IVA Cedente</Label>
+                <Input 
+                  value={formData.partita_iva_ced}
+                  onChange={(e) => setFormData({...formData, partita_iva_ced: e.target.value.toUpperCase()})}
+                  placeholder="01234567890"
+                  className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Codice Fiscale Cedente</Label>
+                <Input 
+                  value={formData.cf_cedente}
+                  onChange={(e) => setFormData({...formData, cf_cedente: e.target.value.toUpperCase()})}
+                  placeholder="VRDLGI..."
+                  className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Ragione Sociale Cedente</Label>

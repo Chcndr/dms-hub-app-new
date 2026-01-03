@@ -288,8 +288,8 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
     setFormData(prev => ({
       ...prev,
       cf_concessionario: impresa.codice_fiscale || '',
-      ragione_sociale: impresa.denominazione || '',
       partita_iva: impresa.partita_iva || '',
+      ragione_sociale: impresa.denominazione || '',
       nome: impresa.rappresentante_legale_nome || '',
       cognome: impresa.rappresentante_legale_cognome || '',
       data_nascita: impresa.rappresentante_legale_data_nascita ? impresa.rappresentante_legale_data_nascita.split('T')[0] : '',
@@ -313,7 +313,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
   const selectCedente = (impresa: Impresa) => {
     setFormData(prev => ({
       ...prev,
-      cedente_cf: impresa.codice_fiscale || '',
+      cedente_cf: impresa.codice_fiscale || impresa.partita_iva || '',
       cedente_ragione_sociale: impresa.denominazione || '',
       cedente_impresa_id: impresa.id?.toString() || '',
       autorizzazione_precedente_intestatario: impresa.denominazione || ''
@@ -534,13 +534,15 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
           <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
             <h3 className="text-sm font-semibold text-[#e8fbff]">Dati Concessionario (Subentrante)</h3>
             
-            {/* Riga 1: Ricerca Impresa con autocomplete, P.IVA, CF e Ragione Sociale */}
+            {/* Riga 1: Ricerca con autocomplete, P.IVA, CF e Ragione Sociale */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="relative">
+              <div className="space-y-2 relative">
+                <Label className="text-[#e8fbff]">Cerca Impresa *</Label>
                 <Input 
-                  placeholder="Cerca P.IVA / CF / Denominazione"
+                  placeholder="P.IVA / CF / Denominazione"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
+                  onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                 />
                 {showSuggestions && (
@@ -553,31 +555,40 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
                       >
                         <div className="font-medium">{impresa.denominazione}</div>
                         <div className="text-xs text-gray-400">
-                          P.IVA: {impresa.partita_iva} | CF: {impresa.codice_fiscale}
+                          {impresa.codice_fiscale || impresa.partita_iva} • {impresa.comune}
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-              <Input 
-                placeholder="Partita IVA"
-                value={formData.partita_iva}
-                readOnly
-                className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
-              />
-              <Input 
-                placeholder="Codice Fiscale"
-                value={formData.cf_concessionario}
-                readOnly
-                className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
-              />
-              <Input 
-                placeholder="Ragione Sociale"
-                value={formData.ragione_sociale}
-                readOnly
-                className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
-              />
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Partita IVA</Label>
+                <Input 
+                  placeholder="Partita IVA"
+                  value={formData.partita_iva}
+                  readOnly
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Codice Fiscale</Label>
+                <Input 
+                  placeholder="Codice Fiscale"
+                  value={formData.cf_concessionario}
+                  readOnly
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Ragione Sociale</Label>
+                <Input 
+                  placeholder="Ragione Sociale"
+                  value={formData.ragione_sociale}
+                  readOnly
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
+                />
+              </div>
             </div>
 
             {/* Riga 2: Qualità e Dati Personali */}
@@ -711,12 +722,18 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
             <div className="space-y-4 border p-4 rounded-lg border-[#14b8a6]/30 bg-[#14b8a6]/5">
               <h3 className="text-sm font-semibold text-[#14b8a6]">Dati Cedente (Solo per Subingresso)</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 relative">
+                  <Label className="text-[#14b8a6]">CF / P.IVA / Denominazione Cedente *</Label>
                   <Input 
-                    placeholder="Cerca P.IVA / CF / Denominazione Cedente"
-                    value={cedenteSearchQuery}
-                    onChange={(e) => setCedenteSearchQuery(e.target.value.toUpperCase())}
+                    placeholder="Es. RSSMRA... o 01234567890 o Nome Impresa"
+                    value={formData.cedente_cf}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setFormData({...formData, cedente_cf: val});
+                      setCedenteSearchQuery(val);
+                    }}
+                    onFocus={() => formData.cedente_cf.length >= 2 && setShowCedenteSuggestions(true)}
                     className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                   />
                   {showCedenteSuggestions && (
@@ -729,25 +746,22 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
                         >
                           <div className="font-medium">{impresa.denominazione}</div>
                           <div className="text-xs text-gray-400">
-                            P.IVA: {impresa.partita_iva} | CF: {impresa.codice_fiscale}
+                            {impresa.codice_fiscale || impresa.partita_iva} • {impresa.comune}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-                <Input 
-                  placeholder="Codice Fiscale Cedente"
-                  value={formData.cedente_cf}
-                  readOnly
-                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
-                />
-                <Input 
-                  placeholder="Ragione Sociale Cedente"
-                  value={formData.cedente_ragione_sociale}
-                  readOnly
-                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
-                />
+                <div className="space-y-2">
+                  <Label className="text-[#14b8a6]">Ragione Sociale Cedente</Label>
+                  <Input 
+                    placeholder="Ragione Sociale Cedente"
+                    value={formData.cedente_ragione_sociale}
+                    readOnly
+                    className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
+                  />
+                </div>
               </div>
               
               {/* Autorizzazione Precedente */}

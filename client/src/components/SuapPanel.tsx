@@ -240,6 +240,7 @@ export default function SuapPanel() {
                               formData.tipologia_attivita === 'misto' ? 'Misto' : 'Non Alimentare',
         ruolo_dichiarante: formData.ruolo_dichiarante,
         // Dati subentrante (form usa suffisso _sub)
+        sub_partita_iva: formData.partita_iva_sub,
         sub_ragione_sociale: formData.ragione_sociale_sub,
         sub_nome: formData.nome_sub,
         sub_cognome: formData.cognome_sub,
@@ -255,6 +256,7 @@ export default function SuapPanel() {
         sub_pec: formData.pec_sub,
         sub_telefono: formData.telefono_sub,
         // Dati cedente (form usa suffisso _ced e cf_cedente)
+        ced_partita_iva: formData.partita_iva_ced,
         ced_cf: formData.cf_cedente,
         ced_ragione_sociale: formData.ragione_sociale_ced,
         ced_nome: formData.nome_ced,
