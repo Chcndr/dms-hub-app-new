@@ -36,6 +36,7 @@ import {
   User
 } from 'lucide-react';
 import { MarketAutorizzazioniTab } from './MarketAutorizzazioniTab';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // ============================================================================
 // TYPES
@@ -100,6 +101,7 @@ type ConcessionRow = {
   impresa_id?: number;
   impresa_denominazione?: string;
   impresa_partita_iva?: string;
+  notes?: string;
 };
 
 export type CompanyFormData = {
