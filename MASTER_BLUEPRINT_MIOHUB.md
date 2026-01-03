@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.11.0  
-> **Data:** 2 Gennaio 2026  
+> **Versione:** 3.12.0  
+> **Data:** 3 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -350,7 +350,7 @@ POST /api/guardian/debug/testEndpoint
 | `stalls` | Posteggi | **564** |
 | `imprese` | Imprese | **13** |
 | `vendors` | Operatori | **11** |
-| `concessions` | Concessioni | **23** |
+| `concessions` | Concessioni | **34** |
 | `agent_messages` | Chat agenti | ~500 |
 | `mio_agent_logs` | Log API | ~1500 |
 | `suap_pratiche` | Pratiche SUAP | **9** |
@@ -479,6 +479,97 @@ Il motore di verifica esegue **23 controlli automatici** su dati reali del siste
 | `client/src/api/suap.ts` | Client API SUAP |
 | `mihub-backend-rest/src/modules/suap/service.js` | Service backend SUAP + Motore Verifica v2.0 |
 | `mihub-backend-rest/routes/suap.js` | Routes API SUAP |
+
+
+### API Endpoints Concessioni (v2.0 - 3 Gennaio 2026)
+
+Il sistema di gestione concessioni è stato completamente aggiornato per supportare il **subingresso automatico** con trasferimento posteggio e wallet.
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/api/concessions` | GET | Lista concessioni con filtri (market_id, vendor_id, active_only) |
+| `/api/concessions/:id` | GET | Dettaglio singola concessione |
+| `/api/concessions` | POST | **Crea nuova concessione** - Gestisce automaticamente subingresso |
+| `/api/concessions/:id` | PUT | Aggiorna tutti i campi di una concessione |
+| `/api/concessions/:id` | PATCH | Aggiorna campi specifici |
+| `/api/concessions/:id` | DELETE | Elimina concessione e libera posteggio |
+| `/api/concessions/:id/associa-posteggio` | POST | Associa posteggio per subingresso manuale |
+
+#### Logica Subingresso Automatico (v2.0)
+
+Il `POST /api/concessions` rileva automaticamente un subingresso quando:
+- `tipo_concessione = 'subingresso'` **oppure**
+- È presente `cedente_impresa_id`
+
+**Flusso automatico:**
+1. Verifica se esiste concessione attiva per il posteggio
+2. Se subingresso:
+   - Chiude la concessione del cedente (stato = CESSATA)
+   - Trasferisce il saldo del wallet al subentrante
+   - Crea la nuova concessione per il subentrante
+   - Aggiorna lo stato del posteggio
+3. Se NON subingresso ma esiste overlap → errore 409
+
+#### Campi Supportati (60+ campi)
+
+| Categoria | Campi |
+|-----------|-------|
+| **Generali** | numero_protocollo, data_protocollazione, oggetto, numero_file |
+| **Concessione** | durata_anni, data_decorrenza, tipo_concessione, sottotipo_conversione, stato |
+| **Concessionario** | cf_concessionario, partita_iva, ragione_sociale, qualita, nome, cognome, data_nascita, luogo_nascita |
+| **Residenza** | residenza_via, residenza_comune, residenza_provincia, residenza_cap |
+| **Sede Legale** | sede_legale_via, sede_legale_comune, sede_legale_provincia, sede_legale_cap |
+| **Cedente** | cedente_cf, cedente_partita_iva, cedente_ragione_sociale, cedente_impresa_id |
+| **Posteggio** | fila, mq, dimensioni_lineari, giorno, tipo_posteggio, attrezzature, ubicazione |
+| **Conversione** | merceologia_precedente, merceologia_nuova, dimensioni_precedenti, dimensioni_nuove |
+| **Economici** | canone_unico |
+| **Riferimenti** | scia_precedente_numero, scia_precedente_data, scia_precedente_comune, scia_id |
+| **Allegati** | planimetria_allegata, prescrizioni |
+
+#### Esempio Chiamata Subingresso
+
+```json
+POST /api/concessions
+{
+  "market_id": 1,
+  "stall_id": 7,
+  "impresa_id": 4,
+  "tipo_concessione": "subingresso",
+  "cedente_impresa_id": 9,
+  "valid_from": "2025-01-03",
+  "valid_to": "2035-01-03",
+  "durata_anni": 10,
+  "settore_merceologico": "Alimentare",
+  "numero_protocollo": "CONC-2025-001"
+}
+```
+
+**Risposta:**
+```json
+{
+  "success": true,
+  "data": {
+    "concession": { "id": 34, "stato": "ATTIVA", ... },
+    "vendor_id": 17,
+    "impresa_id": 4,
+    "subingresso": {
+      "old_concession_id": 16,
+      "old_impresa_id": 9,
+      "wallet_transferred": true,
+      "transferred_balance": 150.00
+    }
+  },
+  "message": "Subingresso completato con successo. Concessione 16 cessata, nuova concessione 34 creata."
+}
+```
+
+#### File Principali Concessioni
+
+| File | Descrizione |
+|------|-------------|
+| `mihub-backend-rest/routes/concessions.js` | API REST concessioni (1200+ righe) |
+| `client/src/components/suap/ConcessioneForm.tsx` | Form frontespizio concessione |
+| `client/src/pages/MarketCompaniesTab.tsx` | Tab concessioni nel mercato |
 
 ---
 
@@ -687,6 +778,16 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 📝 CHANGELOG
+
+### v3.12.0 (03/01/2026) - API Concessioni v2.0 con Subingresso Automatico
+
+- ✅ **API Concessioni v2.0:** POST /api/concessions ora gestisce automaticamente subingresso
+- ✅ **Trasferimento Wallet:** Saldo wallet cedente trasferito automaticamente al subentrante
+- ✅ **60+ Campi Supportati:** Tutti i campi del frontespizio concessione
+- ✅ **PUT /api/concessions/:id:** Nuovo endpoint per aggiornamento completo
+- ✅ **Endpoint Registrati:** Tutti gli endpoint concessioni visibili in /api/dashboard/integrations
+- ✅ **Fix Schema DB:** Corretti riferimenti a colonne inesistenti (stalls.vendor_id, wallets.updated_at)
+- ✅ **Auto-creazione Vendor:** Se impresa_id fornito, vendor creato automaticamente con dati impresa
 
 ### v3.11.0 (02/01/2026) - Motore Verifica SCIA v2.0 con Controlli Reali
 - ✅ **Motore Verifica SCIA v2.0** - Implementazione completa con controlli reali:
