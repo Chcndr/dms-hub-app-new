@@ -2021,9 +2021,17 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
             </TableHeader>
             <TableBody>
               {concessions.map((concession) => {
-                const isExpired = concession.valid_to && new Date(concession.valid_to) < new Date();
+                // Priorità: stato dal DB (CESSATA, SOSPESA) > calcolo dinamico (SCADUTA) > ATTIVA
+                const isCessata = concession.stato === 'CESSATA' || concession.stato_calcolato === 'CESSATA';
+                const isSospesa = concession.stato === 'SOSPESA' || concession.stato_calcolato === 'SOSPESA';
+                const isExpired = !isCessata && !isSospesa && concession.valid_to && new Date(concession.valid_to) < new Date();
+                const displayStato = isCessata ? 'Cessata' : isSospesa ? 'Sospesa' : isExpired ? 'Scaduta' : 'Attiva';
+                const badgeClass = isCessata ? 'bg-gray-500/20 text-gray-400 border-gray-500/30' 
+                  : isSospesa ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                  : isExpired ? 'bg-red-500/20 text-red-400 border-red-500/30' 
+                  : 'bg-green-500/20 text-green-400 border-green-500/30';
                 return (
-                <TableRow key={concession.id} className={`border-[#14b8a6]/10 hover:bg-[#14b8a6]/5 ${isExpired ? 'opacity-70' : ''}`}>
+                <TableRow key={concession.id} className={`border-[#14b8a6]/10 hover:bg-[#14b8a6]/5 ${isCessata || isExpired ? 'opacity-70' : ''}`}>
                   <TableCell className="font-medium text-[#e8fbff]">{concession.stall_number}</TableCell>
                   <TableCell>
                     <div>
@@ -2048,10 +2056,8 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
                       : 'Indeterminato'}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={isExpired 
-                      ? "bg-red-500/20 text-red-400 border-red-500/30" 
-                      : "bg-green-500/20 text-green-400 border-green-500/30"}>
-                      {isExpired ? 'Scaduta' : 'Attiva'}
+                    <Badge variant="outline" className={badgeClass}>
+                      {displayStato}
                     </Badge>
                   </TableCell>
                 </TableRow>
