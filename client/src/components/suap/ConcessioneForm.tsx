@@ -206,7 +206,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
 
   // Lookup Concessionario per CF/P.IVA/Denominazione
   const handleLookup = async () => {
-    const searchTerm = formData.cf_concessionario || formData.partita_iva;
+    const searchTerm = formData.cf_concessionario;
     if (!searchTerm) {
       toast.error('Inserire CF, P.IVA o Denominazione');
       return;
@@ -234,6 +234,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
         const data = json.data[0];
         setFormData(prev => ({
           ...prev,
+          cf_concessionario: data.codice_fiscale || prev.cf_concessionario,
           ragione_sociale: data.denominazione || '',
           partita_iva: data.partita_iva || '',
           nome: data.rappresentante_legale_nome || '',
@@ -520,24 +521,13 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
           <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
             <h3 className="text-sm font-semibold text-[#e8fbff]">Dati Concessionario (Subentrante)</h3>
             
-            {/* Riga 1: P.IVA (con ricerca), CF e Ragione Sociale */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Riga 1: CF (con ricerca), P.IVA e Ragione Sociale */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="flex gap-2">
                 <Input 
-                  placeholder="P.IVA / CF / Denominazione"
-                  value={formData.partita_iva || formData.cf_concessionario}
-                  onChange={(e) => {
-                    const val = e.target.value.toUpperCase();
-                    // Se sembra un CF (16 caratteri alfanumerici) mettilo in cf_concessionario
-                    // Altrimenti mettilo in partita_iva
-                    if (val.length === 16 && /^[A-Z0-9]+$/.test(val)) {
-                      setFormData({...formData, cf_concessionario: val, partita_iva: ''});
-                    } else if (val.length === 11 && /^[0-9]+$/.test(val)) {
-                      setFormData({...formData, partita_iva: val, cf_concessionario: ''});
-                    } else {
-                      setFormData({...formData, partita_iva: val});
-                    }
-                  }}
+                  placeholder="CF / P.IVA / Denominazione"
+                  value={formData.cf_concessionario}
+                  onChange={(e) => setFormData({...formData, cf_concessionario: e.target.value.toUpperCase()})}
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                 />
                 <Button 
@@ -550,9 +540,9 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
                 </Button>
               </div>
               <Input 
-                placeholder="Codice Fiscale"
-                value={formData.cf_concessionario}
-                onChange={(e) => setFormData({...formData, cf_concessionario: e.target.value.toUpperCase()})}
+                placeholder="Partita IVA"
+                value={formData.partita_iva}
+                onChange={(e) => setFormData({...formData, partita_iva: e.target.value})}
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
               <Input 
