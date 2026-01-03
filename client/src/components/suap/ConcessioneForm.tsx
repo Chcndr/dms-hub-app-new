@@ -40,7 +40,13 @@ interface Stall {
   valid_to?: string;
 }
 
-export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () => void, onSubmit: (data: any) => void }) {
+interface ConcessioneFormProps {
+  onCancel: () => void;
+  onSubmit: (data: any) => void;
+  initialData?: any; // Dati pre-compilati da SCIA
+}
+
+export default function ConcessioneForm({ onCancel, onSubmit, initialData }: ConcessioneFormProps) {
   // Stati per dati dal database
   const [markets, setMarkets] = useState<Market[]>([]);
   const [stalls, setStalls] = useState<Stall[]>([]);
@@ -127,6 +133,17 @@ export default function ConcessioneForm({ onCancel, onSubmit }: { onCancel: () =
     planimetria_allegata: false,
     prescrizioni: ''
   });
+
+  // Pre-compila il form se ci sono dati iniziali (da SCIA)
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        ...initialData
+      }));
+      toast.info('Form pre-compilato con i dati della SCIA', { description: 'Verifica e completa i dati mancanti' });
+    }
+  }, [initialData]);
 
   // Carica mercati all'avvio
   useEffect(() => {

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { 
   FileText, CheckCircle2, XCircle, Clock, Loader2, 
   Search, Filter, Eye, Play, User, Building2, MapPin, FileCheck, Users,
-  Plus, LayoutDashboard, List, FileSearch, AlertCircle, TrendingUp
+  Plus, LayoutDashboard, List, FileSearch, AlertCircle, TrendingUp, ScrollText, Stamp
 } from 'lucide-react';
 import { 
   getSuapStats, getSuapPratiche, getSuapPraticaById, 
@@ -163,7 +163,7 @@ function timeAgo(dateStr?: string | null) {
 
 export default function SuapPanel() {
   // State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'lista' | 'dettaglio'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'lista' | 'dettaglio' | 'concessioni'>('dashboard');
   const [stats, setStats] = useState<SuapStats | null>(null);
   const [pratiche, setPratiche] = useState<SuapPratica[]>([]);
   const [selectedPratica, setSelectedPratica] = useState<SuapPraticaFull | null>(null);
@@ -171,6 +171,9 @@ export default function SuapPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSciaForm, setShowSciaForm] = useState(false);
   const [showConcessioneForm, setShowConcessioneForm] = useState(false);
+  const [concessionePreData, setConcessionePreData] = useState<any>(null);
+  const [concessioni, setConcessioni] = useState<any[]>([]);
+  const [searchConcessioni, setSearchConcessioni] = useState('');
   const [showAllChecks, setShowAllChecks] = useState(false); // false = solo ultima verifica, true = storico completo
 
   // Carica dati iniziali
@@ -364,9 +367,9 @@ export default function SuapPanel() {
       {/* Tabs di navigazione */}
       <Tabs 
         value={activeTab} 
-        onValueChange={(v) => setActiveTab(v as 'dashboard' | 'lista' | 'dettaglio')}
+        onValueChange={(v) => setActiveTab(v as 'dashboard' | 'lista' | 'dettaglio' | 'concessioni')}
       >
-        <TabsList className="grid w-full grid-cols-3 bg-[#0b1220]/50">
+        <TabsList className="grid w-full grid-cols-4 bg-[#0b1220]/50">
           <TabsTrigger 
             value="dashboard"
             className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
@@ -388,6 +391,13 @@ export default function SuapPanel() {
           >
             <FileSearch className="mr-2 h-4 w-4" />
             Dettaglio Pratica
+          </TabsTrigger>
+          <TabsTrigger 
+            value="concessioni"
+            className="data-[state=active]:bg-[#f59e0b]/20 data-[state=active]:text-[#f59e0b]"
+          >
+            <ScrollText className="mr-2 h-4 w-4" />
+            Lista Concessioni
           </TabsTrigger>
         </TabsList>
 
@@ -630,14 +640,64 @@ export default function SuapPanel() {
                     {selectedPratica.tipo_pratica} - {selectedPratica.richiedente_nome} ({selectedPratica.richiedente_cf})
                   </p>
                 </div>
-                <Button 
-                  onClick={handleEvaluate}
-                  disabled={loading}
-                  className="bg-[#00f0ff] text-[#0a1628] hover:bg-[#00d4e0]"
-                >
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-                  Esegui Valutazione
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleEvaluate}
+                    disabled={loading}
+                    className="bg-[#00f0ff] text-[#0a1628] hover:bg-[#00d4e0]"
+                  >
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                    Esegui Valutazione
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      // Pre-compila il form concessione con i dati della SCIA
+                      const preData = {
+                        tipo_concessione: 'subingresso',
+                        cf_concessionario: selectedPratica.richiedente_cf || '',
+                        ragione_sociale: selectedPratica.sub_ragione_sociale || selectedPratica.richiedente_nome || '',
+                        nome: selectedPratica.sub_nome || '',
+                        cognome: selectedPratica.sub_cognome || '',
+                        data_nascita: selectedPratica.sub_data_nascita?.split('T')[0] || '',
+                        luogo_nascita: selectedPratica.sub_luogo_nascita || '',
+                        residenza_via: selectedPratica.sub_residenza_via || '',
+                        residenza_comune: selectedPratica.sub_residenza_comune || '',
+                        residenza_cap: selectedPratica.sub_residenza_cap || '',
+                        sede_legale_via: selectedPratica.sub_sede_via || '',
+                        sede_legale_comune: selectedPratica.sub_sede_comune || '',
+                        sede_legale_provincia: selectedPratica.sub_sede_provincia || '',
+                        sede_legale_cap: selectedPratica.sub_sede_cap || '',
+                        // Cedente
+                        cedente_cf: selectedPratica.ced_cf || '',
+                        cedente_ragione_sociale: selectedPratica.ced_ragione_sociale || '',
+                        // Posteggio
+                        mercato: selectedPratica.mercato_nome || selectedPratica.mercato_id || '',
+                        ubicazione: selectedPratica.ubicazione_mercato || '',
+                        posteggio: selectedPratica.posteggio_numero || selectedPratica.posteggio_id || '',
+                        fila: selectedPratica.fila || '',
+                        mq: selectedPratica.dimensioni_mq?.toString() || '',
+                        dimensioni_lineari: selectedPratica.dimensioni_lineari || '',
+                        giorno: selectedPratica.giorno_mercato || '',
+                        attrezzature: selectedPratica.attrezzature || '',
+                        merceologia: selectedPratica.settore_merceologico || 'Non Alimentare',
+                        // SCIA riferimento
+                        scia_precedente_numero: selectedPratica.ced_scia_precedente || '',
+                        scia_precedente_data: selectedPratica.ced_data_presentazione?.split('T')[0] || '',
+                        scia_precedente_comune: selectedPratica.ced_comune_presentazione || '',
+                        // Autorizzazione precedente
+                        autorizzazione_precedente_pg: selectedPratica.ced_scia_precedente || '',
+                        autorizzazione_precedente_data: selectedPratica.ced_data_presentazione?.split('T')[0] || '',
+                        autorizzazione_precedente_intestatario: selectedPratica.ced_ragione_sociale || ''
+                      };
+                      setConcessionePreData(preData);
+                      setShowConcessioneForm(true);
+                    }}
+                    className="bg-[#f59e0b] text-black hover:bg-[#f59e0b]/90"
+                  >
+                    <Stamp className="mr-2 h-4 w-4" />
+                    Genera Concessione
+                  </Button>
+                </div>
               </div>
 
               {/* ============================================================== */}
@@ -973,6 +1033,100 @@ export default function SuapPanel() {
             </>
           )}
         </TabsContent>
+
+        {/* ================================================================== */}
+        {/* TAB LISTA CONCESSIONI */}
+        {/* ================================================================== */}
+        <TabsContent value="concessioni" className="space-y-4 mt-6">
+          {/* Barra ricerca e filtri */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Cerca per numero, concessionario o mercato..."
+                value={searchConcessioni}
+                onChange={(e) => setSearchConcessioni(e.target.value)}
+                className="pl-10 bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#f59e0b]/30 text-[#e8fbff]"
+              />
+            </div>
+            <Button variant="outline" className="border-[#f59e0b]/30 text-[#e8fbff]">
+              <Filter className="mr-2 h-4 w-4" />
+              Filtri
+            </Button>
+            <Button 
+              onClick={() => {
+                setConcessionePreData(null);
+                setShowConcessioneForm(true);
+              }}
+              className="bg-[#f59e0b] text-black hover:bg-[#f59e0b]/90"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nuova Concessione
+            </Button>
+          </div>
+
+          {/* Tabella concessioni */}
+          <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#f59e0b]/30">
+            <CardContent className="p-0">
+              {concessioni.length === 0 ? (
+                <div className="text-center py-16 text-gray-500">
+                  <ScrollText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                  <p>Nessuna concessione presente</p>
+                  <p className="text-sm mt-2">Le concessioni generate appariranno qui</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-[#f59e0b]/30 hover:bg-transparent">
+                      <TableHead className="text-gray-400">N. Protocollo</TableHead>
+                      <TableHead className="text-gray-400">Tipo</TableHead>
+                      <TableHead className="text-gray-400">Concessionario</TableHead>
+                      <TableHead className="text-gray-400">Mercato</TableHead>
+                      <TableHead className="text-gray-400">Posteggio</TableHead>
+                      <TableHead className="text-gray-400">Scadenza</TableHead>
+                      <TableHead className="text-gray-400">Stato</TableHead>
+                      <TableHead className="text-gray-400">Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {concessioni.map((conc) => (
+                      <TableRow 
+                        key={conc.id} 
+                        className="border-[#f59e0b]/30 hover:bg-[#0f172a] cursor-pointer"
+                      >
+                        <TableCell className="text-[#e8fbff] font-medium">{conc.numero_protocollo}</TableCell>
+                        <TableCell className="text-[#e8fbff]">{conc.tipo_concessione}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-[#e8fbff]">{conc.ragione_sociale}</p>
+                            <p className="text-xs text-gray-500">{conc.cf_concessionario}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-[#e8fbff]">{conc.mercato}</TableCell>
+                        <TableCell className="text-[#e8fbff]">{conc.posteggio}</TableCell>
+                        <TableCell className="text-gray-400">{formatDate(conc.data_scadenza)}</TableCell>
+                        <TableCell>
+                          <Badge className={conc.stato === 'ATTIVA' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}>
+                            {conc.stato || 'DA_ASSOCIARE'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            className="text-[#f59e0b] hover:bg-[#f59e0b]/10"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Modal Form SCIA */}
@@ -995,9 +1149,14 @@ export default function SuapPanel() {
             <ConcessioneForm 
               onSubmit={() => {
                 setShowConcessioneForm(false);
+                setConcessionePreData(null);
                 loadData();
               }}
-              onCancel={() => setShowConcessioneForm(false)}
+              onCancel={() => {
+                setShowConcessioneForm(false);
+                setConcessionePreData(null);
+              }}
+              initialData={concessionePreData}
             />
           </div>
         </div>
