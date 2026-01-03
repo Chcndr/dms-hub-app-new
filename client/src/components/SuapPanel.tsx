@@ -84,6 +84,9 @@ interface SuapPraticaFull extends SuapPratica {
   del_residenza_via?: string;
   del_residenza_comune?: string;
   del_residenza_cap?: string;
+  // Collegamento Concessione
+  concessione_id?: number;
+  concessione_numero?: string;
 }
 
 // ============================================================================
@@ -639,6 +642,18 @@ export default function SuapPanel() {
                   <p className="text-gray-400">
                     {selectedPratica.tipo_pratica} - {selectedPratica.richiedente_nome} ({selectedPratica.richiedente_cf})
                   </p>
+                  {/* Semaforo Stato Concessione */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className={`w-3 h-3 rounded-full ${selectedPratica.concessione_id ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+                    <span className={`text-sm font-medium ${selectedPratica.concessione_id ? 'text-green-400' : 'text-red-400'}`}>
+                      Concessione: {selectedPratica.concessione_id ? 'Creata' : 'Da Creare'}
+                    </span>
+                    {selectedPratica.concessione_id && (
+                      <Badge className="bg-green-500/20 text-green-400 text-xs ml-2">
+                        #{selectedPratica.concessione_id}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button 
