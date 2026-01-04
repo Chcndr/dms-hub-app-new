@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.16.0  
+> **Versione:** 3.16.1  
 > **Data:** 4 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -778,6 +778,21 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 📝 CHANGELOG
+### v3.16.1 (5 Gennaio 2026) - PUNTO DI RIPRISTINO STABILE
+**Fix Logica Rinnovo per Concessioni Scadute:**
+- ✅ **Query Rinnovo Migliorata:** Ora cerca anche concessioni scadute (non solo attive)
+- ✅ **Ordine per Data:** Trova la concessione più recente (`ORDER BY valid_to DESC`)
+- ✅ **Esclusione CESSATE:** Ignora solo concessioni già in stato CESSATA
+
+**Stato Sistema:**
+- ✅ Frontend: `dms-hub-app-new` (Vercel) - Commit `58f85fd`
+- ✅ Backend: `mihub-backend-rest` (Hetzner) - Commit `8938bf9`
+- ✅ Database: Neon PostgreSQL - Stabile
+- ✅ Logica Subingresso: Funzionante
+- ✅ Logica Rinnovo: Funzionante (anche per concessioni scadute)
+- ✅ Wallet: Trasferimento automatico attivo
+
+
 ### v3.16.0 (5 Gennaio 2026)
 **Logica Rinnovo Concessione Automatico:**
 - ✅ **Rilevamento Rinnovo:** Quando `tipo_concessione="rinnovo"`, il sistema gestisce automaticamente la sostituzione
