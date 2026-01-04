@@ -1703,7 +1703,24 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                                 const response = await fetch(`https://orchestratore.mio-hub.me/api/concessions/${conc.id}`);
                                 const data = await response.json();
                                 if (data.success && data.data) {
-                                  setSelectedConcessione({ ...conc, ...data.data });
+                                  let concessioneData = { ...conc, ...data.data };
+                                  // Se c'è cedente_impresa_id, carica anche i dati dell'impresa cedente
+                                  if (data.data.cedente_impresa_id) {
+                                    try {
+                                      const cedenteResponse = await fetch(`https://orchestratore.mio-hub.me/api/imprese/${data.data.cedente_impresa_id}`);
+                                      const cedenteData = await cedenteResponse.json();
+                                      if (cedenteData.success && cedenteData.data) {
+                                        concessioneData = {
+                                          ...concessioneData,
+                                          cedente_nome: cedenteData.data.rappresentante_legale_nome || '',
+                                          cedente_cognome: cedenteData.data.rappresentante_legale_cognome || ''
+                                        };
+                                      }
+                                    } catch (cedenteError) {
+                                      console.error('Errore caricamento impresa cedente:', cedenteError);
+                                    }
+                                  }
+                                  setSelectedConcessione(concessioneData);
                                 } else {
                                   setSelectedConcessione(conc);
                                 }
