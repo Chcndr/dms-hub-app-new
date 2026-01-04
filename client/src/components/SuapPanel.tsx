@@ -699,6 +699,11 @@ export default function SuapPanel() {
                     onClick={() => {
                       // Pre-compila il form concessione con i dati della SCIA
                       const preData = {
+                        // Dati Generali - Pre-compilati dalla SCIA
+                        numero_protocollo: selectedPratica.numero_protocollo || '',
+                        data_protocollazione: new Date().toISOString().split('T')[0],
+                        comune_rilascio: selectedPratica.comune_presentazione || '',
+                        oggetto: `Subingresso ${selectedPratica.sub_ragione_sociale || selectedPratica.richiedente_nome || ''} - Posteggio ${selectedPratica.posteggio_numero || ''}`,
                         tipo_concessione: 'subingresso',
                         cf_concessionario: selectedPratica.richiedente_cf || '',
                         partita_iva: selectedPratica.sub_partita_iva || '',

@@ -98,6 +98,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
     // Dati Generali (Frontespizio)
     numero_protocollo: '',
     data_protocollazione: new Date().toISOString().split('T')[0],
+    comune_rilascio: '', // Comune che rilascia la concessione
     oggetto: '', // Vuoto - da compilare a scelta
     numero_file: '',
     
@@ -663,6 +664,17 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
                 />
               </div>
               <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Comune Rilascio</Label>
+                <Input 
+                  value={formData.comune_rilascio}
+                  onChange={(e) => setFormData({...formData, comune_rilascio: e.target.value})}
+                  placeholder="Es. Grosseto"
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Numero File</Label>
                 <Input 
                   value={formData.numero_file}
@@ -671,14 +683,15 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#e8fbff]">Oggetto</Label>
-              <Textarea 
-                value={formData.oggetto}
-                onChange={(e) => setFormData({...formData, oggetto: e.target.value})}
-                className="bg-[#020817] border-[#1e293b] text-[#e8fbff] min-h-[80px]"
-              />
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Oggetto</Label>
+                <Textarea 
+                  value={formData.oggetto}
+                  onChange={(e) => setFormData({...formData, oggetto: e.target.value})}
+                  placeholder="Oggetto della concessione..."
+                  className="bg-[#020817] border-[#1e293b] text-[#e8fbff] min-h-[80px]"
+                />
+              </div>
             </div>
           </div>
 
