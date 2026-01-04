@@ -244,8 +244,18 @@ export default function VetrinePage() {
 
   // Funzione per gestire l'upload dell'immagine
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'principale' | 'gallery') => {
+    console.log('handleImageUpload called', { type, files: event.target.files });
     const file = event.target.files?.[0];
-    if (!file || !selectedImpresa) return;
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
+    if (!selectedImpresa) {
+      console.log('No selectedImpresa');
+      return;
+    }
+    
+    toast.info(`Caricamento ${file.name} in corso...`);
 
     // Verifica tipo file
     if (!file.type.startsWith('image/')) {
@@ -271,19 +281,23 @@ export default function VetrinePage() {
         setPreviewImage(base64Data);
 
         // Invia al backend
-        const response = await fetch(`${API_BASE_URL}/api/imprese/${selectedImpresa.id}/vetrina/upload`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: type,
-            imageData: base64Data,
-            fileName: file.name
-          }),
-        });
-
-        const result = await response.json();
+        console.log('Sending to backend:', { type, fileName: file.name, dataLength: base64Data.length });
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/imprese/${selectedImpresa.id}/vetrina/upload`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: type,
+              imageData: base64Data,
+              fileName: file.name
+            }),
+          });
+          
+          console.log('Response status:', response.status);
+          const result = await response.json();
+          console.log('Response result:', result);
 
         if (result.success) {
           // Aggiorna i dati locali
@@ -303,6 +317,10 @@ export default function VetrinePage() {
           setPreviewImage(null);
         } else {
           toast.error(result.error || 'Errore nel caricamento');
+        }
+        } catch (fetchError) {
+          console.error('Fetch error:', fetchError);
+          toast.error('Errore di connessione al server');
         }
         setIsUploadingImage(false);
       };
