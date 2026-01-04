@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.13.0  
+> **Versione:** 3.14.0  
 > **Data:** 4 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -778,6 +778,26 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 📝 CHANGELOG
+### v3.14.0 (4 Gennaio 2026 - Sera)
+**Fix Concessioni Multi-Vista:**
+- ✅ **Tab Imprese:** Statistiche dinamiche (Imprese Totali, Concessioni Attive, Comuni Coperti, Media)
+- ✅ **SSO SUAP:** Colore tab Lista Concessioni cambiato da giallo a verde
+- ✅ **Semafori Stato:** ATTIVA (verde), SCADUTA (rosso), CESSATA (grigio)
+- ✅ **Caricamento Dettagli:** Chiamata API aggiuntiva per dati completi (cedente, autorizzazione precedente)
+- ✅ **Mapping Campi:** Aggiunti 20+ campi mancanti (stall_number, cedente_*, autorizzazione_*, canone_unico, etc.)
+
+**Modifiche Database:**
+- ✅ **Colonna `scia_id`:** Modificata da INTEGER a TEXT per supportare UUID
+- ✅ **Nuova colonna `concessione_id`:** Aggiunta a tabella `suap_pratiche` per collegamento bidirezionale
+
+**Nuovi Endpoint API:**
+- ✅ **PATCH /api/suap/pratiche/:id:** Aggiornamento campi pratica (concessione_id, stato, note)
+- ✅ **Endpoint Registrati:** Aggiunti 15 nuovi endpoint in api/index.json (concessioni, imprese, qualificazioni)
+
+**Allineamento Repository:**
+- ✅ **GitHub ↔ Hetzner:** Backend allineato (commit `57c5e0d`)
+- ✅ **Frontend Vercel:** Deploy automatico attivo
+
 
 ### v3.13.0 (4 Gennaio 2026)
 
