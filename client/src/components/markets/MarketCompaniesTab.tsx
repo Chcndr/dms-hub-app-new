@@ -1155,8 +1155,20 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                         <ConcessionRow
                           key={concession.id}
                           concession={concession}
-                          onView={() => {
-                            setSelectedConcessionDetail(concession);
+                          onView={async () => {
+                            // Carica i dettagli completi della concessione (inclusi campi cedente)
+                            try {
+                              const response = await fetch(`https://orchestratore.mio-hub.me/api/concessions/${concession.id}`);
+                              const data = await response.json();
+                              if (data.success && data.data) {
+                                setSelectedConcessionDetail({ ...concession, ...data.data });
+                              } else {
+                                setSelectedConcessionDetail(concession);
+                              }
+                            } catch (error) {
+                              console.error('Errore caricamento dettagli concessione:', error);
+                              setSelectedConcessionDetail(concession);
+                            }
                             setConcessionDetailTab('dati');
                           }}
                           onEdit={() => handleOpenConcessionModal(concession)}
