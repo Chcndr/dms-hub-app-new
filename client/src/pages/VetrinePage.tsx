@@ -145,6 +145,24 @@ export default function VetrinePage() {
     loadData();
   }, [params?.id]);
 
+  // Reset stati form quando cambia l'impresa selezionata
+  useEffect(() => {
+    if (selectedImpresa) {
+      setEditDescrizione(selectedImpresa.vetrina_descrizione || '');
+      setEditSocialFacebook(selectedImpresa.social_facebook || '');
+      setEditSocialInstagram(selectedImpresa.social_instagram || '');
+      setEditSocialWebsite(selectedImpresa.social_website || '');
+      setEditSocialWhatsapp(selectedImpresa.social_whatsapp || '');
+    } else {
+      // Reset a valori vuoti quando non c'è impresa selezionata
+      setEditDescrizione('');
+      setEditSocialFacebook('');
+      setEditSocialInstagram('');
+      setEditSocialWebsite('');
+      setEditSocialWhatsapp('');
+    }
+  }, [selectedImpresa?.id]);
+
   const filteredImprese = imprese.filter(
     (impresa) =>
       impresa.denominazione.toLowerCase().includes(searchQuery.toLowerCase()) ||
