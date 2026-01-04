@@ -733,12 +733,12 @@ export default function VetrinePage() {
                       </div>
                     )}
                     <div>
-                      <Input
+                      <input
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleImageUpload(e, 'principale')}
                         disabled={isUploadingImage}
-                        className="w-auto"
+                        className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
                       />
                       <p className="text-xs text-muted-foreground mt-1">Max 5MB - JPG, PNG, GIF</p>
                     </div>
@@ -764,7 +764,7 @@ export default function VetrinePage() {
                       <label className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
                         <Upload className="h-6 w-6 text-muted-foreground mb-1" />
                         <span className="text-xs text-muted-foreground">Aggiungi</span>
-                        <Input
+                        <input
                           type="file"
                           accept="image/*"
                           onChange={(e) => handleImageUpload(e, 'gallery')}
