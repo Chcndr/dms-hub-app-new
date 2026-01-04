@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.12.0  
-> **Data:** 3 Gennaio 2026  
+> **Versione:** 3.13.0  
+> **Data:** 4 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -779,7 +779,35 @@ Piano sviluppo organizzato per quarter:
 
 ## 📝 CHANGELOG
 
-### v3.12.0 (03/01/2026) - API Concessioni v2.0 con Subingresso Automatico
+### v3.13.0 (4 Gennaio 2026)
+
+**Subingresso Automatico Completo:**
+- Implementata logica completa di subingresso nel `POST /api/concessions`
+- Rilevamento automatico subingresso da `tipo_concessione` o `cedente_impresa_id`
+- Trasferimento automatico wallet dal cedente al subentrante
+- Eliminazione wallet cedente con relative transazioni
+- Chiusura automatica concessione cedente (stato CESSATA)
+- Aggiornamento posteggio con nuovo vendor
+
+**Fix Visualizzazione Stati:**
+- Priorità stato CESSATA/SOSPESA dal DB rispetto al calcolo dinamico
+- Esclusione concessioni CESSATE dalla lista posteggi GIS
+- Esclusione concessioni CESSATE dalla scheda imprese
+- Fix semaforo qualifiche (supporto campo `end_date`)
+
+**Nuovi Endpoint API:**
+- `DELETE /api/wallets/:id` - Eliminazione wallet con transazioni
+- `POST /api/wallets` - Creazione wallet manuale
+- Registrazione endpoint concessioni in tab Integrazioni
+
+**Fix Database:**
+- Sanitizzazione campi numerici (stringhe vuote → null)
+- Rimozione ON CONFLICT non supportati
+- Correzione colonne wallets (`last_update` invece di `updated_at`)
+
+**Correzioni Dati:**
+- Fix qualifica REC Alimentari Rossi (SCADUTA → ATTIVA)
+- Eliminazione wallet orfani da concessioni cessate
 
 - ✅ **API Concessioni v2.0:** POST /api/concessions ora gestisce automaticamente subingresso
 - ✅ **Trasferimento Wallet:** Saldo wallet cedente trasferito automaticamente al subentrante
