@@ -1150,6 +1150,69 @@ export default function SuapPanel() {
                   <Button
                     variant="outline"
                     className="border-[#f59e0b]/30 text-[#e8fbff]"
+                    onClick={() => {
+                      // Genera PDF della concessione
+                      const conc = selectedConcessione;
+                      const content = `
+CONCESSIONE N. ${conc.numero_protocollo || conc.id}
+${'='.repeat(50)}
+
+FRONTESPIZIO
+------------
+Numero Protocollo: ${conc.numero_protocollo || '-'}
+Data Protocollazione: ${conc.data_protocollazione ? new Date(conc.data_protocollazione).toLocaleDateString('it-IT') : '-'}
+Comune Rilascio: ${conc.comune_rilascio || '-'}
+Durata: ${conc.durata_anni || 10} anni
+Tipo Concessione: ${conc.tipo_concessione || 'fisso'}
+Settore Merceologico: ${conc.settore_merceologico || '-'}
+Data Decorrenza: ${conc.data_decorrenza ? new Date(conc.data_decorrenza).toLocaleDateString('it-IT') : '-'}
+Data Scadenza: ${conc.valid_to ? new Date(conc.valid_to).toLocaleDateString('it-IT') : '-'}
+Oggetto: ${conc.oggetto || '-'}
+
+CONCESSIONARIO
+--------------
+Ragione Sociale: ${conc.ragione_sociale || '-'}
+Partita IVA: ${conc.partita_iva || '-'}
+Codice Fiscale: ${conc.cf_concessionario || '-'}
+Nome: ${conc.nome || '-'}
+Cognome: ${conc.cognome || '-'}
+
+DATI POSTEGGIO E MERCATO
+------------------------
+Mercato: ${conc.mercato_nome || conc.market_name || '-'}
+Numero Posteggio: ${conc.numero_posteggio || conc.stall_number || '-'}
+Ubicazione: ${conc.ubicazione || '-'}
+Giorno Mercato: ${conc.giorno_mercato || '-'}
+Fila: ${conc.fila || '-'}
+Dimensioni (MQ): ${conc.mq || '-'}
+Dimensioni Lineari: ${conc.dimensioni_lineari || '-'}
+
+CEDENTE (se subingresso)
+------------------------
+Ragione Sociale: ${conc.cedente_ragione_sociale || '-'}
+Partita IVA: ${conc.cedente_partita_iva || '-'}
+Codice Fiscale: ${conc.cedente_cf || '-'}
+Autorizzazione Precedente: ${conc.autorizzazione_precedente_pg || '-'}
+
+${'='.repeat(50)}
+Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}
+                      `.trim();
+                      
+                      // Download come file TXT
+                      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `Concessione_${conc.numero_protocollo || conc.id}_${new Date().toISOString().split('T')[0]}.txt`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      
+                      toast.success('Concessione esportata!', {
+                        description: `File scaricato: Concessione_${conc.numero_protocollo || conc.id}.txt`
+                      });
+                    }}
                   >
                     <FileCheck className="mr-2 h-4 w-4" />
                     Esporta
