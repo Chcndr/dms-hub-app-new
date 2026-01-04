@@ -952,10 +952,10 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
 
                   {/* 4. Cedente (per subingresso) */}
                   {(selectedConcessionDetail.cedente_ragione_sociale || selectedConcessionDetail.cedente_cf) && (
-                    <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#f59e0b]/30">
+                    <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
-                          <User className="h-5 w-5 text-[#f59e0b]" />
+                          <User className="h-5 w-5 text-[#14b8a6]" />
                           Cedente
                         </CardTitle>
                       </CardHeader>
@@ -971,10 +971,10 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
 
                   {/* 5. Autorizzazione Precedente */}
                   {(selectedConcessionDetail.autorizzazione_precedente_pg || selectedConcessionDetail.scia_precedente_numero) && (
-                    <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#8b5cf6]/30">
+                    <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
-                          <FileCheck className="h-5 w-5 text-[#8b5cf6]" />
+                          <FileCheck className="h-5 w-5 text-[#14b8a6]" />
                           Autorizzazione / SCIA Precedente
                         </CardTitle>
                       </CardHeader>
@@ -1005,17 +1005,17 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
 
                   {/* 6. Dati Economici */}
                   {(selectedConcessionDetail.canone_unico || selectedConcessionDetail.attrezzature) && (
-                    <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#22c55e]/30">
+                    <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
-                          <Wallet className="h-5 w-5 text-[#22c55e]" />
+                          <Wallet className="h-5 w-5 text-[#14b8a6]" />
                           Dati Economici e Attrezzature
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {selectedConcessionDetail.canone_unico && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">Canone Unico</p><p className="text-[#22c55e] font-bold text-lg">€ {Number(selectedConcessionDetail.canone_unico).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p></div>
+                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">Canone Unico</p><p className="text-[#14b8a6] font-bold text-lg">€ {Number(selectedConcessionDetail.canone_unico).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p></div>
                           )}
                           {selectedConcessionDetail.attrezzature && (
                             <div><p className="text-xs text-gray-500 uppercase tracking-wide">Attrezzature</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.attrezzature}</p></div>

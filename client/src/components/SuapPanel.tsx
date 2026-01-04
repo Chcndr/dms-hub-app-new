@@ -775,7 +775,7 @@ export default function SuapPanel() {
                       setConcessionePreData(preData);
                       setShowConcessioneForm(true);
                     }}
-                    className="bg-[#f59e0b] text-black hover:bg-[#f59e0b]/90"
+                    className="bg-[#14b8a6] text-black hover:bg-[#14b8a6]/90"
                   >
                     <Stamp className="mr-2 h-4 w-4" />
                     Genera Concessione
@@ -1181,7 +1181,7 @@ export default function SuapPanel() {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    className="border-[#f59e0b]/30 text-[#e8fbff]"
+                    className="border-[#14b8a6]/30 text-[#e8fbff]"
                     onClick={() => {
                       // Genera PDF della concessione
                       const conc = selectedConcessione;
@@ -1508,10 +1508,10 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                 placeholder="Cerca per numero, concessionario o mercato..."
                 value={searchConcessioni}
                 onChange={(e) => setSearchConcessioni(e.target.value)}
-                className="pl-10 bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#f59e0b]/30 text-[#e8fbff]"
+                className="pl-10 bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
               />
             </div>
-            <Button variant="outline" className="border-[#f59e0b]/30 text-[#e8fbff]">
+            <Button variant="outline" className="border-[#14b8a6]/30 text-[#e8fbff]">
               <Filter className="mr-2 h-4 w-4" />
               Filtri
             </Button>
@@ -1520,7 +1520,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                 setConcessionePreData(null);
                 setShowConcessioneForm(true);
               }}
-              className="bg-[#f59e0b] text-black hover:bg-[#f59e0b]/90"
+              className="bg-[#14b8a6] text-black hover:bg-[#14b8a6]/90"
             >
               <Plus className="mr-2 h-4 w-4" />
               Nuova Concessione
@@ -1528,7 +1528,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
           </div>
 
           {/* Tabella concessioni */}
-          <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#f59e0b]/30">
+          <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
             <CardContent className="p-0">
               {concessioni.length === 0 ? (
                 <div className="text-center py-16 text-gray-500">
@@ -1539,7 +1539,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-[#f59e0b]/30 hover:bg-transparent">
+                    <TableRow className="border-[#14b8a6]/30 hover:bg-transparent">
                       <TableHead className="text-gray-400">N. Protocollo</TableHead>
                       <TableHead className="text-gray-400">Tipo</TableHead>
                       <TableHead className="text-gray-400">Concessionario</TableHead>
@@ -1565,13 +1565,13 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                       .map((conc) => (
                       <TableRow 
                         key={conc.id} 
-                        className="border-[#f59e0b]/30 hover:bg-[#0f172a] cursor-pointer"
+                        className="border-[#14b8a6]/30 hover:bg-[#0f172a] cursor-pointer"
                       >
                         <TableCell className="text-[#e8fbff] font-medium">
                           {conc.numero_protocollo || `#${conc.id}`}
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-[#f59e0b]/20 text-[#f59e0b]">
+                          <Badge className="bg-[#14b8a6]/20 text-[#14b8a6]">
                             {conc.tipo_concessione || 'nuova'}
                           </Badge>
                         </TableCell>
@@ -1603,7 +1603,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                           <Button 
                             size="sm" 
                             variant="ghost"
-                            className="text-[#f59e0b] hover:bg-[#f59e0b]/10"
+                            className="text-[#14b8a6] hover:bg-[#14b8a6]/10"
                             onClick={async () => {
                               // Carica i dettagli completi della concessione (inclusi campi cedente)
                               try {
