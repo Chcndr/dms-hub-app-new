@@ -740,7 +740,9 @@ export default function SuapPanel() {
                         // Autorizzazione precedente
                         autorizzazione_precedente_pg: selectedPratica.ced_scia_precedente || '',
                         autorizzazione_precedente_data: selectedPratica.ced_data_presentazione?.split('T')[0] || '',
-                        autorizzazione_precedente_intestatario: selectedPratica.ced_ragione_sociale || ''
+                        autorizzazione_precedente_intestatario: selectedPratica.ced_ragione_sociale || '',
+                        // ID SCIA per collegamento
+                        scia_id: selectedPratica.id
                       };
                       setConcessionePreData(preData);
                       setShowConcessioneForm(true);
@@ -1545,7 +1547,20 @@ export default function SuapPanel() {
             onSubmit={(savedConcessione) => {
               setShowConcessioneForm(false);
               setConcessionePreData(null);
-              loadConcessioni(); // Ricarica solo le concessioni
+              loadConcessioni(); // Ricarica le concessioni
+              // Aggiorna la pratica selezionata con il nuovo concessione_id
+              if (selectedPratica && savedConcessione?.id) {
+                setSelectedPratica({
+                  ...selectedPratica,
+                  concessione_id: savedConcessione.id
+                });
+                // Aggiorna anche nella lista pratiche
+                setPratiche(prev => prev.map(p => 
+                  p.id === selectedPratica.id 
+                    ? { ...p, concessione_id: savedConcessione.id }
+                    : p
+                ));
+              }
               setActiveTab('concessioni'); // Vai al tab concessioni
               toast.success('Concessione salvata!', { 
                 description: `N. ${savedConcessione?.numero_protocollo || savedConcessione?.id}` 
