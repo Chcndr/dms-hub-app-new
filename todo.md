@@ -1019,3 +1019,11 @@
 - [ ] Verificare coerenza tra Gestione Mercati e SSO SUAP (stessa tabella concessions)
 - [ ] Dati mancanti nella concessione #31 (Nome, Cognome, P.IVA, CF vuoti)
 
+
+## FEATURE Subingresso (3 Gen 2026 - 18:40)
+
+- [ ] Implementare logica subingresso: UPDATE concessione esistente invece di INSERT
+- [ ] Trasferire posteggio al nuovo subentrante
+- [ ] Mantenere wallet con canone già versato
+- [ ] Aggiornare connessioni impresa automaticamente
+

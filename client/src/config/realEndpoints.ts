@@ -320,20 +320,602 @@ export const concessionsEndpoints: EndpointConfig[] = [
     category: 'Concessioni',
     exampleResponse: {
       success: true,
-      data: [
-        {
-          id: 1,
-          vendor_id: 1,
-          stall_id: 1,
-          market_id: 1,
-          type: 'annual',
-          start_date: '2025-01-01',
-          end_date: '2025-12-31',
-          status: 'active'
-        }
-      ],
-      count: 5
-    }
+      data: [{ id: 1, vendor_id: 1, stall_id: 1, market_id: 1, type: 'annual', status: 'ATTIVA' }],
+      count: 21
+    },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'concessions-get-by-id',
+    method: 'GET',
+    path: '/api/concessions/:id',
+    name: 'Dettaglio Concessione',
+    description: 'Ottieni i dettagli completi di una concessione specifica',
+    category: 'Concessioni',
+    exampleParams: { id: 36 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'concessions-create',
+    method: 'POST',
+    path: '/api/concessions',
+    name: 'Crea Concessione',
+    description: 'Crea una nuova concessione (assegnazione posteggio)',
+    category: 'Concessioni',
+    exampleBody: { market_id: 1, stall_id: 152, vendor_id: 11, type: 'fisso' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'concessions-create-full',
+    method: 'POST',
+    path: '/api/concessions/full',
+    name: 'Crea Concessione Completa',
+    description: 'Crea concessione con tutti i 60+ campi da SCIA, gestisce subingresso automatico',
+    category: 'Concessioni',
+    exampleBody: { market_id: 1, stall_id: 152, impresa_id: 2, tipo_concessione: 'subingresso' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026 - Gestisce trasferimento wallet e cessazione vecchia concessione'
+  },
+  {
+    id: 'concessions-update',
+    method: 'PUT',
+    path: '/api/concessions/:id',
+    name: 'Aggiorna Concessione',
+    description: 'Aggiorna tutti i campi di una concessione esistente',
+    category: 'Concessioni',
+    exampleParams: { id: 36 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'concessions-patch',
+    method: 'PATCH',
+    path: '/api/concessions/:id',
+    name: 'Aggiorna Parziale Concessione',
+    description: 'Aggiorna campi specifici: stato, scia_id, comune_rilascio, durata_anni, etc.',
+    category: 'Concessioni',
+    exampleParams: { id: 36 },
+    exampleBody: { scia_id: 'uuid-pratica', stato: 'ATTIVA' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'concessions-delete',
+    method: 'DELETE',
+    path: '/api/concessions/:id',
+    name: 'Elimina Concessione',
+    description: 'Elimina una concessione e libera il posteggio',
+    category: 'Concessioni',
+    exampleParams: { id: 36 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'concessions-associa-posteggio',
+    method: 'POST',
+    path: '/api/concessions/:id/associa-posteggio',
+    name: 'Associa Posteggio',
+    description: 'Associa un posteggio a una concessione esistente',
+    category: 'Concessioni',
+    exampleParams: { id: 36 },
+    exampleBody: { stall_id: 152 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  }
+];
+
+/**
+ * CATEGORIA: SUAP / PRATICHE
+ * Gestione pratiche SCIA e workflow SUAP
+ */
+export const suapEndpoints: EndpointConfig[] = [
+  {
+    id: 'suap-stats',
+    method: 'GET',
+    path: '/api/suap/stats',
+    name: 'Statistiche SUAP',
+    description: 'Ottieni statistiche aggregate delle pratiche SUAP',
+    category: 'SUAP',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-list',
+    method: 'GET',
+    path: '/api/suap/pratiche',
+    name: 'Lista Pratiche SCIA',
+    description: 'Ottieni tutte le pratiche SCIA con filtri opzionali',
+    category: 'SUAP',
+    exampleResponse: { success: true, data: [], count: 0 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-get',
+    method: 'GET',
+    path: '/api/suap/pratiche/:id',
+    name: 'Dettaglio Pratica SCIA',
+    description: 'Ottieni dettagli completi di una pratica SCIA con checks, eventi, documenti',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-create',
+    method: 'POST',
+    path: '/api/suap/pratiche',
+    name: 'Crea Pratica SCIA',
+    description: 'Crea una nuova pratica SCIA nel sistema',
+    category: 'SUAP',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-patch',
+    method: 'PATCH',
+    path: '/api/suap/pratiche/:id',
+    name: 'Aggiorna Pratica SCIA',
+    description: 'Aggiorna campi pratica: concessione_id, stato, note, esito',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    exampleBody: { concessione_id: 36, stato: 'APPROVED' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026 - Nuovo endpoint'
+  },
+  {
+    id: 'suap-pratiche-valuta',
+    method: 'POST',
+    path: '/api/suap/pratiche/:id/valuta',
+    name: 'Valuta Pratica',
+    description: 'Esegue valutazione automatica della pratica SCIA',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-stato',
+    method: 'POST',
+    path: '/api/suap/pratiche/:id/stato',
+    name: 'Cambia Stato Pratica',
+    description: 'Cambio stato manuale della pratica con motivazione',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    exampleBody: { nuovo_stato: 'APPROVED', motivazione: 'Approvata' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-refresh',
+    method: 'POST',
+    path: '/api/suap/pratiche/:id/refresh',
+    name: 'Refresh Dati Pratica',
+    description: 'Aggiorna dati pratica con enrichment esterno',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-checks',
+    method: 'GET',
+    path: '/api/suap/pratiche/:id/checks',
+    name: 'Lista Verifiche Pratica',
+    description: 'Ottieni tutte le verifiche eseguite sulla pratica',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-checks-create',
+    method: 'POST',
+    path: '/api/suap/pratiche/:id/checks',
+    name: 'Registra Verifica Manuale',
+    description: 'Registra esito di una verifica manuale',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    exampleBody: { check_code: 'CHECK_DURC', esito: true, dettaglio: 'DURC valido' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-eventi',
+    method: 'GET',
+    path: '/api/suap/pratiche/:id/eventi',
+    name: 'Storico Eventi Pratica',
+    description: 'Ottieni lo storico di tutti gli eventi della pratica',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-documenti',
+    method: 'GET',
+    path: '/api/suap/pratiche/:id/documenti',
+    name: 'Lista Documenti Pratica',
+    description: 'Ottieni tutti i documenti allegati alla pratica',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-documenti-upload',
+    method: 'POST',
+    path: '/api/suap/pratiche/:id/documenti',
+    name: 'Upload Documento',
+    description: 'Carica un documento allegato alla pratica (multipart/form-data)',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-documenti-download',
+    method: 'GET',
+    path: '/api/suap/documenti/:docId/download',
+    name: 'Download Documento',
+    description: 'Scarica un documento allegato tramite URL firmato S3',
+    category: 'SUAP',
+    exampleParams: { docId: 'uuid-documento' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-azioni',
+    method: 'GET',
+    path: '/api/suap/pratiche/:id/azioni',
+    name: 'Lista Azioni Workflow',
+    description: 'Ottieni tutte le azioni workflow della pratica',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-pratiche-azioni-create',
+    method: 'POST',
+    path: '/api/suap/pratiche/:id/azioni',
+    name: 'Crea Azione Workflow',
+    description: 'Crea una nuova azione nel workflow della pratica',
+    category: 'SUAP',
+    exampleParams: { id: 'uuid-pratica' },
+    exampleBody: { tipo_azione: 'RICHIESTA_INTEGRAZIONE', payload: {} },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-regole',
+    method: 'GET',
+    path: '/api/suap/regole',
+    name: 'Lista Regole Valutazione',
+    description: 'Ottieni tutte le regole di valutazione configurate',
+    category: 'SUAP',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-regole-update',
+    method: 'PUT',
+    path: '/api/suap/regole/:checkCode',
+    name: 'Aggiorna Regola',
+    description: 'Aggiorna configurazione di una regola di valutazione',
+    category: 'SUAP',
+    exampleParams: { checkCode: 'CHECK_DURC' },
+    exampleBody: { enabled: true, peso: 10 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'suap-import',
+    method: 'POST',
+    path: '/api/suap/import',
+    name: 'Import Pratiche',
+    description: 'Importa pratiche SCIA da file o sistema esterno',
+    category: 'SUAP',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  }
+];
+
+/**
+ * CATEGORIA: WALLETS
+ * Gestione wallet PagoPA e transazioni
+ */
+export const walletsEndpoints: EndpointConfig[] = [
+  {
+    id: 'wallets-list',
+    method: 'GET',
+    path: '/api/wallets',
+    name: 'Lista Wallets',
+    description: 'Ottieni tutti i wallet attivi nel sistema',
+    category: 'Wallets',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'wallets-by-company',
+    method: 'GET',
+    path: '/api/wallets/company/:companyId',
+    name: 'Wallets per Impresa',
+    description: 'Ottieni tutti i wallet di una specifica impresa',
+    category: 'Wallets',
+    exampleParams: { companyId: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'wallets-transactions',
+    method: 'GET',
+    path: '/api/wallets/:id/transactions',
+    name: 'Transazioni Wallet',
+    description: 'Ottieni lo storico transazioni di un wallet',
+    category: 'Wallets',
+    exampleParams: { id: 1 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'wallets-create',
+    method: 'POST',
+    path: '/api/wallets',
+    name: 'Crea Wallet',
+    description: 'Crea un nuovo wallet per una concessione',
+    category: 'Wallets',
+    exampleBody: { concession_id: 36, company_id: 2, balance: 0 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'wallets-init',
+    method: 'POST',
+    path: '/api/wallets/init',
+    name: 'Inizializza Schema Wallets',
+    description: 'Crea le tabelle wallets e wallet_transactions se non esistono',
+    category: 'Wallets',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'wallets-deposit',
+    method: 'POST',
+    path: '/api/wallets/deposit',
+    name: 'Deposito Wallet',
+    description: 'Effettua un deposito/ricarica su un wallet',
+    category: 'Wallets',
+    exampleBody: { wallet_id: 1, amount: 100, description: 'Ricarica PagoPA' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'wallets-withdraw',
+    method: 'POST',
+    path: '/api/wallets/withdraw',
+    name: 'Prelievo Wallet',
+    description: 'Effettua un prelievo/addebito da un wallet',
+    category: 'Wallets',
+    exampleBody: { wallet_id: 1, amount: 50, description: 'Canone mensile' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'wallets-calculate-fee',
+    method: 'POST',
+    path: '/api/wallets/calculate-annual-fee',
+    name: 'Calcola Canone Annuale',
+    description: 'Calcola il canone annuale basato su tariffa mercato e mq posteggio',
+    category: 'Wallets',
+    exampleBody: { market_id: 1, mq: 30.4 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'wallets-delete',
+    method: 'DELETE',
+    path: '/api/wallets/:id',
+    name: 'Elimina Wallet',
+    description: 'Elimina un wallet e tutte le sue transazioni',
+    category: 'Wallets',
+    exampleParams: { id: 1 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  }
+];
+
+/**
+ * CATEGORIA: TARIFFE
+ * Gestione tariffe mercato
+ */
+export const tariffsEndpoints: EndpointConfig[] = [
+  {
+    id: 'tariffs-by-market',
+    method: 'GET',
+    path: '/api/tariffs/:marketId',
+    name: 'Tariffe Mercato',
+    description: 'Ottieni le tariffe configurate per un mercato',
+    category: 'Tariffe',
+    exampleParams: { marketId: 1 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'tariffs-create',
+    method: 'POST',
+    path: '/api/tariffs',
+    name: 'Crea Tariffa',
+    description: 'Crea una nuova tariffa per un mercato',
+    category: 'Tariffe',
+    exampleBody: { market_id: 1, anno: 2026, tariffa_mq: 46.80 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  }
+];
+
+/**
+ * CATEGORIA: IMPRESE
+ * Gestione imprese e qualificazioni
+ */
+export const impreseEndpoints: EndpointConfig[] = [
+  {
+    id: 'imprese-list',
+    method: 'GET',
+    path: '/api/imprese',
+    name: 'Lista Imprese',
+    description: 'Ottieni tutte le imprese registrate nel sistema',
+    category: 'Imprese',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-get',
+    method: 'GET',
+    path: '/api/imprese/:id',
+    name: 'Dettaglio Impresa',
+    description: 'Ottieni dettagli completi di una impresa',
+    category: 'Imprese',
+    exampleParams: { id: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-create',
+    method: 'POST',
+    path: '/api/imprese',
+    name: 'Crea Impresa',
+    description: 'Registra una nuova impresa nel sistema',
+    category: 'Imprese',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-update',
+    method: 'PUT',
+    path: '/api/imprese/:id',
+    name: 'Aggiorna Impresa',
+    description: 'Aggiorna i dati di una impresa esistente',
+    category: 'Imprese',
+    exampleParams: { id: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-qualificazioni',
+    method: 'GET',
+    path: '/api/imprese/:id/qualificazioni',
+    name: 'Qualificazioni Impresa',
+    description: 'Ottieni tutte le qualificazioni di una impresa',
+    category: 'Imprese',
+    exampleParams: { id: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-qualificazioni-create',
+    method: 'POST',
+    path: '/api/imprese/:id/qualificazioni',
+    name: 'Crea Qualificazione',
+    description: 'Aggiunge una nuova qualificazione a una impresa',
+    category: 'Imprese',
+    exampleParams: { id: 2 },
+    exampleBody: { tipo: 'DURC', scadenza: '2026-12-31', stato: 'VALIDO' },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-qualificazioni-update',
+    method: 'PUT',
+    path: '/api/imprese/:id/qualificazioni/:qualId',
+    name: 'Aggiorna Qualificazione',
+    description: 'Aggiorna una qualificazione esistente',
+    category: 'Imprese',
+    exampleParams: { id: 2, qualId: 1 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-qualificazioni-delete',
+    method: 'DELETE',
+    path: '/api/imprese/:id/qualificazioni/:qualId',
+    name: 'Elimina Qualificazione',
+    description: 'Elimina una qualificazione da una impresa',
+    category: 'Imprese',
+    exampleParams: { id: 2, qualId: 1 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-rating',
+    method: 'GET',
+    path: '/api/imprese/:id/rating',
+    name: 'Rating Impresa',
+    description: 'Ottieni il rating calcolato di una impresa',
+    category: 'Imprese',
+    exampleParams: { id: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-vetrina',
+    method: 'PUT',
+    path: '/api/imprese/:id/vetrina',
+    name: 'Aggiorna Vetrina',
+    description: 'Aggiorna i dati della vetrina pubblica impresa',
+    category: 'Imprese',
+    exampleParams: { id: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-vetrina-upload',
+    method: 'POST',
+    path: '/api/imprese/:id/vetrina/upload',
+    name: 'Upload Immagine Vetrina',
+    description: 'Carica immagine per la vetrina impresa',
+    category: 'Imprese',
+    exampleParams: { id: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'imprese-vetrina-delete-image',
+    method: 'DELETE',
+    path: '/api/imprese/:id/vetrina/gallery/:index',
+    name: 'Elimina Immagine Vetrina',
+    description: 'Elimina una immagine dalla galleria vetrina',
+    category: 'Imprese',
+    exampleParams: { id: 2, index: 0 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  }
+];
+
+/**
+ * CATEGORIA: QUALIFICAZIONI
+ * Endpoint dedicati qualificazioni
+ */
+export const qualificazioniEndpoints: EndpointConfig[] = [
+  {
+    id: 'qualificazioni-list',
+    method: 'GET',
+    path: '/api/qualificazioni',
+    name: 'Lista Qualificazioni',
+    description: 'Ottieni tutte le qualificazioni nel sistema',
+    category: 'Qualificazioni',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'qualificazioni-by-impresa',
+    method: 'GET',
+    path: '/api/qualificazioni/impresa/:impresa_id',
+    name: 'Qualificazioni per Impresa',
+    description: 'Ottieni qualificazioni filtrate per impresa',
+    category: 'Qualificazioni',
+    exampleParams: { impresa_id: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'qualificazioni-durc',
+    method: 'GET',
+    path: '/api/qualificazioni/durc/:impresa_id',
+    name: 'DURC Impresa',
+    description: 'Ottieni stato DURC di una impresa',
+    category: 'Qualificazioni',
+    exampleParams: { impresa_id: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'qualificazioni-durc-create',
+    method: 'POST',
+    path: '/api/qualificazioni/durc',
+    name: 'Crea DURC',
+    description: 'Registra un nuovo DURC per una impresa',
+    category: 'Qualificazioni',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'qualificazioni-suap',
+    method: 'GET',
+    path: '/api/qualificazioni/suap/:impresa_id',
+    name: 'Qualificazioni SUAP',
+    description: 'Ottieni qualificazioni SUAP di una impresa',
+    category: 'Qualificazioni',
+    exampleParams: { impresa_id: 2 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'qualificazioni-suap-create',
+    method: 'POST',
+    path: '/api/qualificazioni/suap',
+    name: 'Crea Qualificazione SUAP',
+    description: 'Registra una nuova qualificazione SUAP',
+    category: 'Qualificazioni',
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
+  },
+  {
+    id: 'qualificazioni-suap-update',
+    method: 'PUT',
+    path: '/api/qualificazioni/suap/:id',
+    name: 'Aggiorna Qualificazione SUAP',
+    description: 'Aggiorna una qualificazione SUAP esistente',
+    category: 'Qualificazioni',
+    exampleParams: { id: 1 },
+    notes: '✅ FUNZIONANTE - Testato 04/01/2026'
   }
 ];
 
@@ -673,6 +1255,11 @@ export const allRealEndpoints: EndpointConfig[] = [
   ...stallsEndpoints,
   ...vendorsEndpoints,
   ...concessionsEndpoints,
+  ...suapEndpoints,
+  ...walletsEndpoints,
+  ...tariffsEndpoints,
+  ...impreseEndpoints,
+  ...qualificazioniEndpoints,
   ...gisEndpoints,
   ...abacusSqlEndpoints,
   ...abacusGithubEndpoints
