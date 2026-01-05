@@ -11,19 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AlertCircle, ArrowLeft, Camera, MapPin, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Camera, MapPin, CheckCircle2, Shield, Clock, Award, Send } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { Link } from 'wouter';
 import { toast } from 'sonner';
 
 const categories = [
-  'Degrado',
-  'Rifiuti',
-  'Illuminazione',
-  'Sicurezza',
-  'Buche',
-  'Microcriminalità',
-  'Altro',
+  { value: 'Degrado', icon: '🏚️' },
+  { value: 'Rifiuti', icon: '🗑️' },
+  { value: 'Illuminazione', icon: '💡' },
+  { value: 'Sicurezza', icon: '🔒' },
+  { value: 'Buche', icon: '🕳️' },
+  { value: 'Microcriminalità', icon: '⚠️' },
+  { value: 'Altro', icon: '📝' },
 ];
 
 export default function CivicPage() {
@@ -78,18 +78,21 @@ export default function CivicPage() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+        <Card className="max-w-lg w-full border-0 shadow-2xl overflow-hidden">
+          <div className="h-2 bg-gradient-to-r from-green-500 to-emerald-500"></div>
+          <CardContent className="pt-8 pb-8 text-center space-y-6">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+              <CheckCircle2 className="h-10 w-10 text-white" />
             </div>
-            <h2 className="text-2xl font-bold">Segnalazione Inviata!</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-3xl font-bold">Segnalazione Inviata!</h2>
+            <p className="text-muted-foreground text-lg">
               Grazie per il tuo contributo. Riceverai aggiornamenti sullo stato della segnalazione e
-              <strong className="text-green-600"> +20 eco-crediti</strong> quando sarà risolta.
+              <span className="font-bold text-green-600"> +20 eco-crediti</span> quando sarà risolta.
             </p>
             <Link href="/">
-              <Button className="w-full mt-4">Torna alla Mappa</Button>
+              <Button className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-600 shadow-lg">
+                Torna alla Home
+              </Button>
             </Link>
           </CardContent>
         </Card>
@@ -98,43 +101,61 @@ export default function CivicPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground p-3 shadow-md">
-        <div className="container max-w-2xl flex items-center gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/20">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-6 w-6" />
-            <h1 className="text-lg font-bold">Sensore Civico</h1>
+    <div className="min-h-screen bg-background pb-16">
+      {/* Header con gradient */}
+      <header className="bg-gradient-to-r from-orange-500 via-red-500 to-rose-600 text-white p-4 shadow-lg">
+        <div className="w-full px-4 md:px-8 flex items-center gap-4">
+          <button
+            onClick={() => window.history.back()}
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-xl">
+              <AlertCircle className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">Sensore Civico</h1>
+              <p className="text-xs text-white/70">Segnala problemi urbani</p>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="container py-6 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Segnala un Problema Urbano</CardTitle>
-            <CardDescription>
-              Aiutaci a migliorare la città. Riceverai +20 eco-crediti quando il problema sarà risolto.
-            </CardDescription>
+      <div className="w-full px-4 md:px-8 py-6 space-y-6">
+        {/* Form Card */}
+        <Card className="border-0 shadow-xl overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-orange-500 via-red-500 to-rose-600"></div>
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Segnala un Problema Urbano</CardTitle>
+                <CardDescription>
+                  Aiutaci a migliorare la città. Riceverai +20 eco-crediti quando il problema sarà risolto.
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Categoria */}
               <div className="space-y-2">
-                <Label htmlFor="category">Categoria *</Label>
+                <Label htmlFor="category" className="text-base font-semibold">Categoria *</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger id="category">
+                  <SelectTrigger id="category" className="h-12 text-base">
                     <SelectValue placeholder="Seleziona categoria" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
+                      <SelectItem key={cat.value} value={cat.value} className="text-base">
+                        <span className="flex items-center gap-2">
+                          <span>{cat.icon}</span>
+                          <span>{cat.value}</span>
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -143,56 +164,59 @@ export default function CivicPage() {
 
               {/* Descrizione */}
               <div className="space-y-2">
-                <Label htmlFor="description">Descrizione *</Label>
+                <Label htmlFor="description" className="text-base font-semibold">Descrizione *</Label>
                 <Textarea
                   id="description"
                   placeholder="Descrivi il problema in dettaglio..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
-                  className="resize-none"
+                  className="resize-none text-base"
                 />
               </div>
 
               {/* Posizione */}
-              <div className="space-y-2">
-                <Label>Posizione *</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={handleGetLocation}
-                    disabled={loading}
-                  >
-                    <MapPin className="h-4 w-4 mr-2" />
-                    {location ? 'Posizione Acquisita' : 'Acquisisci Posizione'}
-                  </Button>
-                </div>
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Posizione *</Label>
+                <Button
+                  type="button"
+                  variant={location ? "default" : "outline"}
+                  className={`w-full h-14 text-base ${location ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700' : ''}`}
+                  onClick={handleGetLocation}
+                  disabled={loading}
+                >
+                  <MapPin className="h-5 w-5 mr-2" />
+                  {location ? '✓ Posizione Acquisita' : 'Acquisisci Posizione GPS'}
+                </Button>
                 {location && (
-                  <p className="text-sm text-muted-foreground">
-                    Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
+                  <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-lg">
+                    📍 Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
                   </p>
                 )}
               </div>
 
-              {/* Foto (placeholder) */}
+              {/* Foto */}
               <div className="space-y-2">
-                <Label>Foto (max 3)</Label>
-                <Button type="button" variant="outline" className="w-full" disabled>
-                  <Camera className="h-4 w-4 mr-2" />
+                <Label className="text-base font-semibold">Foto (max 3)</Label>
+                <Button type="button" variant="outline" className="w-full h-14 text-base" disabled>
+                  <Camera className="h-5 w-5 mr-2" />
                   Aggiungi Foto (Coming Soon)
                 </Button>
               </div>
 
               {/* Submit */}
-              <div className="flex gap-3">
+              <div className="flex gap-4 pt-4">
                 <Link href="/" className="flex-1">
-                  <Button type="button" variant="outline" className="w-full">
+                  <Button type="button" variant="outline" className="w-full h-14 text-base font-semibold">
                     Annulla
                   </Button>
                 </Link>
-                <Button type="submit" className="flex-1" disabled={loading}>
+                <Button 
+                  type="submit" 
+                  className="flex-1 h-14 text-base font-semibold bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                  disabled={loading}
+                >
+                  <Send className="h-5 w-5 mr-2" />
                   {loading ? 'Invio...' : 'Invia Segnalazione'}
                 </Button>
               </div>
@@ -200,25 +224,74 @@ export default function CivicPage() {
           </CardContent>
         </Card>
 
-        {/* Info Box */}
-        <Card className="mt-6 bg-blue-50 border-blue-200">
+        {/* Info Box - Come funziona */}
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500/10 to-blue-600/5">
           <CardContent className="pt-6">
-            <div className="flex gap-3">
-              <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-900">
-                <p className="font-semibold mb-1">Come funziona?</p>
-                <ul className="space-y-1 list-disc list-inside">
-                  <li>Seleziona la categoria del problema</li>
-                  <li>Descrivi la situazione in dettaglio</li>
-                  <li>Acquisisci la posizione GPS</li>
-                  <li>Ricevi notifiche sullo stato della segnalazione</li>
-                  <li>Ottieni +20 crediti quando il problema è risolto</li>
-                </ul>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                <AlertCircle className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="font-bold text-lg mb-3">Come funziona?</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                    <span>Seleziona la categoria del problema</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                    <span>Descrivi la situazione in dettaglio</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                    <span>Acquisisci la posizione GPS</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                    <span>Ricevi notifiche sullo stato</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-green-500/10 to-green-600/5">
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow">
+                <Award className="h-5 w-5 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-green-600">+20</div>
+              <div className="text-xs text-muted-foreground">Crediti Premio</div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-blue-500/10 to-blue-600/5">
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow">
+                <Clock className="h-5 w-5 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-blue-600">48h</div>
+              <div className="text-xs text-muted-foreground">Tempo Medio</div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-purple-500/10 to-purple-600/5">
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-purple-600">94%</div>
+              <div className="text-xs text-muted-foreground">Risolte</div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
+
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }
