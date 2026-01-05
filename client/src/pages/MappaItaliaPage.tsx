@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, MapPin, Search, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import MappaItaliaComponent from '@/components/MappaItaliaComponent';
 import { MIHUB_API_BASE_URL } from '@/config/api';
@@ -28,7 +28,7 @@ const API_BASE_URL = MIHUB_API_BASE_URL;
  * Gemello Digitale del Commercio Nazionale
  * 
  * SOLO LETTURA - Visualizza mercati e posteggi
- * Design mobile-first, coerente con altre pagine pubbliche
+ * Logica Vista Italia/Mercato con animazione zoom
  */
 export default function MappaItaliaPage() {
   const [, navigate] = useLocation();
@@ -77,143 +77,72 @@ export default function MappaItaliaPage() {
   const selectedMarket = markets.find(m => m.id === selectedMarketId);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background flex flex-col pb-20">
       {/* Header Gradient */}
-      <header className="bg-gradient-to-r from-[#14b8a6] via-[#06b6d4] to-[#0891b2] text-white p-4 shadow-lg">
-        <div className="w-full px-4 md:px-8 flex items-center gap-4">
+      <header className="bg-gradient-to-r from-[#14b8a6] via-[#06b6d4] to-[#0891b2] text-white p-3 md:p-4 shadow-lg flex-shrink-0">
+        <div className="w-full px-4 md:px-8 flex items-center gap-3">
           <button
             onClick={handleBack}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-105 flex-shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-xl">
-              <MapPin className="h-7 w-7" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">Mappa Italia</h1>
-              <p className="text-xs text-white/70">Gemello Digitale del Commercio Nazionale</p>
-            </div>
+          <div className="flex-1">
+            <h1 className="text-lg md:text-xl font-bold">Mappa Italia</h1>
+            <p className="text-xs text-white/70">Gemello Digitale del Commercio</p>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="w-full px-4 md:px-8 py-6 space-y-6">
-        {/* Search Card */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 overflow-hidden">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-br from-[#14b8a6] to-[#06b6d4] rounded-xl shadow-lg">
-                <Search className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">Cerca Mercati</CardTitle>
-                <CardDescription className="text-sm">
-                  Trova mercati, hub e negozi sostenibili in tutta Italia
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Cerca per nome, città o regione..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 text-base"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              💡 Digita il nome di un mercato o una città per trovare rapidamente quello che cerchi
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Mercati List */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      {/* Search e Mercati - Compatti */}
+      <div className="bg-[#0b1220] border-b border-[#14b8a6]/10 px-4 md:px-8 py-3 flex-shrink-0">
+        <div className="max-w-7xl mx-auto space-y-2">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#14b8a6]/50" />
+            <Input
+              type="text"
+              placeholder="Cerca mercato, città..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-sm bg-[#0f1729] border border-[#14b8a6]/30"
+            />
           </div>
-        ) : filteredMarkets.length === 0 ? (
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80">
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">Nessun mercato trovato</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          {/* Mercati - Grid Compatto */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 overflow-x-auto pb-1">
             {filteredMarkets.map((market) => (
               <button
                 key={market.id}
                 onClick={() => handleMarketSelect(market.id)}
-                className={`text-left p-4 rounded-xl border-2 transition-all duration-300 ${
+                className={`text-left p-2 rounded-lg transition-all duration-300 text-xs flex-shrink-0 ${
                   selectedMarketId === market.id
-                    ? 'border-primary bg-primary/10 shadow-lg scale-105'
-                    : 'border-border bg-card hover:border-primary/50 hover:shadow-md'
+                    ? 'bg-[#14b8a6]/20 border border-[#14b8a6] shadow-lg'
+                    : 'bg-[#0f1729] border border-[#14b8a6]/10 hover:border-[#14b8a6]/30'
                 }`}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-bold text-base">{market.name}</h3>
-                    <p className="text-sm text-muted-foreground">{market.municipality}</p>
-                  </div>
-                  <span className="text-xs font-semibold px-2 py-1 bg-primary/20 text-primary rounded-full">
-                    {market.code}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="text-muted-foreground">Posteggi</p>
-                    <p className="font-bold text-primary">{market.total_stalls}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Giorno</p>
-                    <p className="font-bold">{market.days}</p>
-                  </div>
+                <p className="font-semibold text-white truncate">{market.name}</p>
+                <p className="text-[#14b8a6] text-xs">{market.municipality}</p>
+                <div className="flex gap-1 mt-1">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
+                    {market.total_stalls}
+                  </Badge>
                 </div>
               </button>
             ))}
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Mappa */}
-        {selectedMarket && (
-          <Card className="border-0 shadow-xl overflow-hidden">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{selectedMarket.name}</CardTitle>
-              <CardDescription>{selectedMarket.municipality}</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="w-full h-[500px] md:h-[600px]">
-                <MappaItaliaComponent preselectedMarketId={selectedMarket.id} />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Mappa Full-Screen */}
+      <div className="flex-1 w-full overflow-hidden">
+        {selectedMarket ? (
+          <MappaItaliaComponent preselectedMarketId={selectedMarket.id} />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-[#0b1220]">
+            <p className="text-[#e8fbff]/60">Seleziona un mercato</p>
+          </div>
         )}
-
-        {/* Info Footer */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-primary/10 to-primary/5">
-          <CardContent className="pt-6">
-            <div className="space-y-3 text-sm">
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                <p><span className="font-semibold text-primary">Clicca su un mercato</span> per visualizzare la mappa e i posteggi</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                <p><span className="font-semibold text-primary">Zoom automatico</span> sulla mappa quando selezioni un mercato</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                <p><span className="font-semibold text-primary">Ricerca veloce</span> per trovare il mercato che cerchi</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
