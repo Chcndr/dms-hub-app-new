@@ -198,6 +198,29 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData }: Con
         console.log('[ConcessioneForm] DEBUG initialData:', JSON.stringify(initialData, null, 2));
         console.log('[ConcessioneForm] DEBUG mercato_id:', initialData?.mercato_id, 'tipo:', typeof initialData?.mercato_id);
         
+        // Carica il prossimo numero di concessione disponibile
+        try {
+          const concessionsRes = await fetch(`${API_URL}/api/dmsHub/concessions/list`);
+          const concessionsJson = await concessionsRes.json();
+          if (concessionsJson.success && concessionsJson.data) {
+            // Trova il numero massimo e proponi il prossimo
+            const maxId = Math.max(...concessionsJson.data.map((c: any) => c.id), 0);
+            const nextNumber = maxId + 1;
+            const currentYear = new Date().getFullYear();
+            
+            // Se non c'è già un numero protocollo impostato, proponi quello automatico
+            if (!initialData?.numero_protocollo) {
+              setFormData(prev => ({
+                ...prev,
+                numero_protocollo: `#${nextNumber}`
+              }));
+              console.log('[ConcessioneForm] Numero progressivo proposto:', `#${nextNumber}`);
+            }
+          }
+        } catch (err) {
+          console.warn('[ConcessioneForm] Errore nel caricare il prossimo numero:', err);
+        }
+        
         // Carica mercati
         const marketsRes = await fetch(`${API_URL}/api/markets`);
         const marketsJson = await marketsRes.json();
