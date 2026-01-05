@@ -33,6 +33,7 @@ import { toast } from 'sonner';
 
 // Import componenti esistenti da riutilizzare
 import MappaItaliaComponent from './MappaItaliaComponent';
+import MappaItaliaPubblica from './MappaItaliaPubblica';
 import GestioneHubNegozi from './GestioneHubNegozi';
 import ImpreseQualificazioniPanel from './ImpreseQualificazioniPanel';
 import WalletPanel from './WalletPanel';
@@ -426,23 +427,9 @@ export default function GestioneHubPanel() {
                     Mappa Hub Territoriali
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[420px]">
-                  <div className="w-full h-full bg-[#0b1220] rounded-lg flex items-center justify-center border border-[#06b6d4]/20">
-                    <div className="text-center">
-                      <Globe className="h-16 w-16 text-[#06b6d4]/40 mx-auto mb-4" />
-                      <p className="text-[#e8fbff]/60">Mappa Hub Integrata</p>
-                      <p className="text-xs text-[#e8fbff]/40 mt-1">
-                        {markets.length} mercati • {stalls.length} posteggi
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        className="mt-4 border-[#06b6d4]/30 text-[#06b6d4]"
-                        onClick={() => setActiveSubTab('rete-hub')}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Vai a Rete Hub
-                      </Button>
-                    </div>
+                <CardContent className="h-[420px] p-0">
+                  <div className="w-full h-full rounded-lg overflow-hidden">
+                    <MappaItaliaPubblica />
                   </div>
                 </CardContent>
               </Card>
