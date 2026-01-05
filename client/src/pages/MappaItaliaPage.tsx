@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, MapPin, Search, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { MappaItaliaComponent } from '@/components/MappaItaliaComponent';
+import MappaItaliaComponent from '@/components/MappaItaliaComponent';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 
 
