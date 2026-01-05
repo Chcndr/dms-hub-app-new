@@ -286,8 +286,12 @@ function MarketDetailPubblica({ market, allMarkets, onMarketChange }: { market: 
   const [viewMode, setViewMode] = useState<'italia' | 'mercato'>('italia');
   const [viewTrigger, setViewTrigger] = useState(0);
 
-  // Carica i posteggi al mount del componente
+  // Reset stato e carica i posteggi quando cambia il mercato
   useEffect(() => {
+    console.log('[MarketDetailPubblica] market.id cambiato:', market.id, market.name);
+    // NON resettare viewMode qui - lasciamo che sia 'mercato' dopo il click sul marker
+    setStalls([]);
+    
     const fetchStalls = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/markets/${market.id}/stalls`);
@@ -379,11 +383,17 @@ function PosteggiTabPubblica({
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const listContainerRef = React.useRef<HTMLDivElement>(null);
 
+  // Reset stato quando cambia il mercato
   useEffect(() => {
+    console.log('[PosteggiTabPubblica] marketId cambiato:', marketId);
+    setLoading(true);
+    setMapData(null);
+    setSelectedStallId(null);
     fetchData();
   }, [marketId]);
 
   const fetchData = async () => {
+    console.log('[PosteggiTabPubblica] fetchData per marketId:', marketId);
     try {
       const [stallsRes, mapRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`),
