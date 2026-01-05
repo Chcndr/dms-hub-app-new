@@ -124,7 +124,7 @@ export default function GestioneHubPanel() {
   const [concessions, setConcessions] = useState<Concession[]>([]);
 
   // Stati per Carbon Credit (EcoCarbon tab)
-  const [tccValue, setTccValue] = useState(0.20);
+  const [tccValue, setTccValue] = useState(1.50);
   const [appliedTccValue, setAppliedTccValue] = useState(1.50);
   
   const [editableParams, setEditableParams] = useState({
@@ -152,14 +152,14 @@ export default function GestioneHubPanel() {
   const calculateAreaValues = () => {
     return editableParams.areaBoosts.map(item => ({
       ...item,
-      value: tccValue * (1 + item.boost / 100)
+      value: appliedTccValue * (1 + item.boost / 100)
     }));
   };
 
   const calculateCategoryValues = () => {
     return editableParams.categoryBoosts.map(item => ({
       ...item,
-      finalValue: tccValue * (1 + item.boost / 100)
+      finalValue: appliedTccValue * (1 + item.boost / 100)
     }));
   };
 
@@ -174,7 +174,7 @@ export default function GestioneHubPanel() {
   };
 
   const calculateReimbursementNeeded = () => {
-    return (editableParams.tccSpent * tccValue).toFixed(0);
+    return (editableParams.tccSpent * appliedTccValue).toFixed(2);
   };
 
   const calculateCO2Saved = () => {
