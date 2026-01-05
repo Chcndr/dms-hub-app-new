@@ -326,7 +326,7 @@ export default function RoutePage() {
     <div className="min-h-screen bg-background">
       {/* Header con gradient */}
       <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-4 shadow-lg">
-        <div className="container flex items-center gap-4">
+        <div className="w-full px-4 md:px-8 flex items-center gap-4">
           <button
             onClick={() => window.history.back()}
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-105"
@@ -345,7 +345,7 @@ export default function RoutePage() {
         </div>
       </header>
 
-      <div className="container py-6 space-y-6">
+      <div className="w-full px-4 md:px-8 py-6 space-y-6">
         {/* Form Pianificazione */}
         <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 overflow-hidden">
           <CardHeader className="pb-4">
