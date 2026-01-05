@@ -34,6 +34,8 @@ import { toast } from 'sonner';
 // Import componenti esistenti da riutilizzare
 import MappaItaliaComponent from './MappaItaliaComponent';
 import MappaItaliaPubblica from './MappaItaliaPubblica';
+import { MarketMapComponent } from './MarketMapComponent';
+import MappaHubMini from './MappaHubMini';
 import GestioneHubNegozi from './GestioneHubNegozi';
 import ImpreseQualificazioniPanel from './ImpreseQualificazioniPanel';
 import WalletPanel from './WalletPanel';
@@ -429,7 +431,12 @@ export default function GestioneHubPanel() {
                 </CardHeader>
                 <CardContent className="h-[420px] p-0">
                   <div className="w-full h-full rounded-lg overflow-hidden">
-                    <MappaItaliaPubblica />
+                    <MappaHubMini 
+                      onMarketClick={(marketId) => {
+                        // Vai al tab Rete Hub quando si clicca su un mercato
+                        setActiveSubTab('rete-hub');
+                      }}
+                    />
                   </div>
                 </CardContent>
               </Card>
