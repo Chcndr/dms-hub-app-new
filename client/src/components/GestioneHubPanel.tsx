@@ -123,6 +123,69 @@ export default function GestioneHubPanel() {
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [concessions, setConcessions] = useState<Concession[]>([]);
 
+  // Stati per Carbon Credit (EcoCarbon tab)
+  const [tccValue, setTccValue] = useState(0.20);
+  const [appliedTccValue, setAppliedTccValue] = useState(1.50);
+  
+  const [editableParams, setEditableParams] = useState({
+    fundBalance: 125000,
+    burnRate: 8500,
+    tccIssued: 125000,
+    tccSpent: 78000,
+    areaBoosts: [
+      { area: 'Grosseto', boost: 0 },
+      { area: 'Follonica', boost: -10 },
+      { area: 'Orbetello', boost: +10 }
+    ],
+    categoryBoosts: [
+      { category: 'BIO', boost: 20 },
+      { category: 'KM0', boost: 15 },
+      { category: 'DOP/IGP', boost: 10 },
+      { category: 'Standard', boost: 0 }
+    ]
+  });
+
+  // Funzioni calcolo Carbon Credit
+  const CO2_PER_TCC = 0.06;
+  const CO2_PER_TREE = 22;
+
+  const calculateAreaValues = () => {
+    return editableParams.areaBoosts.map(item => ({
+      ...item,
+      value: tccValue * (1 + item.boost / 100)
+    }));
+  };
+
+  const calculateCategoryValues = () => {
+    return editableParams.categoryBoosts.map(item => ({
+      ...item,
+      finalValue: tccValue * (1 + item.boost / 100)
+    }));
+  };
+
+  const calculateMonthsRemaining = () => {
+    if (editableParams.burnRate === 0) return '999';
+    return (editableParams.fundBalance / editableParams.burnRate).toFixed(1);
+  };
+
+  const calculateVelocity = () => {
+    if (editableParams.tccIssued === 0) return '0';
+    return ((editableParams.tccSpent / editableParams.tccIssued) * 100).toFixed(1);
+  };
+
+  const calculateReimbursementNeeded = () => {
+    return (editableParams.tccSpent * tccValue).toFixed(0);
+  };
+
+  const calculateCO2Saved = () => {
+    return (editableParams.tccSpent * CO2_PER_TCC).toFixed(0);
+  };
+
+  const calculateTreesEquivalent = () => {
+    const co2Saved = parseFloat(calculateCO2Saved());
+    return Math.round(co2Saved / CO2_PER_TREE);
+  };
+
   // Carica dati reali all'avvio
   useEffect(() => {
     fetchAllData();
@@ -586,16 +649,33 @@ export default function GestioneHubPanel() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="p-4 bg-gradient-to-br from-[#10b981]/20 to-[#10b981]/5 border border-[#10b981]/30 rounded-lg">
-                  <div className="text-sm text-[#e8fbff]/70 mb-1">Saldo Attuale</div>
-                  <div className="text-3xl font-bold text-[#10b981]">€125.000</div>
+                  <div className="text-sm text-[#e8fbff]/70 mb-1">Saldo Attuale (click to edit)</div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[#10b981] text-xl">€</span>
+                    <input
+                      type="number"
+                      value={editableParams.fundBalance}
+                      onChange={(e) => setEditableParams({ ...editableParams, fundBalance: parseFloat(e.target.value) || 0 })}
+                      className="text-3xl font-bold text-[#10b981] bg-transparent border-b-2 border-[#10b981]/50 focus:border-[#10b981] outline-none w-full"
+                    />
+                  </div>
                 </div>
                 <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
-                  <div className="text-sm text-[#e8fbff]/70 mb-1">Burn Rate</div>
-                  <div className="text-2xl font-bold text-[#f59e0b]">€8.500<span className="text-sm text-[#e8fbff]/70">/mese</span></div>
+                  <div className="text-sm text-[#e8fbff]/70 mb-1">Burn Rate (click to edit)</div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[#f59e0b] text-xl">€</span>
+                    <input
+                      type="number"
+                      value={editableParams.burnRate}
+                      onChange={(e) => setEditableParams({ ...editableParams, burnRate: parseFloat(e.target.value) || 0 })}
+                      className="text-2xl font-bold text-[#f59e0b] bg-transparent border-b-2 border-[#f59e0b]/50 focus:border-[#f59e0b] outline-none w-full"
+                    />
+                    <span className="text-sm text-[#e8fbff]/70">/mese</span>
+                  </div>
                 </div>
                 <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
                   <div className="text-sm text-[#e8fbff]/70 mb-1">Mesi Rimanenti</div>
-                  <div className="text-2xl font-bold text-[#14b8a6]">14.7</div>
+                  <div className="text-2xl font-bold text-[#14b8a6]">{calculateMonthsRemaining()}</div>
                 </div>
                 <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
                   <div className="text-sm text-[#e8fbff]/70 mb-1">Valuta</div>
@@ -680,7 +760,7 @@ export default function GestioneHubPanel() {
               <CardContent>
                 <div className="mb-6">
                   <div className="text-sm text-[#e8fbff]/70 mb-2">Valore Corrente</div>
-                  <div className="text-5xl font-bold text-[#14b8a6] mb-1">€0,85</div>
+                  <div className="text-5xl font-bold text-[#14b8a6] mb-1">€{appliedTccValue.toFixed(2).replace('.', ',')}</div>
                   <div className="text-sm text-[#e8fbff]/50">per 1 TCC</div>
                 </div>
 
@@ -688,16 +768,16 @@ export default function GestioneHubPanel() {
                   <div className="text-sm text-[#e8fbff]/70 mb-3">Storico Variazioni</div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-2 bg-[#0b1220] rounded">
-                      <span className="text-xs text-[#e8fbff]/70">Gen 2026</span>
-                      <span className="text-sm font-semibold text-[#14b8a6]">€0,85</span>
+                      <span className="text-xs text-[#e8fbff]/70">2025-09-01</span>
+                      <span className="text-sm font-semibold text-[#14b8a6]">€1,20</span>
                     </div>
                     <div className="flex items-center justify-between p-2 bg-[#0b1220] rounded">
-                      <span className="text-xs text-[#e8fbff]/70">Dic 2025</span>
-                      <span className="text-sm font-semibold text-[#14b8a6]">€0,80</span>
+                      <span className="text-xs text-[#e8fbff]/70">2025-10-01</span>
+                      <span className="text-sm font-semibold text-[#14b8a6]">€1,35</span>
                     </div>
                     <div className="flex items-center justify-between p-2 bg-[#0b1220] rounded">
-                      <span className="text-xs text-[#e8fbff]/70">Nov 2025</span>
-                      <span className="text-sm font-semibold text-[#14b8a6]">€0,75</span>
+                      <span className="text-xs text-[#e8fbff]/70">2025-11-01</span>
+                      <span className="text-sm font-semibold text-[#14b8a6]">€1,50</span>
                     </div>
                   </div>
                 </div>
@@ -770,7 +850,8 @@ export default function GestioneHubPanel() {
                   min="0"
                   max="5.00"
                   step="0.10"
-                  defaultValue="0.20"
+                  value={tccValue}
+                  onChange={(e) => setTccValue(parseFloat(e.target.value))}
                   className="w-full h-2 bg-[#0b1220] rounded-lg appearance-none cursor-pointer"
                 />
                 <div className="flex justify-between text-xs text-[#e8fbff]/50 mt-1">
@@ -785,20 +866,26 @@ export default function GestioneHubPanel() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-[#e8fbff]/70">Nuovo valore:</span>
-                    <span className="text-[#8b5cf6] font-semibold">€0,20</span>
+                    <span className="text-[#8b5cf6] font-semibold">€{tccValue.toFixed(2).replace('.', ',')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#e8fbff]/70">Incremento spesa:</span>
-                    <span className="text-[#f59e0b] font-semibold">+€-1300/mese</span>
+                    <span className="text-[#f59e0b] font-semibold">+€{((tccValue - appliedTccValue) * 1000).toFixed(0)}/mese</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#e8fbff]/70">Mesi rimanenti:</span>
-                    <span className="text-[#14b8a6] font-semibold">625.0</span>
+                    <span className="text-[#14b8a6] font-semibold">{tccValue > 0 ? (editableParams.fundBalance / (tccValue * 1000)).toFixed(1) : '∞'}</span>
                   </div>
                 </div>
               </div>
 
-              <Button className="w-full bg-[#8b5cf6] hover:bg-[#8b5cf6]/80">
+              <Button 
+                onClick={() => {
+                  setAppliedTccValue(tccValue);
+                  toast.success(`Valore TCC aggiornato a €${tccValue.toFixed(2).replace('.', ',')}!`);
+                }}
+                className="w-full bg-[#8b5cf6] hover:bg-[#8b5cf6]/80"
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Applica Modifica
               </Button>
@@ -817,45 +904,34 @@ export default function GestioneHubPanel() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="p-3 bg-[#0b1220] rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#e8fbff] font-medium">Grosseto</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-semibold px-2 py-1 rounded bg-[#14b8a6]/20 text-[#14b8a6]">0</span>
-                        <span className="text-xs text-[#e8fbff]/50">%</span>
+                  {calculateAreaValues().map((area, idx) => (
+                    <div key={area.area} className="p-3 bg-[#0b1220] rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[#e8fbff] font-medium">{area.area}</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={area.boost}
+                            onChange={(e) => {
+                              const newBoosts = [...editableParams.areaBoosts];
+                              newBoosts[idx].boost = parseFloat(e.target.value) || 0;
+                              setEditableParams({ ...editableParams, areaBoosts: newBoosts });
+                            }}
+                            className={`text-sm font-semibold px-2 py-1 rounded w-20 text-center ${
+                              area.boost > 0 ? 'bg-[#10b981]/20 text-[#10b981]' :
+                              area.boost < 0 ? 'bg-[#ef4444]/20 text-[#ef4444]' :
+                              'bg-[#14b8a6]/20 text-[#14b8a6]'
+                            }`}
+                          />
+                          <span className="text-xs text-[#e8fbff]/50">%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
+                        <span className="text-lg font-bold text-[#14b8a6]">€{area.value.toFixed(2).replace('.', ',')}</span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
-                      <span className="text-lg font-bold text-[#14b8a6]">€0,20</span>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#e8fbff] font-medium">Follonica</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-semibold px-2 py-1 rounded bg-[#ef4444]/20 text-[#ef4444]">-10</span>
-                        <span className="text-xs text-[#e8fbff]/50">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
-                      <span className="text-lg font-bold text-[#14b8a6]">€0,18</span>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#e8fbff] font-medium">Orbetello</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-semibold px-2 py-1 rounded bg-[#10b981]/20 text-[#10b981]">10</span>
-                        <span className="text-xs text-[#e8fbff]/50">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
-                      <span className="text-lg font-bold text-[#14b8a6]">€0,22</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -870,62 +946,35 @@ export default function GestioneHubPanel() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="p-3 bg-[#0b1220] rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#e8fbff] font-medium">BIO</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-[#e8fbff]/50">+</span>
-                        <span className="text-sm font-semibold px-2 py-1 rounded bg-[#10b981]/20 text-[#10b981]">20</span>
-                        <span className="text-xs text-[#e8fbff]/50">%</span>
+                  {calculateCategoryValues().map((cat, idx) => (
+                    <div key={cat.category} className="p-3 bg-[#0b1220] rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[#e8fbff] font-medium">{cat.category}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-[#e8fbff]/50">+</span>
+                          <input
+                            type="number"
+                            value={cat.boost}
+                            onChange={(e) => {
+                              const newBoosts = [...editableParams.categoryBoosts];
+                              newBoosts[idx].boost = parseFloat(e.target.value) || 0;
+                              setEditableParams({ ...editableParams, categoryBoosts: newBoosts });
+                            }}
+                            className={`text-sm font-semibold px-2 py-1 rounded w-16 text-center ${
+                              cat.boost > 0 ? 'bg-[#10b981]/20 text-[#10b981]' :
+                              cat.boost < 0 ? 'bg-[#ef4444]/20 text-[#ef4444]' :
+                              'bg-[#14b8a6]/20 text-[#14b8a6]'
+                            }`}
+                          />
+                          <span className="text-xs text-[#e8fbff]/50">%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
+                        <span className="text-lg font-bold text-[#14b8a6]">€{cat.finalValue.toFixed(2).replace('.', ',')}</span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
-                      <span className="text-lg font-bold text-[#14b8a6]">€0,24</span>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#e8fbff] font-medium">KM0</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-[#e8fbff]/50">+</span>
-                        <span className="text-sm font-semibold px-2 py-1 rounded bg-[#10b981]/20 text-[#10b981]">15</span>
-                        <span className="text-xs text-[#e8fbff]/50">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
-                      <span className="text-lg font-bold text-[#14b8a6]">€0,23</span>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#e8fbff] font-medium">DOP/IGP</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-[#e8fbff]/50">+</span>
-                        <span className="text-sm font-semibold px-2 py-1 rounded bg-[#10b981]/20 text-[#10b981]">10</span>
-                        <span className="text-xs text-[#e8fbff]/50">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
-                      <span className="text-lg font-bold text-[#14b8a6]">€0,22</span>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#e8fbff] font-medium">Standard</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-[#e8fbff]/50">+</span>
-                        <span className="text-sm font-semibold px-2 py-1 rounded bg-[#14b8a6]/20 text-[#14b8a6]">0</span>
-                        <span className="text-xs text-[#e8fbff]/50">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
-                      <span className="text-lg font-bold text-[#14b8a6]">€0,20</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -1026,15 +1075,25 @@ export default function GestioneHubPanel() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="p-4 bg-[#0b1220] rounded-lg">
                   <div className="text-sm text-[#e8fbff]/70 mb-1">TCC Emessi (click to edit)</div>
-                  <div className="text-3xl font-bold text-[#14b8a6]">125000</div>
+                  <input
+                    type="number"
+                    value={editableParams.tccIssued}
+                    onChange={(e) => setEditableParams({ ...editableParams, tccIssued: parseFloat(e.target.value) || 0 })}
+                    className="text-3xl font-bold text-[#14b8a6] bg-transparent border-b-2 border-[#14b8a6]/50 focus:border-[#14b8a6] outline-none w-full"
+                  />
                 </div>
                 <div className="p-4 bg-[#0b1220] rounded-lg">
                   <div className="text-sm text-[#e8fbff]/70 mb-1">TCC Spesi (click to edit)</div>
-                  <div className="text-3xl font-bold text-[#10b981]">78000</div>
+                  <input
+                    type="number"
+                    value={editableParams.tccSpent}
+                    onChange={(e) => setEditableParams({ ...editableParams, tccSpent: parseFloat(e.target.value) || 0 })}
+                    className="text-3xl font-bold text-[#10b981] bg-transparent border-b-2 border-[#10b981]/50 focus:border-[#10b981] outline-none w-full"
+                  />
                 </div>
                 <div className="p-4 bg-[#0b1220] rounded-lg">
                   <div className="text-sm text-[#e8fbff]/70 mb-1">Velocity (Utilizzo)</div>
-                  <div className="text-3xl font-bold text-[#f59e0b]">62.4%</div>
+                  <div className="text-3xl font-bold text-[#f59e0b]">{calculateVelocity()}%</div>
                 </div>
               </div>
 
@@ -1046,16 +1105,16 @@ export default function GestioneHubPanel() {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <div className="text-xs text-[#e8fbff]/70 mb-1">Investito (Fondo)</div>
-                    <div className="text-xl font-bold text-[#e8fbff]">€125.000</div>
+                    <div className="text-xl font-bold text-[#e8fbff]">€{editableParams.fundBalance.toLocaleString('it-IT')}</div>
                   </div>
                   <div>
                     <div className="text-xs text-[#e8fbff]/70 mb-1">CO₂ Risparmiata</div>
-                    <div className="text-xl font-bold text-[#10b981]">4680 kg</div>
+                    <div className="text-xl font-bold text-[#10b981]">{calculateCO2Saved()} kg</div>
                     <div className="text-xs text-[#e8fbff]/50 mt-1">(TCC Spesi × 0.06 kg)</div>
                   </div>
                   <div>
                     <div className="text-xs text-[#e8fbff]/70 mb-1">Alberi Equivalenti</div>
-                    <div className="text-xl font-bold text-[#14b8a6]">213 alberi</div>
+                    <div className="text-xl font-bold text-[#14b8a6]">{calculateTreesEquivalent()} alberi</div>
                     <div className="text-xs text-[#e8fbff]/50 mt-1">(CO₂ / 22 kg/albero)</div>
                   </div>
                 </div>
@@ -1070,20 +1129,25 @@ export default function GestioneHubPanel() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs text-[#e8fbff]/70 mb-1">Rimborsi Necessari (TCC Spesi × Valore)</div>
-                    <div className="text-xl font-bold text-[#f59e0b]">€15.600,00</div>
+                    <div className="text-xl font-bold text-[#f59e0b]">€{parseFloat(calculateReimbursementNeeded()).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                   </div>
                   <div>
                     <div className="text-xs text-[#e8fbff]/70 mb-1">Fondo Disponibile</div>
-                    <div className="text-xl font-bold text-[#14b8a6]">€125.000,00</div>
+                    <div className="text-xl font-bold text-[#14b8a6]">€{editableParams.fundBalance.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                   </div>
                 </div>
                 <div className="mt-3 p-3 bg-[#0b1220] rounded-lg">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-[#e8fbff]/70">Copertura Fondo</span>
-                    <span className="text-lg font-bold text-[#10b981]">801.3%</span>
+                    <span className="text-lg font-bold text-[#10b981]">
+                      {parseFloat(calculateReimbursementNeeded()) > 0 ? ((editableParams.fundBalance / parseFloat(calculateReimbursementNeeded())) * 100).toFixed(1) : '∞'}%
+                    </span>
                   </div>
                   <div className="mt-2 h-2 bg-[#0b1220] rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-[#10b981] to-[#14b8a6]" style={{ width: '100%' }} />
+                    <div 
+                      className="h-full bg-gradient-to-r from-[#10b981] to-[#14b8a6] transition-all duration-300" 
+                      style={{ width: `${Math.min(100, parseFloat(calculateReimbursementNeeded()) > 0 ? (editableParams.fundBalance / parseFloat(calculateReimbursementNeeded())) * 100 : 100)}%` }} 
+                    />
                   </div>
                 </div>
               </div>
