@@ -263,7 +263,16 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
 
       {/* Dettaglio Mercato Selezionato */}
       {selectedMarket && (
-        <MarketDetailPubblica market={selectedMarket} allMarkets={markets} />
+        <MarketDetailPubblica 
+          market={selectedMarket} 
+          allMarkets={markets} 
+          onMarketChange={(marketId) => {
+            const newMarket = markets.find(m => m.id === marketId);
+            if (newMarket) {
+              setSelectedMarket(newMarket);
+            }
+          }}
+        />
       )}
     </div>
   );
@@ -272,7 +281,7 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
 /**
  * Dettaglio mercato PUBBLICO - solo mappa e statistiche
  */
-function MarketDetailPubblica({ market, allMarkets }: { market: Market; allMarkets: Market[] }) {
+function MarketDetailPubblica({ market, allMarkets, onMarketChange }: { market: Market; allMarkets: Market[]; onMarketChange?: (marketId: number) => void }) {
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [viewMode, setViewMode] = useState<'italia' | 'mercato'>('italia');
   const [viewTrigger, setViewTrigger] = useState(0);
@@ -328,7 +337,8 @@ function MarketDetailPubblica({ market, allMarkets }: { market: Market; allMarke
           viewMode={viewMode} 
           setViewMode={setViewMode} 
           viewTrigger={viewTrigger} 
-          setViewTrigger={setViewTrigger} 
+          setViewTrigger={setViewTrigger}
+          onMarketChange={onMarketChange}
         />
       </CardContent>
     </Card>
@@ -348,7 +358,8 @@ function PosteggiTabPubblica({
   viewMode, 
   setViewMode, 
   viewTrigger, 
-  setViewTrigger 
+  setViewTrigger,
+  onMarketChange
 }: { 
   marketId: number; 
   marketCode: string; 
@@ -359,7 +370,8 @@ function PosteggiTabPubblica({
   viewMode: 'italia' | 'mercato'; 
   setViewMode: React.Dispatch<React.SetStateAction<'italia' | 'mercato'>>; 
   viewTrigger: number; 
-  setViewTrigger: React.Dispatch<React.SetStateAction<number>> 
+  setViewTrigger: React.Dispatch<React.SetStateAction<number>>;
+  onMarketChange?: (marketId: number) => void;
 }) {
   const [mapData, setMapData] = useState<MarketMapData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -490,6 +502,11 @@ function PosteggiTabPubblica({
               viewTrigger={viewTrigger}
               marketCenterFixed={marketCenter}
               onMarketClick={(clickedMarketId) => {
+                // Prima aggiorna il mercato selezionato nel componente padre
+                if (onMarketChange) {
+                  onMarketChange(clickedMarketId);
+                }
+                // Poi passa alla vista mercato
                 setViewMode('mercato');
                 setViewTrigger(prev => prev + 1);
               }}

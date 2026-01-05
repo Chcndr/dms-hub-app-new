@@ -6,6 +6,7 @@ import { RouteLayer } from './RouteLayer';
 import { getStallMapFillColor, getStallStatusLabel } from '@/lib/stallStatus';
 import { calculatePolygonDimensions } from '@/lib/geodesic';
 import { useMapAnimation } from '@/hooks/useMapAnimation';
+import { useAnimation } from '@/contexts/AnimationContext';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -164,6 +165,9 @@ export function MarketMapComponent({
   marketCenterFixed,
   selectedStallCenter
 }: MarketMapComponentProps) {
+  
+  // Ottieni lo stato di animazione dal context per nascondere poligoni durante zoom
+  const { isAnimating } = useAnimation();
   
   // Se showItalyView è true e non c'è un center specifico, usa coordinate Italia
   // Se mapData è null (vista Italia), usa coordinate Italia come fallback
@@ -488,8 +492,9 @@ export function MarketMapComponent({
             ))
           }
 
-          {/* Renderizza posteggi SOLO quando NON siamo in vista Italia */}
-          {mapData && !showItalyView && mapData.stalls_geojson.features.map((feature, idx) => {
+          {/* Renderizza posteggi SOLO quando NON siamo in vista Italia E NON durante animazione zoom */}
+          {/* Questo previene le "macchie verdi" che appaiono durante la transizione */}
+          {mapData && !showItalyView && !isAnimating && mapData.stalls_geojson.features.map((feature, idx) => {
             const props = feature.properties;
             
             // SKIP: Escludi solo i poligoni "area" del mercato (macchia verde)
