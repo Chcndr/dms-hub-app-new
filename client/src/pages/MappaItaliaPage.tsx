@@ -33,7 +33,7 @@ const API_BASE_URL = MIHUB_API_BASE_URL;
  * MappaItaliaPage - Pagina Pubblica Mappa Italia
  * Gemello Digitale del Commercio Nazionale
  * 
- * Layout: Sidebar (ricerca + scheda + indicatori) + Mappa full-screen
+ * Layout: Header + Barra ricerca/Indicatori + Mappa full-screen
  * Logica Vista Italia/Mercato con animazione zoom
  */
 export default function MappaItaliaPage() {
@@ -129,55 +129,50 @@ export default function MappaItaliaPage() {
         </div>
       </header>
 
-      {/* Main Layout - Sidebar + Mappa */}
-      <div className="flex-1 flex gap-0 overflow-hidden">
-        {/* Sidebar - Ricerca + Scheda + Indicatori */}
-        <div className="w-full md:w-80 bg-[#0b1220] border-r border-[#14b8a6]/10 flex flex-col overflow-y-auto">
-          {/* Search */}
-          <div className="p-3 border-b border-[#14b8a6]/10 flex-shrink-0">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#14b8a6]/50" />
-              <Input
-                type="text"
-                placeholder="Cerca mercato..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-sm bg-[#0f1729] border border-[#14b8a6]/30"
-              />
-            </div>
+      {/* Barra Ricerca + Scheda + Indicatori */}
+      <div className="bg-[#0b1220] border-b border-[#14b8a6]/10 p-3 md:p-4 flex-shrink-0">
+        <div className="w-full px-4 md:px-8 space-y-3">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#14b8a6]/50" />
+            <Input
+              type="text"
+              placeholder="Cerca mercato, città..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-10 text-sm bg-[#0f1729] border border-[#14b8a6]/30"
+            />
           </div>
 
-          {/* Mercati List */}
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {loading ? (
-              <div className="flex justify-center py-6">
-                <Loader2 className="h-5 w-5 text-[#14b8a6] animate-spin" />
-              </div>
-            ) : filteredMarkets.length === 0 ? (
-              <p className="text-[#e8fbff]/60 text-xs text-center py-4">Nessun mercato trovato</p>
-            ) : (
-              filteredMarkets.map((market) => (
+          {/* Mercati Dropdown */}
+          {loading ? (
+            <div className="flex justify-center py-2">
+              <Loader2 className="h-4 w-4 text-[#14b8a6] animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              {filteredMarkets.map((market) => (
                 <button
                   key={market.id}
                   onClick={() => handleMarketSelect(market.id)}
-                  className={`w-full text-left p-2.5 rounded-lg transition-all text-xs ${
+                  className={`text-left p-2 rounded-lg transition-all text-xs ${
                     selectedMarketId === market.id
                       ? 'bg-[#14b8a6]/20 border border-[#14b8a6] shadow-lg'
                       : 'bg-[#0f1729] border border-[#14b8a6]/10 hover:border-[#14b8a6]/30'
                   }`}
                 >
-                  <p className="font-semibold text-white">{market.name}</p>
-                  <p className="text-[#14b8a6]">{market.municipality}</p>
+                  <p className="font-semibold text-white truncate">{market.name}</p>
+                  <p className="text-[#14b8a6] text-xs">{market.municipality}</p>
                 </button>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
 
-          {/* Scheda Mercato + Indicatori */}
+          {/* Scheda Mercato + Indicatori + Tasto */}
           {selectedMarket && (
-            <div className="border-t border-[#14b8a6]/10 p-3 space-y-3 flex-shrink-0">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
               {/* Scheda Mercato */}
-              <div className="bg-[#0f1729] border border-[#14b8a6]/20 rounded-lg p-2.5">
+              <div className="md:col-span-3 bg-[#0f1729] border border-[#14b8a6]/20 rounded-lg p-2.5">
                 <p className="text-xs font-semibold text-white mb-1">{selectedMarket.name}</p>
                 <div className="text-xs text-[#e8fbff]/70 space-y-0.5">
                   <p>📍 {selectedMarket.municipality}</p>
@@ -188,57 +183,46 @@ export default function MappaItaliaPage() {
 
               {/* Indicatori Posteggi */}
               {stallsLoading ? (
-                <div className="flex justify-center py-4">
+                <div className="md:col-span-6 flex justify-center">
                   <Loader2 className="h-4 w-4 text-[#14b8a6] animate-spin" />
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="md:col-span-6 grid grid-cols-3 gap-2">
                   <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 p-2 rounded-lg text-center">
                     <div className="text-xs text-[#ef4444] font-semibold">Occupati</div>
-                    <div className="text-xl font-bold text-[#ef4444]">{occupiedCount}</div>
+                    <div className="text-lg font-bold text-[#ef4444]">{occupiedCount}</div>
                   </div>
                   <div className="bg-[#10b981]/10 border border-[#10b981]/30 p-2 rounded-lg text-center">
                     <div className="text-xs text-[#10b981] font-semibold">Liberi</div>
-                    <div className="text-xl font-bold text-[#10b981]">{freeCount}</div>
+                    <div className="text-lg font-bold text-[#10b981]">{freeCount}</div>
                   </div>
                   <div className="bg-[#f59e0b]/10 border border-[#f59e0b]/30 p-2 rounded-lg text-center">
                     <div className="text-xs text-[#f59e0b] font-semibold">Riservati</div>
-                    <div className="text-xl font-bold text-[#f59e0b]">{reservedCount}</div>
+                    <div className="text-lg font-bold text-[#f59e0b]">{reservedCount}</div>
                   </div>
                 </div>
               )}
 
               {/* Tasto Vista Mercato */}
               <Button
-                className="w-full text-xs h-8 bg-gradient-to-r from-[#14b8a6] to-[#06b6d4] hover:from-[#14b8a6]/80 hover:to-[#06b6d4]/80 text-white"
+                className="md:col-span-3 text-xs h-10 bg-gradient-to-r from-[#14b8a6] to-[#06b6d4] hover:from-[#14b8a6]/80 hover:to-[#06b6d4]/80 text-white"
               >
                 📍 Vista Mercato
               </Button>
             </div>
           )}
         </div>
+      </div>
 
-        {/* Mappa Full-Screen */}
-        <div className="hidden md:flex flex-1 overflow-hidden">
-          {selectedMarket ? (
-            <MappaItaliaComponent preselectedMarketId={selectedMarket.id} />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-[#0b1220]">
-              <p className="text-[#e8fbff]/60">Seleziona un mercato</p>
-            </div>
-          )}
-        </div>
-
-        {/* Mappa Mobile - Full Screen */}
-        <div className="md:hidden flex-1 overflow-hidden">
-          {selectedMarket ? (
-            <MappaItaliaComponent preselectedMarketId={selectedMarket.id} />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-[#0b1220]">
-              <p className="text-[#e8fbff]/60">Seleziona un mercato</p>
-            </div>
-          )}
-        </div>
+      {/* Mappa Full-Screen */}
+      <div className="flex-1 overflow-hidden">
+        {selectedMarket ? (
+          <MappaItaliaComponent preselectedMarketId={selectedMarket.id} />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-[#0b1220]">
+            <p className="text-[#e8fbff]/60">Seleziona un mercato</p>
+          </div>
+        )}
       </div>
     </div>
   );
