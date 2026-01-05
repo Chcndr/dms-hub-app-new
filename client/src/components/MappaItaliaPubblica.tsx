@@ -542,52 +542,7 @@ function PosteggiTabPubblica({
         })()}
       </div>
 
-      {/* Lista Posteggi - SOLO LETTURA */}
-      <div className="border border-[#14b8a6]/20 rounded-lg overflow-hidden">
-        <div className="bg-[#0b1220]/50 px-4 py-2 border-b border-[#14b8a6]/20">
-          <h3 className="text-sm font-semibold text-[#e8fbff]">Lista Posteggi</h3>
-        </div>
-        <div ref={listContainerRef} className="max-h-[400px] overflow-y-auto">
-          <Table>
-            <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
-              <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
-                <TableHead className="text-[#e8fbff]/70 text-xs">N°</TableHead>
-                <TableHead className="text-[#e8fbff]/70 text-xs">Tipo</TableHead>
-                <TableHead className="text-[#e8fbff]/70 text-xs">Stato</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {[...stalls].sort((a, b) => {
-                const numA = parseInt(a.number, 10);
-                const numB = parseInt(b.number, 10);
-                if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-                return a.number.localeCompare(b.number);
-              }).map((stall) => (
-                <TableRow 
-                  key={stall.id}
-                  data-stall-id={stall.id}
-                  className={`cursor-pointer hover:bg-[#14b8a6]/10 border-[#14b8a6]/10 ${
-                    selectedStallId === stall.id ? 'bg-[#14b8a6]/20' : ''
-                  }`}
-                  onClick={() => handleRowClick(stall)}
-                >
-                  <TableCell className="font-medium text-[#e8fbff] text-sm">{stall.number}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
-                      {stall.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="default" className={`${getStallStatusClasses(stall.status)} text-xs`}>
-                      {getStallStatusLabel(stall.status)}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+      {/* Lista Posteggi rimossa - i posteggi sono cliccabili direttamente sulla mappa */}
     </div>
   );
 }
