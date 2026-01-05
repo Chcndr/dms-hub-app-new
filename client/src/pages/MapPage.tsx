@@ -127,7 +127,7 @@ export default function MapPage() {
     <div className="min-h-screen flex flex-col bg-background pb-16">
       {/* Header */}
       <header className="bg-primary text-primary-foreground p-3 shadow-md">
-        <div className="container max-w-2xl flex items-center justify-between">
+        <div className="w-full px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Store className="h-6 w-6" />
             <h1 className="text-lg font-bold">DMS Hub - Mappa Mercato</h1>

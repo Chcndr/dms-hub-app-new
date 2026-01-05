@@ -106,7 +106,7 @@ export default function HomePage() {
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Header */}
         <header className="bg-primary/95 backdrop-blur-sm text-primary-foreground p-4 shadow-lg border-b border-primary/20">
-          <div className="container flex items-center justify-between">
+          <div className="w-full px-4 md:px-8 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Store className="w-8 h-8" />
               <div>
