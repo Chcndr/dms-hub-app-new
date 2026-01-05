@@ -195,7 +195,7 @@ export default function HomePage() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => setLocation('/mappa')}
+              onClick={() => setLocation('/mappa-italia')}
               className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <MapPin className="w-6 h-6" />
