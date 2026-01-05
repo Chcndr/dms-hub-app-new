@@ -21,6 +21,7 @@ import GuardianLogs from "./pages/GuardianLogs";
 import GuardianDebug from "./pages/GuardianDebug";
 import MarketGISPage from "./pages/MarketGISPage";
 import LogDebugPage from "./pages/LogDebugPage";
+import MappaItaliaPage from "./pages/MappaItaliaPage";
 import APITokensPage from "./pages/APITokensPage";
 import CouncilPage from "./pages/CouncilPage";
 import SuapDashboard from "./pages/suap/SuapDashboard";
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/guardian/logs" component={GuardianLogs} />
       <Route path="/guardian/debug" component={GuardianDebug} />
       <Route path="/market-gis" component={MarketGISPage} />
+      <Route path="/mappa-italia" component={MappaItaliaPage} />
       <Route path="/log-debug" component={LogDebugPage} />
       <Route path="/settings/api-tokens" component={APITokensPage} />
       <Route path="/council" component={CouncilPage} />
