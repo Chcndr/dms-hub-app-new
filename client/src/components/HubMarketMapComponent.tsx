@@ -123,6 +123,7 @@ interface HubMarketMapComponentProps {
   selectedHub?: HubLocation; // HUB selezionato con negozi
   onHubClick?: (hubId: number) => void; // Callback click su HUB
   onShopClick?: (shop: HubShop) => void; // Callback click su negozio
+  hubCenterFixed?: [number, number]; // Centro HUB fisso per zoom
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -208,15 +209,35 @@ export function HubMarketMapComponent({
   allHubs = [],
   selectedHub,
   onHubClick,
-  onShopClick
+  onShopClick,
+  hubCenterFixed
 }: HubMarketMapComponentProps) {
   
   // Ottieni lo stato di animazione dal context per nascondere poligoni durante zoom
   const { isAnimating } = useAnimation();
   
-  // Se showItalyView è true e non c'è un center specifico, usa coordinate Italia
-  // Se mapData è null (vista Italia), usa coordinate Italia come fallback
-  const mapCenter: [number, number] = center || (showItalyView || !mapData ? [42.5, 12.5] : [mapData.center.lat, mapData.center.lng]);
+  // Se showItalyView è true, usa coordinate Italia
+  // Se mode è 'hub' e c'è hubCenterFixed, usa quello
+  // Altrimenti usa mapData.center o fallback Italia
+  const mapCenter: [number, number] = center || (
+    showItalyView 
+      ? [42.5, 12.5]  // Centro Italia fisso
+      : mode === 'hub' && hubCenterFixed
+        ? hubCenterFixed  // Centro HUB selezionato
+        : mapData?.center 
+          ? [mapData.center.lat, mapData.center.lng] 
+          : [42.5, 12.5]  // Fallback Italia
+  );
+  
+  // Calcola zoom in base alla vista
+  // Vista Italia: zoom 6 per vedere tutta Italia
+  // Vista HUB: zoom 16 per vedere i negozi
+  // Vista Mercato: usa zoom passato (default 17)
+  const effectiveZoom = showItalyView 
+    ? 6 
+    : mode === 'hub' && hubCenterFixed 
+      ? 16 
+      : zoom;
   
   // Rimosso stato locale ridondante che causava loop
   // L'animazione è gestita direttamente da MapCenterController tramite useAnimation
@@ -324,7 +345,7 @@ export function HubMarketMapComponent({
         <MapContainer
           key={`map-${refreshKey}`}
           center={mapCenter}
-          zoom={zoom}
+          zoom={effectiveZoom}
           scrollWheelZoom={false}
           doubleClickZoom={false}
           zoomDelta={0.5}
@@ -365,7 +386,7 @@ export function HubMarketMapComponent({
           {/* Controller per centrare mappa programmaticamente (cambio vista Italia/Mercato) */}
           <MapCenterController 
             center={mapCenter} 
-            zoom={zoom} 
+            zoom={effectiveZoom} 
             trigger={viewTrigger}
             bounds={marketBounds || undefined}
             isMarketView={!showItalyView}

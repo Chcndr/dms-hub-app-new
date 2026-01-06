@@ -388,7 +388,7 @@ export default function GestioneHubMapWrapper() {
       )}
 
       {/* Mappa */}
-      <div className="h-[500px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
+      <div className="h-[700px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
         <HubMarketMapComponent
           mode={mode}
           mapData={mapData || undefined}
@@ -403,6 +403,7 @@ export default function GestioneHubMapWrapper() {
           viewTrigger={viewTrigger}
           height="100%"
           marketCenterFixed={selectedMarket ? [selectedMarket.latitude, selectedMarket.longitude] : undefined}
+          hubCenterFixed={selectedHub ? [parseFloat(String(selectedHub.latitude || selectedHub.lat)), parseFloat(String(selectedHub.longitude || selectedHub.lng))] : undefined}
         />
       </div>
     </div>
