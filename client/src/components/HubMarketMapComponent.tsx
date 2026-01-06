@@ -514,10 +514,15 @@ export function HubMarketMapComponent({
           ))}
 
           {/* ============ MARKER HUB (Vista Italia) ============ */}
-          {mode === 'hub' && allHubs.length > 0 && allHubs.map((hub) => (
+          {mode === 'hub' && allHubs.length > 0 && allHubs.map((hub) => {
+            // Converti le coordinate da stringa a numero
+            const hubLat = parseFloat(hub.lat || hub.latitude) || 0;
+            const hubLng = parseFloat(hub.lng || hub.longitude) || 0;
+            if (!hubLat || !hubLng) return null;
+            return (
             <Marker
               key={`hub-${hub.id}`}
-              position={[hub.latitude, hub.longitude]}
+              position={[hubLat, hubLng]}
               icon={L.divIcon({
                 className: 'hub-center-marker',
                 html: `<div style="
@@ -576,8 +581,8 @@ export function HubMarketMapComponent({
                     <div className="bg-[#1e293b] p-2 rounded border border-gray-700 mt-2">
                       <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Coordinate GPS</div>
                       <div className="font-mono text-xs text-gray-300 flex justify-between">
-                        <span>Lat: {hub.latitude.toFixed(6)}</span>
-                        <span>Lng: {hub.longitude.toFixed(6)}</span>
+                        <span>Lat: {hubLat.toFixed(6)}</span>
+                        <span>Lng: {hubLng.toFixed(6)}</span>
                       </div>
                     </div>
                     
@@ -588,15 +593,20 @@ export function HubMarketMapComponent({
                 </div>
               </Popup>
             </Marker>
-          ))}
+          );
+          })}
 
           {/* ============ NEGOZI HUB (Vista HUB) ============ */}
           {mode === 'hub' && selectedHub && selectedHub.shops && selectedHub.shops.map((shop) => {
             const shopColor = shop.status === 'active' ? '#10b981' : shop.status === 'closed' ? '#ef4444' : '#6b7280';
+            // Converti le coordinate da stringa a numero
+            const shopLat = parseFloat(shop.lat) || 0;
+            const shopLng = parseFloat(shop.lng) || 0;
+            if (!shopLat || !shopLng) return null;
             return (
               <Marker
                 key={`shop-${shop.id}`}
-                position={[shop.lat, shop.lng]}
+                position={[shopLat, shopLng]}
                 icon={L.divIcon({
                   className: 'shop-marker',
                   html: `<div style="
