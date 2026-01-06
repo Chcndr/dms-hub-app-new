@@ -37,6 +37,8 @@ import MappaItaliaPubblica from './MappaItaliaPubblica';
 import { MarketMapComponent } from './MarketMapComponent';
 import MappaHubMini from './MappaHubMini';
 import GestioneHubNegozi from './GestioneHubNegozi';
+import { HubMarketMapComponent } from './HubMarketMapComponent';
+import GestioneHubMapWrapper from './GestioneHubMapWrapper';
 import ImpreseQualificazioniPanel from './ImpreseQualificazioniPanel';
 import WalletPanel from './WalletPanel';
 import NotificationsPanel from './NotificationsPanel';
@@ -596,11 +598,11 @@ export default function GestioneHubPanel() {
                 Rete Hub - Mappa Interattiva
               </CardTitle>
               <CardDescription className="text-[#e8fbff]/60">
-                Visualizzazione completa di tutti i mercati e posteggi
+                Visualizzazione completa di tutti gli HUB e Mercati con selettore
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <MappaItaliaComponent />
+              <GestioneHubMapWrapper />
             </CardContent>
           </Card>
         </TabsContent>
