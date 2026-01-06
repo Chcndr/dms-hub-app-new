@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.17.0  
-> **Data:** 6 Gennaio 2026  
+> **Versione:** 3.17.1  
+> **Data:** 7 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -778,6 +778,63 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 📝 CHANGELOG
+
+### v3.17.1 (7 Gennaio 2026) - Sistema HUB Market e Negozi GIS
+
+**Nuovo Sistema HUB Market per Visualizzazione Negozi:**
+
+**Componenti Creati:**
+- ✅ **HubMarketMapComponent.tsx:** Clone di MarketMapComponent con supporto dual-mode (Mercati/HUB)
+- ✅ **GestioneHubMapWrapper.tsx:** Wrapper con toggle selector 🏪 Mercati / 🏢 HUB
+- ✅ **GestioneHubNegozi.tsx:** Componente integrato nella Dashboard PA
+
+**Funzionalità Mappa HUB:**
+- ✅ **Toggle Mercati/HUB:** Selettore per switchare tra visualizzazione Mercati (poligoni) e HUB (punti)
+- ✅ **Marker HUB:** Icona "H" viola (#9C27B0) per identificare gli HUB sulla mappa Italia
+- ✅ **Marker Negozi:** Lettere A-J come point markers con colori stato (verde=attivo, rosso=chiuso, grigio=inattivo)
+- ✅ **Popup Negozi:** Dettagli negozio con categoria, stato, telefono, link vetrina
+- ✅ **Area HUB:** Poligono tratteggiato viola per delimitare l'area dell'HUB
+- ✅ **Fine Corsa:** Bounds basati su `area_geojson` per limitare zoom/pan
+
+**Fix Interfacce TypeScript:**
+- ✅ **HubLocation:** Aggiornato per usare `lat`/`lng` invece di `latitude`/`longitude` (match API)
+- ✅ **HubShop:** Interfaccia con `lat`, `lng`, `letter`, `name`, `category`, `status`, `vetrina_url`
+- ✅ **Parsing Coordinate:** `parseFloat()` per gestire stringhe da API
+
+**Database HUB (Neon PostgreSQL):**
+
+| Tabella | Descrizione | Campi Chiave |
+|---------|-------------|-------------|
+| `hub_locations` | HUB indipendenti | id, name, lat, lng, area_geojson, area_sqm |
+| `hub_shops` | Negozi per HUB | id, hub_id, letter, name, lat, lng, status |
+| `hub_services` | Servizi HUB | id, hub_id, name, type, capacity |
+
+**API Endpoints HUB:**
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/api/hub/locations` | GET | Lista tutti gli HUB |
+| `/api/hub/locations/:id` | GET | Dettaglio HUB con negozi e servizi |
+| `/api/hub/locations` | POST | Crea nuovo HUB (con negozi opzionali) |
+| `/api/hub/locations/:id` | PUT | Aggiorna HUB |
+| `/api/hub/shops` | POST | Aggiungi negozio a HUB |
+
+**HUB Market Creati (12 città italiane):**
+- Roma, Milano, Napoli, Torino, Firenze, Bologna
+- Venezia, Genova, Palermo, Bari, Modena, Grosseto (Hub Centro con 10 negozi test)
+
+**Integrazione Editor V3:**
+- ✅ **Pulsante "🗄️ Salva nel Database (Pepe GIS)":** Esporta HUB + Negozi con coordinate
+- ✅ **Formato Export:** `{ name, address, city, lat, lng, areaGeojson, shops: [...] }`
+- ✅ **Negozi Export:** `{ shopNumber, letter, name, lat, lng, category, status }`
+
+**File Modificati:**
+- `client/src/components/HubMarketMapComponent.tsx`
+- `client/src/components/GestioneHubMapWrapper.tsx`
+- `mihub-backend-rest/routes/hub.js`
+
+---
+
 ### v3.16.1 (5 Gennaio 2026) - PUNTO DI RIPRISTINO STABILE
 **Fix Logica Rinnovo per Concessioni Scadute:**
 - ✅ **Query Rinnovo Migliorata:** Ora cerca anche concessioni scadute (non solo attive)
