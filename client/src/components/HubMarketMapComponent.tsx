@@ -429,10 +429,15 @@ export function HubMarketMapComponent({
           })()}
 
           {/* Marker "M" per tutti i mercati (Vista Italia) */}
-          {allMarkets.length > 0 && allMarkets.map((market) => (
+          {allMarkets.length > 0 && allMarkets.map((market) => {
+            // Converti le coordinate da stringa a numero
+            const marketLat = parseFloat(market.latitude) || 0;
+            const marketLng = parseFloat(market.longitude) || 0;
+            if (!marketLat || !marketLng) return null;
+            return (
             <Marker
               key={`market-${market.id}`}
-              position={[market.latitude, market.longitude]}
+              position={[marketLat, marketLng]}
               icon={L.divIcon({
                 className: 'market-center-marker',
                 html: `<div style="
@@ -498,8 +503,8 @@ export function HubMarketMapComponent({
                     <div className="bg-[#1e293b] p-2 rounded border border-gray-700 mt-2">
                       <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Coordinate GPS</div>
                       <div className="font-mono text-xs text-gray-300 flex justify-between">
-                        <span>Lat: {market.latitude.toFixed(6)}</span>
-                        <span>Lng: {market.longitude.toFixed(6)}</span>
+                        <span>Lat: {marketLat.toFixed(6)}</span>
+                        <span>Lng: {marketLng.toFixed(6)}</span>
                       </div>
                     </div>
                     
@@ -511,7 +516,8 @@ export function HubMarketMapComponent({
                 </div>
               </Popup>
             </Marker>
-          ))}
+          );
+          })}
 
           {/* ============ MARKER HUB (Vista Italia) ============ */}
           {mode === 'hub' && allHubs.length > 0 && allHubs.map((hub) => {
