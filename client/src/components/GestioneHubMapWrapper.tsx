@@ -137,9 +137,13 @@ export default function GestioneHubMapWrapper() {
       if (res.ok) {
         const response = await res.json();
         // L'API restituisce {success: true, data: {...}, meta: {...}}
-        const mapDataFromApi = response.data || response;
-        setMapData(mapDataFromApi);
-        console.log('[GestioneHubMapWrapper] Loaded mapData with', mapDataFromApi?.stalls_geojson?.features?.length || 0, 'features');
+        // Controlla success come in GestioneMercati
+        if (response.success && response.data) {
+          setMapData(response.data);
+          console.log('[GestioneHubMapWrapper] Loaded mapData with', response.data?.stalls_geojson?.features?.length || 0, 'features');
+        } else {
+          console.warn('[GestioneHubMapWrapper] API returned success=false or no data');
+        }
       }
 
       // Carica posteggi
