@@ -725,7 +725,7 @@ export function HubMarketMapComponent({
                         </div>
                         <div className="bg-[#1e293b] p-2 rounded border border-gray-700">
                           <div className="text-gray-400 mb-1">COORDINATE</div>
-                          <div className="font-medium text-white truncate" title={`${shop.lat?.toFixed(5)}, ${shop.lng?.toFixed(5)}`}>
+                          <div className="font-medium text-white truncate" title={shop.lat && shop.lng ? `${Number(shop.lat).toFixed(5)}, ${Number(shop.lng).toFixed(5)}` : '-'}>
                             {shop.lat && shop.lng ? `${Number(shop.lat).toFixed(4)}, ${Number(shop.lng).toFixed(4)}` : '-'}
                           </div>
                         </div>
