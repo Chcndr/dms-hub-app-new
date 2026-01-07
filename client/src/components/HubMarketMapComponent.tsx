@@ -758,9 +758,12 @@ export function HubMarketMapComponent({
                         onClick={() => {
                           if (shop.vetrina_url) {
                             window.open(shop.vetrina_url, '_blank');
+                          } else if (shop.owner_id) {
+                            // Naviga alla vetrina dell'impresa collegata (owner_id = impresa_id)
+                            window.location.href = `/vetrine/${shop.owner_id}`;
                           } else {
-                            // Naviga alla vetrina dell'impresa collegata
-                            window.location.href = `/vetrine/${shop.id}`;
+                            // Fallback: cerca per nome
+                            window.location.href = `/vetrine?q=${encodeURIComponent(shop.name || '')}`;
                           }
                         }}
                         className="w-full flex items-center justify-center gap-2 bg-[#9C27B0] hover:bg-[#7B1FA2] text-white py-2.5 px-4 rounded transition-colors text-sm font-medium"
