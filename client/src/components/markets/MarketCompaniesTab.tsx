@@ -64,6 +64,7 @@ export type CompanyRow = {
   autorizzazioni?: { id: number; numero: string; ente: string; stato: string }[];
   spunta_wallets?: { id: number; market_id: number; market_name: string; balance: number }[];
   qualificazioni?: { id: number; type: string; status: string; start_date: string; end_date: string }[];
+  hub_shop_id?: number;   // ID del negozio HUB collegato (se presente = è un negozio HUB)
 };
 
 type ConcessionRow = {
@@ -289,15 +290,15 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   
   // Filtered data
   const filteredCompanies = companies.filter(c => {
-    // Filtro per tipo impresa (ambulanti = hanno concessioni mercato, negozi_hub = hanno hub_shop)
-    if (impresaFilter === 'ambulanti') {
-      // Ambulanti: imprese con concessioni mercato attive
-      const hasConcessioni = c.concessioni && c.concessioni.length > 0;
-      if (!hasConcessioni) return false;
-    } else if (impresaFilter === 'negozi_hub') {
-      // Negozi HUB: imprese senza concessioni mercato (sono negozi fissi HUB)
-      const hasConcessioni = c.concessioni && c.concessioni.length > 0;
-      if (hasConcessioni) return false;
+    // Filtro per tipo impresa:
+    // - negozi_hub = imprese con hub_shop_id (hanno un negozio HUB collegato)
+    // - ambulanti = imprese SENZA hub_shop_id (sono ambulanti di mercato)
+    if (impresaFilter === 'negozi_hub') {
+      // Negozi HUB: imprese che hanno un hub_shop collegato
+      if (!c.hub_shop_id) return false;
+    } else if (impresaFilter === 'ambulanti') {
+      // Ambulanti: imprese che NON hanno un hub_shop collegato
+      if (c.hub_shop_id) return false;
     }
     
     // Filtro per ricerca testuale
@@ -443,6 +444,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         numero_addetti: v.numero_addetti,
         sito_web: v.sito_web,
         data_iscrizione_ri: v.data_iscrizione_ri,
+        hub_shop_id: v.hub_shop_id,  // ID del negozio HUB collegato (se presente)
       }));
       
       console.log('[MarketCompaniesTab] fetchCompanies: caricati', mappedData.length, 'imprese');
@@ -455,8 +457,8 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   };
 
   const fetchConcessions = async () => {
-    // Se marketId è "ALL", carica tutte le concessioni
-    if (marketId === 'ALL') {
+    // Se marketId è "ALL" o "all", carica tutte le concessioni
+    if (marketId === 'ALL' || marketId === 'all') {
       try {
         const response = await fetch(`${API_BASE_URL}/api/concessions`);
         if (!response.ok) {
@@ -611,7 +613,8 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       setConcessions(mappedData);
     } catch (err) {
       console.error('[MarketCompaniesTab] fetchConcessions error:', err);
-      setError('Impossibile caricare le concessioni');
+      // Non mostrare errore se non ci sono concessioni, solo log
+      console.log('[MarketCompaniesTab] Nessuna concessione trovata o errore API');
       setConcessions([]);
     }
   };
