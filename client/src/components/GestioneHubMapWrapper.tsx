@@ -182,6 +182,14 @@ export default function GestioneHubMapWrapper() {
     setViewTrigger(prev => prev + 1);
   };
 
+  // Vai a Vista Mercato/HUB (zoom al selezionato)
+  const handleGoToDetail = () => {
+    if (selectedItem) {
+      setShowItalyView(false);
+      setViewTrigger(prev => prev + 1);
+    }
+  };
+
   // Gestione click su negozio
   const handleShopClick = (shop: HubShop) => {
     toast.info(`Negozio ${shop.letter}: ${shop.name}`);
@@ -257,12 +265,15 @@ export default function GestioneHubMapWrapper() {
         <Button
           variant="outline"
           size="sm"
-          onClick={showItalyView ? undefined : handleBackToItaly}
-          disabled={showItalyView}
+          onClick={showItalyView ? handleGoToDetail : handleBackToItaly}
+          disabled={showItalyView && !selectedItem}
           className="border-[#14b8a6]/30 text-[#e8fbff]"
         >
           <MapPin className="h-4 w-4 mr-2" />
-          {showItalyView ? 'Vista Italia' : `Vista ${mode === 'mercato' ? 'Mercato' : 'HUB'}`}
+          {showItalyView 
+            ? `Vista ${mode === 'mercato' ? 'Mercato' : 'HUB'}` 
+            : 'Vista Italia'
+          }
         </Button>
 
         {/* Refresh */}
