@@ -781,11 +781,6 @@ Piano sviluppo organizzato per quarter:
 ---
 
 ## 🚀 PROGETTO: Funzionalità "Nuovo Negozio" per HUB
-### v3.20.0 (07/01/2026)
-- **Fix Popup Posteggi Mercato**: Dimensioni ora corrette usando width/depth dal DB invece del calcolo geometrico
-- **Popup Negozi HUB Migliorato**: Nuovo design con header viola, coordinate, contatti e tasto Vetrina sempre visibile
-- **Distinzione Colori**: Posteggi mercato (verde/rosso/giallo) vs Negozi HUB (viola)
-
 
 > **Versione Target:** 3.18.0
 > **Data Pianificazione:** 7 Gennaio 2026
@@ -900,6 +895,11 @@ Per il point GIS del nuovo negozio:
 
 
 ## 📝 CHANGELOG
+
+### v3.20.0 (07/01/2026) - Fix Popup Posteggi e Negozi HUB
+- **Fix Popup Posteggi Mercato**: Dimensioni ora corrette usando width/depth dal DB invece del calcolo geometrico
+- **Popup Negozi HUB Migliorato**: Nuovo design con header viola, coordinate, contatti e tasto Vetrina sempre visibile
+- **Distinzione Colori**: Posteggi mercato (verde/rosso/giallo) vs Negozi HUB (viola)
 
 ### v3.19.0 (7 Gennaio 2026) - Sezione Imprese Completa in Gestione HUB
 
