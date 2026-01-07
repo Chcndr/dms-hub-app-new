@@ -777,6 +777,123 @@ Piano sviluppo organizzato per quarter:
 
 ---
 
+
+---
+
+## 🚀 PROGETTO: Funzionalità "Nuovo Negozio" per HUB
+
+> **Versione Target:** 3.18.0
+> **Data Pianificazione:** 7 Gennaio 2026
+> **Stato:** IN SVILUPPO
+
+### Obiettivo
+
+Permettere agli utenti di creare nuovi negozi/vetrine direttamente dalla lista Vetrine Commercianti, con:
+1. Creazione automatica di una scheda impresa minima
+2. Creazione del negozio (hub_shop) collegato all'HUB
+3. Generazione automatica del point GIS sulla mappa
+
+### Flusso Utente
+
+```
+Lista Vetrine → Tab "Nuovo Negozio" → Form Dati Essenziali → Salva
+                                                              ↓
+                                              ┌────────────────────────────────┐
+                                              │ 1. Crea record in `imprese`    │
+                                              │ 2. Crea record in `hub_shops`  │
+                                              │ 3. Genera point GIS            │
+                                              └────────────────────────────────┘
+```
+
+### Tabelle Database Coinvolte
+
+| Tabella | Campi Obbligatori | Descrizione |
+|---------|-------------------|-------------|
+| `imprese` | id, denominazione, partita_iva, codice_fiscale, comune | Anagrafica impresa |
+| `hub_shops` | id, hub_id, name, status | Negozio nell'HUB |
+| `hub_locations` | - | HUB di riferimento (già esistente) |
+
+### Campi Form "Nuovo Negozio"
+
+| Campo | Obbligatorio | Mappa a | Note |
+|-------|--------------|---------|------|
+| Ragione Sociale | ✅ | imprese.denominazione, hub_shops.name | Nome negozio |
+| Partita IVA | ✅ | imprese.partita_iva, hub_shops.vat_number | 11 caratteri |
+| Codice Fiscale | ✅ | imprese.codice_fiscale | 16 caratteri |
+| Comune | ✅ | imprese.comune | Città sede legale |
+| Categoria | ❌ | hub_shops.category | Tipo attività |
+| Telefono | ❌ | imprese.telefono, hub_shops.phone | Contatto |
+| Email | ❌ | imprese.email, hub_shops.email | Contatto |
+| HUB di Riferimento | ✅ | hub_shops.hub_id | Dropdown HUB disponibili |
+
+### API Endpoints da Creare/Modificare
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/api/hub/shops/create-with-impresa` | POST | Crea impresa + shop in transazione |
+
+### Logica Backend (Transazione Atomica)
+
+```javascript
+// POST /api/hub/shops/create-with-impresa
+async function createShopWithImpresa(req, res) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // 1. Crea impresa minima
+    const impresaResult = await client.query(`
+      INSERT INTO imprese (denominazione, partita_iva, codice_fiscale, comune, telefono, email, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      RETURNING id
+    `, [denominazione, partitaIva, codiceFiscale, comune, telefono, email]);
+    
+    const impresaId = impresaResult.rows[0].id;
+    
+    // 2. Crea hub_shop collegato
+    const shopResult = await client.query(`
+      INSERT INTO hub_shops (hub_id, name, category, owner_id, business_name, vat_number, phone, email, lat, lng, status, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', NOW(), NOW())
+      RETURNING id
+    `, [hubId, denominazione, categoria, impresaId, denominazione, partitaIva, telefono, email, lat, lng]);
+    
+    await client.query('COMMIT');
+    
+    res.json({ success: true, impresaId, shopId: shopResult.rows[0].id });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+```
+
+### Componenti Frontend da Creare/Modificare
+
+| File | Modifica |
+|------|----------|
+| `VetrinePage.tsx` | Aggiungere tab "Nuovo Negozio" nella lista |
+| `NuovoNegozioForm.tsx` | Nuovo componente form creazione |
+| `GestioneHubNegozi.tsx` | Aggiungere pulsante "+" per nuovo negozio |
+
+### Coordinate GIS per Nuovo Negozio
+
+Per il point GIS del nuovo negozio:
+- **Opzione 1:** Usa centro dell'HUB selezionato (hub_locations.center_lat/center_lng)
+- **Opzione 2:** Permetti selezione manuale su mappa (futuro)
+- **Opzione 3:** Calcola posizione automatica basata su negozi esistenti
+
+### Checklist Implementazione
+
+- [ ] Backend: Endpoint `/api/hub/shops/create-with-impresa`
+- [ ] Frontend: Tab "Nuovo Negozio" in VetrinePage
+- [ ] Frontend: Form con validazione campi obbligatori
+- [ ] Frontend: Dropdown selezione HUB
+- [ ] Frontend: Feedback successo/errore
+- [ ] Test: Verifica creazione impresa + shop
+- [ ] Test: Verifica visualizzazione in mappa HUB
+- [ ] Deploy: Push e verifica su produzione
+
+
 ## 📝 CHANGELOG
 
 ### v3.17.3 (7 Gennaio 2026) - Fix Conteggi Posteggi e Zoom fitBounds
