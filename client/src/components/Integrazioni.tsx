@@ -637,6 +637,16 @@ function APIDashboard() {
           data = await utils.client.guardian.logApiCall.mutate(parsedBody);
           break;
           
+        // HUB SHOPS - chiamate REST dirette a Hetzner
+        case '/api/hub/shops/create-with-impresa':
+          const createShopResponse = await fetch('https://mihub.157-90-29-66.nip.io/api/hub/shops/create-with-impresa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsedBody),
+          });
+          data = await createShopResponse.json();
+          break;
+          
         // SHOPPING ROUTE - chiamate REST dirette
         case '/api/routing/calculate':
           const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
