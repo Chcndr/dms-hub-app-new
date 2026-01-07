@@ -666,15 +666,73 @@ function APIDashboard() {
           break;
           
         default:
-          // Check if endpoint is defined in api/index.json but not implemented
+          // Chiamata REST diretta per tutti gli endpoint non mappati
+          // Usa base_url da api/index.json o fallback a Hetzner
           if (endpointInfo) {
-            throw new Error(
-              `Endpoint non implementato (solo definito in api/index.json).\n` +
-              `ID: ${endpointInfo.id}\n` +
-              `Service: ${endpointInfo.service_id}\n` +
-              `Base URL: ${endpointInfo.base_url}\n` +
-              `Suggerimento: Implementare endpoint REST su Hetzner`
-            );
+            const baseUrl = endpointInfo.base_url || 'https://mihub.157-90-29-66.nip.io';
+            let restPath = endpointPath;
+            
+            // Converti path tRPC in path REST se necessario
+            // /api/trpc/dmsHub.markets.list -> /api/markets
+            if (restPath.includes('/api/trpc/dmsHub.')) {
+              const parts = restPath.replace('/api/trpc/dmsHub.', '').split('.');
+              const resource = parts[0]; // markets, stalls, bookings, etc.
+              const action = parts[1]; // list, create, getById, etc.
+              
+              // Mappa azioni comuni
+              if (action === 'list' || action === 'listActive' || action === 'listByMarket') {
+                restPath = `/api/${resource}`;
+              } else if (action === 'getById' || action === 'get') {
+                restPath = `/api/${resource}/${parsedBody.id || parsedBody.marketId || 1}`;
+              } else if (action === 'create') {
+                restPath = `/api/${resource}`;
+              } else if (action === 'update' || action === 'updateStatus') {
+                restPath = `/api/${resource}/${parsedBody.id || 1}`;
+              } else if (action === 'delete') {
+                restPath = `/api/${resource}/${parsedBody.id || 1}`;
+              } else {
+                // Fallback: usa il path originale convertito
+                restPath = `/api/${resource}/${action}`;
+              }
+            }
+            
+            // Sostituisci parametri path (es. :id, :marketId)
+            Object.entries(parsedBody).forEach(([key, value]) => {
+              restPath = restPath.replace(`:${key}`, String(value));
+            });
+            
+            const fullUrl = `${baseUrl}${restPath}`;
+            const method = endpointInfo.method || 'GET';
+            
+            const fetchOptions: RequestInit = {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+            };
+            
+            // Aggiungi body per POST/PUT/PATCH
+            if (['POST', 'PUT', 'PATCH'].includes(method) && Object.keys(parsedBody).length > 0) {
+              fetchOptions.body = JSON.stringify(parsedBody);
+            }
+            
+            // Aggiungi query params per GET
+            let urlWithParams = fullUrl;
+            if (method === 'GET' && Object.keys(parsedBody).length > 0) {
+              const queryParams = new URLSearchParams();
+              Object.entries(parsedBody).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) {
+                  queryParams.append(key, String(value));
+                }
+              });
+              const queryString = queryParams.toString();
+              if (queryString) {
+                urlWithParams = `${fullUrl}?${queryString}`;
+              }
+            }
+            
+            console.log(`[API Test] ${method} ${urlWithParams}`);
+            
+            const restResponse = await fetch(urlWithParams, fetchOptions);
+            data = await restResponse.json();
           } else {
             throw new Error(`Endpoint sconosciuto: ${endpointPath}`);
           }
