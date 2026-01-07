@@ -40,6 +40,7 @@ import GestioneHubNegozi from './GestioneHubNegozi';
 import { HubMarketMapComponent } from './HubMarketMapComponent';
 import GestioneHubMapWrapper from './GestioneHubMapWrapper';
 import ImpreseQualificazioniPanel from './ImpreseQualificazioniPanel';
+import { MarketCompaniesTab } from './markets/MarketCompaniesTab';
 import WalletPanel from './WalletPanel';
 import NotificationsPanel from './NotificationsPanel';
 
@@ -611,20 +612,46 @@ export default function GestioneHubPanel() {
         {/* TAB 3: IMPRESE */}
         {/* ================================================================ */}
         <TabsContent value="imprese" className="mt-6">
-          <Card className="bg-[#1a2332] border-[#10b981]/30">
-            <CardHeader>
-              <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-[#10b981]" />
-                Imprese Aderenti
-              </CardTitle>
-              <CardDescription className="text-[#e8fbff]/60">
-                Gestione e qualificazione delle imprese del territorio
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ImpreseQualificazioniPanel />
-            </CardContent>
-          </Card>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="p-4 bg-gradient-to-br from-[#14b8a6]/20 to-[#14b8a6]/5 border border-[#14b8a6]/30 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-[#14b8a6] mb-1">
+                <Building2 className="h-4 w-4" />
+                Imprese Totali
+              </div>
+              <div className="text-3xl font-bold text-white">{vendors.length}</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-[#10b981]/20 to-[#10b981]/5 border border-[#10b981]/30 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-[#10b981] mb-1">
+                <Coins className="h-4 w-4" />
+                Concessioni Attive
+              </div>
+              <div className="text-3xl font-bold text-white">{concessions.filter(c => c.status === 'ATTIVA' || c.status === 'attiva').length}</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-[#06b6d4]/20 to-[#06b6d4]/5 border border-[#06b6d4]/30 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-[#06b6d4] mb-1">
+                <Users className="h-4 w-4" />
+                Comuni Coperti
+              </div>
+              <div className="text-3xl font-bold text-white">{new Set(markets.map(m => m.municipality)).size}</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-[#f59e0b]/20 to-[#f59e0b]/5 border border-[#f59e0b]/30 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-[#f59e0b] mb-1">
+                <TrendingUp className="h-4 w-4" />
+                Media Concess./Impresa
+              </div>
+              <div className="text-3xl font-bold text-white">
+                {vendors.length > 0 ? (concessions.filter(c => c.status === 'ATTIVA' || c.status === 'attiva').length / vendors.length).toFixed(1) : '0'}
+              </div>
+            </div>
+          </div>
+          
+          {/* Componente Imprese Completo con Filtri */}
+          <MarketCompaniesTab 
+            marketId="all" 
+            marketName="Tutti gli HUB" 
+            filterType="all"
+          />
         </TabsContent>
 
         {/* ================================================================ */}
