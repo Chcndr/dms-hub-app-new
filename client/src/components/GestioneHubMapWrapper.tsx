@@ -405,7 +405,10 @@ export default function GestioneHubMapWrapper() {
           viewTrigger={viewTrigger}
           height="100%"
           marketCenterFixed={selectedMarket ? [selectedMarket.latitude, selectedMarket.longitude] : undefined}
-          hubCenterFixed={selectedHub ? [parseFloat(String(selectedHub.lat || selectedHub.latitude)), parseFloat(String(selectedHub.lng || selectedHub.longitude))] : undefined}
+          hubCenterFixed={selectedHub && selectedHub.lat && selectedHub.lng ? [
+            parseFloat(String(selectedHub.lat)) || 42.5,
+            parseFloat(String(selectedHub.lng)) || 12.5
+          ] : undefined}
         />
       </div>
     </div>

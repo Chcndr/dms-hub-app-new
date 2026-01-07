@@ -26,17 +26,23 @@ export function useMapAnimation({ center, zoom, trigger, bounds, isMarketView }:
       setAnimating(true);
       
       if (isMarketView && bounds) {
-        const targetZoom = map.getBoundsZoom(bounds, false, [10, 10]);
-        const forcedZoom = Math.min(targetZoom + 0.5, 19);
-        const currentZoom = map.getZoom();
-        const zoomDiff = Math.abs(forcedZoom - currentZoom);
-        const dynamicDuration = zoomDiff > 4 ? 6 : 1.5;
+        try {
+          const targetZoom = map.getBoundsZoom(bounds, false, [10, 10]);
+          const forcedZoom = Math.min(targetZoom + 0.5, 19);
+          const currentZoom = map.getZoom();
+          const zoomDiff = Math.abs(forcedZoom - currentZoom);
+          const dynamicDuration = zoomDiff > 4 ? 6 : 1.5;
 
-        map.flyTo(bounds.getCenter(), forcedZoom, {
-          duration: dynamicDuration,
-          easeLinearity: 0.25
-        });
-      } else if (center) {
+          map.flyTo(bounds.getCenter(), forcedZoom, {
+            duration: dynamicDuration,
+            easeLinearity: 0.25
+          });
+        } catch (e) {
+          console.error('[useMapAnimation] Error with bounds:', e);
+          isAnimatingRef.current = false;
+          setAnimating(false);
+        }
+      } else if (center && !isNaN(center[0]) && !isNaN(center[1])) {
         const currentZoom = map.getZoom();
         const targetZoom = zoom || 6;
         const zoomDiff = Math.abs(targetZoom - currentZoom);
@@ -46,6 +52,12 @@ export function useMapAnimation({ center, zoom, trigger, bounds, isMarketView }:
           duration: dynamicDuration,
           easeLinearity: 0.25
         });
+      } else {
+        // Coordinate non valide, resetta lo stato animazione
+        console.warn('[useMapAnimation] Invalid center coordinates:', center);
+        isAnimatingRef.current = false;
+        setAnimating(false);
+        return;
       }
       
       const onMoveEnd = () => {
