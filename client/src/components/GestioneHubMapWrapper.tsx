@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { HubMarketMapComponent } from './HubMarketMapComponent';
-import MarketMapComponent from './MarketMapComponent';
+import { MarketMapComponent } from './MarketMapComponent';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MapPin, Building2, Store, Loader2, RefreshCw } from 'lucide-react';
