@@ -385,6 +385,23 @@ export default function GestioneHubMapWrapper() {
                 </>
               )}
             </div>
+            {/* Coordinate GPS */}
+            <div className="bg-[#0b1220] p-3 rounded-lg border border-[#14b8a6]/30">
+              <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider mb-1">Coordinate GPS</div>
+              <div className="font-mono text-xs text-[#e8fbff]/80 flex justify-between">
+                {mode === 'mercato' ? (
+                  <>
+                    <span>Lat: {parseFloat(String((selectedItem as Market).latitude)) ? parseFloat(String((selectedItem as Market).latitude)).toFixed(6) : 'N/A'}</span>
+                    <span>Lng: {parseFloat(String((selectedItem as Market).longitude)) ? parseFloat(String((selectedItem as Market).longitude)).toFixed(6) : 'N/A'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Lat: {parseFloat(String((selectedItem as HubLocation).lat)) ? parseFloat(String((selectedItem as HubLocation).lat)).toFixed(6) : 'N/A'}</span>
+                    <span>Lng: {parseFloat(String((selectedItem as HubLocation).lng)) ? parseFloat(String((selectedItem as HubLocation).lng)).toFixed(6) : 'N/A'}</span>
+                  </>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
