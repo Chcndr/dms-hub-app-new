@@ -896,6 +896,27 @@ Per il point GIS del nuovo negozio:
 
 ## 📝 CHANGELOG
 
+### v3.19.0 (7 Gennaio 2026) - Sezione Imprese Completa in Gestione HUB
+
+**Nuova Sezione Imprese in Gestione HUB:**
+- ✅ Tab "Imprese" aggiunto in Gestione HUB (4 tab totali: Anagrafica, Imprese, Negozi, Servizi)
+- ✅ Riutilizzato componente MarketCompaniesTab con tutti i sub-tab:
+  - 🏢 Imprese
+  - 📄 Concessioni
+  - ✅ Qualificazioni
+  - 📋 Autorizzazioni
+
+**Filtro Tipo Impresa:**
+- 🟢 **Tutte le Imprese** - Mostra tutte
+- 🟠 **Ambulanti Mercato** - Solo imprese con concessioni mercato
+- 🟣 **Negozi HUB** - Solo imprese negozi fissi HUB (senza concessioni)
+
+**Modifiche Tecniche:**
+- `GestioneHubNegozi.tsx`: Aggiunto import MarketCompaniesTab e nuovo TabsContent
+- `MarketCompaniesTab.tsx`: Aggiunto prop filterType e stato impresaFilter
+- Filtro visivo con 3 bottoni colorati sopra la barra ricerca
+
+
 ### v3.18.0 (7 Gennaio 2026) - Funzionalità Nuovo Negozio per HUB
 
 **Nuova Funzionalità Completa:**
