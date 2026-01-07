@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import NuovoNegozioForm from '@/components/NuovoNegozioForm';
 import { useRoute, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +23,9 @@ import {
   Pencil,
   Upload,
   X,
+  Plus,
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'wouter';
 import { toast } from 'sonner';
 import {
@@ -85,6 +88,7 @@ export default function VetrinePage() {
 
   const [searchQuery, setSearchQuery] = useState(getQueryParam('q'));
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('lista');
   
   // Stati modal modifica
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -893,6 +897,22 @@ export default function VetrinePage() {
     );
   }
 
+  // Callback quando viene creato un nuovo negozio
+  const handleNuovoNegozioSuccess = async (data: { impresaId: number; shopId: number }) => {
+    // Ricarica la lista imprese
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/imprese`);
+      const result = await response.json();
+      if (result.success) {
+        setImprese(result.data || []);
+      }
+    } catch (error) {
+      console.error('Errore ricaricamento lista:', error);
+    }
+    // Torna alla lista
+    setActiveTab('lista');
+  };
+
   // Vista lista imprese
   return (
     <div className="min-h-screen bg-background">
@@ -912,71 +932,96 @@ export default function VetrinePage() {
       </header>
 
       <div className="w-full px-4 md:px-8 py-6 space-y-6">
-        {/* Ricerca */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cerca negozio o categoria..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tabs: Lista Vetrine / Nuovo Negozio */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="lista" className="flex items-center gap-2">
+              <Store className="h-4 w-4" />
+              Lista Vetrine
+            </TabsTrigger>
+            <TabsTrigger value="nuovo" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nuovo Negozio
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Lista Imprese */}
-        <div className="space-y-4">
-          {filteredImprese.map((impresa) => (
-            <Card
-              key={impresa.id}
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate(`/vetrine/${impresa.id}`)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle>{impresa.denominazione}</CardTitle>
-                    <CardDescription>{impresa.settore || 'Commercio'}</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-1 text-amber-500">
-                    <Star className="h-4 w-4 fill-current" />
-                    <span className="text-sm font-semibold">{(Number(impresa.rating) || 4.5).toFixed(1)}</span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {impresa.vetrina_descrizione || `${impresa.denominazione} - ${impresa.comune}`}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {impresa.settore && (
-                    <Badge variant="secondary" className="text-xs">
-                      {impresa.settore}
-                    </Badge>
-                  )}
-                  {impresa.comune && (
-                    <Badge variant="outline" className="text-xs">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {impresa.comune}
-                    </Badge>
-                  )}
+          {/* Tab Lista Vetrine */}
+          <TabsContent value="lista" className="space-y-6">
+            {/* Ricerca */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Cerca negozio o categoria..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
 
-        {filteredImprese.length === 0 && (
-          <Card>
-            <CardContent className="pt-6 text-center text-muted-foreground">
-              <Store className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Nessun negozio trovato</p>
-            </CardContent>
-          </Card>
-        )}
+            {/* Lista Imprese */}
+            <div className="space-y-4">
+              {filteredImprese.map((impresa) => (
+                <Card
+                  key={impresa.id}
+                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => navigate(`/vetrine/${impresa.id}`)}
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle>{impresa.denominazione}</CardTitle>
+                        <CardDescription>{impresa.settore || 'Commercio'}</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-1 text-amber-500">
+                        <Star className="h-4 w-4 fill-current" />
+                        <span className="text-sm font-semibold">{(Number(impresa.rating) || 4.5).toFixed(1)}</span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {impresa.vetrina_descrizione || `${impresa.denominazione} - ${impresa.comune}`}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {impresa.settore && (
+                        <Badge variant="secondary" className="text-xs">
+                          {impresa.settore}
+                        </Badge>
+                      )}
+                      {impresa.comune && (
+                        <Badge variant="outline" className="text-xs">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {impresa.comune}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {filteredImprese.length === 0 && (
+              <Card>
+                <CardContent className="pt-6 text-center text-muted-foreground">
+                  <Store className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Nessun negozio trovato</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Tab Nuovo Negozio */}
+          <TabsContent value="nuovo">
+            <NuovoNegozioForm 
+              onSuccess={handleNuovoNegozioSuccess}
+              onCancel={() => setActiveTab('lista')}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
