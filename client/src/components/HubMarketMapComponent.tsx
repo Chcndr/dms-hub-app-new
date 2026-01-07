@@ -101,6 +101,9 @@ interface HubMarketMapComponentProps {
     type?: string;
     vendor_name?: string;
     impresa_id?: number;
+    width?: string;
+    depth?: string;
+    dimensions?: string;
   }>;
   refreshKey?: number;
   isSpuntaMode?: boolean;
@@ -694,47 +697,77 @@ export function HubMarketMapComponent({
                   click: () => onShopClick?.(shop)
                 }}
               >
-                <Popup className="shop-popup" minWidth={250}>
-                  <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '250px' }}>
-                    <div style={{ background: shopColor }} className="p-3 border-b border-gray-700 flex justify-between items-center">
+                <Popup className="shop-popup" minWidth={280}>
+                  <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
+                    {/* Header con colore distintivo viola/magenta per negozi HUB */}
+                    <div style={{ background: '#9C27B0' }} className="p-3 border-b border-gray-700 flex justify-between items-center">
                       <div className="font-bold text-lg text-white flex items-center gap-2">
-                        <span className="bg-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold" style={{ color: shopColor }}>{shop.letter}</span>
+                        <span className="bg-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold" style={{ color: '#9C27B0' }}>{shop.letter}</span>
                         {shop.name}
                       </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold ${
+                        shop.status === 'active' ? 'bg-green-900/50 text-green-400 border border-green-800' :
+                        shop.status === 'closed' ? 'bg-red-900/50 text-red-400 border border-red-800' :
+                        'bg-gray-900/50 text-gray-400 border border-gray-800'
+                      }`}>
+                        {shop.status === 'active' ? 'ATTIVO' : shop.status === 'closed' ? 'CHIUSO' : 'INATTIVO'}
+                      </span>
                     </div>
                     
-                    <div className="p-4 space-y-2 text-sm">
-                      {shop.category && (
-                        <div className="flex justify-between items-center border-b border-gray-800 pb-2">
-                          <span className="text-gray-400">Categoria:</span>
-                          <span className="font-medium text-white">{shop.category}</span>
+                    <div className="p-4 space-y-4">
+                      {/* Tipo e Coordinate */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-[#1e293b] p-2 rounded border border-gray-700">
+                          <div className="text-gray-400 mb-1">TIPO</div>
+                          <div className="font-medium text-white capitalize">
+                            {shop.category || 'Negozio HUB'}
+                          </div>
                         </div>
-                      )}
-                      
-                      <div className="flex justify-between items-center border-b border-gray-800 pb-2">
-                        <span className="text-gray-400">Stato:</span>
-                        <span className="font-medium" style={{ color: shopColor }}>
-                          {shop.status === 'active' ? 'Attivo' : shop.status === 'closed' ? 'Chiuso' : 'Inattivo'}
-                        </span>
+                        <div className="bg-[#1e293b] p-2 rounded border border-gray-700">
+                          <div className="text-gray-400 mb-1">COORDINATE</div>
+                          <div className="font-medium text-white truncate" title={`${shop.lat?.toFixed(5)}, ${shop.lng?.toFixed(5)}`}>
+                            {shop.lat && shop.lng ? `${Number(shop.lat).toFixed(4)}, ${Number(shop.lng).toFixed(4)}` : '-'}
+                          </div>
+                        </div>
                       </div>
                       
-                      {shop.contact_phone && (
-                        <div className="flex justify-between items-center border-b border-gray-800 pb-2">
-                          <span className="text-gray-400">Tel:</span>
-                          <span className="font-medium text-white">{shop.contact_phone}</span>
+                      {/* Contatti */}
+                      {(shop.contact_phone || shop.contact_email) && (
+                        <div className="bg-[#1e293b] p-3 rounded border border-gray-700">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                            <span>📞 Contatti</span>
+                          </div>
+                          {shop.contact_phone && (
+                            <div className="text-sm text-white mb-1">📱 {shop.contact_phone}</div>
+                          )}
+                          {shop.contact_email && (
+                            <div className="text-sm text-white">✉️ {shop.contact_email}</div>
+                          )}
                         </div>
                       )}
                       
+                      {/* Descrizione */}
                       {shop.description && (
-                        <div className="text-gray-300 text-xs mt-2 italic">{shop.description}</div>
+                        <div className="text-gray-300 text-xs italic bg-[#1e293b] p-2 rounded border border-gray-700">
+                          {shop.description}
+                        </div>
                       )}
                       
-                      {shop.vetrina_url && (
-                        <a href={shop.vetrina_url} target="_blank" rel="noopener noreferrer" 
-                           className="block mt-2 text-center bg-[#9C27B0] text-white py-2 rounded text-xs hover:bg-[#7B1FA2]">
-                          🛍️ Vai alla Vetrina
-                        </a>
-                      )}
+                      {/* Tasto Vetrina - sempre visibile per negozi HUB */}
+                      <button 
+                        onClick={() => {
+                          if (shop.vetrina_url) {
+                            window.open(shop.vetrina_url, '_blank');
+                          } else {
+                            // Naviga alla vetrina dell'impresa collegata
+                            window.location.href = `/vetrine/${shop.id}`;
+                          }
+                        }}
+                        className="w-full flex items-center justify-center gap-2 bg-[#9C27B0] hover:bg-[#7B1FA2] text-white py-2.5 px-4 rounded transition-colors text-sm font-medium"
+                      >
+                        <span>🛍️</span>
+                        <span>Visita Vetrina</span>
+                      </button>
                     </div>
                   </div>
                 </Popup>
@@ -1115,30 +1148,43 @@ export function HubMarketMapComponent({
                             let length = '-';
                             let area = '-';
                             let hasDimensions = false;
+                            let isFromDB = false;
 
-                            // 1. Prova a parsare le dimensioni dal DB (priorità assoluta)
-                            // Controlla sia props.dimensions (dal GeoJSON) che dbStall.dimensions (dal DB aggiornato)
-                            const dimensionsSource = dbStall?.dimensions || props.dimensions;
+                            // 1. PRIORITÀ: Usa width e depth dal DB (campi separati)
+                            const dbWidth = dbStall?.width ? parseFloat(dbStall.width) : null;
+                            const dbDepth = dbStall?.depth ? parseFloat(dbStall.depth) : null;
                             
-                            if (dimensionsSource) {
-                              // Supporta formati con virgola o punto, e vari separatori (x, *, X)
-                              const normalized = dimensionsSource.replace(/,/g, '.');
-                              const match = normalized.match(/([\d.]+)\s*m?\s*[x×*]\s*([\d.]+)\s*m?/i);
+                            if (dbWidth && dbDepth && !isNaN(dbWidth) && !isNaN(dbDepth)) {
+                              width = smartFormat(dbWidth);
+                              length = smartFormat(dbDepth);
+                              area = smartFormat(dbWidth * dbDepth);
+                              hasDimensions = true;
+                              isFromDB = true;
+                            }
+
+                            // 2. Fallback: Prova a parsare le dimensioni dal campo dimensions (formato "4x7.60")
+                            if (!hasDimensions) {
+                              const dimensionsSource = dbStall?.dimensions || props.dimensions;
                               
-                              if (match) {
-                                const w = parseFloat(match[1]);
-                                const l = parseFloat(match[2]);
-                                width = smartFormat(w);
-                                length = smartFormat(l);
-                                area = smartFormat(w * l);
-                                hasDimensions = true;
+                              if (dimensionsSource) {
+                                const normalized = dimensionsSource.replace(/,/g, '.');
+                                const match = normalized.match(/([\d.]+)\s*m?\s*[x×*]\s*([\d.]+)\s*m?/i);
+                                
+                                if (match) {
+                                  const w = parseFloat(match[1]);
+                                  const l = parseFloat(match[2]);
+                                  width = smartFormat(w);
+                                  length = smartFormat(l);
+                                  area = smartFormat(w * l);
+                                  hasDimensions = true;
+                                  isFromDB = true;
+                                }
                               }
                             }
 
-                            // 2. Fallback: Calcolo geometrico se mancano i dati DB
+                            // 3. Ultimo fallback: Calcolo geometrico dal poligono GeoJSON
                             if (!hasDimensions && positions.length > 0) {
                               try {
-                                // Calcola la bounding box del poligono
                                 const lats = positions.map(p => p[0]);
                                 const lngs = positions.map(p => p[1]);
                                 const minLat = Math.min(...lats);
@@ -1146,8 +1192,6 @@ export function HubMarketMapComponent({
                                 const minLng = Math.min(...lngs);
                                 const maxLng = Math.max(...lngs);
 
-                                // Converti gradi in metri (approssimazione locale)
-                                // 1 grado lat ~= 111km, 1 grado lng ~= 111km * cos(lat)
                                 const latDiff = maxLat - minLat;
                                 const lngDiff = maxLng - minLng;
                                 const latMeters = latDiff * 111320;
@@ -1170,7 +1214,7 @@ export function HubMarketMapComponent({
                             return (
                               <div className="bg-[#1e293b] p-3 rounded border border-gray-700">
                                 <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
-                                  <span>📏 Dimensioni {(dbStall?.dimensions || props.dimensions) ? '' : '(Stimate)'}</span>
+                                  <span>📏 Dimensioni {isFromDB ? '' : '(Stimate)'}</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
