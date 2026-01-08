@@ -33,9 +33,9 @@ export function useMapAnimation({ center, zoom, trigger, bounds, isMarketView }:
           
           // Calcola lo zoom ottimale per i bounds
           const targetZoom = map.getBoundsZoom(latLngBounds, false, [50, 50]);
-          // Aggiungi +1 allo zoom calcolato per avere una vista più ravvicinata
-          // Questo è lo scatto in più richiesto
-          const forcedZoom = Math.min(Math.max(targetZoom + 1, 17), 19);
+          // Usa lo zoom calcolato senza offset aggiuntivo
+          // per mantenere la pianta visibile con 1 scatto in più rispetto a prima
+          const forcedZoom = Math.min(Math.max(targetZoom, 17), 19);
           
           const currentZoom = map.getZoom();
           const zoomDiff = Math.abs(forcedZoom - currentZoom);
