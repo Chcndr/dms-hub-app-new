@@ -411,6 +411,13 @@ export default function GestioneHubMapWrapper() {
     setMapData(null);
     setStallsData([]);
     setShowItalyView(false);
+    
+    // Centra la mappa sulle coordinate dell'HUB
+    if (hub.center_lat && hub.center_lng) {
+      setCustomCenter([hub.center_lat, hub.center_lng]);
+      setCustomZoom(15); // Zoom ravvicinato per vedere l'area HUB
+    }
+    
     setViewTrigger(prev => prev + 1);
   };
 
