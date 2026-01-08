@@ -4,15 +4,15 @@
  * Wrapper per HubMarketMapComponent con selettore Mercato/HUB
  * Gestisce il caricamento dati e lo switch tra modalità
  * 
- * v3.22.0 - Aggiunta navigazione Regione/Provincia
+ * v3.23.0 - Redesign compatto con indicatori sempre visibili
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { HubMarketMapComponent } from './HubMarketMapComponent';
 import { MarketMapComponent } from './MarketMapComponent';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MapPin, Building2, Store, Loader2, RefreshCw, Map, Navigation, ChevronDown, X } from 'lucide-react';
+import { MapPin, Building2, Store, Loader2, RefreshCw, Map, Navigation, ChevronDown, ChevronLeft, X, Home } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 import { toast } from 'sonner';
@@ -95,6 +95,33 @@ interface Provincia {
   regione_nome?: string;
 }
 
+// Componente indicatore compatto
+const StatIndicator = ({ 
+  label, 
+  value, 
+  color = 'cyan' 
+}: { 
+  label: string; 
+  value: number | string; 
+  color?: 'cyan' | 'red' | 'amber' | 'green' | 'purple' | 'white' 
+}) => {
+  const colorClasses = {
+    cyan: 'border-[#14b8a6]/40 text-[#14b8a6]',
+    red: 'border-[#ef4444]/40 text-[#ef4444]',
+    amber: 'border-[#f59e0b]/40 text-[#f59e0b]',
+    green: 'border-[#10b981]/40 text-[#10b981]',
+    purple: 'border-[#9C27B0]/40 text-[#9C27B0]',
+    white: 'border-[#e8fbff]/30 text-[#e8fbff]',
+  };
+
+  return (
+    <div className={`px-2 py-1 bg-[#0b1220] rounded border ${colorClasses[color]} min-w-[60px] text-center`}>
+      <div className="text-[9px] text-[#e8fbff]/50 uppercase tracking-wider">{label}</div>
+      <div className="text-sm font-bold">{value}</div>
+    </div>
+  );
+};
+
 export default function GestioneHubMapWrapper() {
   // Stati
   const [mode, setMode] = useState<'mercato' | 'hub'>('hub');
@@ -154,14 +181,13 @@ export default function GestioneHubMapWrapper() {
         const hubsResponse = await hubsRes.json();
         if (hubsResponse.success && Array.isArray(hubsResponse.data)) {
           setHubs(hubsResponse.data);
-          console.log('[GestioneHubMapWrapper] Loaded', hubsResponse.data.length, 'HUBs');
+          console.log('[GestioneHubMapWrapper] Loaded', hubsResponse.data.length, 'hubs');
         } else {
           setHubs([]);
         }
       }
     } catch (error) {
       console.error('[GestioneHubMapWrapper] Error loading data:', error);
-      toast.error('Errore nel caricamento dati');
     } finally {
       setLoading(false);
     }
@@ -176,7 +202,6 @@ export default function GestioneHubMapWrapper() {
         const response = await res.json();
         if (response.success && Array.isArray(response.data)) {
           setRegioni(response.data);
-          console.log('[GestioneHubMapWrapper] Loaded', response.data.length, 'regioni');
         }
       }
     } catch (error) {
@@ -186,7 +211,7 @@ export default function GestioneHubMapWrapper() {
     }
   };
 
-  // Carica province di una regione
+  // Carica province per regione
   const loadProvince = async (regioneId: number) => {
     setLoadingProvince(true);
     try {
@@ -195,7 +220,6 @@ export default function GestioneHubMapWrapper() {
         const response = await res.json();
         if (response.success && Array.isArray(response.data)) {
           setProvince(response.data);
-          console.log('[GestioneHubMapWrapper] Loaded', response.data.length, 'province');
         }
       }
     } catch (error) {
@@ -207,15 +231,6 @@ export default function GestioneHubMapWrapper() {
 
   // Gestione selezione regione
   const handleRegioneSelect = async (regione: Regione) => {
-    // Se clicco sulla stessa regione già selezionata, torno a vista Italia
-    if (selectedRegione?.id === regione.id) {
-      handleResetGeo();
-      setShowItalyView(true);
-      setViewTrigger(prev => prev + 1);
-      toast.success('Vista Italia');
-      return;
-    }
-    
     setSelectedRegione(regione);
     setSelectedProvincia(null);
     setSelectedMarket(null);
@@ -237,18 +252,6 @@ export default function GestioneHubMapWrapper() {
 
   // Gestione selezione provincia
   const handleProvinciaSelect = (provincia: Provincia) => {
-    // Se clicco sulla stessa provincia già selezionata, torno a vista Regione
-    if (selectedProvincia?.id === provincia.id && selectedRegione) {
-      setSelectedProvincia(null);
-      const lat = parseFloat(String(selectedRegione.lat));
-      const lng = parseFloat(String(selectedRegione.lng));
-      setCustomCenter([lat, lng]);
-      setCustomZoom(selectedRegione.zoom);
-      setViewTrigger(prev => prev + 1);
-      toast.success(`Vista: ${selectedRegione.nome}`);
-      return;
-    }
-    
     setSelectedProvincia(provincia);
     setSelectedMarket(null);
     setSelectedHub(null);
@@ -264,15 +267,68 @@ export default function GestioneHubMapWrapper() {
     toast.success(`Vista: ${provincia.nome} (${provincia.sigla})`);
   };
 
+  // Navigazione indietro
+  const handleGoBack = () => {
+    if (selectedMarket || selectedHub) {
+      // Da mercato/hub specifico → torna a vista regione o Italia
+      setSelectedMarket(null);
+      setSelectedHub(null);
+      setMapData(null);
+      setStallsData([]);
+      if (selectedProvincia) {
+        const lat = parseFloat(String(selectedProvincia.lat));
+        const lng = parseFloat(String(selectedProvincia.lng));
+        setCustomCenter([lat, lng]);
+        setCustomZoom(selectedProvincia.zoom);
+      } else if (selectedRegione) {
+        const lat = parseFloat(String(selectedRegione.lat));
+        const lng = parseFloat(String(selectedRegione.lng));
+        setCustomCenter([lat, lng]);
+        setCustomZoom(selectedRegione.zoom);
+      } else {
+        setShowItalyView(true);
+        setCustomCenter(null);
+        setCustomZoom(null);
+      }
+      setViewTrigger(prev => prev + 1);
+      toast.success('Vista precedente');
+    } else if (selectedProvincia) {
+      // Da provincia → torna a regione
+      setSelectedProvincia(null);
+      if (selectedRegione) {
+        const lat = parseFloat(String(selectedRegione.lat));
+        const lng = parseFloat(String(selectedRegione.lng));
+        setCustomCenter([lat, lng]);
+        setCustomZoom(selectedRegione.zoom);
+        setViewTrigger(prev => prev + 1);
+        toast.success(`Vista: ${selectedRegione.nome}`);
+      }
+    } else if (selectedRegione) {
+      // Da regione → torna a Italia
+      setSelectedRegione(null);
+      setProvince([]);
+      setCustomCenter(null);
+      setCustomZoom(null);
+      setShowItalyView(true);
+      setViewTrigger(prev => prev + 1);
+      toast.success('Vista Italia');
+    }
+  };
+
   // Reset navigazione geografica - torna a vista Italia
   const handleResetGeo = () => {
     setSelectedRegione(null);
     setSelectedProvincia(null);
+    setSelectedMarket(null);
+    setSelectedHub(null);
     setProvince([]);
     setCustomCenter(null);
     setCustomZoom(null);
+    setMapData(null);
+    setStallsData([]);
     setShowItalyView(true);
     setViewTrigger(prev => prev + 1);
+    toast.success('Vista Italia');
   };
 
   // Gestione click su mercato
@@ -281,7 +337,7 @@ export default function GestioneHubMapWrapper() {
     if (!market) return;
 
     setSelectedMarket(market);
-    handleResetGeo(); // Reset navigazione geografica quando si seleziona un mercato
+    setSelectedHub(null);
 
     try {
       const res = await fetch(`${MIHUB_API_BASE_URL}/api/gis/market-map/${marketId}`);
@@ -303,9 +359,9 @@ export default function GestioneHubMapWrapper() {
       const stallsRes = await fetch(`${MIHUB_API_BASE_URL}/api/stalls?market_id=${marketId}`);
       if (stallsRes.ok) {
         const stallsResponse = await stallsRes.json();
-        if (stallsResponse.success && stallsResponse.data) {
+        if (stallsResponse.success && Array.isArray(stallsResponse.data)) {
           setStallsData(stallsResponse.data);
-          console.log('[GestioneHubMapWrapper] Loaded stallsData with', stallsResponse.data.length, 'stalls');
+          console.log('[GestioneHubMapWrapper] Loaded', stallsResponse.data.length, 'stalls');
         }
       }
     } catch (error) {
@@ -319,34 +375,24 @@ export default function GestioneHubMapWrapper() {
     if (!hub) return;
 
     setSelectedHub(hub);
-    handleResetGeo(); // Reset navigazione geografica quando si seleziona un HUB
+    setSelectedMarket(null);
+    setMapData(null);
+    setStallsData([]);
     setShowItalyView(false);
     setViewTrigger(prev => prev + 1);
-
-    try {
-      const res = await fetch(`${MIHUB_API_BASE_URL}/api/hub/locations/${hubId}`);
-      if (res.ok) {
-        const hubResponse = await res.json();
-        const hubData = hubResponse.data || hubResponse;
-        setSelectedHub(hubData);
-        console.log('[GestioneHubMapWrapper] Loaded HUB with', hubData.shops?.length || 0, 'shops');
-      }
-    } catch (error) {
-      console.error('[GestioneHubMapWrapper] Error loading HUB data:', error);
-    }
   };
 
-  // Torna a Vista Italia
+  // Gestione click su shop
+  const handleShopClick = (shopId: number) => {
+    console.log('[GestioneHubMapWrapper] Shop clicked:', shopId);
+  };
+
+  // Torna a vista Italia
   const handleBackToItaly = () => {
-    setShowItalyView(true);
-    setSelectedMarket(null);
-    setSelectedHub(null);
-    setMapData(null);
     handleResetGeo();
-    setViewTrigger(prev => prev + 1);
   };
 
-  // Vai a Vista Mercato/HUB (zoom al selezionato)
+  // Vai a dettaglio
   const handleGoToDetail = () => {
     if (selectedItem) {
       setShowItalyView(false);
@@ -354,29 +400,111 @@ export default function GestioneHubMapWrapper() {
     }
   };
 
-  // Gestione click su negozio
-  const handleShopClick = (shop: HubShop) => {
-    toast.info(`Negozio ${shop.letter}: ${shop.name}`);
-  };
+  // Filtra elementi
+  const filteredMarkets = useMemo(() => {
+    return markets.filter(m => 
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (m.comune && m.comune.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [markets, searchQuery]);
 
-  // Filtra elementi in base alla ricerca
-  const filteredMarkets = Array.isArray(markets) ? markets.filter(m => 
-    m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    m.comune?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : [];
+  const filteredHubs = useMemo(() => {
+    return hubs.filter(h => 
+      h.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (h.city && h.city.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [hubs, searchQuery]);
 
-  const filteredHubs = Array.isArray(hubs) ? hubs.filter(h => 
-    h.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    h.city?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : [];
-
-  // Lista elementi da mostrare
   const currentList = mode === 'mercato' ? filteredMarkets : filteredHubs;
   const selectedItem = mode === 'mercato' ? selectedMarket : selectedHub;
 
+  // Calcola statistiche dinamiche
+  const stats = useMemo(() => {
+    if (mode === 'mercato') {
+      if (selectedMarket && stallsData.length > 0) {
+        // Statistiche mercato specifico
+        const activeStalls = stallsData.filter(s => s.is_active === true);
+        return {
+          mercati: 1,
+          totali: activeStalls.length,
+          occupati: activeStalls.filter(s => s.status === 'occupato').length,
+          assegnazione: activeStalls.filter(s => s.status === 'riservato').length,
+          liberi: activeStalls.filter(s => s.status === 'libero').length,
+        };
+      } else {
+        // Statistiche totali Italia (placeholder - da implementare API)
+        return {
+          mercati: markets.length,
+          totali: markets.reduce((acc, m) => acc + (m.posteggi_totali || 0), 0) || '—',
+          occupati: '—',
+          assegnazione: '—',
+          liberi: '—',
+        };
+      }
+    } else {
+      // Modalità HUB
+      if (selectedHub) {
+        const shops = selectedHub.shops || [];
+        return {
+          mercati: 1,
+          totali: shops.length,
+          occupati: shops.filter(s => s.status === 'active').length,
+          assegnazione: 0,
+          liberi: shops.filter(s => s.status !== 'active').length,
+        };
+      } else {
+        return {
+          mercati: hubs.length,
+          totali: hubs.reduce((acc, h) => acc + (h.shops?.length || 0), 0),
+          occupati: '—',
+          assegnazione: '—',
+          liberi: '—',
+        };
+      }
+    }
+  }, [mode, selectedMarket, selectedHub, stallsData, markets, hubs]);
+
+  // Coordinate correnti
+  const currentCoords = useMemo(() => {
+    if (selectedMarket) {
+      return {
+        lat: parseFloat(String(selectedMarket.latitude))?.toFixed(4) || '—',
+        lng: parseFloat(String(selectedMarket.longitude))?.toFixed(4) || '—',
+      };
+    } else if (selectedHub) {
+      return {
+        lat: parseFloat(String(selectedHub.lat))?.toFixed(4) || '—',
+        lng: parseFloat(String(selectedHub.lng))?.toFixed(4) || '—',
+      };
+    } else if (selectedProvincia) {
+      return {
+        lat: parseFloat(String(selectedProvincia.lat))?.toFixed(4) || '—',
+        lng: parseFloat(String(selectedProvincia.lng))?.toFixed(4) || '—',
+      };
+    } else if (selectedRegione) {
+      return {
+        lat: parseFloat(String(selectedRegione.lat))?.toFixed(4) || '—',
+        lng: parseFloat(String(selectedRegione.lng))?.toFixed(4) || '—',
+      };
+    }
+    return { lat: '42.5000', lng: '12.5000' }; // Centro Italia
+  }, [selectedMarket, selectedHub, selectedProvincia, selectedRegione]);
+
+  // Determina se mostrare pulsante indietro
+  const canGoBack = selectedRegione || selectedProvincia || selectedMarket || selectedHub;
+
+  // Etichetta vista corrente
+  const currentViewLabel = useMemo(() => {
+    if (selectedMarket) return selectedMarket.name;
+    if (selectedHub) return selectedHub.name;
+    if (selectedProvincia) return `${selectedProvincia.nome} (${selectedProvincia.sigla})`;
+    if (selectedRegione) return selectedRegione.nome;
+    return 'Italia';
+  }, [selectedMarket, selectedHub, selectedProvincia, selectedRegione]);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-[#14b8a6]" />
         <span className="ml-2 text-[#e8fbff]">Caricamento...</span>
       </div>
@@ -384,9 +512,67 @@ export default function GestioneHubMapWrapper() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header con Selettore e Ricerca */}
-      <div className="flex flex-wrap items-center gap-4">
+    <div className="space-y-2">
+      {/* Header con Titolo e Indicatori */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#1a2332] rounded-lg p-3 border border-[#14b8a6]/30">
+        {/* Titolo e sottotitolo */}
+        <div className="flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-[#14b8a6]" />
+            <h2 className="text-lg font-semibold text-[#e8fbff]">Rete Hub - Mappa Interattiva</h2>
+          </div>
+          <p className="text-xs text-[#e8fbff]/50 ml-7">Vista: {currentViewLabel}</p>
+        </div>
+
+        {/* Indicatori compatti */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <StatIndicator 
+            label={mode === 'mercato' ? 'Mercati' : 'HUB'} 
+            value={stats.mercati} 
+            color={mode === 'mercato' ? 'red' : 'purple'} 
+          />
+          <StatIndicator 
+            label={mode === 'mercato' ? 'Posteggi' : 'Negozi'} 
+            value={stats.totali} 
+            color="white" 
+          />
+          <StatIndicator 
+            label={mode === 'mercato' ? 'Occupati' : 'Attivi'} 
+            value={stats.occupati} 
+            color={mode === 'mercato' ? 'red' : 'green'} 
+          />
+          {mode === 'mercato' && (
+            <StatIndicator label="Assegn." value={stats.assegnazione} color="amber" />
+          )}
+          <StatIndicator 
+            label={mode === 'mercato' ? 'Liberi' : 'Inattivi'} 
+            value={stats.liberi} 
+            color={mode === 'mercato' ? 'green' : 'white'} 
+          />
+          
+          {/* Coordinate compatte */}
+          <div className="px-2 py-1 bg-[#0b1220] rounded border border-[#e8fbff]/20 text-center">
+            <div className="text-[8px] text-[#e8fbff]/40 uppercase">GPS</div>
+            <div className="text-[10px] font-mono text-[#e8fbff]/60">
+              {currentCoords.lat} | {currentCoords.lng}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Barra controlli */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Pulsante Home/Italia */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleResetGeo}
+          className="text-[#e8fbff] hover:bg-[#14b8a6]/20"
+          title="Torna a Vista Italia"
+        >
+          <Home className="h-4 w-4" />
+        </Button>
+
         {/* Selettore Mercato/HUB */}
         <div className="flex bg-[#0b1220] rounded-lg p-1 border border-[#14b8a6]/30">
           <Button
@@ -394,51 +580,36 @@ export default function GestioneHubMapWrapper() {
             size="sm"
             onClick={() => { setMode('mercato'); handleBackToItaly(); }}
             className={mode === 'mercato' 
-              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff]'
+              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white h-7 text-xs' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-7 text-xs'
             }
           >
-            <Store className="h-4 w-4 mr-2" />
-            🏪 Mercati ({markets.length})
+            <Store className="h-3 w-3 mr-1" />
+            Mercati ({markets.length})
           </Button>
           <Button
             variant={mode === 'hub' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => { setMode('hub'); handleBackToItaly(); }}
             className={mode === 'hub' 
-              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff]'
+              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white h-7 text-xs' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-7 text-xs'
             }
           >
-            <Building2 className="h-4 w-4 mr-2" />
-            🏢 HUB ({hubs.length})
+            <Building2 className="h-3 w-3 mr-1" />
+            HUB ({hubs.length})
           </Button>
         </div>
 
         {/* Ricerca */}
-        <div className="flex-1 max-w-md">
+        <div className="flex-1 max-w-[200px]">
           <Input
-            placeholder={`Cerca ${mode === 'mercato' ? 'mercato' : 'HUB'} per nome o città...`}
+            placeholder={`Cerca...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+            className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff] h-7 text-xs"
           />
         </div>
-
-        {/* Pulsante Vista Italia / Vista Dettaglio */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={showItalyView ? handleGoToDetail : handleBackToItaly}
-          disabled={showItalyView && !selectedItem}
-          className="border-[#14b8a6]/30 text-[#e8fbff]"
-        >
-          <MapPin className="h-4 w-4 mr-2" />
-          {showItalyView 
-            ? `Vista ${mode === 'mercato' ? 'Mercato' : 'HUB'}` 
-            : 'Vista Italia'
-          }
-        </Button>
 
         {/* Dropdown Regione */}
         <DropdownMenu>
@@ -446,15 +617,15 @@ export default function GestioneHubMapWrapper() {
             <Button
               variant="outline"
               size="sm"
-              className={`border-[#14b8a6]/30 ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
+              className={`border-[#14b8a6]/30 h-7 text-xs ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
             >
-              <Map className="h-4 w-4 mr-2" />
+              <Map className="h-3 w-3 mr-1" />
               {selectedRegione ? selectedRegione.nome : 'Regione'}
-              <ChevronDown className="h-4 w-4 ml-2" />
+              <ChevronDown className="h-3 w-3 ml-1" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="bg-[#1a2332] border-[#14b8a6]/30 max-h-[300px] overflow-y-auto z-[9999]" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-            <DropdownMenuLabel className="text-[#e8fbff]/60">Seleziona Regione</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-[#e8fbff]/60 text-xs">Seleziona Regione</DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-[#14b8a6]/20" />
             {loadingRegioni ? (
               <div className="flex items-center justify-center p-4">
@@ -465,13 +636,13 @@ export default function GestioneHubMapWrapper() {
                 <DropdownMenuItem
                   key={regione.id}
                   onClick={() => handleRegioneSelect(regione)}
-                  className={`text-[#e8fbff] hover:bg-[#14b8a6]/20 cursor-pointer ${
+                  className={`text-[#e8fbff] hover:bg-[#14b8a6]/20 cursor-pointer text-xs ${
                     selectedRegione?.id === regione.id ? 'bg-[#14b8a6]/30' : ''
                   }`}
                 >
                   <div className="flex justify-between w-full">
                     <span>{regione.nome}</span>
-                    <span className="text-[#e8fbff]/50 text-xs ml-2">
+                    <span className="text-[#e8fbff]/50 text-[10px] ml-2">
                       {regione.province_count} prov.
                     </span>
                   </div>
@@ -488,15 +659,15 @@ export default function GestioneHubMapWrapper() {
               variant="outline"
               size="sm"
               disabled={!selectedRegione}
-              className={`border-[#14b8a6]/30 ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
+              className={`border-[#14b8a6]/30 h-7 text-xs ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
             >
-              <Navigation className="h-4 w-4 mr-2" />
-              {selectedProvincia ? `${selectedProvincia.nome} (${selectedProvincia.sigla})` : 'Provincia'}
-              <ChevronDown className="h-4 w-4 ml-2" />
+              <Navigation className="h-3 w-3 mr-1" />
+              {selectedProvincia ? `${selectedProvincia.sigla}` : 'Prov.'}
+              <ChevronDown className="h-3 w-3 ml-1" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="bg-[#1a2332] border-[#14b8a6]/30 max-h-[300px] overflow-y-auto z-[9999]" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-            <DropdownMenuLabel className="text-[#e8fbff]/60">
+            <DropdownMenuLabel className="text-[#e8fbff]/60 text-xs">
               Province di {selectedRegione?.nome || '...'}
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-[#14b8a6]/20" />
@@ -504,22 +675,18 @@ export default function GestioneHubMapWrapper() {
               <div className="flex items-center justify-center p-4">
                 <Loader2 className="h-4 w-4 animate-spin text-[#14b8a6]" />
               </div>
-            ) : province.length === 0 ? (
-              <div className="text-[#e8fbff]/50 text-sm p-4 text-center">
-                Seleziona prima una regione
-              </div>
             ) : (
               province.map((provincia) => (
                 <DropdownMenuItem
                   key={provincia.id}
                   onClick={() => handleProvinciaSelect(provincia)}
-                  className={`text-[#e8fbff] hover:bg-[#f59e0b]/20 cursor-pointer ${
+                  className={`text-[#e8fbff] hover:bg-[#f59e0b]/20 cursor-pointer text-xs ${
                     selectedProvincia?.id === provincia.id ? 'bg-[#f59e0b]/30' : ''
                   }`}
                 >
                   <div className="flex justify-between w-full">
                     <span>{provincia.nome}</span>
-                    <span className="text-[#e8fbff]/50 text-xs ml-2">
+                    <span className="text-[#e8fbff]/50 text-[10px] ml-2">
                       {provincia.sigla}
                     </span>
                   </div>
@@ -529,15 +696,16 @@ export default function GestioneHubMapWrapper() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Reset Geo (se selezionato regione o provincia) */}
-        {(selectedRegione || selectedProvincia) && (
+        {/* Pulsante Indietro */}
+        {canGoBack && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleResetGeo}
-            className="text-[#ef4444] hover:text-[#ef4444] hover:bg-[#ef4444]/10"
+            onClick={handleGoBack}
+            className="text-[#f59e0b] hover:text-[#f59e0b] hover:bg-[#f59e0b]/10 h-7 text-xs"
           >
-            <X className="h-4 w-4" />
+            <ChevronLeft className="h-3 w-3 mr-1" />
+            Indietro
           </Button>
         )}
 
@@ -546,38 +714,18 @@ export default function GestioneHubMapWrapper() {
           variant="ghost"
           size="sm"
           onClick={loadData}
-          className="text-[#14b8a6]"
+          className="text-[#14b8a6] h-7"
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className="h-3 w-3" />
         </Button>
       </div>
 
-      {/* Badge navigazione attiva */}
-      {(selectedRegione || selectedProvincia) && (
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-[#e8fbff]/60">Navigazione:</span>
-          {selectedRegione && (
-            <span className="bg-[#14b8a6]/20 text-[#14b8a6] px-2 py-1 rounded">
-              {selectedRegione.nome}
-            </span>
-          )}
-          {selectedProvincia && (
-            <>
-              <span className="text-[#e8fbff]/40">→</span>
-              <span className="bg-[#f59e0b]/20 text-[#f59e0b] px-2 py-1 rounded">
-                {selectedProvincia.nome} ({selectedProvincia.sigla})
-              </span>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Lista elementi */}
-      <div className="flex gap-4 overflow-x-auto pb-2">
-        {currentList.slice(0, 10).map((item) => (
-          <Card 
+      {/* Lista elementi - Card più basse */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {currentList.slice(0, 12).map((item) => (
+          <div 
             key={item.id}
-            className={`min-w-[200px] cursor-pointer transition-all ${
+            className={`min-w-[140px] cursor-pointer transition-all rounded-lg p-2 border ${
               selectedItem?.id === item.id 
                 ? mode === 'mercato' 
                   ? 'border-[#ef4444] bg-[#ef4444]/10' 
@@ -589,126 +737,28 @@ export default function GestioneHubMapWrapper() {
               : handleHubClick(item.id)
             }
           >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold ${
-                  mode === 'mercato' ? 'bg-[#ef4444]' : 'bg-[#9C27B0]'
-                }`}>
-                  {mode === 'mercato' ? 'M' : 'H'}
-                </span>
-                <span className="text-[#e8fbff] font-medium text-sm truncate">
-                  {item.name}
-                </span>
-              </div>
-              <div className="text-[#e8fbff]/60 text-xs">
-                {mode === 'mercato' 
-                  ? (item as Market).comune || 'Italia'
-                  : (item as HubLocation).city || 'Italia'
-                }
-              </div>
-              {mode === 'hub' && (item as HubLocation).shops && (
-                <div className="text-[#9C27B0] text-xs mt-1">
-                  {(item as HubLocation).shops?.length || 0} negozi
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Dettaglio elemento selezionato */}
-      {selectedItem && (
-        <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+            <div className="flex items-center gap-1">
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${
                 mode === 'mercato' ? 'bg-[#ef4444]' : 'bg-[#9C27B0]'
               }`}>
                 {mode === 'mercato' ? 'M' : 'H'}
               </span>
-              {selectedItem.name}
-            </CardTitle>
-            <CardDescription className="text-[#e8fbff]/60">
+              <span className="text-[#e8fbff] font-medium text-xs truncate">
+                {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
+              </span>
+            </div>
+            <div className="text-[#e8fbff]/50 text-[10px] ml-6 truncate">
               {mode === 'mercato' 
-                ? `Mercato - ${(selectedItem as Market).comune || ''} - ${(selectedItem as Market).giorno || ''}`
-                : `HUB - ${(selectedItem as HubLocation).city || ''} - ${(selectedItem as HubLocation).address || ''}`
+                ? (item as Market).comune || 'Italia'
+                : (item as HubLocation).city || 'Italia'
               }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-4 mb-4">
-              {mode === 'mercato' ? (
-                <>
-                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#14b8a6]/30">
-                    <div className="text-[#e8fbff]/60 text-xs">Posteggi Totali</div>
-                    <div className="text-[#14b8a6] text-xl font-bold">
-                      {Array.isArray(stallsData) ? stallsData.filter(s => s.is_active === true).length : 0}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#ef4444]/30">
-                    <div className="text-[#e8fbff]/60 text-xs">Occupati</div>
-                    <div className="text-[#ef4444] text-xl font-bold">
-                      {Array.isArray(stallsData) ? stallsData.filter(s => s.is_active === true && s.status === 'occupato').length : 0}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#f59e0b]/30">
-                    <div className="text-[#e8fbff]/60 text-xs">In Assegnazione</div>
-                    <div className="text-[#f59e0b] text-xl font-bold">
-                      {Array.isArray(stallsData) ? stallsData.filter(s => s.is_active === true && s.status === 'riservato').length : 0}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#10b981]/30">
-                    <div className="text-[#e8fbff]/60 text-xs">Liberi</div>
-                    <div className="text-[#10b981] text-xl font-bold">
-                      {Array.isArray(stallsData) ? stallsData.filter(s => s.is_active === true && s.status === 'libero').length : 0}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#9C27B0]/30">
-                    <div className="text-[#e8fbff]/60 text-xs">Negozi Totali</div>
-                    <div className="text-[#9C27B0] text-xl font-bold">
-                      {(selectedItem as HubLocation).shops?.length || 0}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#10b981]/30">
-                    <div className="text-[#e8fbff]/60 text-xs">Attivi</div>
-                    <div className="text-[#10b981] text-xl font-bold">
-                      {(selectedItem as HubLocation).shops?.filter(s => s.status === 'active').length || 0}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#0b1220] rounded-lg border border-[#6b7280]/30">
-                    <div className="text-[#e8fbff]/60 text-xs">Inattivi</div>
-                    <div className="text-[#6b7280] text-xl font-bold">
-                      {(selectedItem as HubLocation).shops?.filter(s => s.status !== 'active').length || 0}
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
-            <div className="bg-[#0b1220] p-3 rounded-lg border border-[#14b8a6]/30">
-              <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider mb-1">Coordinate GPS</div>
-              <div className="font-mono text-xs text-[#e8fbff]/80 flex justify-between">
-                {mode === 'mercato' ? (
-                  <>
-                    <span>Lat: {parseFloat(String((selectedItem as Market).latitude)) ? parseFloat(String((selectedItem as Market).latitude)).toFixed(6) : 'N/A'}</span>
-                    <span>Lng: {parseFloat(String((selectedItem as Market).longitude)) ? parseFloat(String((selectedItem as Market).longitude)).toFixed(6) : 'N/A'}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Lat: {parseFloat(String((selectedItem as HubLocation).lat)) ? parseFloat(String((selectedItem as HubLocation).lat)).toFixed(6) : 'N/A'}</span>
-                    <span>Lng: {parseFloat(String((selectedItem as HubLocation).lng)) ? parseFloat(String((selectedItem as HubLocation).lng)).toFixed(6) : 'N/A'}</span>
-                  </>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        ))}
+      </div>
 
       {/* Mappa */}
-      <div className="h-[700px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
+      <div className="h-[500px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
         <HubMarketMapComponent
           mode={mode}
           mapData={mapData || undefined}
