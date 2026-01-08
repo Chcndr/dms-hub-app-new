@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.26.0  
+> **Versione:** 3.27.0  
 > **Data:** 8 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -895,6 +895,39 @@ Per il point GIS del nuovo negozio:
 
 
 ### 📝 CHANGELOG
+
+### v3.27.0 (08/01/2026) - Coordinate Centro HUB Emilia Romagna
+
+**Aggiornamento Database:**
+- **57 HUB aggiornati** con coordinate del centro (center_lat, center_lng)
+- Coordinate calcolate tramite geocoding Nominatim/OpenStreetMap
+- Preparazione per animazione zoom quando si clicca su un HUB
+
+**Province Aggiornate:**
+- Bologna (BO): 6 HUB
+- Modena (MO): 11 HUB
+- Reggio Emilia (RE): 10 HUB
+- Parma (PR): 4 HUB
+- Piacenza (PC): 3 HUB
+- Ferrara (FE): 5 HUB
+- Ravenna (RA): 2 HUB
+- Forlì-Cesena (FC): 9 HUB
+- Rimini (RN): 7 HUB
+
+**Prossimi Passi:**
+- Disegnare le aree perimetrate con Editor V3
+- Calcolare centroide esatto dei poligoni
+- Abbinare GeoJSON alla tabella hub_locations
+
+**Script Utilizzati:**
+- `geocode_hubs.py` - Geocoding automatico località
+- `hub_coordinates_fixed.py` - Coordinate verificate manualmente
+- `update_hub_centers.js` - Aggiornamento database
+
+**Commit:**
+- Database: Aggiornamento coordinate tramite script Node.js su Hetzner
+
+---
 
 ### v3.26.0 (08/01/2026) - Sistema HUB Multi-Livello Emilia Romagna
 
