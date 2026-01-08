@@ -179,7 +179,28 @@ export default function VetrinePage() {
 
   const handleNavigate = async (impresa: Impresa) => {
     try {
-      // Carica coordinate posteggio dall'API
+      // 1. Prima cerca se l'impresa ha un negozio HUB (tramite owner_id)
+      const hubShopsResponse = await fetch(`${API_BASE_URL}/api/hub/shops`);
+      const hubShopsResult = await hubShopsResponse.json();
+      
+      if (hubShopsResult.success && hubShopsResult.data) {
+        // Trova negozio HUB dell'impresa (owner_id = impresa.id)
+        const hubShop = hubShopsResult.data.find((shop: any) => shop.owner_id === impresa.id);
+        
+        if (hubShop && hubShop.lat && hubShop.lng) {
+          // Negozio HUB trovato - usa le sue coordinate
+          const params = new URLSearchParams({
+            destinationLat: hubShop.lat.toString(),
+            destinationLng: hubShop.lng.toString(),
+            destinationName: `${impresa.denominazione} - Negozio HUB`,
+            marketName: 'Hub Centro Grosseto'
+          });
+          navigate(`/route?${params.toString()}`);
+          return;
+        }
+      }
+      
+      // 2. Se non è un negozio HUB, cerca nei posteggi del mercato
       const response = await fetch(`${API_BASE_URL}/api/markets/1/stalls`);
       const result = await response.json();
       
