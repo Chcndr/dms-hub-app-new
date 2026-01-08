@@ -36,7 +36,8 @@ export function useMapAnimation({ center, zoom, trigger, bounds, isMarketView }:
           // Arrotonda a 0.25 più vicino per quarti di scatto (la mappa ha zoomSnap: 0.25)
           // Permette zoom precisi come 17.25, 17.5, 17.75 per adattarsi perfettamente
           const roundedToQuarter = Math.round(rawZoom * 4) / 4;
-          const forcedZoom = Math.min(Math.max(roundedToQuarter, 17), 19);
+          // Aggiungi +0.25 (un quarto di scatto) per avvicinarsi leggermente
+          const forcedZoom = Math.min(Math.max(roundedToQuarter + 0.25, 17), 19);
           
           const currentZoom = map.getZoom();
           const zoomDiff = Math.abs(forcedZoom - currentZoom);
