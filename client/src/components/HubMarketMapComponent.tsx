@@ -230,15 +230,15 @@ export function HubMarketMapComponent({
   const { isAnimating } = useAnimation();
   
   // Se showItalyView è true, usa coordinate Italia
-  // Se mode è 'hub' e c'è hubCenterFixed, usa quello
-  // Se mode è 'mercato' e c'è marketCenterFixed, usa quello
+  // Se c'è hubCenterFixed (regione/provincia/hub), usa quello
+  // Se c'è marketCenterFixed, usa quello
   // Altrimenti usa mapData.center o fallback Italia
   const mapCenter: [number, number] = center || (
     showItalyView 
       ? [42.5, 12.5]  // Centro Italia fisso
-      : mode === 'hub' && hubCenterFixed
-        ? hubCenterFixed  // Centro HUB selezionato
-        : mode === 'mercato' && marketCenterFixed
+      : hubCenterFixed
+        ? hubCenterFixed  // Centro regione/provincia/HUB
+        : marketCenterFixed
           ? marketCenterFixed  // Centro Mercato selezionato
           : mapData?.center 
             ? [mapData.center.lat, mapData.center.lng] 

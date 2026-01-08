@@ -515,16 +515,17 @@ export default function GestioneHubMapWrapper() {
           liberi: shops.filter(s => s.status !== 'active').length,
         };
       } else {
+        // Usa filteredHubs per mostrare statistiche in base alla vista corrente
         return {
-          mercati: hubs.length,
-          totali: hubs.reduce((acc, h) => acc + (h.shops?.length || 0), 0),
+          mercati: filteredHubs.length,
+          totali: filteredHubs.reduce((acc, h) => acc + (h.shops?.length || 0), 0),
           occupati: '—',
           assegnazione: '—',
           liberi: '—',
         };
       }
     }
-  }, [mode, selectedMarket, selectedHub, stallsData, markets, hubs, italyStats]);
+  }, [mode, selectedMarket, selectedHub, stallsData, markets, hubs, italyStats, filteredHubs]);
 
   // Coordinate correnti
   const currentCoords = useMemo(() => {
@@ -782,27 +783,44 @@ export default function GestioneHubMapWrapper() {
         </Button>
       </div>
 
-      {/* Lista elementi - Card più grandi */}
+      {/* Lista elementi - Card più grandi con colori per livello HUB */}
       <div className="flex gap-3 overflow-x-auto pb-2">
-        {currentList.slice(0, 12).map((item) => (
+        {currentList.slice(0, 12).map((item) => {
+          // Determina colore in base al livello HUB
+          const getHubCardColor = (hub: HubLocation) => {
+            switch (hub.livello) {
+              case 'capoluogo': return '#9C27B0'; // Viola pieno
+              case 'provincia': return '#BA68C8'; // Viola chiaro
+              case 'comune': return '#CE93D8';    // Viola pallido
+              default: return '#9C27B0';          // Default viola pieno
+            }
+          };
+          const hubColor = mode === 'hub' ? getHubCardColor(item as HubLocation) : '#ef4444';
+          
+          return (
           <div 
             key={item.id}
             className={`min-w-[160px] cursor-pointer transition-all rounded-lg p-3 border ${
               selectedItem?.id === item.id 
                 ? mode === 'mercato' 
                   ? 'border-[#ef4444] bg-[#ef4444]/10' 
-                  : 'border-[#9C27B0] bg-[#9C27B0]/10'
+                  : `bg-opacity-10`
                 : 'border-[#14b8a6]/30 bg-[#1a2332] hover:border-[#14b8a6]/50'
             }`}
+            style={{
+              borderColor: selectedItem?.id === item.id && mode === 'hub' ? hubColor : undefined,
+              backgroundColor: selectedItem?.id === item.id && mode === 'hub' ? `${hubColor}20` : undefined
+            }}
             onClick={() => mode === 'mercato' 
               ? handleMarketClick(item.id) 
               : handleHubClick(item.id)
             }
           >
             <div className="flex items-center gap-2">
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
-                mode === 'mercato' ? 'bg-[#ef4444]' : 'bg-[#9C27B0]'
-              }`}>
+              <span 
+                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                style={{ backgroundColor: mode === 'hub' ? hubColor : '#ef4444' }}
+              >
                 {mode === 'mercato' ? 'M' : 'H'}
               </span>
               <span className="text-[#e8fbff] font-medium text-sm truncate">
@@ -816,7 +834,8 @@ export default function GestioneHubMapWrapper() {
               }
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* Mappa - altezza maggiore */}
