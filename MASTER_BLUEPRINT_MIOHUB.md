@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.23.0  
+> **Versione:** 3.24.0  
 > **Data:** 8 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -895,6 +895,33 @@ Per il point GIS del nuovo negozio:
 
 
 ### 📝 CHANGELOG
+
+### v3.24.0 (08/01/2026) - Fix Zoom Mappa con Quarti di Scatto
+
+**Fix Zoom Precisione:**
+- **Quarti di scatto (0.25)**: Implementato zoom frazionario per adattamento perfetto
+  - `zoomSnap: 0.25` e `zoomDelta: 0.25` nel MapContainer
+  - Permette zoom precisi come 17.25, 17.5, 17.75
+- **Offset +0.25**: Aggiunto offset per vista leggermente più ravvicinata
+- **Grosseto e Modena**: Ora entrambi i mercati hanno zoom ottimale
+
+**Logica Zoom:**
+```javascript
+const rawZoom = map.getBoundsZoom(bounds);
+const roundedToQuarter = Math.round(rawZoom * 4) / 4;
+const forcedZoom = roundedToQuarter + 0.25;
+```
+
+**File Modificati:**
+- `client/src/hooks/useMapAnimation.ts` - Quarti di scatto + offset
+- `client/src/components/HubMarketMapComponent.tsx` - zoomSnap/zoomDelta 0.25
+
+**Commit:**
+- `3d4bf51` - Fix: Add +0.25 offset to zoom
+- `b2b7a39` - Fix: Use quarter-step zoom (0.25)
+
+---
+
 
 ### v3.23.0 (08/01/2026) - Statistiche Aggregate Italia e Fix Zoom Mappa
 
