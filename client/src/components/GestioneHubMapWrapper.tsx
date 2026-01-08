@@ -207,6 +207,15 @@ export default function GestioneHubMapWrapper() {
 
   // Gestione selezione regione
   const handleRegioneSelect = async (regione: Regione) => {
+    // Se clicco sulla stessa regione già selezionata, torno a vista Italia
+    if (selectedRegione?.id === regione.id) {
+      handleResetGeo();
+      setShowItalyView(true);
+      setViewTrigger(prev => prev + 1);
+      toast.success('Vista Italia');
+      return;
+    }
+    
     setSelectedRegione(regione);
     setSelectedProvincia(null);
     setSelectedMarket(null);
@@ -228,6 +237,18 @@ export default function GestioneHubMapWrapper() {
 
   // Gestione selezione provincia
   const handleProvinciaSelect = (provincia: Provincia) => {
+    // Se clicco sulla stessa provincia già selezionata, torno a vista Regione
+    if (selectedProvincia?.id === provincia.id && selectedRegione) {
+      setSelectedProvincia(null);
+      const lat = parseFloat(String(selectedRegione.lat));
+      const lng = parseFloat(String(selectedRegione.lng));
+      setCustomCenter([lat, lng]);
+      setCustomZoom(selectedRegione.zoom);
+      setViewTrigger(prev => prev + 1);
+      toast.success(`Vista: ${selectedRegione.nome}`);
+      return;
+    }
+    
     setSelectedProvincia(provincia);
     setSelectedMarket(null);
     setSelectedHub(null);
@@ -243,13 +264,15 @@ export default function GestioneHubMapWrapper() {
     toast.success(`Vista: ${provincia.nome} (${provincia.sigla})`);
   };
 
-  // Reset navigazione geografica
+  // Reset navigazione geografica - torna a vista Italia
   const handleResetGeo = () => {
     setSelectedRegione(null);
     setSelectedProvincia(null);
     setProvince([]);
     setCustomCenter(null);
     setCustomZoom(null);
+    setShowItalyView(true);
+    setViewTrigger(prev => prev + 1);
   };
 
   // Gestione click su mercato
