@@ -512,67 +512,56 @@ export default function GestioneHubMapWrapper() {
   }
 
   return (
-    <div className="space-y-2">
-      {/* Header con Indicatori - Vista corrente a sinistra, indicatori a destra */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#1a2332] rounded-lg p-4 border border-[#14b8a6]/30">
-        {/* Vista corrente */}
-        <div className="flex items-center gap-3">
-          <MapPin className="h-6 w-6 text-[#14b8a6]" />
-          <div>
-            <span className="text-sm text-[#e8fbff]/60">Vista:</span>
-            <span className="text-lg font-semibold text-[#e8fbff] ml-2">{currentViewLabel}</span>
+    <div className="space-y-3 p-4">
+      {/* Header unico con Titolo + Indicatori nella stessa barra */}
+      <div className="flex flex-wrap items-center gap-4 bg-[#0b1220] rounded-lg p-4 border border-[#14b8a6]/30">
+        {/* Titolo e Vista - come primo indicatore */}
+        <div className="px-4 py-2 bg-[#1a2332] rounded border border-[#14b8a6]/40 min-w-[200px]">
+          <div className="text-[10px] text-[#14b8a6] uppercase tracking-wider font-bold">GEMELLO DIGITALE DEL COMMERCIO</div>
+          <div className="flex items-center gap-1 mt-1">
+            <span className={`text-xs font-medium ${mode === 'mercato' ? 'text-[#ef4444]' : 'text-[#9C27B0]'}`}>
+              {mode === 'mercato' ? 'MERCATO:' : 'HUB:'}
+            </span>
+            <span className="text-sm font-semibold text-[#e8fbff] truncate max-w-[120px]">{currentViewLabel}</span>
           </div>
         </div>
 
-        {/* Indicatori più larghi */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <StatIndicator 
-            label={mode === 'mercato' ? 'Mercati' : 'HUB'} 
-            value={stats.mercati} 
-            color={mode === 'mercato' ? 'red' : 'purple'} 
-          />
-          <StatIndicator 
-            label={mode === 'mercato' ? 'Posteggi' : 'Negozi'} 
-            value={stats.totali} 
-            color="white" 
-          />
-          <StatIndicator 
-            label={mode === 'mercato' ? 'Occupati' : 'Attivi'} 
-            value={stats.occupati} 
-            color={mode === 'mercato' ? 'red' : 'green'} 
-          />
-          {mode === 'mercato' && (
-            <StatIndicator label="Assegn." value={stats.assegnazione} color="amber" />
-          )}
-          <StatIndicator 
-            label={mode === 'mercato' ? 'Liberi' : 'Inattivi'} 
-            value={stats.liberi} 
-            color={mode === 'mercato' ? 'green' : 'white'} 
-          />
-          
-          {/* Coordinate GPS */}
-          <div className="px-4 py-2 bg-[#0b1220] rounded border border-[#e8fbff]/20 text-center min-w-[140px]">
-            <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">Coordinate GPS</div>
-            <div className="text-sm font-mono text-[#14b8a6]">
-              {currentCoords.lat} | {currentCoords.lng}
-            </div>
+        {/* Indicatori */}
+        <StatIndicator 
+          label={mode === 'mercato' ? 'Mercati' : 'HUB'} 
+          value={stats.mercati} 
+          color={mode === 'mercato' ? 'red' : 'purple'} 
+        />
+        <StatIndicator 
+          label={mode === 'mercato' ? 'Posteggi' : 'Negozi'} 
+          value={stats.totali} 
+          color="white" 
+        />
+        <StatIndicator 
+          label={mode === 'mercato' ? 'Occupati' : 'Attivi'} 
+          value={stats.occupati} 
+          color={mode === 'mercato' ? 'red' : 'green'} 
+        />
+        {mode === 'mercato' && (
+          <StatIndicator label="Assegn." value={stats.assegnazione} color="amber" />
+        )}
+        <StatIndicator 
+          label={mode === 'mercato' ? 'Liberi' : 'Inattivi'} 
+          value={stats.liberi} 
+          color={mode === 'mercato' ? 'green' : 'white'} 
+        />
+        
+        {/* Coordinate GPS */}
+        <div className="px-4 py-2 bg-[#1a2332] rounded border border-[#e8fbff]/20 text-center min-w-[140px] ml-auto">
+          <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">Coordinate GPS</div>
+          <div className="text-sm font-mono text-[#14b8a6]">
+            {currentCoords.lat} | {currentCoords.lng}
           </div>
         </div>
       </div>
 
       {/* Barra controlli */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Pulsante Vista Italia */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleResetGeo}
-          className="text-[#14b8a6] border-[#14b8a6]/50 hover:bg-[#14b8a6]/20 h-8"
-        >
-          <MapPin className="h-4 w-4 mr-1" />
-          Vista Italia
-        </Button>
-
         {/* Selettore Mercato/HUB */}
         <div className="flex bg-[#0b1220] rounded-lg p-1 border border-[#14b8a6]/30">
           <Button
@@ -610,6 +599,17 @@ export default function GestioneHubMapWrapper() {
             className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff] h-7 text-xs"
           />
         </div>
+
+        {/* Pulsante Vista Italia - prima di Regione */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleResetGeo}
+          className="text-[#14b8a6] border-[#14b8a6]/50 hover:bg-[#14b8a6]/20 h-7 text-xs"
+        >
+          <MapPin className="h-3 w-3 mr-1" />
+          Vista Italia
+        </Button>
 
         {/* Dropdown Regione */}
         <DropdownMenu>
@@ -720,12 +720,12 @@ export default function GestioneHubMapWrapper() {
         </Button>
       </div>
 
-      {/* Lista elementi - Card più basse */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      {/* Lista elementi - Card più grandi */}
+      <div className="flex gap-3 overflow-x-auto pb-2">
         {currentList.slice(0, 12).map((item) => (
           <div 
             key={item.id}
-            className={`min-w-[140px] cursor-pointer transition-all rounded-lg p-2 border ${
+            className={`min-w-[160px] cursor-pointer transition-all rounded-lg p-3 border ${
               selectedItem?.id === item.id 
                 ? mode === 'mercato' 
                   ? 'border-[#ef4444] bg-[#ef4444]/10' 
@@ -737,17 +737,17 @@ export default function GestioneHubMapWrapper() {
               : handleHubClick(item.id)
             }
           >
-            <div className="flex items-center gap-1">
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${
+            <div className="flex items-center gap-2">
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
                 mode === 'mercato' ? 'bg-[#ef4444]' : 'bg-[#9C27B0]'
               }`}>
                 {mode === 'mercato' ? 'M' : 'H'}
               </span>
-              <span className="text-[#e8fbff] font-medium text-xs truncate">
-                {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
+              <span className="text-[#e8fbff] font-medium text-sm truncate">
+                {item.name.length > 18 ? item.name.substring(0, 18) + '...' : item.name}
               </span>
             </div>
-            <div className="text-[#e8fbff]/50 text-[10px] ml-6 truncate">
+            <div className="text-[#e8fbff]/50 text-xs ml-8 truncate mt-1">
               {mode === 'mercato' 
                 ? (item as Market).comune || 'Italia'
                 : (item as HubLocation).city || 'Italia'

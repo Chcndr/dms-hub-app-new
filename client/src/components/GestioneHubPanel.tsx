@@ -598,16 +598,7 @@ export default function GestioneHubPanel() {
         {/* ================================================================ */}
         <TabsContent value="rete-hub" className="mt-6">
           <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-            <CardHeader>
-              <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-[#14b8a6]" />
-                Rete Hub - Mappa Interattiva
-              </CardTitle>
-              <CardDescription className="text-[#e8fbff]/60">
-                Visualizzazione completa di tutti gli HUB e Mercati con selettore
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <GestioneHubMapWrapper />
             </CardContent>
           </Card>
