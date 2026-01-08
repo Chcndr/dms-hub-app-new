@@ -129,6 +129,7 @@ interface HubMarketMapComponentProps {
   onHubClick?: (hubId: number) => void; // Callback click su HUB
   onShopClick?: (shop: HubShop) => void; // Callback click su negozio
   hubCenterFixed?: [number, number]; // Centro HUB fisso per zoom
+  customZoom?: number; // Zoom personalizzato per navigazione regione/provincia
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -215,7 +216,8 @@ export function HubMarketMapComponent({
   selectedHub,
   onHubClick,
   onShopClick,
-  hubCenterFixed
+  hubCenterFixed,
+  customZoom
 }: HubMarketMapComponentProps) {
   
   // Ottieni lo stato di animazione dal context per nascondere poligoni durante zoom
@@ -241,13 +243,15 @@ export function HubMarketMapComponent({
   // Vista Italia: zoom 6 per vedere tutta Italia
   // Vista HUB: zoom 16 per vedere i negozi
   // Vista Mercato: zoom 17 per vedere i posteggi
-  const effectiveZoom = showItalyView 
-    ? 6 
-    : mode === 'hub' && hubCenterFixed 
-      ? 16 
-      : mode === 'mercato' && marketCenterFixed
-        ? 17  // Zoom mercato
-        : zoom;
+  const effectiveZoom = customZoom 
+    ? customZoom  // Zoom personalizzato per navigazione regione/provincia
+    : showItalyView 
+      ? 6 
+      : mode === 'hub' && hubCenterFixed 
+        ? 16 
+        : mode === 'mercato' && marketCenterFixed
+          ? 17  // Zoom mercato
+          : zoom;
   
   // Rimosso stato locale ridondante che causava loop
   // L'animazione è gestita direttamente da MapCenterController tramite useAnimation
