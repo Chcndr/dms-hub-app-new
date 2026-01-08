@@ -115,9 +115,9 @@ const StatIndicator = ({
   };
 
   return (
-    <div className={`px-4 py-2 bg-[#0b1220] rounded border ${colorClasses[color]} min-w-[90px] text-center`}>
+    <div className={`px-5 py-2 bg-[#0b1220] rounded border ${colorClasses[color]} min-w-[110px] text-center flex-1 max-w-[130px]`}>
       <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">{label}</div>
-      <div className="text-xl font-bold">{value}</div>
+      <div className="text-2xl font-bold">{value}</div>
     </div>
   );
 };
@@ -516,8 +516,8 @@ export default function GestioneHubMapWrapper() {
       {/* Header unico con Titolo + Indicatori nella stessa barra */}
       <div className="flex flex-wrap items-center gap-4 bg-[#0b1220] rounded-lg p-4 border border-[#14b8a6]/30">
         {/* Titolo e Vista - come primo indicatore */}
-        <div className="px-4 py-2 bg-[#1a2332] rounded border border-[#14b8a6]/40 min-w-[200px]">
-          <div className="text-[10px] text-[#14b8a6] uppercase tracking-wider font-bold">GEMELLO DIGITALE DEL COMMERCIO</div>
+        <div className="px-5 py-2 bg-[#1a2332] rounded border border-[#14b8a6]/40 min-w-[280px] flex-shrink-0">
+          <div className="text-xs text-white uppercase tracking-wider font-bold">GEMELLO DIGITALE DEL COMMERCIO</div>
           <div className="flex items-center gap-1 mt-1">
             <span className={`text-xs font-medium ${mode === 'mercato' ? 'text-[#ef4444]' : 'text-[#9C27B0]'}`}>
               {mode === 'mercato' ? 'MERCATO:' : 'HUB:'}
@@ -552,7 +552,7 @@ export default function GestioneHubMapWrapper() {
         />
         
         {/* Coordinate GPS */}
-        <div className="px-4 py-2 bg-[#1a2332] rounded border border-[#e8fbff]/20 text-center min-w-[140px] ml-auto">
+        <div className="px-5 py-2 bg-[#1a2332] rounded border border-[#e8fbff]/20 text-center min-w-[180px] ml-auto">
           <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">Coordinate GPS</div>
           <div className="text-sm font-mono text-[#14b8a6]">
             {currentCoords.lat} | {currentCoords.lng}
@@ -569,8 +569,8 @@ export default function GestioneHubMapWrapper() {
             size="sm"
             onClick={() => { setMode('mercato'); handleBackToItaly(); }}
             className={mode === 'mercato' 
-              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white h-7 text-xs' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-7 text-xs'
+              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white h-8 text-sm' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-8 text-sm'
             }
           >
             <Store className="h-3 w-3 mr-1" />
@@ -581,8 +581,8 @@ export default function GestioneHubMapWrapper() {
             size="sm"
             onClick={() => { setMode('hub'); handleBackToItaly(); }}
             className={mode === 'hub' 
-              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white h-7 text-xs' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-7 text-xs'
+              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white h-8 text-sm' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-8 text-sm'
             }
           >
             <Building2 className="h-3 w-3 mr-1" />
@@ -591,12 +591,12 @@ export default function GestioneHubMapWrapper() {
         </div>
 
         {/* Ricerca */}
-        <div className="flex-1 max-w-[200px]">
+        <div className="flex-1 min-w-[180px] max-w-[300px]">
           <Input
-            placeholder={`Cerca...`}
+            placeholder={`Cerca ${mode === 'mercato' ? 'mercato' : 'hub'}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff] h-7 text-xs"
+            className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff] h-8 text-sm"
           />
         </div>
 
@@ -605,9 +605,9 @@ export default function GestioneHubMapWrapper() {
           variant="outline"
           size="sm"
           onClick={handleResetGeo}
-          className="text-[#14b8a6] border-[#14b8a6]/50 hover:bg-[#14b8a6]/20 h-7 text-xs"
+          className="text-[#14b8a6] border-[#14b8a6]/50 hover:bg-[#14b8a6]/20 h-8 text-sm"
         >
-          <MapPin className="h-3 w-3 mr-1" />
+          <MapPin className="h-4 w-4 mr-1" />
           Vista Italia
         </Button>
 
@@ -617,7 +617,7 @@ export default function GestioneHubMapWrapper() {
             <Button
               variant="outline"
               size="sm"
-              className={`border-[#14b8a6]/30 h-7 text-xs ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
+              className={`border-[#14b8a6]/30 h-8 text-sm ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
             >
               <Map className="h-3 w-3 mr-1" />
               {selectedRegione ? selectedRegione.nome : 'Regione'}
@@ -659,7 +659,7 @@ export default function GestioneHubMapWrapper() {
               variant="outline"
               size="sm"
               disabled={!selectedRegione}
-              className={`border-[#14b8a6]/30 h-7 text-xs ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
+              className={`border-[#14b8a6]/30 h-8 text-sm ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
             >
               <Navigation className="h-3 w-3 mr-1" />
               {selectedProvincia ? `${selectedProvincia.sigla}` : 'Prov.'}
@@ -702,7 +702,7 @@ export default function GestioneHubMapWrapper() {
             variant="ghost"
             size="sm"
             onClick={handleGoBack}
-            className="text-[#f59e0b] hover:text-[#f59e0b] hover:bg-[#f59e0b]/10 h-7 text-xs"
+            className="text-[#f59e0b] hover:text-[#f59e0b] hover:bg-[#f59e0b]/10 h-8 text-sm"
           >
             <ChevronLeft className="h-3 w-3 mr-1" />
             Indietro
