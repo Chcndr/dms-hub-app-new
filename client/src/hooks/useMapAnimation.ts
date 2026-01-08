@@ -33,27 +33,29 @@ export function useMapAnimation({ center, zoom, trigger, bounds, isMarketView }:
           
           // Calcola lo zoom ottimale per i bounds
           const targetZoom = map.getBoundsZoom(latLngBounds, false, [50, 50]);
-          // Aggiungi +2 allo zoom calcolato per avere una vista più ravvicinata
-          // Limita tra 18 e 20 per avere una vista bilanciata (aumentato di 1 scatto)
-          const forcedZoom = Math.min(Math.max(targetZoom + 2, 18), 20);
+          // Aggiungi +1 allo zoom calcolato per avere una vista più ravvicinata
+          // Questo è lo scatto in più richiesto
+          const forcedZoom = Math.min(Math.max(targetZoom + 1, 17), 19);
           
           const currentZoom = map.getZoom();
           const zoomDiff = Math.abs(forcedZoom - currentZoom);
           const dynamicDuration = zoomDiff > 4 ? 6 : 1.5;
 
-          console.log('[useMapAnimation] Animating to bounds:', {
+          // Calcola il centro dei bounds
+          const boundsCenter = latLngBounds.getCenter();
+
+          console.log('[useMapAnimation] Animating to bounds center with forced zoom:', {
             targetZoom,
             forcedZoom,
             currentZoom,
-            boundsCenter: latLngBounds.getCenter()
+            boundsCenter: [boundsCenter.lat, boundsCenter.lng]
           });
 
-          // Usa flyToBounds per animazione fluida che rispetta i bounds
-          map.flyToBounds(latLngBounds, {
+          // USA flyTo con zoom forzato invece di flyToBounds
+          // flyToBounds ignora il nostro zoom calcolato, quindi usiamo flyTo
+          map.flyTo([boundsCenter.lat, boundsCenter.lng], forcedZoom, {
             duration: dynamicDuration,
-            easeLinearity: 0.25,
-            padding: [30, 30], // Padding in pixel per non tagliare i bordi
-            maxZoom: 20 // Zoom massimo aumentato a 20
+            easeLinearity: 0.25
           });
         } catch (e) {
           console.error('[useMapAnimation] Error with bounds:', e);
