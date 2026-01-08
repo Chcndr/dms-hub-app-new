@@ -115,9 +115,9 @@ const StatIndicator = ({
   };
 
   return (
-    <div className={`px-2 py-1 bg-[#0b1220] rounded border ${colorClasses[color]} min-w-[60px] text-center`}>
-      <div className="text-[9px] text-[#e8fbff]/50 uppercase tracking-wider">{label}</div>
-      <div className="text-sm font-bold">{value}</div>
+    <div className={`px-4 py-2 bg-[#0b1220] rounded border ${colorClasses[color]} min-w-[90px] text-center`}>
+      <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">{label}</div>
+      <div className="text-xl font-bold">{value}</div>
     </div>
   );
 };
@@ -513,19 +513,19 @@ export default function GestioneHubMapWrapper() {
 
   return (
     <div className="space-y-2">
-      {/* Header con Titolo e Indicatori */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#1a2332] rounded-lg p-3 border border-[#14b8a6]/30">
-        {/* Titolo e sottotitolo */}
-        <div className="flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-[#14b8a6]" />
-            <h2 className="text-lg font-semibold text-[#e8fbff]">Rete Hub - Mappa Interattiva</h2>
+      {/* Header con Indicatori - Vista corrente a sinistra, indicatori a destra */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#1a2332] rounded-lg p-4 border border-[#14b8a6]/30">
+        {/* Vista corrente */}
+        <div className="flex items-center gap-3">
+          <MapPin className="h-6 w-6 text-[#14b8a6]" />
+          <div>
+            <span className="text-sm text-[#e8fbff]/60">Vista:</span>
+            <span className="text-lg font-semibold text-[#e8fbff] ml-2">{currentViewLabel}</span>
           </div>
-          <p className="text-xs text-[#e8fbff]/50 ml-7">Vista: {currentViewLabel}</p>
         </div>
 
-        {/* Indicatori compatti */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Indicatori più larghi */}
+        <div className="flex items-center gap-3 flex-wrap">
           <StatIndicator 
             label={mode === 'mercato' ? 'Mercati' : 'HUB'} 
             value={stats.mercati} 
@@ -550,10 +550,10 @@ export default function GestioneHubMapWrapper() {
             color={mode === 'mercato' ? 'green' : 'white'} 
           />
           
-          {/* Coordinate compatte */}
-          <div className="px-2 py-1 bg-[#0b1220] rounded border border-[#e8fbff]/20 text-center">
-            <div className="text-[8px] text-[#e8fbff]/40 uppercase">GPS</div>
-            <div className="text-[10px] font-mono text-[#e8fbff]/60">
+          {/* Coordinate GPS */}
+          <div className="px-4 py-2 bg-[#0b1220] rounded border border-[#e8fbff]/20 text-center min-w-[140px]">
+            <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">Coordinate GPS</div>
+            <div className="text-sm font-mono text-[#14b8a6]">
               {currentCoords.lat} | {currentCoords.lng}
             </div>
           </div>
@@ -562,15 +562,15 @@ export default function GestioneHubMapWrapper() {
 
       {/* Barra controlli */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Pulsante Home/Italia */}
+        {/* Pulsante Vista Italia */}
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={handleResetGeo}
-          className="text-[#e8fbff] hover:bg-[#14b8a6]/20"
-          title="Torna a Vista Italia"
+          className="text-[#14b8a6] border-[#14b8a6]/50 hover:bg-[#14b8a6]/20 h-8"
         >
-          <Home className="h-4 w-4" />
+          <MapPin className="h-4 w-4 mr-1" />
+          Vista Italia
         </Button>
 
         {/* Selettore Mercato/HUB */}
@@ -757,8 +757,8 @@ export default function GestioneHubMapWrapper() {
         ))}
       </div>
 
-      {/* Mappa */}
-      <div className="h-[500px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
+      {/* Mappa - altezza maggiore */}
+      <div className="h-[650px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
         <HubMarketMapComponent
           mode={mode}
           mapData={mapData || undefined}
