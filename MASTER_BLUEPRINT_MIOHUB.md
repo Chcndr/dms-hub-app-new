@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.27.0  
-> **Data:** 8 Gennaio 2026  
+> **Versione:** 3.28.0  
+> **Data:** 9 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -895,6 +895,64 @@ Per il point GIS del nuovo negozio:
 
 
 ### 📝 CHANGELOG
+
+
+### v3.28.0 (09/01/2026) - Indicatore Area mq + Fix Capoluoghi Italia
+
+**Nuove Funzionalità:**
+- **Indicatore Area (mq)** aggiunto nella barra controlli dopo "Indietro"
+  - Calcolo dinamico: Σ (width × depth) per posteggi mercati
+  - Calcolo dinamico: Σ (area_sqm) per HUB
+  - Formato: numeri interi con punto separatore migliaia (es. 275.487 mq)
+- **Rimosso pulsante RefreshCw** dalla barra di navigazione
+
+**Fix Database:**
+- **Napoli e Modena attivati** (active = 1)
+- **regione_id aggiornato** per tutti i 20 capoluoghi di regione
+- **Grosseto confermato come capoluogo** (comune pilota)
+- **Eliminati duplicati**: test, Napoli duplicati, Modena duplicato ID 90
+- **Totale HUB: 79** (21 capoluoghi + 9 province + 49 comuni)
+
+**Fix Frontend:**
+- Indicatori ATTIVI/INATTIVI ora mostrano somma di tutti i negozi in Vista Italia
+- Rimosso limite 12 card per mostrare tutti gli HUB
+- Formato Area mq senza decimali
+
+**Capoluoghi Italia (21):**
+| Città | Regione | regione_id |
+|-------|---------|------------|
+| Aosta | Valle d'Aosta | 2 |
+| Torino | Piemonte | 1 |
+| Genova | Liguria | 7 |
+| Milano | Lombardia | 3 |
+| Trento | Trentino-Alto Adige | 4 |
+| Venezia | Veneto | 5 |
+| Trieste | Friuli-Venezia Giulia | 6 |
+| Bologna | Emilia-Romagna | 8 |
+| Firenze | Toscana | 9 |
+| Ancona | Marche | 11 |
+| Perugia | Umbria | 10 |
+| Roma | Lazio | 12 |
+| L'Aquila | Abruzzo | 13 |
+| Napoli | Campania | 15 |
+| Campobasso | Molise | 14 |
+| Bari | Puglia | 16 |
+| Potenza | Basilicata | 17 |
+| Catanzaro | Calabria | 18 |
+| Palermo | Sicilia | 19 |
+| Cagliari | Sardegna | 20 |
+| **Grosseto** | Toscana (pilota) | 9 |
+
+**File Modificati:**
+- `client/src/components/GestioneHubMapWrapper.tsx`
+- `routes/stalls.js` (backend)
+- `routes/integrations.js` (backend)
+
+**Commit:**
+- Frontend: `2416a0b` - fix: Formato Area mq + indicatori ATTIVI/INATTIVI
+- Backend: `d2c8866` - fix: Rimosso colonne non esistenti dalla query stalls
+
+---
 
 ### v3.27.0 (08/01/2026) - Coordinate Centro HUB Emilia Romagna
 
