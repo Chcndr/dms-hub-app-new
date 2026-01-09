@@ -70,13 +70,17 @@ import {
   getIPBlacklist,
   blockIP,
   unblockIP,
+  getUsers,
+  lockUser,
+  unlockUser,
   type SecurityStats,
   type UserRole,
   type Permission,
   type RolePermission,
   type SecurityEvent,
   type LoginAttempt,
-  type IPBlacklist
+  type IPBlacklist,
+  type SecurityUser
 } from '@/api/securityClient';
 import { ORCHESTRATORE_API_BASE_URL } from '@/config/api';
 
@@ -96,6 +100,8 @@ export default function SecurityTab() {
   const [ipBlacklist, setIPBlacklist] = useState<IPBlacklist[]>([]);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [healthStatus, setHealthStatus] = useState<'healthy' | 'degraded' | 'unhealthy' | 'loading'>('loading');
+  const [users, setUsers] = useState<SecurityUser[]>([]);
+  const [usersSearch, setUsersSearch] = useState('');
 
   // Dialog states
   const [showCreateRoleDialog, setShowCreateRoleDialog] = useState(false);
@@ -150,7 +156,8 @@ export default function SecurityTab() {
         healthRes,
         eventsRes,
         loginsRes,
-        blacklistRes
+        blacklistRes,
+        usersRes
       ] = await Promise.all([
         getSecurityStats(),
         getRoles(),
@@ -159,7 +166,8 @@ export default function SecurityTab() {
         getSecurityHealth(),
         getSecurityEvents({ limit: 20 }),
         getLoginAttempts({ limit: 20 }),
-        getIPBlacklist(true)
+        getIPBlacklist(true),
+        getUsers({ limit: 50 })
       ]);
 
       if (statsRes.success) setStats(statsRes.data);
@@ -173,6 +181,7 @@ export default function SecurityTab() {
       if (eventsRes.success) setEvents(eventsRes.data);
       if (loginsRes.success) setLoginAttempts(loginsRes.data);
       if (blacklistRes.success) setIPBlacklist(blacklistRes.data);
+      if (usersRes.success) setUsers(usersRes.data);
       
       toast.success('Dati sicurezza caricati');
     } catch (err: any) {
@@ -427,10 +436,14 @@ export default function SecurityTab() {
 
       {/* Sub-tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-[#0a1628]">
+        <TabsList className="grid w-full grid-cols-6 bg-[#0a1628]">
           <TabsTrigger value="overview">
             <Shield className="h-4 w-4 mr-2" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="users">
+            <UserCheck className="h-4 w-4 mr-2" />
+            Utenti ({users.length})
           </TabsTrigger>
           <TabsTrigger value="roles">
             <Users className="h-4 w-4 mr-2" />
@@ -581,6 +594,146 @@ export default function SecurityTab() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* USERS TAB */}
+        <TabsContent value="users" className="space-y-6">
+          {/* Search Bar */}
+          <div className="flex items-center justify-between">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#e8fbff]/50" />
+              <Input
+                placeholder="Cerca utente per nome o email..."
+                value={usersSearch}
+                onChange={(e) => setUsersSearch(e.target.value)}
+                className="pl-10 bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff] w-80"
+              />
+            </div>
+            <div className="text-sm text-[#e8fbff]/70">
+              Totale: <span className="font-bold text-[#14b8a6]">{users.length}</span> utenti registrati
+            </div>
+          </div>
+
+          {/* Users Table */}
+          <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+            <CardHeader>
+              <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                <UserCheck className="h-5 w-5 text-[#14b8a6]" />
+                Utenti Registrati
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {users.length === 0 ? (
+                <div className="text-center py-8 text-[#e8fbff]/50">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nessun utente registrato</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {users
+                    .filter(u => 
+                      !usersSearch || 
+                      u.name?.toLowerCase().includes(usersSearch.toLowerCase()) ||
+                      u.email?.toLowerCase().includes(usersSearch.toLowerCase())
+                    )
+                    .map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-4 rounded-lg bg-[#0b1220]/50 border border-[#14b8a6]/20 hover:border-[#14b8a6]/40 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center text-white font-bold">
+                            {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || '?'}
+                          </div>
+                          <div>
+                            <div className="font-medium text-[#e8fbff]">
+                              {user.name || 'Nome non disponibile'}
+                            </div>
+                            <div className="text-sm text-[#e8fbff]/70">
+                              {user.email}
+                            </div>
+                            {user.fiscal_code && (
+                              <div className="text-xs text-[#14b8a6] mt-1">
+                                CF: {user.fiscal_code}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="flex flex-wrap gap-1 justify-end mb-1">
+                              {user.assigned_roles && user.assigned_roles.length > 0 ? (
+                                user.assigned_roles.map((role, idx) => (
+                                  <Badge
+                                    key={idx}
+                                    variant="outline"
+                                    className="border-[#14b8a6]/50 text-[#14b8a6] text-xs"
+                                  >
+                                    {role.role_name || role.role_code}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <Badge variant="outline" className="border-gray-500/50 text-gray-400 text-xs">
+                                  Nessun ruolo
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-[#e8fbff]/50">
+                              Registrato: {user.created_at ? new Date(user.created_at).toLocaleDateString('it-IT') : 'N/D'}
+                            </div>
+                            {user.last_signed_in && (
+                              <div className="text-xs text-[#e8fbff]/50">
+                                Ultimo accesso: {new Date(user.last_signed_in).toLocaleDateString('it-IT')}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                              onClick={() => {
+                                setAssignRole({ ...assignRole, userId: user.id.toString() });
+                                setShowAssignRoleDialog(true);
+                              }}
+                            >
+                              <UserPlus className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                              onClick={async () => {
+                                try {
+                                  await lockUser(user.id, 'Bloccato manualmente');
+                                  toast.success(`Utente ${user.name || user.email} bloccato`);
+                                  loadData();
+                                } catch (err) {
+                                  toast.error('Errore nel blocco utente');
+                                }
+                              }}
+                            >
+                              <Ban className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                      {user.linked_impresa && (
+                        <div className="mt-3 pt-3 border-t border-[#14b8a6]/20">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Database className="h-4 w-4 text-[#14b8a6]" />
+                            <span className="text-[#e8fbff]/70">Collegato a impresa:</span>
+                            <span className="text-[#14b8a6] font-medium">{user.linked_impresa.denominazione}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ROLES TAB */}

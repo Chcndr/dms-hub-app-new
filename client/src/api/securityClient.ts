@@ -467,3 +467,138 @@ export async function unblockIP(ip: string, unblocked_by?: number): Promise<{ su
   
   return response.json();
 }
+
+
+// ============================================================================
+// USER MANAGEMENT TYPES AND FUNCTIONS
+// ============================================================================
+
+export interface SecurityUser {
+  id: number;
+  name: string;
+  email: string;
+  base_role: string;
+  fiscal_code?: string;
+  created_at: string;
+  last_signed_in?: string;
+  assigned_roles: {
+    role_id: number;
+    role_code: string;
+    role_name: string;
+    territory_type?: string;
+    territory_id?: number;
+  }[];
+  linked_impresa?: {
+    id: number;
+    denominazione: string;
+  };
+}
+
+/**
+ * GET /api/security/users
+ * Lista utenti con ruoli assegnati
+ */
+export async function getUsers(filters?: {
+  role?: number;
+  status?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ 
+  success: boolean; 
+  data: SecurityUser[]; 
+  pagination: { total: number; limit: number; offset: number } 
+}> {
+  const params = new URLSearchParams();
+  
+  if (filters?.role) params.append('role', filters.role.toString());
+  if (filters?.status) params.append('status', filters.status);
+  if (filters?.search) params.append('search', filters.search);
+  if (filters?.limit) params.append('limit', filters.limit.toString());
+  if (filters?.offset) params.append('offset', filters.offset.toString());
+  
+  const url = `${API_BASE_URL}/api/security/users?${params.toString()}`;
+  
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch users: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * GET /api/security/users/:id
+ * Dettaglio singolo utente
+ */
+export async function getUserById(id: number): Promise<{ success: boolean; data: SecurityUser }> {
+  const url = `${API_BASE_URL}/api/security/users/${id}`;
+  
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * POST /api/security/users/:id/lock
+ * Blocca un utente
+ */
+export async function lockUser(id: number, reason?: string): Promise<{ success: boolean; message: string }> {
+  const url = `${API_BASE_URL}/api/security/users/${id}/lock`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reason }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to lock user: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * POST /api/security/users/:id/unlock
+ * Sblocca un utente
+ */
+export async function unlockUser(id: number): Promise<{ success: boolean; message: string }> {
+  const url = `${API_BASE_URL}/api/security/users/${id}/unlock`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to unlock user: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * GET /api/security/users/:id/roles
+ * Ruoli assegnati a un utente
+ */
+export async function getUserRoles(id: number): Promise<{ success: boolean; data: any[] }> {
+  const url = `${API_BASE_URL}/api/security/users/${id}/roles`;
+  
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user roles: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
