@@ -618,9 +618,9 @@ export default function GestioneHubMapWrapper() {
     return 'Italia';
   }, [selectedMarket, selectedHub, selectedProvincia, selectedRegione]);
 
-  // Calcolo Area (mq) dinamico - 8 modalità
+  // Calcolo Area (mq) dinamico
   // HUB: somma area_sqm degli HUB filtrati
-  // Mercato: somma width * depth dei posteggi filtrati
+  // Mercato: somma width * depth dei posteggi
   const areaTotal = useMemo(() => {
     // Funzione per calcolare area di un posteggio: width * depth
     const calcStallArea = (s: any): number => {
@@ -636,19 +636,9 @@ export default function GestioneHubMapWrapper() {
         const activeStalls = stallsData.filter(s => s.is_active === true);
         return activeStalls.reduce((acc, s) => acc + calcStallArea(s), 0);
       } else {
-        // Vista Italia/Regione/Provincia: filtra allStallsData
-        let stallsToSum = allStallsData.filter(s => s.is_active === true);
-        
-        if (selectedProvincia) {
-          // Filtra per provincia
-          stallsToSum = stallsToSum.filter(s => s.provincia_id === selectedProvincia.id);
-        } else if (selectedRegione) {
-          // Filtra per regione
-          stallsToSum = stallsToSum.filter(s => s.regione_id === selectedRegione.id);
-        }
-        // Se nessun filtro, somma tutti (Vista Italia)
-        
-        return stallsToSum.reduce((acc, s) => acc + calcStallArea(s), 0);
+        // Vista Italia: somma mq di TUTTI i posteggi di tutti i mercati
+        const activeStalls = allStallsData.filter(s => s.is_active === true);
+        return activeStalls.reduce((acc, s) => acc + calcStallArea(s), 0);
       }
     } else {
       // Modalità HUB: somma area_sqm degli HUB
