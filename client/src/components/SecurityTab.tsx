@@ -1,8 +1,9 @@
 /**
- * SecurityTab Component
+ * SecurityTab Component - VERSIONE COMPLETA
  * Tab Sicurezza per la DashboardPA con dati reali dal backend
+ * Include form per gestione ruoli, permessi, IP blocking
  * 
- * @version 1.0.0
+ * @version 2.0.0
  * @date 9 Gennaio 2026
  */
 
@@ -11,6 +12,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   Shield,
   Users,
@@ -28,7 +48,15 @@ import {
   Database,
   FileText,
   Settings,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  Edit,
+  Trash2,
+  Download,
+  Ban,
+  UserPlus,
+  Search,
+  Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -40,6 +68,8 @@ import {
   getSecurityEvents,
   getLoginAttempts,
   getIPBlacklist,
+  blockIP,
+  unblockIP,
   type SecurityStats,
   type UserRole,
   type Permission,
@@ -48,6 +78,7 @@ import {
   type LoginAttempt,
   type IPBlacklist
 } from '@/api/securityClient';
+import { ORCHESTRATORE_API_BASE_URL } from '@/config/api';
 
 export default function SecurityTab() {
   const [activeSubTab, setActiveSubTab] = useState('overview');
@@ -66,6 +97,41 @@ export default function SecurityTab() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [healthStatus, setHealthStatus] = useState<'healthy' | 'degraded' | 'unhealthy' | 'loading'>('loading');
 
+  // Dialog states
+  const [showCreateRoleDialog, setShowCreateRoleDialog] = useState(false);
+  const [showAssignRoleDialog, setShowAssignRoleDialog] = useState(false);
+  const [showBlockIPDialog, setShowBlockIPDialog] = useState(false);
+  const [showResolveEventDialog, setShowResolveEventDialog] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<SecurityEvent | null>(null);
+  
+  // Form states
+  const [newRole, setNewRole] = useState({
+    code: '',
+    name: '',
+    description: '',
+    sector: 'pa',
+    level: 50,
+    can_delegate: false
+  });
+  
+  const [assignRole, setAssignRole] = useState({
+    userId: '',
+    roleId: '',
+    territoryType: 'comune',
+    territoryId: ''
+  });
+  
+  const [newBlockIP, setNewBlockIP] = useState({
+    ip_address: '',
+    reason: '',
+    is_permanent: false,
+    expires_hours: 24
+  });
+  
+  const [resolutionNotes, setResolutionNotes] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+
   // Load data on mount
   useEffect(() => {
     loadData();
@@ -76,7 +142,6 @@ export default function SecurityTab() {
     setError(null);
     
     try {
-      // Load all data in parallel
       const [
         statsRes,
         rolesRes,
@@ -116,6 +181,165 @@ export default function SecurityTab() {
       toast.error('Errore nel caricamento dati sicurezza');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // API Actions
+  const handleCreateRole = async () => {
+    if (!newRole.code || !newRole.name) {
+      toast.error('Codice e nome sono obbligatori');
+      return;
+    }
+    
+    setActionLoading(true);
+    try {
+      const response = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRole)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Ruolo creato con successo');
+        setShowCreateRoleDialog(false);
+        setNewRole({ code: '', name: '', description: '', sector: 'pa', level: 50, can_delegate: false });
+        loadData();
+      } else {
+        toast.error(data.error || 'Errore nella creazione del ruolo');
+      }
+    } catch (err: any) {
+      toast.error('Errore: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAssignRole = async () => {
+    if (!assignRole.userId || !assignRole.roleId) {
+      toast.error('Utente e ruolo sono obbligatori');
+      return;
+    }
+    
+    setActionLoading(true);
+    try {
+      const response = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${assignRole.roleId}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: parseInt(assignRole.userId),
+          territory_type: assignRole.territoryType,
+          territory_id: assignRole.territoryId || null
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Ruolo assegnato con successo');
+        setShowAssignRoleDialog(false);
+        setAssignRole({ userId: '', roleId: '', territoryType: 'comune', territoryId: '' });
+        loadData();
+      } else {
+        toast.error(data.error || 'Errore nell\'assegnazione del ruolo');
+      }
+    } catch (err: any) {
+      toast.error('Errore: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBlockIP = async () => {
+    if (!newBlockIP.ip_address) {
+      toast.error('Indirizzo IP obbligatorio');
+      return;
+    }
+    
+    // Validate IP format
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!ipRegex.test(newBlockIP.ip_address)) {
+      toast.error('Formato IP non valido');
+      return;
+    }
+    
+    setActionLoading(true);
+    try {
+      const expiresAt = newBlockIP.is_permanent 
+        ? null 
+        : new Date(Date.now() + newBlockIP.expires_hours * 60 * 60 * 1000).toISOString();
+      
+      const result = await blockIP({
+        ip_address: newBlockIP.ip_address,
+        reason: newBlockIP.reason || 'Blocco manuale da Security Tab',
+        is_permanent: newBlockIP.is_permanent,
+        expires_at: expiresAt || undefined
+      });
+      
+      if (result.success) {
+        toast.success(`IP ${newBlockIP.ip_address} bloccato`);
+        setShowBlockIPDialog(false);
+        setNewBlockIP({ ip_address: '', reason: '', is_permanent: false, expires_hours: 24 });
+        loadData();
+      }
+    } catch (err: any) {
+      toast.error('Errore: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnblockIP = async (ip: string) => {
+    setActionLoading(true);
+    try {
+      const result = await unblockIP(ip);
+      if (result.success) {
+        toast.success(`IP ${ip} sbloccato`);
+        loadData();
+      }
+    } catch (err: any) {
+      toast.error('Errore: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResolveEvent = async () => {
+    if (!selectedEvent) return;
+    
+    setActionLoading(true);
+    try {
+      const response = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/events/${selectedEvent.id}/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolution_notes: resolutionNotes })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Evento risolto');
+        setShowResolveEventDialog(false);
+        setSelectedEvent(null);
+        setResolutionNotes('');
+        loadData();
+      } else {
+        toast.error(data.error || 'Errore nella risoluzione');
+      }
+    } catch (err: any) {
+      toast.error('Errore: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleExportAudit = async () => {
+    try {
+      window.open(`${ORCHESTRATORE_API_BASE_URL}/api/security/audit/export?format=csv`, '_blank');
+      toast.success('Export avviato');
+    } catch (err: any) {
+      toast.error('Errore export: ' + err.message);
     }
   };
 
@@ -171,7 +395,7 @@ export default function SecurityTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header con Health Status */}
+      {/* Header con Health Status e Azioni */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-[#e8fbff]">Sicurezza e RBAC</h2>
@@ -179,7 +403,7 @@ export default function SecurityTab() {
             Gestione ruoli, permessi e monitoraggio sicurezza
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Badge className={
             healthStatus === 'healthy' 
               ? 'bg-green-500/20 text-green-400 border-green-500/30'
@@ -190,6 +414,10 @@ export default function SecurityTab() {
             {healthStatus === 'healthy' ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
             {healthStatus.charAt(0).toUpperCase() + healthStatus.slice(1)}
           </Badge>
+          <Button onClick={handleExportAudit} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export Audit
+          </Button>
           <Button onClick={loadData} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Aggiorna
@@ -357,6 +585,183 @@ export default function SecurityTab() {
 
         {/* ROLES TAB */}
         <TabsContent value="roles" className="space-y-6">
+          {/* Actions Bar */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#e8fbff]/50" />
+                <Input
+                  placeholder="Cerca ruolo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff] w-64"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Dialog open={showAssignRoleDialog} onOpenChange={setShowAssignRoleDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Assegna Ruolo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#1a2332] border-[#14b8a6]/30">
+                  <DialogHeader>
+                    <DialogTitle className="text-[#e8fbff]">Assegna Ruolo a Utente</DialogTitle>
+                    <DialogDescription className="text-[#e8fbff]/60">
+                      Assegna un ruolo RBAC a un utente del sistema
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label className="text-[#e8fbff]">ID Utente</Label>
+                      <Input
+                        placeholder="Es: 123"
+                        value={assignRole.userId}
+                        onChange={(e) => setAssignRole({...assignRole, userId: e.target.value})}
+                        className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[#e8fbff]">Ruolo</Label>
+                      <Select value={assignRole.roleId} onValueChange={(v) => setAssignRole({...assignRole, roleId: v})}>
+                        <SelectTrigger className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]">
+                          <SelectValue placeholder="Seleziona ruolo" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#1a2332] border-[#14b8a6]/30">
+                          {roles.map(role => (
+                            <SelectItem key={role.id} value={role.id.toString()} className="text-[#e8fbff]">
+                              {role.name} ({role.code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[#e8fbff]">Tipo Territorio</Label>
+                      <Select value={assignRole.territoryType} onValueChange={(v) => setAssignRole({...assignRole, territoryType: v})}>
+                        <SelectTrigger className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#1a2332] border-[#14b8a6]/30">
+                          <SelectItem value="comune" className="text-[#e8fbff]">Comune</SelectItem>
+                          <SelectItem value="provincia" className="text-[#e8fbff]">Provincia</SelectItem>
+                          <SelectItem value="regione" className="text-[#e8fbff]">Regione</SelectItem>
+                          <SelectItem value="nazionale" className="text-[#e8fbff]">Nazionale</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[#e8fbff]">ID Territorio (opzionale)</Label>
+                      <Input
+                        placeholder="Es: ISTAT code"
+                        value={assignRole.territoryId}
+                        onChange={(e) => setAssignRole({...assignRole, territoryId: e.target.value})}
+                        className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowAssignRoleDialog(false)}>
+                      Annulla
+                    </Button>
+                    <Button onClick={handleAssignRole} disabled={actionLoading} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80">
+                      {actionLoading ? 'Assegnazione...' : 'Assegna'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={showCreateRoleDialog} onOpenChange={setShowCreateRoleDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-[#14b8a6] hover:bg-[#14b8a6]/80">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuovo Ruolo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#1a2332] border-[#14b8a6]/30">
+                  <DialogHeader>
+                    <DialogTitle className="text-[#e8fbff]">Crea Nuovo Ruolo</DialogTitle>
+                    <DialogDescription className="text-[#e8fbff]/60">
+                      Definisci un nuovo ruolo nel sistema RBAC
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-[#e8fbff]">Codice *</Label>
+                        <Input
+                          placeholder="es: market_manager"
+                          value={newRole.code}
+                          onChange={(e) => setNewRole({...newRole, code: e.target.value})}
+                          className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[#e8fbff]">Nome *</Label>
+                        <Input
+                          placeholder="es: Gestore Mercato"
+                          value={newRole.name}
+                          onChange={(e) => setNewRole({...newRole, name: e.target.value})}
+                          className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[#e8fbff]">Descrizione</Label>
+                      <Textarea
+                        placeholder="Descrizione del ruolo..."
+                        value={newRole.description}
+                        onChange={(e) => setNewRole({...newRole, description: e.target.value})}
+                        className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-[#e8fbff]">Settore</Label>
+                        <Select value={newRole.sector} onValueChange={(v) => setNewRole({...newRole, sector: v})}>
+                          <SelectTrigger className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#1a2332] border-[#14b8a6]/30">
+                            <SelectItem value="system" className="text-[#e8fbff]">System</SelectItem>
+                            <SelectItem value="pa" className="text-[#e8fbff]">PA</SelectItem>
+                            <SelectItem value="commerce" className="text-[#e8fbff]">Commerce</SelectItem>
+                            <SelectItem value="inspection" className="text-[#e8fbff]">Inspection</SelectItem>
+                            <SelectItem value="services" className="text-[#e8fbff]">Services</SelectItem>
+                            <SelectItem value="external" className="text-[#e8fbff]">External</SelectItem>
+                            <SelectItem value="citizen" className="text-[#e8fbff]">Citizen</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[#e8fbff]">Livello (10-100)</Label>
+                        <Input
+                          type="number"
+                          min="10"
+                          max="100"
+                          value={newRole.level}
+                          onChange={(e) => setNewRole({...newRole, level: parseInt(e.target.value)})}
+                          className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCreateRoleDialog(false)}>
+                      Annulla
+                    </Button>
+                    <Button onClick={handleCreateRole} disabled={actionLoading} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80">
+                      {actionLoading ? 'Creazione...' : 'Crea Ruolo'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          {/* Roles List */}
           <Card className="bg-[#1a2332] border-[#14b8a6]/30">
             <CardHeader>
               <CardTitle className="text-[#e8fbff] flex items-center gap-2">
@@ -366,7 +771,13 @@ export default function SecurityTab() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {roles.map((role) => (
+                {roles
+                  .filter(role => 
+                    searchTerm === '' || 
+                    role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    role.code.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((role) => (
                   <div 
                     key={role.id}
                     className="flex items-center justify-between p-4 bg-[#0b1220] rounded-lg hover:bg-[#0b1220]/80 cursor-pointer transition-colors"
@@ -500,6 +911,20 @@ export default function SecurityTab() {
                         <div className="text-xs text-[#e8fbff]/50">
                           {new Date(event.created_at).toLocaleString('it-IT')}
                         </div>
+                        {!event.is_resolved && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEvent(event);
+                              setShowResolveEventDialog(true);
+                            }}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            Risolvi
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -507,10 +932,121 @@ export default function SecurityTab() {
               )}
             </CardContent>
           </Card>
+
+          {/* Resolve Event Dialog */}
+          <Dialog open={showResolveEventDialog} onOpenChange={setShowResolveEventDialog}>
+            <DialogContent className="bg-[#1a2332] border-[#14b8a6]/30">
+              <DialogHeader>
+                <DialogTitle className="text-[#e8fbff]">Risolvi Evento</DialogTitle>
+                <DialogDescription className="text-[#e8fbff]/60">
+                  Segna l'evento come risolto e aggiungi note
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                {selectedEvent && (
+                  <div className="p-3 bg-[#0b1220] rounded-lg">
+                    <div className="text-[#e8fbff] font-medium">{selectedEvent.event_type}</div>
+                    <div className="text-sm text-[#e8fbff]/50">{selectedEvent.description}</div>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">Note di Risoluzione</Label>
+                  <Textarea
+                    placeholder="Descrivi come è stato risolto l'evento..."
+                    value={resolutionNotes}
+                    onChange={(e) => setResolutionNotes(e.target.value)}
+                    className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+                    rows={4}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowResolveEventDialog(false)}>
+                  Annulla
+                </Button>
+                <Button onClick={handleResolveEvent} disabled={actionLoading} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80">
+                  {actionLoading ? 'Risoluzione...' : 'Segna come Risolto'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* ACCESS TAB */}
         <TabsContent value="access" className="space-y-6">
+          {/* Block IP Button */}
+          <div className="flex justify-end">
+            <Dialog open={showBlockIPDialog} onOpenChange={setShowBlockIPDialog}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Ban className="h-4 w-4 mr-2" />
+                  Blocca IP
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-[#1a2332] border-[#ef4444]/30">
+                <DialogHeader>
+                  <DialogTitle className="text-[#e8fbff]">Blocca Indirizzo IP</DialogTitle>
+                  <DialogDescription className="text-[#e8fbff]/60">
+                    Aggiungi un IP alla blacklist per bloccare l'accesso
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label className="text-[#e8fbff]">Indirizzo IP *</Label>
+                    <Input
+                      placeholder="Es: 192.168.1.100"
+                      value={newBlockIP.ip_address}
+                      onChange={(e) => setNewBlockIP({...newBlockIP, ip_address: e.target.value})}
+                      className="bg-[#0b1220] border-[#ef4444]/30 text-[#e8fbff]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[#e8fbff]">Motivo</Label>
+                    <Textarea
+                      placeholder="Motivo del blocco..."
+                      value={newBlockIP.reason}
+                      onChange={(e) => setNewBlockIP({...newBlockIP, reason: e.target.value})}
+                      className="bg-[#0b1220] border-[#ef4444]/30 text-[#e8fbff]"
+                    />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="permanent"
+                        checked={newBlockIP.is_permanent}
+                        onChange={(e) => setNewBlockIP({...newBlockIP, is_permanent: e.target.checked})}
+                        className="rounded"
+                      />
+                      <Label htmlFor="permanent" className="text-[#e8fbff]">Blocco permanente</Label>
+                    </div>
+                    {!newBlockIP.is_permanent && (
+                      <div className="flex items-center gap-2">
+                        <Label className="text-[#e8fbff]">Durata (ore):</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="8760"
+                          value={newBlockIP.expires_hours}
+                          onChange={(e) => setNewBlockIP({...newBlockIP, expires_hours: parseInt(e.target.value)})}
+                          className="bg-[#0b1220] border-[#ef4444]/30 text-[#e8fbff] w-24"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowBlockIPDialog(false)}>
+                    Annulla
+                  </Button>
+                  <Button onClick={handleBlockIP} disabled={actionLoading} variant="destructive">
+                    {actionLoading ? 'Blocco...' : 'Blocca IP'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Login Attempts */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
@@ -583,6 +1119,14 @@ export default function SecurityTab() {
                               Temporaneo
                             </Badge>
                           )}
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleUnblockIP(ip.ip_address)}
+                            disabled={actionLoading}
+                          >
+                            <Unlock className="h-4 w-4 text-green-500" />
+                          </Button>
                         </div>
                       </div>
                     ))}
