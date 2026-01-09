@@ -1014,3 +1014,303 @@ export const autorizzazioni = pgTable("autorizzazioni", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+
+// ============================================
+// SECURITY TAB - RBAC & ACCESS CONTROL
+// ============================================
+
+// Enum per i settori del sistema
+export const sectorEnum = pgEnum("sector", [
+  "sistema",    // Amministrazione sistema
+  "pa",         // Pubblica Amministrazione
+  "mercato",    // Gestione Mercati
+  "impresa",    // Imprese e Operatori
+  "esterno",    // Fornitori esterni
+  "pubblico",   // Accesso pubblico
+]);
+
+// Enum per severity degli eventi
+export const severityEnum = pgEnum("severity", [
+  "low",
+  "medium",
+  "high",
+  "critical",
+]);
+
+// Enum per tipi eventi sicurezza
+export const securityEventTypeEnum = pgEnum("security_event_type", [
+  "login_failed",
+  "login_success",
+  "permission_denied",
+  "suspicious_activity",
+  "brute_force_attempt",
+  "session_hijack",
+  "api_abuse",
+]);
+
+// Enum per scope dei permessi
+export const permissionScopeEnum = pgEnum("permission_scope", [
+  "all",        // Accesso globale
+  "territory",  // Limitato al territorio
+  "market",     // Limitato al mercato
+  "own",        // Solo proprie risorse
+  "delegated",  // Risorse delegate
+  "none",       // Nessun accesso
+]);
+
+// Enum per tipo territorio
+export const territoryTypeEnum = pgEnum("territory_type", [
+  "national",   // Nazionale
+  "regional",   // Regionale
+  "provincial", // Provinciale
+  "municipal",  // Comunale
+  "market",     // Singolo mercato
+]);
+
+// Enum per tipo dispositivo
+export const deviceTypeEnum = pgEnum("device_type", [
+  "desktop",
+  "mobile",
+  "tablet",
+  "api",
+]);
+
+// Enum per tipo azione accesso
+export const accessActionTypeEnum = pgEnum("access_action_type", [
+  "login",
+  "logout",
+  "page_view",
+  "api_call",
+  "data_export",
+  "data_modify",
+  "admin_action",
+]);
+
+// ============================================
+// TABELLA 1: user_roles (ruoli utente)
+// ============================================
+export const userRoles = pgTable("user_roles", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  level: integer("level").notNull().default(99), // 0 = super admin, 99 = nessun privilegio
+  sector: sectorEnum("sector"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  codeIdx: index("user_roles_code_idx").on(table.code),
+}));
+export type UserRole = typeof userRoles.$inferSelect;
+export type InsertUserRole = typeof userRoles.$inferInsert;
+
+// ============================================
+// TABELLA 2: permissions (permessi granulari)
+// ============================================
+export const permissions = pgTable("permissions", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  module: varchar("module", { length: 50 }).notNull(), // es: "dmsHub.markets", "security.users"
+  action: varchar("action", { length: 50 }).notNull(), // es: "read", "write", "delete", "admin"
+  description: text("description"),
+  riskLevel: varchar("risk_level", { length: 20 }).default("low"), // low, medium, high, critical
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  moduleActionIdx: index("permissions_module_action_idx").on(table.module, table.action),
+  uniqueModuleAction: index("permissions_unique_idx").on(table.module, table.action),
+}));
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = typeof permissions.$inferInsert;
+
+// ============================================
+// TABELLA 3: role_permissions (matrice ruoli-permessi)
+// ============================================
+export const rolePermissions = pgTable("role_permissions", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  roleId: integer("role_id").notNull().references(() => userRoles.id, { onDelete: "cascade" }),
+  permissionId: integer("permission_id").notNull().references(() => permissions.id, { onDelete: "cascade" }),
+  scopeType: permissionScopeEnum("scope_type").default("own"),
+  scopeValue: text("scope_value"), // es: ID territorio, ID mercato, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  roleIdx: index("role_permissions_role_idx").on(table.roleId),
+  permIdx: index("role_permissions_perm_idx").on(table.permissionId),
+  uniqueRolePerm: index("role_permissions_unique_idx").on(table.roleId, table.permissionId),
+}));
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = typeof rolePermissions.$inferInsert;
+
+// ============================================
+// TABELLA 4: user_role_assignments (assegnazioni ruoli agli utenti)
+// ============================================
+export const userRoleAssignments = pgTable("user_role_assignments", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  roleId: integer("role_id").notNull().references(() => userRoles.id, { onDelete: "cascade" }),
+  territoryType: territoryTypeEnum("territory_type"),
+  territoryId: integer("territory_id"), // ID del territorio (comune, mercato, etc.)
+  assignedBy: integer("assigned_by").references(() => users.id),
+  validFrom: timestamp("valid_from").defaultNow().notNull(),
+  validUntil: timestamp("valid_until"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("user_role_assignments_user_idx").on(table.userId),
+  roleIdx: index("user_role_assignments_role_idx").on(table.roleId),
+  activeIdx: index("user_role_assignments_active_idx").on(table.isActive),
+}));
+export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
+export type InsertUserRoleAssignment = typeof userRoleAssignments.$inferInsert;
+
+// ============================================
+// TABELLA 5: user_sessions (sessioni utente)
+// ============================================
+export const userSessions = pgTable("user_sessions", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionToken: varchar("session_token", { length: 255 }).notNull().unique(),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  deviceType: deviceTypeEnum("device_type"),
+  lastActivity: timestamp("last_activity").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("user_sessions_user_idx").on(table.userId),
+  tokenIdx: index("user_sessions_token_idx").on(table.sessionToken),
+  activeIdx: index("user_sessions_active_idx").on(table.isActive),
+}));
+export type UserSession = typeof userSessions.$inferSelect;
+export type InsertUserSession = typeof userSessions.$inferInsert;
+
+// ============================================
+// TABELLA 6: access_logs (log accessi)
+// ============================================
+export const accessLogs = pgTable("access_logs", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  sessionId: integer("session_id").references(() => userSessions.id),
+  actionType: accessActionTypeEnum("action_type").notNull(),
+  resource: varchar("resource", { length: 255 }), // es: "/api/markets/123"
+  method: varchar("method", { length: 10 }), // GET, POST, PUT, DELETE
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  statusCode: integer("status_code"),
+  responseTime: integer("response_time"), // in ms
+  metadata: text("metadata"), // JSON con dettagli aggiuntivi
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("access_logs_user_idx").on(table.userId),
+  actionIdx: index("access_logs_action_idx").on(table.actionType),
+  createdIdx: index("access_logs_created_idx").on(table.createdAt),
+}));
+export type AccessLog = typeof accessLogs.$inferSelect;
+export type InsertAccessLog = typeof accessLogs.$inferInsert;
+
+// ============================================
+// TABELLA 7: security_events (eventi sicurezza)
+// ============================================
+export const securityEvents = pgTable("security_events", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  eventType: securityEventTypeEnum("event_type").notNull(),
+  severity: severityEnum("severity").notNull(),
+  userId: integer("user_id").references(() => users.id),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  description: text("description").notNull(),
+  metadata: text("metadata"), // JSON con dettagli aggiuntivi
+  resolved: boolean("resolved").default(false).notNull(),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  resolutionNotes: text("resolution_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  typeIdx: index("security_events_type_idx").on(table.eventType),
+  severityIdx: index("security_events_severity_idx").on(table.severity),
+  resolvedIdx: index("security_events_resolved_idx").on(table.resolved),
+  createdIdx: index("security_events_created_idx").on(table.createdAt),
+}));
+export type SecurityEvent = typeof securityEvents.$inferSelect;
+export type InsertSecurityEvent = typeof securityEvents.$inferInsert;
+
+// ============================================
+// TABELLA 8: login_attempts (tentativi di login)
+// ============================================
+export const loginAttempts = pgTable("login_attempts", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  email: varchar("email", { length: 320 }),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  success: boolean("success").notNull(),
+  failureReason: varchar("failure_reason", { length: 100 }), // invalid_credentials, account_locked, expired_session
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  emailIdx: index("login_attempts_email_idx").on(table.email),
+  ipIdx: index("login_attempts_ip_idx").on(table.ipAddress),
+  createdIdx: index("login_attempts_created_idx").on(table.createdAt),
+  successIdx: index("login_attempts_success_idx").on(table.success),
+}));
+export type LoginAttempt = typeof loginAttempts.$inferSelect;
+export type InsertLoginAttempt = typeof loginAttempts.$inferInsert;
+
+// ============================================
+// TABELLA 9: ip_blacklist (IP bloccati)
+// ============================================
+export const ipBlacklist = pgTable("ip_blacklist", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  ipAddress: varchar("ip_address", { length: 50 }).notNull().unique(),
+  reason: text("reason"),
+  blockedBy: integer("blocked_by").references(() => users.id),
+  blockedUntil: timestamp("blocked_until"), // NULL = permanente
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  ipIdx: index("ip_blacklist_ip_idx").on(table.ipAddress),
+  activeIdx: index("ip_blacklist_active_idx").on(table.isActive),
+}));
+export type IPBlacklist = typeof ipBlacklist.$inferSelect;
+export type InsertIPBlacklist = typeof ipBlacklist.$inferInsert;
+
+// ============================================
+// TABELLA 10: compliance_certificates (certificati GDPR)
+// ============================================
+export const complianceCertificates = pgTable("compliance_certificates", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  certificateType: varchar("certificate_type", { length: 50 }).notNull(), // gdpr_consent, privacy_policy, terms_accepted
+  version: varchar("version", { length: 20 }),
+  acceptedAt: timestamp("accepted_at").defaultNow().notNull(),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("compliance_certificates_user_idx").on(table.userId),
+  typeIdx: index("compliance_certificates_type_idx").on(table.certificateType),
+}));
+export type ComplianceCertificate = typeof complianceCertificates.$inferSelect;
+export type InsertComplianceCertificate = typeof complianceCertificates.$inferInsert;
+
+// ============================================
+// TABELLA 11: delegations (deleghe tra utenti)
+// ============================================
+export const securityDelegations = pgTable("security_delegations", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  delegatorId: integer("delegator_id").notNull().references(() => users.id),
+  delegateId: integer("delegate_id").notNull().references(() => users.id),
+  permissionId: integer("permission_id").references(() => permissions.id),
+  scopeType: permissionScopeEnum("scope_type"),
+  scopeValue: text("scope_value"),
+  validFrom: timestamp("valid_from").defaultNow().notNull(),
+  validUntil: timestamp("valid_until"),
+  isActive: boolean("is_active").default(true).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  delegatorIdx: index("security_delegations_delegator_idx").on(table.delegatorId),
+  delegateIdx: index("security_delegations_delegate_idx").on(table.delegateId),
+  activeIdx: index("security_delegations_active_idx").on(table.isActive),
+}));
+export type SecurityDelegation = typeof securityDelegations.$inferSelect;
+export type InsertSecurityDelegation = typeof securityDelegations.$inferInsert;
+
