@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   QrCode, 
   Camera, 
+  CameraOff,
   CheckCircle2, 
   XCircle, 
   Loader2, 
@@ -15,7 +17,8 @@ import {
   ShoppingBag,
   Bike,
   Footprints,
-  Bus
+  Bus,
+  Keyboard
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
@@ -29,7 +32,7 @@ interface CitizenInfo {
 
 interface ScanResult {
   success: boolean;
-  citizen?: CitizenInfo;
+  citizen?: CitizenInfo & { new_balance?: number };
   tcc_assigned?: number;
   message?: string;
   error?: string;
@@ -50,7 +53,70 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
   const [citizenInfo, setCitizenInfo] = useState<CitizenInfo | null>(null);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [inputMode, setInputMode] = useState<'camera' | 'manual'>('camera');
+  
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerContainerId = 'qr-scanner-container';
+
+  // Inizializza lo scanner
+  const startScanner = useCallback(async () => {
+    try {
+      setCameraError(null);
+      
+      if (scannerRef.current) {
+        await scannerRef.current.stop();
+      }
+
+      const html5QrCode = new Html5Qrcode(scannerContainerId);
+      scannerRef.current = html5QrCode;
+
+      await html5QrCode.start(
+        { facingMode: 'environment' }, // Usa la fotocamera posteriore
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
+        },
+        (decodedText) => {
+          // QR Code scansionato con successo
+          handleQRInput(decodedText);
+          // Ferma lo scanner dopo la scansione
+          stopScanner();
+        },
+        (errorMessage) => {
+          // Errore di scansione (normale durante la ricerca)
+          console.debug('QR scan error:', errorMessage);
+        }
+      );
+
+      setCameraActive(true);
+    } catch (err: any) {
+      console.error('Errore avvio scanner:', err);
+      setCameraError(err.message || 'Impossibile accedere alla fotocamera');
+      setCameraActive(false);
+    }
+  }, []);
+
+  // Ferma lo scanner
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current = null;
+      } catch (err) {
+        console.error('Errore stop scanner:', err);
+      }
+    }
+    setCameraActive(false);
+  }, []);
+
+  // Cleanup quando il componente viene smontato
+  useEffect(() => {
+    return () => {
+      stopScanner();
+    };
+  }, [stopScanner]);
 
   // Valida QR Code senza assegnare TCC
   const validateQR = async (qrData: string) => {
@@ -72,14 +138,14 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
       } else {
         setScanResult({
           success: false,
-          error: data.error || 'QR Code non valido'
+          error: data.error || 'QR Code non valido o scaduto'
         });
       }
     } catch (err) {
       console.error('Errore validazione QR:', err);
       setScanResult({
         success: false,
-        error: 'Errore di connessione'
+        error: 'Errore di connessione al server'
       });
     } finally {
       setValidating(false);
@@ -134,7 +200,7 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
       console.error('Errore assegnazione TCC:', err);
       setScanResult({
         success: false,
-        error: 'Errore di connessione'
+        error: 'Errore di connessione al server'
       });
     } finally {
       setScanning(false);
@@ -160,7 +226,7 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
     }
   };
 
-  // Gestione input QR manuale
+  // Gestione input QR manuale o da scanner
   const handleQRInput = (value: string) => {
     setQrInput(value);
     setScanResult(null);
@@ -170,6 +236,15 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
     if (value.startsWith('tcc://') && value.length > 10) {
       validateQR(value);
     }
+  };
+
+  // Reset per nuova scansione
+  const resetScanner = () => {
+    setQrInput('');
+    setCitizenInfo(null);
+    setScanResult(null);
+    setEuroSpent('');
+    setTransportMode('');
   };
 
   return (
@@ -189,49 +264,116 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
         </CardHeader>
       </Card>
 
-      {/* Input QR Code */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="h-5 w-5" />
-            Scansiona QR Code
-          </CardTitle>
-          <CardDescription>
-            Inserisci il codice QR del cliente o scansionalo con la fotocamera
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="qr-input">Codice QR</Label>
-            <Input
-              id="qr-input"
-              placeholder="tcc://30/abc123..."
-              value={qrInput}
-              onChange={(e) => handleQRInput(e.target.value)}
-              className="font-mono"
-            />
-          </div>
+      {/* Toggle Camera/Manual */}
+      <div className="flex gap-2">
+        <Button
+          variant={inputMode === 'camera' ? 'default' : 'outline'}
+          onClick={() => setInputMode('camera')}
+          className="flex-1"
+        >
+          <Camera className="h-4 w-4 mr-2" />
+          Fotocamera
+        </Button>
+        <Button
+          variant={inputMode === 'manual' ? 'default' : 'outline'}
+          onClick={() => {
+            setInputMode('manual');
+            stopScanner();
+          }}
+          className="flex-1"
+        >
+          <Keyboard className="h-4 w-4 mr-2" />
+          Manuale
+        </Button>
+      </div>
 
-          <Button 
-            onClick={() => validateQR(qrInput)} 
-            disabled={!qrInput || validating}
-            className="w-full"
-            variant="outline"
-          >
-            {validating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Validazione...
-              </>
-            ) : (
-              <>
-                <QrCode className="h-4 w-4 mr-2" />
-                Valida QR Code
-              </>
+      {/* Scanner Fotocamera */}
+      {inputMode === 'camera' && !citizenInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5" />
+              Scansiona QR Code
+            </CardTitle>
+            <CardDescription>
+              Inquadra il QR Code del cliente con la fotocamera
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Container per lo scanner */}
+            <div 
+              id={scannerContainerId} 
+              className="w-full aspect-square max-w-sm mx-auto bg-gray-900 rounded-lg overflow-hidden"
+            />
+            
+            {cameraError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <p className="font-medium">Errore fotocamera</p>
+                <p>{cameraError}</p>
+              </div>
             )}
-          </Button>
-        </CardContent>
-      </Card>
+
+            <div className="flex gap-2">
+              {!cameraActive ? (
+                <Button onClick={startScanner} className="flex-1">
+                  <Camera className="h-4 w-4 mr-2" />
+                  Avvia Fotocamera
+                </Button>
+              ) : (
+                <Button onClick={stopScanner} variant="destructive" className="flex-1">
+                  <CameraOff className="h-4 w-4 mr-2" />
+                  Ferma Fotocamera
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Input Manuale */}
+      {inputMode === 'manual' && !citizenInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Keyboard className="h-5 w-5" />
+              Inserimento Manuale
+            </CardTitle>
+            <CardDescription>
+              Inserisci il codice QR del cliente manualmente
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="qr-input">Codice QR</Label>
+              <Input
+                id="qr-input"
+                placeholder="tcc://30/abc123..."
+                value={qrInput}
+                onChange={(e) => handleQRInput(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+
+            <Button 
+              onClick={() => validateQR(qrInput)} 
+              disabled={!qrInput || validating}
+              className="w-full"
+            >
+              {validating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Validazione...
+                </>
+              ) : (
+                <>
+                  <QrCode className="h-4 w-4 mr-2" />
+                  Valida QR Code
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Info Cittadino */}
       {citizenInfo && (
@@ -349,23 +491,32 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
               <p className="text-4xl font-bold text-primary">{getEstimatedTCC()}</p>
             </div>
 
-            <Button 
-              onClick={assignTCC} 
-              disabled={scanning || getEstimatedTCC() === 0}
-              className="w-full h-14 text-lg"
-            >
-              {scanning ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Assegnazione in corso...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  Assegna {getEstimatedTCC()} TCC
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={resetScanner}
+                className="flex-1"
+              >
+                Annulla
+              </Button>
+              <Button 
+                onClick={assignTCC} 
+                disabled={scanning || getEstimatedTCC() === 0}
+                className="flex-1 h-14 text-lg"
+              >
+                {scanning ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Assegnazione...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 mr-2" />
+                    Assegna {getEstimatedTCC()} TCC
+                  </>
+                )}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -377,7 +528,7 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
             <div className="flex items-center gap-4">
               {scanResult.success ? (
                 <>
-                  <CheckCircle2 className="h-12 w-12 text-green-600" />
+                  <CheckCircle2 className="h-12 w-12 text-green-600 flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-lg text-green-700">
                       {scanResult.message}
@@ -391,7 +542,7 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
                 </>
               ) : (
                 <>
-                  <XCircle className="h-12 w-12 text-red-600" />
+                  <XCircle className="h-12 w-12 text-red-600 flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-lg text-red-700">Errore</p>
                     <p className="text-sm text-red-600">{scanResult.error}</p>
@@ -399,6 +550,16 @@ export default function MerchantQRScanner({ shopId, shopName = 'Il tuo negozio' 
                 </>
               )}
             </div>
+            
+            {scanResult.success && (
+              <Button 
+                onClick={resetScanner} 
+                className="w-full mt-4"
+                variant="outline"
+              >
+                Scansiona un altro cliente
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
