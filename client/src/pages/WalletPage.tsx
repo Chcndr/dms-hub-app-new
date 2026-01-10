@@ -677,22 +677,25 @@ export default function WalletPage() {
                         {/* Toggle Camera/Manual */}
                         <div className="flex gap-2 mb-4">
                           <Button
+                            type="button"
                             variant={inputMode === 'camera' ? 'default' : 'outline'}
-                            onClick={() => setInputMode('camera')}
+                            onClick={() => { console.log('Camera clicked'); setInputMode('camera'); }}
                             className="flex-1"
                           >
                             <Camera className="h-4 w-4 mr-2" />
                             Fotocamera
                           </Button>
                           <Button
+                            type="button"
                             variant={inputMode === 'manual' ? 'default' : 'outline'}
-                            onClick={() => setInputMode('manual')}
+                            onClick={() => { console.log('Manual clicked'); setInputMode('manual'); }}
                             className="flex-1"
                           >
                             <Keyboard className="h-4 w-4 mr-2" />
                             Manuale
                           </Button>
                         </div>
+                        <p className="text-xs text-muted-foreground mb-2">Modalità: {inputMode}</p>
 
                         {inputMode === 'camera' ? (
                           <div className="space-y-4">
