@@ -206,6 +206,8 @@ export default function WalletPage() {
 
   // Valida QR Code
   const validateQR = async (qrData: string) => {
+    console.log('validateQR called with:', qrData);
+    alert('Validazione QR: ' + qrData);
     try {
       setValidating(true);
       setCitizenInfo(null);
@@ -761,7 +763,19 @@ export default function WalletPage() {
                                 className="font-mono"
                               />
                             </div>
-                            <Button onClick={() => validateQR(qrInput)} disabled={!qrInput || validating} className="w-full">
+                            <Button 
+                              type="button"
+                              onClick={() => {
+                                console.log('Valida clicked, qrInput:', qrInput);
+                                if (!qrInput) {
+                                  alert('Inserisci un codice QR prima di validare');
+                                  return;
+                                }
+                                validateQR(qrInput);
+                              }} 
+                              disabled={validating} 
+                              className="w-full"
+                            >
                               {validating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <QrCode className="h-4 w-4 mr-2" />}
                               {validating ? 'Validazione...' : 'Valida QR Code'}
                             </Button>
