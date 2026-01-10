@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -98,6 +99,9 @@ export default function WalletPage() {
   const [citizenInfo, setCitizenInfo] = useState<CitizenInfo | null>(null);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [inputMode, setInputMode] = useState<'camera' | 'manual'>('manual');
+  const [cameraActive, setCameraActive] = useState(false);
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const scannerContainerRef = useRef<HTMLDivElement>(null);
   
   // Riscatto state
   const [redeemAmount, setRedeemAmount] = useState('');
@@ -364,7 +368,67 @@ export default function WalletPage() {
   };
 
   // Reset scanner
+  // Camera Scanner Functions
+  const startCameraScanner = async () => {
+    try {
+      if (!scannerContainerRef.current) return;
+      
+      const html5QrCode = new Html5Qrcode('qr-reader');
+      html5QrCodeRef.current = html5QrCode;
+      
+      await html5QrCode.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        (decodedText) => {
+          // QR Code scansionato con successo
+          handleQRInput(decodedText);
+          validateQR(decodedText);
+          stopCameraScanner();
+        },
+        () => {}
+      );
+      setCameraActive(true);
+    } catch (err) {
+      console.error('Errore avvio camera:', err);
+      setInputMode('manual');
+    }
+  };
+
+  const stopCameraScanner = async () => {
+    if (html5QrCodeRef.current) {
+      try {
+        await html5QrCodeRef.current.stop();
+        html5QrCodeRef.current = null;
+      } catch (err) {
+        console.error('Errore stop camera:', err);
+      }
+    }
+    setCameraActive(false);
+  };
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (html5QrCodeRef.current) {
+        html5QrCodeRef.current.stop().catch(() => {});
+      }
+    };
+  }, []);
+
+  // Start/stop camera based on inputMode
+  useEffect(() => {
+    if (inputMode === 'camera' && activeTab === 'impresa' && !citizenInfo) {
+      startCameraScanner();
+    } else {
+      stopCameraScanner();
+    }
+  }, [inputMode, activeTab, citizenInfo]);
+
   const resetScanner = () => {
+    stopCameraScanner();
     setQrInput('');
     setCitizenInfo(null);
     setScanResult(null);
@@ -610,19 +674,62 @@ export default function WalletPage() {
                   <CardContent className="space-y-4">
                     {!citizenInfo ? (
                       <>
-                        <div className="space-y-2">
-                          <Label>Codice QR</Label>
-                          <Input
-                            placeholder="tcc://30/abc123..."
-                            value={qrInput}
-                            onChange={(e) => handleQRInput(e.target.value)}
-                            className="font-mono"
-                          />
+                        {/* Toggle Camera/Manual */}
+                        <div className="flex gap-2 mb-4">
+                          <Button
+                            variant={inputMode === 'camera' ? 'default' : 'outline'}
+                            onClick={() => setInputMode('camera')}
+                            className="flex-1"
+                          >
+                            <Camera className="h-4 w-4 mr-2" />
+                            Fotocamera
+                          </Button>
+                          <Button
+                            variant={inputMode === 'manual' ? 'default' : 'outline'}
+                            onClick={() => setInputMode('manual')}
+                            className="flex-1"
+                          >
+                            <Keyboard className="h-4 w-4 mr-2" />
+                            Manuale
+                          </Button>
                         </div>
-                        <Button onClick={() => validateQR(qrInput)} disabled={!qrInput || validating} className="w-full">
-                          {validating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <QrCode className="h-4 w-4 mr-2" />}
-                          {validating ? 'Validazione...' : 'Valida QR Code'}
-                        </Button>
+
+                        {inputMode === 'camera' ? (
+                          <div className="space-y-4">
+                            <div 
+                              ref={scannerContainerRef}
+                              id="qr-reader" 
+                              className="w-full aspect-square bg-black rounded-lg overflow-hidden"
+                            />
+                            {cameraActive && (
+                              <p className="text-center text-sm text-muted-foreground">
+                                Inquadra il QR Code del cliente
+                              </p>
+                            )}
+                            {!cameraActive && (
+                              <div className="text-center py-8">
+                                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                                <p className="text-sm text-muted-foreground">Avvio fotocamera...</p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-2">
+                              <Label>Codice QR</Label>
+                              <Input
+                                placeholder="tcc://30/abc123..."
+                                value={qrInput}
+                                onChange={(e) => handleQRInput(e.target.value)}
+                                className="font-mono"
+                              />
+                            </div>
+                            <Button onClick={() => validateQR(qrInput)} disabled={!qrInput || validating} className="w-full">
+                              {validating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <QrCode className="h-4 w-4 mr-2" />}
+                              {validating ? 'Validazione...' : 'Valida QR Code'}
+                            </Button>
+                          </>
+                        )}
                       </>
                     ) : (
                       <>

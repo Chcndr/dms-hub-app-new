@@ -7,7 +7,7 @@ import { useLocation } from 'wouter';
 import { startLogin } from '@/api/authClient';
 import { 
   X, Shield, Users, Building2, Landmark, Loader2, 
-  CreditCard, Key, ChevronLeft
+  CreditCard, Key, ChevronLeft, Mail
 } from 'lucide-react';
 
 interface LoginModalProps {
@@ -16,13 +16,16 @@ interface LoginModalProps {
 }
 
 type UserType = 'citizen' | 'business' | 'pa' | null;
-type AuthMethod = 'spid' | 'cie' | 'cns' | 'google' | 'apple' | null;
+type AuthMethod = 'spid' | 'cie' | 'cns' | 'google' | 'apple' | 'email' | null;
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [, navigate] = useLocation();
   const [userType, setUserType] = useState<UserType>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [emailForm, setEmailForm] = useState({ email: '', password: '', name: '', confirmPassword: '' });
 
   if (!isOpen) return null;
 
@@ -55,6 +58,78 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleBack = () => {
     setUserType(null);
     setError('');
+    setShowEmailForm(false);
+    setIsRegistering(false);
+  };
+
+  const handleEmailLogin = async () => {
+    if (!emailForm.email || !emailForm.password) {
+      setError('Inserisci email e password');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('https://orchestratore.mio-hub.me/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailForm.email, password: emailForm.password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+        navigate('/wallet');
+        handleClose();
+      } else {
+        setError(data.error || 'Credenziali non valide');
+      }
+    } catch (err) {
+      setError('Errore di connessione');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailRegister = async () => {
+    if (!emailForm.email || !emailForm.password || !emailForm.name) {
+      setError('Compila tutti i campi');
+      return;
+    }
+    if (emailForm.password !== emailForm.confirmPassword) {
+      setError('Le password non coincidono');
+      return;
+    }
+    if (emailForm.password.length < 6) {
+      setError('La password deve essere di almeno 6 caratteri');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('https://orchestratore.mio-hub.me/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: emailForm.email, 
+          password: emailForm.password,
+          name: emailForm.name
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+        navigate('/wallet');
+        handleClose();
+      } else {
+        setError(data.error || 'Errore durante la registrazione');
+      }
+    } catch (err) {
+      setError('Errore di connessione');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Schermata selezione tipo utente
@@ -187,6 +262,109 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           </>
         )}
       </button>
+
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border"></div>
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="px-2 bg-background text-muted-foreground">oppure</span>
+        </div>
+      </div>
+
+      {/* Email */}
+      <button
+        onClick={() => setShowEmailForm(true)}
+        disabled={loading}
+        className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50"
+      >
+        <Mail className="w-5 h-5" />
+        <span className="font-medium">Continua con Email</span>
+      </button>
+    </div>
+  );
+
+  // Form Email Login/Register
+  const renderEmailForm = () => (
+    <div className="space-y-4">
+      <button
+        onClick={() => { setShowEmailForm(false); setIsRegistering(false); setError(''); }}
+        className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors text-sm"
+      >
+        <ChevronLeft className="w-4 h-4" />
+        Indietro
+      </button>
+
+      <div className="text-center mb-4">
+        <div className="inline-flex items-center justify-center w-14 h-14 bg-emerald-500/20 rounded-xl mb-3">
+          <Mail className="w-7 h-7 text-emerald-400" />
+        </div>
+        <h2 className="text-xl font-semibold text-white">
+          {isRegistering ? 'Registrati' : 'Accedi con Email'}
+        </h2>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-sm text-red-300">
+          {error}
+        </div>
+      )}
+
+      {isRegistering && (
+        <input
+          type="text"
+          placeholder="Nome e Cognome"
+          value={emailForm.name}
+          onChange={(e) => setEmailForm({ ...emailForm, name: e.target.value })}
+          className="w-full px-4 py-3 bg-card/80 border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+        />
+      )}
+
+      <input
+        type="email"
+        placeholder="Email"
+        value={emailForm.email}
+        onChange={(e) => setEmailForm({ ...emailForm, email: e.target.value })}
+        className="w-full px-4 py-3 bg-card/80 border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={emailForm.password}
+        onChange={(e) => setEmailForm({ ...emailForm, password: e.target.value })}
+        className="w-full px-4 py-3 bg-card/80 border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+      />
+
+      {isRegistering && (
+        <input
+          type="password"
+          placeholder="Conferma Password"
+          value={emailForm.confirmPassword}
+          onChange={(e) => setEmailForm({ ...emailForm, confirmPassword: e.target.value })}
+          className="w-full px-4 py-3 bg-card/80 border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+        />
+      )}
+
+      <button
+        onClick={isRegistering ? handleEmailRegister : handleEmailLogin}
+        disabled={loading}
+        className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50"
+      >
+        {loading ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : (
+          <span className="font-medium">{isRegistering ? 'Registrati' : 'Accedi'}</span>
+        )}
+      </button>
+
+      <p className="text-center text-sm text-muted-foreground">
+        {isRegistering ? (
+          <>Hai già un account? <button onClick={() => { setIsRegistering(false); setError(''); }} className="text-primary hover:underline">Accedi</button></>
+        ) : (
+          <>Non hai un account? <button onClick={() => { setIsRegistering(true); setError(''); }} className="text-primary hover:underline">Registrati</button></>
+        )}
+      </p>
     </div>
   );
 
@@ -299,7 +477,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
         {/* Content */}
         {!userType && renderUserTypeSelection()}
-        {userType === 'citizen' && renderCitizenLogin()}
+        {userType === 'citizen' && !showEmailForm && renderCitizenLogin()}
+        {userType === 'citizen' && showEmailForm && renderEmailForm()}
         {(userType === 'business' || userType === 'pa') && renderSPIDLogin()}
       </div>
     </div>
