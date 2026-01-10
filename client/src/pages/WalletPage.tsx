@@ -686,6 +686,44 @@ export default function WalletPage() {
                     <CardDescription>Inserisci il codice QR del cliente per assegnare TCC</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Campo Importo Speso - sempre visibile in cima */}
+                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Euro className="h-5 w-5 text-blue-600" />
+                        <Label className="text-blue-800 font-semibold">Importo Scontrino / POS</Label>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span className="text-2xl font-bold text-blue-600">€</span>
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          value={euroSpent}
+                          onChange={(e) => setEuroSpent(e.target.value)}
+                          className="text-2xl font-bold h-14 text-center"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      {euroSpent && parseFloat(euroSpent) > 0 && (
+                        <p className="text-sm text-blue-600 mt-2 text-center">
+                          = <strong>{Math.floor(parseFloat(euroSpent) * (earnType === 'purchase_km0' ? 3 : earnType === 'purchase_bio' ? 2 : 1))} TCC</strong> da assegnare
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Tipo di acquisto */}
+                    <div className="space-y-2">
+                      <Label>Tipo di acquisto</Label>
+                      <Select value={earnType} onValueChange={setEarnType}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="purchase_bio">🌱 Prodotti BIO (2 TCC/€)</SelectItem>
+                          <SelectItem value="purchase_km0">📍 Prodotti KM0 (3 TCC/€)</SelectItem>
+                          <SelectItem value="generic">🛒 Acquisto Generico (1 TCC/€)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     {!citizenInfo ? (
                       <>
                         {/* Toggle Camera/Manual */}
@@ -790,72 +828,24 @@ export default function WalletPage() {
                             <CheckCircle2 className="h-6 w-6 text-green-600" />
                             <span className="font-semibold text-green-700">Cliente Verificato</span>
                           </div>
-                          <p className="font-medium">{citizenInfo.name}</p>
-                          <p className="text-sm text-muted-foreground">{citizenInfo.email}</p>
-                          <p className="text-sm mt-2">Saldo: <strong>{citizenInfo.wallet_balance} TCC</strong></p>
+                          <p className="font-medium text-gray-800">{citizenInfo.name}</p>
+                          <p className="text-sm text-gray-600">{citizenInfo.email}</p>
+                          <p className="text-sm mt-2 text-gray-700">Saldo attuale: <strong>{citizenInfo.wallet_balance} TCC</strong></p>
                         </div>
 
-                        {/* Form Assegnazione */}
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>Tipo di guadagno</Label>
-                            <Select value={earnType} onValueChange={setEarnType}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="purchase_bio">🌱 Acquisto BIO (2 TCC/€)</SelectItem>
-                                <SelectItem value="purchase_km0">📍 Acquisto KM0 (3 TCC/€)</SelectItem>
-                                <SelectItem value="checkin">📍 Check-in Mercato</SelectItem>
-                                <SelectItem value="generic">🛒 Acquisto Generico (1 TCC/€)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                        {/* Riepilogo e Conferma */}
+                        <div className="p-4 bg-primary/10 rounded-lg text-center">
+                          <p className="text-sm text-muted-foreground">TCC da assegnare</p>
+                          <p className="text-5xl font-bold text-primary">{getEstimatedTCC()}</p>
+                          <p className="text-xs text-muted-foreground mt-1">per €{euroSpent || '0'} di acquisto</p>
+                        </div>
 
-                          {earnType === 'checkin' ? (
-                            <div className="grid grid-cols-4 gap-2">
-                              {[
-                                { mode: 'walk', icon: Footprints, label: 'A piedi', bonus: '+8' },
-                                { mode: 'bike', icon: Bike, label: 'Bici', bonus: '+5' },
-                                { mode: 'public', icon: Bus, label: 'Bus', bonus: '+3' },
-                                { mode: '', icon: null, label: 'Auto', bonus: '+0', emoji: '🚗' }
-                              ].map(({ mode, icon: Icon, label, bonus, emoji }) => (
-                                <Button
-                                  key={mode}
-                                  variant={transportMode === mode ? 'default' : 'outline'}
-                                  onClick={() => setTransportMode(mode)}
-                                  className="flex flex-col h-auto py-2"
-                                >
-                                  {Icon ? <Icon className="h-4 w-4 mb-1" /> : <span className="text-lg mb-1">{emoji}</span>}
-                                  <span className="text-xs">{label}</span>
-                                  <span className="text-xs text-muted-foreground">{bonus}</span>
-                                </Button>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <Label>Importo speso (€)</Label>
-                              <Input
-                                type="number"
-                                placeholder="25.00"
-                                value={euroSpent}
-                                onChange={(e) => setEuroSpent(e.target.value)}
-                                min="0"
-                                step="0.01"
-                              />
-                            </div>
-                          )}
-
-                          <div className="p-4 bg-primary/10 rounded-lg text-center">
-                            <p className="text-sm text-muted-foreground">TCC da assegnare</p>
-                            <p className="text-4xl font-bold text-primary">{getEstimatedTCC()}</p>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <Button variant="outline" onClick={resetScanner} className="flex-1">Annulla</Button>
-                            <Button onClick={assignTCC} disabled={scanning || getEstimatedTCC() === 0} className="flex-1">
-                              {scanning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                              Assegna {getEstimatedTCC()} TCC
-                            </Button>
-                          </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" onClick={resetScanner} className="flex-1">Annulla</Button>
+                          <Button onClick={assignTCC} disabled={scanning || getEstimatedTCC() === 0} className="flex-1">
+                            {scanning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                            Assegna {getEstimatedTCC()} TCC
+                          </Button>
                         </div>
                       </>
                     )}
