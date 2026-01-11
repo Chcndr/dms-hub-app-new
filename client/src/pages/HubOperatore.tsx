@@ -1,14 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-// import { QrReader } from 'react-qr-reader'; // Removed due to React 19 incompatibility
 import { toast } from 'sonner';
 import { 
   BarChart3, 
   QrCode, 
-  Clock, 
+  Wallet,
   TrendingUp, 
   Users, 
   Leaf,
@@ -17,46 +16,95 @@ import {
   Camera,
   CheckCircle2,
   XCircle,
-  RefreshCw
+  RefreshCw,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Send,
+  Clock
 } from 'lucide-react';
+
+// API Base URL
+const API_BASE = 'https://orchestratore.mio-hub.me/api/tcc/v2';
 
 export default function HubOperatore() {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
   
-  // Stati per QR Scanner e Carbon Credits
+  // Stati per Scanner e TCC
+  const [scanMode, setScanMode] = useState<'issue' | 'redeem'>('issue');
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<string | null>(null);
+  const [validatedCustomer, setValidatedCustomer] = useState<any>(null);
   const [amount, setAmount] = useState<string>('');
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [calculatedCredits, setCalculatedCredits] = useState(0);
   const [co2Saved, setCo2Saved] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Wallet Operatore
+  const [operatorWallet, setOperatorWallet] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [tccConfig, setTccConfig] = useState<any>(null);
 
-  // Mock data operatore
+  // Mock data operatore (in futuro da auth)
   const operatore = {
+    id: 1,
     nome: 'Luca Bianchi',
     negozio: 'Frutta e Verdura Bio',
     ruolo: 'Operatore',
   };
 
-  // Mock stats
-  const stats = {
-    venditeOggi: 450.50,
-    carbonAssegnati: 320,
-    clientiServiti: 15,
-    co2Risparmiata: 2.8,
-  };
+  // Carica dati iniziali
+  useEffect(() => {
+    loadOperatorWallet();
+    loadTransactions();
+    loadTccConfig();
+  }, []);
 
   // Calcolo automatico crediti
   useEffect(() => {
     const val = parseFloat(amount) || 0;
-    // Formula base: 1€ = 1 credit. Bonus 20% per ogni certificazione.
     const multiplier = 1 + (selectedCerts.length * 0.2);
     const credits = Math.floor(val * multiplier);
     setCalculatedCredits(credits);
-    // Stima CO2: 1 credit = 0.05kg CO2
     setCo2Saved(parseFloat((credits * 0.05).toFixed(2)));
   }, [amount, selectedCerts]);
+
+  const loadOperatorWallet = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/operator/wallet/${operatore.id}`);
+      const data = await res.json();
+      if (data.success) {
+        setOperatorWallet(data.wallet);
+      }
+    } catch (error) {
+      console.error('Errore caricamento wallet:', error);
+    }
+  };
+
+  const loadTransactions = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/operator/transactions/${operatore.id}?limit=20`);
+      const data = await res.json();
+      if (data.success) {
+        setTransactions(data.transactions);
+      }
+    } catch (error) {
+      console.error('Errore caricamento transazioni:', error);
+    }
+  };
+
+  const loadTccConfig = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/config`);
+      const data = await res.json();
+      if (data.success) {
+        setTccConfig(data.config);
+      }
+    } catch (error) {
+      console.error('Errore caricamento config:', error);
+    }
+  };
 
   const handleCheckIn = () => {
     const now = new Date().toLocaleTimeString('it-IT');
@@ -76,30 +124,156 @@ export default function HubOperatore() {
     );
   };
 
-  const handleScanResult = (result: any, error: any) => {
-    if (result) {
-      setScannedData(result?.text);
-      setIsScanning(false);
-      toast.success('QR Code cliente rilevato!');
-    }
-    if (error) {
-      // Ignora errori di scansione continua
+  // Valida QR Code cliente (per assegnazione TCC)
+  const validateCustomerQR = async (qrData: string) => {
+    try {
+      const res = await fetch('https://orchestratore.mio-hub.me/api/tcc/validate-qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qr_data: qrData })
+      });
+      const data = await res.json();
+      if (data.success && data.valid) {
+        setValidatedCustomer(data.citizen);
+        toast.success(`Cliente verificato: ${data.citizen.name}`);
+        return true;
+      } else {
+        toast.error(data.error || 'QR Code non valido');
+        return false;
+      }
+    } catch (error) {
+      toast.error('Errore validazione QR');
+      return false;
     }
   };
 
-  const handleAssignCredits = () => {
-    if (!scannedData && !window.confirm('Nessun cliente scansionato. Assegnare come "Cliente Anonimo"?')) {
+  // Assegna TCC al cliente
+  const handleIssueCredits = async () => {
+    if (!scannedData || !validatedCustomer) {
+      toast.error('Scansiona prima il QR del cliente');
       return;
     }
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error('Inserisci un importo valido');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/operator/issue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operator_id: operatore.id,
+          qr_data: scannedData,
+          euro_amount: parseFloat(amount),
+          certifications: selectedCerts
+        })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        toast.success(data.message, {
+          description: `Nuovo saldo cliente: ${data.citizen.new_balance} TCC`
+        });
+        // Reset form
+        setAmount('');
+        setSelectedCerts([]);
+        setScannedData(null);
+        setValidatedCustomer(null);
+        // Ricarica dati
+        loadOperatorWallet();
+        loadTransactions();
+      } else {
+        toast.error(data.error || 'Errore assegnazione TCC');
+      }
+    } catch (error) {
+      toast.error('Errore di connessione');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Incassa TCC dal cliente (riscatto)
+  const handleRedeemSpend = async () => {
+    if (!scannedData) {
+      toast.error('Scansiona il QR di spesa del cliente');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/operator/redeem-spend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operator_id: operatore.id,
+          qr_data: scannedData
+        })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        toast.success(data.message);
+        setScannedData(null);
+        loadOperatorWallet();
+        loadTransactions();
+      } else {
+        toast.error(data.error || 'Errore incasso TCC');
+      }
+    } catch (error) {
+      toast.error('Errore di connessione');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Chiusura giornaliera
+  const handleSettlement = async () => {
+    if (!window.confirm('Confermi la chiusura giornaliera? I TCC riscattati verranno inviati al fondo per il rimborso.')) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/operator/settlement`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operator_id: operatore.id })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        toast.success(data.message);
+        loadOperatorWallet();
+      } else {
+        toast.error(data.error || 'Errore chiusura giornaliera');
+      }
+    } catch (error) {
+      toast.error('Errore di connessione');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Simula scansione QR (in futuro con camera reale)
+  const handleManualQRInput = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const qrInput = formData.get('qrInput') as string;
     
-    toast.success(`${calculatedCredits} Carbon Credits assegnati!`, {
-      description: `CO₂ Risparmiata: ${co2Saved} kg`
-    });
+    if (!qrInput) return;
     
-    // Reset form
-    setAmount('');
-    setSelectedCerts([]);
-    setScannedData(null);
+    setScannedData(qrInput);
+    
+    if (scanMode === 'issue') {
+      await validateCustomerQR(qrInput);
+    } else {
+      // Per riscatto, il QR contiene gia i dati necessari
+      toast.success('QR di spesa rilevato');
+    }
+    
+    setIsScanning(false);
   };
 
   return (
@@ -166,7 +340,7 @@ export default function HubOperatore() {
           </CardContent>
         </Card>
 
-        {/* Statistiche Giornaliere */}
+        {/* Statistiche Giornaliere dal Wallet Reale */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="bg-[#1e293b] border-[#334155]">
             <CardHeader className="pb-2">
@@ -174,7 +348,9 @@ export default function HubOperatore() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <p className="text-2xl font-bold text-[#e8fbff]">€{stats.venditeOggi}</p>
+                <p className="text-2xl font-bold text-[#e8fbff]">
+                  EUR{operatorWallet?.euro_sales?.toFixed(2) || '0.00'}
+                </p>
                 <TrendingUp className="w-5 h-5 text-[#10b981]" />
               </div>
             </CardContent>
@@ -182,42 +358,48 @@ export default function HubOperatore() {
 
           <Card className="bg-[#1e293b] border-[#334155]">
             <CardHeader className="pb-2">
-              <CardDescription className="text-[#94a3b8]">Carbon Credit</CardDescription>
+              <CardDescription className="text-[#94a3b8]">TCC Rilasciati</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <p className="text-2xl font-bold text-[#14b8a6]">{stats.carbonAssegnati}</p>
-                <Leaf className="w-5 h-5 text-[#14b8a6]" />
+                <p className="text-2xl font-bold text-[#14b8a6]">
+                  {operatorWallet?.tcc_issued || 0}
+                </p>
+                <ArrowUpCircle className="w-5 h-5 text-[#14b8a6]" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-[#1e293b] border-[#334155]">
             <CardHeader className="pb-2">
-              <CardDescription className="text-[#94a3b8]">Clienti Serviti</CardDescription>
+              <CardDescription className="text-[#94a3b8]">TCC Riscattati</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <p className="text-2xl font-bold text-[#e8fbff]">{stats.clientiServiti}</p>
-                <Users className="w-5 h-5 text-[#f59e0b]" />
+                <p className="text-2xl font-bold text-[#f59e0b]">
+                  {operatorWallet?.tcc_redeemed || 0}
+                </p>
+                <ArrowDownCircle className="w-5 h-5 text-[#f59e0b]" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-[#1e293b] border-[#334155]">
             <CardHeader className="pb-2">
-              <CardDescription className="text-[#94a3b8]">CO₂ Risparmiata</CardDescription>
+              <CardDescription className="text-[#94a3b8]">Differenza</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <p className="text-2xl font-bold text-[#10b981]">{stats.co2Risparmiata} kg</p>
+                <p className="text-2xl font-bold text-[#10b981]">
+                  {operatorWallet?.difference || 0}
+                </p>
                 <Leaf className="w-5 h-5 text-[#10b981]" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Tabs Funzionalità */}
+        {/* Tabs Funzionalita */}
         <Tabs defaultValue="scanner" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-[#1e293b]">
             <TabsTrigger value="scanner" className="data-[state=active]:bg-[#f97316]">
@@ -228,122 +410,189 @@ export default function HubOperatore() {
               <BarChart3 className="w-4 h-4 mr-2" />
               Vendite
             </TabsTrigger>
-            <TabsTrigger value="presenze" className="data-[state=active]:bg-[#f97316]">
-              <Clock className="w-4 h-4 mr-2" />
-              Presenze
+            <TabsTrigger value="wallet" className="data-[state=active]:bg-[#f97316]">
+              <Wallet className="w-4 h-4 mr-2" />
+              Wallet
             </TabsTrigger>
           </TabsList>
 
           {/* Tab Scanner QR */}
           <TabsContent value="scanner" className="space-y-4">
+            {/* Toggle Modalita */}
+            <div className="flex gap-2">
+              <Button
+                variant={scanMode === 'issue' ? 'default' : 'outline'}
+                className={scanMode === 'issue' ? 'bg-[#10b981] hover:bg-[#059669]' : 'border-[#334155]'}
+                onClick={() => { setScanMode('issue'); setScannedData(null); setValidatedCustomer(null); }}
+              >
+                <ArrowUpCircle className="w-4 h-4 mr-2" />
+                Assegna TCC
+              </Button>
+              <Button
+                variant={scanMode === 'redeem' ? 'default' : 'outline'}
+                className={scanMode === 'redeem' ? 'bg-[#f59e0b] hover:bg-[#d97706]' : 'border-[#334155]'}
+                onClick={() => { setScanMode('redeem'); setScannedData(null); setValidatedCustomer(null); }}
+              >
+                <ArrowDownCircle className="w-4 h-4 mr-2" />
+                Incassa TCC
+              </Button>
+            </div>
+
             <Card className="bg-[#1e293b] border-[#334155]">
               <CardHeader>
-                <CardTitle className="text-[#e8fbff]">Scanner QR Code Cliente</CardTitle>
+                <CardTitle className="text-[#e8fbff]">
+                  {scanMode === 'issue' ? 'Assegna TCC al Cliente' : 'Incassa TCC dal Cliente'}
+                </CardTitle>
                 <CardDescription className="text-[#94a3b8]">
-                  Scansiona il QR code del cliente per assegnare carbon credit
+                  {scanMode === 'issue' 
+                    ? 'Inserisci importo, poi scansiona il QR del cliente' 
+                    : 'Scansiona il QR di spesa generato dal cliente'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Scanner Section */}
-                <div className="aspect-square bg-[#0b1220] rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-[#334155] overflow-hidden relative">
-                  {isScanning ? (
-                    <>
-                      <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-                        <Camera className="w-12 h-12 text-yellow-500 mb-2" />
-                        <p className="text-yellow-500 font-medium">Scanner QR Temporaneamente Disabilitato</p>
-                        <p className="text-xs text-white/60 mt-1">Incompatibilità tecnica rilevata (React 19)</p>
+                
+                {/* Form Importo (solo per issue) */}
+                {scanMode === 'issue' && (
+                  <div className="space-y-4 p-4 bg-[#0b1220] rounded-lg">
+                    <div>
+                      <label className="text-sm text-[#94a3b8]">Importo Vendita (EUR)</label>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        placeholder="0.00"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="w-full mt-1 px-3 py-3 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff] text-xl font-bold focus:outline-none focus:border-[#14b8a6]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm text-[#94a3b8] mb-2 block">Certificazioni (+20% cad.)</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['BIO', 'KM0', 'Fair Trade', 'DOP'].map(cert => (
+                          <Badge 
+                            key={cert}
+                            onClick={() => toggleCert(cert)}
+                            className={`cursor-pointer transition-all ${
+                              selectedCerts.includes(cert) 
+                                ? 'bg-[#14b8a6] hover:bg-[#0d9488] ring-2 ring-white/20' 
+                                : 'bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8]'
+                            }`}
+                          >
+                            {cert}
+                          </Badge>
+                        ))}
                       </div>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        className="absolute bottom-4 z-10"
-                        onClick={() => setIsScanning(false)}
-                      >
-                        Ferma Scansione
-                      </Button>
-                    </>
-                  ) : scannedData ? (
+                    </div>
+
+                    <div className="p-3 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-md">
+                      <p className="text-sm text-[#94a3b8]">TCC da Assegnare</p>
+                      <p className="text-3xl font-bold text-[#14b8a6]">{calculatedCredits} TCC</p>
+                      <p className="text-xs text-[#94a3b8] mt-1">CO2 risparmiata: {co2Saved} kg</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Scanner Section */}
+                <div className="aspect-video bg-[#0b1220] rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-[#334155] overflow-hidden relative">
+                  {isScanning ? (
+                    <form onSubmit={handleManualQRInput} className="w-full p-4 space-y-4">
+                      <p className="text-center text-[#94a3b8] mb-4">
+                        <Camera className="w-8 h-8 mx-auto mb-2 text-[#f97316]" />
+                        Inserisci il codice QR manualmente
+                      </p>
+                      <input
+                        name="qrInput"
+                        type="text"
+                        placeholder={scanMode === 'issue' ? 'tcc://userId/token' : 'tcc-spend://userId/token'}
+                        className="w-full px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <Button type="submit" className="flex-1 bg-[#10b981] hover:bg-[#059669]">
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Conferma
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => setIsScanning(false)} className="border-[#334155]">
+                          Annulla
+                        </Button>
+                      </div>
+                    </form>
+                  ) : validatedCustomer ? (
                     <div className="text-center p-4">
                       <CheckCircle2 className="w-16 h-16 text-[#10b981] mx-auto mb-4" />
-                      <p className="text-[#e8fbff] font-medium mb-2">Cliente Identificato</p>
-                      <code className="bg-[#1e293b] px-2 py-1 rounded text-xs text-[#94a3b8]">{scannedData}</code>
+                      <p className="text-[#e8fbff] font-medium mb-2">Cliente Verificato</p>
+                      <p className="text-lg font-bold text-[#14b8a6]">{validatedCustomer.name}</p>
+                      <p className="text-sm text-[#94a3b8]">{validatedCustomer.email}</p>
+                      <p className="text-sm text-[#94a3b8] mt-2">Saldo: {validatedCustomer.wallet_balance} TCC</p>
                       <Button 
-                        className="mt-4 bg-[#f97316] hover:bg-[#ea580c] w-full"
+                        className="mt-4 bg-[#f97316] hover:bg-[#ea580c]"
+                        onClick={() => { setScannedData(null); setValidatedCustomer(null); setIsScanning(true); }}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Nuovo Cliente
+                      </Button>
+                    </div>
+                  ) : scannedData && scanMode === 'redeem' ? (
+                    <div className="text-center p-4">
+                      <CheckCircle2 className="w-16 h-16 text-[#f59e0b] mx-auto mb-4" />
+                      <p className="text-[#e8fbff] font-medium mb-2">QR Spesa Rilevato</p>
+                      <code className="bg-[#1e293b] px-2 py-1 rounded text-xs text-[#94a3b8] block overflow-hidden text-ellipsis">
+                        {scannedData}
+                      </code>
+                      <Button 
+                        className="mt-4 bg-[#f97316] hover:bg-[#ea580c]"
                         onClick={() => { setScannedData(null); setIsScanning(true); }}
                       >
                         <RefreshCw className="w-4 h-4 mr-2" />
-                        Nuova Scansione
+                        Nuovo QR
                       </Button>
                     </div>
                   ) : (
                     <>
-                      <Camera className="w-16 h-16 text-[#94a3b8] mb-4" />
+                      <QrCode className="w-16 h-16 text-[#334155] mb-4" />
                       <p className="text-[#94a3b8] text-center">
-                        Camera QR Scanner
-                        <br />
-                        <span className="text-sm">Inquadra il QR code del cliente</span>
+                        {scanMode === 'issue' ? 'Scansiona QR Cliente' : 'Scansiona QR Spesa'}
                       </p>
                       <Button 
                         className="mt-4 bg-[#f97316] hover:bg-[#ea580c]"
                         onClick={() => setIsScanning(true)}
                       >
                         <Camera className="w-4 h-4 mr-2" />
-                        Attiva Camera
+                        Attiva Scanner
                       </Button>
                     </>
                   )}
                 </div>
 
-                {/* Form Assegnazione Carbon Credit */}
-                <div className="space-y-4 p-4 bg-[#0b1220] rounded-lg">
-                  <h3 className="font-semibold text-[#e8fbff]">Assegna Carbon Credit</h3>
-                  
-                  <div>
-                    <label className="text-sm text-[#94a3b8]">Importo Spesa (€)</label>
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="0.00"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="w-full mt-1 px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-[#94a3b8] mb-2 block">Certificazioni Prodotto (+20% cad.)</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['BIO', 'KM0', 'Fair Trade', 'DOP'].map(cert => (
-                        <Badge 
-                          key={cert}
-                          onClick={() => toggleCert(cert)}
-                          className={`cursor-pointer transition-all ${
-                            selectedCerts.includes(cert) 
-                              ? 'bg-[#14b8a6] hover:bg-[#0d9488] ring-2 ring-white/20' 
-                              : 'bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8]'
-                          }`}
-                        >
-                          {cert}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-md transition-all">
-                    <p className="text-sm text-[#94a3b8]">Carbon Credit Calcolati</p>
-                    <p className="text-2xl font-bold text-[#14b8a6]">{calculatedCredits} credits</p>
-                    <p className="text-xs text-[#94a3b8] mt-1">CO₂ risparmiata: {co2Saved} kg</p>
-                  </div>
-
+                {/* Pulsante Azione */}
+                {scanMode === 'issue' ? (
                   <Button 
-                    className="w-full bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handleAssignCredits}
-                    disabled={!amount || parseFloat(amount) <= 0}
+                    className="w-full bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 text-lg py-6"
+                    onClick={handleIssueCredits}
+                    disabled={!validatedCustomer || !amount || parseFloat(amount) <= 0 || isLoading}
                   >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Conferma Assegnazione
+                    {isLoading ? (
+                      <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                    ) : (
+                      <ArrowUpCircle className="w-5 h-5 mr-2" />
+                    )}
+                    Assegna {calculatedCredits} TCC
                   </Button>
-                </div>
+                ) : (
+                  <Button 
+                    className="w-full bg-[#f59e0b] hover:bg-[#d97706] disabled:opacity-50 text-lg py-6"
+                    onClick={handleRedeemSpend}
+                    disabled={!scannedData || isLoading}
+                  >
+                    {isLoading ? (
+                      <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                    ) : (
+                      <ArrowDownCircle className="w-5 h-5 mr-2" />
+                    )}
+                    Incassa TCC
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -354,52 +603,119 @@ export default function HubOperatore() {
               <CardHeader>
                 <CardTitle className="text-[#e8fbff]">Ultime Transazioni</CardTitle>
                 <CardDescription className="text-[#94a3b8]">
-                  Storico vendite e carbon credit assegnati oggi
+                  Storico vendite e TCC assegnati/riscattati oggi
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                      <div>
-                        <p className="font-semibold text-[#e8fbff]">Cliente #{i}</p>
-                        <p className="text-sm text-[#94a3b8]">10:{i * 5} AM</p>
+                  {transactions.length === 0 ? (
+                    <p className="text-center text-[#94a3b8] py-8">Nessuna transazione oggi</p>
+                  ) : (
+                    transactions.map((tx, i) => (
+                      <div key={tx.id || i} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
+                        <div className="flex items-center gap-3">
+                          {tx.type === 'issue' ? (
+                            <ArrowUpCircle className="w-5 h-5 text-[#14b8a6]" />
+                          ) : (
+                            <ArrowDownCircle className="w-5 h-5 text-[#f59e0b]" />
+                          )}
+                          <div>
+                            <p className="font-semibold text-[#e8fbff]">
+                              {tx.customer_name || 'Cliente'}
+                            </p>
+                            <p className="text-sm text-[#94a3b8]">
+                              {new Date(tx.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-[#e8fbff]">
+                            EUR{tx.euro_amount?.toFixed(2) || '0.00'}
+                          </p>
+                          <p className={`text-sm ${tx.type === 'issue' ? 'text-[#14b8a6]' : 'text-[#f59e0b]'}`}>
+                            {tx.type === 'issue' ? '+' : '-'}{tx.tcc_amount} TCC
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-[#e8fbff]">€{(i * 12.50).toFixed(2)}</p>
-                        <p className="text-sm text-[#14b8a6]">+{i * 15} credits</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Tab Presenze */}
-          <TabsContent value="presenze" className="space-y-4">
+          {/* Tab Wallet */}
+          <TabsContent value="wallet" className="space-y-4">
             <Card className="bg-[#1e293b] border-[#334155]">
               <CardHeader>
-                <CardTitle className="text-[#e8fbff]">Storico Presenze Settimana</CardTitle>
+                <CardTitle className="text-[#e8fbff]">Wallet Operatore</CardTitle>
                 <CardDescription className="text-[#94a3b8]">
-                  Registro check-in e check-out degli ultimi 7 giorni
+                  Riepilogo giornaliero TCC e chiusura cassa
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì'].map((giorno, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                      <div>
-                        <p className="font-semibold text-[#e8fbff]">{giorno}</p>
-                        <p className="text-sm text-[#94a3b8]">3 Nov 2025</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-[#10b981]">Entrata: 08:30</p>
-                        <p className="text-sm text-[#ef4444]">Uscita: 18:00</p>
-                      </div>
-                    </div>
-                  ))}
+              <CardContent className="space-y-6">
+                {/* Riepilogo Wallet */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-[#0b1220] rounded-lg">
+                    <p className="text-sm text-[#94a3b8]">TCC Rilasciati</p>
+                    <p className="text-3xl font-bold text-[#14b8a6]">{operatorWallet?.tcc_issued || 0}</p>
+                    <p className="text-xs text-[#94a3b8]">Assegnati ai clienti</p>
+                  </div>
+                  <div className="p-4 bg-[#0b1220] rounded-lg">
+                    <p className="text-sm text-[#94a3b8]">TCC Riscattati</p>
+                    <p className="text-3xl font-bold text-[#f59e0b]">{operatorWallet?.tcc_redeemed || 0}</p>
+                    <p className="text-xs text-[#94a3b8]">Ricevuti dai clienti</p>
+                  </div>
                 </div>
+
+                {/* Differenza e Valore */}
+                <div className="p-4 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-[#94a3b8]">Differenza (Rilasciati - Riscattati)</p>
+                      <p className="text-2xl font-bold text-[#e8fbff]">{operatorWallet?.difference || 0} TCC</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-[#94a3b8]">Valore Riscattati</p>
+                      <p className="text-2xl font-bold text-[#10b981]">EUR{operatorWallet?.redeemed_eur || '0.00'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tasso di Cambio */}
+                {tccConfig && (
+                  <div className="p-3 bg-[#0b1220] rounded-lg flex justify-between items-center">
+                    <span className="text-sm text-[#94a3b8]">Tasso di Cambio Attuale</span>
+                    <span className="font-bold text-[#e8fbff]">1 TCC = EUR{tccConfig.effective_rate}</span>
+                  </div>
+                )}
+
+                {/* Stato Chiusura */}
+                <div className="p-3 bg-[#0b1220] rounded-lg flex justify-between items-center">
+                  <span className="text-sm text-[#94a3b8]">Stato Giornata</span>
+                  <Badge className={operatorWallet?.settlement_status === 'open' ? 'bg-[#10b981]' : 'bg-[#f59e0b]'}>
+                    {operatorWallet?.settlement_status === 'open' ? 'Aperta' : 
+                     operatorWallet?.settlement_status === 'pending' ? 'In Elaborazione' : 'Chiusa'}
+                  </Badge>
+                </div>
+
+                {/* Pulsante Chiusura */}
+                <Button 
+                  className="w-full bg-[#ef4444] hover:bg-[#dc2626] disabled:opacity-50"
+                  onClick={handleSettlement}
+                  disabled={operatorWallet?.settlement_status !== 'open' || isLoading}
+                >
+                  {isLoading ? (
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  Chiudi Giornata e Invia al Fondo
+                </Button>
+
+                <p className="text-xs text-[#94a3b8] text-center">
+                  La chiusura inviera i TCC riscattati al fondo per il rimborso in EUR
+                </p>
               </CardContent>
             </Card>
           </TabsContent>

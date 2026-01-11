@@ -74,7 +74,13 @@ interface ScanResult {
 // ============================================================================
 
 export default function WalletPage() {
-  const [activeTab, setActiveTab] = useState<'cliente' | 'impresa'>('cliente');
+  // Rimosso tab Impresa - ora solo Cliente con funzione Paga con TCC
+  const [activeTab] = useState<'cliente'>('cliente');
+  
+  // Stato per Paga con TCC
+  const [spendAmount, setSpendAmount] = useState('');
+  const [spendQRData, setSpendQRData] = useState<{qr_string: string; tcc_amount: number; expires_at: string} | null>(null);
+  const [generatingSpendQR, setGeneratingSpendQR] = useState(false);
   
   // Cliente state
   const [walletData, setWalletData] = useState<WalletData | null>(null);
@@ -166,6 +172,38 @@ export default function WalletPage() {
       console.error('Errore generazione QR:', err);
     } finally {
       setRefreshingQR(false);
+    }
+  };
+
+  // Genera QR per spendere TCC
+  const generateSpendQR = async () => {
+    if (!spendAmount || parseFloat(spendAmount) <= 0) return;
+    
+    try {
+      setGeneratingSpendQR(true);
+      const res = await fetch(`${API_BASE}/api/tcc/v2/generate-spend-qr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          euro_amount: parseFloat(spendAmount)
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSpendQRData({
+          qr_string: data.qr_string,
+          tcc_amount: data.tcc_amount,
+          expires_at: data.expires_at
+        });
+      } else {
+        alert(data.error || 'Errore generazione QR');
+      }
+    } catch (err) {
+      console.error('Errore generazione QR spesa:', err);
+      alert('Errore di connessione');
+    } finally {
+      setGeneratingSpendQR(false);
     }
   };
 
@@ -434,7 +472,7 @@ export default function WalletPage() {
 
   // Start/stop camera based on inputMode
   useEffect(() => {
-    if (inputMode === 'camera' && activeTab === 'impresa' && !citizenInfo) {
+    if (inputMode === 'camera' && !citizenInfo) {
       startCameraScanner();
     } else {
       stopCameraScanner();
@@ -459,9 +497,7 @@ export default function WalletPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'impresa') {
-      fetchMerchantData();
-    }
+    // Tab Impresa rimosso - fetchMerchantData non piu necessario
   }, [activeTab]);
 
   // ============================================================================
@@ -525,17 +561,8 @@ export default function WalletPage() {
 
       {/* Tab Selector */}
       <div className="w-full px-4 md:px-8 pt-4">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'cliente' | 'impresa')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="cliente" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Cliente
-            </TabsTrigger>
-            <TabsTrigger value="impresa" className="flex items-center gap-2">
-              <Store className="h-4 w-4" />
-              Impresa
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab}>
+          {/* Tab Impresa rimosso - ora disponibile in HUB Operatore */}
 
           {/* ================================================================ */}
           {/* TAB CLIENTE */}
@@ -610,6 +637,75 @@ export default function WalletPage() {
               </Card>
             </div>
 
+            {/* Paga con TCC */}
+            <Card className="border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-amber-600">
+                  <Euro className="h-5 w-5" />
+                  Paga con TCC
+                </CardTitle>
+                <CardDescription>Genera un QR code per pagare con i tuoi Token Carbon Credit</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!spendQRData ? (
+                  <>
+                    <div>
+                      <Label>Importo da pagare (EUR)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={spendAmount}
+                        onChange={(e) => setSpendAmount(e.target.value)}
+                        className="text-2xl font-bold h-14"
+                      />
+                    </div>
+                    {spendAmount && parseFloat(spendAmount) > 0 && (
+                      <div className="p-3 bg-amber-500/10 rounded-lg">
+                        <p className="text-sm text-muted-foreground">TCC necessari (stima)</p>
+                        <p className="text-2xl font-bold text-amber-600">
+                          ~{Math.ceil(parseFloat(spendAmount) / 0.01)} TCC
+                        </p>
+                      </div>
+                    )}
+                    <Button
+                      className="w-full bg-amber-500 hover:bg-amber-600"
+                      onClick={generateSpendQR}
+                      disabled={!spendAmount || parseFloat(spendAmount) <= 0 || generatingSpendQR}
+                    >
+                      {generatingSpendQR ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <QrCode className="h-4 w-4 mr-2" />
+                      )}
+                      Genera QR Pagamento
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center space-y-4">
+                    <div className="bg-white p-4 rounded-lg shadow-inner inline-block">
+                      <QRCodeSVG value={spendQRData.qr_string} size={180} level="H" />
+                    </div>
+                    <div className="p-3 bg-amber-500/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Importo</p>
+                      <p className="text-2xl font-bold">EUR{spendAmount}</p>
+                      <p className="text-lg text-amber-600 font-semibold">{spendQRData.tcc_amount} TCC</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Valido fino: {new Date(spendQRData.expires_at).toLocaleTimeString('it-IT')}
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => { setSpendQRData(null); setSpendAmount(''); }}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Nuovo Pagamento
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Storico Transazioni */}
             <Card>
               <CardHeader>
@@ -644,337 +740,6 @@ export default function WalletPage() {
             </Card>
           </TabsContent>
 
-          {/* ================================================================ */}
-          {/* TAB IMPRESA */}
-          {/* ================================================================ */}
-          <TabsContent value="impresa" className="space-y-6 mt-4">
-            {loadingMerchant ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <>
-                {/* Saldo Commerciante */}
-                <Card className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white border-0 shadow-2xl">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-white/20 rounded-xl">
-                        <Store className="h-8 w-8" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-white text-xl">{merchantData?.name || 'Commerciante'}</CardTitle>
-                        <CardDescription className="text-white/70">TCC da riscattare</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-6xl font-bold mb-2">{merchantData?.pending_tcc || 0}</div>
-                    <p className="text-white/80 text-lg">= €{merchantData?.pending_eur || '0.00'}</p>
-                    <p className="text-white/60 text-sm mt-2">
-                      Totale rimborsato: {merchantData?.total_reimbursed_tcc || 0} TCC (€{merchantData?.total_reimbursed_eur || '0.00'})
-                    </p>
-                  </CardContent>
-                </Card>
-
-                {/* Scanner QR Code */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <QrCode className="h-5 w-5" />
-                      Scansiona QR Cliente
-                    </CardTitle>
-                    <CardDescription>Inserisci il codice QR del cliente per assegnare TCC</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Campo Importo Speso - sempre visibile in cima */}
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Euro className="h-5 w-5 text-blue-600" />
-                        <Label className="text-blue-800 font-semibold">Importo Scontrino / POS</Label>
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        <span className="text-2xl font-bold text-blue-600">€</span>
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          value={euroSpent}
-                          onChange={(e) => setEuroSpent(e.target.value)}
-                          className="text-2xl font-bold h-14 text-center"
-                          min="0"
-                          step="0.01"
-                        />
-                      </div>
-                      {euroSpent && parseFloat(euroSpent) > 0 && (
-                        <p className="text-sm text-blue-600 mt-2 text-center">
-                          = <strong>{Math.floor(parseFloat(euroSpent) * (earnType === 'purchase_km0' ? 3 : earnType === 'purchase_bio' ? 2 : 1))} TCC</strong> da assegnare
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Tipo di acquisto */}
-                    <div className="space-y-2">
-                      <Label>Tipo di acquisto</Label>
-                      <Select value={earnType} onValueChange={setEarnType}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="purchase_bio">🌱 Prodotti BIO (2 TCC/€)</SelectItem>
-                          <SelectItem value="purchase_km0">📍 Prodotti KM0 (3 TCC/€)</SelectItem>
-                          <SelectItem value="generic">🛒 Acquisto Generico (1 TCC/€)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {!citizenInfo ? (
-                      <>
-                        {/* Toggle Camera/Manual */}
-                        <div className="flex gap-2 mb-4">
-                          <Button
-                            type="button"
-                            variant={inputMode === 'camera' ? 'default' : 'outline'}
-                            onClick={() => { console.log('Camera clicked'); setInputMode('camera'); }}
-                            className="flex-1"
-                          >
-                            <Camera className="h-4 w-4 mr-2" />
-                            Fotocamera
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={inputMode === 'manual' ? 'default' : 'outline'}
-                            onClick={() => { console.log('Manual clicked'); setInputMode('manual'); }}
-                            className="flex-1"
-                          >
-                            <Keyboard className="h-4 w-4 mr-2" />
-                            Manuale
-                          </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-2">Modalità: {inputMode}</p>
-
-                        {inputMode === 'camera' ? (
-                          <div className="space-y-4">
-                            <div className="relative">
-                              <div 
-                                ref={scannerContainerRef}
-                                id="qr-reader" 
-                                className="w-full aspect-square bg-black rounded-lg overflow-hidden"
-                                style={{ minHeight: '300px' }}
-                              />
-                              {/* Area di mira overlay */}
-                              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                                <div className="w-64 h-64 border-4 border-green-400 rounded-lg relative">
-                                  <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-green-400 rounded-tl-lg"></div>
-                                  <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-green-400 rounded-tr-lg"></div>
-                                  <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-green-400 rounded-bl-lg"></div>
-                                  <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-green-400 rounded-br-lg"></div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              {cameraActive ? (
-                                <p className="text-sm text-green-400 font-medium">
-                                  📷 Fotocamera attiva - Inquadra il QR Code
-                                </p>
-                              ) : (
-                                <div className="py-4">
-                                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-green-400" />
-                                  <p className="text-sm text-muted-foreground">Avvio fotocamera...</p>
-                                </div>
-                              )}
-                            </div>
-                            <Button 
-                              type="button"
-                              variant="outline" 
-                              onClick={() => setInputMode('manual')}
-                              className="w-full"
-                            >
-                              <Keyboard className="h-4 w-4 mr-2" />
-                              Passa a inserimento manuale
-                            </Button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="space-y-2">
-                              <Label>Codice QR</Label>
-                              <Input
-                                placeholder="tcc://30/abc123..."
-                                value={qrInput}
-                                onChange={(e) => handleQRInput(e.target.value)}
-                                className="font-mono"
-                              />
-                            </div>
-                            <Button 
-                              type="button"
-                              onClick={() => {
-                                console.log('Valida clicked, qrInput:', qrInput);
-                                if (!qrInput) {
-                                  alert('Inserisci un codice QR prima di validare');
-                                  return;
-                                }
-                                validateQR(qrInput);
-                              }} 
-                              disabled={validating} 
-                              className="w-full"
-                            >
-                              {validating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <QrCode className="h-4 w-4 mr-2" />}
-                              {validating ? 'Validazione...' : 'Valida QR Code'}
-                            </Button>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {/* Cliente Verificato */}
-                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="flex items-center gap-3 mb-3">
-                            <CheckCircle2 className="h-6 w-6 text-green-600" />
-                            <span className="font-semibold text-green-700">Cliente Verificato</span>
-                          </div>
-                          <p className="font-medium text-gray-800">{citizenInfo.name}</p>
-                          <p className="text-sm text-gray-600">{citizenInfo.email}</p>
-                          <p className="text-sm mt-2 text-gray-700">Saldo attuale: <strong>{citizenInfo.wallet_balance} TCC</strong></p>
-                        </div>
-
-                        {/* Riepilogo e Conferma */}
-                        <div className="p-4 bg-primary/10 rounded-lg text-center">
-                          <p className="text-sm text-muted-foreground">TCC da assegnare</p>
-                          <p className="text-5xl font-bold text-primary">{getEstimatedTCC()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">per €{euroSpent || '0'} di acquisto</p>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button variant="outline" onClick={resetScanner} className="flex-1">Annulla</Button>
-                          <Button onClick={assignTCC} disabled={scanning || getEstimatedTCC() === 0} className="flex-1">
-                            {scanning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                            Assegna {getEstimatedTCC()} TCC
-                          </Button>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Risultato Scansione */}
-                    {scanResult && (
-                      <div className={`p-4 rounded-lg ${scanResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border`}>
-                        <div className="flex items-center gap-3">
-                          {scanResult.success ? (
-                            <CheckCircle2 className="h-8 w-8 text-green-600" />
-                          ) : (
-                            <XCircle className="h-8 w-8 text-red-600" />
-                          )}
-                          <div>
-                            <p className={`font-semibold ${scanResult.success ? 'text-green-700' : 'text-red-700'}`}>
-                              {scanResult.success ? scanResult.message : 'Errore'}
-                            </p>
-                            {!scanResult.success && <p className="text-sm text-red-600">{scanResult.error}</p>}
-                          </div>
-                        </div>
-                        {scanResult.success && (
-                          <Button onClick={resetScanner} variant="outline" className="w-full mt-3">
-                            Scansiona altro cliente
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Riscatto TCC */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Euro className="h-5 w-5" />
-                      Riscatta TCC in Euro
-                    </CardTitle>
-                    <CardDescription>Converti i tuoi TCC in Euro sul tuo conto</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Importo TCC da riscattare</Label>
-                      <Input
-                        type="number"
-                        placeholder={`Max: ${merchantData?.pending_tcc || 0}`}
-                        value={redeemAmount}
-                        onChange={(e) => setRedeemAmount(e.target.value)}
-                        max={merchantData?.pending_tcc || 0}
-                        min="1"
-                      />
-                      {redeemAmount && (
-                        <p className="text-sm text-muted-foreground">
-                          = €{(parseInt(redeemAmount) * 0.01).toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>IBAN</Label>
-                      <Input
-                        placeholder="IT60X0542811101000000123456"
-                        value={bankAccount}
-                        onChange={(e) => setBankAccount(e.target.value)}
-                      />
-                    </div>
-
-                    <Button 
-                      onClick={redeemTCC} 
-                      disabled={redeeming || !redeemAmount || parseInt(redeemAmount) > (merchantData?.pending_tcc || 0)}
-                      className="w-full"
-                    >
-                      {redeeming ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ArrowDownToLine className="h-4 w-4 mr-2" />}
-                      {redeeming ? 'Elaborazione...' : `Riscatta €${redeemAmount ? (parseInt(redeemAmount) * 0.01).toFixed(2) : '0.00'}`}
-                    </Button>
-
-                    {redeemResult && (
-                      <div className={`p-4 rounded-lg ${redeemResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border`}>
-                        {redeemResult.success ? (
-                          <div className="flex items-center gap-3">
-                            <CheckCircle2 className="h-8 w-8 text-green-600" />
-                            <div>
-                              <p className="font-semibold text-green-700">{redeemResult.message}</p>
-                              <p className="text-sm text-green-600">Bonifico di €{redeemResult.eur_amount} in arrivo</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <XCircle className="h-8 w-8 text-red-600" />
-                            <p className="text-red-700">{redeemResult.error}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Storico Rimborsi */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <History className="h-5 w-5" />
-                      Storico Rimborsi
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {reimbursements.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4">Nessun rimborso ancora</p>
-                      ) : (
-                        reimbursements.map((r) => (
-                          <div key={r.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                            <div>
-                              <p className="font-medium">{r.tcc_amount} TCC → €{parseFloat(r.eur_amount).toFixed(2)}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(r.created_at).toLocaleDateString('it-IT')}
-                              </p>
-                            </div>
-                            <span className={`px-2 py-1 rounded text-xs ${r.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                              {r.status === 'completed' ? 'Completato' : 'In attesa'}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-          </TabsContent>
         </Tabs>
       </div>
 
