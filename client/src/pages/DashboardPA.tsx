@@ -454,9 +454,29 @@ export default function DashboardPA() {
     }));
   };
 
+  // Funzione per formattazione italiana numeri (punto migliaia, virgola decimali)
+  const formatNumberIT = (num: number | string | undefined | null, decimals: number = 0): string => {
+    if (num === undefined || num === null || isNaN(Number(num))) return '0';
+    const n = typeof num === 'string' ? parseFloat(num) : num;
+    return n.toLocaleString('it-IT', { 
+      minimumFractionDigits: decimals, 
+      maximumFractionDigits: decimals 
+    });
+  };
+
+  // Funzione per formattazione euro
+  const formatEuroIT = (num: number | string | undefined | null, decimals: number = 2): string => {
+    if (num === undefined || num === null || isNaN(Number(num))) return '€0,00';
+    const n = typeof num === 'string' ? parseFloat(num) : num;
+    return '€' + n.toLocaleString('it-IT', { 
+      minimumFractionDigits: decimals, 
+      maximumFractionDigits: decimals 
+    });
+  };
+
   const calculateMonthsRemaining = () => {
-    if (editableParams.burnRate === 0) return 999;
-    return (editableParams.fundBalance / editableParams.burnRate).toFixed(1);
+    if (editableParams.burnRate === 0) return '999';
+    return formatNumberIT(editableParams.fundBalance / editableParams.burnRate, 1);
   };
 
   const calculateVelocity = () => {
@@ -2404,22 +2424,22 @@ export default function DashboardPA() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="p-4 bg-gradient-to-br from-[#14b8a6]/20 to-[#14b8a6]/5 border border-[#14b8a6]/30 rounded-lg">
                       <div className="text-sm text-[#e8fbff]/70 mb-1">TCC in Circolazione</div>
-                      <div className="text-3xl font-bold text-[#14b8a6]">{fundStats.total_circulation?.toLocaleString()}</div>
+                      <div className="text-3xl font-bold text-[#14b8a6]">{formatNumberIT(fundStats.total_circulation)}</div>
                       <div className="text-xs text-[#e8fbff]/50">Nei wallet utenti</div>
                     </div>
                     <div className="p-4 bg-[#0b1220] border border-[#10b981]/20 rounded-lg">
                       <div className="text-sm text-[#e8fbff]/70 mb-1">TCC Totali Rilasciati</div>
-                      <div className="text-2xl font-bold text-[#10b981]">{fundStats.total_issued?.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-[#10b981]">{formatNumberIT(fundStats.total_issued)}</div>
                       <div className="text-xs text-[#e8fbff]/50">Dagli operatori</div>
                     </div>
                     <div className="p-4 bg-[#0b1220] border border-[#f59e0b]/20 rounded-lg">
                       <div className="text-sm text-[#e8fbff]/70 mb-1">TCC Totali Riscattati</div>
-                      <div className="text-2xl font-bold text-[#f59e0b]">{fundStats.total_redeemed?.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-[#f59e0b]">{formatNumberIT(fundStats.total_redeemed)}</div>
                       <div className="text-xs text-[#e8fbff]/50">Dai clienti</div>
                     </div>
                     <div className="p-4 bg-gradient-to-br from-[#8b5cf6]/20 to-[#8b5cf6]/5 border border-[#8b5cf6]/30 rounded-lg">
                       <div className="text-sm text-[#e8fbff]/70 mb-1">Fabbisogno Fondo</div>
-                      <div className="text-2xl font-bold text-[#8b5cf6]">€{fundStats.fund_requirement_eur}</div>
+                      <div className="text-2xl font-bold text-[#8b5cf6]">{formatEuroIT(fundStats.fund_requirement_eur)}</div>
                       <div className="text-xs text-[#e8fbff]/50">Per coprire circolazione</div>
                     </div>
                   </div>
@@ -2428,15 +2448,15 @@ export default function DashboardPA() {
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="p-3 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
                       <div className="text-xs text-[#e8fbff]/70">Rilasciati Oggi</div>
-                      <div className="text-xl font-bold text-[#10b981]">{fundStats.today?.issued || 0} TCC</div>
+                      <div className="text-xl font-bold text-[#10b981]">{formatNumberIT(fundStats.today?.issued || 0)} TCC</div>
                     </div>
                     <div className="p-3 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
                       <div className="text-xs text-[#e8fbff]/70">Riscattati Oggi</div>
-                      <div className="text-xl font-bold text-[#f59e0b]">{fundStats.today?.redeemed || 0} TCC</div>
+                      <div className="text-xl font-bold text-[#f59e0b]">{formatNumberIT(fundStats.today?.redeemed || 0)} TCC</div>
                     </div>
                     <div className="p-3 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-lg">
                       <div className="text-xs text-[#e8fbff]/70">Vendite Oggi</div>
-                      <div className="text-xl font-bold text-[#14b8a6]">€{fundStats.today?.sales_eur || 0}</div>
+                      <div className="text-xl font-bold text-[#14b8a6]">{formatEuroIT(fundStats.today?.sales_eur || 0)}</div>
                     </div>
                   </div>
                   
@@ -2448,11 +2468,11 @@ export default function DashboardPA() {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-lg font-bold text-[#e8fbff]">{fundStats.users?.total || 0}</div>
+                        <div className="text-lg font-bold text-[#e8fbff]">{formatNumberIT(fundStats.users?.total || 0)}</div>
                         <div className="text-xs text-[#e8fbff]/50">Totali</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-[#10b981]">{fundStats.users?.active || 0}</div>
+                        <div className="text-lg font-bold text-[#10b981]">{formatNumberIT(fundStats.users?.active || 0)}</div>
                         <div className="text-xs text-[#e8fbff]/50">Con TCC</div>
                       </div>
                     </div>
