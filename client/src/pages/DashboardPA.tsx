@@ -520,6 +520,11 @@ export default function DashboardPA() {
   const [tccRules, setTccRules] = useState<any[]>([]);
   const [tccRulesLoading, setTccRulesLoading] = useState(false);
   
+  // TCC v2.1 - Environment Data (Meteo, Qualità Aria, ETS)
+  const [envData, setEnvData] = useState<any>(null);
+  const [envLoading, setEnvLoading] = useState(false);
+  const [editableEtsPrice, setEditableEtsPrice] = useState<number>(89.56);
+  
   // Documentation Modal state
   const [docModalContent, setDocModalContent] = useState<{ title: string; content: string } | null>(null);
   
@@ -579,6 +584,53 @@ export default function DashboardPA() {
     };
     loadRules();
   }, [selectedComuneId]);
+  
+  // Carica dati ambientali per l'hub selezionato (TCC v2.1 - Environment)
+  useEffect(() => {
+    const fetchEnvironmentData = async () => {
+      if (!selectedComuneId) return;
+      setEnvLoading(true);
+      try {
+        const response = await fetch(`https://orchestratore.mio-hub.me/api/tcc/v2/environment/${selectedComuneId}`);
+        const data = await response.json();
+        if (data.success) {
+          setEnvData(data);
+          setEditableEtsPrice(data.ets?.price_per_tonne || 89.56);
+        }
+      } catch (error) {
+        console.error('Error fetching environment data:', error);
+      } finally {
+        setEnvLoading(false);
+      }
+    };
+    fetchEnvironmentData();
+  }, [selectedComuneId]);
+  
+  // Funzione per aggiornare il prezzo ETS
+  const handleEtsPriceUpdate = async () => {
+    if (!editableEtsPrice || editableEtsPrice <= 0) return;
+    try {
+      const response = await fetch('https://orchestratore.mio-hub.me/api/tcc/v2/ets-price', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          ets_price: editableEtsPrice,
+          notes: 'Aggiornamento manuale da dashboard'
+        })
+      });
+      const data = await response.json();
+      if (data.success && selectedComuneId) {
+        // Ricarica i dati ambientali per aggiornare il valore TCC
+        const envResponse = await fetch(`https://orchestratore.mio-hub.me/api/tcc/v2/environment/${selectedComuneId}`);
+        const envData = await envResponse.json();
+        if (envData.success) {
+          setEnvData(envData);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating ETS price:', error);
+    }
+  };
   
   // Carica statistiche fondo TCC NAZIONALI (endpoint originale senza comune)
   useEffect(() => {
@@ -2405,6 +2457,142 @@ export default function DashboardPA() {
                 {tccComuni.length === 0 && (
                   <div className="mt-2 text-sm text-[#f59e0b]">
                     Nessun comune con area geografica definita. Crea prima un'area hub.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* DATI AMBIENTALI IN TEMPO REALE */}
+            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-[#14b8a6]" />
+                  Dati Ambientali in Tempo Reale
+                  {envLoading && <RefreshCw className="h-4 w-4 animate-spin text-[#14b8a6]" />}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* METEO */}
+                  <div className="p-4 bg-gradient-to-br from-[#3b82f6]/20 to-[#3b82f6]/5 border border-[#3b82f6]/30 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CloudRain className="h-5 w-5 text-[#3b82f6]" />
+                      <span className="text-sm font-semibold text-[#e8fbff]">Meteo</span>
+                    </div>
+                    {envData?.weather ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#e8fbff]/70 text-sm">Temperatura</span>
+                          <span className="text-2xl font-bold text-[#3b82f6]">{envData.weather.temperature}°C</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#e8fbff]/70 text-sm">Condizioni</span>
+                          <span className="text-sm text-[#e8fbff]">{envData.weather.weather_description}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#e8fbff]/70 text-sm">Umidità</span>
+                          <span className="text-sm text-[#e8fbff]">{envData.weather.humidity}%</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#e8fbff]/70 text-sm">Vento</span>
+                          <span className="text-sm text-[#e8fbff]">{envData.weather.wind_speed} km/h</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[#e8fbff]/50 text-sm">Caricamento...</div>
+                    )}
+                  </div>
+                  
+                  {/* QUALITÀ ARIA */}
+                  <div className="p-4 bg-gradient-to-br from-[#10b981]/20 to-[#10b981]/5 border border-[#10b981]/30 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Wind className="h-5 w-5 text-[#10b981]" />
+                      <span className="text-sm font-semibold text-[#e8fbff]">Qualità Aria</span>
+                    </div>
+                    {envData?.air_quality ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#e8fbff]/70 text-sm">AQI Europeo</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold" style={{ color: envData.air_quality.aqi_color }}>{envData.air_quality.european_aqi}</span>
+                            <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: envData.air_quality.aqi_color + '30', color: envData.air_quality.aqi_color }}>{envData.air_quality.aqi_label}</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          <div className="text-center p-2 bg-[#0b1220] rounded">
+                            <div className="text-xs text-[#e8fbff]/50">PM10</div>
+                            <div className="text-sm font-semibold text-[#e8fbff]">{envData.air_quality.pm10?.toFixed(1)}</div>
+                          </div>
+                          <div className="text-center p-2 bg-[#0b1220] rounded">
+                            <div className="text-xs text-[#e8fbff]/50">PM2.5</div>
+                            <div className="text-sm font-semibold text-[#e8fbff]">{envData.air_quality.pm2_5?.toFixed(1)}</div>
+                          </div>
+                          <div className="text-center p-2 bg-[#0b1220] rounded">
+                            <div className="text-xs text-[#e8fbff]/50">NO₂</div>
+                            <div className="text-sm font-semibold text-[#e8fbff]">{envData.air_quality.no2?.toFixed(1)}</div>
+                          </div>
+                          <div className="text-center p-2 bg-[#0b1220] rounded">
+                            <div className="text-xs text-[#e8fbff]/50">O₃</div>
+                            <div className="text-sm font-semibold text-[#e8fbff]">{envData.air_quality.o3?.toFixed(1)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[#e8fbff]/50 text-sm">Caricamento...</div>
+                    )}
+                  </div>
+                  
+                  {/* PREZZO ETS */}
+                  <div className="p-4 bg-gradient-to-br from-[#f59e0b]/20 to-[#f59e0b]/5 border border-[#f59e0b]/30 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Euro className="h-5 w-5 text-[#f59e0b]" />
+                      <span className="text-sm font-semibold text-[#e8fbff]">Prezzo EU ETS</span>
+                    </div>
+                    {envData?.ets ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#e8fbff]/70 text-sm">€/tonnellata CO₂</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-[#f59e0b]">€</span>
+                            <input
+                              type="number"
+                              value={editableEtsPrice}
+                              onChange={(e) => setEditableEtsPrice(parseFloat(e.target.value) || 0)}
+                              onBlur={handleEtsPriceUpdate}
+                              className="w-20 text-2xl font-bold text-[#f59e0b] bg-transparent border-b border-[#f59e0b]/50 focus:border-[#f59e0b] outline-none text-right"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#e8fbff]/70 text-sm">Valore 1 TCC</span>
+                          <span className="text-lg font-semibold text-[#14b8a6]">€{envData.tcc?.effective_value?.toFixed(4)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#e8fbff]/70 text-sm">Policy Multiplier</span>
+                          <span className="text-sm text-[#e8fbff]">{envData.tcc?.policy_multiplier}x</span>
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50 mt-2 pt-2 border-t border-[#f59e0b]/20">
+                          Formula: 1 TCC = 1% ETS × multiplier
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[#e8fbff]/50 text-sm">Caricamento...</div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Info Hub e Timestamp */}
+                {envData?.hub && (
+                  <div className="mt-4 flex items-center justify-between text-xs text-[#e8fbff]/50">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3 w-3" />
+                      <span>{envData.hub.city} ({envData.hub.coordinates.lat.toFixed(4)}, {envData.hub.coordinates.lon.toFixed(4)})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3 w-3" />
+                      <span>Aggiornato: {new Date(envData.timestamp).toLocaleTimeString('it-IT')}</span>
+                    </div>
                   </div>
                 )}
               </CardContent>
