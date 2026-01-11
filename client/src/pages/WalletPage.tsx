@@ -126,6 +126,9 @@ export default function WalletPage() {
   const [spendQRData, setSpendQRData] = useState<{qr_string: string; tcc_amount: number; expires_at: string} | null>(null);
   const [generatingSpendQR, setGeneratingSpendQR] = useState(false);
   
+  // Valore TCC in euro (basato su EU ETS: €89/tonnellata / 1000 = €0,089 per kg CO₂)
+  const TCC_VALUE_EUR = 0.089;
+  
   // Cliente state
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [qrData, setQrData] = useState<QRData | null>(null);
@@ -813,7 +816,10 @@ export default function WalletPage() {
                       <div className="p-3 bg-amber-500/10 rounded-lg">
                         <p className="text-sm text-muted-foreground">TCC necessari (stima)</p>
                         <p className="text-2xl font-bold text-amber-600">
-                          ~{Math.ceil(parseFloat(spendAmount))} TCC
+                          ~{Math.ceil(parseFloat(spendAmount) / TCC_VALUE_EUR).toLocaleString('it-IT')} TCC
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          (1 TCC = €{TCC_VALUE_EUR.toLocaleString('it-IT', {minimumFractionDigits: 3})} = 1 kg CO₂)
                         </p>
                       </div>
                     )}

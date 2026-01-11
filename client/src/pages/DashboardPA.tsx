@@ -418,7 +418,8 @@ export default function DashboardPA() {
   const [walletSearch, setWalletSearch] = useState('');
   const [selectedWallet, setSelectedWallet] = useState<number | null>(null);
 
-  const [tccValue, setTccValue] = useState(0.20);
+  // Leva Politica: TCC assegnati per €10 spesi (range 0-30, default 1 = 10 TCC per €10)
+  const [tccValue, setTccValue] = useState(1.0); // Moltiplicatore leva (1.0 = 10 TCC per €10)
   
   // Carbon Credits - Simulatore completo
   const [editableParams, setEditableParams] = useState({
@@ -653,7 +654,11 @@ export default function DashboardPA() {
           // Aggiorna il valore TCC applicato dalla config nazionale
           if (data.fund.config?.tcc_value) {
             setAppliedTccValue(parseFloat(data.fund.config.tcc_value));
-            setTccValue(parseFloat(data.fund.config.tcc_value));
+          }
+          // Aggiorna la leva politica (policy_multiplier)
+          if (data.fund.config?.policy_multiplier) {
+            // policy_multiplier rappresenta TCC per €1, quindi moltiplichiamo per 10 per avere TCC per €10
+            setTccValue(parseFloat(data.fund.config.policy_multiplier));
           }
         }
       } catch (error) {
@@ -2876,19 +2881,25 @@ export default function DashboardPA() {
                         return;
                       }
                       try {
+                        // Calcola il policy_multiplier: quanti TCC per €10 / valore base
+                        // Se tccValue = 1 (10 TCC per €10), policy_multiplier = 10 * 0.089 = 0.89
+                        // Il moltiplicatore indica quanti TCC vengono assegnati per ogni euro speso
+                        const tccPer10Euro = Math.round(tccValue * 10);
+                        const policyMultiplier = tccPer10Euro / 10; // TCC per €1
+                        
                         const response = await fetch(`https://orchestratore.mio-hub.me/api/tcc/v2/config/update/${selectedComuneId}`, {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
-                            policy_multiplier: tccValue,
-                            tcc_value: 1.0,
-                            policy_notes: `Leva: ${Math.round(tccValue * 10)} TCC per €10 - ${new Date().toLocaleDateString('it-IT')}`
+                            policy_multiplier: policyMultiplier,
+                            // NON sovrascrivere tcc_value - deve rimanere €0,089!
+                            policy_notes: `Leva: ${tccPer10Euro} TCC per €10 - ${new Date().toLocaleDateString('it-IT')}`
                           })
                         });
                         const data = await response.json();
                         if (data.success) {
-                          setAppliedTccValue(tccValue);
-                          alert(`Leva politica salvata!\n\n€10 spesi = ${Math.round(tccValue * 10)} TCC assegnati`);
+                          setAppliedTccValue(0.089); // Valore fisso EU ETS
+                          alert(`Leva politica salvata!\n\n€10 spesi = ${tccPer10Euro} TCC assegnati\nMoltiplicatore: ${policyMultiplier.toFixed(2)}x`);
                         } else {
                           alert(`Errore: ${data.error || 'Impossibile salvare'}`);
                         }
