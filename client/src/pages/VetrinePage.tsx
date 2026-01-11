@@ -705,7 +705,7 @@ export default function VetrinePage() {
                       <div className="flex justify-between items-start mb-3">
                         <h3 className="font-semibold">{product.name}</h3>
                         <span className="text-lg font-bold text-primary">
-                          €{product.price.toFixed(2)}
+                          €{product.price.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </span>
                       </div>
                       <Button

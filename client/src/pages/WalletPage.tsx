@@ -554,8 +554,9 @@ export default function WalletPage() {
   // ============================================================================
 
   const balance = walletData?.balance || 0;
-  const co2Saved = Math.round(balance * 0.5);
-  const treesEquivalent = Math.round(co2Saved / 22);
+  // Formula: 1 TCC = 1 kg CO2, 22 kg CO2 = 1 albero/anno
+  const co2Saved = balance; // 1 TCC = 1 kg CO2
+  const treesEquivalent = (co2Saved / 22).toFixed(1); // 22 kg CO2 per albero/anno
 
   const getLevel = (balance: number) => {
     if (balance >= 500) return { name: 'Oro', color: 'amber', percentile: 'Top 5%' };
@@ -731,7 +732,7 @@ export default function WalletPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-7xl font-bold mb-2">{balance}</div>
-                <p className="text-primary-foreground/80">crediti disponibili (€{(balance * 0.01).toFixed(2)})</p>
+                <p className="text-primary-foreground/80">crediti disponibili (€{(balance * 0.089).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</p>
               </CardContent>
             </Card>
 
@@ -767,9 +768,9 @@ export default function WalletPage() {
                   <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
                     <Leaf className="h-7 w-7 text-white" />
                   </div>
-                  <div className="text-4xl font-bold text-green-600">{co2Saved} kg</div>
+                  <div className="text-4xl font-bold text-green-600">{co2Saved.toLocaleString('it-IT')} kg</div>
                   <div className="text-sm text-muted-foreground font-medium">CO₂ Evitata</div>
-                  <p className="text-xs text-muted-foreground mt-2">Equivalente a {treesEquivalent} alberi</p>
+                  <p className="text-xs text-muted-foreground mt-2">Equivalente a {treesEquivalent} alberi/anno</p>
                 </CardContent>
               </Card>
 
@@ -798,7 +799,7 @@ export default function WalletPage() {
                 {!spendQRData ? (
                   <>
                     <div>
-                      <Label>Importo da pagare (EUR)</Label>
+                      <Label>Importo da pagare (€)</Label>
                       <Input
                         type="number"
                         step="0.01"
