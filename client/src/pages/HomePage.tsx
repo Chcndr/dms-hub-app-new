@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import LoginModal from '@/components/LoginModal';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,38 @@ export default function HomePage() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [pendingRoute, setPendingRoute] = useState<string | null>(null);
+
+  // Controlla autenticazione all'avvio
+  useEffect(() => {
+    const checkAuth = () => {
+      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      setIsAuthenticated(!!(userStr && token));
+    };
+    checkAuth();
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
+  }, []);
+
+  // Naviga dopo login riuscito
+  useEffect(() => {
+    if (isAuthenticated && pendingRoute) {
+      setLocation(pendingRoute);
+      setPendingRoute(null);
+    }
+  }, [isAuthenticated, pendingRoute]);
+
+  // Gestisce click su tab protetti
+  const handleProtectedNavigation = (route: string) => {
+    if (isAuthenticated) {
+      setLocation(route);
+    } else {
+      setPendingRoute(route);
+      setShowLoginModal(true);
+    }
+  };
 
   // Dati demo per la ricerca
   const allResults: SearchResult[] = [
@@ -205,7 +237,7 @@ export default function HomePage() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => setLocation('/mappa-italia')}
+              onClick={() => handleProtectedNavigation('/mappa-italia')}
               className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <MapPin className="w-6 h-6" />
@@ -214,7 +246,7 @@ export default function HomePage() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => setLocation('/route')}
+              onClick={() => handleProtectedNavigation('/route')}
               className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <TrendingUp className="w-6 h-6" />
@@ -223,7 +255,7 @@ export default function HomePage() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => setLocation('/wallet')}
+              onClick={() => handleProtectedNavigation('/wallet')}
               className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <Leaf className="w-6 h-6" />
@@ -232,7 +264,7 @@ export default function HomePage() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => setLocation('/civic')}
+              onClick={() => handleProtectedNavigation('/civic')}
               className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <Search className="w-6 h-6" />
@@ -241,7 +273,7 @@ export default function HomePage() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => setLocation('/vetrine')}
+              onClick={() => handleProtectedNavigation('/vetrine')}
               className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <Store className="w-6 h-6" />
@@ -268,7 +300,15 @@ export default function HomePage() {
       {/* Login Modal */}
       <LoginModal 
         isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)} 
+        onClose={() => {
+          setShowLoginModal(false);
+          // Ricontrolla autenticazione dopo chiusura modal
+          const userStr = localStorage.getItem('user');
+          const token = localStorage.getItem('token');
+          if (userStr && token) {
+            setIsAuthenticated(true);
+          }
+        }} 
       />
     </div>
   );
