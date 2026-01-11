@@ -449,7 +449,7 @@ export default function HubOperatore() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <p className="text-2xl font-bold text-[#e8fbff]">
-                  EUR{operatorWallet?.euro_sales?.toFixed(2) || '0.00'}
+                  €{parseFloat(operatorWallet?.euro_sales || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 </p>
                 <TrendingUp className="w-5 h-5 text-[#10b981]" />
               </div>
@@ -754,7 +754,7 @@ export default function HubOperatore() {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-[#e8fbff]">
-                            EUR{parseFloat(tx.euro_amount || 0).toFixed(2)}
+                            €{parseFloat(tx.euro_amount || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                           </p>
                           <p className={`text-sm ${tx.type === 'issue' ? 'text-[#14b8a6]' : 'text-[#f59e0b]'}`}>
                             {tx.type === 'issue' ? '+' : '-'}{tx.tcc_amount} TCC
@@ -801,7 +801,7 @@ export default function HubOperatore() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-[#94a3b8]">Valore Riscattati</p>
-                      <p className="text-2xl font-bold text-[#10b981]">EUR{operatorWallet?.redeemed_eur || '0.00'}</p>
+                      <p className="text-2xl font-bold text-[#10b981]">€{parseFloat(operatorWallet?.redeemed_eur || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                     </div>
                   </div>
                 </div>
@@ -810,7 +810,7 @@ export default function HubOperatore() {
                 {tccConfig && (
                   <div className="p-3 bg-[#0b1220] rounded-lg flex justify-between items-center">
                     <span className="text-sm text-[#94a3b8]">Tasso di Cambio Attuale</span>
-                    <span className="font-bold text-[#e8fbff]">1 TCC = EUR{tccConfig.effective_rate}</span>
+                    <span className="font-bold text-[#e8fbff]">1 TCC = €{parseFloat(tccConfig.effective_rate).toLocaleString('it-IT', {minimumFractionDigits: 4, maximumFractionDigits: 4})}</span>
                   </div>
                 )}
 

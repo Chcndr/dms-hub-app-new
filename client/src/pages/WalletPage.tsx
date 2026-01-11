@@ -836,7 +836,7 @@ export default function WalletPage() {
                     </div>
                     <div className="p-3 bg-amber-500/10 rounded-lg">
                       <p className="text-sm text-muted-foreground">Importo</p>
-                      <p className="text-2xl font-bold">EUR{spendAmount}</p>
+                      <p className="text-2xl font-bold">€{parseFloat(spendAmount || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                       <p className="text-lg text-amber-600 font-semibold">{spendQRData.tcc_amount} TCC</p>
                     </div>
                     <p className="text-xs text-muted-foreground">

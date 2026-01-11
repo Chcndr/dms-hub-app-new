@@ -2567,14 +2567,14 @@ export default function DashboardPA() {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-[#e8fbff]/70 text-sm">Valore 1 TCC</span>
-                          <span className="text-lg font-semibold text-[#14b8a6]">€{envData.tcc?.effective_value?.toFixed(4)}</span>
+                          <span className="text-lg font-semibold text-[#14b8a6]">€{(envData.tcc?.effective_value || 0).toLocaleString('it-IT', {minimumFractionDigits: 4, maximumFractionDigits: 4})}</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-[#e8fbff]/70 text-sm">Policy Multiplier</span>
                           <span className="text-sm text-[#e8fbff]">{envData.tcc?.policy_multiplier}x</span>
                         </div>
                         <div className="text-xs text-[#e8fbff]/50 mt-2 pt-2 border-t border-[#f59e0b]/20">
-                          Formula: 1 TCC = 1% ETS × multiplier
+                          Formula: 1 TCC = 1 kg CO₂ = ETS/1000
                         </div>
                       </div>
                     ) : (
@@ -2787,7 +2787,7 @@ export default function DashboardPA() {
                   <div className="mb-6">
                     <div className="text-sm text-[#e8fbff]/70 mb-2">Valore Corrente</div>
                     <div className="text-5xl font-bold text-[#14b8a6] mb-1">
-                      €{appliedTccValue.toFixed(2).replace('.', ',')}
+                      €{appliedTccValue.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 4})}
                     </div>
                     <div className="text-sm text-[#e8fbff]/50">per 1 TCC</div>
                   </div>
@@ -2800,7 +2800,7 @@ export default function DashboardPA() {
                       ]).map((item: any, idx: number) => (
                         <div key={idx} className="flex items-center justify-between p-2 bg-[#0b1220] rounded">
                           <span className="text-xs text-[#e8fbff]/70">{item.date}</span>
-                          <span className="text-sm font-semibold text-[#14b8a6]">€{parseFloat(item.value || 0).toFixed(2)}</span>
+                          <span className="text-sm font-semibold text-[#14b8a6]">€{parseFloat(item.value || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span>
                         </div>
                       ))}
                     </div>
@@ -2840,11 +2840,11 @@ export default function DashboardPA() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-[#e8fbff]/70">Nuovo valore:</span>
-                        <span className="text-[#8b5cf6] font-semibold">€{tccValue.toFixed(2).replace('.', ',')}</span>
+                        <span className="text-[#8b5cf6] font-semibold">€{tccValue.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[#e8fbff]/70">Incremento spesa:</span>
-                        <span className="text-[#f59e0b] font-semibold">+€{((tccValue - appliedTccValue) * 1000).toFixed(0)}/mese</span>
+                        <span className="text-[#f59e0b] font-semibold">+€{((tccValue - appliedTccValue) * 1000).toLocaleString('it-IT', {minimumFractionDigits: 0, maximumFractionDigits: 0})}/mese</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[#e8fbff]/70">Mesi rimanenti:</span>
@@ -2872,7 +2872,7 @@ export default function DashboardPA() {
                         const data = await response.json();
                         if (data.success) {
                           setAppliedTccValue(tccValue);
-                          alert(`Valore TCC aggiornato a €${tccValue.toFixed(2).replace('.', ',')}!\n\nLa modifica è stata salvata nel database.`);
+                          alert(`Valore TCC aggiornato a €${tccValue.toLocaleString('it-IT', {minimumFractionDigits: 4})}!\n\nLa modifica è stata salvata nel database.`);
                         } else {
                           alert(`Errore: ${data.error || 'Impossibile salvare la modifica'}`);
                         }
@@ -2925,7 +2925,7 @@ export default function DashboardPA() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
-                          <span className="text-lg font-bold text-[#14b8a6]">€{area.value.toFixed(2).replace('.', ',')}</span>
+                          <span className="text-lg font-bold text-[#14b8a6]">€{area.value.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span>
                         </div>
                       </div>
                     ))}
@@ -2966,7 +2966,7 @@ export default function DashboardPA() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-[#e8fbff]/50">Valore finale:</span>
-                          <span className="text-lg font-bold text-[#14b8a6]">€{cat.finalValue.toFixed(2).replace('.', ',')}</span>
+                          <span className="text-lg font-bold text-[#14b8a6]">€{cat.finalValue.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span>
                         </div>
                       </div>
                     ))}
