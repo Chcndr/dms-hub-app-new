@@ -21,7 +21,8 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   Send,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 
 // API Base URL
@@ -293,8 +294,9 @@ export default function HubOperatore() {
       const data = await res.json();
       
       if (data.success) {
+        const txNum = data.transaction?.transaction_number || '';
         toast.success(data.message, {
-          description: `Nuovo saldo cliente: ${data.citizen.new_balance} TCC`
+          description: `${txNum ? `#${txNum} - ` : ''}Nuovo saldo cliente: ${data.citizen.new_balance} TCC`
         });
         // Reset form
         setAmount('');
@@ -336,8 +338,12 @@ export default function HubOperatore() {
       const data = await res.json();
       
       if (data.success) {
-        toast.success(data.message);
+        const txNum = data.transaction?.transaction_number || '';
+        toast.success(data.message, {
+          description: txNum ? `#${txNum}` : undefined
+        });
         setScannedData(null);
+        setValidatedSpendRequest(null);
         // Ricarica dati con piccolo delay per evitare race condition
         setTimeout(() => {
           loadOperatorWallet();
@@ -837,8 +843,16 @@ export default function HubOperatore() {
                     </div>
                   ) : scannedData && scanMode === 'redeem' ? (
                     <div className="text-center p-4">
-                      <RefreshCw className="w-16 h-16 text-[#f59e0b] mx-auto mb-4 animate-spin" />
-                      <p className="text-[#e8fbff] font-medium">Validazione in corso...</p>
+                      <AlertCircle className="w-16 h-16 text-[#ef4444] mx-auto mb-4" />
+                      <p className="text-[#e8fbff] font-medium mb-2">QR non valido o scaduto</p>
+                      <p className="text-[#94a3b8] text-sm mb-4">Il codice QR potrebbe essere già stato usato o essere scaduto</p>
+                      <Button 
+                        className="bg-[#f97316] hover:bg-[#ea580c]"
+                        onClick={() => { setScannedData(null); setValidatedSpendRequest(null); }}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Riprova
+                      </Button>
                     </div>
                   ) : (
                     <form onSubmit={handleManualQRInput} className="w-full p-4 space-y-4">
@@ -979,6 +993,12 @@ export default function HubOperatore() {
                                tx.type === 'settlement' ? `Chiusura Giornata${tx.description?.startsWith('#') ? ' ' + tx.description.split('|')[0] : ''}` :
                                'Rimborso Ricevuto'}
                             </p>
+                            {/* Numero progressivo transazione */}
+                            {tx.description && tx.description.includes('#TRX-') && (
+                              <p className="text-xs text-[#14b8a6] font-mono">
+                                #{tx.description.match(/#TRX-(\d{8}-\d{6})/)?.[1]}
+                              </p>
+                            )}
                             <p className="text-sm text-[#94a3b8]">
                               {new Date(tx.created_at).toLocaleDateString('it-IT')} - {new Date(tx.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                             </p>
