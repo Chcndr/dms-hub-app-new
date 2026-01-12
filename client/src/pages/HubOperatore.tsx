@@ -735,7 +735,7 @@ export default function HubOperatore() {
                   {(!transactions || transactions.length === 0) ? (
                     <p className="text-center text-[#94a3b8] py-8">Nessuna transazione oggi</p>
                   ) : (
-                    (transactions || []).map((tx, i) => (
+                    (transactions || []).filter(tx => tx.type === 'issue' || tx.type === 'redeem').map((tx, i) => (
                       <div key={tx.id || i} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                         <div className="flex items-center gap-3">
                           {tx.type === 'issue' ? (
