@@ -790,18 +790,17 @@ export default function WalletPage() {
                   </div>
                   <div className="text-4xl font-bold text-green-600">{lastOperationCO2.toLocaleString('it-IT')} kg</div>
                   <div className="text-sm text-muted-foreground font-medium">CO₂ Evitata</div>
-                  <p className="text-xs text-muted-foreground mt-1">Ultima operazione</p>
-                  <p className="text-xs text-muted-foreground">≈ {lastOperationTrees} alberi/anno</p>
+                  <p className="text-xs text-muted-foreground mt-2">Equivalente a {lastOperationTrees} alberi/anno</p>
                 </CardContent>
               </Card>
 
-              {/* Card Arancione/Verde - Totale Cumulativo con Barra Progresso */}
+              {/* Card Livello - Sfondo che cresce dal basso */}
               <Card className="border-0 shadow-lg overflow-hidden relative">
                 {/* Sfondo arancione base */}
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-amber-600/10" />
-                {/* Barra verde che cresce dal basso */}
+                {/* Sfondo verde che cresce dal basso */}
                 <div 
-                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-green-500/40 to-green-400/20 transition-all duration-1000 ease-out"
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-green-500 to-green-400/80 transition-all duration-1000 ease-out"
                   style={{ height: `${progressPercent}%` }}
                 />
                 <CardContent className="pt-6 text-center relative z-10">
@@ -812,14 +811,6 @@ export default function WalletPage() {
                   <div className="text-lg font-semibold text-green-600">{totalCumulativeCO2.toLocaleString('it-IT')} kg</div>
                   <div className="text-xs text-muted-foreground">CO₂ totale</div>
                   <p className="text-xs text-muted-foreground mt-1">{level.percentile}</p>
-                  {/* Mini barra progresso */}
-                  <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-amber-500 to-green-500 transition-all duration-1000"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{progressPercent.toFixed(0)}% verso Eco-Leggenda</p>
                 </CardContent>
               </Card>
             </div>
