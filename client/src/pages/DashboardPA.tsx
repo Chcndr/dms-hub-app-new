@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 import { useAnimation } from '@/contexts/AnimationContext';
 import { 
   Users, TrendingUp, Store, ShoppingCart, Leaf, MapPin, 
-  Activity, BarChart3, PieChart, ArrowUpRight, ArrowDownRight, ArrowDown,
+  Activity, BarChart3, PieChart, ArrowUpRight, ArrowDownRight, ArrowDown, ArrowUpCircle, ArrowDownCircle,
   Bike, Car, Bus, Footprints, Zap, Package, Globe, Award,
   Calendar, Clock, AlertCircle, AlertTriangle, CheckCircle, Download, FileText, Bot, Send,
   Shield, Lock, UserCheck, Terminal, Bug, Code, Wrench, RefreshCw,
@@ -516,6 +516,7 @@ export default function DashboardPA() {
   // Fund TCC Stats - Dati reali dal backend
   const [fundStats, setFundStats] = useState<any>(null);
   const [fundLoading, setFundLoading] = useState(true);
+  const [fundMovementFilter, setFundMovementFilter] = useState<'all' | 'deposit' | 'reimbursement'>('all');
   
   // TCC v2.1 - Comuni e Regole
   const [tccComuni, setTccComuni] = useState<any[]>([]);
@@ -641,25 +642,35 @@ export default function DashboardPA() {
       try {
         setFundLoading(true);
         // Usa l'endpoint originale per le statistiche nazionali
-        const response = await fetch('https://orchestratore.mio-hub.me/api/tcc/v2/fund/stats');
-        const data = await response.json();
-        if (data.success) {
-          setFundStats(data.fund);
+        const [statsResponse, transactionsResponse] = await Promise.all([
+          fetch('https://orchestratore.mio-hub.me/api/tcc/v2/fund/stats'),
+          fetch('https://orchestratore.mio-hub.me/api/tcc/v2/fund/transactions')
+        ]);
+        const statsData = await statsResponse.json();
+        const transactionsData = await transactionsResponse.json();
+        
+        if (statsData.success) {
+          // Combina stats con transactions
+          const fundWithTransactions = {
+            ...statsData.fund,
+            transactions: transactionsData.success ? transactionsData.transactions : []
+          };
+          setFundStats(fundWithTransactions);
           // Aggiorna anche i parametri editabili con i dati reali
           setEditableParams(prev => ({
             ...prev,
-            tccIssued: data.fund.total_issued || 0,
-            tccSpent: data.fund.total_redeemed || 0,
-            fundBalance: parseFloat(data.fund.fund_requirement_eur || '0') // Fabbisogno fondo in euro
+            tccIssued: statsData.fund.total_issued || 0,
+            tccSpent: statsData.fund.total_redeemed || 0,
+            fundBalance: parseFloat(statsData.fund.fund_requirement_eur || '0') // Fabbisogno fondo in euro
           }));
           // Aggiorna il valore TCC applicato dalla config nazionale
-          if (data.fund.config?.tcc_value) {
-            setAppliedTccValue(parseFloat(data.fund.config.tcc_value));
+          if (statsData.fund.config?.tcc_value) {
+            setAppliedTccValue(parseFloat(statsData.fund.config.tcc_value));
           }
           // Aggiorna la leva politica (policy_multiplier)
-          if (data.fund.config?.policy_multiplier) {
+          if (statsData.fund.config?.policy_multiplier) {
             // policy_multiplier = TCC per €10 spesi (valore diretto)
-            setTccValue(parseFloat(data.fund.config.policy_multiplier));
+            setTccValue(parseFloat(statsData.fund.config.policy_multiplier));
           }
         }
       } catch (error) {
@@ -3114,6 +3125,92 @@ export default function DashboardPA() {
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Processa Batch
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Storico Movimenti Fondo */}
+            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+              <CardHeader>
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-[#14b8a6]" />
+                  Storico Movimenti Fondo
+                </CardTitle>
+                <CardDescription className="text-[#94a3b8]">
+                  Registro completo di tutte le operazioni del fondo TCC
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Filtri Movimenti */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button
+                    size="sm"
+                    variant={fundMovementFilter === 'all' ? 'default' : 'outline'}
+                    onClick={() => setFundMovementFilter('all')}
+                    className={fundMovementFilter === 'all' ? 'bg-[#f97316]' : 'border-[#334155] text-[#94a3b8]'}
+                  >
+                    Tutti
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={fundMovementFilter === 'deposit' ? 'default' : 'outline'}
+                    onClick={() => setFundMovementFilter('deposit')}
+                    className={fundMovementFilter === 'deposit' ? 'bg-[#10b981]' : 'border-[#334155] text-[#94a3b8]'}
+                  >
+                    Entrate
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={fundMovementFilter === 'reimbursement' ? 'default' : 'outline'}
+                    onClick={() => setFundMovementFilter('reimbursement')}
+                    className={fundMovementFilter === 'reimbursement' ? 'bg-[#ef4444]' : 'border-[#334155] text-[#94a3b8]'}
+                  >
+                    Rimborsi
+                  </Button>
+                </div>
+
+                {/* Lista Movimenti */}
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {(!fundStats?.transactions || fundStats.transactions.length === 0) ? (
+                    <p className="text-center text-[#94a3b8] py-8">Nessun movimento registrato</p>
+                  ) : (
+                    (fundStats.transactions || []).filter(tx => fundMovementFilter === 'all' || tx.type === fundMovementFilter).map((tx, i) => (
+                      <div key={tx.id || i} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
+                        <div className="flex items-center gap-3">
+                          {tx.type === 'deposit' ? (
+                            <div className="w-8 h-8 rounded-full bg-[#10b981]/20 flex items-center justify-center">
+                              <ArrowUpCircle className="w-4 h-4 text-[#10b981]" />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-[#ef4444]/20 flex items-center justify-center">
+                              <ArrowDownCircle className="w-4 h-4 text-[#ef4444]" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-[#e8fbff]">
+                              {tx.type === 'deposit' ? 'Deposito Fondo' : `Rimborso - ${tx.operator_name || 'Operatore'}`}
+                            </p>
+                            <p className="text-sm text-[#94a3b8]">
+                              {new Date(tx.created_at).toLocaleDateString('it-IT')} - {new Date(tx.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            <Badge className={`text-xs mt-1 ${tx.type === 'deposit' ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
+                              {tx.type === 'deposit' ? 'Entrata' : 'Uscita'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-semibold ${tx.type === 'deposit' ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+                            {tx.type === 'deposit' ? '+' : '-'}€{parseFloat(tx.amount || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          </p>
+                          {tx.tcc_amount && (
+                            <p className="text-sm text-[#94a3b8]">
+                              {tx.tcc_amount} TCC
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
