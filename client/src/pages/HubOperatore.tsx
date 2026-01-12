@@ -132,6 +132,7 @@ export default function HubOperatore() {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<string | null>(null);
   const [validatedCustomer, setValidatedCustomer] = useState<any>(null);
+  const [validatedSpendRequest, setValidatedSpendRequest] = useState<any>(null);
   const [amount, setAmount] = useState<string>('');
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [calculatedCredits, setCalculatedCredits] = useState(0);
@@ -483,6 +484,34 @@ export default function HubOperatore() {
     }
   }, [inputMode, validatedCustomer, scannedData]);
 
+  // Valida QR di spesa e recupera info cliente
+  const validateSpendQR = async (qrData: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/operator/validate-spend-qr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qr_data: qrData })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setValidatedSpendRequest({
+          customer: data.customer,
+          spend: data.spend_request
+        });
+        toast.success(`Cliente verificato: ${data.customer.name}`);
+      } else {
+        toast.error(data.error || 'QR non valido');
+        setScannedData(null);
+        setValidatedSpendRequest(null);
+      }
+    } catch (error) {
+      toast.error('Errore validazione QR');
+      setScannedData(null);
+      setValidatedSpendRequest(null);
+    }
+  };
+
   // Input manuale QR
   const handleManualQRInput = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -496,8 +525,8 @@ export default function HubOperatore() {
     if (scanMode === 'issue') {
       await validateCustomerQR(qrInput);
     } else {
-      // Per riscatto, il QR contiene gia i dati necessari
-      toast.success('QR di spesa rilevato');
+      // Valida QR di spesa e recupera info cliente
+      await validateSpendQR(qrInput);
     }
     
     setIsScanning(false);
@@ -785,20 +814,31 @@ export default function HubOperatore() {
                         Nuovo Cliente
                       </Button>
                     </div>
-                  ) : scannedData && scanMode === 'redeem' ? (
+                  ) : scannedData && scanMode === 'redeem' && validatedSpendRequest ? (
                     <div className="text-center p-4">
                       <CheckCircle2 className="w-16 h-16 text-[#f59e0b] mx-auto mb-4" />
-                      <p className="text-[#e8fbff] font-medium mb-2">QR Spesa Rilevato</p>
-                      <code className="bg-[#1e293b] px-2 py-1 rounded text-xs text-[#94a3b8] block overflow-hidden text-ellipsis">
-                        {scannedData}
-                      </code>
+                      <p className="text-[#e8fbff] font-medium mb-2">Cliente Verificato</p>
+                      <p className="text-[#14b8a6] text-xl font-bold mb-1">{validatedSpendRequest.customer.name}</p>
+                      <p className="text-[#94a3b8] text-sm mb-4">Saldo: {validatedSpendRequest.customer.wallet_balance} TCC</p>
+                      
+                      <div className="bg-[#1e293b] rounded-lg p-4 mb-4">
+                        <p className="text-[#94a3b8] text-sm">TCC da Incassare</p>
+                        <p className="text-[#f59e0b] text-3xl font-bold">{validatedSpendRequest.spend.tcc_amount} TCC</p>
+                        <p className="text-[#10b981] text-lg font-semibold">€{validatedSpendRequest.spend.euro_amount.toFixed(2)}</p>
+                      </div>
+                      
                       <Button 
-                        className="mt-4 bg-[#f97316] hover:bg-[#ea580c]"
-                        onClick={() => { setScannedData(null); }}
+                        className="bg-[#f97316] hover:bg-[#ea580c]"
+                        onClick={() => { setScannedData(null); setValidatedSpendRequest(null); }}
                       >
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Nuovo QR
                       </Button>
+                    </div>
+                  ) : scannedData && scanMode === 'redeem' ? (
+                    <div className="text-center p-4">
+                      <RefreshCw className="w-16 h-16 text-[#f59e0b] mx-auto mb-4 animate-spin" />
+                      <p className="text-[#e8fbff] font-medium">Validazione in corso...</p>
                     </div>
                   ) : (
                     <form onSubmit={handleManualQRInput} className="w-full p-4 space-y-4">
@@ -839,14 +879,14 @@ export default function HubOperatore() {
                   <Button 
                     className="w-full bg-[#f59e0b] hover:bg-[#d97706] active:bg-[#b45309] active:scale-95 transition-all duration-150 disabled:opacity-50 text-lg py-6"
                     onClick={handleRedeemSpend}
-                    disabled={!scannedData || isLoading || !walletEnabled}
+                    disabled={!scannedData || !validatedSpendRequest || isLoading || !walletEnabled}
                   >
                     {isLoading ? (
                       <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
                     ) : (
                       <ArrowDownCircle className="w-5 h-5 mr-2" />
                     )}
-                    {isLoading ? 'Elaborazione...' : 'Incassa TCC'}
+                    {isLoading ? 'Elaborazione...' : validatedSpendRequest ? `Incassa ${validatedSpendRequest.spend.tcc_amount} TCC (€${validatedSpendRequest.spend.euro_amount.toFixed(2)})` : 'Incassa TCC'}
                   </Button>
                 )}
               </CardContent>
