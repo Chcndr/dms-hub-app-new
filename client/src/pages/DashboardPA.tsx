@@ -3174,10 +3174,18 @@ export default function DashboardPA() {
                   {(!fundStats?.transactions || fundStats.transactions.length === 0) ? (
                     <p className="text-center text-[#94a3b8] py-8">Nessun movimento registrato</p>
                   ) : (
-                    (fundStats.transactions || []).filter(tx => fundMovementFilter === 'all' || tx.type === fundMovementFilter).map((tx, i) => (
+                    (fundStats.transactions || []).filter(tx => {
+                      if (fundMovementFilter === 'all') return true;
+                      if (fundMovementFilter === 'deposit') return tx.type === 'deposit';
+                      if (fundMovementFilter === 'reimbursement') return tx.type === 'reimbursement' || tx.type === 'reimbursement_batch';
+                      return true;
+                    }).map((tx, i) => {
+                      const isDeposit = tx.type === 'deposit';
+                      const euroValue = tx.euro_value ? (tx.euro_value / 100) : (tx.amount || 0);
+                      return (
                       <div key={tx.id || i} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                         <div className="flex items-center gap-3">
-                          {tx.type === 'deposit' ? (
+                          {isDeposit ? (
                             <div className="w-8 h-8 rounded-full bg-[#10b981]/20 flex items-center justify-center">
                               <ArrowUpCircle className="w-4 h-4 text-[#10b981]" />
                             </div>
@@ -3188,28 +3196,29 @@ export default function DashboardPA() {
                           )}
                           <div>
                             <p className="font-semibold text-[#e8fbff]">
-                              {tx.type === 'deposit' ? 'Deposito Fondo' : `Rimborso - ${tx.operator_name || 'Operatore'}`}
+                              {isDeposit ? 'Deposito Fondo' : (tx.type === 'reimbursement_batch' ? 'Batch Rimborsi' : tx.description || 'Rimborso')}
                             </p>
                             <p className="text-sm text-[#94a3b8]">
                               {new Date(tx.created_at).toLocaleDateString('it-IT')} - {new Date(tx.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                             </p>
-                            <Badge className={`text-xs mt-1 ${tx.type === 'deposit' ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
-                              {tx.type === 'deposit' ? 'Entrata' : 'Uscita'}
+                            <Badge className={`text-xs mt-1 ${isDeposit ? 'bg-[#10b981]/20 text-[#10b981]' : tx.status === 'completed' ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'bg-[#f59e0b]/20 text-[#f59e0b]'}`}>
+                              {isDeposit ? 'Entrata' : tx.status === 'completed' ? 'Completato' : 'In Attesa'}
                             </Badge>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className={`font-semibold ${tx.type === 'deposit' ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                            {tx.type === 'deposit' ? '+' : '-'}€{parseFloat(tx.amount || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          <p className={`font-semibold ${isDeposit ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+                            {isDeposit ? '+' : '-'}€{euroValue.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                           </p>
-                          {tx.tcc_amount && (
+                          {tx.amount > 0 && (
                             <p className="text-sm text-[#94a3b8]">
-                              {tx.tcc_amount} TCC
+                              {tx.amount} TCC
                             </p>
                           )}
                         </div>
                       </div>
-                    ))
+                    );
+                    })
                   )}
                 </div>
               </CardContent>
