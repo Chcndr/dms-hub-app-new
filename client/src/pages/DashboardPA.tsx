@@ -486,7 +486,8 @@ export default function DashboardPA() {
   };
 
   const calculateReimbursementNeeded = () => {
-    return (editableParams.tccSpent * tccValue).toFixed(0);
+    // Rimborsi = TCC spesi × valore TCC in euro (€0,089)
+    return (editableParams.tccSpent * appliedTccValue).toFixed(2);
   };
 
   // NUOVA FORMULA: 1 TCC = 1 kg CO2 (basato su EU ETS: 1 TCC rappresenta 1 kg di CO2)
@@ -507,7 +508,7 @@ export default function DashboardPA() {
   // Chat AI
   const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'ai', content: string}>>([]);
   const [chatInput, setChatInput] = useState('');
-  const [appliedTccValue, setAppliedTccValue] = useState(1.50);
+  const [appliedTccValue, setAppliedTccValue] = useState(0.089); // Valore TCC in euro (€0,089 basato su EU ETS)
   
   // Guardian Logs for MIO Agent tab
   const [guardianLogs, setGuardianLogs] = useState<any[]>([]);
@@ -649,7 +650,7 @@ export default function DashboardPA() {
             ...prev,
             tccIssued: data.fund.total_issued || 0,
             tccSpent: data.fund.total_redeemed || 0,
-            fundBalance: parseFloat(data.fund.fund_requirement_eur || '0') * 100
+            fundBalance: parseFloat(data.fund.fund_requirement_eur || '0') // Fabbisogno fondo in euro
           }));
           // Aggiorna il valore TCC applicato dalla config nazionale
           if (data.fund.config?.tcc_value) {
