@@ -181,7 +181,8 @@ export default function HubOperatore() {
 
   const loadOperatorWallet = async () => {
     try {
-      const res = await fetch(`${API_BASE}/operator/wallet/${operatore.id}`);
+      // Aggiungo timestamp per evitare cache del browser (specialmente Safari/iPad)
+      const res = await fetch(`${API_BASE}/operator/wallet/${operatore.id}?_t=${Date.now()}`);
       const data = await res.json();
       if (data.success) {
         setOperatorWallet(data.wallet);
@@ -368,7 +369,25 @@ export default function HubOperatore() {
       
       if (data.success) {
         toast.success(data.message);
-        loadOperatorWallet();
+        // Usa i dati del nuovo wallet dalla risposta se disponibili
+        if (data.new_wallet) {
+          setOperatorWallet({
+            ...data.new_wallet,
+            id: 0, // Sarà aggiornato dal reload
+            operator_id: operatore.id,
+            difference: 0,
+            difference_eur: '0.00',
+            redeemed_eur: '0.00',
+            exchange_rate: operatorWallet?.exchange_rate || 0.089,
+            impresa_id: operatorWallet?.impresa_id,
+            wallet_status: 'active'
+          });
+        }
+        // Ricarica anche dal server dopo un breve delay per conferma
+        setTimeout(() => {
+          loadOperatorWallet();
+          loadTransactions();
+        }, 500);
       } else {
         toast.error(data.error || 'Errore chiusura giornaliera');
       }
