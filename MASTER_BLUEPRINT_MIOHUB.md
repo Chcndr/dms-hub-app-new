@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.30.0  
+> **Versione:** 3.31.0  
 > **Data:** 12 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -487,6 +487,49 @@ Il sistema **TCC Wallet-Impresa** collega i wallet Token Carbon Credit (TCC) dir
 | Operatore | Luca Bianchi (ID: 1) |
 
 ---
+
+### 🆕 Aggiornamenti Settlement v5.8.0 (12 Gennaio 2026)
+
+#### Numero Progressivo Settlement
+Ogni chiusura giornata ora genera un **numero progressivo univoco** per tracciabilità:
+
+| Campo | Formato | Esempio |
+|-------|---------|---------|
+| `settlement_number` | `YYYYMMDD-NNNN` | `20260112-0001` |
+
+#### Multiple Chiusure Giornaliere
+Il sistema ora supporta **multiple chiusure nello stesso giorno**:
+- Non è un sistema fiscale, quindi non c'è limite alle chiusure
+- Ogni chiusura crea un nuovo wallet con contatori azzerati
+- Il numero progressivo distingue le chiusure dello stesso giorno
+
+#### Modifiche Database
+| Tabella | Modifica | Descrizione |
+|---------|----------|-------------|
+| `operator_daily_wallet` | `+settlement_number` | Numero progressivo chiusura |
+| `operator_daily_wallet` | `-UNIQUE(operator_id, date)` | Rimosso vincolo per multiple chiusure |
+
+#### Flusso Settlement Aggiornato
+```
+1. Operatore clicca "Chiudi Giornata"
+   └─► Sistema genera settlement_number (es. 20260112-0001)
+       └─► Wallet corrente → status = 'pending'
+           └─► Crea NUOVO wallet per OGGI (non domani!)
+               └─► Contatori azzerati, status = 'open'
+                   └─► Frontend mostra nuovo wallet immediatamente
+
+2. Storico Transazioni
+   └─► Mostra "Chiusura Giornata #20260112-0001"
+       └─► Numero visibile per tracciabilità
+```
+
+#### Migrazione Applicata
+```sql
+-- migrations/020_add_settlement_number.sql
+ALTER TABLE operator_daily_wallet ADD COLUMN settlement_number VARCHAR(20);
+CREATE INDEX idx_operator_daily_wallet_settlement_number ON operator_daily_wallet(settlement_number);
+```
+
 
 ## 📋 SSO SUAP - MODULO SCIA
 
