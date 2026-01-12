@@ -534,7 +534,7 @@ export default function HubOperatore() {
               {!isCheckedIn ? (
                 <Button 
                   onClick={handleCheckIn}
-                  className="bg-[#10b981] hover:bg-[#059669] text-white"
+                  className="bg-[#10b981] hover:bg-[#059669] active:bg-[#047857] active:scale-95 transition-all duration-150 text-white"
                 >
                   <LogIn className="w-4 h-4 mr-2" />
                   Check-in
@@ -543,6 +543,7 @@ export default function HubOperatore() {
                 <Button 
                   onClick={handleCheckOut}
                   variant="destructive"
+                  className="active:scale-95 transition-all duration-150"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Check-out
@@ -793,7 +794,7 @@ export default function HubOperatore() {
                         className="w-full px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
                         autoFocus
                       />
-                      <Button type="submit" className="w-full bg-[#10b981] hover:bg-[#059669] disabled:opacity-50" disabled={!walletEnabled}>
+                      <Button type="submit" className="w-full bg-[#10b981] hover:bg-[#059669] active:bg-[#047857] active:scale-95 transition-all duration-150 disabled:opacity-50" disabled={!walletEnabled}>
                         <CheckCircle2 className="w-4 h-4 mr-2" />
                         Conferma
                       </Button>
@@ -804,7 +805,7 @@ export default function HubOperatore() {
                 {/* Pulsante Azione */}
                 {scanMode === 'issue' ? (
                   <Button 
-                    className="w-full bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 text-lg py-6"
+                    className="w-full bg-[#10b981] hover:bg-[#059669] active:bg-[#047857] active:scale-95 transition-all duration-150 disabled:opacity-50 text-lg py-6"
                     onClick={handleIssueCredits}
                     disabled={!validatedCustomer || !amount || parseFloat(amount) <= 0 || isLoading || !walletEnabled}
                   >
@@ -813,11 +814,11 @@ export default function HubOperatore() {
                     ) : (
                       <ArrowUpCircle className="w-5 h-5 mr-2" />
                     )}
-                    Assegna {calculatedCredits} TCC
+                    {isLoading ? 'Invio in corso...' : `Assegna ${calculatedCredits} TCC`}
                   </Button>
                 ) : (
                   <Button 
-                    className="w-full bg-[#f59e0b] hover:bg-[#d97706] disabled:opacity-50 text-lg py-6"
+                    className="w-full bg-[#f59e0b] hover:bg-[#d97706] active:bg-[#b45309] active:scale-95 transition-all duration-150 disabled:opacity-50 text-lg py-6"
                     onClick={handleRedeemSpend}
                     disabled={!scannedData || isLoading || !walletEnabled}
                   >
@@ -826,7 +827,7 @@ export default function HubOperatore() {
                     ) : (
                       <ArrowDownCircle className="w-5 h-5 mr-2" />
                     )}
-                    Incassa TCC
+                    {isLoading ? 'Elaborazione...' : 'Incassa TCC'}
                   </Button>
                 )}
               </CardContent>
@@ -1017,7 +1018,7 @@ export default function HubOperatore() {
 
                 {/* Pulsante Chiusura */}
                 <Button 
-                  className="w-full bg-[#ef4444] hover:bg-[#dc2626] disabled:opacity-50"
+                  className="w-full bg-[#ef4444] hover:bg-[#dc2626] active:bg-[#b91c1c] active:scale-95 transition-all duration-150 disabled:opacity-50"
                   onClick={handleSettlement}
                   disabled={operatorWallet?.settlement_status !== 'open' || isLoading}
                 >
@@ -1026,7 +1027,7 @@ export default function HubOperatore() {
                   ) : (
                     <Send className="w-4 h-4 mr-2" />
                   )}
-                  Chiudi Giornata e Invia al Fondo
+                  {isLoading ? 'Elaborazione...' : 'Chiudi Giornata e Invia al Fondo'}
                 </Button>
 
                 <p className="text-xs text-[#94a3b8] text-center">

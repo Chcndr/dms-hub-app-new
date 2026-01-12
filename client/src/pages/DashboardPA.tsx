@@ -3097,10 +3097,14 @@ export default function DashboardPA() {
                     Export CSV
                   </Button>
                   <Button 
-                    className="flex-1 bg-[#8b5cf6] hover:bg-[#8b5cf6]/80"
-                    onClick={async () => {
+                    className="flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] active:bg-[#6d28d9] active:scale-95 transition-all duration-150 disabled:opacity-50"
+                    id="processBatchBtn"
+                    onClick={async (e) => {
+                      const btn = e.currentTarget;
+                      const originalContent = btn.innerHTML;
+                      btn.disabled = true;
+                      btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Elaborazione...';
                       try {
-                        toast.info('Elaborazione rimborsi in corso...');
                         const response = await fetch('https://orchestratore.mio-hub.me/api/tcc/v2/process-batch-reimbursements', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' }
@@ -3111,7 +3115,6 @@ export default function DashboardPA() {
                             toast.info('Nessun rimborso pending da processare');
                           } else {
                             toast.success(`Processati ${data.processed} rimborsi per \u20ac${data.total_euro}`);
-                            // Ricarica le statistiche
                             window.location.reload();
                           }
                         } else {
@@ -3120,6 +3123,9 @@ export default function DashboardPA() {
                       } catch (error) {
                         console.error('Errore:', error);
                         toast.error('Errore di connessione');
+                      } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalContent;
                       }
                     }}
                   >
