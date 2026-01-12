@@ -440,7 +440,8 @@ export default function HubOperatore() {
           if (scanMode === 'issue') {
             await validateCustomerQR(decodedText);
           } else {
-            toast.success('QR di spesa rilevato');
+            // Valida QR di spesa e recupera info cliente
+            await validateSpendQR(decodedText);
           }
           
           await stopCameraScanner();
