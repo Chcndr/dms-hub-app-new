@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, FileCheck, FileText, User, MapPin, Wallet, Calendar, Building } from 'lucide-react';
+import { ArrowLeft, FileCheck, FileText, User, MapPin, Wallet, Calendar, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
@@ -71,21 +71,20 @@ ${'='.repeat(50)}
 
 DATI DOMANDA
 ------------
-Numero: ${domanda.numero_autorizzazione || '-'}
+Numero: ${domanda.numero_autorizzazione || `#${domanda.id}`}
 Data Richiesta: ${formatDate(domanda.data_richiesta)}
 Stato: ${domanda.stato || '-'}
 Settore Richiesto: ${domanda.settore_richiesto || '-'}
-Presenze Accumulate: ${domanda.presenze || 0}
+Giorno: ${domanda.giorno_settimana || domanda.market_days || '-'}
+Presenze Accumulate: ${domanda.numero_presenze || 0}
 
 IMPRESA RICHIEDENTE
 -------------------
 Ragione Sociale: ${domanda.company_name || '-'}
 Partita IVA: ${domanda.company_piva || '-'}
 Codice Fiscale: ${domanda.company_cf || '-'}
-Nome Rappresentante: ${domanda.rappresentante_nome || '-'}
-Cognome Rappresentante: ${domanda.rappresentante_cognome || '-'}
-PEC: ${domanda.pec || '-'}
-Telefono: ${domanda.telefono || '-'}
+Nome Rappresentante: ${domanda.rappresentante_legale_nome || '-'}
+Cognome Rappresentante: ${domanda.rappresentante_legale_cognome || '-'}
 
 MERCATO DI RIFERIMENTO
 ----------------------
@@ -93,19 +92,21 @@ Mercato: ${domanda.market_name || '-'}
 Comune: ${domanda.market_municipality || '-'}
 Giorno: ${domanda.market_days || '-'}
 
-AUTORIZZAZIONE
---------------
-Numero Autorizzazione: ${domanda.numero_autorizzazione_riferimento || '-'}
+AUTORIZZAZIONE DI RIFERIMENTO
+-----------------------------
+Numero Autorizzazione: ${domanda.numero_autorizzazione || '-'}
+Tipo: ${domanda.autorizzazione_tipo === 'A' ? 'Tipo A - Posteggio' : domanda.autorizzazione_tipo === 'B' ? 'Tipo B - Itinerante' : '-'}
 Ente Rilascio: ${domanda.autorizzazione_ente || '-'}
+Data Rilascio: ${formatDate(domanda.autorizzazione_data)}
 
 WALLET SPUNTA
 -------------
 ID Wallet: ${domanda.wallet_id || '-'}
-Saldo: € ${domanda.wallet_balance?.toFixed(2) || '0.00'}
+Saldo: € ${parseFloat(domanda.wallet_balance || 0).toFixed(2)}
 
 NOTE
 ----
-${domanda.note || '-'}
+${domanda.note || 'Nessuna'}
 
 ${'='.repeat(50)}
 Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}
@@ -115,14 +116,14 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `DomandaSpunta_${domanda.numero_autorizzazione || domanda.id}_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `DomandaSpunta_${domanda.id}_${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
     toast.success('Domanda esportata!', {
-      description: `File scaricato: DomandaSpunta_${domanda.numero_autorizzazione || domanda.id}.txt`
+      description: `File scaricato: DomandaSpunta_${domanda.id}.txt`
     });
   };
 
@@ -131,6 +132,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
       case 'APPROVATA':
         return 'bg-green-500/20 text-green-400';
       case 'IN_ATTESA':
+      case 'PENDING':
         return 'bg-yellow-500/20 text-yellow-400';
       case 'RIFIUTATA':
         return 'bg-red-500/20 text-red-400';
@@ -146,6 +148,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
       case 'APPROVATA':
         return 'bg-green-500';
       case 'IN_ATTESA':
+      case 'PENDING':
         return 'bg-yellow-500';
       case 'RIFIUTATA':
         return 'bg-red-500';
@@ -184,7 +187,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xl font-bold text-[#e8fbff] flex items-center gap-3">
-            Domanda Spunta {domanda.numero_autorizzazione || `#${domanda.id}`}
+            Domanda Spunta #{domanda.id}
             <Badge className={getStatoBadgeClass()}>
               {domanda.stato || 'N/D'}
             </Badge>
@@ -217,7 +220,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">N. Domanda</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.numero_autorizzazione || `#${domanda.id}`}</p>
+              <p className="text-[#e8fbff] font-medium">#{domanda.id}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Data Richiesta</p>
@@ -228,12 +231,20 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               <p className="text-[#e8fbff] font-medium">{domanda.settore_richiesto || '-'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Presenze</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.presenze || 0}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Giorno</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.giorno_settimana || domanda.market_days || '-'}</p>
             </div>
-            <div className="col-span-2 md:col-span-4">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Presenze</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.numero_presenze || 0}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Data Prima Presenza</p>
+              <p className="text-[#e8fbff] font-medium">{formatDate(domanda.data_prima_presenza)}</p>
+            </div>
+            <div className="col-span-2">
               <p className="text-xs text-gray-500 uppercase tracking-wide">Note</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.note || '-'}</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.note || 'Nessuna'}</p>
             </div>
           </div>
         </CardContent>
@@ -263,29 +274,11 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Nome</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.rappresentante_nome || '-'}</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.rappresentante_legale_nome || '-'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Cognome</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.rappresentante_cognome || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Qualità</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.rappresentante_qualita || 'Legale Rappresentante'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">PEC</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.pec || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Telefono</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.telefono || '-'}</p>
-            </div>
-            <div className="col-span-2 md:col-span-3">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Sede Legale</p>
-              <p className="text-[#e8fbff] font-medium">
-                {[domanda.sede_legale_via, domanda.sede_legale_cap, domanda.sede_legale_comune, domanda.sede_legale_provincia].filter(Boolean).join(', ') || '-'}
-              </p>
+              <p className="text-[#e8fbff] font-medium">{domanda.rappresentante_legale_cognome || '-'}</p>
             </div>
           </div>
         </CardContent>
@@ -300,7 +293,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Mercato</p>
               <p className="text-[#e8fbff] font-medium">{domanda.market_name || '-'}</p>
@@ -310,22 +303,18 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               <p className="text-[#e8fbff] font-medium">{domanda.market_municipality || '-'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Giorno</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Giorno Mercato</p>
               <p className="text-[#e8fbff] font-medium">{domanda.market_days || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Codice Mercato</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.market_code || '-'}</p>
             </div>
           </div>
         </CardContent>
       </Card>
       
-      {/* Sezione Autorizzazione */}
+      {/* Sezione Autorizzazione di Riferimento */}
       <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
         <CardHeader className="pb-3">
           <CardTitle className="text-[#14b8a6] flex items-center gap-2 text-lg">
-            <Calendar className="h-5 w-5" />
+            <ClipboardCheck className="h-5 w-5" />
             Autorizzazione di Riferimento
           </CardTitle>
         </CardHeader>
@@ -333,7 +322,14 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">N. Autorizzazione</p>
-              <p className="text-[#e8fbff] font-medium">{domanda.numero_autorizzazione_riferimento || domanda.numero_autorizzazione || '-'}</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.numero_autorizzazione || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Tipo</p>
+              <p className="text-[#e8fbff] font-medium">
+                {domanda.autorizzazione_tipo === 'A' ? 'Tipo A - Posteggio' : 
+                 domanda.autorizzazione_tipo === 'B' ? 'Tipo B - Itinerante' : '-'}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Ente Rilascio</p>
@@ -356,16 +352,16 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">ID Wallet</p>
               <p className="text-[#e8fbff] font-medium">{domanda.wallet_id || '-'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Saldo Attuale</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Saldo</p>
               <p className="text-[#e8fbff] font-medium text-lg">
-                <span className={domanda.wallet_balance > 0 ? 'text-green-400' : 'text-orange-400'}>
-                  € {domanda.wallet_balance?.toFixed(2) || '0.00'}
+                <span className={parseFloat(domanda.wallet_balance || 0) > 0 ? 'text-green-400' : 'text-orange-400'}>
+                  € {parseFloat(domanda.wallet_balance || 0).toFixed(2)}
                 </span>
               </p>
             </div>
@@ -375,7 +371,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                 {domanda.wallet_id ? (
                   <span className="text-green-400">✓ Attivo</span>
                 ) : (
-                  <span className="text-gray-400">Non creato</span>
+                  <span className="text-red-400">✗ Non creato</span>
                 )}
               </p>
             </div>
