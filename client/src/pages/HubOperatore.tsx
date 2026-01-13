@@ -998,6 +998,7 @@ export default function HubOperatore() {
                               {tx.type === 'issue' ? tx.customer_name || 'Cliente' :
                                tx.type === 'redeem' ? tx.customer_name || 'Cliente' :
                                tx.type === 'settlement' ? `Chiusura Giornata${tx.description?.startsWith('#') ? ' ' + tx.description.split('|')[0] : ''}` :
+                               tx.type === 'reimbursement_received' ? `Rimborso Ricevuto${tx.description?.startsWith('#') ? ' ' + tx.description.split('|')[0] : ''}` :
                                'Rimborso Ricevuto'}
                             </p>
                             {/* Numero progressivo transazione */}
