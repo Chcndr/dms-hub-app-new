@@ -22,6 +22,8 @@ import AutorizzazioneForm from '@/components/suap/AutorizzazioneForm';
 import DomandaSpuntaForm from '@/components/suap/DomandaSpuntaForm';
 import ListaAutorizzazioniSuap from '@/components/suap/ListaAutorizzazioniSuap';
 import ListaDomandeSpuntaSuap from '@/components/suap/ListaDomandeSpuntaSuap';
+import AutorizzazioneDetail from '@/components/suap/AutorizzazioneDetail';
+import DomandaSpuntaDetail from '@/components/suap/DomandaSpuntaDetail';
 import { toast } from 'sonner';
 
 // Ente ID hardcoded per ora - in futuro da contesto utente
@@ -1796,6 +1798,14 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               autorizzazioneId={selectedAutorizzazioneId}
               mode={autorizzazioneMode}
             />
+          ) : autorizzazioneMode === 'view' && selectedAutorizzazioneId ? (
+            <AutorizzazioneDetail
+              autorizzazioneId={selectedAutorizzazioneId}
+              onBack={() => {
+                setSelectedAutorizzazioneId(null);
+                setAutorizzazioneMode('create');
+              }}
+            />
           ) : (
             <ListaAutorizzazioniSuap 
               onNuovaAutorizzazione={() => {
@@ -1806,7 +1816,6 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               onViewAutorizzazione={(id) => {
                 setAutorizzazioneMode('view');
                 setSelectedAutorizzazioneId(id);
-                setShowAutorizzazioneForm(true);
               }}
               onEditAutorizzazione={(id) => {
                 setAutorizzazioneMode('edit');
@@ -1837,6 +1846,14 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               domandaId={selectedDomandaSpuntaId}
               mode={domandaSpuntaMode}
             />
+          ) : domandaSpuntaMode === 'view' && selectedDomandaSpuntaId ? (
+            <DomandaSpuntaDetail
+              domandaId={selectedDomandaSpuntaId}
+              onBack={() => {
+                setSelectedDomandaSpuntaId(null);
+                setDomandaSpuntaMode('create');
+              }}
+            />
           ) : (
             <ListaDomandeSpuntaSuap 
               onNuovaDomanda={() => {
@@ -1847,7 +1864,6 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               onViewDomanda={(id) => {
                 setDomandaSpuntaMode('view');
                 setSelectedDomandaSpuntaId(id);
-                setShowDomandaSpuntaForm(true);
               }}
               onEditDomanda={(id) => {
                 setDomandaSpuntaMode('edit');

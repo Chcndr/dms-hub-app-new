@@ -1,0 +1,387 @@
+/**
+ * DomandaSpuntaDetail.tsx
+ * 
+ * Componente per visualizzare il dettaglio di una domanda spunta.
+ * Design identico a quello delle Concessioni.
+ */
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, FileCheck, FileText, User, MapPin, Wallet, Calendar, Building } from 'lucide-react';
+import { toast } from 'sonner';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+
+interface DomandaSpuntaDetailProps {
+  domandaId: number;
+  onBack: () => void;
+}
+
+export default function DomandaSpuntaDetail({ domandaId, onBack }: DomandaSpuntaDetailProps) {
+  const [domanda, setDomanda] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('it-IT');
+  };
+
+  useEffect(() => {
+    const fetchDomanda = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/domande-spunta/${domandaId}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setDomanda(json.data);
+        } else {
+          toast.error('Errore nel caricamento della domanda');
+        }
+      } catch (err) {
+        console.error('Errore:', err);
+        toast.error('Errore nel caricamento della domanda');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDomanda();
+  }, [domandaId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#14b8a6]"></div>
+      </div>
+    );
+  }
+
+  if (!domanda) {
+    return (
+      <div className="text-center text-gray-400 py-8">
+        Domanda non trovata
+      </div>
+    );
+  }
+
+  const handleExport = () => {
+    const content = `
+DOMANDA SPUNTA N. ${domanda.numero_autorizzazione || domanda.id}
+${'='.repeat(50)}
+
+DATI DOMANDA
+------------
+Numero: ${domanda.numero_autorizzazione || '-'}
+Data Richiesta: ${formatDate(domanda.data_richiesta)}
+Stato: ${domanda.stato || '-'}
+Settore Richiesto: ${domanda.settore_richiesto || '-'}
+Presenze Accumulate: ${domanda.presenze || 0}
+
+IMPRESA RICHIEDENTE
+-------------------
+Ragione Sociale: ${domanda.company_name || '-'}
+Partita IVA: ${domanda.company_piva || '-'}
+Codice Fiscale: ${domanda.company_cf || '-'}
+Nome Rappresentante: ${domanda.rappresentante_nome || '-'}
+Cognome Rappresentante: ${domanda.rappresentante_cognome || '-'}
+PEC: ${domanda.pec || '-'}
+Telefono: ${domanda.telefono || '-'}
+
+MERCATO DI RIFERIMENTO
+----------------------
+Mercato: ${domanda.market_name || '-'}
+Comune: ${domanda.market_municipality || '-'}
+Giorno: ${domanda.market_days || '-'}
+
+AUTORIZZAZIONE
+--------------
+Numero Autorizzazione: ${domanda.numero_autorizzazione_riferimento || '-'}
+Ente Rilascio: ${domanda.autorizzazione_ente || '-'}
+
+WALLET SPUNTA
+-------------
+ID Wallet: ${domanda.wallet_id || '-'}
+Saldo: € ${domanda.wallet_balance?.toFixed(2) || '0.00'}
+
+NOTE
+----
+${domanda.note || '-'}
+
+${'='.repeat(50)}
+Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}
+    `.trim();
+    
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `DomandaSpunta_${domanda.numero_autorizzazione || domanda.id}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Domanda esportata!', {
+      description: `File scaricato: DomandaSpunta_${domanda.numero_autorizzazione || domanda.id}.txt`
+    });
+  };
+
+  const getStatoBadgeClass = () => {
+    switch (domanda.stato?.toUpperCase()) {
+      case 'APPROVATA':
+        return 'bg-green-500/20 text-green-400';
+      case 'IN_ATTESA':
+        return 'bg-yellow-500/20 text-yellow-400';
+      case 'RIFIUTATA':
+        return 'bg-red-500/20 text-red-400';
+      case 'SOSPESA':
+        return 'bg-orange-500/20 text-orange-400';
+      default:
+        return 'bg-blue-500/20 text-blue-400';
+    }
+  };
+
+  const getStatoDotClass = () => {
+    switch (domanda.stato?.toUpperCase()) {
+      case 'APPROVATA':
+        return 'bg-green-500';
+      case 'IN_ATTESA':
+        return 'bg-yellow-500';
+      case 'RIFIUTATA':
+        return 'bg-red-500';
+      case 'SOSPESA':
+        return 'bg-orange-500';
+      default:
+        return 'bg-blue-500';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header con pulsante torna */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="text-gray-400 hover:text-white"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Torna alla lista
+          </Button>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${getStatoDotClass()}`} />
+            <span className="text-sm text-gray-400">
+              {domanda.stato || 'N/D'}
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Titolo domanda */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-bold text-[#e8fbff] flex items-center gap-3">
+            Domanda Spunta {domanda.numero_autorizzazione || `#${domanda.id}`}
+            <Badge className={getStatoBadgeClass()}>
+              {domanda.stato || 'N/D'}
+            </Badge>
+          </h3>
+          <p className="text-gray-400">
+            {domanda.market_name || 'N/A'} - {domanda.company_name || 'N/A'} ({domanda.company_piva || 'N/A'})
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="border-[#14b8a6]/30 text-[#e8fbff]"
+            onClick={handleExport}
+          >
+            <FileCheck className="mr-2 h-4 w-4" />
+            Esporta
+          </Button>
+        </div>
+      </div>
+      
+      {/* Sezione Dati Domanda */}
+      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-[#14b8a6] flex items-center gap-2 text-lg">
+            <FileText className="h-5 w-5" />
+            Dati Domanda
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">N. Domanda</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.numero_autorizzazione || `#${domanda.id}`}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Data Richiesta</p>
+              <p className="text-[#e8fbff] font-medium">{formatDate(domanda.data_richiesta)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Settore Richiesto</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.settore_richiesto || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Presenze</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.presenze || 0}</p>
+            </div>
+            <div className="col-span-2 md:col-span-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Note</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.note || '-'}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Sezione Impresa Richiedente */}
+      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-[#14b8a6] flex items-center gap-2 text-lg">
+            <User className="h-5 w-5" />
+            Impresa Richiedente
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Ragione Sociale</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.company_name || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Partita IVA</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.company_piva || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Codice Fiscale</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.company_cf || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Nome</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.rappresentante_nome || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Cognome</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.rappresentante_cognome || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Qualità</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.rappresentante_qualita || 'Legale Rappresentante'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">PEC</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.pec || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Telefono</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.telefono || '-'}</p>
+            </div>
+            <div className="col-span-2 md:col-span-3">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Sede Legale</p>
+              <p className="text-[#e8fbff] font-medium">
+                {[domanda.sede_legale_via, domanda.sede_legale_cap, domanda.sede_legale_comune, domanda.sede_legale_provincia].filter(Boolean).join(', ') || '-'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Sezione Mercato */}
+      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-[#14b8a6] flex items-center gap-2 text-lg">
+            <MapPin className="h-5 w-5" />
+            Mercato di Riferimento
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Mercato</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.market_name || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Comune</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.market_municipality || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Giorno</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.market_days || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Codice Mercato</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.market_code || '-'}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Sezione Autorizzazione */}
+      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-[#14b8a6] flex items-center gap-2 text-lg">
+            <Calendar className="h-5 w-5" />
+            Autorizzazione di Riferimento
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">N. Autorizzazione</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.numero_autorizzazione_riferimento || domanda.numero_autorizzazione || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Ente Rilascio</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.autorizzazione_ente || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Data Rilascio</p>
+              <p className="text-[#e8fbff] font-medium">{formatDate(domanda.autorizzazione_data)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Sezione Wallet Spunta */}
+      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-[#14b8a6] flex items-center gap-2 text-lg">
+            <Wallet className="h-5 w-5" />
+            Wallet Spunta
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">ID Wallet</p>
+              <p className="text-[#e8fbff] font-medium">{domanda.wallet_id || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Saldo Attuale</p>
+              <p className="text-[#e8fbff] font-medium text-lg">
+                <span className={domanda.wallet_balance > 0 ? 'text-green-400' : 'text-orange-400'}>
+                  € {domanda.wallet_balance?.toFixed(2) || '0.00'}
+                </span>
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Stato Wallet</p>
+              <p className="text-[#e8fbff] font-medium">
+                {domanda.wallet_id ? (
+                  <span className="text-green-400">✓ Attivo</span>
+                ) : (
+                  <span className="text-gray-400">Non creato</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
