@@ -310,11 +310,20 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
         });
         
         // Cerca Requisiti Morali/Professionali (per dichiarazione_requisiti)
+        // Include: Morali, Onorabilità, Professionali, REC, SAB, HACCP, Alimentare
         const moraliQualifica = qualifiche.find((q: any) => {
           const tipo = q.tipo_qualifica?.toUpperCase() || q.tipo?.toUpperCase() || '';
           const stato = q.stato?.toUpperCase() || '';
           const scadenza = new Date(q.data_scadenza);
-          return (tipo.includes('MORAL') || tipo.includes('ONORABIL') || tipo.includes('PROFESS')) && stato !== 'SCADUTO' && scadenza > oggi;
+          const isRequisito = tipo.includes('MORAL') || 
+                              tipo.includes('ONORABIL') || 
+                              tipo.includes('PROFESS') ||
+                              tipo.includes('REC') || 
+                              tipo.includes('SAB') || 
+                              tipo.includes('HACCP') || 
+                              tipo.includes('ALIMENT') ||
+                              tipo.includes('SOMMINISTR');
+          return isRequisito && stato !== 'SCADUTO' && scadenza > oggi;
         });
         
         // Cerca Antimafia

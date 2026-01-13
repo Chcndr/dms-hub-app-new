@@ -324,12 +324,18 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
           return (tipo.includes('MORAL') || tipo.includes('ONORABIL')) && stato !== 'SCADUTO' && scadenza > oggi;
         });
         
-        // Cerca Requisiti Professionali
+        // Cerca Requisiti Professionali (include REC, SAB, HACCP, Alimentare)
         const professionaliQualifica = qualifiche.find((q: any) => {
           const tipo = q.tipo_qualifica?.toUpperCase() || q.tipo?.toUpperCase() || '';
           const stato = q.stato?.toUpperCase() || '';
           const scadenza = new Date(q.data_scadenza);
-          return tipo.includes('PROFESS') && stato !== 'SCADUTO' && scadenza > oggi;
+          const isProfessionale = tipo.includes('PROFESS') || 
+                                  tipo.includes('REC') || 
+                                  tipo.includes('SAB') || 
+                                  tipo.includes('HACCP') || 
+                                  tipo.includes('ALIMENT') ||
+                                  tipo.includes('SOMMINISTR');
+          return isProfessionale && stato !== 'SCADUTO' && scadenza > oggi;
         });
         
         // Aggiorna formData con i dati trovati
