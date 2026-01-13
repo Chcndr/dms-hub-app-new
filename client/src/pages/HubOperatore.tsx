@@ -731,6 +731,8 @@ export default function HubOperatore() {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         className="w-full mt-1 px-3 py-3 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff] text-xl font-bold focus:outline-none focus:border-[#14b8a6]"
+                        autoComplete="off"
+                        data-form-type="other"
                       />
                     </div>
 
@@ -856,7 +858,7 @@ export default function HubOperatore() {
                       </Button>
                     </div>
                   ) : (
-                    <form onSubmit={handleManualQRInput} className="w-full p-4 space-y-4">
+                    <form onSubmit={handleManualQRInput} className="w-full p-4 space-y-4" autoComplete="off" data-form-type="other">
                       <p className="text-center text-[#94a3b8] mb-4">
                         <QrCode className="w-8 h-8 mx-auto mb-2 text-[#14b8a6]" />
                         Inserisci il codice QR manualmente
@@ -866,7 +868,11 @@ export default function HubOperatore() {
                         type="text"
                         placeholder={scanMode === 'issue' ? 'tcc://userId/token' : 'tcc-spend://userId/token'}
                         className="w-full px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
-                        autoFocus
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck="false"
+                        data-form-type="other"
                       />
                       <Button type="submit" className="w-full bg-[#10b981] hover:bg-[#059669] active:bg-[#047857] active:scale-95 transition-all duration-150 disabled:opacity-50" disabled={!walletEnabled}>
                         <CheckCircle2 className="w-4 h-4 mr-2" />
