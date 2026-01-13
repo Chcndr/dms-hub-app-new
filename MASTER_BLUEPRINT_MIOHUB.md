@@ -2144,6 +2144,7 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 |------------|-----|------|-------------|
 | dms-hub-app-new | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation |
 | mihub-backend-rest | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation |
+| **miohub-backups** | **v3.32.0-stable** | 13/01/2026 | Database dump SQL (29 MB) |
 | MIO-hub | v16.0.0-stable | 12/01/2026 | 353 endpoints |
 
 #### Storico Punti di Ripristino
@@ -2167,12 +2168,14 @@ git fetch --tags
 git checkout v3.32.0-stable
 pm2 restart mihub-backend
 
-# Database (Neon Console)
+# Database - Opzione 1: Da backup SQL (consigliato)
+# 1. Scarica backup da https://github.com/Chcndr/miohub-backups
+# 2. gunzip backup_miohub_v3.32.0_*.sql.gz
+# 3. psql "postgresql://..." < backup_miohub_v3.32.0_*.sql
+
+# Database - Opzione 2: Neon Point-in-Time (max 6 ore)
 # 1. Vai su https://console.neon.tech
-# 2. Seleziona progetto "neondb"
-# 3. Vai su "Branches" > "Create Branch"
-# 4. Nome: "restore-v3.32.0-stable"
-# 5. Point-in-time: seleziona data/ora desiderata
+# 2. Branches > Create Branch > Past data
 ```
 
 ---
