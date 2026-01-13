@@ -290,6 +290,40 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
     }));
     
     toast.success('Dati impresa caricati');
+    
+    // Carica DURC dalla tabella qualificazioni
+    fetchDurcData(impresa.id);
+  };
+  
+  // Funzione per caricare i dati DURC dalla tabella qualificazioni
+  const fetchDurcData = async (impresaId: number) => {
+    try {
+      const res = await fetch(`${API_URL}/api/qualificazioni/impresa/${impresaId}`);
+      const json = await res.json();
+      
+      if (json.success && json.data && json.data.length > 0) {
+        // Cerca una qualifica di tipo DURC valida
+        const durcQualifica = json.data.find((q: any) => 
+          q.tipo_qualifica?.toUpperCase().includes('DURC') || 
+          q.tipo?.toUpperCase().includes('DURC')
+        );
+        
+        if (durcQualifica) {
+          setFormData(prev => ({
+            ...prev,
+            durc_numero: durcQualifica.numero_attestato || durcQualifica.numero_certificato || '',
+            durc_data_rilascio: durcQualifica.data_rilascio ? durcQualifica.data_rilascio.split('T')[0] : '',
+            durc_data_scadenza: durcQualifica.data_scadenza ? durcQualifica.data_scadenza.split('T')[0] : ''
+          }));
+          
+          toast.success('Dati DURC caricati automaticamente', {
+            description: `DURC n. ${durcQualifica.numero_attestato || durcQualifica.numero_certificato || 'N/A'}`
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Errore nel caricamento DURC:', err);
+    }
   };
 
   // Gestione cambio mercato

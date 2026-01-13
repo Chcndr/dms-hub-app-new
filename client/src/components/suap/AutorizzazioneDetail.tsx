@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, FileCheck, FileText, User, MapPin, Calendar, Building } from 'lucide-react';
+import { ArrowLeft, FileCheck, FileText, User, MapPin, Calendar, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
@@ -84,8 +84,8 @@ TITOLARE
 Ragione Sociale: ${autorizzazione.company_name || autorizzazione.ragione_sociale || '-'}
 Partita IVA: ${autorizzazione.company_piva || autorizzazione.partita_iva || '-'}
 Codice Fiscale: ${autorizzazione.company_cf || autorizzazione.codice_fiscale || '-'}
-Nome: ${autorizzazione.rappresentante_nome || '-'}
-Cognome: ${autorizzazione.rappresentante_cognome || '-'}
+Nome: ${autorizzazione.rappresentante_legale_nome || autorizzazione.rappresentante_nome || '-'}
+Cognome: ${autorizzazione.rappresentante_legale_cognome || autorizzazione.rappresentante_cognome || '-'}
 
 MERCATO (se Tipo A)
 -------------------
@@ -268,11 +268,11 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Nome</p>
-              <p className="text-[#e8fbff] font-medium">{autorizzazione.rappresentante_nome || '-'}</p>
+              <p className="text-[#e8fbff] font-medium">{autorizzazione.rappresentante_legale_nome || autorizzazione.rappresentante_nome || '-'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Cognome</p>
-              <p className="text-[#e8fbff] font-medium">{autorizzazione.rappresentante_cognome || '-'}</p>
+              <p className="text-[#e8fbff] font-medium">{autorizzazione.rappresentante_legale_cognome || autorizzazione.rappresentante_cognome || '-'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Qualità</p>

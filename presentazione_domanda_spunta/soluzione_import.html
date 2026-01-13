@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', sans-serif; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: linear-gradient(135deg, #0b1220 0%, #1a2332 100%);
+            color: #e8fbff;
+            position: relative;
+            overflow: hidden;
+            padding-top: 60px;
+        }
+        
+        /* Decorative Grid */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(20, 184, 166, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 184, 166, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .header {
+            margin-left: 80px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 2;
+            border-left: 4px solid #14b8a6;
+            padding-left: 20px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 800;
+            color: #e8fbff;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 400;
+            color: #14b8a6;
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 40px;
+            padding: 0 80px;
+            position: relative;
+            z-index: 2;
+            align-items: flex-start;
+        }
+
+        .code-comparison {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .code-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-header {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-wrong {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .header-correct {
+            background: rgba(20, 184, 166, 0.2);
+            color: #14b8a6;
+            border-bottom: 1px solid rgba(20, 184, 166, 0.3);
+        }
+
+        .code-content {
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        .strike {
+            text-decoration: line-through;
+            color: #ef4444;
+            opacity: 0.7;
+        }
+
+        .highlight {
+            color: #14b8a6;
+            font-weight: bold;
+        }
+
+        .visual-context {
+            width: 450px;
+            height: 400px;
+            position: relative;
+            border: 1px solid #334155;
+            overflow: hidden;
+        }
+
+        .visual-context img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.6;
+            filter: grayscale(20%) contrast(120%);
+        }
+
+        .visual-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(to top, #0b1220, transparent);
+        }
+
+        .icon-change-note {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(20, 184, 166, 0.1);
+            border-left: 4px solid #14b8a6;
+            color: #cbd5e1;
+            font-size: 18px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="grid-overlay"></div>
+        
+        <div class="header">
+            <h1>Soluzione Implementata - Fix Import</h1>
+            <h2>Correzione degli import da lucide-react</h2>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="code-comparison">
+                <div class="code-box">
+                    <div class="code-header header-wrong">
+                        <span>Prima (Errore)</span>
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div class="code-content">
+import { <span class="strike">Building</span>, FileCheck, ... } from 'lucide-react';
+                    </div>
+                </div>
+
+                <div class="code-box">
+                    <div class="code-header header-correct">
+                        <span>Dopo (Corretto)</span>
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="code-content">
+import { <span class="highlight">ClipboardCheck</span>, FileCheck, FileText, User, MapPin, Wallet, Calendar } from 'lucide-react';
+                    </div>
+                </div>
+
+                <div class="icon-change-note">
+                    <strong>Sostituzione Icona:</strong><br>
+                    L'icona <code>Building</code> (non esistente) è stata sostituita con <code>ClipboardCheck</code> per rappresentare semanticamente la sezione "Autorizzazione di Riferimento".
+                </div>
+            </div>
+
+            <div class="visual-context">
+                <img src="/home/ubuntu/dms-hub-app-new/slide_react_code.jpg" alt="React Code Editor Context">
+                <div class="visual-overlay">
+                    <p style="color: #cbd5e1; font-size: 14px;">Contesto di sviluppo React/TypeScript</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

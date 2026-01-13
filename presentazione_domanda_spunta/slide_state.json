@@ -1,0 +1,108 @@
+{
+  "project_info": {
+    "title": "Aggiornamento Componente DomandaSpuntaDetail",
+    "created": 1768340544.9102352,
+    "last_updated": 1768340600.923947,
+    "total_slides": 12
+  },
+  "slides": {
+    "copertina": "edited",
+    "problema": "edited",
+    "soluzione_import": "edited",
+    "soluzione_api": "edit_pending",
+    "architettura": "edit_pending",
+    "design_system": "edit_pending",
+    "funzionalita_esporta": "edit_pending",
+    "flusso_utente": "edit_pending",
+    "impatto": "edit_pending",
+    "roadmap": "edit_pending",
+    "riepilogo_tecnico": "edit_pending",
+    "conclusione": "edit_pending"
+  },
+  "outline": [
+    {
+      "id": "copertina",
+      "title": "Aggiornamento Componente DomandaSpuntaDetail",
+      "summary": "Slide di copertina con titolo, sottotitolo e dettagli del progetto.",
+      "image_plan": "",
+      "slide_template_key": ""
+    },
+    {
+      "id": "problema",
+      "title": "Il Problema Riscontrato",
+      "summary": "Descrizione dell'errore critico nel caricamento del dettaglio Domanda Spunta.",
+      "image_plan": "",
+      "slide_template_key": ""
+    },
+    {
+      "id": "soluzione_import",
+      "title": "Soluzione Implementata - Fix Import",
+      "summary": "Dettaglio della correzione degli import da lucide-react.",
+      "image_plan": "/home/ubuntu/upload/search_images/ybeudDjHWx3T.jpg; /home/ubuntu/upload/search_images/4zYNKzOcdsEe.jpg; /home/ubuntu/upload/search_images/KlEHGsKooWXe.png - These images display code snippets and development environments, which are highly relevant to 'Fix Import' and 'lucide-react' library changes.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "soluzione_api",
+      "title": "Soluzione Implementata - Allineamento Campi API",
+      "summary": "Tabella di confronto tra i campi frontend precedenti e quelli corretti.",
+      "image_plan": "",
+      "slide_template_key": ""
+    },
+    {
+      "id": "architettura",
+      "title": "Architettura del Componente",
+      "summary": "Panoramica della struttura modulare in 5 sezioni informative.",
+      "image_plan": "/home/ubuntu/upload/search_images/l7oOYtX6DDEk.png; /home/ubuntu/upload/search_images/xCbGXsOSM42V.png; /home/ubuntu/upload/search_images/KSZ8htWGPQpv.png - These images are dashboards or application interfaces with multiple sections, aligning well with the 'Struttura modulare con 5 sezioni informative' concept.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "design_system",
+      "title": "Design System Applicato",
+      "summary": "Dettagli sulla coerenza visiva con il tema MioHub.",
+      "image_plan": "/home/ubuntu/upload/search_images/r3PbW0d93E0E.png - This image shows a modern web application design with various UI elements, which fits the 'Design System Applicato' theme and visual consistency.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "funzionalita_esporta",
+      "title": "Funzionalità Esporta",
+      "summary": "Descrizione della funzione di export dei dati in formato testuale.",
+      "image_plan": "",
+      "slide_template_key": ""
+    },
+    {
+      "id": "flusso_utente",
+      "title": "Flusso Utente Completo",
+      "summary": "Diagramma del workflow operativo per gli utenti SUAP.",
+      "image_plan": "/home/ubuntu/upload/search_images/dLZ96Jl30BkC.png - This image shows a user interface with a list and detail view, which is relevant to the 'Flusso Utente Completo' and 'Lista Domande Spunta → Dettaglio Domanda' workflow.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "impatto",
+      "title": "Impatto sul Sistema",
+      "summary": "Benefici operativi per i 35.000 operatori comunali.",
+      "image_plan": "",
+      "slide_template_key": ""
+    },
+    {
+      "id": "roadmap",
+      "title": "Prossimi Passi",
+      "summary": "Roadmap di sviluppo e integrazione futura.",
+      "image_plan": "",
+      "slide_template_key": ""
+    },
+    {
+      "id": "riepilogo_tecnico",
+      "title": "Riepilogo Tecnico",
+      "summary": "Sintesi delle modifiche al codice e dettagli del commit.",
+      "image_plan": "",
+      "slide_template_key": ""
+    },
+    {
+      "id": "conclusione",
+      "title": "Conclusione",
+      "summary": "Slide conclusiva che riassume il valore dell'aggiornamento.",
+      "image_plan": "",
+      "slide_template_key": ""
+    }
+  ]
+}

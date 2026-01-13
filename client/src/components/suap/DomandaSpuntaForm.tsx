@@ -286,6 +286,53 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
     }
     
     toast.success('Dati impresa caricati');
+    
+    // Verifica DURC dalla tabella qualificazioni
+    checkDurcStatus(impresa.id);
+  };
+  
+  // Funzione per verificare lo stato DURC dalla tabella qualificazioni
+  const checkDurcStatus = async (impresaId: number) => {
+    try {
+      const res = await fetch(`${API_URL}/api/qualificazioni/impresa/${impresaId}`);
+      const json = await res.json();
+      
+      if (json.success && json.data && json.data.length > 0) {
+        // Cerca una qualifica di tipo DURC valida
+        const durcQualifica = json.data.find((q: any) => 
+          (q.tipo_qualifica?.toUpperCase().includes('DURC') || 
+           q.tipo?.toUpperCase().includes('DURC')) &&
+          q.stato?.toUpperCase() !== 'SCADUTO'
+        );
+        
+        if (durcQualifica) {
+          const scadenza = new Date(durcQualifica.data_scadenza);
+          const oggi = new Date();
+          
+          if (scadenza > oggi) {
+            // DURC valido - auto-seleziona la checkbox
+            setFormData(prev => ({
+              ...prev,
+              dichiarazione_durc: true
+            }));
+            
+            toast.success('DURC valido trovato', {
+              description: `Scadenza: ${scadenza.toLocaleDateString('it-IT')}`
+            });
+          } else {
+            toast.warning('DURC scaduto', {
+              description: 'Il DURC dell\'impresa risulta scaduto. Aggiornare prima di procedere.'
+            });
+          }
+        } else {
+          toast.warning('DURC non trovato', {
+            description: 'Nessun DURC presente nelle qualifiche dell\'impresa'
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Errore nel controllo DURC:', err);
+    }
   };
 
   // Gestione cambio mercato
