@@ -2,11 +2,11 @@
  * ListaAutorizzazioniSuap.tsx
  * 
  * Lista delle autorizzazioni commercio su aree pubbliche per SSO SUAP.
- * Design coerente con ListaConcessioni.
+ * Design coerente con ListaConcessioni (sfondo grigio, righe verdi).
  */
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -120,15 +120,15 @@ export default function ListaAutorizzazioniSuap({
   const getStatoBadge = (stato: string) => {
     switch (stato?.toUpperCase()) {
       case 'ATTIVA':
-        return <Badge className="bg-green-600 text-white">Attiva</Badge>;
+        return <Badge className="bg-green-500/20 text-green-400">Attiva</Badge>;
       case 'SCADUTA':
-        return <Badge className="bg-red-600 text-white">Scaduta</Badge>;
+        return <Badge className="bg-red-500/20 text-red-400">Scaduta</Badge>;
       case 'SOSPESA':
-        return <Badge className="bg-yellow-600 text-white">Sospesa</Badge>;
+        return <Badge className="bg-yellow-500/20 text-yellow-400">Sospesa</Badge>;
       case 'REVOCATA':
-        return <Badge className="bg-gray-600 text-white">Revocata</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-400">Revocata</Badge>;
       default:
-        return <Badge className="bg-gray-500 text-white">{stato || 'N/D'}</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-400">{stato || 'N/D'}</Badge>;
     }
   };
 
@@ -136,11 +136,11 @@ export default function ListaAutorizzazioniSuap({
   const getTipoBadge = (tipo: string) => {
     switch (tipo) {
       case 'A':
-        return <Badge className="bg-blue-600 text-white">Tipo A</Badge>;
+        return <Badge className="bg-purple-500/20 text-purple-400">Tipo A</Badge>;
       case 'B':
-        return <Badge className="bg-purple-600 text-white">Tipo B</Badge>;
+        return <Badge className="bg-purple-500/20 text-purple-400">Tipo B</Badge>;
       default:
-        return <Badge className="bg-gray-500 text-white">{tipo || 'N/D'}</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-400">{tipo || 'N/D'}</Badge>;
     }
   };
 
@@ -165,87 +165,108 @@ export default function ListaAutorizzazioniSuap({
     }
   };
 
-  return (
-    <Card className="bg-[#0a1628] border-[#1e293b]">
-      <CardHeader className="border-b border-[#1e293b]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileCheck className="w-5 h-5 text-purple-400" />
-            <CardTitle className="text-[#e8fbff]">Lista Autorizzazioni</CardTitle>
-            <Badge variant="outline" className="ml-2 text-gray-400">
-              {filteredAutorizzazioni.length} risultati
-            </Badge>
-          </div>
-          <Button 
-            onClick={onNuovaAutorizzazione}
-            className="bg-purple-600 hover:bg-purple-700 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nuova Autorizzazione
-          </Button>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pt-4">
-        {/* Filtri */}
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex-1 min-w-[300px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input 
-                placeholder="Cerca per numero, concessionario o mercato..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#020817] border-[#1e293b] text-[#e8fbff]"
-              />
-            </div>
-          </div>
-          
-          <Select value={filterTipo} onValueChange={setFilterTipo}>
-            <SelectTrigger className="w-[150px] bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutti i tipi</SelectItem>
-              <SelectItem value="A">Tipo A - Posteggio</SelectItem>
-              <SelectItem value="B">Tipo B - Itinerante</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={filterStato} onValueChange={setFilterStato}>
-            <SelectTrigger className="w-[150px] bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Stato" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutti gli stati</SelectItem>
-              <SelectItem value="ATTIVA">Attiva</SelectItem>
-              <SelectItem value="SCADUTA">Scaduta</SelectItem>
-              <SelectItem value="SOSPESA">Sospesa</SelectItem>
-              <SelectItem value="REVOCATA">Revocata</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button 
-            variant="outline" 
-            onClick={fetchAutorizzazioni}
-            className="border-[#1e293b] text-[#e8fbff]"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
+  // Visualizza autorizzazione
+  const handleView = (id: number) => {
+    if (onViewAutorizzazione) {
+      onViewAutorizzazione(id);
+    } else {
+      toast.info('Dettaglio autorizzazione', { description: `ID: ${id}` });
+    }
+  };
 
-        {/* Tabella */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-          </div>
-        ) : (
-          <div className="rounded-md border border-[#1e293b] overflow-hidden">
+  // Modifica autorizzazione
+  const handleEdit = (id: number) => {
+    if (onEditAutorizzazione) {
+      onEditAutorizzazione(id);
+    } else {
+      toast.info('Modifica autorizzazione', { description: `ID: ${id}` });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header con titolo e pulsante */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileCheck className="w-5 h-5 text-purple-400" />
+          <h2 className="text-xl font-semibold text-[#e8fbff]">Lista Autorizzazioni</h2>
+          <Badge variant="outline" className="ml-2 text-gray-400 border-gray-600">
+            {filteredAutorizzazioni.length} risultati
+          </Badge>
+        </div>
+        <Button 
+          onClick={onNuovaAutorizzazione}
+          className="bg-purple-600 hover:bg-purple-700 text-white"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuova Autorizzazione
+        </Button>
+      </div>
+
+      {/* Filtri */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Input 
+            placeholder="Cerca per numero, concessionario o mercato..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+          />
+        </div>
+        
+        <Select value={filterTipo} onValueChange={setFilterTipo}>
+          <SelectTrigger className="w-[150px] bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti i tipi</SelectItem>
+            <SelectItem value="A">Tipo A - Posteggio</SelectItem>
+            <SelectItem value="B">Tipo B - Itinerante</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <Select value={filterStato} onValueChange={setFilterStato}>
+          <SelectTrigger className="w-[150px] bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Stato" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="ATTIVA">Attiva</SelectItem>
+            <SelectItem value="SCADUTA">Scaduta</SelectItem>
+            <SelectItem value="SOSPESA">Sospesa</SelectItem>
+            <SelectItem value="REVOCATA">Revocata</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <Button 
+          variant="outline" 
+          onClick={fetchAutorizzazioni}
+          className="border-[#14b8a6]/30 text-[#e8fbff]"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Tabella */}
+      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+            </div>
+          ) : filteredAutorizzazioni.length === 0 ? (
+            <div className="text-center py-16 text-gray-500">
+              <FileCheck className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p>Nessuna autorizzazione trovata</p>
+              <p className="text-sm mt-2">Le autorizzazioni create appariranno qui</p>
+            </div>
+          ) : (
             <Table>
               <TableHeader>
-                <TableRow className="bg-[#020817] hover:bg-[#020817]">
+                <TableRow className="border-[#14b8a6]/30 hover:bg-transparent">
                   <TableHead className="text-gray-400">N. Autorizzazione</TableHead>
                   <TableHead className="text-gray-400">Tipo</TableHead>
                   <TableHead className="text-gray-400">Impresa</TableHead>
@@ -254,75 +275,68 @@ export default function ListaAutorizzazioniSuap({
                   <TableHead className="text-gray-400">Rilascio</TableHead>
                   <TableHead className="text-gray-400">Scadenza</TableHead>
                   <TableHead className="text-gray-400">Stato</TableHead>
-                  <TableHead className="text-gray-400 text-right">Azioni</TableHead>
+                  <TableHead className="text-gray-400">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAutorizzazioni.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-400">
-                      Nessuna autorizzazione trovata
+                {filteredAutorizzazioni.map((auth) => (
+                  <TableRow 
+                    key={auth.id} 
+                    className="border-[#14b8a6]/30 hover:bg-[#0f172a] cursor-pointer"
+                  >
+                    <TableCell className="text-[#e8fbff] font-medium">
+                      {auth.numero_autorizzazione}
+                    </TableCell>
+                    <TableCell>{getTipoBadge(auth.tipo)}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-[#e8fbff]">{auth.company_name}</p>
+                        <p className="text-xs text-gray-500">{auth.company_piva || auth.company_cf}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[#e8fbff]">{auth.ente_rilascio}</TableCell>
+                    <TableCell className="text-[#e8fbff]">
+                      {auth.market_name || '-'}
+                      {auth.stall_number && <span className="text-gray-400 ml-1">({auth.stall_number})</span>}
+                    </TableCell>
+                    <TableCell className="text-gray-400">{formatDate(auth.data_rilascio)}</TableCell>
+                    <TableCell className="text-gray-400">{formatDate(auth.data_scadenza)}</TableCell>
+                    <TableCell>{getStatoBadge(auth.stato)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                          onClick={() => handleView(auth.id)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="text-yellow-400 hover:bg-yellow-400/10"
+                          onClick={() => handleEdit(auth.id)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="text-red-400 hover:bg-red-400/10"
+                          onClick={() => handleDelete(auth.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredAutorizzazioni.map((auth) => (
-                    <TableRow key={auth.id} className="hover:bg-[#1e293b]/50">
-                      <TableCell className="text-[#e8fbff] font-medium">
-                        {auth.numero_autorizzazione}
-                      </TableCell>
-                      <TableCell>{getTipoBadge(auth.tipo)}</TableCell>
-                      <TableCell>
-                        <div className="text-[#e8fbff]">{auth.company_name}</div>
-                        <div className="text-xs text-gray-400">{auth.company_piva || auth.company_cf}</div>
-                      </TableCell>
-                      <TableCell className="text-[#e8fbff]">{auth.ente_rilascio}</TableCell>
-                      <TableCell className="text-[#e8fbff]">
-                        {auth.market_name || '-'}
-                        {auth.stall_number && <span className="text-gray-400 ml-1">({auth.stall_number})</span>}
-                      </TableCell>
-                      <TableCell className="text-[#e8fbff]">{formatDate(auth.data_rilascio)}</TableCell>
-                      <TableCell className="text-[#e8fbff]">{formatDate(auth.data_scadenza)}</TableCell>
-                      <TableCell>{getStatoBadge(auth.stato)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {onViewAutorizzazione && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => onViewAutorizzazione(auth.id)}
-                              className="text-gray-400 hover:text-[#e8fbff]"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          )}
-                          {onEditAutorizzazione && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => onEditAutorizzazione(auth.id)}
-                              className="text-gray-400 hover:text-[#e8fbff]"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleDelete(auth.id)}
-                            className="text-gray-400 hover:text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

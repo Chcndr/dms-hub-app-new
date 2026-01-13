@@ -2,11 +2,11 @@
  * ListaDomandeSpuntaSuap.tsx
  * 
  * Lista delle domande di partecipazione alla spunta per SSO SUAP.
- * Design coerente con ListaConcessioni.
+ * Design coerente con ListaConcessioni (sfondo grigio, righe verdi).
  */
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,7 @@ import {
   Plus, 
   Eye, 
   Trash2, 
+  Edit,
   CheckCircle,
   XCircle,
   FileText,
@@ -65,11 +66,13 @@ interface DomandaSpunta {
 interface ListaDomandeSpuntaSuapProps {
   onNuovaDomanda: () => void;
   onViewDomanda?: (id: number) => void;
+  onEditDomanda?: (id: number) => void;
 }
 
 export default function ListaDomandeSpuntaSuap({ 
   onNuovaDomanda, 
-  onViewDomanda 
+  onViewDomanda,
+  onEditDomanda 
 }: ListaDomandeSpuntaSuapProps) {
   const [domande, setDomande] = useState<DomandaSpunta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,13 +130,13 @@ export default function ListaDomandeSpuntaSuap({
     switch (stato?.toUpperCase()) {
       case 'APPROVATA':
       case 'ATTIVA':
-        return <Badge className="bg-green-600 text-white">Approvata</Badge>;
+        return <Badge className="bg-green-500/20 text-green-400">Approvata</Badge>;
       case 'IN_ATTESA':
-        return <Badge className="bg-yellow-600 text-white">In Attesa</Badge>;
+        return <Badge className="bg-yellow-500/20 text-yellow-400">In Attesa</Badge>;
       case 'RIFIUTATA':
-        return <Badge className="bg-red-600 text-white">Rifiutata</Badge>;
+        return <Badge className="bg-red-500/20 text-red-400">Rifiutata</Badge>;
       default:
-        return <Badge className="bg-gray-500 text-white">{stato || 'N/D'}</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-400">{stato || 'N/D'}</Badge>;
     }
   };
 
@@ -201,74 +204,95 @@ export default function ListaDomandeSpuntaSuap({
     }
   };
 
-  return (
-    <Card className="bg-[#0a1628] border-[#1e293b]">
-      <CardHeader className="border-b border-[#1e293b]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-green-400" />
-            <CardTitle className="text-[#e8fbff]">Domande Spunta</CardTitle>
-            <Badge variant="outline" className="ml-2 text-gray-400">
-              {filteredDomande.length} risultati
-            </Badge>
-          </div>
-          <Button 
-            onClick={onNuovaDomanda}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nuova Domanda Spunta
-          </Button>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pt-4">
-        {/* Filtri */}
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex-1 min-w-[300px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input 
-                placeholder="Cerca per impresa o mercato..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#020817] border-[#1e293b] text-[#e8fbff]"
-              />
-            </div>
-          </div>
-          
-          <Select value={filterStato} onValueChange={setFilterStato}>
-            <SelectTrigger className="w-[150px] bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Stato" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutti gli stati</SelectItem>
-              <SelectItem value="APPROVATA">Approvata</SelectItem>
-              <SelectItem value="IN_ATTESA">In Attesa</SelectItem>
-              <SelectItem value="RIFIUTATA">Rifiutata</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button 
-            variant="outline" 
-            onClick={fetchDomande}
-            className="border-[#1e293b] text-[#e8fbff]"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
+  // Visualizza domanda
+  const handleView = (id: number) => {
+    if (onViewDomanda) {
+      onViewDomanda(id);
+    } else {
+      toast.info('Dettaglio domanda', { description: `ID: ${id}` });
+    }
+  };
 
-        {/* Tabella */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-green-400" />
-          </div>
-        ) : (
-          <div className="rounded-md border border-[#1e293b] overflow-hidden">
+  // Modifica domanda
+  const handleEdit = (id: number) => {
+    if (onEditDomanda) {
+      onEditDomanda(id);
+    } else {
+      toast.info('Modifica domanda', { description: `ID: ${id}` });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header con titolo e pulsante */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileText className="w-5 h-5 text-green-400" />
+          <h2 className="text-xl font-semibold text-[#e8fbff]">Domande Spunta</h2>
+          <Badge variant="outline" className="ml-2 text-gray-400 border-gray-600">
+            {filteredDomande.length} risultati
+          </Badge>
+        </div>
+        <Button 
+          onClick={onNuovaDomanda}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuova Domanda Spunta
+        </Button>
+      </div>
+
+      {/* Filtri */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Input 
+            placeholder="Cerca per impresa o mercato..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
+          />
+        </div>
+        
+        <Select value={filterStato} onValueChange={setFilterStato}>
+          <SelectTrigger className="w-[150px] bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Stato" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="APPROVATA">Approvata</SelectItem>
+            <SelectItem value="IN_ATTESA">In Attesa</SelectItem>
+            <SelectItem value="RIFIUTATA">Rifiutata</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <Button 
+          variant="outline" 
+          onClick={fetchDomande}
+          className="border-[#14b8a6]/30 text-[#e8fbff]"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Tabella */}
+      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-green-400" />
+            </div>
+          ) : filteredDomande.length === 0 ? (
+            <div className="text-center py-16 text-gray-500">
+              <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p>Nessuna domanda spunta trovata</p>
+              <p className="text-sm mt-2">Le domande create appariranno qui</p>
+            </div>
+          ) : (
             <Table>
               <TableHeader>
-                <TableRow className="bg-[#020817] hover:bg-[#020817]">
+                <TableRow className="border-[#14b8a6]/30 hover:bg-transparent">
                   <TableHead className="text-gray-400">Impresa</TableHead>
                   <TableHead className="text-gray-400">Mercato</TableHead>
                   <TableHead className="text-gray-400">Giorno</TableHead>
@@ -278,95 +302,100 @@ export default function ListaDomandeSpuntaSuap({
                   <TableHead className="text-gray-400">Presenze</TableHead>
                   <TableHead className="text-gray-400">Wallet</TableHead>
                   <TableHead className="text-gray-400">Stato</TableHead>
-                  <TableHead className="text-gray-400 text-right">Azioni</TableHead>
+                  <TableHead className="text-gray-400">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDomande.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-gray-400">
-                      Nessuna domanda spunta trovata
+                {filteredDomande.map((dom) => (
+                  <TableRow 
+                    key={dom.id} 
+                    className="border-[#14b8a6]/30 hover:bg-[#0f172a] cursor-pointer"
+                  >
+                    <TableCell>
+                      <div>
+                        <p className="text-[#e8fbff]">{dom.company_name}</p>
+                        <p className="text-xs text-gray-500">{dom.company_piva || dom.company_cf}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-[#e8fbff]">{dom.market_name}</p>
+                        <p className="text-xs text-gray-500">{dom.market_municipality}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[#e8fbff]">{dom.market_days || '-'}</TableCell>
+                    <TableCell className="text-[#e8fbff]">{dom.settore_richiesto || '-'}</TableCell>
+                    <TableCell className="text-[#e8fbff]">{dom.numero_autorizzazione || '-'}</TableCell>
+                    <TableCell className="text-gray-400">{formatDate(dom.data_richiesta)}</TableCell>
+                    <TableCell className="text-[#e8fbff]">{dom.numero_presenze || 0}</TableCell>
+                    <TableCell>
+                      {dom.wallet_id ? (
+                        <div className="flex items-center gap-1">
+                          <Wallet className="w-4 h-4 text-green-400" />
+                          <span className="text-green-400">{formatCurrency(dom.wallet_balance)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{getStatoBadge(dom.stato)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                          onClick={() => handleView(dom.id)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="text-yellow-400 hover:bg-yellow-400/10"
+                          onClick={() => handleEdit(dom.id)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        {dom.stato === 'IN_ATTESA' && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              className="text-green-400 hover:bg-green-400/10"
+                              onClick={() => handleApprova(dom.id)}
+                              title="Approva"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              className="text-orange-400 hover:bg-orange-400/10"
+                              onClick={() => handleRifiuta(dom.id)}
+                              title="Rifiuta"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="text-red-400 hover:bg-red-400/10"
+                          onClick={() => handleDelete(dom.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredDomande.map((dom) => (
-                    <TableRow key={dom.id} className="hover:bg-[#1e293b]/50">
-                      <TableCell>
-                        <div className="text-[#e8fbff]">{dom.company_name}</div>
-                        <div className="text-xs text-gray-400">{dom.company_piva || dom.company_cf}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-[#e8fbff]">{dom.market_name}</div>
-                        <div className="text-xs text-gray-400">{dom.market_municipality}</div>
-                      </TableCell>
-                      <TableCell className="text-[#e8fbff]">{dom.market_days || '-'}</TableCell>
-                      <TableCell className="text-[#e8fbff]">{dom.settore_richiesto || '-'}</TableCell>
-                      <TableCell className="text-[#e8fbff]">{dom.numero_autorizzazione || '-'}</TableCell>
-                      <TableCell className="text-[#e8fbff]">{formatDate(dom.data_richiesta)}</TableCell>
-                      <TableCell className="text-[#e8fbff]">{dom.numero_presenze || 0}</TableCell>
-                      <TableCell>
-                        {dom.wallet_id ? (
-                          <div className="flex items-center gap-1">
-                            <Wallet className="w-4 h-4 text-green-400" />
-                            <span className="text-green-400">{formatCurrency(dom.wallet_balance)}</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{getStatoBadge(dom.stato)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {dom.stato === 'IN_ATTESA' && (
-                            <>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => handleApprova(dom.id)}
-                                className="text-green-400 hover:text-green-300"
-                                title="Approva"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => handleRifiuta(dom.id)}
-                                className="text-red-400 hover:text-red-300"
-                                title="Rifiuta"
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                          {onViewDomanda && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => onViewDomanda(dom.id)}
-                              className="text-gray-400 hover:text-[#e8fbff]"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleDelete(dom.id)}
-                            className="text-gray-400 hover:text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
