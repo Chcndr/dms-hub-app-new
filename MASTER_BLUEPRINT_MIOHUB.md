@@ -2140,27 +2140,39 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 
 ### 📊 Punti di Ripristino Stabili
 
-| Repository | Tag | Data | Endpoint |
-|------------|-----|------|----------|
-| dms-hub-app-new | v3.29.0-stable | 12/01/2026 | - |
-| MIO-hub | v16.0.0-stable | 12/01/2026 | 353 |
-| mihub-backend-rest | v5.7.0-stable | 12/01/2026 | 31 |
+| Repository | Tag | Data | Descrizione |
+|------------|-----|------|-------------|
+| dms-hub-app-new | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation |
+| mihub-backend-rest | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation |
+| MIO-hub | v16.0.0-stable | 12/01/2026 | 353 endpoints |
+
+#### Storico Punti di Ripristino
+| Repository | Tag | Data | Note |
+|------------|-----|------|------|
+| dms-hub-app-new | v3.29.0-stable | 12/01/2026 | Settlement numbers |
+| mihub-backend-rest | v5.7.0-stable | 12/01/2026 | Wallet-Impresa |
 
 ### 🔧 Come Ripristinare
 
 ```bash
-# Frontend
+# Frontend (Vercel si aggiorna automaticamente)
 cd dms-hub-app-new
-git checkout v3.29.0-stable
+git checkout v3.32.0-stable
+git push origin v3.32.0-stable:master --force
 
-# API Index
-cd MIO-hub
-git checkout v16.0.0-stable
-
-# Backend
-cd mihub-backend-rest
-git checkout v5.7.0-stable
+# Backend (Hetzner)
+ssh root@157.90.29.66
+cd /root/mihub-backend-rest
+git fetch --tags
+git checkout v3.32.0-stable
 pm2 restart mihub-backend
+
+# Database (Neon Console)
+# 1. Vai su https://console.neon.tech
+# 2. Seleziona progetto "neondb"
+# 3. Vai su "Branches" > "Create Branch"
+# 4. Nome: "restore-v3.32.0-stable"
+# 5. Point-in-time: seleziona data/ora desiderata
 ```
 
 ---
