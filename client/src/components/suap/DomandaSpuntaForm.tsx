@@ -133,6 +133,10 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
     // Settore
     settore_richiesto: 'Non Alimentare',
     
+    // Presenze per Graduatoria
+    numero_presenze: 0,
+    data_prima_presenza: '',
+    
     // Dichiarazioni
     dichiarazione_requisiti: false,
     dichiarazione_durc: false,
@@ -418,6 +422,8 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
           autorizzazione_id: formData.autorizzazione_id ? parseInt(formData.autorizzazione_id) : null,
           giorno_settimana: formData.giorno,
           settore_richiesto: formData.settore_richiesto,
+          numero_presenze: formData.numero_presenze || 0,
+          data_prima_presenza: formData.data_prima_presenza || null,
           note: formData.note
         })
       });
@@ -712,6 +718,42 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
                 placeholder="Auto-popolato"
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* PRESENZE PER GRADUATORIA */}
+        <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[#e8fbff]">Presenze per Graduatoria Spunta</h3>
+            <span className="text-xs text-gray-400">(Inserire manualmente o auto-compilato da graduatoria)</span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-[#e8fbff]">Numero Presenze</Label>
+              <Input 
+                type="number"
+                min="0"
+                value={formData.numero_presenze}
+                onChange={(e) => setFormData({...formData, numero_presenze: parseInt(e.target.value) || 0})}
+                placeholder="0"
+                className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                disabled={isViewMode}
+              />
+              <p className="text-xs text-gray-400">Numero di presenze maturate nel mercato selezionato</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-[#e8fbff]">Data Prima Presenza</Label>
+              <Input 
+                type="date"
+                value={formData.data_prima_presenza}
+                onChange={(e) => setFormData({...formData, data_prima_presenza: e.target.value})}
+                className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
+                disabled={isViewMode}
+              />
+              <p className="text-xs text-gray-400">Data della prima presenza registrata nel mercato</p>
             </div>
           </div>
         </div>
