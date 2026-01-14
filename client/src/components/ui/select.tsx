@@ -30,10 +30,24 @@ function SelectTrigger({
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default";
 }) {
+  // Handler per supporto tastiera iPad
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Apri dropdown con Enter, Space, ArrowDown o ArrowUp
+    if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+      // Lascia che Radix gestisca l'evento, ma assicurati che funzioni
+      const target = e.currentTarget as HTMLElement;
+      if (target && !target.getAttribute('data-state')?.includes('open')) {
+        // Forza il click se il dropdown non si apre
+        setTimeout(() => target.click(), 0);
+      }
+    }
+  };
+
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
+      onKeyDown={handleKeyDown}
       className={cn(
         "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer touch-manipulation active:scale-[0.98]",
         className
@@ -103,9 +117,19 @@ function SelectItem({
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Item>) {
+  // Handler per supporto tastiera iPad - seleziona con Enter
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      // Forza la selezione
+      const target = e.currentTarget as HTMLElement;
+      target.click();
+    }
+  };
+
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
+      onKeyDown={handleKeyDown}
       className={cn(
         "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-2.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 active:bg-accent hover:bg-accent/50 touch-manipulation",
         className
