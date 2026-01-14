@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.34.0  
+> **Versione:** 3.35.0  
 > **Data:** 14 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -1084,7 +1084,76 @@ Per il point GIS del nuovo negozio:
 - [ ] Deploy: Push e verifica su produzione
 
 
+## 🆕 PROGETTO: GESTIONE CANONE UNICO E MORE (v3.35.0)
+
+> **Data Progetto:** 14 Gennaio 2026  
+> **Autore:** Manus AI  
+> **Stato:** PROGETTAZIONE
+
+### Obiettivo
+
+Implementare un sistema completo per la gestione del **Canone Unico Patrimoniale (CUP)**, includendo calcolo, scadenze, more, pagamenti straordinari e un **sistema di blocco automatico/manuale per le concessioni non pagate**.
+
+### Architettura Frontend
+
+**Nuovo Sotto-Tab:** "Canone Unico" nel `WalletPanel.tsx`
+
+**Componenti:**
+1.  **`CanoneUnicoPanel`**: Componente principale del nuovo tab.
+    -   **Filtri**: Dropdown "Mercato/Fiera", Dropdown "Tipo Operatore", Search "Impresa/P.IVA".
+    -   **Tabella Scadenze**: Elenco scadenze con stato (Pagato, Scaduto, **Bloccato**), giorni ritardo, importi.
+    -   **Azioni**: "Genera Avviso Mora", "Genera Pagamento Straordinario".
+    -   **Selettore Blocco Manuale**: Toggle "Blocca/Sblocca" per il dirigente (visibile solo in modalità manuale).
+
+2.  **`CalcoloMoraDialog`**: Dialog con dettaglio calcolo mora e interessi.
+
+3.  **`PagamentoStraordinarioDialog`**: Dialog per creare pagamenti per eventi specifici (fiere, etc.).
+
+### 💎 Logica di Blocco/Sblocco Concessione
+
+Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pagamenti` - boolean) per scegliere la modalità di gestione dei mancati pagamenti:
+
+-   **Modalità Automatica (Default)**:
+    1.  **Blocco**: Se il canone non viene pagato entro X giorni dalla scadenza (default 30), il sistema **sospende automaticamente la concessione** (`concessions.status = 'SOSPESA'`).
+    2.  **Effetto**: L'operatore non potrà registrare la presenza al mercato.
+    3.  **Sblocco**: Appena il sistema riceve la notifica di pagamento (tramite PagoPA), la concessione viene **riattivata automaticamente** (`concessions.status = 'ATTIVA'`).
+
+-   **Modalità Manuale**:
+    1.  **Notifica**: Se il canone non viene pagato, il sistema invia una **notifica al dirigente** nell'area "Notifiche" e mostra un alert nella tabella del "Canone Unico".
+    2.  **Azione**: Il dirigente può usare il **selettore (toggle) "Blocca/Sblocca"** per decidere manualmente se sospendere la concessione.
+
+### Architettura Backend
+
+**Modifiche al Database:**
+-   Aggiungere `status VARCHAR(20) DEFAULT 'ATTIVA'` alla tabella `concessions`.
+-   Aggiungere `blocco_automatico_pagamenti BOOLEAN DEFAULT true` alla tabella `comuni`.
+
+**Logica Aggiuntiva:**
+-   Un **processo giornaliero (cron job)** verificherà le scadenze e applicherà il blocco automatico se attivo.
+-   L'endpoint per la **registrazione delle presenze** (`POST /api/gis/presenze`) verificherà lo `status` della concessione.
+
+**Nuovi Endpoint API:**
+
+| Endpoint | Metodo | Descrizione |
+|---|---|---|
+| `POST /api/wallet-scadenze/genera-canone-annuo` | POST | Genera le scadenze del canone annuo per tutti i posteggi attivi |
+| `POST /api/wallet-scadenze/genera-pagamento-straordinario` | POST | Genera avvisi di pagamento per un mercato/fiera straordinaria |
+| `GET /api/wallet-scadenze/riepilogo` | GET | Riepilogo scadenze con filtri per mercato, tipo operatore, etc. |
+| `PUT /api/concessions/:id/status` | PUT | Endpoint per il blocco/sblocco manuale del dirigente |
+
+---
+
 ### 📝 CHANGELOG
+
+### v3.35.0 (14/01/2026) - Progettazione Gestione Canone Unico e More
+
+**Nuove Funzionalità Progettate:**
+- Sotto-tab "Canone Unico" con filtri e tabella scadenze
+- Logica di blocco/sblocco automatico e manuale delle concessioni
+- Calcolo automatico mora e interessi
+- Generazione avvisi di pagamento straordinari
+
+---
 
 ### v3.34.0 (14/01/2026) - Storico Wallet e Gestione Scadenze Canone
 
