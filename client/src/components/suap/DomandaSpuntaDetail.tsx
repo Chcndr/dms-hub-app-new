@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, FileCheck, FileText, User, MapPin, Wallet, Calendar, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, FileCheck, FileText, User, MapPin, Wallet, Calendar, ClipboardCheck, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
@@ -22,6 +22,81 @@ interface DomandaSpuntaDetailProps {
 export default function DomandaSpuntaDetail({ domandaId, onBack }: DomandaSpuntaDetailProps) {
   const [domanda, setDomanda] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleApprova = async () => {
+    if (!confirm('Sei sicuro di voler approvare questa domanda? Verrà creato il wallet spunta.')) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/domande-spunta/${domandaId}/approva`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success('Domanda approvata con successo!');
+        setDomanda(json.data);
+      } else {
+        toast.error(json.error || 'Errore nell\'approvazione');
+      }
+    } catch (err) {
+      console.error('Errore:', err);
+      toast.error('Errore nell\'approvazione della domanda');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRevisione = async () => {
+    const motivo = prompt('Inserisci il motivo della richiesta di regolarizzazione:');
+    if (!motivo) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/domande-spunta/${domandaId}/revisione`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo })
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.warning('Richiesta di regolarizzazione inviata');
+        setDomanda(json.data);
+      } else {
+        toast.error(json.error || 'Errore nella richiesta');
+      }
+    } catch (err) {
+      console.error('Errore:', err);
+      toast.error('Errore nella richiesta di regolarizzazione');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRifiuta = async () => {
+    const motivo = prompt('Inserisci il motivo del rifiuto:');
+    if (!motivo) return;
+    if (!confirm('Sei sicuro di voler rifiutare questa domanda?')) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/domande-spunta/${domandaId}/rifiuta`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo })
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.error('Domanda rifiutata');
+        setDomanda(json.data);
+      } else {
+        toast.error(json.error || 'Errore nel rifiuto');
+      }
+    } catch (err) {
+      console.error('Errore:', err);
+      toast.error('Errore nel rifiuto della domanda');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -196,7 +271,36 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
             {domanda.market_name || 'N/A'} - {domanda.company_name || 'N/A'} ({domanda.company_piva || 'N/A'})
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Pulsanti azione per il funzionario SUAP */}
+          {domanda.stato !== 'APPROVATA' && domanda.stato !== 'RIFIUTATA' && (
+            <>
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleApprova}
+                disabled={actionLoading}
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Approva
+              </Button>
+              <Button
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+                onClick={handleRevisione}
+                disabled={actionLoading}
+              >
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Richiedi Regolarizzazione
+              </Button>
+              <Button
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleRifiuta}
+                disabled={actionLoading}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Rifiuta
+              </Button>
+            </>
+          )}
           <Button
             variant="outline"
             className="border-[#14b8a6]/30 text-[#e8fbff]"
