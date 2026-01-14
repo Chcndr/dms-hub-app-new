@@ -580,8 +580,8 @@ export default function SuapPanel() {
                     <p className="text-sm text-[#e8fbff]/40 mt-2">Tutte le pratiche sono state processate</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {pratiche.filter(p => p.stato === 'IN_LAVORAZIONE' || p.stato === 'EVALUATED').slice(0, 5).map((pratica) => (
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    {pratiche.filter(p => p.stato === 'IN_LAVORAZIONE' || p.stato === 'EVALUATED').map((pratica) => (
                       <div 
                         key={pratica.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-orange-500/5 border border-orange-500/20 hover:bg-orange-500/10 cursor-pointer transition-colors"
@@ -618,7 +618,7 @@ export default function SuapPanel() {
                   Nuove Domande
                 </CardTitle>
                 <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
-                  {pratiche.filter(p => p.stato === 'RECEIVED').length + domandeSpuntaDashboard.filter(d => d.stato === 'IN_ATTESA').length} nuove
+                  {pratiche.filter(p => p.stato === 'RECEIVED').length + domandeSpuntaDashboard.filter(d => d.stato === 'IN_ATTESA' || d.stato === 'DA_REVISIONARE').length} nuove
                 </span>
               </CardHeader>
               <CardContent>
@@ -626,15 +626,15 @@ export default function SuapPanel() {
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
                   </div>
-                ) : (pratiche.filter(p => p.stato === 'RECEIVED').length + domandeSpuntaDashboard.filter(d => d.stato === 'IN_ATTESA').length) === 0 ? (
+                ) : (pratiche.filter(p => p.stato === 'RECEIVED').length + domandeSpuntaDashboard.filter(d => d.stato === 'IN_ATTESA' || d.stato === 'DA_REVISIONARE').length) === 0 ? (
                   <div className="text-center py-8">
                     <Inbox className="h-12 w-12 mx-auto text-[#e8fbff]/20 mb-4" />
                     <p className="text-[#e8fbff]/60">Nessuna nuova domanda</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                     {/* Pratiche SCIA */}
-                    {pratiche.filter(p => p.stato === 'RECEIVED').slice(0, 3).map((pratica) => (
+                    {pratiche.filter(p => p.stato === 'RECEIVED').map((pratica) => (
                       <div 
                         key={`pratica-${pratica.id}`}
                         className="flex items-center justify-between p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 hover:bg-blue-500/10 cursor-pointer transition-colors"
@@ -659,7 +659,7 @@ export default function SuapPanel() {
                       </div>
                     ))}
                     {/* Domande Spunta */}
-                    {domandeSpuntaDashboard.filter(d => d.stato === 'IN_ATTESA').slice(0, 3).map((domanda) => (
+                    {domandeSpuntaDashboard.filter(d => d.stato === 'IN_ATTESA' || d.stato === 'DA_REVISIONARE').map((domanda) => (
                       <div 
                         key={`spunta-${domanda.id}`}
                         className="flex items-center justify-between p-3 rounded-lg bg-green-500/5 border border-green-500/20 hover:bg-green-500/10 cursor-pointer transition-colors"
