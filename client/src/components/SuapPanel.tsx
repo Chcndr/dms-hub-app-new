@@ -196,6 +196,10 @@ export default function SuapPanel() {
   const [concessionePreData, setConcessionePreData] = useState<any>(null);
   const [concessioni, setConcessioni] = useState<any[]>([]);
   const [searchConcessioni, setSearchConcessioni] = useState('');
+  const [showConcessioniFilters, setShowConcessioniFilters] = useState(false);
+  const [concessioniFilterTipo, setConcessioniFilterTipo] = useState<string>('all');
+  const [concessioniFilterStato, setConcessioniFilterStato] = useState<string>('all');
+  const [concessioniFilterMercato, setConcessioniFilterMercato] = useState<string>('all');
   const [showAllChecks, setShowAllChecks] = useState(false); // false = solo ultima verifica, true = storico completo
   const [selectedConcessione, setSelectedConcessione] = useState<any | null>(null);
   const [concessioneDetailTab, setConcessioneDetailTab] = useState<'dati' | 'posteggio' | 'esporta'>('dati');
@@ -1665,7 +1669,11 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                 className="pl-10 bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
               />
             </div>
-            <Button variant="outline" className="border-[#14b8a6]/30 text-[#e8fbff]">
+            <Button 
+              variant="outline" 
+              className={`border-[#14b8a6]/30 text-[#e8fbff] ${showConcessioniFilters ? 'bg-[#14b8a6]/20' : ''}`}
+              onClick={() => setShowConcessioniFilters(!showConcessioniFilters)}
+            >
               <Filter className="mr-2 h-4 w-4" />
               Filtri
             </Button>
@@ -1680,6 +1688,67 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               Nuova Concessione
             </Button>
           </div>
+
+          {/* Pannello Filtri Espandibile */}
+          {showConcessioniFilters && (
+            <div className="flex flex-wrap gap-4 p-4 bg-[#0f172a] rounded-lg border border-[#14b8a6]/20">
+              <div className="flex-1 min-w-[150px]">
+                <label className="text-xs text-gray-400 mb-1 block">Tipo</label>
+                <select
+                  value={concessioniFilterTipo}
+                  onChange={(e) => setConcessioniFilterTipo(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#1a2332] border border-[#14b8a6]/30 rounded-md text-[#e8fbff] text-sm"
+                >
+                  <option value="all">Tutti i tipi</option>
+                  <option value="rinnovo">Rinnovo</option>
+                  <option value="subingresso">Subingresso</option>
+                  <option value="nuova">Nuova</option>
+                </select>
+              </div>
+              <div className="flex-1 min-w-[150px]">
+                <label className="text-xs text-gray-400 mb-1 block">Stato</label>
+                <select
+                  value={concessioniFilterStato}
+                  onChange={(e) => setConcessioniFilterStato(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#1a2332] border border-[#14b8a6]/30 rounded-md text-[#e8fbff] text-sm"
+                >
+                  <option value="all">Tutti gli stati</option>
+                  <option value="ATTIVA">Attiva</option>
+                  <option value="SCADUTA">Scaduta</option>
+                  <option value="CESSATA">Cessata</option>
+                  <option value="SOSPESA">Sospesa</option>
+                </select>
+              </div>
+              <div className="flex-1 min-w-[150px]">
+                <label className="text-xs text-gray-400 mb-1 block">Mercato</label>
+                <select
+                  value={concessioniFilterMercato}
+                  onChange={(e) => setConcessioniFilterMercato(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#1a2332] border border-[#14b8a6]/30 rounded-md text-[#e8fbff] text-sm"
+                >
+                  <option value="all">Tutti i mercati</option>
+                  {[...new Set(concessioni.map(c => c.market_name).filter(Boolean))].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setConcessioniFilterTipo('all');
+                    setConcessioniFilterStato('all');
+                    setConcessioniFilterMercato('all');
+                  }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <RefreshCw className="mr-1 h-3 w-3" />
+                  Reset
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Tabella concessioni */}
           <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
@@ -1708,14 +1777,32 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                   <TableBody>
                     {concessioni
                       .filter((conc) => {
-                        if (!searchConcessioni) return true;
-                        const search = searchConcessioni.toLowerCase();
-                        return (
-                          conc.numero_protocollo?.toLowerCase().includes(search) ||
-                          conc.ragione_sociale?.toLowerCase().includes(search) ||
-                          conc.market_name?.toLowerCase().includes(search) ||
-                          conc.cf_concessionario?.toLowerCase().includes(search)
-                        );
+                        // Filtro ricerca testuale
+                        if (searchConcessioni) {
+                          const search = searchConcessioni.toLowerCase();
+                          const matchesSearch = (
+                            conc.numero_protocollo?.toLowerCase().includes(search) ||
+                            conc.ragione_sociale?.toLowerCase().includes(search) ||
+                            conc.market_name?.toLowerCase().includes(search) ||
+                            conc.cf_concessionario?.toLowerCase().includes(search)
+                          );
+                          if (!matchesSearch) return false;
+                        }
+                        // Filtro tipo
+                        if (concessioniFilterTipo !== 'all') {
+                          const tipo = (conc.tipo_concessione || 'nuova').toLowerCase();
+                          if (tipo !== concessioniFilterTipo.toLowerCase()) return false;
+                        }
+                        // Filtro stato
+                        if (concessioniFilterStato !== 'all') {
+                          const stato = (conc.stato_calcolato || conc.stato || '').toUpperCase();
+                          if (stato !== concessioniFilterStato) return false;
+                        }
+                        // Filtro mercato
+                        if (concessioniFilterMercato !== 'all') {
+                          if (conc.market_name !== concessioniFilterMercato) return false;
+                        }
+                        return true;
                       })
                       .map((conc) => (
                       <TableRow 
