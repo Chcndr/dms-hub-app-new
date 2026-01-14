@@ -368,7 +368,7 @@ POST /api/guardian/debug/testEndpoint
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (166 endpoint totali)
+### Endpoint Index (356 endpoint totali)
 
 Gli endpoint sono documentati in:
 ```
