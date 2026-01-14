@@ -1,12 +1,30 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
+import { FileText, CheckCircle2, XCircle, Clock, Loader2, AlertTriangle, Bell, Inbox } from 'lucide-react';
 import { getSuapStats, getSuapPratiche, createSuapPratica, SuapStats, SuapPratica } from '@/api/suap';
 import SciaForm from '@/components/suap/SciaForm';
 import ConcessioneForm from '@/components/suap/ConcessioneForm';
 import { toast } from 'sonner';
 import { Link } from 'wouter';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+
+interface PraticaPendente {
+  id: number;
+  tipo: string;
+  impresa: string;
+  mercato: string;
+  motivo?: string;
+  data: string;
+}
+
+interface NuovaDomanda {
+  id: number;
+  tipo: string;
+  impresa: string;
+  data: string;
+}
 
 export default function SuapDashboard({ embedded = false }: { embedded?: boolean }) {
   const [stats, setStats] = useState<SuapStats | null>(null);
@@ -15,6 +33,12 @@ export default function SuapDashboard({ embedded = false }: { embedded?: boolean
   const [loadingPratiche, setLoadingPratiche] = useState(true);
   const [showSciaForm, setShowSciaForm] = useState(false);
   const [showConcessioneForm, setShowConcessioneForm] = useState(false);
+  
+  // Nuovi state per pratiche pendenti e nuove domande
+  const [pratichePendenti, setPratichePendenti] = useState<PraticaPendente[]>([]);
+  const [nuoveDomande, setNuoveDomande] = useState<NuovaDomanda[]>([]);
+  const [loadingPendenti, setLoadingPendenti] = useState(true);
+  const [loadingNuove, setLoadingNuove] = useState(true);
 
   // Carica statistiche
   useEffect(() => {
@@ -50,6 +74,97 @@ export default function SuapDashboard({ embedded = false }: { embedded?: boolean
       }
     }
     loadPratiche();
+  }, []);
+
+  // Carica pratiche pendenti (DA_REVISIONARE)
+  useEffect(() => {
+    async function loadPratichePendenti() {
+      try {
+        // Carica domande spunta da revisionare
+        const domandeRes = await fetch(`${API_URL}/api/domande-spunta?stato=DA_REVISIONARE`);
+        const domandeJson = await domandeRes.json();
+        
+        // Carica autorizzazioni da revisionare
+        const autRes = await fetch(`${API_URL}/api/autorizzazioni?stato=DA_REVISIONARE`);
+        const autJson = await autRes.json();
+        
+        const pendenti: PraticaPendente[] = [];
+        
+        // Aggiungi domande spunta
+        if (domandeJson.success && domandeJson.data) {
+          domandeJson.data.forEach((d: any) => {
+            pendenti.push({
+              id: d.id,
+              tipo: 'Domanda Spunta',
+              impresa: d.company_name || 'N/D',
+              mercato: d.market_name || 'N/D',
+              motivo: d.note?.includes('RICHIESTA REGOLARIZZAZIONE') 
+                ? d.note.split('RICHIESTA REGOLARIZZAZIONE:')[1]?.trim() 
+                : undefined,
+              data: d.updated_at || d.created_at
+            });
+          });
+        }
+        
+        // Aggiungi autorizzazioni
+        if (autJson.success && autJson.data) {
+          autJson.data.forEach((a: any) => {
+            pendenti.push({
+              id: a.id,
+              tipo: 'Autorizzazione',
+              impresa: a.ragione_sociale || 'N/D',
+              mercato: a.ente_rilascio || 'N/D',
+              motivo: a.note,
+              data: a.updated_at || a.created_at
+            });
+          });
+        }
+        
+        // Ordina per data
+        pendenti.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+        setPratichePendenti(pendenti.slice(0, 5));
+      } catch (error) {
+        console.error('Failed to load pratiche pendenti', error);
+        setPratichePendenti([]);
+      } finally {
+        setLoadingPendenti(false);
+      }
+    }
+    loadPratichePendenti();
+  }, []);
+
+  // Carica nuove domande (IN_ATTESA)
+  useEffect(() => {
+    async function loadNuoveDomande() {
+      try {
+        // Carica domande spunta in attesa
+        const domandeRes = await fetch(`${API_URL}/api/domande-spunta?stato=IN_ATTESA`);
+        const domandeJson = await domandeRes.json();
+        
+        const nuove: NuovaDomanda[] = [];
+        
+        if (domandeJson.success && domandeJson.data) {
+          domandeJson.data.forEach((d: any) => {
+            nuove.push({
+              id: d.id,
+              tipo: 'Domanda Spunta',
+              impresa: d.company_name || 'N/D',
+              data: d.created_at
+            });
+          });
+        }
+        
+        // Ordina per data (più recenti prima)
+        nuove.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+        setNuoveDomande(nuove.slice(0, 5));
+      } catch (error) {
+        console.error('Failed to load nuove domande', error);
+        setNuoveDomande([]);
+      } finally {
+        setLoadingNuove(false);
+      }
+    }
+    loadNuoveDomande();
   }, []);
 
   // Handler per submit SCIA
@@ -318,45 +433,61 @@ export default function SuapDashboard({ embedded = false }: { embedded?: boolean
         </Card>
       </div>
 
-      {/* Recent Activity & Alerts */}
+      {/* Pratiche Pendenti & Nuove Domande */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        {/* Pratiche Pendenti - Da Revisionare */}
         <Card className="col-span-4 bg-[#0a1628] border-[#1e293b]">
-          <CardHeader>
-            <CardTitle className="text-[#e8fbff]">Attività Recente</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-400" />
+              Pratiche Pendenti
+            </CardTitle>
+            <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full">
+              {pratichePendenti.length} da revisionare
+            </span>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {loadingPratiche ? (
+            <div className="space-y-4">
+              {loadingPendenti ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#00f0ff]" />
-                  <span className="ml-2 text-[#e8fbff]/60">Caricamento pratiche...</span>
+                  <Loader2 className="h-6 w-6 animate-spin text-orange-400" />
+                  <span className="ml-2 text-[#e8fbff]/60">Caricamento...</span>
                 </div>
-              ) : pratiche.length === 0 ? (
+              ) : pratichePendenti.length === 0 ? (
                 <div className="text-center py-8">
-                  <FileText className="h-12 w-12 mx-auto text-[#e8fbff]/20 mb-4" />
-                  <p className="text-[#e8fbff]/60">Nessuna pratica presente</p>
+                  <CheckCircle2 className="h-12 w-12 mx-auto text-green-400/40 mb-4" />
+                  <p className="text-[#e8fbff]/60">Nessuna pratica pendente</p>
                   <p className="text-sm text-[#e8fbff]/40 mt-2">
-                    Clicca su "Nuova SCIA" per creare la prima pratica
+                    Tutte le pratiche sono state processate
                   </p>
                 </div>
               ) : (
-                pratiche.map((pratica) => (
-                  <div key={pratica.id} className="flex items-center">
+                pratichePendenti.map((pratica) => (
+                  <div key={pratica.id} className="flex items-center p-3 rounded-lg bg-orange-500/5 border border-orange-500/20 hover:bg-orange-500/10 cursor-pointer transition-colors">
                     <div className="space-y-1 flex-1">
                       <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></span>
                         <p className="text-sm font-medium leading-none text-[#e8fbff]">
-                          {pratica.tipo_pratica}
+                          {pratica.tipo}
                         </p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${getStatoBadge(pratica.stato)}`}>
-                          {pratica.stato}
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
+                          Da Revisionare
                         </span>
                       </div>
                       <p className="text-sm text-[#e8fbff]/60">
-                        {pratica.richiedente_nome} - {pratica.richiedente_cf}
+                        {pratica.impresa} - {pratica.mercato}
                       </p>
+                      {pratica.motivo && (
+                        <p className="text-xs text-orange-400/80 mt-1">
+                          Motivo: {pratica.motivo}
+                        </p>
+                      )}
                     </div>
-                    <div className="ml-auto font-medium text-[#e8fbff]/60 text-sm">
-                      {formatRelativeTime(pratica.created_at)}
+                    <div className="ml-auto text-right">
+                      <p className="text-xs text-[#e8fbff]/60">{formatRelativeTime(pratica.data)}</p>
+                      <Button size="sm" variant="ghost" className="text-orange-400 hover:bg-orange-400/10 mt-1">
+                        Verifica
+                      </Button>
                     </div>
                   </div>
                 ))
@@ -365,33 +496,42 @@ export default function SuapDashboard({ embedded = false }: { embedded?: boolean
           </CardContent>
         </Card>
 
+        {/* Nuove Domande Arrivate */}
         <Card className="col-span-3 bg-[#0a1628] border-[#1e293b]">
-          <CardHeader>
-            <CardTitle className="text-[#e8fbff]">Stato Integrazioni</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+              <Bell className="h-5 w-5 text-blue-400" />
+              Nuove Domande
+            </CardTitle>
+            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+              {nuoveDomande.length} nuove
+            </span>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-sm text-[#e8fbff]">PDND Interoperabilità</span>
+            <div className="space-y-3">
+              {loadingNuove ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
                 </div>
-                <span className="text-xs text-[#e8fbff]/60">Online</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-sm text-[#e8fbff]">INPS DURC OnLine</span>
+              ) : nuoveDomande.length === 0 ? (
+                <div className="text-center py-8">
+                  <Inbox className="h-12 w-12 mx-auto text-[#e8fbff]/20 mb-4" />
+                  <p className="text-[#e8fbff]/60">Nessuna nuova domanda</p>
                 </div>
-                <span className="text-xs text-[#e8fbff]/60">Online</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                  <span className="text-sm text-[#e8fbff]">Agenzia Entrate</span>
-                </div>
-                <span className="text-xs text-[#e8fbff]/60">Latenza Alta</span>
-              </div>
+              ) : (
+                nuoveDomande.map((domanda) => (
+                  <div key={domanda.id} className="flex items-center p-2 rounded-lg hover:bg-blue-500/5 cursor-pointer transition-colors border border-transparent hover:border-blue-500/20">
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+                      <div>
+                        <p className="text-sm text-[#e8fbff] font-medium">{domanda.tipo}</p>
+                        <p className="text-xs text-[#e8fbff]/60">{domanda.impresa}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-[#e8fbff]/40">{formatRelativeTime(domanda.data)}</span>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
