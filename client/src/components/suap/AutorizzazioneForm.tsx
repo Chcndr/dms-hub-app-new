@@ -222,23 +222,79 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
           const json = await res.json();
           if (json.success && json.data) {
             const aut = json.data;
+            
+            // Imposta il searchQuery per mostrare il nome dell'impresa
+            if (aut.company_name) {
+              setSearchQuery(aut.company_name);
+            }
+            
+            // Imposta l'ID dell'impresa selezionata
+            if (aut.vendor_id) {
+              setSelectedImpresaId(aut.vendor_id);
+            }
+            
+            // Imposta il mercato selezionato
+            if (aut.market_id) {
+              setSelectedMarketId(aut.market_id);
+            }
+            
             setFormData(prev => ({
               ...prev,
+              // Dati Generali
               numero_autorizzazione: aut.numero_autorizzazione || '',
               data_rilascio: aut.data_rilascio ? new Date(aut.data_rilascio).toISOString().split('T')[0] : '',
               data_scadenza: aut.data_scadenza ? new Date(aut.data_scadenza).toISOString().split('T')[0] : '',
               ente_rilascio: aut.ente_rilascio || '',
               tipo: aut.tipo || 'A',
-              impresa_id: aut.vendor_id?.toString() || '',
-              cf_impresa: aut.company_cf || '',
-              partita_iva: aut.company_piva || '',
-              ragione_sociale: aut.company_name || '',
+              
+              // Dati Impresa
+              impresa_id: aut.vendor_id?.toString() || aut.impresa_id?.toString() || '',
+              cf_impresa: aut.company_cf || aut.codice_fiscale || '',
+              partita_iva: aut.company_piva || aut.partita_iva || '',
+              ragione_sociale: aut.company_name || aut.ragione_sociale || '',
+              
+              // Dati Rappresentante Legale
+              nome: aut.rappresentante_legale_nome || aut.nome || '',
+              cognome: aut.rappresentante_legale_cognome || aut.cognome || '',
+              data_nascita: aut.rappresentante_legale_data_nascita || '',
+              luogo_nascita: aut.rappresentante_legale_luogo_nascita || '',
+              residenza_via: aut.rappresentante_legale_residenza_via || '',
+              residenza_comune: aut.rappresentante_legale_residenza_comune || '',
+              residenza_provincia: aut.rappresentante_legale_residenza_provincia || '',
+              residenza_cap: aut.rappresentante_legale_residenza_cap || '',
+              
+              // Sede Legale
+              sede_legale_via: aut.sede_legale_via || aut.indirizzo_via || '',
+              sede_legale_comune: aut.sede_legale_comune || aut.comune || '',
+              sede_legale_provincia: aut.sede_legale_provincia || aut.indirizzo_provincia || '',
+              sede_legale_cap: aut.sede_legale_cap || aut.indirizzo_cap || '',
+              
+              // Mercato e Posteggio
               mercato: aut.market_name || '',
               mercato_id: aut.market_id?.toString() || '',
+              posteggio: aut.stall_number || '',
+              posteggio_id: aut.stall_id?.toString() || '',
+              ubicazione: aut.market_address || '',
+              giorno: aut.market_days || '',
+              
+              // Settore
               settore: aut.settore || 'Non Alimentare',
+              sottosettore: aut.sottosettore || '',
+              
+              // DURC e Requisiti
+              durc_numero: aut.durc_numero || '',
+              durc_data_rilascio: aut.durc_data_rilascio ? new Date(aut.durc_data_rilascio).toISOString().split('T')[0] : '',
+              durc_data_scadenza: aut.durc_data_scadenza ? new Date(aut.durc_data_scadenza).toISOString().split('T')[0] : '',
+              durc_valido: aut.durc_valido || false,
+              requisiti_morali: aut.requisiti_morali || false,
+              requisiti_professionali: aut.requisiti_professionali || false,
+              
+              // Note e Stato
               note: aut.note || '',
               stato: aut.stato || 'ATTIVA'
             }));
+            
+            toast.info('Dati autorizzazione caricati', { description: 'Modifica i campi necessari' });
           }
         } catch (err) {
           console.error('Errore caricamento autorizzazione:', err);
@@ -430,7 +486,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
     }));
   };
 
-  // Salva autorizzazione
+  // Salva autorizzazione (POST per creazione, PUT per modifica)
   const handleSave = async () => {
     // Validazione
     if (!formData.impresa_id || !formData.numero_autorizzazione || !formData.ente_rilascio) {
@@ -443,30 +499,39 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
       return;
     }
     
+    const payload = {
+      impresa_id: parseInt(formData.impresa_id),
+      numero_autorizzazione: formData.numero_autorizzazione,
+      ente_rilascio: formData.ente_rilascio,
+      data_rilascio: formData.data_rilascio,
+      data_scadenza: formData.tipo === 'A' ? formData.data_scadenza : null,
+      tipo: formData.tipo,
+      settore: formData.settore,
+      sottosettore: formData.sottosettore,
+      mercato_id: formData.mercato_id ? parseInt(formData.mercato_id) : null,
+      posteggio_id: formData.posteggio_id ? parseInt(formData.posteggio_id) : null,
+      durc_numero: formData.durc_numero,
+      durc_data_rilascio: formData.durc_data_rilascio || null,
+      durc_data_scadenza: formData.durc_data_scadenza || null,
+      durc_valido: formData.durc_valido,
+      requisiti_morali: formData.requisiti_morali,
+      requisiti_professionali: formData.requisiti_professionali,
+      stato: formData.stato,
+      note: formData.note
+    };
+    
     try {
-      const response = await fetch(`${API_URL}/api/autorizzazioni`, {
-        method: 'POST',
+      // Se siamo in modalità edit e abbiamo un ID, usa PUT per aggiornare
+      const isUpdate = isEditMode && autorizzazioneId;
+      const url = isUpdate 
+        ? `${API_URL}/api/autorizzazioni/${autorizzazioneId}`
+        : `${API_URL}/api/autorizzazioni`;
+      const method = isUpdate ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          impresa_id: parseInt(formData.impresa_id),
-          numero_autorizzazione: formData.numero_autorizzazione,
-          ente_rilascio: formData.ente_rilascio,
-          data_rilascio: formData.data_rilascio,
-          data_scadenza: formData.tipo === 'A' ? formData.data_scadenza : null,
-          tipo: formData.tipo,
-          settore: formData.settore,
-          sottosettore: formData.sottosettore,
-          mercato_id: formData.mercato_id ? parseInt(formData.mercato_id) : null,
-          posteggio_id: formData.posteggio_id ? parseInt(formData.posteggio_id) : null,
-          durc_numero: formData.durc_numero,
-          durc_data_rilascio: formData.durc_data_rilascio || null,
-          durc_data_scadenza: formData.durc_data_scadenza || null,
-          durc_valido: formData.durc_valido,
-          requisiti_morali: formData.requisiti_morali,
-          requisiti_professionali: formData.requisiti_professionali,
-          stato: formData.stato,
-          note: formData.note
-        })
+        body: JSON.stringify(payload)
       });
       
       const json = await response.json();
@@ -475,7 +540,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
         throw new Error(json.error || 'Errore durante il salvataggio');
       }
       
-      toast.success('Autorizzazione creata con successo');
+      toast.success(isUpdate ? 'Autorizzazione aggiornata con successo' : 'Autorizzazione creata con successo');
       onSubmit(json.data);
     } catch (err: any) {
       console.error('Errore salvataggio:', err);
