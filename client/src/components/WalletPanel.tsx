@@ -82,6 +82,7 @@ export default function WalletPanel() {
   const [showPagamentoStraordinarioDialog, setShowPagamentoStraordinarioDialog] = useState(false);
   const [canoneAnno, setCanoneAnno] = useState(new Date().getFullYear().toString());
   const [canoneDataScadenza, setCanoneDataScadenza] = useState('');
+  const [canoneNumeroRate, setCanoneNumeroRate] = useState('1');
   const [straordinarioDescrizione, setStraordinarioDescrizione] = useState('');
   const [straordinarioImporto, setStraordinarioImporto] = useState('');
   const [straordinarioMercatoId, setStraordinarioMercatoId] = useState('');
@@ -212,12 +213,12 @@ export default function WalletPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           anno: parseInt(canoneAnno),
-          data_scadenza: canoneDataScadenza || `${canoneAnno}-03-31`
+          numero_rate: parseInt(canoneNumeroRate)
         })
       });
       const data = await response.json();
       if (data.success) {
-        alert(`Generate ${data.scadenze_create} scadenze per l'anno ${canoneAnno}`);
+        alert(`Generate ${data.scadenze_create} scadenze (${data.numero_rate} rate) per l'anno ${canoneAnno}`);
         setShowGeneraCanoneDialog(false);
         fetchCanoneScadenze();
       } else {
@@ -1011,6 +1012,7 @@ export default function WalletPanel() {
                         <th className="text-left px-4 py-3 text-slate-400 font-medium">MERCATO</th>
                         <th className="text-left px-4 py-3 text-slate-400 font-medium">POSTEGGIO</th>
                         <th className="text-left px-4 py-3 text-slate-400 font-medium">ANNO</th>
+                        <th className="text-center px-4 py-3 text-slate-400 font-medium">RATA</th>
                         <th className="text-left px-4 py-3 text-slate-400 font-medium">SCADENZA</th>
                         <th className="text-left px-4 py-3 text-slate-400 font-medium">GIORNI RITARDO</th>
                         <th className="text-right px-4 py-3 text-slate-400 font-medium">IMPORTO</th>
@@ -1029,6 +1031,16 @@ export default function WalletPanel() {
                           <td className="px-4 py-3 text-slate-300">{s.mercato_nome || '-'}</td>
                           <td className="px-4 py-3 text-slate-300">{s.posteggio || '-'}</td>
                           <td className="px-4 py-3 text-slate-300">{s.anno_riferimento}</td>
+                          <td className="px-4 py-3 text-center">
+                            {s.rata_totale > 1 ? (
+                              <span className="inline-flex items-center gap-1">
+                                <span className={`w-3 h-3 rounded-full ${s.stato === 'PAGATO' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                <span className="text-slate-300 text-sm">{s.rata_numero}/{s.rata_totale}</span>
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-slate-300">
                             {s.data_scadenza ? new Date(s.data_scadenza).toLocaleDateString('it-IT') : '-'}
                           </td>
@@ -1225,13 +1237,17 @@ export default function WalletPanel() {
               />
             </div>
             <div>
-              <Label className="text-slate-300">Data Scadenza (default: 31 marzo)</Label>
-              <Input 
-                type="date" 
-                value={canoneDataScadenza} 
-                onChange={(e) => setCanoneDataScadenza(e.target.value)}
-                className="bg-[#0f172a] border-slate-700 text-white"
-              />
+              <Label className="text-slate-300">Numero Rate</Label>
+              <select 
+                value={canoneNumeroRate} 
+                onChange={(e) => setCanoneNumeroRate(e.target.value)}
+                className="w-full p-2 rounded bg-[#0f172a] border border-slate-700 text-white"
+              >
+                <option value="1">1 rata (pagamento unico - 31 marzo)</option>
+                <option value="2">2 rate (marzo e settembre)</option>
+                <option value="3">3 rate (marzo, giugno, settembre)</option>
+                <option value="4">4 rate (trimestrale)</option>
+              </select>
             </div>
           </div>
           <DialogFooter>
