@@ -624,12 +624,20 @@ export default function WalletPanel() {
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
       
-      // Determina la descrizione - DEVE contenere "Canone" per aggiornare le scadenze
+      // Determina la descrizione e la scadenza da pagare
       let description = '';
+      let scadenza_id: number | null = null;
+      
       if (selectedWallet.type !== 'SPUNTA') {
         if (walletScadenze.length > 0) {
-          // Pagamento rata specifica
-          description = `Pagamento Canone Rata ${walletScadenze[0].rata} - ${selectedWallet.market_name} - Posteggio ${selectedWallet.stall_number}`;
+          // Trova la prima rata non pagata (quella evidenziata)
+          const primaRataDaPagare = walletScadenze.find(s => s.stato !== 'PAGATO');
+          if (primaRataDaPagare) {
+            scadenza_id = primaRataDaPagare.id;
+            description = `Pagamento Canone Rata ${primaRataDaPagare.rata} - ${selectedWallet.market_name} - Posteggio ${selectedWallet.stall_number}`;
+          } else {
+            description = `Pagamento Canone Annuo - ${selectedWallet.market_name} - Posteggio ${selectedWallet.stall_number}`;
+          }
         } else {
           description = `Pagamento Canone Annuo - ${selectedWallet.market_name} - Posteggio ${selectedWallet.stall_number}`;
         }
@@ -643,7 +651,8 @@ export default function WalletPanel() {
         body: JSON.stringify({
           wallet_id: selectedWallet.id,
           amount: parseFloat(depositAmount),
-          description
+          description,
+          scadenza_id
         })
       });
 
