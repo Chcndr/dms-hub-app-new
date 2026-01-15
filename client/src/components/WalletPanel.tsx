@@ -81,11 +81,15 @@ export default function WalletPanel() {
   const [showGeneraCanoneDialog, setShowGeneraCanoneDialog] = useState(false);
   const [showPagamentoStraordinarioDialog, setShowPagamentoStraordinarioDialog] = useState(false);
   const [canoneAnno, setCanoneAnno] = useState(new Date().getFullYear().toString());
-  const [canoneDataScadenza, setCanoneDataScadenza] = useState('');
+  const [canoneDataPrimaRata, setCanoneDataPrimaRata] = useState(`${new Date().getFullYear()}-03-31`);
   const [canoneNumeroRate, setCanoneNumeroRate] = useState('1');
   const [straordinarioDescrizione, setStraordinarioDescrizione] = useState('');
   const [straordinarioImporto, setStraordinarioImporto] = useState('');
-  const [straordinarioMercatoId, setStraordinarioMercatoId] = useState('');
+  const [straordinarioMercatoId, setStraordinarioMercatoId] = useState('all');
+  const [straordinarioDataScadenza, setStraordinarioDataScadenza] = useState('');
+  const [straordinarioImpresaId, setStraordinarioImpresaId] = useState('');
+  const [straordinarioImpresaSearch, setStraordinarioImpresaSearch] = useState('');
+  const [straordinarioImpreseSuggestions, setStraordinarioImpreseSuggestions] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [companies, setCompanies] = useState<CompanyWallets[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -214,7 +218,8 @@ export default function WalletPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           anno: parseInt(canoneAnno),
-          numero_rate: parseInt(canoneNumeroRate)
+          numero_rate: parseInt(canoneNumeroRate),
+          data_prima_rata: canoneDataPrimaRata
         })
       });
       const data = await response.json();
@@ -294,22 +299,34 @@ export default function WalletPanel() {
   };
 
   const handleGeneraPagamentoStraordinario = async () => {
+    if (!straordinarioDescrizione || !straordinarioImporto || !straordinarioDataScadenza) {
+      alert('Compila tutti i campi obbligatori: Descrizione, Importo, Data Scadenza');
+      return;
+    }
+    
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
       const response = await fetch(`${API_URL}/api/canone-unico/genera-pagamento-straordinario`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mercato_id: parseInt(straordinarioMercatoId),
+          mercato_id: straordinarioMercatoId !== 'all' ? parseInt(straordinarioMercatoId) : null,
+          impresa_id: straordinarioImpresaId ? parseInt(straordinarioImpresaId) : null,
           descrizione: straordinarioDescrizione,
           importo: parseFloat(straordinarioImporto),
-          data_scadenza: canoneDataScadenza
+          data_scadenza: straordinarioDataScadenza,
+          tutti: straordinarioMercatoId === 'all' && !straordinarioImpresaId
         })
       });
       const data = await response.json();
       if (data.success) {
-        alert(`Generati ${data.scadenze_create} avvisi di pagamento straordinario`);
+        alert(`Generati ${data.scadenze_create} avvisi di pagamento straordinario per ${data.imprese_coinvolte} imprese`);
         setShowPagamentoStraordinarioDialog(false);
+        setStraordinarioDescrizione('');
+        setStraordinarioImporto('');
+        setStraordinarioDataScadenza('');
+        setStraordinarioImpresaId('');
+        setStraordinarioImpresaSearch('');
         fetchCanoneScadenze();
       } else {
         alert('Errore: ' + data.error);
@@ -317,6 +334,28 @@ export default function WalletPanel() {
     } catch (err) {
       console.error('Errore generazione pagamento straordinario:', err);
       alert('Errore di connessione');
+    }
+  };
+  
+  // Ricerca imprese per pagamento straordinario
+  const handleSearchImpresaStraordinario = async (search: string) => {
+    setStraordinarioImpresaSearch(search);
+    setStraordinarioImpresaId('');
+    
+    if (search.length < 2) {
+      setStraordinarioImpreseSuggestions([]);
+      return;
+    }
+    
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const response = await fetch(`${API_URL}/api/imprese?search=${encodeURIComponent(search)}&limit=5`);
+      const data = await response.json();
+      if (data.success) {
+        setStraordinarioImpreseSuggestions(data.data || []);
+      }
+    } catch (err) {
+      console.error('Errore ricerca imprese:', err);
     }
   };
 
@@ -1434,7 +1473,11 @@ export default function WalletPanel() {
               <Input 
                 type="number" 
                 value={canoneAnno} 
-                onChange={(e) => setCanoneAnno(e.target.value)}
+                onChange={(e) => {
+                  setCanoneAnno(e.target.value);
+                  // Aggiorna anche la data prima rata con l'anno selezionato
+                  setCanoneDataPrimaRata(`${e.target.value}-03-31`);
+                }}
                 className="bg-[#0f172a] border-slate-700 text-white"
               />
             </div>
@@ -1445,11 +1488,26 @@ export default function WalletPanel() {
                 onChange={(e) => setCanoneNumeroRate(e.target.value)}
                 className="w-full p-2 rounded bg-[#0f172a] border border-slate-700 text-white"
               >
-                <option value="1">1 rata (pagamento unico - 31 marzo)</option>
-                <option value="2">2 rate (marzo e settembre)</option>
-                <option value="3">3 rate (marzo, giugno, settembre)</option>
+                <option value="1">1 rata (pagamento unico)</option>
+                <option value="2">2 rate (semestrale)</option>
+                <option value="3">3 rate (quadrimestrale)</option>
                 <option value="4">4 rate (trimestrale)</option>
               </select>
+            </div>
+            <div>
+              <Label className="text-slate-300">Data Prima Rata</Label>
+              <Input 
+                type="date" 
+                value={canoneDataPrimaRata} 
+                onChange={(e) => setCanoneDataPrimaRata(e.target.value)}
+                className="bg-[#0f172a] border-slate-700 text-white"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                {canoneNumeroRate === '1' && 'Scadenza unica'}
+                {canoneNumeroRate === '2' && 'Le rate saranno a 6 mesi di distanza'}
+                {canoneNumeroRate === '3' && 'Le rate saranno a 4 mesi di distanza'}
+                {canoneNumeroRate === '4' && 'Le rate saranno a 3 mesi di distanza'}
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -1465,26 +1523,71 @@ export default function WalletPanel() {
 
       {/* Dialog Pagamento Straordinario */}
       <Dialog open={showPagamentoStraordinarioDialog} onOpenChange={setShowPagamentoStraordinarioDialog}>
-        <DialogContent className="bg-[#1e293b] border-slate-700 text-white sm:max-w-[400px]">
+        <DialogContent className="bg-[#1e293b] border-slate-700 text-white sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Pagamento Straordinario</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Genera avvisi di pagamento per fiere o eventi straordinari
+              Genera avvisi di pagamento per fiere, eventi o addebiti extra
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <div>
-              <Label className="text-slate-300">ID Mercato</Label>
-              <Input 
-                type="number" 
-                value={straordinarioMercatoId} 
-                onChange={(e) => setStraordinarioMercatoId(e.target.value)}
-                placeholder="Es: 1"
-                className="bg-[#0f172a] border-slate-700 text-white"
-              />
+            {/* Selezione destinatari */}
+            <div className="bg-slate-800/50 p-3 rounded-lg space-y-3">
+              <Label className="text-slate-300 font-medium">Destinatari</Label>
+              
+              {/* Cerca impresa singola */}
+              <div className="relative">
+                <Label className="text-slate-400 text-xs">Cerca Impresa (opzionale)</Label>
+                <Input 
+                  value={straordinarioImpresaSearch} 
+                  onChange={(e) => handleSearchImpresaStraordinario(e.target.value)}
+                  placeholder="Cerca per ragione sociale o P.IVA..."
+                  className="bg-[#0f172a] border-slate-700 text-white"
+                />
+                {straordinarioImpreseSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                    {straordinarioImpreseSuggestions.map((impresa: any) => (
+                      <div 
+                        key={impresa.id} 
+                        className="p-2 hover:bg-slate-700 cursor-pointer text-sm"
+                        onClick={() => {
+                          setStraordinarioImpresaId(impresa.id.toString());
+                          setStraordinarioImpresaSearch(impresa.denominazione);
+                          setStraordinarioImpreseSuggestions([]);
+                        }}
+                      >
+                        <div className="font-medium">{impresa.denominazione}</div>
+                        <div className="text-slate-400 text-xs">P.IVA: {impresa.partita_iva}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {straordinarioImpresaId && (
+                  <div className="mt-1 text-xs text-green-400">Impresa selezionata (ID: {straordinarioImpresaId})</div>
+                )}
+              </div>
+              
+              {/* Oppure seleziona mercato */}
+              {!straordinarioImpresaId && (
+                <div>
+                  <Label className="text-slate-400 text-xs">Oppure seleziona Mercato</Label>
+                  <select 
+                    value={straordinarioMercatoId} 
+                    onChange={(e) => setStraordinarioMercatoId(e.target.value)}
+                    className="w-full p-2 rounded bg-[#0f172a] border border-slate-700 text-white"
+                  >
+                    <option value="all">Tutti i mercati</option>
+                    {mercatiList.map((m: any) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
+            
+            {/* Dettagli pagamento */}
             <div>
-              <Label className="text-slate-300">Descrizione Evento</Label>
+              <Label className="text-slate-300">Descrizione Evento *</Label>
               <Input 
                 value={straordinarioDescrizione} 
                 onChange={(e) => setStraordinarioDescrizione(e.target.value)}
@@ -1492,29 +1595,48 @@ export default function WalletPanel() {
                 className="bg-[#0f172a] border-slate-700 text-white"
               />
             </div>
-            <div>
-              <Label className="text-slate-300">Importo (€)</Label>
-              <Input 
-                type="number" 
-                step="0.01"
-                value={straordinarioImporto} 
-                onChange={(e) => setStraordinarioImporto(e.target.value)}
-                placeholder="Es: 150.00"
-                className="bg-[#0f172a] border-slate-700 text-white"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-slate-300">Importo (€) *</Label>
+                <Input 
+                  type="number" 
+                  step="0.01"
+                  value={straordinarioImporto} 
+                  onChange={(e) => setStraordinarioImporto(e.target.value)}
+                  placeholder="150.00"
+                  className="bg-[#0f172a] border-slate-700 text-white"
+                />
+              </div>
+              <div>
+                <Label className="text-slate-300">Data Scadenza *</Label>
+                <Input 
+                  type="date" 
+                  value={straordinarioDataScadenza} 
+                  onChange={(e) => setStraordinarioDataScadenza(e.target.value)}
+                  className="bg-[#0f172a] border-slate-700 text-white"
+                />
+              </div>
             </div>
-            <div>
-              <Label className="text-slate-300">Data Scadenza</Label>
-              <Input 
-                type="date" 
-                value={canoneDataScadenza} 
-                onChange={(e) => setCanoneDataScadenza(e.target.value)}
-                className="bg-[#0f172a] border-slate-700 text-white"
-              />
+            
+            {/* Riepilogo */}
+            <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-sm">
+              <div className="text-amber-400 font-medium mb-1">Riepilogo:</div>
+              <div className="text-slate-300">
+                {straordinarioImpresaId 
+                  ? `Pagamento per: ${straordinarioImpresaSearch}` 
+                  : straordinarioMercatoId === 'all' 
+                    ? 'Pagamento per: TUTTI i concessionari' 
+                    : `Pagamento per: Concessionari del mercato selezionato`
+                }
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPagamentoStraordinarioDialog(false)} className="border-slate-600">
+            <Button variant="outline" onClick={() => {
+              setShowPagamentoStraordinarioDialog(false);
+              setStraordinarioImpresaId('');
+              setStraordinarioImpresaSearch('');
+            }} className="border-slate-600">
               Annulla
             </Button>
             <Button onClick={handleGeneraPagamentoStraordinario} className="bg-amber-600 hover:bg-amber-700">
