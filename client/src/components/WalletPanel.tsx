@@ -469,10 +469,11 @@ export default function WalletPanel() {
         const scadenzeData = await scadenzeRes.json();
         
         if (scadenzeData.success && scadenzeData.semaforo && scadenzeData.semaforo.length > 0) {
-          // Ci sono scadenze generate - mostra le rate da pagare
-          const rateNonPagate = scadenzeData.semaforo.filter((r: any) => r.stato === 'NON_PAGATO');
-          setWalletScadenze(rateNonPagate);
+          // Ci sono scadenze generate - mostra TUTTE le rate (pagate e non pagate)
+          setWalletScadenze(scadenzeData.semaforo);
           
+          // Trova la prima rata non pagata per impostare l'importo
+          const rateNonPagate = scadenzeData.semaforo.filter((r: any) => r.stato === 'NON_PAGATO');
           if (rateNonPagate.length > 0) {
             // Imposta l'importo della prima rata non pagata
             setDepositAmount(rateNonPagate[0].importo.toFixed(2));
@@ -1549,24 +1550,45 @@ export default function WalletPanel() {
                 <div className="flex justify-center py-4"><Loader2 className="animate-spin h-8 w-8 text-blue-500" /></div>
               ) : walletScadenze.length > 0 ? (
                 <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-700 space-y-3">
-                  <div className="text-sm text-slate-400 mb-2">Rate da pagare per {annualFeeData?.year || new Date().getFullYear()}:</div>
-                  {walletScadenze.map((rata: any, idx: number) => (
-                    <div key={idx} className={`flex justify-between items-center p-2 rounded ${idx === 0 ? 'bg-blue-500/20 border border-blue-500' : 'bg-slate-800'}`}>
-                      <div className="flex items-center gap-2">
-                        <span className={`w-3 h-3 rounded-full ${rata.colore === 'verde' ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                        <span className="text-white">Rata {rata.rata}</span>
-                        <span className="text-slate-400 text-xs">scad. {new Date(rata.scadenza).toLocaleDateString('it-IT')}</span>
+                  <div className="text-sm text-slate-400 mb-2">Rate per {annualFeeData?.year || new Date().getFullYear()}:</div>
+                  {walletScadenze.map((rata: any, idx: number) => {
+                    const isPagata = rata.stato === 'PAGATO';
+                    const rateNonPagate = walletScadenze.filter((r: any) => r.stato === 'NON_PAGATO');
+                    const isFirstNonPagata = !isPagata && rateNonPagate.length > 0 && rata.rata === rateNonPagate[0].rata;
+                    
+                    return (
+                      <div key={idx} className={`flex justify-between items-center p-2 rounded ${
+                        isPagata 
+                          ? 'bg-green-500/10 border border-green-500/30 opacity-70' 
+                          : isFirstNonPagata 
+                            ? 'bg-blue-500/20 border border-blue-500' 
+                            : 'bg-slate-800'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          <span className={`w-3 h-3 rounded-full ${isPagata ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                          <span className={isPagata ? 'text-green-400' : 'text-white'}>Rata {rata.rata}</span>
+                          <span className="text-slate-400 text-xs">scad. {new Date(rata.scadenza).toLocaleDateString('it-IT')}</span>
+                          {isPagata && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">PAGATA</span>}
+                        </div>
+                        <span className={`font-bold ${isPagata ? 'text-green-400' : isFirstNonPagata ? 'text-blue-400' : 'text-slate-300'}`}>€ {rata.importo.toFixed(2)}</span>
                       </div>
-                      <span className={`font-bold ${idx === 0 ? 'text-blue-400' : 'text-slate-300'}`}>€ {rata.importo.toFixed(2)}</span>
+                    );
+                  })}
+                  {walletScadenze.filter((r: any) => r.stato === 'NON_PAGATO').length > 0 ? (
+                    <>
+                      {walletScadenze.filter((r: any) => r.stato === 'NON_PAGATO').length > 1 && (
+                        <div className="text-xs text-slate-500 mt-2">* Verrà pagata la prima rata non pagata (€ {walletScadenze.filter((r: any) => r.stato === 'NON_PAGATO')[0]?.importo.toFixed(2)})</div>
+                      )}
+                      <div className="border-t border-slate-700 pt-2 flex justify-between font-bold text-lg">
+                        <span className="text-white">Importo Rata:</span>
+                        <span className="text-blue-400">€ {walletScadenze.filter((r: any) => r.stato === 'NON_PAGATO')[0]?.importo.toFixed(2)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="border-t border-slate-700 pt-2 text-center text-green-400 font-bold">
+                      ✅ Tutte le rate sono state pagate!
                     </div>
-                  ))}
-                  {walletScadenze.length > 1 && (
-                    <div className="text-xs text-slate-500 mt-2">* Verrà pagata la prima rata selezionata (€ {walletScadenze[0]?.importo.toFixed(2)})</div>
                   )}
-                  <div className="border-t border-slate-700 pt-2 flex justify-between font-bold text-lg">
-                    <span className="text-white">Importo Rata:</span>
-                    <span className="text-blue-400">€ {walletScadenze[0]?.importo.toFixed(2)}</span>
-                  </div>
                 </div>
               ) : annualFeeData ? (
                 <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-700 space-y-3">
