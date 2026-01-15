@@ -120,6 +120,21 @@ export default function WalletPanel() {
   const [isLoadingImprese, setIsLoadingImprese] = useState(false);
   const [impreseSearch, setImpreseSearch] = useState('');
 
+  // Stati per Impostazioni Mora (v3.46.0)
+  const [showImpostazioniMoraDialog, setShowImpostazioniMoraDialog] = useState(false);
+  const [impostazioniMora, setImpostazioniMora] = useState<{
+    mora_abilitata: boolean;
+    tasso_interesse_giornaliero: number;
+    tasso_mora_fisso: number;
+    giorni_grazia: number;
+  }>({
+    mora_abilitata: false,
+    tasso_interesse_giornaliero: 0.000137,
+    tasso_mora_fisso: 0.05,
+    giorni_grazia: 0
+  });
+  const [isSavingMora, setIsSavingMora] = useState(false);
+
   // --- FETCH DATA ---
   const fetchWallets = async () => {
     setIsLoading(true);
@@ -188,6 +203,55 @@ export default function WalletPanel() {
   }, []);
 
   // --- CANONE UNICO ---
+  // Funzione per caricare impostazioni mora (v3.46.0)
+  const fetchImpostazioniMora = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const response = await fetch(`${API_URL}/api/canone-unico/impostazioni-mora`);
+      const data = await response.json();
+      if (data.success) {
+        setImpostazioniMora({
+          mora_abilitata: data.impostazioni.mora_abilitata,
+          tasso_interesse_giornaliero: parseFloat(data.impostazioni.tasso_interesse_giornaliero),
+          tasso_mora_fisso: parseFloat(data.impostazioni.tasso_mora_fisso),
+          giorni_grazia: data.impostazioni.giorni_grazia
+        });
+      }
+    } catch (err) {
+      console.error('Errore caricamento impostazioni mora:', err);
+    }
+  };
+
+  // Funzione per salvare impostazioni mora (v3.46.0)
+  const handleSaveImpostazioniMora = async () => {
+    setIsSavingMora(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const response = await fetch(`${API_URL}/api/canone-unico/impostazioni-mora`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(impostazioniMora)
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('Impostazioni mora salvate');
+        setShowImpostazioniMoraDialog(false);
+        // Se mora abilitata, aggiorna le scadenze in mora
+        if (impostazioniMora.mora_abilitata) {
+          await fetch(`${API_URL}/api/canone-unico/aggiorna-mora`, { method: 'POST' });
+          fetchCanoneScadenze();
+        }
+      } else {
+        alert('Errore: ' + data.error);
+      }
+    } catch (err) {
+      console.error('Errore salvataggio impostazioni mora:', err);
+      alert('Errore di connessione');
+    } finally {
+      setIsSavingMora(false);
+    }
+  };
+
   const fetchCanoneScadenze = async () => {
     setIsLoadingCanone(true);
     try {
@@ -363,6 +427,7 @@ export default function WalletPanel() {
     if (subTab === 'canone') {
       fetchCanoneScadenze();
       fetchMercatiList();
+      fetchImpostazioniMora();
     }
   }, [subTab, canoneFilters]);
 
@@ -1217,6 +1282,13 @@ export default function WalletPanel() {
                 >
                   <Trash2 className="mr-2 h-4 w-4" /> Elimina Scadenze Anno
                 </Button>
+                <Button 
+                  onClick={() => setShowImpostazioniMoraDialog(true)}
+                  variant="outline"
+                  className="border-purple-600 text-purple-400 hover:bg-purple-600/10"
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" /> Impostazioni Mora
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1269,7 +1341,7 @@ export default function WalletPanel() {
                           <td className="px-4 py-3 text-center">
                             {s.rata_totale > 1 ? (
                               <span className="inline-flex items-center gap-1">
-                                <span className={`w-3 h-3 rounded-full ${s.stato === 'PAGATO' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                <span className={`w-3 h-3 rounded-full ${(s.stato_dinamico || s.stato) === 'PAGATO' ? 'bg-green-500' : (s.stato_dinamico || s.stato) === 'IN_MORA' ? 'bg-red-500' : 'bg-amber-500'}`}></span>
                                 <span className="text-slate-300 text-sm">{s.rata_numero}/{s.rata_totale}</span>
                               </span>
                             ) : (
@@ -1280,9 +1352,9 @@ export default function WalletPanel() {
                             {s.data_scadenza ? new Date(s.data_scadenza).toLocaleDateString('it-IT') : '-'}
                           </td>
                           <td className="px-4 py-3">
-                            {s.giorni_ritardo > 0 ? (
-                              <Badge className={`${s.giorni_ritardo > 30 ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                                {s.giorni_ritardo} giorni
+                            {(s.giorni_ritardo_calc || s.giorni_ritardo || 0) > 0 ? (
+                              <Badge className={`${(s.giorni_ritardo_calc || s.giorni_ritardo) > 30 ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                {s.giorni_ritardo_calc || s.giorni_ritardo} gg
                               </Badge>
                             ) : (
                               <span className="text-green-400">In regola</span>
@@ -1292,15 +1364,16 @@ export default function WalletPanel() {
                           <td className="px-4 py-3 text-right text-red-400">
                             {(Number(s.importo_mora || 0) + Number(s.importo_interessi || 0)) > 0 
                               ? `€ ${(Number(s.importo_mora || 0) + Number(s.importo_interessi || 0)).toFixed(2)}` 
-                              : '-'}
+                              : (s.giorni_ritardo_calc || s.giorni_ritardo || 0) > 0 ? `${s.giorni_ritardo_calc || s.giorni_ritardo} gg` : '-'}
                           </td>
                           <td className="px-4 py-3">
                             <Badge className={`${
-                              s.stato === 'PAGATO' ? 'bg-green-500/20 text-green-400' :
-                              s.stato === 'IN_MORA' ? 'bg-red-500/20 text-red-400' :
+                              (s.stato_dinamico || s.stato) === 'PAGATO' ? 'bg-green-500/20 text-green-400' :
+                              (s.stato_dinamico || s.stato) === 'IN_MORA' ? 'bg-red-500/20 text-red-400' :
                               'bg-amber-500/20 text-amber-400'
                             }`}>
-                              {s.stato || 'NON_PAGATO'}
+                              {(s.stato_dinamico || s.stato) === 'PAGATO' ? 'PAGATO' : 
+                               (s.stato_dinamico || s.stato) === 'IN_MORA' ? 'IN MORA' : 'NON PAGATO'}
                             </Badge>
                           </td>
                           <td className="px-4 py-3">
@@ -1840,6 +1913,105 @@ export default function WalletPanel() {
             >
               {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
               Elimina Wallet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Impostazioni Mora (v3.46.0) */}
+      <Dialog open={showImpostazioniMoraDialog} onOpenChange={setShowImpostazioniMoraDialog}>
+        <DialogContent className="bg-[#1e293b] border-slate-700 text-white sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-purple-400 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Impostazioni Mora
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Configura il calcolo automatico degli interessi di mora
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            {/* Toggle Abilita Mora */}
+            <div className="flex items-center justify-between p-3 bg-[#0f172a] rounded-lg border border-slate-700">
+              <div>
+                <Label className="text-white font-medium">Calcolo Mora Abilitato</Label>
+                <p className="text-xs text-slate-400">Se abilitato, calcola automaticamente gli interessi di mora</p>
+              </div>
+              <button
+                onClick={() => setImpostazioniMora({...impostazioniMora, mora_abilitata: !impostazioniMora.mora_abilitata})}
+                className={`w-12 h-6 rounded-full transition-colors ${impostazioniMora.mora_abilitata ? 'bg-purple-600' : 'bg-slate-600'}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full transition-transform ${impostazioniMora.mora_abilitata ? 'translate-x-6' : 'translate-x-0.5'}`}></div>
+              </button>
+            </div>
+
+            {/* Tasso Interesse Giornaliero */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Tasso Interesse Giornaliero (%)</Label>
+              <Input
+                type="number"
+                step="0.001"
+                value={(impostazioniMora.tasso_interesse_giornaliero * 100).toFixed(4)}
+                onChange={(e) => setImpostazioniMora({...impostazioniMora, tasso_interesse_giornaliero: parseFloat(e.target.value) / 100 || 0})}
+                className="bg-[#0f172a] border-slate-600 text-white"
+                disabled={!impostazioniMora.mora_abilitata}
+              />
+              <p className="text-xs text-slate-500">Es: 0.0137% = tasso legale 5%/365 giorni</p>
+            </div>
+
+            {/* Tasso Mora Fisso */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Mora Fissa (%)</Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={(impostazioniMora.tasso_mora_fisso * 100).toFixed(1)}
+                onChange={(e) => setImpostazioniMora({...impostazioniMora, tasso_mora_fisso: parseFloat(e.target.value) / 100 || 0})}
+                className="bg-[#0f172a] border-slate-600 text-white"
+                disabled={!impostazioniMora.mora_abilitata}
+              />
+              <p className="text-xs text-slate-500">Percentuale fissa applicata all'importo in mora</p>
+            </div>
+
+            {/* Giorni di Grazia */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Giorni di Grazia</Label>
+              <Input
+                type="number"
+                value={impostazioniMora.giorni_grazia}
+                onChange={(e) => setImpostazioniMora({...impostazioniMora, giorni_grazia: parseInt(e.target.value) || 0})}
+                className="bg-[#0f172a] border-slate-600 text-white"
+              />
+              <p className="text-xs text-slate-500">Giorni dopo la scadenza prima di applicare la mora</p>
+            </div>
+
+            {/* Riepilogo Calcolo */}
+            {impostazioniMora.mora_abilitata && (
+              <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-3">
+                <p className="text-purple-300 text-sm">
+                  <strong>Formula:</strong> Importo × {(impostazioniMora.tasso_mora_fisso * 100).toFixed(1)}% + (Importo × {(impostazioniMora.tasso_interesse_giornaliero * 100).toFixed(4)}% × giorni ritardo)
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              onClick={() => setShowImpostazioniMoraDialog(false)}
+              disabled={isSavingMora}
+            >
+              Annulla
+            </Button>
+            <Button 
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+              onClick={handleSaveImpostazioniMora}
+              disabled={isSavingMora}
+            >
+              {isSavingMora ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+              Salva Impostazioni
             </Button>
           </DialogFooter>
         </DialogContent>
