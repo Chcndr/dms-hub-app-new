@@ -1342,6 +1342,7 @@ export default function WalletPanel() {
                       <SelectItem value="all">Tutti</SelectItem>
                       <SelectItem value="CONCESSION">Concessionari</SelectItem>
                       <SelectItem value="SPUNTA">Spuntisti</SelectItem>
+                      <SelectItem value="STRAORDINARIO">Straordinari</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1403,30 +1404,60 @@ export default function WalletPanel() {
                   </div>
                 </div>
                 
-                {/* Interessi Mora */}
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-                  <div className="text-xs text-amber-400 uppercase font-semibold">Interessi Mora</div>
-                  <div className="text-xl font-bold text-amber-400">
-                    € {canoneScadenze
-                      .reduce((sum: number, s: any) => sum + parseFloat(s.importo_mora || 0), 0)
-                      .toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {/* Interessi Mora / Ricariche Spunta */}
+                {canoneFilters.tipo_operatore === 'SPUNTA' ? (
+                  <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
+                    <div className="text-xs text-cyan-400 uppercase font-semibold">Ricariche Spunta</div>
+                    <div className="text-xl font-bold text-cyan-400">
+                      € {ricaricheSpunta
+                        .reduce((sum: number, r: any) => sum + parseFloat(r.amount || 0), 0)
+                        .toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {ricaricheSpunta.length} ricariche
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-400">
-                    {canoneScadenze.filter((s: any) => s.stato_dinamico === 'IN_MORA' || s.pagato_in_mora).length} rate in mora
+                ) : (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                    <div className="text-xs text-amber-400 uppercase font-semibold">Interessi Mora</div>
+                    <div className="text-xl font-bold text-amber-400">
+                      € {canoneScadenze
+                        .reduce((sum: number, s: any) => sum + parseFloat(s.importo_mora || 0), 0)
+                        .toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {canoneScadenze.filter((s: any) => s.stato_dinamico === 'IN_MORA' || s.pagato_in_mora).length} rate in mora
+                    </div>
                   </div>
-                </div>
+                )}
                 
-                {/* Canoni Pagati */}
+                {/* Canoni Pagati / Totale Ricariche */}
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
-                  <div className="text-xs text-green-400 uppercase font-semibold">Pagati</div>
+                  <div className="text-xs text-green-400 uppercase font-semibold">
+                    {canoneFilters.tipo_operatore === 'SPUNTA' ? 'Totale Incassato' : 'Pagati'}
+                  </div>
                   <div className="text-xl font-bold text-green-400">
-                    € {canoneScadenze
-                      .filter((s: any) => s.stato === 'PAGATO')
-                      .reduce((sum: number, s: any) => sum + parseFloat(s.importo_pagato || s.importo_dovuto || 0), 0)
-                      .toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    € {(() => {
+                      // Calcolo totale pagato dalle scadenze
+                      const totaleScadenzePagate = canoneScadenze
+                        .filter((s: any) => s.stato === 'PAGATO')
+                        .reduce((sum: number, s: any) => sum + parseFloat(s.importo_pagato || s.importo_dovuto || 0), 0);
+                      
+                      // Se filtro Spuntisti, aggiungi anche le ricariche
+                      if (canoneFilters.tipo_operatore === 'SPUNTA' || canoneFilters.tipo_operatore === 'all') {
+                        const totaleRicariche = ricaricheSpunta
+                          .reduce((sum: number, r: any) => sum + parseFloat(r.amount || 0), 0);
+                        return (totaleScadenzePagate + totaleRicariche).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      }
+                      
+                      return totaleScadenzePagate.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    })()}
                   </div>
                   <div className="text-xs text-slate-400">
-                    {canoneScadenze.filter((s: any) => s.stato === 'PAGATO').length} rate
+                    {canoneFilters.tipo_operatore === 'SPUNTA' 
+                      ? `${ricaricheSpunta.length} ricariche`
+                      : `${canoneScadenze.filter((s: any) => s.stato === 'PAGATO').length} rate`
+                    }
                   </div>
                 </div>
               </div>
