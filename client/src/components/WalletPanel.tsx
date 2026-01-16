@@ -122,6 +122,7 @@ export default function WalletPanel() {
   const [impreseConcessioni, setImpreseConcessioni] = useState<any[]>([]);
   const [isLoadingImprese, setIsLoadingImprese] = useState(false);
   const [impreseSearch, setImpreseSearch] = useState('');
+  const [impreseTipoOperatore, setImpreseTipoOperatore] = useState<string>('all'); // v3.58.0: filtro tipo operatore
 
   // Stati per Ricariche Spunta (v3.55.0)
   const [ricaricheSpunta, setRicaricheSpunta] = useState<any[]>([]);
@@ -514,13 +515,14 @@ export default function WalletPanel() {
     }
   };
 
-  const fetchImpreseConcessioni = async (marketId: string) => {
+  const fetchImpreseConcessioni = async (marketId: string, tipoOperatore?: string) => {
     if (!marketId) return;
     setIsLoadingImprese(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
       const params = new URLSearchParams({ market_id: marketId });
       if (impreseSearch) params.append('search', impreseSearch);
+      if (tipoOperatore && tipoOperatore !== 'all') params.append('tipo_operatore', tipoOperatore);
       
       const response = await fetch(`${API_URL}/api/canone-unico/imprese-concessioni?${params.toString()}`);
       const data = await response.json();
@@ -543,9 +545,9 @@ export default function WalletPanel() {
 
   useEffect(() => {
     if (selectedMercatoId) {
-      fetchImpreseConcessioni(selectedMercatoId);
+      fetchImpreseConcessioni(selectedMercatoId, impreseTipoOperatore);
     }
-  }, [selectedMercatoId, impreseSearch]);
+  }, [selectedMercatoId, impreseSearch, impreseTipoOperatore]);
 
   // Carica posteggi automaticamente quando cambiano mercato o impresa (v3.52.0)
   useEffect(() => {
@@ -1663,7 +1665,7 @@ export default function WalletPanel() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Filtri Lista Imprese - v3.57.0: sincronizzato con filtro principale */}
+              {/* Filtri Lista Imprese - v3.57.0/v3.58.0: sincronizzato con filtro principale + tipo operatore */}
               <div className="flex flex-wrap gap-4 items-end mb-6">
                 <div className="w-[250px]">
                   <Label className="text-slate-400 text-sm">Seleziona Mercato</Label>
@@ -1679,6 +1681,19 @@ export default function WalletPanel() {
                       {mercatiList.map((m) => (
                         <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-[150px]">
+                  <Label className="text-slate-400 text-sm">Tipo Operatore</Label>
+                  <Select value={impreseTipoOperatore} onValueChange={(v) => setImpreseTipoOperatore(v)}>
+                    <SelectTrigger className="bg-[#0f172a] border-slate-700 text-white">
+                      <SelectValue placeholder="Tutti" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1e293b] border-slate-700">
+                      <SelectItem value="all">Tutti</SelectItem>
+                      <SelectItem value="CONCESSION">Concessionari</SelectItem>
+                      <SelectItem value="SPUNTA">Spuntisti</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1710,8 +1725,10 @@ export default function WalletPanel() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {impreseConcessioni.map((impresa: any) => (
                     <div 
-                      key={`${impresa.impresa_id}-${impresa.concessione_id}`} 
-                      className="bg-[#0f172a] border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors"
+                      key={`${impresa.impresa_id}-${impresa.concessione_id || 'spunta'}`} 
+                      className={`bg-[#0f172a] border rounded-lg p-4 hover:border-slate-600 transition-colors ${
+                        impresa.tipo_record === 'SPUNTA' ? 'border-yellow-700/50' : 'border-slate-700'
+                      }`}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div>
@@ -1723,17 +1740,24 @@ export default function WalletPanel() {
                           variant="outline" 
                           className="border-slate-600 text-slate-300 h-8"
                           onClick={() => {
-                            const info = `📋 DETTAGLI CONCESSIONE\n\n` +
-                              `🏢 Impresa: ${impresa.denominazione}\n` +
-                              `📄 P.IVA: ${impresa.partita_iva || 'N/A'}\n` +
-                              `📍 Posteggio: ${impresa.posteggio_numero}\n` +
-                              `📊 Stato: ${impresa.badge_concessione}\n` +
-                              `💰 Saldo Wallet: € ${Number(impresa.wallet_balance || 0).toFixed(2)}\n` +
-                              `📅 Valida dal: ${impresa.valid_from ? new Date(impresa.valid_from).toLocaleDateString('it-IT') : 'N/A'}\n` +
-                              `📅 Scadenza: ${impresa.valid_to ? new Date(impresa.valid_to).toLocaleDateString('it-IT') : 'N/A'}\n` +
-                              `💵 Canone Annuo: € ${Number(impresa.canone_unico || 0).toFixed(2)}\n` +
-                              `⚠️ Scadenze non pagate: ${impresa.scadenze_non_pagate || 0}\n` +
-                              `💸 Totale dovuto: € ${Number(impresa.totale_dovuto || 0).toFixed(2)}`;
+                            const isSpuntista = impresa.tipo_record === 'SPUNTA';
+                            const info = isSpuntista 
+                              ? `📋 DETTAGLI SPUNTISTA\n\n` +
+                                `🏢 Impresa: ${impresa.denominazione}\n` +
+                                `📄 P.IVA: ${impresa.partita_iva || 'N/A'}\n` +
+                                `📊 Tipo: SPUNTISTA (senza concessione)\n` +
+                                `💰 Saldo Wallet Spunta: € ${Number(impresa.wallet_balance || 0).toFixed(2)}`
+                              : `📋 DETTAGLI CONCESSIONE\n\n` +
+                                `🏢 Impresa: ${impresa.denominazione}\n` +
+                                `📄 P.IVA: ${impresa.partita_iva || 'N/A'}\n` +
+                                `📍 Posteggio: ${impresa.posteggio_numero}\n` +
+                                `📊 Stato: ${impresa.badge_concessione}\n` +
+                                `💰 Saldo Wallet: € ${Number(impresa.wallet_balance || 0).toFixed(2)}\n` +
+                                `📅 Valida dal: ${impresa.valid_from ? new Date(impresa.valid_from).toLocaleDateString('it-IT') : 'N/A'}\n` +
+                                `📅 Scadenza: ${impresa.valid_to ? new Date(impresa.valid_to).toLocaleDateString('it-IT') : 'N/A'}\n` +
+                                `💵 Canone Annuo: € ${Number(impresa.canone_unico || 0).toFixed(2)}\n` +
+                                `⚠️ Scadenze non pagate: ${impresa.scadenze_non_pagate || 0}\n` +
+                                `💸 Totale dovuto: € ${Number(impresa.totale_dovuto || 0).toFixed(2)}`;
                             alert(info);
                           }}
                         >
@@ -1741,56 +1765,78 @@ export default function WalletPanel() {
                         </Button>
                       </div>
 
-                      {/* Badge Concessione/Posteggio */}
+                      {/* Badge Concessione/Posteggio o Spuntista */}
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {/* Badge Concessione */}
-                        <span className={`inline-flex items-center gap-2 px-2 py-1 text-xs font-medium rounded-md ${
-                          impresa.badge_color === 'red' 
-                            ? 'text-red-400 bg-red-400/10 border border-red-400/20' 
-                            : 'text-blue-400 bg-blue-400/10 border border-blue-400/20'
-                        }`}>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            Posteggio {impresa.posteggio_numero}
-                            {impresa.badge_concessione !== 'ATTIVA' && (
-                              <span className="ml-1 text-[10px] uppercase font-bold">({impresa.badge_concessione})</span>
-                            )}
-                          </div>
-                          {impresa.wallet_balance !== undefined && (
-                            <div className={`flex items-center gap-1 pl-2 border-l ${
-                              impresa.badge_color === 'red' ? 'border-red-400/20' : 'border-blue-400/20'
-                            } ${impresa.wallet_balance > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              <div className={`w-2 h-2 rounded-full ${impresa.wallet_balance > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-                              <span className="font-bold">€ {Number(impresa.wallet_balance).toFixed(2)}</span>
+                        {impresa.tipo_record === 'SPUNTA' ? (
+                          /* Badge per Spuntista senza concessione */
+                          <span className="inline-flex items-center gap-2 px-2 py-1 text-xs font-medium rounded-md text-yellow-400 bg-yellow-400/10 border border-yellow-400/20">
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                              SPUNTISTA
                             </div>
+                            {impresa.wallet_balance !== undefined && (
+                              <div className={`flex items-center gap-1 pl-2 border-l border-yellow-400/20 ${impresa.wallet_balance > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                <div className={`w-2 h-2 rounded-full ${impresa.wallet_balance > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+                                <span className="font-bold">€ {Number(impresa.wallet_balance).toFixed(2)}</span>
+                              </div>
+                            )}
+                          </span>
+                        ) : (
+                          /* Badge per Concessionario */
+                          <>
+                            <span className={`inline-flex items-center gap-2 px-2 py-1 text-xs font-medium rounded-md ${
+                              impresa.badge_color === 'red' 
+                                ? 'text-red-400 bg-red-400/10 border border-red-400/20' 
+                                : impresa.badge_color === 'yellow'
+                                  ? 'text-yellow-400 bg-yellow-400/10 border border-yellow-400/20'
+                                  : 'text-blue-400 bg-blue-400/10 border border-blue-400/20'
+                            }`}>
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                Posteggio {impresa.posteggio_numero}
+                                {impresa.badge_concessione !== 'ATTIVA' && (
+                                  <span className="ml-1 text-[10px] uppercase font-bold">({impresa.badge_concessione})</span>
+                                )}
+                              </div>
+                              {impresa.wallet_balance !== undefined && (
+                                <div className={`flex items-center gap-1 pl-2 border-l ${
+                                  impresa.badge_color === 'red' ? 'border-red-400/20' : 'border-blue-400/20'
+                                } ${impresa.wallet_balance > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                  <div className={`w-2 h-2 rounded-full ${impresa.wallet_balance > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+                                  <span className="font-bold">€ {Number(impresa.wallet_balance).toFixed(2)}</span>
+                                </div>
+                              )}
+                            </span>
+
+                            {/* Badge Spunta se presente */}
+                            {impresa.badge_wallet === 'SPUNTA' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 rounded-md">
+                                <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                Spunta
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Info Scadenze - solo per concessionari */}
+                      {impresa.tipo_record !== 'SPUNTA' && (
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="text-slate-400">
+                            Scadenza: {impresa.valid_to ? new Date(impresa.valid_to).toLocaleDateString('it-IT') : 'N/A'}
+                          </div>
+                          {impresa.scadenze_non_pagate > 0 && (
+                            <Badge className="bg-red-500/20 text-red-400">
+                              {impresa.scadenze_non_pagate} scadenze non pagate
+                            </Badge>
                           )}
-                        </span>
-
-                        {/* Badge Spunta se presente */}
-                        {impresa.badge_wallet === 'SPUNTA' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 rounded-md">
-                            <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                            Spunta
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Info Scadenze */}
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="text-slate-400">
-                          Scadenza: {impresa.valid_to ? new Date(impresa.valid_to).toLocaleDateString('it-IT') : 'N/A'}
+                          {impresa.totale_dovuto > 0 && (
+                            <span className="text-red-400 font-bold">
+                              Dovuto: € {Number(impresa.totale_dovuto).toFixed(2)}
+                            </span>
+                          )}
                         </div>
-                        {impresa.scadenze_non_pagate > 0 && (
-                          <Badge className="bg-red-500/20 text-red-400">
-                            {impresa.scadenze_non_pagate} scadenze non pagate
-                          </Badge>
-                        )}
-                        {impresa.totale_dovuto > 0 && (
-                          <span className="text-red-400 font-bold">
-                            Dovuto: € {Number(impresa.totale_dovuto).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
