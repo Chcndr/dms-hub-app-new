@@ -1718,7 +1718,25 @@ export default function WalletPanel() {
                           <h4 className="text-white font-medium">{impresa.denominazione}</h4>
                           <p className="text-sm text-slate-400">P.IVA: {impresa.partita_iva || 'N/A'}</p>
                         </div>
-                        <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 h-8">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="border-slate-600 text-slate-300 h-8"
+                          onClick={() => {
+                            const info = `📋 DETTAGLI CONCESSIONE\n\n` +
+                              `🏢 Impresa: ${impresa.denominazione}\n` +
+                              `📄 P.IVA: ${impresa.partita_iva || 'N/A'}\n` +
+                              `📍 Posteggio: ${impresa.posteggio_numero}\n` +
+                              `📊 Stato: ${impresa.badge_concessione}\n` +
+                              `💰 Saldo Wallet: € ${Number(impresa.wallet_balance || 0).toFixed(2)}\n` +
+                              `📅 Valida dal: ${impresa.valid_from ? new Date(impresa.valid_from).toLocaleDateString('it-IT') : 'N/A'}\n` +
+                              `📅 Scadenza: ${impresa.valid_to ? new Date(impresa.valid_to).toLocaleDateString('it-IT') : 'N/A'}\n` +
+                              `💵 Canone Annuo: € ${Number(impresa.canone_unico || 0).toFixed(2)}\n` +
+                              `⚠️ Scadenze non pagate: ${impresa.scadenze_non_pagate || 0}\n` +
+                              `💸 Totale dovuto: € ${Number(impresa.totale_dovuto || 0).toFixed(2)}`;
+                            alert(info);
+                          }}
+                        >
                           <Eye className="h-3 w-3" />
                         </Button>
                       </div>
