@@ -123,6 +123,10 @@ export default function WalletPanel() {
   const [isLoadingImprese, setIsLoadingImprese] = useState(false);
   const [impreseSearch, setImpreseSearch] = useState('');
 
+  // Stati per Ricariche Spunta (v3.55.0)
+  const [ricaricheSpunta, setRicaricheSpunta] = useState<any[]>([]);
+  const [isLoadingRicariche, setIsLoadingRicariche] = useState(false);
+
   // Stati per Impostazioni Mora (v3.46.0)
   const [showImpostazioniMoraDialog, setShowImpostazioniMoraDialog] = useState(false);
   const [impostazioniMora, setImpostazioniMora] = useState<{
@@ -274,6 +278,27 @@ export default function WalletPanel() {
       console.error('Errore caricamento scadenze canone:', err);
     } finally {
       setIsLoadingCanone(false);
+    }
+  };
+
+  // Funzione per caricare le ricariche Spunta (v3.55.0)
+  const fetchRicaricheSpunta = async () => {
+    setIsLoadingRicariche(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const params = new URLSearchParams();
+      if (canoneFilters.mercato_id && canoneFilters.mercato_id !== 'all') params.append('mercato_id', canoneFilters.mercato_id);
+      if (canoneFilters.impresa_search) params.append('impresa_search', canoneFilters.impresa_search);
+      
+      const response = await fetch(`${API_URL}/api/canone-unico/ricariche-spunta?${params.toString()}`);
+      const data = await response.json();
+      if (data.success) {
+        setRicaricheSpunta(data.data);
+      }
+    } catch (err) {
+      console.error('Errore caricamento ricariche spunta:', err);
+    } finally {
+      setIsLoadingRicariche(false);
     }
   };
 
@@ -466,6 +491,12 @@ export default function WalletPanel() {
       fetchCanoneScadenze();
       fetchMercatiList();
       fetchImpostazioniMora();
+      // Carica ricariche Spunta se filtro è Spuntisti o Tutti
+      if (canoneFilters.tipo_operatore === 'SPUNTA' || canoneFilters.tipo_operatore === 'all') {
+        fetchRicaricheSpunta();
+      } else {
+        setRicaricheSpunta([]);
+      }
     }
   }, [subTab, canoneFilters]);
 
@@ -1309,7 +1340,7 @@ export default function WalletPanel() {
                     </SelectTrigger>
                     <SelectContent className="bg-[#1e293b] border-slate-700">
                       <SelectItem value="all">Tutti</SelectItem>
-                      <SelectItem value="CONCESSIONE">Concessionari</SelectItem>
+                      <SelectItem value="CONCESSION">Concessionari</SelectItem>
                       <SelectItem value="SPUNTA">Spuntisti</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1527,6 +1558,63 @@ export default function WalletPanel() {
               )}
             </CardContent>
           </Card>
+
+          {/* Sezione Ricariche Spunta (v3.55.0) */}
+          {(canoneFilters.tipo_operatore === 'SPUNTA' || canoneFilters.tipo_operatore === 'all') && (
+            <Card className="bg-[#1e293b] border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-cyan-400" />
+                  Ricariche Wallet Spunta ({ricaricheSpunta.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingRicariche ? (
+                  <div className="flex justify-center py-8"><Loader2 className="animate-spin h-8 w-8 text-cyan-500" /></div>
+                ) : ricaricheSpunta.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400">
+                    <Wallet className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                    <p>Nessuna ricarica trovata</p>
+                    <p className="text-sm">Le ricariche dei wallet Spunta appariranno qui</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-slate-700">
+                          <th className="text-left px-4 py-3 text-slate-400 font-medium">IMPRESA</th>
+                          <th className="text-left px-4 py-3 text-slate-400 font-medium">MERCATO</th>
+                          <th className="text-left px-4 py-3 text-slate-400 font-medium">DATA</th>
+                          <th className="text-left px-4 py-3 text-slate-400 font-medium">DESCRIZIONE</th>
+                          <th className="text-right px-4 py-3 text-slate-400 font-medium">IMPORTO</th>
+                          <th className="text-left px-4 py-3 text-slate-400 font-medium">STATO</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ricaricheSpunta.map((r: any) => (
+                          <tr key={r.id} className="border-b border-slate-700/50 hover:bg-slate-800/50">
+                            <td className="px-4 py-3">
+                              <span className="text-white font-medium">{r.ragione_sociale}</span>
+                              <span className="block text-xs text-slate-400">{r.partita_iva}</span>
+                            </td>
+                            <td className="px-4 py-3 text-slate-300">{r.mercato_nome || '-'}</td>
+                            <td className="px-4 py-3 text-slate-300">
+                              {r.transaction_date ? new Date(r.transaction_date).toLocaleDateString('it-IT') : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-cyan-400">{r.description || 'Ricarica'}</td>
+                            <td className="px-4 py-3 text-right font-bold text-green-400">+ € {Number(r.amount || 0).toFixed(2)}</td>
+                            <td className="px-4 py-3">
+                              <Badge className="bg-green-500/20 text-green-400">COMPLETATA</Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Lista Imprese/Concessioni (v3.36.0) */}
           <Card className="bg-[#1e293b] border-slate-700">
