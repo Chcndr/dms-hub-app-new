@@ -1851,7 +1851,7 @@ export default function WalletPanel() {
                       
                       // Usa importo_totale se disponibile (include mora), altrimenti importo base
                       const importoDaMostrare = rata.importo_totale || rata.importo;
-                      const hasMora = rata.importo_mora && rata.importo_mora > 0;
+                      const hasMora = rata.importo_mora > 0;
                       
                       return (
                         <div key={idx} className={`flex justify-between items-center p-2 rounded ${
@@ -1898,7 +1898,7 @@ export default function WalletPanel() {
                     const primaRata = rateNonPagate[0];
                     if (rateNonPagate.length > 0 && primaRata) {
                       const importoTotale = primaRata.importo_totale || primaRata.importo;
-                      const hasMora = primaRata.importo_mora && primaRata.importo_mora > 0;
+                      const hasMora = primaRata.importo_mora > 0;
                       return (
                         <>
                           {rateNonPagate.length > 1 && (
