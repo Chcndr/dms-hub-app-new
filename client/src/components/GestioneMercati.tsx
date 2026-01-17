@@ -357,6 +357,9 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
   // Carica i posteggi al mount del componente
   useEffect(() => {
     fetchStalls();
+    // Reset vista all'apertura di un nuovo mercato
+    setViewMode('italia');
+    setViewTrigger(prev => prev + 1);
   }, [market.id]);
 
   // Espone la funzione fetchStalls al componente padre
@@ -1294,6 +1297,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   const [isSpuntaMode, setIsSpuntaMode] = useState(false);
   const [isOccupaMode, setIsOccupaMode] = useState(false);
   const [isLiberaMode, setIsLiberaMode] = useState(false);
+  const updateStallStatus = trpc.dmsHub.stalls.updateStatus.useMutation();
   const [isAnimating, setIsAnimating] = useState(false); // Animazione in corso
   const stopAnimationRef = React.useRef(false); // Flag per fermare l'animazione
   const [showCompanyModal, setShowCompanyModal] = useState(false);
@@ -1600,8 +1604,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
     if (selectedStallId === stall.id) {
       setSelectedStallId(null);
       setSelectedStallCenter(null);
-      // Ripristino reset vista ma con animazione ottimizzata (vedi MarketMapComponent)
-      setViewTrigger(prev => prev + 1);
+      // NON resettare la vista qui per evitare problemi di zoom
+      // setViewTrigger(prev => prev + 1);
       return;
     }
     
@@ -1707,6 +1711,13 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
               variant="outline"
               className="text-xs bg-transparent hover:bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50"
               onClick={async () => {
+                // Se animazione in corso, ferma
+                if (isAnimating) {
+                  stopAnimationRef.current = true;
+                  toast.info('Animazione fermata!');
+                  return;
+                }
+
                 // Prepara Spunta: liberi -> riservati (per spuntisti)
                 const freeStalls = stalls.filter(s => s.status === 'libero');
                 if (freeStalls.length === 0) {
@@ -1731,20 +1742,19 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                       break;
                     }
                     try {
-                      const response = await fetch(`/api/stalls/${stall.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'riservato' })
+                      // Usa tRPC invece di fetch REST e mappa lo stato correttamente
+                      await updateStallStatus.mutateAsync({
+                        stallId: stall.id,
+                        status: 'reserved'
                       });
-                      if (response.ok) {
-                        successCount++;
-                        // Aggiorna lo stato locale per vedere l'animazione
-                        setStalls(prev => prev.map(s => 
-                          s.id === stall.id ? { ...s, status: 'riservato' } : s
-                        ));
-                      } else {
-                        errorCount++;
-                      }
+                      
+                      successCount++;
+                      // Aggiorna lo stato locale per vedere l'animazione
+                      setStalls(prev => prev.map(s => 
+                        s.id === stall.id ? { ...s, status: 'reserved' } : s
+                      ));
+                      // Piccolo delay per l'animazione
+                      await new Promise(resolve => setTimeout(resolve, 100));
                     } catch (error) {
                       console.error(`Errore preparazione posteggio ${stall.number}:`, error);
                       errorCount++;
