@@ -359,11 +359,13 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
   useEffect(() => {
     fetchStalls();
     // Reset vista all'apertura di un nuovo mercato
-    // Uso un piccolo timeout per assicurarmi che la mappa sia pronta
-    setTimeout(() => {
-      setViewMode('italia');
+    // Forza la vista Italia inizialmente
+    setViewMode('italia');
+    // Uso un piccolo timeout per assicurarmi che la mappa sia pronta prima di scatenare l'animazione
+    const timer = setTimeout(() => {
       setViewTrigger(prev => prev + 1);
-    }, 500);
+    }, 800);
+    return () => clearTimeout(timer);
   }, [market.id]);
 
   // Espone la funzione fetchStalls al componente padre
@@ -389,7 +391,7 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
               // Quando si entra nel tab posteggi, forza sempre Vista Italia
               setViewMode('italia');
               // Trigger per assicurare che la mappa si posizioni correttamente
-              setTimeout(() => setViewTrigger(prev => prev + 1), 100);
+              setTimeout(() => setViewTrigger(prev => prev + 1), 300);
             } else {
               // Quando si esce dal tab posteggi, resetta selezioni
               setSelectedStallId(null);
@@ -1756,6 +1758,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                       const data = await response.json();
                       if (data.success) {
                         successCount++;
+                        toast.success(`Posteggio ${stall.number} pronto per la spunta`, { duration: 1000 });
                         // Aggiorna lo stato locale per vedere l'animazione
                         setStalls(prev => prev.map(s => 
                           s.id === stall.id ? { ...s, status: 'riservato' } : s
