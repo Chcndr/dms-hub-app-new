@@ -367,9 +367,9 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
 
           {/* TAB CONCESSIONARI */}
           <TabsContent value="concessionari" className="mt-4">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto border border-slate-700 rounded-lg">
               <table className="w-full text-xs">
-                <thead>
+                <thead className="sticky top-0 bg-slate-800 z-10">
                   <tr className="border-b border-slate-600 text-slate-400">
                     <th className="text-center p-1 w-12">N°</th>
                     <th className="text-center p-1">Stato</th>
@@ -531,9 +531,9 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
 
           {/* TAB SPUNTISTI - Stessa struttura dei concessionari */}
           <TabsContent value="spuntisti" className="mt-4">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto border border-slate-700 rounded-lg">
               <table className="w-full text-xs">
-                <thead>
+                <thead className="sticky top-0 bg-slate-800 z-10">
                   <tr className="border-b border-slate-600 text-slate-400">
                     <th className="text-center p-1 w-12"># Pos.</th>
                     <th className="text-center p-1">Stato/Post.</th>
@@ -670,9 +670,9 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
 
           {/* TAB FIERE/STRAORDINARI */}
           <TabsContent value="straordinari" className="mt-4">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto border border-slate-700 rounded-lg">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky top-0 bg-slate-800 z-10">
                   <tr className="border-b border-slate-600 text-slate-400">
                     <th className="text-left p-2">Posteggio</th>
                     <th className="text-left p-2">Impresa</th>
