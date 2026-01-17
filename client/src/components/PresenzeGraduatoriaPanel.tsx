@@ -116,9 +116,10 @@ interface PresenzeGraduatoriaPanelProps {
   marketName?: string;
   stalls?: StallData[];
   onRefreshStalls?: () => Promise<void>;
+  refreshTrigger?: number;
 }
 
-export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], onRefreshStalls }: PresenzeGraduatoriaPanelProps) {
+export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], onRefreshStalls, refreshTrigger }: PresenzeGraduatoriaPanelProps) {
   const [activeTab, setActiveTab] = useState('concessionari');
   const [graduatoria, setGraduatoria] = useState<GraduatoriaRecord[]>([]);
   const [presenze, setPresenze] = useState<PresenzaRecord[]>([]);
@@ -147,7 +148,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
     totale_incassato: number;
   } | null>(null);
 
-  // Fetch graduatoria quando cambia mercato o tab
+  // Fetch graduatoria quando cambia mercato, tab o trigger
   useEffect(() => {
     if (marketId) {
       fetchGraduatoria();
@@ -157,7 +158,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
         fetchSpuntisti();
       }
     }
-  }, [marketId, activeTab]);
+  }, [marketId, activeTab, refreshTrigger]);
 
   // Sincronizzazione Real-Time: Aggiorna quando cambiano i posteggi (stalls)
   useEffect(() => {
@@ -541,7 +542,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
       <CardContent>
         {/* === STATO MERCATO (Sincronizzato) === */}
         <div className="flex items-center gap-2 mb-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
-          {/* Stato Test Mercato */}
+          {/* Stato Mercato Real-Time */}
           {testMercatoStato && (
             <div className="flex-1 flex items-center justify-end gap-4 text-xs">
               <div className="flex items-center gap-1">
@@ -561,8 +562,8 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
                 <span className="text-slate-400">Spuntisti in attesa: {testMercatoStato.spuntisti_in_attesa}</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-cyan-400">💰</span>
-                <span className="text-slate-400">Incassato: €{testMercatoStato.totale_incassato?.toFixed(2) || '0.00'}</span>
+                <span className="text-cyan-400 font-bold">💰</span>
+                <span className="text-cyan-400 font-bold">Incassato: €{testMercatoStato.totale_incassato?.toFixed(2) || '0.00'}</span>
               </div>
             </div>
           )}
