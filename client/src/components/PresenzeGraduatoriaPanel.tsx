@@ -68,6 +68,28 @@ interface PresenzaRecord {
   impresa_piva: string;
 }
 
+interface SpuntistaRecord {
+  wallet_id: number;
+  impresa_id: number;
+  impresa_nome: string;
+  impresa_piva: string;
+  codice_fiscale: string;
+  wallet_balance: number;
+  posizione: number;
+  punteggio: number;
+  presenze_totali: number;
+  data_prima_presenza: string;
+  // Campi presenza giornaliera
+  presenza_id?: number;
+  giorno_presenza?: string;
+  orario_arrivo?: string;
+  orario_deposito_rifiuti?: string;
+  orario_uscita?: string;
+  importo_pagato?: number;
+  stall_scelto?: string;
+  stato_presenza?: 'presente' | 'rinunciato' | 'rinuncia_forzata' | null;
+}
+
 interface StallData {
   id: number;
   number: string;
@@ -90,10 +112,17 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<Partial<GraduatoriaRecord>>({});
-  const [showStoricoPopup, setShowStoricoPopup] = useState<{stallId: number; stallNumber: string; presenze: number; primaPresenza: string | null} | null>(null);
-  const [spuntisti, setSpuntisti] = useState<any[]>([]);
+  const [showStoricoPopup, setShowStoricoPopup] = useState<{
+    stallId?: number; 
+    stallNumber?: string; 
+    presenze: number; 
+    primaPresenza: string | null;
+    walletId?: number;
+    impresaId?: number;
+    impresaNome?: string;
+  } | null>(null);
+  const [spuntisti, setSpuntisti] = useState<SpuntistaRecord[]>([]);
   const [loadingSpuntisti, setLoadingSpuntisti] = useState(false);
-  // toast importato da sonner
 
   // Fetch graduatoria quando cambia mercato o tab
   useEffect(() => {
@@ -240,6 +269,68 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(amount || 0);
   };
 
+  // Funzione per ottenere il badge stato spuntista
+  const getStatoSpuntistaBadge = (record: SpuntistaRecord) => {
+    if (record.stato_presenza === 'presente' && record.stall_scelto) {
+      // Verde con numero posteggio
+      return (
+        <Badge className="bg-green-500 text-white font-bold min-w-[60px] justify-center">
+          {record.stall_scelto}
+        </Badge>
+      );
+    } else if (record.stato_presenza === 'rinunciato') {
+      // Arancione - ha fatto presenza ma non ha scelto posteggio
+      return (
+        <Badge className="bg-orange-500 text-white text-[10px] min-w-[60px] justify-center">
+          RINUNCIATO
+        </Badge>
+      );
+    } else if (record.stato_presenza === 'rinuncia_forzata') {
+      // Rosso - non ci sono più posteggi disponibili
+      return (
+        <Badge className="bg-red-500 text-white text-[10px] min-w-[60px] justify-center">
+          RINUNCIA
+        </Badge>
+      );
+    } else {
+      // Grigio - non ancora presente
+      return (
+        <Badge className="bg-slate-600 text-slate-300 text-[10px] min-w-[60px] justify-center">
+          IN ATTESA
+        </Badge>
+      );
+    }
+  };
+
+  // Salva storico spuntista
+  const handleSaveStoricoSpuntista = async () => {
+    if (!showStoricoPopup) return;
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/graduatoria/aggiorna-storico`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet_id: showStoricoPopup.walletId,
+          impresa_id: showStoricoPopup.impresaId,
+          market_id: marketId,
+          presenze_totali: showStoricoPopup.presenze,
+          data_prima_presenza: showStoricoPopup.primaPresenza
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Storico aggiornato!');
+        fetchSpuntisti();
+        setShowStoricoPopup(null);
+      } else {
+        toast.error(data.error || 'Errore salvataggio');
+      }
+    } catch (error) {
+      toast.error('Errore di connessione');
+    }
+  };
+
   if (!marketId) {
     return (
       <Card className="bg-slate-800/50 border-slate-700">
@@ -371,7 +462,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
             </div>
 
             {/* Popup Storico Presenze - Editabile */}
-            {showStoricoPopup && (
+            {showStoricoPopup && showStoricoPopup.stallId && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowStoricoPopup(null)}>
                 <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 border border-cyan-500/30" onClick={e => e.stopPropagation()}>
                   <h3 className="text-lg font-bold text-white mb-4">📊 Storico Presenze - Posteggio {showStoricoPopup.stallNumber}</h3>
@@ -438,75 +529,86 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
             )}
           </TabsContent>
 
-          {/* TAB SPUNTISTI - Carica dati dal nuovo endpoint /api/spuntisti/mercato/:id */}
+          {/* TAB SPUNTISTI - Stessa struttura dei concessionari */}
           <TabsContent value="spuntisti" className="mt-4">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-slate-600 text-slate-400">
-                    <th className="text-center p-2"># Pos.</th>
-                    <th className="text-left p-2">Impresa</th>
-                    <th className="text-center p-2">Saldo Wallet</th>
-                    <th className="text-center p-2">Punteggio</th>
-                    <th className="text-center p-2">Presenze</th>
-                    <th className="text-center p-2">Prima Presenza</th>
-                    <th className="text-center p-2">Presente</th>
-                    <th className="text-center p-2">Azioni</th>
+                    <th className="text-center p-1 w-12"># Pos.</th>
+                    <th className="text-center p-1">Stato/Post.</th>
+                    <th className="text-left p-1">Impresa</th>
+                    <th className="text-center p-1">Saldo Wallet</th>
+                    <th className="text-center p-1">Giorno</th>
+                    <th className="text-center p-1">Arrivo</th>
+                    <th className="text-center p-1">Rifiuti</th>
+                    <th className="text-center p-1">Uscita</th>
+                    <th className="text-center p-1">Pagato</th>
+                    <th className="text-center p-1 cursor-pointer hover:text-yellow-400" title="Click per storico">Presenze</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loadingSpuntisti ? (
                     <tr>
-                      <td colSpan={8} className="text-center p-4 text-slate-400">Caricamento spuntisti...</td>
+                      <td colSpan={10} className="text-center p-4 text-slate-400">Caricamento spuntisti...</td>
                     </tr>
                   ) : spuntisti.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center p-4 text-slate-400">
+                      <td colSpan={10} className="text-center p-4 text-slate-400">
                         Nessuno spuntista con wallet SPUNTA per questo mercato.
                       </td>
                     </tr>
                   ) : spuntisti
                     .sort((a, b) => (a.posizione || 999) - (b.posizione || 999))
                     .map((record, index) => (
-                    <tr key={record.wallet_id} className="border-b border-slate-700 hover:bg-yellow-900/20 bg-yellow-900/10">
-                      <td className="p-2 text-center">
-                        <Badge className={`${record.posizione === 1 ? 'bg-yellow-500' : record.posizione === 2 ? 'bg-slate-400' : record.posizione === 3 ? 'bg-amber-600' : 'bg-slate-600'}`}>
+                    <tr key={record.wallet_id} className="border-b border-slate-700/50 hover:bg-yellow-900/20 bg-yellow-900/10">
+                      <td className="p-1 text-center">
+                        <Badge className={`${record.posizione === 1 ? 'bg-yellow-500' : record.posizione === 2 ? 'bg-slate-400' : record.posizione === 3 ? 'bg-amber-600' : 'bg-slate-600'} text-[10px]`}>
                           #{record.posizione < 999 ? record.posizione : (index + 1)}
                         </Badge>
                       </td>
-                      <td className="p-2">
-                        <div className="text-white font-medium">{record.impresa_nome}</div>
-                        <div className="text-slate-400 text-xs">{record.impresa_piva || record.codice_fiscale}</div>
+                      <td className="p-1 text-center">
+                        {getStatoSpuntistaBadge(record)}
                       </td>
-                      <td className="p-2 text-center">
-                        <span className={`font-bold ${parseFloat(record.wallet_balance || 0) > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {formatCurrency(parseFloat(record.wallet_balance || 0))}
+                      <td className="p-1">
+                        <div className="text-yellow-400 font-medium text-xs">{record.impresa_nome}</div>
+                        <div className="text-slate-500 text-[10px]">{record.impresa_piva || record.codice_fiscale}</div>
+                      </td>
+                      <td className="p-1 text-center">
+                        <span className={`font-bold text-xs ${parseFloat(String(record.wallet_balance || 0)) > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {formatCurrency(parseFloat(String(record.wallet_balance || 0)))}
                         </span>
                       </td>
-                      <td className="p-2 text-center">
-                        <span className="text-yellow-400 font-bold">{record.punteggio || 0}</span>
+                      <td className="p-1 text-center text-slate-300 text-xs">
+                        {record.giorno_presenza ? new Date(record.giorno_presenza).toLocaleDateString('it-IT', {weekday: 'short', day: '2-digit', month: '2-digit'}) : '-'}
                       </td>
-                      <td className="p-2 text-center">
-                        <span className="text-white">{record.presenze_totali || 0}</span>
+                      <td className="p-1 text-center text-green-400 text-xs">
+                        {record.orario_arrivo || '-'}
                       </td>
-                      <td className="p-2 text-center">
-                        <span className="text-slate-300">{record.data_prima_presenza ? formatDate(record.data_prima_presenza) : '-'}</span>
+                      <td className="p-1 text-center text-orange-400 text-xs">
+                        {record.orario_deposito_rifiuti || '-'}
                       </td>
-                      <td className="p-2 text-center">
-                        <Checkbox className="border-yellow-500 data-[state=checked]:bg-yellow-500" />
+                      <td className="p-1 text-center text-blue-400 text-xs">
+                        {record.orario_uscita || '-'}
                       </td>
-                      <td className="p-2 text-center">
-                        <div className="flex gap-1 justify-center">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            onClick={() => toast.info(`📢 Chiamata Turno #${record.posizione < 999 ? record.posizione : (index + 1)} - ${record.impresa_nome}`)}
-                            className="text-yellow-400 hover:text-yellow-300"
-                            title="Chiama Turno"
-                          >
-                            <Phone className="w-4 h-4" />
-                          </Button>
-                        </div>
+                      <td className="p-1 text-center text-xs">
+                        <span className={record.importo_pagato ? 'text-green-400 font-bold' : 'text-slate-500'}>
+                          {record.importo_pagato ? formatCurrency(record.importo_pagato) : '-'}
+                        </span>
+                      </td>
+                      <td className="p-1 text-center">
+                        <button 
+                          onClick={() => setShowStoricoPopup({
+                            walletId: record.wallet_id,
+                            impresaId: record.impresa_id,
+                            impresaNome: record.impresa_nome,
+                            presenze: record.presenze_totali || 0,
+                            primaPresenza: record.data_prima_presenza || null
+                          })}
+                          className="text-white font-bold hover:text-yellow-400 cursor-pointer text-xs"
+                        >
+                          {record.presenze_totali || 0}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -520,6 +622,50 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
                 </div>
               )}
             </div>
+
+            {/* Popup Storico Presenze Spuntista - Editabile */}
+            {showStoricoPopup && showStoricoPopup.walletId && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowStoricoPopup(null)}>
+                <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 border border-yellow-500/30" onClick={e => e.stopPropagation()}>
+                  <h3 className="text-lg font-bold text-yellow-400 mb-4">📊 Storico Presenze - {showStoricoPopup.impresaNome}</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-slate-400 text-sm block mb-1">Presenze Totali (storico):</label>
+                      <input 
+                        type="number"
+                        className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white text-lg font-bold"
+                        value={showStoricoPopup.presenze}
+                        onChange={(e) => setShowStoricoPopup({...showStoricoPopup, presenze: parseInt(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-slate-400 text-sm block mb-1">Data Prima Presenza:</label>
+                      <input 
+                        type="date"
+                        className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
+                        value={showStoricoPopup.primaPresenza || ''}
+                        onChange={(e) => setShowStoricoPopup({...showStoricoPopup, primaPresenza: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button 
+                      className="flex-1 bg-yellow-600 hover:bg-yellow-700"
+                      onClick={handleSaveStoricoSpuntista}
+                    >
+                      💾 Salva
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      className="flex-1 border-slate-600"
+                      onClick={() => setShowStoricoPopup(null)}
+                    >
+                      Annulla
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           {/* TAB FIERE/STRAORDINARI */}
