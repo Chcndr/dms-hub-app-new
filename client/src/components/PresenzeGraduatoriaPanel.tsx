@@ -152,11 +152,25 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
     if (marketId) {
       fetchGraduatoria();
       fetchPresenze();
+      fetchTestMercatoStato();
       if (activeTab === 'spuntisti') {
         fetchSpuntisti();
       }
     }
   }, [marketId, activeTab]);
+
+  // Sincronizzazione Real-Time: Aggiorna quando cambiano i posteggi (stalls)
+  useEffect(() => {
+    if (marketId && stalls.length > 0) {
+      console.log('[PresenzeGraduatoriaPanel] Rilevato cambiamento posteggi, sincronizzo...');
+      fetchGraduatoria();
+      fetchPresenze();
+      fetchTestMercatoStato();
+      if (activeTab === 'spuntisti') {
+        fetchSpuntisti();
+      }
+    }
+  }, [stalls]);
 
   const fetchGraduatoria = async () => {
     if (!marketId) return;
@@ -525,35 +539,8 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* === BARRA TEST MERCATO === */}
+        {/* === STATO MERCATO (Sincronizzato) === */}
         <div className="flex items-center gap-2 mb-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
-          <Button
-            onClick={handleStartTestMercato}
-            className="bg-green-600 hover:bg-green-700 text-white gap-2"
-            size="sm"
-          >
-            <Play className="w-4 h-4" />
-            Test Mercato
-          </Button>
-          <Button
-            onClick={handleAvviaSpunta}
-            className="bg-orange-600 hover:bg-orange-700 text-white gap-2"
-            size="sm"
-            disabled={!testMercatoActive && (testMercatoStato?.posteggi?.libero || 0) === 0}
-          >
-            <Flag className="w-4 h-4" />
-            Avvio Spunta
-          </Button>
-          <Button
-            onClick={handleResetTestMercato}
-            variant="outline"
-            className="border-red-500 text-red-400 hover:bg-red-500/20 gap-2"
-            size="sm"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </Button>
-          
           {/* Stato Test Mercato */}
           {testMercatoStato && (
             <div className="flex-1 flex items-center justify-end gap-4 text-xs">
