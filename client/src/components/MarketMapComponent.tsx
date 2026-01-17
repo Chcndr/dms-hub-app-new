@@ -70,7 +70,11 @@ interface MarketMapComponentProps {
   }>;
   refreshKey?: number; // Key per forzare re-mount completo della mappa
   isSpuntaMode?: boolean; // Modalità spunta per test dimensioni
-  onConfirmAssignment?: (stallId: number) => Promise<void>; // Callback per confermare assegnazione
+  isOccupaMode?: boolean; // Modalità occupa (click su posteggio libero -> occupato)
+  isLiberaMode?: boolean; // Modalità libera (click su posteggio occupato -> libero)
+  onConfirmAssignment?: (stallId: number) => Promise<void>; // Callback per confermare assegnazione (spunta)
+  onOccupaStall?: (stallId: number) => Promise<void>; // Callback per occupare posteggio
+  onLiberaStall?: (stallId: number) => Promise<void>; // Callback per liberare posteggio
   routeConfig?: { // Configurazione routing (opzionale)
     enabled: boolean;
     userLocation: { lat: number; lng: number };
@@ -155,7 +159,11 @@ export function MarketMapComponent({
   stallsData = [],
   refreshKey = 0,
   isSpuntaMode = false,
+  isOccupaMode = false,
+  isLiberaMode = false,
   onConfirmAssignment,
+  onOccupaStall,
+  onLiberaStall,
   routeConfig,
   // Props per Vista Italia (Gemello Digitale)
   allMarkets = [],
@@ -598,7 +606,81 @@ export function MarketMapComponent({
                   
                   {/* Popup informativo */}
                   <Popup className="stall-popup" minWidth={280}>
-                    {isSpuntaMode && displayStatus === 'riservato' ? (
+                    {/* Popup OCCUPA per posteggi liberi */}
+                    {isOccupaMode && displayStatus === 'libero' ? (
+                      <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
+                        <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
+                          <div className="font-bold text-lg text-white">
+                            ✅ Occupa #{props.number}
+                          </div>
+                          <span className="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold bg-green-900/50 text-green-400 border border-green-800">
+                            {getStallStatusLabel(displayStatus)}
+                          </span>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          <p className="text-sm text-gray-300">Conferma l'occupazione di questo posteggio per registrare l'arrivo.</p>
+                          <button
+                            className="w-full bg-[#10b981] hover:bg-[#10b981]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            onClick={async () => {
+                              if (!onOccupaStall) {
+                                alert('Funzione "Occupa" non configurata!');
+                                return;
+                              }
+                              if (!dbStall?.id) {
+                                alert('Impossibile trovare l\'ID del posteggio!');
+                                return;
+                              }
+                              try {
+                                await onOccupaStall(dbStall.id);
+                              } catch (error) {
+                                console.error('[ERROR] Occupa posteggio:', error);
+                                alert('Errore durante l\'occupazione!');
+                              }
+                            }}
+                            disabled={!onOccupaStall || !dbStall?.id}
+                          >
+                            ✅ Conferma Occupazione
+                          </button>
+                        </div>
+                      </div>
+                    ) : isLiberaMode && displayStatus === 'occupato' ? (
+                      /* Popup LIBERA per posteggi occupati */
+                      <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
+                        <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
+                          <div className="font-bold text-lg text-white">
+                            🚮 Libera #{props.number}
+                          </div>
+                          <span className="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold bg-red-900/50 text-red-400 border border-red-800">
+                            {getStallStatusLabel(displayStatus)}
+                          </span>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          <p className="text-sm text-gray-300">Conferma la liberazione di questo posteggio per registrare l'uscita.</p>
+                          <button
+                            className="w-full bg-[#ef4444] hover:bg-[#ef4444]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            onClick={async () => {
+                              if (!onLiberaStall) {
+                                alert('Funzione "Libera" non configurata!');
+                                return;
+                              }
+                              if (!dbStall?.id) {
+                                alert('Impossibile trovare l\'ID del posteggio!');
+                                return;
+                              }
+                              try {
+                                await onLiberaStall(dbStall.id);
+                              } catch (error) {
+                                console.error('[ERROR] Libera posteggio:', error);
+                                alert('Errore durante la liberazione!');
+                              }
+                            }}
+                            disabled={!onLiberaStall || !dbStall?.id}
+                          >
+                            🚮 Conferma Liberazione
+                          </button>
+                        </div>
+                      </div>
+                    ) : isSpuntaMode && displayStatus === 'riservato' ? (
                       /* Popup Spunta per posteggi riservati - DARK MODE */
                       <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
                         {/* Header Scuro */}

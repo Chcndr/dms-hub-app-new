@@ -1292,6 +1292,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const [isSpuntaMode, setIsSpuntaMode] = useState(false);
+  const [isOccupaMode, setIsOccupaMode] = useState(false);
+  const [isLiberaMode, setIsLiberaMode] = useState(false);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [selectedCompanyForModal, setSelectedCompanyForModal] = useState<CompanyRow | null>(null);
   const listContainerRef = React.useRef<HTMLDivElement>(null);
@@ -1463,6 +1465,129 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
     }
   };
 
+  // Occupa un posteggio libero (registra arrivo/presenza)
+  const handleOccupaStall = async (stallId: number, impresaId?: number, walletId?: number) => {
+    try {
+      console.log('[DEBUG handleOccupaStall] Occupando posteggio:', stallId);
+      
+      // 1. Aggiorna stato posteggio a occupato
+      const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'occupato' }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        console.log('[DEBUG handleOccupaStall] Posteggio occupato:', stallId);
+        
+        // 2. Registra presenza (arrivo) se abbiamo impresa e wallet
+        if (impresaId && walletId) {
+          try {
+            const presenzaResponse = await fetch(`${API_BASE_URL}/api/presenze/registra`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                market_id: marketId,
+                stall_id: stallId,
+                impresa_id: impresaId,
+                wallet_id: walletId,
+                tipo_presenza: 'CONCESSION',
+                giorno_mercato: new Date().toISOString().split('T')[0]
+              })
+            });
+            
+            const presenzaData = await presenzaResponse.json();
+            if (presenzaData.success) {
+              toast.success(`Arrivo registrato - ${presenzaData.data.importo_addebitato?.toFixed(2) || '0.00'}€`);
+            } else {
+              toast.success('Posteggio occupato (presenza non registrata)');
+            }
+          } catch (presenzaError) {
+            console.warn('[WARN] Errore registrazione presenza:', presenzaError);
+            toast.success('Posteggio occupato (presenza non registrata)');
+          }
+        } else {
+          toast.success('Posteggio occupato!');
+        }
+        
+        // Aggiorna stato locale
+        setStalls(prevStalls => 
+          prevStalls.map(s => 
+            s.id === stallId ? { ...s, status: 'occupato' } : s
+          )
+        );
+        
+        setSelectedStallId(null);
+        setSelectedStallCenter(null);
+      } else {
+        toast.error('Errore nell\'occupazione del posteggio');
+      }
+    } catch (error) {
+      console.error('[ERROR handleOccupaStall]:', error);
+      toast.error('Errore durante l\'occupazione del posteggio');
+      throw error;
+    }
+  };
+
+  // Libera un posteggio occupato (registra uscita)
+  const handleLiberaStall = async (stallId: number) => {
+    try {
+      console.log('[DEBUG handleLiberaStall] Liberando posteggio:', stallId);
+      
+      // 1. Aggiorna stato posteggio a libero
+      const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'libero' }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        console.log('[DEBUG handleLiberaStall] Posteggio liberato:', stallId);
+        
+        // 2. Registra uscita (aggiorna presenza esistente)
+        try {
+          const uscitaResponse = await fetch(`${API_BASE_URL}/api/presenze/registra-uscita`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              market_id: marketId,
+              stall_id: stallId,
+              giorno_mercato: new Date().toISOString().split('T')[0]
+            })
+          });
+          
+          const uscitaData = await uscitaResponse.json();
+          if (uscitaData.success) {
+            toast.success('Uscita registrata!');
+          } else {
+            toast.success('Posteggio liberato (uscita non registrata)');
+          }
+        } catch (uscitaError) {
+          console.warn('[WARN] Errore registrazione uscita:', uscitaError);
+          toast.success('Posteggio liberato (uscita non registrata)');
+        }
+        
+        // Aggiorna stato locale
+        setStalls(prevStalls => 
+          prevStalls.map(s => 
+            s.id === stallId ? { ...s, status: 'libero' } : s
+          )
+        );
+        
+        setSelectedStallId(null);
+        setSelectedStallCenter(null);
+      } else {
+        toast.error('Errore nella liberazione del posteggio');
+      }
+    } catch (error) {
+      console.error('[ERROR handleLiberaStall]:', error);
+      toast.error('Errore durante la liberazione del posteggio');
+      throw error;
+    }
+  };
+
   const handleCancel = () => {
     setEditingId(null);
     setEditData({});
@@ -1518,16 +1643,53 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
   return (
     <div className="space-y-4">
-      {/* Statistiche Posteggi */}
+      {/* Statistiche Posteggi - Indicatori Cliccabili */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 p-4 rounded-lg">
+        {/* Indicatore OCCUPATI - Click attiva modalità Libera */}
+        <div 
+          className={`bg-[#ef4444]/10 border p-4 rounded-lg relative cursor-pointer transition-all ${
+            isLiberaMode 
+              ? 'border-[#ef4444] ring-2 ring-[#ef4444]/50' 
+              : 'border-[#ef4444]/30 hover:border-[#ef4444]/60'
+          }`}
+          onClick={() => {
+            setIsLiberaMode(!isLiberaMode);
+            setIsOccupaMode(false);
+            setIsSpuntaMode(false);
+          }}
+        >
           <div className="text-sm text-[#ef4444] mb-1">Occupati</div>
           <div className="text-3xl font-bold text-[#ef4444]">{occupiedCount}</div>
+          {isLiberaMode && (
+            <span className="absolute top-2 right-2 text-xs bg-[#ef4444] text-white px-2 py-1 rounded">
+              🚮 Libera
+            </span>
+          )}
         </div>
-        <div className="bg-[#10b981]/10 border border-[#10b981]/30 p-4 rounded-lg">
+        
+        {/* Indicatore LIBERI - Click attiva modalità Occupa */}
+        <div 
+          className={`bg-[#10b981]/10 border p-4 rounded-lg relative cursor-pointer transition-all ${
+            isOccupaMode 
+              ? 'border-[#10b981] ring-2 ring-[#10b981]/50' 
+              : 'border-[#10b981]/30 hover:border-[#10b981]/60'
+          }`}
+          onClick={() => {
+            setIsOccupaMode(!isOccupaMode);
+            setIsLiberaMode(false);
+            setIsSpuntaMode(false);
+          }}
+        >
           <div className="text-sm text-[#10b981] mb-1">Liberi</div>
           <div className="text-3xl font-bold text-[#10b981]">{freeCount}</div>
+          {isOccupaMode && (
+            <span className="absolute top-2 right-2 text-xs bg-[#10b981] text-white px-2 py-1 rounded">
+              ✅ Occupa
+            </span>
+          )}
         </div>
+        
+        {/* Indicatore RISERVATI - Pulsante Spunta (logica esistente) */}
         <div className="bg-[#f59e0b]/10 border border-[#f59e0b]/30 p-4 rounded-lg relative">
           <div className="text-sm text-[#f59e0b] mb-1">Riservati</div>
           <div className="text-3xl font-bold text-[#f59e0b]">{reservedCount}</div>
@@ -1539,14 +1701,127 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 ? 'bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white border-[#f59e0b]' 
                 : 'bg-transparent hover:bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50'
             }`}
-            onClick={() => setIsSpuntaMode(!isSpuntaMode)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsSpuntaMode(!isSpuntaMode);
+              setIsOccupaMode(false);
+              setIsLiberaMode(false);
+            }}
           >
             ✓ Spunta
           </Button>
         </div>
       </div>
 
-      {/* Pulsante Conferma Assegnazione Globale (solo in modalità Spunta) */}
+      {/* Barra LIBERA TUTTI (modalità Libera) */}
+      {isLiberaMode && occupiedCount > 0 && (
+        <div className="mb-4">
+          <Button
+            className="w-full bg-[#ef4444] hover:bg-[#ef4444]/80 text-white font-semibold py-3 border-2 border-[#ef4444]/50"
+            onClick={async () => {
+              const occupiedStalls = stalls.filter(s => s.status === 'occupato');
+              if (occupiedStalls.length === 0) {
+                toast.info('Nessun posteggio occupato da liberare');
+                return;
+              }
+              
+              const confirmed = window.confirm(
+                `Liberare ${occupiedStalls.length} posteggi occupati?\n\n` +
+                `Tutti i posteggi occupati diventeranno liberi e verrà registrata l'uscita.`
+              );
+              
+              if (!confirmed) return;
+              
+              try {
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const stall of occupiedStalls) {
+                  try {
+                    await handleLiberaStall(stall.id);
+                    successCount++;
+                  } catch (error) {
+                    console.error(`Errore liberazione posteggio ${stall.number}:`, error);
+                    errorCount++;
+                  }
+                }
+                
+                if (successCount > 0) {
+                  toast.success(`${successCount} posteggi liberati con successo!`);
+                }
+                if (errorCount > 0) {
+                  toast.error(`${errorCount} posteggi non liberati`);
+                }
+                
+                await fetchData();
+                setMapRefreshKey(prev => prev + 1);
+                setIsLiberaMode(false);
+              } catch (error) {
+                console.error('Errore liberazione posteggi:', error);
+                toast.error('Errore durante la liberazione dei posteggi');
+              }
+            }}
+          >
+            🚮 Libera Tutti ({occupiedCount} posteggi)
+          </Button>
+        </div>
+      )}
+
+      {/* Barra OCCUPA TUTTI (modalità Occupa) */}
+      {isOccupaMode && freeCount > 0 && (
+        <div className="mb-4">
+          <Button
+            className="w-full bg-[#10b981] hover:bg-[#10b981]/80 text-white font-semibold py-3 border-2 border-[#10b981]/50"
+            onClick={async () => {
+              const freeStalls = stalls.filter(s => s.status === 'libero');
+              if (freeStalls.length === 0) {
+                toast.info('Nessun posteggio libero da occupare');
+                return;
+              }
+              
+              const confirmed = window.confirm(
+                `Occupare ${freeStalls.length} posteggi liberi?\n\n` +
+                `Tutti i posteggi liberi diventeranno occupati e verrà registrato l'arrivo.`
+              );
+              
+              if (!confirmed) return;
+              
+              try {
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const stall of freeStalls) {
+                  try {
+                    await handleOccupaStall(stall.id);
+                    successCount++;
+                  } catch (error) {
+                    console.error(`Errore occupazione posteggio ${stall.number}:`, error);
+                    errorCount++;
+                  }
+                }
+                
+                if (successCount > 0) {
+                  toast.success(`${successCount} posteggi occupati con successo!`);
+                }
+                if (errorCount > 0) {
+                  toast.error(`${errorCount} posteggi non occupati`);
+                }
+                
+                await fetchData();
+                setMapRefreshKey(prev => prev + 1);
+                setIsOccupaMode(false);
+              } catch (error) {
+                console.error('Errore occupazione posteggi:', error);
+                toast.error('Errore durante l\'occupazione dei posteggi');
+              }
+            }}
+          >
+            ✅ Occupa Tutti ({freeCount} posteggi)
+          </Button>
+        </div>
+      )}
+
+      {/* Barra CONFERMA ASSEGNAZIONE (modalità Spunta - logica esistente) */}
       {isSpuntaMode && reservedCount > 0 && (
         <div className="mb-4">
           <Button
@@ -1629,7 +1904,11 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
               zoom={viewMode === 'mercato' ? 17 : 6}
               height="100%"
               isSpuntaMode={isSpuntaMode}
+              isOccupaMode={isOccupaMode}
+              isLiberaMode={isLiberaMode}
               onConfirmAssignment={handleConfirmAssignment}
+              onOccupaStall={handleOccupaStall}
+              onLiberaStall={handleLiberaStall}
               onStallClick={(stallNumber) => {
                 const dbStall = stallsByNumber.get(stallNumber);
                 if (dbStall) {
