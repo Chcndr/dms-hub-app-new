@@ -16,7 +16,11 @@ import {
   Edit2,
   Save,
   X,
-  Phone
+  Phone,
+  Play,
+  Flag,
+  RotateCcw,
+  CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -124,6 +128,16 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
   } | null>(null);
   const [spuntisti, setSpuntisti] = useState<SpuntistaRecord[]>([]);
   const [loadingSpuntisti, setLoadingSpuntisti] = useState(false);
+  
+  // Stati per Test Mercato
+  const [testMercatoActive, setTestMercatoActive] = useState(false);
+  const [spuntaActive, setSpuntaActive] = useState(false);
+  const [testMercatoStato, setTestMercatoStato] = useState<{
+    posteggi: { libero?: number; occupato?: number; riservato?: number };
+    presenze: { CONCESSION?: number; SPUNTA?: number };
+    spuntisti_in_attesa: number;
+    totale_incassato: number;
+  } | null>(null);
 
   // Fetch graduatoria quando cambia mercato o tab
   useEffect(() => {
@@ -202,6 +216,149 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
       setLoadingSpuntisti(false);
     }
   };
+
+  // === FUNZIONI TEST MERCATO ===
+  const fetchTestMercatoStato = async () => {
+    if (!marketId) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/test-mercato/stato/${marketId}`);
+      const data = await response.json();
+      if (data.success) {
+        setTestMercatoStato(data.data);
+      }
+    } catch (error) {
+      console.error('Errore fetch stato test mercato:', error);
+    }
+  };
+
+  const handleStartTestMercato = async () => {
+    if (!marketId) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/test-mercato/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ market_id: marketId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`✅ ${data.message}`);
+        setTestMercatoActive(true);
+        setSpuntaActive(false);
+        fetchTestMercatoStato();
+        // Ricarica i dati
+        window.location.reload();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error('Errore avvio test mercato');
+    }
+  };
+
+  const handleRegistraPresenzaConcessionario = async (stallId: number) => {
+    if (!marketId) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/test-mercato/registra-presenza-concessionario`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stall_id: stallId, market_id: marketId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`✅ ${data.message}`);
+        if (data.data.addebito_effettuato) {
+          toast.info(`💰 Addebitato €${data.data.costo_posteggio.toFixed(2)} - Nuovo saldo: €${data.data.nuovo_saldo_wallet?.toFixed(2)}`);
+        }
+        fetchTestMercatoStato();
+        fetchGraduatoria();
+        fetchPresenze();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error('Errore registrazione presenza');
+    }
+  };
+
+  const handleAvviaSpunta = async () => {
+    if (!marketId) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/test-mercato/avvia-spunta`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ market_id: marketId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`🏁 ${data.message}`);
+        setSpuntaActive(true);
+        fetchTestMercatoStato();
+        fetchSpuntisti();
+        // Ricarica i dati
+        window.location.reload();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error('Errore avvio spunta');
+    }
+  };
+
+  const handleAssegnaPosteggioSpunta = async (stallId: number) => {
+    if (!marketId) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/test-mercato/assegna-posteggio-spunta`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stall_id: stallId, market_id: marketId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`✅ ${data.message}`);
+        if (data.data.addebito_effettuato) {
+          toast.info(`💰 Addebitato €${data.data.costo_posteggio.toFixed(2)} - Nuovo saldo: €${data.data.nuovo_saldo_wallet?.toFixed(2)}`);
+        }
+        fetchTestMercatoStato();
+        fetchSpuntisti();
+        fetchGraduatoria();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error('Errore assegnazione posteggio');
+    }
+  };
+
+  const handleResetTestMercato = async () => {
+    if (!marketId) return;
+    if (!confirm('Sei sicuro di voler resettare il test mercato? Tutte le presenze del giorno verranno eliminate.')) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/test-mercato/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ market_id: marketId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`🔄 ${data.message}`);
+        setTestMercatoActive(false);
+        setSpuntaActive(false);
+        fetchTestMercatoStato();
+        window.location.reload();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error('Errore reset test mercato');
+    }
+  };
+
+  // Carica stato test mercato quando cambia il mercato
+  useEffect(() => {
+    if (marketId) {
+      fetchTestMercatoStato();
+    }
+  }, [marketId]);
 
   const handleEdit = (record: GraduatoriaRecord) => {
     setEditingId(record.id);
@@ -353,6 +510,62 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* === BARRA TEST MERCATO === */}
+        <div className="flex items-center gap-2 mb-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+          <Button
+            onClick={handleStartTestMercato}
+            className="bg-green-600 hover:bg-green-700 text-white gap-2"
+            size="sm"
+          >
+            <Play className="w-4 h-4" />
+            Test Mercato
+          </Button>
+          <Button
+            onClick={handleAvviaSpunta}
+            className="bg-orange-600 hover:bg-orange-700 text-white gap-2"
+            size="sm"
+            disabled={!testMercatoActive && (testMercatoStato?.posteggi?.libero || 0) === 0}
+          >
+            <Flag className="w-4 h-4" />
+            Avvio Spunta
+          </Button>
+          <Button
+            onClick={handleResetTestMercato}
+            variant="outline"
+            className="border-red-500 text-red-400 hover:bg-red-500/20 gap-2"
+            size="sm"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset
+          </Button>
+          
+          {/* Stato Test Mercato */}
+          {testMercatoStato && (
+            <div className="flex-1 flex items-center justify-end gap-4 text-xs">
+              <div className="flex items-center gap-1">
+                <span className="text-green-400">●</span>
+                <span className="text-slate-400">Liberi: {testMercatoStato.posteggi?.libero || 0}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-orange-400">●</span>
+                <span className="text-slate-400">Assegn: {testMercatoStato.posteggi?.riservato || 0}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-red-400">●</span>
+                <span className="text-slate-400">Occupati: {testMercatoStato.posteggi?.occupato || 0}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-yellow-400">●</span>
+                <span className="text-slate-400">Spuntisti in attesa: {testMercatoStato.spuntisti_in_attesa}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-cyan-400">💰</span>
+                <span className="text-slate-400">Incassato: €{testMercatoStato.totale_incassato?.toFixed(2) || '0.00'}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 bg-slate-700/50">
             <TabsTrigger value="concessionari" className="data-[state=active]:bg-cyan-600">
@@ -401,11 +614,27 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
                     const presenza = presenze.find(p => p.stall_id === stall.id);
                     const isSpuntista = stall.type === 'spunta';
                     const isRevoca = record?.stato_revoca === 'REVOCA';
-                    const getStatoBadge = (status: string) => {
+                    const getStatoBadge = (status: string, stallId: number) => {
                       switch(status) {
                         case 'occupato': return <Badge className="bg-red-500 text-[10px] px-1">OCCUP.</Badge>;
-                        case 'riservato': return <Badge className="bg-yellow-500 text-[10px] px-1">ASSEGN.</Badge>;
-                        case 'libero': default: return <Badge className="bg-green-500 text-[10px] px-1">LIBERO</Badge>;
+                        case 'riservato': return (
+                          <Badge 
+                            className="bg-orange-500 text-[10px] px-1 cursor-pointer hover:bg-orange-600" 
+                            onClick={() => handleAssegnaPosteggioSpunta(stallId)}
+                            title="Click per assegnare a spuntista"
+                          >
+                            ASSEGN.
+                          </Badge>
+                        );
+                        case 'libero': default: return (
+                          <Badge 
+                            className="bg-green-500 text-[10px] px-1 cursor-pointer hover:bg-green-600" 
+                            onClick={() => handleRegistraPresenzaConcessionario(stallId)}
+                            title="Click per registrare presenza"
+                          >
+                            LIBERO
+                          </Badge>
+                        );
                       }
                     };
                     return (
@@ -414,7 +643,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
                         <span className="text-cyan-400 font-mono font-bold">{stall.number}</span>
                       </td>
                       <td className="p-1 text-center">
-                        {getStatoBadge(stall.status)}
+                        {getStatoBadge(stall.status, stall.id)}
                       </td>
                       <td className="p-1">
                         {stall.vendor_business_name ? (
