@@ -76,6 +76,7 @@ interface SpuntistaRecord {
   codice_fiscale: string;
   wallet_balance: number;
   posizione: number;
+  posizione_graduatoria?: number; // Posizione calcolata dinamicamente
   punteggio: number;
   presenze_totali: number;
   data_prima_presenza: string;
@@ -558,13 +559,14 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
                         Nessuno spuntista con wallet SPUNTA per questo mercato.
                       </td>
                     </tr>
-                  ) : spuntisti
-                    .sort((a, b) => (a.posizione || 999) - (b.posizione || 999))
-                    .map((record, index) => (
+                  ) : spuntisti.map((record) => {
+                    // Usa posizione_graduatoria calcolata dal backend (basata su presenze DESC, data ASC)
+                    const pos = record.posizione_graduatoria || 999;
+                    return (
                     <tr key={record.wallet_id} className="border-b border-slate-700/50 hover:bg-yellow-900/20 bg-yellow-900/10">
                       <td className="p-1 text-center">
-                        <Badge className={`${record.posizione === 1 ? 'bg-yellow-500' : record.posizione === 2 ? 'bg-slate-400' : record.posizione === 3 ? 'bg-amber-600' : 'bg-slate-600'} text-[10px]`}>
-                          #{record.posizione < 999 ? record.posizione : (index + 1)}
+                        <Badge className={`${pos === 1 ? 'bg-yellow-500' : pos === 2 ? 'bg-slate-400' : pos === 3 ? 'bg-amber-600' : 'bg-slate-600'} text-[10px]`}>
+                          #{pos}
                         </Badge>
                       </td>
                       <td className="p-1 text-center">
@@ -611,7 +613,8 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
               {spuntisti.length > 0 && (
