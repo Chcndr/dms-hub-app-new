@@ -88,6 +88,8 @@ interface MarketMapComponentProps {
   viewTrigger?: number; // Trigger per forzare flyTo quando cambia vista
   marketCenterFixed?: [number, number]; // Centro fisso del mercato per marker M (non si sposta con selezione posteggio)
   selectedStallCenter?: [number, number]; // Centro del posteggio selezionato per pan mappa
+  interactive?: boolean; // Se false, disabilita dragging e scroll zoom
+  defaultLayer?: 'dark' | 'light' | 'satellite'; // Layer iniziale
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -186,7 +188,9 @@ export function MarketMapComponent({
   showItalyView = false,
   viewTrigger = 0,
   marketCenterFixed,
-  selectedStallCenter
+  selectedStallCenter,
+  interactive = true,
+  defaultLayer = 'dark'
 }: MarketMapComponentProps) {
   
   // Ottieni lo stato di animazione dal context per nascondere poligoni durante zoom
@@ -303,29 +307,27 @@ export function MarketMapComponent({
           zoomSnap={0.25}
           zoomDelta={0.25}
           ref={mapRef}
-          scrollWheelZoom={false}
-          dragging={false}
-          doubleClickZoom={false}
-          touchZoom={false}
-          boxZoom={false}
-          keyboard={false}
+          scrollWheelZoom={interactive}
+          dragging={interactive}
+          doubleClickZoom={interactive}
+          touchZoom={interactive}
         >
           <LayersControl position="topright">
-            <LayersControl.BaseLayer checked name="Strade (OpenStreetMap)">
+            <LayersControl.BaseLayer checked={defaultLayer === 'light'} name="Strade (OpenStreetMap)">
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 maxZoom={21}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Satellite (Esri)">
+            <LayersControl.BaseLayer checked={defaultLayer === 'satellite'} name="Satellite (Esri)">
               <TileLayer
                 attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                 maxZoom={19}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="CartoDB Dark">
+            <LayersControl.BaseLayer checked={defaultLayer === 'dark'} name="CartoDB Dark">
               <TileLayer
                 attribution='&copy; <a href="https://carto.com">CARTO</a>'
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
