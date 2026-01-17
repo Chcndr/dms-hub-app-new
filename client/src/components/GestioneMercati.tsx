@@ -364,7 +364,7 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
     // Uso un piccolo timeout per assicurarmi che la mappa sia pronta prima del trigger
     setTimeout(() => {
       setViewTrigger(prev => prev + 1);
-    }, 500);
+    }, 100);
   }, [market.id]);
 
   // Espone la funzione fetchStalls al componente padre
@@ -390,7 +390,7 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
               // Quando si entra nel tab posteggi, forza sempre Vista Italia
               setViewMode('italia');
               // Trigger per assicurare che la mappa si posizioni correttamente
-              setTimeout(() => setViewTrigger(prev => prev + 1), 500);
+              setTimeout(() => setViewTrigger(prev => prev + 1), 100);
             } else {
               // Quando si esce dal tab posteggi, resetta selezioni
               setSelectedStallId(null);
