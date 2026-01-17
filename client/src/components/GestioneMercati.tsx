@@ -359,12 +359,14 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
   useEffect(() => {
     fetchStalls();
     // Reset vista all'apertura di un nuovo mercato
-    // Forza la vista Italia inizialmente
+    // Forza la vista Italia inizialmente e resetta il trigger
     setViewMode('italia');
-    // Uso un piccolo timeout per assicurarmi che la mappa sia pronta prima di scatenare l'animazione
+    setViewTrigger(0);
+    
+    // Uso un timeout per assicurarmi che la mappa sia pronta prima di scatenare l'animazione
     const timer = setTimeout(() => {
       setViewTrigger(prev => prev + 1);
-    }, 800);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [market.id]);
 
@@ -390,8 +392,10 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
             if (value === 'posteggi') {
               // Quando si entra nel tab posteggi, forza sempre Vista Italia
               setViewMode('italia');
+              // Resetta il trigger per forzare un nuovo flyTo
+              setViewTrigger(0);
               // Trigger per assicurare che la mappa si posizioni correttamente
-              setTimeout(() => setViewTrigger(prev => prev + 1), 300);
+              setTimeout(() => setViewTrigger(prev => prev + 1), 500);
             } else {
               // Quando si esce dal tab posteggi, resetta selezioni
               setSelectedStallId(null);
