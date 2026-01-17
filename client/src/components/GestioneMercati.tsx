@@ -27,6 +27,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MarketMapComponent } from './MarketMapComponent';
 import { PresenzeGraduatoriaPanel } from './PresenzeGraduatoriaPanel';
+import { trpc } from '@/lib/trpc';
 import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData, FORMA_GIURIDICA_OPTIONS, STATO_IMPRESA_OPTIONS } from './markets/MarketCompaniesTab';
 import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL_STATUS_OPTIONS } from '@/lib/stallStatus';
 import L from 'leaflet';
@@ -358,8 +359,11 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
   useEffect(() => {
     fetchStalls();
     // Reset vista all'apertura di un nuovo mercato
-    setViewMode('italia');
-    setViewTrigger(prev => prev + 1);
+    // Uso un piccolo timeout per assicurarmi che la mappa sia pronta
+    setTimeout(() => {
+      setViewMode('italia');
+      setViewTrigger(prev => prev + 1);
+    }, 500);
   }, [market.id]);
 
   // Espone la funzione fetchStalls al componente padre
