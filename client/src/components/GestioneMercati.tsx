@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MarketMapComponent } from './MarketMapComponent';
 import { PresenzeGraduatoriaPanel } from './PresenzeGraduatoriaPanel';
 import { trpc } from '@/lib/trpc';
-import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData, FORMA_GIURIDICA_OPTIONS, STATO_IMPRESA_OPTIONS } from './markets/MarketCompaniesTab';
+import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData } from './markets/MarketCompaniesTab';
 import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL_STATUS_OPTIONS } from '@/lib/stallStatus';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -107,6 +107,10 @@ interface Concession {
   stall_number: string;
   vendor_business_name: string;
   vendor_code: string;
+  stato?: string;
+  stato_calcolato?: string;
+  settore_merceologico?: string;
+  comune_rilascio?: string;
 }
 
 interface MarketMapData {
@@ -392,10 +396,7 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
               // Trigger per assicurare che la mappa si posizioni correttamente
               setTimeout(() => setViewTrigger(prev => prev + 1), 100);
             } else {
-              // Quando si esce dal tab posteggi, resetta selezioni
-              setSelectedStallId(null);
-              setSelectedStallCenter(null);
-              // Resetta anche viewMode per sicurezza
+              // Quando si esce dal tab posteggi, resetta viewMode per sicurezza
               setViewMode('italia');
             }
           }}
@@ -1311,6 +1312,11 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [selectedCompanyForModal, setSelectedCompanyForModal] = useState<CompanyRow | null>(null);
   const listContainerRef = React.useRef<HTMLDivElement>(null);
+  
+  // Nuovi state per presenze e graduatoria (integrazione lista unificata)
+  const [presenze, setPresenze] = useState<any[]>([]);
+  const [graduatoria, setGraduatoria] = useState<any[]>([]);
+  const [listFilter, setListFilter] = useState<'concessionari' | 'spunta' | 'fiere'>('concessionari');
 
   useEffect(() => {
     fetchData();
@@ -1318,15 +1324,19 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
   const fetchData = async () => {
     try {
-      const [stallsRes, mapRes, concessionsRes] = await Promise.all([
+      const [stallsRes, mapRes, concessionsRes, presenzeRes, graduatoriaRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`),
         fetch(`${API_BASE_URL}/api/gis/market-map/${marketId}`),
-        fetch(`${API_BASE_URL}/api/markets/${marketCode}/stalls/concessions`)
+        fetch(`${API_BASE_URL}/api/markets/${marketCode}/stalls/concessions`),
+        fetch(`${API_BASE_URL}/api/presenze/mercato/${marketId}`).catch(() => ({ json: () => ({ success: false }) })),
+        fetch(`${API_BASE_URL}/api/graduatoria/mercato/${marketId}`).catch(() => ({ json: () => ({ success: false }) }))
       ]);
 
       const stallsData = await stallsRes.json();
       const mapDataRes = await mapRes.json();
       const concessionsData = await concessionsRes.json();
+      const presenzeData = await presenzeRes.json();
+      const graduatoriaData = await graduatoriaRes.json();
 
       console.log('[DEBUG fetchData] Dati ricevuti:', {
         stallsCount: stallsData.data?.length,
@@ -1356,6 +1366,15 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         }
         setConcessionsByStallId(map);
         console.log('[DEBUG fetchData] concessioni caricate:', Object.keys(map).length);
+      }
+      // Carica presenze e graduatoria
+      if (presenzeData.success && Array.isArray(presenzeData.data)) {
+        setPresenze(presenzeData.data);
+        console.log('[DEBUG fetchData] presenze caricate:', presenzeData.data.length);
+      }
+      if (graduatoriaData.success && Array.isArray(graduatoriaData.data)) {
+        setGraduatoria(graduatoriaData.data);
+        console.log('[DEBUG fetchData] graduatoria caricata:', graduatoriaData.data.length);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -2061,12 +2080,12 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             status: s.status,
             type: s.type,
             vendor_name: s.vendor_business_name || undefined,
-            dimensions: s.dimensions // Passa le dimensioni dal DB alla mappa
+            dimensions: s.width && s.depth ? `${s.width}x${s.depth}` : undefined // Calcola le dimensioni da width e depth
           }));
           return (
             <MarketMapComponent
               refreshKey={mapRefreshKey}
-              mapData={mapData}  // Passa sempre mapData così i posteggi sono visibili durante l'animazione
+              mapData={mapData as any}  // Passa sempre mapData così i posteggi sono visibili durante l'animazione
               center={viewMode === 'mercato' ? marketCenter : [42.5, 12.5] as [number, number]}
               zoom={viewMode === 'mercato' ? 17 : 6}
               height="100%"
@@ -2077,7 +2096,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
               onOccupaStall={handleOccupaStall}
               onLiberaStall={handleLiberaStall}
               onStallClick={(stallNumber) => {
-                const dbStall = stallsByNumber.get(stallNumber);
+                const dbStall = stallsByNumber.get(String(stallNumber));
                 if (dbStall) {
                   setSelectedStallId(dbStall.id);
                   // Scroll alla riga nella lista (solo dentro il container, non la pagina)
@@ -2096,8 +2115,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   }, 100);
                 }
               }}
-              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
-              stallsData={stallsDataForMap}
+              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number ? parseInt(stalls.find(s => s.id === selectedStallId)!.number, 10) : undefined}
+              stallsData={stallsDataForMap.map(s => ({ ...s, number: parseInt(s.number, 10) || 0 }))}
               allMarkets={allMarkets.map(m => ({
                 id: m.id,
                 name: m.name,
@@ -2118,32 +2137,78 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         })()}
       </div>
 
-      {/* NUOVO LAYOUT: Lista posteggi (sinistra) + Scheda impresa (destra) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* LAYOUT UNIFICATO: Lista posteggi a tutta larghezza */}
+      <div className="space-y-4">
         {/* Lista Posteggi con scroll interno */}
         <div className="border border-[#14b8a6]/20 rounded-lg overflow-hidden">
+          {/* Header con Tab Filtro */}
           <div className="bg-[#0b1220]/50 px-4 py-2 border-b border-[#14b8a6]/20">
-            <h3 className="text-sm font-semibold text-[#e8fbff]">Lista Posteggi</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[#e8fbff]">Lista Posteggi</h3>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant={listFilter === 'concessionari' ? 'default' : 'outline'}
+                  className={`text-xs h-7 ${listFilter === 'concessionari' ? 'bg-[#14b8a6] text-white' : 'bg-transparent text-[#e8fbff]/70 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20'}`}
+                  onClick={() => setListFilter('concessionari')}
+                >
+                  Concessionari
+                </Button>
+                <Button
+                  size="sm"
+                  variant={listFilter === 'spunta' ? 'default' : 'outline'}
+                  className={`text-xs h-7 ${listFilter === 'spunta' ? 'bg-[#f59e0b] text-white' : 'bg-transparent text-[#e8fbff]/70 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20'}`}
+                  onClick={() => setListFilter('spunta')}
+                >
+                  Spunta
+                </Button>
+                <Button
+                  size="sm"
+                  variant={listFilter === 'fiere' ? 'default' : 'outline'}
+                  className={`text-xs h-7 ${listFilter === 'fiere' ? 'bg-[#8b5cf6] text-white' : 'bg-transparent text-[#e8fbff]/70 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20'}`}
+                  onClick={() => setListFilter('fiere')}
+                >
+                  Fiere/Straord.
+                </Button>
+              </div>
+            </div>
           </div>
           <div ref={listContainerRef} className="max-h-[400px] overflow-y-auto">
             <Table>
               <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
                 <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
-                  <TableHead className="text-[#e8fbff]/70 text-xs">N°</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs">Tipo</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs">Stato</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs">Intestatario</TableHead>
-                  <TableHead className="text-right text-[#e8fbff]/70 text-xs">Azioni</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-12">N°</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-24">Stato</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs">Impresa</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-20">Giorno</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Accesso</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Rifiuti</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Uscita</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Pres.</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Ass.</TableHead>
+                  <TableHead className="text-right text-[#e8fbff]/70 text-xs w-12">⚙️</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...stalls].sort((a, b) => {
+                {[...stalls]
+                  // Filtra per tipo in base al tab selezionato
+                  .filter(stall => {
+                    if (listFilter === 'concessionari') return stall.type === 'fisso';
+                    if (listFilter === 'spunta') return stall.type === 'spunta' || stall.status === 'riservato';
+                    if (listFilter === 'fiere') return stall.type === 'straordinario' || stall.type === 'fiera';
+                    return true;
+                  })
+                  .sort((a, b) => {
                   // Ordina per numero crescente (gestisce sia numeri che stringhe)
                   const numA = parseInt(a.number, 10);
                   const numB = parseInt(b.number, 10);
                   if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
                   return a.number.localeCompare(b.number);
-                }).map((stall) => (
+                }).map((stall) => {                  // Trova i dati di presenza per questo posteggio
+                  const presenzaOggi = presenze.find(p => p.stall_number === stall.number || p.stallId === stall.id);
+                  const gradRecord = graduatoria.find(g => g.stall_number === stall.number || g.stallId === stall.id);
+                  
+                  return (
                   <TableRow 
                     key={stall.id}
                     data-stall-id={stall.id}
@@ -2152,60 +2217,64 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     }`}
                     onClick={() => handleRowClick(stall)}
                   >
-                    <TableCell className="font-medium text-[#e8fbff] text-sm">{stall.number}</TableCell>
+                    {/* N° Posteggio */}
+                    <TableCell className="font-medium text-[#14b8a6] text-sm">{stall.number}</TableCell>
+                    
+                    {/* Stato */}
                     <TableCell>
-                      {editingId === stall.id ? (
-                        <Select
-                          value={editData.type}
-                          onValueChange={(value) => setEditData({ ...editData, type: value })}
-                        >
-                          <SelectTrigger className="w-[80px] bg-[#0b1220] border-[#14b8a6]/30 h-7 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="fisso">Fisso</SelectItem>
-                            <SelectItem value="spunta">Spunta</SelectItem>
-                            <SelectItem value="libero">Libero</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="outline" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
-                          {stall.type}
-                        </Badge>
-                      )}
+                      <Badge variant="default" className={`${getStallStatusClasses(stall.status)} text-xs`}>
+                        {getStallStatusLabel(stall.status)}
+                      </Badge>
                     </TableCell>
-                    <TableCell>
-                      {editingId === stall.id ? (
-                        <Select
-                          value={editData.status}
-                          onValueChange={(value) => setEditData({ ...editData, status: value })}
-                        >
-                          <SelectTrigger className="w-[100px] bg-[#0b1220] border-[#14b8a6]/30 h-7 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STALL_STATUS_OPTIONS.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="default" className={`${getStallStatusClasses(stall.status)} text-xs`}>
-                          {getStallStatusLabel(stall.status)}
-                        </Badge>
-                      )}
-                    </TableCell>
+                    
+                    {/* Impresa - colore giallo se spuntista */}
                     <TableCell className="text-sm">
                       {stall.vendor_business_name ? (
-                        <p className="font-medium text-[#e8fbff] text-xs truncate max-w-[120px]">{stall.vendor_business_name}</p>
+                        <p className={`font-medium text-xs truncate max-w-[180px] ${stall.type === 'spunta' ? 'text-[#f59e0b]' : 'text-[#e8fbff]'}`}>
+                          {stall.vendor_business_name}
+                        </p>
                       ) : concessionsByStallId[stall.number] ? (
-                        <p className="font-medium text-[#e8fbff] text-xs truncate max-w-[120px]">{concessionsByStallId[stall.number].companyName}</p>
+                        <p className={`font-medium text-xs truncate max-w-[180px] ${stall.type === 'spunta' ? 'text-[#f59e0b]' : 'text-[#e8fbff]'}`}>
+                          {concessionsByStallId[stall.number].companyName}
+                        </p>
                       ) : (
                         <span className="text-[#e8fbff]/50 text-xs">-</span>
                       )}
                     </TableCell>
+                    
+                    {/* Giorno */}
+                    <TableCell className="text-xs text-[#e8fbff]/70">
+                      {presenzaOggi?.giorno || presenzaOggi?.data ? (
+                        new Date(presenzaOggi.giorno || presenzaOggi.data).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })
+                      ) : '-'}
+                    </TableCell>
+                    
+                    {/* Accesso */}
+                    <TableCell className="text-xs text-center text-[#10b981]">
+                      {presenzaOggi?.ora_accesso || presenzaOggi?.checkin || '-'}
+                    </TableCell>
+                    
+                    {/* Rifiuti */}
+                    <TableCell className="text-xs text-center text-[#f59e0b]">
+                      {presenzaOggi?.ora_rifiuti || '-'}
+                    </TableCell>
+                    
+                    {/* Uscita */}
+                    <TableCell className="text-xs text-center text-[#3b82f6]">
+                      {presenzaOggi?.ora_uscita || presenzaOggi?.checkout || '-'}
+                    </TableCell>
+                    
+                    {/* Presenze totali */}
+                    <TableCell className="text-xs text-center text-[#e8fbff]">
+                      {gradRecord?.presenze_totali || gradRecord?.presenze || 0}
+                    </TableCell>
+                    
+                    {/* Assenze */}
+                    <TableCell className="text-xs text-center text-[#e8fbff]/50">
+                      {gradRecord?.assenze_totali || gradRecord?.assenze || 0}
+                    </TableCell>
+                    
+                    {/* Azioni */}
                     <TableCell className="text-right">
                       {editingId === stall.id ? (
                         <div className="flex justify-end gap-1">
@@ -2246,7 +2315,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                       )}
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
