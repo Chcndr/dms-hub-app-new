@@ -411,20 +411,9 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
             <TabsTrigger 
               value="posteggi"
               className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
-              onClick={(e) => {
-                // Se siamo già nel tab posteggi, toggle tra vista Italia e vista Mercato
-                if (activeTab === 'posteggi') {
-                  e.preventDefault();
-                  setViewMode(prev => prev === 'italia' ? 'mercato' : 'italia');
-                  setViewTrigger(prev => prev + 1); // Forza flyTo
-                }
-              }}
             >
               <MapPin className="mr-2 h-4 w-4" />
-              {activeTab === 'posteggi' 
-                ? (viewMode === 'italia' ? 'Vista Mercato' : 'Vista Italia')
-                : 'Vista Italia'
-              }
+              Posteggi
             </TabsTrigger>
             <TabsTrigger 
               value="concessioni"
@@ -440,6 +429,20 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
           </TabsContent>
 
           <TabsContent value="posteggi" className="space-y-4">
+            <div className="flex justify-center mb-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-[#0b1220]/50 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
+                onClick={() => {
+                  setViewMode(prev => prev === 'italia' ? 'mercato' : 'italia');
+                  setViewTrigger(prev => prev + 1);
+                }}
+              >
+                <MapPin className="mr-2 h-4 w-4" />
+                {viewMode === 'italia' ? 'Vai a Vista Mercato' : 'Torna a Vista Italia'}
+              </Button>
+            </div>
             <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} stalls={stalls} setStalls={setStalls} allMarkets={allMarkets} viewMode={viewMode} setViewMode={setViewMode} viewTrigger={viewTrigger} setViewTrigger={setViewTrigger} />
           </TabsContent>
 
