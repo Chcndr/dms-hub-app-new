@@ -164,7 +164,7 @@ function StallCenterController({ stallCenter }: { stallCenter?: [number, number]
  * @param selectedStallNumber - Numero posteggio selezionato (evidenziato)
  * @param stallsData - Dati aggiornati dei posteggi dal database (per override colori/stato)
  */
-export const MarketMapComponent = ({
+export function MarketMapComponent({
   mapData,
   center,
   zoom = 17,
