@@ -359,9 +359,10 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
   useEffect(() => {
     fetchStalls();
     // Reset vista all'apertura di un nuovo mercato
-    // Uso un piccolo timeout per assicurarmi che la mappa sia pronta
+    // Forza immediatamente lo stato italia
+    setViewMode('italia');
+    // Uso un piccolo timeout per assicurarmi che la mappa sia pronta prima del trigger
     setTimeout(() => {
-      setViewMode('italia');
       setViewTrigger(prev => prev + 1);
     }, 500);
   }, [market.id]);
@@ -389,7 +390,7 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
               // Quando si entra nel tab posteggi, forza sempre Vista Italia
               setViewMode('italia');
               // Trigger per assicurare che la mappa si posizioni correttamente
-              setTimeout(() => setViewTrigger(prev => prev + 1), 300);
+              setTimeout(() => setViewTrigger(prev => prev + 1), 500);
             } else {
               // Quando si esce dal tab posteggi, resetta selezioni
               setSelectedStallId(null);
