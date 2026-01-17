@@ -1706,7 +1706,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
               size="sm"
               variant="outline"
               className="text-xs bg-transparent hover:bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50"
-              onClick={() => {
+              onClick={async () => {
                 // Prepara Spunta: liberi -> riservati (per spuntisti)
                 const freeStalls = stalls.filter(s => s.status === 'libero');
                 if (freeStalls.length === 0) {
@@ -1714,33 +1714,60 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   return;
                 }
                 const confirmed = window.confirm(
-                  `Preparare ${freeStalls.length} posteggi liberi per la spunta?\n\nTutti i posteggi liberi diventeranno riservati (arancioni) pronti per l'assegnazione spunta.`
+                  `Preparare ${freeStalls.length} posteggi liberi per la spunta?\n\nTutti i posteggi liberi diventeranno riservati (arancioni) pronti per l'assegnazione spunta.\n\nPuoi cliccare STOP per fermare l'animazione.`
                 );
                 if (!confirmed) return;
                 
-                (async () => {
+                try {
+                  setIsAnimating(true);
+                  stopAnimationRef.current = false;
                   let successCount = 0;
+                  let errorCount = 0;
+                  
                   for (const stall of freeStalls) {
+                    // Controlla se l'utente ha cliccato STOP
+                    if (stopAnimationRef.current) {
+                      toast.info(`Animazione fermata dopo ${successCount} posteggi`);
+                      break;
+                    }
                     try {
-                      await fetch(`/api/stalls/${stall.id}`, {
+                      const response = await fetch(`/api/stalls/${stall.id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ status: 'riservato' })
                       });
-                      successCount++;
+                      if (response.ok) {
+                        successCount++;
+                        // Aggiorna lo stato locale per vedere l'animazione
+                        setStalls(prev => prev.map(s => 
+                          s.id === stall.id ? { ...s, status: 'riservato' } : s
+                        ));
+                      } else {
+                        errorCount++;
+                      }
                     } catch (error) {
                       console.error(`Errore preparazione posteggio ${stall.number}:`, error);
+                      errorCount++;
                     }
                   }
-                  if (successCount > 0) {
+                  
+                  if (successCount > 0 && !stopAnimationRef.current) {
                     toast.success(`${successCount} posteggi pronti per la spunta!`);
-                    await fetchData();
-                    setMapRefreshKey(prev => prev + 1);
                   }
-                })();
+                  if (errorCount > 0) {
+                    toast.error(`${errorCount} posteggi non preparati`);
+                  }
+                  
+                  await fetchData();
+                  setIsAnimating(false);
+                } catch (error) {
+                  console.error('Errore preparazione posteggi:', error);
+                  toast.error('Errore durante la preparazione dei posteggi');
+                  setIsAnimating(false);
+                }
               }}
             >
-              🟠 Prepara
+              {isAnimating ? '⏹ STOP' : '🟠 Prepara'}
             </Button>
             <Button
               size="sm"
@@ -1821,7 +1848,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 }
                 
                 await fetchData();
-                setMapRefreshKey(prev => prev + 1);
+                // Non resettare la mappa per mantenere zoom/posizione
                 setIsAnimating(false);
                 if (!stopAnimationRef.current) {
                   setIsLiberaMode(false);
@@ -1897,7 +1924,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 }
                 
                 await fetchData();
-                setMapRefreshKey(prev => prev + 1);
+                // Non resettare la mappa per mantenere zoom/posizione
                 setIsAnimating(false);
                 if (!stopAnimationRef.current) {
                   setIsOccupaMode(false);
@@ -1974,7 +2001,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 
                 // Ricarica dati
                 await fetchData();
-                setMapRefreshKey(prev => prev + 1);
+                // Non resettare la mappa per mantenere zoom/posizione
                 setIsAnimating(false);
                 if (!stopAnimationRef.current) {
                   setIsSpuntaMode(false);

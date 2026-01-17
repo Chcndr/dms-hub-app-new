@@ -606,7 +606,7 @@ export function MarketMapComponent({
                   
                   {/* Popup informativo */}
                   <Popup className="stall-popup" minWidth={280}>
-                    {/* Popup OCCUPA per posteggi liberi */}
+                    {/* Popup OCCUPA per posteggi liberi - ROSSO */}
                     {isOccupaMode && displayStatus === 'libero' ? (
                       <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
                         <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
@@ -620,7 +620,7 @@ export function MarketMapComponent({
                         <div className="p-4 space-y-4">
                           <p className="text-sm text-gray-300">Conferma l'occupazione di questo posteggio per registrare l'arrivo.</p>
                           <button
-                            className="w-full bg-[#10b981] hover:bg-[#10b981]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full bg-[#ef4444] hover:bg-[#ef4444]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             onClick={async () => {
                               if (!onOccupaStall) {
                                 alert('Funzione "Occupa" non configurata!');
@@ -644,7 +644,7 @@ export function MarketMapComponent({
                         </div>
                       </div>
                     ) : isLiberaMode && displayStatus === 'occupato' ? (
-                      /* Popup LIBERA per posteggi occupati */
+                      /* Popup LIBERA per posteggi occupati - VERDE */
                       <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
                         <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
                           <div className="font-bold text-lg text-white">
@@ -657,7 +657,7 @@ export function MarketMapComponent({
                         <div className="p-4 space-y-4">
                           <p className="text-sm text-gray-300">Conferma la liberazione di questo posteggio per registrare l'uscita.</p>
                           <button
-                            className="w-full bg-[#ef4444] hover:bg-[#ef4444]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full bg-[#10b981] hover:bg-[#10b981]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             onClick={async () => {
                               if (!onLiberaStall) {
                                 alert('Funzione "Libera" non configurata!');
