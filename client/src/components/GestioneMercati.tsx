@@ -443,6 +443,20 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
           </TabsContent>
 
           <TabsContent value="posteggi" className="space-y-4">
+            <div className="flex justify-center mb-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-[#0b1220]/50 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
+                onClick={() => {
+                  setViewMode(prev => prev === 'italia' ? 'mercato' : 'italia');
+                  setViewTrigger(prev => prev + 1);
+                }}
+              >
+                <MapPin className="mr-2 h-4 w-4" />
+                {viewMode === 'italia' ? 'Vai a Vista Mercato' : 'Torna a Vista Italia'}
+              </Button>
+            </div>
             <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} stalls={stalls} setStalls={setStalls} allMarkets={allMarkets} viewMode={viewMode} setViewMode={setViewMode} viewTrigger={viewTrigger} setViewTrigger={setViewTrigger} />
           </TabsContent>
 
@@ -1657,21 +1671,6 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
   return (
     <div className="space-y-4">
-      {/* Pulsante Cambio Vista Italia/Mercato */}
-      <div className="flex justify-center">
-        <Button
-          variant="outline"
-          className="border-[#14b8a6] text-[#14b8a6] hover:bg-[#14b8a6]/20"
-          onClick={() => {
-            setViewMode(prev => prev === 'italia' ? 'mercato' : 'italia');
-            setViewTrigger(prev => prev + 1);
-          }}
-        >
-          <MapPin className="mr-2 h-4 w-4" />
-          {viewMode === 'italia' ? 'Vai a Vista Mercato' : 'Torna a Vista Italia'}
-        </Button>
-      </div>
-
       {/* Statistiche Posteggi - Con Pulsanti Azione */}
       <div className="grid grid-cols-3 gap-4">
         {/* Indicatore OCCUPATI - Pulsante Occupa (per occupare i liberi) */}
