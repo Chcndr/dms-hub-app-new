@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.35.0  
-> **Data:** 14 Gennaio 2026  
+> **Versione:** 3.35.1  
+> **Data:** 17 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -3156,4 +3156,225 @@ wallets ──► concessions ──► stalls ──► markets
 | 3. Registra in Guardian | ⏳ |
 | 4. Implementa frontend | ⏳ |
 | 5. Deploy e test | ⏳ |
+
+
+
+---
+
+## 🗺️ GESTIONE MERCATI - POSTEGGI TAB (v3.35.1)
+
+> **Data Aggiornamento:** 17 Gennaio 2026  
+> **Autore:** Manus AI  
+> **Stato:** STABILE - Punto di Ripristino
+
+### 1. Panoramica
+
+Il **Tab Posteggi** nella Gestione Mercati è il centro operativo per la gestione quotidiana del mercato. Include:
+
+- **Vista Italia**: Panoramica nazionale con tutti i mercati (marker rossi "M")
+- **Vista Mercato**: Pianta dettagliata con posteggi colorati per stato
+- **Sistema Spunta**: Gestione assegnazione giornaliera posteggi liberi
+- **Sincronizzazione Real-Time**: Aggiornamento istantaneo di mappa, lista e statistiche
+
+### 2. Componenti Principali
+
+| Componente | File | Descrizione |
+|------------|------|-------------|
+| **GestioneMercati** | `client/src/components/GestioneMercati.tsx` | Container principale con logica di stato |
+| **MarketMapComponent** | `client/src/components/MarketMapComponent.tsx` | Mappa Leaflet con posteggi e popup |
+| **PresenzeGraduatoriaPanel** | `client/src/components/PresenzeGraduatoriaPanel.tsx` | Lista presenze e graduatoria spuntisti |
+| **useMapAnimation** | `client/src/hooks/useMapAnimation.ts` | Hook per animazioni flyTo della mappa |
+
+### 3. Vista Italia / Vista Mercato
+
+#### 3.1 Logica di Navigazione
+
+```typescript
+// Stato in GestioneMercati.tsx (MarketDetail)
+const [viewMode, setViewMode] = useState<'italia' | 'mercato'>('italia');
+const [viewTrigger, setViewTrigger] = useState(0);
+
+// Pulsante di cambio vista
+<Button onClick={() => {
+  setViewMode(viewMode === 'italia' ? 'mercato' : 'italia');
+  setViewTrigger(prev => prev + 1);
+}}>
+  {viewMode === 'italia' ? 'Vai a Vista Mercato' : 'Torna a Vista Italia'}
+</Button>
+```
+
+#### 3.2 Coordinate e Zoom
+
+| Vista | Center | Zoom | Descrizione |
+|-------|--------|------|-------------|
+| **Italia** | `[42.5, 12.5]` | 6 | Panoramica nazionale |
+| **Mercato** | `mapData.center` | Auto (bounds) | Pianta dettagliata |
+
+#### 3.3 Hook useMapAnimation
+
+L'hook `useMapAnimation.ts` gestisce le animazioni flyTo:
+
+```typescript
+// Parametri ricevuti
+interface UseMapAnimationParams {
+  center: [number, number];
+  zoom: number;
+  showItalyView: boolean;
+  isMarketView: boolean;
+  trigger: number;
+  bounds?: LatLngBoundsExpression;
+}
+
+// Logica principale
+if (showItalyView && !isMarketView) {
+  // FlyTo Italia
+  map.flyTo([42.5, 12.5], 6, { duration: 1.5 });
+} else if (isMarketView && bounds) {
+  // FlyTo Mercato con bounds
+  const rawZoom = map.getBoundsZoom(bounds);
+  map.flyTo(boundsCenter, rawZoom + 0.25, { duration: 1.5 });
+}
+```
+
+### 4. Sistema Spunta
+
+#### 4.1 Pulsanti Operativi
+
+| Pulsante | Colore | Funzione |
+|----------|--------|----------|
+| **Occupa** | Verde | Attiva modalità occupazione posteggi |
+| **Libera** | Blu | Attiva modalità liberazione posteggi |
+| **Prepara** | Arancione | Avvia animazione batch per preparare spunta |
+| **Spunta** | Verde | Conferma assegnazioni spunta |
+
+#### 4.2 Funzione Prepara Spunta
+
+La funzione `handlePreparaSpunta` esegue un'animazione batch che:
+
+1. Filtra i posteggi con stato `'libero'`
+2. Chiede conferma all'utente (`window.confirm`)
+3. Esegue un loop con delay (100ms) per ogni posteggio
+4. Cambia lo stato da `'libero'` a `'in_assegnazione'`
+5. Può essere interrotta con il pulsante STOP
+
+```typescript
+const handlePreparaSpunta = async () => {
+  const freeStalls = stalls.filter(s => s.status === 'libero');
+  if (!window.confirm(`Preparare ${freeStalls.length} posteggi per la spunta?`)) return;
+  
+  setIsAnimating(true);
+  stopAnimationRef.current = false;
+  
+  for (const stall of freeStalls) {
+    if (stopAnimationRef.current) break;
+    await updateStallStatus(stall.id, 'in_assegnazione');
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  setIsAnimating(false);
+};
+```
+
+### 5. Popup Posteggi
+
+#### 5.1 Struttura Popup
+
+Il popup scuro mostra:
+
+- **Header**: Numero posteggio + Badge stato colorato
+- **Dati Tecnici**: Tipo, Coordinate, Dimensioni (LxP), Superficie
+- **Pulsante Azione**: Appare solo quando è attiva una modalità (Occupa/Libera/Spunta)
+
+#### 5.2 Pulsanti di Azione nel Popup
+
+```typescript
+// Condizioni di visibilità
+{activeMode === 'occupa' && stall.status === 'libero' && (
+  <Button onClick={() => onConfirmOccupazione(stall.id)}>
+    Conferma Occupazione
+  </Button>
+)}
+
+{activeMode === 'libera' && stall.status === 'occupato' && (
+  <Button onClick={() => onConfirmLiberazione(stall.id)}>
+    Conferma Liberazione
+  </Button>
+)}
+
+{activeMode === 'spunta' && stall.status === 'in_assegnazione' && (
+  <Button onClick={() => onConfirmAssignment(stall.id)}>
+    Conferma Assegnazione
+  </Button>
+)}
+```
+
+### 6. Sincronizzazione Real-Time
+
+#### 6.1 Trigger di Aggiornamento
+
+```typescript
+// In GestioneMercati.tsx
+const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+// Dopo ogni operazione su posteggio
+const handleStallUpdate = async () => {
+  await updateStall(...);
+  setRefreshTrigger(prev => prev + 1); // Trigger aggiornamento
+};
+```
+
+#### 6.2 Componenti che Reagiscono
+
+| Componente | Prop | Reazione |
+|------------|------|----------|
+| **MarketMapComponent** | `stalls` | Ricolora posteggi |
+| **Lista Posteggi** | `stalls` | Aggiorna badge stato |
+| **PresenzeGraduatoriaPanel** | `refreshTrigger` | Ricarica dati presenze |
+| **Contatori** | `stalls` | Ricalcola Occupati/Liberi/Riservati |
+
+### 7. Marker e Colori
+
+#### 7.1 Marker Mercato (Vista Italia)
+
+- **Icona**: Cerchio rosso con "M" bianca
+- **Dimensione**: 32px
+- **Tooltip**: Nome mercato
+
+#### 7.2 Colori Posteggi (Vista Mercato)
+
+| Stato | Colore | Hex |
+|-------|--------|-----|
+| `libero` | Verde | `#22c55e` |
+| `occupato` | Rosso | `#ef4444` |
+| `in_assegnazione` | Arancione | `#f97316` |
+| `riservato` | Giallo | `#eab308` |
+
+### 8. File Principali
+
+| File | Righe | Descrizione |
+|------|-------|-------------|
+| `GestioneMercati.tsx` | ~2500 | Container principale, logica di stato, pulsanti |
+| `MarketMapComponent.tsx` | ~800 | Mappa Leaflet, posteggi, popup |
+| `PresenzeGraduatoriaPanel.tsx` | ~400 | Lista presenze, graduatoria |
+| `useMapAnimation.ts` | ~150 | Hook animazioni mappa |
+
+### 9. Commit di Riferimento
+
+| Commit | Descrizione |
+|--------|-------------|
+| `6b82183` | Vista Italia come default all'apertura tab Posteggi |
+| `cd7ffa1` | Funzione Prepara Spunta con animazione batch |
+| `b159ef4` | Pulsante dedicato Vista Italia/Mercato |
+| `7d778e4` | Ripristino stabile post-fix |
+
+### 10. Problemi Noti e Soluzioni
+
+| Problema | Causa | Soluzione |
+|----------|-------|-----------|
+| Mappa non si sposta su Italia | `viewTrigger` non incrementato | Incrementare `viewTrigger` nel click |
+| Popup senza pulsanti azione | `activeMode` non passato | Verificare props in MarketMapComponent |
+| Lista presenze non si aggiorna | `refreshTrigger` non collegato | Passare `refreshTrigger` a PresenzeGraduatoriaPanel |
+| Animazione Prepara non parte | Filtro stato errato | Verificare `stalls.filter(s => s.status === 'libero')` |
+
+---
 
