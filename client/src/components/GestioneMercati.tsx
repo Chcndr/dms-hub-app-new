@@ -164,6 +164,7 @@ export default function GestioneMercati() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [marketStalls, setMarketStalls] = useState<Stall[]>([]);
+  const [refreshStallsCallback, setRefreshStallsCallback] = useState<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
     fetchMarkets();
@@ -317,12 +318,12 @@ export default function GestioneMercati() {
 
       {/* Dettaglio Mercato Selezionato */}
       {selectedMarket && (
-        <MarketDetail market={selectedMarket} allMarkets={markets} onUpdate={fetchMarkets} onStallsLoaded={setMarketStalls} />
+        <MarketDetail market={selectedMarket} allMarkets={markets} onUpdate={fetchMarkets} onStallsLoaded={setMarketStalls} onRefreshStallsReady={setRefreshStallsCallback} />
       )}
 
       {/* Presenze e Graduatoria */}
       {selectedMarket && (
-        <PresenzeGraduatoriaPanel marketId={selectedMarket.id} marketName={selectedMarket.name} stalls={marketStalls} />
+        <PresenzeGraduatoriaPanel marketId={selectedMarket.id} marketName={selectedMarket.name} stalls={marketStalls} onRefreshStalls={refreshStallsCallback || undefined} />
       )}
     </div>
   );
@@ -331,31 +332,38 @@ export default function GestioneMercati() {
 /**
  * Dettaglio mercato con tab
  */
-function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded }: { market: Market; allMarkets: Market[]; onUpdate: () => void; onStallsLoaded?: (stalls: Stall[]) => void }) {
+function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshStallsReady }: { market: Market; allMarkets: Market[]; onUpdate: () => void; onStallsLoaded?: (stalls: Stall[]) => void; onRefreshStallsReady?: (callback: (() => Promise<void>) | null) => void }) {
   const [activeTab, setActiveTab] = useState("anagrafica");
   const [stalls, setStalls] = useState<Stall[]>([]);
   // Stato per Vista Italia / Vista Mercato: 'italia' | 'mercato'
   const [viewMode, setViewMode] = useState<'italia' | 'mercato'>('italia');
   const [viewTrigger, setViewTrigger] = useState(0); // Trigger per forzare flyTo
 
+  // Funzione per caricare i posteggi (esposta per refresh esterno)
+  const fetchStalls = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/markets/${market.id}/stalls`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const json = await response.json();
+      if (json.success && Array.isArray(json.data)) {
+        setStalls(json.data);
+        onStallsLoaded?.(json.data);
+      }
+    } catch (error) {
+      console.error('[MarketDetail] Errore caricamento posteggi:', error);
+    }
+  };
+
   // Carica i posteggi al mount del componente
   useEffect(() => {
-    const fetchStalls = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/markets/${market.id}/stalls`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const json = await response.json();
-        if (json.success && Array.isArray(json.data)) {
-          setStalls(json.data);
-          onStallsLoaded?.(json.data);
-        }
-      } catch (error) {
-        console.error('[MarketDetail] Errore caricamento posteggi:', error);
-      }
-    };
-    
     fetchStalls();
   }, [market.id]);
+
+  // Espone la funzione fetchStalls al componente padre
+  useEffect(() => {
+    onRefreshStallsReady?.(fetchStalls);
+    return () => onRefreshStallsReady?.(null);
+  }, [market.id, onRefreshStallsReady]);
 
   return (
     <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">

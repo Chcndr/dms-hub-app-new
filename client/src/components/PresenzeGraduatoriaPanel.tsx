@@ -115,9 +115,10 @@ interface PresenzeGraduatoriaPanelProps {
   marketId: number | null;
   marketName?: string;
   stalls?: StallData[];
+  onRefreshStalls?: () => Promise<void>;
 }
 
-export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: PresenzeGraduatoriaPanelProps) {
+export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], onRefreshStalls }: PresenzeGraduatoriaPanelProps) {
   const [activeTab, setActiveTab] = useState('concessionari');
   const [graduatoria, setGraduatoria] = useState<GraduatoriaRecord[]>([]);
   const [presenze, setPresenze] = useState<PresenzaRecord[]>([]);
@@ -254,6 +255,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
         fetchTestMercatoStato();
         fetchGraduatoria();
         fetchPresenze();
+        if (onRefreshStalls) await onRefreshStalls();
       } else {
         toast.error(data.error);
       }
@@ -279,6 +281,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
         fetchTestMercatoStato();
         fetchGraduatoria();
         fetchPresenze();
+        if (onRefreshStalls) await onRefreshStalls();
       } else {
         toast.error(data.error);
       }
@@ -303,6 +306,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
         fetchSpuntisti();
         fetchGraduatoria();
         fetchPresenze();
+        if (onRefreshStalls) await onRefreshStalls();
       } else {
         toast.error(data.error);
       }
@@ -328,6 +332,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
         fetchTestMercatoStato();
         fetchSpuntisti();
         fetchGraduatoria();
+        if (onRefreshStalls) await onRefreshStalls();
       } else {
         toast.error(data.error);
       }
@@ -354,6 +359,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [] }: 
         fetchGraduatoria();
         fetchPresenze();
         fetchSpuntisti();
+        if (onRefreshStalls) await onRefreshStalls();
       } else {
         toast.error(data.error);
       }
