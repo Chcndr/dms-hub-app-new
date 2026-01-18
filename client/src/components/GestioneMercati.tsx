@@ -1384,8 +1384,40 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         const spuntistiOrdinati = spuntistiData.data.sort((a: any, b: any) => 
           (b.numero_presenze || 0) - (a.numero_presenze || 0)
         );
-        setSpuntisti(spuntistiOrdinati);
-        console.log('[DEBUG fetchData] spuntisti caricati:', spuntistiOrdinati.length);
+        
+        // Arricchisci con dati qualifica e wallet per ogni spuntista
+        const spuntistiArricchiti = await Promise.all(
+          spuntistiOrdinati.map(async (spuntista: any) => {
+            try {
+              // Fetch qualification-status
+              const qualRes = await fetch(`${API_BASE_URL}/api/tcc/v2/impresa/${spuntista.impresa_id}/qualification-status`).catch(() => null);
+              const qualData = qualRes ? await qualRes.json().catch(() => ({})) : {};
+              
+              // Fetch wallet spunta
+              const walletRes = await fetch(`${API_BASE_URL}/api/tcc/v2/impresa/${spuntista.impresa_id}/wallet`).catch(() => null);
+              const walletData = walletRes ? await walletRes.json().catch(() => ({})) : {};
+              
+              // Trova wallet spunta per questo mercato
+              const walletSpunta = walletData.data?.wallets?.find((w: any) => 
+                w.tipo === 'SPUNTA' && w.market_id === parseInt(marketId)
+              );
+              
+              return {
+                ...spuntista,
+                qualificato: qualData.data?.qualificato ?? qualData.qualificato ?? null,
+                qualification_status: qualData.data || qualData,
+                wallet_saldo: walletSpunta?.saldo ?? null,
+                wallet_stato: walletSpunta?.stato ?? null
+              };
+            } catch (err) {
+              console.warn('[fetchData] Errore fetch dati spuntista:', spuntista.impresa_id, err);
+              return spuntista;
+            }
+          })
+        );
+        
+        setSpuntisti(spuntistiArricchiti);
+        console.log('[DEBUG fetchData] spuntisti arricchiti:', spuntistiArricchiti.length);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -2223,23 +2255,32 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                       const presenzaOggi = presenze.find(p => 
                         p.impresa_id === spuntista.impresa_id
                       );
-                      // Determina stato semaforo
-                      const hasQualifica = spuntista.qualificato !== false; // Default true se non specificato
+                      // Determina stato semaforo basato su dati reali da API
+                      // qualificato viene da /api/tcc/v2/impresa/:id/qualification-status
+                      const hasQualifica = spuntista.qualificato === true;
+                      const isNotQualified = spuntista.qualificato === false;
                       const haPosteggio = !!posteggioAssegnato;
                       const haPresenza = !!presenzaOggi?.ora_accesso;
                       
                       let statoLabel = 'IN ATTESA';
-                      let statoColor = 'bg-gray-500/20 text-gray-400'; // Grigio
+                      let statoColor = 'bg-gray-500/20 text-gray-400'; // Grigio - default
                       
-                      if (!hasQualifica) {
+                      if (isNotQualified) {
+                        // Rosso - NON QUALIFICATO (da API qualification-status)
                         statoLabel = 'NON QUALIF.';
-                        statoColor = 'bg-[#ef4444]/20 text-[#ef4444]'; // Rosso
+                        statoColor = 'bg-[#ef4444]/20 text-[#ef4444]';
                       } else if (haPosteggio) {
+                        // Arancione con numero posteggio - ASSEGNATO
                         statoLabel = posteggioAssegnato?.number || 'ASSEGNATO';
-                        statoColor = 'bg-[#f59e0b]/20 text-[#f59e0b]'; // Arancione
-                      } else if (haPresenza) {
+                        statoColor = 'bg-[#f59e0b]/20 text-[#f59e0b]';
+                      } else if (hasQualifica && haPresenza) {
+                        // Verde - QUALIFICATO (ha qualifica E ha fatto presenza)
                         statoLabel = 'QUALIFICATO';
-                        statoColor = 'bg-[#10b981]/20 text-[#10b981]'; // Verde
+                        statoColor = 'bg-[#10b981]/20 text-[#10b981]';
+                      } else if (hasQualifica) {
+                        // Grigio - IN ATTESA (ha qualifica ma non ha ancora fatto presenza)
+                        statoLabel = 'IN ATTESA';
+                        statoColor = 'bg-gray-500/20 text-gray-400';
                       }
                       
                       return (
