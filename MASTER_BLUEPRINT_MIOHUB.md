@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.35.1  
-> **Data:** 17 Gennaio 2026  
+> **Versione:** 3.36.0  
+> **Data:** 18 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -3248,32 +3248,111 @@ if (showItalyView && !isMarketView) {
 | **Prepara** | Arancione | Avvia animazione batch per preparare spunta |
 | **Spunta** | Verde | Conferma assegnazioni spunta |
 
-#### 4.2 Funzione Prepara Spunta
+#### 4.2 Funzione Prepara Spunta (v3.36.0 - 18/01/2026)
 
-La funzione `handlePreparaSpunta` esegue un'animazione batch che:
+La funzione `handlePreparaSpunta` chiama l'endpoint backend `/api/test-mercato/avvia-spunta` che:
 
-1. Filtra i posteggi con stato `'libero'`
-2. Chiede conferma all'utente (`window.confirm`)
-3. Esegue un loop con delay (100ms) per ogni posteggio
-4. Cambia lo stato da `'libero'` a `'in_assegnazione'`
-5. Può essere interrotta con il pulsante STOP
+1. Cambia lo stato di tutti i posteggi liberi da `'libero'` a `'riservato'` (arancione sulla mappa)
+2. Registra la presenza di tutti gli spuntisti qualificati con:
+   - `giorno_presenza`: data corrente
+   - `orario_arrivo`: orario corrente
+   - `stato_presenza`: "qualificato"
+3. Aggiorna la mappa in tempo reale con i colori corretti
 
 ```typescript
 const handlePreparaSpunta = async () => {
-  const freeStalls = stalls.filter(s => s.status === 'libero');
-  if (!window.confirm(`Preparare ${freeStalls.length} posteggi per la spunta?`)) return;
+  if (!window.confirm('Preparare la spunta per oggi?')) return;
   
-  setIsAnimating(true);
-  stopAnimationRef.current = false;
-  
-  for (const stall of freeStalls) {
-    if (stopAnimationRef.current) break;
-    await updateStallStatus(stall.id, 'in_assegnazione');
-    await new Promise(resolve => setTimeout(resolve, 100));
+  try {
+    await fetch(`${API_BASE_URL}/api/test-mercato/avvia-spunta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ marketId })
+    });
+    await fetchData(); // Refresh dati
+    toast.success('Spunta preparata!');
+  } catch (error) {
+    toast.error('Errore nella preparazione spunta');
   }
-  
-  setIsAnimating(false);
 };
+```
+
+#### 4.3 Funzione Assegna Posteggio Spunta (v3.36.0)
+
+Quando si clicca su un posteggio riservato in modalità spunta, il popup mostra:
+- Dimensioni posteggio (larghezza × lunghezza)
+- **Canone calcolato**: superficie × €/mq del mercato
+- Pulsante "Conferma Assegnazione"
+
+Il click su "Conferma Assegnazione" chiama `/api/test-mercato/assegna-posteggio-spunta` che:
+
+1. Trova il primo spuntista in graduatoria (per presenze totali)
+2. Assegna il posteggio allo spuntista
+3. **Scala l'importo dal wallet** dello spuntista
+4. Incrementa `presenze_totali` dello spuntista
+5. Cambia stato posteggio da `'riservato'` a `'occupato'`
+6. Salva `spuntista_nome` nel posteggio per mostrarlo in giallo nella tabella
+
+```typescript
+const handleConfirmAssignment = async (stallId: number) => {
+  if (!isSpuntaMode) return;
+  
+  try {
+    await fetch(`${API_BASE_URL}/api/test-mercato/assegna-posteggio-spunta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ marketId, stallId })
+    });
+    await fetchData(); // Refresh dati
+    toast.success('Posteggio assegnato!');
+  } catch (error) {
+    toast.error('Errore nell\'assegnazione');
+  }
+};
+```
+
+#### 4.4 Funzione Chiudi Spunta (v3.36.0)
+
+Il pulsante "Chiudi Spunta" appare nella barra quando la modalità spunta è attiva. Chiama `/api/test-mercato/chiudi-spunta` che:
+
+1. Registra `orario_uscita` per tutti gli spuntisti con posteggio assegnato
+2. Libera i posteggi riservati non assegnati
+3. Rimuove `spuntista_nome` dai posteggi
+
+#### 4.5 Flusso Completo Spunta
+
+```mermaid
+sequenceDiagram
+    participant O as Operatore
+    participant F as Frontend
+    participant B as Backend
+    participant DB as Database
+    
+    O->>F: Click "Prepara Spunta"
+    F->>B: POST /api/test-mercato/avvia-spunta
+    B->>DB: UPDATE stalls SET status='riservato'
+    B->>DB: INSERT vendor_presences (giorno, orario, stato='qualificato')
+    B-->>F: OK
+    F->>F: Refresh mappa (posteggi arancioni)
+    
+    O->>F: Click posteggio riservato
+    F->>F: Mostra popup con canone calcolato
+    O->>F: Click "Conferma Assegnazione"
+    F->>B: POST /api/test-mercato/assegna-posteggio-spunta
+    B->>DB: UPDATE stalls SET status='occupato', spuntista_nome=...
+    B->>DB: UPDATE wallets SET balance = balance - canone
+    B->>DB: UPDATE vendor_presences SET stall_id=..., importo_pagato=...
+    B-->>F: OK
+    F->>F: Refresh mappa (posteggio rosso)
+    F->>F: Mostra nome spuntista in giallo nella tabella
+    
+    O->>F: Click "Chiudi Spunta"
+    F->>B: POST /api/test-mercato/chiudi-spunta
+    B->>DB: UPDATE vendor_presences SET orario_uscita=NOW()
+    B->>DB: UPDATE stalls SET status='libero', spuntista_nome=NULL
+    B-->>F: OK
+    F->>F: Refresh mappa (posteggi verdi)
+```
 ```
 
 ### 5. Popup Posteggi
@@ -3363,15 +3442,22 @@ const handleStallUpdate = async () => {
 
 | Commit | Descrizione |
 |--------|-------------|
-| `6b82183` | Vista Italia come default all'apertura tab Posteggi |
-| `cd7ffa1` | Funzione Prepara Spunta con animazione batch |
-| `b159ef4` | Pulsante dedicato Vista Italia/Mercato |
-| `7d778e4` | Ripristino stabile post-fix |
+| `808a1ac` | Fix: rimuovo parseInt da stallsDataForMap - rompeva lookup colori mappa |
+| `c536330` | Fix: getStallColor gestisce sia numeri che stringhe per matching colori |
+| `32c2718` | Integrazione completa flusso spunta con wallet, presenze, nome giallo |
+| `df25584` | Fix: corretto endpoint popup presenze e campo importo speso |
+| `7c3a4a7` | Backend: Fix rimuovo updated_at da vendor_presences |
+| `4e2f4d3` | Backend: Integrazione flusso spunta con stato qualificato |
+| `47f5d09` | Backend: Aggiunto wallet_id nelle presenze spuntisti |
 
 ### 10. Problemi Noti e Soluzioni
 
 | Problema | Causa | Soluzione |
 |----------|-------|-----------|
+| Posteggi tutti verdi sulla mappa | `parseInt` rompeva il lookup tra numeri GeoJSON e database | Usare `s.number` direttamente senza parseInt |
+| Stato "rinunciato" invece di "qualificato" | Query backend usava logica errata | Modificato CASE in query spuntisti/mercato |
+| Wallet non scalato | Endpoint assegna-posteggio non chiamava wallet | Aggiunto UPDATE wallets in assegna-posteggio-spunta |
+| Nome spuntista non in giallo | Campo spuntista_nome non salvato nel posteggio | Aggiunto spuntista_nome in UPDATE stalls |
 | Mappa non si sposta su Italia | `viewTrigger` non incrementato | Incrementare `viewTrigger` nel click |
 | Popup senza pulsanti azione | `activeMode` non passato | Verificare props in MarketMapComponent |
 | Lista presenze non si aggiorna | `refreshTrigger` non collegato | Passare `refreshTrigger` a PresenzeGraduatoriaPanel |
