@@ -856,43 +856,19 @@ export function MarketMapComponent({
 	                            </button>
 	                          )}
 
-	                          {isSpuntaMode && displayStatus === 'riservato' && (
-	                            <button
-	                              className="w-full bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-orange-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-	                              onClick={async (e) => {
-	                                e.stopPropagation();
-	                                if (onConfirmAssignment && dbStall?.id) await onConfirmAssignment(dbStall.id);
-	                              }}
-	                            >
-	                              ✓ Conferma Assegnazione
-	                            </button>
-	                          )}
-                          
-                          {/* Pulsante Conferma Assegnazione */}
-                          <button
-                            className="w-full bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-orange-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                          onClick={async () => {
-                            if (!onConfirmAssignment) {
-                              alert('Funzione "Conferma Assegnazione" non configurata!');
-                              return;
-                            }
-                            
-                            if (!dbStall?.id) {
-                              alert('Impossibile trovare l\'ID del posteggio!');
-                              return;
-                            }
-                            
-                            try {
-                              await onConfirmAssignment(dbStall.id);
-                            } catch (error) {
-                              console.error('[ERROR] Conferma assegnazione:', error);
-                              alert('Errore durante la conferma assegnazione!');
-                            }
-                          }}
-                          disabled={!onConfirmAssignment || !dbStall?.id}
-                        >
-                          ✓ Conferma Assegnazione
-                        </button>
+                          {/* Pulsante Conferma Assegnazione - solo in modalità Spunta e per posteggi riservati */}
+                          {isSpuntaMode && displayStatus === 'riservato' && (
+                            <button
+                              className="w-full bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-orange-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (onConfirmAssignment && dbStall?.id) await onConfirmAssignment(dbStall.id);
+                              }}
+                              disabled={!onConfirmAssignment || !dbStall?.id}
+                            >
+                              ✓ Conferma Assegnazione
+                            </button>
+                          )}
                       </div>
                     </div>
                     ) : (
