@@ -67,6 +67,7 @@ interface MarketMapComponentProps {
     type?: string;
     vendor_name?: string;
     impresa_id?: number;
+    dimensions?: string;
   }>;
   refreshKey?: number; // Key per forzare re-mount completo della mappa
   isSpuntaMode?: boolean; // Modalità spunta per test dimensioni

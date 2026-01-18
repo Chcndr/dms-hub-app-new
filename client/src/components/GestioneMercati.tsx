@@ -2149,11 +2149,12 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         {mapData && (() => {
           const stallsDataForMap = stalls.map(s => ({
             id: s.id,
-            number: s.number,
+            number: parseInt(s.number) || 0,
             status: s.status,
             type: s.type,
             vendor_name: s.vendor_business_name || undefined,
-            dimensions: s.width && s.depth ? `${s.width}x${s.depth}` : undefined // Calcola le dimensioni da width e depth
+            impresa_id: s.impresa_id || undefined,
+            dimensions: s.width && s.depth ? `${s.width}x${s.depth}` : undefined
           }));
           return (
             <MarketMapComponent
@@ -2168,7 +2169,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
               onConfirmAssignment={handleConfirmAssignment}
               onOccupaStall={handleOccupaStall}
               onLiberaStall={handleLiberaStall}
-              costPerSqm={formData.cost_per_sqm || 0.90}
+              costPerSqm={allMarkets.find(m => m.id === marketId)?.cost_per_sqm || 0.90}
               onStallClick={(stallNumber) => {
                 const dbStall = stallsByNumber.get(String(stallNumber));
                 if (dbStall) {
@@ -2189,7 +2190,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   }, 100);
                 }
               }}
-              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
+              selectedStallNumber={parseInt(stalls.find(s => s.id === selectedStallId)?.number || '0') || undefined}
               stallsData={stallsDataForMap}
               allMarkets={allMarkets.map(m => ({
                 id: m.id,
@@ -2507,8 +2508,16 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     
                     {/* Importo Speso - canone posteggio scalato */}
                     <TableCell className="text-xs text-center">
-                      {stall.status === 'occupato' && stall.canone ? (
-                        <span className="text-[#f59e0b] font-medium">€{stall.canone?.toFixed(2)}</span>
+                      {stall.spuntista_impresa_id ? (
+                        // Se c'è uno spuntista assegnato, cerca il suo importo pagato
+                        (() => {
+                          const spuntistaAssegnato = spuntisti.find(s => s.impresa_id === stall.spuntista_impresa_id);
+                          return spuntistaAssegnato?.importo_pagato ? (
+                            <span className="text-[#f59e0b] font-medium">€{parseFloat(String(spuntistaAssegnato.importo_pagato)).toFixed(2)}</span>
+                          ) : (
+                            <span className="text-[#e8fbff]/30">-</span>
+                          );
+                        })()
                       ) : (
                         <span className="text-[#e8fbff]/30">-</span>
                       )}
