@@ -2468,18 +2468,18 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             <Table>
               <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
                 <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-10">N°</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-24">Stato</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs">Impresa</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Wallet</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Importo</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-16">Giorno</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Accesso</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Rifiuti</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Uscita</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-12 text-center">Pres.</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-12 text-center">Ass.</TableHead>
-                  <TableHead className="text-right text-[#e8fbff]/70 text-xs w-10">⚙️</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-12">N°</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-28">Stato</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs min-w-[180px]">Impresa</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-20 text-center">Wallet</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-20 text-center">Importo</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-20">Giorno</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Accesso</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Rifiuti</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Uscita</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Pres.</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Ass.</TableHead>
+                  <TableHead className="text-right text-[#e8fbff]/70 text-xs w-12">⚙️</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -2543,30 +2543,39 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     
                     {/* Wallet - semaforino con saldo */}
                     <TableCell className="text-xs text-center">
-                      {gradRecord?.wallet_saldo !== undefined ? (
-                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${gradRecord.wallet_saldo > 0 ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
-                          €{gradRecord.wallet_saldo?.toFixed(2) || '0.00'}
+                      {gradRecord?.wallet_balance !== undefined ? (
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${parseFloat(gradRecord.wallet_balance) > 0 ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
+                          €{parseFloat(gradRecord.wallet_balance || 0).toFixed(2)}
                         </span>
                       ) : (
                         <span className="text-[#e8fbff]/30">-</span>
                       )}
                     </TableCell>
                     
-                    {/* Importo Speso - canone posteggio scalato */}
+                    {/* Importo Posteggio - calcolato da area_mq * cost_per_sqm o dalla presenza */}
                     <TableCell className="text-xs text-center">
-                      {stall.spuntista_impresa_id ? (
-                        // Se c'è uno spuntista assegnato, cerca il suo importo pagato
-                        (() => {
+                      {(() => {
+                        // Prima controlla se c'è un importo dalla presenza di oggi
+                        if (presenzaOggi?.importo_addebitato || gradRecord?.presenza_importo) {
+                          const importo = parseFloat(presenzaOggi?.importo_addebitato || gradRecord?.presenza_importo || 0);
+                          return <span className="text-[#f59e0b] font-medium">€{importo.toFixed(2)}</span>;
+                        }
+                        // Se c'è uno spuntista assegnato, cerca il suo importo
+                        if (stall.spuntista_impresa_id) {
                           const spuntistaAssegnato = spuntisti.find(s => s.impresa_id === stall.spuntista_impresa_id);
-                          return spuntistaAssegnato?.importo_pagato ? (
-                            <span className="text-[#f59e0b] font-medium">€{parseFloat(String(spuntistaAssegnato.importo_pagato)).toFixed(2)}</span>
-                          ) : (
-                            <span className="text-[#e8fbff]/30">-</span>
-                          );
-                        })()
-                      ) : (
-                        <span className="text-[#e8fbff]/30">-</span>
-                      )}
+                          if (spuntistaAssegnato?.importo_pagato) {
+                            return <span className="text-[#f59e0b] font-medium">€{parseFloat(String(spuntistaAssegnato.importo_pagato)).toFixed(2)}</span>;
+                          }
+                        }
+                        // Altrimenti calcola l'importo teorico del posteggio
+                        const areaMq = parseFloat(stall.area_mq || 0);
+                        const costPerSqm = 0.90; // Default cost per sqm
+                        if (areaMq > 0) {
+                          const importoTeorico = areaMq * costPerSqm;
+                          return <span className="text-[#e8fbff]/50">€{importoTeorico.toFixed(2)}</span>;
+                        }
+                        return <span className="text-[#e8fbff]/30">-</span>;
+                      })()}
                     </TableCell>
                     
                     {/* Giorno */}
