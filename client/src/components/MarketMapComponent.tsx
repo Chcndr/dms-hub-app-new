@@ -128,6 +128,7 @@ function StallCenterController({ stallCenter }: { stallCenter?: [number, number]
   
   useEffect(() => {
     if (!stallCenter) return;
+    if (typeof stallCenter[0] !== 'number' || typeof stallCenter[1] !== 'number') return;
     
     // Crea una chiave unica per questo centro
     const centerKey = `${stallCenter[0].toFixed(6)},${stallCenter[1].toFixed(6)}`;
@@ -401,10 +402,10 @@ export function MarketMapComponent({
                       📍 Centro Mercato
                     </div>
                     <div className="text-gray-600">
-                      Lat: {fixedCenter[0].toFixed(6)}
+                      Lat: {typeof fixedCenter[0] === 'number' ? fixedCenter[0].toFixed(6) : '-'}
                     </div>
                     <div className="text-gray-600">
-                      Lng: {fixedCenter[1].toFixed(6)}
+                      Lng: {typeof fixedCenter[1] === 'number' ? fixedCenter[1].toFixed(6) : '-'}
                     </div>
                   </div>
                 </Popup>
@@ -482,8 +483,8 @@ export function MarketMapComponent({
                     <div className="bg-[#1e293b] p-2 rounded border border-gray-700 mt-2">
                       <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Coordinate GPS</div>
                       <div className="font-mono text-xs text-gray-300 flex justify-between">
-                        <span>Lat: {market.latitude.toFixed(6)}</span>
-                        <span>Lng: {market.longitude.toFixed(6)}</span>
+                        <span>Lat: {typeof market.latitude === 'number' ? market.latitude.toFixed(6) : '-'}</span>
+                        <span>Lng: {typeof market.longitude === 'number' ? market.longitude.toFixed(6) : '-'}</span>
                       </div>
                     </div>
                     
@@ -945,12 +946,11 @@ export function MarketMapComponent({
                           {(() => {
                             // Funzione di formattazione intelligente
                             const smartFormat = (val: number) => {
-                              if (isNaN(val)) return '-';
+                              if (val === undefined || val === null || isNaN(val) || typeof val !== 'number') return '-';
                               // Se è molto vicino a un intero (es. 3.999 o 4.001), arrotonda all'intero
                               if (Math.abs(val - Math.round(val)) < 0.05) {
                                 return Math.round(val).toString();
                               }
-                              // Altrimenti usa 2 decimali
                               return val.toFixed(2);
                             };
 
