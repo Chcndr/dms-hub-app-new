@@ -550,6 +550,10 @@ export function MarketMapComponent({
             
             if (feature.geometry.type === 'Polygon') {
               const coords = feature.geometry.coordinates as [number, number][][];
+              if (!coords || !coords[0]) {
+                console.warn('[DEBUG] Polygon senza coordinate valide:', props.number);
+                return null;
+              }
               positions = coords[0].map(
                 ([lng, lat]: [number, number]) => [lat, lng]
               );
