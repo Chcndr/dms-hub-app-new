@@ -67,7 +67,6 @@ interface MarketMapComponentProps {
     type?: string;
     vendor_name?: string;
     impresa_id?: number;
-    dimensions?: string;
   }>;
   refreshKey?: number; // Key per forzare re-mount completo della mappa
   isSpuntaMode?: boolean; // Modalità spunta per test dimensioni
@@ -128,7 +127,6 @@ function StallCenterController({ stallCenter }: { stallCenter?: [number, number]
   
   useEffect(() => {
     if (!stallCenter) return;
-    if (typeof stallCenter[0] !== 'number' || typeof stallCenter[1] !== 'number') return;
     
     // Crea una chiave unica per questo centro
     const centerKey = `${stallCenter[0].toFixed(6)},${stallCenter[1].toFixed(6)}`;
@@ -229,7 +227,7 @@ export function MarketMapComponent({
       console.log('[DEBUG] Bounds calcolati da area mercato, punti:', allCoords.length);
     } else {
       // Fallback: calcola bounds da tutti i posteggi
-      mapData.stalls_geojson?.features?.forEach((feature: any) => {
+      mapData.stalls_geojson.features.forEach((feature: any) => {
         if (feature.geometry?.type === 'Polygon' && feature.geometry.coordinates?.[0]) {
           feature.geometry.coordinates[0].forEach((coord: number[]) => {
             allCoords.push([coord[1], coord[0]]);
@@ -273,14 +271,10 @@ export function MarketMapComponent({
   
   // Funzione per determinare il colore in base allo stato
   // USA SOLO stallsData, IGNORA il GeoJSON statico!
-  // Gestisce sia numeri che stringhe per il matching
-  const getStallColor = (stallNumber: number | string): string => {
-    // Prova prima come numero, poi come stringa
-    const numKey = typeof stallNumber === 'string' ? parseInt(stallNumber, 10) : stallNumber;
-    const strKey = String(stallNumber);
-    const dbStall = stallsByNumber.get(numKey) || stallsByNumber.get(strKey);
+  const getStallColor = (stallNumber: number): string => {
+    const dbStall = stallsByNumber.get(stallNumber);
     const status = dbStall?.status || 'libero';
-    console.log(`[DEBUG getStallColor] Posteggio ${stallNumber}: numKey=${numKey}, strKey=${strKey}, dbStall=${!!dbStall}, status=${status}`);
+    console.log(`[DEBUG getStallColor] Posteggio ${stallNumber}: dbStall=${!!dbStall}, status=${status}`);
     return getStallMapFillColor(status);
   };
   
@@ -402,10 +396,10 @@ export function MarketMapComponent({
                       📍 Centro Mercato
                     </div>
                     <div className="text-gray-600">
-                      Lat: {typeof fixedCenter[0] === 'number' ? fixedCenter[0].toFixed(6) : '-'}
+                      Lat: {fixedCenter[0].toFixed(6)}
                     </div>
                     <div className="text-gray-600">
-                      Lng: {typeof fixedCenter[1] === 'number' ? fixedCenter[1].toFixed(6) : '-'}
+                      Lng: {fixedCenter[1].toFixed(6)}
                     </div>
                   </div>
                 </Popup>
@@ -483,8 +477,8 @@ export function MarketMapComponent({
                     <div className="bg-[#1e293b] p-2 rounded border border-gray-700 mt-2">
                       <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Coordinate GPS</div>
                       <div className="font-mono text-xs text-gray-300 flex justify-between">
-                        <span>Lat: {typeof market.latitude === 'number' ? market.latitude.toFixed(6) : '-'}</span>
-                        <span>Lng: {typeof market.longitude === 'number' ? market.longitude.toFixed(6) : '-'}</span>
+                        <span>Lat: {market.latitude.toFixed(6)}</span>
+                        <span>Lng: {market.longitude.toFixed(6)}</span>
                       </div>
                     </div>
                     
@@ -500,19 +494,16 @@ export function MarketMapComponent({
 
           {/* Piazzole (stalls) - solo se mapData esiste */}
           {mapData && (() => {
-            console.log('[VERCEL DEBUG] MarketMapComponent - Rendering', mapData.stalls_geojson?.features?.length ?? 0, 'stalls');
+            console.log('[VERCEL DEBUG] MarketMapComponent - Rendering', mapData.stalls_geojson.features.length, 'stalls');
             return null;
           })()}
           {/* Layer Macchia Verde (Area Mercato) - Renderizza PRIMA dei posteggi */}
-          {mapData && !showItalyView && mapData.stalls_geojson?.features
-            ?.filter(f => (f.properties?.kind === 'area' || f.properties?.type === 'mercato') && f.geometry.type === 'Polygon' && f.geometry.coordinates?.[0])
-            ?.map((feature, idx) => {
-              const areaCoords = feature.geometry.coordinates?.[0] as number[][] | undefined;
-              if (!areaCoords || !Array.isArray(areaCoords)) return null;
-              return (
+          {mapData && !showItalyView && mapData.stalls_geojson.features
+            .filter(f => (f.properties?.kind === 'area' || f.properties?.type === 'mercato') && f.geometry.type === 'Polygon')
+            .map((feature, idx) => (
               <Polygon
                 key={`area-${idx}`}
-                positions={areaCoords.map(c => [c[1], c[0]] as [number, number])}
+                positions={(feature.geometry.coordinates[0] as number[][]).map(c => [c[1], c[0]] as [number, number])}
                 pathOptions={{
                   color: '#14b8a6',
                   fillColor: '#14b8a6',
@@ -522,13 +513,12 @@ export function MarketMapComponent({
                 }}
                 interactive={false}
               />
-            );
-            })
+            ))
           }
 
           {/* Renderizza posteggi SOLO quando NON siamo in vista Italia E NON durante animazione zoom */}
           {/* Questo previene le "macchie verdi" che appaiono durante la transizione */}
-          {mapData && !showItalyView && !isAnimating && mapData.stalls_geojson?.features?.map((feature, idx) => {
+          {mapData && !showItalyView && !isAnimating && mapData.stalls_geojson.features.map((feature, idx) => {
             const props = feature.properties;
             
             // SKIP: Escludi solo i poligoni "area" del mercato (macchia verde)
@@ -555,10 +545,6 @@ export function MarketMapComponent({
             
             if (feature.geometry.type === 'Polygon') {
               const coords = feature.geometry.coordinates as [number, number][][];
-              if (!coords || !coords[0]) {
-                console.warn('[DEBUG] Polygon senza coordinate valide:', props.number);
-                return null;
-              }
               positions = coords[0].map(
                 ([lng, lat]: [number, number]) => [lat, lng]
               );
@@ -636,8 +622,8 @@ export function MarketMapComponent({
                   
                   {/* Popup informativo */}
                   <Popup className="stall-popup" minWidth={280}>
-                    {/* Popup OCCUPA per posteggi liberi/riservati/in_assegnazione - ROSSO */}
-                    {isOccupaMode && (displayStatus === 'libero' || displayStatus === 'riservato' || displayStatus === 'in_assegnazione') ? (
+                    {/* Popup OCCUPA per posteggi liberi - ROSSO */}
+                    {isOccupaMode && displayStatus === 'libero' ? (
                       <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
                         <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
                           <div className="font-bold text-lg text-white">
@@ -673,8 +659,8 @@ export function MarketMapComponent({
                           </button>
                         </div>
                       </div>
-                    ) : isLiberaMode && (displayStatus === 'occupato' || displayStatus === 'riservato' || displayStatus === 'in_assegnazione') ? (
-                      /* Popup LIBERA per posteggi occupati/riservati/in_assegnazione - VERDE */
+                    ) : isLiberaMode && displayStatus === 'occupato' ? (
+                      /* Popup LIBERA per posteggi occupati - VERDE */
                       <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
                         <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
                           <div className="font-bold text-lg text-white">
@@ -736,7 +722,7 @@ export function MarketMapComponent({
                           {(() => {
                             // Funzione di formattazione intelligente
                             const smartFormat = (val: number) => {
-                              if (val === undefined || val === null || isNaN(val) || typeof val !== 'number') return '-';
+                              if (isNaN(val)) return '-';
                               if (Math.abs(val - Math.round(val)) < 0.05) {
                                 return Math.round(val).toString();
                               }
@@ -771,9 +757,9 @@ export function MarketMapComponent({
                             // 2. Se mancano nel DB, usa calcolo geometrico
                             if (isEstimated) {
                               const dims = calculatePolygonDimensions(positions);
-                              widthStr = (isNaN(dims.width) ? 0 : dims.width).toFixed(2);
-                              lengthStr = (isNaN(dims.height) ? 0 : dims.height).toFixed(2);
-                              areaStr = (isNaN(dims.area) ? 0 : dims.area).toFixed(2);
+                              widthStr = dims.width.toFixed(2);
+                              lengthStr = dims.height.toFixed(2);
+                              areaStr = dims.area.toFixed(2);
                             }
                             
                             return (
@@ -832,7 +818,7 @@ export function MarketMapComponent({
 	                            </Link>
 	                          )}
 	
-                          {/* Canone di occupazione - calcolato da superficie x costo/mq */}
+	                          {/* Canone di occupazione - calcolato da superficie x costo/mq */}
                           {(() => {
                             // Calcola area dal DB o dalla geometria
                             let area = 0;
@@ -844,16 +830,15 @@ export function MarketMapComponent({
                                 area = parseFloat(match[1]) * parseFloat(match[2]);
                               }
                             }
-                            if (area === 0) {
+                            if (area === 0 || isNaN(area)) {
                               const dims = calculatePolygonDimensions(positions);
-                              area = dims.area;
+                              area = typeof dims?.area === 'number' && !isNaN(dims.area) ? dims.area : 0;
                             }
-                            const canone = area * costPerSqm;
-                            
-                            // Controllo sicurezza per valori NaN
-                            const safeArea = isNaN(area) ? 0 : area;
-                            const safeCanone = isNaN(canone) ? 0 : canone;
-                            const safeCostPerSqm = isNaN(costPerSqm) ? 0 : costPerSqm;
+                            // Controlli sicurezza per evitare errori toFixed
+                            const safeArea = typeof area === 'number' && !isNaN(area) ? area : 0;
+                            const safeCostPerSqm = typeof costPerSqm === 'number' && !isNaN(costPerSqm) ? costPerSqm : 0.90;
+                            const canone = safeArea * safeCostPerSqm;
+                            const safeCanone = typeof canone === 'number' && !isNaN(canone) ? canone : 0;
                             
                             return (
                               <div className="bg-[#1e3a8a]/20 p-3 rounded border border-[#1e3a8a]/50">
@@ -869,7 +854,7 @@ export function MarketMapComponent({
                           })()}
 
 	                          {/* PULSANTI DI AZIONE (OCCUPA / LIBERA / SPUNTA) */}
-	                          {isOccupaMode && (displayStatus === 'libero' || displayStatus === 'riservato' || displayStatus === 'in_assegnazione') && (
+	                          {isOccupaMode && displayStatus === 'libero' && (
 	                            <button
 	                              className="w-full bg-[#ef4444] hover:bg-[#ef4444]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 	                              onClick={async (e) => {
@@ -881,7 +866,7 @@ export function MarketMapComponent({
 	                            </button>
 	                          )}
 
-	                          {isLiberaMode && (displayStatus === 'occupato' || displayStatus === 'riservato' || displayStatus === 'in_assegnazione') && (
+	                          {isLiberaMode && displayStatus === 'occupato' && (
 	                            <button
 	                              className="w-full bg-[#10b981] hover:bg-[#10b981]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 	                              onClick={async (e) => {
@@ -936,8 +921,8 @@ export function MarketMapComponent({
                             </div>
                             <div className="bg-[#1e293b] p-2 rounded border border-gray-700">
                               <div className="text-gray-400 mb-1">COORDINATE</div>
-                              <div className="font-medium text-white truncate" title={positions[0] && typeof positions[0][0] === 'number' && typeof positions[0][1] === 'number' ? `${positions[0][0].toFixed(5)}, ${positions[0][1].toFixed(5)}` : '-'}>
-                                {positions[0] && typeof positions[0][0] === 'number' && typeof positions[0][1] === 'number' ? `${positions[0][0].toFixed(4)}, ${positions[0][1].toFixed(4)}` : '-'}
+                              <div className="font-medium text-white truncate" title={`${positions[0]?.[0].toFixed(5)}, ${positions[0]?.[1].toFixed(5)}`}>
+                                {positions[0] ? `${positions[0][0].toFixed(4)}, ${positions[0][1].toFixed(4)}` : '-'}
                               </div>
                             </div>
                           </div>
@@ -946,11 +931,12 @@ export function MarketMapComponent({
                           {(() => {
                             // Funzione di formattazione intelligente
                             const smartFormat = (val: number) => {
-                              if (val === undefined || val === null || isNaN(val) || typeof val !== 'number') return '-';
+                              if (isNaN(val)) return '-';
                               // Se è molto vicino a un intero (es. 3.999 o 4.001), arrotonda all'intero
                               if (Math.abs(val - Math.round(val)) < 0.05) {
                                 return Math.round(val).toString();
                               }
+                              // Altrimenti usa 2 decimali
                               return val.toFixed(2);
                             };
 
