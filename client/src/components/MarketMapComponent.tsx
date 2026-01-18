@@ -770,9 +770,9 @@ export function MarketMapComponent({
                             // 2. Se mancano nel DB, usa calcolo geometrico
                             if (isEstimated) {
                               const dims = calculatePolygonDimensions(positions);
-                              widthStr = dims.width.toFixed(2);
-                              lengthStr = dims.height.toFixed(2);
-                              areaStr = dims.area.toFixed(2);
+                              widthStr = (isNaN(dims.width) ? 0 : dims.width).toFixed(2);
+                              lengthStr = (isNaN(dims.height) ? 0 : dims.height).toFixed(2);
+                              areaStr = (isNaN(dims.area) ? 0 : dims.area).toFixed(2);
                             }
                             
                             return (
@@ -849,13 +849,18 @@ export function MarketMapComponent({
                             }
                             const canone = area * costPerSqm;
                             
+                            // Controllo sicurezza per valori NaN
+                            const safeArea = isNaN(area) ? 0 : area;
+                            const safeCanone = isNaN(canone) ? 0 : canone;
+                            const safeCostPerSqm = isNaN(costPerSqm) ? 0 : costPerSqm;
+                            
                             return (
                               <div className="bg-[#1e3a8a]/20 p-3 rounded border border-[#1e3a8a]/50">
                                 <div className="flex justify-between items-center">
                                   <span className="text-sm font-semibold text-blue-400">💶 Canone Spunta:</span>
                                   <div className="text-right">
-                                    <div className="font-bold text-xl text-blue-400">€ {canone.toFixed(2)}</div>
-                                    <div className="text-[10px] text-gray-500">{area.toFixed(2)} m² × €{costPerSqm.toFixed(2)}/m²</div>
+                                    <div className="font-bold text-xl text-blue-400">€ {safeCanone.toFixed(2)}</div>
+                                    <div className="text-[10px] text-gray-500">{safeArea.toFixed(2)} m² × €{safeCostPerSqm.toFixed(2)}/m²</div>
                                   </div>
                                 </div>
                               </div>
@@ -930,8 +935,8 @@ export function MarketMapComponent({
                             </div>
                             <div className="bg-[#1e293b] p-2 rounded border border-gray-700">
                               <div className="text-gray-400 mb-1">COORDINATE</div>
-                              <div className="font-medium text-white truncate" title={`${positions[0]?.[0].toFixed(5)}, ${positions[0]?.[1].toFixed(5)}`}>
-                                {positions[0] ? `${positions[0][0].toFixed(4)}, ${positions[0][1].toFixed(4)}` : '-'}
+                              <div className="font-medium text-white truncate" title={positions[0] && typeof positions[0][0] === 'number' && typeof positions[0][1] === 'number' ? `${positions[0][0].toFixed(5)}, ${positions[0][1].toFixed(5)}` : '-'}>
+                                {positions[0] && typeof positions[0][0] === 'number' && typeof positions[0][1] === 'number' ? `${positions[0][0].toFixed(4)}, ${positions[0][1].toFixed(4)}` : '-'}
                               </div>
                             </div>
                           </div>
