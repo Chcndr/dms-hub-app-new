@@ -1948,7 +1948,46 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       {/* Barra OCCUPA TUTTI (modalità Occupa) */}
       {isOccupaMode && (
-        <div className="mb-4">
+        <div className="mb-4 space-y-2">
+          {/* Pulsante INIZIA MERCATO - Azzera presenze del giorno */}
+          <Button
+            className="w-full font-semibold py-2 border-2 bg-[#3b82f6] hover:bg-[#3b82f6]/80 border-[#3b82f6]/50 text-white"
+            onClick={async () => {
+              const confirmed = window.confirm(
+                `🚀 Iniziare la giornata mercato?\n\n` +
+                `Questa azione:\n` +
+                `• Azzererà tutte le presenze del giorno (concessionari + spuntisti)\n` +
+                `• Reset pulito per iniziare la giornata\n\n` +
+                `Usare solo all'inizio della giornata!`
+              );
+              
+              if (!confirmed) return;
+              
+              try {
+                const response = await fetch(`${API_BASE_URL}/api/test-mercato/inizia-mercato`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ market_id: marketId }),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                  toast.success(`🚀 ${data.message}`);
+                } else {
+                  toast.error(data.error || 'Errore durante l\'inizializzazione mercato');
+                }
+                
+                await fetchData();
+              } catch (error) {
+                console.error('Errore inizia mercato:', error);
+                toast.error('Errore durante l\'inizializzazione del mercato');
+              }
+            }}
+          >
+            🚀 Inizia Mercato (Azzera Presenze)
+          </Button>
+          
+          {/* Pulsante OCCUPA TUTTI esistente */}
           <Button
             className={`w-full font-semibold py-3 border-2 ${
               isAnimating 
