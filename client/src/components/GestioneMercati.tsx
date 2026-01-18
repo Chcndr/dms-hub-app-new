@@ -2175,16 +2175,18 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             <Table>
               <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
                 <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-12">N°</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-10">N°</TableHead>
                   <TableHead className="text-[#e8fbff]/70 text-xs w-24">Stato</TableHead>
                   <TableHead className="text-[#e8fbff]/70 text-xs">Impresa</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-20">Giorno</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Accesso</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Rifiuti</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Uscita</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Pres.</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Ass.</TableHead>
-                  <TableHead className="text-right text-[#e8fbff]/70 text-xs w-12">⚙️</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Wallet</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Importo</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-16">Giorno</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Accesso</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Rifiuti</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Uscita</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-12 text-center">Pres.</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs w-12 text-center">Ass.</TableHead>
+                  <TableHead className="text-right text-[#e8fbff]/70 text-xs w-10">⚙️</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -2231,15 +2233,35 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     {/* Impresa - colore giallo se spuntista */}
                     <TableCell className="text-sm">
                       {stall.vendor_business_name ? (
-                        <p className={`font-medium text-xs truncate max-w-[180px] ${stall.type === 'spunta' ? 'text-[#f59e0b]' : 'text-[#e8fbff]'}`}>
+                        <p className={`font-medium text-xs truncate max-w-[150px] ${stall.type === 'spunta' ? 'text-[#f59e0b]' : 'text-[#e8fbff]'}`}>
                           {stall.vendor_business_name}
                         </p>
                       ) : concessionsByStallId[stall.number] ? (
-                        <p className={`font-medium text-xs truncate max-w-[180px] ${stall.type === 'spunta' ? 'text-[#f59e0b]' : 'text-[#e8fbff]'}`}>
+                        <p className={`font-medium text-xs truncate max-w-[150px] ${stall.type === 'spunta' ? 'text-[#f59e0b]' : 'text-[#e8fbff]'}`}>
                           {concessionsByStallId[stall.number].companyName}
                         </p>
                       ) : (
                         <span className="text-[#e8fbff]/50 text-xs">-</span>
+                      )}
+                    </TableCell>
+                    
+                    {/* Wallet - semaforino con saldo */}
+                    <TableCell className="text-xs text-center">
+                      {gradRecord?.wallet_saldo !== undefined ? (
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${gradRecord.wallet_saldo > 0 ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
+                          €{gradRecord.wallet_saldo?.toFixed(2) || '0.00'}
+                        </span>
+                      ) : (
+                        <span className="text-[#e8fbff]/30">-</span>
+                      )}
+                    </TableCell>
+                    
+                    {/* Importo Speso - canone posteggio scalato */}
+                    <TableCell className="text-xs text-center">
+                      {stall.status === 'occupato' && stall.canone ? (
+                        <span className="text-[#f59e0b] font-medium">€{stall.canone?.toFixed(2)}</span>
+                      ) : (
+                        <span className="text-[#e8fbff]/30">-</span>
                       )}
                     </TableCell>
                     
