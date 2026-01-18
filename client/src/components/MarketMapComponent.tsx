@@ -499,11 +499,11 @@ export function MarketMapComponent({
 
           {/* Piazzole (stalls) - solo se mapData esiste */}
           {mapData && (() => {
-            console.log('[VERCEL DEBUG] MarketMapComponent - Rendering', mapData.stalls_geojson.features.length, 'stalls');
+            console.log('[VERCEL DEBUG] MarketMapComponent - Rendering', mapData.stalls_geojson?.features?.length ?? 0, 'stalls');
             return null;
           })()}
           {/* Layer Macchia Verde (Area Mercato) - Renderizza PRIMA dei posteggi */}
-          {mapData && !showItalyView && mapData.stalls_geojson.features
+          {mapData && !showItalyView && mapData.stalls_geojson?.features
             .filter(f => (f.properties?.kind === 'area' || f.properties?.type === 'mercato') && f.geometry.type === 'Polygon')
             .map((feature, idx) => (
               <Polygon
@@ -523,7 +523,7 @@ export function MarketMapComponent({
 
           {/* Renderizza posteggi SOLO quando NON siamo in vista Italia E NON durante animazione zoom */}
           {/* Questo previene le "macchie verdi" che appaiono durante la transizione */}
-          {mapData && !showItalyView && !isAnimating && mapData.stalls_geojson.features.map((feature, idx) => {
+          {mapData && !showItalyView && !isAnimating && mapData.stalls_geojson?.features?.map((feature, idx) => {
             const props = feature.properties;
             
             // SKIP: Escludi solo i poligoni "area" del mercato (macchia verde)
