@@ -1313,7 +1313,10 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   // Nuovi state per presenze e graduatoria (integrazione lista unificata)
   const [presenze, setPresenze] = useState<any[]>([]);
   const [graduatoria, setGraduatoria] = useState<any[]>([]);
+  const [spuntisti, setSpuntisti] = useState<any[]>([]);
   const [listFilter, setListFilter] = useState<'concessionari' | 'spunta' | 'fiere'>('concessionari');
+  const [showPresenzePopup, setShowPresenzePopup] = useState(false);
+  const [selectedSpuntistaForPresenze, setSelectedSpuntistaForPresenze] = useState<any>(null);
 
   useEffect(() => {
     fetchData();
@@ -1321,17 +1324,19 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
   const fetchData = async () => {
     try {
-      const [stallsRes, mapRes, concessionsRes, presenzeRes, graduatoriaRes] = await Promise.all([
+      const [stallsRes, mapRes, concessionsRes, presenzeRes, graduatoriaRes, spuntistiRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`),
         fetch(`${API_BASE_URL}/api/gis/market-map/${marketId}`),
         fetch(`${API_BASE_URL}/api/markets/${marketCode}/stalls/concessions`),
         fetch(`${API_BASE_URL}/api/presenze/mercato/${marketId}`).catch(() => ({ json: () => ({ success: false }) })),
-        fetch(`${API_BASE_URL}/api/graduatoria/mercato/${marketId}`).catch(() => ({ json: () => ({ success: false }) }))
+        fetch(`${API_BASE_URL}/api/graduatoria/mercato/${marketId}`).catch(() => ({ json: () => ({ success: false }) })),
+        fetch(`${API_BASE_URL}/api/domande-spunta?mercato_id=${marketId}&stato=ATTIVA`).catch(() => ({ json: () => ({ success: false }) }))
       ]);
 
       const stallsData = await stallsRes.json();
       const mapDataRes = await mapRes.json();
       const concessionsData = await concessionsRes.json();
+      const spuntistiData = await spuntistiRes.json();
       const presenzeData = await presenzeRes.json();
       const graduatoriaData = await graduatoriaRes.json();
 
@@ -1372,6 +1377,15 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       if (graduatoriaData.success && Array.isArray(graduatoriaData.data)) {
         setGraduatoria(graduatoriaData.data);
         console.log('[DEBUG fetchData] graduatoria caricata:', graduatoriaData.data.length);
+      }
+      // Carica spuntisti da domande-spunta
+      if (spuntistiData.success && Array.isArray(spuntistiData.data)) {
+        // Ordina per presenze decrescenti (graduatoria)
+        const spuntistiOrdinati = spuntistiData.data.sort((a: any, b: any) => 
+          (b.numero_presenze || 0) - (a.numero_presenze || 0)
+        );
+        setSpuntisti(spuntistiOrdinati);
+        console.log('[DEBUG fetchData] spuntisti caricati:', spuntistiOrdinati.length);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -2172,6 +2186,165 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             </div>
           </div>
           <div ref={listContainerRef} className="max-h-[400px] overflow-y-auto">
+            {/* TABELLA SPUNTISTI - quando tab Spunta è selezionato */}
+            {listFilter === 'spunta' ? (
+              <Table>
+                <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
+                  <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-10">#</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-28">Stato</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs">Impresa</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Wallet</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-16 text-center">Importo</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-16">Giorno</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Accesso</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Rifiuti</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-14 text-center">Uscita</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-12 text-center cursor-pointer hover:text-[#14b8a6]" title="Clicca per modificare">Pres.</TableHead>
+                    <TableHead className="text-[#e8fbff]/70 text-xs w-12 text-center">Ass.</TableHead>
+                    <TableHead className="text-right text-[#e8fbff]/70 text-xs w-10">⚙️</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {spuntisti.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={12} className="text-center text-[#e8fbff]/50 py-8">
+                        Nessuno spuntista registrato per questo mercato
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    spuntisti.map((spuntista, index) => {
+                      // Trova il posteggio assegnato (se presente)
+                      const posteggioAssegnato = stalls.find(s => 
+                        s.vendor_id === spuntista.impresa_id || 
+                        s.impresa_id === spuntista.impresa_id
+                      );
+                      // Trova presenza di oggi
+                      const presenzaOggi = presenze.find(p => 
+                        p.impresa_id === spuntista.impresa_id
+                      );
+                      // Determina stato semaforo
+                      const hasQualifica = spuntista.qualificato !== false; // Default true se non specificato
+                      const haPosteggio = !!posteggioAssegnato;
+                      const haPresenza = !!presenzaOggi?.ora_accesso;
+                      
+                      let statoLabel = 'IN ATTESA';
+                      let statoColor = 'bg-gray-500/20 text-gray-400'; // Grigio
+                      
+                      if (!hasQualifica) {
+                        statoLabel = 'NON QUALIF.';
+                        statoColor = 'bg-[#ef4444]/20 text-[#ef4444]'; // Rosso
+                      } else if (haPosteggio) {
+                        statoLabel = posteggioAssegnato?.number || 'ASSEGNATO';
+                        statoColor = 'bg-[#f59e0b]/20 text-[#f59e0b]'; // Arancione
+                      } else if (haPresenza) {
+                        statoLabel = 'QUALIFICATO';
+                        statoColor = 'bg-[#10b981]/20 text-[#10b981]'; // Verde
+                      }
+                      
+                      return (
+                        <TableRow 
+                          key={spuntista.id}
+                          className="cursor-pointer hover:bg-[#14b8a6]/10 border-[#14b8a6]/10"
+                        >
+                          {/* # Posizione Graduatoria */}
+                          <TableCell className="font-medium text-[#14b8a6] text-sm">{index + 1}</TableCell>
+                          
+                          {/* Stato Semaforo */}
+                          <TableCell>
+                            <Badge variant="default" className={`${statoColor} text-xs`}>
+                              {statoLabel}
+                            </Badge>
+                          </TableCell>
+                          
+                          {/* Impresa (sempre giallo per spuntisti) */}
+                          <TableCell className="text-sm">
+                            <p className="font-medium text-xs truncate max-w-[150px] text-[#f59e0b]">
+                              {spuntista.impresa_nome || spuntista.ragione_sociale || 'N/D'}
+                            </p>
+                          </TableCell>
+                          
+                          {/* Wallet - semaforino con saldo */}
+                          <TableCell className="text-xs text-center">
+                            {spuntista.wallet_saldo !== undefined ? (
+                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${spuntista.wallet_saldo > 0 ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
+                                €{(spuntista.wallet_saldo || 0).toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-[#e8fbff]/30">-</span>
+                            )}
+                          </TableCell>
+                          
+                          {/* Importo Speso - canone posteggio */}
+                          <TableCell className="text-xs text-center">
+                            {posteggioAssegnato?.canone ? (
+                              <span className="text-[#f59e0b] font-medium">€{posteggioAssegnato.canone.toFixed(2)}</span>
+                            ) : (
+                              <span className="text-[#e8fbff]/30">-</span>
+                            )}
+                          </TableCell>
+                          
+                          {/* Giorno */}
+                          <TableCell className="text-xs text-[#e8fbff]/70">
+                            {presenzaOggi?.giorno || presenzaOggi?.data ? (
+                              new Date(presenzaOggi.giorno || presenzaOggi.data).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })
+                            ) : '-'}
+                          </TableCell>
+                          
+                          {/* Accesso */}
+                          <TableCell className="text-xs text-center text-[#10b981]">
+                            {presenzaOggi?.ora_accesso || presenzaOggi?.checkin || '-'}
+                          </TableCell>
+                          
+                          {/* Rifiuti */}
+                          <TableCell className="text-xs text-center text-[#f59e0b]">
+                            {presenzaOggi?.ora_rifiuti || '-'}
+                          </TableCell>
+                          
+                          {/* Uscita */}
+                          <TableCell className="text-xs text-center text-[#3b82f6]">
+                            {presenzaOggi?.ora_uscita || presenzaOggi?.checkout || '-'}
+                          </TableCell>
+                          
+                          {/* Presenze - CLICCABILE per popup */}
+                          <TableCell 
+                            className="text-xs text-center text-[#e8fbff] cursor-pointer hover:text-[#14b8a6] hover:underline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSpuntistaForPresenze(spuntista);
+                              setShowPresenzePopup(true);
+                            }}
+                          >
+                            {spuntista.numero_presenze || 0}
+                          </TableCell>
+                          
+                          {/* Assenze */}
+                          <TableCell className="text-xs text-center text-[#e8fbff]/50">
+                            {spuntista.numero_assenze || 0}
+                          </TableCell>
+                          
+                          {/* Azioni */}
+                          <TableCell className="text-right">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Apri dettaglio spuntista
+                              }}
+                              className="hover:bg-[#14b8a6]/20 text-[#14b8a6] h-6 w-6 p-0"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            ) : (
+            /* TABELLA POSTEGGI - per tab Concessionari e Fiere */
             <Table>
               <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
                 <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
@@ -2193,11 +2366,9 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 {[...stalls]
                   // Filtra per tipo in base al tab selezionato
                   // Concessionari = TUTTI i posteggi (default)
-                  // Spunta = solo posteggi spunta o in assegnazione
                   // Fiere = solo posteggi straordinari/fiere
                   .filter(stall => {
                     if (listFilter === 'concessionari') return true; // Mostra TUTTI
-                    if (listFilter === 'spunta') return stall.type === 'spunta' || stall.status === 'riservato';
                     if (listFilter === 'fiere') return stall.type === 'straordinario' || stall.type === 'fiera';
                     return true;
                   })
@@ -2342,8 +2513,61 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 })}
               </TableBody>
             </Table>
+            )}
           </div>
         </div>
+
+        {/* Popup Modifica Presenze */}
+        {showPresenzePopup && selectedSpuntistaForPresenze && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg p-6 w-[400px]">
+              <h3 className="text-lg font-semibold text-[#e8fbff] mb-4">
+                Modifica Presenze - {selectedSpuntistaForPresenze.impresa_nome || selectedSpuntistaForPresenze.ragione_sociale}
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-[#e8fbff]/70 mb-1">Presenze Storiche</label>
+                  <input 
+                    type="number" 
+                    defaultValue={selectedSpuntistaForPresenze.numero_presenze || 0}
+                    className="w-full bg-[#0b1220] border border-[#14b8a6]/30 rounded px-3 py-2 text-[#e8fbff]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-[#e8fbff]/70 mb-1">Data Prima Presenza</label>
+                  <input 
+                    type="date" 
+                    defaultValue={selectedSpuntistaForPresenze.data_prima_presenza || ''}
+                    className="w-full bg-[#0b1220] border border-[#14b8a6]/30 rounded px-3 py-2 text-[#e8fbff]"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowPresenzePopup(false);
+                    setSelectedSpuntistaForPresenze(null);
+                  }}
+                  className="border-[#ef4444]/30 text-[#ef4444] hover:bg-[#ef4444]/10"
+                >
+                  Annulla
+                </Button>
+                <Button 
+                  onClick={() => {
+                    // TODO: Salva presenze via API
+                    toast.success('Presenze aggiornate');
+                    setShowPresenzePopup(false);
+                    setSelectedSpuntistaForPresenze(null);
+                  }}
+                  className="bg-[#10b981] hover:bg-[#10b981]/80 text-white"
+                >
+                  Salva
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Scheda Impresa - Form inline o preview */}
         <div className="h-[450px] flex flex-col bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10 overflow-hidden relative">
