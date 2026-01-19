@@ -1604,12 +1604,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           toast.success('Posteggio occupato!');
         }
         
-        // Aggiorna stato locale
-        setStalls(prevStalls => 
-          prevStalls.map(s => 
-            s.id === stallId ? { ...s, status: 'occupato' } : s
-          )
-        );
+        // Ricarica dati per aggiornare lista con giorno/ora/wallet
+        await fetchData();
         
         setSelectedStallId(null);
         setSelectedStallCenter(null);
@@ -1662,12 +1658,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           toast.success('Posteggio liberato (uscita non registrata)');
         }
         
-        // Aggiorna stato locale
-        setStalls(prevStalls => 
-          prevStalls.map(s => 
-            s.id === stallId ? { ...s, status: 'libero' } : s
-          )
-        );
+        // Ricarica dati per aggiornare lista con uscita/wallet
+        await fetchData();
         
         setSelectedStallId(null);
         setSelectedStallCenter(null);
