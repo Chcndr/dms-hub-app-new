@@ -1563,7 +1563,12 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
     try {
       console.log('[DEBUG handleOccupaStall] Occupando posteggio:', stallId);
       
-      // 1. Aggiorna stato posteggio a occupato
+      // AGGIORNA STATO LOCALE IMMEDIATAMENTE per animazione veloce
+      setStallsData(prev => prev.map(s => 
+        s.id === stallId ? { ...s, status: 'occupato' } : s
+      ));
+      
+      // 1. Aggiorna stato posteggio a occupato (in background)
       const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1590,7 +1595,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           if (presenzaData.success) {
             toast.success(`Arrivo registrato - €${presenzaData.data.importo_addebitato?.toFixed(2) || '0.00'}`);
             
-            // Aggiorna stato locale invece di ricaricare tutto
+            // Aggiorna con dati completi dalla risposta
             setStallsData(prev => prev.map(s => 
               s.id === stallId ? {
                 ...s,
@@ -1611,10 +1616,18 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         setSelectedStallId(null);
         setSelectedStallCenter(null);
       } else {
+        // Rollback stato locale se fallisce
+        setStallsData(prev => prev.map(s => 
+          s.id === stallId ? { ...s, status: 'libero' } : s
+        ));
         toast.error('Errore nell\'occupazione del posteggio');
       }
     } catch (error) {
       console.error('[ERROR handleOccupaStall]:', error);
+      // Rollback stato locale
+      setStallsData(prev => prev.map(s => 
+        s.id === stallId ? { ...s, status: 'libero' } : s
+      ));
       toast.error('Errore durante l\'occupazione del posteggio');
       throw error;
     }
@@ -1625,7 +1638,12 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
     try {
       console.log('[DEBUG handleLiberaStall] Liberando posteggio:', stallId);
       
-      // 1. Aggiorna stato posteggio a libero
+      // AGGIORNA STATO LOCALE IMMEDIATAMENTE per animazione veloce
+      setStallsData(prev => prev.map(s => 
+        s.id === stallId ? { ...s, status: 'libero' } : s
+      ));
+      
+      // 1. Aggiorna stato posteggio a libero (in background)
       const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1651,7 +1669,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           if (uscitaData.success) {
             toast.success('Uscita registrata!');
             
-            // Aggiorna stato locale
+            // Aggiorna con ora uscita
             const oraUscita = new Date().toLocaleTimeString('it-IT', { 
               timeZone: 'Europe/Rome',
               hour: '2-digit',
@@ -1675,10 +1693,18 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         setSelectedStallId(null);
         setSelectedStallCenter(null);
       } else {
+        // Rollback stato locale se fallisce
+        setStallsData(prev => prev.map(s => 
+          s.id === stallId ? { ...s, status: 'occupato' } : s
+        ));
         toast.error('Errore nella liberazione del posteggio');
       }
     } catch (error) {
       console.error('[ERROR handleLiberaStall]:', error);
+      // Rollback stato locale
+      setStallsData(prev => prev.map(s => 
+        s.id === stallId ? { ...s, status: 'occupato' } : s
+      ));
       toast.error('Errore durante la liberazione del posteggio');
       throw error;
     }
