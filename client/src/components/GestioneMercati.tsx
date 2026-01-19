@@ -2552,9 +2552,10 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                       )}
                     </TableCell>
                     
-                    {/* Wallet - semaforino con saldo */}
+                    {/* Wallet - semaforino con saldo (nascosto se posteggio libero senza concessionario/spuntista) */}
                     <TableCell className="text-xs text-center">
-                      {gradRecord?.wallet_balance !== undefined ? (
+                      {/* Mostra wallet solo se: ha concessionario O ha spuntista assegnato O è occupato */}
+                      {(stall.vendor_business_name || stall.spuntista_nome || concessionsByStallId[stall.number] || stall.status === 'occupato') && gradRecord?.wallet_balance !== undefined ? (
                         <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${parseFloat(gradRecord.wallet_balance) > 0 ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
                           €{parseFloat(gradRecord.wallet_balance || 0).toFixed(2)}
                         </span>
