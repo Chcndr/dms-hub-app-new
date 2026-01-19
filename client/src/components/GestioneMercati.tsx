@@ -1574,38 +1574,39 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       if (data.success) {
         console.log('[DEBUG handleOccupaStall] Posteggio occupato:', stallId);
         
-        // 2. Registra presenza (arrivo) se abbiamo impresa e wallet
-        if (impresaId && walletId) {
-          try {
-            const presenzaResponse = await fetch(`${API_BASE_URL}/api/presenze/registra`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                market_id: marketId,
-                stall_id: stallId,
-                impresa_id: impresaId,
-                wallet_id: walletId,
-                tipo_presenza: 'CONCESSION',
-                giorno_mercato: new Date().toISOString().split('T')[0]
-              })
-            });
+        // 2. Registra presenza - il backend recupera wallet dalla CONCESSIONE del posteggio
+        try {
+          const presenzaResponse = await fetch(`${API_BASE_URL}/api/presenze/registra`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              market_id: marketId,
+              stall_id: stallId,
+              tipo_presenza: 'CONCESSION'
+            })
+          });
+          
+          const presenzaData = await presenzaResponse.json();
+          if (presenzaData.success) {
+            toast.success(`Arrivo registrato - €${presenzaData.data.importo_addebitato?.toFixed(2) || '0.00'}`);
             
-            const presenzaData = await presenzaResponse.json();
-            if (presenzaData.success) {
-              toast.success(`Arrivo registrato - ${presenzaData.data.importo_addebitato?.toFixed(2) || '0.00'}€`);
-            } else {
-              toast.success('Posteggio occupato (presenza non registrata)');
-            }
-          } catch (presenzaError) {
-            console.warn('[WARN] Errore registrazione presenza:', presenzaError);
-            toast.success('Posteggio occupato (presenza non registrata)');
+            // Aggiorna stato locale invece di ricaricare tutto
+            setStallsData(prev => prev.map(s => 
+              s.id === stallId ? {
+                ...s,
+                status: 'occupato',
+                giorno_mercato: presenzaData.data.giorno_mercato,
+                checkin_time: presenzaData.data.checkin_time,
+                wallet_balance: presenzaData.data.nuovo_saldo
+              } : s
+            ));
+          } else {
+            toast.warning(`Posteggio occupato - ${presenzaData.error || 'presenza non registrata'}`);
           }
-        } else {
-          toast.success('Posteggio occupato!');
+        } catch (presenzaError) {
+          console.warn('[WARN] Errore registrazione presenza:', presenzaError);
+          toast.warning('Posteggio occupato (presenza non registrata)');
         }
-        
-        // Ricarica dati per aggiornare lista con giorno/ora/wallet
-        await fetchData();
         
         setSelectedStallId(null);
         setSelectedStallCenter(null);
@@ -1642,24 +1643,34 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               market_id: marketId,
-              stall_id: stallId,
-              giorno_mercato: new Date().toISOString().split('T')[0]
+              stall_id: stallId
             })
           });
           
           const uscitaData = await uscitaResponse.json();
           if (uscitaData.success) {
             toast.success('Uscita registrata!');
+            
+            // Aggiorna stato locale
+            const oraUscita = new Date().toLocaleTimeString('it-IT', { 
+              timeZone: 'Europe/Rome',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            setStallsData(prev => prev.map(s => 
+              s.id === stallId ? {
+                ...s,
+                status: 'libero',
+                checkout_time: oraUscita
+              } : s
+            ));
           } else {
-            toast.success('Posteggio liberato (uscita non registrata)');
+            toast.warning('Posteggio liberato (uscita non registrata)');
           }
         } catch (uscitaError) {
           console.warn('[WARN] Errore registrazione uscita:', uscitaError);
-          toast.success('Posteggio liberato (uscita non registrata)');
+          toast.warning('Posteggio liberato (uscita non registrata)');
         }
-        
-        // Ricarica dati per aggiornare lista con uscita/wallet
-        await fetchData();
         
         setSelectedStallId(null);
         setSelectedStallCenter(null);
@@ -1813,18 +1824,48 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 
                 try {
                   setIsAnimating(true);
+                  stopAnimationRef.current = false;
+                  let successCount = 0;
                   
-                  // Chiama endpoint avvia-spunta che fa tutto in una volta
+                  // Animazione uno a uno: cambia stato ogni posteggio
+                  for (const stall of freeStalls) {
+                    if (stopAnimationRef.current) {
+                      toast.info(`Animazione fermata dopo ${successCount} posteggi`);
+                      break;
+                    }
+                    try {
+                      // Cambia stato a in_assegnazione
+                      const response = await fetch(`${API_BASE_URL}/api/stalls/${stall.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'in_assegnazione' }),
+                      });
+                      const data = await response.json();
+                      if (data.success) {
+                        toast.success(`Posteggio ${stall.number} → in assegnazione`);
+                        // Aggiorna stato locale
+                        setStallsData(prev => prev.map(s => 
+                          s.id === stall.id ? { ...s, status: 'in_assegnazione' } : s
+                        ));
+                        successCount++;
+                        // Piccolo delay per animazione visibile
+                        await new Promise(r => setTimeout(r, 50));
+                      }
+                    } catch (error) {
+                      console.error(`Errore posteggio ${stall.number}:`, error);
+                    }
+                  }
+                  
+                  // Chiama endpoint per registrare presenze spuntisti e incrementare assenze
                   const response = await fetch(`${API_BASE_URL}/api/test-mercato/avvia-spunta`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ market_id: marketId }),
                   });
-
                   const data = await response.json();
+                  
                   if (data.success) {
-                    toast.success(`🏁 ${data.message}`);
-                    // Attiva modalità spunta automaticamente
+                    toast.success(`🏁 ${successCount} posteggi preparati - ${data.data?.assenze_incrementate || 0} assenze registrate`);
                     setIsSpuntaMode(true);
                     setIsOccupaMode(false);
                     setIsLiberaMode(false);
@@ -1908,6 +1949,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   try {
                     await handleLiberaStall(stall.id);
                     successCount++;
+                    // Piccolo delay per animazione visibile
+                    await new Promise(r => setTimeout(r, 50));
                   } catch (error) {
                     console.error(`Errore liberazione posteggio ${stall.number}:`, error);
                     errorCount++;
@@ -2023,6 +2066,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   try {
                     await handleOccupaStall(stall.id);
                     successCount++;
+                    // Piccolo delay per animazione visibile
+                    await new Promise(r => setTimeout(r, 50));
                   } catch (error) {
                     console.error(`Errore occupazione posteggio ${stall.number}:`, error);
                     errorCount++;
@@ -2099,6 +2144,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   try {
                     await handleConfirmAssignment(stall.id);
                     successCount++;
+                    // Piccolo delay per animazione visibile
+                    await new Promise(r => setTimeout(r, 50));
                   } catch (error) {
                     console.error(`Errore conferma posteggio ${stall.number}:`, error);
                     errorCount++;
