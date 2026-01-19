@@ -1494,19 +1494,24 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             { duration: 4000 }
           );
           
-          // Aggiorna stato locale
+          // PRIMA deseleziona posteggio per fermare il lampeggiamento fucsia
+          setSelectedStallId(null);
+          setSelectedStallCenter(null);
+          
+          // Aggiorna stato locale con tutti i dati dello spuntista assegnato
           setStalls(prevStalls => 
             prevStalls.map(s => 
-              s.id === stallId ? { ...s, status: 'occupato' } : s
+              s.id === stallId ? { 
+                ...s, 
+                status: 'occupato',
+                spuntista_impresa_id: spuntista.impresa_id,
+                spuntista_nome: spuntista.impresa_name
+              } : s
             )
           );
           
           // Ricarica dati spuntisti per aggiornare la tabella
           await fetchData();
-          
-          // Deseleziona posteggio
-          setSelectedStallId(null);
-          setSelectedStallCenter(null);
         } else {
           toast.error(data.error || 'Errore nell\'assegnazione spunta');
         }
