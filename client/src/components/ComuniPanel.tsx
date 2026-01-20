@@ -564,10 +564,10 @@ export default function ComuniPanel() {
         </div>
       </div>
 
-      {/* Layout a due colonne */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Lista Comuni */}
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-4">
+      {/* Layout: lista stretta + dettaglio largo */}
+      <div className="flex gap-6">
+        {/* Lista Comuni - sidebar stretta */}
+        <div className={`bg-gray-800/50 rounded-xl border border-gray-700 p-4 ${selectedComune ? 'w-80 flex-shrink-0' : 'w-full'}`}>
           <h3 className="text-lg font-medium text-white mb-4">Comuni Registrati</h3>
           
           {/* Ricerca locale */}
@@ -634,9 +634,9 @@ export default function ComuniPanel() {
           )}
         </div>
 
-        {/* Dettaglio Comune */}
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-4">
-          {selectedComune ? (
+        {/* Dettaglio Comune - occupa tutto lo spazio rimanente */}
+        {selectedComune && (
+        <div className="flex-1 bg-gray-800/50 rounded-xl border border-gray-700 p-6">
             <>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-white">{selectedComune.nome}</h3>
@@ -962,13 +962,8 @@ export default function ComuniPanel() {
                 </div>
               )}
             </>
-          ) : (
-            <div className="text-center py-12 text-gray-400">
-              <Building2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Seleziona un comune per vedere i dettagli</p>
-            </div>
-          )}
         </div>
+        )}
       </div>
 
       {/* Modal Ricerca IPA */}
