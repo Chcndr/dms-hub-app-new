@@ -330,6 +330,9 @@ export default function ComuniPanel() {
         ? `${API_BASE_URL}/api/comuni/${editingComune.id}`
         : `${API_BASE_URL}/api/comuni`;
       
+      const isNewComune = !editingComune;
+      const codiceIPA = comuneForm.codice_ipa;
+      
       const res = await fetch(url, {
         method: editingComune ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -338,6 +341,14 @@ export default function ComuniPanel() {
       
       const data = await res.json();
       if (data.success) {
+        // Se è un nuovo comune importato da IPA, importa automaticamente i settori
+        if (isNewComune && codiceIPA) {
+          const newComuneId = data.data?.id || data.id;
+          if (newComuneId) {
+            await importSettoriAutomatici(newComuneId, codiceIPA);
+          }
+        }
+        
         fetchComuni();
         setShowComuneForm(false);
         setEditingComune(null);
@@ -350,6 +361,77 @@ export default function ComuniPanel() {
     } catch (error) {
       console.error('Error saving comune:', error);
     }
+  };
+
+  // Importa automaticamente i settori da IPA dopo la creazione del comune
+  const importSettoriAutomatici = async (comuneId: number, codiceIPA: string) => {
+    try {
+      console.log(`Importazione automatica settori per comune ${comuneId} da IPA ${codiceIPA}`);
+      
+      // Recupera le UO da IndicePA
+      const resUO = await fetch(`${API_BASE_URL}/api/ipa/uo/${codiceIPA}`);
+      const dataUO = await resUO.json();
+      
+      if (dataUO.success && dataUO.data && dataUO.data.length > 0) {
+        let importati = 0;
+        
+        for (const uo of dataUO.data) {
+          // Mappa il tipo settore
+          const tipoSettore = mapTipoSettore(uo.descrizione || '');
+          
+          const settoreData = {
+            tipo_settore: tipoSettore,
+            nome_settore: uo.descrizione || 'Settore',
+            responsabile_nome: uo.responsabile_nome || '',
+            responsabile_cognome: uo.responsabile_cognome || '',
+            email: uo.email || '',
+            pec: uo.pec || '',
+            telefono: uo.telefono || '',
+            indirizzo: uo.indirizzo || '',
+            orari_apertura: '',
+            note: `Importato da IndicePA - Codice UO: ${uo.codice_uni_uo || ''}`
+          };
+          
+          // Salva il settore
+          const resSave = await fetch(`${API_BASE_URL}/api/comuni/${comuneId}/settori`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settoreData)
+          });
+          
+          if (resSave.ok) {
+            importati++;
+          }
+        }
+        
+        console.log(`Importati ${importati} settori da IndicePA`);
+        alert(`Comune creato con successo!\n\nImportati automaticamente ${importati} settori da IndicePA.`);
+      } else {
+        console.log('Nessun settore trovato su IndicePA');
+      }
+    } catch (error) {
+      console.error('Errore import settori automatici:', error);
+    }
+  };
+
+  // Mappa la descrizione UO al tipo settore
+  const mapTipoSettore = (descrizione: string): string => {
+    const desc = descrizione.toLowerCase();
+    if (desc.includes('suap') || desc.includes('attività produttive')) return 'SUAP';
+    if (desc.includes('commercio')) return 'COMMERCIO';
+    if (desc.includes('tributi')) return 'TRIBUTI';
+    if (desc.includes('polizia') || desc.includes('vigili')) return 'POLIZIA_LOCALE';
+    if (desc.includes('anagrafe') || desc.includes('demografic')) return 'DEMOGRAFICI';
+    if (desc.includes('urbanistic') || desc.includes('edilizi')) return 'TECNICO';
+    if (desc.includes('ambiente') || desc.includes('ecolog')) return 'AMBIENTE';
+    if (desc.includes('social')) return 'ALTRO';
+    if (desc.includes('ragioneria') || desc.includes('bilancio')) return 'RAGIONERIA';
+    if (desc.includes('personale') || desc.includes('risorse umane')) return 'ALTRO';
+    if (desc.includes('segreteria')) return 'SEGRETERIA';
+    if (desc.includes('tecnico') || desc.includes('lavori pubblici')) return 'TECNICO';
+    if (desc.includes('urp') || desc.includes('relazioni')) return 'URP';
+    if (desc.includes('protezione civile')) return 'PROTEZIONE_CIVILE';
+    return 'ALTRO';
   };
 
   // Elimina comune

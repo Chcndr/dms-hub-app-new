@@ -3465,3 +3465,199 @@ const handleStallUpdate = async () => {
 
 ---
 
+
+## 💡 AGGIORNAMENTO 20 GENNAIO 2026 - INTEGRAZIONE INDICEPA E DASHBOARD COMUNI
+
+### 1. Integrazione IndicePA (IPA)
+
+#### 1.1 Funzionalità Implementate
+
+| Funzionalità | Endpoint | Descrizione |
+|---|---|---|
+| **Import Comuni da IPA** | `POST /api/ipa/import` | Importa comuni da IndicePA con dati arricchiti |
+| **Import Settori/UO da IPA** | `GET /api/ipa/uo/:codice_ipa` | Importa Unità Organizzative di un ente |
+| **Tipologie Enti IPA** | `GET /api/ipa/tipologie` | Lista tipologie enti (Comuni, Province, etc.) |
+
+#### 1.2 Dati Importati da IPA
+
+**Per i Comuni:**
+- `codice_ipa` - Codice univoco IPA
+- `codice_istat` - Codice ISTAT
+- `codice_catastale` - Codice catastale
+- `nome`, `provincia`, `regione`, `cap`
+- `pec`, `email`, `telefono`, `sito_web`, `indirizzo`
+- `latitudine`, `longitudine` (da geocoding)
+
+**Per le Unità Organizzative (Settori):**
+- `codice_uni_uo` - Codice univoco UO
+- `tipo_settore` - Tipo mappato automaticamente
+- `nome_settore` - Descrizione UO
+- `responsabile_nome`, `responsabile_cognome`
+- `email`, `pec`, `telefono`, `indirizzo`
+
+#### 1.3 Mapping Automatico Tipi Settore
+
+| Parola chiave in Descrizione_uo | tipo_settore |
+|---|---|
+| SUAP, Attività Produttive | SUAP |
+| Commercio | COMMERCIO |
+| Tributi | TRIBUTI |
+| Polizia, Vigili | POLIZIA_LOCALE |
+| Anagrafe, Demografici | ANAGRAFE |
+| Urbanistica, Edilizia | URBANISTICA |
+| Ambiente | AMBIENTE |
+| Sociale, Servizi Sociali | SERVIZI_SOCIALI |
+| Ragioneria, Bilancio | RAGIONERIA |
+| Personale, Risorse Umane | PERSONALE |
+| Segreteria | SEGRETERIA |
+| Tecnico, Lavori Pubblici | TECNICO |
+| (altro) | ALTRO |
+
+---
+
+### 2. Dashboard Comune a 5 Tab
+
+#### 2.1 Struttura Tab
+
+| Tab | Contenuto | Stato |
+|---|---|---|
+| **Anagrafica** | Dati base + dati IPA (PEC, CAP, ISTAT, Catastale) | ✅ Implementato |
+| **Settori** | Gestione UO + Import da IPA | ✅ Implementato |
+| **Mercati** | Lista mercati del comune | 🔶 Placeholder |
+| **Fatturazione** | Contratti e fatture MIO-HUB | 🔶 Placeholder |
+| **Permessi** | Ruoli e accessi per il comune | 🔶 Placeholder |
+
+#### 2.2 Layout Migliorato
+
+- **Senza selezione**: Lista comuni a larghezza piena
+- **Con selezione**: Lista stretta (320px) + Dettaglio largo con 5 tab
+
+#### 2.3 Funzionalità Ricerca
+
+- Ricerca per nome, provincia, regione, CAP
+- Deseleziona automaticamente il comune se non nei risultati filtrati
+
+---
+
+### 3. Schema Database Aggiornato
+
+#### 3.1 Tabella comuni (16 colonne)
+
+| Colonna | Tipo | Descrizione | Fonte IPA |
+|---|---|---|---|
+| id | integer | ID auto-incrementale | - |
+| nome | varchar(100) | Nome del comune | Denominazione_ente |
+| provincia | varchar(2) | Sigla provincia | Provincia |
+| regione | varchar(50) | Nome regione | Regione |
+| cap | varchar(5) | Codice postale | Cap |
+| codice_istat | varchar(10) | Codice ISTAT | Codice_comune_ISTAT |
+| codice_catastale | varchar(4) | Codice catastale | Codice_catastale_comune |
+| codice_ipa | varchar(20) | Codice IPA univoco | Codice_IPA |
+| pec | varchar(255) | PEC istituzionale | Mail1 (tipo PEC) |
+| email | varchar(255) | Email istituzionale | Mail1 |
+| telefono | varchar(20) | Telefono centralino | Telefono |
+| sito_web | varchar(255) | Sito web ufficiale | Sito_istituzionale |
+| indirizzo | varchar(255) | Indirizzo sede | Indirizzo |
+| latitudine | numeric | Latitudine GPS | (da geocoding) |
+| longitudine | numeric | Longitudine GPS | (da geocoding) |
+| created_at | timestamp | Data creazione | - |
+| updated_at | timestamp | Data aggiornamento | - |
+
+#### 3.2 Tabella settori_comune (15 colonne)
+
+| Colonna | Tipo | Descrizione | Fonte IPA (UO) |
+|---|---|---|---|
+| id | integer | ID auto-incrementale | - |
+| comune_id | integer | FK a comuni.id | - |
+| tipo_settore | varchar(50) | Tipo settore | Mappato da Descrizione_uo |
+| nome_settore | varchar(100) | Nome completo settore | Descrizione_uo |
+| codice_uni_uo | varchar(20) | Codice univoco UO | Codice_uni_uo |
+| responsabile_nome | varchar(100) | Nome responsabile | Nome_responsabile |
+| responsabile_cognome | varchar(100) | Cognome responsabile | Cognome_responsabile |
+| email | varchar(255) | Email settore | Mail1 |
+| pec | varchar(255) | PEC settore | Mail1 (tipo PEC) |
+| telefono | varchar(20) | Telefono settore | Telefono |
+| indirizzo | varchar(255) | Indirizzo settore | Indirizzo |
+| orari_apertura | text | Orari di apertura | - |
+| note | text | Note aggiuntive | - |
+| created_at | timestamp | Data creazione | - |
+| updated_at | timestamp | Data aggiornamento | - |
+
+---
+
+### 4. Progetto Tab Mancanti (Da Implementare)
+
+#### 4.1 Tab Mercati
+
+**Connessione**: markets.municipality → comuni.nome
+
+**Endpoint da creare**: GET /api/comuni/:id/mercati
+
+**Funzionalità**:
+- Lista mercati del comune
+- Pulsante "Gestisci" per ogni mercato
+
+#### 4.2 Tab Fatturazione
+
+**Nuove tabelle da creare**:
+
+**comune_contratti**
+| Colonna | Tipo | Descrizione |
+|---|---|---|
+| id | integer | ID univoco |
+| comune_id | integer | FK a comuni.id |
+| servizio_id | varchar | ID del servizio (es. "MIOHUB_BASE") |
+| data_inizio | date | Data inizio contratto |
+| data_fine | date | Data fine contratto |
+| importo_annuale | numeric | Importo annuale del servizio |
+| stato | varchar | Stato (attivo, scaduto, in_attesa) |
+
+**comune_fatture**
+| Colonna | Tipo | Descrizione |
+|---|---|---|
+| id | integer | ID univoco |
+| contratto_id | integer | FK a comune_contratti.id |
+| data_emissione | date | Data emissione fattura |
+| periodo_riferimento | varchar | Mese/Anno di riferimento |
+| importo | numeric | Importo fattura |
+| stato | varchar | Stato (emessa, pagata, insoluta) |
+| pagopa_iuv | varchar | IUV per pagamento PagoPA |
+
+**Endpoint da creare**:
+- GET/POST /api/comuni/:id/contratti
+- GET/POST /api/contratti/:id/fatture
+- POST /api/fatture/:id/genera-pagopa
+
+#### 4.3 Tab Permessi
+
+**Tabelle esistenti da usare**:
+- user_roles - Ruoli disponibili
+- role_permissions - Permessi per ruolo
+- user_role_assignments - Assegnazione ruoli (con territory_type='comune' e territory_id=comuni.id)
+
+**Endpoint da creare**:
+- GET /api/comuni/:id/utenti
+- POST /api/comuni/:id/utenti
+- DELETE /api/comuni/:id/utenti/:userId/ruoli/:roleId
+
+---
+
+### 5. Guardian Aggiornato
+
+- **Versione**: v26
+- **Endpoint monitorati**: 380
+- **Nuovi endpoint aggiunti**: ipa.uo, ipa.tipologie
+
+---
+
+### 6. File Modificati
+
+| File | Righe | Modifiche |
+|---|---|---|
+| ComuniPanel.tsx | ~1000 | Dashboard 5 tab, import IPA, layout migliorato |
+| routes/ipa.js | ~150 | Endpoint UO e tipologie |
+| MIO-hub/api/index.json | ~6000 | Guardian v26 con nuovi endpoint |
+
+---
+
+*Aggiornamento del 20 Gennaio 2026 - Manus AI*
