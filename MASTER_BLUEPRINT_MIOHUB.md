@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.37.0  
+> **Versione:** 3.38.0  
 > **Data:** 20 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -3587,15 +3587,32 @@ const handleStallUpdate = async () => {
 
 ### 4. Progetto Tab Mancanti (Da Implementare)
 
-#### 4.1 Tab Mercati
+#### 4.1 Tab Mercati ✅ COMPLETATA
 
 **Connessione**: markets.municipality → comuni.nome
 
-**Endpoint da creare**: GET /api/comuni/:id/mercati
+**Endpoint**: GET /api/comuni/:id/mercati (con area totale calcolata dai posteggi)
 
 **Funzionalità**:
-- Lista mercati del comune
-- Pulsante "Gestisci" per ogni mercato
+- Lista mercati del comune con stato (attivo/inattivo)
+- **Area Totale** calcolata dalla somma dei posteggi (width × depth)
+- Numero posteggi reali (stalls_count)
+- Giorni mercato, costo/mq, giornate/anno
+- Pulsante "Vai al mercato" per ogni mercato
+
+#### 4.1b Tab HUB ✅ COMPLETATA
+
+**Connessione**: hub_locations.city → comuni.nome
+
+**Endpoint**: GET /api/comuni/:id/hub (con negozi e area totale)
+
+**Funzionalità**:
+- Lista HUB del comune con stato (attivo/inattivo)
+- **Area Totale** dell'HUB in mq
+- Numero negozi con lista dettagliata
+- Badge livello (capoluogo, ecc.) e tipo (urbano, ecc.)
+- Per ogni negozio: nome, categoria, telefono, stato
+- Pulsante "Vai all'HUB" per ogni HUB
 
 #### 4.2 Tab Fatturazione
 
@@ -3687,9 +3704,9 @@ const handleStallUpdate = async () => {
 
 ### 5. Guardian Aggiornato
 
-- **Versione**: v27
-- **Endpoint monitorati**: 69 totali
-- **Endpoint Comuni PA**: 24 (CRUD comuni, settori, mercati, contratti, fatture, utenti, IPA)
+- **Versione**: v28
+- **Endpoint monitorati**: 70 totali
+- **Endpoint Comuni PA**: 25 (CRUD comuni, settori, mercati, **HUB**, contratti, fatture, utenti, IPA)
 
 ---
 

@@ -1442,7 +1442,7 @@ export default function ComuniPanel() {
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Posteggi</p>
-                              <p className="text-sm text-white">{mercato.stalls_count || mercato.total_stalls || 0}</p>
+                              <p className="text-sm text-white">{mercato.total_stalls || 0}</p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Area Totale</p>
