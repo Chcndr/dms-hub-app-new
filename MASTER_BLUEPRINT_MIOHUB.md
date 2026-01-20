@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.43.0  
+> **Versione:** 3.44.0  
 > **Data:** 20 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -1151,6 +1151,35 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 ### 📝 CHANGELOG
+
+### v3.44.0 (20/01/2026) - Form Registrazione Attestati
+
+**Backend - Nuovi Endpoint `/api/formazione/*`:**
+- `GET /api/formazione/imprese/search?q=` - Ricerca imprese per nome/PIVA/CF
+- `GET /api/formazione/tipi-attestato` - Lista tipi attestato disponibili
+- `POST /api/formazione/attestati` - Registra nuovo attestato
+- `GET /api/formazione/attestati` - Lista attestati (filtrabile per impresa/ente/tipo)
+
+**Frontend - Tab Documentazione → Enti Formatori:**
+- Form "Registra Nuovo Attestato" con:
+  - Ricerca impresa con autocomplete live
+  - Selezione tipo attestato (11 tipi: HACCP, Sicurezza Lavoro, Antincendio, Primo Soccorso, Privacy GDPR, Igiene Alimentare, RSPP, RLS, Carrellista, PES/PAV, Altro)
+  - Date rilascio e scadenza
+  - Campi opzionali: Ente rilascio, N. Attestato, Ore formazione, Docente, Note
+  - Salvataggio in tabella `qualificazioni`
+
+**Flusso Operativo:**
+1. Ente formatore cerca impresa digitando nome/PIVA
+2. Seleziona dall'elenco dropdown autocomplete
+3. Compila tipo attestato, date, dettagli corso
+4. Clicca "Registra Attestato"
+5. L'attestato viene salvato e appare nella sezione Qualificazione dell'impresa
+
+**Index.json Aggiornato:**
+- Versione: 29
+- Totale endpoint: 433 (+4)
+
+---
 
 ### v3.43.0 (20/01/2026) - Tab Documentazione con Enti Formatori e Bandi
 
