@@ -13,7 +13,7 @@ import {
   Radio, CloudRain, Wind, UserCog, ClipboardCheck, Scale, Bell, BellRing,
   Navigation, Train, ParkingCircle, TrafficCone, FileBarChart, Plug, SettingsIcon, Euro, Newspaper, Rocket,
   XCircle, Lightbulb, MessageSquare, Brain, Calculator, ExternalLink, StopCircle,
-  Search, Filter, Plus
+  Search, Filter, Plus, Landmark, BookOpen, Star, FileCheck, HandCoins
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -80,6 +80,8 @@ function useDashboardData() {
   const [statsRealtime, setStatsRealtime] = useState<any>(null);
   const [statsGrowth, setStatsGrowth] = useState<any>(null);
   const [statsQualificazione, setStatsQualificazione] = useState<any>(null);
+  const [formazioneStats, setFormazioneStats] = useState<any>(null);
+  const [bandiStats, setBandiStats] = useState<any>(null);
   
   useEffect(() => {
     const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
@@ -137,6 +139,46 @@ function useDashboardData() {
         }
       })
       .catch(err => console.log('Stats qualificazione fetch error:', err));
+    
+    // Fetch formazione stats (enti formatori e corsi)
+    fetch(`${MIHUB_API}/formazione/stats`)
+      .then(res => res.json())
+      .then(async data => {
+        if (data.success) {
+          // Fetch anche lista enti e corsi
+          const [entiRes, corsiRes] = await Promise.all([
+            fetch(`${MIHUB_API}/formazione/enti`).then(r => r.json()),
+            fetch(`${MIHUB_API}/formazione/corsi`).then(r => r.json())
+          ]);
+          
+          setFormazioneStats({
+            stats: data.data,
+            enti: entiRes.success ? entiRes.data : [],
+            corsi: corsiRes.success ? corsiRes.data : []
+          });
+        }
+      })
+      .catch(err => console.log('Formazione stats fetch error:', err));
+    
+    // Fetch bandi stats (associazioni e catalogo bandi)
+    fetch(`${MIHUB_API}/bandi/stats`)
+      .then(res => res.json())
+      .then(async data => {
+        if (data.success) {
+          // Fetch anche lista associazioni e bandi
+          const [assocRes, catalogoRes] = await Promise.all([
+            fetch(`${MIHUB_API}/bandi/associazioni`).then(r => r.json()),
+            fetch(`${MIHUB_API}/bandi/catalogo`).then(r => r.json())
+          ]);
+          
+          setBandiStats({
+            stats: data.data,
+            associazioni: assocRes.success ? assocRes.data : [],
+            catalogo: catalogoRes.success ? catalogoRes.data : []
+          });
+        }
+      })
+      .catch(err => console.log('Bandi stats fetch error:', err));
   }, []);
 
   // Combina dati tRPC con dati REST
@@ -182,7 +224,9 @@ function useDashboardData() {
     statsOverview: statsOverview,
     statsRealtime: statsRealtime,
     statsGrowth: statsGrowth,
-    statsQualificazione: statsQualificazione
+    statsQualificazione: statsQualificazione,
+    formazioneStats: formazioneStats,
+    bandiStats: bandiStats
   };
 }
 
@@ -4662,9 +4706,329 @@ export default function DashboardPA() {
             <MarketCompaniesTab marketId="ALL" stalls={[]} />
           </TabsContent>
 
+          {/* TAB 24: DOCUMENTAZIONE - ENTI FORMATORI & BANDI */}
+          <TabsContent value="docs" className="space-y-6">
+            {/* Sotto-tab per Formazione e Bandi */}
+            <Tabs defaultValue="formazione" className="w-full">
+              <TabsList className="bg-[#1a2332] border border-[#3b82f6]/20 mb-6">
+                <TabsTrigger value="formazione" className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]">
+                  <GraduationCap className="w-4 h-4 mr-2" />
+                  Enti Formatori
+                </TabsTrigger>
+                <TabsTrigger value="bandi" className="data-[state=active]:bg-[#10b981]/20 data-[state=active]:text-[#10b981]">
+                  <Landmark className="w-4 h-4 mr-2" />
+                  Associazioni & Bandi
+                </TabsTrigger>
+              </TabsList>
 
+              {/* SOTTO-TAB: ENTI FORMATORI */}
+              <TabsContent value="formazione" className="space-y-6">
+                {/* KPI Formazione */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 text-blue-400 text-sm mb-1">
+                        <Building2 className="w-4 h-4" />
+                        Enti Accreditati
+                        {realData.formazioneStats && <span className="text-xs text-[#10b981]">● Live</span>}
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        {realData.formazioneStats?.stats?.enti?.totale ?? 0}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        Rating medio: {realData.formazioneStats?.stats?.enti?.rating_medio ?? '-'}/5
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border-cyan-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 text-cyan-400 text-sm mb-1">
+                        <BookOpen className="w-4 h-4" />
+                        Corsi Programmati
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        {realData.formazioneStats?.stats?.corsi?.programmati ?? 0}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        {realData.formazioneStats?.stats?.corsi?.iscritti_totali ?? 0} iscritti totali
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 text-emerald-400 text-sm mb-1">
+                        <FileCheck className="w-4 h-4" />
+                        Corsi Completati
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        {realData.formazioneStats?.stats?.corsi?.completati ?? 0}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 text-purple-400 text-sm mb-1">
+                        <Activity className="w-4 h-4" />
+                        In Corso
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        {realData.formazioneStats?.stats?.corsi?.in_corso ?? 0}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
 
-          {/* TAB 24: MIO AGENT */}
+                {/* Lista Enti Formatori */}
+                <Card className="bg-[#1a2332] border-[#3b82f6]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <GraduationCap className="h-5 w-5 text-[#3b82f6]" />
+                      Enti Formatori Accreditati
+                      {realData.formazioneStats?.enti && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {(realData.formazioneStats?.enti || []).map((ente: any, idx: number) => (
+                        <div key={ente.id || idx} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-[#3b82f6]/30'}`}>
+                              #{idx + 1}
+                            </div>
+                            <div>
+                              <div className="text-[#e8fbff] font-medium">{ente.nome}</div>
+                              <div className="text-xs text-[#e8fbff]/50">
+                                {ente.specializzazioni?.join(', ') || 'Formazione generale'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1 text-yellow-400">
+                              <Star className="w-4 h-4 fill-current" />
+                              <span className="font-bold">{ente.rating || '-'}</span>
+                            </div>
+                            <div className="text-xs text-[#e8fbff]/50">
+                              {ente.corsi_count || 0} corsi
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {(!realData.formazioneStats?.enti || realData.formazioneStats.enti.length === 0) && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <GraduationCap className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Caricamento enti formatori...</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Corsi Disponibili */}
+                <Card className="bg-[#1a2332] border-[#3b82f6]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-[#3b82f6]" />
+                      Corsi Disponibili
+                      {realData.formazioneStats?.corsi && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(realData.formazioneStats?.corsi || []).map((corso: any, idx: number) => (
+                        <div key={corso.id || idx} className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="text-[#e8fbff] font-medium">{corso.titolo}</div>
+                              <div className="text-xs text-[#e8fbff]/50">{corso.ente_nome}</div>
+                            </div>
+                            <Badge className={`${corso.tipo_attestato === 'HACCP' ? 'bg-emerald-500/20 text-emerald-400' : corso.tipo_attestato === 'Antincendio' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                              {corso.tipo_attestato}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <div className="text-[#e8fbff]/70">
+                              <span className="text-cyan-400 font-bold">€{corso.costo || 0}</span> · {corso.durata_ore || 0}h
+                            </div>
+                            <div className="text-[#e8fbff]/50">
+                              {corso.posti_disponibili || 0}/{corso.max_partecipanti || 0} posti
+                            </div>
+                          </div>
+                          {corso.data_inizio && (
+                            <div className="mt-2 text-xs text-[#e8fbff]/50">
+                              <Calendar className="w-3 h-3 inline mr-1" />
+                              Inizio: {new Date(corso.data_inizio).toLocaleDateString('it-IT')}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {(!realData.formazioneStats?.corsi || realData.formazioneStats.corsi.length === 0) && (
+                        <div className="col-span-2 text-center text-[#e8fbff]/50 py-8">
+                          <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Caricamento corsi...</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* SOTTO-TAB: ASSOCIAZIONI & BANDI */}
+              <TabsContent value="bandi" className="space-y-6">
+                {/* KPI Bandi */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 text-emerald-400 text-sm mb-1">
+                        <Landmark className="w-4 h-4" />
+                        Associazioni Partner
+                        {realData.bandiStats && <span className="text-xs text-[#10b981]">● Live</span>}
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        {realData.bandiStats?.stats?.associazioni?.totale ?? 0}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        Success rate: {realData.bandiStats?.stats?.associazioni?.success_rate_medio ?? '-'}%
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border-cyan-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 text-cyan-400 text-sm mb-1">
+                        <FileText className="w-4 h-4" />
+                        Bandi Aperti
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        {realData.bandiStats?.stats?.bandi?.aperti ?? 0}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        {realData.bandiStats?.stats?.bandi?.in_scadenza ?? 0} in scadenza
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border-yellow-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 text-yellow-400 text-sm mb-1">
+                        <HandCoins className="w-4 h-4" />
+                        Importo Totale
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        €{((realData.bandiStats?.stats?.bandi?.importo_totale ?? 0) / 1000).toFixed(0)}K
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 text-purple-400 text-sm mb-1">
+                        <Target className="w-4 h-4" />
+                        Rating Medio
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        {realData.bandiStats?.stats?.associazioni?.rating_medio ?? '-'}/5
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Lista Associazioni */}
+                <Card className="bg-[#1a2332] border-[#10b981]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <Landmark className="h-5 w-5 text-[#10b981]" />
+                      Associazioni Partner
+                      {realData.bandiStats?.associazioni && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {(realData.bandiStats?.associazioni || []).map((assoc: any, idx: number) => (
+                        <div key={assoc.id || idx} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#10b981]/10">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-[#10b981]/30'}`}>
+                              #{idx + 1}
+                            </div>
+                            <div>
+                              <div className="text-[#e8fbff] font-medium">{assoc.nome}</div>
+                              <div className="text-xs text-[#e8fbff]/50">
+                                {assoc.tipo_ente} · {assoc.specializzazioni?.join(', ') || 'Generale'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1 text-emerald-400">
+                              <TrendingUp className="w-4 h-4" />
+                              <span className="font-bold">{assoc.success_rate || 0}%</span>
+                            </div>
+                            <div className="text-xs text-[#e8fbff]/50">
+                              {assoc.pratiche_gestite || 0} pratiche
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {(!realData.bandiStats?.associazioni || realData.bandiStats.associazioni.length === 0) && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <Landmark className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Caricamento associazioni...</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Catalogo Bandi */}
+                <Card className="bg-[#1a2332] border-[#10b981]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-[#10b981]" />
+                      Catalogo Bandi Attivi
+                      {realData.bandiStats?.catalogo && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(realData.bandiStats?.catalogo || []).map((bando: any, idx: number) => (
+                        <div key={bando.id || idx} className="p-4 bg-[#0b1220] rounded-lg border border-[#10b981]/10">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="text-[#e8fbff] font-medium">{bando.titolo}</div>
+                              <div className="text-xs text-[#e8fbff]/50">{bando.ente_erogatore}</div>
+                            </div>
+                            <Badge className={`${bando.tipo_ente === 'regionale' ? 'bg-blue-500/20 text-blue-400' : bando.tipo_ente === 'nazionale' ? 'bg-purple-500/20 text-purple-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                              {bando.tipo_ente}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center text-sm mb-2">
+                            <div className="text-yellow-400 font-bold">
+                              €{((bando.importo_max || 0) / 1000).toFixed(0)}K max
+                            </div>
+                            <div className="text-[#e8fbff]/50">
+                              Fondo: €{((bando.fondo_totale || 0) / 1000).toFixed(0)}K
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center text-xs text-[#e8fbff]/50">
+                            <div>
+                              <Calendar className="w-3 h-3 inline mr-1" />
+                              Scade: {bando.scadenza ? new Date(bando.scadenza).toLocaleDateString('it-IT') : 'N/D'}
+                            </div>
+                            <div className="text-emerald-400">
+                              {bando.settori_target?.slice(0, 2).join(', ') || 'Tutti i settori'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {(!realData.bandiStats?.catalogo || realData.bandiStats.catalogo.length === 0) && (
+                        <div className="col-span-2 text-center text-[#e8fbff]/50 py-8">
+                          <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Caricamento bandi...</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* TAB 25: MIO AGENT */}
           <TabsContent value="mio" className="space-y-6">
             {/* SEZIONE A: Chat Principale MIO (sempre visibile) */}
             <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
