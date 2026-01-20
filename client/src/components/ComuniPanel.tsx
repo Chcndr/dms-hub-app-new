@@ -647,7 +647,7 @@ export default function ComuniPanel() {
               </div>
               
               {/* Info Comune */}
-              <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
+              <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
                 {selectedComune.indirizzo && (
                   <div className="flex items-center gap-2 text-gray-300">
                     <MapPin className="w-4 h-4 text-gray-400" />
@@ -672,6 +672,40 @@ export default function ComuniPanel() {
                     <a href={selectedComune.sito_web} target="_blank" rel="noopener noreferrer" className="hover:underline truncate">
                       {selectedComune.sito_web}
                     </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Dati Aggiuntivi IPA */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4 p-3 bg-gray-700/30 rounded-lg text-xs">
+                {selectedComune.pec && (
+                  <div className="col-span-2">
+                    <span className="text-gray-500">PEC:</span>
+                    <span className="text-purple-300 ml-1">{selectedComune.pec}</span>
+                  </div>
+                )}
+                {selectedComune.cap && (
+                  <div>
+                    <span className="text-gray-500">CAP:</span>
+                    <span className="text-gray-300 ml-1">{selectedComune.cap}</span>
+                  </div>
+                )}
+                {selectedComune.codice_istat && (
+                  <div>
+                    <span className="text-gray-500">ISTAT:</span>
+                    <span className="text-gray-300 ml-1">{selectedComune.codice_istat}</span>
+                  </div>
+                )}
+                {selectedComune.codice_catastale && (
+                  <div>
+                    <span className="text-gray-500">Catastale:</span>
+                    <span className="text-gray-300 ml-1">{selectedComune.codice_catastale}</span>
+                  </div>
+                )}
+                {selectedComune.codice_ipa && (
+                  <div>
+                    <span className="text-gray-500">IPA:</span>
+                    <span className="text-purple-300 ml-1">{selectedComune.codice_ipa}</span>
                   </div>
                 )}
               </div>
