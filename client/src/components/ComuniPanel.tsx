@@ -612,8 +612,8 @@ export default function ComuniPanel() {
   }
 
   // Calcola statistiche
-  const totalSettori = comuni.reduce((acc, c) => acc + (c.num_settori || 0), 0);
-  const comuniConSettori = comuni.filter(c => (c.num_settori || 0) > 0).length;
+  const totalSettori = comuni.reduce((acc, c) => acc + (parseInt(c.num_settori) || 0), 0);
+  const comuniConSettori = comuni.filter(c => (parseInt(c.num_settori) || 0) > 0).length;
 
   return (
     <div className="space-y-6">
