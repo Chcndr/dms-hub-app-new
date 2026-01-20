@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.40.0  
+> **Versione:** 3.41.0  
 > **Data:** 20 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -1151,6 +1151,57 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 ### 📝 CHANGELOG
+
+### v3.41.0 (20/01/2026) - Completamento Collegamento Dati Reali Dashboard PA
+
+**Frontend - Collegamento Completo Indicatori:**
+- **Tab Real-time** collegato a `/api/stats/realtime` con refresh automatico ogni 30 secondi
+  - Utenti Online
+  - Operatori Attivi
+  - Check-in Oggi
+  - Transazioni Oggi
+- **Grafico Crescita Utenti** collegato a `/api/stats/growth`
+  - Dati settimanali reali (14+3+4+10 nuovi utenti nelle ultime 4 settimane)
+  - Indicatore "Live" visibile quando dati caricati
+- **Tab Sostenibilità** collegato ai dati TCC reali
+  - TCC in Circolazione: 1.254
+  - TCC Emessi Totali: 14.440
+  - TCC Riscattati: 13.186
+  - Utenti TCC: 3
+  - CO₂ Risparmiata e Alberi Equivalenti calcolati dinamicamente
+- **Tab Prodotti** - Mostra avviso "Modulo in Sviluppo"
+  - Dati disponibili con integrazione TPAS (Q1 2027)
+  - Preview struttura futura (categorie, certificazioni)
+- **Tab Controlli/Sanzioni** - Mostra avviso "Modulo in Sviluppo"
+  - Dati disponibili con integrazione Guardian (Q2 2026)
+  - Preview KPI futuri (programmati, completati, violazioni, multe)
+
+**Hook useDashboardData Aggiornato:**
+- Aggiunto fetch per `statsRealtime` da `/api/stats/realtime`
+- Aggiunto fetch per `statsGrowth` da `/api/stats/growth`
+- Tutti i dati disponibili nel return dell'hook
+
+**Stato Indicatori Dashboard PA:**
+
+| Tab | Dati Reali | Dati Mock | Stato |
+|-----|------------|-----------|-------|
+| Dashboard Overview | 4 KPI | 0 | 🟢 100% |
+| Crescita Utenti | Grafico | 0 | 🟢 100% |
+| Clienti | 4 | 0 | 🟢 100% |
+| Wallet/PagoPA | 3 | 0 | 🟢 100% |
+| Prodotti | 0 | 0 | 🟡 Preview |
+| Sostenibilità | 4 TCC | 0 | 🟢 100% |
+| Carbon Credits | 8 | 0 | 🟢 100% |
+| Real-time | 4 | 0 | 🟢 100% |
+| Comuni | 6 | 0 | 🟢 100% |
+| Mercati | 4 | 0 | 🟢 100% |
+| HUB | 4 | 0 | 🟢 100% |
+| Controlli/Sanzioni | 0 | 0 | 🟡 Preview |
+
+**Commit:**
+- Frontend: `0debeda` - feat(dashboard-pa): collegamento dati reali per tutti i tab
+
+---
 
 ### v3.40.0 (20/01/2026) - Implementazione Statistiche Dashboard PA
 
