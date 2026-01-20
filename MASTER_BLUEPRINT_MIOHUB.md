@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.42.0  
+> **Versione:** 3.43.0  
 > **Data:** 20 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -1151,6 +1151,52 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 ### 📝 CHANGELOG
+
+### v3.43.0 (20/01/2026) - Tab Documentazione con Enti Formatori e Bandi
+
+**Nuove Tabelle Database:**
+- `formazione_enti` - Anagrafica enti formatori accreditati (5 record)
+- `formazione_corsi` - Catalogo corsi di formazione (6 record)
+- `bandi_associazioni` - Anagrafica associazioni partner (5 record)
+- `bandi_catalogo` - Catalogo bandi disponibili (8 record)
+
+**Backend - Nuovi Endpoint `/api/formazione/*`:**
+- `GET /api/formazione/enti` - Lista enti formatori accreditati
+- `POST /api/formazione/enti` - Crea nuovo ente formatore
+- `GET /api/formazione/enti/:id` - Dettaglio ente con corsi
+- `PUT /api/formazione/enti/:id` - Aggiorna ente formatore
+- `GET /api/formazione/corsi` - Lista corsi disponibili
+- `POST /api/formazione/corsi` - Crea nuovo corso
+- `GET /api/formazione/corsi/:id` - Dettaglio corso
+- `GET /api/formazione/stats` - Statistiche formazione
+
+**Backend - Nuovi Endpoint `/api/bandi/*`:**
+- `GET /api/bandi/associazioni` - Lista associazioni partner
+- `POST /api/bandi/associazioni` - Crea nuova associazione
+- `GET /api/bandi/associazioni/:id` - Dettaglio associazione
+- `PUT /api/bandi/associazioni/:id` - Aggiorna associazione
+- `GET /api/bandi/catalogo` - Lista bandi disponibili
+- `POST /api/bandi/catalogo` - Crea nuovo bando
+- `GET /api/bandi/catalogo/:id` - Dettaglio bando
+- `GET /api/bandi/matching/:bando_id` - Matching imprese-bando
+- `GET /api/bandi/stats` - Statistiche bandi
+
+**Frontend - Tab Documentazione:**
+- Sotto-tab "Enti Formatori":
+  - 4 KPI: Enti Accreditati, Corsi Programmati, Completati, In Corso
+  - Lista enti con rating e specializzazioni
+  - Catalogo corsi con prezzi, durata, posti
+- Sotto-tab "Associazioni & Bandi":
+  - 4 KPI: Associazioni Partner, Bandi Aperti, Importo Totale, Rating
+  - Lista associazioni con success rate
+  - Catalogo bandi con importi e scadenze
+
+**Index.json Aggiornato:**
+- Versione: 28
+- Totale endpoint: 429 (+22)
+- Nuove categorie: Formazione (8), Bandi (9), Stats Qualificazione (5)
+
+---
 
 ### v3.42.0 (20/01/2026) - Tab Qualificazione Imprese con Dati Reali
 
