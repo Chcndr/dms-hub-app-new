@@ -77,8 +77,13 @@ function useDashboardData() {
 
   // Fetch stats overview dal backend REST MIHUB
   const [statsOverview, setStatsOverview] = useState<any>(null);
+  const [statsRealtime, setStatsRealtime] = useState<any>(null);
+  const [statsGrowth, setStatsGrowth] = useState<any>(null);
+  
   useEffect(() => {
     const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+    
+    // Fetch overview
     fetch(`${MIHUB_API}/stats/overview`)
       .then(res => res.json())
       .then(data => {
@@ -87,6 +92,26 @@ function useDashboardData() {
         }
       })
       .catch(err => console.log('Stats overview fetch error:', err));
+    
+    // Fetch realtime
+    fetch(`${MIHUB_API}/stats/realtime`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setStatsRealtime(data.data);
+        }
+      })
+      .catch(err => console.log('Stats realtime fetch error:', err));
+    
+    // Fetch growth
+    fetch(`${MIHUB_API}/stats/growth`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setStatsGrowth(data.data);
+        }
+      })
+      .catch(err => console.log('Stats growth fetch error:', err));
   }, []);
 
   // Combina dati tRPC con dati REST
@@ -129,7 +154,9 @@ function useDashboardData() {
     civicReports: civicReportsQuery.data || [],
     mobilityData: mobilityQuery.data || [],
     isLoading: overviewQuery.isLoading && !statsOverview,
-    statsOverview: statsOverview
+    statsOverview: statsOverview,
+    statsRealtime: statsRealtime,
+    statsGrowth: statsGrowth
   };
 }
 
@@ -1241,16 +1268,39 @@ export default function DashboardPA() {
   // Simula aggiornamento real-time
   const { isAnimating } = useAnimation();
 
+  // Aggiorna realtimeData con dati reali dal backend
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (isAnimating) return; // PAUSA se c'è animazione mappa in corso
-      
+    if (realData.statsRealtime) {
       setRealtimeData(prev => ({
         ...prev,
-        activeUsers: prev.activeUsers + Math.floor(Math.random() * 10 - 5),
-        todayTransactions: prev.todayTransactions + Math.floor(Math.random() * 3)
+        activeUsers: realData.statsRealtime.activeUsers || 0,
+        activeVendors: realData.statsRealtime.activeVendors || 0,
+        todayCheckins: realData.statsRealtime.todayCheckins || 0,
+        todayTransactions: realData.statsRealtime.todayTransactions || 0
       }));
-    }, 5000);
+    }
+  }, [realData.statsRealtime]);
+
+  // Refresh realtime ogni 30 secondi
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isAnimating) return;
+      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+      fetch(`${MIHUB_API}/stats/realtime`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setRealtimeData(prev => ({
+              ...prev,
+              activeUsers: data.data.activeUsers || 0,
+              activeVendors: data.data.activeVendors || 0,
+              todayCheckins: data.data.todayCheckins || 0,
+              todayTransactions: data.data.todayTransactions || 0
+            }));
+          }
+        })
+        .catch(err => console.log('Realtime refresh error:', err));
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [isAnimating]);
@@ -2072,26 +2122,40 @@ export default function DashboardPA() {
             {/* Contenuto Overview */}
             {dashboardSubTab === 'overview' && (
               <div className="space-y-6">
-            {/* Crescita Utenti */}
+            {/* Crescita Utenti - Dati Reali dal Backend */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-[#14b8a6]" />
                   Crescita Utenti
+                  {realData.statsGrowth && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-end justify-between gap-2">
-                  {mockData.usersGrowth.map((item, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                      <div className="w-full bg-[#14b8a6]/20 rounded-t-lg relative" style={{ height: `${(item.users / 16000) * 100}%` }}>
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#14b8a6] to-[#14b8a6]/50 rounded-t-lg"></div>
-                      </div>
-                      <span className="text-xs text-[#e8fbff]/70">{item.date}</span>
-                      <span className="text-sm font-semibold text-[#14b8a6]">{item.users.toLocaleString()}</span>
+                {realData.statsGrowth && realData.statsGrowth.length > 0 ? (
+                  <div className="h-64 flex items-end justify-between gap-2">
+                    {realData.statsGrowth.map((item: any, i: number) => {
+                      const maxUsers = Math.max(...realData.statsGrowth.map((d: any) => d.cumulative || d.users || 0));
+                      const currentValue = item.cumulative || item.users || 0;
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                          <div className="w-full bg-[#14b8a6]/20 rounded-t-lg relative" style={{ height: `${maxUsers > 0 ? (currentValue / maxUsers) * 100 : 0}%`, minHeight: '20px' }}>
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#14b8a6] to-[#14b8a6]/50 rounded-t-lg"></div>
+                          </div>
+                          <span className="text-xs text-[#e8fbff]/70">{item.date || item.period}</span>
+                          <span className="text-sm font-semibold text-[#14b8a6]">{currentValue.toLocaleString()}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center">
+                    <div className="text-center">
+                      <TrendingUp className="h-12 w-12 text-[#14b8a6]/30 mx-auto mb-2" />
+                      <p className="text-[#e8fbff]/50">Caricamento dati crescita...</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -2235,62 +2299,53 @@ export default function DashboardPA() {
 
           {/* TAB 4: PRODOTTI */}
           <TabsContent value="products" className="space-y-6">
-            {/* Categorie */}
-            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+            {/* Avviso dati non disponibili */}
+            <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-[#f59e0b]/10 rounded-lg">
+                    <Clock className="h-8 w-8 text-[#f59e0b]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[#e8fbff] font-semibold text-lg">Modulo Prodotti in Sviluppo</h3>
+                    <p className="text-[#e8fbff]/70">I dati sui prodotti saranno disponibili con l'integrazione TPAS (Q1 2027)</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Preview Categorie - Struttura Futura */}
+            <Card className="bg-[#1a2332] border-[#14b8a6]/30 opacity-60">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <ShoppingCart className="h-5 w-5 text-[#14b8a6]" />
                   Categorie Più Acquistate
+                  <span className="text-xs text-[#f59e0b] ml-2">Preview</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {mockData.categories.map((cat, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-[#e8fbff]">{cat.name}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-[#e8fbff]/70">{cat.purchases.toLocaleString()}</span>
-                        <span className="font-semibold text-[#14b8a6]">{cat.percentage}%</span>
-                        <span className="text-xs text-[#10b981]">🌱 BIO {cat.bio}%</span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-[#0b1220] rounded-full h-2">
-                      <div
-                        className="h-2 rounded-full transition-all"
-                        style={{ width: `${cat.percentage}%`, backgroundColor: cat.color }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
+              <CardContent>
+                <div className="text-center py-8">
+                  <ShoppingCart className="h-12 w-12 text-[#14b8a6]/30 mx-auto mb-3" />
+                  <p className="text-[#e8fbff]/50">Dati categorie non ancora disponibili</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-1">Richiede integrazione con sistema vendite</p>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Certificazioni */}
-            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+            {/* Preview Certificazioni - Struttura Futura */}
+            <Card className="bg-[#1a2332] border-[#14b8a6]/30 opacity-60">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <Award className="h-5 w-5 text-[#14b8a6]" />
                   Certificazioni Prodotti
+                  <span className="text-xs text-[#f59e0b] ml-2">Preview</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  {mockData.certifications.map((cert, i) => (
-                    <div key={i} className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/20">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[#e8fbff] font-semibold">{cert.type}</span>
-                        <Award className="h-5 w-5" style={{ color: cert.color }} />
-                      </div>
-                      <div className="text-2xl font-bold text-[#14b8a6] mb-1">{cert.percentage}%</div>
-                      <div className="text-sm text-[#e8fbff]/70">{cert.count.toLocaleString()} prodotti</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 p-4 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
-                  <div className="flex items-center gap-2 text-[#10b981]">
-                    <Award className="h-5 w-5" />
-                    <span className="font-semibold">78.5% prodotti certificati</span>
-                  </div>
+                <div className="text-center py-8">
+                  <Award className="h-12 w-12 text-[#14b8a6]/30 mx-auto mb-3" />
+                  <p className="text-[#e8fbff]/50">Dati certificazioni non ancora disponibili</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-1">Richiede integrazione con database prodotti</p>
                 </div>
               </CardContent>
             </Card>
@@ -2303,59 +2358,103 @@ export default function DashboardPA() {
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <Leaf className="h-5 w-5 text-[#14b8a6]" />
                   Rating Sostenibilità Popolazione
+                  {realData.statsOverview && <span className="text-xs text-[#10b981] ml-2">● Dati Reali</span>}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center mb-6">
                   <div className="text-6xl font-bold text-[#14b8a6] mb-2">
-                    {mockData.overview.sustainabilityRating}/10
+                    {realData.overview?.sustainabilityRating || 0}/10
                   </div>
-                  <p className="text-[#e8fbff]/70">Media popolazione</p>
+                  <p className="text-[#e8fbff]/70">Media popolazione basata su TCC</p>
                 </div>
+                
+                {/* Dati TCC Reali */}
+                {realData.statsOverview?.tcc && (
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 bg-[#0b1220] rounded-lg border border-[#10b981]/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Leaf className="h-5 w-5 text-[#10b981]" />
+                        <span className="text-[#e8fbff]/70 text-sm">TCC in Circolazione</span>
+                      </div>
+                      <div className="text-3xl font-bold text-[#10b981]">
+                        {(realData.statsOverview.tcc.total_in_circulation || 0).toLocaleString('it-IT')}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="h-5 w-5 text-[#14b8a6]" />
+                        <span className="text-[#e8fbff]/70 text-sm">TCC Emessi Totali</span>
+                      </div>
+                      <div className="text-3xl font-bold text-[#14b8a6]">
+                        {(realData.statsOverview.tcc.total_issued || 0).toLocaleString('it-IT')}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-[#0b1220] rounded-lg border border-[#f59e0b]/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Award className="h-5 w-5 text-[#f59e0b]" />
+                        <span className="text-[#e8fbff]/70 text-sm">TCC Riscattati</span>
+                      </div>
+                      <div className="text-3xl font-bold text-[#f59e0b]">
+                        {(realData.statsOverview.tcc.total_redeemed || 0).toLocaleString('it-IT')}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-[#0b1220] rounded-lg border border-[#8b5cf6]/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-5 w-5 text-[#8b5cf6]" />
+                        <span className="text-[#e8fbff]/70 text-sm">Utenti TCC</span>
+                      </div>
+                      <div className="text-3xl font-bold text-[#8b5cf6]">
+                        {(realData.statsOverview.tcc.active_users || 0).toLocaleString('it-IT')}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Indicatori Sostenibilità */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                    <span className="text-[#e8fbff]">Carbon Credits</span>
+                    <span className="text-[#e8fbff]">Carbon Credits (TCC)</span>
                     <div className="flex items-center gap-2">
                       <div className="w-32 bg-[#14b8a6]/20 rounded-full h-2">
-                        <div className="bg-[#14b8a6] h-2 rounded-full" style={{ width: '82%' }}></div>
+                        <div className="bg-[#14b8a6] h-2 rounded-full" style={{ width: `${Math.min((realData.statsOverview?.tcc?.total_in_circulation || 0) / 20000 * 100, 100)}%` }}></div>
                       </div>
-                      <span className="text-[#14b8a6] font-semibold">8.2/10</span>
+                      <span className="text-[#14b8a6] font-semibold">
+                        {((realData.statsOverview?.tcc?.total_in_circulation || 0) / 2000).toFixed(1)}/10
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                    <span className="text-[#e8fbff]">Acquisti BIO</span>
+                    <span className="text-[#e8fbff]">Tasso Riscatto TCC</span>
                     <div className="flex items-center gap-2">
                       <div className="w-32 bg-[#14b8a6]/20 rounded-full h-2">
-                        <div className="bg-[#14b8a6] h-2 rounded-full" style={{ width: '78%' }}></div>
+                        <div className="bg-[#10b981] h-2 rounded-full" style={{ 
+                          width: `${realData.statsOverview?.tcc?.total_issued > 0 
+                            ? (realData.statsOverview.tcc.total_redeemed / realData.statsOverview.tcc.total_issued * 100) 
+                            : 0}%` 
+                        }}></div>
                       </div>
-                      <span className="text-[#14b8a6] font-semibold">7.8/10</span>
+                      <span className="text-[#10b981] font-semibold">
+                        {realData.statsOverview?.tcc?.total_issued > 0 
+                          ? ((realData.statsOverview.tcc.total_redeemed / realData.statsOverview.tcc.total_issued * 10).toFixed(1))
+                          : '0.0'}/10
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                    <span className="text-[#e8fbff]">Trasporto Sostenibile</span>
+                    <span className="text-[#e8fbff]">CO₂ Risparmiata</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-32 bg-[#14b8a6]/20 rounded-full h-2">
-                        <div className="bg-[#14b8a6] h-2 rounded-full" style={{ width: '75%' }}></div>
-                      </div>
-                      <span className="text-[#14b8a6] font-semibold">7.5/10</span>
+                      <span className="text-[#10b981] font-semibold">
+                        {((realData.statsOverview?.tcc?.total_redeemed || 0)).toLocaleString('it-IT')} kg
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                    <span className="text-[#e8fbff]">Engagement Civico</span>
+                    <span className="text-[#e8fbff]">Alberi Equivalenti</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-32 bg-[#14b8a6]/20 rounded-full h-2">
-                        <div className="bg-[#14b8a6] h-2 rounded-full" style={{ width: '69%' }}></div>
-                      </div>
-                      <span className="text-[#14b8a6] font-semibold">6.9/10</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                    <span className="text-[#e8fbff]">Shopping Locale</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-[#14b8a6]/20 rounded-full h-2">
-                        <div className="bg-[#14b8a6] h-2 rounded-full" style={{ width: '85%' }}></div>
-                      </div>
-                      <span className="text-[#14b8a6] font-semibold">8.5/10</span>
+                      <span className="text-[#14b8a6] font-semibold">
+                        {Math.round((realData.statsOverview?.tcc?.total_redeemed || 0) / 22)} alberi
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -4079,13 +4178,29 @@ export default function DashboardPA() {
 
           {/* TAB 16: CONTROLLI/SANZIONI */}
           <TabsContent value="inspections" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Avviso modulo in sviluppo */}
+            <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-[#f59e0b]/10 rounded-lg">
+                    <Clock className="h-8 w-8 text-[#f59e0b]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[#e8fbff] font-semibold text-lg">Modulo Controlli in Sviluppo</h3>
+                    <p className="text-[#e8fbff]/70">I dati sui controlli saranno disponibili con l'integrazione Guardian (Q2 2026)</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Preview KPI - Struttura Futura */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 opacity-60">
               <Card className="bg-gradient-to-br from-[#f59e0b]/20 to-[#f59e0b]/5 border-[#f59e0b]/30">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-[#e8fbff] text-sm">Programmati</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-4xl font-bold text-[#f59e0b]">{mockData.inspections.scheduled}</div>
+                  <div className="text-4xl font-bold text-[#f59e0b]">-</div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-[#10b981]/20 to-[#10b981]/5 border-[#10b981]/30">
@@ -4093,7 +4208,7 @@ export default function DashboardPA() {
                   <CardTitle className="text-[#e8fbff] text-sm">Completati</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-4xl font-bold text-[#10b981]">{mockData.inspections.completed}</div>
+                  <div className="text-4xl font-bold text-[#10b981]">-</div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-[#ef4444]/20 to-[#ef4444]/5 border-[#ef4444]/30">
@@ -4101,7 +4216,7 @@ export default function DashboardPA() {
                   <CardTitle className="text-[#e8fbff] text-sm">Violazioni</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-4xl font-bold text-[#ef4444]">{mockData.inspections.violations}</div>
+                  <div className="text-4xl font-bold text-[#ef4444]">-</div>
                 </CardContent>
               </Card>
               <Card className="bg-[#1a2332] border-[#14b8a6]/30">
@@ -4109,26 +4224,20 @@ export default function DashboardPA() {
                   <CardTitle className="text-[#e8fbff] text-sm">Multe Totali</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-[#ef4444]">€{mockData.inspections.totalFines.toLocaleString()}</div>
+                  <div className="text-3xl font-bold text-[#ef4444]">€-</div>
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+            <Card className="bg-[#1a2332] border-[#f59e0b]/30 opacity-60">
               <CardHeader>
-                <CardTitle className="text-[#e8fbff]">Prossimi Controlli</CardTitle>
+                <CardTitle className="text-[#e8fbff]">Prossimi Controlli <span className="text-xs text-[#f59e0b] ml-2">Preview</span></CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {mockData.inspections.upcoming.map((inspection) => (
-                    <div key={inspection.id} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between">
-                      <div>
-                        <div className="text-[#e8fbff] font-semibold">{inspection.business}</div>
-                        <div className="text-sm text-[#e8fbff]/70">{inspection.type} • Ispettore: {inspection.inspector}</div>
-                      </div>
-                      <div className="text-[#f59e0b] font-semibold">{inspection.date}</div>
-                    </div>
-                  ))}
+                <div className="text-center py-8">
+                  <Shield className="h-12 w-12 text-[#f59e0b]/30 mx-auto mb-3" />
+                  <p className="text-[#e8fbff]/50">Nessun controllo programmato</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-1">Richiede integrazione con sistema Guardian</p>
                 </div>
               </CardContent>
             </Card>
