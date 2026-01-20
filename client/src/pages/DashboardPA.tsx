@@ -4411,32 +4411,32 @@ export default function DashboardPA() {
                   <div className="p-4 bg-[#3b82f6]/10 border border-[#3b82f6]/30 rounded-lg">
                     <div className="text-sm text-[#e8fbff]/70 mb-1">Linee Attive</div>
                     <div className="text-3xl font-bold text-[#3b82f6]">
-                      {realData.mobilityData.length > 0 
-                        ? new Set(realData.mobilityData.filter((m: any) => m.type === 'bus' || m.type === 'tram').map((m: any) => m.lineNumber)).size
+                      {(realData.mobilityData || []).length > 0 
+                        ? new Set((realData.mobilityData || []).filter((m: any) => m.type === 'bus' || m.type === 'tram').map((m: any) => m.lineNumber)).size
                         : mockData.mobility.busLines}
                     </div>
                   </div>
                   <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
                     <div className="text-sm text-[#e8fbff]/70 mb-1">Bus in Servizio</div>
                     <div className="text-3xl font-bold text-[#10b981]">
-                      {realData.mobilityData.length > 0
-                        ? realData.mobilityData.filter((m: any) => m.type === 'bus' && m.status === 'active').length
+                      {(realData.mobilityData || []).length > 0
+                        ? (realData.mobilityData || []).filter((m: any) => m.type === 'bus' && m.status === 'active').length
                         : mockData.mobility.activeBuses}
                     </div>
                   </div>
                   <div className="p-4 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
                     <div className="text-sm text-[#e8fbff]/70 mb-1">Passeggeri Oggi</div>
                     <div className="text-3xl font-bold text-[#f59e0b]">
-                      {realData.mobilityData.length > 0
-                        ? realData.mobilityData.reduce((sum: number, m: any) => sum + (m.occupancy || 0), 0).toLocaleString()
+                      {(realData.mobilityData || []).length > 0
+                        ? (realData.mobilityData || []).reduce((sum: number, m: any) => sum + (m.occupancy || 0), 0).toLocaleString()
                         : mockData.mobility.passengers.toLocaleString()}
                     </div>
                   </div>
                   <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
                     <div className="text-sm text-[#e8fbff]/70 mb-1">Fermate</div>
                     <div className="text-3xl font-bold text-[#e8fbff]">
-                      {realData.mobilityData.length > 0
-                        ? realData.mobilityData.filter((m: any) => m.type === 'bus' || m.type === 'tram').length
+                      {(realData.mobilityData || []).length > 0
+                        ? (realData.mobilityData || []).filter((m: any) => m.type === 'bus' || m.type === 'tram').length
                         : mockData.mobility.totalBusStops}
                     </div>
                   </div>
@@ -4444,8 +4444,8 @@ export default function DashboardPA() {
 
                 <div className="space-y-2">
                   <h4 className="text-[#e8fbff] font-semibold mb-3">Prossime Corse</h4>
-                  {(realData.mobilityData.length > 0 
-                    ? realData.mobilityData.filter((m: any) => m.type === 'bus' || m.type === 'tram').slice(0, 3)
+                  {((realData.mobilityData || []).length > 0 
+                    ? (realData.mobilityData || []).filter((m: any) => m.type === 'bus' || m.type === 'tram').slice(0, 3)
                     : mockData.mobility.stops
                   ).map((stop: any) => (
                     <div key={stop.id} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between">
@@ -4552,7 +4552,7 @@ export default function DashboardPA() {
             </div>
 
             {/* Mappa Interattiva Fermate */}
-            {realData.mobilityData.length > 0 && (
+            {(realData.mobilityData || []).length > 0 && (
               <Card className="bg-[#1a2332] border-[#3b82f6]/30">
                 <CardHeader>
                   <CardTitle className="text-[#e8fbff] flex items-center gap-2">
@@ -4563,7 +4563,7 @@ export default function DashboardPA() {
                 <CardContent>
                   <div className="h-[500px] rounded-lg overflow-hidden">
                     <MobilityMap
-                      stops={realData.mobilityData.map((m: any) => ({
+                      stops={(realData.mobilityData || []).map((m: any) => ({
                         id: m.id,
                         type: m.type,
                         stopName: m.stopName,
