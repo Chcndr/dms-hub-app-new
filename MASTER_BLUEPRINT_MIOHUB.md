@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.36.0  
-> **Data:** 18 Gennaio 2026  
+> **Versione:** 3.37.0  
+> **Data:** 20 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -3599,54 +3599,97 @@ const handleStallUpdate = async () => {
 
 #### 4.2 Tab Fatturazione
 
-**Nuove tabelle da creare**:
+**Tabelle create** ✅:
 
 **comune_contratti**
 | Colonna | Tipo | Descrizione |
 |---|---|---|
-| id | integer | ID univoco |
-| comune_id | integer | FK a comuni.id |
-| servizio_id | varchar | ID del servizio (es. "MIOHUB_BASE") |
-| data_inizio | date | Data inizio contratto |
-| data_fine | date | Data fine contratto |
-| importo_annuale | numeric | Importo annuale del servizio |
-| stato | varchar | Stato (attivo, scaduto, in_attesa) |
+| id | SERIAL | ID univoco |
+| comune_id | INTEGER | FK a comuni.id |
+| tipo_contratto | VARCHAR(50) | Tipo (servizio_miohub, licenza_annuale, manutenzione, consulenza) |
+| descrizione | TEXT | Descrizione contratto |
+| data_inizio | DATE | Data inizio contratto |
+| data_fine | DATE | Data fine contratto |
+| importo_annuale | NUMERIC(10,2) | Importo annuale del servizio |
+| stato | VARCHAR(20) | Stato (attivo, scaduto, in_attesa, sospeso) |
+| note | TEXT | Note aggiuntive |
+| created_at | TIMESTAMP | Data creazione |
+| updated_at | TIMESTAMP | Data ultimo aggiornamento |
 
 **comune_fatture**
 | Colonna | Tipo | Descrizione |
 |---|---|---|
-| id | integer | ID univoco |
-| contratto_id | integer | FK a comune_contratti.id |
-| data_emissione | date | Data emissione fattura |
-| periodo_riferimento | varchar | Mese/Anno di riferimento |
-| importo | numeric | Importo fattura |
-| stato | varchar | Stato (emessa, pagata, insoluta) |
-| pagopa_iuv | varchar | IUV per pagamento PagoPA |
+| id | SERIAL | ID univoco |
+| comune_id | INTEGER | FK a comuni.id |
+| contratto_id | INTEGER | FK a comune_contratti.id (opzionale) |
+| numero_fattura | VARCHAR(50) | Numero fattura (es. FT-2025-001) |
+| data_emissione | DATE | Data emissione fattura |
+| data_scadenza | DATE | Data scadenza pagamento |
+| importo | NUMERIC(10,2) | Importo imponibile |
+| iva | NUMERIC(5,2) | Aliquota IVA (default 22%) |
+| totale | NUMERIC(10,2) | Totale con IVA (calcolato) |
+| stato | VARCHAR(20) | Stato (emessa, inviata, pagata, scaduta) |
+| pagopa_iuv | VARCHAR(50) | IUV per pagamento PagoPA |
+| data_pagamento | DATE | Data effettivo pagamento |
+| note | TEXT | Note aggiuntive |
+| created_at | TIMESTAMP | Data creazione |
+| updated_at | TIMESTAMP | Data ultimo aggiornamento |
 
-**Endpoint da creare**:
-- GET/POST /api/comuni/:id/contratti
-- GET/POST /api/contratti/:id/fatture
-- POST /api/fatture/:id/genera-pagopa
+**comune_utenti**
+| Colonna | Tipo | Descrizione |
+|---|---|---|
+| id | SERIAL | ID univoco |
+| comune_id | INTEGER | FK a comuni.id |
+| user_id | INTEGER | FK a users.id |
+| ruolo | VARCHAR(50) | Ruolo (admin, operatore_mercato, polizia_locale, tributi, suap, operatore) |
+| permessi | JSONB | Permessi specifici (opzionale) |
+| attivo | BOOLEAN | Stato attivazione (default true) |
+| created_at | TIMESTAMP | Data creazione |
+| updated_at | TIMESTAMP | Data ultimo aggiornamento |
+
+**Endpoint implementati** ✅:
+
+| Endpoint | Metodo | Descrizione |
+|---|---|---|
+| `/api/comuni/:id/contratti` | GET | Lista contratti del comune |
+| `/api/comuni/:id/contratti` | POST | Crea nuovo contratto |
+| `/api/comuni/contratti/:id` | PUT | Aggiorna contratto |
+| `/api/comuni/contratti/:id` | DELETE | Elimina contratto |
+| `/api/comuni/:id/fatture` | GET | Lista fatture del comune |
+| `/api/comuni/:id/fatture` | POST | Crea nuova fattura |
+| `/api/comuni/fatture/:id` | PUT | Aggiorna stato fattura |
+| `/api/comuni/:id/utenti` | GET | Lista utenti assegnati al comune |
+| `/api/comuni/:id/utenti` | POST | Assegna utente con ruolo |
+| `/api/comuni/utenti/:id` | PUT | Aggiorna ruolo/permessi utente |
+| `/api/comuni/utenti/:id` | DELETE | Rimuove utente dal comune |
+| `/api/comuni/:id/utenti/stats` | GET | Statistiche utenti per ruolo |
 
 #### 4.3 Tab Permessi
 
-**Tabelle esistenti da usare**:
-- user_roles - Ruoli disponibili
-- role_permissions - Permessi per ruolo
-- user_role_assignments - Assegnazione ruoli (con territory_type='comune' e territory_id=comuni.id)
+**Ruoli disponibili**:
+| Ruolo | Label | Descrizione |
+|---|---|---|
+| admin | Admin Comune | Accesso completo a tutte le funzionalità |
+| operatore_mercato | Operatore Mercato | Gestione presenze e spunta mercati |
+| polizia_locale | Polizia Locale | Controlli e verbali |
+| tributi | Ufficio Tributi | Gestione COSAP e pagamenti |
+| suap | SUAP | Autorizzazioni e pratiche |
+| operatore | Operatore Generico | Accesso base in sola lettura |
 
-**Endpoint da creare**:
-- GET /api/comuni/:id/utenti
-- POST /api/comuni/:id/utenti
-- DELETE /api/comuni/:id/utenti/:userId/ruoli/:roleId
+**Funzionalità Frontend**:
+- Riepilogo visivo per ruolo con conteggio utenti
+- Lista utenti assegnati con nome/email
+- Dropdown per cambiare ruolo al volo
+- Modal per assegnare nuovi utenti (per email o ID)
+- Pulsante elimina utente
 
 ---
 
 ### 5. Guardian Aggiornato
 
-- **Versione**: v26
-- **Endpoint monitorati**: 380
-- **Nuovi endpoint aggiunti**: ipa.uo, ipa.tipologie
+- **Versione**: v27
+- **Endpoint monitorati**: 69 totali
+- **Endpoint Comuni PA**: 24 (CRUD comuni, settori, mercati, contratti, fatture, utenti, IPA)
 
 ---
 
@@ -3654,9 +3697,10 @@ const handleStallUpdate = async () => {
 
 | File | Righe | Modifiche |
 |---|---|---|
-| ComuniPanel.tsx | ~1000 | Dashboard 5 tab, import IPA, layout migliorato |
+| ComuniPanel.tsx | ~2300 | Dashboard 5 tab complete, import IPA, fatturazione, permessi |
+| routes/comuni.js | ~620 | Endpoint CRUD completi per tutte le entità |
+| routes/integrations.js | ~650 | Guardian con 24 endpoint Comuni PA |
 | routes/ipa.js | ~150 | Endpoint UO e tipologie |
-| MIO-hub/api/index.json | ~6000 | Guardian v26 con nuovi endpoint |
 
 ---
 
