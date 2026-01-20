@@ -4758,21 +4758,28 @@ export default function DashboardPA() {
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 text-emerald-400 text-sm mb-1">
                         <FileCheck className="w-4 h-4" />
-                        Corsi Completati
+                        Attestati Registrati
+                        {realData.formazioneStats?.stats?.attestati && <span className="text-xs text-[#10b981]">● Live</span>}
                       </div>
                       <div className="text-2xl font-bold text-white">
-                        {realData.formazioneStats?.stats?.corsi?.completati ?? 0}
+                        {realData.formazioneStats?.stats?.attestati?.totale ?? 0}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        {realData.formazioneStats?.stats?.attestati?.attivi ?? 0} attivi
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+                  <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
                     <CardContent className="p-4">
-                      <div className="flex items-center gap-2 text-purple-400 text-sm mb-1">
-                        <Activity className="w-4 h-4" />
-                        In Corso
+                      <div className="flex items-center gap-2 text-red-400 text-sm mb-1">
+                        <AlertTriangle className="w-4 h-4" />
+                        In Scadenza
                       </div>
                       <div className="text-2xl font-bold text-white">
-                        {realData.formazioneStats?.stats?.corsi?.in_corso ?? 0}
+                        {realData.formazioneStats?.stats?.attestati?.in_scadenza_30 ?? 0}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        {realData.formazioneStats?.stats?.attestati?.scaduti ?? 0} scaduti
                       </div>
                     </CardContent>
                   </Card>
@@ -4865,6 +4872,68 @@ export default function DashboardPA() {
                         <div className="col-span-2 text-center text-[#e8fbff]/50 py-8">
                           <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Caricamento corsi...</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Lista Imprese con Attestati - Scadenze */}
+                <Card className="bg-[#1a2332] border-[#f59e0b]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-[#f59e0b]" />
+                      Scadenze Attestati Imprese
+                      {realData.formazioneStats?.stats?.scadenze_imprese && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                    </CardTitle>
+                    <CardDescription className="text-[#e8fbff]/50">
+                      Attestati in scadenza e scaduti ordinati per data
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                      {(realData.formazioneStats?.stats?.scadenze_imprese || []).map((item: any, idx: number) => (
+                        <div key={item.id || idx} className={`flex items-center justify-between p-3 rounded-lg border ${
+                          item.stato_scadenza === 'scaduto' ? 'bg-red-500/10 border-red-500/30' :
+                          item.stato_scadenza === 'urgente' ? 'bg-orange-500/10 border-orange-500/30' :
+                          item.stato_scadenza === 'in_scadenza' ? 'bg-yellow-500/10 border-yellow-500/30' :
+                          'bg-[#0b1220] border-[#3b82f6]/10'
+                        }`}>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-4 h-4 text-[#e8fbff]/50" />
+                              <span className="text-[#e8fbff] font-medium">{item.impresa_nome}</span>
+                            </div>
+                            <div className="flex items-center gap-4 mt-1 text-xs text-[#e8fbff]/50">
+                              <span className="flex items-center gap-1">
+                                <FileCheck className="w-3 h-3" />
+                                {item.tipo}
+                              </span>
+                              <span>{item.ente_rilascio}</span>
+                              {item.numero_certificato && <span>#{item.numero_certificato}</span>}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`text-sm font-bold ${
+                              item.stato_scadenza === 'scaduto' ? 'text-red-400' :
+                              item.stato_scadenza === 'urgente' ? 'text-orange-400' :
+                              item.stato_scadenza === 'in_scadenza' ? 'text-yellow-400' :
+                              'text-emerald-400'
+                            }`}>
+                              {item.stato_scadenza === 'scaduto' ? `Scaduto da ${Math.abs(item.giorni_rimanenti)} gg` :
+                               item.giorni_rimanenti <= 0 ? 'Scaduto' :
+                               `${item.giorni_rimanenti} giorni`}
+                            </div>
+                            <div className="text-xs text-[#e8fbff]/50">
+                              Scade: {new Date(item.data_scadenza).toLocaleDateString('it-IT')}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {(!realData.formazioneStats?.stats?.scadenze_imprese || realData.formazioneStats.stats.scadenze_imprese.length === 0) && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <FileCheck className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessun attestato registrato</p>
                         </div>
                       )}
                     </div>
