@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import { PanicButton } from '@/components/PanicButton';
 import { useLocation } from 'wouter';
 import { useAnimation } from '@/contexts/AnimationContext';
@@ -76,8 +76,8 @@ function useDashboardData() {
   const mobilityQuery = trpc.mobility.list.useQuery();
 
   // Fetch stats overview dal backend REST MIHUB
-  const [statsOverview, setStatsOverview] = React.useState<any>(null);
-  React.useEffect(() => {
+  const [statsOverview, setStatsOverview] = useState<any>(null);
+  useEffect(() => {
     const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
     fetch(`${MIHUB_API}/stats/overview`)
       .then(res => res.json())
@@ -90,7 +90,7 @@ function useDashboardData() {
   }, []);
 
   // Combina dati tRPC con dati REST
-  const combinedOverview = React.useMemo(() => {
+  const combinedOverview = useMemo(() => {
     if (statsOverview) {
       return {
         totalUsers: statsOverview.utenti_totali || 0,
