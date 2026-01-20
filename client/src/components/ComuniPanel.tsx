@@ -98,6 +98,18 @@ interface Fattura {
   tipo_contratto?: string;
 }
 
+interface UtenteComune {
+  id: number;
+  comune_id: number;
+  user_id: number;
+  ruolo: string;
+  permessi: Record<string, boolean>;
+  attivo: boolean;
+  email?: string;
+  user_name?: string;
+  created_at: string;
+}
+
 interface IPAResult {
   codice_ipa: string;
   denominazione: string;
@@ -165,6 +177,26 @@ export default function ComuniPanel() {
     stato: 'emessa',
     note: ''
   });
+
+  // Stato per permessi
+  const [utentiComune, setUtentiComune] = useState<UtenteComune[]>([]);
+  const [loadingPermessi, setLoadingPermessi] = useState(false);
+  const [showUtenteForm, setShowUtenteForm] = useState(false);
+  const [utenteForm, setUtenteForm] = useState({
+    user_id: '',
+    ruolo: 'operatore',
+    email: ''
+  });
+
+  // Ruoli disponibili
+  const RUOLI_COMUNE = [
+    { value: 'admin', label: 'Admin Comune', description: 'Accesso completo a tutte le funzionalità' },
+    { value: 'operatore_mercato', label: 'Operatore Mercato', description: 'Gestione presenze e spunta mercati' },
+    { value: 'polizia_locale', label: 'Polizia Locale', description: 'Controlli e verbali' },
+    { value: 'tributi', label: 'Ufficio Tributi', description: 'Gestione COSAP e pagamenti' },
+    { value: 'suap', label: 'SUAP', description: 'Autorizzazioni e pratiche' },
+    { value: 'operatore', label: 'Operatore Generico', description: 'Accesso base in sola lettura' }
+  ];
 
   // Form state per comune
   const [comuneForm, setComuneForm] = useState({
@@ -326,6 +358,88 @@ export default function ComuniPanel() {
     }
   };
 
+  // Carica utenti assegnati al comune
+  const fetchPermessi = async (comuneId: number) => {
+    setLoadingPermessi(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/comuni/${comuneId}/utenti`);
+      const data = await res.json();
+      if (data.success) setUtentiComune(data.data);
+    } catch (error) {
+      console.error('Error fetching permessi:', error);
+    } finally {
+      setLoadingPermessi(false);
+    }
+  };
+
+  // Assegna utente al comune
+  const handleAssegnaUtente = async () => {
+    if (!selectedComune || !utenteForm.email) return;
+    try {
+      // Prima cerchiamo l'utente per email
+      const userRes = await fetch(`${API_BASE_URL}/api/users?email=${encodeURIComponent(utenteForm.email)}`);
+      const userData = await userRes.json();
+      
+      let userId = utenteForm.user_id;
+      if (userData.success && userData.data?.length > 0) {
+        userId = userData.data[0].id;
+      } else if (!userId) {
+        alert('Utente non trovato. Inserisci un ID utente valido o un\'email esistente.');
+        return;
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/api/comuni/${selectedComune.id}/utenti`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: parseInt(userId as string), ruolo: utenteForm.ruolo })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowUtenteForm(false);
+        setUtenteForm({ user_id: '', ruolo: 'operatore', email: '' });
+        fetchPermessi(selectedComune.id);
+      }
+    } catch (error) {
+      console.error('Error assigning utente:', error);
+    }
+  };
+
+  // Aggiorna ruolo utente
+  const handleUpdateRuolo = async (assegnazioneId: number, nuovoRuolo: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/comuni/utenti/${assegnazioneId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruolo: nuovoRuolo })
+      });
+      const data = await res.json();
+      if (data.success && selectedComune) {
+        fetchPermessi(selectedComune.id);
+      }
+    } catch (error) {
+      console.error('Error updating ruolo:', error);
+    }
+  };
+
+  // Rimuovi utente dal comune
+  const handleRimuoviUtente = async (assegnazioneId: number) => {
+    if (!confirm('Sei sicuro di voler rimuovere questo utente dal comune?')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/comuni/utenti/${assegnazioneId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success && selectedComune) {
+        fetchPermessi(selectedComune.id);
+      }
+    } catch (error) {
+      console.error('Error removing utente:', error);
+    }
+  };
+
+  // Conta utenti per ruolo
+  const getUtentiPerRuolo = (ruolo: string) => {
+    return utentiComune.filter(u => u.ruolo === ruolo && u.attivo).length;
+  };
+
   // Ricerca su IndicePA
   const searchIPA = async () => {
     if (!ipaSearchQuery || ipaSearchQuery.length < 3) {
@@ -479,6 +593,7 @@ export default function ComuniPanel() {
       fetchSettori(selectedComune.id);
       fetchMercati(selectedComune.id);
       fetchFatturazione(selectedComune.id);
+      fetchPermessi(selectedComune.id);
     }
   }, [selectedComune]);
 
@@ -1433,42 +1548,96 @@ export default function ComuniPanel() {
               {/* Tab Permessi */}
               {activeTab === 'permessi' && (
                 <div className="pt-2">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-white">Gestione Permessi e Ruoli</h4>
-                    <button className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm rounded-lg transition-colors">
-                      <Plus className="w-3 h-3" />
-                      Assegna Utente
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-white">Admin Comune</span>
-                          <p className="text-xs text-gray-400">Accesso completo a tutte le funzionalità del comune</p>
-                        </div>
-                        <span className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded">0 utenti</span>
-                      </div>
+                  {loadingPermessi ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto text-cyan-400" />
+                      <p className="text-gray-400 mt-2">Caricamento permessi...</p>
                     </div>
-                    <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-white">Operatore Mercato</span>
-                          <p className="text-xs text-gray-400">Gestione presenze e spunta mercati</p>
-                        </div>
-                        <span className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded">0 utenti</span>
+                  ) : (
+                    <>
+                      {/* Header con pulsante aggiungi */}
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium text-white flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-purple-400" />
+                          Gestione Permessi e Ruoli
+                        </h4>
+                        <button 
+                          onClick={() => setShowUtenteForm(true)}
+                          className="flex items-center gap-1 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Assegna Utente
+                        </button>
                       </div>
-                    </div>
-                    <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-white">Polizia Locale</span>
-                          <p className="text-xs text-gray-400">Controlli e verbali</p>
-                        </div>
-                        <span className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded">0 utenti</span>
+
+                      {/* Riepilogo ruoli */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                        {RUOLI_COMUNE.map(ruolo => (
+                          <div key={ruolo.value} className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-white">{ruolo.label}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                getUtentiPerRuolo(ruolo.value) > 0 
+                                  ? 'bg-purple-500/20 text-purple-400' 
+                                  : 'bg-gray-600/30 text-gray-500'
+                              }`}>
+                                {getUtentiPerRuolo(ruolo.value)}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">{ruolo.description}</p>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  </div>
+
+                      {/* Lista utenti assegnati */}
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-400 mb-3">Utenti Assegnati ({utentiComune.length})</h5>
+                        {utentiComune.length === 0 ? (
+                          <div className="text-center py-6 text-gray-400 bg-gray-800/30 rounded-lg border border-gray-700">
+                            <Users className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                            <p>Nessun utente assegnato</p>
+                            <p className="text-sm mt-1">Clicca "Assegna Utente" per aggiungere operatori</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {utentiComune.map(utente => (
+                              <div key={utente.id} className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-purple-600/30 flex items-center justify-center">
+                                      <Users className="w-4 h-4 text-purple-400" />
+                                    </div>
+                                    <div>
+                                      <p className="font-medium text-white">{utente.user_name || utente.email || `Utente #${utente.user_id}`}</p>
+                                      <p className="text-xs text-gray-500">{utente.email}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <select
+                                      value={utente.ruolo}
+                                      onChange={(e) => handleUpdateRuolo(utente.id, e.target.value)}
+                                      className="text-xs bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                    >
+                                      {RUOLI_COMUNE.map(r => (
+                                        <option key={r.value} value={r.value}>{r.label}</option>
+                                      ))}
+                                    </select>
+                                    <button
+                                      onClick={() => handleRimuoviUtente(utente.id)}
+                                      className="text-red-400 hover:text-red-300 p-1"
+                                      title="Rimuovi utente"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </>
@@ -2007,6 +2176,71 @@ export default function ComuniPanel() {
               >
                 <Save className="w-4 h-4" />
                 Crea Fattura
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Assegna Utente */}
+      {showUtenteForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Assegna Utente al Comune</h3>
+              <button onClick={() => setShowUtenteForm(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Email Utente *</label>
+                <input
+                  type="email"
+                  value={utenteForm.email}
+                  onChange={e => setUtenteForm({...utenteForm, email: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                  placeholder="es. operatore@comune.it"
+                />
+                <p className="text-xs text-gray-500 mt-1">L'utente deve essere già registrato nel sistema</p>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Oppure ID Utente</label>
+                <input
+                  type="number"
+                  value={utenteForm.user_id}
+                  onChange={e => setUtenteForm({...utenteForm, user_id: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                  placeholder="es. 123"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Ruolo *</label>
+                <select
+                  value={utenteForm.ruolo}
+                  onChange={e => setUtenteForm({...utenteForm, ruolo: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                >
+                  {RUOLI_COMUNE.map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {RUOLI_COMUNE.find(r => r.value === utenteForm.ruolo)?.description}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowUtenteForm(false)} className="px-4 py-2 text-gray-400 hover:text-white">
+                Annulla
+              </button>
+              <button
+                onClick={handleAssegnaUtente}
+                disabled={!utenteForm.email && !utenteForm.user_id}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg"
+              >
+                <Save className="w-4 h-4" />
+                Assegna Utente
               </button>
             </div>
           </div>
