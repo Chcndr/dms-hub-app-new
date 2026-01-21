@@ -1091,6 +1091,89 @@ export default function DashboardPA() {
     }
   }, [fetchedTraces]);
 
+  // 🔔 NOTIFICHE STATE - Sistema bidirezionale PA/Associazioni ↔ Imprese
+  const [notificheStats, setNotificheStats] = useState<any>(null);
+  const [notificheRisposte, setNotificheRisposte] = useState<any[]>([]);
+  const [mercatiList, setMercatiList] = useState<any[]>([]);
+  const [hubList, setHubList] = useState<any[]>([]);
+  const [impreseList, setImpreseList] = useState<any[]>([]);
+  const [invioNotificaLoading, setInvioNotificaLoading] = useState(false);
+  const [selectedNotifica, setSelectedNotifica] = useState<any>(null);
+  const [notificheNonLette, setNotificheNonLette] = useState(0);
+  
+  // Fetch notifiche stats e risposte
+  useEffect(() => {
+    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+    
+    // Fetch stats notifiche
+    fetch(`${MIHUB_API}/notifiche/stats`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setNotificheStats(data.data);
+          setNotificheNonLette(parseInt(data.data.statistiche?.non_lette || '0'));
+        }
+      })
+      .catch(err => console.log('Notifiche stats fetch error:', err));
+    
+    // Fetch risposte (messaggi dalle imprese)
+    fetch(`${MIHUB_API}/notifiche/risposte`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setNotificheRisposte(data.data || []);
+        }
+      })
+      .catch(err => console.log('Notifiche risposte fetch error:', err));
+    
+    // Fetch lista mercati
+    fetch(`${MIHUB_API}/stats/overview`)
+      .then(res => res.json())
+      .then(async data => {
+        // Fetch mercati separatamente
+        const mercatiRes = await fetch(`${MIHUB_API}/markets`).then(r => r.json()).catch(() => ({ data: [] }));
+        if (mercatiRes.data) {
+          setMercatiList(mercatiRes.data);
+        }
+      })
+      .catch(err => console.log('Mercati fetch error:', err));
+    
+    // Fetch lista hub
+    fetch(`${MIHUB_API}/tcc/v2/comuni`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.comuni) {
+          setHubList(data.comuni);
+        }
+      })
+      .catch(err => console.log('Hub fetch error:', err));
+    
+    // Fetch lista imprese
+    fetch('https://api.mio-hub.me/api/imprese')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data) {
+          setImpreseList(data.data);
+        }
+      })
+      .catch(err => console.log('Imprese fetch error:', err));
+    
+    // Polling ogni 30 secondi per aggiornare notifiche
+    const interval = setInterval(() => {
+      fetch(`${MIHUB_API}/notifiche/stats`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setNotificheStats(data.data);
+            setNotificheNonLette(parseInt(data.data.statistiche?.non_lette || '0'));
+          }
+        })
+        .catch(err => console.log('Notifiche stats poll error:', err));
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   // GIS Map state (blocco ufficiale da GestioneMercati)
   const [gisStalls, setGisStalls] = useState<any[]>([]);
   const [gisMapData, setGisMapData] = useState<any | null>(null);
@@ -1638,10 +1721,10 @@ export default function DashboardPA() {
     setDocModalContent(content[docKey]);
   };
 
-  const QuickAccessButton = ({ href, icon, label, color = 'teal' }: any) => (
+  const QuickAccessButton = ({ href, icon, label, color = 'teal', badge = 0 }: any) => (
     <button
       onClick={() => setLocation(href)}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+      className={`relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
         color === 'orange'
           ? 'bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]'
           : color === 'yellow'
@@ -1651,6 +1734,11 @@ export default function DashboardPA() {
     >
       {icon}
       <span className="text-sm font-medium">{label}</span>
+      {badge > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
     </button>
   );
 
@@ -1771,7 +1859,7 @@ export default function DashboardPA() {
             <QuickAccessButton href="/civic" icon={<AlertCircle className="h-5 w-5" />} label="Segnala" />
             <QuickAccessButton href="/vetrine" icon={<Store className="h-5 w-5" />} label="Vetrine" />
             <QuickAccessButton href="/hub-operatore" icon={<Activity className="h-5 w-5" />} label="Hub Operatore" color="orange" />
-            <QuickAccessButton href="/app/impresa/notifiche" icon={<Bell className="h-5 w-5" />} label="Notifiche" color="yellow" />
+            <QuickAccessButton href="/app/impresa/notifiche" icon={<Bell className="h-5 w-5" />} label="Notifiche" color="yellow" badge={notificheNonLette} />
             <button
               onClick={() => window.open('https://api.mio-hub.me/tools/bus_hub.html', '_blank')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
@@ -5183,7 +5271,9 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <Bell className="h-5 w-5 text-[#3b82f6]" />
                       Invia Notifica alle Imprese
-                      <Badge className="bg-blue-500/20 text-blue-400 ml-2">Nuovo</Badge>
+                      {notificheNonLette > 0 && (
+                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">{notificheNonLette} nuove</Badge>
+                      )}
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
                       Invia comunicazioni informative o promozionali alle imprese iscritte
@@ -5196,7 +5286,23 @@ export default function DashboardPA() {
                       const formData = new FormData(form);
                       const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
                       
+                      setInvioNotificaLoading(true);
                       try {
+                        const targetTipo = formData.get('target_tipo');
+                        const targetId = formData.get('target_id');
+                        let targetNome = null;
+                        
+                        if (targetTipo === 'MERCATO' && targetId) {
+                          const mercato = mercatiList.find(m => m.id === parseInt(targetId as string));
+                          targetNome = mercato?.name || mercato?.nome;
+                        } else if (targetTipo === 'HUB' && targetId) {
+                          const hub = hubList.find(h => h.hub_id === parseInt(targetId as string));
+                          targetNome = hub?.comune_nome;
+                        } else if (targetTipo === 'IMPRESA' && targetId) {
+                          const impresa = impreseList.find(i => i.id === parseInt(targetId as string));
+                          targetNome = impresa?.denominazione;
+                        }
+                        
                         const response = await fetch(`${MIHUB_API}/notifiche/send`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
@@ -5206,26 +5312,60 @@ export default function DashboardPA() {
                             titolo: formData.get('titolo'),
                             messaggio: formData.get('messaggio'),
                             tipo_messaggio: formData.get('tipo_messaggio'),
-                            target_tipo: formData.get('target_tipo'),
-                            target_id: formData.get('target_id') || null,
-                            target_nome: formData.get('target_nome') || null
+                            target_tipo: targetTipo,
+                            target_id: targetId || null,
+                            target_nome: targetNome
                           })
                         });
                         const data = await response.json();
                         if (data.success) {
-                          alert(`Notifica inviata a ${data.data.destinatari_count} destinatari!`);
+                          alert(`✅ Notifica inviata con successo a ${data.data.destinatari_count} destinatari!`);
                           form.reset();
                         } else {
-                          alert('Errore: ' + data.error);
+                          alert('❌ Errore: ' + data.error);
                         }
                       } catch (err) {
-                        alert('Errore invio notifica');
+                        alert('❌ Errore invio notifica');
+                      } finally {
+                        setInvioNotificaLoading(false);
                       }
                     }} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm text-[#e8fbff]/70 mb-1">Destinatari</label>
-                          <select name="target_tipo" className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]" required>
+                          <select name="target_tipo" id="enti_target_tipo" className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]" required
+                            onChange={(e) => {
+                              const targetIdSelect = document.getElementById('enti_target_id') as HTMLSelectElement;
+                              const targetIdContainer = document.getElementById('enti_target_id_container');
+                              if (targetIdContainer) {
+                                targetIdContainer.style.display = ['MERCATO', 'HUB', 'IMPRESA'].includes(e.target.value) ? 'block' : 'none';
+                              }
+                              if (targetIdSelect) {
+                                targetIdSelect.innerHTML = '<option value="">Seleziona...</option>';
+                                if (e.target.value === 'MERCATO') {
+                                  mercatiList.forEach(m => {
+                                    const opt = document.createElement('option');
+                                    opt.value = m.id;
+                                    opt.textContent = m.name || m.nome;
+                                    targetIdSelect.appendChild(opt);
+                                  });
+                                } else if (e.target.value === 'HUB') {
+                                  hubList.forEach(h => {
+                                    const opt = document.createElement('option');
+                                    opt.value = h.hub_id;
+                                    opt.textContent = h.comune_nome;
+                                    targetIdSelect.appendChild(opt);
+                                  });
+                                } else if (e.target.value === 'IMPRESA') {
+                                  impreseList.forEach(i => {
+                                    const opt = document.createElement('option');
+                                    opt.value = i.id;
+                                    opt.textContent = i.denominazione;
+                                    targetIdSelect.appendChild(opt);
+                                  });
+                                }
+                              }
+                            }}>
                             <option value="TUTTI">Tutte le Imprese</option>
                             <option value="MERCATO">Imprese del Mercato...</option>
                             <option value="HUB">Negozi dell'HUB...</option>
@@ -5240,6 +5380,12 @@ export default function DashboardPA() {
                           </select>
                         </div>
                       </div>
+                      <div id="enti_target_id_container" style={{ display: 'none' }}>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Seleziona Destinatario Specifico</label>
+                        <select name="target_id" id="enti_target_id" className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]">
+                          <option value="">Seleziona...</option>
+                        </select>
+                      </div>
                       <div>
                         <label className="block text-sm text-[#e8fbff]/70 mb-1">Titolo</label>
                         <input type="text" name="titolo" placeholder="Es: Nuovo corso HACCP disponibile" 
@@ -5251,12 +5397,73 @@ export default function DashboardPA() {
                           className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]" required />
                       </div>
                       <div className="flex justify-end">
-                        <button type="submit" className="px-6 py-3 bg-gradient-to-r from-[#3b82f6] to-[#8b5cf6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2">
-                          <Send className="w-4 h-4" />
-                          Invia Notifica
+                        <button type="submit" disabled={invioNotificaLoading}
+                          className="px-6 py-3 bg-gradient-to-r from-[#3b82f6] to-[#8b5cf6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50">
+                          {invioNotificaLoading ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              Invio in corso...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4" />
+                              Invia Notifica
+                            </>
+                          )}
                         </button>
                       </div>
                     </form>
+                  </CardContent>
+                </Card>
+
+                {/* Lista Risposte dalle Imprese - Enti Formatori */}
+                <Card className="bg-[#1a2332] border-[#3b82f6]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-[#3b82f6]" />
+                      Risposte dalle Imprese
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length > 0 && (
+                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">
+                          {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length} nuove
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="text-[#e8fbff]/50">
+                      Messaggi ricevuti dalle imprese in risposta alle tue notifiche
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="max-h-[400px] overflow-y-auto space-y-3">
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').slice(0, 10).map((risposta: any, idx: number) => (
+                        <div key={idx} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-blue-500/10 border-blue-500/30' : 'bg-[#0b1220] border-[#3b82f6]/20'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-4 h-4 text-blue-400" />
+                              <span className="text-[#e8fbff] font-medium">{risposta.mittente_nome || 'Impresa'}</span>
+                              {!risposta.letta && <Badge className="bg-blue-500 text-white text-xs">Nuova</Badge>}
+                            </div>
+                            <span className="text-xs text-[#e8fbff]/50">
+                              {new Date(risposta.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[#e8fbff]/80">{risposta.titolo}</p>
+                          <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{risposta.messaggio}</p>
+                          {risposta.tipo_messaggio === 'RICHIESTA_APPUNTAMENTO' && (
+                            <Badge className="bg-amber-500/20 text-amber-400 mt-2">Richiesta Appuntamento</Badge>
+                          )}
+                          {risposta.tipo_messaggio === 'ISCRIZIONE_CORSO' && (
+                            <Badge className="bg-green-500/20 text-green-400 mt-2">Iscrizione Corso</Badge>
+                          )}
+                        </div>
+                      ))}
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').length === 0 && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessuna risposta ricevuta</p>
+                          <p className="text-xs mt-1">Le risposte delle imprese appariranno qui</p>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -5693,7 +5900,9 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <Bell className="h-5 w-5 text-[#10b981]" />
                       Invia Notifica alle Imprese
-                      <Badge className="bg-emerald-500/20 text-emerald-400 ml-2">Nuovo</Badge>
+                      {notificheNonLette > 0 && (
+                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">{notificheNonLette} nuove</Badge>
+                      )}
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
                       Invia comunicazioni su bandi, servizi o avvisi importanti
@@ -5706,7 +5915,23 @@ export default function DashboardPA() {
                       const formData = new FormData(form);
                       const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
                       
+                      setInvioNotificaLoading(true);
                       try {
+                        const targetTipo = formData.get('target_tipo');
+                        const targetId = formData.get('target_id');
+                        let targetNome = null;
+                        
+                        if (targetTipo === 'MERCATO' && targetId) {
+                          const mercato = mercatiList.find(m => m.id === parseInt(targetId as string));
+                          targetNome = mercato?.name || mercato?.nome;
+                        } else if (targetTipo === 'HUB' && targetId) {
+                          const hub = hubList.find(h => h.hub_id === parseInt(targetId as string));
+                          targetNome = hub?.comune_nome;
+                        } else if (targetTipo === 'IMPRESA' && targetId) {
+                          const impresa = impreseList.find(i => i.id === parseInt(targetId as string));
+                          targetNome = impresa?.denominazione;
+                        }
+                        
                         const response = await fetch(`${MIHUB_API}/notifiche/send`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
@@ -5716,26 +5941,60 @@ export default function DashboardPA() {
                             titolo: formData.get('titolo'),
                             messaggio: formData.get('messaggio'),
                             tipo_messaggio: formData.get('tipo_messaggio'),
-                            target_tipo: formData.get('target_tipo'),
-                            target_id: formData.get('target_id') || null,
-                            target_nome: formData.get('target_nome') || null
+                            target_tipo: targetTipo,
+                            target_id: targetId || null,
+                            target_nome: targetNome
                           })
                         });
                         const data = await response.json();
                         if (data.success) {
-                          alert(`Notifica inviata a ${data.data.destinatari_count} destinatari!`);
+                          alert(`✅ Notifica inviata con successo a ${data.data.destinatari_count} destinatari!`);
                           form.reset();
                         } else {
-                          alert('Errore: ' + data.error);
+                          alert('❌ Errore: ' + data.error);
                         }
                       } catch (err) {
-                        alert('Errore invio notifica');
+                        alert('❌ Errore invio notifica');
+                      } finally {
+                        setInvioNotificaLoading(false);
                       }
                     }} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm text-[#e8fbff]/70 mb-1">Destinatari</label>
-                          <select name="target_tipo" className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]" required>
+                          <select name="target_tipo" id="assoc_target_tipo" className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]" required
+                            onChange={(e) => {
+                              const targetIdSelect = document.getElementById('assoc_target_id') as HTMLSelectElement;
+                              const targetIdContainer = document.getElementById('assoc_target_id_container');
+                              if (targetIdContainer) {
+                                targetIdContainer.style.display = ['MERCATO', 'HUB', 'IMPRESA'].includes(e.target.value) ? 'block' : 'none';
+                              }
+                              if (targetIdSelect) {
+                                targetIdSelect.innerHTML = '<option value="">Seleziona...</option>';
+                                if (e.target.value === 'MERCATO') {
+                                  mercatiList.forEach(m => {
+                                    const opt = document.createElement('option');
+                                    opt.value = m.id;
+                                    opt.textContent = m.name || m.nome;
+                                    targetIdSelect.appendChild(opt);
+                                  });
+                                } else if (e.target.value === 'HUB') {
+                                  hubList.forEach(h => {
+                                    const opt = document.createElement('option');
+                                    opt.value = h.hub_id;
+                                    opt.textContent = h.comune_nome;
+                                    targetIdSelect.appendChild(opt);
+                                  });
+                                } else if (e.target.value === 'IMPRESA') {
+                                  impreseList.forEach(i => {
+                                    const opt = document.createElement('option');
+                                    opt.value = i.id;
+                                    opt.textContent = i.denominazione;
+                                    targetIdSelect.appendChild(opt);
+                                  });
+                                }
+                              }
+                            }}>
                             <option value="TUTTI">Tutte le Imprese</option>
                             <option value="MERCATO">Imprese del Mercato...</option>
                             <option value="HUB">Negozi dell'HUB...</option>
@@ -5750,6 +6009,12 @@ export default function DashboardPA() {
                           </select>
                         </div>
                       </div>
+                      <div id="assoc_target_id_container" style={{ display: 'none' }}>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Seleziona Destinatario Specifico</label>
+                        <select name="target_id" id="assoc_target_id" className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]">
+                          <option value="">Seleziona...</option>
+                        </select>
+                      </div>
                       <div>
                         <label className="block text-sm text-[#e8fbff]/70 mb-1">Titolo</label>
                         <input type="text" name="titolo" placeholder="Es: Nuovo bando contributi digitalizzazione" 
@@ -5761,12 +6026,73 @@ export default function DashboardPA() {
                           className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]" required />
                       </div>
                       <div className="flex justify-end">
-                        <button type="submit" className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#3b82f6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2">
-                          <Send className="w-4 h-4" />
-                          Invia Notifica
+                        <button type="submit" disabled={invioNotificaLoading}
+                          className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#3b82f6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50">
+                          {invioNotificaLoading ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              Invio in corso...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4" />
+                              Invia Notifica
+                            </>
+                          )}
                         </button>
                       </div>
                     </form>
+                  </CardContent>
+                </Card>
+
+                {/* Lista Risposte dalle Imprese - Associazioni */}
+                <Card className="bg-[#1a2332] border-[#10b981]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-[#10b981]" />
+                      Risposte dalle Imprese
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length > 0 && (
+                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">
+                          {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length} nuove
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="text-[#e8fbff]/50">
+                      Messaggi ricevuti dalle imprese in risposta alle tue notifiche
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="max-h-[400px] overflow-y-auto space-y-3">
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').slice(0, 10).map((risposta: any, idx: number) => (
+                        <div key={idx} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#0b1220] border-[#10b981]/20'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-4 h-4 text-emerald-400" />
+                              <span className="text-[#e8fbff] font-medium">{risposta.mittente_nome || 'Impresa'}</span>
+                              {!risposta.letta && <Badge className="bg-emerald-500 text-white text-xs">Nuova</Badge>}
+                            </div>
+                            <span className="text-xs text-[#e8fbff]/50">
+                              {new Date(risposta.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[#e8fbff]/80">{risposta.titolo}</p>
+                          <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{risposta.messaggio}</p>
+                          {risposta.tipo_messaggio === 'RICHIESTA_APPUNTAMENTO' && (
+                            <Badge className="bg-amber-500/20 text-amber-400 mt-2">Richiesta Appuntamento</Badge>
+                          )}
+                          {risposta.tipo_messaggio === 'ISCRIZIONE_CORSO' && (
+                            <Badge className="bg-green-500/20 text-green-400 mt-2">Iscrizione Corso</Badge>
+                          )}
+                        </div>
+                      ))}
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').length === 0 && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessuna risposta ricevuta</p>
+                          <p className="text-xs mt-1">Le risposte delle imprese appariranno qui</p>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
