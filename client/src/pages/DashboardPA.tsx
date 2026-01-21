@@ -5454,31 +5454,72 @@ export default function DashboardPA() {
                   </CardContent>
                 </Card>
 
-                {/* Lista Risposte dalle Imprese - Enti Formatori */}
+                {/* Lista Messaggi - Enti Formatori */}
                 <Card className="bg-[#1a2332] border-[#3b82f6]/20">
                   <CardHeader>
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <MessageSquare className="h-5 w-5 text-[#3b82f6]" />
-                      Risposte dalle Imprese
+                      Messaggi
                       {(notificheRisposteEnti || []).filter((r: any) => !r.letta).length > 0 && (
-                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">
+                        <Badge className="bg-red-500 text-white ml-2">
                           {(notificheRisposteEnti || []).filter((r: any) => !r.letta).length} nuove
                         </Badge>
                       )}
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
-                      Messaggi ricevuti dalle imprese in risposta alle tue notifiche
+                      Messaggi inviati e ricevuti
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                    {/* Filtri */}
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        onClick={() => setFiltroMessaggiEnti('tutti')}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiEnti === 'tutti' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20'}`}
+                      >
+                        Tutti
+                      </button>
+                      <button
+                        onClick={() => setFiltroMessaggiEnti('inviati')}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiEnti === 'inviati' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20'}`}
+                      >
+                        Inviati ({(messaggiInviatiEnti || []).length})
+                      </button>
+                      <button
+                        onClick={() => setFiltroMessaggiEnti('ricevuti')}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiEnti === 'ricevuti' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20'}`}
+                      >
+                        Ricevuti ({(notificheRisposteEnti || []).length})
+                      </button>
+                    </div>
                     <div className="max-h-[400px] overflow-y-auto space-y-3">
-                      {(notificheRisposteEnti || []).slice(0, 10).map((risposta: any, idx: number) => (
-                        <div key={idx} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-blue-500/10 border-blue-500/30' : 'bg-[#0b1220] border-[#3b82f6]/20'}`}>
+                      {/* Messaggi Inviati */}
+                      {(filtroMessaggiEnti === 'tutti' || filtroMessaggiEnti === 'inviati') && (messaggiInviatiEnti || []).map((msg: any, idx: number) => (
+                        <div key={`inv-${idx}`} className="p-3 rounded-lg border bg-blue-500/5 border-blue-500/20">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <Building2 className="w-4 h-4 text-blue-400" />
+                              <Send className="w-4 h-4 text-blue-400" />
+                              <span className="text-[#e8fbff] font-medium">Inviato</span>
+                              <Badge className="bg-blue-500/20 text-blue-400 text-xs">→ {msg.destinatari || 0} imprese</Badge>
+                            </div>
+                            <span className="text-xs text-[#e8fbff]/50">
+                              {new Date(msg.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[#e8fbff]/80">{msg.titolo}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs text-[#e8fbff]/50">Letti: {msg.lette || 0}/{msg.destinatari || 0}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Messaggi Ricevuti */}
+                      {(filtroMessaggiEnti === 'tutti' || filtroMessaggiEnti === 'ricevuti') && (notificheRisposteEnti || []).map((risposta: any, idx: number) => (
+                        <div key={`ric-${idx}`} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-blue-500/10 border-blue-500/30' : 'bg-[#0b1220] border-[#3b82f6]/20'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-amber-400" />
                               <span className="text-[#e8fbff] font-medium">{risposta.mittente_nome || 'Impresa'}</span>
-                              {!risposta.letta && <Badge className="bg-blue-500 text-white text-xs">Nuova</Badge>}
+                              {!risposta.letta && <Badge className="bg-amber-500 text-white text-xs">Nuova</Badge>}
                             </div>
                             <span className="text-xs text-[#e8fbff]/50">
                               {new Date(risposta.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -5486,19 +5527,25 @@ export default function DashboardPA() {
                           </div>
                           <p className="text-sm text-[#e8fbff]/80">{risposta.titolo}</p>
                           <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{risposta.messaggio}</p>
-                          {risposta.tipo_messaggio === 'RICHIESTA_APPUNTAMENTO' && (
-                            <Badge className="bg-amber-500/20 text-amber-400 mt-2">Richiesta Appuntamento</Badge>
-                          )}
-                          {risposta.tipo_messaggio === 'ISCRIZIONE_CORSO' && (
-                            <Badge className="bg-green-500/20 text-green-400 mt-2">Iscrizione Corso</Badge>
-                          )}
                         </div>
                       ))}
-                      {(notificheRisposteEnti || []).length === 0 && (
+                      {/* Empty states */}
+                      {filtroMessaggiEnti === 'inviati' && (messaggiInviatiEnti || []).length === 0 && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <Send className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessun messaggio inviato</p>
+                        </div>
+                      )}
+                      {filtroMessaggiEnti === 'ricevuti' && (notificheRisposteEnti || []).length === 0 && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <Mail className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessuna risposta ricevuta</p>
+                        </div>
+                      )}
+                      {filtroMessaggiEnti === 'tutti' && (messaggiInviatiEnti || []).length === 0 && (notificheRisposteEnti || []).length === 0 && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessuna risposta ricevuta</p>
-                          <p className="text-xs mt-1">Le risposte delle imprese appariranno qui</p>
+                          <p>Nessun messaggio</p>
                         </div>
                       )}
                     </div>
