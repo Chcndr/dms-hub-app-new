@@ -1129,8 +1129,13 @@ export default function DashboardPA() {
         if (data.success && Array.isArray(data.data)) {
           setNotificheRisposte(data.data);
           // Filtra per target_tipo (chi era il destinatario originale della notifica)
-          setNotificheRisposteEnti(data.data.filter((r: any) => r.target_tipo === 'ENTE_FORMATORE'));
-          setNotificheRisposteAssoc(data.data.filter((r: any) => r.target_tipo === 'ASSOCIAZIONE'));
+          const risposteEnti = data.data.filter((r: any) => r.target_tipo === 'ENTE_FORMATORE');
+          const risposteAssoc = data.data.filter((r: any) => r.target_tipo === 'ASSOCIAZIONE');
+          setNotificheRisposteEnti(risposteEnti);
+          setNotificheRisposteAssoc(risposteAssoc);
+          // Calcola totale risposte non lette per badge barra rapida
+          const totaleNonLette = data.data.filter((r: any) => !r.letta).length;
+          setNotificheNonLette(totaleNonLette);
         }
       })
       .catch(err => console.log('Notifiche risposte fetch error:', err));
@@ -1202,10 +1207,21 @@ export default function DashboardPA() {
         .then(data => {
           if (data.success) {
             setNotificheStats(data.data);
-            setNotificheNonLette(parseInt(data.data.statistiche?.non_lette || '0'));
           }
         })
         .catch(err => console.log('Notifiche stats poll error:', err));
+      // Aggiorna anche risposte non lette
+      fetch(`${MIHUB_API}/notifiche/risposte`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.data)) {
+            setNotificheRisposte(data.data);
+            setNotificheRisposteEnti(data.data.filter((r: any) => r.target_tipo === 'ENTE_FORMATORE'));
+            setNotificheRisposteAssoc(data.data.filter((r: any) => r.target_tipo === 'ASSOCIAZIONE'));
+            setNotificheNonLette(data.data.filter((r: any) => !r.letta).length);
+          }
+        })
+        .catch(err => console.log('Notifiche risposte poll error:', err));
     }, 30000);
     
     return () => clearInterval(interval);
@@ -5308,9 +5324,6 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <Bell className="h-5 w-5 text-[#3b82f6]" />
                       Invia Notifica alle Imprese
-                      {notificheNonLette > 0 && (
-                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">{notificheNonLette} nuove</Badge>
-                      )}
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
                       Invia comunicazioni informative o promozionali alle imprese iscritte
@@ -5985,9 +5998,6 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <Bell className="h-5 w-5 text-[#10b981]" />
                       Invia Notifica alle Imprese
-                      {notificheNonLette > 0 && (
-                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">{notificheNonLette} nuove</Badge>
-                      )}
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
                       Invia comunicazioni su bandi, servizi o avvisi importanti

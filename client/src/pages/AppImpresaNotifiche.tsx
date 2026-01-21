@@ -328,6 +328,7 @@ export default function AppImpresaNotifiche() {
                                 <span className="text-xs text-[#e8fbff]/50">→ {msg.target_nome || msg.mittente_nome}</span>
                               </div>
                               <p className="text-sm truncate">{msg.titolo}</p>
+                              <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{msg.messaggio}</p>
                               <span className="text-xs text-[#e8fbff]/30">
                                 {new Date(msg.created_at).toLocaleDateString('it-IT')}
                               </span>
