@@ -1094,6 +1094,8 @@ export default function DashboardPA() {
   // 🔔 NOTIFICHE STATE - Sistema bidirezionale PA/Associazioni ↔ Imprese
   const [notificheStats, setNotificheStats] = useState<any>(null);
   const [notificheRisposte, setNotificheRisposte] = useState<any[]>([]);
+  const [notificheRisposteEnti, setNotificheRisposteEnti] = useState<any[]>([]);
+  const [notificheRisposteAssoc, setNotificheRisposteAssoc] = useState<any[]>([]);
   const [mercatiList, setMercatiList] = useState<any[]>([]);
   const [hubList, setHubList] = useState<any[]>([]);
   const [impreseList, setImpreseList] = useState<any[]>([]);
@@ -1116,12 +1118,15 @@ export default function DashboardPA() {
       })
       .catch(err => console.log('Notifiche stats fetch error:', err));
     
-    // Fetch risposte (messaggi dalle imprese)
+    // Fetch risposte (messaggi dalle imprese) - separate per Enti e Associazioni
     fetch(`${MIHUB_API}/notifiche/risposte`)
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
-          setNotificheRisposte(data.data || []);
+        if (data.success && Array.isArray(data.data)) {
+          setNotificheRisposte(data.data);
+          // Filtra per mittente_tipo della notifica originale
+          setNotificheRisposteEnti(data.data.filter((r: any) => r.mittente_tipo === 'ENTE_FORMATORE'));
+          setNotificheRisposteAssoc(data.data.filter((r: any) => r.mittente_tipo === 'ASSOCIAZIONE'));
         }
       })
       .catch(err => console.log('Notifiche risposte fetch error:', err));
@@ -5308,6 +5313,7 @@ export default function DashboardPA() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             mittente_tipo: 'ENTE_FORMATORE',
+                            mittente_id: 1,
                             mittente_nome: 'Ente Formatore',
                             titolo: formData.get('titolo'),
                             messaggio: formData.get('messaggio'),
@@ -5422,9 +5428,9 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <MessageSquare className="h-5 w-5 text-[#3b82f6]" />
                       Risposte dalle Imprese
-                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length > 0 && (
+                      {(notificheRisposteEnti || []).filter((r: any) => !r.letta).length > 0 && (
                         <Badge className="bg-red-500 text-white ml-2 animate-pulse">
-                          {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length} nuove
+                          {(notificheRisposteEnti || []).filter((r: any) => !r.letta).length} nuove
                         </Badge>
                       )}
                     </CardTitle>
@@ -5434,7 +5440,7 @@ export default function DashboardPA() {
                   </CardHeader>
                   <CardContent>
                     <div className="max-h-[400px] overflow-y-auto space-y-3">
-                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').slice(0, 10).map((risposta: any, idx: number) => (
+                      {(notificheRisposteEnti || []).slice(0, 10).map((risposta: any, idx: number) => (
                         <div key={idx} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-blue-500/10 border-blue-500/30' : 'bg-[#0b1220] border-[#3b82f6]/20'}`}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
@@ -5456,7 +5462,7 @@ export default function DashboardPA() {
                           )}
                         </div>
                       ))}
-                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').length === 0 && (
+                      {(notificheRisposteEnti || []).length === 0 && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Nessuna risposta ricevuta</p>
@@ -5937,6 +5943,7 @@ export default function DashboardPA() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             mittente_tipo: 'ASSOCIAZIONE',
+                            mittente_id: 2,
                             mittente_nome: 'Associazione di Categoria',
                             titolo: formData.get('titolo'),
                             messaggio: formData.get('messaggio'),
@@ -6051,9 +6058,9 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <MessageSquare className="h-5 w-5 text-[#10b981]" />
                       Risposte dalle Imprese
-                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length > 0 && (
+                      {(notificheRisposteAssoc || []).filter((r: any) => !r.letta).length > 0 && (
                         <Badge className="bg-red-500 text-white ml-2 animate-pulse">
-                          {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length} nuove
+                          {(notificheRisposteAssoc || []).filter((r: any) => !r.letta).length} nuove
                         </Badge>
                       )}
                     </CardTitle>
@@ -6063,7 +6070,7 @@ export default function DashboardPA() {
                   </CardHeader>
                   <CardContent>
                     <div className="max-h-[400px] overflow-y-auto space-y-3">
-                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').slice(0, 10).map((risposta: any, idx: number) => (
+                      {(notificheRisposteAssoc || []).slice(0, 10).map((risposta: any, idx: number) => (
                         <div key={idx} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#0b1220] border-[#10b981]/20'}`}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
@@ -6085,7 +6092,7 @@ export default function DashboardPA() {
                           )}
                         </div>
                       ))}
-                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').length === 0 && (
+                      {(notificheRisposteAssoc || []).length === 0 && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Nessuna risposta ricevuta</p>
