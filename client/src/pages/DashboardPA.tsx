@@ -1133,13 +1133,13 @@ export default function DashboardPA() {
   useEffect(() => {
     const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
     
-    // Fetch stats notifiche
+    // Fetch stats notifiche (solo per statistiche generali, NON per badge)
     fetch(`${MIHUB_API}/notifiche/stats`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
           setNotificheStats(data.data);
-          setNotificheNonLette(parseInt(data.data.statistiche?.non_lette || '0'));
+          // NON settare notificheNonLette qui - viene calcolato dalle risposte
         }
       })
       .catch(err => console.log('Notifiche stats fetch error:', err));
