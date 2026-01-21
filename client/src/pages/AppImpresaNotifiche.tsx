@@ -40,6 +40,8 @@ export default function AppImpresaNotifiche() {
   const [nonLette, setNonLette] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState<'tutte' | 'non_lette' | 'lette'>('tutte');
+  const [filtroTipo, setFiltroTipo] = useState<'tutti' | 'ricevuti' | 'inviati'>('tutti');
+  const [messaggiInviati, setMessaggiInviati] = useState<any[]>([]);
   const [rispostaText, setRispostaText] = useState('');
   const [invioRisposta, setInvioRisposta] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -71,6 +73,17 @@ export default function AppImpresaNotifiche() {
 
   useEffect(() => {
     fetchNotifiche();
+    // Fetch messaggi inviati dall'impresa (risposte)
+    fetch(`${MIHUB_API}/notifiche/risposte`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          // Filtra solo i messaggi inviati da questa impresa
+          const inviatiDaImpresa = data.data.filter((m: any) => m.mittente_tipo === 'IMPRESA');
+          setMessaggiInviati(inviatiDaImpresa);
+        }
+      })
+      .catch(err => console.log('Messaggi inviati fetch error:', err));
     // Polling ogni 30 secondi per nuove notifiche
     const interval = setInterval(fetchNotifiche, 30000);
     return () => clearInterval(interval);
@@ -225,62 +238,123 @@ export default function AppImpresaNotifiche() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Filtri Tipo */}
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setFiltroTipo('tutti')}
+                    className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'tutti' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20'}`}
+                  >
+                    Tutti
+                  </button>
+                  <button
+                    onClick={() => setFiltroTipo('ricevuti')}
+                    className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'ricevuti' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20'}`}
+                  >
+                    Ricevuti ({notifiche.length})
+                  </button>
+                  <button
+                    onClick={() => setFiltroTipo('inviati')}
+                    className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'inviati' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20'}`}
+                  >
+                    Inviati ({messaggiInviati.length})
+                  </button>
+                </div>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
                   {loading ? (
                     <div className="text-center py-8 text-[#e8fbff]/50">
                       <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin" />
                       <p>Caricamento...</p>
                     </div>
-                  ) : notifiche.length === 0 ? (
-                    <div className="text-center py-8 text-[#e8fbff]/50">
-                      <Mail className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                      <p>Nessuna notifica</p>
-                    </div>
                   ) : (
-                    notifiche.map((notifica) => (
-                      <div
-                        key={notifica.id}
-                        onClick={() => {
-                          setNotificaSelezionata(notifica);
-                          segnaComeLetta(notifica);
-                        }}
-                        className={`p-3 rounded-lg cursor-pointer transition-all ${
-                          notificaSelezionata?.id === notifica.id
-                            ? 'bg-[#3b82f6]/20 border border-[#3b82f6]/50'
-                            : notifica.stato === 'INVIATO'
-                            ? 'bg-[#0b1220] border border-[#3b82f6]/30 hover:border-[#3b82f6]/50'
-                            : 'bg-[#0b1220]/50 border border-transparent hover:border-[#3b82f6]/20'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 mt-1">
-                            {notifica.stato === 'INVIATO' ? (
-                              <BellRing className="w-4 h-4 text-[#3b82f6]" />
-                            ) : (
-                              <MailOpen className="w-4 h-4 text-[#e8fbff]/30" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              {getMittenteIcon(notifica.mittente_tipo)}
-                              <span className="text-sm font-medium truncate">{notifica.mittente_nome}</span>
+                    <>
+                      {/* Messaggi Ricevuti */}
+                      {(filtroTipo === 'tutti' || filtroTipo === 'ricevuti') && notifiche.map((notifica) => (
+                        <div
+                          key={`ric-${notifica.id}`}
+                          onClick={() => {
+                            setNotificaSelezionata(notifica);
+                            segnaComeLetta(notifica);
+                          }}
+                          className={`p-3 rounded-lg cursor-pointer transition-all ${
+                            notificaSelezionata?.id === notifica.id
+                              ? 'bg-[#3b82f6]/20 border border-[#3b82f6]/50'
+                              : notifica.stato === 'INVIATO'
+                              ? 'bg-[#0b1220] border border-[#3b82f6]/30 hover:border-[#3b82f6]/50'
+                              : 'bg-[#0b1220]/50 border border-transparent hover:border-[#3b82f6]/20'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-1">
+                              {notifica.stato === 'INVIATO' ? (
+                                <BellRing className="w-4 h-4 text-[#3b82f6]" />
+                              ) : (
+                                <MailOpen className="w-4 h-4 text-[#e8fbff]/30" />
+                              )}
                             </div>
-                            <p className={`text-sm truncate ${notifica.stato === 'INVIATO' ? 'font-semibold' : ''}`}>
-                              {notifica.titolo}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge className={`text-xs ${getTipoColor(notifica.tipo_messaggio)}`}>
-                                {notifica.tipo_messaggio}
-                              </Badge>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                {getMittenteIcon(notifica.mittente_tipo)}
+                                <span className="text-sm font-medium truncate">{notifica.mittente_nome}</span>
+                              </div>
+                              <p className={`text-sm truncate ${notifica.stato === 'INVIATO' ? 'font-semibold' : ''}`}>
+                                {notifica.titolo}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className={`text-xs ${getTipoColor(notifica.tipo_messaggio)}`}>
+                                  {notifica.tipo_messaggio}
+                                </Badge>
+                                <span className="text-xs text-[#e8fbff]/30">
+                                  {new Date(notifica.data_invio).toLocaleDateString('it-IT')}
+                                </span>
+                              </div>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-[#e8fbff]/30 flex-shrink-0" />
+                          </div>
+                        </div>
+                      ))}
+                      {/* Messaggi Inviati */}
+                      {(filtroTipo === 'tutti' || filtroTipo === 'inviati') && messaggiInviati.map((msg: any, idx: number) => (
+                        <div
+                          key={`inv-${idx}`}
+                          className="p-3 rounded-lg border bg-emerald-500/5 border-emerald-500/20"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-1">
+                              <Send className="w-4 h-4 text-emerald-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-medium text-emerald-400">Inviato</span>
+                                <span className="text-xs text-[#e8fbff]/50">→ {msg.target_nome || msg.mittente_nome}</span>
+                              </div>
+                              <p className="text-sm truncate">{msg.titolo}</p>
                               <span className="text-xs text-[#e8fbff]/30">
-                                {new Date(notifica.data_invio).toLocaleDateString('it-IT')}
+                                {new Date(msg.created_at).toLocaleDateString('it-IT')}
                               </span>
                             </div>
                           </div>
-                          <ChevronRight className="w-4 h-4 text-[#e8fbff]/30 flex-shrink-0" />
                         </div>
-                      </div>
-                    ))
+                      ))}
+                      {/* Empty states */}
+                      {filtroTipo === 'ricevuti' && notifiche.length === 0 && (
+                        <div className="text-center py-8 text-[#e8fbff]/50">
+                          <Mail className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessun messaggio ricevuto</p>
+                        </div>
+                      )}
+                      {filtroTipo === 'inviati' && messaggiInviati.length === 0 && (
+                        <div className="text-center py-8 text-[#e8fbff]/50">
+                          <Send className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessun messaggio inviato</p>
+                        </div>
+                      )}
+                      {filtroTipo === 'tutti' && notifiche.length === 0 && messaggiInviati.length === 0 && (
+                        <div className="text-center py-8 text-[#e8fbff]/50">
+                          <Mail className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessun messaggio</p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>
