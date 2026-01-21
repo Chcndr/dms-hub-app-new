@@ -368,7 +368,7 @@ POST /api/guardian/debug/testEndpoint
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (344 endpoint totali)
+### Endpoint Index (460 endpoint totali)
 
 Gli endpoint sono documentati in:
 ```
@@ -1410,6 +1410,38 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 **Commit:**
 - Backend: `b6a23ea` - fix: syntax error query mercati
 - Frontend: (in corso) - Tab HUB + link Gestione Hub
+
+---
+
+### v3.48.0 (21/01/2026) - Fix Gestione Mercati e Sistema Notifiche Completo
+
+**Fix Critici Gestione Mercati:**
+- ✅ **Conteggio Posteggi Corretto:** Query ora filtra per `geometry_geojson IS NOT NULL` (160 invece di 182)
+- ✅ **Reset Lista Presenze:** Quando cambi mercato, gli state `presenze` e `graduatoria` vengono azzerati
+- ✅ **Importo Spunta Corretto:** Query usa `giorno_mercato` invece di `DATE(checkin_time)` per trovare presenze
+- ✅ **Inizia Mercato Completo:** Ora azzera TUTTE le presenze (non solo quelle di oggi) per test più puliti
+
+**Sistema Notifiche v3.47.0 Completato:**
+- ✅ **Filtri Messaggi:** Pulsanti Tutti/Inviati/Ricevuti in Dashboard PA e App Impresa
+- ✅ **Icone Busta:** Busta chiusa (gialla) = non letto, Busta aperta (grigia) = letto
+- ✅ **Click per Leggere:** Click su messaggio lo segna come letto nel DB
+- ✅ **Badge Corretto:** Conta solo risposte non lette (non tutti i destinatari)
+- ✅ **Nuovo Endpoint:** `PUT /api/notifiche/risposte/:id/letta` aggiunto a Guardian
+
+**File Modificati Backend (Hetzner):**
+- `routes/test-mercato.js` - Query inizia-mercato con filtro geometry_geojson
+- `routes/presenze.js` - Query spuntisti con giorno_mercato
+- `routes/notifiche.js` - Endpoint risposte/:id/letta
+- `routes/integrations.js` - Nuovo endpoint in inventario Guardian
+
+**File Modificati Frontend (Vercel):**
+- `client/src/components/GestioneMercati.tsx` - Reset state al cambio mercato
+- `client/src/pages/DashboardPA.tsx` - Filtri notifiche, icone busta, click lettura
+- `client/src/pages/AppImpresaNotifiche.tsx` - Filtri e testo messaggi inviati
+
+**Commit:**
+- Frontend: `4cd6fcc` - docs: Aggiorna Blueprint
+- Backend: PM2 restart con modifiche manuali
 
 ---
 
@@ -4258,6 +4290,9 @@ Saranno create due nuove tabelle.
 | `/api/notifiche/leggi/:id` | PUT | Segna una notifica come letta |
 | `/api/notifiche/reply` | POST | Invia una risposta a una notifica esistente |
 | `/api/notifiche/stats` | GET | Statistiche notifiche (inviate, lette) per la Dashboard PA |
+| `/api/notifiche/risposte` | GET | Recupera risposte/messaggi dalle imprese verso PA |
+| `/api/notifiche/messaggi/:mittente_tipo/:mittente_id` | GET | Messaggi filtrabili per tipo (tutti/inviati/ricevuti) |
+| `/api/notifiche/risposte/:id/letta` | PUT | **NUOVO** - Segna risposta impresa come letta |
 
 ### 5. Modifiche Frontend (Dashboard PA)
 
@@ -4285,14 +4320,25 @@ Saranno create due nuove tabelle.
 
 ### 7. Fasi di Sviluppo
 
-1.  **Fase 1: Progettazione (Corrente)** - Definizione requisiti e schemi nel Blueprint.
-2.  **Fase 2: Database** - Creazione tabelle `notifiche` e `notifiche_destinatari`.
-3.  **Fase 3: Backend** - Sviluppo dei 6 nuovi endpoint API per la gestione delle notifiche.
-4.  **Fase 4: Frontend (Dashboard PA)** - Implementazione del form di invio nei tab `Enti & Associazioni` e `Enti Formatori`.
-5.  **Fase 5: Frontend (App Impresa)** - Creazione della nuova pagina `/app/impresa/notifiche` per la visualizzazione e gestione delle notifiche lato impresa.
-6.  **Fase 6: Frontend (Dashboard PA)** - Aggiunta del nuovo tab "Notifiche" nella barra di accesso rapido.
-7.  **Fase 7: Test e Deploy** - Test end-to-end del flusso di notifica e deploy in produzione.
+1.  ✅ **Fase 1: Progettazione** - Definizione requisiti e schemi nel Blueprint.
+2.  ✅ **Fase 2: Database** - Creazione tabelle `notifiche` e `notifiche_destinatari` + colonna `letta`.
+3.  ✅ **Fase 3: Backend** - Sviluppo endpoint API per la gestione delle notifiche.
+4.  ✅ **Fase 4: Frontend (Dashboard PA)** - Implementazione form di invio nei tab Enti & Associazioni e Enti Formatori.
+5.  ✅ **Fase 5: Frontend (App Impresa)** - Creazione pagina `/app/impresa/notifiche`.
+6.  ✅ **Fase 6: Frontend (Dashboard PA)** - Aggiunta tab "Notifiche" nella barra rapida.
+7.  ✅ **Fase 7: Test e Deploy** - Test end-to-end completato.
+
+### 8. Funzionalità Implementate (21 Gennaio 2026)
+
+| Funzionalità | Stato | Note |
+|---|---|---|
+| Filtri Messaggi (Tutti/Inviati/Ricevuti) | ✅ | Dashboard PA e App Impresa |
+| Icone Busta Aperta/Chiusa | ✅ | Distingue messaggi letti/non letti |
+| Click per Segnare come Letto | ✅ | Aggiorna DB e UI in tempo reale |
+| Badge Notifiche Corretto | ✅ | Conta solo risposte non lette |
+| Contatore Letture Messaggi Inviati | ✅ | Es. "Letti: 3/28" |
+| Endpoint Guardian Monitorato | ✅ | `/api/notifiche/risposte/:id/letta` |
 
 ---
 
-*Progetto del 21 Gennaio 2026 - Manus AI*
+*Progetto completato il 21 Gennaio 2026 - Manus AI*
