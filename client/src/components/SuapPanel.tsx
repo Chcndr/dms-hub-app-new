@@ -1605,23 +1605,25 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">ID Wallet</p>
-                      <p className="text-[#e8fbff] font-medium">{selectedConcessione.wallet_id || selectedConcessione.id || '-'}</p>
+                      <p className="text-[#e8fbff] font-medium">{selectedConcessione.wallet_id || '-'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Saldo</p>
                       <p className="text-[#e8fbff] font-medium text-lg">
-                        <span className={Number(selectedConcessione.canone_unico || 0) > 0 ? 'text-red-400' : 'text-green-400'}>
-                          € {selectedConcessione.canone_unico ? `-${Number(selectedConcessione.canone_unico).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '0.00'}
+                        <span className={Number(selectedConcessione.wallet_balance || 0) >= 0 ? 'text-green-400' : 'text-red-400'}>
+                          € {Number(selectedConcessione.wallet_balance || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                         </span>
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Stato Wallet</p>
                       <p className="text-[#e8fbff] font-medium">
-                        {selectedConcessione.stato === 'ATTIVA' || selectedConcessione.stato === 'attiva' ? (
+                        {selectedConcessione.wallet_status === 'ACTIVE' ? (
                           <span className="text-green-400">✓ Attivo</span>
+                        ) : selectedConcessione.wallet_id ? (
+                          <span className="text-orange-400">⚠ {selectedConcessione.wallet_status || 'Sospeso'}</span>
                         ) : (
-                          <span className="text-orange-400">⚠ In attesa</span>
+                          <span className="text-gray-400">- Non creato</span>
                         )}
                       </p>
                     </div>

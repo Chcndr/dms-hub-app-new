@@ -4344,3 +4344,65 @@ Saranno create due nuove tabelle.
 ---
 
 *Progetto completato il 21 Gennaio 2026 - Manus AI*
+
+
+---
+
+## 🚀 PROGETTI IN CORSO
+
+### Progetto Concessione Digitale v3.49.0 - Dati Reali Wallet e Requisiti
+
+**Obiettivo:** Sostituire i dati mock nel dettaglio concessione con dati reali provenienti dal database per le sezioni Wallet e Requisiti.
+
+**Componenti Coinvolti:**
+- **Database (Neon):** Modifica tabella `concessions`.
+- **Backend (Hetzner):** Aggiornamento endpoint `/api/concessions/:id`.
+- **Frontend (Vercel):** Aggiornamento componente `SuapPanel.tsx`.
+
+#### Fase 1: Modifica Database (Tabella `concessions`)
+
+Aggiungere i seguenti campi per allineare i dati dei requisiti direttamente alla concessione.
+
+- `durc_valido` (BOOLEAN, default: `false`)
+- `durc_data` (DATE, nullable)
+- `requisiti_morali` (BOOLEAN, default: `true`)
+- `requisiti_professionali` (BOOLEAN, default: `true`)
+
+**Script di Migrazione SQL:**
+```sql
+ALTER TABLE concessions
+ADD COLUMN durc_valido BOOLEAN DEFAULT false,
+ADD COLUMN durc_data DATE,
+ADD COLUMN requisiti_morali BOOLEAN DEFAULT true,
+ADD COLUMN requisiti_professionali BOOLEAN DEFAULT true;
+```
+
+#### Fase 2: Aggiornamento Backend (Endpoint API)
+
+**File da modificare:** `/root/mihub-backend-rest/server.js`
+
+**Endpoint:** `GET /api/concessions/:id`
+
+**Logica da implementare:**
+1.  Modificare la query SQL per includere una `LEFT JOIN` con la tabella `wallets`.
+    -   `LEFT JOIN wallets ON wallets.concession_id = concessions.id`
+2.  Selezionare i campi del wallet e i nuovi campi dei requisiti.
+    -   `wallets.id as wallet_id`
+    -   `wallets.balance as wallet_balance`
+    -   `wallets.status as wallet_status`
+    -   `concessions.durc_valido`
+    -   `concessions.durc_data`
+    -   `concessions.requisiti_morali`
+    -   `concessions.requisiti_professionali`
+
+**Endpoint Correlato:** La modifica si rifletterà automaticamente sull'endpoint `GET /api/suap/pratiche` che già recupera i dati della concessione collegata.
+
+#### Fase 3: Aggiornamento Frontend (Componente React)
+
+**File da modificare:** `/home/ubuntu/dms-hub-app-new/client/src/components/SuapPanel.tsx`
+
+**Logica da implementare:**
+1.  Verificare che l'oggetto `selectedConcessione` ricevuto dall'API contenga i nuovi campi.
+2.  Collegare i campi del componente ai dati reali, rimuovendo ogni valore statico o mock.
+    -   **Wallet:** `selectedConcessione.wallet_id`, `selectedConcessione.wallet_balance`, `selectedConcessione.wallet_status`.
+    -   **Requisiti:** `selectedConcessione.durc_valido`, `selectedConcessione.durc_data`, `selectedConcessione.requisiti_morali`, `selectedConcessione.requisiti_professionali`.
