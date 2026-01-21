@@ -167,16 +167,22 @@ function useDashboardData() {
       .then(res => res.json())
       .then(async data => {
         if (data.success) {
-          // Fetch anche lista associazioni e bandi
-          const [assocRes, catalogoRes] = await Promise.all([
+          // Fetch anche lista associazioni, bandi, servizi, richieste e regolarità
+          const [assocRes, catalogoRes, serviziRes, richiesteRes, regolaritaRes] = await Promise.all([
             fetch(`${MIHUB_API}/bandi/associazioni`).then(r => r.json()),
-            fetch(`${MIHUB_API}/bandi/catalogo`).then(r => r.json())
+            fetch(`${MIHUB_API}/bandi/catalogo`).then(r => r.json()),
+            fetch(`${MIHUB_API}/bandi/servizi`).then(r => r.json()),
+            fetch(`${MIHUB_API}/bandi/richieste/stats`).then(r => r.json()),
+            fetch(`${MIHUB_API}/bandi/regolarita/stats`).then(r => r.json())
           ]);
           
           setBandiStats({
             stats: data.data,
             associazioni: assocRes.success ? assocRes.data : [],
-            catalogo: catalogoRes.success ? catalogoRes.data : []
+            catalogo: catalogoRes.success ? catalogoRes.data : [],
+            servizi: serviziRes.success ? serviziRes.data : [],
+            richieste: richiesteRes.success ? richiesteRes.data : null,
+            regolarita: regolaritaRes.success ? regolaritaRes.data : null
           });
         }
       })
@@ -5316,6 +5322,279 @@ export default function DashboardPA() {
                         <div className="col-span-2 text-center text-[#e8fbff]/50 py-8">
                           <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Caricamento bandi...</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* CATALOGO SERVIZI ASSOCIAZIONI */}
+                <Card className="bg-[#1a2332] border-[#8b5cf6]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <Briefcase className="h-5 w-5 text-[#8b5cf6]" />
+                      Servizi Professionali
+                      {realData.bandiStats?.servizi && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                      <Badge className="bg-purple-500/20 text-purple-400 ml-2">Nuovo</Badge>
+                    </CardTitle>
+                    <CardDescription className="text-[#e8fbff]/50">
+                      DURC, SCIA, Contabilità, Paghe, Consulenza - {realData.bandiStats?.servizi?.length || 0} servizi disponibili
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                      {[
+                        { cat: 'REGOLARIZZAZIONE', nome: 'DURC', icona: Shield, colore: 'red' },
+                        { cat: 'PRATICHE', nome: 'SCIA & Pratiche', icona: FileText, colore: 'blue' },
+                        { cat: 'CONTABILITA', nome: 'Contabilità', icona: Calculator, colore: 'green' },
+                        { cat: 'PAGHE', nome: 'Paghe', icona: Users, colore: 'yellow' },
+                        { cat: 'CONSULENZA', nome: 'Consulenza', icona: Briefcase, colore: 'purple' },
+                        { cat: 'ASSOCIATIVO', nome: 'Associativo', icona: Award, colore: 'cyan' }
+                      ].map(({ cat, nome, icona: Icona, colore }) => {
+                        const count = (realData.bandiStats?.servizi || []).filter((s: any) => s.categoria === cat).length;
+                        return (
+                          <div key={cat} className={`bg-[#0b1220] p-3 rounded-lg border border-${colore}-500/20 text-center`}>
+                            <Icona className={`w-6 h-6 mx-auto mb-1 text-${colore}-400`} />
+                            <div className="text-lg font-bold text-white">{count}</div>
+                            <div className="text-xs text-[#e8fbff]/50">{nome}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2">
+                      {(realData.bandiStats?.servizi || []).slice(0, 12).map((servizio: any, idx: number) => (
+                        <div key={servizio.id || idx} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#8b5cf6]/10">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-[#e8fbff]">{servizio.nome}</span>
+                              <Badge className={`text-xs ${
+                                servizio.categoria === 'REGOLARIZZAZIONE' ? 'bg-red-500/20 text-red-400' :
+                                servizio.categoria === 'PRATICHE' ? 'bg-blue-500/20 text-blue-400' :
+                                servizio.categoria === 'CONTABILITA' ? 'bg-green-500/20 text-green-400' :
+                                servizio.categoria === 'PAGHE' ? 'bg-yellow-500/20 text-yellow-400' :
+                                servizio.categoria === 'CONSULENZA' ? 'bg-purple-500/20 text-purple-400' :
+                                'bg-cyan-500/20 text-cyan-400'
+                              }`}>
+                                {servizio.categoria}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-[#e8fbff]/50 mt-1">
+                              {servizio.associazione_nome || 'Tutte le associazioni'}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-[#10b981]">€{servizio.prezzo_associati || servizio.prezzo_base}</div>
+                            {servizio.prezzo_base !== servizio.prezzo_associati && (
+                              <div className="text-xs text-[#e8fbff]/30 line-through">€{servizio.prezzo_base}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* RICHIESTE SERVIZI DALLE IMPRESE */}
+                <Card className="bg-[#1a2332] border-[#f59e0b]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <ClipboardCheck className="h-5 w-5 text-[#f59e0b]" />
+                      Richieste Servizi
+                      {realData.bandiStats?.richieste && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                      <Badge className="bg-orange-500/20 text-orange-400 ml-2">Nuovo</Badge>
+                    </CardTitle>
+                    <CardDescription className="text-[#e8fbff]/50">
+                      Richieste dalle imprese - {realData.bandiStats?.richieste?.conteggi?.totale || 0} totali
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* KPI Richieste */}
+                    <div className="grid grid-cols-5 gap-3 mb-4">
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-[#f59e0b]/20 text-center">
+                        <div className="text-2xl font-bold text-[#f59e0b]">{realData.bandiStats?.richieste?.conteggi?.in_attesa || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">In Attesa</div>
+                      </div>
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-[#3b82f6]/20 text-center">
+                        <div className="text-2xl font-bold text-[#3b82f6]">{realData.bandiStats?.richieste?.conteggi?.in_lavorazione || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">In Lavorazione</div>
+                      </div>
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-[#10b981]/20 text-center">
+                        <div className="text-2xl font-bold text-[#10b981]">{realData.bandiStats?.richieste?.conteggi?.completate || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">Completate</div>
+                      </div>
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-[#ef4444]/20 text-center">
+                        <div className="text-2xl font-bold text-[#ef4444]">{realData.bandiStats?.richieste?.conteggi?.urgenti || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">Urgenti</div>
+                      </div>
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-[#e8fbff]/10 text-center">
+                        <div className="text-2xl font-bold text-[#e8fbff]">{realData.bandiStats?.richieste?.conteggi?.totale || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">Totale</div>
+                      </div>
+                    </div>
+                    
+                    {/* Lista Richieste */}
+                    <div className="max-h-[350px] overflow-y-auto space-y-2 pr-2">
+                      {(realData.bandiStats?.richieste?.richieste_recenti || []).map((item: any, idx: number) => (
+                        <div key={item.id || idx} className={`flex items-center justify-between p-3 rounded-lg border ${
+                          item.priorita === 'URGENTE' ? 'bg-red-500/10 border-red-500/30' :
+                          item.priorita === 'ALTA' ? 'bg-orange-500/10 border-orange-500/30' :
+                          item.stato === 'COMPLETATA' ? 'bg-green-500/10 border-green-500/30' :
+                          item.stato === 'IN_LAVORAZIONE' ? 'bg-blue-500/10 border-blue-500/30' :
+                          'bg-[#0b1220] border-[#e8fbff]/10'
+                        }`}>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-[#e8fbff]">{item.impresa_nome}</span>
+                              <Badge className={`text-xs ${
+                                item.stato === 'COMPLETATA' ? 'bg-green-500/20 text-green-400' :
+                                item.stato === 'IN_LAVORAZIONE' ? 'bg-blue-500/20 text-blue-400' :
+                                item.stato === 'ANNULLATA' ? 'bg-gray-500/20 text-gray-400' :
+                                'bg-orange-500/20 text-orange-400'
+                              }`}>
+                                {item.stato}
+                              </Badge>
+                              {item.priorita === 'URGENTE' && (
+                                <Badge className="bg-red-500/20 text-red-400 text-xs">URGENTE</Badge>
+                              )}
+                              {item.priorita === 'ALTA' && (
+                                <Badge className="bg-orange-500/20 text-orange-400 text-xs">ALTA</Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-[#e8fbff]/60 mt-1">
+                              <span className="text-[#8b5cf6]">{item.servizio_nome}</span>
+                              <span className="ml-2 text-[#e8fbff]/40">({item.servizio_categoria})</span>
+                            </div>
+                            {item.operatore_assegnato && (
+                              <div className="text-xs text-[#e8fbff]/40 mt-1">
+                                Operatore: {item.operatore_assegnato}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-[#e8fbff]/50">
+                              {item.data_richiesta ? new Date(item.data_richiesta).toLocaleDateString('it-IT') : '-'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {(!realData.bandiStats?.richieste?.richieste_recenti || realData.bandiStats.richieste.richieste_recenti.length === 0) && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <ClipboardCheck className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessuna richiesta registrata</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* IMPRESE CON PROBLEMI DI REGOLARITÀ */}
+                <Card className="bg-[#1a2332] border-[#ef4444]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-[#ef4444]" />
+                      Imprese con Problemi di Regolarità
+                      {realData.bandiStats?.regolarita && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                      <Badge className="bg-red-500/20 text-red-400 ml-2">Attenzione</Badge>
+                    </CardTitle>
+                    <CardDescription className="text-[#e8fbff]/50">
+                      DURC irregolare, SCIA scaduta, Autorizzazioni mancanti
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* KPI Regolarità */}
+                    <div className="grid grid-cols-5 gap-3 mb-4">
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-[#ef4444]/20 text-center">
+                        <div className="text-2xl font-bold text-[#ef4444]">{realData.bandiStats?.regolarita?.conteggi?.irregolari || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">Irregolari</div>
+                      </div>
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-[#f59e0b]/20 text-center">
+                        <div className="text-2xl font-bold text-[#f59e0b]">{realData.bandiStats?.regolarita?.conteggi?.scaduti || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">Scaduti</div>
+                      </div>
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-yellow-500/20 text-center">
+                        <div className="text-2xl font-bold text-yellow-400">{realData.bandiStats?.regolarita?.conteggi?.in_scadenza || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">In Scadenza</div>
+                      </div>
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-[#8b5cf6]/20 text-center">
+                        <div className="text-2xl font-bold text-[#8b5cf6]">{realData.bandiStats?.regolarita?.conteggi?.da_verificare || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">Da Verificare</div>
+                      </div>
+                      <div className="bg-[#0b1220] p-3 rounded-lg border border-[#10b981]/20 text-center">
+                        <div className="text-2xl font-bold text-[#10b981]">{realData.bandiStats?.regolarita?.conteggi?.regolari || 0}</div>
+                        <div className="text-xs text-[#e8fbff]/50">Regolari</div>
+                      </div>
+                    </div>
+
+                    {/* Conteggi per Tipo */}
+                    <div className="grid grid-cols-5 gap-2 mb-4">
+                      {(realData.bandiStats?.regolarita?.per_tipo || []).map((tipo: any) => (
+                        <div key={tipo.tipo} className="bg-[#0b1220] p-2 rounded border border-[#e8fbff]/10 text-center">
+                          <div className="text-xs text-[#e8fbff]/50">{tipo.tipo}</div>
+                          <div className="text-sm font-bold text-white">{tipo.totale}</div>
+                          {tipo.problematici > 0 && (
+                            <div className="text-xs text-[#ef4444]">{tipo.problematici} problemi</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Lista Imprese Problematiche */}
+                    <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                      {(realData.bandiStats?.regolarita?.imprese_problematiche || []).map((item: any, idx: number) => (
+                        <div key={item.id || idx} className={`flex items-center justify-between p-3 rounded-lg border ${
+                          item.stato === 'IRREGOLARE' ? 'bg-red-500/10 border-red-500/30' :
+                          item.stato === 'SCADUTO' ? 'bg-orange-500/10 border-orange-500/30' :
+                          item.stato === 'IN_SCADENZA' ? 'bg-yellow-500/10 border-yellow-500/30' :
+                          'bg-purple-500/10 border-purple-500/30'
+                        }`}>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-[#e8fbff]">{item.impresa_nome}</span>
+                              <Badge className={`text-xs ${
+                                item.stato === 'IRREGOLARE' ? 'bg-red-500/20 text-red-400' :
+                                item.stato === 'SCADUTO' ? 'bg-orange-500/20 text-orange-400' :
+                                item.stato === 'IN_SCADENZA' ? 'bg-yellow-500/20 text-yellow-400' :
+                                'bg-purple-500/20 text-purple-400'
+                              }`}>
+                                {item.stato}
+                              </Badge>
+                              <Badge className="bg-[#e8fbff]/10 text-[#e8fbff]/70 text-xs">
+                                {item.tipo}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-[#e8fbff]/60 mt-1">
+                              {item.impresa_piva && <span>P.IVA: {item.impresa_piva}</span>}
+                              {item.impresa_comune && <span className="ml-2">• {item.impresa_comune}</span>}
+                            </div>
+                            {item.note && (
+                              <div className="text-xs text-[#e8fbff]/40 mt-1">
+                                {item.note}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            {item.data_scadenza && (
+                              <div className={`text-sm font-bold ${
+                                item.giorni_rimanenti < 0 ? 'text-[#ef4444]' :
+                                item.giorni_rimanenti <= 30 ? 'text-[#f59e0b]' :
+                                'text-yellow-400'
+                              }`}>
+                                {item.giorni_rimanenti < 0 
+                                  ? `Scaduto da ${Math.abs(item.giorni_rimanenti)} gg`
+                                  : `${item.giorni_rimanenti} gg`
+                                }
+                              </div>
+                            )}
+                            <div className="text-xs text-[#e8fbff]/50">
+                              {item.data_scadenza ? new Date(item.data_scadenza).toLocaleDateString('it-IT') : 'N/D'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {(!realData.bandiStats?.regolarita?.imprese_problematiche || realData.bandiStats.regolarita.imprese_problematiche.length === 0) && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-30 text-[#10b981]" />
+                          <p>Tutte le imprese sono in regola!</p>
                         </div>
                       )}
                     </div>
