@@ -1088,7 +1088,95 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                     </Card>
                   )}
 
-                  {/* 7. Note e Riferimenti */}
+                  {/* 7. Wallet Concessione */}
+                  <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-[#14b8a6] flex items-center gap-2 text-lg">
+                        <Wallet className="h-5 w-5" />
+                        Wallet Concessione
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">ID Wallet</p>
+                          <p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.wallet_id || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">Saldo</p>
+                          <p className="text-[#e8fbff] font-medium text-lg">
+                            <span className={Number(selectedConcessionDetail.wallet_balance || 0) >= 0 ? 'text-green-400' : 'text-red-400'}>
+                              € {Number(selectedConcessionDetail.wallet_balance || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                            </span>
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">Stato Wallet</p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.wallet_status === 'ACTIVE' ? (
+                              <span className="text-green-400">✓ Attivo</span>
+                            ) : selectedConcessionDetail.wallet_id ? (
+                              <span className="text-orange-400">⚠ {selectedConcessionDetail.wallet_status || 'Sospeso'}</span>
+                            ) : (
+                              <span className="text-gray-400">- Non creato</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* 8. Requisiti e Documentazione */}
+                  <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-[#14b8a6] flex items-center gap-2 text-lg">
+                        <Calendar className="h-5 w-5" />
+                        Requisiti e Documentazione
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">DURC Valido</p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.durc_scadenza_qualifica && new Date(selectedConcessionDetail.durc_scadenza_qualifica) > new Date() ? (
+                              <span className="text-green-400">✓ Sì</span>
+                            ) : selectedConcessionDetail.durc_scadenza_qualifica ? (
+                              <span className="text-orange-400">⚠ Scaduto</span>
+                            ) : (
+                              <span className="text-red-400">✗ Non presente</span>
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">Scadenza DURC</p>
+                          <p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.durc_scadenza_qualifica ? new Date(selectedConcessionDetail.durc_scadenza_qualifica).toLocaleDateString('it-IT') : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">Requisiti Morali</p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.requisiti_morali ? (
+                              <span className="text-green-400">✓ Verificati</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">Requisiti Professionali</p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.requisiti_professionali ? (
+                              <span className="text-green-400">✓ Verificati</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* 9. Note e Riferimenti */}
                   {(selectedConcessionDetail.notes || selectedConcessionDetail.scia_id) && (
                     <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
                       <CardHeader className="pb-3">
