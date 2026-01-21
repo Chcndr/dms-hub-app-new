@@ -2567,7 +2567,9 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 
 | Repository | Tag | Data | Descrizione |
 |------------|-----|------|-------------|
-| dms-hub-app-new | **v3.35.1-stable** | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
+| dms-hub-app-new | **v3.48.0-stable** | 21/01/2026 | Sistema Notifiche completo + Fix Gestione Mercati |
+| mihub-backend-rest | **v3.48.0-stable** | 21/01/2026 | Backup routes/ con fix notifiche e mercati |
+| dms-hub-app-new | v3.35.1-stable | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
 | dms-hub-app-new | v3.32.0-stable | 13/01/2026 | TCC transaction numbers, QR validation |
 | mihub-backend-rest | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation |
 | **miohub-backups** | **v3.32.0-stable** | 13/01/2026 | Database dump SQL (29 MB) |
