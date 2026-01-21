@@ -949,7 +949,7 @@ export default function DashboardPA() {
     // Il conversation_id 'user-manus-direct' è già sufficiente
   });
   
-  const manusMessages = (manusMessagesRaw || []).map(msg => ({
+  const manusMessages = manusMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
@@ -971,7 +971,7 @@ export default function DashboardPA() {
     // Il conversation_id 'user-abacus-direct' è già sufficiente
   });
   
-  const abacusMessages = (abacusMessagesRaw || []).map(msg => ({
+  const abacusMessages = abacusMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
@@ -1006,7 +1006,7 @@ export default function DashboardPA() {
     // Il conversation_id 'user-gptdev-direct' è già sufficiente
   });
   
-  const gptdevMessages = (gptdevMessagesRaw || []).map(msg => ({
+  const gptdevMessages = gptdevMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
@@ -1015,7 +1015,7 @@ export default function DashboardPA() {
     pending: msg.pending  // Preserva flag pending per Optimistic UI
   }));
   
-  const zapierMessages = (zapierMessagesRaw || []).map(msg => ({
+  const zapierMessages = zapierMessagesRaw.map(msg => ({
     role: msg.role as 'user' | 'assistant',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
@@ -1100,73 +1100,6 @@ export default function DashboardPA() {
   const [invioNotificaLoading, setInvioNotificaLoading] = useState(false);
   const [selectedNotifica, setSelectedNotifica] = useState<any>(null);
   const [notificheNonLette, setNotificheNonLette] = useState(0);
-  // Nuovi state per messaggi unificati con filtri e ID separati
-  const [messaggiEnti, setMessaggiEnti] = useState<any[]>([]);
-  const [messaggiAssociazioni, setMessaggiAssociazioni] = useState<any[]>([]);
-  const [filtroMessaggiEnti, setFiltroMessaggiEnti] = useState<'tutti' | 'inviati' | 'ricevuti'>('tutti');
-  const [filtroMessaggiAssoc, setFiltroMessaggiAssoc] = useState<'tutti' | 'inviati' | 'ricevuti'>('tutti');
-  const [nonLetteEnti, setNonLetteEnti] = useState(0);
-  const [nonLetteAssoc, setNonLetteAssoc] = useState(0);
-  // ID fissi per Enti Formatori (1) e Associazioni (2)
-  const ENTE_FORMATORE_ID = 1;
-  const ASSOCIAZIONE_ID = 2;
-  
-  // Fetch messaggi per Enti Formatori
-  const fetchMessaggiEnti = async () => {
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
-    try {
-      const res = await fetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/${ENTE_FORMATORE_ID}?filtro=${filtroMessaggiEnti}`);
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setMessaggiEnti(data.data);
-        setNonLetteEnti(data.non_letti || 0);
-      } else {
-        setMessaggiEnti([]);
-        setNonLetteEnti(0);
-      }
-    } catch (err) {
-      console.log('Messaggi Enti fetch error:', err);
-      setMessaggiEnti([]);
-      setNonLetteEnti(0);
-    }
-  };
-  
-  // Fetch messaggi per Associazioni
-  const fetchMessaggiAssociazioni = async () => {
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
-    try {
-      const res = await fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/${ASSOCIAZIONE_ID}?filtro=${filtroMessaggiAssoc}`);
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setMessaggiAssociazioni(data.data);
-        setNonLetteAssoc(data.non_letti || 0);
-      } else {
-        setMessaggiAssociazioni([]);
-        setNonLetteAssoc(0);
-      }
-    } catch (err) {
-      console.log('Messaggi Associazioni fetch error:', err);
-      setMessaggiAssociazioni([]);
-      setNonLetteAssoc(0);
-    }
-  };
-  
-  // Segna messaggio come letto
-  const segnaMessaggioLetto = async (id: number, mittenteId: number, mittenteTipo: string) => {
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
-    try {
-      await fetch(`${MIHUB_API}/notifiche/segna-letto/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mittente_tipo: mittenteTipo, mittente_id: mittenteId })
-      });
-      // Refresh messaggi
-      if (mittenteTipo === 'ENTE_FORMATORE') fetchMessaggiEnti();
-      else fetchMessaggiAssociazioni();
-    } catch (err) {
-      console.log('Segna letto error:', err);
-    }
-  };
   
   // Fetch notifiche stats e risposte
   useEffect(() => {
@@ -1178,11 +1111,12 @@ export default function DashboardPA() {
       .then(data => {
         if (data.success) {
           setNotificheStats(data.data);
+          setNotificheNonLette(parseInt(data.data.statistiche?.non_lette || '0'));
         }
       })
       .catch(err => console.log('Notifiche stats fetch error:', err));
     
-    // Fetch risposte (messaggi dalle imprese) - per backward compatibility
+    // Fetch risposte (messaggi dalle imprese)
     fetch(`${MIHUB_API}/notifiche/risposte`)
       .then(res => res.json())
       .then(data => {
@@ -1192,16 +1126,14 @@ export default function DashboardPA() {
       })
       .catch(err => console.log('Notifiche risposte fetch error:', err));
     
-    // Fetch messaggi separati per Enti e Associazioni
-    fetchMessaggiEnti();
-    fetchMessaggiAssociazioni();
-    
     // Fetch lista mercati
-    fetch(`${MIHUB_API}/notifiche/markets`)
+    fetch(`${MIHUB_API}/stats/overview`)
       .then(res => res.json())
-      .then(data => {
-        if (data.success && data.data) {
-          setMercatiList(data.data);
+      .then(async data => {
+        // Fetch mercati separatamente
+        const mercatiRes = await fetch(`${MIHUB_API}/markets`).then(r => r.json()).catch(() => ({ data: [] }));
+        if (mercatiRes.data) {
+          setMercatiList(mercatiRes.data);
         }
       })
       .catch(err => console.log('Mercati fetch error:', err));
@@ -1217,7 +1149,7 @@ export default function DashboardPA() {
       .catch(err => console.log('Hub fetch error:', err));
     
     // Fetch lista imprese
-    fetch(`${MIHUB_API}/notifiche/imprese`)
+    fetch('https://api.mio-hub.me/api/imprese')
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data) {
@@ -1228,21 +1160,19 @@ export default function DashboardPA() {
     
     // Polling ogni 30 secondi per aggiornare notifiche
     const interval = setInterval(() => {
-      fetchMessaggiEnti();
-      fetchMessaggiAssociazioni();
+      fetch(`${MIHUB_API}/notifiche/stats`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setNotificheStats(data.data);
+            setNotificheNonLette(parseInt(data.data.statistiche?.non_lette || '0'));
+          }
+        })
+        .catch(err => console.log('Notifiche stats poll error:', err));
     }, 30000);
     
     return () => clearInterval(interval);
   }, []);
-  
-  // Aggiorna quando cambia filtro
-  useEffect(() => { fetchMessaggiEnti(); }, [filtroMessaggiEnti]);
-  useEffect(() => { fetchMessaggiAssociazioni(); }, [filtroMessaggiAssoc]);
-  
-  // Calcola totale notifiche non lette per badge barra rapida
-  useEffect(() => {
-    setNotificheNonLette(nonLetteEnti + nonLetteAssoc);
-  }, [nonLetteEnti, nonLetteAssoc]);
 
   // GIS Map state (blocco ufficiale da GestioneMercati)
   const [gisStalls, setGisStalls] = useState<any[]>([]);
@@ -1559,7 +1489,7 @@ export default function DashboardPA() {
 
   // Scroll MIO quando cambiano messaggi
   useEffect(() => {
-    if (!mioMessagesRef.current || !mioMessages || mioMessages.length === 0) return;
+    if (!mioMessagesRef.current || mioMessages.length === 0) return;
     
     // Timeout per assicurarsi che il DOM sia aggiornato
     const timeoutId = setTimeout(() => {
@@ -1805,7 +1735,7 @@ export default function DashboardPA() {
       {icon}
       <span className="text-sm font-medium">{label}</span>
       {badge > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
           {badge > 9 ? '9+' : badge}
         </span>
       )}
@@ -2844,7 +2774,7 @@ export default function DashboardPA() {
                     {tccComuni.length === 0 && (
                       <option value="">Caricamento comuni...</option>
                     )}
-                    {(tccComuni || []).map((comune) => (
+                    {tccComuni.map((comune) => (
                       <option key={comune.hub_id} value={comune.hub_id}>
                         {comune.nome} ({comune.provincia}) - {comune.hub_name}
                       </option>
@@ -3919,7 +3849,7 @@ export default function DashboardPA() {
                         </ul>
                       </div>
                     </div>
-                    {(chatMessages || []).map((msg, i) => (
+                    {chatMessages.map((msg, i) => (
                       <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                         {msg.role === 'ai' && (
                           <div className="w-8 h-8 rounded-full bg-[#14b8a6]/20 flex items-center justify-center flex-shrink-0">
@@ -5377,7 +5307,6 @@ export default function DashboardPA() {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
-                            mittente_id: ENTE_FORMATORE_ID,
                             mittente_tipo: 'ENTE_FORMATORE',
                             mittente_nome: 'Ente Formatore',
                             titolo: formData.get('titolo'),
@@ -5414,21 +5343,21 @@ export default function DashboardPA() {
                               if (targetIdSelect) {
                                 targetIdSelect.innerHTML = '<option value="">Seleziona...</option>';
                                 if (e.target.value === 'MERCATO') {
-                                  (mercatiList || []).forEach(m => {
+                                  mercatiList.forEach(m => {
                                     const opt = document.createElement('option');
                                     opt.value = m.id;
                                     opt.textContent = m.name || m.nome;
                                     targetIdSelect.appendChild(opt);
                                   });
                                 } else if (e.target.value === 'HUB') {
-                                  (hubList || []).forEach(h => {
+                                  hubList.forEach(h => {
                                     const opt = document.createElement('option');
                                     opt.value = h.hub_id;
                                     opt.textContent = h.comune_nome;
                                     targetIdSelect.appendChild(opt);
                                   });
                                 } else if (e.target.value === 'IMPRESA') {
-                                  (impreseList || []).forEach(i => {
+                                  impreseList.forEach(i => {
                                     const opt = document.createElement('option');
                                     opt.value = i.id;
                                     opt.textContent = i.denominazione;
@@ -5487,108 +5416,51 @@ export default function DashboardPA() {
                   </CardContent>
                 </Card>
 
-                {/* Lista Messaggi Unificata - Enti Formatori */}
+                {/* Lista Risposte dalle Imprese - Enti Formatori */}
                 <Card className="bg-[#1a2332] border-[#3b82f6]/20">
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                        <MessageSquare className="h-5 w-5 text-[#3b82f6]" />
-                        Messaggi
-                        {nonLetteEnti > 0 && (
-                          <Badge className="bg-red-500 text-white ml-2">
-                            {nonLetteEnti} da leggere
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      {/* Filtro Messaggi */}
-                      <div className="flex gap-2">
-                        <button onClick={() => setFiltroMessaggiEnti('tutti')}
-                          className={`px-3 py-1 rounded text-sm ${filtroMessaggiEnti === 'tutti' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70'}`}>
-                          Tutti
-                        </button>
-                        <button onClick={() => setFiltroMessaggiEnti('inviati')}
-                          className={`px-3 py-1 rounded text-sm ${filtroMessaggiEnti === 'inviati' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70'}`}>
-                          Inviati
-                        </button>
-                        <button onClick={() => setFiltroMessaggiEnti('ricevuti')}
-                          className={`px-3 py-1 rounded text-sm ${filtroMessaggiEnti === 'ricevuti' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70'}`}>
-                          Ricevuti
-                        </button>
-                      </div>
-                    </div>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-[#3b82f6]" />
+                      Risposte dalle Imprese
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length > 0 && (
+                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">
+                          {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length} nuove
+                        </Badge>
+                      )}
+                    </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
-                      Storico messaggi inviati e ricevuti
+                      Messaggi ricevuti dalle imprese in risposta alle tue notifiche
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="max-h-[500px] overflow-y-auto space-y-3">
-                      {Array.isArray(messaggiEnti) && messaggiEnti.slice(0, 20).map((msg: any, idx: number) => (
-                        <div key={idx} 
-                          onClick={() => msg.direzione === 'RICEVUTO' && msg.non_letti > 0 && segnaMessaggioLetto(msg.id, ENTE_FORMATORE_ID, 'ENTE_FORMATORE')}
-                          className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-blue-400/50 ${
-                            msg.direzione === 'INVIATO' 
-                              ? 'bg-[#0b1220] border-[#3b82f6]/20' 
-                              : msg.non_letti > 0 
-                                ? 'bg-blue-500/10 border-blue-500/30' 
-                                : 'bg-[#0b1220] border-[#3b82f6]/20'
-                          }`}>
+                    <div className="max-h-[400px] overflow-y-auto space-y-3">
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').slice(0, 10).map((risposta: any, idx: number) => (
+                        <div key={idx} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-blue-500/10 border-blue-500/30' : 'bg-[#0b1220] border-[#3b82f6]/20'}`}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              {/* Icona busta aperta/chiusa */}
-                              {msg.direzione === 'INVIATO' ? (
-                                <Send className="w-4 h-4 text-blue-400" />
-                              ) : msg.non_letti > 0 ? (
-                                <Mail className="w-4 h-4 text-amber-400" />
-                              ) : (
-                                <MailOpen className="w-4 h-4 text-green-400" />
-                              )}
-                              <span className="text-[#e8fbff] font-medium">
-                                {msg.direzione === 'INVIATO' ? `A: ${msg.target_nome || msg.target_tipo}` : msg.mittente_nome || 'Impresa'}
-                              </span>
-                              {/* Badge direzione */}
-                              <Badge className={msg.direzione === 'INVIATO' ? 'bg-blue-500/20 text-blue-400 text-xs' : 'bg-amber-500/20 text-amber-400 text-xs'}>
-                                {msg.direzione === 'INVIATO' ? 'Inviato' : 'Ricevuto'}
-                              </Badge>
-                              {msg.direzione === 'RICEVUTO' && msg.non_letti > 0 && (
-                                <Badge className="bg-red-500 text-white text-xs">Nuovo</Badge>
-                              )}
+                              <Building2 className="w-4 h-4 text-blue-400" />
+                              <span className="text-[#e8fbff] font-medium">{risposta.mittente_nome || 'Impresa'}</span>
+                              {!risposta.letta && <Badge className="bg-blue-500 text-white text-xs">Nuova</Badge>}
                             </div>
                             <span className="text-xs text-[#e8fbff]/50">
-                              {new Date(msg.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              {new Date(risposta.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          <p className="text-sm text-[#e8fbff]/80">{msg.titolo}</p>
-                          <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{msg.messaggio}</p>
-                          {/* Tracking letture per invii di gruppo */}
-                          {msg.direzione === 'INVIATO' && msg.totale_destinatari > 1 && (
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-[#e8fbff]/50">Inviato a {msg.totale_destinatari} imprese</span>
-                              <div className="flex items-center gap-1">
-                                <span className={`w-2 h-2 rounded-full ${msg.letti > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                <span className="text-xs text-[#e8fbff]/70">{msg.letti}/{msg.totale_destinatari} letti</span>
-                              </div>
-                            </div>
-                          )}
-                          {/* Semaforo lettura per invio singolo */}
-                          {msg.direzione === 'INVIATO' && msg.totale_destinatari === 1 && (
-                            <div className="flex items-center gap-1 mt-2">
-                              <span className={`w-2 h-2 rounded-full ${msg.letti > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                              <span className="text-xs text-[#e8fbff]/50">{msg.letti > 0 ? 'Letto' : 'Non letto'}</span>
-                            </div>
-                          )}
-                          {msg.tipo_messaggio === 'RICHIESTA_APPUNTAMENTO' && (
+                          <p className="text-sm text-[#e8fbff]/80">{risposta.titolo}</p>
+                          <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{risposta.messaggio}</p>
+                          {risposta.tipo_messaggio === 'RICHIESTA_APPUNTAMENTO' && (
                             <Badge className="bg-amber-500/20 text-amber-400 mt-2">Richiesta Appuntamento</Badge>
                           )}
-                          {msg.tipo_messaggio === 'ISCRIZIONE_CORSO' && (
+                          {risposta.tipo_messaggio === 'ISCRIZIONE_CORSO' && (
                             <Badge className="bg-green-500/20 text-green-400 mt-2">Iscrizione Corso</Badge>
                           )}
                         </div>
                       ))}
-                      {(!Array.isArray(messaggiEnti) || messaggiEnti.length === 0) && (
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').length === 0 && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessun messaggio</p>
-                          <p className="text-xs mt-1">I messaggi inviati e ricevuti appariranno qui</p>
+                          <p>Nessuna risposta ricevuta</p>
+                          <p className="text-xs mt-1">Le risposte delle imprese appariranno qui</p>
                         </div>
                       )}
                     </div>
@@ -6064,7 +5936,6 @@ export default function DashboardPA() {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
-                            mittente_id: ASSOCIAZIONE_ID,
                             mittente_tipo: 'ASSOCIAZIONE',
                             mittente_nome: 'Associazione di Categoria',
                             titolo: formData.get('titolo'),
@@ -6101,21 +5972,21 @@ export default function DashboardPA() {
                               if (targetIdSelect) {
                                 targetIdSelect.innerHTML = '<option value="">Seleziona...</option>';
                                 if (e.target.value === 'MERCATO') {
-                                  (mercatiList || []).forEach(m => {
+                                  mercatiList.forEach(m => {
                                     const opt = document.createElement('option');
                                     opt.value = m.id;
                                     opt.textContent = m.name || m.nome;
                                     targetIdSelect.appendChild(opt);
                                   });
                                 } else if (e.target.value === 'HUB') {
-                                  (hubList || []).forEach(h => {
+                                  hubList.forEach(h => {
                                     const opt = document.createElement('option');
                                     opt.value = h.hub_id;
                                     opt.textContent = h.comune_nome;
                                     targetIdSelect.appendChild(opt);
                                   });
                                 } else if (e.target.value === 'IMPRESA') {
-                                  (impreseList || []).forEach(i => {
+                                  impreseList.forEach(i => {
                                     const opt = document.createElement('option');
                                     opt.value = i.id;
                                     opt.textContent = i.denominazione;
@@ -6174,108 +6045,51 @@ export default function DashboardPA() {
                   </CardContent>
                 </Card>
 
-                {/* Lista Messaggi Unificata - Associazioni */}
+                {/* Lista Risposte dalle Imprese - Associazioni */}
                 <Card className="bg-[#1a2332] border-[#10b981]/20">
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                        <MessageSquare className="h-5 w-5 text-[#10b981]" />
-                        Messaggi
-                        {nonLetteAssoc > 0 && (
-                          <Badge className="bg-red-500 text-white ml-2">
-                            {nonLetteAssoc} da leggere
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      {/* Filtro Messaggi */}
-                      <div className="flex gap-2">
-                        <button onClick={() => setFiltroMessaggiAssoc('tutti')}
-                          className={`px-3 py-1 rounded text-sm ${filtroMessaggiAssoc === 'tutti' ? 'bg-emerald-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70'}`}>
-                          Tutti
-                        </button>
-                        <button onClick={() => setFiltroMessaggiAssoc('inviati')}
-                          className={`px-3 py-1 rounded text-sm ${filtroMessaggiAssoc === 'inviati' ? 'bg-emerald-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70'}`}>
-                          Inviati
-                        </button>
-                        <button onClick={() => setFiltroMessaggiAssoc('ricevuti')}
-                          className={`px-3 py-1 rounded text-sm ${filtroMessaggiAssoc === 'ricevuti' ? 'bg-emerald-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70'}`}>
-                          Ricevuti
-                        </button>
-                      </div>
-                    </div>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-[#10b981]" />
+                      Risposte dalle Imprese
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length > 0 && (
+                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">
+                          {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA' && !r.letta).length} nuove
+                        </Badge>
+                      )}
+                    </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
-                      Storico messaggi inviati e ricevuti
+                      Messaggi ricevuti dalle imprese in risposta alle tue notifiche
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="max-h-[500px] overflow-y-auto space-y-3">
-                      {Array.isArray(messaggiAssociazioni) && messaggiAssociazioni.slice(0, 20).map((msg: any, idx: number) => (
-                        <div key={idx} 
-                          onClick={() => msg.direzione === 'RICEVUTO' && msg.non_letti > 0 && segnaMessaggioLetto(msg.id, ASSOCIAZIONE_ID, 'ASSOCIAZIONE')}
-                          className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-emerald-400/50 ${
-                            msg.direzione === 'INVIATO' 
-                              ? 'bg-[#0b1220] border-[#10b981]/20' 
-                              : msg.non_letti > 0 
-                                ? 'bg-emerald-500/10 border-emerald-500/30' 
-                                : 'bg-[#0b1220] border-[#10b981]/20'
-                          }`}>
+                    <div className="max-h-[400px] overflow-y-auto space-y-3">
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').slice(0, 10).map((risposta: any, idx: number) => (
+                        <div key={idx} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#0b1220] border-[#10b981]/20'}`}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              {/* Icona busta aperta/chiusa */}
-                              {msg.direzione === 'INVIATO' ? (
-                                <Send className="w-4 h-4 text-emerald-400" />
-                              ) : msg.non_letti > 0 ? (
-                                <Mail className="w-4 h-4 text-amber-400" />
-                              ) : (
-                                <MailOpen className="w-4 h-4 text-green-400" />
-                              )}
-                              <span className="text-[#e8fbff] font-medium">
-                                {msg.direzione === 'INVIATO' ? `A: ${msg.target_nome || msg.target_tipo}` : msg.mittente_nome || 'Impresa'}
-                              </span>
-                              {/* Badge direzione */}
-                              <Badge className={msg.direzione === 'INVIATO' ? 'bg-emerald-500/20 text-emerald-400 text-xs' : 'bg-amber-500/20 text-amber-400 text-xs'}>
-                                {msg.direzione === 'INVIATO' ? 'Inviato' : 'Ricevuto'}
-                              </Badge>
-                              {msg.direzione === 'RICEVUTO' && msg.non_letti > 0 && (
-                                <Badge className="bg-red-500 text-white text-xs">Nuovo</Badge>
-                              )}
+                              <Building2 className="w-4 h-4 text-emerald-400" />
+                              <span className="text-[#e8fbff] font-medium">{risposta.mittente_nome || 'Impresa'}</span>
+                              {!risposta.letta && <Badge className="bg-emerald-500 text-white text-xs">Nuova</Badge>}
                             </div>
                             <span className="text-xs text-[#e8fbff]/50">
-                              {new Date(msg.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              {new Date(risposta.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          <p className="text-sm text-[#e8fbff]/80">{msg.titolo}</p>
-                          <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{msg.messaggio}</p>
-                          {/* Tracking letture per invii di gruppo */}
-                          {msg.direzione === 'INVIATO' && msg.totale_destinatari > 1 && (
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-[#e8fbff]/50">Inviato a {msg.totale_destinatari} imprese</span>
-                              <div className="flex items-center gap-1">
-                                <span className={`w-2 h-2 rounded-full ${msg.letti > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                <span className="text-xs text-[#e8fbff]/70">{msg.letti}/{msg.totale_destinatari} letti</span>
-                              </div>
-                            </div>
-                          )}
-                          {/* Semaforo lettura per invio singolo */}
-                          {msg.direzione === 'INVIATO' && msg.totale_destinatari === 1 && (
-                            <div className="flex items-center gap-1 mt-2">
-                              <span className={`w-2 h-2 rounded-full ${msg.letti > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                              <span className="text-xs text-[#e8fbff]/50">{msg.letti > 0 ? 'Letto' : 'Non letto'}</span>
-                            </div>
-                          )}
-                          {msg.tipo_messaggio === 'RICHIESTA_APPUNTAMENTO' && (
+                          <p className="text-sm text-[#e8fbff]/80">{risposta.titolo}</p>
+                          <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{risposta.messaggio}</p>
+                          {risposta.tipo_messaggio === 'RICHIESTA_APPUNTAMENTO' && (
                             <Badge className="bg-amber-500/20 text-amber-400 mt-2">Richiesta Appuntamento</Badge>
                           )}
-                          {msg.tipo_messaggio === 'ISCRIZIONE_CORSO' && (
+                          {risposta.tipo_messaggio === 'ISCRIZIONE_CORSO' && (
                             <Badge className="bg-green-500/20 text-green-400 mt-2">Iscrizione Corso</Badge>
                           )}
                         </div>
                       ))}
-                      {(!Array.isArray(messaggiAssociazioni) || messaggiAssociazioni.length === 0) && (
+                      {notificheRisposte.filter(r => r.mittente_tipo === 'IMPRESA').length === 0 && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessun messaggio</p>
-                          <p className="text-xs mt-1">I messaggi inviati e ricevuti appariranno qui</p>
+                          <p>Nessuna risposta ricevuta</p>
+                          <p className="text-xs mt-1">Le risposte delle imprese appariranno qui</p>
                         </div>
                       )}
                     </div>
@@ -6335,7 +6149,7 @@ export default function DashboardPA() {
                       {/* Area messaggi */}
                       <div className="relative">
                         <div ref={mioMessagesRef} className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-scroll space-y-3 chat-messages-container">
-                        {(!mioMessages || mioMessages.length === 0) ? (
+                        {mioMessages.length === 0 ? (
                           <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
                         ) : (
                           mioMessages.map((msg) => (
@@ -6611,7 +6425,7 @@ export default function DashboardPA() {
                           )}
                           
                           {/* Messaggi GPT Developer */}
-                          {selectedAgent === 'gptdev' && (gptdevMessages || []).map((msg, idx) => (
+                          {selectedAgent === 'gptdev' && gptdevMessages.map((msg, idx) => (
                             <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                               <div className={`p-3 rounded-lg ${
                                 msg.role === 'user' 
@@ -6632,7 +6446,7 @@ export default function DashboardPA() {
                           ))}
                           
                           {/* Messaggi Manus */}
-                          {selectedAgent === 'manus' && (manusMessages || []).map((msg, idx) => (
+                          {selectedAgent === 'manus' && manusMessages.map((msg, idx) => (
                             <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                               <div className={`p-3 rounded-lg ${
                                 msg.role === 'user' 
@@ -6653,7 +6467,7 @@ export default function DashboardPA() {
                           ))}
                           
                           {/* Messaggi Abacus */}
-                          {selectedAgent === 'abacus' && (abacusMessages || []).map((msg, idx) => (
+                          {selectedAgent === 'abacus' && abacusMessages.map((msg, idx) => (
                             <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                               <div className={`p-3 rounded-lg ${
                                 msg.role === 'user' 
@@ -6674,7 +6488,7 @@ export default function DashboardPA() {
                           ))}
                           
                           {/* Messaggi Zapier */}
-                          {selectedAgent === 'zapier' && (zapierMessages || []).map((msg, idx) => (
+                          {selectedAgent === 'zapier' && zapierMessages.map((msg, idx) => (
                             <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                               <div className={`p-3 rounded-lg ${
                                 msg.role === 'user' 
@@ -6897,7 +6711,7 @@ export default function DashboardPA() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {(guardianLogs || [])
+                  {guardianLogs
                     .filter(log => {
                       // Vista 4 agenti: mostra tutti gli agenti (mio, gptdev, manus, abacus, zapier)
                       if (viewMode === 'quad') {
@@ -7094,7 +6908,7 @@ export default function DashboardPA() {
                       center={gisMapCenter}
                       zoom={17}
                       height="100%"
-                      stallsData={(filteredGisStalls || []).map(s => ({
+                      stallsData={filteredGisStalls.map(s => ({
                         id: s.id,
                         number: s.number,
                         status: s.status,
@@ -7289,7 +7103,7 @@ function LogsSection() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {(systemLogs || []).map((log) => (
+                {systemLogs.map((log) => (
                   <div
                     key={log.id}
                     className="p-3 rounded-lg border bg-[#0b1220] border-[#14b8a6]/20"
@@ -7512,7 +7326,7 @@ function LogsSection() {
                       center={gisMapCenter}
                       zoom={17}
                       height="100%"
-                      stallsData={(filteredGisStalls || []).map(s => ({
+                      stallsData={filteredGisStalls.map(s => ({
                         id: s.id,
                         number: s.number,
                         status: s.status,
