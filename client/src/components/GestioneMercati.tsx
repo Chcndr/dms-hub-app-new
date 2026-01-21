@@ -1372,14 +1372,20 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         setConcessionsByStallId(map);
         console.log('[DEBUG fetchData] concessioni caricate:', Object.keys(map).length);
       }
-      // Carica presenze e graduatoria
+      // Carica presenze e graduatoria - RESET se non ci sono dati
       if (presenzeData.success && Array.isArray(presenzeData.data)) {
         setPresenze(presenzeData.data);
         console.log('[DEBUG fetchData] presenze caricate:', presenzeData.data.length);
+      } else {
+        setPresenze([]);
+        console.log('[DEBUG fetchData] presenze azzerate (nessun dato)');
       }
       if (graduatoriaData.success && Array.isArray(graduatoriaData.data)) {
         setGraduatoria(graduatoriaData.data);
         console.log('[DEBUG fetchData] graduatoria caricata:', graduatoriaData.data.length);
+      } else {
+        setGraduatoria([]);
+        console.log('[DEBUG fetchData] graduatoria azzerata (nessun dato)');
       }
       // Carica spuntisti da endpoint /api/spuntisti/mercato/:id (già arricchito con dati impresa e wallet)
       const spuntistiArray = spuntistiData.data || spuntistiData;
