@@ -6131,31 +6131,72 @@ export default function DashboardPA() {
                   </CardContent>
                 </Card>
 
-                {/* Lista Risposte dalle Imprese - Associazioni */}
+                {/* Lista Messaggi - Associazioni */}
                 <Card className="bg-[#1a2332] border-[#10b981]/20">
                   <CardHeader>
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <MessageSquare className="h-5 w-5 text-[#10b981]" />
-                      Risposte dalle Imprese
+                      Messaggi
                       {(notificheRisposteAssoc || []).filter((r: any) => !r.letta).length > 0 && (
-                        <Badge className="bg-red-500 text-white ml-2 animate-pulse">
+                        <Badge className="bg-red-500 text-white ml-2">
                           {(notificheRisposteAssoc || []).filter((r: any) => !r.letta).length} nuove
                         </Badge>
                       )}
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
-                      Messaggi ricevuti dalle imprese in risposta alle tue notifiche
+                      Messaggi inviati e ricevuti
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                    {/* Filtri */}
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        onClick={() => setFiltroMessaggiAssoc('tutti')}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiAssoc === 'tutti' ? 'bg-emerald-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-emerald-500/20'}`}
+                      >
+                        Tutti
+                      </button>
+                      <button
+                        onClick={() => setFiltroMessaggiAssoc('inviati')}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiAssoc === 'inviati' ? 'bg-emerald-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-emerald-500/20'}`}
+                      >
+                        Inviati ({(messaggiInviatiAssoc || []).length})
+                      </button>
+                      <button
+                        onClick={() => setFiltroMessaggiAssoc('ricevuti')}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiAssoc === 'ricevuti' ? 'bg-emerald-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-emerald-500/20'}`}
+                      >
+                        Ricevuti ({(notificheRisposteAssoc || []).length})
+                      </button>
+                    </div>
                     <div className="max-h-[400px] overflow-y-auto space-y-3">
-                      {(notificheRisposteAssoc || []).slice(0, 10).map((risposta: any, idx: number) => (
-                        <div key={idx} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#0b1220] border-[#10b981]/20'}`}>
+                      {/* Messaggi Inviati */}
+                      {(filtroMessaggiAssoc === 'tutti' || filtroMessaggiAssoc === 'inviati') && (messaggiInviatiAssoc || []).map((msg: any, idx: number) => (
+                        <div key={`inv-${idx}`} className="p-3 rounded-lg border bg-emerald-500/5 border-emerald-500/20">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <Building2 className="w-4 h-4 text-emerald-400" />
+                              <Send className="w-4 h-4 text-emerald-400" />
+                              <span className="text-[#e8fbff] font-medium">Inviato</span>
+                              <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">→ {msg.destinatari || 0} imprese</Badge>
+                            </div>
+                            <span className="text-xs text-[#e8fbff]/50">
+                              {new Date(msg.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[#e8fbff]/80">{msg.titolo}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs text-[#e8fbff]/50">Letti: {msg.lette || 0}/{msg.destinatari || 0}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Messaggi Ricevuti */}
+                      {(filtroMessaggiAssoc === 'tutti' || filtroMessaggiAssoc === 'ricevuti') && (notificheRisposteAssoc || []).map((risposta: any, idx: number) => (
+                        <div key={`ric-${idx}`} className={`p-3 rounded-lg border ${!risposta.letta ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#0b1220] border-[#10b981]/20'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-amber-400" />
                               <span className="text-[#e8fbff] font-medium">{risposta.mittente_nome || 'Impresa'}</span>
-                              {!risposta.letta && <Badge className="bg-emerald-500 text-white text-xs">Nuova</Badge>}
+                              {!risposta.letta && <Badge className="bg-amber-500 text-white text-xs">Nuova</Badge>}
                             </div>
                             <span className="text-xs text-[#e8fbff]/50">
                               {new Date(risposta.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -6163,19 +6204,25 @@ export default function DashboardPA() {
                           </div>
                           <p className="text-sm text-[#e8fbff]/80">{risposta.titolo}</p>
                           <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{risposta.messaggio}</p>
-                          {risposta.tipo_messaggio === 'RICHIESTA_APPUNTAMENTO' && (
-                            <Badge className="bg-amber-500/20 text-amber-400 mt-2">Richiesta Appuntamento</Badge>
-                          )}
-                          {risposta.tipo_messaggio === 'ISCRIZIONE_CORSO' && (
-                            <Badge className="bg-green-500/20 text-green-400 mt-2">Iscrizione Corso</Badge>
-                          )}
                         </div>
                       ))}
-                      {(notificheRisposteAssoc || []).length === 0 && (
+                      {/* Empty states */}
+                      {filtroMessaggiAssoc === 'inviati' && (messaggiInviatiAssoc || []).length === 0 && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <Send className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessun messaggio inviato</p>
+                        </div>
+                      )}
+                      {filtroMessaggiAssoc === 'ricevuti' && (notificheRisposteAssoc || []).length === 0 && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <Mail className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessuna risposta ricevuta</p>
+                        </div>
+                      )}
+                      {filtroMessaggiAssoc === 'tutti' && (messaggiInviatiAssoc || []).length === 0 && (notificheRisposteAssoc || []).length === 0 && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessuna risposta ricevuta</p>
-                          <p className="text-xs mt-1">Le risposte delle imprese appariranno qui</p>
+                          <p>Nessun messaggio</p>
                         </div>
                       )}
                     </div>
