@@ -137,6 +137,13 @@ export default function SecurityTab() {
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // Tab Permissions Management - Gestione permessi tab editabili
+  const [tabPermissions, setTabPermissions] = useState<Permission[]>([]);
+  const [roleTabPermissions, setRoleTabPermissions] = useState<Record<number, number[]>>({});
+  const [editedRolePermissions, setEditedRolePermissions] = useState<Record<number, number[]>>({});
+  const [hasPermissionChanges, setHasPermissionChanges] = useState(false);
+  const [savingPermissions, setSavingPermissions] = useState(false);
 
   // Load data on mount
   useEffect(() => {
@@ -183,6 +190,9 @@ export default function SecurityTab() {
       if (blacklistRes.success) setIPBlacklist(blacklistRes.data);
       if (usersRes.success) setUsers(usersRes.data);
       
+      // Carica permessi tab separatamente
+      await loadTabPermissions();
+      
       toast.success('Dati sicurezza caricati');
     } catch (err: any) {
       console.error('Error loading security data:', err);
@@ -191,6 +201,128 @@ export default function SecurityTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Carica permessi tab e matrice ruolo-permessi
+  const loadTabPermissions = async () => {
+    try {
+      // Carica permessi tab
+      const tabPermsRes = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/permissions/tabs`);
+      const tabPermsData = await tabPermsRes.json();
+      
+      if (tabPermsData.success) {
+        setTabPermissions(tabPermsData.data);
+        
+        // Costruisci la matrice ruolo -> permessi
+        const rolePermsMap: Record<number, number[]> = {};
+        
+        // Per ogni ruolo, carica i suoi permessi
+        const rolesRes = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/roles`);
+        const rolesData = await rolesRes.json();
+        
+        if (rolesData.success) {
+          for (const role of rolesData.data) {
+            const rolePermsRes = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${role.id}/permissions`);
+            const rolePermsData = await rolePermsRes.json();
+            
+            if (rolePermsData.success) {
+              // Filtra solo i permessi tab
+              const tabPermIds = tabPermsData.data.map((p: Permission) => p.id);
+              rolePermsMap[role.id] = rolePermsData.data
+                .filter((p: Permission) => tabPermIds.includes(p.id))
+                .map((p: Permission) => p.id);
+            }
+          }
+        }
+        
+        setRoleTabPermissions(rolePermsMap);
+        setEditedRolePermissions(rolePermsMap);
+        setHasPermissionChanges(false);
+      }
+    } catch (err) {
+      console.error('Error loading tab permissions:', err);
+    }
+  };
+
+  // Toggle permesso per un ruolo
+  const toggleRolePermission = (roleId: number, permissionId: number) => {
+    setEditedRolePermissions(prev => {
+      const current = prev[roleId] || [];
+      const newPerms = current.includes(permissionId)
+        ? current.filter(id => id !== permissionId)
+        : [...current, permissionId];
+      
+      const updated = { ...prev, [roleId]: newPerms };
+      
+      // Verifica se ci sono modifiche rispetto all'originale
+      const hasChanges = Object.keys(updated).some(key => {
+        const roleIdNum = parseInt(key);
+        const original = roleTabPermissions[roleIdNum] || [];
+        const edited = updated[roleIdNum] || [];
+        return original.length !== edited.length || 
+               !original.every(id => edited.includes(id));
+      });
+      setHasPermissionChanges(hasChanges);
+      
+      return updated;
+    });
+  };
+
+  // Salva le modifiche ai permessi
+  const savePermissionChanges = async () => {
+    setSavingPermissions(true);
+    try {
+      // Per ogni ruolo modificato, salva i permessi
+      for (const [roleIdStr, permIds] of Object.entries(editedRolePermissions)) {
+        const roleId = parseInt(roleIdStr);
+        const original = roleTabPermissions[roleId] || [];
+        const edited = permIds || [];
+        
+        // Verifica se questo ruolo è stato modificato
+        if (original.length !== edited.length || !original.every(id => edited.includes(id))) {
+          // Ottieni tutti i permessi del ruolo (non solo tab)
+          const rolePermsRes = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${roleId}/permissions`);
+          const rolePermsData = await rolePermsRes.json();
+          
+          if (rolePermsData.success) {
+            // Mantieni i permessi non-tab, sostituisci i tab
+            const tabPermIds = tabPermissions.map(p => p.id);
+            const nonTabPerms = rolePermsData.data
+              .filter((p: Permission) => !tabPermIds.includes(p.id))
+              .map((p: Permission) => p.id);
+            
+            const allPermIds = [...nonTabPerms, ...edited];
+            
+            // Salva
+            const saveRes = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${roleId}/permissions`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ permission_ids: allPermIds })
+            });
+            
+            const saveData = await saveRes.json();
+            if (!saveData.success) {
+              throw new Error(saveData.error || 'Errore nel salvataggio');
+            }
+          }
+        }
+      }
+      
+      toast.success('Permessi salvati con successo!');
+      setRoleTabPermissions(editedRolePermissions);
+      setHasPermissionChanges(false);
+      loadData(); // Ricarica tutti i dati
+    } catch (err: any) {
+      toast.error('Errore: ' + err.message);
+    } finally {
+      setSavingPermissions(false);
+    }
+  };
+
+  // Annulla le modifiche
+  const cancelPermissionChanges = () => {
+    setEditedRolePermissions(roleTabPermissions);
+    setHasPermissionChanges(false);
   };
 
   // API Actions
@@ -997,6 +1129,113 @@ export default function SecurityTab() {
 
         {/* PERMISSIONS TAB */}
         <TabsContent value="permissions" className="space-y-6">
+          {/* NUOVA SEZIONE: Gestione Permessi Tab Dashboard */}
+          <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <Eye className="h-5 w-5 text-[#f59e0b]" />
+                  Gestione Permessi Tab Dashboard
+                  <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30 ml-2">
+                    {tabPermissions.length} Tab
+                  </Badge>
+                </CardTitle>
+                {hasPermissionChanges && (
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={cancelPermissionChanges}
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Annulla
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={savePermissionChanges}
+                      disabled={savingPermissions}
+                      className="bg-[#14b8a6] hover:bg-[#14b8a6]/80"
+                    >
+                      {savingPermissions ? (
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                      )}
+                      Salva Modifiche
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-[#e8fbff]/60 mt-2">
+                Configura quali tab della dashboard sono visibili per ogni ruolo. Le modifiche vengono applicate immediatamente dopo il salvataggio.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {tabPermissions.length === 0 ? (
+                <div className="text-center py-8 text-[#e8fbff]/50">
+                  <RefreshCw className="h-8 w-8 mx-auto mb-2 animate-spin" />
+                  <p>Caricamento permessi tab...</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[#14b8a6]/20">
+                        <th className="text-left py-3 px-2 text-[#e8fbff]/70 font-medium sticky left-0 bg-[#1a2332] min-w-[200px]">
+                          Tab
+                        </th>
+                        {roles.slice(0, 8).map(role => (
+                          <th key={role.id} className="text-center py-3 px-2 text-[#e8fbff]/70 font-medium min-w-[100px]">
+                            <div className="truncate" title={role.name}>
+                              {role.name.length > 12 ? role.name.substring(0, 12) + '...' : role.name}
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tabPermissions.map((perm) => (
+                        <tr key={perm.id} className="border-b border-[#14b8a6]/10 hover:bg-[#0b1220]/50">
+                          <td className="py-2 px-2 sticky left-0 bg-[#1a2332]">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#e8fbff]">{perm.name.replace('Visualizza Tab ', '')}</span>
+                              {perm.is_sensitive && (
+                                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
+                                  ⚠️
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-[#e8fbff]/40">{perm.code}</div>
+                          </td>
+                          {roles.slice(0, 8).map(role => {
+                            const isChecked = (editedRolePermissions[role.id] || []).includes(perm.id);
+                            return (
+                              <td key={role.id} className="text-center py-2 px-2">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleRolePermission(role.id, perm.id)}
+                                  className="w-5 h-5 rounded border-[#14b8a6]/30 bg-[#0b1220] text-[#14b8a6] focus:ring-[#14b8a6] focus:ring-offset-0 cursor-pointer"
+                                />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {roles.length > 8 && (
+                <div className="mt-4 text-sm text-[#e8fbff]/50 text-center">
+                  Mostrando i primi 8 ruoli. Per gestire altri ruoli, selezionali dalla sezione Ruoli.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Sezione esistente: Permessi per categoria */}
           {Object.entries(permissionsByCategory).map(([category, perms]) => (
             <Card key={category} className="bg-[#1a2332] border-[#14b8a6]/30">
               <CardHeader>
