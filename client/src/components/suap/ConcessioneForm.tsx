@@ -668,7 +668,24 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
         limitazioni_merceologia: sanitizeValue(formData.limitazioni_merceologia),
         canone_unico: sanitizeValue(formData.canone_unico),
         planimetria_allegata: formData.planimetria_allegata || false,
-        prescrizioni: sanitizeValue(formData.prescrizioni)
+        prescrizioni: sanitizeValue(formData.prescrizioni),
+        // Dati Concessionario
+        cf_concessionario: sanitizeValue(formData.cf_concessionario),
+        partita_iva: sanitizeValue(formData.partita_iva),
+        ragione_sociale: sanitizeValue(formData.ragione_sociale),
+        qualita: sanitizeValue(formData.qualita),
+        nome: sanitizeValue(formData.nome),
+        cognome: sanitizeValue(formData.cognome),
+        data_nascita: sanitizeValue(formData.data_nascita),
+        luogo_nascita: sanitizeValue(formData.luogo_nascita),
+        residenza_via: sanitizeValue(formData.residenza_via),
+        residenza_comune: sanitizeValue(formData.residenza_comune),
+        residenza_provincia: sanitizeValue(formData.residenza_provincia),
+        residenza_cap: sanitizeValue(formData.residenza_cap),
+        sede_legale_via: sanitizeValue(formData.sede_legale_via),
+        sede_legale_comune: sanitizeValue(formData.sede_legale_comune),
+        sede_legale_provincia: sanitizeValue(formData.sede_legale_provincia),
+        sede_legale_cap: sanitizeValue(formData.sede_legale_cap)
       };
       
       // In modalità edit usa PUT, altrimenti POST
