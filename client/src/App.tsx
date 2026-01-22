@@ -32,6 +32,7 @@ import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import DashboardImpresa from "./pages/DashboardImpresa";
 import AppImpresaNotifiche from "./pages/AppImpresaNotifiche";
+import ImpersonationBanner from "./components/ImpersonationBanner";
 
 function Router() {
   return (
@@ -77,6 +78,7 @@ function App() {
         <AnimationProvider>
           <MioProvider>
             <TooltipProvider>
+              <ImpersonationBanner />
               <Toaster />
               <Router />
               <ChatWidget userRole="client" />

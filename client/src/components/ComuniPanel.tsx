@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Plus, Edit, Trash2, Phone, Mail, Globe, MapPin, Users, ChevronDown, ChevronUp, Save, X, Search, Download, Loader2, FileText, ShoppingBag, Shield, CreditCard } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, Phone, Mail, Globe, MapPin, Users, ChevronDown, ChevronUp, Save, X, Search, Download, Loader2, FileText, ShoppingBag, Shield, CreditCard, Eye, ExternalLink } from 'lucide-react';
 
 const API_BASE_URL = 'https://orchestratore.mio-hub.me';
 
@@ -223,6 +223,9 @@ export default function ComuniPanel() {
     ruolo: 'operatore',
     email: ''
   });
+
+  // Stato per impersonificazione
+  const [impersonating, setImpersonating] = useState(false);
 
   // Ruoli disponibili
   const RUOLI_COMUNE = [
@@ -490,6 +493,58 @@ export default function ComuniPanel() {
   // Conta utenti per ruolo
   const getUtentiPerRuolo = (ruolo: string) => {
     return utentiComune.filter(u => u.ruolo === ruolo && u.attivo).length;
+  };
+
+  // Funzione per accedere come admin del comune (impersonificazione)
+  const handleAccediComeComune = async (comune: Comune) => {
+    if (!confirm(`Vuoi accedere come Admin del Comune di ${comune.nome}?\n\nVerrà aperta una nuova finestra con la vista del comune.`)) return;
+    
+    setImpersonating(true);
+    try {
+      // Cerca l'admin del comune
+      const res = await fetch(`${API_BASE_URL}/api/comuni/${comune.id}/utenti`);
+      const data = await res.json();
+      
+      if (data.success && data.data.length > 0) {
+        // Trova l'admin o il primo utente attivo
+        const adminUser = data.data.find((u: UtenteComune) => u.ruolo === 'admin' && u.attivo) || data.data.find((u: UtenteComune) => u.attivo);
+        
+        if (adminUser && adminUser.user_id) {
+          // Chiama l'API di impersonificazione
+          const impRes = await fetch(`${API_BASE_URL}/api/security/users/${adminUser.user_id}/impersonate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comune_id: comune.id })
+          });
+          const impData = await impRes.json();
+          
+          if (impData.success) {
+            // Salva in sessionStorage per il banner
+            sessionStorage.setItem('impersonating_comune', JSON.stringify({
+              comune_id: comune.id,
+              comune_nome: comune.nome,
+              user_id: adminUser.user_id,
+              user_email: adminUser.email || impData.data?.target_user?.email
+            }));
+            
+            // Apri nuova finestra con la dashboard filtrata per comune
+            window.open(`/dashboard-pa?comune_id=${comune.id}&impersonate=true`, '_blank');
+            alert(`✅ Sessione di impersonificazione avviata per ${comune.nome}\n\nTutte le azioni saranno registrate nel log di sicurezza.`);
+          } else {
+            alert(`❌ Errore: ${impData.error || 'Impossibile avviare impersonificazione'}`);
+          }
+        } else {
+          alert(`⚠️ Nessun utente admin trovato per il Comune di ${comune.nome}.\n\nAssegna prima un utente con ruolo Admin nella sezione Permessi.`);
+        }
+      } else {
+        alert(`⚠️ Nessun utente assegnato al Comune di ${comune.nome}.\n\nAssegna prima un utente nella sezione Permessi.`);
+      }
+    } catch (error) {
+      console.error('Error impersonating comune:', error);
+      alert('❌ Errore di connessione durante l\'impersonificazione');
+    } finally {
+      setImpersonating(false);
+    }
   };
 
   // Ricerca su IndicePA
@@ -1119,6 +1174,14 @@ export default function ComuniPanel() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={(e) => { e.stopPropagation(); handleAccediComeComune(comune); }}
+                        className="p-1 text-yellow-400 hover:text-yellow-300" 
+                        title="Accedi come Admin del Comune"
+                        disabled={impersonating}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={(e) => { e.stopPropagation(); openEditComune(comune); }}
                         className="p-1 text-gray-400 hover:text-cyan-400"
                       >
@@ -1144,11 +1207,22 @@ export default function ComuniPanel() {
             <>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-white">{selectedComune.nome}</h3>
-                {selectedComune.codice_ipa && (
-                  <span className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded">
-                    IPA: {selectedComune.codice_ipa}
-                  </span>
-                )}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleAccediComeComune(selectedComune)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 rounded-lg text-sm font-medium transition-colors"
+                    disabled={impersonating}
+                  >
+                    <Eye className="w-4 h-4" />
+                    {impersonating ? 'Caricamento...' : 'Accedi come'}
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                  {selectedComune.codice_ipa && (
+                    <span className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded">
+                      IPA: {selectedComune.codice_ipa}
+                    </span>
+                  )}
+                </div>
               </div>
               
               {/* Tab Navigation */}
@@ -1721,13 +1795,42 @@ export default function ComuniPanel() {
                           <Shield className="w-4 h-4 text-purple-400" />
                           Gestione Permessi e Ruoli
                         </h4>
-                        <button 
-                          onClick={() => setShowUtenteForm(true)}
-                          className="flex items-center gap-1 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                          Assegna Utente
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={async () => {
+                              if (!selectedComune) return;
+                              if (!confirm(`Vuoi generare le credenziali Admin per ${selectedComune.nome}?\n\nVerrà creato un utente admin con password temporanea.`)) return;
+                              try {
+                                const res = await fetch(`${API_BASE_URL}/api/comuni/${selectedComune.id}/provision-admin`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' }
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  alert(`✅ Admin creato!\n\nEmail: ${data.data.admin_email}\nPassword: ${data.data.temp_password}\n\n⚠️ IMPORTANTE: Salva queste credenziali e inviale alla PEC del comune!`);
+                                  fetchPermessi(selectedComune.id);
+                                } else {
+                                  alert(`❌ Errore: ${data.error}${data.existing_admin ? `\n\nAdmin esistente: ${data.existing_admin}` : ''}`);
+                                }
+                              } catch (error) {
+                                console.error('Error provisioning admin:', error);
+                                alert('❌ Errore di connessione');
+                              }
+                            }}
+                            className="flex items-center gap-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
+                            title="Genera automaticamente un utente admin con credenziali temporanee"
+                          >
+                            <Shield className="w-3 h-3" />
+                            Genera Admin
+                          </button>
+                          <button 
+                            onClick={() => setShowUtenteForm(true)}
+                            className="flex items-center gap-1 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Assegna Utente
+                          </button>
+                        </div>
                       </div>
 
                       {/* Riepilogo ruoli */}
