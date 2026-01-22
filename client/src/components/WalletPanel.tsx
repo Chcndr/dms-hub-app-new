@@ -33,6 +33,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // --- TIPI ---
 
@@ -148,7 +149,7 @@ export default function WalletPanel() {
     setIsLoading(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
-      const response = await fetch(`${API_URL}/api/wallets`);
+      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/wallets`));
       const data = await response.json();
 
       if (data.success) {

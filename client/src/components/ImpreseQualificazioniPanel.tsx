@@ -4,6 +4,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Building2, FileCheck, AlertCircle, CheckCircle, Clock, Users, Search, X, TrendingUp } from 'lucide-react';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // ============================================================================
 // INTERFACCE TYPESCRIPT
@@ -222,7 +223,7 @@ export default function ImpreseQualificazioniPanel() {
     const fetchImprese = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/imprese`);
+        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese`));
         const data = await response.json();
         if (data.success && data.data) {
           // Mappa i campi dall'API ai nomi usati nel frontend

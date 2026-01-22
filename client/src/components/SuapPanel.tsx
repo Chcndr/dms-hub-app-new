@@ -17,6 +17,7 @@ import {
   SuapStats, SuapPratica, SuapEvento, SuapCheck 
 } from '@/api/suap';
 import SciaForm from '@/components/suap/SciaForm';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 import ConcessioneForm from '@/components/suap/ConcessioneForm';
 import AutorizzazioneForm from '@/components/suap/AutorizzazioneForm';
 import DomandaSpuntaForm from '@/components/suap/DomandaSpuntaForm';
@@ -239,7 +240,7 @@ export default function SuapPanel() {
   
   const loadConcessioni = async () => {
     try {
-      const response = await fetch('https://orchestratore.mio-hub.me/api/concessions');
+      const response = await fetch(addComuneIdToUrl('https://orchestratore.mio-hub.me/api/concessions'));
       const data = await response.json();
       if (data.success) {
         // Usa stato_calcolato dal backend se presente, altrimenti calcola

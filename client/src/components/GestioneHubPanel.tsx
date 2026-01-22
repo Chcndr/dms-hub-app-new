@@ -45,6 +45,7 @@ import WalletPanel from './WalletPanel';
 import NotificationsPanel from './NotificationsPanel';
 
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // ============================================================================
 // TIPI E INTERFACCE
@@ -208,11 +209,11 @@ export default function GestioneHubPanel() {
     setLoading(true);
     try {
       const [marketsRes, vendorsRes, stallsRes, concessionsRes, impreseRes] = await Promise.all([
-        fetch(`${MIHUB_API_BASE_URL}/api/markets`),
-        fetch(`${MIHUB_API_BASE_URL}/api/vendors`),
-        fetch(`${MIHUB_API_BASE_URL}/api/stalls`),
-        fetch(`${MIHUB_API_BASE_URL}/api/concessions`),
-        fetch(`${MIHUB_API_BASE_URL}/api/imprese`)
+        fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/markets`)),
+        fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/vendors`)),
+        fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/stalls`)),
+        fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/concessions`)),
+        fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/imprese`))
       ]);
 
       const [marketsData, vendorsData, stallsData, concessionsData, impreseData] = await Promise.all([

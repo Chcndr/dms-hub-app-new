@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { MarketAutorizzazioniTab } from './MarketAutorizzazioniTab';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // ============================================================================
 // TYPES
@@ -461,7 +462,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
     // Se marketId è "ALL" o "all", carica tutte le concessioni
     if (marketId === 'ALL' || marketId === 'all') {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/concessions`);
+        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/concessions`));
         if (!response.ok) {
           // Se l'endpoint non esiste, non mostrare errore
           console.log('[MarketCompaniesTab] fetchConcessions ALL: endpoint non disponibile');
