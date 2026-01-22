@@ -662,6 +662,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
         mq: sanitizeValue(formData.mq),
         dimensioni_lineari: sanitizeValue(formData.dimensioni_lineari),
         giorno: sanitizeValue(formData.giorno),
+        ubicazione: sanitizeValue(formData.ubicazione),
         tipo_posteggio: sanitizeValue(formData.tipo_posteggio),
         attrezzature: sanitizeValue(formData.attrezzature),
         settore_merceologico: sanitizeValue(formData.merceologia),
