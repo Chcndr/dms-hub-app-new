@@ -23,25 +23,16 @@ export default function ImpersonationBanner() {
       const urlParams = new URLSearchParams(window.location.search);
       const isImpersonate = urlParams.get('impersonate') === 'true';
       const comuneId = urlParams.get('comune_id');
+      const comuneNome = urlParams.get('comune_nome');
+      const userEmail = urlParams.get('user_email');
       
-      // Controlla sessionStorage
-      const storedData = sessionStorage.getItem('impersonating_comune');
-      
-      if (isImpersonate && storedData) {
-        try {
-          const data = JSON.parse(storedData);
-          setImpersonationData(data);
-          setIsVisible(true);
-        } catch (e) {
-          console.error('Error parsing impersonation data:', e);
-        }
-      } else if (isImpersonate && comuneId) {
-        // Fallback: solo comune_id dall'URL
+      if (isImpersonate && comuneId) {
+        // Leggi tutti i dati dall'URL
         setImpersonationData({
           comune_id: parseInt(comuneId),
-          comune_nome: `Comune #${comuneId}`,
+          comune_nome: comuneNome ? decodeURIComponent(comuneNome) : `Comune #${comuneId}`,
           user_id: 0,
-          user_email: ''
+          user_email: userEmail ? decodeURIComponent(userEmail) : ''
         });
         setIsVisible(true);
       }

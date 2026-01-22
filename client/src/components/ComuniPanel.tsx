@@ -519,16 +519,12 @@ export default function ComuniPanel() {
           const impData = await impRes.json();
           
           if (impData.success) {
-            // Salva in sessionStorage per il banner
-            sessionStorage.setItem('impersonating_comune', JSON.stringify({
-              comune_id: comune.id,
-              comune_nome: comune.nome,
-              user_id: adminUser.user_id,
-              user_email: adminUser.email || impData.data?.target_user?.email
-            }));
+            // Passa i dati nell'URL per il banner (sessionStorage non funziona tra finestre)
+            const comuneNomeEncoded = encodeURIComponent(comune.nome);
+            const userEmail = encodeURIComponent(adminUser.email || impData.data?.target_user?.email || '');
             
-            // Apri nuova finestra con la dashboard filtrata per comune
-            window.open(`/dashboard-pa?comune_id=${comune.id}&impersonate=true`, '_blank');
+            // Apri nuova finestra con tutti i dati nell'URL
+            window.open(`/dashboard-pa?comune_id=${comune.id}&comune_nome=${comuneNomeEncoded}&user_email=${userEmail}&impersonate=true`, '_blank');
             alert(`✅ Sessione di impersonificazione avviata per ${comune.nome}\n\nTutte le azioni saranno registrate nel log di sicurezza.`);
           } else {
             alert(`❌ Errore: ${impData.error || 'Impossibile avviare impersonificazione'}`);
