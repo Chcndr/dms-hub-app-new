@@ -4,12 +4,14 @@
  * Questo context carica e memorizza i permessi dell'utente loggato
  * per controllare la visibilità dei tab nella dashboard.
  * 
- * @version 1.0.0
+ * @version 1.1.0
  * @date 23 Gennaio 2026
+ * 
+ * NOTA: Non usa useAuth per evitare problemi con getLoginUrl.
+ * Invece, carica i permessi in modo indipendente.
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { useAuth } from '@/_core/hooks/useAuth';
 import { ORCHESTRATORE_API_BASE_URL } from '@/config/api';
 
 // Tipi
@@ -44,7 +46,6 @@ interface PermissionsProviderProps {
 
 // Provider Component
 export function PermissionsProvider({ children }: PermissionsProviderProps) {
-  const { user, isAuthenticated } = useAuth();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [permissionCodes, setPermissionCodes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,20 +53,13 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
 
   // Carica i permessi dell'utente
   const loadUserPermissions = useCallback(async () => {
-    if (!isAuthenticated || !user) {
-      setPermissions([]);
-      setPermissionCodes([]);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      // Ottieni il ruolo dell'utente (per ora usiamo super_admin come default)
-      // In futuro questo verrà dal profilo utente
-      const userRoleId = getUserRoleId(user);
+      // Per ora usiamo super_admin (ID=1) come default per tutti gli utenti
+      // In futuro questo verrà determinato dal profilo utente
+      const userRoleId = 1; // super_admin - tutti i permessi
       
       // Carica i permessi del ruolo
       const response = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${userRoleId}/permissions`);
@@ -80,37 +74,23 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
     } catch (err: any) {
       console.error('[PermissionsContext] Errore:', err);
       setError(err.message);
-      // In caso di errore, concedi tutti i permessi (fallback sicuro per admin)
-      // Questo evita di bloccare l'accesso in caso di problemi di rete
+      // In caso di errore, NON blocchiamo l'accesso
+      // Lasciamo permissionCodes vuoto, il fallback garantirà l'accesso
       setPermissions([]);
       setPermissionCodes([]);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user]);
+  }, []);
 
-  // Determina il ruolo dell'utente (logica semplificata)
-  const getUserRoleId = (user: any): number => {
-    // Per ora restituiamo sempre 1 (super_admin) per gli utenti autenticati
-    // In futuro questo leggerà il ruolo dal profilo utente nel database
-    // Il ruolo sarà memorizzato nella tabella users o user_roles
-    
-    // Logica futura:
-    // if (user.role === 'super_admin') return 1;
-    // if (user.role === 'admin_pa') return 2;
-    // etc.
-    
-    return 1; // super_admin - tutti i permessi
-  };
-
-  // Carica permessi quando l'utente cambia
+  // Carica permessi all'avvio
   useEffect(() => {
     loadUserPermissions();
   }, [loadUserPermissions]);
 
   // Verifica se l'utente ha un permesso specifico
   const hasPermission = useCallback((code: string): boolean => {
-    // Se non ci sono permessi caricati, concedi accesso (fallback)
+    // Se non ci sono permessi caricati e non stiamo caricando, concedi accesso (fallback)
     if (permissionCodes.length === 0 && !loading) {
       return true; // Fallback: accesso consentito
     }
