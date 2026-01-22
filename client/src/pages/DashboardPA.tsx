@@ -86,8 +86,16 @@ function useDashboardData() {
   useEffect(() => {
     const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
     
-    // Fetch overview
-    fetch(`${MIHUB_API}/stats/overview`)
+    // Leggi comune_id dall'URL se in modalità impersonificazione
+    const urlParams = new URLSearchParams(window.location.search);
+    const comuneId = urlParams.get('comune_id');
+    const isImpersonating = urlParams.get('impersonate') === 'true';
+    
+    // Costruisci query string per filtro comune
+    const comuneFilter = (comuneId && isImpersonating) ? `?comune_id=${comuneId}` : '';
+    
+    // Fetch overview (con filtro comune se impersonificazione)
+    fetch(`${MIHUB_API}/stats/overview${comuneFilter}`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -559,6 +567,17 @@ export default function DashboardPA() {
   const urlParams = new URLSearchParams(window.location.search);
   const tabFromUrl = urlParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabFromUrl || 'dashboard');
+  
+  // Modalità impersonificazione: nascondi tab admin
+  const isImpersonating = urlParams.get('impersonate') === 'true';
+  const comuneIdFromUrl = urlParams.get('comune_id');
+  const comuneNomeFromUrl = urlParams.get('comune_nome');
+  
+  // Tab da nascondere in modalità impersonificazione (solo per comuni)
+  const hiddenTabsForComuni = [
+    'security', 'sistema', 'ai', 'integrations', 'settings', 
+    'comuni', 'reports', 'workspace', 'docs'
+  ];
   const [dashboardSubTab, setDashboardSubTab] = useState<'overview' | 'mercati'>('overview');
   const [sistemaSubTab, setSistemaSubTab] = useState<'logs' | 'debug'>('logs');
   const [walletSubTab, setWalletSubTab] = useState<'wallet' | 'pagopa'>('wallet');
@@ -2103,6 +2122,7 @@ export default function DashboardPA() {
               <Activity className="h-6 w-6" />
               <span className="text-xs font-medium">Real-time</span>
             </button>
+            {!isImpersonating && (
             <button
               onClick={() => setActiveTab('sistema')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2114,6 +2134,7 @@ export default function DashboardPA() {
               <Terminal className="h-6 w-6" />
               <span className="text-xs font-medium">Sistema</span>
             </button>
+            )}
             <button
               onClick={() => setActiveTab('ai')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2125,6 +2146,7 @@ export default function DashboardPA() {
               <Bot className="h-6 w-6" />
               <span className="text-xs font-medium">Agente AI</span>
             </button>
+            {!isImpersonating && (
             <button
               onClick={() => setActiveTab('security')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2136,6 +2158,7 @@ export default function DashboardPA() {
               <Shield className="h-6 w-6" />
               <span className="text-xs font-medium">Sicurezza</span>
             </button>
+            )}
             <button
               onClick={() => setActiveTab('ssosuap')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2169,6 +2192,7 @@ export default function DashboardPA() {
               <Radio className="h-6 w-6" />
               <span className="text-xs font-medium">Segnalazioni & IoT</span>
             </button>
+            {!isImpersonating && (
             <button
               onClick={() => setActiveTab('comuni')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2180,6 +2204,7 @@ export default function DashboardPA() {
               <Building2 className="h-6 w-6" />
               <span className="text-xs font-medium">Comuni</span>
             </button>
+            )}
             <button
               onClick={() => setActiveTab('inspections')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2213,6 +2238,7 @@ export default function DashboardPA() {
               <Train className="h-6 w-6" />
               <span className="text-xs font-medium">Centro Mobilità</span>
             </button>
+            {!isImpersonating && (
             <button
               onClick={() => setActiveTab('reports')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2224,6 +2250,8 @@ export default function DashboardPA() {
               <FileBarChart className="h-6 w-6" />
               <span className="text-xs font-medium">Report</span>
             </button>
+            )}
+            {!isImpersonating && (
             <button
               onClick={() => setActiveTab('integrations')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2235,6 +2263,8 @@ export default function DashboardPA() {
               <Plug className="h-6 w-6" />
               <span className="text-xs font-medium">Integrazioni</span>
             </button>
+            )}
+            {!isImpersonating && (
             <button
               onClick={() => setActiveTab('settings')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2246,6 +2276,7 @@ export default function DashboardPA() {
               <SettingsIcon className="h-6 w-6" />
               <span className="text-xs font-medium">Impostazioni</span>
             </button>
+            )}
             <button
               onClick={() => setActiveTab('mercati')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
