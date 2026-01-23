@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.49.0  
-> **Data:** 22 Gennaio 2026  
+> **Versione:** 3.50.0  
+> **Data:** 23 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -1151,6 +1151,95 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 ### 📝 CHANGELOG
+
+### v3.50.0 (23/01/2026) - Sistema RBAC Completo per Dashboard PA
+
+**Sistema Permessi RBAC:**
+- **28 Tab protetti** con `ProtectedTab` (tutti i tab della Dashboard PA)
+- **12 Quick Access protetti** con `ProtectedQuickAccess` (barra rapida applicativi)
+- **Pulsante Dashboard PA** nascosto in HomePage per utenti senza permesso
+- **99 permessi totali** nel database (tab.view.*, quick.view.*, security.*, etc.)
+
+**Tab Dashboard PA (28 totali):**
+| ID | Nome | Permesso |
+|----|------|----------|
+| dashboard | Dashboard | tab.view.dashboard |
+| users | Clienti | tab.view.users |
+| wallet | Wallet/PagoPA | tab.view.wallet |
+| products | Prodotti | tab.view.products |
+| sustainability | Sostenibilità | tab.view.sustainability |
+| tpas | TPAS | tab.view.tpas |
+| carboncredits | Carbon Credits | tab.view.carboncredits |
+| realtime | Real-time | tab.view.realtime |
+| sistema | Sistema | tab.view.sistema |
+| ai | Agente AI | tab.view.ai |
+| security | Sicurezza | tab.view.security |
+| ssosuap | SSO SUAP | tab.view.ssosuap |
+| businesses | Qualificazione | tab.view.businesses |
+| civic | Segnalazioni & IoT | tab.view.civic |
+| comuni | Comuni | tab.view.comuni |
+| inspections | Controlli/Sanzioni | tab.view.inspections |
+| notifications | Notifiche | tab.view.notifications |
+| mobility | Centro Mobilità | tab.view.mobility |
+| reports | Report | tab.view.reports |
+| integrations | Integrazioni | tab.view.integrations |
+| settings | Impostazioni | tab.view.settings |
+| mercati | Gestione Mercati | tab.view.mercati |
+| imprese | Imprese | tab.view.imprese |
+| docs | Enti & Associazioni | tab.view.docs |
+| mio | MIO Agent | tab.view.mio |
+| mappa | Mappa GIS | tab.view.mappa |
+| workspace | Gestione HUB | tab.view.workspace |
+| council | Concilio AI | tab.view.council |
+
+**Quick Access (12 totali):**
+| ID | Nome | Permesso |
+|----|------|----------|
+| home | Home | quick.view.home |
+| wallet | Wallet | quick.view.wallet |
+| route | Route | quick.view.route |
+| civic | Segnala | quick.view.civic |
+| vetrine | Vetrine | quick.view.vetrine |
+| hub_operatore | Hub Operatore | quick.view.hub_operatore |
+| notifiche | Notifiche | quick.view.notifiche |
+| bus_hub | BUS HUB | quick.view.bus_hub |
+| core_map | Core Map | quick.view.core_map |
+| sito_pubblico | Sito Pubblico | quick.view.sito_pubblico |
+| dms_news | DMS News | quick.view.dms_news |
+| gestionale | Gestionale DMS | quick.view.gestionale |
+
+**Ruoli Sistema:**
+| ID | Codice | Livello | Descrizione |
+|----|--------|---------|-------------|
+| 1 | super_admin | 100 | Accesso completo a tutto il sistema |
+| 2 | admin_pa | 90 | Amministratore PA con accesso limitato |
+| 13 | citizen | 10 | Cittadino con accesso base |
+
+**Componenti Frontend Creati:**
+- `ProtectedTab` - Wrapper per tab con controllo permessi
+- `ProtectedQuickAccess` - Wrapper per quick access con controllo permessi
+- `PermissionsContext` - Context React per gestione permessi utente
+
+**Logica Determinazione Ruolo:**
+1. Se impersonificazione attiva → `admin_pa`
+2. Se email = `chcndr@gmail.com` → `super_admin`
+3. Se `assigned_roles` presente → primo ruolo assegnato
+4. Se `base_role = "admin"` → `admin_pa`
+5. Default → `citizen`
+
+**File Modificati:**
+- `client/src/pages/DashboardPA.tsx` (+100 righe)
+- `client/src/pages/HomePage.tsx` (+25 righe)
+- `client/src/components/ProtectedTab.tsx` (nuovo)
+- `client/src/contexts/PermissionsContext.tsx` (nuovo)
+
+**API Endpoints Sicurezza:**
+- `GET /api/security/roles/:id/permissions` - Permessi per ruolo
+- `GET /api/security/permissions` - Lista tutti i permessi
+- `POST /api/security/permissions` - Crea nuovo permesso (nuovo)
+- `POST /api/security/permissions/:code/assign` - Assegna permesso a ruolo (nuovo)
+
+---
 
 ### v3.44.0 (20/01/2026) - Form Registrazione Attestati
 
