@@ -51,6 +51,7 @@ export interface SuapStats {
 export interface SuapFilters {
   stato?: string;
   search?: string;
+  comune_nome?: string;
 }
 
 /**
@@ -76,6 +77,7 @@ export async function getSuapPratiche(enteId: string, filters: SuapFilters = {})
   params.append('ente_id', enteId);
   if (filters.stato) params.append('stato', filters.stato);
   if (filters.search) params.append('search', filters.search);
+  if (filters.comune_nome) params.append('comune_nome', filters.comune_nome);
 
   const res = await fetch(`${baseUrl}/api/suap/pratiche?${params.toString()}`, {
     headers: {

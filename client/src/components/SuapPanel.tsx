@@ -254,17 +254,21 @@ export default function SuapPanel() {
     }
   };
 
-  // Carica dati iniziali
+  // Carica dati iniziali - ricarica quando cambia il comune
   useEffect(() => {
-    loadData();
-  }, []);
+    if (comuneData) {
+      loadData();
+    }
+  }, [comuneData]);
 
   const loadData = async () => {
     setLoading(true);
     try {
+      // Usa il comune_nome per filtrare le pratiche SCIA
+      const comuneNomeFilter = comuneData?.nome?.toUpperCase() || '';
       const [statsData, praticheData] = await Promise.all([
         getSuapStats(ENTE_ID),
-        getSuapPratiche(ENTE_ID)
+        getSuapPratiche(ENTE_ID, { comune_nome: comuneNomeFilter })
       ]);
       setStats(statsData);
       // Ordina per data creazione (più recenti prima)
@@ -327,7 +331,8 @@ export default function SuapPanel() {
   const loadDomandeSpuntaDashboard = async () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
-      const response = await fetch(`${API_URL}/api/domande-spunta`);
+      // Usa addComuneIdToUrl per filtrare per comune
+      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/domande-spunta`));
       const data = await response.json();
       if (data.success && data.data) {
         // Ordina per data creazione (più recenti prima)

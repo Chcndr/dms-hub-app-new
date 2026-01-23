@@ -271,7 +271,8 @@ export default function WalletPanel() {
       if (canoneFilters.impresa_search) params.append('impresa_search', canoneFilters.impresa_search);
       if (canoneFilters.stato && canoneFilters.stato !== 'all') params.append('stato', canoneFilters.stato);
       
-      const response = await fetch(`${API_URL}/api/canone-unico/riepilogo?${params.toString()}`);
+      // Usa addComuneIdToUrl per filtrare per comune
+      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/canone-unico/riepilogo?${params.toString()}`));
       const data = await response.json();
       if (data.success) {
         setCanoneScadenze(data.data);
@@ -621,7 +622,8 @@ export default function WalletPanel() {
     setIsLoadingHistory(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
-      const response = await fetch(`${API_URL}/api/wallet-history`);
+      // Usa addComuneIdToUrl per filtrare per comune
+      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/wallet-history`));
       const data = await response.json();
       if (data.success) {
         setWalletHistory(data.data || []);
