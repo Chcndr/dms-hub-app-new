@@ -34,6 +34,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import NotificationManager from '@/components/suap/NotificationManager';
 
 // --- TIPI ---
 
@@ -72,7 +73,8 @@ interface AnnualFeeCalculation {
 }
 
 export default function WalletPanel() {
-  const [subTab, setSubTab] = useState<'wallet' | 'pagopa' | 'riconciliazione' | 'storico' | 'canone'>('wallet');
+  const [subTab, setSubTab] = useState<'wallet' | 'pagopa' | 'riconciliazione' | 'storico' | 'canone' | 'notifiche'>('wallet');
+  const [notificheNonLette, setNotificheNonLette] = useState(0);
   const [walletHistory, setWalletHistory] = useState<any[]>([]);
   
   // Stati per Canone Unico
@@ -641,6 +643,26 @@ export default function WalletPanel() {
     }
   }, [subTab]);
 
+  // Carica conteggio notifiche non lette per Tributi
+  const loadNotificheCount = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      // Usa comune_id 1 come default (Grosseto) - in futuro sarà dinamico
+      const url = addComuneIdToUrl(`${API_URL}/api/notifiche/mittente/1?mittente_tipo=TRIBUTI`);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success) {
+        setNotificheNonLette(data.non_letti || 0);
+      }
+    } catch (error) {
+      console.error('Errore caricamento notifiche:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadNotificheCount();
+  }, []);
+
   // --- ACTIONS ---
 
   const handleOpenDeposit = async (wallet: WalletItem, companyName: string) => {
@@ -912,6 +934,19 @@ export default function WalletPanel() {
             className={subTab === 'canone' ? 'bg-[#f59e0b]' : 'border-slate-700 text-slate-300'}
           >
             <Euro className="mr-1 h-4 w-4" /> Canone
+          </Button>
+          <Button 
+            size="sm"
+            variant={subTab === 'notifiche' ? 'default' : 'outline'}
+            onClick={() => setSubTab('notifiche')}
+            className={subTab === 'notifiche' ? 'bg-[#8b5cf6]' : 'border-slate-700 text-slate-300'}
+          >
+            <Bell className="mr-1 h-4 w-4" /> Notifiche
+            {notificheNonLette > 0 && (
+              <Badge className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5">
+                {notificheNonLette}
+              </Badge>
+            )}
           </Button>
         </div>
       </div>
@@ -1846,6 +1881,18 @@ export default function WalletPanel() {
               )}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Tab Notifiche */}
+      {subTab === 'notifiche' && (
+        <div className="space-y-6">
+          <NotificationManager
+            mittenteTipo="TRIBUTI"
+            mittenteId={1}
+            mittenteNome="Ufficio Tributi Comune di Grosseto"
+            onNotificheUpdate={loadNotificheCount}
+          />
         </div>
       )}
 
