@@ -2423,6 +2423,7 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Gestione HUB</span>
             </button>
             </ProtectedTab>
+            <ProtectedTab tabId="council">
             <button
               onClick={() => window.location.href = '/council'}
               className="flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all bg-gradient-to-br from-[#a855f7]/10 to-[#ec4899]/10 border-[#a855f7]/30 hover:from-[#a855f7]/20 hover:to-[#ec4899]/20 text-[#a855f7] hover:scale-105"
@@ -2430,6 +2431,7 @@ export default function DashboardPA() {
               <Scale className="h-6 w-6" />
               <span className="text-xs font-medium">Concilio AI</span>
             </button>
+            </ProtectedTab>
           </div>
         </div>
 
