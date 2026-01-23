@@ -1948,13 +1948,28 @@ export default function DashboardPA() {
         <div className="max-w-7xl mx-auto">
           <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">Accesso Rapido Applicativi</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-3">
-            <QuickAccessButton href="/" icon={<Store className="h-5 w-5" />} label="Home" />
-            <QuickAccessButton href="/wallet" icon={<Leaf className="h-5 w-5" />} label="Wallet" />
-            <QuickAccessButton href="/route" icon={<TrendingUp className="h-5 w-5" />} label="Route" />
-            <QuickAccessButton href="/civic" icon={<AlertCircle className="h-5 w-5" />} label="Segnala" />
-            <QuickAccessButton href="/vetrine" icon={<Store className="h-5 w-5" />} label="Vetrine" />
-            <QuickAccessButton href="/hub-operatore" icon={<Activity className="h-5 w-5" />} label="Hub Operatore" color="orange" />
-            <QuickAccessButton href="/app/impresa/notifiche" icon={<Bell className="h-5 w-5" />} label="Notifiche" color="yellow" badge={notificheNonLette} />
+            <ProtectedQuickAccess quickId="home">
+              <QuickAccessButton href="/" icon={<Store className="h-5 w-5" />} label="Home" />
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="wallet">
+              <QuickAccessButton href="/wallet" icon={<Leaf className="h-5 w-5" />} label="Wallet" />
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="route">
+              <QuickAccessButton href="/route" icon={<TrendingUp className="h-5 w-5" />} label="Route" />
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="civic">
+              <QuickAccessButton href="/civic" icon={<AlertCircle className="h-5 w-5" />} label="Segnala" />
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="vetrine">
+              <QuickAccessButton href="/vetrine" icon={<Store className="h-5 w-5" />} label="Vetrine" />
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="hub_operatore">
+              <QuickAccessButton href="/hub-operatore" icon={<Activity className="h-5 w-5" />} label="Hub Operatore" color="orange" />
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="notifiche">
+              <QuickAccessButton href="/app/impresa/notifiche" icon={<Bell className="h-5 w-5" />} label="Notifiche" color="yellow" badge={notificheNonLette} />
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="bus_hub">
             <button
               onClick={() => window.open('https://api.mio-hub.me/tools/bus_hub.html', '_blank')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
@@ -1962,6 +1977,8 @@ export default function DashboardPA() {
               <Wrench className="h-5 w-5" />
               <span className="text-sm font-medium">BUS HUB</span>
             </button>
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="core_map">
             <button
               onClick={() => window.open('https://chcndr.github.io/dms-gemello-core/index-grosseto.html', '_blank')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]"
@@ -1969,6 +1986,8 @@ export default function DashboardPA() {
               <MapPin className="h-5 w-5" />
               <span className="text-sm font-medium">Core Map</span>
             </button>
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="sito_pubblico">
             <button
               onClick={() => window.open('https://chcndr.github.io/dms-gemello-core/', '_blank')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/20 text-[#10b981]"
@@ -1976,6 +1995,8 @@ export default function DashboardPA() {
               <Globe className="h-5 w-5" />
               <span className="text-sm font-medium">Sito Pubblico</span>
             </button>
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="dms_news">
             <button
               onClick={() => window.open('https://chcndr.github.io/dms-gemello-news/landing/home.html', '_blank')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/20 text-[#3b82f6]"
@@ -1983,6 +2004,8 @@ export default function DashboardPA() {
               <Newspaper className="h-5 w-5" />
               <span className="text-sm font-medium">DMS News</span>
             </button>
+            </ProtectedQuickAccess>
+            <ProtectedQuickAccess quickId="gestionale">
             <button
               onClick={() => window.open('https://lapsy-dms.herokuapp.com/index.html', '_blank')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#ef4444]/10 border-[#ef4444]/30 hover:bg-[#ef4444]/20 text-[#ef4444]"
@@ -1990,6 +2013,7 @@ export default function DashboardPA() {
               <Rocket className="h-5 w-5" />
               <span className="text-sm font-medium">Gestionale DMS</span>
             </button>
+            </ProtectedQuickAccess>
           </div>
         </div>
       </div>
@@ -2035,6 +2059,7 @@ export default function DashboardPA() {
         <div className="bg-[#1a2332] border border-[#14b8a6]/30 p-4 rounded-lg">
           <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">Sezioni Dashboard</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            <ProtectedTab tabId="dashboard">
             <button
               onClick={() => setActiveTab('dashboard')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2046,6 +2071,8 @@ export default function DashboardPA() {
               <BarChart3 className="h-6 w-6" />
               <span className="text-xs font-medium">Dashboard</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="users">
             <button
               onClick={() => setActiveTab('users')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2057,6 +2084,8 @@ export default function DashboardPA() {
               <Users className="h-6 w-6" />
               <span className="text-xs font-medium">Clienti</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="wallet">
             <button
               onClick={() => setActiveTab('wallet')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2068,6 +2097,8 @@ export default function DashboardPA() {
               <Euro className="h-6 w-6" />
               <span className="text-xs font-medium">Wallet/PagoPA</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="products">
             <button
               onClick={() => setActiveTab('products')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2079,6 +2110,8 @@ export default function DashboardPA() {
               <ShoppingCart className="h-6 w-6" />
               <span className="text-xs font-medium">Prodotti</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="sustainability">
             <button
               onClick={() => setActiveTab('sustainability')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2090,6 +2123,8 @@ export default function DashboardPA() {
               <Leaf className="h-6 w-6" />
               <span className="text-xs font-medium">Sostenibilità</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="tpas">
             <button
               onClick={() => setActiveTab('tpas')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2101,6 +2136,8 @@ export default function DashboardPA() {
               <Package className="h-6 w-6" />
               <span className="text-xs font-medium">TPAS</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="carboncredits">
             <button
               onClick={() => setActiveTab('carboncredits')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2112,6 +2149,8 @@ export default function DashboardPA() {
               <Coins className="h-6 w-6" />
               <span className="text-xs font-medium">Carbon Credits</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="realtime">
             <button
               onClick={() => setActiveTab('realtime')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2123,7 +2162,7 @@ export default function DashboardPA() {
               <Activity className="h-6 w-6" />
               <span className="text-xs font-medium">Real-time</span>
             </button>
-            {!isImpersonating && (
+            </ProtectedTab>
             <ProtectedTab tabId="sistema">
             <button
               onClick={() => setActiveTab('sistema')}
@@ -2137,7 +2176,7 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Sistema</span>
             </button>
             </ProtectedTab>
-            )}
+            <ProtectedTab tabId="ai">
             <button
               onClick={() => setActiveTab('ai')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2149,7 +2188,7 @@ export default function DashboardPA() {
               <Bot className="h-6 w-6" />
               <span className="text-xs font-medium">Agente AI</span>
             </button>
-            {!isImpersonating && (
+            </ProtectedTab>
             <ProtectedTab tabId="security">
             <button
               onClick={() => setActiveTab('security')}
@@ -2163,7 +2202,7 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Sicurezza</span>
             </button>
             </ProtectedTab>
-            )}
+            <ProtectedTab tabId="ssosuap">
             <button
               onClick={() => setActiveTab('ssosuap')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2175,6 +2214,8 @@ export default function DashboardPA() {
               <FileText className="h-6 w-6" />
               <span className="text-xs font-medium">SSO SUAP</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="businesses">
             <button
               onClick={() => setActiveTab('businesses')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2186,6 +2227,8 @@ export default function DashboardPA() {
               <Building2 className="h-6 w-6" />
               <span className="text-xs font-medium">Qualificazione</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="civic">
             <button
               onClick={() => setActiveTab('civic')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2197,7 +2240,7 @@ export default function DashboardPA() {
               <Radio className="h-6 w-6" />
               <span className="text-xs font-medium">Segnalazioni & IoT</span>
             </button>
-            {!isImpersonating && (
+            </ProtectedTab>
             <ProtectedTab tabId="comuni">
             <button
               onClick={() => setActiveTab('comuni')}
@@ -2211,7 +2254,7 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Comuni</span>
             </button>
             </ProtectedTab>
-            )}
+            <ProtectedTab tabId="inspections">
             <button
               onClick={() => setActiveTab('inspections')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2223,6 +2266,8 @@ export default function DashboardPA() {
               <Scale className="h-6 w-6" />
               <span className="text-xs font-medium">Controlli/Sanzioni</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="notifications">
             <button
               onClick={() => setActiveTab('notifications')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2234,6 +2279,8 @@ export default function DashboardPA() {
               <Bell className="h-6 w-6" />
               <span className="text-xs font-medium">Notifiche</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="mobility">
             <button
               onClick={() => setActiveTab('mobility')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2245,7 +2292,7 @@ export default function DashboardPA() {
               <Train className="h-6 w-6" />
               <span className="text-xs font-medium">Centro Mobilità</span>
             </button>
-            {!isImpersonating && (
+            </ProtectedTab>
             <ProtectedTab tabId="reports">
             <button
               onClick={() => setActiveTab('reports')}
@@ -2259,8 +2306,6 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Report</span>
             </button>
             </ProtectedTab>
-            )}
-            {!isImpersonating && (
             <ProtectedTab tabId="integrations">
             <button
               onClick={() => setActiveTab('integrations')}
@@ -2274,8 +2319,6 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Integrazioni</span>
             </button>
             </ProtectedTab>
-            )}
-            {!isImpersonating && (
             <ProtectedTab tabId="settings">
             <button
               onClick={() => setActiveTab('settings')}
@@ -2289,7 +2332,7 @@ export default function DashboardPA() {
               <span className="text-xs font-medium">Impostazioni</span>
             </button>
             </ProtectedTab>
-            )}
+            <ProtectedTab tabId="mercati">
             <button
               onClick={() => setActiveTab('mercati')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2301,6 +2344,8 @@ export default function DashboardPA() {
               <Building2 className="h-6 w-6" />
               <span className="text-xs font-medium">Gestione Mercati</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="imprese">
             <button
               onClick={() => setActiveTab('imprese')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2312,6 +2357,8 @@ export default function DashboardPA() {
               <Building2 className="h-6 w-6" />
               <span className="text-xs font-medium">Imprese</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="docs">
             <button
               onClick={() => setActiveTab('docs')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2323,6 +2370,8 @@ export default function DashboardPA() {
               <FileText className="h-6 w-6" />
               <span className="text-xs font-medium">Enti & Associazioni</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="mio">
             <button
               onClick={() => {
                 setActiveTab('mio');
@@ -2347,6 +2396,8 @@ export default function DashboardPA() {
               <Bot className="h-6 w-6" />
               <span className="text-xs font-medium">MIO Agent</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="mappa">
             <button
               onClick={() => setActiveTab('mappa')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2358,6 +2409,8 @@ export default function DashboardPA() {
               <MapPin className="h-6 w-6" />
               <span className="text-xs font-medium">Mappa GIS</span>
             </button>
+            </ProtectedTab>
+            <ProtectedTab tabId="workspace">
             <button
               onClick={() => setActiveTab('workspace')}
               className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
@@ -2369,6 +2422,7 @@ export default function DashboardPA() {
               <Globe className="h-6 w-6" />
               <span className="text-xs font-medium">Gestione HUB</span>
             </button>
+            </ProtectedTab>
             <button
               onClick={() => window.location.href = '/council'}
               className="flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all bg-gradient-to-br from-[#a855f7]/10 to-[#ec4899]/10 border-[#a855f7]/30 hover:from-[#a855f7]/20 hover:to-[#ec4899]/20 text-[#a855f7] hover:scale-105"

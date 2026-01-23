@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import LoginModal from '@/components/LoginModal';
+import { usePermissions } from '@/contexts/PermissionsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -26,6 +27,9 @@ export default function HomePage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
+  
+  // Permessi utente per controllare visibilità Dashboard PA
+  const { canViewTab, loading: permissionsLoading } = usePermissions();
 
   // Controlla autenticazione all'avvio
   useEffect(() => {
@@ -279,15 +283,18 @@ export default function HomePage() {
               <Store className="w-6 h-6" />
               <span>Vetrine</span>
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setLocation('/dashboard-pa')}
-              className="h-24 flex-col gap-2 bg-gradient-to-br from-purple-500/20 to-purple-700/20 backdrop-blur-sm hover:bg-purple-500/30 border-purple-500/50"
-            >
-              <BarChart3 className="w-6 h-6 text-purple-400" />
-              <span className="text-purple-300">Dashboard PA</span>
-            </Button>
+            {/* Dashboard PA - visibile solo a utenti con permesso tab.view.dashboard */}
+            {(permissionsLoading || canViewTab('dashboard')) && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => isAuthenticated ? setLocation('/dashboard-pa') : handleProtectedNavigation('/dashboard-pa')}
+                className="h-24 flex-col gap-2 bg-gradient-to-br from-purple-500/20 to-purple-700/20 backdrop-blur-sm hover:bg-purple-500/30 border-purple-500/50"
+              >
+                <BarChart3 className="w-6 h-6 text-purple-400" />
+                <span className="text-purple-300">Dashboard PA</span>
+              </Button>
+            )}
           </div>
         </main>
 
