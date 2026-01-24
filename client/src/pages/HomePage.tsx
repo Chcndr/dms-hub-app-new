@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { 
-  Search, MapPin, Store, Building2, Leaf, TrendingUp, BarChart3, LogIn,
+  Search, MapPin, Store, Building2, Leaf, TrendingUp, BarChart3, LogIn, LogOut,
   Bell, Wallet, Activity, ClipboardList, Menu
 } from 'lucide-react';
 import { geoAPI } from '@/utils/api';
@@ -168,15 +168,33 @@ export default function HomePage() {
                   Dashboard PA
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowLoginModal(true)}
-                className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                Accedi
-              </Button>
+{isAuthenticated ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('permissions');
+                    setIsAuthenticated(false);
+                    window.location.reload();
+                  }}
+                  className="bg-red-500/20 border-red-500/30 hover:bg-red-500/30 text-red-300"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Esci
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLoginModal(true)}
+                  className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Accedi
+                </Button>
+              )}
             </div>
           </div>
         </header>
