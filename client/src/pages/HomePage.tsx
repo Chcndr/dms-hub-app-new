@@ -394,7 +394,7 @@ export default function HomePage() {
       {/* Login Modal */}
       <LoginModal 
         isOpen={showLoginModal}
-        redirectRoute={pendingRoute || '/wallet'}
+        redirectRoute={pendingRoute || '/'}
         onClose={() => {
           setShowLoginModal(false);
           setPendingRoute(null);
