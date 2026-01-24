@@ -1957,7 +1957,7 @@ export default function DashboardPA() {
       <div className="bg-[#1a2332] border-b border-[#14b8a6]/30 py-4 px-6">
         <div className="max-w-7xl mx-auto">
           <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">Accesso Rapido Applicativi</h3>
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="grid grid-cols-5 md:grid-cols-10 gap-3">
             <ProtectedQuickAccess quickId="home">
               <QuickAccessButton href="/" icon={<Store className="h-5 w-5" />} label="Home" />
             </ProtectedQuickAccess>
