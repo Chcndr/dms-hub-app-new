@@ -1,8 +1,7 @@
 /**
  * Wallet Impresa - Pagamenti PagoPA
  * Pagina dedicata per visualizzare il wallet dell'impresa loggata
- * Riutilizza il componente WalletPanel esistente con filtro impresa
- * v3.70.0
+ * v3.71.0 - Fix scadenze e pulsante pagamento
  */
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import {
   Wallet, Euro, Calendar, Clock, CreditCard, CheckCircle, 
   AlertCircle, ArrowLeft, RefreshCw, FileText, Building2,
   Receipt, TrendingUp, ChevronRight, ChevronDown, ChevronUp,
-  Store, MapPin
+  Store, MapPin, AlertTriangle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +21,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Tipi wallet
 interface WalletItem {
@@ -46,34 +52,56 @@ interface CompanyWallets {
   concession_wallets: WalletItem[];
 }
 
-interface Scadenza {
+// Tipo scadenza dal backend
+interface ScadenzaAPI {
   id: number;
-  tipo: string;
-  descrizione: string;
-  importo: number;
+  wallet_id: number;
+  anno_riferimento: number;
+  importo_dovuto: string;
+  importo_pagato: string;
   data_scadenza: string;
-  stato: 'DA_PAGARE' | 'PAGATO' | 'SCADUTO';
-  iuv?: string;
-  mercato_nome?: string;
+  data_pagamento: string | null;
+  stato: string;
+  giorni_ritardo: number;
+  importo_mora: string;
+  importo_interessi: string;
+  rata_numero: number;
+  rata_totale: number;
+  pagato_in_mora: boolean;
+  tipo: string;
+  note: string | null;
+  wallet_tipo: string;
+  wallet_saldo: string;
+  ragione_sociale: string;
+  partita_iva: string;
+  mercato_nome: string;
+  posteggio: string;
+  concessione_status: string;
+  concessione_id: number;
+  giorni_ritardo_calc: number;
+  giorni_grazia: number;
+  stato_dinamico: string;
 }
 
 export default function WalletImpresaPage() {
   const [, setLocation] = useLocation();
   const [company, setCompany] = useState<CompanyWallets | null>(null);
-  const [scadenze, setScadenze] = useState<Scadenza[]>([]);
+  const [scadenze, setScadenze] = useState<ScadenzaAPI[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('wallet');
   const [expandedSpunta, setExpandedSpunta] = useState(false);
-  const [expandedConcessioni, setExpandedConcessioni] = useState(false);
+  const [expandedConcessioni, setExpandedConcessioni] = useState(true);
+  const [selectedScadenza, setSelectedScadenza] = useState<ScadenzaAPI | null>(null);
+  const [showPagamentoDialog, setShowPagamentoDialog] = useState(false);
   
-  // ID impresa dall'utente loggato (in produzione verrà dall'autenticazione)
+  // ID impresa dall'utente loggato
   const getImpresaId = () => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const user = JSON.parse(userStr);
-      return user.impresa_id || 1; // Default a 1 per test
+      return user.impresa_id || null;
     }
-    return 1;
+    return null;
   };
   
   const IMPRESA_ID = getImpresaId();
@@ -81,23 +109,32 @@ export default function WalletImpresaPage() {
 
   // Carica dati wallet impresa
   const fetchData = async () => {
+    if (!IMPRESA_ID) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
-      // Fetch wallet impresa usando l'API Hetzner
+      // Fetch wallet impresa
       const walletsRes = await fetch(`${API_BASE_URL}/api/wallets/company/${IMPRESA_ID}`);
       const walletsData = await walletsRes.json();
+      
+      let spuntaWallets: WalletItem[] = [];
+      let concessionWallets: WalletItem[] = [];
+      
       if (walletsData.success && walletsData.data) {
-        // Trasforma i dati dal formato API al formato atteso dal componente
         const wallets = walletsData.data;
-        const spuntaWallets = wallets.filter((w: any) => w.type === 'SPUNTA').map((w: any) => ({
+        spuntaWallets = wallets.filter((w: any) => w.type === 'SPUNTA').map((w: any) => ({
           id: w.id,
           type: 'SPUNTA' as const,
           balance: parseFloat(w.balance) || 0,
           status: w.status,
           market_name: w.market_name,
+          stall_number: w.stall_number,
           updated_at: w.last_update
         }));
-        const concessionWallets = wallets.filter((w: any) => w.type === 'CONCESSION').map((w: any) => ({
+        concessionWallets = wallets.filter((w: any) => w.type === 'CONCESSION').map((w: any) => ({
           id: w.id,
           type: 'CONCESSIONE' as const,
           balance: parseFloat(w.balance) || 0,
@@ -108,25 +145,28 @@ export default function WalletImpresaPage() {
           stall_area: parseFloat(w.stall_area) || 0,
           updated_at: w.last_update
         }));
-        
-        // Fetch dati impresa
-        const impresaRes = await fetch(`${API_BASE_URL}/api/imprese/${IMPRESA_ID}`);
-        const impresaData = await impresaRes.json();
-        
-        setCompany({
-          company_id: IMPRESA_ID,
-          ragione_sociale: impresaData.success ? impresaData.data?.denominazione : 'Impresa',
-          partita_iva: impresaData.success ? impresaData.data?.partita_iva : 'N/A',
-          spunta_wallets: spuntaWallets,
-          concession_wallets: concessionWallets
-        });
       }
       
-      // Fetch scadenze impresa
-      const scadenzeRes = await fetch(`${API_BASE_URL}/api/canone-unico/scadenze-impresa/${IMPRESA_ID}`);
-      const scadenzeData = await scadenzeRes.json();
-      if (scadenzeData.success) {
-        setScadenze(scadenzeData.data || []);
+      // Fetch dati impresa
+      const impresaRes = await fetch(`${API_BASE_URL}/api/imprese/${IMPRESA_ID}`);
+      const impresaData = await impresaRes.json();
+      
+      setCompany({
+        company_id: IMPRESA_ID,
+        ragione_sociale: impresaData.success ? impresaData.data?.denominazione : 'Impresa',
+        partita_iva: impresaData.success ? impresaData.data?.partita_iva : 'N/A',
+        spunta_wallets: spuntaWallets,
+        concession_wallets: concessionWallets
+      });
+      
+      // Fetch scadenze usando l'endpoint riepilogo con filtro per ragione sociale
+      const ragioneSociale = impresaData.success ? impresaData.data?.denominazione : '';
+      if (ragioneSociale) {
+        const scadenzeRes = await fetch(`${API_BASE_URL}/api/canone-unico/riepilogo?impresa_search=${encodeURIComponent(ragioneSociale)}`);
+        const scadenzeData = await scadenzeRes.json();
+        if (scadenzeData.success) {
+          setScadenze(scadenzeData.data || []);
+        }
       }
     } catch (error) {
       console.error('Errore caricamento dati wallet:', error);
@@ -144,13 +184,46 @@ export default function WalletImpresaPage() {
     [...(company.spunta_wallets || []), ...(company.concession_wallets || [])]
       .reduce((sum, w) => sum + (w.balance || 0), 0) : 0;
   
-  const totaleDaPagare = scadenze
-    .filter(s => s.stato === 'DA_PAGARE' || s.stato === 'SCADUTO')
-    .reduce((sum, s) => sum + s.importo, 0);
+  const scadenzeNonPagate = scadenze.filter(s => s.stato !== 'PAGATO');
+  const totaleDaPagare = scadenzeNonPagate.reduce((sum, s) => {
+    const importo = parseFloat(s.importo_dovuto) || 0;
+    const mora = parseFloat(s.importo_mora) || 0;
+    const interessi = parseFloat(s.importo_interessi) || 0;
+    return sum + importo + mora + interessi;
+  }, 0);
 
-  // Gestisce pagamento
-  const handlePaga = async (scadenza: Scadenza) => {
-    alert(`Pagamento di €${scadenza.importo.toFixed(2)} per ${scadenza.descrizione}\n\nIntegrazione PagoPA in sviluppo...`);
+  // Gestisce pagamento simulato
+  const handlePaga = async (scadenza: ScadenzaAPI) => {
+    setSelectedScadenza(scadenza);
+    setShowPagamentoDialog(true);
+  };
+
+  const handleConfirmaPagamento = async () => {
+    if (!selectedScadenza) return;
+    
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const response = await fetch(`${API_URL}/api/canone-unico/paga-scadenza`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scadenza_id: selectedScadenza.id,
+          importo_pagato: parseFloat(selectedScadenza.importo_dovuto) + parseFloat(selectedScadenza.importo_mora || '0') + parseFloat(selectedScadenza.importo_interessi || '0'),
+          metodo_pagamento: 'SIMULAZIONE'
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('Pagamento simulato completato!');
+        setShowPagamentoDialog(false);
+        fetchData();
+      } else {
+        alert('Errore: ' + data.error);
+      }
+    } catch (err) {
+      console.error('Errore pagamento:', err);
+      alert('Errore di connessione');
+    }
   };
 
   // Colore stato wallet
@@ -167,11 +240,32 @@ export default function WalletImpresaPage() {
   const getStatoColor = (stato: string) => {
     switch (stato) {
       case 'PAGATO': return 'bg-green-500/20 text-green-400';
-      case 'DA_PAGARE': return 'bg-yellow-500/20 text-yellow-400';
+      case 'NON_PAGATO': return 'bg-yellow-500/20 text-yellow-400';
+      case 'IN_MORA': return 'bg-red-500/20 text-red-400';
       case 'SCADUTO': return 'bg-red-500/20 text-red-400';
       default: return 'bg-gray-500/20 text-gray-400';
     }
   };
+
+  // Se non c'è impresa_id, mostra messaggio
+  if (!IMPRESA_ID) {
+    return (
+      <div className="min-h-screen bg-[#0b1220] text-[#e8fbff] flex items-center justify-center">
+        <Card className="bg-[#1a2332] border-[#14b8a6]/20 max-w-md">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
+            <h2 className="text-xl font-bold mb-2">Accesso non autorizzato</h2>
+            <p className="text-[#e8fbff]/70 mb-4">
+              Per visualizzare il wallet devi effettuare il login con un account impresa.
+            </p>
+            <Button onClick={() => setLocation('/')} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80">
+              Torna alla Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0b1220] text-[#e8fbff]">
@@ -255,7 +349,9 @@ export default function WalletImpresaPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-[#e8fbff]/50">Da Pagare</p>
-                  <p className="text-2xl font-bold text-[#f59e0b]">€{totaleDaPagare.toFixed(2)}</p>
+                  <p className={`text-2xl font-bold ${totaleDaPagare > 0 ? 'text-[#f59e0b]' : 'text-[#10b981]'}`}>
+                    €{totaleDaPagare.toFixed(2)}
+                  </p>
                 </div>
                 <Receipt className="w-8 h-8 text-[#f59e0b]/50" />
               </div>
@@ -272,7 +368,7 @@ export default function WalletImpresaPage() {
             </TabsTrigger>
             <TabsTrigger value="scadenze" className="data-[state=active]:bg-[#14b8a6]/20">
               <Receipt className="w-4 h-4 mr-2" />
-              Scadenze
+              Scadenze ({scadenzeNonPagate.length})
             </TabsTrigger>
             <TabsTrigger value="storico" className="data-[state=active]:bg-[#14b8a6]/20">
               <FileText className="w-4 h-4 mr-2" />
@@ -365,7 +461,7 @@ export default function WalletImpresaPage() {
                                 <div>
                                   <p className="font-medium text-[#e8fbff]">{wallet.market_name}</p>
                                   <p className="text-sm text-[#e8fbff]/50">
-                                    Concessione: {wallet.concession_code} • {wallet.stall_area} mq
+                                    Concessione: #{wallet.concession_code} • {wallet.stall_area} mq
                                   </p>
                                 </div>
                               </div>
@@ -399,36 +495,72 @@ export default function WalletImpresaPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {scadenze.filter(s => s.stato !== 'PAGATO').length === 0 ? (
+                {scadenzeNonPagate.length === 0 ? (
                   <div className="text-center py-8 text-[#e8fbff]/50">
                     <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-400" />
                     <p>Nessuna scadenza da pagare</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {scadenze
-                      .filter(s => s.stato !== 'PAGATO')
-                      .map((scadenza) => (
-                        <div key={scadenza.id} className="flex items-center justify-between p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/10">
-                          <div className="flex items-center gap-4">
-                            <Receipt className="w-5 h-5 text-[#14b8a6]" />
-                            <div>
-                              <h4 className="font-medium text-[#e8fbff]">{scadenza.descrizione}</h4>
-                              <p className="text-sm text-[#e8fbff]/50">
-                                Scadenza: {new Date(scadenza.data_scadenza).toLocaleDateString('it-IT')}
-                              </p>
+                    {scadenzeNonPagate.map((scadenza) => {
+                      const importo = parseFloat(scadenza.importo_dovuto) || 0;
+                      const mora = parseFloat(scadenza.importo_mora) || 0;
+                      const interessi = parseFloat(scadenza.importo_interessi) || 0;
+                      const totale = importo + mora + interessi;
+                      const inMora = scadenza.stato === 'IN_MORA' || scadenza.stato_dinamico === 'IN_MORA';
+                      
+                      return (
+                        <div 
+                          key={scadenza.id} 
+                          className={`p-4 bg-[#0b1220] rounded-lg border ${inMora ? 'border-red-500/30' : 'border-[#14b8a6]/10'}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {inMora ? (
+                                <AlertTriangle className="w-5 h-5 text-red-400" />
+                              ) : (
+                                <Receipt className="w-5 h-5 text-[#14b8a6]" />
+                              )}
+                              <div>
+                                <h4 className="font-medium text-[#e8fbff]">
+                                  {scadenza.tipo === 'CANONE_ANNUO' ? 'Canone Annuo' : scadenza.tipo} - Rata {scadenza.rata_numero}/{scadenza.rata_totale}
+                                </h4>
+                                <p className="text-sm text-[#e8fbff]/50">
+                                  {scadenza.mercato_nome} • Posteggio {scadenza.posteggio}
+                                </p>
+                                <p className="text-sm text-[#e8fbff]/50">
+                                  Scadenza: {new Date(scadenza.data_scadenza).toLocaleDateString('it-IT')}
+                                  {inMora && (
+                                    <span className="text-red-400 ml-2">
+                                      ({scadenza.giorni_ritardo_calc || scadenza.giorni_ritardo} gg MORA)
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <Badge className={getStatoColor(scadenza.stato_dinamico || scadenza.stato)}>
+                                  {(scadenza.stato_dinamico || scadenza.stato).replace('_', ' ')}
+                                </Badge>
+                                <p className="text-lg font-bold text-[#e8fbff]">€{importo.toFixed(2)}</p>
+                                {mora > 0 && (
+                                  <p className="text-sm text-red-400">+€{(mora + interessi).toFixed(2)} mora</p>
+                                )}
+                              </div>
+                              <Button 
+                                size="sm" 
+                                onClick={() => handlePaga(scadenza)} 
+                                className={`${inMora ? 'bg-red-600 hover:bg-red-700' : 'bg-[#14b8a6] hover:bg-[#14b8a6]/80'}`}
+                              >
+                                <CreditCard className="w-4 h-4 mr-2" />
+                                Paga €{totale.toFixed(2)}
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <Badge className={getStatoColor(scadenza.stato)}>{scadenza.stato.replace('_', ' ')}</Badge>
-                            <span className="text-xl font-bold text-[#e8fbff]">€{scadenza.importo.toFixed(2)}</span>
-                            <Button size="sm" onClick={() => handlePaga(scadenza)} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80">
-                              <CreditCard className="w-4 h-4 mr-2" />
-                              Paga
-                            </Button>
-                          </div>
                         </div>
-                      ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -459,13 +591,18 @@ export default function WalletImpresaPage() {
                           <div className="flex items-center gap-4">
                             <CheckCircle className="w-5 h-5 text-green-400" />
                             <div>
-                              <h4 className="font-medium text-[#e8fbff]">{scadenza.descrizione}</h4>
-                              <p className="text-sm text-[#e8fbff]/50">IUV: {scadenza.iuv || 'N/A'}</p>
+                              <h4 className="font-medium text-[#e8fbff]">
+                                {scadenza.tipo === 'CANONE_ANNUO' ? 'Canone Annuo' : scadenza.tipo} - Rata {scadenza.rata_numero}/{scadenza.rata_totale}
+                              </h4>
+                              <p className="text-sm text-[#e8fbff]/50">
+                                Pagato il: {scadenza.data_pagamento ? new Date(scadenza.data_pagamento).toLocaleDateString('it-IT') : 'N/A'}
+                                {scadenza.pagato_in_mora && <span className="text-yellow-400 ml-2">(pagato in mora)</span>}
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
                             <Badge className="bg-green-500/20 text-green-400">PAGATO</Badge>
-                            <span className="text-xl font-bold text-green-400">€{scadenza.importo.toFixed(2)}</span>
+                            <span className="text-xl font-bold text-green-400">€{parseFloat(scadenza.importo_pagato || scadenza.importo_dovuto).toFixed(2)}</span>
                           </div>
                         </div>
                       ))}
@@ -476,6 +613,60 @@ export default function WalletImpresaPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Dialog Pagamento */}
+      <Dialog open={showPagamentoDialog} onOpenChange={setShowPagamentoDialog}>
+        <DialogContent className="bg-[#1a2332] border-[#14b8a6]/20 text-[#e8fbff]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-[#14b8a6]" />
+              Pagamento Canone
+            </DialogTitle>
+            <DialogDescription className="text-[#e8fbff]/70">
+              {selectedScadenza?.mercato_nome} - Posteggio {selectedScadenza?.posteggio}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedScadenza && (
+            <div className="space-y-4">
+              <div className="bg-[#0b1220] p-4 rounded-lg">
+                <div className="flex justify-between mb-2">
+                  <span className="text-[#e8fbff]/70">Rata {selectedScadenza.rata_numero}/{selectedScadenza.rata_totale}</span>
+                  <span className="text-[#e8fbff]">€{parseFloat(selectedScadenza.importo_dovuto).toFixed(2)}</span>
+                </div>
+                {parseFloat(selectedScadenza.importo_mora) > 0 && (
+                  <div className="flex justify-between mb-2 text-red-400">
+                    <span>Mora ({selectedScadenza.giorni_ritardo_calc} gg)</span>
+                    <span>+€{parseFloat(selectedScadenza.importo_mora).toFixed(2)}</span>
+                  </div>
+                )}
+                {parseFloat(selectedScadenza.importo_interessi) > 0 && (
+                  <div className="flex justify-between mb-2 text-red-400">
+                    <span>Interessi</span>
+                    <span>+€{parseFloat(selectedScadenza.importo_interessi).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="border-t border-[#14b8a6]/20 pt-2 mt-2 flex justify-between font-bold text-lg">
+                  <span>TOTALE</span>
+                  <span className="text-[#14b8a6]">
+                    €{(parseFloat(selectedScadenza.importo_dovuto) + parseFloat(selectedScadenza.importo_mora || '0') + parseFloat(selectedScadenza.importo_interessi || '0')).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" onClick={() => setShowPagamentoDialog(false)} className="border-[#14b8a6]/30">
+                  Annulla
+                </Button>
+                <Button onClick={handleConfirmaPagamento} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Paga Ora (Simulazione)
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
