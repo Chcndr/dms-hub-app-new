@@ -77,21 +77,53 @@ export default function WalletImpresaPage() {
   };
   
   const IMPRESA_ID = getImpresaId();
-  const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
   // Carica dati wallet impresa
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch wallet impresa usando l'API esistente
-      const walletsRes = await fetch(`${MIHUB_API}/wallets/company/${IMPRESA_ID}`);
+      // Fetch wallet impresa usando l'API Hetzner
+      const walletsRes = await fetch(`${API_BASE_URL}/api/wallets/company/${IMPRESA_ID}`);
       const walletsData = await walletsRes.json();
       if (walletsData.success && walletsData.data) {
-        setCompany(walletsData.data);
+        // Trasforma i dati dal formato API al formato atteso dal componente
+        const wallets = walletsData.data;
+        const spuntaWallets = wallets.filter((w: any) => w.type === 'SPUNTA').map((w: any) => ({
+          id: w.id,
+          type: 'SPUNTA' as const,
+          balance: parseFloat(w.balance) || 0,
+          status: w.status,
+          market_name: w.market_name,
+          updated_at: w.last_update
+        }));
+        const concessionWallets = wallets.filter((w: any) => w.type === 'CONCESSION').map((w: any) => ({
+          id: w.id,
+          type: 'CONCESSIONE' as const,
+          balance: parseFloat(w.balance) || 0,
+          status: w.status,
+          market_name: w.market_name,
+          concession_code: w.concession_code,
+          stall_number: w.stall_number,
+          stall_area: parseFloat(w.stall_area) || 0,
+          updated_at: w.last_update
+        }));
+        
+        // Fetch dati impresa
+        const impresaRes = await fetch(`${API_BASE_URL}/api/imprese/${IMPRESA_ID}`);
+        const impresaData = await impresaRes.json();
+        
+        setCompany({
+          company_id: IMPRESA_ID,
+          ragione_sociale: impresaData.success ? impresaData.data?.denominazione : 'Impresa',
+          partita_iva: impresaData.success ? impresaData.data?.partita_iva : 'N/A',
+          spunta_wallets: spuntaWallets,
+          concession_wallets: concessionWallets
+        });
       }
       
       // Fetch scadenze impresa
-      const scadenzeRes = await fetch(`${MIHUB_API}/canone-unico/scadenze-impresa/${IMPRESA_ID}`);
+      const scadenzeRes = await fetch(`${API_BASE_URL}/api/canone-unico/scadenze-impresa/${IMPRESA_ID}`);
       const scadenzeData = await scadenzeRes.json();
       if (scadenzeData.success) {
         setScadenze(scadenzeData.data || []);
