@@ -34,6 +34,10 @@ import AuthCallback from "./pages/AuthCallback";
 import DashboardImpresa from "./pages/DashboardImpresa";
 import AppImpresaNotifiche from "./pages/AppImpresaNotifiche";
 import ImpersonationBanner from "./components/ImpersonationBanner";
+// v3.70.0 - Nuove pagine App Impresa
+import WalletImpresaPage from "./pages/WalletImpresaPage";
+import PresenzePage from "./pages/PresenzePage";
+import AnagraficaPage from "./pages/AnagraficaPage";
 
 function Router() {
   return (
@@ -64,6 +68,10 @@ function Router() {
       <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/dashboard-impresa" component={DashboardImpresa} />
       <Route path="/app/impresa/notifiche" component={AppImpresaNotifiche} />
+      {/* v3.70.0 - Nuove route App Impresa */}
+      <Route path="/app/impresa/wallet" component={WalletImpresaPage} />
+      <Route path="/app/impresa/presenze" component={PresenzePage} />
+      <Route path="/app/impresa/anagrafica" component={AnagraficaPage} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -94,4 +102,4 @@ function App() {
 }
 
 export default App;
-// Deploy trigger Thu Jan 22 13:03:53 EST 2026
+// Deploy trigger Fri Jan 24 03:30:00 EST 2026 - v3.70.0 App Impresa

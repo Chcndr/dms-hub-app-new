@@ -5,7 +5,10 @@ import { usePermissions } from '@/contexts/PermissionsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Search, MapPin, Store, Building2, Leaf, TrendingUp, BarChart3, LogIn } from 'lucide-react';
+import { 
+  Search, MapPin, Store, Building2, Leaf, TrendingUp, BarChart3, LogIn,
+  Bell, Wallet, Activity, ClipboardList, Menu
+} from 'lucide-react';
 import { geoAPI } from '@/utils/api';
 
 interface SearchResult {
@@ -28,7 +31,7 @@ export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
   
-  // Permessi utente per controllare visibilità Dashboard PA
+  // Permessi utente per controllare visibilità tab
   const { canViewTab, loading: permissionsLoading } = usePermissions();
 
   // Controlla autenticazione all'avvio
@@ -152,15 +155,29 @@ export default function HomePage() {
                 <p className="text-xs opacity-90">Gemello Digitale del Commercio</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowLoginModal(true)}
-              className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Accedi
-            </Button>
+            <div className="flex items-center gap-3">
+              {/* Dashboard PA - spostato nell'header (v3.70.0) */}
+              {(permissionsLoading || canViewTab('dashboard')) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => isAuthenticated ? setLocation('/dashboard-pa') : handleProtectedNavigation('/dashboard-pa')}
+                  className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Dashboard PA
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLoginModal(true)}
+                className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Accedi
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -236,13 +253,13 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Pulsanti sezioni app */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-5xl mt-8">
+          {/* Tab Pubblici - Riga 1 (v3.70.0) */}
+          <div className="flex flex-wrap justify-center gap-4 w-full max-w-4xl">
             <Button
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/mappa-italia')}
-              className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <MapPin className="w-6 h-6" />
               <span>Mappa</span>
@@ -251,7 +268,7 @@ export default function HomePage() {
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/route')}
-              className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <TrendingUp className="w-6 h-6" />
               <span>Route</span>
@@ -260,7 +277,7 @@ export default function HomePage() {
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/wallet')}
-              className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <Leaf className="w-6 h-6" />
               <span>Wallet</span>
@@ -269,7 +286,7 @@ export default function HomePage() {
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/civic')}
-              className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <Search className="w-6 h-6" />
               <span>Segnala</span>
@@ -278,21 +295,73 @@ export default function HomePage() {
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/vetrine')}
-              className="h-24 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
               <Store className="w-6 h-6" />
               <span>Vetrine</span>
             </Button>
-            {/* Dashboard PA - visibile solo a utenti con permesso tab.view.dashboard */}
-            {(permissionsLoading || canViewTab('dashboard')) && (
+          </div>
+
+          {/* Tab Impresa - Riga 2 (v3.70.0) */}
+          <div className="flex flex-wrap justify-center gap-4 w-full max-w-4xl">
+            {/* Presenze - apre app Heroku */}
+            {(permissionsLoading || canViewTab('presenze')) && (
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => isAuthenticated ? setLocation('/dashboard-pa') : handleProtectedNavigation('/dashboard-pa')}
-                className="h-24 flex-col gap-2 bg-gradient-to-br from-purple-500/20 to-purple-700/20 backdrop-blur-sm hover:bg-purple-500/30 border-purple-500/50"
+                onClick={() => handleProtectedNavigation('/app/impresa/presenze')}
+                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
               >
-                <BarChart3 className="w-6 h-6 text-purple-400" />
-                <span className="text-purple-300">Dashboard PA</span>
+                <ClipboardList className="w-6 h-6" />
+                <span>Presenze</span>
+              </Button>
+            )}
+            {/* Wallet Impresa - pagamenti PagoPA */}
+            {(permissionsLoading || canViewTab('wallet_impresa')) && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => handleProtectedNavigation('/app/impresa/wallet')}
+                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              >
+                <Wallet className="w-6 h-6" />
+                <span>Wallet Impresa</span>
+              </Button>
+            )}
+            {/* Hub Operatore - già esistente */}
+            {(permissionsLoading || canViewTab('hub_operatore')) && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => handleProtectedNavigation('/hub-operatore')}
+                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              >
+                <Activity className="w-6 h-6" />
+                <span>Hub Operatore</span>
+              </Button>
+            )}
+            {/* Notifiche - già esistente */}
+            {(permissionsLoading || canViewTab('notifiche')) && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => handleProtectedNavigation('/app/impresa/notifiche')}
+                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              >
+                <Bell className="w-6 h-6" />
+                <span>Notifiche</span>
+              </Button>
+            )}
+            {/* Anagrafica - placeholder per sviluppi futuri */}
+            {(permissionsLoading || canViewTab('anagrafica')) && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => handleProtectedNavigation('/app/impresa/anagrafica')}
+                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              >
+                <Menu className="w-6 h-6" />
+                <span>Anagrafica</span>
               </Button>
             )}
           </div>
