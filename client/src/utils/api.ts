@@ -38,7 +38,13 @@ export const geoAPI = {
     if (lng) params.append('lng', lng.toString());
     if (category) params.append('category', category);
 
-    return fetchAPI<{ results: any[]; count: number }>(`/geo/search?${params.toString()}`);
+    // Usa il nuovo endpoint di ricerca pubblica
+    const response = await fetch(`https://api.mio-hub.me/api/public/search?query=${encodeURIComponent(query || '')}`);
+    if (!response.ok) {
+      return { error: 'Search failed' };
+    }
+    const data = await response.json();
+    return { data: { results: data.results || [], count: data.count || 0 } };
   },
 
   getMarket: async (id: string) => {

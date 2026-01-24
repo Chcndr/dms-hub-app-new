@@ -14,12 +14,15 @@ import { geoAPI } from '@/utils/api';
 interface SearchResult {
   id: string;
   name: string;
-  type: 'mercato' | 'hub' | 'negozio' | 'servizio';
+  type: 'mercato' | 'hub' | 'negozio' | 'servizio' | 'impresa' | 'vetrina' | 'merceologia' | 'citta';
   city: string;
-  distance: number;
-  isOpen: boolean;
-  lat: number;
-  lng: number;
+  distance?: number;
+  isOpen?: boolean;
+  lat?: number;
+  lng?: number;
+  mercato?: string;
+  impresa?: string;
+  descrizione?: string;
 }
 
 export default function HomePage() {
@@ -103,12 +106,15 @@ export default function HomePage() {
     const mapped = data.results.map(r => ({
       id: r.id,
       name: r.name,
-      type: r.type as 'mercato' | 'hub' | 'negozio' | 'servizio',
-      city: r.address?.split(',')[1]?.trim() || 'N/A',
-      distance: r.distance / 1000, // metri -> km
+      type: r.type as SearchResult['type'],
+      city: r.city || 'N/A',
+      distance: r.distance ? r.distance / 1000 : undefined,
       isOpen: r.isOpen,
-      lat: r.lat,
-      lng: r.lng,
+      lat: r.lat || 0,
+      lng: r.lng || 0,
+      mercato: r.mercato,
+      impresa: r.impresa,
+      descrizione: r.descrizione,
     }));
     
     const filtered = mapped;
@@ -128,7 +134,25 @@ export default function HomePage() {
       case 'hub': return <Building2 className="w-4 h-4" />;
       case 'negozio': return <MapPin className="w-4 h-4" />;
       case 'servizio': return <TrendingUp className="w-4 h-4" />;
+      case 'impresa': return <Building2 className="w-4 h-4" />;
+      case 'vetrina': return <Store className="w-4 h-4" />;
+      case 'merceologia': return <Leaf className="w-4 h-4" />;
+      case 'citta': return <MapPin className="w-4 h-4" />;
       default: return <MapPin className="w-4 h-4" />;
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'mercato': return 'Mercato';
+      case 'hub': return 'Hub';
+      case 'negozio': return 'Negozio';
+      case 'servizio': return 'Servizio';
+      case 'impresa': return 'Impresa';
+      case 'vetrina': return 'Vetrina';
+      case 'merceologia': return 'Merceologia';
+      case 'citta': return 'Città';
+      default: return type;
     }
   };
 
@@ -260,8 +284,16 @@ export default function HomePage() {
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {result.type.charAt(0).toUpperCase() + result.type.slice(1)} • {result.city} • {result.distance} km
+                            {getTypeLabel(result.type)} • {result.city}
+                            {result.mercato && ` • ${result.mercato}`}
+                            {result.impresa && ` • ${result.impresa}`}
+                            {result.distance && ` • ${result.distance.toFixed(1)} km`}
                           </p>
+                          {result.descrizione && (
+                            <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-1">
+                              {result.descrizione}
+                            </p>
+                          )}
                         </div>
                       </button>
                     ))}
