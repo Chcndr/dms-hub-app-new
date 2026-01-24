@@ -32,7 +32,7 @@ export default function HomePage() {
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
   
   // Permessi utente per controllare visibilità tab
-  const { canViewTab, loading: permissionsLoading } = usePermissions();
+  const { canViewTab, canViewQuickAccess, loading: permissionsLoading } = usePermissions();
 
   // Controlla autenticazione all'avvio
   useEffect(() => {
@@ -347,7 +347,7 @@ export default function HomePage() {
               </Button>
             )}
             {/* Hub Operatore - già esistente */}
-            {(permissionsLoading || canViewTab('hub_operatore')) && (
+            {(permissionsLoading || canViewQuickAccess('hub_operatore')) && (
               <Button
                 variant="outline"
                 size="lg"
@@ -359,7 +359,7 @@ export default function HomePage() {
               </Button>
             )}
             {/* Notifiche - già esistente */}
-            {(permissionsLoading || canViewTab('notifiche')) && (
+            {(permissionsLoading || canViewQuickAccess('notifiche')) && (
               <Button
                 variant="outline"
                 size="lg"
