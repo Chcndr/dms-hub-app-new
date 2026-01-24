@@ -655,9 +655,9 @@ export default function WalletPanel() {
   // Carica conteggio notifiche non lette per Tributi
   const loadNotificheCount = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
       // Usa comune_id 1 come default (Grosseto) - in futuro sarà dinamico
-      const url = addComuneIdToUrl(`${API_URL}/api/notifiche/mittente/1?mittente_tipo=TRIBUTI`);
+      const url = addComuneIdToUrl(`${MIHUB_API}/notifiche/messaggi/TRIBUTI/1`);
       const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
@@ -893,17 +893,17 @@ export default function WalletPanel() {
   return (
     <div className="space-y-6 p-6 bg-[#0f172a] min-h-screen text-slate-100 border border-green-500/30 rounded-lg">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="space-y-3">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Wallet className="h-8 w-8 text-[#3b82f6]" />
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Wallet className="h-6 w-6 text-[#3b82f6]" />
             Wallet Operatori & PagoPA
           </h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-slate-400 text-sm mt-1">
             Gestione borsellini digitali: Spunta (ricaricabile) e Concessioni (canone annuo)
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1">
           <Button 
             size="sm"
             variant={subTab === 'wallet' ? 'default' : 'outline'}
