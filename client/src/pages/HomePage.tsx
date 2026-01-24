@@ -393,9 +393,11 @@ export default function HomePage() {
 
       {/* Login Modal */}
       <LoginModal 
-        isOpen={showLoginModal} 
+        isOpen={showLoginModal}
+        redirectRoute={pendingRoute || '/wallet'}
         onClose={() => {
           setShowLoginModal(false);
+          setPendingRoute(null);
           // Ricontrolla autenticazione dopo chiusura modal
           const userStr = localStorage.getItem('user');
           const token = localStorage.getItem('token');

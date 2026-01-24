@@ -13,12 +13,13 @@ import {
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  redirectRoute?: string; // Route dove navigare dopo il login (default: /wallet)
 }
 
 type UserType = 'citizen' | 'business' | 'pa' | null;
 type AuthMethod = 'spid' | 'cie' | 'cns' | 'google' | 'apple' | 'email' | null;
 
-export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, redirectRoute }: LoginModalProps) {
   const [, navigate] = useLocation();
   const [userType, setUserType] = useState<UserType>(null);
   const [loading, setLoading] = useState(false);
@@ -79,7 +80,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       if (data.success) {
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('token', data.token);
-        navigate('/wallet');
+        navigate(redirectRoute || '/wallet');
         handleClose();
       } else {
         setError(data.error || 'Credenziali non valide');
@@ -120,7 +121,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       if (data.success) {
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('token', data.token);
-        navigate('/wallet');
+        navigate(redirectRoute || '/wallet');
         handleClose();
       } else {
         setError(data.error || 'Errore durante la registrazione');
