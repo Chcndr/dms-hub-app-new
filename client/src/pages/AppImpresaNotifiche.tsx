@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'wouter';
 import { 
   Bell, BellRing, Mail, MailOpen, Send, Calendar, Clock, 
   Building2, GraduationCap, Landmark, CheckCircle, Archive,
@@ -35,6 +36,7 @@ interface Notifica {
 }
 
 export default function AppImpresaNotifiche() {
+  const [, setLocation] = useLocation();
   const [notifiche, setNotifiche] = useState<Notifica[]>([]);
   const [notificaSelezionata, setNotificaSelezionata] = useState<Notifica | null>(null);
   const [nonLette, setNonLette] = useState(0);
@@ -185,7 +187,16 @@ export default function AppImpresaNotifiche() {
     <div className="min-h-screen bg-[#0b1220] text-[#e8fbff]">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#3b82f6]/20 p-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="container mx-auto flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocation('/')}
+            className="text-[#e8fbff]/70 hover:text-[#e8fbff]"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Torna alla Home
+          </Button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#3b82f6] to-[#8b5cf6] flex items-center justify-center">
               <Bell className="w-5 h-5 text-white" />
@@ -215,7 +226,7 @@ export default function AppImpresaNotifiche() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto p-4">
+      <div className="container mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Lista Notifiche */}
           <div className="lg:col-span-1">

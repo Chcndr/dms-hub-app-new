@@ -42,7 +42,7 @@ export default function PresenzePage() {
     <div className="min-h-screen bg-[#0b1220] text-[#e8fbff] flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#14b8a6]/20 p-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="container mx-auto flex items-center justify-between">
           <Button 
             variant="ghost" 
             size="sm" 

@@ -26,7 +26,7 @@ export default function AnagraficaPage() {
     <div className="min-h-screen bg-[#0b1220] text-[#e8fbff]">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#14b8a6]/20 p-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="container mx-auto flex items-center justify-between">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -50,7 +50,7 @@ export default function AnagraficaPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="container mx-auto p-6">
         <Card className="bg-[#1a2332] border-[#14b8a6]/20 mb-6">
           <CardHeader>
             <CardTitle className="text-[#e8fbff] flex items-center gap-2">
