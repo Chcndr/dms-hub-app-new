@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.50.0  
-> **Data:** 23 Gennaio 2026  
+> **Versione:** 3.73.1  
+> **Data:** 24 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -4552,3 +4552,204 @@ La logica di creazione concessione (`/routes/concessions.js`) in caso di rinnovo
 **Soluzione:**
 1. **Correzione Dati:** Aggiornare manualmente il `vendor_id` della concessione 44 a 3 (vendor di "Alimentari Verdi").
 2. **Correzione Codice:** Modificare la logica di creazione concessione per garantire che il `vendor_id` sia sempre quello corretto dell'impresa concessionaria, anche in caso di rinnovo/subingresso.
+
+
+---
+
+## 📅 CHANGELOG 24 GENNAIO 2026 (v3.73.0 → v3.73.1)
+
+### 🎯 Riepilogo Giornata
+
+Giornata dedicata alla correzione di bug critici nel sistema Wallet e Notifiche, con focus su:
+- Creazione automatica wallet SPUNTISTA/GENERICO
+- Visualizzazione corretta dei wallet nell'App Impresa
+- Sistema notifiche con filtri e badge
+
+---
+
+### 🔧 FIX BACKEND (mihub-backend-rest)
+
+#### 1. Creazione Automatica Wallet SPUNTISTA (Commit: `1fdae14`)
+
+**Problema Identificato:**
+Il wallet SPUNTISTA (mostrato come "GENERICO" nel frontend) non veniva creato automaticamente quando si creava una nuova impresa. I 13 wallet SPUNTISTA esistenti erano stati creati manualmente il 28/12/2025 con uno script batch.
+
+**File Modificati:**
+- `routes/hub.js` (riga ~633) - Creazione impresa da vetrina Hub
+- `routes/imprese.js` (riga ~304) - Creazione impresa standard
+
+**Codice Aggiunto:**
+```javascript
+// Crea wallet SPUNTISTA (generico) per l'impresa
+await pool.query(`
+  INSERT INTO wallets (company_id, type, balance, status, created_at)
+  VALUES ($1, 'SPUNTISTA', 0, 'ACTIVE', NOW())
+`, [impresaId]);
+```
+
+**Script SQL Eseguito per Fix Imprese Esistenti:**
+```sql
+INSERT INTO wallets (company_id, type, balance, status, created_at)
+SELECT id, 'SPUNTISTA', 0, 'ACTIVE', NOW()
+FROM imprese
+WHERE id NOT IN (SELECT company_id FROM wallets WHERE type = 'SPUNTISTA');
+-- Risultato: 15 wallet creati, totale ora 28 (tutte le imprese coperte)
+```
+
+---
+
+### 🎨 FIX FRONTEND (dms-hub-app-new)
+
+#### 2. Visualizzazione Wallet GENERICO in App Impresa (Commit: `7800197`)
+
+**Problema:**
+Il wallet SPUNTISTA non appariva nell'App Impresa perché il frontend cercava `type === 'GENERICO'` ma nel database il tipo è `'SPUNTISTA'`.
+
+**File:** `client/src/pages/WalletImpresaPage.tsx`
+
+**Fix (riga 128):**
+```javascript
+// PRIMA:
+wallets.filter((w: any) => w.type === 'SPUNTA' || w.type === 'GENERICO')
+
+// DOPO:
+wallets.filter((w: any) => w.type === 'SPUNTA' || w.type === 'GENERICO' || w.type === 'SPUNTISTA')
+```
+
+#### 3. Testo Wallet GENERICO e Pulsante Ricarica (Commit: `e20cff7`)
+
+**Problema:**
+- Il wallet GENERICO mostrava "Credito Spunta" invece di solo il badge "GENERICO"
+- Mancava il pulsante "Ricarica" per il wallet GENERICO
+
+**File:** `client/src/pages/WalletImpresaPage.tsx`
+
+**Fix:**
+- Rimosso testo "Credito Spunta" dal wallet GENERICO
+- Aggiunto pulsante "+ Ricarica" con dialog per ricarica PagoPA
+- Aggiunto stato `showRicaricaDialog`, `selectedWalletRicarica`, `ricaricaAmount`
+
+#### 4. Storico Ricariche Wallet (Commit: `b6a2646`)
+
+**Problema:**
+Lo storico mostrava solo i pagamenti canone, non le ricariche wallet.
+
+**File:** `client/src/pages/WalletImpresaPage.tsx`
+
+**Fix:**
+- Aggiunto stato `transactions` per le transazioni wallet
+- Aggiunto fetch da `/api/wallets/{id}/transactions` per ogni wallet
+- Sezione "Storico Movimenti" ora mostra:
+  - **Ricariche** (DEPOSIT) con badge BLU e importo +€XX.XX
+  - **Pagamenti Canone** (PAGATO) con badge VERDE
+
+#### 5. Filtri Notifiche App Impresa (Commit: `b6a2646`)
+
+**Problema:**
+La pagina notifiche mostrava solo le notifiche ricevute senza possibilità di vedere i messaggi inviati.
+
+**File:** `client/src/pages/AppImpresaNotifiche.tsx`
+
+**Fix:**
+- Ripristinati filtri **Tutti / Ricevuti / Inviati**
+- Default impostato su **"Ricevuti"** (più logico per l'impresa)
+- Messaggi inviati mostrati con icona verde `<Send>` e stile differente
+
+#### 6. Badge Notifiche HomePage App Impresa (Commit: `e20cff7`)
+
+**Problema:**
+Il badge notifiche non appariva nel pulsante "Notifiche" della Home.
+
+**File:** `client/src/pages/HomePage.tsx`
+
+**Fix (riga 68):**
+```javascript
+// PRIMA:
+const unread = data.notifiche?.filter((n: any) => !n.letto)?.length || 0;
+
+// DOPO:
+const unread = data.data?.non_lette || 0;
+```
+
+#### 7. Tasto Notifiche Tagliato in WalletPanel (Commit: `b6a2646`)
+
+**Problema:**
+Il tasto "Notifiche" nella barra tab del WalletPanel (Dashboard PA) veniva tagliato.
+
+**File:** `client/src/components/WalletPanel.tsx`
+
+**Fix (riga 951):**
+```javascript
+className={`flex-shrink-0 whitespace-nowrap ${subTab === 'notifiche' ? 'bg-[#8b5cf6]' : 'border-slate-700 text-slate-300'}`}
+```
+
+#### 8. Badge Notifiche Pulsante Dashboard PA (Commit: `b6a2646`)
+
+**Problema:**
+Il badge notifiche appariva solo nella barra rapida, non nel pulsante "Notifiche" nella griglia Sezioni Dashboard.
+
+**File:** `client/src/pages/DashboardPA.tsx`
+
+**Fix (riga ~2280):**
+```jsx
+<button className={`relative flex flex-col items-center...`}>
+  <Bell className="h-6 w-6" />
+  <span className="text-xs font-medium">Notifiche</span>
+  {notificheNonLette > 0 && (
+    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+      {notificheNonLette > 99 ? '99+' : notificheNonLette}
+    </span>
+  )}
+</button>
+```
+
+---
+
+### 📊 STATO COMPONENTI (24/01/2026)
+
+| Componente | Stato | Note |
+|------------|-------|------|
+| **Wallet GENERICO** | ✅ Funzionante | Creato automaticamente, visibile in App Impresa |
+| **Ricarica Wallet** | ✅ Funzionante | Pulsante + Dialog + Salvataggio in wallet_transactions |
+| **Storico Movimenti** | ✅ Funzionante | Mostra ricariche e pagamenti canone |
+| **Notifiche App Impresa** | ✅ Funzionante | Filtri Tutti/Ricevuti/Inviati |
+| **Badge Notifiche Home** | ✅ Funzionante | Mostra conteggio non lette |
+| **Badge Notifiche Dashboard** | ✅ Funzionante | Sia barra rapida che griglia |
+| **Tasto Notifiche WalletPanel** | ✅ Funzionante | Non più tagliato |
+
+---
+
+### 🗄️ STRUTTURA WALLET (Chiarimento)
+
+```
+TIPI WALLET:
+├── SPUNTISTA (DB) → "GENERICO" (UI) - Wallet generale dell'impresa
+├── SPUNTA (DB) → "SPUNTA" (UI) - Wallet per mercato specifico (domanda spunta approvata)
+└── CONCESSION (DB) → "CONCESSIONE" (UI) - Wallet legato al posteggio
+
+FLUSSO CREAZIONE:
+1. Creazione Impresa → Wallet SPUNTISTA (automatico)
+2. Approvazione Domanda Spunta → Wallet SPUNTA per quel mercato
+3. Creazione Concessione → Wallet CONCESSION per quel posteggio
+```
+
+---
+
+### 📝 COMMIT DELLA GIORNATA
+
+| Commit | Descrizione | Repository |
+|--------|-------------|------------|
+| `1fdae14` | Creazione automatica wallet SPUNTISTA | mihub-backend-rest |
+| `7800197` | Fix filtro wallet SPUNTISTA frontend | dms-hub-app-new |
+| `e20cff7` | Fix notifiche, ricarica wallet, badge | dms-hub-app-new |
+| `b6a2646` | Storico ricariche, filtri notifiche, badge Dashboard | dms-hub-app-new |
+
+---
+
+### ⚠️ VINCOLI NEGATIVI (Cosa NON fare)
+
+1. **NON cercare `type === 'GENERICO'`** nel frontend - il tipo nel DB è `'SPUNTISTA'`
+2. **NON usare `data.notifiche.filter(!n.letto)`** - usare `data.data.non_lette` dal backend
+3. **NON rimuovere i filtri notifiche** - gli utenti vogliono vedere sia ricevuti che inviati
+4. **NON dimenticare `flex-shrink-0`** sui pulsanti in container con overflow-x-auto
+
