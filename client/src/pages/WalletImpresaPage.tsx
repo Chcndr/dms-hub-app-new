@@ -32,7 +32,7 @@ import {
 // Tipi wallet
 interface WalletItem {
   id: number;
-  type: 'SPUNTA' | 'CONCESSIONE';
+  type: 'SPUNTA' | 'CONCESSIONE' | 'GENERICO';
   balance: number;
   status: 'ACTIVE' | 'BLOCKED' | 'LOW_BALANCE';
   market_name?: string;
@@ -125,9 +125,9 @@ export default function WalletImpresaPage() {
       
       if (walletsData.success && walletsData.data) {
         const wallets = walletsData.data;
-        spuntaWallets = wallets.filter((w: any) => w.type === 'SPUNTA').map((w: any) => ({
+        spuntaWallets = wallets.filter((w: any) => w.type === 'SPUNTA' || w.type === 'GENERICO').map((w: any) => ({
           id: w.id,
-          type: 'SPUNTA' as const,
+          type: (w.type === 'GENERICO' ? 'GENERICO' : 'SPUNTA') as 'SPUNTA' | 'GENERICO',
           balance: parseFloat(w.balance) || 0,
           status: w.status,
           market_name: w.market_name,
@@ -203,13 +203,18 @@ export default function WalletImpresaPage() {
     
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
-      const response = await fetch(`${API_URL}/api/canone-unico/paga-scadenza`, {
+      const importoTotale = parseFloat(selectedScadenza.importo_dovuto) + parseFloat(selectedScadenza.importo_mora || '0') + parseFloat(selectedScadenza.importo_interessi || '0');
+      const description = `Pagamento Canone ${selectedScadenza.tipo === 'CANONE_ANNUO' ? 'Annuo' : selectedScadenza.tipo} - Rata ${selectedScadenza.rata_numero}/${selectedScadenza.rata_totale} - ${selectedScadenza.mercato_nome} - Posteggio ${selectedScadenza.posteggio}`;
+      
+      // Usa l'endpoint corretto /api/wallets/deposit
+      const response = await fetch(`${API_URL}/api/wallets/deposit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          scadenza_id: selectedScadenza.id,
-          importo_pagato: parseFloat(selectedScadenza.importo_dovuto) + parseFloat(selectedScadenza.importo_mora || '0') + parseFloat(selectedScadenza.importo_interessi || '0'),
-          metodo_pagamento: 'SIMULAZIONE'
+          wallet_id: selectedScadenza.wallet_id,
+          amount: importoTotale,
+          description: description,
+          scadenza_id: selectedScadenza.id
         })
       });
       const data = await response.json();
@@ -218,7 +223,7 @@ export default function WalletImpresaPage() {
         setShowPagamentoDialog(false);
         fetchData();
       } else {
-        alert('Errore: ' + data.error);
+        alert('Errore: ' + (data.error || 'Errore sconosciuto'));
       }
     } catch (err) {
       console.error('Errore pagamento:', err);
@@ -422,10 +427,16 @@ export default function WalletImpresaPage() {
                           <div key={wallet.id} className="p-3 bg-[#0b1220]/50 rounded-lg border border-[#14b8a6]/10">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <MapPin className="w-4 h-4 text-[#14b8a6]" />
+                                {wallet.type === 'GENERICO' ? (
+                                  <Badge className="bg-slate-600 text-white">GENERICO</Badge>
+                                ) : (
+                                  <Badge className="bg-[#14b8a6]/20 text-[#14b8a6]">{wallet.market_name}</Badge>
+                                )}
                                 <div>
-                                  <p className="font-medium text-[#e8fbff]">{wallet.market_name}</p>
-                                  <p className="text-sm text-[#e8fbff]/50">Posteggio: {wallet.stall_number || 'N/A'}</p>
+                                  <p className="font-medium text-[#e8fbff]">
+                                    {wallet.type === 'GENERICO' ? 'Credito Spunta' : wallet.market_name}
+                                  </p>
+                                  <p className="text-sm text-[#e8fbff]/50">ID Wallet: #{wallet.id}</p>
                                 </div>
                               </div>
                               <div className="text-right">

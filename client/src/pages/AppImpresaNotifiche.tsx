@@ -61,7 +61,7 @@ export default function AppImpresaNotifiche() {
   const IMPRESA_ID = impresaData.id;
   const IMPRESA_NOME = impresaData.nome;
   
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me/api';
+  const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://api.mio-hub.me') + '/api';
 
   // Carica notifiche
   const fetchNotifiche = async () => {
