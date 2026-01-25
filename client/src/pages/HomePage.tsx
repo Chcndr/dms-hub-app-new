@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { 
   Search, MapPin, Store, Building2, Leaf, TrendingUp, BarChart3, LogIn, LogOut,
-  Bell, Wallet, Activity, ClipboardList, Menu
+  Bell, Wallet, Activity, ClipboardList, Menu, Presentation
 } from 'lucide-react';
 import { geoAPI } from '@/utils/api';
 
@@ -213,6 +213,16 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Presentazione - link pubblico senza login (v3.74.0) */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('https://files.manuscdn.com/user_upload_by_module/session_file/310419663032452543/NOayPdmvIaypDakv.pdf', '_blank')}
+                className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
+              >
+                <Presentation className="w-4 h-4 mr-2" />
+                Presentazione
+              </Button>
               {/* Dashboard PA - spostato nell'header (v3.70.0) */}
               {(permissionsLoading || canViewTab('dashboard')) && (
                 <Button
