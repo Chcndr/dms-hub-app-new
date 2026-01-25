@@ -38,6 +38,7 @@ import ImpersonationBanner from "./components/ImpersonationBanner";
 import WalletImpresaPage from "./pages/WalletImpresaPage";
 import PresenzePage from "./pages/PresenzePage";
 import AnagraficaPage from "./pages/AnagraficaPage";
+import PresentazionePage from "./pages/PresentazionePage";
 
 function Router() {
   return (
@@ -72,6 +73,8 @@ function Router() {
       <Route path="/app/impresa/wallet" component={WalletImpresaPage} />
       <Route path="/app/impresa/presenze" component={PresenzePage} />
       <Route path="/app/impresa/anagrafica" component={AnagraficaPage} />
+      {/* v3.74.0 - Presentazione pubblica */}
+      <Route path="/presentazione" component={PresentazionePage} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

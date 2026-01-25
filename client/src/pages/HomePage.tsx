@@ -217,7 +217,7 @@ export default function HomePage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open('https://files.manuscdn.com/user_upload_by_module/session_file/310419663032452543/NOayPdmvIaypDakv.pdf', '_blank')}
+                onClick={() => setLocation('/presentazione')}
                 className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
               >
                 <Presentation className="w-4 h-4 mr-2" />
