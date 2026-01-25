@@ -205,8 +205,9 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
   }, []);
 
   // Filtra imprese mentre si digita (autocomplete Subentrante)
+  // Mostra risultati dalla prima lettera per una ricerca più reattiva
   useEffect(() => {
-    if (searchQuery.length < 2) {
+    if (searchQuery.length < 1) {
       setFilteredImprese([]);
       setShowSuggestions(false);
       return;
@@ -217,15 +218,16 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
       i.denominazione?.toUpperCase().includes(query) ||
       i.codice_fiscale?.toUpperCase().includes(query) ||
       i.partita_iva?.includes(query.replace(/\D/g, ''))
-    ).slice(0, 10); // Max 10 suggerimenti
+    ).slice(0, 15); // Max 15 suggerimenti per mostrare più risultati
     
     setFilteredImprese(filtered);
     setShowSuggestions(filtered.length > 0);
   }, [searchQuery, allImprese]);
 
   // Filtra imprese mentre si digita (autocomplete Cedente)
+  // Mostra risultati dalla prima lettera per una ricerca più reattiva
   useEffect(() => {
-    if (cedenteSearchQuery.length < 2) {
+    if (cedenteSearchQuery.length < 1) {
       setFilteredCedenteImprese([]);
       setShowCedenteSuggestions(false);
       return;
@@ -236,7 +238,7 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
       i.denominazione?.toUpperCase().includes(query) ||
       i.codice_fiscale?.toUpperCase().includes(query) ||
       i.partita_iva?.includes(query.replace(/\D/g, ''))
-    ).slice(0, 10); // Max 10 suggerimenti
+    ).slice(0, 15); // Max 15 suggerimenti per mostrare più risultati
     
     setFilteredCedenteImprese(filtered);
     setShowCedenteSuggestions(filtered.length > 0);
@@ -517,6 +519,8 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
       mercato_id: marketId,
       ubicazione_mercato: market?.municipality || '',
       giorno_mercato: market?.days || '',
+      // Auto-compila comune_presentazione dal mercato selezionato
+      comune_presentazione: market?.municipality?.toUpperCase() || prev.comune_presentazione,
       // Reset posteggio e cedente quando cambia mercato
       posteggio: '',
       posteggio_id: '',
@@ -585,7 +589,7 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
   };
 
   return (
-    <Card className="bg-[#0f172a] border-[#334155] max-w-4xl mx-auto max-h-[90vh] overflow-y-auto">
+    <Card className="bg-[#0a1628] border-[#1e293b] w-full p-4 max-h-[90vh] overflow-y-auto">
       <CardHeader>
         <CardTitle className="text-[#e8fbff] flex items-center gap-2">
           <FileText className="text-[#14b8a6]" />
@@ -892,7 +896,7 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
                 </div>
                 {/* Dropdown autocomplete Subentrante */}
                 {showSuggestions && filteredImprese.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-96 overflow-y-auto">
                     {filteredImprese.map((impresa) => (
                       <button
                         key={impresa.id}
@@ -1105,7 +1109,7 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
                 </div>
                 {/* Dropdown autocomplete Cedente */}
                 {showCedenteSuggestions && filteredCedenteImprese.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-96 overflow-y-auto">
                     {filteredCedenteImprese.map((impresa) => (
                       <button
                         key={impresa.id}

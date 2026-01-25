@@ -949,6 +949,7 @@ export default function SuapPanel() {
                         cedente_cf: selectedPratica.ced_cf || '',
                         cedente_partita_iva: selectedPratica.ced_partita_iva || '',
                         cedente_ragione_sociale: selectedPratica.ced_ragione_sociale || '',
+                        cedente_impresa_id: selectedPratica.ced_impresa_id?.toString() || '',
                         // Posteggio - ID per pre-selezione automatica
                         mercato_id: selectedPratica.mercato_id || null,
                         posteggio_id: selectedPratica.posteggio_id || null,

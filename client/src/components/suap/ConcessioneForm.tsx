@@ -364,8 +364,9 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
   }, [initialData]);
 
   // Filtra imprese mentre si digita (autocomplete Concessionario)
+  // Mostra risultati dalla prima lettera per una ricerca più reattiva
   useEffect(() => {
-    if (searchQuery.length < 2) {
+    if (searchQuery.length < 1) {
       setFilteredImprese([]);
       setShowSuggestions(false);
       return;
@@ -376,15 +377,16 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
       i.denominazione?.toUpperCase().includes(query) ||
       i.codice_fiscale?.toUpperCase().includes(query) ||
       i.partita_iva?.includes(query.replace(/\D/g, ''))
-    ).slice(0, 10); // Max 10 suggerimenti
+    ).slice(0, 15); // Max 15 suggerimenti per mostrare più risultati
     
     setFilteredImprese(filtered);
     setShowSuggestions(filtered.length > 0);
   }, [searchQuery, allImprese]);
 
   // Filtra imprese mentre si digita (autocomplete Cedente)
+  // Mostra risultati dalla prima lettera per una ricerca più reattiva
   useEffect(() => {
-    if (cedenteSearchQuery.length < 2) {
+    if (cedenteSearchQuery.length < 1) {
       setFilteredCedenteImprese([]);
       setShowCedenteSuggestions(false);
       return;
@@ -395,7 +397,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
       i.denominazione?.toUpperCase().includes(query) ||
       i.codice_fiscale?.toUpperCase().includes(query) ||
       i.partita_iva?.includes(query.replace(/\D/g, ''))
-    ).slice(0, 10); // Max 10 suggerimenti
+    ).slice(0, 15); // Max 15 suggerimenti per mostrare più risultati
     
     setFilteredCedenteImprese(filtered);
     setShowCedenteSuggestions(filtered.length > 0);
@@ -686,7 +688,20 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
         sede_legale_via: sanitizeValue(formData.sede_legale_via),
         sede_legale_comune: sanitizeValue(formData.sede_legale_comune),
         sede_legale_provincia: sanitizeValue(formData.sede_legale_provincia),
-        sede_legale_cap: sanitizeValue(formData.sede_legale_cap)
+        sede_legale_cap: sanitizeValue(formData.sede_legale_cap),
+        // Dati Cedente (per subingresso)
+        cedente_impresa_id: formData.cedente_impresa_id ? parseInt(formData.cedente_impresa_id) : null,
+        cedente_cf: sanitizeValue(formData.cedente_cf),
+        cedente_partita_iva: sanitizeValue(formData.cedente_partita_iva),
+        cedente_ragione_sociale: sanitizeValue(formData.cedente_ragione_sociale),
+        // Autorizzazione precedente
+        autorizzazione_precedente_pg: sanitizeValue(formData.autorizzazione_precedente_pg),
+        autorizzazione_precedente_data: sanitizeValue(formData.autorizzazione_precedente_data),
+        autorizzazione_precedente_intestatario: sanitizeValue(formData.autorizzazione_precedente_intestatario),
+        // SCIA precedente
+        scia_precedente_numero: sanitizeValue(formData.scia_precedente_numero),
+        scia_precedente_data: sanitizeValue(formData.scia_precedente_data),
+        scia_precedente_comune: sanitizeValue(formData.scia_precedente_comune)
       };
       
       // In modalità edit usa PUT, altrimenti POST
@@ -910,7 +925,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
                   className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                 />
                 {showSuggestions && (
-                  <div className="absolute z-50 w-full mt-1 bg-[#0a1628] border border-[#1e293b] rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="absolute z-50 w-full mt-1 bg-[#0a1628] border border-[#1e293b] rounded-md shadow-lg max-h-96 overflow-auto">
                     {filteredImprese.map((impresa) => (
                       <div
                         key={impresa.id}
@@ -1097,7 +1112,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
                     className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
                   />
                   {showCedenteSuggestions && (
-                    <div className="absolute z-50 w-full mt-1 bg-[#0a1628] border border-[#1e293b] rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="absolute z-50 w-full mt-1 bg-[#0a1628] border border-[#1e293b] rounded-md shadow-lg max-h-96 overflow-auto">
                       {filteredCedenteImprese.map((impresa) => (
                         <div
                           key={impresa.id}

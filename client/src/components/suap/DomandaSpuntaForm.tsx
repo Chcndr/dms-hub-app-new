@@ -221,14 +221,15 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
   }, [domandaId, mode]);
 
   // Filtra imprese per autocomplete
+  // Mostra risultati dalla prima lettera per una ricerca più reattiva
   useEffect(() => {
-    if (searchQuery.length >= 2) {
+    if (searchQuery.length >= 1) {
       const query = searchQuery.toLowerCase();
       const filtered = allImprese.filter(imp => 
         imp.denominazione?.toLowerCase().includes(query) ||
         imp.codice_fiscale?.toLowerCase().includes(query) ||
         imp.partita_iva?.includes(query)
-      ).slice(0, 10);
+      ).slice(0, 15); // Max 15 suggerimenti per mostrare più risultati
       setFilteredImprese(filtered);
       setShowSuggestions(filtered.length > 0);
     } else {
@@ -485,7 +486,7 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
               {showSuggestions && (
-                <div className="absolute z-50 w-full mt-1 bg-[#0a1628] border border-[#1e293b] rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="absolute z-50 w-full mt-1 bg-[#0a1628] border border-[#1e293b] rounded-md shadow-lg max-h-96 overflow-auto">
                   {filteredImprese.map((impresa) => (
                     <div
                       key={impresa.id}
