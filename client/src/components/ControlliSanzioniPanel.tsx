@@ -1,22 +1,32 @@
 /**
  * ControlliSanzioniPanel - Modulo Controlli e Sanzioni per Polizia Municipale
- * Versione: 1.0.0
+ * Versione: 2.0.0
  * Data: 25 Gennaio 2026
+ * 
+ * Sotto-tab:
+ * 1. Panoramica - KPI e overview
+ * 2. Da Controllare - Watchlist imprese
+ * 3. Verbali - Lista verbali emessi
+ * 4. Tipi Infrazione - Catalogo infrazioni
+ * 5. Pratiche SUAP - Nuove pratiche, concessioni, autorizzazioni
+ * 6. Notifiche PM - Sistema invio notifiche
  */
 
 import { useState, useEffect } from 'react';
 import { 
   Shield, AlertTriangle, CheckCircle, Clock, FileText, 
-  MapPin, Search, Filter, Plus, Euro, Bell, Eye, 
+  Search, Filter, Plus, Euro, Bell, Eye, Send,
   ChevronRight, RefreshCw, Building2, Store, Truck,
-  ClipboardCheck, AlertCircle, Calendar, User, Download
+  ClipboardCheck, AlertCircle, Calendar, User, Download,
+  FileCheck, Briefcase, X, MessageSquare
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { MarketMapComponent } from '@/components/MarketMapComponent';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 // API Base URL
 const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
@@ -77,15 +87,39 @@ interface InfractionType {
   default_amount: string;
 }
 
+interface SuapPratica {
+  id: number;
+  numero_pratica: string;
+  tipo_pratica: string;
+  stato: string;
+  impresa_nome: string;
+  comune_nome: string;
+  data_presentazione: string;
+  data_scadenza: string;
+}
+
+interface Impresa {
+  id: number;
+  denominazione: string;
+  partita_iva: string;
+}
+
 export default function ControlliSanzioniPanel() {
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [stats, setStats] = useState<InspectionStats | null>(null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [sanctions, setSanctions] = useState<Sanction[]>([]);
   const [infractionTypes, setInfractionTypes] = useState<InfractionType[]>([]);
+  const [praticheSuap, setPraticheSuap] = useState<SuapPratica[]>([]);
+  const [impreseList, setImpreseList] = useState<Impresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modal states
+  const [showNuovoControlloModal, setShowNuovoControlloModal] = useState(false);
+  const [nuovoControlloLoading, setNuovoControlloLoading] = useState(false);
+  const [invioNotificaLoading, setInvioNotificaLoading] = useState(false);
 
   // Fetch data on mount
   useEffect(() => {
@@ -104,17 +138,27 @@ export default function ControlliSanzioniPanel() {
       // Fetch watchlist
       const watchlistRes = await fetch(`${MIHUB_API}/watchlist?status=PENDING&limit=20`);
       const watchlistData = await watchlistRes.json();
-      if (watchlistData.success) setWatchlist(watchlistData.data);
+      if (watchlistData.success) setWatchlist(watchlistData.data || []);
 
       // Fetch sanctions
       const sanctionsRes = await fetch(`${MIHUB_API}/sanctions?limit=20`);
       const sanctionsData = await sanctionsRes.json();
-      if (sanctionsData.success) setSanctions(sanctionsData.data);
+      if (sanctionsData.success) setSanctions(sanctionsData.data || []);
 
       // Fetch infraction types
       const typesRes = await fetch(`${MIHUB_API}/sanctions/types`);
       const typesData = await typesRes.json();
-      if (typesData.success) setInfractionTypes(typesData.data);
+      if (typesData.success) setInfractionTypes(typesData.data || []);
+
+      // Fetch pratiche SUAP
+      const praticheRes = await fetch(`${MIHUB_API}/suap/pratiche?limit=50`);
+      const praticheData = await praticheRes.json();
+      if (praticheData.success) setPraticheSuap(praticheData.data || []);
+
+      // Fetch imprese list for notifications
+      const impreseRes = await fetch(`${MIHUB_API}/imprese?limit=100`);
+      const impreseData = await impreseRes.json();
+      if (impreseData.success) setImpreseList(impreseData.data || []);
 
     } catch (err) {
       setError('Errore nel caricamento dei dati');
@@ -144,6 +188,17 @@ export default function ControlliSanzioniPanel() {
     }
   };
 
+  // Pratica status badge
+  const getPraticaStatusBadge = (stato: string) => {
+    switch (stato?.toUpperCase()) {
+      case 'APPROVATA': return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Approvata</Badge>;
+      case 'RIFIUTATA': return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Rifiutata</Badge>;
+      case 'IN_LAVORAZIONE': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">In Lavorazione</Badge>;
+      case 'IN_ATTESA': return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">In Attesa</Badge>;
+      default: return <Badge className="bg-gray-500/20 text-gray-400">{stato}</Badge>;
+    }
+  };
+
   // Category icon
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -151,6 +206,87 @@ export default function ControlliSanzioniPanel() {
       case 'NEGOZIO': return <Building2 className="h-4 w-4" />;
       case 'AMBULANTE': return <Truck className="h-4 w-4" />;
       default: return <Shield className="h-4 w-4" />;
+    }
+  };
+
+  // Handle nuovo controllo submit
+  const handleNuovoControlloSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setNuovoControlloLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      impresa_id: formData.get('impresa_id'),
+      tipo_controllo: formData.get('tipo_controllo'),
+      note: formData.get('note'),
+      agente: 'Polizia Municipale'
+    };
+
+    try {
+      const response = await fetch(`${MIHUB_API}/inspections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('✅ Controllo registrato con successo!');
+        setShowNuovoControlloModal(false);
+        fetchAllData();
+      } else {
+        alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+      }
+    } catch (err) {
+      alert('❌ Errore nella registrazione del controllo');
+    } finally {
+      setNuovoControlloLoading(false);
+    }
+  };
+
+  // Handle invio notifica PM
+  const handleInvioNotifica = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setInvioNotificaLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const targetTipo = formData.get('target_tipo') as string;
+    const targetId = formData.get('target_id') as string;
+    
+    let targetNome = '';
+    if (targetTipo === 'IMPRESA' && targetId) {
+      const impresa = impreseList.find(i => i.id === parseInt(targetId));
+      targetNome = impresa?.denominazione || '';
+    }
+
+    try {
+      const response = await fetch(`${MIHUB_API}/notifiche/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mittente_tipo: 'POLIZIA_MUNICIPALE',
+          mittente_id: 1,
+          mittente_nome: 'Polizia Municipale',
+          titolo: formData.get('titolo'),
+          messaggio: formData.get('messaggio'),
+          tipo_messaggio: formData.get('tipo_messaggio'),
+          target_tipo: targetTipo,
+          target_id: targetId || null,
+          target_nome: targetNome
+        })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`✅ Notifica inviata con successo a ${data.data?.destinatari_count || 0} destinatari!`);
+        (e.target as HTMLFormElement).reset();
+      } else {
+        alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
+      }
+    } catch (err) {
+      alert('❌ Errore invio notifica');
+    } finally {
+      setInvioNotificaLoading(false);
     }
   };
 
@@ -189,12 +325,80 @@ export default function ControlliSanzioniPanel() {
           <Button 
             size="sm" 
             className="bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-black"
+            onClick={() => setShowNuovoControlloModal(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
             Nuovo Controllo
           </Button>
         </div>
       </div>
+
+      {/* Modal Nuovo Controllo */}
+      {showNuovoControlloModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#1a2332] border border-[#f59e0b]/30 rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#e8fbff]">Nuovo Controllo</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowNuovoControlloModal(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <form onSubmit={handleNuovoControlloSubmit} className="space-y-4">
+              <div>
+                <Label className="text-[#e8fbff]/70">Impresa</Label>
+                <select 
+                  name="impresa_id" 
+                  required
+                  className="w-full mt-1 bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-2 text-[#e8fbff]"
+                >
+                  <option value="">Seleziona impresa...</option>
+                  {impreseList.map(imp => (
+                    <option key={imp.id} value={imp.id}>{imp.denominazione} - {imp.partita_iva}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label className="text-[#e8fbff]/70">Tipo Controllo</Label>
+                <select 
+                  name="tipo_controllo" 
+                  required
+                  className="w-full mt-1 bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-2 text-[#e8fbff]"
+                >
+                  <option value="ORDINARIO">Controllo Ordinario</option>
+                  <option value="STRAORDINARIO">Controllo Straordinario</option>
+                  <option value="SU_SEGNALAZIONE">Su Segnalazione</option>
+                  <option value="VERIFICA_DOCUMENTALE">Verifica Documentale</option>
+                </select>
+              </div>
+              <div>
+                <Label className="text-[#e8fbff]/70">Note</Label>
+                <Textarea 
+                  name="note" 
+                  placeholder="Note sul controllo..."
+                  className="mt-1 bg-[#0b1220] border-[#f59e0b]/30 text-[#e8fbff]"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowNuovoControlloModal(false)}
+                  className="flex-1 border-[#e8fbff]/20"
+                >
+                  Annulla
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={nuovoControlloLoading}
+                  className="flex-1 bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-black"
+                >
+                  {nuovoControlloLoading ? 'Salvataggio...' : 'Registra Controllo'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -278,7 +482,7 @@ export default function ControlliSanzioniPanel() {
 
       {/* Sub-tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="bg-[#1a2332] border border-[#3b82f6]/20 p-1">
+        <TabsList className="bg-[#1a2332] border border-[#3b82f6]/20 p-1 flex-wrap h-auto">
           <TabsTrigger 
             value="overview" 
             className="data-[state=active]:bg-[#f59e0b]/20 data-[state=active]:text-[#f59e0b]"
@@ -306,6 +510,20 @@ export default function ControlliSanzioniPanel() {
           >
             <AlertCircle className="h-4 w-4 mr-2" />
             Tipi Infrazione
+          </TabsTrigger>
+          <TabsTrigger 
+            value="suap" 
+            className="data-[state=active]:bg-[#8b5cf6]/20 data-[state=active]:text-[#8b5cf6]"
+          >
+            <Briefcase className="h-4 w-4 mr-2" />
+            Pratiche SUAP ({praticheSuap.length})
+          </TabsTrigger>
+          <TabsTrigger 
+            value="notifiche" 
+            className="data-[state=active]:bg-[#ec4899]/20 data-[state=active]:text-[#ec4899]"
+          >
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Notifiche PM
           </TabsTrigger>
         </TabsList>
 
@@ -409,75 +627,82 @@ export default function ControlliSanzioniPanel() {
           </Card>
         </TabsContent>
 
-        {/* Tab: Watchlist (Da Controllare) */}
+        {/* Tab: Da Controllare (Watchlist) */}
         <TabsContent value="watchlist" className="space-y-4 mt-4">
           <Card className="bg-[#1a2332] border-[#f59e0b]/30">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <Bell className="h-5 w-5 text-[#f59e0b]" />
-                  Lista Controlli da Effettuare
+                  Imprese da Controllare
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Input 
                     placeholder="Cerca impresa..." 
-                    className="w-64 bg-[#0b1220] border-[#3b82f6]/30 text-[#e8fbff]"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-64 bg-[#0b1220] border-[#f59e0b]/30 text-[#e8fbff]"
                   />
                 </div>
               </div>
               <CardDescription className="text-[#e8fbff]/60">
-                Imprese con irregolarità, scadenze o segnalazioni da verificare
+                Imprese con irregolarità o scadenze da verificare
               </CardDescription>
             </CardHeader>
             <CardContent>
               {watchlist.length === 0 ? (
                 <div className="text-center py-12">
                   <CheckCircle className="h-16 w-16 text-[#10b981]/30 mx-auto mb-4" />
-                  <p className="text-[#e8fbff]/70 text-lg">Nessun controllo in sospeso</p>
-                  <p className="text-[#e8fbff]/40 text-sm mt-2">Tutte le imprese sono in regola</p>
+                  <p className="text-[#e8fbff]/50 text-lg">Nessuna impresa da controllare</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-2">La watchlist è vuota</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {watchlist
-                    .filter(item => 
-                      !searchTerm || 
-                      item.impresa_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      item.partita_iva?.includes(searchTerm)
-                    )
-                    .map((item) => (
-                    <div key={item.id} className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10 hover:border-[#f59e0b]/30 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className={`p-2 rounded-lg ${
-                            item.priority === 'URGENTE' ? 'bg-red-500/20' :
-                            item.priority === 'ALTA' ? 'bg-orange-500/20' : 'bg-yellow-500/20'
-                          }`}>
-                            <AlertTriangle className={`h-5 w-5 ${
-                              item.priority === 'URGENTE' ? 'text-red-400' :
-                              item.priority === 'ALTA' ? 'text-orange-400' : 'text-yellow-400'
-                            }`} />
-                          </div>
-                          <div>
-                            <p className="text-[#e8fbff] font-semibold">{item.impresa_nome || 'Impresa N/D'}</p>
-                            <p className="text-[#e8fbff]/50 text-sm">P.IVA: {item.partita_iva || 'N/D'}</p>
-                            <p className="text-[#e8fbff]/40 text-xs mt-1">{item.trigger_description}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge className={getPriorityColor(item.priority)}>{item.priority}</Badge>
-                          <Badge className="bg-[#3b82f6]/20 text-[#3b82f6] border-[#3b82f6]/30">
-                            {item.trigger_type.replace(/_/g, ' ')}
-                          </Badge>
-                          <Button size="sm" variant="outline" className="border-[#f59e0b]/30 text-[#f59e0b]">
-                            <Eye className="h-4 w-4 mr-1" />
-                            Dettagli
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[#3b82f6]/20">
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">IMPRESA</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">MOTIVO</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">PRIORITÀ</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">DATA</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">AZIONI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {watchlist
+                        .filter(item => 
+                          !searchTerm || 
+                          item.impresa_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          item.partita_iva?.includes(searchTerm)
+                        )
+                        .map((item) => (
+                        <tr key={item.id} className="border-b border-[#3b82f6]/10 hover:bg-[#0b1220]/50">
+                          <td className="p-3">
+                            <p className="text-[#e8fbff] font-medium text-sm">{item.impresa_nome || 'N/D'}</p>
+                            <p className="text-[#e8fbff]/50 text-xs">{item.partita_iva}</p>
+                          </td>
+                          <td className="p-3">
+                            <p className="text-[#e8fbff]/80 text-sm">{item.trigger_description}</p>
+                            <p className="text-[#e8fbff]/40 text-xs">{item.trigger_type}</p>
+                          </td>
+                          <td className="p-3 text-center">
+                            <Badge className={getPriorityColor(item.priority)}>{item.priority}</Badge>
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className="text-[#e8fbff]/60 text-sm">
+                              {new Date(item.created_at).toLocaleDateString('it-IT')}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center">
+                            <Button size="sm" variant="ghost" className="text-[#f59e0b] hover:bg-[#f59e0b]/10">
+                              <ClipboardCheck className="h-4 w-4 mr-1" />
+                              Controlla
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
@@ -491,27 +716,30 @@ export default function ControlliSanzioniPanel() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <FileText className="h-5 w-5 text-[#ef4444]" />
-                  Registro Verbali
+                  Verbali Emessi
                 </CardTitle>
                 <Button size="sm" className="bg-[#ef4444] hover:bg-[#ef4444]/80 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Nuovo Verbale
                 </Button>
               </div>
+              <CardDescription className="text-[#e8fbff]/60">
+                Elenco dei verbali di sanzione emessi
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {sanctions.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="h-16 w-16 text-[#ef4444]/30 mx-auto mb-4" />
-                  <p className="text-[#e8fbff]/70 text-lg">Nessun verbale emesso</p>
-                  <p className="text-[#e8fbff]/40 text-sm mt-2">I verbali emessi appariranno qui</p>
+                  <p className="text-[#e8fbff]/50 text-lg">Nessun verbale emesso</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-2">I verbali appariranno qui</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-[#3b82f6]/20">
-                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">CODICE</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">VERBALE</th>
                         <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">IMPRESA</th>
                         <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">INFRAZIONE</th>
                         <th className="text-right p-3 text-[#e8fbff]/60 text-xs font-medium">IMPORTO</th>
@@ -599,6 +827,207 @@ export default function ControlliSanzioniPanel() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Pratiche SUAP */}
+        <TabsContent value="suap" className="space-y-4 mt-4">
+          <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-[#8b5cf6]" />
+                  Pratiche SUAP - Nuove Autorizzazioni e Concessioni
+                </CardTitle>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={fetchAllData}
+                  className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Aggiorna
+                </Button>
+              </div>
+              <CardDescription className="text-[#e8fbff]/60">
+                Nuove pratiche, concessioni, autorizzazioni e domande spunta dal sistema SUAP
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {praticheSuap.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileCheck className="h-16 w-16 text-[#8b5cf6]/30 mx-auto mb-4" />
+                  <p className="text-[#e8fbff]/50 text-lg">Nessuna pratica SUAP recente</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-2">Le nuove pratiche appariranno qui</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[#8b5cf6]/20">
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">N° PRATICA</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">TIPO</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">IMPRESA</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">COMUNE</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">STATO</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">DATA</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">AZIONI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {praticheSuap.map((pratica) => (
+                        <tr key={pratica.id} className="border-b border-[#8b5cf6]/10 hover:bg-[#0b1220]/50">
+                          <td className="p-3">
+                            <span className="text-[#8b5cf6] font-mono text-sm">{pratica.numero_pratica}</span>
+                          </td>
+                          <td className="p-3">
+                            <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
+                              {pratica.tipo_pratica}
+                            </Badge>
+                          </td>
+                          <td className="p-3">
+                            <p className="text-[#e8fbff] text-sm">{pratica.impresa_nome || 'N/D'}</p>
+                          </td>
+                          <td className="p-3">
+                            <p className="text-[#e8fbff]/70 text-sm">{pratica.comune_nome || 'N/D'}</p>
+                          </td>
+                          <td className="p-3 text-center">
+                            {getPraticaStatusBadge(pratica.stato)}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className="text-[#e8fbff]/60 text-sm">
+                              {pratica.data_presentazione ? new Date(pratica.data_presentazione).toLocaleDateString('it-IT') : '-'}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center">
+                            <Button size="sm" variant="ghost" className="text-[#8b5cf6] hover:bg-[#8b5cf6]/10">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Notifiche PM */}
+        <TabsContent value="notifiche" className="space-y-4 mt-4">
+          <Card className="bg-[#1a2332] border-[#ec4899]/30">
+            <CardHeader>
+              <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-[#ec4899]" />
+                Invio Notifiche - Polizia Municipale
+              </CardTitle>
+              <CardDescription className="text-[#e8fbff]/60">
+                Invia comunicazioni ufficiali alle imprese del territorio
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleInvioNotifica} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-[#e8fbff]/70">Destinatari</Label>
+                    <select 
+                      name="target_tipo" 
+                      required
+                      className="w-full mt-1 bg-[#0b1220] border border-[#ec4899]/30 rounded-lg p-2 text-[#e8fbff]"
+                    >
+                      <option value="TUTTI">Tutte le Imprese</option>
+                      <option value="IMPRESA">Impresa Singola...</option>
+                      <option value="MERCATO">Imprese del Mercato</option>
+                      <option value="HUB">Negozi dell'HUB</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-[#e8fbff]/70">Impresa Specifica (opzionale)</Label>
+                    <select 
+                      name="target_id"
+                      className="w-full mt-1 bg-[#0b1220] border border-[#ec4899]/30 rounded-lg p-2 text-[#e8fbff]"
+                    >
+                      <option value="">Seleziona impresa...</option>
+                      {impreseList.map(imp => (
+                        <option key={imp.id} value={imp.id}>{imp.denominazione}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-[#e8fbff]/70">Tipo Messaggio</Label>
+                    <select 
+                      name="tipo_messaggio" 
+                      required
+                      className="w-full mt-1 bg-[#0b1220] border border-[#ec4899]/30 rounded-lg p-2 text-[#e8fbff]"
+                    >
+                      <option value="AVVISO">Avviso</option>
+                      <option value="COMUNICAZIONE">Comunicazione Ufficiale</option>
+                      <option value="SCADENZA">Promemoria Scadenza</option>
+                      <option value="CONTROLLO">Preavviso Controllo</option>
+                      <option value="SANZIONE">Notifica Sanzione</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-[#e8fbff]/70">Titolo</Label>
+                    <Input 
+                      name="titolo" 
+                      required
+                      placeholder="Oggetto della comunicazione..."
+                      className="mt-1 bg-[#0b1220] border-[#ec4899]/30 text-[#e8fbff]"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-[#e8fbff]/70">Messaggio</Label>
+                  <Textarea 
+                    name="messaggio" 
+                    required
+                    rows={5}
+                    placeholder="Scrivi il contenuto della comunicazione..."
+                    className="mt-1 bg-[#0b1220] border-[#ec4899]/30 text-[#e8fbff]"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    disabled={invioNotificaLoading}
+                    className="bg-[#ec4899] hover:bg-[#ec4899]/80 text-white"
+                  >
+                    {invioNotificaLoading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Invio in corso...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Invia Notifica
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Info Box */}
+          <Card className="bg-[#0b1220] border-[#ec4899]/20">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Bell className="h-5 w-5 text-[#ec4899] mt-0.5" />
+                <div>
+                  <p className="text-[#e8fbff] font-medium text-sm">Sistema Notifiche Integrato</p>
+                  <p className="text-[#e8fbff]/60 text-xs mt-1">
+                    Le notifiche vengono inviate direttamente all'app delle imprese. 
+                    I destinatari riceveranno una notifica push e potranno visualizzare il messaggio nella loro area riservata.
+                    Questo sistema è connesso a SSO SUAP e Wallet PagoPA per una comunicazione unificata.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
