@@ -118,16 +118,20 @@ interface RispostaPM {
 }
 
 interface MarketSession {
+  id: number;
   market_id: number;
   market_name: string;
   comune: string;
   data_mercato: string;
-  totale_presenze: string;
-  uscite_registrate: string;
-  prima_entrata: string;
-  ultima_uscita: string | null;
+  ora_apertura: string | null;
+  ora_chiusura: string | null;
+  stato: string;
+  totale_presenze: number;
   totale_incassato: string;
-  posteggi_occupati: string;
+  posteggi_occupati: number;
+  note: string | null;
+  chiuso_da: string | null;
+  created_at: string;
 }
 
 interface SessionDetail {
@@ -1936,20 +1940,36 @@ export default function ControlliSanzioniPanel() {
                   variant="outline"
                   className="border-[#10b981]/30 text-[#10b981] hover:bg-[#10b981]/10"
                   onClick={() => {
-                    // Esporta CSV con lista presenze completa
+                    // Esporta CSV con resoconto + lista presenze completa
+                    // Header resoconto
+                    const resocontoHeader = [
+                      '=== RESOCONTO MERCATO ===',
+                      `Mercato: ${selectedSession.market_name}`,
+                      `Comune: ${selectedSession.comune}`,
+                      `Data: ${new Date(selectedSession.data_mercato).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}`,
+                      `Ora Apertura: ${selectedSession.ora_apertura || '-'}`,
+                      `Ora Chiusura: ${selectedSession.ora_chiusura || '-'}`,
+                      `Posteggi Occupati: ${selectedSession.posteggi_occupati}`,
+                      `Presenze Totali: ${selectedSession.totale_presenze}`,
+                      `Totale Incassato: €${parseFloat(selectedSession.totale_incassato || '0').toFixed(2)}`,
+                      '',
+                      '=== LISTA PRESENZE ==='
+                    ].join('\n');
+                    
                     const csvContent = [
+                      resocontoHeader,
                       ['N° Posteggio', 'Impresa', 'P.IVA', 'Importo', 'Giorno', 'Accesso', 'Rifiuti', 'Uscita', 'Presenze', 'Assenze'].join(';'),
                       ...sessionDetails.map(d => [
-                        d.stall_number,
-                        d.impresa_nome,
-                        d.impresa_piva,
+                        d.stall_number || '',
+                        d.impresa_nome || '',
+                        d.impresa_piva || '',
                         `€${parseFloat(d.importo_addebitato || '0').toFixed(2)}`,
-                        new Date(d.giorno).toLocaleDateString('it-IT'),
-                        d.ora_accesso ? new Date(d.ora_accesso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '-',
+                        d.giorno ? new Date(d.giorno).toLocaleDateString('it-IT') : '-',
+                        d.ora_accesso || '-',
                         d.ora_rifiuti || '-',
-                        d.ora_uscita ? new Date(d.ora_uscita).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '-',
+                        d.ora_uscita || '-',
                         d.presenze_totali || 0,
-                        d.assenze_totali || 0
+                        d.assenze_non_giustificate || 0
                       ].join(';'))
                     ].join('\n');
                     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
