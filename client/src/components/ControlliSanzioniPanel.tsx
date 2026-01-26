@@ -104,6 +104,17 @@ interface Impresa {
   partita_iva: string;
 }
 
+interface RispostaPM {
+  id: number;
+  mittente_id: number;
+  mittente_nome: string;
+  titolo: string;
+  messaggio: string;
+  tipo_messaggio: string;
+  created_at: string;
+  letta: boolean;
+}
+
 export default function ControlliSanzioniPanel() {
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [stats, setStats] = useState<InspectionStats | null>(null);
@@ -122,6 +133,8 @@ export default function ControlliSanzioniPanel() {
   const [showNuovoVerbaleModal, setShowNuovoVerbaleModal] = useState(false);
   const [nuovoVerbaleLoading, setNuovoVerbaleLoading] = useState(false);
   const [invioNotificaLoading, setInvioNotificaLoading] = useState(false);
+  const [rispostePM, setRispostePM] = useState<RispostaPM[]>([]);
+  const [risposteLoading, setRisposteLoading] = useState(false);
 
   // Fetch data on mount
   useEffect(() => {
@@ -161,6 +174,17 @@ export default function ControlliSanzioniPanel() {
       const impreseRes = await fetch(`${MIHUB_API}/imprese?limit=100`);
       const impreseData = await impreseRes.json();
       if (impreseData.success) setImpreseList(impreseData.data || []);
+
+      // Fetch risposte PM (risposte delle imprese destinate alla PM)
+      const risposteRes = await fetch(`${MIHUB_API}/notifiche/risposte`);
+      const risposteData = await risposteRes.json();
+      if (risposteData.success) {
+        // Filtra solo le risposte destinate alla Polizia Municipale
+        const rispostePMFiltered = (risposteData.data || []).filter(
+          (r: any) => r.target_tipo === 'POLIZIA_MUNICIPALE'
+        );
+        setRispostePM(rispostePMFiltered);
+      }
 
     } catch (err) {
       setError('Errore nel caricamento dei dati');
@@ -1144,6 +1168,93 @@ export default function ControlliSanzioniPanel() {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+
+          {/* Risposte Ricevute dalle Imprese */}
+          <Card className="bg-[#0b1220] border-[#ec4899]/20">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-[#ec4899]" />
+                  <CardTitle className="text-[#e8fbff] text-lg">Risposte Ricevute</CardTitle>
+                  {rispostePM.filter(r => !r.letta).length > 0 && (
+                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+                      {rispostePM.filter(r => !r.letta).length} nuove
+                    </Badge>
+                  )}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={fetchAllData}
+                  className="border-[#ec4899]/30 text-[#ec4899] hover:bg-[#ec4899]/10"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Aggiorna
+                </Button>
+              </div>
+              <CardDescription className="text-[#e8fbff]/60">
+                Messaggi e risposte ricevute dalle imprese
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {rispostePM.length === 0 ? (
+                <div className="text-center py-8">
+                  <MessageSquare className="h-12 w-12 text-[#ec4899]/30 mx-auto mb-3" />
+                  <p className="text-[#e8fbff]/60">Nessuna risposta ricevuta</p>
+                  <p className="text-[#e8fbff]/40 text-sm">Le risposte delle imprese appariranno qui</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {rispostePM.map((risposta) => (
+                    <div 
+                      key={risposta.id} 
+                      className={`p-4 rounded-lg border ${
+                        risposta.letta 
+                          ? 'bg-[#0b1220]/50 border-[#ec4899]/10' 
+                          : 'bg-[#ec4899]/10 border-[#ec4899]/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-[#e8fbff]">{risposta.mittente_nome}</span>
+                            {!risposta.letta && (
+                              <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
+                                Nuova
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-[#e8fbff]/80 font-medium text-sm">{risposta.titolo}</p>
+                          <p className="text-[#e8fbff]/60 text-sm mt-1">{risposta.messaggio}</p>
+                          <p className="text-[#e8fbff]/40 text-xs mt-2">
+                            {new Date(risposta.created_at).toLocaleString('it-IT')}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-[#ec4899] hover:bg-[#ec4899]/10"
+                          onClick={async () => {
+                            // Segna come letta
+                            try {
+                              await fetch(`${MIHUB_API}/notifiche/risposte/${risposta.id}/letta`, {
+                                method: 'PUT'
+                              });
+                              fetchAllData();
+                            } catch (err) {
+                              console.error('Errore:', err);
+                            }
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
