@@ -65,15 +65,24 @@ interface Impresa {
   denominazione: string;
   partita_iva: string;
   codice_fiscale: string;
-  indirizzo: string;
-  citta: string;
-  cap: string;
-  provincia: string;
+  indirizzo_via: string;
+  indirizzo_civico: string;
+  indirizzo_cap: string;
+  indirizzo_provincia: string;
+  comune: string;
   telefono: string;
   email: string;
   pec: string;
-  legale_rappresentante: string;
-  legale_rappresentante_cf: string;
+  rappresentante_legale_nome: string;
+  rappresentante_legale_cognome: string;
+  rappresentante_legale_cf: string;
+  rappresentante_legale_data_nascita: string;
+  rappresentante_legale_luogo_nascita: string;
+  rappresentante_legale_residenza_via: string;
+  rappresentante_legale_residenza_civico: string;
+  rappresentante_legale_residenza_cap: string;
+  rappresentante_legale_residenza_comune: string;
+  rappresentante_legale_residenza_provincia: string;
 }
 
 export default function NuovoVerbalePage() {
@@ -199,10 +208,24 @@ export default function NuovoVerbalePage() {
   const handleSelectImpresa = async (impresa: Impresa) => {
     setSelectedImpresa(impresa);
     
-    // Auto-fill trasgressore data
-    setTransgressorName(impresa.legale_rappresentante || impresa.denominazione);
-    setTransgressorCF(impresa.legale_rappresentante_cf || impresa.codice_fiscale || '');
-    setTransgressorAddress(`${impresa.indirizzo || ''}, ${impresa.cap || ''} ${impresa.citta || ''} (${impresa.provincia || ''})`);
+    // Auto-fill trasgressore data con i campi corretti del database
+    const nomeCompleto = impresa.rappresentante_legale_nome && impresa.rappresentante_legale_cognome
+      ? `${impresa.rappresentante_legale_cognome} ${impresa.rappresentante_legale_nome}`
+      : impresa.denominazione;
+    setTransgressorName(nomeCompleto);
+    setTransgressorCF(impresa.rappresentante_legale_cf || impresa.codice_fiscale || '');
+    
+    // Data e luogo di nascita
+    if (impresa.rappresentante_legale_data_nascita) {
+      setTransgressorBirthDate(impresa.rappresentante_legale_data_nascita.split('T')[0]);
+    }
+    setTransgressorBirthPlace(impresa.rappresentante_legale_luogo_nascita || '');
+    
+    // Residenza/Domicilio
+    const residenza = impresa.rappresentante_legale_residenza_via
+      ? `${impresa.rappresentante_legale_residenza_via} ${impresa.rappresentante_legale_residenza_civico || ''}, ${impresa.rappresentante_legale_residenza_cap || ''} ${impresa.rappresentante_legale_residenza_comune || ''} (${impresa.rappresentante_legale_residenza_provincia || ''})`
+      : `${impresa.indirizzo_via || ''} ${impresa.indirizzo_civico || ''}, ${impresa.indirizzo_cap || ''} ${impresa.comune || ''} (${impresa.indirizzo_provincia || ''})`;
+    setTransgressorAddress(residenza);
     
     setShowImpresaModal(false);
     setSearchImpresa('');
