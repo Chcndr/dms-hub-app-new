@@ -1940,26 +1940,55 @@ export default function ControlliSanzioniPanel() {
                   variant="outline"
                   className="border-[#10b981]/30 text-[#10b981] hover:bg-[#10b981]/10"
                   onClick={() => {
-                    // Esporta CSV con resoconto + lista presenze completa
-                    // Header resoconto
-                    const resocontoHeader = [
-                      '=== RESOCONTO MERCATO ===',
-                      `Mercato: ${selectedSession.market_name}`,
-                      `Comune: ${selectedSession.comune}`,
-                      `Data: ${new Date(selectedSession.data_mercato).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}`,
-                      `Ora Apertura: ${selectedSession.ora_apertura || '-'}`,
-                      `Ora Chiusura: ${selectedSession.ora_chiusura || '-'}`,
-                      `Posteggi Occupati: ${selectedSession.posteggi_occupati}`,
-                      `Presenze Totali: ${selectedSession.totale_presenze}`,
-                      `Totale Incassato: €${parseFloat(selectedSession.totale_incassato || '0').toFixed(2)}`,
-                      '',
-                      '=== LISTA PRESENZE ==='
-                    ].join('\n');
+                    // Separa concessionari e spuntisti
+                    const concessionari = sessionDetails.filter(d => d.tipo_presenza === 'CONCESSION' || !d.tipo_presenza);
+                    const spuntisti = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTISTA');
                     
+                    // Calcola statistiche dai dettagli
+                    const usciteRegistrate = sessionDetails.filter(d => d.ora_uscita).length;
+                    const totaleIncassato = sessionDetails.reduce((sum, d) => sum + parseFloat(d.importo_addebitato || '0'), 0);
+                    
+                    // Trova prima entrata e ultima uscita dai dettagli
+                    const orariAccesso = sessionDetails.filter(d => d.ora_accesso).map(d => d.ora_accesso).sort();
+                    const orariUscita = sessionDetails.filter(d => d.ora_uscita).map(d => d.ora_uscita).sort();
+                    const primaEntrata = orariAccesso[0] || '-';
+                    const ultimaUscita = orariUscita[orariUscita.length - 1] || '-';
+                    
+                    // Header resoconto in formato tabella
                     const csvContent = [
-                      resocontoHeader,
-                      ['N° Posteggio', 'Impresa', 'P.IVA', 'Importo', 'Giorno', 'Accesso', 'Rifiuti', 'Uscita', 'Presenze', 'Assenze'].join(';'),
-                      ...sessionDetails.map(d => [
+                      // Resoconto in formato tabella
+                      'RESOCONTO MERCATO',
+                      'Campo;Valore',
+                      `Mercato;${selectedSession.market_name}`,
+                      `Comune;${selectedSession.comune}`,
+                      `Data;${new Date(selectedSession.data_mercato).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}`,
+                      `Prima Entrata;${primaEntrata}`,
+                      `Ultima Uscita;${ultimaUscita}`,
+                      `Posteggi Occupati;${sessionDetails.length}`,
+                      `Presenze Totali;${sessionDetails.length}`,
+                      `Uscite Registrate;${usciteRegistrate}`,
+                      `Totale Incassato;€${totaleIncassato.toFixed(2)}`,
+                      '',
+                      // Sezione Concessionari
+                      'LISTA CONCESSIONARI',
+                      'N° Posteggio;Impresa;P.IVA;Importo;Giorno;Accesso;Rifiuti;Uscita;Presenze;Assenze',
+                      ...concessionari.map(d => [
+                        d.stall_number || '',
+                        d.impresa_nome || '',
+                        d.impresa_piva || '',
+                        `€${parseFloat(d.importo_addebitato || '0').toFixed(2)}`,
+                        d.giorno ? new Date(d.giorno).toLocaleDateString('it-IT') : '-',
+                        d.ora_accesso || '-',
+                        d.ora_rifiuti || '-',
+                        d.ora_uscita || '-',
+                        d.presenze_totali || 0,
+                        d.assenze_non_giustificate || 0
+                      ].join(';')),
+                      '',
+                      // Sezione Spuntisti
+                      'LISTA SPUNTISTI',
+                      'N° Posteggio;Impresa;P.IVA;Importo;Giorno;Accesso;Rifiuti;Uscita;Presenze;Assenze',
+                      ...spuntisti.map(d => [
                         d.stall_number || '',
                         d.impresa_nome || '',
                         d.impresa_piva || '',
@@ -2003,64 +2032,101 @@ export default function ControlliSanzioniPanel() {
                 </div>
               ) : (
                 <>
-                  {/* Stats rapide */}
-                  <div className="grid grid-cols-4 gap-4 mb-4">
-                    <div className="bg-[#0d1520] p-3 rounded-lg text-center">
-                      <p className="text-[#3b82f6] font-bold text-xl">{selectedSession.posteggi_occupati}</p>
-                      <p className="text-gray-400 text-xs">Posteggi Occupati</p>
-                    </div>
-                    <div className="bg-[#0d1520] p-3 rounded-lg text-center">
-                      <p className="text-[#10b981] font-bold text-xl">{selectedSession.totale_presenze}</p>
-                      <p className="text-gray-400 text-xs">Presenze</p>
-                    </div>
-                    <div className="bg-[#0d1520] p-3 rounded-lg text-center">
-                      <p className="text-[#f59e0b] font-bold text-xl">{selectedSession.uscite_registrate}</p>
-                      <p className="text-gray-400 text-xs">Uscite Registrate</p>
-                    </div>
-                    <div className="bg-[#0d1520] p-3 rounded-lg text-center">
-                      <p className="text-[#8b5cf6] font-bold text-xl">€{parseFloat(selectedSession.totale_incassato || '0').toFixed(2)}</p>
-                      <p className="text-gray-400 text-xs">Totale Incassato</p>
-                    </div>
-                  </div>
+                  {/* Stats rapide - calcolate dai dettagli */}
+                  {(() => {
+                    const usciteCalcolate = sessionDetails.filter(d => d.ora_uscita).length;
+                    const totaleCalcolato = sessionDetails.reduce((sum, d) => sum + parseFloat(d.importo_addebitato || '0'), 0);
+                    const concessionariCount = sessionDetails.filter(d => d.tipo_presenza === 'CONCESSION' || !d.tipo_presenza).length;
+                    const spuntistiCount = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTISTA').length;
+                    return (
+                      <div className="grid grid-cols-5 gap-3 mb-4">
+                        <div className="bg-[#0d1520] p-3 rounded-lg text-center">
+                          <p className="text-[#3b82f6] font-bold text-xl">{sessionDetails.length}</p>
+                          <p className="text-gray-400 text-xs">Posteggi Occupati</p>
+                        </div>
+                        <div className="bg-[#0d1520] p-3 rounded-lg text-center">
+                          <p className="text-[#10b981] font-bold text-xl">{concessionariCount}</p>
+                          <p className="text-gray-400 text-xs">Concessionari</p>
+                        </div>
+                        <div className="bg-[#0d1520] p-3 rounded-lg text-center">
+                          <p className="text-[#f97316] font-bold text-xl">{spuntistiCount}</p>
+                          <p className="text-gray-400 text-xs">Spuntisti</p>
+                        </div>
+                        <div className="bg-[#0d1520] p-3 rounded-lg text-center">
+                          <p className="text-[#f59e0b] font-bold text-xl">{usciteCalcolate}</p>
+                          <p className="text-gray-400 text-xs">Uscite Registrate</p>
+                        </div>
+                        <div className="bg-[#0d1520] p-3 rounded-lg text-center">
+                          <p className="text-[#8b5cf6] font-bold text-xl">€{totaleCalcolato.toFixed(2)}</p>
+                          <p className="text-gray-400 text-xs">Totale Incassato</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
-                  {/* Tabella presenze */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-[#8b5cf6]/20">
-                          <th className="text-left py-2 px-3 text-gray-400 text-sm">N°</th>
-                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Impresa</th>
-                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Importo</th>
-                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Giorno</th>
-                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Accesso</th>
-                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Rifiuti</th>
-                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Uscita</th>
-                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Pres.</th>
-                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Ass.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sessionDetails.map((detail, idx) => (
-                          <tr key={`${detail.id}-${idx}`} className="border-b border-[#8b5cf6]/10 hover:bg-[#0d1520]/50">
-                            <td className="py-2 px-3 text-[#3b82f6] font-medium">{detail.stall_number}</td>
-                            <td className="py-2 px-3">
-                              <p className="text-[#e8fbff] text-sm">{detail.impresa_nome}</p>
-                              <p className="text-gray-500 text-xs">{detail.impresa_piva}</p>
-                            </td>
-                            <td className="py-2 px-3 text-[#10b981]">€{parseFloat(detail.importo_addebitato || '0').toFixed(2)}</td>
-                            <td className="py-2 px-3 text-gray-400 text-sm">
-                              {new Date(detail.giorno).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
-                            </td>
-                            <td className="py-2 px-3 text-[#3b82f6]">{detail.ora_accesso || '-'}</td>
-                            <td className="py-2 px-3 text-gray-400">{detail.ora_rifiuti || '-'}</td>
-                            <td className="py-2 px-3 text-[#f59e0b]">{detail.ora_uscita || '-'}</td>
-                            <td className="py-2 px-3 text-[#10b981]">{detail.presenze_totali || 0}</td>
-                            <td className="py-2 px-3 text-red-400">{detail.assenze_non_giustificate || 0}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  {/* Tabella Concessionari */}
+                  {(() => {
+                    const concessionari = sessionDetails.filter(d => d.tipo_presenza === 'CONCESSION' || !d.tipo_presenza);
+                    const spuntisti = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTISTA');
+                    
+                    const renderTable = (data: SessionDetail[], title: string, color: string) => (
+                      <div className="mb-6">
+                        <h4 className={`text-${color} font-semibold mb-2 flex items-center gap-2`}>
+                          <Store className="h-4 w-4" />
+                          {title} ({data.length})
+                        </h4>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b border-[#8b5cf6]/20">
+                                <th className="text-left py-2 px-3 text-gray-400 text-sm">N°</th>
+                                <th className="text-left py-2 px-3 text-gray-400 text-sm">Impresa</th>
+                                <th className="text-left py-2 px-3 text-gray-400 text-sm">Importo</th>
+                                <th className="text-left py-2 px-3 text-gray-400 text-sm">Giorno</th>
+                                <th className="text-left py-2 px-3 text-gray-400 text-sm">Accesso</th>
+                                <th className="text-left py-2 px-3 text-gray-400 text-sm">Rifiuti</th>
+                                <th className="text-left py-2 px-3 text-gray-400 text-sm">Uscita</th>
+                                <th className="text-left py-2 px-3 text-gray-400 text-sm">Pres.</th>
+                                <th className="text-left py-2 px-3 text-gray-400 text-sm">Ass.</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {data.map((detail, idx) => (
+                                <tr key={`${detail.id}-${idx}`} className="border-b border-[#8b5cf6]/10 hover:bg-[#0d1520]/50">
+                                  <td className="py-2 px-3 text-[#3b82f6] font-medium">{detail.stall_number}</td>
+                                  <td className="py-2 px-3">
+                                    <p className="text-[#e8fbff] text-sm">{detail.impresa_nome}</p>
+                                    <p className="text-gray-500 text-xs">{detail.impresa_piva}</p>
+                                  </td>
+                                  <td className="py-2 px-3 text-[#10b981]">€{parseFloat(detail.importo_addebitato || '0').toFixed(2)}</td>
+                                  <td className="py-2 px-3 text-gray-400 text-sm">
+                                    {new Date(detail.giorno).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
+                                  </td>
+                                  <td className="py-2 px-3 text-[#3b82f6]">{detail.ora_accesso || '-'}</td>
+                                  <td className="py-2 px-3 text-gray-400">{detail.ora_rifiuti || '-'}</td>
+                                  <td className="py-2 px-3 text-[#f59e0b]">{detail.ora_uscita || '-'}</td>
+                                  <td className="py-2 px-3 text-[#10b981]">{detail.presenze_totali || 0}</td>
+                                  <td className="py-2 px-3 text-red-400">{detail.assenze_non_giustificate || 0}</td>
+                                </tr>
+                              ))}
+                              {data.length === 0 && (
+                                <tr>
+                                  <td colSpan={9} className="py-4 text-center text-gray-500">Nessuna presenza registrata</td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                    
+                    return (
+                      <>
+                        {renderTable(concessionari, 'Concessionari', '[#10b981]')}
+                        {renderTable(spuntisti, 'Spuntisti', '[#f97316]')}
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>
