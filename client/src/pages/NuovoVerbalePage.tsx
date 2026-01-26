@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { 
   Shield, FileText, User, Building2, MapPin, Calendar, 
   AlertTriangle, Euro, Save, ArrowLeft, Search, X, 
@@ -77,7 +77,7 @@ interface Impresa {
 }
 
 export default function NuovoVerbalePage() {
-  const navigate = useNavigate();
+  const [, setLocationPath] = useLocation();
   
   // State
   const [config, setConfig] = useState<ConfigData | null>(null);
@@ -282,7 +282,7 @@ export default function NuovoVerbalePage() {
       
       if (result.success) {
         alert(`✅ Verbale ${result.data.verbale_code} emesso con successo!\n\nNotifica inviata all'impresa.`);
-        navigate('/dashboard-pa?tab=controlli');
+        setLocationPath('/dashboard-pa?tab=controlli');
       } else {
         alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
       }
@@ -325,7 +325,7 @@ export default function NuovoVerbalePage() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => navigate('/dashboard-pa?tab=controlli')}
+                onClick={() => setLocationPath('/dashboard-pa?tab=controlli')}
                 className="text-[#e8fbff]/70 hover:text-[#e8fbff]"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -870,7 +870,7 @@ export default function NuovoVerbalePage() {
             <Button 
               type="button"
               variant="outline"
-              onClick={() => navigate('/dashboard-pa?tab=controlli')}
+              onClick={() => setLocationPath('/dashboard-pa?tab=controlli')}
               className="border-[#e8fbff]/20 text-[#e8fbff]/70"
             >
               Annulla
