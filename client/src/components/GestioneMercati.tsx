@@ -31,6 +31,7 @@ import { MarketMapComponent } from './MarketMapComponent';
 import { PresenzeGraduatoriaPanel } from './PresenzeGraduatoriaPanel';
 import { trpc } from '@/lib/trpc';
 import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData } from './markets/MarketCompaniesTab';
+import { MarketSettingsTab } from './markets/MarketSettingsTab';
 import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL_STATUS_OPTIONS } from '@/lib/stallStatus';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -403,7 +404,7 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
             }
           }}
         >
-          <TabsList className="grid w-full grid-cols-3 bg-[#0b1220]/50">
+          <TabsList className="grid w-full grid-cols-4 bg-[#0b1220]/50">
             <TabsTrigger 
               value="anagrafica"
               className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
@@ -424,6 +425,13 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
             >
               <Users className="mr-2 h-4 w-4" />
               Imprese / Concessioni
+            </TabsTrigger>
+            <TabsTrigger 
+              value="impostazioni"
+              className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Impostazioni
             </TabsTrigger>
           </TabsList>
 
@@ -455,6 +463,13 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
               marketName={market.name}
               municipality={market.municipality}
               stalls={stalls.map(s => ({ id: s.id.toString(), code: s.number }))} 
+            />
+          </TabsContent>
+
+          <TabsContent value="impostazioni" className="space-y-4">
+            <MarketSettingsTab 
+              marketId={market.id} 
+              marketName={market.name}
             />
           </TabsContent>
         </Tabs>
