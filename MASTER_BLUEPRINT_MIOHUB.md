@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.73.12  
-> **Data:** 25 Gennaio 2026  
+> **Versione:** 3.81.0  
+> **Data:** 26 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -4940,4 +4940,257 @@ WHERE wallet_id IS NULL AND stall_id = $2;
 ```bash
 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -i ~/.ssh/manus_hetzner_key root@157.90.29.66 "cd /root/mihub-backend-rest && git pull && pm2 restart mihub-backend"
 ```
+
+
+
+---
+
+## 🆕 VERBALI PROFESSIONALI L. 689/81 (v3.80.0 - 26 Gennaio 2026)
+
+### Panoramica
+
+Sistema completo per l'emissione di **verbali professionali** conformi alla Legge 689/81 per le sanzioni amministrative rilevate dalla Polizia Municipale.
+
+### Componenti
+
+| Componente | Descrizione |
+|------------|-------------|
+| **NuovoVerbalePage** | Form professionale a 9 sezioni per emissione verbale |
+| **Backend API** | 6 endpoint REST per gestione verbali |
+| **PDF Generator** | Generazione PDF conforme L. 689/81 |
+| **Notifiche** | Sistema invio notifiche a imprese |
+
+### Form Verbale - 9 Sezioni
+
+| Sezione | Contenuto |
+|---------|-----------|
+| 1. **Intestazione** | Comune, Provincia, Corpo PM (auto-compilato) |
+| 2. **Agente Accertatore** | Nome, Matricola, Qualifica |
+| 3. **Luogo e Data** | Indirizzo, Data/Ora accertamento |
+| 4. **Dati Trasgressore** | Impresa con ricerca popup |
+| 5. **Proprietario/Obbligato** | Se diverso dal trasgressore |
+| 6. **Violazione Contestata** | Infrazione con testo di legge |
+| 7. **Dichiarazioni** | Contestazione immediata/differita |
+| 8. **Sanzione Amministrativa** | Importo, ridotto, scadenze |
+| 9. **Note Aggiuntive** | Osservazioni libere |
+
+### API Endpoints Verbali
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/api/verbali/config` | GET | Configurazione Comune/Corpo PM |
+| `/api/verbali/infrazioni` | GET | Catalogo infrazioni con testo legge |
+| `/api/verbali` | POST | Emetti nuovo verbale |
+| `/api/verbali/:id` | GET | Dettaglio verbale |
+| `/api/verbali/:id/pdf` | GET | Genera PDF conforme |
+| `/api/verbali/:id/invia` | POST | Notifica impresa |
+
+### Database - Nuove Colonne `sanctions`
+
+| Colonna | Tipo | Descrizione |
+|---------|------|-------------|
+| `verbale_number` | VARCHAR | Numero progressivo verbale |
+| `agente_nome` | VARCHAR | Nome agente accertatore |
+| `agente_matricola` | VARCHAR | Matricola agente |
+| `agente_qualifica` | VARCHAR | Qualifica agente |
+| `luogo_accertamento` | TEXT | Indirizzo accertamento |
+| `data_accertamento` | TIMESTAMP | Data/ora accertamento |
+| `contestazione_immediata` | BOOLEAN | Se contestato immediatamente |
+| `motivo_differita` | TEXT | Motivo contestazione differita |
+| `dichiarazioni_trasgressore` | TEXT | Dichiarazioni rese |
+| `importo_ridotto` | DECIMAL | Importo pagamento ridotto |
+| `scadenza_ridotto` | DATE | Scadenza pagamento ridotto |
+| `scadenza_ordinario` | DATE | Scadenza pagamento ordinario |
+| `pdf_path` | VARCHAR | Path file PDF generato |
+| `notifica_inviata_at` | TIMESTAMP | Data invio notifica |
+
+### URL Frontend
+
+- **Nuovo Verbale:** `https://dms-hub-app-new.vercel.app/pm/nuovo-verbale`
+
+---
+
+## 🆕 SISTEMA IMPOSTAZIONI ORARI MERCATO (v3.81.0 - 26 Gennaio 2026)
+
+### Panoramica
+
+Sistema completo per la **gestione degli orari mercato** con rilevamento automatico delle trasgressioni e gestione delle giustifiche.
+
+### Funzionalità Principali
+
+| Funzionalità | Descrizione |
+|--------------|-------------|
+| **Impostazioni Orari** | Configurazione orari presenza, spazzatura, uscita per ogni mercato |
+| **Monitoraggio Automatico** | CRON job per rilevamento trasgressioni |
+| **Gestione Giustifiche** | Workflow completo invio/approvazione giustifiche |
+| **Verbali Automatici** | Toggle per emissione automatica verbali |
+
+### Componenti Frontend
+
+| Componente | Posizione | Descrizione |
+|------------|-----------|-------------|
+| **MarketSettingsTab** | Gestione Mercati → Tab "Impostazioni" | Configurazione orari e regole |
+| **Tab Giustifiche** | Controlli/Sanzioni → Tab "Giustifiche" | Gestione giustifiche trasgressioni |
+
+### Sotto-tab "Impostazioni" in Gestione Mercati
+
+| Sezione | Contenuto |
+|---------|-----------|
+| **Orari Presenza** | Inizio/Fine + Orario Spuntisti |
+| **Orari Spazzatura** | Inizio/Fine deposito rifiuti |
+| **Orari Uscita** | Inizio/Fine uscita mercato |
+| **Toggle Verbali** | Attiva/disattiva verbali automatici per tipo |
+| **Giorni Giustifica** | Configurazione deadline giustifiche |
+
+### Tab "Giustifiche" in Controlli/Sanzioni
+
+| Elemento | Descrizione |
+|----------|-------------|
+| **Stats Rapide** | In Attesa, Da Valutare, Scadute, Totale |
+| **Lista Trasgressioni** | Badge tipo e stato, countdown giorni |
+| **Azioni** | Vedi Certificato, Approva, Rifiuta, Prepara Verbale |
+
+### Tipi di Trasgressione
+
+| Tipo | Descrizione | Verbale Automatico |
+|------|-------------|-------------------|
+| `PRESENZA_TARDIVA` | Presenza non marcata entro l'orario | Configurabile |
+| `SPAZZATURA_TARDIVA` | Deposito rifiuti fuori orario | Configurabile |
+| `USCITA_ANTICIPATA` | Uscita prima dell'orario consentito | Configurabile |
+
+### Workflow Giustifiche
+
+```
+1. Trasgressione Rilevata (CRON)
+   └─► Status: PENDING
+       └─► Notifica a Impresa
+           └─► Countdown giorni per giustifica
+
+2. Impresa Invia Certificato
+   └─► Status: JUSTIFICATION_SUBMITTED
+       └─► Notifica a PM
+           └─► In attesa di valutazione
+
+3a. PM Approva
+    └─► Status: JUSTIFIED
+        └─► Trasgressione chiusa
+
+3b. PM Rifiuta
+    └─► Status: SANCTION_PREPARED
+        └─► Prepara verbale
+
+4. Scadenza Giustifica (CRON)
+   └─► Status: SANCTION_PREPARED
+       └─► Verbale automatico (se abilitato)
+```
+
+### Database - Nuove Tabelle
+
+#### Tabella `market_settings`
+
+| Colonna | Tipo | Descrizione |
+|---------|------|-------------|
+| `id` | SERIAL | Primary key |
+| `market_id` | INTEGER | FK a markets |
+| `presence_start_time` | TIME | Inizio orario presenza |
+| `presence_end_time` | TIME | Fine orario presenza |
+| `spunta_presence_start_time` | TIME | Inizio presenza spuntisti |
+| `waste_disposal_start_time` | TIME | Inizio deposito spazzatura |
+| `waste_disposal_end_time` | TIME | Fine deposito spazzatura |
+| `exit_market_start_time` | TIME | Inizio orario uscita |
+| `exit_market_end_time` | TIME | Fine orario uscita |
+| `is_active` | BOOLEAN | Monitoraggio attivo |
+| `justification_days` | INTEGER | Giorni per giustifica |
+| `auto_sanction_rules` | JSONB | Regole verbali automatici |
+
+#### Tabella `market_transgressions`
+
+| Colonna | Tipo | Descrizione |
+|---------|------|-------------|
+| `id` | SERIAL | Primary key |
+| `market_id` | INTEGER | FK a markets |
+| `market_date` | DATE | Data mercato |
+| `business_id` | INTEGER | FK a imprese |
+| `transgression_type` | VARCHAR | Tipo trasgressione |
+| `status` | VARCHAR | Stato workflow |
+| `justification_deadline` | TIMESTAMP | Scadenza giustifica |
+| `justification_file_path` | VARCHAR | Path certificato |
+| `justification_status` | VARCHAR | Stato giustifica |
+| `justification_notes` | TEXT | Note giustifica |
+| `sanction_id` | INTEGER | FK a sanctions |
+
+### API Endpoints Market Settings
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/api/market-settings/:marketId` | GET | Ottieni impostazioni orari |
+| `/api/market-settings/:marketId` | POST | Salva impostazioni orari |
+| `/api/market-settings/transgressions/list` | GET | Lista trasgressioni |
+| `/api/market-settings/transgressions/pending-justifications` | GET | Giustifiche in attesa |
+| `/api/market-settings/transgressions/:id/justify` | POST | Invia giustifica |
+| `/api/market-settings/transgressions/:id/review` | PUT | Approva/Rifiuta |
+| `/api/market-settings/transgressions/:id/sanction` | POST | Collega verbale |
+| `/api/market-settings/transgressions/stats` | GET | Statistiche |
+| `/api/market-settings/cron/run` | POST | Esegui CRON manuale |
+
+### CRON Job
+
+**File:** `cron/market-transgressions.js`
+
+| Task | Frequenza | Descrizione |
+|------|-----------|-------------|
+| `detectTransgressions` | Ogni 5 min | Rileva trasgressioni durante orari mercato |
+| `checkExpiredJustifications` | Ogni ora | Verifica scadenze giustifiche |
+
+### URL Frontend
+
+- **Impostazioni Mercato:** Dashboard PA → Gestione Mercati → Tab "Impostazioni"
+- **Giustifiche:** Dashboard PA → Controlli/Sanzioni → Tab "Giustifiche"
+- **Integrazioni:** Dashboard PA → Tab "Integrazioni" (15 nuovi endpoint registrati)
+
+---
+
+### 📝 COMMIT SESSIONE 26 GENNAIO 2026
+
+| Commit | Versione | Descrizione | Repository |
+|--------|----------|-------------|------------|
+| `ae217c4` | v3.80.0 | Backend verbali professionali L. 689/81 | mihub-backend-rest |
+| `d271b28` | v3.80.0 | Frontend NuovoVerbalePage + endpoint Guardian | dms-hub-app-new |
+| `681036e` | v3.81.0 | Sotto-tab Impostazioni Mercato | dms-hub-app-new |
+| `3e623d5` | v3.81.0 | Tab Giustifiche in Controlli/Sanzioni | dms-hub-app-new |
+| `ca3a9ea` | v3.81.0 | CRON Job rilevamento trasgressioni | mihub-backend-rest |
+| `5b7f164` | v3.81.0 | 9 endpoint Market Settings in Guardian | dms-hub-app-new |
+
+---
+
+### 🔄 STATO DEPLOY AGGIORNATO
+
+| Componente | Versione | Stato |
+|------------|----------|-------|
+| **Frontend (Vercel)** | v3.81.0 | ✅ Deployato |
+| **Backend (Hetzner)** | v3.81.0 | ✅ Deployato |
+| **Database (Neon)** | v3.81.0 | ✅ Migrato |
+
+---
+
+### ⚠️ VINCOLI NEGATIVI AGGIORNATI
+
+1. **NON contare posteggi di tutti i mercati** per CHECK_LIMITE_POSTEGGI - filtrare sempre per `market_id`
+2. **NON eliminare wallet** senza prima eliminare `vendor_presences` e `wallet_transactions` collegate
+3. **NON cancellare scadenze canone** nel subingresso - devono essere trasferite al subentrante
+4. **NON usare graduatoria** per il saldo wallet nella lista posteggi - usare `stall.wallet_balance`
+5. **NON cercare imprese** con minLength > 1 - gli utenti vogliono risultati dalla prima lettera
+6. **NON usare `react-router-dom`** nel frontend - il progetto usa `wouter` per il routing
+7. **NON modificare le tabelle esistenti** senza verificare le dipendenze - usare sempre migrazioni incrementali
+
+---
+
+### 📊 STATISTICHE AGGIORNATE
+
+- **Endpoint totali:** 463 (151 REST + 312 tRPC)
+- **Endpoint Verbali:** 6
+- **Endpoint Market Settings:** 9
+- **Mercati nel DB:** 3 (Grosseto, Novi Sad, Modena)
+- **Tabelle nuove:** 2 (`market_settings`, `market_transgressions`)
+- **Colonne nuove `sanctions`:** 14
 
