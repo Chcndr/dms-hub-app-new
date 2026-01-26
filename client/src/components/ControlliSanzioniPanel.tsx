@@ -187,6 +187,8 @@ export default function ControlliSanzioniPanel() {
   const [invioNotificaLoading, setInvioNotificaLoading] = useState(false);
   const [rispostePM, setRispostePM] = useState<RispostaPM[]>([]);
   const [risposteLoading, setRisposteLoading] = useState(false);
+  const [selectedRisposta, setSelectedRisposta] = useState<RispostaPM | null>(null);
+  const [showRispostaModal, setShowRispostaModal] = useState(false);
   const [transgressions, setTransgressions] = useState<Transgression[]>([]);
   const [transgressionsLoading, setTransgressionsLoading] = useState(false);
   
@@ -927,11 +929,11 @@ export default function ControlliSanzioniPanel() {
                               const data = await res.json();
                               if (data.success && data.data?.length > 0) {
                                 const stall = data.data[0];
-                                if (stall.latitudine && stall.longitudine) {
+                                if (stall.latitude && stall.longitude) {
                                   setWatchlistPosteggio({
-                                    lat: parseFloat(stall.latitudine),
-                                    lng: parseFloat(stall.longitudine),
-                                    numero: stall.numero || 'N/D'
+                                    lat: parseFloat(stall.latitude),
+                                    lng: parseFloat(stall.longitude),
+                                    numero: stall.number || 'N/D'
                                   });
                                 } else {
                                   setWatchlistPosteggio(null);
@@ -1347,11 +1349,28 @@ export default function ControlliSanzioniPanel() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={fetchAllData}
+                  onClick={async () => {
+                    setRisposteLoading(true);
+                    try {
+                      const risposteRes = await fetch(`${MIHUB_API}/notifiche/risposte`);
+                      const risposteData = await risposteRes.json();
+                      if (risposteData.success) {
+                        const rispostePMFiltered = (risposteData.data || []).filter(
+                          (r: any) => r.target_tipo === 'POLIZIA_MUNICIPALE'
+                        );
+                        setRispostePM(rispostePMFiltered);
+                      }
+                    } catch (err) {
+                      console.error('Errore:', err);
+                    } finally {
+                      setRisposteLoading(false);
+                    }
+                  }}
+                  disabled={risposteLoading}
                   className="border-[#ec4899]/30 text-[#ec4899] hover:bg-[#ec4899]/10"
                 >
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                  Aggiorna
+                  <RefreshCw className={`h-4 w-4 mr-1 ${risposteLoading ? 'animate-spin' : ''}`} />
+                  {risposteLoading ? 'Caricamento...' : 'Aggiorna'}
                 </Button>
               </div>
               <CardDescription className="text-[#e8fbff]/60">
@@ -1397,14 +1416,21 @@ export default function ControlliSanzioniPanel() {
                           size="sm"
                           className="text-[#ec4899] hover:bg-[#ec4899]/10"
                           onClick={async () => {
-                            // Segna come letta
-                            try {
-                              await fetch(`${MIHUB_API}/notifiche/risposte/${risposta.id}/letta`, {
-                                method: 'PUT'
-                              });
-                              fetchAllData();
-                            } catch (err) {
-                              console.error('Errore:', err);
+                            // Apri modal e segna come letta
+                            setSelectedRisposta(risposta);
+                            setShowRispostaModal(true);
+                            if (!risposta.letta) {
+                              try {
+                                await fetch(`${MIHUB_API}/notifiche/risposte/${risposta.id}/letta`, {
+                                  method: 'PUT'
+                                });
+                                // Aggiorna lo stato locale
+                                setRispostePM(prev => prev.map(r => 
+                                  r.id === risposta.id ? { ...r, letta: true } : r
+                                ));
+                              } catch (err) {
+                                console.error('Errore:', err);
+                              }
                             }
                           }}
                         >
@@ -1904,17 +1930,50 @@ export default function ControlliSanzioniPanel() {
                   {new Date(selectedSession.data_mercato).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
                 </p>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => {
-                  setShowSessionModal(false);
-                  setSelectedSession(null);
-                  setSessionDetails([]);
-                }}
-              >
-                <X className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-[#10b981]/30 text-[#10b981] hover:bg-[#10b981]/10"
+                  onClick={() => {
+                    // Esporta CSV con lista presenze completa
+                    const csvContent = [
+                      ['N° Posteggio', 'Impresa', 'P.IVA', 'Importo', 'Giorno', 'Accesso', 'Rifiuti', 'Uscita', 'Presenze', 'Assenze'].join(';'),
+                      ...sessionDetails.map(d => [
+                        d.stall_number,
+                        d.impresa_nome,
+                        d.impresa_piva,
+                        `€${parseFloat(d.importo_addebitato || '0').toFixed(2)}`,
+                        new Date(d.giorno).toLocaleDateString('it-IT'),
+                        d.ora_accesso ? new Date(d.ora_accesso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '-',
+                        d.ora_rifiuti || '-',
+                        d.ora_uscita ? new Date(d.ora_uscita).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '-',
+                        d.presenze_totali || 0,
+                        d.assenze_totali || 0
+                      ].join(';'))
+                    ].join('\n');
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `presenze_${selectedSession.market_name.replace(/\s+/g, '_')}_${new Date(selectedSession.data_mercato).toISOString().split('T')[0]}.csv`;
+                    link.click();
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Esporta Presenze
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => {
+                    setShowSessionModal(false);
+                    setSelectedSession(null);
+                    setSessionDetails([]);
+                  }}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
             <div className="p-4 overflow-y-auto max-h-[calc(90vh-100px)]">
               {detailsLoading ? (
@@ -1984,6 +2043,64 @@ export default function ControlliSanzioniPanel() {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Visualizzazione Risposta */}
+      {showRispostaModal && selectedRisposta && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a2332] border border-[#ec4899]/30 rounded-lg w-full max-w-lg">
+            <div className="p-4 border-b border-[#ec4899]/20 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-[#ec4899]" />
+                <h3 className="text-[#e8fbff] font-bold">Messaggio Ricevuto</h3>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => {
+                  setShowRispostaModal(false);
+                  setSelectedRisposta(null);
+                }}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="bg-[#0d1520] p-3 rounded-lg">
+                <p className="text-gray-400 text-xs mb-1">MITTENTE</p>
+                <p className="text-[#e8fbff] font-medium">{selectedRisposta.mittente_nome}</p>
+                <p className="text-gray-500 text-xs">{selectedRisposta.mittente_tipo}</p>
+              </div>
+              
+              <div>
+                <p className="text-gray-400 text-xs mb-1">OGGETTO</p>
+                <p className="text-[#e8fbff] font-medium">{selectedRisposta.titolo}</p>
+              </div>
+              
+              <div className="bg-[#0d1520] p-4 rounded-lg">
+                <p className="text-gray-400 text-xs mb-2">MESSAGGIO</p>
+                <p className="text-[#e8fbff] whitespace-pre-wrap">{selectedRisposta.messaggio}</p>
+              </div>
+              
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>Ricevuto: {new Date(selectedRisposta.created_at).toLocaleString('it-IT')}</span>
+                <Badge className={selectedRisposta.letta ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}>
+                  {selectedRisposta.letta ? 'Letto' : 'Non letto'}
+                </Badge>
+              </div>
+            </div>
+            <div className="p-4 border-t border-[#ec4899]/20 flex justify-end">
+              <Button 
+                onClick={() => {
+                  setShowRispostaModal(false);
+                  setSelectedRisposta(null);
+                }}
+                className="bg-[#ec4899]/20 text-[#ec4899] hover:bg-[#ec4899]/30"
+              >
+                Chiudi
+              </Button>
             </div>
           </div>
         </div>
