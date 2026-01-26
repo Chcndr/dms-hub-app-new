@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.83.0  
-> **Data:** 26 Gennaio 2026 (Aggiornamento Sera)  
+> **Versione:** 3.51.0  
+> **Data:** 26 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -368,7 +368,7 @@ POST /api/guardian/debug/testEndpoint
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (460 endpoint totali)
+### Endpoint Index (477 endpoint totali)
 
 Gli endpoint sono documentati in:
 ```
@@ -921,16 +921,9 @@ fi
 
 ### Statistiche
 
-- **Endpoint totali:** 448 (136 REST + 312 tRPC)
-- **Endpoint Comuni PA:** 25
-- **Mercati nel DB:** 3 (Grosseto, Novi Sad, Modena)
-- **HUB nel DB:** 79
-- **Comuni registrati:** 5
-- **Posteggi totali:** 564 (160 con geometria)
-- **Concessioni attive:** 6
-- **Utenti TCC:** 3
-- **TCC in circolazione:** 1.254
-- **Log totali:** ~2000
+- **Endpoint totali:** 153
+- **Mercati nel DB:** 2
+- **Log totali:** ~1500
 - **Agenti attivi:** 5 (MIO, GPT Dev, Manus, Abacus, Zapier)
 - **Secrets configurati:** 10/10
 
@@ -1151,454 +1144,6 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 ### 📝 CHANGELOG
-
-### v3.50.0 (23/01/2026) - Sistema RBAC Completo per Dashboard PA
-
-**Sistema Permessi RBAC:**
-- **28 Tab protetti** con `ProtectedTab` (tutti i tab della Dashboard PA)
-- **12 Quick Access protetti** con `ProtectedQuickAccess` (barra rapida applicativi)
-- **Pulsante Dashboard PA** nascosto in HomePage per utenti senza permesso
-- **99 permessi totali** nel database (tab.view.*, quick.view.*, security.*, etc.)
-
-**Tab Dashboard PA (28 totali):**
-| ID | Nome | Permesso |
-|----|------|----------|
-| dashboard | Dashboard | tab.view.dashboard |
-| users | Clienti | tab.view.users |
-| wallet | Wallet/PagoPA | tab.view.wallet |
-| products | Prodotti | tab.view.products |
-| sustainability | Sostenibilità | tab.view.sustainability |
-| tpas | TPAS | tab.view.tpas |
-| carboncredits | Carbon Credits | tab.view.carboncredits |
-| realtime | Real-time | tab.view.realtime |
-| sistema | Sistema | tab.view.sistema |
-| ai | Agente AI | tab.view.ai |
-| security | Sicurezza | tab.view.security |
-| ssosuap | SSO SUAP | tab.view.ssosuap |
-| businesses | Qualificazione | tab.view.businesses |
-| civic | Segnalazioni & IoT | tab.view.civic |
-| comuni | Comuni | tab.view.comuni |
-| inspections | Controlli/Sanzioni | tab.view.inspections |
-| notifications | Notifiche | tab.view.notifications |
-| mobility | Centro Mobilità | tab.view.mobility |
-| reports | Report | tab.view.reports |
-| integrations | Integrazioni | tab.view.integrations |
-| settings | Impostazioni | tab.view.settings |
-| mercati | Gestione Mercati | tab.view.mercati |
-| imprese | Imprese | tab.view.imprese |
-| docs | Enti & Associazioni | tab.view.docs |
-| mio | MIO Agent | tab.view.mio |
-| mappa | Mappa GIS | tab.view.mappa |
-| workspace | Gestione HUB | tab.view.workspace |
-| council | Concilio AI | tab.view.council |
-
-**Quick Access (12 totali):**
-| ID | Nome | Permesso |
-|----|------|----------|
-| home | Home | quick.view.home |
-| wallet | Wallet | quick.view.wallet |
-| route | Route | quick.view.route |
-| civic | Segnala | quick.view.civic |
-| vetrine | Vetrine | quick.view.vetrine |
-| hub_operatore | Hub Operatore | quick.view.hub_operatore |
-| notifiche | Notifiche | quick.view.notifiche |
-| bus_hub | BUS HUB | quick.view.bus_hub |
-| core_map | Core Map | quick.view.core_map |
-| sito_pubblico | Sito Pubblico | quick.view.sito_pubblico |
-| dms_news | DMS News | quick.view.dms_news |
-| gestionale | Gestionale DMS | quick.view.gestionale |
-
-**Ruoli Sistema:**
-| ID | Codice | Livello | Descrizione |
-|----|--------|---------|-------------|
-| 1 | super_admin | 100 | Accesso completo a tutto il sistema |
-| 2 | admin_pa | 90 | Amministratore PA con accesso limitato |
-| 13 | citizen | 10 | Cittadino con accesso base |
-
-**Componenti Frontend Creati:**
-- `ProtectedTab` - Wrapper per tab con controllo permessi
-- `ProtectedQuickAccess` - Wrapper per quick access con controllo permessi
-- `PermissionsContext` - Context React per gestione permessi utente
-
-**Logica Determinazione Ruolo:**
-1. Se impersonificazione attiva → `admin_pa`
-2. Se email = `chcndr@gmail.com` → `super_admin`
-3. Se `assigned_roles` presente → primo ruolo assegnato
-4. Se `base_role = "admin"` → `admin_pa`
-5. Default → `citizen`
-
-**File Modificati:**
-- `client/src/pages/DashboardPA.tsx` (+100 righe)
-- `client/src/pages/HomePage.tsx` (+25 righe)
-- `client/src/components/ProtectedTab.tsx` (nuovo)
-- `client/src/contexts/PermissionsContext.tsx` (nuovo)
-
-**API Endpoints Sicurezza:**
-- `GET /api/security/roles/:id/permissions` - Permessi per ruolo
-- `GET /api/security/permissions` - Lista tutti i permessi
-- `POST /api/security/permissions` - Crea nuovo permesso (nuovo)
-- `POST /api/security/permissions/:code/assign` - Assegna permesso a ruolo (nuovo)
-
----
-
-### v3.44.0 (20/01/2026) - Form Registrazione Attestati
-
-**Backend - Nuovi Endpoint `/api/formazione/*`:**
-- `GET /api/formazione/imprese/search?q=` - Ricerca imprese per nome/PIVA/CF
-- `GET /api/formazione/tipi-attestato` - Lista tipi attestato disponibili
-- `POST /api/formazione/attestati` - Registra nuovo attestato
-- `GET /api/formazione/attestati` - Lista attestati (filtrabile per impresa/ente/tipo)
-
-**Frontend - Tab Documentazione → Enti Formatori:**
-- Form "Registra Nuovo Attestato" con:
-  - Ricerca impresa con autocomplete live
-  - Selezione tipo attestato (11 tipi: HACCP, Sicurezza Lavoro, Antincendio, Primo Soccorso, Privacy GDPR, Igiene Alimentare, RSPP, RLS, Carrellista, PES/PAV, Altro)
-  - Date rilascio e scadenza
-  - Campi opzionali: Ente rilascio, N. Attestato, Ore formazione, Docente, Note
-  - Salvataggio in tabella `qualificazioni`
-
-**Flusso Operativo:**
-1. Ente formatore cerca impresa digitando nome/PIVA
-2. Seleziona dall'elenco dropdown autocomplete
-3. Compila tipo attestato, date, dettagli corso
-4. Clicca "Registra Attestato"
-5. L'attestato viene salvato e appare nella sezione Qualificazione dell'impresa
-
-**Index.json Aggiornato:**
-- Versione: 29
-- Totale endpoint: 433 (+4)
-
----
-
-### v3.43.0 (20/01/2026) - Tab Documentazione con Enti Formatori e Bandi
-
-**Nuove Tabelle Database:**
-- `formazione_enti` - Anagrafica enti formatori accreditati (5 record)
-- `formazione_corsi` - Catalogo corsi di formazione (6 record)
-- `bandi_associazioni` - Anagrafica associazioni partner (5 record)
-- `bandi_catalogo` - Catalogo bandi disponibili (8 record)
-
-**Backend - Nuovi Endpoint `/api/formazione/*`:**
-- `GET /api/formazione/enti` - Lista enti formatori accreditati
-- `POST /api/formazione/enti` - Crea nuovo ente formatore
-- `GET /api/formazione/enti/:id` - Dettaglio ente con corsi
-- `PUT /api/formazione/enti/:id` - Aggiorna ente formatore
-- `GET /api/formazione/corsi` - Lista corsi disponibili
-- `POST /api/formazione/corsi` - Crea nuovo corso
-- `GET /api/formazione/corsi/:id` - Dettaglio corso
-- `GET /api/formazione/stats` - Statistiche formazione
-
-**Backend - Nuovi Endpoint `/api/bandi/*`:**
-- `GET /api/bandi/associazioni` - Lista associazioni partner
-- `POST /api/bandi/associazioni` - Crea nuova associazione
-- `GET /api/bandi/associazioni/:id` - Dettaglio associazione
-- `PUT /api/bandi/associazioni/:id` - Aggiorna associazione
-- `GET /api/bandi/catalogo` - Lista bandi disponibili
-- `POST /api/bandi/catalogo` - Crea nuovo bando
-- `GET /api/bandi/catalogo/:id` - Dettaglio bando
-- `GET /api/bandi/matching/:bando_id` - Matching imprese-bando
-- `GET /api/bandi/stats` - Statistiche bandi
-
-**Frontend - Tab Documentazione:**
-- Sotto-tab "Enti Formatori":
-  - 4 KPI: Enti Accreditati, Corsi Programmati, Completati, In Corso
-  - Lista enti con rating e specializzazioni
-  - Catalogo corsi con prezzi, durata, posti
-- Sotto-tab "Associazioni & Bandi":
-  - 4 KPI: Associazioni Partner, Bandi Aperti, Importo Totale, Rating
-  - Lista associazioni con success rate
-  - Catalogo bandi con importi e scadenze
-
-**Index.json Aggiornato:**
-- Versione: 28
-- Totale endpoint: 429 (+22)
-- Nuove categorie: Formazione (8), Bandi (9), Stats Qualificazione (5)
-
----
-
-### v3.42.0 (20/01/2026) - Tab Qualificazione Imprese con Dati Reali
-
-**Backend - Nuovi Endpoint `/api/stats/qualificazione/*`:**
-- `GET /api/stats/qualificazione/overview` - KPI conformità imprese
-  - Totale imprese: 28
-  - Conformi: 0 (0%)
-  - Con riserva: 3 (10.7%)
-  - Non conformi: 4 (14.3%)
-  - Non verificati: 21 (75%)
-- `GET /api/stats/qualificazione/scadenze` - Scadenze qualifiche nei prossimi 90 giorni
-  - 7 scadenze imminenti (da tabella `qualificazioni`)
-- `GET /api/stats/qualificazione/demografia` - Demografia imprese
-  - Aperture 2026: 15
-  - Cessazioni 2026: 0
-  - Crescita netta: +15
-  - Per settore: 10 settori diversi
-- `GET /api/stats/qualificazione/top-imprese` - Top 5 imprese per rating
-  - Ordinate per rating e score_digitalizzazione
-- `GET /api/stats/qualificazione/indici` - Indici strategici
-  - Riqualificazione: 0% (nessuna impresa riqualificata)
-  - Digitalizzazione: 45% (media score_digitalizzazione)
-  - Sostenibilità: 100% (tutte le imprese con wallet TCC)
-  - Conformità: 97.1% (qualifiche valide vs totali)
-
-**Frontend - Tab Qualificazione Aggiornato:**
-- **KPI Conformità** - Collegati a `/api/stats/qualificazione/overview`
-  - Pienamente Conformi, Con Riserva, Non Conformi, Totale Imprese
-  - Indicatore "Live" quando dati reali caricati
-- **Scadenze Imminenti** - Collegato a `/api/stats/qualificazione/scadenze`
-  - Lista scadenze con giorni rimanenti
-  - Evidenziazione critica per scadenze < 15 giorni
-- **Demografia Imprese** - Collegato a `/api/stats/qualificazione/demografia`
-  - Aperture/Cessazioni anno corrente
-  - Distribuzione per settore (Top 5)
-- **Indici Strategici** - Collegato a `/api/stats/qualificazione/indici`
-  - Riqualificazione, Digitalizzazione, Sostenibilità, Conformità
-  - Barre di progresso animate
-- **Top 5 Imprese** - Collegato a `/api/stats/qualificazione/top-imprese`
-  - Nome, settore, score, digitalizzazione
-
-**Sezioni ancora con Mock (Fase 2):**
-- Formazione (richiede tabella `formazione_corsi`)
-- Bandi Attivi (richiede tabella `bandi_attivi`)
-
-**File Modificati:**
-- Backend: `routes/stats-qualificazione.js` (nuovo)
-- Backend: `index.js` (aggiunto mount route)
-- Frontend: `DashboardPA.tsx` (147 inserzioni, 86 rimozioni)
-
-**Commit:**
-- Backend: `e1e6a6b` - feat: endpoint stats qualificazione
-- Frontend: `a53c483` - feat: Tab Qualificazione collegato a dati reali
-
----
-
-### v3.41.0 (20/01/2026) - Completamento Collegamento Dati Reali Dashboard PA
-
-**Frontend - Collegamento Completo Indicatori:**
-- **Tab Real-time** collegato a `/api/stats/realtime` con refresh automatico ogni 30 secondi
-  - Utenti Online
-  - Operatori Attivi
-  - Check-in Oggi
-  - Transazioni Oggi
-- **Grafico Crescita Utenti** collegato a `/api/stats/growth`
-  - Dati settimanali reali (14+3+4+10 nuovi utenti nelle ultime 4 settimane)
-  - Indicatore "Live" visibile quando dati caricati
-- **Tab Sostenibilità** collegato ai dati TCC reali
-  - TCC in Circolazione: 1.254
-  - TCC Emessi Totali: 14.440
-  - TCC Riscattati: 13.186
-  - Utenti TCC: 3
-  - CO₂ Risparmiata e Alberi Equivalenti calcolati dinamicamente
-- **Tab Prodotti** - Mostra avviso "Modulo in Sviluppo"
-  - Dati disponibili con integrazione TPAS (Q1 2027)
-  - Preview struttura futura (categorie, certificazioni)
-- **Tab Controlli/Sanzioni** - Mostra avviso "Modulo in Sviluppo"
-  - Dati disponibili con integrazione Guardian (Q2 2026)
-  - Preview KPI futuri (programmati, completati, violazioni, multe)
-
-**Hook useDashboardData Aggiornato:**
-- Aggiunto fetch per `statsRealtime` da `/api/stats/realtime`
-- Aggiunto fetch per `statsGrowth` da `/api/stats/growth`
-- Tutti i dati disponibili nel return dell'hook
-
-**Stato Indicatori Dashboard PA:**
-
-| Tab | Dati Reali | Dati Mock | Stato |
-|-----|------------|-----------|-------|
-| Dashboard Overview | 4 KPI | 0 | 🟢 100% |
-| Crescita Utenti | Grafico | 0 | 🟢 100% |
-| Clienti | 4 | 0 | 🟢 100% |
-| Wallet/PagoPA | 3 | 0 | 🟢 100% |
-| Prodotti | 0 | 0 | 🟡 Preview |
-| Sostenibilità | 4 TCC | 0 | 🟢 100% |
-| Carbon Credits | 8 | 0 | 🟢 100% |
-| Real-time | 4 | 0 | 🟢 100% |
-| Comuni | 6 | 0 | 🟢 100% |
-| Mercati | 4 | 0 | 🟢 100% |
-| HUB | 4 | 0 | 🟢 100% |
-| Controlli/Sanzioni | 0 | 0 | 🟡 Preview |
-
-**Commit:**
-- Frontend: `0debeda` - feat(dashboard-pa): collegamento dati reali per tutti i tab
-
----
-
-### v3.40.0 (20/01/2026) - Implementazione Statistiche Dashboard PA
-
-**Backend - Nuovi Endpoint Statistiche:**
-- `GET /api/stats/overview` - Statistiche aggregate per Dashboard Overview
-  - Utenti totali: 31 (da wallets)
-  - Mercati attivi: 2
-  - HUB: 79
-  - Comuni: 5
-  - Vendors: 12
-  - Posteggi: 564
-  - Imprese: 28
-  - Autorizzazioni SUAP: 3
-  - Domande Spunta: 10
-  - Utenti TCC: 3
-- `GET /api/stats/realtime` - Dati in tempo reale
-- `GET /api/stats/inspections` - Statistiche controlli/sanzioni
-- `GET /api/stats/growth` - Grafico crescita utenti
-
-**Frontend - Collegamento KPI:**
-- Hook `useDashboardData` modificato per chiamare `/api/stats/overview`
-- Indicatori Dashboard Overview ora collegati a dati reali
-- Rimossi mockData per indicatori principali
-
-**Commit:**
-- Backend: `stats.js` - Endpoint statistiche aggregate
-- Frontend: `7473285` - Connect Dashboard PA KPIs to real stats/overview endpoint
-
----
-
-### v3.39.0 (20/01/2026) - Progetto Statistiche Dashboard PA + Tab HUB Comuni
-
-**Nuove Funzionalità:**
-- **Tab HUB** nella Dashboard Comuni PA
-  - Lista HUB del comune con negozi e area totale
-  - Link "Vai all'HUB" → Gestione Hub Territoriale
-- **Tab Mercati aggiornata** con area totale calcolata (solo posteggi con geometria)
-  - Grosseto: 160 posteggi, 4.864 mq
-- **Link corretti** per navigazione a Gestione Hub → Rete Hub
-
-**Nuovi Endpoint API (25 totali per Comuni PA):**
-- `GET /api/comuni/:id/hub` - Lista HUB del comune
-- `GET/POST /api/comuni/:id/contratti` - Gestione contratti
-- `PUT/DELETE /api/comuni/contratti/:id` - CRUD contratti
-- `GET/POST /api/comuni/:id/fatture` - Gestione fatture
-- `PUT /api/comuni/fatture/:id` - Aggiorna stato fattura
-- `GET/POST /api/comuni/:id/utenti` - Gestione permessi utenti
-- `PUT/DELETE /api/comuni/utenti/:id` - CRUD permessi
-- `GET /api/comuni/:id/utenti/stats` - Statistiche per ruolo
-
-**Tabelle Database Nuove:**
-- `comune_contratti` - Contratti di servizio comuni
-- `comune_fatture` - Fatture emesse ai comuni
-- `comune_utenti` - Permessi utenti per comune
-
-**Progetto Statistiche Dashboard PA:**
-
-| Tab | Dati Reali | Dati Mock | Stato |
-|-----|------------|-----------|-------|
-| Dashboard | 1 | 5 | 🔴 20% |
-| Clienti | 4 | 1 | 🟢 80% |
-| Wallet/PagoPA | 3 | 0 | 🟢 100% |
-| Prodotti | 0 | 2 | 🔴 0% |
-| Sostenibilità | 0 | 6 | 🔴 0% |
-| Carbon Credits | 8 | 0 | 🟢 100% |
-| Real-time | 1 | 4 | 🟡 20% |
-| Comuni | 6 | 0 | 🟢 100% |
-| Gestione Mercati | 4 | 0 | 🟢 100% |
-| Gestione HUB | 4 | 0 | 🟢 100% |
-
-**Piano Implementazione Statistiche:**
-1. Fase 1: Collegare indicatori Overview a dati reali
-2. Fase 2: Creare endpoint `/api/stats/overview` aggregato
-3. Fase 3: Rimuovere mockData dal frontend
-
-**Commit:**
-- Backend: `b6a23ea` - fix: syntax error query mercati
-- Frontend: (in corso) - Tab HUB + link Gestione Hub
-
----
-
-### v3.49.0 (22/01/2026) - Vista Impresa/Concessione e Fix Dimensioni Posteggi Grosseto
-
-**Nuove Funzionalità Gestione Mercati:**
-- ✅ **Vista Impresa con Form Completo:** Tab "Vista Impresa" mostra CompanyModal inline con 38 campi editabili
-- ✅ **Vista Concessione Funzionante:** Tab "Vista Concessione" mostra tutti i dati della concessione (dati, concessionario, posteggio, economici, wallet, documenti)
-- ✅ **Tab Sempre Visibili:** I tab Vista Impresa/Concessione rimangono visibili quando si seleziona un posteggio
-- ✅ **CompanyModal Inline:** Modificato per non coprire i tab (usa flex-1 invece di absolute)
-
-**Fix Dimensioni Posteggi Grosseto:**
-- ✅ **Dimensioni Corrette:** Tutti i 160 posteggi aggiornati a 8x5 metri (40 m²)
-- ✅ **Campi Aggiornati:** `width=8`, `depth=5`, `area_mq=40`, `dimensions='8x5'`
-- ✅ **Concessioni Aggiornate:** `mq=40`, `dimensioni_lineari='8 x 5'` per le 6 concessioni attive
-- ✅ **Popup Mappa:** Ora mostra correttamente 8m x 5m = 40 m²
-- ✅ **Vista Concessione:** Ora mostra MQ: 40 e Dimensioni: 8 x 5
-
-**Fix Import Lucide-React:**
-- ✅ **Wallet e Calendar:** Aggiunti import mancanti per Vista Concessione
-
-**Stato Posteggi Grosseto (market_id=1):**
-- 160 posteggi totali con geometry_geojson
-- Numerazione: 1-185 (con 22 gap per posteggi eliminati dopo ristrutturazione)
-- Dimensioni uniformi: 8m x 5m = 40 m²
-- Costo suolo: €36.00 (40 m² × €0.90)
-
-**File Modificati Frontend (Vercel):**
-- `client/src/components/GestioneMercati.tsx` - Vista Impresa/Concessione con tab sempre visibili
-- `client/src/components/markets/MarketCompaniesTab.tsx` - CompanyModal inline senza absolute positioning
-
-**File Modificati Backend (Hetzner):**
-- `routes/markets.js` - Filtro geometry_geojson IS NOT NULL
-- `routes/stalls.js` - Filtro geometry_geojson IS NOT NULL
-
-**Modifiche Database (Neon):**
-- `UPDATE stalls SET width=8, depth=5, area_mq=40, dimensions='8x5' WHERE market_id=1` (160 righe)
-- `UPDATE concessions SET mq=40, dimensioni_lineari='8 x 5' WHERE stall_id IN (SELECT id FROM stalls WHERE market_id=1)` (6 righe)
-
-**Commit:**
-- Frontend: `169b76f` - Fix filtro posteggi
-- Backend: `93cbacf` - Fix filtro geometry_geojson
-
----
-
-### v3.48.0 (21/01/2026) - Fix Gestione Mercati e Sistema Notifiche Completo
-
-**Fix Critici Gestione Mercati:**
-- ✅ **Conteggio Posteggi Corretto:** Query ora filtra per `geometry_geojson IS NOT NULL` (160 invece di 182)
-- ✅ **Reset Lista Presenze:** Quando cambi mercato, gli state `presenze` e `graduatoria` vengono azzerati
-- ✅ **Importo Spunta Corretto:** Query usa `giorno_mercato` invece di `DATE(checkin_time)` per trovare presenze
-- ✅ **Inizia Mercato Completo:** Ora azzera TUTTE le presenze (non solo quelle di oggi) per test più puliti
-
-**Sistema Notifiche v3.47.0 Completato:**
-- ✅ **Filtri Messaggi:** Pulsanti Tutti/Inviati/Ricevuti in Dashboard PA e App Impresa
-- ✅ **Icone Busta:** Busta chiusa (gialla) = non letto, Busta aperta (grigia) = letto
-- ✅ **Click per Leggere:** Click su messaggio lo segna come letto nel DB
-- ✅ **Badge Corretto:** Conta solo risposte non lette (non tutti i destinatari)
-- ✅ **Nuovo Endpoint:** `PUT /api/notifiche/risposte/:id/letta` aggiunto a Guardian
-
-**File Modificati Backend (Hetzner):**
-- `routes/test-mercato.js` - Query inizia-mercato con filtro geometry_geojson
-- `routes/presenze.js` - Query spuntisti con giorno_mercato
-- `routes/notifiche.js` - Endpoint risposte/:id/letta
-- `routes/integrations.js` - Nuovo endpoint in inventario Guardian
-
-**File Modificati Frontend (Vercel):**
-- `client/src/components/GestioneMercati.tsx` - Reset state al cambio mercato
-- `client/src/pages/DashboardPA.tsx` - Filtri notifiche, icone busta, click lettura
-- `client/src/pages/AppImpresaNotifiche.tsx` - Filtri e testo messaggi inviati
-
-**Commit:**
-- Frontend: `4cd6fcc` - docs: Aggiorna Blueprint
-- Backend: PM2 restart con modifiche manuali
-
----
-
-### v3.38.0 (20/01/2026) - Tab Fatturazione e Permessi Comuni PA
-
-**Nuove Funzionalità:**
-- **Tab Fatturazione** completa nella Dashboard Comuni PA
-  - Sezione Contratti con CRUD completo
-  - Sezione Fatture con calcolo IVA automatico
-  - Pulsante "Segna pagata" per aggiornare stato
-- **Tab Permessi** completa nella Dashboard Comuni PA
-  - Riepilogo visivo per ruolo (Admin, Operatore Mercato, Polizia Locale, Tributi, SUAP)
-  - Lista utenti assegnati con dropdown cambio ruolo
-  - Modal per assegnare nuovi utenti
-
----
-
-### v3.37.0 (19/01/2026) - Tab Settori Comuni PA + Import IPA
-
-**Nuove Funzionalità:**
-- **Tab Settori** nella Dashboard Comuni PA
-  - CRUD settori/UO del comune
-  - Import automatico da IndicePA
-  - Ricerca comuni su IPA
-
----
 
 ### v3.35.0 (14/01/2026) - Progettazione Gestione Canone Unico e More
 
@@ -1867,6 +1412,167 @@ const forcedZoom = roundedToQuarter + 0.25;
 
 ---
 
+
+
+### v3.51.0 (26 Gennaio 2026) - Sistema Controlli/Sanzioni e Storico Mercati
+
+**Obiettivo**: Migliorare il pannello Controlli/Sanzioni con funzionalità avanzate per PM e storico mercati.
+
+**Backend (Hetzner):**
+- ✅ Nuovo endpoint `POST /api/presenze/mercato/:id/chiudi` - Chiusura sessione mercato con snapshot
+- ✅ Nuovo endpoint `GET /api/presenze/sessioni` - Lista sessioni mercato chiuse (storico)
+- ✅ Nuovo endpoint `GET /api/presenze/sessioni/:id/dettaglio` - Dettaglio presenze sessione
+- ✅ Nuovo endpoint `POST /api/verbali/:id/invia` - Invio notifica verbale all'impresa
+- ✅ Nuovo endpoint `GET /api/verbali/:id/pdf` - Download PDF verbale
+- ✅ Fix INSERT notifiche con colonne corrette (target_id, target_tipo, letta)
+- ✅ Tabella `market_sessions` per storico sessioni chiuse
+- ✅ Tabella `market_session_details` per dettaglio presenze
+
+**Frontend (Vercel):**
+- ✅ Tab Storico: Barra ricerca per data + scroll interno container
+- ✅ Tab Storico: Pulsante "Scarica CSV" per esportare dati sessioni
+- ✅ Tab Verbali: Icona occhio (👁️) per visualizzare PDF + download separato
+- ✅ Tab Da Controllare: Riga cliccabile per aprire modal dettagli
+- ✅ Tab Da Controllare: Modal con info impresa, motivo controllo, priorità
+- ✅ Tab Da Controllare: Pulsante "Avvia Navigazione GPS" verso posteggio
+- ✅ Tab Da Controllare: Pulsanti "Prepara Verbale" e "Segna Controllato"
+
+**Guardian**: 477 endpoint totali (+9)
+
+**Commit:**
+- Backend: `2148f33` - fix(verbali): correzione INSERT notifiche con colonne corrette
+- Frontend: `98dc69f` - feat(controlli-sanzioni): miglioramenti UI multipli
+- MIO-hub: `efd9809` - feat(api): add 9 new endpoints (presenze, verbali, pm)
+
+---
+
+### v3.50.0 (23 Gennaio 2026) - Sistema Gestione Permessi Tab Dashboard
+
+**Obiettivo**: Permettere la gestione granulare dei permessi per ogni tab della dashboard attraverso la sezione Sicurezza.
+
+**Backend (Hetzner):**
+- ✅ Nuovo endpoint `PUT /api/security/roles/:id/permissions` per aggiornare i permessi di un ruolo
+- ✅ Nuovo endpoint `GET /api/security/permissions/tabs` per ottenere la lista dei permessi tab
+- ✅ Migration `017_add_tab_permissions.sql` con 39 nuovi permessi:
+  - 27 permessi per tab sidebar (es. `tab.view.dashboard`, `tab.view.security`)
+  - 12 permessi per accesso rapido (es. `quick.view.home`, `quick.view.bus_hub`)
+- ✅ Permessi sensibili assegnati solo a `super_admin`: Sistema, Sicurezza, Comuni, Report, Integrazioni, Impostazioni, Documentazione, Workspace, BUS HUB
+
+**Frontend (Vercel):**
+- ✅ Nuovo `PermissionsContext` (`/contexts/PermissionsContext.tsx`) per gestire i permessi utente
+- ✅ Nuovo componente `ProtectedTab` (`/components/ProtectedTab.tsx`) per render condizionale
+- ✅ Matrice checkbox in Sicurezza → Permessi per gestione visuale permessi
+- ✅ Wrapper `ProtectedTab` applicato ai tab sensibili in `DashboardPA.tsx`
+
+**Guardian**: 463 endpoint totali (+4)
+
+**Commit:**
+- Backend: `956c122` - feat: register 2 new security endpoints in Guardian integrations
+- Frontend: `706b925` - fix: remove useAuth dependency from PermissionsContext
+
+---
+
+### v3.49.0 (22 Gennaio 2026) - Sistema Multi-Comune e Impersonificazione
+
+**Obiettivo**: Permettere all'admin MioHub di creare automaticamente credenziali per i comuni e di "entrare" nella loro vista.
+
+**Backend (Hetzner):**
+- ✅ Nuovo endpoint `POST /api/comuni/:id/provision-admin` per auto-provisioning admin comune
+- ✅ Nuovo endpoint `GET /api/comuni/:id/admin-credentials` per verificare esistenza admin
+- ✅ Filtro `comune_id` aggiunto a: concessions, imprese, wallets, autorizzazioni, qualificazioni, stats, markets, stalls
+
+**Frontend (Vercel):**
+- ✅ Pulsante "Accedi come" nella sezione Comuni
+- ✅ Componente `ImpersonationBanner.tsx` per mostrare lo stato di impersonificazione
+- ✅ Banner giallo con "Stai visualizzando come: [Nome Comune]" e pulsante "Esci"
+- ✅ Filtro automatico dati per comune durante impersonificazione
+
+**Database (Neon):**
+- ✅ Nuova colonna `must_change_password` nella tabella `users`
+- ✅ Relazione `comune_utenti` per associare utenti ai comuni
+
+**Guardian**: 461 endpoint totali
+
+---
+
+### v3.48.0 (21 Gennaio 2026) - Sistema Notifiche Completo e Fix Gestione Mercati
+
+**Sistema Notifiche:**
+- ✅ Filtri messaggi: Tutti/Inviati/Ricevuti
+- ✅ Icone busta aperta/chiusa per stato lettura
+- ✅ Click per segnare come letto
+- ✅ Badge notifiche corretto nella sidebar
+- ✅ Endpoint `/api/notifiche/risposte/:id/letta`
+
+**Fix Gestione Mercati:**
+- ✅ Conteggio posteggi corretto: 160 (filtro `geometry_geojson IS NOT NULL`)
+- ✅ Reset lista presenze al cambio mercato
+- ✅ Importo spunta corretto con `toFixed(2)`
+- ✅ "Inizia Mercato" azzera TUTTE le presenze
+
+**Guardian**: 460 endpoint totali
+
+---
+
+### v3.47.0 (20 Gennaio 2026) - Progetto Enti Formatori e Bandi (Progettazione)
+
+**Progettazione** (documentazione per sviluppo futuro):
+- 📋 Nuovo tab "Enti Formatori" in Qualificazione
+- 📋 Nuovo tab "Associazioni e Bandi"
+- 📋 Nuove tabelle previste: `formazione_corsi`, `formazione_partecipanti`, `formazione_enti`, `bandi_attivi`, `bandi_domande`
+
+---
+
+### v3.46.0 (19 Gennaio 2026) - Pannello Dettaglio Posteggio con 4 Tab (Progettazione)
+
+**Progettazione** (documentazione per sviluppo futuro):
+- 📋 Espansione pannello dettaglio posteggio da 1 a 4 tab:
+  1. **Impresa**: Anagrafica impresa (esistente)
+  2. **Concessione**: Dati concessione abbinata
+  3. **Autorizzazione**: Autorizzazione commerciale
+  4. **Storico Presenze**: Storico presenze sul posteggio
+
+---
+
+### v3.45.0 (16-18 Gennaio 2026) - Sistema Presenze e Graduatoria v3
+
+**Database (Neon):**
+- ✅ Nuova tabella `graduatoria_presenze`
+- ✅ Estensione tabella `vendor_presences` con campi aggiuntivi
+
+**Backend (Hetzner):**
+- ✅ Nuovi endpoint per gestione presenze e graduatoria
+- ✅ Logica calcolo graduatoria automatica
+
+**Frontend (Vercel):**
+- ✅ 3 tab in Gestione Mercati: Concessionari, Spuntisti, Fiere/Straordinari
+- ✅ Campi editabili per presenze storiche
+- ✅ Sistema semafori qualifiche (verde/giallo/rosso)
+
+---
+
+### v3.44.0 (16 Gennaio 2026) - Flusso Mercato Completo
+
+**Nuove Funzionalità:**
+- ✅ Pulsante "🏪 Chiudi Mercato" - Libera TUTTI i posteggi e registra uscite
+- ✅ Pulsante "🚀 Inizia Mercato" - Azzera tutte le presenze del giorno
+- ✅ Popup Occupa/Libera per posteggi riservati/in_assegnazione
+- ✅ Fix errore `.toFixed is not a function`
+
+**Flusso Giornata Mercato:**
+| Fase | Pulsante | Azione |
+|------|----------|--------|
+| 1 | 🚀 Inizia Mercato | Azzera presenze del giorno |
+| 2 | ✅ Occupa | Registra arrivo concessionari + detrae wallet |
+| 3 | 🟠 Prepara Spunta | Posteggi liberi → in_assegnazione |
+| 4 | ✓ Spunta | Assegna posteggi agli spuntisti |
+| 5 | 🏪 Chiudi Mercato | Libera tutti + registra uscite |
+
+**Endpoint:**
+- `POST /api/test-mercato/inizia-mercato`
+- `POST /api/test-mercato/chiudi-mercato`
+
+---
 
 ### v3.22.0 (08/01/2026) - Sistema Navigazione Geografica Regioni/Province
 
@@ -2698,9 +2404,7 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 
 | Repository | Tag | Data | Descrizione |
 |------------|-----|------|-------------|
-| dms-hub-app-new | **v3.48.0-stable** | 21/01/2026 | Sistema Notifiche completo + Fix Gestione Mercati |
-| mihub-backend-rest | **v3.48.0-stable** | 21/01/2026 | Backup routes/ con fix notifiche e mercati |
-| dms-hub-app-new | v3.35.1-stable | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
+| dms-hub-app-new | **v3.35.1-stable** | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
 | dms-hub-app-new | v3.32.0-stable | 13/01/2026 | TCC transaction numbers, QR validation |
 | mihub-backend-rest | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation |
 | **miohub-backups** | **v3.32.0-stable** | 13/01/2026 | Database dump SQL (29 MB) |
@@ -4161,8 +3865,8 @@ const handleStallUpdate = async () => {
 
 ### 5. Guardian Aggiornato
 
-- **Versione**: v31
-- **Endpoint monitorati**: 136 totali
+- **Versione**: v28
+- **Endpoint monitorati**: 70 totali
 - **Endpoint Comuni PA**: 25 (CRUD comuni, settori, mercati, **HUB**, contratti, fatture, utenti, IPA)
 
 ---
@@ -4178,1161 +3882,4 @@ const handleStallUpdate = async () => {
 
 ---
 
-## 🆕 v3.45.0 - v3.46.0 (21/01/2026) - Sistema Formazione e Servizi Associazioni
-
-### 1. Sistema Iscrizioni Corsi Formazione
-
-**Nuova Tabella Database:**
-
-| Tabella | Descrizione |
-|---------|-------------|
-| `formazione_iscrizioni` | Iscrizioni imprese ai corsi formativi |
-
-**Struttura formazione_iscrizioni:**
-
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| id | SERIAL | ID univoco |
-| corso_id | INTEGER | FK a formazione_corsi |
-| impresa_id | INTEGER | FK a imprese |
-| utente_nome | VARCHAR | Nome partecipante |
-| utente_email | VARCHAR | Email partecipante |
-| stato | VARCHAR | ISCRITTO, CONFERMATO, COMPLETATO, ANNULLATO |
-| data_iscrizione | TIMESTAMP | Data iscrizione |
-| note | TEXT | Note aggiuntive |
-
-**Nuovi Endpoint Formazione:**
-
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/formazione/iscrizioni` | GET | Lista iscrizioni |
-| `/api/formazione/iscrizioni` | POST | Crea iscrizione |
-| `/api/formazione/iscrizioni/:id` | PUT | Aggiorna stato |
-| `/api/formazione/iscrizioni/:id` | DELETE | Cancella iscrizione |
-| `/api/formazione/iscrizioni/stats` | GET | Statistiche iscrizioni |
-
-**Frontend - Tab Enti Formatori:**
-- KPI: Iscritti, Confermati, Completati, Annullati
-- Lista scorrevole con stato colorato
-- Mostra: impresa, corso, ente, partecipante, date
-
----
-
-### 2. Sistema Servizi Associazioni
-
-**Nuove Tabelle Database:**
-
-| Tabella | Record | Descrizione |
-|---------|--------|-------------|
-| `servizi_associazioni` | 24 | Catalogo servizi professionali |
-| `richieste_servizi` | 10 | Richieste dalle imprese |
-| `regolarita_imprese` | 20 | Stato regolarità documentale |
-
-**Struttura servizi_associazioni:**
-
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| id | SERIAL | ID univoco |
-| associazione_id | INTEGER | FK a bandi_associazioni |
-| codice | VARCHAR | Codice servizio |
-| nome | VARCHAR | Nome servizio |
-| descrizione | TEXT | Descrizione dettagliata |
-| categoria | VARCHAR | REGOLARIZZAZIONE, PRATICHE, CONTABILITA, PAGHE, CONSULENZA, ASSOCIATIVO |
-| prezzo_base | DECIMAL | Prezzo standard |
-| prezzo_associati | DECIMAL | Prezzo scontato per associati |
-| durata_media_giorni | INTEGER | Tempo medio evasione |
-
-**Categorie Servizi (24 totali):**
-
-| Categoria | Servizi | Esempi |
-|-----------|---------|--------|
-| REGOLARIZZAZIONE | 3 | Verifica DURC, Regolarizzazione DURC, Rateizzazione INPS |
-| PRATICHE | 7 | SCIA Apertura/Modifica/Subingresso, Autorizzazione Sanitaria, Visura Camerale |
-| CONTABILITA | 5 | Contabilità Ordinaria/Semplificata, Bilancio, Dichiarazione IVA, F24 |
-| PAGHE | 4 | Elaborazione Paghe, Assunzione, Licenziamento, CU Annuale |
-| CONSULENZA | 4 | Fiscale, Legale, Lavoro, Bandi |
-| ASSOCIATIVO | 2 | Tessera Base, Tessera Premium |
-
-**Struttura richieste_servizi:**
-
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| id | SERIAL | ID univoco |
-| servizio_id | INTEGER | FK a servizi_associazioni |
-| impresa_id | INTEGER | FK a imprese |
-| stato | VARCHAR | RICHIESTA, IN_LAVORAZIONE, COMPLETATA, ANNULLATA |
-| priorita | VARCHAR | URGENTE, ALTA, NORMALE, BASSA |
-| operatore_assegnato | VARCHAR | Nome operatore |
-| importo_preventivo | DECIMAL | Preventivo |
-| importo_finale | DECIMAL | Importo finale |
-
-**Struttura regolarita_imprese:**
-
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| id | SERIAL | ID univoco |
-| impresa_id | INTEGER | FK a imprese |
-| tipo | VARCHAR | DURC, SCIA, AUT_SANITARIA, VISURA_CAMERALE, ISCRIZIONE_ALBO |
-| stato | VARCHAR | REGOLARE, IN_SCADENZA, SCADUTO, IRREGOLARE, DA_VERIFICARE |
-| numero_documento | VARCHAR | Numero documento |
-| data_rilascio | DATE | Data rilascio |
-| data_scadenza | DATE | Data scadenza |
-| ente_rilascio | VARCHAR | Ente che ha rilasciato |
-
-**Nuovi Endpoint Bandi/Servizi:**
-
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/bandi/servizi` | GET | Lista servizi disponibili |
-| `/api/bandi/servizi/categorie` | GET | Categorie servizi |
-| `/api/bandi/richieste` | GET | Lista richieste |
-| `/api/bandi/richieste` | POST | Crea richiesta |
-| `/api/bandi/richieste/:id` | PUT | Aggiorna stato |
-| `/api/bandi/richieste/stats` | GET | Statistiche richieste |
-| `/api/bandi/regolarita` | GET | Lista regolarità |
-| `/api/bandi/regolarita/:id` | PUT | Aggiorna regolarità |
-| `/api/bandi/regolarita/stats` | GET | Imprese problematiche |
-
----
-
-### 3. Frontend - Tab Associazioni & Bandi
-
-**Nuove Sezioni:**
-
-| Sezione | Descrizione |
-|---------|-------------|
-| Servizi Professionali | Catalogo 24 servizi con prezzi |
-| Richieste Servizi | Lista richieste con stato e priorità |
-| Imprese con Problemi | DURC irregolare, SCIA scaduta, ecc. |
-
-**KPI Richieste Servizi:**
-- In Attesa: 4
-- In Lavorazione: 4
-- Completate: 2
-- Urgenti: 2
-- Totale: 10
-
-**KPI Regolarità Imprese:**
-- Irregolari: 1
-- Scaduti: 3
-- In Scadenza: 5
-- Da Verificare: 2
-- Regolari: 9
-
----
-
-### 4. Commit e Deploy
-
-| Repository | Commit | Descrizione |
-|------------|--------|-------------|
-| mihub-backend-rest | `ccf3cdf` | Endpoint iscrizioni corsi |
-| mihub-backend-rest | `7f8adb7` | Sistema servizi e regolarità |
-| dms-hub-app-new | `5a21450` | Lista iscrizioni frontend |
-| dms-hub-app-new | `4667bf9` | Servizi e regolarità frontend |
-| MIO-hub | `e1af897` | Index.json v30 (iscrizioni) |
-| MIO-hub | `646c489` | Index.json v31 (servizi) |
-
----
-
-*Aggiornamento del 21 Gennaio 2026 - Manus AI*
-
-
----
-
-## 🆕 PROGETTO: Sistema di Notifiche Bidirezionale (v3.47.0)
-
-> **Versione Target:** 3.47.0  
-> **Data Completamento:** 21 Gennaio 2026  
-> **Stato:** ✅ COMPLETATO
-
-### 1. Obiettivo
-
-Creare un **sistema di notifiche bidirezionale** per facilitare la comunicazione tra la **Pubblica Amministrazione (PA) / Associazioni** e le **Imprese** (ambulanti e negozi). Il sistema permetterà l'invio di notifiche massive e singole, e consentirà alle imprese di rispondere e interagire tramite una nuova app dedicata.
-
-### 2. Architettura e Flusso
-
-Il sistema si baserà su tre componenti principali: la Dashboard PA, il Backend e una nuova App Impresa.
-
-```mermaid
-graph TD
-    subgraph Dashboard PA
-        A[Tab Enti & Associazioni] --> C{Invia Notifica};
-        B[Tab Enti Formatori] --> C;
-    end
-
-    subgraph App Impresa (Nuova Pagina)
-        F[Operatore Impresa] --> G{Leggi/Rispondi Notifiche};
-        G --> H[Richiedi Appuntamento];
-        G --> I[Iscriviti a Corso];
-    end
-
-    subgraph Backend (API REST)
-        D[Endpoints Notifiche];
-    end
-
-    subgraph Database (Neon)
-        E[Tabelle: notifiche, notifiche_destinatari];
-    end
-
-    C -- "POST /api/notifiche/send" --> D;
-    D -- Salva/Recupera --> E;
-    D -- "GET /api/notifiche/impresa/:id" --> G;
-    G -- "POST /api/notifiche/reply" --> D;
-```
-
-**Flusso Operativo:**
-1.  **Invio da PA:** Un operatore PA compone una notifica nei tab "Enti & Associazioni" o "Enti Formatori". Può scegliere destinatari multipli (tutte le imprese di un mercato/HUB) o un'impresa singola.
-2.  **Salvataggio Backend:** L'API salva la notifica e la associa ai destinatari nella tabella `notifiche_destinatari`.
-3.  **Visualizzazione Impresa:** L'operatore dell'impresa apre la nuova "App Impresa" (accessibile dal nuovo tab "Notifiche" nella barra rapida) e visualizza le notifiche ricevute.
-4.  **Interazione Impresa:** L'operatore può rispondere alla notifica, richiedere un appuntamento o avviare l'iscrizione a un corso, inviando una richiesta al backend.
-
-### 3. Tabelle Database
-
-Saranno create due nuove tabelle.
-
-**Tabella `notifiche`**
-
-| Campo | Tipo | Descrizione |
-|---|---|---|
-| `id` | SERIAL | ID univoco della notifica |
-| `mittente_id` | INTEGER | ID utente PA/associazione che invia |
-| `mittente_tipo` | VARCHAR | 'PA', 'ASSOCIAZIONE', 'ENTE_FORMATORE' |
-| `titolo` | VARCHAR(255) | Titolo della notifica |
-| `messaggio` | TEXT | Corpo del messaggio (supporta Markdown) |
-| `tipo_messaggio` | VARCHAR | 'INFORMATIVA', 'PROMOZIONALE', 'RISPOSTA' |
-| `data_invio` | TIMESTAMP | Data e ora di invio |
-| `id_conversazione` | INTEGER | ID per raggruppare messaggi della stessa conversazione |
-
-**Tabella `notifiche_destinatari`**
-
-| Campo | Tipo | Descrizione |
-|---|---|---|
-| `id` | SERIAL | ID univoco |
-| `notifica_id` | INTEGER | FK a `notifiche.id` |
-| `impresa_id` | INTEGER | FK a `imprese.id` (destinatario) |
-| `data_lettura` | TIMESTAMP | Data e ora di prima lettura (NULL se non letta) |
-| `stato` | VARCHAR | 'INVIATO', 'LETTO', 'ARCHIVIATO' |
-
-### 4. API Endpoints
-
-| Endpoint | Metodo | Descrizione |
-|---|---|---|
-| `/api/notifiche/send` | POST | Invia una nuova notifica (singola o massiva) |
-| `/api/notifiche/impresa/:id` | GET | Recupera tutte le notifiche per un'impresa |
-| `/api/notifiche/conversazione/:id` | GET | Recupera i messaggi di una specifica conversazione |
-| `/api/notifiche/leggi/:id` | PUT | Segna una notifica come letta |
-| `/api/notifiche/reply` | POST | Invia una risposta a una notifica esistente |
-| `/api/notifiche/stats` | GET | Statistiche notifiche (inviate, lette) per la Dashboard PA |
-| `/api/notifiche/risposte` | GET | Recupera risposte/messaggi dalle imprese verso PA |
-| `/api/notifiche/messaggi/:mittente_tipo/:mittente_id` | GET | Messaggi filtrabili per tipo (tutti/inviati/ricevuti) |
-| `/api/notifiche/risposte/:id/letta` | PUT | **NUOVO** - Segna risposta impresa come letta |
-
-### 5. Modifiche Frontend (Dashboard PA)
-
-1.  **Container "Invia Notifica":**
-    *   **Posizione:** Aggiunto nei tab `Enti & Associazioni` e `Enti Formatori`.
-    *   **Campi:**
-        *   **Destinatari:** Dropdown con opzioni: "Impresa singola" (con ricerca), "Tutte le imprese del Mercato..." (con selezione mercato), "Tutti i negozi dell'HUB..." (con selezione HUB).
-        *   **Titolo:** Campo di testo.
-        *   **Messaggio:** Text area con supporto Markdown.
-        *   **Pulsante "Invia Notifica"**.
-
-2.  **Tab "Notifiche" nella Barra Rapida:**
-    *   **Posizione:** Inserito tra "Hub Operatore" e "BUS HUB".
-    *   **Icona:** `Bell` o simile.
-    *   **Azione:** Apre la nuova pagina/app dedicata alle notifiche per le imprese in una nuova scheda del browser.
-
-### 6. Nuova App Impresa (Pagina Web Dedicata)
-
-*   **URL:** `/app/impresa/notifiche`
-*   **Layout:** Simile a un'app di messaggistica.
-    *   **Colonna Sinistra:** Lista delle conversazioni, ordinate per data più recente. Ogni item mostra il mittente, il titolo e un'anteprima del messaggio.
-    *   **Area Destra:** Visualizzazione dei messaggi della conversazione selezionata.
-    *   **Area Input Risposta:** In fondo all'area destra, per permettere all'operatore di rispondere.
-    *   **Pulsanti Azione:** "Richiedi Appuntamento" e "Iscriviti a Corso" che pre-compilano una risposta o reindirizzano alla pagina corretta.
-
-### 7. Fasi di Sviluppo
-
-1.  ✅ **Fase 1: Progettazione** - Definizione requisiti e schemi nel Blueprint.
-2.  ✅ **Fase 2: Database** - Creazione tabelle `notifiche` e `notifiche_destinatari` + colonna `letta`.
-3.  ✅ **Fase 3: Backend** - Sviluppo endpoint API per la gestione delle notifiche.
-4.  ✅ **Fase 4: Frontend (Dashboard PA)** - Implementazione form di invio nei tab Enti & Associazioni e Enti Formatori.
-5.  ✅ **Fase 5: Frontend (App Impresa)** - Creazione pagina `/app/impresa/notifiche`.
-6.  ✅ **Fase 6: Frontend (Dashboard PA)** - Aggiunta tab "Notifiche" nella barra rapida.
-7.  ✅ **Fase 7: Test e Deploy** - Test end-to-end completato.
-
-### 8. Funzionalità Implementate (21 Gennaio 2026)
-
-| Funzionalità | Stato | Note |
-|---|---|---|
-| Filtri Messaggi (Tutti/Inviati/Ricevuti) | ✅ | Dashboard PA e App Impresa |
-| Icone Busta Aperta/Chiusa | ✅ | Distingue messaggi letti/non letti |
-| Click per Segnare come Letto | ✅ | Aggiorna DB e UI in tempo reale |
-| Badge Notifiche Corretto | ✅ | Conta solo risposte non lette |
-| Contatore Letture Messaggi Inviati | ✅ | Es. "Letti: 3/28" |
-| Endpoint Guardian Monitorato | ✅ | `/api/notifiche/risposte/:id/letta` |
-
----
-
-*Progetto completato il 21 Gennaio 2026 - Manus AI*
-
-
----
-
-## 🚀 PROGETTI IN CORSO
-
-### Progetto Concessione Digitale v3.49.0 - Dati Reali Wallet e Requisiti
-
-**Obiettivo:** Sostituire i dati mock nel dettaglio concessione con dati reali provenienti dal database per le sezioni Wallet e Requisiti.
-
-**Componenti Coinvolti:**
-- **Database (Neon):** Modifica tabella `concessions`.
-- **Backend (Hetzner):** Aggiornamento endpoint `/api/concessions/:id`.
-- **Frontend (Vercel):** Aggiornamento componente `SuapPanel.tsx`.
-
-#### Fase 1: Modifica Database (Tabella `concessions`)
-
-Aggiungere i seguenti campi per allineare i dati dei requisiti direttamente alla concessione.
-
-- `durc_valido` (BOOLEAN, default: `false`)
-- `durc_data` (DATE, nullable)
-- `requisiti_morali` (BOOLEAN, default: `true`)
-- `requisiti_professionali` (BOOLEAN, default: `true`)
-
-**Script di Migrazione SQL:**
-```sql
-ALTER TABLE concessions
-ADD COLUMN durc_valido BOOLEAN DEFAULT false,
-ADD COLUMN durc_data DATE,
-ADD COLUMN requisiti_morali BOOLEAN DEFAULT true,
-ADD COLUMN requisiti_professionali BOOLEAN DEFAULT true;
-```
-
-#### Fase 2: Aggiornamento Backend (Endpoint API)
-
-**File da modificare:** `/root/mihub-backend-rest/server.js`
-
-**Endpoint:** `GET /api/concessions/:id`
-
-**Logica da implementare:**
-1.  Modificare la query SQL per includere una `LEFT JOIN` con la tabella `wallets`.
-    -   `LEFT JOIN wallets ON wallets.concession_id = concessions.id`
-2.  Selezionare i campi del wallet e i nuovi campi dei requisiti.
-    -   `wallets.id as wallet_id`
-    -   `wallets.balance as wallet_balance`
-    -   `wallets.status as wallet_status`
-    -   `concessions.durc_valido`
-    -   `concessions.durc_data`
-    -   `concessions.requisiti_morali`
-    -   `concessions.requisiti_professionali`
-
-**Endpoint Correlato:** La modifica si rifletterà automaticamente sull'endpoint `GET /api/suap/pratiche` che già recupera i dati della concessione collegata.
-
-#### Fase 3: Aggiornamento Frontend (Componente React)
-
-**File da modificare:** `/home/ubuntu/dms-hub-app-new/client/src/components/SuapPanel.tsx`
-
-**Logica da implementare:**
-1.  Verificare che l'oggetto `selectedConcessione` ricevuto dall'API contenga i nuovi campi.
-2.  Collegare i campi del componente ai dati reali, rimuovendo ogni valore statico o mock.
-    -   **Wallet:** `selectedConcessione.wallet_id`, `selectedConcessione.wallet_balance`, `selectedConcessione.wallet_status`.
-    -   **Requisiti:** `selectedConcessione.durc_valido`, `selectedConcessione.durc_data`, `selectedConcessione.requisiti_morali`, `selectedConcessione.requisiti_professionali`.
-
-
-## 🐞 BUG E SOLUZIONI (21 Gennaio 2026)
-
-### 1. Bug `vendor_id` errato nella creazione concessioni
-
-**Problema:**
-Quando si crea una nuova concessione (es. "Alimentari Verdi", impresa 19) su un posteggio (es. 101) che aveva una concessione precedente con un vendor diverso (es. vendor 2, "Impresa Aggiornata PUT"), il sistema assegna il `vendor_id` della vecchia concessione (2) invece di creare/usare il vendor corretto per la nuova impresa (3).
-
-**Causa:**
-La logica di creazione concessione (`/routes/concessions.js`) in caso di rinnovo/subingresso, non aggiorna correttamente il `vendor_id` se l'impresa cambia.
-
-**Soluzione:**
-1. **Correzione Dati:** Aggiornare manualmente il `vendor_id` della concessione 44 a 3 (vendor di "Alimentari Verdi").
-2. **Correzione Codice:** Modificare la logica di creazione concessione per garantire che il `vendor_id` sia sempre quello corretto dell'impresa concessionaria, anche in caso di rinnovo/subingresso.
-
-
----
-
-## 📅 CHANGELOG 24 GENNAIO 2026 (v3.73.0 → v3.73.1)
-
-### 🎯 Riepilogo Giornata
-
-Giornata dedicata alla correzione di bug critici nel sistema Wallet e Notifiche, con focus su:
-- Creazione automatica wallet SPUNTISTA/GENERICO
-- Visualizzazione corretta dei wallet nell'App Impresa
-- Sistema notifiche con filtri e badge
-
----
-
-### 🔧 FIX BACKEND (mihub-backend-rest)
-
-#### 1. Creazione Automatica Wallet SPUNTISTA (Commit: `1fdae14`)
-
-**Problema Identificato:**
-Il wallet SPUNTISTA (mostrato come "GENERICO" nel frontend) non veniva creato automaticamente quando si creava una nuova impresa. I 13 wallet SPUNTISTA esistenti erano stati creati manualmente il 28/12/2025 con uno script batch.
-
-**File Modificati:**
-- `routes/hub.js` (riga ~633) - Creazione impresa da vetrina Hub
-- `routes/imprese.js` (riga ~304) - Creazione impresa standard
-
-**Codice Aggiunto:**
-```javascript
-// Crea wallet SPUNTISTA (generico) per l'impresa
-await pool.query(`
-  INSERT INTO wallets (company_id, type, balance, status, created_at)
-  VALUES ($1, 'SPUNTISTA', 0, 'ACTIVE', NOW())
-`, [impresaId]);
-```
-
-**Script SQL Eseguito per Fix Imprese Esistenti:**
-```sql
-INSERT INTO wallets (company_id, type, balance, status, created_at)
-SELECT id, 'SPUNTISTA', 0, 'ACTIVE', NOW()
-FROM imprese
-WHERE id NOT IN (SELECT company_id FROM wallets WHERE type = 'SPUNTISTA');
--- Risultato: 15 wallet creati, totale ora 28 (tutte le imprese coperte)
-```
-
----
-
-### 🎨 FIX FRONTEND (dms-hub-app-new)
-
-#### 2. Visualizzazione Wallet GENERICO in App Impresa (Commit: `7800197`)
-
-**Problema:**
-Il wallet SPUNTISTA non appariva nell'App Impresa perché il frontend cercava `type === 'GENERICO'` ma nel database il tipo è `'SPUNTISTA'`.
-
-**File:** `client/src/pages/WalletImpresaPage.tsx`
-
-**Fix (riga 128):**
-```javascript
-// PRIMA:
-wallets.filter((w: any) => w.type === 'SPUNTA' || w.type === 'GENERICO')
-
-// DOPO:
-wallets.filter((w: any) => w.type === 'SPUNTA' || w.type === 'GENERICO' || w.type === 'SPUNTISTA')
-```
-
-#### 3. Testo Wallet GENERICO e Pulsante Ricarica (Commit: `e20cff7`)
-
-**Problema:**
-- Il wallet GENERICO mostrava "Credito Spunta" invece di solo il badge "GENERICO"
-- Mancava il pulsante "Ricarica" per il wallet GENERICO
-
-**File:** `client/src/pages/WalletImpresaPage.tsx`
-
-**Fix:**
-- Rimosso testo "Credito Spunta" dal wallet GENERICO
-- Aggiunto pulsante "+ Ricarica" con dialog per ricarica PagoPA
-- Aggiunto stato `showRicaricaDialog`, `selectedWalletRicarica`, `ricaricaAmount`
-
-#### 4. Storico Ricariche Wallet (Commit: `b6a2646`)
-
-**Problema:**
-Lo storico mostrava solo i pagamenti canone, non le ricariche wallet.
-
-**File:** `client/src/pages/WalletImpresaPage.tsx`
-
-**Fix:**
-- Aggiunto stato `transactions` per le transazioni wallet
-- Aggiunto fetch da `/api/wallets/{id}/transactions` per ogni wallet
-- Sezione "Storico Movimenti" ora mostra:
-  - **Ricariche** (DEPOSIT) con badge BLU e importo +€XX.XX
-  - **Pagamenti Canone** (PAGATO) con badge VERDE
-
-#### 5. Filtri Notifiche App Impresa (Commit: `b6a2646`)
-
-**Problema:**
-La pagina notifiche mostrava solo le notifiche ricevute senza possibilità di vedere i messaggi inviati.
-
-**File:** `client/src/pages/AppImpresaNotifiche.tsx`
-
-**Fix:**
-- Ripristinati filtri **Tutti / Ricevuti / Inviati**
-- Default impostato su **"Ricevuti"** (più logico per l'impresa)
-- Messaggi inviati mostrati con icona verde `<Send>` e stile differente
-
-#### 6. Badge Notifiche HomePage App Impresa (Commit: `e20cff7`)
-
-**Problema:**
-Il badge notifiche non appariva nel pulsante "Notifiche" della Home.
-
-**File:** `client/src/pages/HomePage.tsx`
-
-**Fix (riga 68):**
-```javascript
-// PRIMA:
-const unread = data.notifiche?.filter((n: any) => !n.letto)?.length || 0;
-
-// DOPO:
-const unread = data.data?.non_lette || 0;
-```
-
-#### 7. Tasto Notifiche Tagliato in WalletPanel (Commit: `b6a2646`)
-
-**Problema:**
-Il tasto "Notifiche" nella barra tab del WalletPanel (Dashboard PA) veniva tagliato.
-
-**File:** `client/src/components/WalletPanel.tsx`
-
-**Fix (riga 951):**
-```javascript
-className={`flex-shrink-0 whitespace-nowrap ${subTab === 'notifiche' ? 'bg-[#8b5cf6]' : 'border-slate-700 text-slate-300'}`}
-```
-
-#### 8. Badge Notifiche Pulsante Dashboard PA (Commit: `b6a2646`)
-
-**Problema:**
-Il badge notifiche appariva solo nella barra rapida, non nel pulsante "Notifiche" nella griglia Sezioni Dashboard.
-
-**File:** `client/src/pages/DashboardPA.tsx`
-
-**Fix (riga ~2280):**
-```jsx
-<button className={`relative flex flex-col items-center...`}>
-  <Bell className="h-6 w-6" />
-  <span className="text-xs font-medium">Notifiche</span>
-  {notificheNonLette > 0 && (
-    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-      {notificheNonLette > 99 ? '99+' : notificheNonLette}
-    </span>
-  )}
-</button>
-```
-
----
-
-### 📊 STATO COMPONENTI (24/01/2026)
-
-| Componente | Stato | Note |
-|------------|-------|------|
-| **Wallet GENERICO** | ✅ Funzionante | Creato automaticamente, visibile in App Impresa |
-| **Ricarica Wallet** | ✅ Funzionante | Pulsante + Dialog + Salvataggio in wallet_transactions |
-| **Storico Movimenti** | ✅ Funzionante | Mostra ricariche e pagamenti canone |
-| **Notifiche App Impresa** | ✅ Funzionante | Filtri Tutti/Ricevuti/Inviati |
-| **Badge Notifiche Home** | ✅ Funzionante | Mostra conteggio non lette |
-| **Badge Notifiche Dashboard** | ✅ Funzionante | Sia barra rapida che griglia |
-| **Tasto Notifiche WalletPanel** | ✅ Funzionante | Non più tagliato |
-
----
-
-### 🗄️ STRUTTURA WALLET (Chiarimento)
-
-```
-TIPI WALLET:
-├── SPUNTISTA (DB) → "GENERICO" (UI) - Wallet generale dell'impresa
-├── SPUNTA (DB) → "SPUNTA" (UI) - Wallet per mercato specifico (domanda spunta approvata)
-└── CONCESSION (DB) → "CONCESSIONE" (UI) - Wallet legato al posteggio
-
-FLUSSO CREAZIONE:
-1. Creazione Impresa → Wallet SPUNTISTA (automatico)
-2. Approvazione Domanda Spunta → Wallet SPUNTA per quel mercato
-3. Creazione Concessione → Wallet CONCESSION per quel posteggio
-```
-
----
-
-### 📝 COMMIT DELLA GIORNATA
-
-| Commit | Descrizione | Repository |
-|--------|-------------|------------|
-| `1fdae14` | Creazione automatica wallet SPUNTISTA | mihub-backend-rest |
-| `7800197` | Fix filtro wallet SPUNTISTA frontend | dms-hub-app-new |
-| `e20cff7` | Fix notifiche, ricarica wallet, badge | dms-hub-app-new |
-| `b6a2646` | Storico ricariche, filtri notifiche, badge Dashboard | dms-hub-app-new |
-
----
-
-### ⚠️ VINCOLI NEGATIVI (Cosa NON fare)
-
-1. **NON cercare `type === 'GENERICO'`** nel frontend - il tipo nel DB è `'SPUNTISTA'`
-2. **NON usare `data.notifiche.filter(!n.letto)`** - usare `data.data.non_lette` dal backend
-3. **NON rimuovere i filtri notifiche** - gli utenti vogliono vedere sia ricevuti che inviati
-4. **NON dimenticare `flex-shrink-0`** sui pulsanti in container con overflow-x-auto
-
-
-
----
-
-## 💡 AGGIORNAMENTO 25 GENNAIO 2026 - SESSIONE COMPLETA
-
-### ✅ Modifiche Implementate
-
-#### 1. Fix Barra Rapida Dashboard PA (v3.73.5)
-**Problema:** I tasti della barra rapida "Accesso Rapido Applicativi" andavano a capo invece di stare su una riga.
-
-**File:** `client/src/pages/DashboardPA.tsx`
-
-**Fix:**
-- Cambiato da `grid-cols-5 md:grid-cols-10` a `grid-cols-11` per forzare tutti gli 11 tasti su una riga
-- Ridotto gap da `gap-3` a `gap-2` per risparmiare spazio
-
----
-
-#### 2. Fix Sub-Tab WalletPanel (v3.73.6 - v3.73.7)
-**Problema:** Il sub-tab "Notifiche" nel WalletPanel era tagliato e il badge notifiche non appariva.
-
-**File:** `client/src/components/WalletPanel.tsx`
-
-**Fix:**
-- Sub-tab spostati su riga separata sotto il titolo per avere più spazio
-- Endpoint notifiche corretto: `/api/notifiche/messaggi/TRIBUTI/1`
-- Badge rosso con numero notifiche non lette ora visibile
-
----
-
-#### 3. Fix Saldo Wallet Lista Posteggi (v3.73.8)
-**Problema:** Nella simulazione mercato, il saldo wallet del posteggio 5 (Intim8) mostrava il saldo sbagliato perché cercava nella graduatoria invece di usare il saldo diretto.
-
-**Causa:** Intim8 aveva 2 posteggi (5 e 6) con 2 wallet diversi, ma la graduatoria aveva solo 1 record.
-
-**File:** `client/src/components/GestioneMercati.tsx`
-
-**Fix:**
-```javascript
-// PRIMA (errato) - cercava nella graduatoria
-const gradRecord = graduatoria.find(g => g.stall_id === stall.id);
-const walletBalance = gradRecord?.wallet_balance;
-
-// DOPO (corretto) - usa direttamente il saldo dal posteggio
-const walletBalance = stall.wallet_balance;
-```
-
----
-
-#### 4. Form SCIA Migliorato (v3.73.9)
-
-**4.1 Form Allargato**
-- Cambiato da `max-w-4xl` a `w-full` come gli altri form
-
-**4.2 Auto-compilazione Comune Presentazione**
-- Quando si seleziona un mercato, il campo "Comune Presentazione" si compila automaticamente con il comune del mercato
-
-**4.3 Ricerca Imprese Migliorata (TUTTI I FORM)**
-| Form | File |
-|------|------|
-| SciaForm | `client/src/components/suap/SciaForm.tsx` |
-| ConcessioneForm | `client/src/components/suap/ConcessioneForm.tsx` |
-| DomandaSpuntaForm | `client/src/components/suap/DomandaSpuntaForm.tsx` |
-| AutorizzazioneForm | `client/src/components/suap/AutorizzazioneForm.tsx` |
-
-**Modifiche applicate a tutti:**
-- Ricerca attiva dalla **prima lettera** (invece di 2)
-- Limite risultati aumentato da **10 a 15**
-- Altezza dropdown aumentata da **max-h-60 a max-h-96**
-
----
-
-#### 5. Fix CHECK_LIMITE_POSTEGGI (v3.73.10 Backend)
-**Problema:** Il check contava TUTTI i posteggi dell'impresa in TUTTI i mercati, invece di contare solo quelli nello stesso mercato.
-
-**Regola corretta:**
-- Mercati < 100 posteggi: max 2 posteggi per impresa nello stesso mercato
-- Mercati ≥ 100 posteggi: max 3 posteggi per impresa nello stesso mercato
-
-**File:** `mihub-backend-rest/src/modules/suap/service.js`
-
-**Fix:**
-```sql
--- PRIMA (errato)
-SELECT COUNT(*) FROM concessions c
-JOIN vendors v ON c.vendor_id = v.id
-WHERE v.impresa_id = $1
-
--- DOPO (corretto)
-SELECT COUNT(*) FROM concessions c
-JOIN vendors v ON c.vendor_id = v.id
-JOIN stalls s ON c.stall_id = s.id
-WHERE v.impresa_id = $1 
-AND s.market_id = $2  -- Filtro per mercato specifico
-```
-
----
-
-#### 6. Fix Creazione Concessione da SCIA (v3.73.11 Backend)
-**Problema:** Errore "Failed to create concession" quando si generava la concessione da una SCIA di subingresso.
-
-**Causa:** Il backend provava a eliminare il wallet del cedente, ma c'erano ancora presenze (vendor_presences) collegate.
-
-**File:** `mihub-backend-rest/routes/concessions.js`
-
-**Fix:**
-```javascript
-// Prima di eliminare il wallet, eliminare le presenze collegate
-await client.query('DELETE FROM vendor_presences WHERE wallet_id = $1', [oldWalletId]);
-await client.query('DELETE FROM wallet_transactions WHERE wallet_id = $1', [oldWalletId]);
-await client.query('DELETE FROM wallets WHERE id = $1', [oldWalletId]);
-```
-
----
-
-#### 7. Subingresso: Storico Wallet e Trasferimento Scadenze (v3.73.12 Backend) ⏳
-**Problema:** Quando si faceva un subingresso:
-1. Non veniva registrato il trasferimento nello storico wallet
-2. Le scadenze canone venivano cancellate invece di essere trasferite al subentrante
-
-**File:** `mihub-backend-rest/routes/concessions.js`
-
-**Fix implementato (da deployare):**
-
-**Storico Wallet:**
-```javascript
-// TRASFERIMENTO_OUT per cedente
-INSERT INTO wallet_history (wallet_id, impresa_id, event_type, motivo, saldo, ...)
-VALUES ($1, $2, 'TRASFERIMENTO_OUT', 'Subingresso a [Subentrante] - Posteggio X', ...);
-
-// TRASFERIMENTO_IN per subentrante
-INSERT INTO wallet_history (wallet_id, impresa_id, event_type, motivo, saldo, ...)
-VALUES ($1, $2, 'TRASFERIMENTO_IN', 'Subingresso da [Cedente] - Posteggio X', ...);
-```
-
-**Trasferimento Scadenze:**
-```javascript
-// 1. Scollega scadenze dal vecchio wallet (prima di eliminarlo)
-UPDATE wallet_scadenze SET wallet_id = NULL WHERE wallet_id = $1;
-
-// 2. Dopo creazione nuovo wallet, riassegna le scadenze
-UPDATE wallet_scadenze 
-SET wallet_id = $1, note = CONCAT(COALESCE(note, ''), ' [Trasferito da subingresso]')
-WHERE wallet_id IS NULL AND stall_id = $2;
-```
-
----
-
-### 📝 COMMIT DELLA SESSIONE
-
-| Commit | Versione | Descrizione | Repository |
-|--------|----------|-------------|------------|
-| `40b1fef` | v3.73.4 | Ripristino griglia barra rapida | dms-hub-app-new |
-| `f4a0e59` | v3.73.5 | Barra rapida 11 colonne | dms-hub-app-new |
-| `80dd598` | v3.73.6 | Fix sub-tab flex-wrap | dms-hub-app-new |
-| `d3a4cf6` | v3.73.7 | Sub-tab su riga separata + endpoint notifiche | dms-hub-app-new |
-| `3318a89` | v3.73.8 | Fix saldo wallet lista posteggi | dms-hub-app-new |
-| `6e7c5ca` | v3.73.9 | Form SCIA + ricerca imprese migliorata | dms-hub-app-new |
-| `94a3538` | v3.73.10 | Fix CHECK_LIMITE_POSTEGGI per mercato | mihub-backend-rest |
-| `7fee704` | v3.73.11 | Fix eliminazione wallet con presenze | mihub-backend-rest |
-| `bd0366c` | v3.73.12 | Storico wallet + trasferimento scadenze | mihub-backend-rest |
-
----
-
-### ⚠️ VINCOLI NEGATIVI (Cosa NON fare)
-
-1. **NON contare posteggi di tutti i mercati** per CHECK_LIMITE_POSTEGGI - filtrare sempre per `market_id`
-2. **NON eliminare wallet** senza prima eliminare `vendor_presences` e `wallet_transactions` collegate
-3. **NON cancellare scadenze canone** nel subingresso - devono essere trasferite al subentrante
-4. **NON usare graduatoria** per il saldo wallet nella lista posteggi - usare `stall.wallet_balance`
-5. **NON cercare imprese** con minLength > 1 - gli utenti vogliono risultati dalla prima lettera
-
----
-
-### 🔄 STATO DEPLOY
-
-| Componente | Versione | Stato |
-|------------|----------|-------|
-| **Frontend (Vercel)** | v3.73.9 | ✅ Deployato |
-| **Backend (Hetzner)** | v3.73.11 | ✅ Deployato |
-| **Backend v3.73.12** | v3.73.12 | ⏳ Da deployare |
-
-**Comando deploy backend:**
-```bash
-ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -i ~/.ssh/manus_hetzner_key root@157.90.29.66 "cd /root/mihub-backend-rest && git pull && pm2 restart mihub-backend"
-```
-
-
-
----
-
-## 🆕 VERBALI PROFESSIONALI L. 689/81 (v3.80.0 - 26 Gennaio 2026)
-
-### Panoramica
-
-Sistema completo per l'emissione di **verbali professionali** conformi alla Legge 689/81 per le sanzioni amministrative rilevate dalla Polizia Municipale.
-
-### Componenti
-
-| Componente | Descrizione |
-|------------|-------------|
-| **NuovoVerbalePage** | Form professionale a 9 sezioni per emissione verbale |
-| **Backend API** | 6 endpoint REST per gestione verbali |
-| **PDF Generator** | Generazione PDF conforme L. 689/81 |
-| **Notifiche** | Sistema invio notifiche a imprese |
-
-### Form Verbale - 9 Sezioni
-
-| Sezione | Contenuto |
-|---------|-----------|
-| 1. **Intestazione** | Comune, Provincia, Corpo PM (auto-compilato) |
-| 2. **Agente Accertatore** | Nome, Matricola, Qualifica |
-| 3. **Luogo e Data** | Indirizzo, Data/Ora accertamento |
-| 4. **Dati Trasgressore** | Impresa con ricerca popup |
-| 5. **Proprietario/Obbligato** | Se diverso dal trasgressore |
-| 6. **Violazione Contestata** | Infrazione con testo di legge |
-| 7. **Dichiarazioni** | Contestazione immediata/differita |
-| 8. **Sanzione Amministrativa** | Importo, ridotto, scadenze |
-| 9. **Note Aggiuntive** | Osservazioni libere |
-
-### API Endpoints Verbali
-
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/verbali/config` | GET | Configurazione Comune/Corpo PM |
-| `/api/verbali/infrazioni` | GET | Catalogo infrazioni con testo legge |
-| `/api/verbali` | POST | Emetti nuovo verbale |
-| `/api/verbali/:id` | GET | Dettaglio verbale |
-| `/api/verbali/:id/pdf` | GET | Genera PDF conforme |
-| `/api/verbali/:id/invia` | POST | Notifica impresa |
-
-### Database - Nuove Colonne `sanctions`
-
-| Colonna | Tipo | Descrizione |
-|---------|------|-------------|
-| `verbale_number` | VARCHAR | Numero progressivo verbale |
-| `agente_nome` | VARCHAR | Nome agente accertatore |
-| `agente_matricola` | VARCHAR | Matricola agente |
-| `agente_qualifica` | VARCHAR | Qualifica agente |
-| `luogo_accertamento` | TEXT | Indirizzo accertamento |
-| `data_accertamento` | TIMESTAMP | Data/ora accertamento |
-| `contestazione_immediata` | BOOLEAN | Se contestato immediatamente |
-| `motivo_differita` | TEXT | Motivo contestazione differita |
-| `dichiarazioni_trasgressore` | TEXT | Dichiarazioni rese |
-| `importo_ridotto` | DECIMAL | Importo pagamento ridotto |
-| `scadenza_ridotto` | DATE | Scadenza pagamento ridotto |
-| `scadenza_ordinario` | DATE | Scadenza pagamento ordinario |
-| `pdf_path` | VARCHAR | Path file PDF generato |
-| `notifica_inviata_at` | TIMESTAMP | Data invio notifica |
-
-### URL Frontend
-
-- **Nuovo Verbale:** `https://dms-hub-app-new.vercel.app/pm/nuovo-verbale`
-
----
-
-## 🆕 SISTEMA IMPOSTAZIONI ORARI MERCATO (v3.81.0 - 26 Gennaio 2026)
-
-### Panoramica
-
-Sistema completo per la **gestione degli orari mercato** con rilevamento automatico delle trasgressioni e gestione delle giustifiche.
-
-### Funzionalità Principali
-
-| Funzionalità | Descrizione |
-|--------------|-------------|
-| **Impostazioni Orari** | Configurazione orari presenza, spazzatura, uscita per ogni mercato |
-| **Monitoraggio Automatico** | CRON job per rilevamento trasgressioni |
-| **Gestione Giustifiche** | Workflow completo invio/approvazione giustifiche |
-| **Verbali Automatici** | Toggle per emissione automatica verbali |
-
-### Componenti Frontend
-
-| Componente | Posizione | Descrizione |
-|------------|-----------|-------------|
-| **MarketSettingsTab** | Gestione Mercati → Tab "Impostazioni" | Configurazione orari e regole |
-| **Tab Giustifiche** | Controlli/Sanzioni → Tab "Giustifiche" | Gestione giustifiche trasgressioni |
-
-### Sotto-tab "Impostazioni" in Gestione Mercati
-
-| Sezione | Contenuto |
-|---------|-----------|
-| **Orari Presenza** | Inizio/Fine + Orario Spuntisti |
-| **Orari Spazzatura** | Inizio/Fine deposito rifiuti |
-| **Orari Uscita** | Inizio/Fine uscita mercato |
-| **Toggle Verbali** | Attiva/disattiva verbali automatici per tipo |
-| **Giorni Giustifica** | Configurazione deadline giustifiche |
-
-### Tab "Giustifiche" in Controlli/Sanzioni
-
-| Elemento | Descrizione |
-|----------|-------------|
-| **Stats Rapide** | In Attesa, Da Valutare, Scadute, Totale |
-| **Lista Trasgressioni** | Badge tipo e stato, countdown giorni |
-| **Azioni** | Vedi Certificato, Approva, Rifiuta, Prepara Verbale |
-
-### Tipi di Trasgressione
-
-| Tipo | Descrizione | Verbale Automatico |
-|------|-------------|-------------------|
-| `PRESENZA_TARDIVA` | Presenza non marcata entro l'orario | Configurabile |
-| `SPAZZATURA_TARDIVA` | Deposito rifiuti fuori orario | Configurabile |
-| `USCITA_ANTICIPATA` | Uscita prima dell'orario consentito | Configurabile |
-
-### Workflow Giustifiche
-
-```
-1. Trasgressione Rilevata (CRON)
-   └─► Status: PENDING
-       └─► Notifica a Impresa
-           └─► Countdown giorni per giustifica
-
-2. Impresa Invia Certificato
-   └─► Status: JUSTIFICATION_SUBMITTED
-       └─► Notifica a PM
-           └─► In attesa di valutazione
-
-3a. PM Approva
-    └─► Status: JUSTIFIED
-        └─► Trasgressione chiusa
-
-3b. PM Rifiuta
-    └─► Status: SANCTION_PREPARED
-        └─► Prepara verbale
-
-4. Scadenza Giustifica (CRON)
-   └─► Status: SANCTION_PREPARED
-       └─► Verbale automatico (se abilitato)
-```
-
-### Database - Nuove Tabelle
-
-#### Tabella `market_settings`
-
-| Colonna | Tipo | Descrizione |
-|---------|------|-------------|
-| `id` | SERIAL | Primary key |
-| `market_id` | INTEGER | FK a markets |
-| `presence_start_time` | TIME | Inizio orario presenza |
-| `presence_end_time` | TIME | Fine orario presenza |
-| `spunta_presence_start_time` | TIME | Inizio presenza spuntisti |
-| `waste_disposal_start_time` | TIME | Inizio deposito spazzatura |
-| `waste_disposal_end_time` | TIME | Fine deposito spazzatura |
-| `exit_market_start_time` | TIME | Inizio orario uscita |
-| `exit_market_end_time` | TIME | Fine orario uscita |
-| `is_active` | BOOLEAN | Monitoraggio attivo |
-| `justification_days` | INTEGER | Giorni per giustifica |
-| `auto_sanction_rules` | JSONB | Regole verbali automatici |
-
-#### Tabella `market_transgressions`
-
-| Colonna | Tipo | Descrizione |
-|---------|------|-------------|
-| `id` | SERIAL | Primary key |
-| `market_id` | INTEGER | FK a markets |
-| `market_date` | DATE | Data mercato |
-| `business_id` | INTEGER | FK a imprese |
-| `transgression_type` | VARCHAR | Tipo trasgressione |
-| `status` | VARCHAR | Stato workflow |
-| `justification_deadline` | TIMESTAMP | Scadenza giustifica |
-| `justification_file_path` | VARCHAR | Path certificato |
-| `justification_status` | VARCHAR | Stato giustifica |
-| `justification_notes` | TEXT | Note giustifica |
-| `sanction_id` | INTEGER | FK a sanctions |
-
-### API Endpoints Market Settings
-
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/market-settings/:marketId` | GET | Ottieni impostazioni orari |
-| `/api/market-settings/:marketId` | POST | Salva impostazioni orari |
-| `/api/market-settings/transgressions/list` | GET | Lista trasgressioni |
-| `/api/market-settings/transgressions/pending-justifications` | GET | Giustifiche in attesa |
-| `/api/market-settings/transgressions/:id/justify` | POST | Invia giustifica |
-| `/api/market-settings/transgressions/:id/review` | PUT | Approva/Rifiuta |
-| `/api/market-settings/transgressions/:id/sanction` | POST | Collega verbale |
-| `/api/market-settings/transgressions/stats` | GET | Statistiche |
-| `/api/market-settings/cron/run` | POST | Esegui CRON manuale |
-
-### CRON Job
-
-**File:** `cron/market-transgressions.js`
-
-| Task | Frequenza | Descrizione |
-|------|-----------|-------------|
-| `detectTransgressions` | Ogni 5 min | Rileva trasgressioni durante orari mercato |
-| `checkExpiredJustifications` | Ogni ora | Verifica scadenze giustifiche |
-
-### URL Frontend
-
-- **Impostazioni Mercato:** Dashboard PA → Gestione Mercati → Tab "Impostazioni"
-- **Giustifiche:** Dashboard PA → Controlli/Sanzioni → Tab "Giustifiche"
-- **Integrazioni:** Dashboard PA → Tab "Integrazioni" (15 nuovi endpoint registrati)
-
----
-
-### 📝 COMMIT SESSIONE 26 GENNAIO 2026
-
-| Commit | Versione | Descrizione | Repository |
-|--------|----------|-------------|------------|
-| `ae217c4` | v3.80.0 | Backend verbali professionali L. 689/81 | mihub-backend-rest |
-| `d271b28` | v3.80.0 | Frontend NuovoVerbalePage + endpoint Guardian | dms-hub-app-new |
-| `681036e` | v3.81.0 | Sotto-tab Impostazioni Mercato | dms-hub-app-new |
-| `3e623d5` | v3.81.0 | Tab Giustifiche in Controlli/Sanzioni | dms-hub-app-new |
-| `ca3a9ea` | v3.81.0 | CRON Job rilevamento trasgressioni | mihub-backend-rest |
-| `5b7f164` | v3.81.0 | 9 endpoint Market Settings in Guardian | dms-hub-app-new |
-
----
-
-### 🔄 STATO DEPLOY AGGIORNATO
-
-| Componente | Versione | Stato |
-|------------|----------|-------|
-| **Frontend (Vercel)** | v3.81.0 | ✅ Deployato |
-| **Backend (Hetzner)** | v3.81.0 | ✅ Deployato |
-| **Database (Neon)** | v3.81.0 | ✅ Migrato |
-
----
-
-### ⚠️ VINCOLI NEGATIVI AGGIORNATI
-
-1. **NON contare posteggi di tutti i mercati** per CHECK_LIMITE_POSTEGGI - filtrare sempre per `market_id`
-2. **NON eliminare wallet** senza prima eliminare `vendor_presences` e `wallet_transactions` collegate
-3. **NON cancellare scadenze canone** nel subingresso - devono essere trasferite al subentrante
-4. **NON usare graduatoria** per il saldo wallet nella lista posteggi - usare `stall.wallet_balance`
-5. **NON cercare imprese** con minLength > 1 - gli utenti vogliono risultati dalla prima lettera
-6. **NON usare `react-router-dom`** nel frontend - il progetto usa `wouter` per il routing
-7. **NON modificare le tabelle esistenti** senza verificare le dipendenze - usare sempre migrazioni incrementali
-
----
-
-### 📊 STATISTICHE AGGIORNATE
-
-- **Endpoint totali:** 463 (151 REST + 312 tRPC)
-- **Endpoint Verbali:** 6
-- **Endpoint Market Settings:** 9
-- **Mercati nel DB:** 3 (Grosseto, Novi Sad, Modena)
-- **Tabelle nuove:** 2 (`market_settings`, `market_transgressions`)
-- **Colonne nuove `sanctions`:** 14
-
-
-
----
-
-## 🆕 AGGIORNAMENTI 26 GENNAIO 2026 (POMERIGGIO) - v3.82.0
-
-### Bug Fix Critici
-
-| Bug | Fix | Commit |
-|-----|-----|--------|
-| Watchlist vuota ma conta 1 | Query corretta: `denominazione` invece di `ragione_sociale` | `watchlist.js` |
-| PDF Verbale errore 500 | Query corretta per colonne indirizzo imprese | `verbali.js` |
-| Form Verbale non carica dati impresa | Mappatura corretta campi rappresentante legale | `NuovoVerbalePage.tsx` |
-| ControlliSanzioniPanel lento | Loading inline - UI sempre visibile durante caricamento | `ControlliSanzioniPanel.tsx` |
-| API lente su orchestratore | Cambiato URL da `orchestratore.mio-hub.me` a `api.mio-hub.me` | Frontend |
-
-### Nuove Funzionalità
-
-#### 1. Auto-compilazione Form Verbale
-- **Data odierna** - Auto-compilata al caricamento
-- **Ora corrente** - Auto-compilata al caricamento
-- **Luogo con GPS** - Recupera coordinate GPS del dispositivo
-- **Reverse Geocoding** - Converte coordinate in indirizzo (via Nominatim/OpenStreetMap)
-- **Dropdown Comuni** - Seleziona tra i 5 comuni registrati
-
-#### 2. Mappatura Completa Dati Impresa
-Quando si seleziona un'impresa nel form verbale, vengono auto-compilati:
-- Nome e Cognome Rappresentante Legale
-- Codice Fiscale
-- Data di Nascita
-- Luogo di Nascita
-- Residenza/Domicilio completo
-
-#### 3. Filtro Mercati per Comune
-**Logica implementata in `GestioneMercati.tsx`:**
-- **Super Admin** (`chcndr@gmail.com`) → Vede tutti i mercati
-- **Utente con ruolo assegnato** → Vede solo mercati del proprio comune
-- **Modalità impersonificazione** → Vede solo mercati del comune impersonificato
-
-```javascript
-// Filtro basato su:
-// 1. isImpersonating + comuneNome (da URL params)
-// 2. user.assigned_roles[0].comune_nome (da localStorage)
-// 3. isSuperAdmin (bypass filtro)
-```
-
-### Dati Test Impresa MIO TEST (ID 38)
-
-| Campo | Valore |
-|-------|--------|
-| Rappresentante Legale | Mario Rossi |
-| CF Rappresentante | RSSMRA80A01H501Z |
-| Data Nascita | 01/01/1980 |
-| Luogo Nascita | Roma (RM) |
-| Residenza | Via Garibaldi 15, 58100 Grosseto (GR) |
-| Indirizzo Sede | Via Roma 42, 58100 Grosseto (GR) |
-| Telefono | 0564123456 |
-| Email | info@miotest.it |
-| PEC | miotest@pec.it |
-
-### Commit Sessione Pomeriggio
-
-| Commit | Descrizione | Repository |
-|--------|-------------|------------|
-| `watchlist-fix` | Fix query watchlist denominazione | mihub-backend-rest |
-| `pdf-fix` | Fix query PDF colonne indirizzo | mihub-backend-rest |
-| `3f8eca2` | Mappatura corretta campi impresa form verbale | dms-hub-app-new |
-| `fc93478` | Loading inline ControlliSanzioniPanel | dms-hub-app-new |
-| `5982978` | Auto-compilazione luogo GPS + data/ora | dms-hub-app-new |
-| `65af4fd` | Filtro mercati per comune | dms-hub-app-new |
-
-### Test API Verificati
-
-| Endpoint | Stato | Note |
-|----------|-------|------|
-| `/api/watchlist` | ✅ OK | Mostra impresa MIO TEST |
-| `/api/sanctions` | ✅ OK | 1 verbale |
-| `/api/verbali/1/pdf` | ✅ OK | PDF generato correttamente |
-| `/api/market-settings/1` | ✅ OK | Impostazioni attive |
-| `/api/comuni` | ✅ OK | 5 comuni disponibili |
-| `/api/verbali/infrazioni` | ✅ OK | 16 infrazioni |
-
-### Vincoli Negativi Aggiunti
-
-8. **NON usare `ragione_sociale`** nelle query imprese - il campo corretto è `denominazione`
-9. **NON usare `indirizzo`** singolo nelle query imprese - usare `indirizzo_via`, `indirizzo_civico`, `indirizzo_cap`, `indirizzo_provincia`
-10. **NON bloccare UI durante caricamento** - usare loading inline con spinner nel pulsante Aggiorna
-
-### Statistiche Aggiornate v3.82.0
-
-- **Versione:** 3.82.0
-- **Endpoint totali:** 463 (151 REST + 312 tRPC)
-- **Comuni registrati:** 5 (Bologna, Carpi, Grosseto, Modena, Vignola)
-- **Mercati nel DB:** 2 (Grosseto, Novi Sad Modena)
-- **Verbali emessi:** 1 (VER-2026-6771)
-
----
-
-## 📝 AGGIORNAMENTO v3.83.0 - 26 Gennaio 2026 (Sera)
-
-### Tab Storico Sessioni Mercato
-
-**Nuovo sotto-tab "Storico"** aggiunto in Controlli/Sanzioni:
-
-| Componente | Descrizione |
-|------------|-------------|
-| Lista sessioni | Mostra mercati chiusi con data, posteggi, incassato |
-| Modal dettaglio | Cronologia presenze con N°, Impresa, Accesso, Rifiuti, Uscita |
-| Stats rapide | Posteggi occupati, presenze, uscite registrate, totale incassato |
-
-### Nuovi Endpoint Backend
-
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/presenze/storico/sessioni` | GET | Lista sessioni mercato chiuse |
-| `/api/presenze/storico/dettaglio/:marketId/:data` | GET | Dettaglio cronologia presenze |
-
-### Filtro Mercati per Comune
-
-Implementato filtro in Gestione Mercati:
-- **Super Admin** → Vede tutti i mercati
-- **Utente Comune** → Vede solo mercati del proprio comune
-- **Impersonificazione** → Vede solo mercati del comune impersonificato
-
-### Commit Sessione Sera
-
-| Commit | Descrizione |
-|--------|-------------|
-| `88c6339` | Endpoint storico sessioni mercato |
-| `d26439b` | Tab Storico in Controlli/Sanzioni |
-| `65af4fd` | Filtro mercati per comune |
-
-### Statistiche Aggiornate v3.83.0
-
-- **Versione:** 3.83.0
-- **Endpoint totali:** 465 (153 REST + 312 tRPC)
-- **Nuovi endpoint:** 2 (storico sessioni + dettaglio)
-- **Tab Controlli/Sanzioni:** 9 (Panoramica, Da Controllare, Verbali, Tipi Infrazione, Pratiche SUAP, Notifiche PM, Giustifiche, **Storico**)
-
----
-
-*Ultimo aggiornamento: 26 Gennaio 2026 ore 16:30*
+*Aggiornamento del 20 Gennaio 2026 - Manus AI*
