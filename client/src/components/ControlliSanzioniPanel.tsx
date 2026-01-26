@@ -119,6 +119,8 @@ export default function ControlliSanzioniPanel() {
   // Modal states
   const [showNuovoControlloModal, setShowNuovoControlloModal] = useState(false);
   const [nuovoControlloLoading, setNuovoControlloLoading] = useState(false);
+  const [showNuovoVerbaleModal, setShowNuovoVerbaleModal] = useState(false);
+  const [nuovoVerbaleLoading, setNuovoVerbaleLoading] = useState(false);
   const [invioNotificaLoading, setInvioNotificaLoading] = useState(false);
 
   // Fetch data on mount
@@ -216,10 +218,11 @@ export default function ControlliSanzioniPanel() {
     
     const formData = new FormData(e.currentTarget);
     const data = {
-      impresa_id: formData.get('impresa_id'),
-      tipo_controllo: formData.get('tipo_controllo'),
-      note: formData.get('note'),
-      agente: 'Polizia Municipale'
+      business_id: formData.get('impresa_id'),
+      type: formData.get('tipo_controllo') || 'CONTROLLO_PM',
+      notes: formData.get('note') || '',
+      inspector: 'Polizia Municipale',
+      status: 'scheduled'
     };
 
     try {
@@ -241,6 +244,50 @@ export default function ControlliSanzioniPanel() {
       alert('❌ Errore nella registrazione del controllo');
     } finally {
       setNuovoControlloLoading(false);
+    }
+  };
+
+  // Handle nuovo verbale submit
+  const handleNuovoVerbaleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setNuovoVerbaleLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const impresaId = formData.get('impresa_id');
+    const infractionCode = formData.get('infraction_code') as string;
+    const amount = formData.get('amount');
+    const description = formData.get('description');
+    
+    // Genera codice verbale
+    const verbaleCode = `PM-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+    
+    const data = {
+      impresa_id: impresaId,
+      infraction_code: infractionCode,
+      verbale_code: verbaleCode,
+      amount: parseFloat(amount as string) || 0,
+      description: description || `Verbale per ${infractionCode}`
+    };
+
+    try {
+      const response = await fetch(`${MIHUB_API}/sanctions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`✅ Verbale ${verbaleCode} emesso con successo! Notifica inviata all'impresa.`);
+        setShowNuovoVerbaleModal(false);
+        fetchAllData();
+      } else {
+        alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+      }
+    } catch (err) {
+      alert('❌ Errore nella creazione del verbale');
+    } finally {
+      setNuovoVerbaleLoading(false);
     }
   };
 
@@ -393,6 +440,87 @@ export default function ControlliSanzioniPanel() {
                   className="flex-1 bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-black"
                 >
                   {nuovoControlloLoading ? 'Salvataggio...' : 'Registra Controllo'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nuovo Verbale */}
+      {showNuovoVerbaleModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#1a2332] border border-[#ef4444]/30 rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#e8fbff]">Nuovo Verbale</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowNuovoVerbaleModal(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <form onSubmit={handleNuovoVerbaleSubmit} className="space-y-4">
+              <div>
+                <Label className="text-[#e8fbff]/70">Impresa</Label>
+                <select 
+                  name="impresa_id" 
+                  required
+                  className="w-full mt-1 bg-[#0b1220] border border-[#ef4444]/30 rounded-lg p-2 text-[#e8fbff]"
+                >
+                  <option value="">Seleziona impresa...</option>
+                  {impreseList.map(imp => (
+                    <option key={imp.id} value={imp.id}>{imp.denominazione} - {imp.partita_iva}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label className="text-[#e8fbff]/70">Tipo Infrazione</Label>
+                <select 
+                  name="infraction_code" 
+                  required
+                  className="w-full mt-1 bg-[#0b1220] border border-[#ef4444]/30 rounded-lg p-2 text-[#e8fbff]"
+                >
+                  <option value="">Seleziona infrazione...</option>
+                  {infractionTypes.map(inf => (
+                    <option key={inf.id} value={inf.code}>
+                      {inf.code} - {inf.description} (€{inf.default_amount})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label className="text-[#e8fbff]/70">Importo (€)</Label>
+                <Input 
+                  type="number" 
+                  name="amount" 
+                  placeholder="Importo sanzione"
+                  required
+                  min="0"
+                  step="0.01"
+                  className="mt-1 bg-[#0b1220] border-[#ef4444]/30 text-[#e8fbff]"
+                />
+              </div>
+              <div>
+                <Label className="text-[#e8fbff]/70">Descrizione</Label>
+                <Textarea 
+                  name="description" 
+                  placeholder="Descrizione della violazione..."
+                  className="mt-1 bg-[#0b1220] border-[#ef4444]/30 text-[#e8fbff]"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowNuovoVerbaleModal(false)}
+                  className="flex-1 border-[#e8fbff]/20"
+                >
+                  Annulla
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={nuovoVerbaleLoading}
+                  className="flex-1 bg-[#ef4444] hover:bg-[#ef4444]/80 text-white"
+                >
+                  {nuovoVerbaleLoading ? 'Emissione...' : 'Emetti Verbale'}
                 </Button>
               </div>
             </form>
@@ -718,7 +846,11 @@ export default function ControlliSanzioniPanel() {
                   <FileText className="h-5 w-5 text-[#ef4444]" />
                   Verbali Emessi
                 </CardTitle>
-                <Button size="sm" className="bg-[#ef4444] hover:bg-[#ef4444]/80 text-white">
+                <Button 
+                  size="sm" 
+                  className="bg-[#ef4444] hover:bg-[#ef4444]/80 text-white"
+                  onClick={() => setShowNuovoVerbaleModal(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Nuovo Verbale
                 </Button>
