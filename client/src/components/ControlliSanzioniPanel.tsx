@@ -1942,7 +1942,7 @@ export default function ControlliSanzioniPanel() {
                   onClick={() => {
                     // Separa concessionari e spuntisti
                     const concessionari = sessionDetails.filter(d => d.tipo_presenza === 'CONCESSION' || !d.tipo_presenza);
-                    const spuntisti = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTISTA');
+                    const spuntisti = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTA');
                     
                     // Calcola statistiche dai dettagli
                     const usciteRegistrate = sessionDetails.filter(d => d.ora_uscita).length;
@@ -2037,7 +2037,7 @@ export default function ControlliSanzioniPanel() {
                     const usciteCalcolate = sessionDetails.filter(d => d.ora_uscita).length;
                     const totaleCalcolato = sessionDetails.reduce((sum, d) => sum + parseFloat(d.importo_addebitato || '0'), 0);
                     const concessionariCount = sessionDetails.filter(d => d.tipo_presenza === 'CONCESSION' || !d.tipo_presenza).length;
-                    const spuntistiCount = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTISTA').length;
+                    const spuntistiCount = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTA').length;
                     return (
                       <div className="grid grid-cols-5 gap-3 mb-4">
                         <div className="bg-[#0d1520] p-3 rounded-lg text-center">
@@ -2067,7 +2067,7 @@ export default function ControlliSanzioniPanel() {
                   {/* Tabella Concessionari */}
                   {(() => {
                     const concessionari = sessionDetails.filter(d => d.tipo_presenza === 'CONCESSION' || !d.tipo_presenza);
-                    const spuntisti = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTISTA');
+                    const spuntisti = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTA');
                     
                     const renderTable = (data: SessionDetail[], title: string, color: string) => (
                       <div className="mb-6">
