@@ -116,6 +116,37 @@ interface RispostaPM {
   letta: boolean;
 }
 
+interface MarketSession {
+  market_id: number;
+  market_name: string;
+  comune: string;
+  data_mercato: string;
+  totale_presenze: string;
+  uscite_registrate: string;
+  prima_entrata: string;
+  ultima_uscita: string | null;
+  totale_incassato: string;
+  posteggi_occupati: string;
+}
+
+interface SessionDetail {
+  id: number;
+  stall_id: number;
+  stall_number: string;
+  area_mq: string;
+  impresa_id: number;
+  impresa_nome: string;
+  impresa_piva: string;
+  tipo_presenza: string;
+  giorno: string;
+  ora_accesso: string;
+  ora_uscita: string | null;
+  ora_rifiuti: string | null;
+  importo_addebitato: string;
+  presenze_totali: number;
+  assenze_non_giustificate: number;
+}
+
 interface Transgression {
   id: number;
   market_id: number;
@@ -157,6 +188,14 @@ export default function ControlliSanzioniPanel() {
   const [risposteLoading, setRisposteLoading] = useState(false);
   const [transgressions, setTransgressions] = useState<Transgression[]>([]);
   const [transgressionsLoading, setTransgressionsLoading] = useState(false);
+  
+  // Storico sessioni mercato
+  const [marketSessions, setMarketSessions] = useState<MarketSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<MarketSession | null>(null);
+  const [sessionDetails, setSessionDetails] = useState<SessionDetail[]>([]);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [showSessionModal, setShowSessionModal] = useState(false);
 
   // Fetch data on mount
   useEffect(() => {
@@ -212,6 +251,11 @@ export default function ControlliSanzioniPanel() {
       const transgressionsRes = await fetch(`${MIHUB_API}/market-settings/transgressions/pending-justifications`);
       const transgressionsData = await transgressionsRes.json();
       if (transgressionsData.success) setTransgressions(transgressionsData.data || []);
+
+      // Fetch storico sessioni mercato
+      const sessionsRes = await fetch(`${MIHUB_API}/presenze/storico/sessioni?limit=50`);
+      const sessionsData = await sessionsRes.json();
+      if (sessionsData.success) setMarketSessions(sessionsData.data || []);
 
     } catch (err) {
       setError('Errore nel caricamento dei dati');
@@ -705,6 +749,13 @@ export default function ControlliSanzioniPanel() {
           >
             <FileCheck className="h-4 w-4 mr-2" />
             Giustifiche ({transgressions.length})
+          </TabsTrigger>
+          <TabsTrigger 
+            value="storico" 
+            className="data-[state=active]:bg-[#8b5cf6]/20 data-[state=active]:text-[#8b5cf6]"
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Storico ({marketSessions.length})
           </TabsTrigger>
         </TabsList>
 
@@ -1508,7 +1559,185 @@ export default function ControlliSanzioniPanel() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Tab: Storico Sessioni Mercato */}
+        <TabsContent value="storico" className="space-y-4 mt-4">
+          <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+            <CardHeader>
+              <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-[#8b5cf6]" />
+                Storico Sessioni Mercato
+              </CardTitle>
+              <CardDescription className="text-gray-400">
+                Cronologia dei mercati chiusi con dettaglio presenze
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {marketSessions.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nessuna sessione mercato chiusa</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {marketSessions.map((session, idx) => (
+                    <div 
+                      key={`${session.market_id}-${session.data_mercato}-${idx}`}
+                      className="bg-[#0d1520] border border-[#8b5cf6]/20 rounded-lg p-4 hover:border-[#8b5cf6]/50 cursor-pointer transition-colors"
+                      onClick={async () => {
+                        setSelectedSession(session);
+                        setShowSessionModal(true);
+                        setDetailsLoading(true);
+                        try {
+                          const dataStr = session.data_mercato.split('T')[0];
+                          const res = await fetch(`${MIHUB_API}/presenze/storico/dettaglio/${session.market_id}/${dataStr}`);
+                          const data = await res.json();
+                          if (data.success) {
+                            // Rimuovi duplicati basandosi su stall_id
+                            const uniqueDetails = data.presenze.filter((p: SessionDetail, i: number, arr: SessionDetail[]) => 
+                              arr.findIndex(x => x.stall_id === p.stall_id) === i
+                            );
+                            setSessionDetails(uniqueDetails);
+                          }
+                        } catch (err) {
+                          console.error('Errore fetch dettaglio:', err);
+                        } finally {
+                          setDetailsLoading(false);
+                        }
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-[#8b5cf6]/20 p-3 rounded-lg">
+                            <Store className="h-6 w-6 text-[#8b5cf6]" />
+                          </div>
+                          <div>
+                            <h4 className="text-[#e8fbff] font-medium">{session.market_name}</h4>
+                            <p className="text-gray-400 text-sm">{session.comune}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-center">
+                            <p className="text-[#e8fbff] font-bold">
+                              {new Date(session.data_mercato).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+                            </p>
+                            <p className="text-gray-400 text-xs">Data Mercato</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-[#3b82f6] font-bold">{session.posteggi_occupati}</p>
+                            <p className="text-gray-400 text-xs">Posteggi</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-[#10b981] font-bold">€{parseFloat(session.totale_incassato || '0').toFixed(2)}</p>
+                            <p className="text-gray-400 text-xs">Incassato</p>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-gray-400" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Modal Dettaglio Sessione */}
+      {showSessionModal && selectedSession && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a2332] border border-[#8b5cf6]/30 rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden">
+            <div className="p-4 border-b border-[#8b5cf6]/20 flex items-center justify-between">
+              <div>
+                <h3 className="text-[#e8fbff] font-bold text-lg">{selectedSession.market_name}</h3>
+                <p className="text-gray-400 text-sm">
+                  {new Date(selectedSession.data_mercato).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => {
+                  setShowSessionModal(false);
+                  setSelectedSession(null);
+                  setSessionDetails([]);
+                }}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[calc(90vh-100px)]">
+              {detailsLoading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="h-8 w-8 animate-spin mx-auto text-[#8b5cf6]" />
+                  <p className="text-gray-400 mt-2">Caricamento cronologia...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Stats rapide */}
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div className="bg-[#0d1520] p-3 rounded-lg text-center">
+                      <p className="text-[#3b82f6] font-bold text-xl">{selectedSession.posteggi_occupati}</p>
+                      <p className="text-gray-400 text-xs">Posteggi Occupati</p>
+                    </div>
+                    <div className="bg-[#0d1520] p-3 rounded-lg text-center">
+                      <p className="text-[#10b981] font-bold text-xl">{selectedSession.totale_presenze}</p>
+                      <p className="text-gray-400 text-xs">Presenze</p>
+                    </div>
+                    <div className="bg-[#0d1520] p-3 rounded-lg text-center">
+                      <p className="text-[#f59e0b] font-bold text-xl">{selectedSession.uscite_registrate}</p>
+                      <p className="text-gray-400 text-xs">Uscite Registrate</p>
+                    </div>
+                    <div className="bg-[#0d1520] p-3 rounded-lg text-center">
+                      <p className="text-[#8b5cf6] font-bold text-xl">€{parseFloat(selectedSession.totale_incassato || '0').toFixed(2)}</p>
+                      <p className="text-gray-400 text-xs">Totale Incassato</p>
+                    </div>
+                  </div>
+
+                  {/* Tabella presenze */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-[#8b5cf6]/20">
+                          <th className="text-left py-2 px-3 text-gray-400 text-sm">N°</th>
+                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Impresa</th>
+                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Importo</th>
+                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Giorno</th>
+                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Accesso</th>
+                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Rifiuti</th>
+                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Uscita</th>
+                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Pres.</th>
+                          <th className="text-left py-2 px-3 text-gray-400 text-sm">Ass.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sessionDetails.map((detail, idx) => (
+                          <tr key={`${detail.id}-${idx}`} className="border-b border-[#8b5cf6]/10 hover:bg-[#0d1520]/50">
+                            <td className="py-2 px-3 text-[#3b82f6] font-medium">{detail.stall_number}</td>
+                            <td className="py-2 px-3">
+                              <p className="text-[#e8fbff] text-sm">{detail.impresa_nome}</p>
+                              <p className="text-gray-500 text-xs">{detail.impresa_piva}</p>
+                            </td>
+                            <td className="py-2 px-3 text-[#10b981]">€{parseFloat(detail.importo_addebitato || '0').toFixed(2)}</td>
+                            <td className="py-2 px-3 text-gray-400 text-sm">
+                              {new Date(detail.giorno).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
+                            </td>
+                            <td className="py-2 px-3 text-[#3b82f6]">{detail.ora_accesso || '-'}</td>
+                            <td className="py-2 px-3 text-gray-400">{detail.ora_rifiuti || '-'}</td>
+                            <td className="py-2 px-3 text-[#f59e0b]">{detail.ora_uscita || '-'}</td>
+                            <td className="py-2 px-3 text-[#10b981]">{detail.presenze_totali || 0}</td>
+                            <td className="py-2 px-3 text-red-400">{detail.assenze_non_giustificate || 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
