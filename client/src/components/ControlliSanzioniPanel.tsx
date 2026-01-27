@@ -91,15 +91,25 @@ interface InfractionType {
   default_amount: string;
 }
 
-interface SuapPratica {
+// Interfaccia per le domande spunta dal SUAP
+interface DomandaSpunta {
   id: number;
-  numero_pratica: string;
-  tipo_pratica: string;
+  company_name: string;
+  company_piva: string;
+  company_cf: string;
+  market_name: string;
+  market_municipality: string;
+  market_days: string;
+  numero_autorizzazione: string;
+  autorizzazione_tipo: string;
+  settore_richiesto: string;
+  numero_presenze: number;
+  data_richiesta: string;
+  data_approvazione: string;
   stato: string;
-  impresa_nome: string;
-  comune_nome: string;
-  data_presentazione: string;
-  data_scadenza: string;
+  wallet_balance: number;
+  wallet_id: number;
+  note: string;
 }
 
 interface Impresa {
@@ -199,7 +209,7 @@ export default function ControlliSanzioniPanel() {
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [sanctions, setSanctions] = useState<Sanction[]>([]);
   const [infractionTypes, setInfractionTypes] = useState<InfractionType[]>([]);
-  const [praticheSuap, setPraticheSuap] = useState<SuapPratica[]>([]);
+  const [domandeSpunta, setDomandeSpunta] = useState<DomandaSpunta[]>([]);
   const [impreseList, setImpreseList] = useState<Impresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -271,10 +281,17 @@ export default function ControlliSanzioniPanel() {
       const typesData = await typesRes.json();
       if (typesData.success) setInfractionTypes(typesData.data || []);
 
-      // Fetch pratiche SUAP - filtrato per comune se in impersonificazione
-      const praticheRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/suap/pratiche?limit=50&stato=APPROVATA,RIFIUTATA,REVOCATA`));
-      const praticheData = await praticheRes.json();
-      if (praticheData.success) setPraticheSuap(praticheData.data || []);
+      // Fetch domande spunta dal SUAP - filtrato per comune se in impersonificazione
+      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const domandeRes = await fetch(addComuneIdToUrl(`${API_URL}/api/domande-spunta`));
+      const domandeData = await domandeRes.json();
+      if (domandeData.success) {
+        // Ordina per data (più recenti prima)
+        const sorted = (domandeData.data || []).sort((a: DomandaSpunta, b: DomandaSpunta) => 
+          new Date(b.data_richiesta || '').getTime() - new Date(a.data_richiesta || '').getTime()
+        );
+        setDomandeSpunta(sorted);
+      }
 
       // Fetch imprese list - filtrato per comune se in impersonificazione
       const impreseRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/imprese?limit=100`));
@@ -310,44 +327,44 @@ export default function ControlliSanzioniPanel() {
         if (notificheSuapData.success) {
           setNotificheSuap(notificheSuapData.data || []);
         } else {
-          // Se l'endpoint non esiste, generiamo le notifiche dalle pratiche SUAP
+          // Se l'endpoint non esiste, generiamo le notifiche dalle domande spunta
           // Questo è un fallback per quando il backend non ha ancora l'endpoint dedicato
-          const notificheFromPratiche = (praticheData.data || []).map((p: SuapPratica, idx: number) => ({
+          const notificheFromDomande = (domandeData.data || []).map((d: DomandaSpunta, idx: number) => ({
             id: idx + 1,
-            pratica_id: p.id,
-            numero_pratica: p.numero_pratica,
-            tipo_pratica: p.tipo_pratica,
+            pratica_id: d.id,
+            numero_pratica: d.numero_autorizzazione || `DS-${d.id}`,
+            tipo_pratica: d.autorizzazione_tipo || 'Domanda Spunta',
             stato_precedente: null,
-            stato_attuale: p.stato,
-            impresa_nome: p.impresa_nome || 'N/D',
-            impresa_cf: '',
+            stato_attuale: d.stato,
+            impresa_nome: d.company_name || 'N/D',
+            impresa_cf: d.company_cf || '',
             comune_id: 0,
-            comune_nome: p.comune_nome || 'N/D',
-            messaggio: `Pratica ${p.numero_pratica} - ${p.tipo_pratica}: stato ${p.stato}`,
-            data_cambio_stato: p.data_presentazione,
+            comune_nome: d.market_municipality || 'N/D',
+            messaggio: `Domanda Spunta ${d.company_name} - Mercato ${d.market_name}: stato ${d.stato}`,
+            data_cambio_stato: d.data_richiesta,
             letta: false
           }));
-          setNotificheSuap(notificheFromPratiche);
+          setNotificheSuap(notificheFromDomande);
         }
       } catch (notifErr) {
         console.log('[ControlliSanzioni] Endpoint notifiche-pm non disponibile, usando fallback');
-        // Fallback: generiamo le notifiche dalle pratiche SUAP
-        const notificheFromPratiche = (praticheData.data || []).map((p: SuapPratica, idx: number) => ({
+        // Fallback: generiamo le notifiche dalle domande spunta
+        const notificheFromDomande = (domandeData.data || []).map((d: DomandaSpunta, idx: number) => ({
           id: idx + 1,
-          pratica_id: p.id,
-          numero_pratica: p.numero_pratica,
-          tipo_pratica: p.tipo_pratica,
+          pratica_id: d.id,
+          numero_pratica: d.numero_autorizzazione || `DS-${d.id}`,
+          tipo_pratica: d.autorizzazione_tipo || 'Domanda Spunta',
           stato_precedente: null,
-          stato_attuale: p.stato,
-          impresa_nome: p.impresa_nome || 'N/D',
-          impresa_cf: '',
+          stato_attuale: d.stato,
+          impresa_nome: d.company_name || 'N/D',
+          impresa_cf: d.company_cf || '',
           comune_id: 0,
-          comune_nome: p.comune_nome || 'N/D',
-          messaggio: `Pratica ${p.numero_pratica} - ${p.tipo_pratica}: stato ${p.stato}`,
-          data_cambio_stato: p.data_presentazione,
+          comune_nome: d.market_municipality || 'N/D',
+          messaggio: `Domanda Spunta ${d.company_name} - Mercato ${d.market_name}: stato ${d.stato}`,
+          data_cambio_stato: d.data_richiesta,
           letta: false
         }));
-        setNotificheSuap(notificheFromPratiche);
+        setNotificheSuap(notificheFromDomande);
       }
 
     } catch (err) {
@@ -1373,98 +1390,14 @@ export default function ControlliSanzioniPanel() {
           </Card>
         </TabsContent>
 
-        {/* Tab: Pratiche SUAP */}
+        {/* Tab: Pratiche SUAP - Domande Spunta */}
         <TabsContent value="suap" className="space-y-4 mt-4">
+          {/* Sezione Notifiche Stato Pratiche con Semaforo */}
           <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-<Briefcase className="h-5 w-5 text-[#8b5cf6]" />
-                Pratiche SUAP - Esiti (Approvate/Negate/Revocate)
-                </CardTitle>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={fetchAllData}
-                  className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Aggiorna
-                </Button>
-              </div>
-              <CardDescription className="text-[#e8fbff]/60">
-                Pratiche espletate, negate o revocate dal sistema SUAP - per verifica e controllo
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {praticheSuap.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileCheck className="h-16 w-16 text-[#8b5cf6]/30 mx-auto mb-4" />
-                  <p className="text-[#e8fbff]/50 text-lg">Nessuna pratica SUAP recente</p>
-                  <p className="text-[#e8fbff]/30 text-sm mt-2">Le nuove pratiche appariranno qui</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-[#8b5cf6]/20">
-                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">N° PRATICA</th>
-                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">TIPO</th>
-                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">IMPRESA</th>
-                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">COMUNE</th>
-                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">STATO</th>
-                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">DATA</th>
-                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">AZIONI</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {praticheSuap.map((pratica) => (
-                        <tr key={pratica.id} className="border-b border-[#8b5cf6]/10 hover:bg-[#0b1220]/50">
-                          <td className="p-3">
-                            <span className="text-[#8b5cf6] font-mono text-sm">{pratica.numero_pratica}</span>
-                          </td>
-                          <td className="p-3">
-                            <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
-                              {pratica.tipo_pratica}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            <p className="text-[#e8fbff] text-sm">{pratica.impresa_nome || 'N/D'}</p>
-                          </td>
-                          <td className="p-3">
-                            <p className="text-[#e8fbff]/70 text-sm">{pratica.comune_nome || 'N/D'}</p>
-                          </td>
-                          <td className="p-3 text-center">
-                            {getPraticaStatusIndicator(pratica.stato)}
-                          </td>
-                          <td className="p-3 text-center">
-                            <span className="text-[#e8fbff]/60 text-sm">
-                              {pratica.data_presentazione ? new Date(pratica.data_presentazione).toLocaleDateString('it-IT') : '-'}
-                            </span>
-                          </td>
-                          <td className="p-3 text-center">
-                            <Button size="sm" variant="ghost" className="text-[#8b5cf6] hover:bg-[#8b5cf6]/10">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab: Notifiche PM - Usa NotificationManager come SUAP e Wallet */}
-        <TabsContent value="notifiche" className="space-y-6 mt-4">
-          {/* Sezione Notifiche SUAP - Stato Pratiche */}
-          <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-[#8b5cf6]" />
+                  <Bell className="h-5 w-5 text-[#8b5cf6]" />
                   Notifiche SUAP - Stato Pratiche
                 </CardTitle>
                 <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
@@ -1483,8 +1416,8 @@ export default function ControlliSanzioniPanel() {
                   <p className="text-[#e8fbff]/30 text-sm mt-1">Le notifiche di cambio stato pratiche appariranno qui</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                  {notificheSuap.map((notifica) => (
+                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                  {notificheSuap.slice(0, 5).map((notifica) => (
                     <div 
                       key={notifica.id} 
                       className={`p-4 rounded-lg border transition-all ${
@@ -1522,6 +1455,167 @@ export default function ControlliSanzioniPanel() {
                             <Eye className="h-4 w-4 mr-1" />
                             Dettagli
                           </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Tabella Domande Spunta */}
+          <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-[#8b5cf6]" />
+                  Domande Spunta - Pratiche SUAP
+                </CardTitle>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={fetchAllData}
+                  className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Aggiorna
+                </Button>
+              </div>
+              <CardDescription className="text-[#e8fbff]/60">
+                Domande di partecipazione alla spunta - stato e esiti dal SUAP
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {domandeSpunta.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileCheck className="h-16 w-16 text-[#8b5cf6]/30 mx-auto mb-4" />
+                  <p className="text-[#e8fbff]/50 text-lg">Nessuna domanda spunta recente</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-2">Le nuove domande appariranno qui</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[#8b5cf6]/20">
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">IMPRESA</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">MERCATO</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">GIORNO</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">SETTORE</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">PRESENZE</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">WALLET</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">STATO</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">DATA</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">AZIONI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {domandeSpunta.map((domanda) => (
+                        <tr key={domanda.id} className="border-b border-[#8b5cf6]/10 hover:bg-[#0b1220]/50">
+                          <td className="p-3">
+                            <p className="text-[#e8fbff] text-sm font-medium">{domanda.company_name || 'N/D'}</p>
+                            <p className="text-[#e8fbff]/50 text-xs">{domanda.company_piva}</p>
+                          </td>
+                          <td className="p-3">
+                            <p className="text-[#e8fbff] text-sm">{domanda.market_name || 'N/D'}</p>
+                            <p className="text-[#e8fbff]/50 text-xs">{domanda.market_municipality}</p>
+                          </td>
+                          <td className="p-3">
+                            <span className="text-[#e8fbff]/70 text-sm">{domanda.market_days || '-'}</span>
+                          </td>
+                          <td className="p-3">
+                            <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
+                              {domanda.settore_richiesto || 'N/D'}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className="text-[#e8fbff] text-sm">{domanda.numero_presenze || 0}</span>
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className={`text-sm font-medium ${(domanda.wallet_balance || 0) < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                              € {(domanda.wallet_balance || 0).toFixed(2)}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center">
+                            {getPraticaStatusIndicator(domanda.stato)}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className="text-[#e8fbff]/60 text-sm">
+                              {domanda.data_richiesta ? new Date(domanda.data_richiesta).toLocaleDateString('it-IT') : '-'}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center">
+                            <Button size="sm" variant="ghost" className="text-[#8b5cf6] hover:bg-[#8b5cf6]/10">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Notifiche PM - Usa NotificationManager come SUAP e Wallet */}
+        <TabsContent value="notifiche" className="space-y-6 mt-4">
+          {/* Sezione Notifiche SUAP - Messaggi dal SUAP */}
+          <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-[#8b5cf6]" />
+                  Notifiche dal SUAP
+                </CardTitle>
+                <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
+                  {notificheSuap.filter(n => !n.letta).length} nuove
+                </Badge>
+              </div>
+              <CardDescription className="text-[#e8fbff]/60">
+                Comunicazioni automatiche dal SUAP - stesse notifiche inviate alle imprese
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {notificheSuap.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-12 w-12 text-[#8b5cf6]/30 mx-auto mb-3" />
+                  <p className="text-[#e8fbff]/50">Nessuna notifica dal SUAP</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-1">Le comunicazioni del SUAP appariranno qui</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {notificheSuap.map((notifica) => (
+                    <div 
+                      key={notifica.id} 
+                      className={`p-4 rounded-lg border transition-all ${
+                        notifica.letta 
+                          ? 'bg-[#0f1729]/50 border-[#8b5cf6]/10' 
+                          : 'bg-[#8b5cf6]/5 border-[#8b5cf6]/30'
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center flex-shrink-0">
+                          <Briefcase className="h-5 w-5 text-[#8b5cf6]" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[#e8fbff] font-medium">SUAP</span>
+                            <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
+                              {notifica.tipo_pratica}
+                            </Badge>
+                            {!notifica.letta && (
+                              <span className="w-2 h-2 rounded-full bg-[#8b5cf6] animate-pulse"></span>
+                            )}
+                          </div>
+                          <p className="text-[#e8fbff] text-sm font-medium mb-1">
+                            Pratica {notifica.numero_pratica} - {notifica.impresa_nome}
+                          </p>
+                          <p className="text-[#e8fbff]/70 text-sm">{notifica.messaggio}</p>
+                          <p className="text-[#e8fbff]/40 text-xs mt-2">
+                            {notifica.data_cambio_stato ? new Date(notifica.data_cambio_stato).toLocaleString('it-IT') : '-'}
+                          </p>
                         </div>
                       </div>
                     </div>
