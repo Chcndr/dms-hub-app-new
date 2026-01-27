@@ -1474,8 +1474,14 @@ export default function DashboardPA() {
   
   // Fetch Guardian logs from Neon database via Abacus SQL
   // 🔥 FIX: Carica attività agenti da agent_messages invece di guardian_logs
+  // 🔥 FIX 27/01/2026: Ridotto polling e aggiunto controllo visibilità tab per risparmiare CPU Vercel
   useEffect(() => {
     const fetchAgentActivity = async () => {
+      // Non fare polling se la tab non è visibile (risparmia CPU Vercel)
+      if (document.hidden) {
+        console.log('[DashboardPA] Tab non visibile, skip polling agenti');
+        return;
+      }
       try {
         // Carica gli ultimi messaggi degli agenti da tutte le conversazioni di coordinamento
         const conversationIds = [
@@ -1517,8 +1523,8 @@ export default function DashboardPA() {
       }
     };
     fetchAgentActivity();
-    // Refresh every 10 seconds for real-time updates
-    const interval = setInterval(fetchAgentActivity, 10000);
+    // Refresh every 30 seconds for real-time updates (era 10s, aumentato per risparmiare CPU Vercel)
+    const interval = setInterval(fetchAgentActivity, 30000);
     return () => clearInterval(interval);
   }, []);
   
