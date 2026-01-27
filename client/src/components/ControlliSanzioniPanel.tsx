@@ -175,10 +175,10 @@ interface Transgression {
 }
 
 interface ControlliSanzioniPanelProps {
-  comuneId?: number;
+  comuneId?: number | null;  // null = mostra tutti i comuni (admin mode)
 }
 
-export default function ControlliSanzioniPanel({ comuneId = 1 }: ControlliSanzioniPanelProps) {
+export default function ControlliSanzioniPanel({ comuneId }: ControlliSanzioniPanelProps) {
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [stats, setStats] = useState<InspectionStats | null>(null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
@@ -226,18 +226,27 @@ export default function ControlliSanzioniPanel({ comuneId = 1 }: ControlliSanzio
     setLoading(true);
     setError(null);
     try {
-      // Fetch stats (filtrato per comune)
-      const statsRes = await fetch(`${MIHUB_API}/inspections/stats?comune_id=${comuneId}`);
+      // Fetch stats (filtrato per comune se specificato)
+      const statsUrl = comuneId && comuneId > 0 
+        ? `${MIHUB_API}/inspections/stats?comune_id=${comuneId}`
+        : `${MIHUB_API}/inspections/stats`;
+      const statsRes = await fetch(statsUrl);
       const statsData = await statsRes.json();
       if (statsData.success) setStats(statsData.data);
 
-      // Fetch watchlist (filtrato per comune)
-      const watchlistRes = await fetch(`${MIHUB_API}/watchlist?status=PENDING&limit=20&comune_id=${comuneId}`);
+      // Fetch watchlist (filtrato per comune se specificato)
+      const watchlistUrl = comuneId && comuneId > 0 
+        ? `${MIHUB_API}/watchlist?status=PENDING&limit=20&comune_id=${comuneId}`
+        : `${MIHUB_API}/watchlist?status=PENDING&limit=20`;
+      const watchlistRes = await fetch(watchlistUrl);
       const watchlistData = await watchlistRes.json();
       if (watchlistData.success) setWatchlist(watchlistData.data || []);
 
-      // Fetch sanctions (filtrato per comune)
-      const sanctionsRes = await fetch(`${MIHUB_API}/sanctions?limit=20&comune_id=${comuneId}`);
+      // Fetch sanctions (filtrato per comune se specificato)
+      const sanctionsUrl = comuneId && comuneId > 0 
+        ? `${MIHUB_API}/sanctions?limit=20&comune_id=${comuneId}`
+        : `${MIHUB_API}/sanctions?limit=20`;
+      const sanctionsRes = await fetch(sanctionsUrl);
       const sanctionsData = await sanctionsRes.json();
       if (sanctionsData.success) setSanctions(sanctionsData.data || []);
 
@@ -246,13 +255,21 @@ export default function ControlliSanzioniPanel({ comuneId = 1 }: ControlliSanzio
       const typesData = await typesRes.json();
       if (typesData.success) setInfractionTypes(typesData.data || []);
 
-      // Fetch notifiche SUAP (dal nuovo endpoint, filtrato per comune)
-      console.log("Fetching SUAP notifiche per comune:", comuneId); const praticheRes = await fetch(`${MIHUB_API}/notifiche/suap?comune_id=${comuneId}&limit=50`);
+      // Fetch notifiche SUAP (dal nuovo endpoint, filtrato per comune se specificato)
+      // Se comuneId è null/undefined/0, mostra TUTTE le notifiche (modalità admin)
+      const suapUrl = comuneId && comuneId > 0 
+        ? `${MIHUB_API}/notifiche/suap?comune_id=${comuneId}&limit=50`
+        : `${MIHUB_API}/notifiche/suap?limit=50`;
+      console.log("Fetching SUAP notifiche:", suapUrl); 
+      const praticheRes = await fetch(suapUrl);
       const praticheData = await praticheRes.json();
       console.log("SUAP data:", praticheData); if (praticheData.success) setPraticheSuap(praticheData.data || []);
 
-      // Fetch imprese list for notifications (filtrato per comune)
-      const impreseRes = await fetch(`${MIHUB_API}/imprese?limit=100&comune_id=${comuneId}`);
+      // Fetch imprese list for notifications (filtrato per comune se specificato)
+      const impreseUrl = comuneId && comuneId > 0 
+        ? `${MIHUB_API}/imprese?limit=100&comune_id=${comuneId}`
+        : `${MIHUB_API}/imprese?limit=100`;
+      const impreseRes = await fetch(impreseUrl);
       const impreseData = await impreseRes.json();
       if (impreseData.success) setImpreseList(impreseData.data || []);
 
@@ -272,8 +289,11 @@ export default function ControlliSanzioniPanel({ comuneId = 1 }: ControlliSanzio
       const transgressionsData = await transgressionsRes.json();
       if (transgressionsData.success) setTransgressions(transgressionsData.data || []);
 
-      // Fetch storico sessioni mercato (usa nuovo endpoint market_sessions, filtrato per comune)
-      const sessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni?limit=50&comune_id=${comuneId}`);
+      // Fetch storico sessioni mercato (usa nuovo endpoint market_sessions, filtrato per comune se specificato)
+      const sessionsUrl = comuneId && comuneId > 0 
+        ? `${MIHUB_API}/presenze/sessioni?limit=50&comune_id=${comuneId}`
+        : `${MIHUB_API}/presenze/sessioni?limit=50`;
+      const sessionsRes = await fetch(sessionsUrl);
       const sessionsData = await sessionsRes.json();
       if (sessionsData.success) setMarketSessions(sessionsData.data || []);
 
