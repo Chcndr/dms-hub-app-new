@@ -92,15 +92,13 @@ interface InfractionType {
 
 interface SuapPratica {
   id: number;
-  tipo: string;
-  titolo: string;
-  messaggio: string;
-  tipo_messaggio: string;
-  mittente_nome: string;
-  target_nome: string;
+  numero_pratica: string;
+  tipo_pratica: string;
+  stato: string;
   impresa_nome: string;
-  created_at: string;
-  letta: boolean;
+  comune_nome: string;
+  data_presentazione: string;
+  data_scadenza: string;
 }
 
 interface Impresa {
@@ -174,11 +172,7 @@ interface Transgression {
   created_at: string;
 }
 
-interface ControlliSanzioniPanelProps {
-  comuneId?: number | null;  // null = mostra tutti i comuni (admin mode)
-}
-
-export default function ControlliSanzioniPanel({ comuneId }: ControlliSanzioniPanelProps) {
+export default function ControlliSanzioniPanel() {
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [stats, setStats] = useState<InspectionStats | null>(null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
@@ -220,33 +214,24 @@ export default function ControlliSanzioniPanel({ comuneId }: ControlliSanzioniPa
   // Fetch data on mount
   useEffect(() => {
     fetchAllData();
-  }, [comuneId]);
+  }, []);
 
   const fetchAllData = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch stats (filtrato per comune se specificato)
-      const statsUrl = comuneId && comuneId > 0 
-        ? `${MIHUB_API}/inspections/stats?comune_id=${comuneId}`
-        : `${MIHUB_API}/inspections/stats`;
-      const statsRes = await fetch(statsUrl);
+      // Fetch stats
+      const statsRes = await fetch(`${MIHUB_API}/inspections/stats`);
       const statsData = await statsRes.json();
       if (statsData.success) setStats(statsData.data);
 
-      // Fetch watchlist (filtrato per comune se specificato)
-      const watchlistUrl = comuneId && comuneId > 0 
-        ? `${MIHUB_API}/watchlist?status=PENDING&limit=20&comune_id=${comuneId}`
-        : `${MIHUB_API}/watchlist?status=PENDING&limit=20`;
-      const watchlistRes = await fetch(watchlistUrl);
+      // Fetch watchlist
+      const watchlistRes = await fetch(`${MIHUB_API}/watchlist?status=PENDING&limit=20`);
       const watchlistData = await watchlistRes.json();
       if (watchlistData.success) setWatchlist(watchlistData.data || []);
 
-      // Fetch sanctions (filtrato per comune se specificato)
-      const sanctionsUrl = comuneId && comuneId > 0 
-        ? `${MIHUB_API}/sanctions?limit=20&comune_id=${comuneId}`
-        : `${MIHUB_API}/sanctions?limit=20`;
-      const sanctionsRes = await fetch(sanctionsUrl);
+      // Fetch sanctions
+      const sanctionsRes = await fetch(`${MIHUB_API}/sanctions?limit=20`);
       const sanctionsData = await sanctionsRes.json();
       if (sanctionsData.success) setSanctions(sanctionsData.data || []);
 
@@ -255,21 +240,13 @@ export default function ControlliSanzioniPanel({ comuneId }: ControlliSanzioniPa
       const typesData = await typesRes.json();
       if (typesData.success) setInfractionTypes(typesData.data || []);
 
-      // Fetch notifiche SUAP (dal nuovo endpoint, filtrato per comune se specificato)
-      // Se comuneId è null/undefined/0, mostra TUTTE le notifiche (modalità admin)
-      const suapUrl = comuneId && comuneId > 0 
-        ? `${MIHUB_API}/notifiche/suap?comune_id=${comuneId}&limit=50`
-        : `${MIHUB_API}/notifiche/suap?limit=50`;
-      console.log("Fetching SUAP notifiche:", suapUrl); 
-      const praticheRes = await fetch(suapUrl);
+      // Fetch pratiche SUAP (solo espletate, negate, revocate)
+      const praticheRes = await fetch(`${MIHUB_API}/suap/pratiche?limit=50&stato=APPROVATA,RIFIUTATA,REVOCATA`);
       const praticheData = await praticheRes.json();
-      console.log("SUAP data:", praticheData); if (praticheData.success) setPraticheSuap(praticheData.data || []);
+      if (praticheData.success) setPraticheSuap(praticheData.data || []);
 
-      // Fetch imprese list for notifications (filtrato per comune se specificato)
-      const impreseUrl = comuneId && comuneId > 0 
-        ? `${MIHUB_API}/imprese?limit=100&comune_id=${comuneId}`
-        : `${MIHUB_API}/imprese?limit=100`;
-      const impreseRes = await fetch(impreseUrl);
+      // Fetch imprese list for notifications
+      const impreseRes = await fetch(`${MIHUB_API}/imprese?limit=100`);
       const impreseData = await impreseRes.json();
       if (impreseData.success) setImpreseList(impreseData.data || []);
 
@@ -289,11 +266,8 @@ export default function ControlliSanzioniPanel({ comuneId }: ControlliSanzioniPa
       const transgressionsData = await transgressionsRes.json();
       if (transgressionsData.success) setTransgressions(transgressionsData.data || []);
 
-      // Fetch storico sessioni mercato (usa nuovo endpoint market_sessions, filtrato per comune se specificato)
-      const sessionsUrl = comuneId && comuneId > 0 
-        ? `${MIHUB_API}/presenze/sessioni?limit=50&comune_id=${comuneId}`
-        : `${MIHUB_API}/presenze/sessioni?limit=50`;
-      const sessionsRes = await fetch(sessionsUrl);
+      // Fetch storico sessioni mercato (usa nuovo endpoint market_sessions)
+      const sessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni?limit=50`);
       const sessionsData = await sessionsRes.json();
       if (sessionsData.success) setMarketSessions(sessionsData.data || []);
 
@@ -1192,14 +1166,14 @@ export default function ControlliSanzioniPanel({ comuneId }: ControlliSanzioniPa
           </Card>
         </TabsContent>
 
-        {/* Tab: Notifiche SUAP */}
+        {/* Tab: Pratiche SUAP */}
         <TabsContent value="suap" className="space-y-4 mt-4">
           <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-[#8b5cf6]" />
-                  Notifiche SUAP
+<Briefcase className="h-5 w-5 text-[#8b5cf6]" />
+                Pratiche SUAP - Esiti (Approvate/Negate/Revocate)
                 </CardTitle>
                 <Button 
                   size="sm" 
@@ -1212,61 +1186,64 @@ export default function ControlliSanzioniPanel({ comuneId }: ControlliSanzioniPa
                 </Button>
               </div>
               <CardDescription className="text-[#e8fbff]/60">
-                Notifiche inviate dal SUAP - Domande spunta, concessioni, autorizzazioni
+                Pratiche espletate, negate o revocate dal sistema SUAP - per verifica e controllo
               </CardDescription>
             </CardHeader>
             <CardContent>
               {praticheSuap.length === 0 ? (
                 <div className="text-center py-12">
-                  <Bell className="h-16 w-16 text-[#8b5cf6]/30 mx-auto mb-4" />
-                  <p className="text-[#e8fbff]/50 text-lg">Nessuna notifica SUAP recente</p>
-                  <p className="text-[#e8fbff]/30 text-sm mt-2">Le nuove notifiche appariranno qui</p>
+                  <FileCheck className="h-16 w-16 text-[#8b5cf6]/30 mx-auto mb-4" />
+                  <p className="text-[#e8fbff]/50 text-lg">Nessuna pratica SUAP recente</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-2">Le nuove pratiche appariranno qui</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {praticheSuap.map((notifica) => {
-                    // Determina il colore del semaforo in base al titolo
-                    const getSemaforoColor = (titolo: string) => {
-                      if (titolo.includes('🟢') || titolo.includes('Approvata')) return 'bg-green-500';
-                      if (titolo.includes('🟡') || titolo.includes('Revisione') || titolo.includes('Regolarizzazione')) return 'bg-yellow-500';
-                      if (titolo.includes('🔴') || titolo.includes('Rifiutata') || titolo.includes('Negata')) return 'bg-red-500';
-                      return 'bg-blue-500';
-                    };
-                    return (
-                      <div key={notifica.id} className="flex items-start gap-4 p-4 bg-[#0b1220]/50 rounded-lg border border-[#8b5cf6]/10 hover:border-[#8b5cf6]/30 transition-colors">
-                        {/* Semaforo */}
-                        <div className={`w-3 h-3 rounded-full mt-1.5 ${getSemaforoColor(notifica.titolo)} shadow-lg`} />
-                        {/* Contenuto */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[#e8fbff] font-medium">{notifica.titolo.replace(/🟢|🟡|🔴/g, '').trim()}</span>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[#8b5cf6]/20">
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">N° PRATICA</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">TIPO</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">IMPRESA</th>
+                        <th className="text-left p-3 text-[#e8fbff]/60 text-xs font-medium">COMUNE</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">STATO</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">DATA</th>
+                        <th className="text-center p-3 text-[#e8fbff]/60 text-xs font-medium">AZIONI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {praticheSuap.map((pratica) => (
+                        <tr key={pratica.id} className="border-b border-[#8b5cf6]/10 hover:bg-[#0b1220]/50">
+                          <td className="p-3">
+                            <span className="text-[#8b5cf6] font-mono text-sm">{pratica.numero_pratica}</span>
+                          </td>
+                          <td className="p-3">
                             <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
-                              {notifica.tipo_messaggio}
+                              {pratica.tipo_pratica}
                             </Badge>
-                          </div>
-                          <p className="text-[#e8fbff]/60 text-sm line-clamp-2 mb-2">{notifica.messaggio}</p>
-                          <div className="flex items-center gap-4 text-xs text-[#e8fbff]/40">
-                            <span className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              A: {notifica.target_nome}
+                          </td>
+                          <td className="p-3">
+                            <p className="text-[#e8fbff] text-sm">{pratica.impresa_nome || 'N/D'}</p>
+                          </td>
+                          <td className="p-3">
+                            <p className="text-[#e8fbff]/70 text-sm">{pratica.comune_nome || 'N/D'}</p>
+                          </td>
+                          <td className="p-3 text-center">
+                            {getPraticaStatusBadge(pratica.stato)}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className="text-[#e8fbff]/60 text-sm">
+                              {pratica.data_presentazione ? new Date(pratica.data_presentazione).toLocaleDateString('it-IT') : '-'}
                             </span>
-                            <span className="flex items-center gap-1">
-                              <Building2 className="h-3 w-3" />
-                              Da: {notifica.mittente_nome}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(notifica.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Stato letta */}
-                        {!notifica.letta && (
-                          <div className="w-2 h-2 rounded-full bg-[#8b5cf6] animate-pulse" title="Non letta" />
-                        )}
-                      </div>
-                    );
-                  })}
+                          </td>
+                          <td className="p-3 text-center">
+                            <Button size="sm" variant="ghost" className="text-[#8b5cf6] hover:bg-[#8b5cf6]/10">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>

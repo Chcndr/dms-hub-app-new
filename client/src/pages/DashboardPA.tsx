@@ -4576,7 +4576,7 @@ export default function DashboardPA() {
 
           {/* TAB 16: CONTROLLI/SANZIONI */}
           <TabsContent value="inspections" className="space-y-6">
-            <ControlliSanzioniPanel comuneId={isImpersonating && comuneIdFromUrl ? parseInt(comuneIdFromUrl) : selectedComuneId} />
+            <ControlliSanzioniPanel />
           </TabsContent>
           <TabsContent value="notifications" className="space-y-6">
             <NotificationsPanel />
