@@ -171,6 +171,13 @@ export default function NuovoVerbalePage() {
     setLoading(true);
     setError(null);
     try {
+      // Leggi direttamente dall'URL per evitare problemi di timing con useEffect
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlImpersonate = urlParams.get('impersonate') === 'true';
+      const urlComuneId = urlParams.get('comune_id') ? parseInt(urlParams.get('comune_id')!) : null;
+      
+      console.log('[Verbale] URL params - impersonate:', urlImpersonate, 'comune_id:', urlComuneId);
+      
       // Timeout controller
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -182,9 +189,18 @@ export default function NuovoVerbalePage() {
         setComuni(comuniData.data || []);
         // Se in modalità impersonificazione, usa il comune dall'URL
         // Altrimenti seleziona il primo comune di default
-        if (isImpersonating && impersonatedComuneId) {
-          setSelectedComuneId(impersonatedComuneId);
-          console.log('[Verbale] Usando comune da impersonificazione:', impersonatedComuneId);
+        if (urlImpersonate && urlComuneId) {
+          // Verifica che il comune esista nella lista
+          const comuneExists = comuniData.data?.some((c: any) => c.id === urlComuneId);
+          if (comuneExists) {
+            setSelectedComuneId(urlComuneId);
+            console.log('[Verbale] Usando comune da impersonificazione:', urlComuneId);
+          } else {
+            console.warn('[Verbale] Comune impersonificato non trovato:', urlComuneId);
+            if (comuniData.data?.length > 0) {
+              setSelectedComuneId(comuniData.data[0].id);
+            }
+          }
         } else if (comuniData.data?.length > 0) {
           setSelectedComuneId(comuniData.data[0].id);
         }
@@ -203,9 +219,9 @@ export default function NuovoVerbalePage() {
       // Fetch imprese - filtra per comune se in modalità impersonificazione
       try {
         let impreseUrl = `${MIHUB_API}/imprese?limit=100`;
-        if (isImpersonating && impersonatedComuneId) {
-          impreseUrl += `&comune_id=${impersonatedComuneId}`;
-          console.log('[Verbale] Filtrando imprese per comune:', impersonatedComuneId);
+        if (urlImpersonate && urlComuneId) {
+          impreseUrl += `&comune_id=${urlComuneId}`;
+          console.log('[Verbale] Filtrando imprese per comune:', urlComuneId);
         }
         const impreseRes = await fetch(impreseUrl, { signal: controller.signal });
         const impreseData = await impreseRes.json();
