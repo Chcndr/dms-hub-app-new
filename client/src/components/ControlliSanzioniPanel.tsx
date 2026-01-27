@@ -320,9 +320,16 @@ export default function ControlliSanzioniPanel() {
         // Filtro lato frontend per location se in impersonificazione
         if (isImpersonatingFromUrl && comuneNomeFromUrl) {
           const comuneNome = comuneNomeFromUrl;
-          sanctionsFiltered = sanctionsFiltered.filter((s: Sanction) => 
-            s.location?.toLowerCase().includes(comuneNome?.toLowerCase() || '')
-          );
+          sanctionsFiltered = sanctionsFiltered.filter((s: Sanction) => {
+            // Se location è null/undefined, includiamo il verbale solo se non c'è un altro comune nel nome
+            // Se location contiene il nome del comune, lo includiamo
+            if (!s.location) {
+              // Verbali senza location vengono esclusi in modalità impersonificazione
+              // perché non possiamo determinare a quale comune appartengono
+              return false;
+            }
+            return s.location.toLowerCase().includes(comuneNome.toLowerCase());
+          });
           
           // Ricalcola le stats localmente dai verbali filtrati
           const totaleImporti = sanctionsFiltered.reduce((sum: number, s: Sanction) => sum + parseFloat(s.amount || '0'), 0);
