@@ -146,6 +146,37 @@ interface NotificaSUAP {
   letta: boolean;
 }
 
+// Interfaccia per le Concessioni dal SUAP
+interface Concessione {
+  id: number;
+  numero_protocollo: string;
+  company_name: string;
+  company_piva: string;
+  market_name: string;
+  market_municipality: string;
+  stall_number: string;
+  tipo_concessione: string;
+  valid_from: string;
+  valid_to: string;
+  stato: string;
+  stato_calcolato: string;
+  created_at: string;
+}
+
+// Interfaccia per le Autorizzazioni dal SUAP
+interface Autorizzazione {
+  id: number;
+  numero: string;
+  company_name: string;
+  company_piva: string;
+  tipo: string;
+  ente_rilascio: string;
+  data_rilascio: string;
+  data_scadenza: string;
+  stato: string;
+  created_at: string;
+}
+
 interface MarketSession {
   id: number;
   market_id: number;
@@ -231,6 +262,10 @@ export default function ControlliSanzioniPanel() {
   // Notifiche SUAP per PM
   const [notificheSuap, setNotificheSuap] = useState<NotificaSUAP[]>([]);
   const [notificheSuapLoading, setNotificheSuapLoading] = useState(false);
+  
+  // Concessioni e Autorizzazioni dal SUAP
+  const [concessioni, setConcessioni] = useState<Concessione[]>([]);
+  const [autorizzazioni, setAutorizzazioni] = useState<Autorizzazione[]>([]);
   
   // Storico sessioni mercato
   const [marketSessions, setMarketSessions] = useState<MarketSession[]>([]);
@@ -319,6 +354,50 @@ export default function ControlliSanzioniPanel() {
       const sessionsData = await sessionsRes.json();
       if (sessionsData.success) setMarketSessions(sessionsData.data || []);
 
+      // Fetch concessioni dal SUAP - filtrato per comune se in impersonificazione
+      let concessioniData: any = { data: [] };
+      try {
+        const concessioniRes = await fetch(addComuneIdToUrl('https://orchestratore.mio-hub.me/api/concessions'));
+        concessioniData = await concessioniRes.json();
+        if (concessioniData.success) {
+          // Calcola stato se non presente
+          const oggi = new Date();
+          const concessioniWithStatus = (concessioniData.data || []).map((c: any) => {
+            if (c.stato_calcolato) return c;
+            if (c.stato === 'CESSATA') return { ...c, stato_calcolato: 'CESSATA' };
+            let stato_calcolato = c.stato || 'ATTIVA';
+            if (c.valid_to) {
+              const scadenza = new Date(c.valid_to);
+              stato_calcolato = scadenza < oggi ? 'SCADUTA' : 'ATTIVA';
+            }
+            return { ...c, stato_calcolato };
+          });
+          // Ordina per data creazione (più recenti prima)
+          const sorted = concessioniWithStatus.sort((a: any, b: any) => 
+            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+          );
+          setConcessioni(sorted);
+        }
+      } catch (concErr) {
+        console.log('[ControlliSanzioni] Errore fetch concessioni:', concErr);
+      }
+
+      // Fetch autorizzazioni dal SUAP - filtrato per comune se in impersonificazione
+      let autorizzazioniData: any = { data: [] };
+      try {
+        const autorizzazioniRes = await fetch(addComuneIdToUrl(`${API_URL}/api/autorizzazioni`));
+        autorizzazioniData = await autorizzazioniRes.json();
+        if (autorizzazioniData.success || autorizzazioniData.data) {
+          // Ordina per data creazione (più recenti prima)
+          const sorted = (autorizzazioniData.data || []).sort((a: any, b: any) => 
+            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+          );
+          setAutorizzazioni(sorted);
+        }
+      } catch (autErr) {
+        console.log('[ControlliSanzioni] Errore fetch autorizzazioni:', autErr);
+      }
+
       // Fetch notifiche SUAP per PM - notifiche di cambio stato pratiche
       // Queste sono le stesse notifiche inviate alle imprese quando il SUAP approva/nega/revisiona
       try {
@@ -327,13 +406,13 @@ export default function ControlliSanzioniPanel() {
         if (notificheSuapData.success) {
           setNotificheSuap(notificheSuapData.data || []);
         } else {
-          // Se l'endpoint non esiste, generiamo le notifiche dalle domande spunta
+          // Se l'endpoint non esiste, generiamo le notifiche da domande spunta, concessioni e autorizzazioni
           // Questo è un fallback per quando il backend non ha ancora l'endpoint dedicato
           const notificheFromDomande = (domandeData.data || []).map((d: DomandaSpunta, idx: number) => ({
             id: idx + 1,
             pratica_id: d.id,
             numero_pratica: d.numero_autorizzazione || `DS-${d.id}`,
-            tipo_pratica: d.autorizzazione_tipo || 'Domanda Spunta',
+            tipo_pratica: 'Domanda Spunta',
             stato_precedente: null,
             stato_attuale: d.stato,
             impresa_nome: d.company_name || 'N/D',
@@ -344,16 +423,54 @@ export default function ControlliSanzioniPanel() {
             data_cambio_stato: d.data_richiesta,
             letta: false
           }));
-          setNotificheSuap(notificheFromDomande);
+          
+          // Aggiungi notifiche dalle concessioni
+          const notificheFromConcessioni = (concessioniData.data || []).map((c: any, idx: number) => ({
+            id: 1000 + idx + 1,
+            pratica_id: c.id,
+            numero_pratica: c.numero_protocollo || `CONC-${c.id}`,
+            tipo_pratica: 'Concessione',
+            stato_precedente: null,
+            stato_attuale: c.stato_calcolato || c.stato || 'ATTIVA',
+            impresa_nome: c.company_name || 'N/D',
+            impresa_cf: c.company_piva || '',
+            comune_id: 0,
+            comune_nome: c.market_municipality || 'N/D',
+            messaggio: `Concessione ${c.company_name} - Mercato ${c.market_name} - Posteggio ${c.stall_number || 'N/D'}: stato ${c.stato_calcolato || c.stato}`,
+            data_cambio_stato: c.created_at,
+            letta: false
+          }));
+          
+          // Aggiungi notifiche dalle autorizzazioni
+          const notificheFromAutorizzazioni = (autorizzazioniData.data || []).map((a: any, idx: number) => ({
+            id: 2000 + idx + 1,
+            pratica_id: a.id,
+            numero_pratica: a.numero || `AUT-${a.id}`,
+            tipo_pratica: 'Autorizzazione',
+            stato_precedente: null,
+            stato_attuale: a.stato || 'ATTIVA',
+            impresa_nome: a.company_name || 'N/D',
+            impresa_cf: a.company_piva || '',
+            comune_id: 0,
+            comune_nome: 'N/D',
+            messaggio: `Autorizzazione ${a.tipo || 'N/D'} - ${a.company_name}: stato ${a.stato || 'ATTIVA'}`,
+            data_cambio_stato: a.created_at,
+            letta: false
+          }));
+          
+          // Unisci tutte le notifiche e ordina per data
+          const allNotifiche = [...notificheFromDomande, ...notificheFromConcessioni, ...notificheFromAutorizzazioni]
+            .sort((a, b) => new Date(b.data_cambio_stato || '').getTime() - new Date(a.data_cambio_stato || '').getTime());
+          setNotificheSuap(allNotifiche);
         }
       } catch (notifErr) {
         console.log('[ControlliSanzioni] Endpoint notifiche-pm non disponibile, usando fallback');
-        // Fallback: generiamo le notifiche dalle domande spunta
+        // Fallback: generiamo le notifiche da domande spunta, concessioni e autorizzazioni
         const notificheFromDomande = (domandeData.data || []).map((d: DomandaSpunta, idx: number) => ({
           id: idx + 1,
           pratica_id: d.id,
           numero_pratica: d.numero_autorizzazione || `DS-${d.id}`,
-          tipo_pratica: d.autorizzazione_tipo || 'Domanda Spunta',
+          tipo_pratica: 'Domanda Spunta',
           stato_precedente: null,
           stato_attuale: d.stato,
           impresa_nome: d.company_name || 'N/D',
@@ -364,7 +481,45 @@ export default function ControlliSanzioniPanel() {
           data_cambio_stato: d.data_richiesta,
           letta: false
         }));
-        setNotificheSuap(notificheFromDomande);
+        
+        // Aggiungi notifiche dalle concessioni
+        const notificheFromConcessioni = (concessioniData.data || []).map((c: any, idx: number) => ({
+          id: 1000 + idx + 1,
+          pratica_id: c.id,
+          numero_pratica: c.numero_protocollo || `CONC-${c.id}`,
+          tipo_pratica: 'Concessione',
+          stato_precedente: null,
+          stato_attuale: c.stato_calcolato || c.stato || 'ATTIVA',
+          impresa_nome: c.company_name || 'N/D',
+          impresa_cf: c.company_piva || '',
+          comune_id: 0,
+          comune_nome: c.market_municipality || 'N/D',
+          messaggio: `Concessione ${c.company_name} - Mercato ${c.market_name} - Posteggio ${c.stall_number || 'N/D'}: stato ${c.stato_calcolato || c.stato}`,
+          data_cambio_stato: c.created_at,
+          letta: false
+        }));
+        
+        // Aggiungi notifiche dalle autorizzazioni
+        const notificheFromAutorizzazioni = (autorizzazioniData.data || []).map((a: any, idx: number) => ({
+          id: 2000 + idx + 1,
+          pratica_id: a.id,
+          numero_pratica: a.numero || `AUT-${a.id}`,
+          tipo_pratica: 'Autorizzazione',
+          stato_precedente: null,
+          stato_attuale: a.stato || 'ATTIVA',
+          impresa_nome: a.company_name || 'N/D',
+          impresa_cf: a.company_piva || '',
+          comune_id: 0,
+          comune_nome: 'N/D',
+          messaggio: `Autorizzazione ${a.tipo || 'N/D'} - ${a.company_name}: stato ${a.stato || 'ATTIVA'}`,
+          data_cambio_stato: a.created_at,
+          letta: false
+        }));
+        
+        // Unisci tutte le notifiche e ordina per data
+        const allNotifiche = [...notificheFromDomande, ...notificheFromConcessioni, ...notificheFromAutorizzazioni]
+          .sort((a, b) => new Date(b.data_cambio_stato || '').getTime() - new Date(a.data_cambio_stato || '').getTime());
+        setNotificheSuap(allNotifiche);
       }
 
     } catch (err) {
