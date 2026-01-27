@@ -62,9 +62,10 @@ interface NotificationManagerProps {
   mittenteId: number;        // ID del comune
   mittenteNome: string;      // Nome visualizzato (es. "SUAP Comune di Grosseto")
   onNotificheUpdate?: () => void;  // Callback per aggiornare il conteggio notifiche nel parent
+  comuneId?: number;         // ID del comune per filtrare i dati (opzionale, usato in impersonificazione)
 }
 
-export function NotificationManager({ mittenteTipo, mittenteId, mittenteNome, onNotificheUpdate }: NotificationManagerProps) {
+export function NotificationManager({ mittenteTipo, mittenteId, mittenteNome, onNotificheUpdate, comuneId }: NotificationManagerProps) {
   // State
   const [messaggi, setMessaggi] = useState<Messaggio[]>([]);
   const [filtroMessaggi, setFiltroMessaggi] = useState<'tutti' | 'inviati' | 'ricevuti'>('tutti');
@@ -91,8 +92,13 @@ export function NotificationManager({ mittenteTipo, mittenteId, mittenteNome, on
   const fetchMessaggi = async () => {
     try {
       setLoading(true);
-      const filtroParam = filtroMessaggi !== 'tutti' ? `?filtro=${filtroMessaggi}` : '';
-      const response = await fetch(`${MIHUB_API}/notifiche/messaggi/${mittenteTipo}/${mittenteId}${filtroParam}`);
+      // Costruisce i parametri query
+      const params = new URLSearchParams();
+      if (filtroMessaggi !== 'tutti') params.append('filtro', filtroMessaggi);
+      if (comuneId) params.append('comune_id', comuneId.toString());
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      
+      const response = await fetch(`${MIHUB_API}/notifiche/messaggi/${mittenteTipo}/${mittenteId}${queryString}`);
       const data = await response.json();
       
       if (data.success) {
@@ -109,13 +115,16 @@ export function NotificationManager({ mittenteTipo, mittenteId, mittenteNome, on
   // Fetch liste destinatari
   const fetchDestinatari = async () => {
     try {
-      // Mercati
-      const mercatiRes = await fetch(`${MIHUB_API}/notifiche/markets`);
+      // Costruisce query param per comune_id
+      const comuneParam = comuneId ? `?comune_id=${comuneId}` : '';
+      
+      // Mercati - filtrati per comune se specificato
+      const mercatiRes = await fetch(`${MIHUB_API}/notifiche/markets${comuneParam}`);
       const mercatiData = await mercatiRes.json();
       if (mercatiData.success) setMercatiList(mercatiData.data || []);
       
-      // Imprese
-      const impreseRes = await fetch(`${MIHUB_API}/notifiche/imprese`);
+      // Imprese - filtrate per comune se specificato
+      const impreseRes = await fetch(`${MIHUB_API}/notifiche/imprese${comuneParam}`);
       const impreseData = await impreseRes.json();
       if (impreseData.success) setImpreseList(impreseData.data || []);
       

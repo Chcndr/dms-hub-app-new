@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useImpersonation } from '@/hooks/useImpersonation';
 import { 
   Shield, AlertTriangle, CheckCircle, Clock, FileText, 
   Search, Filter, Plus, Euro, Bell, Eye, Send,
@@ -173,6 +174,9 @@ interface Transgression {
 }
 
 export default function ControlliSanzioniPanel() {
+  // Hook per impersonificazione - legge comune_id dall'URL
+  const { isImpersonating, comuneId: impersonatedComuneId, addComuneIdToUrl } = useImpersonation();
+  
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [stats, setStats] = useState<InspectionStats | null>(null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
@@ -211,47 +215,53 @@ export default function ControlliSanzioniPanel() {
   const [showWatchlistModal, setShowWatchlistModal] = useState(false);
   const [watchlistPosteggio, setWatchlistPosteggio] = useState<{lat: number, lng: number, numero: string} | null>(null);
 
-  // Fetch data on mount
+  // Fetch data on mount e quando cambia l'impersonificazione
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [isImpersonating, impersonatedComuneId]);
 
   const fetchAllData = async () => {
     setLoading(true);
     setError(null);
+    
+    // Log impersonificazione per debug
+    if (isImpersonating && impersonatedComuneId) {
+      console.log('[ControlliSanzioni] Modalità impersonificazione attiva, comune_id:', impersonatedComuneId);
+    }
+    
     try {
-      // Fetch stats
-      const statsRes = await fetch(`${MIHUB_API}/inspections/stats`);
+      // Fetch stats - filtrato per comune se in impersonificazione
+      const statsRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/inspections/stats`));
       const statsData = await statsRes.json();
       if (statsData.success) setStats(statsData.data);
 
-      // Fetch watchlist
-      const watchlistRes = await fetch(`${MIHUB_API}/watchlist?status=PENDING&limit=20`);
+      // Fetch watchlist - filtrato per comune se in impersonificazione
+      const watchlistRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/watchlist?status=PENDING&limit=20`));
       const watchlistData = await watchlistRes.json();
       if (watchlistData.success) setWatchlist(watchlistData.data || []);
 
-      // Fetch sanctions
-      const sanctionsRes = await fetch(`${MIHUB_API}/sanctions?limit=20`);
+      // Fetch sanctions - filtrato per comune se in impersonificazione
+      const sanctionsRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/sanctions?limit=20`));
       const sanctionsData = await sanctionsRes.json();
       if (sanctionsData.success) setSanctions(sanctionsData.data || []);
 
-      // Fetch infraction types
+      // Fetch infraction types (non filtrato - sono globali)
       const typesRes = await fetch(`${MIHUB_API}/sanctions/types`);
       const typesData = await typesRes.json();
       if (typesData.success) setInfractionTypes(typesData.data || []);
 
-      // Fetch pratiche SUAP (solo espletate, negate, revocate)
-      const praticheRes = await fetch(`${MIHUB_API}/suap/pratiche?limit=50&stato=APPROVATA,RIFIUTATA,REVOCATA`);
+      // Fetch pratiche SUAP - filtrato per comune se in impersonificazione
+      const praticheRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/suap/pratiche?limit=50&stato=APPROVATA,RIFIUTATA,REVOCATA`));
       const praticheData = await praticheRes.json();
       if (praticheData.success) setPraticheSuap(praticheData.data || []);
 
-      // Fetch imprese list for notifications
-      const impreseRes = await fetch(`${MIHUB_API}/imprese?limit=100`);
+      // Fetch imprese list - filtrato per comune se in impersonificazione
+      const impreseRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/imprese?limit=100`));
       const impreseData = await impreseRes.json();
       if (impreseData.success) setImpreseList(impreseData.data || []);
 
-      // Fetch risposte PM (risposte delle imprese destinate alla PM)
-      const risposteRes = await fetch(`${MIHUB_API}/notifiche/risposte`);
+      // Fetch risposte PM - filtrato per comune se in impersonificazione
+      const risposteRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/notifiche/risposte`));
       const risposteData = await risposteRes.json();
       if (risposteData.success) {
         // Filtra solo le risposte destinate alla Polizia Municipale
@@ -261,13 +271,13 @@ export default function ControlliSanzioniPanel() {
         setRispostePM(rispostePMFiltered);
       }
 
-      // Fetch trasgressioni in attesa di giustifica
-      const transgressionsRes = await fetch(`${MIHUB_API}/market-settings/transgressions/pending-justifications`);
+      // Fetch trasgressioni in attesa di giustifica - filtrato per comune se in impersonificazione
+      const transgressionsRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/market-settings/transgressions/pending-justifications`));
       const transgressionsData = await transgressionsRes.json();
       if (transgressionsData.success) setTransgressions(transgressionsData.data || []);
 
-      // Fetch storico sessioni mercato (usa nuovo endpoint market_sessions)
-      const sessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni?limit=50`);
+      // Fetch storico sessioni mercato - filtrato per comune se in impersonificazione
+      const sessionsRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/presenze/sessioni?limit=50`));
       const sessionsData = await sessionsRes.json();
       if (sessionsData.success) setMarketSessions(sessionsData.data || []);
 
@@ -1254,8 +1264,9 @@ export default function ControlliSanzioniPanel() {
         <TabsContent value="notifiche" className="space-y-6 mt-4">
           <NotificationManager 
             mittenteTipo="POLIZIA_MUNICIPALE"
-            mittenteId={1}
-            mittenteNome="Polizia Municipale - Comune di Grosseto"
+            mittenteId={isImpersonating && impersonatedComuneId ? parseInt(impersonatedComuneId) : 1}
+            mittenteNome={`Polizia Municipale${isImpersonating ? '' : ' - Comune di Grosseto'}`}
+            comuneId={isImpersonating && impersonatedComuneId ? parseInt(impersonatedComuneId) : undefined}
           />
         </TabsContent>
 

@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useImpersonation } from '@/components/ImpersonationBanner';
 import { useLocation } from 'wouter';
 import { 
   Shield, FileText, User, Building2, MapPin, Calendar, 
@@ -88,6 +89,9 @@ interface Impresa {
 export default function NuovoVerbalePage() {
   const [, setLocationPath] = useLocation();
   
+  // Hook per impersonificazione - legge comune_id dall'URL
+  const { isImpersonating, comuneId: impersonatedComuneId } = useImpersonation();
+  
   // State
   const [config, setConfig] = useState<ConfigData | null>(null);
   const [infrazioni, setInfrazioni] = useState<Infrazione[]>([]);
@@ -146,10 +150,10 @@ export default function NuovoVerbalePage() {
   // Form state - Note
   const [notes, setNotes] = useState('');
 
-  // Fetch data on mount
+  // Fetch data on mount e quando cambia l'impersonificazione
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [isImpersonating, impersonatedComuneId]);
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -164,8 +168,12 @@ export default function NuovoVerbalePage() {
       const comuniData = await comuniRes.json();
       if (comuniData.success) {
         setComuni(comuniData.data || []);
-        // Seleziona il primo comune di default
-        if (comuniData.data?.length > 0) {
+        // Se in modalità impersonificazione, usa il comune dall'URL
+        // Altrimenti seleziona il primo comune di default
+        if (isImpersonating && impersonatedComuneId) {
+          setSelectedComuneId(impersonatedComuneId);
+          console.log('[Verbale] Usando comune da impersonificazione:', impersonatedComuneId);
+        } else if (comuniData.data?.length > 0) {
           setSelectedComuneId(comuniData.data[0].id);
         }
       }
@@ -180,9 +188,14 @@ export default function NuovoVerbalePage() {
       const infrazioniData = await infrazioniRes.json();
       if (infrazioniData.success) setInfrazioni(infrazioniData.data || []);
 
-      // Fetch imprese (opzionale, non bloccare se fallisce)
+      // Fetch imprese - filtra per comune se in modalità impersonificazione
       try {
-        const impreseRes = await fetch(`${MIHUB_API}/imprese?limit=100`, { signal: controller.signal });
+        let impreseUrl = `${MIHUB_API}/imprese?limit=100`;
+        if (isImpersonating && impersonatedComuneId) {
+          impreseUrl += `&comune_id=${impersonatedComuneId}`;
+          console.log('[Verbale] Filtrando imprese per comune:', impersonatedComuneId);
+        }
+        const impreseRes = await fetch(impreseUrl, { signal: controller.signal });
         const impreseData = await impreseRes.json();
         if (impreseData.success) setImprese(impreseData.data || []);
       } catch (e) {
@@ -476,11 +489,17 @@ export default function NuovoVerbalePage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]/70">Comune *</Label>
+                <Label className="text-[#e8fbff]/70">
+                  Comune *
+                  {isImpersonating && (
+                    <span className="ml-2 text-xs text-[#f59e0b]">(da impersonificazione)</span>
+                  )}
+                </Label>
                 <select 
                   value={selectedComuneId || ''}
                   onChange={(e) => setSelectedComuneId(Number(e.target.value))}
-                  className="w-full h-10 px-3 rounded-md bg-[#0b1220] border border-[#3b82f6]/30 text-[#e8fbff] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+                  disabled={isImpersonating && !!impersonatedComuneId}
+                  className={`w-full h-10 px-3 rounded-md bg-[#0b1220] border border-[#3b82f6]/30 text-[#e8fbff] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] ${isImpersonating ? 'cursor-not-allowed opacity-75' : ''}`}
                 >
                   <option value="">Seleziona Comune...</option>
                   {comuni.map(c => (
