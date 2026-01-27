@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Eye, X, ExternalLink, AlertTriangle } from 'lucide-react';
+import { getImpersonationParams, endImpersonation } from '@/hooks/useImpersonation';
 
 interface ImpersonationData {
   comune_id: number;
@@ -11,30 +12,29 @@ interface ImpersonationData {
 /**
  * Banner che mostra quando l'admin sta visualizzando come un comune
  * Appare in alto nella pagina con sfondo giallo
+ * 
+ * NOTA: Usa sessionStorage per persistere l'impersonificazione tra pagine
  */
 export default function ImpersonationBanner() {
   const [impersonationData, setImpersonationData] = useState<ImpersonationData | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Controlla se siamo in modalità impersonificazione
+    // Controlla se siamo in modalità impersonificazione (URL o sessionStorage)
     const checkImpersonation = () => {
-      // Controlla URL params
-      const urlParams = new URLSearchParams(window.location.search);
-      const isImpersonate = urlParams.get('impersonate') === 'true';
-      const comuneId = urlParams.get('comune_id');
-      const comuneNome = urlParams.get('comune_nome');
-      const userEmail = urlParams.get('user_email');
+      const state = getImpersonationParams();
       
-      if (isImpersonate && comuneId) {
-        // Leggi tutti i dati dall'URL
+      if (state.isImpersonating && state.comuneId) {
         setImpersonationData({
-          comune_id: parseInt(comuneId),
-          comune_nome: comuneNome ? decodeURIComponent(comuneNome) : `Comune #${comuneId}`,
+          comune_id: parseInt(state.comuneId),
+          comune_nome: state.comuneNome ? decodeURIComponent(state.comuneNome) : `Comune #${state.comuneId}`,
           user_id: 0,
-          user_email: userEmail ? decodeURIComponent(userEmail) : ''
+          user_email: state.userEmail ? decodeURIComponent(state.userEmail) : ''
         });
         setIsVisible(true);
+      } else {
+        setIsVisible(false);
+        setImpersonationData(null);
       }
     };
 
@@ -42,16 +42,20 @@ export default function ImpersonationBanner() {
     
     // Ascolta cambiamenti di storage
     window.addEventListener('storage', checkImpersonation);
-    return () => window.removeEventListener('storage', checkImpersonation);
+    window.addEventListener('popstate', checkImpersonation);
+    
+    return () => {
+      window.removeEventListener('storage', checkImpersonation);
+      window.removeEventListener('popstate', checkImpersonation);
+    };
   }, []);
 
   const handleEndImpersonation = () => {
-    sessionStorage.removeItem('impersonating_comune');
-    // Rimuovi i parametri dall'URL e ricarica
-    const url = new URL(window.location.href);
-    url.searchParams.delete('impersonate');
-    url.searchParams.delete('comune_id');
-    window.location.href = url.toString();
+    endImpersonation();
+    setIsVisible(false);
+    setImpersonationData(null);
+    // Ricarica la pagina per pulire lo stato
+    window.location.href = window.location.pathname;
   };
 
   if (!isVisible || !impersonationData) return null;
@@ -93,18 +97,17 @@ export default function ImpersonationBanner() {
 /**
  * Hook per verificare se siamo in modalità impersonificazione
  * e ottenere il comune_id per filtrare i dati
+ * 
+ * @deprecated Usa useImpersonation da '@/hooks/useImpersonation' invece
  */
 export function useImpersonation() {
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [comuneId, setComuneId] = useState<number | null>(null);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const impersonate = urlParams.get('impersonate') === 'true';
-    const id = urlParams.get('comune_id');
-    
-    setIsImpersonating(impersonate);
-    setComuneId(id ? parseInt(id) : null);
+    const state = getImpersonationParams();
+    setIsImpersonating(state.isImpersonating);
+    setComuneId(state.comuneId ? parseInt(state.comuneId) : null);
   }, []);
 
   return { isImpersonating, comuneId };

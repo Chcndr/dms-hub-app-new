@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useImpersonation } from '@/components/ImpersonationBanner';
+import { useImpersonation, getImpersonationParams } from '@/hooks/useImpersonation';
 import { useLocation } from 'wouter';
 import { 
   Shield, FileText, User, Building2, MapPin, Calendar, 
@@ -89,8 +89,9 @@ interface Impresa {
 export default function NuovoVerbalePage() {
   const [, setLocationPath] = useLocation();
   
-  // Hook per impersonificazione - legge comune_id dall'URL
-  const { isImpersonating, comuneId: impersonatedComuneId } = useImpersonation();
+  // Hook per impersonificazione - legge comune_id dall'URL o sessionStorage
+  const { isImpersonating, comuneId, comuneNome } = useImpersonation();
+  const impersonatedComuneId = comuneId ? parseInt(comuneId) : null;
   
   // State
   const [config, setConfig] = useState<ConfigData | null>(null);
@@ -171,12 +172,12 @@ export default function NuovoVerbalePage() {
     setLoading(true);
     setError(null);
     try {
-      // Leggi direttamente dall'URL per evitare problemi di timing con useEffect
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlImpersonate = urlParams.get('impersonate') === 'true';
-      const urlComuneId = urlParams.get('comune_id') ? parseInt(urlParams.get('comune_id')!) : null;
+      // Leggi i parametri di impersonificazione (URL o sessionStorage)
+      const impState = getImpersonationParams();
+      const urlImpersonate = impState.isImpersonating;
+      const urlComuneId = impState.comuneId ? parseInt(impState.comuneId) : null;
       
-      console.log('[Verbale] URL params - impersonate:', urlImpersonate, 'comune_id:', urlComuneId);
+      console.log('[Verbale] Impersonation params - impersonate:', urlImpersonate, 'comune_id:', urlComuneId, '(from:', impState.comuneId ? 'storage/url' : 'none', ')');
       
       // Timeout controller
       const controller = new AbortController();
