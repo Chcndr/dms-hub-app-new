@@ -1532,8 +1532,8 @@ export default function ControlliSanzioniPanel() {
                             <span className="text-[#e8fbff] text-sm">{domanda.numero_presenze || 0}</span>
                           </td>
                           <td className="p-3 text-center">
-                            <span className={`text-sm font-medium ${(domanda.wallet_balance || 0) < 0 ? 'text-red-400' : 'text-green-400'}`}>
-                              € {(domanda.wallet_balance || 0).toFixed(2)}
+                            <span className={`text-sm font-medium ${parseFloat(String(domanda.wallet_balance || 0)) < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                              € {parseFloat(String(domanda.wallet_balance || 0)).toFixed(2)}
                             </span>
                           </td>
                           <td className="p-3 text-center">
