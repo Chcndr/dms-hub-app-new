@@ -1487,15 +1487,16 @@ export default function ControlliSanzioniPanel() {
                         const sessionDate = session.data_mercato.split('T')[0];
                         return sessionDate === storicoDateFilter;
                       });
+                      // BOM per Excel UTF-8 + CSV con separatore punto e virgola
                       const csvContent = [
-                        ['Mercato', 'Comune', 'Data', 'Posteggi Occupati', 'Presenze', 'Totale Incassato'].join(';'),
+                        '\uFEFF' + ['Mercato', 'Comune', 'Data', 'Posteggi Occupati', 'Presenze', 'Totale Incassato EUR'].join(';'),
                         ...filteredSessions.map(s => [
                           s.market_name,
                           s.comune,
                           new Date(s.data_mercato).toLocaleDateString('it-IT'),
                           s.posteggi_occupati,
                           s.totale_presenze,
-                          `€${parseFloat(s.totale_incassato || '0').toFixed(2)}`
+                          parseFloat(s.totale_incassato || '0').toFixed(2).replace('.', ',')
                         ].join(';'))
                       ].join('\n');
                       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1747,8 +1748,29 @@ export default function ControlliSanzioniPanel() {
                     const primaEntrata = orariAccesso[0] || '-';
                     const ultimaUscita = orariUscita[orariUscita.length - 1] || '-';
                     
-                    // Header resoconto in formato tabella CSV con separatore tab per Excel
-                    const SEP = '\t'; // Tab separator per Excel
+                    // CSV con separatore punto e virgola (standard italiano per Excel)
+                    const SEP = ';';
+                    // Funzione per formattare data in modo sicuro
+                    const formatData = (dataStr: string | null | undefined) => {
+                      if (!dataStr) return '-';
+                      try {
+                        const d = new Date(dataStr);
+                        if (isNaN(d.getTime())) return '-';
+                        return d.toLocaleDateString('it-IT');
+                      } catch { return '-'; }
+                    };
+                    // Funzione per formattare orario in modo sicuro
+                    const formatOrario = (orario: string | null | undefined) => {
+                      if (!orario || orario === 'null' || orario === 'undefined') return '-';
+                      // Se è già in formato HH:MM, restituiscilo
+                      if (/^\d{2}:\d{2}$/.test(orario)) return orario;
+                      // Prova a parsare come data
+                      try {
+                        const d = new Date(orario);
+                        if (isNaN(d.getTime())) return orario;
+                        return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                      } catch { return orario; }
+                    };
                     const csvContent = [
                       // BOM per Excel UTF-8
                       '\uFEFF',
@@ -1768,32 +1790,32 @@ export default function ControlliSanzioniPanel() {
                       '',
                       // Sezione Concessionari
                       `LISTA CONCESSIONARI (${concessionari.length})`,
-                      `N° Posteggio${SEP}Impresa${SEP}P.IVA${SEP}Importo${SEP}Giorno${SEP}Accesso${SEP}Rifiuti${SEP}Uscita${SEP}Presenze${SEP}Assenze`,
+                      `N. Posteggio${SEP}Impresa${SEP}P.IVA${SEP}Importo EUR${SEP}Giorno${SEP}Accesso${SEP}Rifiuti${SEP}Uscita${SEP}Presenze${SEP}Assenze`,
                       ...concessionari.map(d => [
                         d.stall_number || '',
                         d.impresa_nome || '',
                         d.impresa_piva || '',
-                        parseFloat(d.importo_addebitato || '0').toFixed(2),
-                        d.giorno ? new Date(d.giorno).toLocaleDateString('it-IT') : '-',
-                        d.ora_accesso || '-',
-                        d.ora_rifiuti || '-',
-                        d.ora_uscita || '-',
+                        parseFloat(d.importo_addebitato || '0').toFixed(2).replace('.', ','),
+                        formatData(d.giorno),
+                        formatOrario(d.ora_accesso),
+                        formatOrario(d.ora_rifiuti),
+                        formatOrario(d.ora_uscita),
                         d.presenze_totali || 0,
                         d.assenze_non_giustificate || 0
                       ].join(SEP)),
                       '',
                       // Sezione Spuntisti
                       `LISTA SPUNTISTI (${spuntisti.length})`,
-                      `N° Posteggio${SEP}Impresa${SEP}P.IVA${SEP}Importo${SEP}Giorno${SEP}Accesso${SEP}Rifiuti${SEP}Uscita${SEP}Presenze${SEP}Assenze`,
+                      `N. Posteggio${SEP}Impresa${SEP}P.IVA${SEP}Importo EUR${SEP}Giorno${SEP}Accesso${SEP}Rifiuti${SEP}Uscita${SEP}Presenze${SEP}Assenze`,
                       ...spuntisti.map(d => [
                         d.stall_number || '',
                         d.impresa_nome || '',
                         d.impresa_piva || '',
-                        parseFloat(d.importo_addebitato || '0').toFixed(2),
-                        d.giorno ? new Date(d.giorno).toLocaleDateString('it-IT') : '-',
-                        d.ora_accesso || '-',
-                        d.ora_rifiuti || '-',
-                        d.ora_uscita || '-',
+                        parseFloat(d.importo_addebitato || '0').toFixed(2).replace('.', ','),
+                        formatData(d.giorno),
+                        formatOrario(d.ora_accesso),
+                        formatOrario(d.ora_rifiuti),
+                        formatOrario(d.ora_uscita),
                         d.presenze_totali || 0,
                         d.assenze_non_giustificate || 0
                       ].join(SEP))
