@@ -3,7 +3,7 @@
  * Legge i parametri dall'URL e fornisce helper per le chiamate API filtrate
  */
 
-import { useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface ImpersonationState {
   isImpersonating: boolean;
@@ -20,43 +20,66 @@ export interface UseImpersonationReturn extends ImpersonationState {
 }
 
 export function useImpersonation(): UseImpersonationReturn {
-  const state = useMemo(() => {
-    // Legge i parametri dall'URL
+  // Legge i parametri direttamente dall'URL (sincrono, sempre aggiornato)
+  const getParamsFromUrl = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
-    const isImpersonating = params.get('impersonate') === 'true';
-    const comuneId = params.get('comune_id');
-    const comuneNome = params.get('comune_nome');
-    const userEmail = params.get('user_email');
-
     return {
-      isImpersonating,
-      comuneId,
-      comuneNome,
-      userEmail
+      isImpersonating: params.get('impersonate') === 'true',
+      comuneId: params.get('comune_id'),
+      comuneNome: params.get('comune_nome'),
+      userEmail: params.get('user_email')
     };
   }, []);
 
+  const [state, setState] = useState<ImpersonationState>(getParamsFromUrl);
+
+  // Aggiorna lo state quando cambia l'URL
+  useEffect(() => {
+    const handleUrlChange = () => {
+      setState(getParamsFromUrl());
+    };
+
+    // Ascolta cambiamenti di popstate (navigazione browser)
+    window.addEventListener('popstate', handleUrlChange);
+    
+    // Aggiorna immediatamente
+    handleUrlChange();
+
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+    };
+  }, [getParamsFromUrl]);
+
   // Helper per aggiungere comune_id alle URL delle API
-  const addComuneIdToUrl = (url: string): string => {
-    if (!state.isImpersonating || !state.comuneId) {
+  // IMPORTANTE: Legge direttamente dall'URL per garantire valori aggiornati
+  const addComuneIdToUrl = useCallback((url: string): string => {
+    const params = new URLSearchParams(window.location.search);
+    const isImpersonating = params.get('impersonate') === 'true';
+    const comuneId = params.get('comune_id');
+    
+    if (!isImpersonating || !comuneId) {
       return url;
     }
 
     const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}comune_id=${state.comuneId}`;
-  };
+    return `${url}${separator}comune_id=${comuneId}`;
+  }, []);
 
   // Helper per opzioni fetch (per future estensioni)
-  const getFetchOptions = () => {
-    if (!state.isImpersonating || !state.comuneId) {
+  const getFetchOptions = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    const isImpersonating = params.get('impersonate') === 'true';
+    const comuneId = params.get('comune_id');
+    
+    if (!isImpersonating || !comuneId) {
       return {};
     }
     return {
       headers: {
-        'X-Comune-Id': state.comuneId
+        'X-Comune-Id': comuneId
       }
     };
-  };
+  }, []);
 
   return {
     ...state,
