@@ -150,10 +150,22 @@ export default function NuovoVerbalePage() {
   // Form state - Note
   const [notes, setNotes] = useState('');
 
-  // Fetch data on mount e quando cambia l'impersonificazione
+  // Fetch data on mount
   useEffect(() => {
     fetchInitialData();
-  }, [isImpersonating, impersonatedComuneId]);
+  }, []);
+
+  // Effetto separato per gestire l'impersonificazione dopo il caricamento dei comuni
+  useEffect(() => {
+    if (isImpersonating && impersonatedComuneId && comuni.length > 0) {
+      // Verifica che il comune esista nella lista
+      const comuneExists = comuni.some(c => c.id === impersonatedComuneId);
+      if (comuneExists) {
+        setSelectedComuneId(impersonatedComuneId);
+        console.log('[Verbale] Impersonificazione: selezionato comune', impersonatedComuneId);
+      }
+    }
+  }, [isImpersonating, impersonatedComuneId, comuni]);
 
   const fetchInitialData = async () => {
     setLoading(true);
