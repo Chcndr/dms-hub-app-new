@@ -119,6 +119,23 @@ interface RispostaPM {
   letta: boolean;
 }
 
+// Notifica SUAP per la Polizia Municipale - stato pratiche
+interface NotificaSUAP {
+  id: number;
+  pratica_id: number;
+  numero_pratica: string;
+  tipo_pratica: string;
+  stato_precedente: string | null;
+  stato_attuale: string;
+  impresa_nome: string;
+  impresa_cf: string;
+  comune_id: number;
+  comune_nome: string;
+  messaggio: string;
+  data_cambio_stato: string;
+  letta: boolean;
+}
+
 interface MarketSession {
   id: number;
   market_id: number;
@@ -201,6 +218,10 @@ export default function ControlliSanzioniPanel() {
   const [transgressions, setTransgressions] = useState<Transgression[]>([]);
   const [transgressionsLoading, setTransgressionsLoading] = useState(false);
   
+  // Notifiche SUAP per PM
+  const [notificheSuap, setNotificheSuap] = useState<NotificaSUAP[]>([]);
+  const [notificheSuapLoading, setNotificheSuapLoading] = useState(false);
+  
   // Storico sessioni mercato
   const [marketSessions, setMarketSessions] = useState<MarketSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -281,6 +302,54 @@ export default function ControlliSanzioniPanel() {
       const sessionsData = await sessionsRes.json();
       if (sessionsData.success) setMarketSessions(sessionsData.data || []);
 
+      // Fetch notifiche SUAP per PM - notifiche di cambio stato pratiche
+      // Queste sono le stesse notifiche inviate alle imprese quando il SUAP approva/nega/revisiona
+      try {
+        const notificheSuapRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/suap/notifiche-pm?limit=50`));
+        const notificheSuapData = await notificheSuapRes.json();
+        if (notificheSuapData.success) {
+          setNotificheSuap(notificheSuapData.data || []);
+        } else {
+          // Se l'endpoint non esiste, generiamo le notifiche dalle pratiche SUAP
+          // Questo è un fallback per quando il backend non ha ancora l'endpoint dedicato
+          const notificheFromPratiche = (praticheData.data || []).map((p: SuapPratica, idx: number) => ({
+            id: idx + 1,
+            pratica_id: p.id,
+            numero_pratica: p.numero_pratica,
+            tipo_pratica: p.tipo_pratica,
+            stato_precedente: null,
+            stato_attuale: p.stato,
+            impresa_nome: p.impresa_nome || 'N/D',
+            impresa_cf: '',
+            comune_id: 0,
+            comune_nome: p.comune_nome || 'N/D',
+            messaggio: `Pratica ${p.numero_pratica} - ${p.tipo_pratica}: stato ${p.stato}`,
+            data_cambio_stato: p.data_presentazione,
+            letta: false
+          }));
+          setNotificheSuap(notificheFromPratiche);
+        }
+      } catch (notifErr) {
+        console.log('[ControlliSanzioni] Endpoint notifiche-pm non disponibile, usando fallback');
+        // Fallback: generiamo le notifiche dalle pratiche SUAP
+        const notificheFromPratiche = (praticheData.data || []).map((p: SuapPratica, idx: number) => ({
+          id: idx + 1,
+          pratica_id: p.id,
+          numero_pratica: p.numero_pratica,
+          tipo_pratica: p.tipo_pratica,
+          stato_precedente: null,
+          stato_attuale: p.stato,
+          impresa_nome: p.impresa_nome || 'N/D',
+          impresa_cf: '',
+          comune_id: 0,
+          comune_nome: p.comune_nome || 'N/D',
+          messaggio: `Pratica ${p.numero_pratica} - ${p.tipo_pratica}: stato ${p.stato}`,
+          data_cambio_stato: p.data_presentazione,
+          letta: false
+        }));
+        setNotificheSuap(notificheFromPratiche);
+      }
+
     } catch (err) {
       setError('Errore nel caricamento dei dati');
       console.error('Fetch error:', err);
@@ -309,14 +378,142 @@ export default function ControlliSanzioniPanel() {
     }
   };
 
-  // Pratica status badge
+  // Pratica status indicator - Semaforo con stato scritto
+  const getPraticaStatusIndicator = (stato: string) => {
+    const statoUpper = stato?.toUpperCase();
+    
+    // Configurazione per ogni stato
+    const statusConfig: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
+      'APPROVATA': { 
+        bg: 'bg-green-500/10', 
+        border: 'border-green-500', 
+        text: 'text-green-400', 
+        dot: 'bg-green-500',
+        label: 'APPROVATA'
+      },
+      'APPROVED': { 
+        bg: 'bg-green-500/10', 
+        border: 'border-green-500', 
+        text: 'text-green-400', 
+        dot: 'bg-green-500',
+        label: 'APPROVATA'
+      },
+      'RIFIUTATA': { 
+        bg: 'bg-red-500/10', 
+        border: 'border-red-500', 
+        text: 'text-red-400', 
+        dot: 'bg-red-500',
+        label: 'NEGATA'
+      },
+      'REJECTED': { 
+        bg: 'bg-red-500/10', 
+        border: 'border-red-500', 
+        text: 'text-red-400', 
+        dot: 'bg-red-500',
+        label: 'NEGATA'
+      },
+      'NEGATA': { 
+        bg: 'bg-red-500/10', 
+        border: 'border-red-500', 
+        text: 'text-red-400', 
+        dot: 'bg-red-500',
+        label: 'NEGATA'
+      },
+      'REVOCATA': { 
+        bg: 'bg-orange-500/10', 
+        border: 'border-orange-500', 
+        text: 'text-orange-400', 
+        dot: 'bg-orange-500',
+        label: 'REVOCATA'
+      },
+      'IN_LAVORAZIONE': { 
+        bg: 'bg-blue-500/10', 
+        border: 'border-blue-500', 
+        text: 'text-blue-400', 
+        dot: 'bg-blue-500 animate-pulse',
+        label: 'IN LAVORAZIONE'
+      },
+      'IN_REVISIONE': { 
+        bg: 'bg-yellow-500/10', 
+        border: 'border-yellow-500', 
+        text: 'text-yellow-400', 
+        dot: 'bg-yellow-500 animate-pulse',
+        label: 'IN REVISIONE'
+      },
+      'INTEGRATION_NEEDED': { 
+        bg: 'bg-yellow-500/10', 
+        border: 'border-yellow-500', 
+        text: 'text-yellow-400', 
+        dot: 'bg-yellow-500 animate-pulse',
+        label: 'IN REVISIONE'
+      },
+      'IN_ATTESA': { 
+        bg: 'bg-amber-500/10', 
+        border: 'border-amber-500', 
+        text: 'text-amber-400', 
+        dot: 'bg-amber-500',
+        label: 'IN ATTESA'
+      },
+      'RECEIVED': { 
+        bg: 'bg-cyan-500/10', 
+        border: 'border-cyan-500', 
+        text: 'text-cyan-400', 
+        dot: 'bg-cyan-500',
+        label: 'RICEVUTA'
+      },
+      'PRECHECK': { 
+        bg: 'bg-indigo-500/10', 
+        border: 'border-indigo-500', 
+        text: 'text-indigo-400', 
+        dot: 'bg-indigo-500 animate-pulse',
+        label: 'VERIFICA'
+      },
+      'EVALUATED': { 
+        bg: 'bg-purple-500/10', 
+        border: 'border-purple-500', 
+        text: 'text-purple-400', 
+        dot: 'bg-purple-500',
+        label: 'VALUTATA'
+      }
+    };
+    
+    const config = statusConfig[statoUpper] || { 
+      bg: 'bg-gray-500/10', 
+      border: 'border-gray-500', 
+      text: 'text-gray-400', 
+      dot: 'bg-gray-500',
+      label: stato || 'N/D'
+    };
+    
+    return (
+      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${config.bg} border ${config.border}`}>
+        <span className={`w-3 h-3 rounded-full ${config.dot}`}></span>
+        <span className={`text-xs font-bold tracking-wide ${config.text}`}>
+          {config.label}
+        </span>
+      </div>
+    );
+  };
+
+  // Manteniamo anche la versione badge per retrocompatibilità
   const getPraticaStatusBadge = (stato: string) => {
     switch (stato?.toUpperCase()) {
-      case 'APPROVATA': return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Approvata</Badge>;
-      case 'RIFIUTATA': return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Rifiutata</Badge>;
-      case 'IN_LAVORAZIONE': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">In Lavorazione</Badge>;
-      case 'IN_ATTESA': return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">In Attesa</Badge>;
-      default: return <Badge className="bg-gray-500/20 text-gray-400">{stato}</Badge>;
+      case 'APPROVATA': 
+      case 'APPROVED': 
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Approvata</Badge>;
+      case 'RIFIUTATA': 
+      case 'REJECTED': 
+      case 'NEGATA': 
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Negata</Badge>;
+      case 'IN_LAVORAZIONE': 
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">In Lavorazione</Badge>;
+      case 'IN_ATTESA': 
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">In Attesa</Badge>;
+      case 'IN_REVISIONE':
+      case 'INTEGRATION_NEEDED':
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">In Revisione</Badge>;
+      default: 
+        return <Badge className="bg-gray-500/20 text-gray-400">{stato}</Badge>;
     }
   };
 
@@ -1238,7 +1435,7 @@ export default function ControlliSanzioniPanel() {
                             <p className="text-[#e8fbff]/70 text-sm">{pratica.comune_nome || 'N/D'}</p>
                           </td>
                           <td className="p-3 text-center">
-                            {getPraticaStatusBadge(pratica.stato)}
+                            {getPraticaStatusIndicator(pratica.stato)}
                           </td>
                           <td className="p-3 text-center">
                             <span className="text-[#e8fbff]/60 text-sm">
@@ -1262,6 +1459,79 @@ export default function ControlliSanzioniPanel() {
 
         {/* Tab: Notifiche PM - Usa NotificationManager come SUAP e Wallet */}
         <TabsContent value="notifiche" className="space-y-6 mt-4">
+          {/* Sezione Notifiche SUAP - Stato Pratiche */}
+          <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-[#8b5cf6]" />
+                  Notifiche SUAP - Stato Pratiche
+                </CardTitle>
+                <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
+                  {notificheSuap.filter(n => !n.letta).length} nuove
+                </Badge>
+              </div>
+              <CardDescription className="text-[#e8fbff]/60">
+                Notifiche automatiche dal SUAP quando una pratica viene approvata, negata o messa in revisione
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {notificheSuap.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-12 w-12 text-[#8b5cf6]/30 mx-auto mb-3" />
+                  <p className="text-[#e8fbff]/50">Nessuna notifica SUAP</p>
+                  <p className="text-[#e8fbff]/30 text-sm mt-1">Le notifiche di cambio stato pratiche appariranno qui</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {notificheSuap.map((notifica) => (
+                    <div 
+                      key={notifica.id} 
+                      className={`p-4 rounded-lg border transition-all ${
+                        notifica.letta 
+                          ? 'bg-[#0f1729]/50 border-[#8b5cf6]/10' 
+                          : 'bg-[#8b5cf6]/5 border-[#8b5cf6]/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-[#8b5cf6] font-mono text-sm">{notifica.numero_pratica}</span>
+                            <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
+                              {notifica.tipo_pratica}
+                            </Badge>
+                            {!notifica.letta && (
+                              <span className="w-2 h-2 rounded-full bg-[#8b5cf6] animate-pulse"></span>
+                            )}
+                          </div>
+                          <p className="text-[#e8fbff] text-sm mb-1">
+                            <span className="text-[#e8fbff]/60">Impresa:</span> {notifica.impresa_nome}
+                          </p>
+                          <p className="text-[#e8fbff]/70 text-sm">{notifica.messaggio}</p>
+                          <p className="text-[#e8fbff]/40 text-xs mt-2">
+                            {notifica.data_cambio_stato ? new Date(notifica.data_cambio_stato).toLocaleString('it-IT') : '-'}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          {getPraticaStatusIndicator(notifica.stato_attuale)}
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Dettagli
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Sezione Notifiche Manuali PM */}
           <NotificationManager 
             mittenteTipo="POLIZIA_MUNICIPALE"
             mittenteId={isImpersonating && impersonatedComuneId ? parseInt(impersonatedComuneId) : 1}
