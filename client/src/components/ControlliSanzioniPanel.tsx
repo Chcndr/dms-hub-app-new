@@ -1857,10 +1857,12 @@ export default function ControlliSanzioniPanel() {
                     const totaleCalcolato = sessionDetails.reduce((sum, d) => sum + parseFloat(d.importo_addebitato || '0'), 0);
                     const concessionariCount = sessionDetails.filter(d => d.tipo_presenza === 'CONCESSION' || !d.tipo_presenza).length;
                     const spuntistiCount = sessionDetails.filter(d => d.tipo_presenza === 'SPUNTA').length;
+                    // Calcola posteggi unici (non duplicati)
+                    const posteggiUnici = new Set(sessionDetails.map(d => d.stall_number)).size;
                     return (
                       <div className="grid grid-cols-5 gap-3 mb-4">
                         <div className="bg-[#0d1520] p-3 rounded-lg text-center">
-                          <p className="text-[#3b82f6] font-bold text-xl">{sessionDetails.length}</p>
+                          <p className="text-[#3b82f6] font-bold text-xl">{posteggiUnici}</p>
                           <p className="text-gray-400 text-xs">Posteggi Occupati</p>
                         </div>
                         <div className="bg-[#0d1520] p-3 rounded-lg text-center">
