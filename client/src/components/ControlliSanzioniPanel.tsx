@@ -323,26 +323,27 @@ export default function ControlliSanzioniPanel() {
           const comuneId = parseInt(comuneIdFromUrl);
           const comuneNome = comuneNomeFromUrl || '';
           sanctionsFiltered = sanctionsFiltered.filter((s: Sanction) => {
-            // 1. Prima controlla comune_id nel verbaleDataJson (nuovi verbali)
+            // Filtra per comune_id nell'intestazione del verbale
+            // Il campo location contiene la posizione GPS della violazione, NON il comune di appartenenza
             try {
               const verbaleData = typeof s.verbale_data_json === 'string' 
                 ? JSON.parse(s.verbale_data_json) 
                 : s.verbale_data_json;
+              
+              // Controlla comune_id nell'intestazione
               if (verbaleData?.intestazione?.comune_id) {
-                // Nuovo verbale con comune_id - usa questo
                 return verbaleData.intestazione.comune_id === comuneId;
               }
+              
+              // Fallback: controlla il nome del comune nell'intestazione
+              if (verbaleData?.intestazione?.comune && comuneNome) {
+                return verbaleData.intestazione.comune.toLowerCase().includes(comuneNome.toLowerCase());
+              }
             } catch (e) {
-              // JSON parsing fallito, continua con fallback
+              // JSON parsing fallito
             }
             
-            // 2. Fallback per verbali vecchi: controlla il campo location
-            // (i verbali vecchi hanno intestazione.comune hardcoded a "Cesena")
-            if (s.location && comuneNome) {
-              return s.location.toLowerCase().includes(comuneNome.toLowerCase());
-            }
-            
-            // 3. Verbali senza comune_id e senza location vengono esclusi
+            // Verbali senza comune_id nell'intestazione vengono esclusi
             return false;
           });
           
