@@ -2337,6 +2337,8 @@ export default function ControlliSanzioniPanel() {
                     // Calcola statistiche dai dettagli
                     const usciteRegistrate = sessionDetails.filter(d => d.ora_uscita).length;
                     const totaleIncassato = sessionDetails.reduce((sum, d) => sum + parseFloat(d.importo_addebitato || '0'), 0);
+                    // Calcola posteggi unici (non duplicati)
+                    const posteggiUnici = new Set(sessionDetails.map(d => d.stall_number)).size;
                     
                     // Trova prima entrata e ultima uscita dai dettagli
                     const orariAccesso = sessionDetails.filter(d => d.ora_accesso).map(d => d.ora_accesso).sort();
@@ -2378,7 +2380,7 @@ export default function ControlliSanzioniPanel() {
                       `Data${SEP}${new Date(selectedSession.data_mercato).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}`,
                       `Prima Entrata${SEP}${primaEntrata}`,
                       `Ultima Uscita${SEP}${ultimaUscita}`,
-                      `Posteggi Occupati${SEP}${sessionDetails.length}`,
+                      `Posteggi Occupati${SEP}${posteggiUnici}`,
                       `Concessionari${SEP}${concessionari.length}`,
                       `Spuntisti${SEP}${spuntisti.length}`,
                       `Uscite Registrate${SEP}${usciteRegistrate}`,
