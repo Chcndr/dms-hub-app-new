@@ -364,11 +364,15 @@ export default function NuovoVerbalePage() {
       // Ottieni il nome del comune selezionato
       const selectedComune = comuni.find(c => c.id === selectedComuneId);
       const comuneNome = selectedComune?.nome || '';
+      const comuneProvincia = selectedComune?.provincia || '';
+      const corpoPM = comuneNome ? `Polizia Municipale di ${comuneNome.replace('Comune di ', '')}` : 'Polizia Municipale';
       
       const payload = {
-        // Comune (per filtro)
+        // Comune (per filtro e intestazione verbale)
         comune_id: selectedComuneId,
         comune_nome: comuneNome,
+        comune_provincia: comuneProvincia,
+        corpo_pm: corpoPM,
         // Agente
         agent_name: agentName,
         agent_badge: agentBadge,
