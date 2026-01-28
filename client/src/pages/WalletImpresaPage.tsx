@@ -932,6 +932,16 @@ export default function WalletImpresaPage() {
                             <p className="text-xs text-[#e8fbff]/30">
                               Pagato il: {sanzione.paid_date ? new Date(sanzione.paid_date).toLocaleDateString('it-IT') : 'N/A'}
                             </p>
+                            {/* Pulsante PDF verbale */}
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="mt-2 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                              onClick={() => window.open(`https://api.mio-hub.me/api/verbali/${sanzione.id}/pdf`, '_blank')}
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              Vedi Verbale
+                            </Button>
                           </div>
                           <div className="text-right">
                             <Badge className="bg-red-500/20 text-red-400">SANZIONE</Badge>

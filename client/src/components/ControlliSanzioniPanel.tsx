@@ -154,8 +154,10 @@ interface NotificaSUAP {
 interface Concessione {
   id: number;
   numero_protocollo: string;
-  company_name: string;
-  company_piva: string;
+  // Campi corretti dall'API orchestratore
+  ragione_sociale: string;
+  impresa_denominazione: string;
+  partita_iva: string;
   market_name: string;
   market_municipality: string;
   stall_number: string;
@@ -165,6 +167,7 @@ interface Concessione {
   stato: string;
   stato_calcolato: string;
   created_at: string;
+  comune_rilascio?: string;
 }
 
 // Interfaccia per le Autorizzazioni dal SUAP
@@ -478,11 +481,11 @@ export default function ControlliSanzioniPanel() {
             tipo_pratica: 'Concessione',
             stato_precedente: null,
             stato_attuale: c.stato_calcolato || c.stato || 'ATTIVA',
-            impresa_nome: c.company_name || 'N/D',
-            impresa_cf: c.company_piva || '',
+            impresa_nome: c.ragione_sociale || c.impresa_denominazione || 'N/D',
+            impresa_cf: c.partita_iva || '',
             comune_id: 0,
             comune_nome: c.market_municipality || 'N/D',
-            messaggio: `Concessione ${c.company_name} - Mercato ${c.market_name} - Posteggio ${c.stall_number || 'N/D'}: stato ${c.stato_calcolato || c.stato}`,
+            messaggio: `Concessione ${c.ragione_sociale || c.impresa_denominazione || 'N/D'} - Mercato ${c.market_name} - Posteggio ${c.stall_number || 'N/D'}: stato ${c.stato_calcolato || c.stato}`,
             data_cambio_stato: c.created_at,
             letta: false
           }));
@@ -536,11 +539,11 @@ export default function ControlliSanzioniPanel() {
           tipo_pratica: 'Concessione',
           stato_precedente: null,
           stato_attuale: c.stato_calcolato || c.stato || 'ATTIVA',
-          impresa_nome: c.company_name || 'N/D',
-          impresa_cf: c.company_piva || '',
+          impresa_nome: c.ragione_sociale || c.impresa_denominazione || 'N/D',
+          impresa_cf: c.partita_iva || '',
           comune_id: 0,
           comune_nome: c.market_municipality || 'N/D',
-          messaggio: `Concessione ${c.company_name} - Mercato ${c.market_name} - Posteggio ${c.stall_number || 'N/D'}: stato ${c.stato_calcolato || c.stato}`,
+          messaggio: `Concessione ${c.ragione_sociale || c.impresa_denominazione || 'N/D'} - Mercato ${c.market_name} - Posteggio ${c.stall_number || 'N/D'}: stato ${c.stato_calcolato || c.stato}`,
           data_cambio_stato: c.created_at,
           letta: false
         }));
