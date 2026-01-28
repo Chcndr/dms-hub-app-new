@@ -368,11 +368,11 @@ POST /api/guardian/debug/testEndpoint
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (477 endpoint totali)
+### Endpoint Index (739 endpoint totali)
 
 Gli endpoint sono documentati in:
 ```
-/home/ubuntu/dms-hub-app-new/client/public/api-index.json
+MIO-hub/api/index.json (GitHub: Chcndr/MIO-hub)
 ```
 
 ### Categorie Principali
@@ -1438,7 +1438,36 @@ const forcedZoom = roundedToQuarter + 0.25;
 
 ---
 
+### v3.53.0 (28 Gennaio 2026) - Persistenza Impersonificazione e Sync Endpoint
 
+**Obiettivo**: Risolvere problemi impersonificazione su Safari/iPad e sincronizzare tutti gli endpoint nel sistema.
+
+**Backend (Hetzner):**
+- ✅ Modificato `POST /api/verbali/:id/invia` per usare comune corretto dall'intestazione
+- ✅ Aggiunta colonna `comune_id` alla tabella `notifiche`
+- ✅ Aggiunta colonna `link_riferimento` alla tabella `notifiche`
+- ✅ Notifica verbale ora include link diretto al PDF
+
+**Frontend (Vercel):**
+- ✅ `useImpersonation.ts` ora usa `sessionStorage` per persistere i dati
+- ✅ `ImpersonationBanner.tsx` aggiornato con nuova logica
+- ✅ `NuovoVerbalePage.tsx` legge comune da sessionStorage
+- ✅ `ComuniPanel.tsx` redirect nella stessa pagina (fix Safari popup)
+- ✅ `ControlliSanzioniPanel.tsx` filtro verbali per `comune_id`
+
+**MIO-hub (api/index.json):**
+- ✅ Sincronizzati 262 nuovi endpoint dal backend
+- ✅ **Totale endpoint: 739** (era 477)
+
+**Guardian**: 739 endpoint totali (+262)
+
+**Commit:**
+- Frontend: `07ed7d4` - fix(impersonation): redirect same page for Safari
+- Frontend: `63b53fb` - fix(verbali): filter by comune_id from intestazione
+- Backend: `243cbdb` - feat(verbali): notifica con comune corretto e link PDF
+- MIO-hub: `bb55bfc` - feat(api): sync 262 new endpoints (total: 739)
+
+---
 
 ### v3.52.0 (27 Gennaio 2026) - Filtro Comune e Notifiche Verbali con PDF
 
