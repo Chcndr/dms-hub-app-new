@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.53.0  
+> **Versione:** 3.54.0  
 > **Data:** 28 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -1169,6 +1169,43 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 ### 📝 CHANGELOG
+
+### v3.54.0 (28/01/2026) - Modulo Pagamento Sanzioni/Verbali PM
+
+**Nuove Funzionalità:**
+
+1. **Pagamento Sanzioni Impresa** - Wallet Impresa
+   - Nuova sezione "Sanzioni/Verbali PM da Pagare" nel tab Scadenze
+   - Visualizzazione importo ridotto (-30%) se entro 5 giorni dalla notifica
+   - Countdown giorni rimanenti per sconto
+   - Pulsante "Paga" con dialog conferma PagoPA
+   - Link diretto al PDF del verbale
+
+2. **Gestione Sanzioni PA** - WalletPanel
+   - Nuovo subtab "Sanzioni" (rosso) nella barra navigazione
+   - Filtri per stato (Pagato/Non Pagato) e ricerca impresa
+   - Card riepilogo: Da Incassare / Incassato / Totale
+   - Lista verbali con badge stato e importo
+   - Pulsante "Registra" per pagamento manuale (contanti/bonifico)
+   - Dialog conferma registrazione pagamento
+
+3. **Backend Endpoint** - 3 nuovi endpoint REST
+   - `GET /api/sanctions/riepilogo-pagamenti` - Riepilogo per PA con totali
+   - `GET /api/sanctions/impresa/:id/da-pagare` - Verbali non pagati per impresa
+   - `POST /api/sanctions/:id/paga-pagopa` - Registra pagamento
+
+4. **Database** - 4 nuove colonne su `sanctions`
+   - `pagopa_iuv` - Identificativo Univoco Versamento
+   - `pagopa_payment_date` - Data pagamento PagoPA
+   - `reduced_amount` - Importo ridotto calcolato
+   - `reduced_due_date` - Scadenza per pagamento ridotto
+
+**Commit:**
+- Backend: `[auto-deploy]` - "feat: 3 endpoint pagamento sanzioni"
+- Frontend: `949e7c6` - "feat: v3.53.0 - modulo pagamento sanzioni/verbali PM"
+- MIO-hub: `6b2971a` - "feat: aggiunto 3 endpoint pagamento sanzioni v3.53.0"
+
+---
 
 ### v3.53.0 (28/01/2026) - Bug Fix Critici Sistema Verbali e Notifiche PM
 
