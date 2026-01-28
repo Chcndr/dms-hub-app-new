@@ -80,6 +80,9 @@ interface Sanction {
   issue_date: string;
   due_date: string;
   location?: string; // Campo per filtrare per comune
+  // v3.54.2: Campi per importo pagato con sconto
+  reduced_amount?: string;
+  pagopa_payment_date?: string;
 }
 
 interface InfractionType {
@@ -1264,7 +1267,15 @@ export default function ControlliSanzioniPanel() {
                           <p className="text-[#e8fbff]/50 text-xs">{sanction.impresa_nome || 'N/D'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[#ef4444] font-bold">€{parseFloat(sanction.amount).toLocaleString('it-IT')}</p>
+                          {/* v3.54.2: Mostra importo pagato se disponibile */}
+                          {sanction.payment_status === 'PAGATO' && sanction.reduced_amount ? (
+                            <>
+                              <p className="text-[#22c55e] font-bold">€{parseFloat(sanction.reduced_amount).toLocaleString('it-IT')}</p>
+                              <p className="text-[#e8fbff]/40 text-xs line-through">€{parseFloat(sanction.amount).toLocaleString('it-IT')}</p>
+                            </>
+                          ) : (
+                            <p className="text-[#ef4444] font-bold">€{parseFloat(sanction.amount).toLocaleString('it-IT')}</p>
+                          )}
                           {getPaymentStatusBadge(sanction.payment_status)}
                         </div>
                       </div>
@@ -1483,7 +1494,15 @@ export default function ControlliSanzioniPanel() {
                             <p className="text-[#e8fbff]/80 text-sm">{sanction.infraction_code}</p>
                           </td>
                           <td className="p-3 text-right">
-                            <span className="text-[#ef4444] font-bold">€{parseFloat(sanction.amount).toLocaleString('it-IT')}</span>
+                            {/* v3.54.2: Mostra importo pagato se disponibile */}
+                            {sanction.payment_status === 'PAGATO' && sanction.reduced_amount ? (
+                              <div>
+                                <span className="text-[#22c55e] font-bold">€{parseFloat(sanction.reduced_amount).toLocaleString('it-IT')}</span>
+                                <p className="text-[#e8fbff]/40 text-xs line-through">€{parseFloat(sanction.amount).toLocaleString('it-IT')}</p>
+                              </div>
+                            ) : (
+                              <span className="text-[#ef4444] font-bold">€{parseFloat(sanction.amount).toLocaleString('it-IT')}</span>
+                            )}
                           </td>
                           <td className="p-3 text-center">
                             {getPaymentStatusBadge(sanction.payment_status)}
