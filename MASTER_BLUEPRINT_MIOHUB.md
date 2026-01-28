@@ -368,7 +368,7 @@ POST /api/guardian/debug/testEndpoint
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (739 endpoint totali)
+### Endpoint Index (727 endpoint totali)
 
 Gli endpoint sono documentati in:
 ```
@@ -1457,15 +1457,15 @@ const forcedZoom = roundedToQuarter + 0.25;
 
 **MIO-hub (api/index.json):**
 - ✅ Sincronizzati 262 nuovi endpoint dal backend
-- ✅ **Totale endpoint: 739** (era 477)
+- ✅ **Totale endpoint: 727** (era 477, rimossi 12 duplicati)
 
-**Guardian**: 739 endpoint totali (+262)
+**Guardian**: 727 endpoint totali (+250)
 
 **Commit:**
 - Frontend: `07ed7d4` - fix(impersonation): redirect same page for Safari
 - Frontend: `63b53fb` - fix(verbali): filter by comune_id from intestazione
 - Backend: `243cbdb` - feat(verbali): notifica con comune corretto e link PDF
-- MIO-hub: `bb55bfc` - feat(api): sync 262 new endpoints (total: 739)
+- MIO-hub: `45083d2` - feat(api): sync 250 new endpoints, remove duplicates (total: 727)
 
 ---
 
