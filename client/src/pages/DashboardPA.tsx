@@ -2524,90 +2524,16 @@ export default function DashboardPA() {
               </CardContent>
             </Card>
 
-            {/* Mappa Mercati */}
-            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-[#14b8a6]" />
-                  Mappa Mercati Attivi
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {gisMapData && gisStalls.length > 0 ? (
-                  <div className="h-[500px] rounded-lg overflow-hidden">
-                    {(() => {
-                      const stallsDataForMap = gisStalls.map(s => ({
-                        id: s.id,
-                        number: s.number,
-                        status: s.status,
-                        type: s.type,
-                        vendor_name: s.vendor_business_name || undefined,
-                        impresa_id: s.impresa_id || undefined
-                      }));
-                      return (
-                        <MarketMapComponent
-                          refreshKey={gisMapRefreshKey}
-                          mapData={gisMapData}
-                          center={gisMapCenter}
-                          zoom={18}
-                          height="100%"
-                          stallsData={stallsDataForMap}
-                        />
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
-                    <p>Caricamento mappa...</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Mappa Rete HUB Italia - Overview */}
+            <GestioneHubMapWrapper />
               </div>
             )}
 
             {/* Contenuto Mercati */}
             {dashboardSubTab === 'mercati' && (
               <div className="space-y-6">
-                {/* Mappa Mercato Grosseto (GIS UFFICIALE) */}
-                <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-                  <CardHeader>
-                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-[#14b8a6]" />
-                      Mappa Mercato Grosseto
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {gisMapData && gisStalls.length > 0 ? (
-                      <div className="h-[500px] rounded-lg overflow-hidden">
-                        {(() => {
-                          const stallsDataForMap = gisStalls.map(s => ({
-                            id: s.id,
-                            number: s.number,
-                            status: s.status,
-                            type: s.type,
-                            vendor_name: s.vendor_business_name || undefined,
-                            impresa_id: s.impresa_id || undefined
-                          }));
-                          return (
-                            <MarketMapComponent
-                              refreshKey={gisMapRefreshKey}
-                              mapData={gisMapData}
-                              center={gisMapCenter}
-                              zoom={18}
-                              height="100%"
-                              stallsData={stallsDataForMap}
-                            />
-                          );
-                        })()}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
-                        <p>Caricamento mappa...</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                {/* Mappa Rete HUB Italia - Mercati */}
+                <GestioneHubMapWrapper />
 
                 <Card className="bg-[#1a2332] border-[#14b8a6]/30">
                   <CardHeader>
@@ -4453,45 +4379,8 @@ export default function DashboardPA() {
             {/* Pannello Segnalazioni Civiche con dati reali e config TCC */}
             <CivicReportsPanel />
 
-            {/* Mappa Mercato Grosseto (GIS UFFICIALE) */}
-            <Card className="bg-[#1a2332] border-[#06b6d4]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-[#06b6d4]" />
-                  Mappa Mercato Grosseto
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {gisMapData && gisStalls.length > 0 ? (
-                  <div className="h-[500px] rounded-lg overflow-hidden">
-                    {(() => {
-                      const stallsDataForMap = gisStalls.map(s => ({
-                        id: s.id,
-                        number: s.number,
-                        status: s.status,
-                        type: s.type,
-                        vendor_name: s.vendor_business_name || undefined,
-                        impresa_id: s.impresa_id || undefined
-                      }));
-                      return (
-                        <MarketMapComponent
-                          refreshKey={gisMapRefreshKey}
-                          mapData={gisMapData}
-                          center={gisMapCenter}
-                          zoom={18}
-                          height="100%"
-                          stallsData={stallsDataForMap}
-                        />
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[400px] text-[#94a3b8]">
-                    <p>Caricamento mappa...</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Mappa Rete HUB Italia - Segnalazioni Civiche */}
+            <GestioneHubMapWrapper />
 
             <Card className="bg-[#1a2332] border-[#06b6d4]/30">
               <CardHeader>
