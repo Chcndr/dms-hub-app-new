@@ -368,7 +368,7 @@ POST /api/guardian/debug/testEndpoint
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (727 endpoint totali)
+### Endpoint Index (743 endpoint totali)
 
 Gli endpoint sono documentati in:
 ```
@@ -388,11 +388,12 @@ MIO-hub/api/index.json (GitHub: Chcndr/MIO-hub)
 | SUAP & Ente Sussidiario API | 29 |
 | Sistema Notifiche Bidirezionali | 25 |
 | Token Carbon Credit (TCC) API | 11 |
+| **Civic Reports (Segnalazioni Civiche)** | **10** |
 | GitHub REST API | 8 |
 | MIO Agent Logs | 4 |
-| **TOTALE** | **727** |
+| **TOTALE** | **743** |
 
-> **Nota**: La dashboard mostra 730 perché include 3 endpoint interni di sistema.
+> **Nota**: La dashboard mostra 746 perché include 3 endpoint interni di sistema.
 
 ### Categorie Principali
 
@@ -413,6 +414,7 @@ MIO-hub/api/index.json (GitHub: Chcndr/MIO-hub)
 | **Verbali** | `/api/verbali/*` | pdf, invia, list |
 | **Watchlist** | `/api/watchlist/*` | list, update, resolve |
 | **Presenze** | `/api/presenze/*` | sessioni, dettaglio, chiudi |
+| **Civic Reports** | `/api/civic-reports/*` | list, create, stats, config, resolve, assign |
 
 ---
 
@@ -1209,7 +1211,7 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 - Backend: `9adf514` - "feat: civic-reports.js con 10 endpoint"
 - Frontend: `18425f1` - "feat: Segnalazioni Civiche v3.55.0"
 
-**Totale Endpoint Sistema: 737** (727 + 10)
+**Totale Endpoint Sistema: 743** (733 + 10)
 
 ---
 
@@ -2677,6 +2679,7 @@ git push origin master
 | `Wallets REST` | Wallet pagamenti |
 | `Guardian` | Monitoraggio sistema |
 | `System & Auth` | Autenticazione |
+| `Civic Reports` | Segnalazioni civiche cittadini/imprese |
 
 ### 🔄 Sincronizzazione
 
@@ -4392,7 +4395,9 @@ ON CONFLICT (comune_id) DO NOTHING;
 | 10 | `/api/civic-reports/config` | PUT | Aggiorna configurazione TCC | `{comune_id, tcc_reward_default, ...}` |
 
 **Totale nuovi endpoint: 10**
-**Nuovo totale endpoint sistema: 737** (727 + 10)
+**Nuovo totale endpoint sistema: 743** (733 + 10)
+
+> **Guardian Monitoring**: Tutti i 10 endpoint sono monitorati dal sistema Guardian e visibili nella sezione "Integrazioni e API" della Dashboard PA.
 
 #### 5.2 Logica Endpoint Chiave
 
