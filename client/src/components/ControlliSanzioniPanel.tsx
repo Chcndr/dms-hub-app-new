@@ -126,6 +126,7 @@ interface RispostaPM {
   id: number;
   mittente_id: number;
   mittente_nome: string;
+  mittente_tipo?: string;
   titolo: string;
   messaggio: string;
   tipo_messaggio: string;
@@ -2202,7 +2203,7 @@ export default function ControlliSanzioniPanel() {
 
         {/* Tab: Segnalazioni Civiche per PM */}
         <TabsContent value="segnalazioni" className="space-y-4 mt-4">
-          <SegnalazioniPMSubtab comuneId={selectedComune?.id || 1} />
+          <SegnalazioniPMSubtab comuneId={isImpersonating && impersonatedComuneId ? parseInt(impersonatedComuneId) : 1} />
         </TabsContent>
       </Tabs>
 
