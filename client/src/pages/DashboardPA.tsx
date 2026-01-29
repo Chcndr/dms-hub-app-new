@@ -43,6 +43,7 @@ import SecurityTab from '@/components/SecurityTab';
 import ClientiTab from '@/components/ClientiTab';
 import GestioneHubPanel from '@/components/GestioneHubPanel';
 import ControlliSanzioniPanel from '@/components/ControlliSanzioniPanel';
+import CivicReportsPanel from '@/components/CivicReportsPanel';
 import { BusHubEditor } from '@/components/bus-hub';
 import { ProtectedTab, ProtectedQuickAccess } from '@/components/ProtectedTab';
 import { MessageContent } from '@/components/MessageContent';
@@ -4448,52 +4449,8 @@ export default function DashboardPA() {
 
           {/* TAB 14: SEGNALAZIONI & IOT */}
           <TabsContent value="civic" className="space-y-6">
-            <Card className="bg-[#1a2332] border-[#06b6d4]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Radio className="h-5 w-5 text-[#06b6d4]" />
-                  Segnalazioni Civiche
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <div className="p-4 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Pending</div>
-                    <div className="text-3xl font-bold text-[#f59e0b]">{mockData.civicReports.pending}</div>
-                  </div>
-                  <div className="p-4 bg-[#06b6d4]/10 border border-[#06b6d4]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">In Progress</div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">{mockData.civicReports.inProgress}</div>
-                  </div>
-                  <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Resolved</div>
-                    <div className="text-3xl font-bold text-[#10b981]">{mockData.civicReports.resolved}</div>
-                  </div>
-                  <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Totali</div>
-                    <div className="text-3xl font-bold text-[#e8fbff]">{mockData.civicReports.total}</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {mockData.civicReports.recent.map((report) => (
-                    <div key={report.id} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="text-[#e8fbff] font-semibold">{report.type}</div>
-                        <div className="text-sm text-[#e8fbff]/70">{report.description} - {report.location}</div>
-                        <div className="text-xs text-[#e8fbff]/50 mt-1">{report.user} • {report.date}</div>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        report.status === 'pending' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
-                        report.status === 'in_progress' ? 'bg-[#06b6d4]/20 text-[#06b6d4]' :
-                        'bg-[#10b981]/20 text-[#10b981]'
-                      }`}>
-                        {report.status === 'pending' ? 'Da assegnare' : report.status === 'in_progress' ? 'In corso' : 'Risolto'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Pannello Segnalazioni Civiche con dati reali e config TCC */}
+            <CivicReportsPanel />
 
             {/* Mappa Mercato Grosseto (GIS UFFICIALE) */}
             <Card className="bg-[#1a2332] border-[#06b6d4]/30">

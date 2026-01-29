@@ -1210,6 +1210,13 @@ export default function ControlliSanzioniPanel() {
             <Calendar className="h-4 w-4 mr-2" />
             Storico ({marketSessions.length})
           </TabsTrigger>
+          <TabsTrigger 
+            value="segnalazioni" 
+            className="data-[state=active]:bg-[#06b6d4]/20 data-[state=active]:text-[#06b6d4]"
+          >
+            <Navigation className="h-4 w-4 mr-2" />
+            Segnalazioni
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab: Panoramica */}
@@ -2192,6 +2199,11 @@ export default function ControlliSanzioniPanel() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Tab: Segnalazioni Civiche per PM */}
+        <TabsContent value="segnalazioni" className="space-y-4 mt-4">
+          <SegnalazioniPMSubtab comuneId={selectedComune?.id || 1} />
+        </TabsContent>
       </Tabs>
 
       {/* Modal Dettaglio Watchlist con Navigazione GPS */}
@@ -2605,6 +2617,275 @@ export default function ControlliSanzioniPanel() {
               >
                 Chiudi
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * SegnalazioniPMSubtab - Subtab per visualizzare segnalazioni civiche per PM
+ */
+function SegnalazioniPMSubtab({ comuneId }: { comuneId: number }) {
+  const [reports, setReports] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        // Carica stats
+        const statsRes = await fetch(`${MIHUB_API}/civic-reports/stats?comune_id=${comuneId}`);
+        const statsData = await statsRes.json();
+        if (statsData.success) setStats(statsData.data);
+
+        // Carica lista segnalazioni
+        const reportsRes = await fetch(`${MIHUB_API}/civic-reports?comune_id=${comuneId}&limit=50`);
+        const reportsData = await reportsRes.json();
+        if (reportsData.success) setReports(reportsData.data);
+      } catch (error) {
+        console.error('Errore caricamento segnalazioni:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [comuneId]);
+
+  const handleAssign = async (reportId: number) => {
+    try {
+      const res = await fetch(`${MIHUB_API}/civic-reports/${reportId}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_to: 'PM' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: 'in_progress', assigned_to: 'PM' } : r));
+      }
+    } catch (error) {
+      console.error('Errore assegnazione:', error);
+    }
+  };
+
+  const handleResolve = async (reportId: number) => {
+    try {
+      const res = await fetch(`${MIHUB_API}/civic-reports/${reportId}/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolution_notes: 'Risolto da PM' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: 'resolved' } : r));
+      }
+    } catch (error) {
+      console.error('Errore risoluzione:', error);
+    }
+  };
+
+  const openGoogleMaps = (lat: string, lng: string) => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+    window.open(url, '_blank');
+  };
+
+  if (loading) {
+    return (
+      <Card className="bg-[#1a2332] border-[#06b6d4]/30">
+        <CardContent className="flex items-center justify-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-[#06b6d4]" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* KPI Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card className="bg-[#f59e0b]/10 border-[#f59e0b]/30">
+          <CardContent className="pt-4">
+            <div className="text-3xl font-bold text-[#f59e0b]">{stats?.pending || 0}</div>
+            <div className="text-sm text-[#e8fbff]/70">Da Assegnare</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#06b6d4]/10 border-[#06b6d4]/30">
+          <CardContent className="pt-4">
+            <div className="text-3xl font-bold text-[#06b6d4]">{stats?.inProgress || 0}</div>
+            <div className="text-sm text-[#e8fbff]/70">In Corso</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#10b981]/10 border-[#10b981]/30">
+          <CardContent className="pt-4">
+            <div className="text-3xl font-bold text-[#10b981]">{stats?.resolved || 0}</div>
+            <div className="text-sm text-[#e8fbff]/70">Risolte</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#0b1220] border-[#14b8a6]/20">
+          <CardContent className="pt-4">
+            <div className="text-3xl font-bold text-[#e8fbff]">{stats?.total || 0}</div>
+            <div className="text-sm text-[#e8fbff]/70">Totali</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lista Segnalazioni */}
+      <Card className="bg-[#1a2332] border-[#06b6d4]/30">
+        <CardHeader>
+          <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+            <Navigation className="h-5 w-5 text-[#06b6d4]" />
+            Segnalazioni Civiche da Gestire
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {reports.length === 0 ? (
+            <div className="text-center py-8 text-[#e8fbff]/50">
+              <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>Nessuna segnalazione presente</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {reports.map((report) => (
+                <div 
+                  key={report.id} 
+                  className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between hover:bg-[#0b1220]/80 cursor-pointer"
+                  onClick={() => { setSelectedReport(report); setShowDetailModal(true); }}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#e8fbff] font-semibold">{report.type}</span>
+                      {report.priority === 'URGENT' && (
+                        <Badge className="bg-[#ef4444]/20 text-[#ef4444]">Urgente</Badge>
+                      )}
+                    </div>
+                    <div className="text-sm text-[#e8fbff]/70">
+                      {report.description?.substring(0, 80)}{report.description?.length > 80 ? '...' : ''}
+                    </div>
+                    <div className="text-xs text-[#e8fbff]/50 mt-1">
+                      {new Date(report.created_at).toLocaleDateString('it-IT')} • 
+                      {report.lat && report.lng && (
+                        <span 
+                          className="text-[#06b6d4] hover:underline cursor-pointer ml-1"
+                          onClick={(e) => { e.stopPropagation(); openGoogleMaps(report.lat, report.lng); }}
+                        >
+                          📍 Naviga
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={`${
+                      report.status === 'pending' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
+                      report.status === 'in_progress' ? 'bg-[#06b6d4]/20 text-[#06b6d4]' :
+                      report.status === 'resolved' ? 'bg-[#10b981]/20 text-[#10b981]' :
+                      'bg-[#ef4444]/20 text-[#ef4444]'
+                    }`}>
+                      {report.status === 'pending' ? 'Da assegnare' : 
+                       report.status === 'in_progress' ? 'In corso' : 
+                       report.status === 'resolved' ? 'Risolto' : 'Rifiutato'}
+                    </Badge>
+                    {report.status === 'pending' && (
+                      <Button 
+                        size="sm" 
+                        className="bg-[#06b6d4] hover:bg-[#06b6d4]/80"
+                        onClick={(e) => { e.stopPropagation(); handleAssign(report.id); }}
+                      >
+                        Prendi in carico
+                      </Button>
+                    )}
+                    {report.status === 'in_progress' && (
+                      <Button 
+                        size="sm" 
+                        className="bg-[#10b981] hover:bg-[#10b981]/80"
+                        onClick={(e) => { e.stopPropagation(); handleResolve(report.id); }}
+                      >
+                        Risolvi
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal Dettaglio */}
+      {showDetailModal && selectedReport && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a2332] border border-[#06b6d4]/30 rounded-lg w-full max-w-lg">
+            <div className="p-4 border-b border-[#06b6d4]/20 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-[#06b6d4]/20 p-2 rounded-lg">
+                  <Navigation className="h-6 w-6 text-[#06b6d4]" />
+                </div>
+                <div>
+                  <h3 className="text-[#e8fbff] font-bold text-lg">{selectedReport.type}</h3>
+                  <p className="text-gray-400 text-sm">ID: {selectedReport.id}</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => { setShowDetailModal(false); setSelectedReport(null); }}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="bg-[#0b1220] rounded-lg p-4">
+                <h4 className="text-[#e8fbff]/60 text-xs uppercase mb-2">Descrizione</h4>
+                <p className="text-[#e8fbff]">{selectedReport.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#0b1220] rounded-lg p-3">
+                  <p className="text-[#e8fbff]/60 text-xs">Data Segnalazione</p>
+                  <p className="text-[#e8fbff] font-medium">
+                    {new Date(selectedReport.created_at).toLocaleDateString('it-IT')}
+                  </p>
+                </div>
+                <div className="bg-[#0b1220] rounded-lg p-3">
+                  <p className="text-[#e8fbff]/60 text-xs">Priorità</p>
+                  <Badge className={selectedReport.priority === 'URGENT' ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'bg-[#06b6d4]/20 text-[#06b6d4]'}>
+                    {selectedReport.priority || 'NORMAL'}
+                  </Badge>
+                </div>
+              </div>
+              {selectedReport.lat && selectedReport.lng && (
+                <Button 
+                  className="w-full bg-[#10b981] hover:bg-[#10b981]/80"
+                  onClick={() => openGoogleMaps(selectedReport.lat, selectedReport.lng)}
+                >
+                  <Navigation className="h-4 w-4 mr-2" />
+                  Naviga verso la segnalazione
+                </Button>
+              )}
+              <div className="flex gap-2">
+                {selectedReport.status === 'pending' && (
+                  <Button 
+                    className="flex-1 bg-[#06b6d4] hover:bg-[#06b6d4]/80"
+                    onClick={() => { handleAssign(selectedReport.id); setShowDetailModal(false); }}
+                  >
+                    Prendi in carico
+                  </Button>
+                )}
+                {selectedReport.status === 'in_progress' && (
+                  <Button 
+                    className="flex-1 bg-[#10b981] hover:bg-[#10b981]/80"
+                    onClick={() => { handleResolve(selectedReport.id); setShowDetailModal(false); }}
+                  >
+                    Segna come Risolto
+                  </Button>
+                )}
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => { setShowDetailModal(false); setSelectedReport(null); }}
+                >
+                  Chiudi
+                </Button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -15,6 +14,10 @@ import { AlertCircle, ArrowLeft, Camera, MapPin, CheckCircle2, Shield, Clock, Aw
 import BottomNav from '@/components/BottomNav';
 import { Link } from 'wouter';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useImpersonation } from '@/contexts/ImpersonationContext';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 const categories = [
   { value: 'Degrado', icon: '🏚️' },
@@ -32,6 +35,27 @@ export default function CivicPage() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [tccReward, setTccReward] = useState(20);
+  
+  const { user, impresa } = useAuth();
+  const { selectedComune } = useImpersonation();
+
+  // Carica config TCC per il comune
+  useEffect(() => {
+    const loadConfig = async () => {
+      const comuneId = selectedComune?.id || 1;
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/civic-reports/config?comune_id=${comuneId}`);
+        const data = await response.json();
+        if (data.success && data.data) {
+          setTccReward(data.data.tcc_reward_default || 20);
+        }
+      } catch (error) {
+        console.error('Errore caricamento config TCC:', error);
+      }
+    };
+    loadConfig();
+  }, [selectedComune]);
 
   const handleGetLocation = () => {
     setLoading(true);
@@ -67,12 +91,42 @@ export default function CivicPage() {
 
     setLoading(true);
 
-    // Simula invio API
-    setTimeout(() => {
+    try {
+      const comuneId = selectedComune?.id || 1;
+      
+      const payload = {
+        type: category,
+        description: description,
+        lat: location.lat.toString(),
+        lng: location.lng.toString(),
+        comune_id: comuneId,
+        user_id: user?.id || null,
+        impresa_id: impresa?.id || null,
+        priority: 'NORMAL'
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/civic-reports`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setLoading(false);
+        setSubmitted(true);
+        toast.success(`Segnalazione inviata con successo! +${tccReward} crediti alla risoluzione`);
+      } else {
+        throw new Error(data.error || 'Errore invio segnalazione');
+      }
+    } catch (error) {
       setLoading(false);
-      setSubmitted(true);
-      toast.success('Segnalazione inviata con successo! +20 crediti alla risoluzione');
-    }, 1500);
+      console.error('Errore invio segnalazione:', error);
+      toast.error('Errore durante l\'invio della segnalazione');
+    }
   };
 
   if (submitted) {
@@ -87,7 +141,7 @@ export default function CivicPage() {
             <h2 className="text-3xl font-bold">Segnalazione Inviata!</h2>
             <p className="text-muted-foreground text-lg">
               Grazie per il tuo contributo. Riceverai aggiornamenti sullo stato della segnalazione e
-              <span className="font-bold text-green-600"> +20 eco-crediti</span> quando sarà risolta.
+              <span className="font-bold text-green-600"> +{tccReward} eco-crediti</span> quando sarà risolta.
             </p>
             <Link href="/">
               <Button className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-600 shadow-lg">
@@ -135,7 +189,7 @@ export default function CivicPage() {
               <div>
                 <CardTitle className="text-xl">Segnala un Problema Urbano</CardTitle>
                 <CardDescription>
-                  Aiutaci a migliorare la città. Riceverai +20 eco-crediti quando il problema sarà risolto.
+                  Aiutaci a migliorare la città. Riceverai +{tccReward} eco-crediti quando il problema sarà risolto.
                 </CardDescription>
               </div>
             </div>
@@ -263,7 +317,7 @@ export default function CivicPage() {
               <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow">
                 <Award className="h-5 w-5 text-white" />
               </div>
-              <div className="text-2xl font-bold text-green-600">+20</div>
+              <div className="text-2xl font-bold text-green-600">+{tccReward}</div>
               <div className="text-xs text-muted-foreground">Crediti Premio</div>
             </CardContent>
           </Card>
