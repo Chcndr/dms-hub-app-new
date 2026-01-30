@@ -4051,6 +4051,7 @@ Coordinate verificate tramite OpenStreetMap Nominatim.
 | P7 | UPSERT logic HUB | bus_hub.html | ✅ |
 | P7b | UPSERT logic Markets | slot_editor_v3_unified.html | ✅ |
 | P13 | Salvataggio immagine/corner/centro | bus_hub.html | ✅ |
+| P15 | Fix hubCorner.getLatLng() + proprietà aree | slot_editor_v3_unified.html | ✅ |
 
 ### 📁 Backup Creati
 
@@ -4059,6 +4060,65 @@ Coordinate verificate tramite OpenStreetMap Nominatim.
 | slot_editor_v3_unified.html | .bak.20260130 | 30/01/2026 |
 | bus_hub.html | .bak.20260130, .bak.P13.20260130 | 30/01/2026 |
 | hub.js | .bak.20260130 | 30/01/2026 |
+
+---
+
+#### ✅ P15: Fix hubCorner.getLatLng() e Proprietà Aree (30/01/2026)
+
+**Problema critico risolto:**
+- Errore JavaScript `window.hubCorner.getLatLng is not a function` bloccava il salvataggio nel database
+- Le proprietà delle aree (fillColor, borderColor, fillOpacity, name, type) non venivano salvate
+
+**Causa:**
+- `window.hubCorner` è un oggetto `{bounds, rotation, scale, fixed}`, NON un marker Leaflet
+- Il codice tentava di chiamare `.getLatLng()` su un oggetto semplice
+- Le proprietà di stile venivano aggiornate solo nel poligono Leaflet, non nell'oggetto `window.hubArea`
+
+**Soluzione implementata:**
+
+**1. Fix cornerGeojson (righe 4417-4440):**
+```javascript
+// ========== P15 FIX: Prepara corner GeoJSON corretto ==========
+let cornerGeojson = null;
+if (window.hubCorner && window.hubCorner.bounds) {
+  cornerGeojson = {
+    type: 'Feature',
+    properties: {
+      rotation: window.hubCorner.rotation || 0,
+      scale: window.hubCorner.scale || 1,
+      fixed: window.hubCorner.fixed || false
+    },
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[...bounds as polygon...]]
+    }
+  };
+}
+```
+
+**2. Fix areaGeojson con proprietà (righe 4396-4415):**
+```javascript
+areaGeojson = {
+  type: 'Feature',
+  properties: {
+    name: window.hubArea.name || 'Area HUB',
+    type: window.hubArea.type || 'hub',
+    fillColor: window.hubArea.fillColor || '#9C27B0',
+    fillOpacity: window.hubArea.fillOpacity || 0.2,
+    borderColor: window.hubArea.borderColor || '#9C27B0',
+    borderWidth: window.hubArea.borderWidth || 3
+  },
+  geometry: { type: 'Polygon', coordinates: [...] }
+};
+```
+
+**3. Sincronizzazione proprietà (righe 2988-3019):**
+- Quando l'utente modifica colore/spessore/opacità nel popup, le proprietà vengono salvate anche in `window.hubArea`
+
+**4. Inizializzazione proprietà (righe 3047-3058):**
+- Quando viene creata una nuova area HUB, le proprietà di default vengono inizializzate
+
+**File modificato:** `slot_editor_v3_unified.html`
 
 ---
 
