@@ -1,18 +1,15 @@
 /**
  * CivicReportsLayer - Componente per visualizzare segnalazioni civiche sulla mappa
  * 
- * Questo componente renderizza:
- * 1. Marker colorati per ogni segnalazione (con colore basato su tipo)
- * 2. Heatmap (zone di calore) per visualizzare densità segnalazioni
+ * Versione SEMPLIFICATA: solo marker colorati, senza heatmap
+ * La heatmap verrà aggiunta in una versione successiva
  * 
  * @author Manus AI
- * @version 1.0.0
+ * @version 1.1.0 - Versione semplificata senza heatmap
  * @date 30 Gennaio 2026
  */
-
-import React, { useEffect, useMemo } from 'react';
-import { Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import React, { useMemo } from 'react';
+import { CircleMarker, Popup } from 'react-leaflet';
 
 // ============================================================
 // INTERFACCE
@@ -25,12 +22,12 @@ import L from 'leaflet';
 export interface CivicReport {
   id: number;
   type: string;
-  description: string;
-  lat: string | null;
-  lng: string | null;
-  status: string;
-  created_at: string;
-  // Campi opzionali (aggiunti nello schema aggiornato)
+  description: string | null;
+  lat: string | number | null;
+  lng: string | number | null;
+  status: string | null;
+  created_at: string | null;
+  // Campi opzionali
   priority?: string | null;
   address?: string | null;
   user_id?: number | null;
@@ -44,7 +41,7 @@ export interface CivicReportsLayerProps {
   civicReports: CivicReport[];
   /** Mostra marker colorati (default: true) */
   showMarkers?: boolean;
-  /** Mostra heatmap zone di calore (default: true) */
+  /** Mostra heatmap zone di calore - DISABILITATO in questa versione */
   showHeatmap?: boolean;
   /** Callback quando si clicca su un marker */
   onReportClick?: (report: CivicReport) => void;
@@ -57,7 +54,7 @@ export interface CivicReportsLayerProps {
 /**
  * Schema colori per i marker in base al tipo di segnalazione
  */
-export const CIVIC_MARKER_COLORS: Record<string, string> = {
+const CIVIC_MARKER_COLORS: Record<string, string> = {
   'buche': '#f97316',           // 🟠 Arancione
   'illuminazione': '#eab308',   // 🟡 Giallo
   'rifiuti': '#22c55e',         // 🟢 Verde
@@ -71,7 +68,7 @@ export const CIVIC_MARKER_COLORS: Record<string, string> = {
 /**
  * Etichette italiane per i tipi di segnalazione
  */
-export const CIVIC_TYPE_LABELS: Record<string, string> = {
+const CIVIC_TYPE_LABELS: Record<string, string> = {
   'buche': 'Buche Stradali',
   'illuminazione': 'Illuminazione',
   'rifiuti': 'Rifiuti Abbandonati',
@@ -85,56 +82,71 @@ export const CIVIC_TYPE_LABELS: Record<string, string> = {
 /**
  * Etichette italiane per gli stati
  */
-export const CIVIC_STATUS_LABELS: Record<string, { label: string; color: string; icon: string }> = {
-  'pending': { label: 'In Attesa', color: 'text-orange-500', icon: '⏸' },
-  'in_progress': { label: 'In Lavorazione', color: 'text-blue-500', icon: '⏳' },
-  'resolved': { label: 'Risolta', color: 'text-green-500', icon: '✓' },
-  'rejected': { label: 'Rifiutata', color: 'text-red-500', icon: '✗' },
+const CIVIC_STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  'pending': { label: 'In Attesa', color: '#f97316' },
+  'in_progress': { label: 'In Lavorazione', color: '#3b82f6' },
+  'resolved': { label: 'Risolta', color: '#22c55e' },
+  'rejected': { label: 'Rifiutata', color: '#ef4444' },
 };
 
 // ============================================================
-// COMPONENTE HEATMAP
+// FUNZIONI HELPER
 // ============================================================
 
 /**
- * Componente interno per gestire la heatmap con leaflet.heat
+ * Ottiene il colore del marker in base al tipo di segnalazione
  */
-function HeatmapLayer({ points }: { points: [number, number, number][] }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (!points.length) return;
-    
-    // Importa dinamicamente leaflet.heat
-    import('leaflet.heat').then(() => {
-      // @ts-ignore - leaflet.heat aggiunge L.heatLayer
-      const heatLayer = L.heatLayer(points, {
-        radius: 25,
-        blur: 15,
-        maxZoom: 17,
-        max: 3,
-        minOpacity: 0.3,
-        gradient: {
-          0.0: '#3b82f6',  // Blu (bassa densità)
-          0.25: '#22c55e', // Verde
-          0.5: '#eab308',  // Giallo
-          0.75: '#f97316', // Arancione
-          1.0: '#ef4444',  // Rosso (alta densità)
-        }
-      });
-      
-      heatLayer.addTo(map);
-      
-      // Cleanup
-      return () => {
-        map.removeLayer(heatLayer);
-      };
-    }).catch(err => {
-      console.warn('[CivicReportsLayer] Errore caricamento leaflet.heat:', err);
+function getMarkerColor(type: string | null | undefined): string {
+  if (!type) return CIVIC_MARKER_COLORS['altro'];
+  const normalizedType = type.toLowerCase().trim();
+  return CIVIC_MARKER_COLORS[normalizedType] || CIVIC_MARKER_COLORS['altro'];
+}
+
+/**
+ * Ottiene l'etichetta del tipo di segnalazione
+ */
+function getTypeLabel(type: string | null | undefined): string {
+  if (!type) return 'Segnalazione';
+  const normalizedType = type.toLowerCase().trim();
+  return CIVIC_TYPE_LABELS[normalizedType] || type;
+}
+
+/**
+ * Ottiene info sullo stato
+ */
+function getStatusInfo(status: string | null | undefined): { label: string; color: string } {
+  if (!status) return { label: 'Sconosciuto', color: '#6b7280' };
+  const normalizedStatus = status.toLowerCase().trim();
+  return CIVIC_STATUS_LABELS[normalizedStatus] || { label: status, color: '#6b7280' };
+}
+
+/**
+ * Formatta la data in italiano
+ */
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return 'Data non disponibile';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
-  }, [map, points]);
-  
-  return null;
+  } catch {
+    return dateStr;
+  }
+}
+
+/**
+ * Converte coordinate in numero
+ */
+function parseCoord(coord: string | number | null | undefined): number | null {
+  if (coord === null || coord === undefined) return null;
+  const num = typeof coord === 'number' ? coord : parseFloat(coord);
+  if (isNaN(num) || num === 0) return null;
+  return num;
 }
 
 // ============================================================
@@ -144,6 +156,8 @@ function HeatmapLayer({ points }: { points: [number, number, number][] }) {
 /**
  * CivicReportsLayer - Layer per segnalazioni civiche sulla mappa
  * 
+ * Versione semplificata: solo marker CircleMarker colorati
+ * 
  * Uso:
  * ```tsx
  * <MapContainer>
@@ -151,7 +165,6 @@ function HeatmapLayer({ points }: { points: [number, number, number][] }) {
  *   <CivicReportsLayer 
  *     civicReports={reports} 
  *     showMarkers={true}
- *     showHeatmap={true}
  *   />
  * </MapContainer>
  * ```
@@ -159,142 +172,121 @@ function HeatmapLayer({ points }: { points: [number, number, number][] }) {
 export function CivicReportsLayer({
   civicReports,
   showMarkers = true,
-  showHeatmap = true,
+  showHeatmap = false, // Ignorato in questa versione
   onReportClick
 }: CivicReportsLayerProps) {
   
   // Filtra solo segnalazioni con coordinate valide
   const validReports = useMemo(() => {
+    if (!civicReports || !Array.isArray(civicReports)) return [];
+    
     return civicReports.filter(report => {
-      if (!report.lat || !report.lng) return false;
-      const lat = parseFloat(report.lat);
-      const lng = parseFloat(report.lng);
-      return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+      if (!report) return false;
+      const lat = parseCoord(report.lat);
+      const lng = parseCoord(report.lng);
+      return lat !== null && lng !== null;
     });
   }, [civicReports]);
   
-  // Trasforma in punti per heatmap [lat, lng, intensity]
-  const heatmapPoints = useMemo(() => {
-    return validReports.map(report => {
-      const lat = parseFloat(report.lat!);
-      const lng = parseFloat(report.lng!);
-      
-      // Calcola intensità basata su priorità e status
-      let intensity = 1;
-      if (report.priority === 'HIGH') intensity = 2;
-      if (report.priority === 'URGENT') intensity = 3;
-      if (report.status === 'pending') intensity += 0.5;
-      
-      return [lat, lng, intensity] as [number, number, number];
-    });
-  }, [validReports]);
-  
-  // Se non ci sono segnalazioni valide, non renderizzare nulla
-  if (validReports.length === 0) {
+  // Se non ci sono segnalazioni valide o markers disabilitati, non renderizzare nulla
+  if (!showMarkers || validReports.length === 0) {
     return null;
   }
   
   return (
     <>
-      {/* Layer Heatmap (renderizzato sotto i marker) */}
-      {showHeatmap && heatmapPoints.length > 0 && (
-        <HeatmapLayer points={heatmapPoints} />
-      )}
-      
-      {/* Layer Marker Civici */}
-      {showMarkers && validReports.map((report) => {
-        const lat = parseFloat(report.lat!);
-        const lng = parseFloat(report.lng!);
+      {validReports.map((report) => {
+        const lat = parseCoord(report.lat)!;
+        const lng = parseCoord(report.lng)!;
+        const color = getMarkerColor(report.type);
+        const typeLabel = getTypeLabel(report.type);
+        const statusInfo = getStatusInfo(report.status);
+        const isUrgent = report.priority === 'URGENT' || report.priority === 'HIGH';
         
-        // Determina colore in base al tipo
-        const typeKey = report.type?.toLowerCase() || 'altro';
-        const color = CIVIC_MARKER_COLORS[typeKey] || CIVIC_MARKER_COLORS['altro'];
-        
-        // Determina stile in base allo status
-        const isResolved = report.status === 'resolved';
-        const isInProgress = report.status === 'in_progress';
-        const isUrgent = report.priority === 'URGENT';
-        
-        // Dimensione marker (più grande se urgente)
-        const size = isUrgent ? 20 : 14;
-        
-        // Crea icona marker con div personalizzato
-        const markerIcon = L.divIcon({
-          className: `civic-marker ${isUrgent ? 'civic-marker-urgent' : ''}`,
-          html: `<div style="
-            width: ${size}px;
-            height: ${size}px;
-            border-radius: 50%;
-            background-color: ${isResolved ? '#9ca3af' : color};
-            opacity: ${isResolved ? 0.5 : 1};
-            border: ${isInProgress ? '3px solid white' : 'none'};
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-            ${isUrgent ? 'animation: civic-pulse 1.5s ease-in-out infinite;' : ''}
-          "></div>`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
-        });
-        
-        // Ottieni label e status info
-        const typeLabel = CIVIC_TYPE_LABELS[typeKey] || report.type || 'Segnalazione';
-        const statusInfo = CIVIC_STATUS_LABELS[report.status] || CIVIC_STATUS_LABELS['pending'];
+        // Dimensione marker: più grande se urgente
+        const radius = isUrgent ? 12 : 8;
         
         return (
-          <Marker
+          <CircleMarker
             key={`civic-${report.id}`}
-            position={[lat, lng]}
-            icon={markerIcon}
+            center={[lat, lng]}
+            radius={radius}
+            pathOptions={{
+              fillColor: color,
+              fillOpacity: report.status === 'resolved' ? 0.4 : 0.8,
+              color: isUrgent ? '#ffffff' : color,
+              weight: isUrgent ? 3 : 2,
+              opacity: 1,
+            }}
             eventHandlers={{
-              click: () => onReportClick?.(report)
+              click: () => {
+                if (onReportClick) {
+                  onReportClick(report);
+                }
+              }
             }}
           >
-            <Popup className="civic-report-popup">
-              <div className="min-w-[200px] text-sm">
+            <Popup>
+              <div className="min-w-[200px] p-2">
                 {/* Header con tipo e colore */}
-                <div 
-                  className="font-bold text-white px-3 py-2 -mx-3 -mt-3 mb-2 rounded-t"
-                  style={{ backgroundColor: color }}
-                >
-                  {typeLabel}
+                <div className="flex items-center gap-2 mb-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="font-semibold text-sm text-gray-800">
+                    {typeLabel}
+                  </span>
+                  {isUrgent && (
+                    <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                      URGENTE
+                    </span>
+                  )}
                 </div>
                 
                 {/* Descrizione */}
-                <div className="text-gray-700 mb-2 px-1">
-                  {report.description}
-                </div>
-                
-                {/* Indirizzo se presente */}
-                {report.address && (
-                  <div className="text-xs text-gray-500 mb-2 px-1">
-                    📍 {report.address}
-                  </div>
+                {report.description && (
+                  <p className="text-xs text-gray-600 mb-2 line-clamp-3">
+                    {report.description}
+                  </p>
                 )}
                 
-                {/* Data e Status */}
-                <div className="flex justify-between items-center text-xs border-t pt-2 px-1">
-                  <span className="text-gray-400">
-                    {new Date(report.created_at).toLocaleDateString('it-IT', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric'
-                    })}
+                {/* Indirizzo */}
+                {report.address && (
+                  <p className="text-xs text-gray-500 mb-2">
+                    📍 {report.address}
+                  </p>
+                )}
+                
+                {/* Status e Data */}
+                <div className="flex items-center justify-between text-xs">
+                  <span 
+                    className="px-2 py-0.5 rounded-full"
+                    style={{ 
+                      backgroundColor: `${statusInfo.color}20`,
+                      color: statusInfo.color 
+                    }}
+                  >
+                    {statusInfo.label}
                   </span>
-                  <span className={`font-medium ${statusInfo.color}`}>
-                    {statusInfo.icon} {statusInfo.label}
+                  <span className="text-gray-400">
+                    {formatDate(report.created_at)}
                   </span>
                 </div>
                 
-                {/* Badge priorità se urgente */}
-                {isUrgent && (
-                  <div className="mt-2 px-1">
-                    <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded">
-                      ⚠️ URGENTE
-                    </span>
+                {/* Foto se presente */}
+                {report.photo_url && (
+                  <div className="mt-2">
+                    <img 
+                      src={report.photo_url} 
+                      alt="Foto segnalazione"
+                      className="w-full h-20 object-cover rounded"
+                    />
                   </div>
                 )}
               </div>
             </Popup>
-          </Marker>
+          </CircleMarker>
         );
       })}
     </>
