@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.80.0  
-> **Data:** 02 Febbraio 2026  
+> **Versione:** 3.52.0  
+> **Data:** 27 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -368,32 +368,12 @@ POST /api/guardian/debug/testEndpoint
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (743 endpoint totali)
+### Endpoint Index (477 endpoint totali)
 
 Gli endpoint sono documentati in:
 ```
-MIO-hub/api/index.json (GitHub: Chcndr/MIO-hub)
+/home/ubuntu/dms-hub-app-new/client/public/api-index.json
 ```
-
-### Riepilogo Endpoint per Servizio
-
-| Servizio | Endpoint |
-|----------|----------|
-| MIHUB Backend REST | 301 |
-| DMS HUB API | 194 |
-| Security RBAC API | 47 |
-| Altri Servizi | 40 |
-| MIHUB Backend | 38 |
-| Token Carbon Credit v2 (TCC v2) API | 30 |
-| SUAP & Ente Sussidiario API | 29 |
-| Sistema Notifiche Bidirezionali | 25 |
-| Token Carbon Credit (TCC) API | 11 |
-| **Civic Reports (Segnalazioni Civiche)** | **10** |
-| GitHub REST API | 8 |
-| MIO Agent Logs | 4 |
-| **TOTALE** | **743** |
-
-> **Nota**: La dashboard mostra 746 perché include 3 endpoint interni di sistema.
 
 ### Categorie Principali
 
@@ -414,7 +394,6 @@ MIO-hub/api/index.json (GitHub: Chcndr/MIO-hub)
 | **Verbali** | `/api/verbali/*` | pdf, invia, list |
 | **Watchlist** | `/api/watchlist/*` | list, update, resolve |
 | **Presenze** | `/api/presenze/*` | sessioni, dettaglio, chiudi |
-| **Civic Reports** | `/api/civic-reports/*` | list, create, stats, config, resolve, assign |
 
 ---
 
@@ -1172,258 +1151,6 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 
 ### 📝 CHANGELOG
 
-### v3.79.0 (02/02/2026) - Segnalazioni Civiche Mobile Redesign + Fix Zoom Mappa
-
-**Fix Zoom Mappa Italia:**
-- Zoom 5 solo per mobile (< 768px), zoom 6 per iPad/desktop
-- Condizione responsive per non alterare esperienza tablet/PC
-
-**Pagina Segnalazioni Civiche (CivicPage) - Redesign Mobile:**
-- Layout fullscreen senza container su mobile
-- Rimossa barra bottom (BottomNav) e 5 tabs
-- Rimosso pulsante "Acquisisci Posizione GPS" (acquisizione automatica)
-- GPS automatico all'apertura pagina con toast conferma
-- Popup istruzioni con icona info (i) nell'header
-- Upload foto funzionante (max 3 foto) con preview
-- Pagina statica con form compatto
-- Colori gradient sfumati mantenuti
-
-**Schema Connessione Segnalazioni Civiche:**
-```
-┌─────────────────┐     POST /api/civic-reports     ┌─────────────────┐
-│  CivicPage.tsx  │ ─────────────────────────────► │  civic_reports  │
-│  (App Mobile)   │   {type, description, lat,     │   (Database)    │
-│                 │    lng, photos[], comune_id}   │                 │
-└─────────────────┘                                 └────────┬────────┘
-                                                             │
-         ┌───────────────────────────────────────────────────┼───────────────────────────────────────────────────┐
-         │                                                   │                                                   │
-         ▼                                                   ▼                                                   ▼
-┌─────────────────┐                               ┌─────────────────┐                               ┌─────────────────┐
-│  Dashboard PA   │                               │  Controlli PM   │                               │   Notifiche     │
-│  Tab Segnalaz.  │                               │  Subtab Segnala │                               │   (Sistema)     │
-│  + Config TCC   │                               │  + Azioni PM    │                               │                 │
-└─────────────────┘                               └─────────────────┘                               └─────────────────┘
-```
-
-**Colonne Database `civic_reports` per foto:**
-- `photos` TEXT[] - Array URL S3 delle foto allegate
-- Le foto vengono caricate su S3 e i link salvati nel DB
-
-**File Modificati:**
-- `client/src/components/HubMarketMapComponent.tsx` - Zoom condizionale mobile/desktop
-- `client/src/pages/CivicPage.tsx` - Redesign completo mobile
-- `client/src/index.css` - Classe scrollbar-hide per galleria
-
----
-
-### v3.78.0 (02/02/2026) - Ottimizzazione UX Mobile Mappa e Vetrine
-
-**Mappa Italia (HubMarketMapComponent):**
-- Zoom iniziale ridotto da 6 a 5 per visualizzare tutta la penisola su mobile
-- Rimosso tab "Italia" ridondante (sostituito da pulsante "Indietro")
-- Mappa fullscreen 100vh su mobile per massimizzare area visibile
-- Scroll automatico alla mappa su selezione Regione/Provincia/Indietro
-
-**Pagina Vetrina Mobile:**
-- Layout fullscreen senza container su mobile
-- Tasto "Modifica" visibile solo per Admin e impresa titolare
-- Galleria prodotti con swipe orizzontale fullscreen e snap obbligatorio
-- Rimossi numeri dalle foto galleria
-- Indicatori pallini per navigazione galleria
-
-**Pagina Lista Vetrine (Redesign Completo):**
-- Header verde con pulsante "Nuovo Negozio" a destra (stesso stile "Modifica")
-- Rimossi tabs "Lista Vetrine" e "Nuovo Negozio"
-- Barra ricerca spostata fuori dal container, subito sotto header
-- Schede negozi più compatte (padding ridotto)
-- Pagina statica: header e ricerca fissi, solo schede scrollabili
-- Navigazione indietro corretta (naviga a /vetrine invece di history.back)
-
-**Fix Tecnici:**
-- Rimosso useAuth da VetrinePage per evitare errori OAuth su pagina pubblica
-- Scroll snap galleria con `scrollSnapType: 'x mandatory'` e `scrollSnapStop: 'always'`
-- `-webkit-overflow-scrolling: touch` per iOS
-
-**Commit:**
-- `e198179` - Mappa zoom ridotto, fullscreen mobile, scroll automatico
-- `a42bc70` - Fix useAuth VetrinePage
-- `05489a0` - Tab Nuovo Negozio solo admin, galleria snap
-- `a14939d` - Abilitare sempre tab e modifica
-- `6ed1593` - Redesign lista vetrine completo
-
----
-
-### v3.55.0 (29/01/2026) - Modulo Segnalazioni Civiche Completo
-
-**Nuove Funzionalità:**
-
-1. **Backend - 10 Nuovi Endpoint** (`/routes/civic-reports.js`)
-   - `GET /api/civic-reports` - Lista segnalazioni con filtri
-   - `POST /api/civic-reports` - Crea nuova segnalazione
-   - `GET /api/civic-reports/stats` - Statistiche per dashboard
-   - `GET /api/civic-reports/config` - Leggi config TCC
-   - `PUT /api/civic-reports/config` - Aggiorna config TCC
-   - `GET /api/civic-reports/:id` - Dettaglio segnalazione
-   - `PATCH /api/civic-reports/:id/status` - Aggiorna stato
-   - `PATCH /api/civic-reports/:id/assign` - Assegna a PM
-   - `POST /api/civic-reports/:id/resolve` - Risolvi + assegna TCC
-   - `POST /api/civic-reports/:id/link-sanction` - Collega a verbale
-
-2. **Database**
-   - ALTER TABLE `civic_reports` (+13 colonne: comune_id, impresa_id, priority, assigned_to, tcc_reward, etc.)
-   - CREATE TABLE `civic_config` (configurazione TCC per comune)
-   - 5 indici per performance
-
-3. **Frontend - CivicPage.tsx**
-   - Collegamento a API reale invece di simulazione
-   - Invio segnalazione con GPS e categoria
-
-4. **Frontend - Dashboard PA**
-   - Nuovo componente `CivicReportsPanel.tsx`
-   - Dati reali invece di mockData
-   - Card "Configurazione Reward TCC" modificabile
-
-5. **Frontend - ControlliSanzioniPanel**
-   - Nuovo subtab "Segnalazioni" per PM
-   - Lista segnalazioni con azioni: Prendi in carico, Risolvi
-   - Navigazione GPS verso segnalazione
-
-**Commit:**
-- Backend: `9adf514` - "feat: civic-reports.js con 10 endpoint"
-- Frontend: `18425f1` - "feat: Segnalazioni Civiche v3.55.0"
-
-**Totale Endpoint Sistema: 743** (733 + 10)
-
----
-
-### v3.54.4 (29/01/2026) - Fix Sconto 30% Verbali e Notifiche
-
-**Bug Fix Critici:**
-
-1. **Fix notified/notified_at alla creazione verbale**
-   - Prima: verbali creati avevano `notified=false` e `notified_at=null`
-   - Conseguenza: lo sconto 30% non appariva in "Sanzioni da Pagare" nel Wallet Impresa
-   - Ora: dopo INSERT notifica, viene eseguito `UPDATE sanctions SET notified=true, notified_at=NOW()`
-
-2. **Fix INSERT notifiche_destinatari**
-   - Prima: usava colonne errate (`destinatario_id`, `letto`) che non esistevano
-   - Conseguenza: errore SQL, notifiche non arrivavano all'impresa
-   - Ora: usa colonne corrette (`impresa_id`, `stato='INVIATO'`)
-
-3. **Aggiornamento verbali esistenti**
-   - Query SQL per aggiornare verbali con notifica ma `notified=false`
-   - Tutti i 12 verbali esistenti ora hanno `notified=true` e `notified_at` corretto
-
-**Commit:**
-- Backend: `ad79a88` - "fix: notified/notified_at aggiornati alla creazione verbale"
-- Backend: `31059a5` - "fix: corretto colonne notifiche_destinatari"
-
-**File Modificati:**
-- `mihub-backend-rest/routes/verbali.js` (v2.1.0) - Fix UPDATE notified + INSERT notifiche_destinatari
-
-**Stato Allineamento Sistemi:**
-- GitHub Backend: `31059a5` ✅
-- Hetzner PM2: `31059a5` ✅
-- GitHub Frontend: `9a790be` ✅
-- Vercel: autodeploy ✅
-- Neon DB: 12/12 verbali con notified=true ✅
-
----
-
-### v3.54.0 (28/01/2026) - Modulo Pagamento Sanzioni/Verbali PM
-
-**Nuove Funzionalità:**
-
-1. **Pagamento Sanzioni Impresa** - Wallet Impresa
-   - Nuova sezione "Sanzioni/Verbali PM da Pagare" nel tab Scadenze
-   - Visualizzazione importo ridotto (-30%) se entro 5 giorni dalla notifica
-   - Countdown giorni rimanenti per sconto
-   - Pulsante "Paga" con dialog conferma PagoPA
-   - Link diretto al PDF del verbale
-
-2. **Gestione Sanzioni PA** - WalletPanel
-   - Nuovo subtab "Sanzioni" (rosso) nella barra navigazione
-   - Filtri per stato (Pagato/Non Pagato) e ricerca impresa
-   - Card riepilogo: Da Incassare / Incassato / Totale
-   - Lista verbali con badge stato e importo
-   - Pulsante "Registra" per pagamento manuale (contanti/bonifico)
-   - Dialog conferma registrazione pagamento
-
-3. **Backend Endpoint** - 3 nuovi endpoint REST
-   - `GET /api/sanctions/riepilogo-pagamenti` - Riepilogo per PA con totali
-   - `GET /api/sanctions/impresa/:id/da-pagare` - Verbali non pagati per impresa
-   - `POST /api/sanctions/:id/paga-pagopa` - Registra pagamento
-
-4. **Database** - 4 nuove colonne su `sanctions`
-   - `pagopa_iuv` - Identificativo Univoco Versamento
-   - `pagopa_payment_date` - Data pagamento PagoPA
-   - `reduced_amount` - Importo ridotto calcolato
-   - `reduced_due_date` - Scadenza per pagamento ridotto
-
-**Commit:**
-- Backend: `[auto-deploy]` - "feat: 3 endpoint pagamento sanzioni"
-- Frontend: `949e7c6` - "feat: v3.53.0 - modulo pagamento sanzioni/verbali PM"
-- MIO-hub: `6b2971a` - "feat: aggiunto 3 endpoint pagamento sanzioni v3.53.0"
-
----
-
-### v3.53.0 (28/01/2026) - Bug Fix Critici Sistema Verbali e Notifiche PM
-
-**Bug Fix Critici:**
-
-1. **Storico Sessioni Mercato** - Fix salvataggio sessioni
-   - Endpoint `/api/test-mercato/chiudi-mercato` ora salva correttamente in `market_sessions` + `market_session_details`
-   - Prima: chiudeva mercato ma NON salvava storico
-   - Ora: UPSERT per evitare duplicati
-
-2. **Conteggio Posteggi CSV** - Fix export CSV
-   - Prima: contava righe totali (duplicati per ogni presenza)
-   - Ora: conta posteggi unici con `new Set()`
-
-3. **Notifiche Verbali PM** - Fix visibilità notifiche
-   - Aggiunto INSERT in `notifiche_destinatari` con `mittente_id`
-   - Le notifiche ora appaiono correttamente nel tab PM dell'app impresa
-   - Aggiunto `link_riferimento` per accesso diretto al PDF verbale
-
-4. **Link Visualizza Verbale** - Fix route inesistente
-   - Prima: puntava a route frontend `/verbale/:id` (non esistente)
-   - Ora: link diretto API PDF `/api/verbali/:id/pdf`
-
-5. **Creazione Verbali** - Rimossi valori hardcoded
-   - Prima: "Cesena" hardcoded come comune
-   - Ora: usa dati da impersonificazione (`comune_id`, `comune_nome`, `provincia`, `corpo_pm`)
-
-6. **Endpoint Concessioni** - Fix parametro URL
-   - Prima: usava `marketCode` (non esistente)
-   - Ora: usa correttamente `marketId`
-
-7. **Query Database** - Fix colonne errate
-   - Tabella `imprese`: usa `denominazione` (non `ragione_sociale`)
-   - Tabella `pm_watchlist`: usa `trigger_type`, `trigger_description` (non `reason`, `notes`)
-
-**Commit:**
-- Backend: `2c49601` - "fix: corretto colonne i.denominazione e pm_watchlist trigger_type"
-- Frontend: `b7bbdc0` - "fix: corretto endpoint concessioni (marketId invece di marketCode)"
-
-**File Modificati:**
-- `mihub-backend-rest/routes/verbali.js` - Usa dati impersonificazione per comune
-- `mihub-backend-rest/routes/test-mercato.js` - Fix salvataggio sessioni
-- `mihub-backend-rest/routes/notifiche.js` - Aggiunto link_riferimento e mittente_id
-- `mihub-backend-rest/routes/market-settings.js` - Fix query usa i.denominazione
-- `dms-hub-app-new/src/pages/ControlliSanzioniPanel.tsx` - Fix export CSV posteggi unici
-- `dms-hub-app-new/src/pages/AppImpresaNotifiche.tsx` - Fix link visualizza verbale
-- `dms-hub-app-new/src/pages/GestioneMercati.tsx` - Fix endpoint concessioni
-
-**Stato Sistema:**
-- ✅ Sistema stabile e funzionante
-- ✅ Tutti i verbali mostrano il comune corretto
-- ✅ Notifiche verbali arrivano correttamente all'app impresa
-- ✅ Storico sessioni mercato funziona correttamente
-- ✅ Codice allineato: GitHub = Hetzner = Vercel
-
----
-
 ### v3.52.0 (27/01/2026) - Fix Storico Sessioni Mercato + Ottimizzazione Polling Vercel
 
 **Bug Fix:**
@@ -1711,36 +1438,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 
 ---
 
-### v3.53.0 (28 Gennaio 2026) - Persistenza Impersonificazione e Sync Endpoint
 
-**Obiettivo**: Risolvere problemi impersonificazione su Safari/iPad e sincronizzare tutti gli endpoint nel sistema.
-
-**Backend (Hetzner):**
-- ✅ Modificato `POST /api/verbali/:id/invia` per usare comune corretto dall'intestazione
-- ✅ Aggiunta colonna `comune_id` alla tabella `notifiche`
-- ✅ Aggiunta colonna `link_riferimento` alla tabella `notifiche`
-- ✅ Notifica verbale ora include link diretto al PDF
-
-**Frontend (Vercel):**
-- ✅ `useImpersonation.ts` ora usa `sessionStorage` per persistere i dati
-- ✅ `ImpersonationBanner.tsx` aggiornato con nuova logica
-- ✅ `NuovoVerbalePage.tsx` legge comune da sessionStorage
-- ✅ `ComuniPanel.tsx` redirect nella stessa pagina (fix Safari popup)
-- ✅ `ControlliSanzioniPanel.tsx` filtro verbali per `comune_id`
-
-**MIO-hub (api/index.json):**
-- ✅ Sincronizzati 262 nuovi endpoint dal backend
-- ✅ **Totale endpoint: 727** (era 477, rimossi 12 duplicati)
-
-**Guardian**: 727 endpoint totali (+250)
-
-**Commit:**
-- Frontend: `07ed7d4` - fix(impersonation): redirect same page for Safari
-- Frontend: `63b53fb` - fix(verbali): filter by comune_id from intestazione
-- Backend: `243cbdb` - feat(verbali): notifica con comune corretto e link PDF
-- MIO-hub: `45083d2` - feat(api): sync 250 new endpoints, remove duplicates (total: 727)
-
----
 
 ### v3.52.0 (27 Gennaio 2026) - Filtro Comune e Notifiche Verbali con PDF
 
@@ -1938,185 +1636,6 @@ const forcedZoom = roundedToQuarter + 0.25;
 **Endpoint:**
 - `POST /api/test-mercato/inizia-mercato`
 - `POST /api/test-mercato/chiudi-mercato`
-
----
-
-### v3.56.0 (01/02/2026) - Navigazione Turn-by-Turn su Mappa GIS
-
-**Nuove Funzionalità:**
-- **Flusso Ricerca → Vetrina**: Click su risultato ricerca ora apre VetrinePage invece di Dashboard PA
-- **NavigationMode.tsx**: Nuovo componente per navigazione turn-by-turn sulla mappa GIS
-- **GPS Tracking Real-time**: `watchPosition` per aggiornamento posizione continuo
-- **Istruzioni OSRM**: Istruzioni di navigazione ("Gira a destra", "Prosegui dritto", ecc.)
-- **Sintesi Vocale**: Istruzioni lette in italiano con Web Speech API
-- **Ricalcolo Automatico**: Se fuori percorso >50m, ricalcola automaticamente
-- **UI Overlay Navigazione**: Distanza/tempo rimanente, step corrente, pulsante termina
-- **Marker Utente Direzionale**: Freccia blu che ruota in base alla direzione GPS
-- **Percorso Tracciato**: Polyline verde sulla mappa Leaflet
-
-**Flusso Completo Implementato:**
-1. **HomePage** → Ricerca impresa/mercato → Click risultato → **VetrinePage**
-2. **VetrinePage** → "Come Arrivare" → **RoutePage** (destinazione precompilata)
-3. **RoutePage** → GPS/coordinate → "Pianifica Percorso" → Calcolo distanza/CO₂/crediti
-4. **RoutePage** → "Avvia Navigazione" → **Navigazione sulla mappa GIS**
-
-**File Modificati:**
-- `client/src/pages/HomePage.tsx` - handleResultClick naviga a /vetrine/:id
-- `client/src/pages/RoutePage.tsx` - Integrazione NavigationMode, fix destLat/destLng
-- `client/src/components/NavigationMode.tsx` - NUOVO componente navigazione
-- `client/src/components/GestioneHubMapWrapper.tsx` - Props navigationMode
-- `client/src/components/HubMarketMapComponent.tsx` - Props navigationMode, integrazione NavigationMode
-
-**Props NavigationMode:**
-```typescript
-interface NavigationModeProps {
-  destination: { lat: number; lng: number };
-  destinationName: string;
-  mode: 'walking' | 'cycling' | 'driving';
-  onClose: () => void;
-}
-```
-
-**Commit:**
-- `045e9be` - feat: Flusso ricerca → vetrina + routeConfig
-- `9b966e5` - feat: Input manuale coordinate in RoutePage
-- `e624e25` - fix: handleStartNavigation usa routeConfig.userLocation
-- `5c88673` - feat: Navigazione turn-by-turn sulla mappa GIS
-- `1b80586` - fix: Definire destLat/destLng per routeConfig
-
-**Punto di Ripristino:**
-- Tag: `v3.55.0-stable-pre-routing`
-- Commit: `26ba096`
-
----
-
-### PUNTO DI RIPRISTINO STABILE v3.80.0 (02/02/2026)
-
-**Sistema Completamente Verificato e Allineato:**
-
-| Componente | Stato | Tag/Commit | URL |
-|------------|-------|------------|-----|
-| **Frontend GitHub** | ✅ OK | `v3.80.0-stable` (`aaf088e`) | github.com/Chcndr/dms-hub-app-new |
-| **Backend GitHub** | ✅ OK | `v3.54.0-stable` (`c486929`) | github.com/Chcndr/mihub-backend-rest |
-| **Vercel** | ✅ OK | Deploy automatico | dms-hub-app-new.vercel.app |
-| **Hetzner** | ✅ OK | API v2.0.0 online | orchestratore.mio-hub.me |
-| **Neon DB** | ✅ OK | 2 mercati attivi | - |
-
-**Per ripristinare a questo punto:**
-```bash
-# Frontend
-git checkout v3.80.0-stable
-
-# Backend
-git checkout v3.54.0-stable
-```
-
----
-
-### v3.80.0 (02/02/2026) - Ottimizzazione Tab Route e Fix Navigazione
-
-**Obiettivo**: Ottimizzare completamente il tab Route dell'app pubblica con layout fullscreen, navigazione migliorata e traduzioni italiane.
-
-**Layout Fullscreen Mobile:**
-- ✅ Rimossi tutti i container e padding su mobile
-- ✅ Card senza bordi arrotondati su mobile (`rounded-none`)
-- ✅ Header verde abbassato (da `p-4` a `p-3`)
-- ✅ Card statistiche (km, minuti, CO₂, crediti) compattate
-
-**Sezione "Perché usare Shopping Route?":**
-- ✅ Compattata con padding ridotti
-- ✅ Testi più piccoli per ottimizzare spazio
-
-**Sezioni RIMOSSE (duplicate):**
-- ❌ Barra ricerca posteggi (già presente in tab Mappa)
-- ❌ Statistiche posteggi (Totali, Liberi, Occupati, Riservati)
-- ❌ Card Legenda Mappa
-
-**Fix Popup Indicazioni Leaflet Routing Machine:**
-- ✅ Nascosto completamente con CSS `!important`
-- ✅ Aggiunto in `index.css` regole per `.leaflet-routing-container`
-
-**Fix Popup Navigazione Nero:**
-- ✅ Spostato FUORI dalla mappa usando React Portal
-- ✅ Ora appare SOPRA i controlli (HUB, Regione, ecc.)
-- ✅ Funziona su mobile, iPad e PC
-- ✅ Pulsante X funzionante per chiudere
-
-**Traduzioni Navigazione in ITALIANO:**
-- ✅ Ignorata istruzione inglese dall'API OSRM
-- ✅ Traduzione completa per tutti i tipi di manovra:
-  - Svolte: "Gira a destra", "Gira a sinistra", "Svolta leggera a destra/sinistra"
-  - Continua: "Continua dritto", "Continua"
-  - Bivio: "Tieni la destra al bivio", "Tieni la sinistra al bivio" (era "fork slight right")
-  - Rotonde: "Entra nella rotonda", "Esci dalla rotonda"
-  - Rampe: "Prendi la rampa", "Esci dalla rampa"
-  - Merge, End of road, New name tradotti
-- ✅ Nome strada in italiano ("su Via...")
-
-**Zoom Vista Mercato:**
-- ✅ Aumentato da 19 a **20** per far comparire i numeri dei posteggi
-
-**Dimensioni Marker Ridotte (uniformate ~20px):**
-- ✅ **Marker HUB viola**: 20/18/16px (capoluogo/provincia/comune)
-- ✅ **Marker Mercato rosso**: 20px
-- ✅ **Marker Negozi**: 20px
-- ✅ Font ridotti a 11px
-- ✅ Bordi ridotti a 1-2px
-
-**File Modificati:**
-- `client/src/pages/RoutePage.tsx` - Layout fullscreen, sezioni rimosse
-- `client/src/components/NavigationMode.tsx` - Portal per popup, traduzioni italiane
-- `client/src/components/RouteLayer.tsx` - Nascosto pannello LRM
-- `client/src/components/HubMarketMapComponent.tsx` - Zoom mercato, dimensioni marker
-- `client/src/index.css` - CSS per nascondere pannello LRM
-
-**Commit:**
-- Frontend: Multipli commit per ottimizzazione Route
-
----
-
-### v3.79.0 (02/02/2026) - Ottimizzazione Tab CivicPage e GPS Nativo
-
-**Obiettivo**: Ottimizzare il tab Civic (Segnalazioni Cittadino) con layout fullscreen e GPS nativo.
-
-**Layout Fullscreen Mobile:**
-- ✅ Rimossi container e padding su mobile
-- ✅ Card senza bordi arrotondati su mobile
-- ✅ Form compatto per stare in una singola schermata
-
-**GPS con Popup Nativo:**
-- ✅ Usa `navigator.geolocation.getCurrentPosition()` per triggerare popup nativo iOS/browser
-- ✅ Stato GPS migliorato: idle, requesting, success, error
-- ✅ Pulsante "Riprova GPS" se fallisce
-
-**Indicatori spostati nel Popup Info:**
-- ✅ I 3 indicatori (Crediti +20, Tempo 48h, Risolte 94%) ora nel popup informativo (icona ℹ️)
-- ✅ Non più visibili nella pagina principale
-
-**File Modificati:**
-- `client/src/pages/CivicPage.tsx` - Layout fullscreen, GPS nativo, popup info
-
-**Commit:**
-- Frontend: `fix: CivicPage fullscreen layout, native GPS popup, indicators in info popup`
-
----
-
-### v3.78.0 (02/02/2026) - Ottimizzazione Tab Mappa Fullscreen
-
-**Obiettivo**: Ottimizzare il tab Mappa dell'app pubblica con layout fullscreen e controlli compatti.
-
-**Layout Fullscreen Mobile:**
-- ✅ Mappa a tutto schermo senza container
-- ✅ Controlli (Mercati/HUB, Regione, Provincia) compattati
-- ✅ Card HUB scrollabili orizzontalmente
-
-**Vista iPad/PC:**
-- ✅ Layout responsive con controlli sopra la mappa
-- ✅ Popup navigazione fuori dalla mappa
-
-**File Modificati:**
-- `client/src/pages/MapPage.tsx` - Layout fullscreen
-- `client/src/components/GestioneHubMapWrapper.tsx` - Controlli compatti
 
 ---
 
@@ -2940,7 +2459,6 @@ git push origin master
 | `Wallets REST` | Wallet pagamenti |
 | `Guardian` | Monitoraggio sistema |
 | `System & Auth` | Autenticazione |
-| `Civic Reports` | Segnalazioni civiche cittadini/imprese |
 
 ### 🔄 Sincronizzazione
 
@@ -2951,22 +2469,15 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 
 | Repository | Tag | Data | Descrizione |
 |------------|-----|------|-------------|
-| **dms-hub-app-new** | **v3.55.0-stable** | 29/01/2026 | Segnalazioni Civiche Complete (743 endpoint) |
-| **mihub-backend-rest** | **v3.55.0-stable** | 29/01/2026 | 10 endpoint civic-reports, civic_config table |
-| **MIO-hub** | **v39.0.0-stable** | 29/01/2026 | API Index con 740 endpoint |
-| **miohub-backups** | **v3.55.0-stable** | 29/01/2026 | Database reference (civic_reports, civic_config) |
-| dms-hub-app-new | v3.35.1-stable | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
+| dms-hub-app-new | **v3.35.1-stable** | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
 | dms-hub-app-new | v3.32.0-stable | 13/01/2026 | TCC transaction numbers, QR validation |
-| mihub-backend-rest | v3.32.0-stable | 13/01/2026 | TCC transaction numbers, QR validation |
-| miohub-backups | v3.32.0-stable | 13/01/2026 | Database dump SQL (29 MB) |
+| mihub-backend-rest | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation |
+| **miohub-backups** | **v3.32.0-stable** | 13/01/2026 | Database dump SQL (29 MB) |
 | MIO-hub | v16.0.0-stable | 12/01/2026 | 353 endpoints |
 
 #### Storico Punti di Ripristino
 | Repository | Tag | Data | Note |
 |------------|-----|------|------|
-| dms-hub-app-new | v3.54.4-stable | 29/01/2026 | Fix sconto 30% verbali |
-| mihub-backend-rest | v3.54.4-stable | 29/01/2026 | Fix notified/notified_at |
-| dms-hub-app-new | v3.35.1-stable | 17/01/2026 | Gestione Mercati |
 | dms-hub-app-new | v3.29.0-stable | 12/01/2026 | Settlement numbers |
 | mihub-backend-rest | v5.7.0-stable | 12/01/2026 | Wallet-Impresa |
 
@@ -2975,26 +2486,22 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 ```bash
 # Frontend (Vercel si aggiorna automaticamente)
 cd dms-hub-app-new
-git checkout v3.55.0-stable
-git push origin v3.55.0-stable:master --force
+git checkout v3.32.0-stable
+git push origin v3.32.0-stable:master --force
 
 # Backend (Hetzner)
 ssh root@157.90.29.66
 cd /root/mihub-backend-rest
 git fetch --tags
-git checkout v3.55.0-stable
+git checkout v3.32.0-stable
 pm2 restart mihub-backend
-
-# API Index
-cd MIO-hub
-git checkout v39.0.0-stable
-git push origin v39.0.0-stable:master --force
 
 # Database - Opzione 1: Da backup SQL (consigliato)
 # 1. Scarica backup da https://github.com/Chcndr/miohub-backups
-# 2. Vedi database/v3.55.0-stable/README.md per istruzioni
+# 2. gunzip backup_miohub_v3.32.0_*.sql.gz
+# 3. psql "postgresql://..." < backup_miohub_v3.32.0_*.sql
 
-# Database - Opzione 2: Neon Point-in-Time (max 7 giorni)
+# Database - Opzione 2: Neon Point-in-Time (max 6 ore)
 # 1. Vai su https://console.neon.tech
 # 2. Branches > Create Branch > Past data
 ```
@@ -4442,969 +3949,117 @@ const handleStallUpdate = async () => {
 
 *Aggiornamento del 20 Gennaio 2026 - Manus AI*
 
-
 ---
 
-## 🆕 PROGETTO: SEGNALAZIONI CIVICHE (v3.55.0)
+## 🔧 PATCH BUS HUB EDITOR - 30 GENNAIO 2026
 
-> **Data Progetto:** 29 Gennaio 2026  
-> **Autore:** Manus AI  
-> **Stato:** 📋 IN ATTESA APPROVAZIONE
+### Sessione Manus AI - Fix e Miglioramenti
 
----
+#### ✅ P13 - Salvataggio Completo Immagine/Corner/Centro
 
-### 1. Obiettivo
+**Problema:** Il pulsante "Salva nel Database" salvava solo nome, indirizzo, coordinate e negozi, ma NON salvava l'immagine PNG trasparente e i corner (angoli per posizione/rotazione/scala).
 
-Completare il modulo **Segnalazioni Civiche** permettendo a cittadini e imprese di segnalare problemi urbani (degrado, rifiuti, buche, illuminazione, sicurezza), con gestione completa lato PA e Polizia Municipale, inclusa la configurazione dei **Token Carbon Credit (TCC)** come premio per le segnalazioni risolte.
+**Soluzione implementata:**
 
----
-
-### 2. Analisi Stato Attuale
-
-#### 2.1 Componenti Esistenti
-
-| Componente | File | Stato | Dettaglio |
-|------------|------|-------|----------|
-| **Form Segnalazione (App)** | `CivicPage.tsx` | ⚠️ PARZIALE | Form UI completo con GPS, ma usa `setTimeout` simulato - NON salva nel DB |
-| **Tab BottomNav** | `BottomNav.tsx` | ✅ FUNZIONANTE | Route `/civic` con label "Segnala" e icona |
-| **Tab Dashboard PA** | `DashboardPA.tsx` | ⚠️ PARZIALE | Tab "Segnalazioni & IoT" esiste con UI, ma usa `mockData.civicReports` |
-| **Tabella DB** | `civic_reports` | ⚠️ PARZIALE | Esiste con 9 colonne base, 0 record, manca `comune_id` |
-| **Backend Endpoints** | - | ❌ NON ESISTE | Nessun file `/routes/civic-reports.js` |
-| **Subtab PM** | `ControlliSanzioniPanel.tsx` | ❌ NON ESISTE | Nessun subtab per segnalazioni civiche |
-
-#### 2.2 Struttura Tabella `civic_reports` Attuale
-
-```sql
--- TABELLA ESISTENTE (da Neon DB)
-CREATE TABLE civic_reports (
-  id          INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  user_id     INTEGER REFERENCES users(id),
-  type        VARCHAR(100) NOT NULL,        -- Categoria: Degrado, Rifiuti, etc.
-  description TEXT NOT NULL,
-  lat         VARCHAR(20),                  -- Latitudine GPS
-  lng         VARCHAR(20),                  -- Longitudine GPS  
-  photo_url   TEXT,                         -- URL foto (non implementato)
-  status      VARCHAR(50) DEFAULT 'pending', -- pending, in_progress, resolved, rejected
-  created_at  TIMESTAMP DEFAULT NOW()
-);
--- Record attuali: 0
-```
-
-#### 2.3 Codice Frontend Attuale (CivicPage.tsx)
-
-```typescript
-// PROBLEMA: Simulazione invece di chiamata API reale
-const handleSubmit = async (e: React.FormEvent) => {
-  // ...
-  setLoading(true);
-  // ❌ SIMULA invio API con setTimeout
-  setTimeout(() => {
-    setLoading(false);
-    setSubmitted(true);
-    toast.success('Segnalazione inviata con successo! +20 crediti alla risoluzione');
-  }, 1500);
-};
-```
-
-#### 2.4 Codice Dashboard PA Attuale (DashboardPA.tsx)
-
-```typescript
-// PROBLEMA: Dati mock hardcoded invece di API reale
-const mockData = {
-  civicReports: {
-    total: 127,
-    pending: 45,
-    inProgress: 38,
-    resolved: 44,
-    recent: [
-      { id: 1, type: 'Rifiuti', description: 'Cassonetti pieni', location: 'Via Roma', ... },
-      // ... altri dati mock
-    ]
-  }
-};
-```
-
----
-
-### 3. Schema Architettura Completo
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                           ARCHITETTURA SEGNALAZIONI CIVICHE                              │
-└─────────────────────────────────────────────────────────────────────────────────────────┘
-
-                              ┌─────────────────────┐
-                              │   CONFIGURAZIONE    │
-                              │   TCC REWARD        │
-                              │   (Dashboard PA)    │
-                              │   Default: 20 TCC   │
-                              └──────────┬──────────┘
-                                         │
-                                         ▼
-┌───────────────────┐          ┌─────────────────────┐          ┌───────────────────┐
-│   APP CITTADINO   │          │                     │          │   DASHBOARD PA    │
-│   /IMPRESA        │          │   BACKEND API       │          │   Tab Civic IoT   │
-│                   │          │   /api/civic-reports│          │                   │
-│ ┌───────────────┐ │  POST    │                     │   GET    │ ┌───────────────┐ │
-│ │ CivicPage.tsx │ │─────────▶│ ┌─────────────────┐ │◀─────────│ │ KPI Cards     │ │
-│ │ - Categoria   │ │          │ │ civic-reports.js│ │          │ │ - Pending     │ │
-│ │ - Descrizione │ │          │ │                 │ │          │ │ - In Progress │ │
-│ │ - GPS (lat/lng│ │          │ │ POST /          │ │          │ │ - Resolved    │ │
-│ │ - Foto (TODO) │ │          │ │ GET /           │ │          │ │ - Totali      │ │
-│ └───────────────┘ │          │ │ GET /stats      │ │          │ └───────────────┘ │
-└───────────────────┘          │ │ PATCH /:id/stat │ │          │ ┌───────────────┐ │
-                               │ │ PATCH /:id/assig│ │          │ │ Mappa Leaflet │ │
-                               │ │ POST /:id/link  │ │          │ │ con markers   │ │
-                               │ │ GET /config     │ │          │ └───────────────┘ │
-                               │ │ PUT /config     │ │          │ ┌───────────────┐ │
-                               │ └─────────────────┘ │          │ │ Lista + Filtri│ │
-                               │          │         │          │ └───────────────┘ │
-                               │          ▼         │          │ ┌───────────────┐ │
-                               │ ┌─────────────────┐│          │ │ ⚙️ Config TCC │ │
-                               │ │   DATABASE      ││          │ │ Reward amount │ │
-                               │ │   NEON          ││          │ └───────────────┘ │
-                               │ │                 ││          └───────────────────┘
-                               │ │ civic_reports   ││
-                               │ │ civic_config    ││          ┌───────────────────┐
-                               │ │ notifiche       ││          │  CONTROLLI PM     │
-                               │ │ extended_users  ││          │  (Subtab)         │
-                               │ └─────────────────┘│          │                   │
-                               └─────────────────────┘          │ ┌───────────────┐ │
-                                         │                      │ │ Lista Segnala │ │
-                                         │ Notifica             │ │ da verificare │ │
-                                         ▼                      │ └───────────────┘ │
-                               ┌─────────────────────┐          │ ┌───────────────┐ │
-                               │   SISTEMA NOTIFICHE │          │ │ Mappa PM      │ │
-                               │                     │          │ └───────────────┘ │
-                               │ - Notifica PA       │          │ ┌───────────────┐ │
-                               │ - Notifica PM       │          │ │ Azioni:       │ │
-                               │ - Notifica Cittadino│          │ │ - Assegna     │ │
-                               │   (alla risoluzione)│          │ │ - Risolvi     │ │
-                               └─────────────────────┘          │ │ - Crea Verbale│ │
-                                                                │ └───────────────┘ │
-                                                                └───────────────────┘
-```
-
----
-
-### 4. Modifiche Database
-
-#### 4.1 ALTER TABLE civic_reports
-
-```sql
--- Aggiungere colonne mancanti per impersonificazione e gestione completa
-ALTER TABLE civic_reports 
-  ADD COLUMN IF NOT EXISTS comune_id INTEGER,              -- FK per impersonificazione
-  ADD COLUMN IF NOT EXISTS impresa_id INTEGER,             -- Se segnalazione da impresa
-  ADD COLUMN IF NOT EXISTS address TEXT,                   -- Indirizzo testuale (reverse geocoding)
-  ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'NORMAL',  -- LOW, NORMAL, HIGH, URGENT
-  ADD COLUMN IF NOT EXISTS assigned_to INTEGER,            -- ID agente PM assegnato
-  ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP,          -- Data assegnazione
-  ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMP,          -- Data risoluzione
-  ADD COLUMN IF NOT EXISTS resolved_by INTEGER,            -- ID utente che ha risolto
-  ADD COLUMN IF NOT EXISTS resolution_notes TEXT,          -- Note risoluzione
-  ADD COLUMN IF NOT EXISTS tcc_reward INTEGER DEFAULT 20,  -- TCC assegnati (configurabile)
-  ADD COLUMN IF NOT EXISTS tcc_rewarded BOOLEAN DEFAULT FALSE, -- TCC già assegnati?
-  ADD COLUMN IF NOT EXISTS linked_sanction_id INTEGER,     -- FK a sanctions (se crea verbale)
-  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
-
--- Foreign Keys
-ALTER TABLE civic_reports 
-  ADD CONSTRAINT fk_civic_comune FOREIGN KEY (comune_id) REFERENCES comuni(id),
-  ADD CONSTRAINT fk_civic_impresa FOREIGN KEY (impresa_id) REFERENCES imprese(id),
-  ADD CONSTRAINT fk_civic_assigned FOREIGN KEY (assigned_to) REFERENCES users(id),
-  ADD CONSTRAINT fk_civic_resolved FOREIGN KEY (resolved_by) REFERENCES users(id),
-  ADD CONSTRAINT fk_civic_sanction FOREIGN KEY (linked_sanction_id) REFERENCES sanctions(id);
-
--- Indici per performance
-CREATE INDEX IF NOT EXISTS idx_civic_reports_comune ON civic_reports(comune_id);
-CREATE INDEX IF NOT EXISTS idx_civic_reports_status ON civic_reports(status);
-CREATE INDEX IF NOT EXISTS idx_civic_reports_type ON civic_reports(type);
-CREATE INDEX IF NOT EXISTS idx_civic_reports_priority ON civic_reports(priority);
-CREATE INDEX IF NOT EXISTS idx_civic_reports_created ON civic_reports(created_at DESC);
-```
-
-#### 4.2 Nuova Tabella civic_config (Configurazione TCC per Comune)
-
-```sql
--- Tabella per configurazione TCC reward per comune
-CREATE TABLE IF NOT EXISTS civic_config (
-  id SERIAL PRIMARY KEY,
-  comune_id INTEGER UNIQUE REFERENCES comuni(id),
-  tcc_reward_default INTEGER DEFAULT 20,           -- TCC default per segnalazione risolta
-  tcc_reward_urgent INTEGER DEFAULT 30,            -- TCC per segnalazioni urgenti
-  tcc_reward_photo_bonus INTEGER DEFAULT 5,        -- Bonus se include foto
-  auto_assign_enabled BOOLEAN DEFAULT FALSE,       -- Auto-assegnazione a PM
-  notify_pm_enabled BOOLEAN DEFAULT TRUE,          -- Notifica PM su nuova segnalazione
-  notify_pa_enabled BOOLEAN DEFAULT TRUE,          -- Notifica PA su nuova segnalazione
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Inserire config default per comuni esistenti
-INSERT INTO civic_config (comune_id, tcc_reward_default)
-SELECT id, 20 FROM comuni
-ON CONFLICT (comune_id) DO NOTHING;
-```
-
----
-
-### 5. Nuovi Endpoint API Backend
-
-#### 5.1 File: `/routes/civic-reports.js`
-
-| # | Endpoint | Metodo | Descrizione | Parametri |
-|---|----------|--------|-------------|----------|
-| 1 | `/api/civic-reports` | GET | Lista segnalazioni con filtri | `?comune_id=&status=&type=&priority=&page=&limit=` |
-| 2 | `/api/civic-reports` | POST | Crea nuova segnalazione | `{type, description, lat, lng, user_id?, impresa_id?, comune_id}` |
-| 3 | `/api/civic-reports/stats` | GET | Statistiche per dashboard | `?comune_id=` |
-| 4 | `/api/civic-reports/:id` | GET | Dettaglio singola segnalazione | - |
-| 5 | `/api/civic-reports/:id/status` | PATCH | Aggiorna stato | `{status, resolution_notes?}` |
-| 6 | `/api/civic-reports/:id/assign` | PATCH | Assegna a agente PM | `{assigned_to}` |
-| 7 | `/api/civic-reports/:id/resolve` | POST | Risolvi e assegna TCC | `{resolution_notes}` |
-| 8 | `/api/civic-reports/:id/link-sanction` | POST | Collega a verbale esistente | `{sanction_id}` |
-| 9 | `/api/civic-reports/config` | GET | Leggi configurazione TCC | `?comune_id=` |
-| 10 | `/api/civic-reports/config` | PUT | Aggiorna configurazione TCC | `{comune_id, tcc_reward_default, ...}` |
-
-**Totale nuovi endpoint: 10**
-**Nuovo totale endpoint sistema: 743** (733 + 10)
-
-> **Guardian Monitoring**: Tutti i 10 endpoint sono monitorati dal sistema Guardian e visibili nella sezione "Integrazioni e API" della Dashboard PA.
-
-#### 5.2 Logica Endpoint Chiave
-
+**1. Modifica `saveToDatabase()` in bus_hub.html:**
 ```javascript
-// POST /api/civic-reports - Crea segnalazione
-router.post('/', async (req, res) => {
-  const { type, description, lat, lng, user_id, impresa_id, comune_id } = req.body;
-  
-  // 1. Inserisci in civic_reports
-  const result = await pool.query(`
-    INSERT INTO civic_reports (type, description, lat, lng, user_id, impresa_id, comune_id, status)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-    RETURNING *
-  `, [type, description, lat, lng, user_id, impresa_id, comune_id]);
-  
-  // 2. Crea notifica per PA
-  await pool.query(`
-    INSERT INTO notifiche (titolo, messaggio, tipo, comune_id, created_at)
-    VALUES ($1, $2, 'SEGNALAZIONE_CIVICA', $3, NOW())
-  `, [`Nuova segnalazione: ${type}`, description.substring(0, 100), comune_id]);
-  
-  // 3. Crea notifica per PM (se abilitato)
-  // ...
-  
-  res.json({ success: true, data: result.rows[0] });
+// ========== P13 FIX: Aggiungi immagine trasparente e corner ==========
+// Recupera immagine trasparente dal BUS
+const pngData = await DMSBUS.get('png_transparent');
+if (pngData) photoUrl = pngData;
+
+// Recupera corner/GCP dal BUS
+const gcp = await DMSBUS.getJSON('gcp');
+if (gcp && gcp.corners) cornerGeojson = JSON.stringify(gcp.corners);
+
+// Aggiungi al payload
+payload.photoUrl = photoUrl;
+payload.cornerGeojson = cornerGeojson;
+// ========== FINE P13 FIX ==========
+```
+
+**2. Modifica `loadFromDb()` in bus_hub.html:**
+```javascript
+// ========== P13 FIX: Carica immagine e corner dal database ==========
+// Carica immagine trasparente nel BUS
+if (result.photo_url) {
+  await DMSBUS.put('png_transparent', result.photo_url);
+}
+
+// Carica corner/GCP nel BUS
+if (result.corner_geojson) {
+  const corners = JSON.parse(result.corner_geojson);
+  await DMSBUS.putJSON('gcp', { corners: corners });
+}
+
+// Salva dati mercato nel BUS per Editor V3
+await DMSBUS.putJSON('market_data', {
+  market_lat: result.center_lat,
+  market_lng: result.center_lng,
+  market_name: result.name,
+  market_address: result.address,
+  market_city: result.city
 });
-
-// POST /api/civic-reports/:id/resolve - Risolvi e assegna TCC
-router.post('/:id/resolve', async (req, res) => {
-  const { id } = req.params;
-  const { resolution_notes, resolved_by } = req.body;
-  
-  // 1. Leggi segnalazione
-  const report = await pool.query('SELECT * FROM civic_reports WHERE id = $1', [id]);
-  if (!report.rows[0]) return res.status(404).json({ error: 'Segnalazione non trovata' });
-  
-  // 2. Leggi config TCC per comune
-  const config = await pool.query(
-    'SELECT tcc_reward_default FROM civic_config WHERE comune_id = $1',
-    [report.rows[0].comune_id]
-  );
-  const tccReward = config.rows[0]?.tcc_reward_default || 20;
-  
-  // 3. Aggiorna stato a 'resolved'
-  await pool.query(`
-    UPDATE civic_reports 
-    SET status = 'resolved', resolved_at = NOW(), resolved_by = $1, 
-        resolution_notes = $2, tcc_rewarded = TRUE, tcc_reward = $3
-    WHERE id = $4
-  `, [resolved_by, resolution_notes, tccReward, id]);
-  
-  // 4. Assegna TCC al cittadino
-  if (report.rows[0].user_id) {
-    await pool.query(`
-      UPDATE extended_users 
-      SET wallet_balance = COALESCE(wallet_balance, 0) + $1 
-      WHERE user_id = $2
-    `, [tccReward, report.rows[0].user_id]);
-  }
-  
-  // 5. Notifica cittadino
-  await pool.query(`
-    INSERT INTO notifiche (titolo, messaggio, tipo, destinatario_id, created_at)
-    VALUES ($1, $2, 'TCC_REWARD', $3, NOW())
-  `, [
-    `Segnalazione risolta! +${tccReward} TCC`,
-    `La tua segnalazione "${report.rows[0].type}" è stata risolta. Hai ricevuto ${tccReward} Token Carbon Credit!`,
-    report.rows[0].user_id
-  ]);
-  
-  res.json({ success: true, tcc_awarded: tccReward });
-});
+// ========== FINE P13 FIX ==========
 ```
 
----
-
-### 6. Modifiche Frontend
-
-#### 6.1 CivicPage.tsx - Collegamento API Reale
-
-```typescript
-// PRIMA (simulazione)
-setTimeout(() => {
-  setLoading(false);
-  setSubmitted(true);
-}, 1500);
-
-// DOPO (API reale)
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!category || !description || !location) {
-    toast.error('Compila tutti i campi obbligatori');
-    return;
-  }
-  
-  setLoading(true);
-  try {
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
-    const response = await fetch(`${MIHUB_API}/civic-reports`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: category,
-        description,
-        lat: location.lat.toString(),
-        lng: location.lng.toString(),
-        user_id: currentUser?.id,        // Da useAuth()
-        impresa_id: currentUser?.impresa_id,
-        comune_id: getComuneIdFromLocation(location) // Reverse geocoding o default
-      })
-    });
-    
-    const data = await response.json();
-    if (data.success) {
-      setSubmitted(true);
-      toast.success('Segnalazione inviata! Riceverai TCC quando sarà risolta.');
-    } else {
-      toast.error(data.error || 'Errore invio segnalazione');
-    }
-  } catch (err) {
-    toast.error('Errore di connessione');
-  } finally {
-    setLoading(false);
-  }
-};
+**Flusso completo ora funzionante:**
+```
+[PNG Tool] → Crea immagine trasparente → [DMSBUS: png_transparent]
+                                              ↓
+[Slot Editor V3] → Posiziona con corner → [DMSBUS: gcp.corners]
+                                              ↓
+[BUS HUB] → "Salva nel Database" → [PostgreSQL: photo_url, corner_geojson]
+                                              ↓
+[BUS HUB] → "Carica" → [DMSBUS: png_transparent, gcp.corners]
+                                              ↓
+[Slot Editor V3] → Visualizza pianta già posizionata
 ```
 
-#### 6.2 DashboardPA.tsx - Tab Civic IoT con Dati Reali + Config TCC
+**Campi database utilizzati (hub_locations):**
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| photo_url | TEXT | Immagine PNG trasparente (base64) |
+| corner_geojson | JSONB | 4 angoli con coordinate {nw, ne, se, sw} |
+| center_lat | NUMERIC | Latitudine centro mercato |
+| center_lng | NUMERIC | Longitudine centro mercato |
 
-```typescript
-// Aggiungere sezione configurazione TCC nel tab civic
-<Card className="bg-[#1a2332] border-[#06b6d4]/30">
-  <CardHeader>
-    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-      <Settings className="h-5 w-5 text-[#06b6d4]" />
-      Configurazione Reward TCC
-    </CardTitle>
-  </CardHeader>
-  <CardContent>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="space-y-2">
-        <Label>TCC per Segnalazione Risolta</Label>
-        <Input 
-          type="number" 
-          value={tccConfig.tcc_reward_default} 
-          onChange={(e) => setTccConfig({...tccConfig, tcc_reward_default: parseInt(e.target.value)})}
-          className="bg-[#0b1220] border-[#14b8a6]/30"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>TCC Bonus Urgenti</Label>
-        <Input 
-          type="number" 
-          value={tccConfig.tcc_reward_urgent} 
-          onChange={(e) => setTccConfig({...tccConfig, tcc_reward_urgent: parseInt(e.target.value)})}
-          className="bg-[#0b1220] border-[#14b8a6]/30"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>TCC Bonus con Foto</Label>
-        <Input 
-          type="number" 
-          value={tccConfig.tcc_reward_photo_bonus} 
-          onChange={(e) => setTccConfig({...tccConfig, tcc_reward_photo_bonus: parseInt(e.target.value)})}
-          className="bg-[#0b1220] border-[#14b8a6]/30"
-        />
-      </div>
-    </div>
-    <Button 
-      onClick={handleSaveTccConfig} 
-      className="mt-4 bg-[#14b8a6] hover:bg-[#0d9488]"
-    >
-      Salva Configurazione
-    </Button>
-  </CardContent>
-</Card>
-```
-
-#### 6.3 ControlliSanzioniPanel.tsx - Nuovo Subtab "Segnalazioni"
-
-```typescript
-// Aggiungere subtab nella lista esistente
-const subTabs = [
-  { id: 'overview', label: 'Panoramica', icon: LayoutDashboard },
-  { id: 'toCheck', label: 'Da Controllare', icon: ClipboardCheck },
-  { id: 'verbali', label: 'Verbali', icon: FileText },
-  { id: 'infractions', label: 'Tipi Infrazione', icon: AlertTriangle },
-  { id: 'suap', label: 'Pratiche SUAP', icon: Building2 },
-  { id: 'notifications', label: 'Notifiche PM', icon: Bell },
-  { id: 'civic', label: 'Segnalazioni', icon: AlertCircle },  // 🆕 NUOVO
-  { id: 'justifications', label: 'Giustifiche', icon: MessageSquare },
-  { id: 'history', label: 'Storico', icon: History },
-];
-
-// Contenuto subtab civic
-{activeSubTab === 'civic' && (
-  <div className="space-y-6">
-    {/* KPI Cards */}
-    <div className="grid grid-cols-4 gap-4">
-      <Card>Pending: {civicStats.pending}</Card>
-      <Card>In Progress: {civicStats.inProgress}</Card>
-      <Card>Resolved: {civicStats.resolved}</Card>
-      <Card>Totali: {civicStats.total}</Card>
-    </div>
-    
-    {/* Mappa con markers segnalazioni */}
-    <Card>
-      <CivicReportsMap reports={civicReports} onMarkerClick={handleSelectReport} />
-    </Card>
-    
-    {/* Lista segnalazioni con azioni */}
-    <Card>
-      <Table>
-        {civicReports.map(report => (
-          <TableRow key={report.id}>
-            <TableCell>{report.type}</TableCell>
-            <TableCell>{report.description}</TableCell>
-            <TableCell>{report.address || `${report.lat}, ${report.lng}`}</TableCell>
-            <TableCell>
-              <Badge variant={getPriorityVariant(report.priority)}>
-                {report.priority}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <Button onClick={() => handleAssign(report.id)}>Assegna</Button>
-              <Button onClick={() => handleResolve(report.id)}>Risolvi</Button>
-              <Button onClick={() => handleCreateVerbale(report)}>Crea Verbale</Button>
-            </TableCell>
-          </TableRow>
-        ))}
-      </Table>
-    </Card>
-  </div>
-)}
-```
+**Backup creato:** `bus_hub.html.bak.P13.20260130`
 
 ---
 
-### 7. Flusso Stati Segnalazione
+#### ✅ Fix Coordinate Mercato Grosseto
 
-```
-                                    ┌─────────────┐
-                                    │   REJECTED  │
-                                    │  (Invalida) │
-                                    └─────────────┘
-                                          ▲
-                                          │ Rifiuta
-                                          │
-┌──────────┐     Assegna      ┌─────────────────┐     Risolvi      ┌──────────────┐
-│ PENDING  │─────────────────▶│  IN_PROGRESS    │─────────────────▶│   RESOLVED   │
-│ (Nuova)  │                  │  (Assegnata)    │                  │  (+N TCC)    │
-└──────────┘                  └─────────────────┘                  └──────────────┘
-     │                               │                                    │
-     │                               │ Crea Verbale                       │
-     │                               ▼                                    │
-     │                        ┌─────────────────┐                         │
-     │                        │ LINKED_SANCTION │                         │
-     │                        │ (Verbale creato)│                         │
-     │                        └─────────────────┘                         │
-     │                                                                    │
-     └────────────────────────────────────────────────────────────────────┘
-                              Notifica cittadino con TCC
-```
+**Problema:** Durante i test API, le coordinate del Mercato Grosseto erano state erroneamente modificate, spostando il marker M fuori dal centro.
+
+**Soluzione:** Ripristinate le coordinate corrette via API PATCH:
+- **Prima (errato):** 42.7589, 11.1135 (Cinema Marraccini)
+- **Adesso (corretto):** 42.7587, 11.1143 (Piazza del Sale)
+
+Coordinate verificate tramite OpenStreetMap Nominatim.
 
 ---
 
-### 8. Categorie e Priorità
+### 📋 Riepilogo Patch Completate (Sessione 30/01/2026)
 
-#### 8.1 Categorie Segnalazioni
+| Patch | Descrizione | File Modificato | Stato |
+|-------|-------------|-----------------|-------|
+| P1 | Fix coordinate hardcoded | slot_editor_v3_unified.html | ✅ |
+| P2 | Fix variabile plantOverlay | slot_editor_v3_unified.html | ✅ |
+| P5 | Pre-popola nome/indirizzo/città | slot_editor_v3_unified.html | ✅ |
+| P6 | Fix INSERT backend | hub.js | ✅ |
+| P7 | UPSERT logic HUB | bus_hub.html | ✅ |
+| P7b | UPSERT logic Markets | slot_editor_v3_unified.html | ✅ |
+| P13 | Salvataggio immagine/corner/centro | bus_hub.html | ✅ |
 
-| Categoria | Icona | Colore Marker | Priorità Default |
-|-----------|-------|---------------|------------------|
-| Degrado | 🏚️ | #EF4444 (Rosso) | NORMAL |
-| Rifiuti | 🗑️ | #F59E0B (Giallo) | NORMAL |
-| Illuminazione | 💡 | #10B981 (Verde) | LOW |
-| Sicurezza | 🔒 | #3B82F6 (Blu) | HIGH |
-| Buche | 🕳️ | #8B5CF6 (Viola) | HIGH |
-| Microcriminalità | ⚠️ | #1F2937 (Nero) | URGENT |
-| Strade | 🛣️ | #6B7280 (Grigio) | NORMAL |
-| Altro | 📝 | #9CA3AF (Grigio chiaro) | LOW |
+### 📁 Backup Creati
 
-#### 8.2 Livelli Priorità
-
-| Priorità | Badge Color | TCC Multiplier | Tempo Risposta Target |
-|----------|-------------|----------------|----------------------|
-| LOW | Verde | 1x | 7 giorni |
-| NORMAL | Blu | 1x | 3 giorni |
-| HIGH | Arancione | 1.25x | 24 ore |
-| URGENT | Rosso | 1.5x | 4 ore |
+| File | Backup | Data |
+|------|--------|------|
+| slot_editor_v3_unified.html | .bak.20260130 | 30/01/2026 |
+| bus_hub.html | .bak.20260130, .bak.P13.20260130 | 30/01/2026 |
+| hub.js | .bak.20260130 | 30/01/2026 |
 
 ---
 
-### 9. Integrazione con Sistema Esistente
-
-#### 9.1 Tabelle Collegate
-
-| Tabella | Tipo Relazione | Campo FK | Uso |
-|---------|----------------|----------|-----|
-| `users` | FK | `user_id` | Cittadino che segnala |
-| `imprese` | FK | `impresa_id` | Impresa che segnala |
-| `comuni` | FK | `comune_id` | Impersonificazione e filtro dati |
-| `sanctions` | FK | `linked_sanction_id` | Collegamento a verbale se creato |
-| `notifiche` | INSERT | - | Notifiche PA, PM e cittadino |
-| `extended_users` | UPDATE | `wallet_balance` | Assegnazione TCC reward |
-| `civic_config` | FK | `comune_id` | Configurazione TCC per comune |
-
-#### 9.2 Impersonificazione
-
-Tutte le query devono rispettare il filtro `comune_id` quando l'utente è in modalità impersonificazione:
-
-```javascript
-// Esempio query con impersonificazione
-const comuneId = req.query.comune_id || req.user?.comune_id;
-const whereClause = comuneId ? 'WHERE comune_id = $1' : '';
-const params = comuneId ? [comuneId] : [];
-
-const result = await pool.query(`
-  SELECT * FROM civic_reports ${whereClause} ORDER BY created_at DESC
-`, params);
-```
-
----
-
-### 10. Registrazione Guardian
-
-Aggiungere i 10 nuovi endpoint in `/routes/integrations.js`:
-
-```javascript
-// Sezione CIVIC REPORTS
-{ method: 'GET', path: '/api/civic-reports', description: 'Lista segnalazioni civiche con filtri' },
-{ method: 'POST', path: '/api/civic-reports', description: 'Crea nuova segnalazione civica' },
-{ method: 'GET', path: '/api/civic-reports/stats', description: 'Statistiche segnalazioni per dashboard' },
-{ method: 'GET', path: '/api/civic-reports/:id', description: 'Dettaglio singola segnalazione' },
-{ method: 'PATCH', path: '/api/civic-reports/:id/status', description: 'Aggiorna stato segnalazione' },
-{ method: 'PATCH', path: '/api/civic-reports/:id/assign', description: 'Assegna segnalazione a agente PM' },
-{ method: 'POST', path: '/api/civic-reports/:id/resolve', description: 'Risolvi segnalazione e assegna TCC' },
-{ method: 'POST', path: '/api/civic-reports/:id/link-sanction', description: 'Collega segnalazione a verbale' },
-{ method: 'GET', path: '/api/civic-reports/config', description: 'Leggi configurazione TCC comune' },
-{ method: 'PUT', path: '/api/civic-reports/config', description: 'Aggiorna configurazione TCC comune' },
-```
-
----
-
-### 11. Checklist Implementazione
-
-#### 11.1 Database
-- [ ] ALTER TABLE civic_reports (aggiungere 12 colonne)
-- [ ] CREATE TABLE civic_config
-- [ ] CREATE INDEX (5 indici)
-- [ ] INSERT config default per comuni esistenti
-
-#### 11.2 Backend
-- [ ] Creare file `/routes/civic-reports.js`
-- [ ] Implementare 10 endpoint
-- [ ] Registrare route in `server.js`
-- [ ] Registrare 10 endpoint in Guardian (`integrations.js`)
-- [ ] Test endpoint con Postman/curl
-
-#### 11.3 Frontend - CivicPage.tsx
-- [ ] Sostituire setTimeout con fetch API reale
-- [ ] Aggiungere gestione errori
-- [ ] Aggiungere loading state migliorato
-
-#### 11.4 Frontend - DashboardPA.tsx (Tab Civic IoT)
-- [ ] Sostituire mockData con fetch da `/api/civic-reports/stats`
-- [ ] Aggiungere Card configurazione TCC
-- [ ] Collegare lista segnalazioni a dati reali
-- [ ] Aggiungere mappa con markers reali
-
-#### 11.5 Frontend - ControlliSanzioniPanel.tsx
-- [ ] Aggiungere subtab "Segnalazioni" nella lista
-- [ ] Creare contenuto subtab con mappa e lista
-- [ ] Implementare azioni: Assegna, Risolvi, Crea Verbale
-
-#### 11.6 Test & Deploy
-- [ ] Test flusso completo: Invio → Assegnazione → Risoluzione → TCC
-- [ ] Test impersonificazione
-- [ ] Test configurazione TCC
-- [ ] Deploy Backend (GitHub → Hetzner)
-- [ ] Deploy Frontend (GitHub → Vercel)
-
----
-
-### 12. Stima Tempi
-
-| Fase | Attività | Tempo Stimato |
-|------|----------|---------------|
-| 1 | Database: ALTER + CREATE + INDEX | 20 min |
-| 2 | Backend: civic-reports.js (10 endpoint) | 1h 30min |
-| 3 | Backend: Registrazione Guardian | 15 min |
-| 4 | Frontend: CivicPage.tsx (API reale) | 30 min |
-| 5 | Frontend: DashboardPA.tsx (dati reali + config TCC) | 1h |
-| 6 | Frontend: ControlliSanzioniPanel.tsx (subtab) | 1h 30min |
-| 7 | Test flusso completo | 30 min |
-| 8 | Deploy e verifica produzione | 15 min |
-| **TOTALE** | | **~5-6 ore** |
-
----
-
-### 13. Note Implementazione
-
-#### 13.1 Regole Critiche
-
-1. **NON modificare** codice esistente funzionante in altri moduli
-2. **Riutilizzare** componenti esistenti (MarketMapComponent per mappa, Card per KPI)
-3. **Rispettare** pattern impersonificazione esistente (`comune_id` in query params)
-4. **Seguire** stile UI esistente (colori, spacing, componenti shadcn/ui)
-
-#### 13.2 Dipendenze
-
-- Nessuna nuova dipendenza npm richiesta
-- Riutilizzo di: Leaflet (già presente), shadcn/ui, lucide-react
-
-#### 13.3 Backward Compatibility
-
-- La tabella `civic_reports` esistente rimane compatibile
-- I nuovi campi hanno tutti valori default
-- Il frontend continuerà a funzionare anche prima del deploy backend (fallback a mockData)
-
----
-
-*Progetto documentato da Manus AI - 29 Gennaio 2026*
-*Versione: 3.55.0 - In attesa approvazione*
-
-
----
-
-## 📱 MODIFICHE UI MOBILE APP - v3.75.x (01/02/2026)
-
-### Versione 3.75.0 - 3.75.2
-
-**Commit:** 8513faf → fe08634 → 4680945
-
-#### Modifiche HomePage
-
-| Elemento | Prima | Dopo |
-|----------|-------|------|
-| Tab "Presentazione" | Visibile per tutti | **Solo PA** (filtrato con `canViewTab('dashboard')`) |
-| Tab "Esci" | Non presente | Visibile per Cittadino e Impresa |
-
-**File modificato:** `client/src/pages/HomePage.tsx`
-
-#### Modifiche WalletPage
-
-| Elemento | Prima | Dopo |
-|----------|-------|------|
-| Freccia indietro header | Nascosta su mobile | **Visibile sempre** (mobile + PC/Tablet) |
-| Pulsante Logout header | Visibile sempre | **Solo PC/Tablet** (`hidden sm:flex`) |
-| Barra saldo mobile | Piccola | **Più alta** con testo più grande (text-2xl) |
-| Nome intestatario | Non presente | **Visibile** nell'header |
-| Tasti Paga/Storico | Con sfondo colorato | **Trasparenti** con solo bordo (`bg-transparent border border-border/50`) |
-
-**File modificato:** `client/src/pages/WalletPage.tsx`
-
-#### Modifiche WalletPaga
-
-| Elemento | Prima | Dopo |
-|----------|-------|------|
-| Header | Gradient amber | **Gradient teal/emerald** (coerente con Wallet) |
-| Tasto "Genera QR" | Sfondo giallo | **Trasparente** con bordo (`bg-transparent border`) |
-
-**File modificato:** `client/src/pages/WalletPaga.tsx`
-
-#### Modifiche WalletStorico
-
-| Elemento | Prima | Dopo |
-|----------|-------|------|
-| Header | Stile diverso | **Gradient teal/emerald** (coerente) |
-| Indicatori | Piccoli | **Più grandi** (icone 14x14, padding aumentato) |
-| Freccia indietro | `history.back()` | **Link diretto** a `/wallet` |
-
-**File modificato:** `client/src/pages/WalletStorico.tsx`
-
----
-
-## 🗺️ PROGETTO MODIFICHE MAPPA MOBILE - v3.76.x (IN PIANIFICAZIONE)
-
-### Obiettivo
-
-Ottimizzare la pagina Mappa per visualizzazione smartphone, mantenendo **INVARIATA** la versione PC/Tablet.
-
-### ⚠️ REGOLA CRITICA: NON-INTERFERENZA
-
-> **Il componente mappa è MOLTO DELICATO e ha richiesto molto tempo per essere perfezionato.**
-> **NON modificare il codice esistente che funziona su PC/Tablet.**
-> **Usare SOLO classi CSS responsive (`sm:hidden` / `hidden sm:block`) per differenziare le viste.**
-
----
-
-### Struttura Attuale (Analisi Componenti)
-
-#### File Coinvolti
-
-| File | Descrizione | Righe |
-|------|-------------|-------|
-| `client/src/pages/MappaItaliaPage.tsx` | Pagina wrapper con header | 45 |
-| `client/src/components/GestioneHubMapWrapper.tsx` | Wrapper principale con tutti i controlli | 1041 |
-| `client/src/components/HubMarketMapComponent.tsx` | Componente mappa Leaflet | ~800 |
-| `client/src/components/MapWithTransportLayer.tsx` | Layer trasporto pubblico | ~300 |
-
-#### Struttura GestioneHubMapWrapper (Attuale)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ HEADER INDICATORI (riga 718-765)                                │
-│ ┌─────────────────┬─────┬─────┬─────┬─────┬─────────────────┐  │
-│ │ GEMELLO DIGITALE│ HUB │NEGOZI│ATTIVI│INATT│ COORDINATE GPS │  │
-│ │ DEL COMMERCIO   │  79 │  6  │  6  │  0  │ 42.5 | 12.5    │  │
-│ └─────────────────┴─────┴─────┴─────┴─────┴─────────────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│ BARRA CONTROLLI (riga 767-923)                                  │
-│ ┌──────────────┬────────────┬────────────┬────────┬────────┐   │
-│ │ Mercati/HUB  │ Cerca...   │Vista Italia│Regione │ Prov.  │   │
-│ └──────────────┴────────────┴────────────┴────────┴────────┘   │
-├─────────────────────────────────────────────────────────────────┤
-│ LISTA SCORREVOLE (riga 925-978)                                 │
-│ ┌──────┬──────┬──────┬──────┬──────┬──────┐                    │
-│ │ HUB  │ HUB  │ HUB  │ HUB  │ HUB  │ ...  │ ← scroll orizzontale│
-│ └──────┴──────┴──────┴──────┴──────┴──────┘                    │
-├─────────────────────────────────────────────────────────────────┤
-│ MAPPA (riga 980-1037)                                           │
-│ ┌─────────────────────────────────────────────────────────────┐│
-│ │                                                             ││
-│ │                    HubMarketMapComponent                    ││
-│ │                    (con MapWithTransportLayer)              ││
-│ │                                                             ││
-│ └─────────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Modifiche Richieste (SOLO MOBILE < 640px)
-
-#### Schermata 1: Selezione Hub/Mercato (Statica)
-
-| # | Elemento | Stato Attuale | Modifica Mobile |
-|---|----------|---------------|------------------|
-| 1 | Container "GEMELLO DIGITALE DEL COMMERCIO" | Box con titolo + HUB: Italia | **RIMUOVERE** completamente |
-| 2 | Indicatori (HUB, NEGOZI, ATTIVI, INATTIVI) | 4 box separati + coordinate | **Una riga** - 4 indicatori compatti SENZA coordinate |
-| 3 | Tab "Mercati" / "HUB" | Sfondo colorato quando attivo | **Trasparenti** con bordo, MANTENERE colore quando attivo |
-| 4 | Barra ricerca | Input con placeholder | **MANTENERE** invariata |
-| 5 | Tab "Vista Italia" | Pulsante verde | **RIMUOVERE** (spostare in Schermata 2) |
-| 6 | Tab "Regione" / "Prov." | Dropdown con sfondo | **Trasparenti** con bordo, aprono popup selezione |
-| 7 | Tab "Area: NaN mq" | Indicatore area | **RIMUOVERE** su mobile |
-| 8 | Lista hub/mercati | Card scorrevoli | **MANTENERE** invariata |
-| 9 | Mappa | Visibile sotto lista | **NASCONDERE** (va in Schermata 2) |
-
-#### Schermata 2: Mappa Fullscreen
-
-| # | Elemento | Descrizione |
-|---|----------|-------------|
-| 1 | Layout | **Fullscreen** senza container (tipo YouTube a tutto schermo) |
-| 2 | Mappa | Vista Italia a tutto schermo con markers |
-| 3 | Tab "Apri" / "Chiudi" | **Singolo pulsante toggle** sopra la mappa |
-| 4 | Animazione | Click "Apri" → zoom animato fino a hub/mercato selezionato |
-| 5 | Pulsante "Vista Italia" | Torna a vista Italia (reset zoom) |
-| 6 | Freccia indietro | Torna a Schermata 1 (selezione) |
-
----
-
-### Piano Implementazione Dettagliato
-
-#### Fase 1: Preparazione (NON toccare codice esistente)
-
-1. Creare backup: `GestioneHubMapWrapper.tsx.backup-v3.75.2`
-2. Aggiungere stato `isMobile` (già presente riga 190)
-3. Aggiungere stato `showFullscreenMap` per toggle schermata
-
-#### Fase 2: Modifiche CSS Responsive
-
-**Strategia: Usare classi Tailwind per nascondere/mostrare elementi**
-
-```tsx
-// Esempio pattern da usare:
-<div className="hidden sm:flex">  {/* Visibile solo su PC/Tablet */}
-<div className="sm:hidden">       {/* Visibile solo su Mobile */}
-```
-
-#### Fase 3: Schermata 1 Mobile
-
-```tsx
-{/* MOBILE: Header compatto con indicatori su una riga */}
-{isMobile && (
-  <div className="sm:hidden flex items-center gap-2 p-2 overflow-x-auto">
-    <StatIndicator label="HUB" value={stats.mercati} color="purple" compact />
-    <StatIndicator label="Negozi" value={stats.totali} color="white" compact />
-    <StatIndicator label="Attivi" value={stats.occupati} color="green" compact />
-    <StatIndicator label="Inattivi" value={stats.liberi} color="white" compact />
-  </div>
-)}
-
-{/* PC/TABLET: Header originale invariato */}
-<div className="hidden sm:flex ...">
-  {/* Codice esistente INVARIATO */}
-</div>
-```
-
-#### Fase 4: Schermata 2 Mobile (Mappa Fullscreen)
-
-```tsx
-{/* MOBILE: Mappa fullscreen con toggle */}
-{isMobile && showFullscreenMap && (
-  <div className="fixed inset-0 z-50 bg-[#0b1220]">
-    {/* Header con pulsanti */}
-    <div className="absolute top-0 left-0 right-0 z-10 p-2 flex justify-between">
-      <button onClick={() => setShowFullscreenMap(false)}>
-        <ArrowLeft /> Indietro
-      </button>
-      <button onClick={handleToggleAnimation}>
-        {isAnimating ? 'Chiudi' : 'Apri'}
-      </button>
-      <button onClick={handleResetToItaly}>
-        Vista Italia
-      </button>
-    </div>
-    
-    {/* Mappa fullscreen */}
-    <div className="h-full w-full">
-      <HubMarketMapComponent ... />
-    </div>
-  </div>
-)}
-```
-
-#### Fase 5: Pulsante "Apri Mappa" in Schermata 1
-
-```tsx
-{/* MOBILE: Pulsante per aprire mappa fullscreen */}
-{isMobile && !showFullscreenMap && selectedItem && (
-  <button 
-    onClick={() => setShowFullscreenMap(true)}
-    className="w-full py-3 bg-[#14b8a6] text-white rounded-lg"
-  >
-    <Map className="h-5 w-5 mr-2" />
-    Apri Mappa
-  </button>
-)}
-```
-
----
-
-### Stile Tab Trasparenti (Come Home)
-
-```tsx
-// Stile base trasparente
-const tabBaseStyle = "bg-transparent border border-border/40 backdrop-blur-sm";
-
-// Stile attivo (mantiene colore)
-const tabActiveStyle = mode === 'mercato' 
-  ? 'bg-[#ef4444] text-white border-[#ef4444]' 
-  : 'bg-[#9C27B0] text-white border-[#9C27B0]';
-```
-
----
-
-### Checklist Implementazione
-
-- [ ] Backup file originale
-- [ ] Aggiungere stato `showFullscreenMap`
-- [ ] Creare versione mobile header indicatori (una riga)
-- [ ] Nascondere container "GEMELLO DIGITALE" su mobile
-- [ ] Nascondere coordinate GPS su mobile
-- [ ] Nascondere "Vista Italia" e "Area mq" su mobile (Schermata 1)
-- [ ] Rendere tab Mercati/HUB trasparenti su mobile
-- [ ] Rendere tab Regione/Prov trasparenti su mobile
-- [ ] Creare Schermata 2 fullscreen con mappa
-- [ ] Implementare toggle Apri/Chiudi animazione
-- [ ] Implementare pulsante "Vista Italia" in Schermata 2
-- [ ] Implementare freccia indietro in Schermata 2
-- [ ] Test su viewport mobile (< 640px)
-- [ ] Test su viewport PC/Tablet (>= 640px) - DEVE essere IDENTICO
-- [ ] Push su GitHub e deploy Vercel
-
----
-
-### Note Critiche per l'Implementazione
-
-1. **NON modificare** il codice che funziona su PC/Tablet
-2. **Usare SOLO** classi CSS responsive per differenziare
-3. **Il componente HubMarketMapComponent** non deve essere toccato
-4. **Testare SEMPRE** entrambe le viste prima del deploy
-5. **In caso di dubbio**, chiedere conferma prima di procedere
-
----
-
-### Stima Tempi
-
-| Fase | Attività | Tempo Stimato |
-|------|----------|---------------|
-| 1 | Backup e preparazione | 5 min |
-| 2 | Modifiche header mobile | 20 min |
-| 3 | Schermata 1 mobile | 30 min |
-| 4 | Schermata 2 fullscreen | 45 min |
-| 5 | Stile tab trasparenti | 15 min |
-| 6 | Test e debug | 30 min |
-| 7 | Deploy e verifica | 10 min |
-| **TOTALE** | | **~2.5 ore** |
-
----
-
-*Progetto documentato da Manus AI - 02 Febbraio 2026*
-*Versione: 3.77.0 - PRODUZIONE*
-
----
-
-## 📝 CHANGELOG v3.77.0 (02 Febbraio 2026)
-
-### Mappa Mobile - Ottimizzazioni Completate
-
-| Modifica | Descrizione |
-|----------|-------------|
-| **Zoom Italia ridotto** | Da 6 a 5 per visualizzare tutta la penisola su mobile |
-| **Tab Italia rimosso** | Ridondante con pulsante "Indietro" |
-| **Mappa fullscreen** | Altezza 100vh su mobile per riempire schermo |
-| **Scroll automatico** | Scroll alla mappa su selezione Regione/Provincia/Indietro |
-
-### Pagina Vetrina - Ottimizzazioni Mobile
-
-| Modifica | Descrizione |
-|----------|-------------|
-| **Layout fullscreen** | Rimossi container e padding su mobile |
-| **Tasto Modifica** | Visibile solo per Admin o Impresa titolare |
-| **Galleria swipe** | Foto fullscreen con scroll orizzontale su mobile |
-| **Numeri rimossi** | Rimossi badge numerici dalle foto galleria |
-| **Controllo ruoli** | Integrato sistema RBAC per permessi modifica |
-
-### File Modificati
-
-- `client/src/components/HubMarketMapComponent.tsx` - Zoom Italia 5
-- `client/src/components/GestioneHubMapWrapper.tsx` - Tab Italia rimosso, scroll handlers
-- `client/src/pages/VetrinePage.tsx` - Layout mobile, controllo ruoli, galleria swipe
-- `client/src/index.css` - Classe scrollbar-hide per gallerie
-
----
-
-*Aggiornamento Blueprint: 02 Febbraio 2026 - v3.77.0*
-*Prossima versione pianificata: v3.78.x (Import Mercato Modena Novi Sad)*
+*Aggiornamento del 30 Gennaio 2026 - Manus AI*
