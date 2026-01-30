@@ -133,24 +133,7 @@ const StatIndicator = ({
   );
 };
 
-// Interfaccia per segnalazioni civiche (opzionale)
-interface CivicReport {
-  id: number;
-  type: string;
-  description?: string;
-  status: 'pending' | 'in_progress' | 'resolved';
-  priority?: 'NORMAL' | 'URGENT';
-  lat: number | string;
-  lng: number | string;
-  created_at?: string;
-  comune_nome?: string;
-}
-
-interface GestioneHubMapWrapperProps {
-  civicReports?: CivicReport[];
-}
-
-export default function GestioneHubMapWrapper({ civicReports = [] }: GestioneHubMapWrapperProps) {
+export default function GestioneHubMapWrapper() {
   // Stati
   const [mode, setMode] = useState<'mercato' | 'hub'>('hub');
   const [loading, setLoading] = useState(true);
@@ -989,7 +972,6 @@ export default function GestioneHubMapWrapper({ civicReports = [] }: GestioneHub
             ] : customCenter || undefined
           ) : customCenter || undefined}
           customZoom={customZoom || undefined}
-          civicReports={civicReports}
         />
       </div>
     </div>
