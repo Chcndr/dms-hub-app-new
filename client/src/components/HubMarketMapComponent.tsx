@@ -313,9 +313,14 @@ export function HubMarketMapComponent({
     
     try {
       // Parse area_geojson se è una stringa
-      const areaGeojson = typeof selectedHub.area_geojson === 'string' 
+      let areaGeojson = typeof selectedHub.area_geojson === 'string' 
         ? JSON.parse(selectedHub.area_geojson) 
         : selectedHub.area_geojson;
+      
+      // Supporta sia formato Polygon che Feature
+      if (areaGeojson?.type === 'Feature' && areaGeojson.geometry) {
+        areaGeojson = areaGeojson.geometry;
+      }
       
       if (areaGeojson?.type !== 'Polygon' || !areaGeojson.coordinates?.[0]) return null;
       
@@ -840,9 +845,14 @@ export function HubMarketMapComponent({
           {/* Nasconde area durante animazione zoom per evitare macchia viola */}
           {mode === 'hub' && selectedHub && selectedHub.area_geojson && !isAnimating && (() => {
             try {
-              const areaData = typeof selectedHub.area_geojson === 'string' 
+              let areaData = typeof selectedHub.area_geojson === 'string' 
                 ? JSON.parse(selectedHub.area_geojson) 
                 : selectedHub.area_geojson;
+              
+              // Supporta sia formato Polygon che Feature
+              if (areaData.type === 'Feature' && areaData.geometry) {
+                areaData = areaData.geometry;
+              }
               
               if (areaData.type === 'Polygon' && areaData.coordinates) {
                 const positions = areaData.coordinates[0].map((c: number[]) => [c[1], c[0]] as [number, number]);

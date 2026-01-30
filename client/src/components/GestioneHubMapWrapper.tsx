@@ -505,8 +505,12 @@ export default function GestioneHubMapWrapper() {
         (h.livello === 'capoluogo' || h.livello === 'provincia')
       );
     } else {
-      // Vista Italia: mostra solo capoluoghi
-      filtered = filtered.filter(h => h.livello === 'capoluogo' || !h.livello);
+      // Vista Italia: mostra capoluoghi + HUB con area configurata
+      filtered = filtered.filter(h => 
+        h.livello === 'capoluogo' || 
+        !h.livello || 
+        h.area_geojson  // Mostra anche HUB con area configurata
+      );
     }
     
     return filtered;
