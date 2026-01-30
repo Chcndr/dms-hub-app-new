@@ -5,7 +5,7 @@
  * La heatmap verrà aggiunta in una versione successiva
  * 
  * @author Manus AI
- * @version 1.1.0 - Versione semplificata senza heatmap
+ * @version 1.2.0 - Interfaccia allineata a schema Drizzle (camelCase)
  * @date 30 Gennaio 2026
  */
 import React, { useMemo } from 'react';
@@ -17,23 +17,32 @@ import { CircleMarker, Popup } from 'react-leaflet';
 
 /**
  * Interfaccia per una segnalazione civica
- * NOTA: Tutti i campi non presenti nello schema DB originale sono opzionali
+ * ALLINEATA allo schema Drizzle (camelCase)
  */
 export interface CivicReport {
   id: number;
   type: string;
   description: string | null;
-  lat: string | number | null;
-  lng: string | number | null;
+  lat: string | null;
+  lng: string | null;
   status: string | null;
-  created_at: string | null;
+  createdAt: Date | string | null;
   // Campi opzionali
-  priority?: string | null;
+  userId?: number | null;
+  comuneId?: number | null;
+  impresaId?: number | null;
   address?: string | null;
-  user_id?: number | null;
-  comune_id?: number | null;
-  photo_url?: string | null;
-  updated_at?: string | null;
+  photoUrl?: string | null;
+  priority?: string | null;
+  assignedTo?: number | null;
+  assignedAt?: Date | string | null;
+  resolvedAt?: Date | string | null;
+  resolvedBy?: number | null;
+  resolutionNotes?: string | null;
+  tccReward?: number | null;
+  tccRewarded?: boolean | null;
+  linkedSanctionId?: number | null;
+  updatedAt?: Date | string | null;
 }
 
 export interface CivicReportsLayerProps {
@@ -123,10 +132,10 @@ function getStatusInfo(status: string | null | undefined): { label: string; colo
 /**
  * Formatta la data in italiano
  */
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return 'Data non disponibile';
+function formatDate(dateValue: Date | string | null | undefined): string {
+  if (!dateValue) return 'Data non disponibile';
   try {
-    const date = new Date(dateStr);
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
     return date.toLocaleDateString('it-IT', {
       day: '2-digit',
       month: 'short',
@@ -135,7 +144,7 @@ function formatDate(dateStr: string | null | undefined): string {
       minute: '2-digit'
     });
   } catch {
-    return dateStr;
+    return String(dateValue);
   }
 }
 
@@ -270,15 +279,15 @@ export function CivicReportsLayer({
                     {statusInfo.label}
                   </span>
                   <span className="text-gray-400">
-                    {formatDate(report.created_at)}
+                    {formatDate(report.createdAt)}
                   </span>
                 </div>
                 
                 {/* Foto se presente */}
-                {report.photo_url && (
+                {report.photoUrl && (
                   <div className="mt-2">
                     <img 
-                      src={report.photo_url} 
+                      src={report.photoUrl} 
                       alt="Foto segnalazione"
                       className="w-full h-20 object-cover rounded"
                     />

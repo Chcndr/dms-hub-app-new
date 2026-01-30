@@ -8,6 +8,7 @@ import { calculatePolygonDimensions } from '@/lib/geodesic';
 import { useMapAnimation } from '@/hooks/useMapAnimation';
 import { useAnimation } from '@/contexts/AnimationContext';
 import L from 'leaflet';
+import { CivicReportsLayer, CivicReport } from './CivicReportsLayer';
 import 'leaflet/dist/leaflet.css';
 
 // Fix per icone marker Leaflet
@@ -136,6 +137,9 @@ interface HubMarketMapComponentProps {
   onShopClick?: (shop: HubShop) => void; // Callback click su negozio
   hubCenterFixed?: [number, number]; // Centro HUB fisso per zoom
   customZoom?: number; // Zoom personalizzato per navigazione regione/provincia
+  
+  // ============ PROPS PER SEGNALAZIONI CIVICHE ============
+  civicReports?: CivicReport[]; // Array di segnalazioni civiche da visualizzare sulla mappa
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -223,7 +227,9 @@ export function HubMarketMapComponent({
   onHubClick,
   onShopClick,
   hubCenterFixed,
-  customZoom
+  customZoom,
+  // Props per segnalazioni civiche
+  civicReports = []
 }: HubMarketMapComponentProps) {
   
   // Ottieni lo stato di animazione dal context per nascondere poligoni durante zoom
@@ -1341,6 +1347,11 @@ export function HubMarketMapComponent({
               </React.Fragment>
             );
           })}
+          
+          {/* Layer Segnalazioni Civiche */}
+          {civicReports && civicReports.length > 0 && (
+            <CivicReportsLayer civicReports={civicReports} showMarkers={true} />
+          )}
         </MapContainer>
       </div>
     </>
