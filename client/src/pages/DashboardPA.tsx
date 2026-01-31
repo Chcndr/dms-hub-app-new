@@ -4600,7 +4600,7 @@ export default function DashboardPA() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[500px] rounded-lg overflow-hidden">
+                  <div className="h-[700px] rounded-lg overflow-hidden">
                     {/* Riutilizzo del componente GestioneHubMapWrapper che mostra HUB, Mercati e layer Trasporti */}
                     <GestioneHubMapWrapper />
                   </div>
