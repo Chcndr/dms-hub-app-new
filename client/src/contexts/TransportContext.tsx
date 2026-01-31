@@ -113,30 +113,54 @@ export function TransportProvider({ children }: TransportProviderProps) {
     }
   }, []);
 
-  // Carica fermate per regione/tipo
+  // Carica fermate per regione/tipo - Carica sia bus che treni
   const loadStops = useCallback(async (region?: string) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const params = new URLSearchParams();
-      if (region && region !== 'all') params.append('region', region);
-      params.append('limit', '500'); // Limite ragionevole
+      // Carica bus e treni in parallelo
+      const busParams = new URLSearchParams();
+      busParams.append('type', 'bus');
+      busParams.append('limit', '5000'); // Limite alto per bus
+      if (region && region !== 'all') busParams.append('region', region);
       
-      const response = await fetch(`${API_BASE}/stops?${params}`);
+      const trainParams = new URLSearchParams();
+      trainParams.append('type', 'train');
+      trainParams.append('limit', '500'); // Tutte le stazioni treni
       
-      if (!response.ok) {
-        throw new Error(`Errore caricamento fermate: ${response.status}`);
+      const [busResponse, trainResponse] = await Promise.all([
+        fetch(`${API_BASE}/stops?${busParams}`),
+        fetch(`${API_BASE}/stops?${trainParams}`)
+      ]);
+      
+      let allStops: TransportStop[] = [];
+      
+      // Processa bus
+      if (busResponse.ok) {
+        const busData = await busResponse.json();
+        if (busData.success && Array.isArray(busData.data)) {
+          const busStops = busData.data.map(transformApiStop);
+          allStops = [...allStops, ...busStops];
+          console.log('[TransportContext] Caricate', busStops.length, 'fermate bus');
+        }
       }
       
-      const data = await response.json();
+      // Processa treni
+      if (trainResponse.ok) {
+        const trainData = await trainResponse.json();
+        if (trainData.success && Array.isArray(trainData.data)) {
+          const trainStops = trainData.data.map(transformApiStop);
+          allStops = [...allStops, ...trainStops];
+          console.log('[TransportContext] Caricate', trainStops.length, 'stazioni treni');
+        }
+      }
       
-      if (data.success && Array.isArray(data.data)) {
-        const transformedStops = data.data.map(transformApiStop);
-        setStops(transformedStops);
-        console.log('[TransportContext] Caricate', transformedStops.length, 'fermate da API');
+      if (allStops.length > 0) {
+        setStops(allStops);
+        console.log('[TransportContext] Totale fermate caricate:', allStops.length);
       } else {
-        throw new Error('Formato risposta non valido');
+        throw new Error('Nessuna fermata trovata');
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Errore sconosciuto';
