@@ -4480,24 +4480,43 @@ export default function DashboardPA() {
                   {gtfsLoading ? (
                     <div className="text-center py-4 text-[#e8fbff]/50">Caricamento dati GTFS...</div>
                   ) : gtfsStops.length > 0 ? (
-                    gtfsStops.slice(0, 5).map((stop: any, idx: number) => (
-                      <div key={stop.stop_id || idx} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between">
-                        <div>
-                          <div className="text-[#e8fbff] font-semibold">{stop.stop_name}</div>
-                          <div className="text-sm text-[#e8fbff]/70">
-                            {stop.stop_type === 'bus' ? '🚌 Bus' : '🚂 Treno'} - {stop.agency_name || 'TPER'}
+                    <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                      {/* Mescola fermate da tutti i provider: prendi alcune TPER, alcune Trenitalia, alcune Tiemme */}
+                      {(() => {
+                        const tperStops = gtfsStops.filter((s: any) => s.provider === 'tper').slice(0, 10);
+                        const trainStops = gtfsStops.filter((s: any) => s.stop_type === 'train').slice(0, 5);
+                        const tiemmeStops = gtfsStops.filter((s: any) => s.provider === 'tiemme' && !s.stop_name?.includes('(Tmp)')).slice(0, 5);
+                        // Combina e ordina per numero di routes (decrescente)
+                        const mixedStops = [...tperStops, ...trainStops, ...tiemmeStops]
+                          .sort((a: any, b: any) => (b.routes?.length || 0) - (a.routes?.length || 0));
+                        return mixedStops.map((stop: any, idx: number) => (
+                          <div key={stop.stop_id || idx} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between hover:bg-[#0b1220]/80 transition-colors">
+                            <div className="flex-1">
+                              <div className="text-[#e8fbff] font-semibold">{stop.stop_name}</div>
+                              <div className="text-sm text-[#e8fbff]/70 flex items-center gap-2">
+                                <span>{stop.stop_type === 'bus' ? '🚌' : '🚂'}</span>
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  stop.provider === 'tper' ? 'bg-blue-500/20 text-blue-400' :
+                                  stop.provider === 'trenitalia' ? 'bg-green-500/20 text-green-400' :
+                                  'bg-orange-500/20 text-orange-400'
+                                }`}>
+                                  {stop.provider?.toUpperCase() || 'TPER'}
+                                </span>
+                                <span className="text-[#e8fbff]/50">{stop.region}</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-[#10b981]">
+                                {stop.routes?.length || 0} linee
+                              </div>
+                              <div className="text-xs text-[#e8fbff]/50">
+                                {parseFloat(stop.stop_lat)?.toFixed(4)}, {parseFloat(stop.stop_lon)?.toFixed(4)}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-[#10b981]">
-                            {stop.routes?.length || 0} linee
-                          </div>
-                          <div className="text-xs text-[#e8fbff]/50">
-                            {stop.stop_lat?.toFixed(4)}, {stop.stop_lon?.toFixed(4)}
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                        ));
+                      })()}
+                    </div>
                   ) : (
                     <div className="text-center py-4 text-[#e8fbff]/50">
                       Attiva il layer Trasporti sulla mappa per caricare i dati
