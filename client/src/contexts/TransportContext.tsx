@@ -53,25 +53,57 @@ interface TransportProviderProps {
 }
 
 // Trasforma i dati dall'API al formato frontend
-const transformApiStop = (apiStop: any): TransportStop => ({
-  stop_id: apiStop.stop_id,
-  stop_name: apiStop.stop_name,
-  stop_lat: parseFloat(apiStop.stop_lat),
-  stop_lon: parseFloat(apiStop.stop_lon),
-  stop_type: apiStop.stop_type as 'bus' | 'train',
-  agency_name: apiStop.provider === 'tper' ? 'TPER' : 
-               apiStop.provider === 'trenitalia' ? 'Trenitalia' : 
-               apiStop.provider,
-  routes: Array.isArray(apiStop.routes) ? apiStop.routes.map((r: string) => ({
-    route_id: r,
-    route_short_name: r,
-    route_long_name: `Linea ${r}`,
-    route_type: apiStop.stop_type === 'train' ? 2 : 3,
-  })) : [],
-  // Campi aggiuntivi dall'API nearby
-  distance_m: apiStop.distance_m,
-  walk_time_min: apiStop.walk_time_min,
-});
+const transformApiStop = (apiStop: any): TransportStop => {
+  // Trasforma routes - gestisce sia stringhe che oggetti {line, location}
+  let transformedRoutes: TransportRoute[] = [];
+  if (Array.isArray(apiStop.routes)) {
+    transformedRoutes = apiStop.routes.map((r: any) => {
+      // Se è una stringa semplice (es. "REG", "IC")
+      if (typeof r === 'string') {
+        return {
+          route_id: r,
+          route_short_name: r,
+          route_long_name: `Linea ${r}`,
+          route_type: apiStop.stop_type === 'train' ? 2 : 3,
+        };
+      }
+      // Se è un oggetto con {line, location} (formato TPER)
+      if (typeof r === 'object' && r !== null) {
+        const lineId = r.line || r.route_id || 'N/A';
+        const locationName = r.location || r.route_long_name || '';
+        return {
+          route_id: lineId,
+          route_short_name: lineId,
+          route_long_name: locationName ? `Linea ${lineId} - ${locationName}` : `Linea ${lineId}`,
+          route_type: apiStop.stop_type === 'train' ? 2 : 3,
+        };
+      }
+      // Fallback
+      return {
+        route_id: 'unknown',
+        route_short_name: '?',
+        route_long_name: 'Linea sconosciuta',
+        route_type: 3,
+      };
+    });
+  }
+
+  return {
+    stop_id: apiStop.stop_id,
+    stop_name: apiStop.stop_name,
+    stop_lat: parseFloat(apiStop.stop_lat),
+    stop_lon: parseFloat(apiStop.stop_lon),
+    stop_type: apiStop.stop_type as 'bus' | 'train',
+    agency_name: apiStop.provider === 'tper' ? 'TPER' : 
+                 apiStop.provider === 'trenitalia' ? 'Trenitalia' : 
+                 apiStop.provider === 'tiemme' ? 'Tiemme' :
+                 apiStop.provider,
+    routes: transformedRoutes,
+    // Campi aggiuntivi dall'API nearby
+    distance_m: apiStop.distance_m,
+    walk_time_min: apiStop.walk_time_min,
+  };
+};
 
 export function TransportProvider({ children }: TransportProviderProps) {
   const [stops, setStops] = useState<TransportStop[]>([]);
