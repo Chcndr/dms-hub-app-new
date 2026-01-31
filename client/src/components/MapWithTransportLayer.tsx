@@ -51,6 +51,8 @@ function MapWithTransportLayerInner({
 }: MapWithTransportLayerProps) {
   const { transportLayerVisible, setTransportLayerVisible } = useTransport();
   const [showNearbyPanel, setShowNearbyPanel] = useState(false);
+  const [selectedStop, setSelectedStop] = useState<TransportStop | null>(null);
+  const [showRoute, setShowRoute] = useState(false);
 
   // Mostra automaticamente il pannello quando si seleziona un punto
   React.useEffect(() => {
@@ -59,16 +61,40 @@ function MapWithTransportLayerInner({
     }
   }, [referencePoint, autoShowNearbyPanel, transportLayerVisible]);
 
+  // Reset route quando cambia il punto di riferimento
+  React.useEffect(() => {
+    setShowRoute(false);
+    setSelectedStop(null);
+  }, [referencePoint]);
+
   const handleStopClick = (stop: TransportStop) => {
+    setSelectedStop(stop);
+    setShowRoute(true); // Attiva il routing quando si clicca sulla freccia
     onStopClick?.(stop);
-    // Qui potremmo aggiungere logica per centrare la mappa sulla fermata
-    console.log('[MapWithTransportLayer] Fermata selezionata:', stop.stop_name);
+    console.log('[MapWithTransportLayer] Fermata selezionata per routing:', stop.stop_name, 'Coordinate:', stop.stop_lat, stop.stop_lon);
   };
+
+  // Configura routing se abbiamo sia punto di partenza che fermata selezionata
+  const routeConfig = (showRoute && referencePoint && selectedStop) ? {
+    enabled: true,
+    userLocation: { lat: referencePoint.lat, lng: referencePoint.lng },
+    destination: { lat: selectedStop.stop_lat, lng: selectedStop.stop_lon },
+    mode: 'walking' as const
+  } : undefined;
 
   return (
     <div className={`relative ${className}`}>
-      {/* Mappa originale (children) */}
-      {children}
+      {/* Mappa originale (children) - passa routeConfig per il routing */}
+      {React.Children.map(children, child => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child as React.ReactElement<any>, {
+            selectedStopCenter: selectedStop ? [selectedStop.stop_lat, selectedStop.stop_lon] as [number, number] : undefined,
+            selectedStopName: selectedStop?.stop_name,
+            routeConfig: routeConfig,
+          });
+        }
+        return child;
+      })}
 
       {/* Overlay: Toggle trasporti */}
       <TransportLayerToggle position={togglePosition} />
@@ -91,6 +117,31 @@ function MapWithTransportLayerInner({
           <span>🚌</span>
           <span className="text-sm font-medium">Fermate vicine</span>
         </button>
+      )}
+
+      {/* Info routing attivo con pulsante chiudi */}
+      {showRoute && selectedStop && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-[#1e293b] border border-[#14b8a6] rounded-lg shadow-xl px-4 py-3 flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🚶</span>
+            <div>
+              <p className="text-white text-sm font-medium">Percorso a piedi verso</p>
+              <p className="text-[#14b8a6] text-xs">{selectedStop.stop_name}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setShowRoute(false);
+              setSelectedStop(null);
+            }}
+            className="ml-2 p-1.5 bg-red-500/20 hover:bg-red-500/40 rounded-full transition-colors"
+            title="Chiudi percorso"
+          >
+            <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       )}
     </div>
   );

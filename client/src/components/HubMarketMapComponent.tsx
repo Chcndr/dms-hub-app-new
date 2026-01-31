@@ -136,6 +136,10 @@ interface HubMarketMapComponentProps {
   onShopClick?: (shop: HubShop) => void; // Callback click su negozio
   hubCenterFixed?: [number, number]; // Centro HUB fisso per zoom
   customZoom?: number; // Zoom personalizzato per navigazione regione/provincia
+  
+  // ============ PROPS PER TRASPORTI ============
+  selectedStopCenter?: [number, number]; // Centro fermata trasporto selezionata
+  selectedStopName?: string; // Nome fermata selezionata
 }
 
 // Controller per centrare la mappa programmaticamente

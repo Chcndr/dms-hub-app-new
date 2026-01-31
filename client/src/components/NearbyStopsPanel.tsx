@@ -58,6 +58,12 @@ const estimateWalkTime = (km: number): string => {
   return `${hours}h ${mins}min`;
 };
 
+// Apre Google Maps con indicazioni a piedi verso la fermata
+const openGoogleMapsDirections = (fromLat: number, fromLng: number, toLat: number, toLng: number, stopName: string) => {
+  const url = `https://www.google.com/maps/dir/?api=1&origin=${fromLat},${fromLng}&destination=${toLat},${toLng}&travelmode=walking&destination_place_id=${encodeURIComponent(stopName)}`;
+  window.open(url, '_blank');
+};
+
 export function NearbyStopsPanel({
   referencePoint,
   radiusKm = 2,
@@ -68,6 +74,7 @@ export function NearbyStopsPanel({
   const { stops, loadStopsNearPoint, isLoading } = useTransport();
   const [nearbyStops, setNearbyStops] = useState<TransportStop[]>([]);
   const [selectedType, setSelectedType] = useState<'all' | 'bus' | 'train'>('all');
+  const [expandedStopId, setExpandedStopId] = useState<string | null>(null);
 
   // Carica fermate vicine quando cambia il punto di riferimento
   useEffect(() => {

@@ -1598,10 +1598,10 @@ export const integrations: IntegrationConfig[] = [
     id: 'mobility-tper',
     name: 'Mobility / TPER',
     description: 'Sistema di mobilità urbana e trasporto pubblico. Fornisce dati su fermate bus, tram e parcheggi.',
-    baseUrl: 'https://api.tper.it',
-    status: 'in_preparation',
+    baseUrl: 'https://api.mio-hub.me',
+    status: 'active',
     dataOwner: 'TPER / Comune',
-    notes: 'Collegato a MobilityMap.tsx (Centro Mobilità). API esterne TPER non ancora integrate direttamente. Dati attualmente mock nel frontend.',
+    notes: 'Integrato con API GTFS (api.mio-hub.me). Dati reali TPER Bologna/Ferrara + Trenitalia + Tiemme importati nel database.',
     endpoints: [
       '/api/mobility/stops',
       '/api/mobility/lines',
