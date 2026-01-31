@@ -34,10 +34,10 @@ export function TransportLayerToggle({
   const busCount = stops.filter(s => s.stop_type === 'bus').length;
   const trainCount = stops.filter(s => s.stop_type === 'train' || s.stop_type === 'tram' || s.stop_type === 'metro').length;
 
-  // Posizionamento
+  // Posizionamento - top-right spostato più in basso per non coprire i controlli layer mappa
   const positionClasses = {
     'top-left': 'top-4 left-4',
-    'top-right': 'top-4 right-4',
+    'top-right': 'top-16 right-4', // Spostato più in basso (era top-4)
     'bottom-left': 'bottom-4 left-4',
     'bottom-right': 'bottom-4 right-4',
   };
