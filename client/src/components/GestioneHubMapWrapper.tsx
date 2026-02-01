@@ -12,7 +12,7 @@ import { HubMarketMapComponent } from './HubMarketMapComponent';
 import { MarketMapComponent } from './MarketMapComponent';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MapPin, Building2, Store, Loader2, Map, Navigation, ChevronDown, ChevronLeft, X, Home } from 'lucide-react';
+import { MapPin, Building2, Store, Loader2, Map, Navigation, ChevronDown, ChevronLeft, X, Home, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 import { toast } from 'sonner';
@@ -144,9 +144,9 @@ const StatIndicator = ({
   };
 
   return (
-    <div className={`px-2 sm:px-5 py-1 sm:py-2 bg-[#0b1220] rounded border ${colorClasses[color]} min-w-[60px] sm:min-w-[110px] text-center flex-1 max-w-[80px] sm:max-w-[130px]`}>
-      <div className="text-[8px] sm:text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">{label}</div>
-      <div className="text-lg sm:text-2xl font-bold">{value}</div>
+    <div className={`px-1.5 sm:px-5 py-1 sm:py-2 bg-[#0b1220] rounded border ${colorClasses[color]} flex-1 text-center`}>
+      <div className="text-[7px] sm:text-[10px] text-[#e8fbff]/50 uppercase tracking-wider truncate">{label}</div>
+      <div className="text-sm sm:text-2xl font-bold">{value}</div>
     </div>
   );
 };
@@ -188,6 +188,9 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
 
   // Rileva se smartphone (per layout mobile)
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Stato per mostrare mappa fullscreen su mobile
+  const [showMobileMap, setShowMobileMap] = useState(false);
 
   // Statistiche aggregate (Italia/Regione/Provincia)
   const [marketStats, setMarketStats] = useState<{
@@ -464,6 +467,10 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
           console.log('[GestioneHubMapWrapper] Loaded', stallsResponse.data.length, 'stalls');
         }
       }
+    // Apri mappa fullscreen su mobile
+      if (isMobile) {
+        setShowMobileMap(true);
+      }
     } catch (error) {
       console.error('[GestioneHubMapWrapper] Error loading market data:', error);
     }
@@ -487,6 +494,11 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
     }
     
     setViewTrigger(prev => prev + 1);
+    
+    // Apri mappa fullscreen su mobile
+    if (isMobile) {
+      setShowMobileMap(true);
+    }
   };
 
   // Gestione click su shop
@@ -716,9 +728,89 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
   }
 
   return (
-    <div className="space-y-3 p-4">
+    <div className="space-y-2 sm:space-y-3 p-0 sm:p-4">
+      {/* Overlay Mappa Fullscreen Mobile */}
+      {showMobileMap && isMobile && (
+        <div className="fixed inset-0 z-50 bg-[#0b1220] flex flex-col">
+          {/* Header overlay */}
+          <div className="flex items-center justify-between px-3 py-2 bg-[#1a2332] border-b border-[#14b8a6]/30">
+            <button 
+              onClick={() => setShowMobileMap(false)}
+              className="flex items-center gap-2 text-[#e8fbff] hover:text-[#14b8a6] transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span className="text-sm font-medium">Indietro</span>
+            </button>
+            <span className="text-sm font-semibold text-[#e8fbff] truncate max-w-[150px]">
+              {selectedHub?.name || selectedMarket?.name || 'Mappa'}
+            </span>
+            <button 
+              onClick={() => { handleBackToItaly(); setShowMobileMap(false); }}
+              className="px-3 py-1 bg-[#14b8a6]/20 text-[#14b8a6] text-xs font-medium rounded border border-[#14b8a6]/30"
+            >
+              Italia
+            </button>
+          </div>
+          {/* Mappa fullscreen */}
+          <div className="flex-1 relative">
+            <MapWithTransportLayer
+              selectedLocation={(() => {
+                if (mode === 'hub' && selectedHub) {
+                  const lat = parseFloat(String(selectedHub.center_lat || selectedHub.lat)) || 0;
+                  const lng = parseFloat(String(selectedHub.center_lng || selectedHub.lng)) || 0;
+                  if (lat && lng) {
+                    return { lat, lng, name: selectedHub.name, type: 'hub' as const };
+                  }
+                }
+                if (mode === 'mercato' && selectedMarket) {
+                  const lat = parseFloat(String(selectedMarket.latitude)) || 0;
+                  const lng = parseFloat(String(selectedMarket.longitude)) || 0;
+                  if (lat && lng) {
+                    return { lat, lng, name: selectedMarket.name, type: 'mercato' as const };
+                  }
+                }
+                return undefined;
+              })()}
+              searchRadiusKm={2}
+              togglePosition="bottom-left"
+              className="h-full"
+            >
+              <HubMarketMapComponent
+                mode={mode}
+                mapData={mapData || undefined}
+                stallsData={stallsData}
+                allMarkets={mode === 'mercato' ? filteredMarkets : []}
+                allHubs={mode === 'hub' ? filteredHubs : []}
+                selectedHub={mode === 'hub' ? selectedHub || undefined : undefined}
+                onMarketClick={handleMarketClick}
+                onHubClick={handleHubClick}
+                onShopClick={handleShopClick}
+                showItalyView={false}
+                viewTrigger={viewTrigger}
+                height="100%"
+                marketCenterFixed={selectedMarket && selectedMarket.latitude && selectedMarket.longitude ? [
+                  parseFloat(String(selectedMarket.latitude)) || 42.5,
+                  parseFloat(String(selectedMarket.longitude)) || 12.5
+                ] : customCenter || undefined}
+                hubCenterFixed={selectedHub ? (
+                  selectedHub.center_lat && selectedHub.center_lng ? [
+                    parseFloat(String(selectedHub.center_lat)) || 42.5,
+                    parseFloat(String(selectedHub.center_lng)) || 12.5
+                  ] : selectedHub.lat && selectedHub.lng ? [
+                    parseFloat(String(selectedHub.lat)) || 42.5,
+                    parseFloat(String(selectedHub.lng)) || 12.5
+                  ] : customCenter || undefined
+                ) : customCenter || undefined}
+                customZoom={customZoom || 15}
+                routeConfig={routeConfig}
+                navigationMode={navigationMode}
+              />
+            </MapWithTransportLayer>
+          </div>
+        </div>
+      )}
       {/* Header unico con Titolo + Indicatori nella stessa barra */}
-      <div className="flex flex-wrap items-center gap-4 bg-[#0b1220] rounded-lg p-4 border border-[#14b8a6]/30">
+      <div className="flex flex-nowrap items-center gap-1 sm:gap-4 bg-[#0b1220] sm:rounded-lg px-1 py-2 sm:p-4 sm:border border-[#14b8a6]/30">
         {/* Titolo e Vista - come primo indicatore */}
         <div className="hidden sm:block px-5 py-2 bg-[#1a2332] rounded border border-[#14b8a6]/40 min-w-[280px] flex-shrink-0">
           <div className="text-xs text-white uppercase tracking-wider font-bold">GEMELLO DIGITALE DEL COMMERCIO</div>
@@ -765,16 +857,16 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
       </div>
 
       {/* Barra controlli */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
         {/* Selettore Mercato/HUB */}
-        <div className="flex bg-[#0b1220] rounded-lg p-1 border border-[#14b8a6]/30">
+        <div className="flex w-full sm:w-auto bg-[#0b1220] rounded-lg p-1 border border-[#14b8a6]/30">
           <Button
             variant={mode === 'mercato' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => { setMode('mercato'); handleBackToItaly(); }}
             className={mode === 'mercato' 
-              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white h-10 sm:h-8 text-base sm:text-sm' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-10 sm:h-8 text-base sm:text-sm'
+              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white h-12 sm:h-8 text-base sm:text-sm flex-1' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-12 sm:h-8 text-base sm:text-sm flex-1'
             }
           >
             <Store className="h-3 w-3 mr-1" />
@@ -785,8 +877,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
             size="sm"
             onClick={() => { setMode('hub'); handleBackToItaly(); }}
             className={mode === 'hub' 
-              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white h-10 sm:h-8 text-base sm:text-sm' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-10 sm:h-8 text-base sm:text-sm'
+              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white h-12 sm:h-8 text-base sm:text-sm flex-1' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-12 sm:h-8 text-base sm:text-sm flex-1'
             }
           >
             <Building2 className="h-3 w-3 mr-1" />
@@ -795,12 +887,12 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         </div>
 
         {/* Ricerca */}
-        <div className="flex-1 min-w-[180px] max-w-[300px]">
+        <div className="w-full sm:flex-1 sm:min-w-[180px] sm:max-w-[300px]">
           <Input
             placeholder={`Cerca ${mode === 'mercato' ? 'mercato' : 'hub'}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff] h-8 text-sm"
+            className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff] h-12 sm:h-8 text-base sm:text-sm"
           />
         </div>
 
@@ -821,7 +913,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
             <Button
               variant="outline"
               size="sm"
-              className={`border-[#14b8a6]/30 h-10 sm:h-8 text-base sm:text-sm ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
+              className={`border-[#14b8a6]/30 h-12 sm:h-8 text-base sm:text-sm flex-1 sm:flex-none ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
             >
               <Map className="h-3 w-3 mr-1" />
               {selectedRegione ? selectedRegione.nome : 'Regione'}
@@ -863,7 +955,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
               variant="outline"
               size="sm"
               disabled={!selectedRegione}
-              className={`border-[#14b8a6]/30 h-10 sm:h-8 text-base sm:text-sm ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
+              className={`border-[#14b8a6]/30 h-12 sm:h-8 text-base sm:text-sm flex-1 sm:flex-none ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
             >
               <Navigation className="h-3 w-3 mr-1" />
               {selectedProvincia ? `${selectedProvincia.sigla}` : 'Prov.'}
@@ -977,8 +1069,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         })}
       </div>
 
-      {/* Mappa - altezza responsive per adattarsi allo schermo */}
-      <div className="h-[calc(100vh-320px)] min-h-[500px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
+      {/* Mappa - nascosta su mobile (visibile in overlay fullscreen) */}
+      <div className="hidden sm:block h-[calc(100vh-320px)] min-h-[500px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
         <MapWithTransportLayer
           referencePoint={(() => {
             // Determina il punto di riferimento corrente (HUB o Mercato selezionato)
