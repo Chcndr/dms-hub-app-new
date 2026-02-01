@@ -720,7 +720,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
       {/* Header unico con Titolo + Indicatori nella stessa barra */}
       <div className="flex flex-wrap items-center gap-4 bg-[#0b1220] rounded-lg p-4 border border-[#14b8a6]/30">
         {/* Titolo e Vista - come primo indicatore */}
-        <div className="px-5 py-2 bg-[#1a2332] rounded border border-[#14b8a6]/40 min-w-[280px] flex-shrink-0">
+        <div className="hidden sm:block px-5 py-2 bg-[#1a2332] rounded border border-[#14b8a6]/40 min-w-[280px] flex-shrink-0">
           <div className="text-xs text-white uppercase tracking-wider font-bold">GEMELLO DIGITALE DEL COMMERCIO</div>
           <div className="flex items-center gap-1 mt-1">
             <span className={`text-xs font-medium ${mode === 'mercato' ? 'text-[#ef4444]' : 'text-[#9C27B0]'}`}>
@@ -756,7 +756,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         />
         
         {/* Coordinate GPS */}
-        <div className="px-5 py-2 bg-[#1a2332] rounded border border-[#e8fbff]/20 text-center min-w-[180px] ml-auto">
+        <div className="hidden sm:flex px-5 py-2 bg-[#1a2332] rounded border border-[#e8fbff]/20 text-center min-w-[180px] ml-auto">
           <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">Coordinate GPS</div>
           <div className="text-sm font-mono text-[#14b8a6]">
             {currentCoords.lat} | {currentCoords.lng}
@@ -809,7 +809,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
           variant="outline"
           size="sm"
           onClick={handleResetGeo}
-          className="text-[#14b8a6] border-[#14b8a6]/50 hover:bg-[#14b8a6]/20 h-8 text-sm"
+          className="hidden sm:flex text-[#14b8a6] border-[#14b8a6]/50 hover:bg-[#14b8a6]/20 h-8 text-sm"
         >
           <MapPin className="h-4 w-4 mr-1" />
           Vista Italia
@@ -914,7 +914,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         )}
 
         {/* Indicatore Area (mq) - sempre visibile, calcolo dinamico - ULTIMO elemento */}
-        <div className="px-3 py-1 bg-[#0b1220] rounded border border-[#14b8a6]/40 text-center h-8 flex items-center gap-2">
+        <div className="hidden sm:flex px-3 py-1 bg-[#0b1220] rounded border border-[#14b8a6]/40 text-center h-8 items-center gap-2">
           <span className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">Area:</span>
           <span className="text-sm font-bold text-[#14b8a6]">{formatArea(areaTotal)} mq</span>
         </div>
