@@ -37,8 +37,6 @@ import AppImpresaNotifiche from "./pages/AppImpresaNotifiche";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 // v3.70.0 - Nuove pagine App Impresa
 import WalletImpresaPage from "./pages/WalletImpresaPage";
-import WalletPaga from "./pages/WalletPaga";
-import WalletStorico from "./pages/WalletStorico";
 import PresenzePage from "./pages/PresenzePage";
 import AnagraficaPage from "./pages/AnagraficaPage";
 import PresentazionePage from "./pages/PresentazionePage";
@@ -51,8 +49,6 @@ function Router() {
       <Route path="/" sonnElement={'exact'} component={HomePage} />
       <Route path="/mappa" component={MapPage} />
       <Route path="/wallet" component={WalletPage} />
-      <Route path="/wallet/paga" component={WalletPaga} />
-      <Route path="/wallet/storico" component={WalletStorico} />
       <Route path="/civic" component={CivicPage} />
       <Route path="/route" component={RoutePage} />
       <Route path="/vetrine/:id" component={VetrinePage} />
