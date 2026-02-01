@@ -194,6 +194,9 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
   
   // Stato per vista zoom (true = zoom mercato/hub, false = vista Italia)
   const [mobileMapZoomed, setMobileMapZoomed] = useState(true);
+  
+  // ViewTrigger separato per mappa mobile (evita animazioni al mount)
+  const [mobileViewTrigger, setMobileViewTrigger] = useState(0);
 
   // Statistiche aggregate (Italia/Regione/Provincia)
   const [marketStats, setMarketStats] = useState<{
@@ -472,6 +475,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
       }
     // Apri mappa fullscreen su mobile - PARTE DA VISTA ITALIA
       if (isMobile) {
+        setMobileViewTrigger(0); // Reset trigger per evitare animazione al mount
         setShowMobileMap(true);
         setMobileMapZoomed(false); // Parte da vista Italia, poi clicca Apri per zoomare
         setShowItalyView(true);
@@ -502,6 +506,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
     
     // Apri mappa fullscreen su mobile - PARTE DA VISTA ITALIA
     if (isMobile) {
+      setMobileViewTrigger(0); // Reset trigger per evitare animazione al mount
       setShowMobileMap(true);
       setMobileMapZoomed(false); // Parte da vista Italia, poi clicca Apri per zoomare
       setShowItalyView(true);
@@ -1116,7 +1121,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
               onHubClick={(id) => { handleHubClick(id); }}
               onShopClick={handleShopClick}
               showItalyView={showItalyView}
-              viewTrigger={viewTrigger}
+              viewTrigger={mobileViewTrigger}
               height="100%"
               marketCenterFixed={selectedMarket && selectedMarket.latitude && selectedMarket.longitude ? [
                 parseFloat(String(selectedMarket.latitude)) || 42.5,
@@ -1142,7 +1147,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
                 onClick={() => {
                   setMobileMapZoomed(true);
                   setShowItalyView(false); // Zoom sull'hub/mercato
-                  setViewTrigger(prev => prev + 1);
+                  setMobileViewTrigger(prev => prev + 1); // Triggera animazione
                 }}
                 className={`px-6 py-3 rounded-full font-bold text-sm shadow-lg transition-all ${
                   mobileMapZoomed 
@@ -1156,7 +1161,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
                 onClick={() => {
                   setMobileMapZoomed(false);
                   setShowItalyView(true);
-                  setViewTrigger(prev => prev + 1);
+                  setMobileViewTrigger(prev => prev + 1); // Triggera animazione
                 }}
                 className={`px-6 py-3 rounded-full font-bold text-sm shadow-lg transition-all ${
                   !mobileMapZoomed 
