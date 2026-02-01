@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  History, TrendingUp, Leaf, ArrowLeft, Loader2
+  History, TrendingUp, Leaf, ArrowLeft, Loader2, TreeDeciduous
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { Link } from 'wouter';
@@ -18,11 +16,11 @@ interface Transaction {
 }
 
 export default function WalletStorico() {
-  // Autenticazione
+  // Auth
   const [currentUser, setCurrentUser] = useState<{id: number; name: string; email: string} | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
-  // Dati
+  // Data
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +41,7 @@ export default function WalletStorico() {
     }
   }, []);
 
-  // Carica transazioni
+  // Load transactions
   useEffect(() => {
     if (currentUser?.id) {
       fetch(`${API_BASE}/api/tcc/wallet/${currentUser.id}/transactions`)
@@ -58,36 +56,27 @@ export default function WalletStorico() {
     }
   }, [currentUser?.id]);
 
-  // Calcoli
+  // Calculations
   const totalCO2 = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
   const totalTrees = (totalCO2 / 22).toFixed(1);
-  
-  // Ultima transazione
   const lastTx = transactions.length > 0 ? transactions[0] : null;
   const lastCO2 = lastTx ? Math.abs(lastTx.amount) : 0;
 
-  // Se non autenticato
+  // Not authenticated
   if (!isAuthenticated && !loading) {
     return (
-      <div className="fixed inset-0 bg-background flex flex-col">
-        <header className="bg-gradient-to-r from-primary to-emerald-600 text-white p-3 flex items-center gap-3 shrink-0">
+      <div className="fixed inset-0 bg-slate-900 flex flex-col">
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-3 flex items-center gap-3">
           <Link href="/wallet">
-            <button className="p-2 rounded-full bg-white/10 hover:bg-white/20">
-              <ArrowLeft className="h-5 w-5" />
+            <button className="p-2 rounded-full bg-white/20 hover:bg-white/30">
+              <ArrowLeft className="h-5 w-5 text-white" />
             </button>
           </Link>
-          <History className="h-6 w-6" />
-          <h1 className="text-lg font-bold">Storico</h1>
-        </header>
-        <div className="flex-1 flex items-center justify-center p-4">
-          <Card className="w-full max-w-sm text-center">
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground mb-4">Devi accedere per vedere lo storico</p>
-              <Link href="/wallet">
-                <Button>Vai al Wallet</Button>
-              </Link>
-            </CardContent>
-          </Card>
+          <History className="h-6 w-6 text-white" />
+          <span className="text-white font-bold text-lg">Storico</span>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <p className="text-slate-400">Devi accedere per vedere lo storico</p>
         </div>
         <BottomNav />
       </div>
@@ -96,112 +85,96 @@ export default function WalletStorico() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-background flex items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <div className="fixed inset-0 bg-slate-900 flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-background flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-slate-900 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-gradient-to-r from-primary to-emerald-600 text-white p-3 sm:p-4 flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-3 flex items-center gap-3 shrink-0">
         <Link href="/wallet">
-          <button className="p-2 rounded-full bg-white/10 hover:bg-white/20">
-            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          <button className="p-2 rounded-full bg-white/20 hover:bg-white/30">
+            <ArrowLeft className="h-5 w-5 text-white" />
           </button>
         </Link>
-        <History className="h-5 w-5 sm:h-6 sm:w-6" />
+        <History className="h-6 w-6 text-white" />
         <div>
-          <h1 className="text-base sm:text-lg font-bold">Storico</h1>
-          <p className="text-xs text-white/70">{transactions.length} transazioni</p>
+          <p className="text-white font-bold text-lg">Storico</p>
+          <p className="text-white/70 text-xs">{transactions.length} transazioni</p>
         </div>
-      </header>
-
-      {/* Statistiche - Due colonne affiancate */}
-      <div className="shrink-0 p-3 sm:p-4 grid grid-cols-2 gap-2 sm:gap-3">
-        {/* Colonna 1: CO2 e Alberi */}
-        <Card className="border-0 shadow-md bg-gradient-to-br from-green-500/10 to-green-600/5">
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                <Leaf className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-xs text-muted-foreground">Impatto</span>
-            </div>
-            <div className="space-y-1">
-              <div>
-                <p className="text-xl sm:text-2xl font-bold text-green-600">{totalCO2.toLocaleString('it-IT')} kg</p>
-                <p className="text-xs text-muted-foreground">CO₂ totale</p>
-              </div>
-              <div className="pt-2 border-t border-green-500/20">
-                <p className="text-lg font-semibold text-green-600">🌳 {totalTrees}</p>
-                <p className="text-xs text-muted-foreground">alberi equiv.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Colonna 2: Trend */}
-        <Card className="border-0 shadow-md bg-gradient-to-br from-blue-500/10 to-blue-600/5">
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-xs text-muted-foreground">Trend</span>
-            </div>
-            <div className="space-y-1">
-              <div>
-                <p className="text-xl sm:text-2xl font-bold text-blue-600">{lastCO2} kg</p>
-                <p className="text-xs text-muted-foreground">ultima op.</p>
-              </div>
-              <div className="pt-2 border-t border-blue-500/20">
-                <p className="text-sm font-medium text-blue-600">
-                  {lastTx?.type === 'earn' ? '↑ Accredito' : '↓ Pagamento'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {lastTx ? new Date(lastTx.created_at).toLocaleDateString('it-IT') : '-'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Lista transazioni - scrollabile */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 pt-0">
-        <Card>
-          <CardHeader className="p-3 pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <History className="h-4 w-4" />
-              Transazioni
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="space-y-2">
-              {transactions.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4 text-sm">Nessuna transazione</p>
-              ) : (
-                transactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-2 sm:p-3 bg-muted/30 rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{tx.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(tx.created_at).toLocaleDateString('it-IT', {
-                          day: '2-digit', month: 'short', year: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                    <div className={`text-base sm:text-lg font-semibold ml-2 ${tx.type === 'earn' ? 'text-green-600' : 'text-red-500'}`}>
-                      {tx.type === 'earn' ? '+' : '-'}{Math.abs(tx.amount)}
-                    </div>
-                  </div>
-                ))
-              )}
+      {/* Stats - Due colonne fullscreen */}
+      <div className="grid grid-cols-2 gap-0 shrink-0">
+        {/* CO2 + Alberi */}
+        <div className="bg-gradient-to-br from-green-600 to-green-700 px-4 py-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Leaf className="h-5 w-5 text-green-300" />
+            <span className="text-green-200 text-sm">Impatto</span>
+          </div>
+          <p className="text-3xl font-black text-white">{totalCO2.toLocaleString('it-IT')}</p>
+          <p className="text-green-200 text-sm">kg CO₂ totale</p>
+          <div className="mt-3 pt-3 border-t border-green-500/30">
+            <div className="flex items-center gap-2">
+              <TreeDeciduous className="h-5 w-5 text-green-300" />
+              <span className="text-2xl font-bold text-white">{totalTrees}</span>
             </div>
-          </CardContent>
-        </Card>
+            <p className="text-green-200 text-xs">alberi equivalenti</p>
+          </div>
+        </div>
+
+        {/* Trend */}
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 px-4 py-4">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="h-5 w-5 text-blue-300" />
+            <span className="text-blue-200 text-sm">Trend</span>
+          </div>
+          <p className="text-3xl font-black text-white">{lastCO2}</p>
+          <p className="text-blue-200 text-sm">kg ultima op.</p>
+          <div className="mt-3 pt-3 border-t border-blue-500/30">
+            <p className="text-lg font-semibold text-white">
+              {lastTx?.type === 'earn' ? '↑ Accredito' : '↓ Pagamento'}
+            </p>
+            <p className="text-blue-200 text-xs">
+              {lastTx ? new Date(lastTx.created_at).toLocaleDateString('it-IT') : '-'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Transactions list - Scrollable fullscreen */}
+      <div className="flex-1 overflow-y-auto bg-slate-800">
+        <div className="px-4 py-3 border-b border-slate-700 sticky top-0 bg-slate-800">
+          <p className="text-white font-semibold flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Transazioni
+          </p>
+        </div>
+        
+        <div className="divide-y divide-slate-700">
+          {transactions.length === 0 ? (
+            <p className="text-center text-slate-500 py-8">Nessuna transazione</p>
+          ) : (
+            transactions.map((tx) => (
+              <div key={tx.id} className="px-4 py-3 flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium truncate">{tx.description}</p>
+                  <p className="text-slate-500 text-sm">
+                    {new Date(tx.created_at).toLocaleDateString('it-IT', {
+                      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+                <div className={`text-xl font-bold ml-3 ${tx.type === 'earn' ? 'text-green-500' : 'text-red-500'}`}>
+                  {tx.type === 'earn' ? '+' : '-'}{Math.abs(tx.amount)}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       <BottomNav />

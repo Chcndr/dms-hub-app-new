@@ -1,26 +1,24 @@
 import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { 
-  Euro, QrCode, RefreshCw, Loader2, ArrowLeft, Wallet
+  Euro, QrCode, RefreshCw, Loader2, ArrowLeft
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
-
-// Valore TCC in euro (basato su EU ETS: €89/tonnellata / 1000 = €0,089 per kg CO₂)
 const TCC_VALUE_EUR = 0.089;
 
 export default function WalletPaga() {
-  // Autenticazione
+  const [, setLocation] = useLocation();
+  
+  // Auth
   const [currentUser, setCurrentUser] = useState<{id: number; name: string; email: string} | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
-  // Stato pagamento
+  // Payment state
   const [spendAmount, setSpendAmount] = useState('');
   const [spendQRData, setSpendQRData] = useState<{qr_string: string; tcc_amount: number; expires_at: string} | null>(null);
   const [generatingSpendQR, setGeneratingSpendQR] = useState(false);
@@ -41,7 +39,7 @@ export default function WalletPaga() {
     }
   }, []);
 
-  // Carica saldo
+  // Load balance
   useEffect(() => {
     if (currentUser?.id) {
       fetch(`${API_BASE}/api/tcc/wallet/${currentUser.id}`)
@@ -55,7 +53,7 @@ export default function WalletPaga() {
     }
   }, [currentUser?.id]);
 
-  // Genera QR per spendere TCC
+  // Generate spend QR
   const generateSpendQR = async () => {
     if (!spendAmount || parseFloat(spendAmount) <= 0 || !currentUser?.id) return;
     
@@ -92,28 +90,21 @@ export default function WalletPaga() {
     setSpendAmount('');
   };
 
-  // Se non autenticato
+  // Not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="fixed inset-0 bg-background flex flex-col">
-        <header className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-3 flex items-center gap-3 shrink-0">
+      <div className="fixed inset-0 bg-slate-900 flex flex-col">
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 flex items-center gap-3">
           <Link href="/wallet">
-            <button className="p-2 rounded-full bg-white/10 hover:bg-white/20">
-              <ArrowLeft className="h-5 w-5" />
+            <button className="p-2 rounded-full bg-white/20 hover:bg-white/30">
+              <ArrowLeft className="h-5 w-5 text-white" />
             </button>
           </Link>
-          <Euro className="h-6 w-6" />
-          <h1 className="text-lg font-bold">Paga con TCC</h1>
-        </header>
-        <div className="flex-1 flex items-center justify-center p-4">
-          <Card className="w-full max-w-sm text-center">
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground mb-4">Devi accedere per pagare</p>
-              <Link href="/wallet">
-                <Button>Vai al Wallet</Button>
-              </Link>
-            </CardContent>
-          </Card>
+          <Euro className="h-6 w-6 text-white" />
+          <span className="text-white font-bold text-lg">Paga con TCC</span>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <p className="text-slate-400">Devi accedere per pagare</p>
         </div>
         <BottomNav />
       </div>
@@ -121,104 +112,93 @@ export default function WalletPaga() {
   }
 
   return (
-    <div className="fixed inset-0 bg-background flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-slate-900 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-3 sm:p-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
           <Link href="/wallet">
-            <button className="p-2 rounded-full bg-white/10 hover:bg-white/20">
-              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+            <button className="p-2 rounded-full bg-white/20 hover:bg-white/30">
+              <ArrowLeft className="h-5 w-5 text-white" />
             </button>
           </Link>
-          <Euro className="h-5 w-5 sm:h-6 sm:w-6" />
+          <Euro className="h-6 w-6 text-white" />
           <div>
-            <h1 className="text-base sm:text-lg font-bold">Paga con TCC</h1>
-            <p className="text-xs text-white/70">Saldo: {balance} TCC</p>
+            <p className="text-white font-bold text-lg">Paga con TCC</p>
+            <p className="text-white/70 text-xs">Saldo: {balance} TCC</p>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Contenuto */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
+      {/* Content - Fullscreen */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
         {!spendQRData ? (
-          // Form inserimento importo
-          <Card className="w-full max-w-sm border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-amber-600">
-                <Euro className="h-5 w-5" />
-                Paga con TCC
-              </CardTitle>
-              <CardDescription>Genera un QR code per pagare con i tuoi Token Carbon Credit</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="text-sm">Importo da pagare (€)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={spendAmount}
-                  onChange={(e) => setSpendAmount(e.target.value)}
-                  className="text-3xl font-bold h-16 text-center"
-                />
-              </div>
-              
-              {spendAmount && parseFloat(spendAmount) > 0 && (
-                <div className="p-3 bg-amber-500/10 rounded-lg text-center">
-                  <p className="text-xs text-muted-foreground">TCC necessari</p>
-                  <p className="text-2xl font-bold text-amber-600">
-                    {Math.ceil(parseFloat(spendAmount) / TCC_VALUE_EUR).toLocaleString('it-IT')} TCC
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    1 TCC = €{TCC_VALUE_EUR.toFixed(3)} = 1 kg CO₂
-                  </p>
-                </div>
-              )}
-              
-              <Button
-                className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-lg font-semibold"
-                onClick={generateSpendQR}
-                disabled={!spendAmount || parseFloat(spendAmount) <= 0 || generatingSpendQR}
-              >
-                {generatingSpendQR ? (
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                ) : (
-                  <QrCode className="h-5 w-5 mr-2" />
-                )}
-                Genera QR Pagamento
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          // QR Code generato
-          <Card className="w-full max-w-sm border-2 border-amber-500/30">
-            <CardContent className="pt-6 text-center space-y-4">
-              <div className="bg-white p-4 rounded-lg shadow-inner inline-block">
-                <QRCodeSVG value={spendQRData.qr_string} size={200} level="H" />
-              </div>
-              
-              <div className="p-4 bg-amber-500/10 rounded-lg">
-                <p className="text-sm text-muted-foreground">Importo</p>
-                <p className="text-3xl font-bold">
-                  €{parseFloat(spendAmount).toLocaleString('it-IT', {minimumFractionDigits: 2})}
+          // Input form - Fullscreen
+          <div className="w-full max-w-md">
+            <p className="text-slate-400 text-center mb-4">Genera un QR code per pagare con i tuoi Token Carbon Credit</p>
+            
+            <div className="mb-4">
+              <p className="text-slate-400 text-sm mb-2">Importo da pagare (€)</p>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={spendAmount}
+                onChange={(e) => setSpendAmount(e.target.value)}
+                className="text-4xl font-bold h-20 text-center bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            
+            {spendAmount && parseFloat(spendAmount) > 0 && (
+              <div className="bg-amber-500/20 px-4 py-4 mb-4 text-center">
+                <p className="text-slate-400 text-sm">TCC necessari</p>
+                <p className="text-3xl font-bold text-amber-500">
+                  {Math.ceil(parseFloat(spendAmount) / TCC_VALUE_EUR).toLocaleString('it-IT')} TCC
                 </p>
-                <p className="text-xl text-amber-600 font-semibold">{spendQRData.tcc_amount} TCC</p>
+                <p className="text-slate-500 text-xs mt-1">1 TCC = €{TCC_VALUE_EUR.toFixed(3)} = 1 kg CO₂</p>
               </div>
-              
-              <p className="text-xs text-muted-foreground">
-                Valido fino: {new Date(spendQRData.expires_at).toLocaleTimeString('it-IT')}
+            )}
+            
+            <Button
+              className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-lg font-bold"
+              onClick={generateSpendQR}
+              disabled={!spendAmount || parseFloat(spendAmount) <= 0 || generatingSpendQR}
+            >
+              {generatingSpendQR ? (
+                <Loader2 className="h-6 w-6 mr-2 animate-spin" />
+              ) : (
+                <QrCode className="h-6 w-6 mr-2" />
+              )}
+              Genera QR Pagamento
+            </Button>
+          </div>
+        ) : (
+          // QR Code generated - Fullscreen
+          <div className="w-full text-center">
+            <div className="bg-white p-6 rounded-xl shadow-2xl inline-block mb-4">
+              <QRCodeSVG value={spendQRData.qr_string} size={240} level="H" />
+            </div>
+            
+            <div className="bg-amber-500/20 px-6 py-4 mb-4">
+              <p className="text-slate-400 text-sm">Importo</p>
+              <p className="text-4xl font-bold text-white">
+                €{parseFloat(spendAmount).toLocaleString('it-IT', {minimumFractionDigits: 2})}
               </p>
-              
-              <Button
-                variant="outline"
-                className="w-full h-12"
-                onClick={resetPayment}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Nuovo Pagamento
-              </Button>
-            </CardContent>
-          </Card>
+              <p className="text-2xl text-amber-500 font-semibold">{spendQRData.tcc_amount} TCC</p>
+            </div>
+            
+            <p className="text-slate-500 text-sm mb-4">
+              Valido fino: {new Date(spendQRData.expires_at).toLocaleTimeString('it-IT')}
+            </p>
+            
+            <Button
+              variant="outline"
+              className="w-full h-12 border-slate-600 text-white hover:bg-slate-800"
+              onClick={resetPayment}
+            >
+              <RefreshCw className="h-5 w-5 mr-2" />
+              Nuovo Pagamento
+            </Button>
+          </div>
         )}
       </div>
 
