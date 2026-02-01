@@ -144,9 +144,9 @@ const StatIndicator = ({
   };
 
   return (
-    <div className={`px-5 py-2 bg-[#0b1220] rounded border ${colorClasses[color]} min-w-[110px] text-center flex-1 max-w-[130px]`}>
-      <div className="text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">{label}</div>
-      <div className="text-2xl font-bold">{value}</div>
+    <div className={`px-2 sm:px-5 py-1 sm:py-2 bg-[#0b1220] rounded border ${colorClasses[color]} min-w-[60px] sm:min-w-[110px] text-center flex-1 max-w-[80px] sm:max-w-[130px]`}>
+      <div className="text-[8px] sm:text-[10px] text-[#e8fbff]/50 uppercase tracking-wider">{label}</div>
+      <div className="text-lg sm:text-2xl font-bold">{value}</div>
     </div>
   );
 };
@@ -188,9 +188,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
 
   // Rileva se smartphone (per layout mobile)
   const [isMobile, setIsMobile] = useState(false);
-  
-  // Stato per mostrare mappa fullscreen su mobile
-  const [showMobileMap, setShowMobileMap] = useState(false);
 
   // Statistiche aggregate (Italia/Regione/Provincia)
   const [marketStats, setMarketStats] = useState<{
@@ -441,11 +438,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
 
     setSelectedMarket(market);
     setSelectedHub(null);
-    
-    // Su mobile, apri mappa fullscreen
-    if (isMobile) {
-      setShowMobileMap(true);
-    }
 
     try {
       const res = await fetch(`${MIHUB_API_BASE_URL}/api/gis/market-map/${marketId}`);
@@ -484,11 +476,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
 
     setSelectedHub(hub);
     setSelectedMarket(null);
-    
-    // Su mobile, apri mappa fullscreen
-    if (isMobile) {
-      setShowMobileMap(true);
-    }
     setMapData(null);
     setStallsData([]);
     setShowItalyView(false);
@@ -786,8 +773,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
             size="sm"
             onClick={() => { setMode('mercato'); handleBackToItaly(); }}
             className={mode === 'mercato' 
-              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white h-8 text-sm' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-8 text-sm'
+              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white h-10 sm:h-8 text-base sm:text-sm' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-10 sm:h-8 text-base sm:text-sm'
             }
           >
             <Store className="h-3 w-3 mr-1" />
@@ -798,8 +785,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
             size="sm"
             onClick={() => { setMode('hub'); handleBackToItaly(); }}
             className={mode === 'hub' 
-              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white h-8 text-sm' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-8 text-sm'
+              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white h-10 sm:h-8 text-base sm:text-sm' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-10 sm:h-8 text-base sm:text-sm'
             }
           >
             <Building2 className="h-3 w-3 mr-1" />
@@ -834,7 +821,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
             <Button
               variant="outline"
               size="sm"
-              className={`border-[#14b8a6]/30 h-8 text-sm ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
+              className={`border-[#14b8a6]/30 h-10 sm:h-8 text-base sm:text-sm ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
             >
               <Map className="h-3 w-3 mr-1" />
               {selectedRegione ? selectedRegione.nome : 'Regione'}
@@ -876,7 +863,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
               variant="outline"
               size="sm"
               disabled={!selectedRegione}
-              className={`border-[#14b8a6]/30 h-8 text-sm ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
+              className={`border-[#14b8a6]/30 h-10 sm:h-8 text-base sm:text-sm ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
             >
               <Navigation className="h-3 w-3 mr-1" />
               {selectedProvincia ? `${selectedProvincia.sigla}` : 'Prov.'}
@@ -990,8 +977,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         })}
       </div>
 
-      {/* Mappa - nascosta su mobile (si apre fullscreen), visibile su desktop */}
-      <div className="hidden sm:block h-[calc(100vh-320px)] min-h-[500px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
+      {/* Mappa - altezza responsive per adattarsi allo schermo */}
+      <div className="h-[calc(100vh-320px)] min-h-[500px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
         <MapWithTransportLayer
           referencePoint={(() => {
             // Determina il punto di riferimento corrente (HUB o Mercato selezionato)
@@ -1049,92 +1036,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         </MapWithTransportLayer>
       </div>
 
-      {/* MAPPA FULLSCREEN MOBILE - si apre quando si seleziona hub/mercato */}
-      {showMobileMap && isMobile && (
-        <div className="fixed inset-0 z-50 bg-[#0a0f1a] sm:hidden">
-          {/* Header con controlli */}
-          <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-[#0d9488] to-[#14b8a6] p-3 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowMobileMap(false)}
-              className="text-white hover:bg-white/20 h-10 w-10 p-0 rounded-full"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-            <span className="text-white font-medium text-sm truncate flex-1 mx-2 text-center">
-              {selectedHub?.name || selectedMarket?.name || 'Mappa'}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                handleResetGeo();
-              }}
-              className="text-white hover:bg-white/20 h-10 px-3 rounded-full text-xs"
-            >
-              <MapPin className="h-4 w-4 mr-1" />
-              Italia
-            </Button>
-          </div>
-          {/* Mappa fullscreen */}
-          <div className="h-full pt-14">
-            <MapWithTransportLayer
-              referencePoint={(() => {
-                if (mode === 'hub' && selectedHub) {
-                  const lat = parseFloat(String(selectedHub.lat || selectedHub.latitude)) || 0;
-                  const lng = parseFloat(String(selectedHub.lng || selectedHub.longitude)) || 0;
-                  if (lat && lng) {
-                    return { lat, lng, name: selectedHub.name, type: 'hub' as const };
-                  }
-                }
-                if (mode === 'mercato' && selectedMarket) {
-                  const lat = parseFloat(String(selectedMarket.latitude)) || 0;
-                  const lng = parseFloat(String(selectedMarket.longitude)) || 0;
-                  if (lat && lng) {
-                    return { lat, lng, name: selectedMarket.name, type: 'mercato' as const };
-                  }
-                }
-                return undefined;
-              })()}
-              searchRadiusKm={2}
-              togglePosition="bottom-left"
-              className="h-full"
-            >
-              <HubMarketMapComponent
-                mode={mode}
-                mapData={mapData || undefined}
-                stallsData={stallsData}
-                allMarkets={mode === 'mercato' ? filteredMarkets : []}
-                allHubs={mode === 'hub' ? filteredHubs : []}
-                selectedHub={mode === 'hub' ? selectedHub || undefined : undefined}
-                onMarketClick={handleMarketClick}
-                onHubClick={handleHubClick}
-                onShopClick={handleShopClick}
-                showItalyView={showItalyView}
-                viewTrigger={viewTrigger}
-                height="100%"
-                marketCenterFixed={selectedMarket && selectedMarket.latitude && selectedMarket.longitude ? [
-                  parseFloat(String(selectedMarket.latitude)) || 42.5,
-                  parseFloat(String(selectedMarket.longitude)) || 12.5
-                ] : customCenter || undefined}
-                hubCenterFixed={selectedHub ? (
-                  selectedHub.center_lat && selectedHub.center_lng ? [
-                    parseFloat(String(selectedHub.center_lat)) || 42.5,
-                    parseFloat(String(selectedHub.center_lng)) || 12.5
-                  ] : selectedHub.lat && selectedHub.lng ? [
-                    parseFloat(String(selectedHub.lat)) || 42.5,
-                    parseFloat(String(selectedHub.lng)) || 12.5
-                  ] : customCenter || undefined
-                ) : customCenter || undefined}
-                customZoom={customZoom || undefined}
-                routeConfig={routeConfig}
-                navigationMode={navigationMode}
-              />
-            </MapWithTransportLayer>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
