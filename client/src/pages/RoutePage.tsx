@@ -365,12 +365,12 @@ export default function RoutePage() {
   };
 
   const handleStartNavigation = () => {
-    if (!plan || !userLocation || !routeConfig) {
+    if (!plan || !routeConfig) {
       toast.error('Calcola prima il percorso');
       return;
     }
     
-    const { destination } = routeConfig;
+    const { destination, userLocation: startLocation } = routeConfig;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
     // Mappa modalità per navigazione
@@ -387,10 +387,10 @@ export default function RoutePage() {
     if (isIOS) {
       // Apple Maps deep link
       const dirflg = navMode === 'walking' ? 'w' : navMode === 'driving' ? 'd' : 'r';
-      url = `maps://maps.apple.com/?saddr=${userLocation.lat},${userLocation.lng}&daddr=${destination.lat},${destination.lng}&dirflg=${dirflg}`;
+      url = `maps://maps.apple.com/?saddr=${startLocation.lat},${startLocation.lng}&daddr=${destination.lat},${destination.lng}&dirflg=${dirflg}`;
     } else {
       // Google Maps deep link (funziona su Android e web)
-      url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${destination.lat},${destination.lng}&travelmode=${navMode}`;
+      url = `https://www.google.com/maps/dir/?api=1&origin=${startLocation.lat},${startLocation.lng}&destination=${destination.lat},${destination.lng}&travelmode=${navMode}`;
     }
     
     // Apri navigazione esterna
