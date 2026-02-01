@@ -81,21 +81,31 @@ export default function VetrinePage() {
   
   // Stato per controllo permessi modifica (senza useAuth per evitare errori OAuth)
   const [canEdit, setCanEdit] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   
-  // Verifica permessi modifica da localStorage (salvato da useAuth quando disponibile)
+  // Verifica permessi da localStorage (salvato da useAuth quando disponibile)
   useEffect(() => {
     try {
       const userInfoStr = localStorage.getItem('manus-runtime-user-info');
-      if (userInfoStr && selectedImpresa) {
+      if (userInfoStr) {
         const userInfo = JSON.parse(userInfoStr);
-        // Admin ha accesso totale, oppure impresa titolare
-        const isAdmin = userInfo?.role === 'admin';
-        const isOwner = userInfo?.id === selectedImpresa.id;
-        setCanEdit(isAdmin || isOwner);
+        // Admin ha accesso totale
+        const adminCheck = userInfo?.role === 'admin';
+        setIsAdmin(adminCheck);
+        
+        // Per modifica vetrina: admin o proprietario
+        if (selectedImpresa) {
+          const isOwner = userInfo?.id === selectedImpresa.id;
+          setCanEdit(adminCheck || isOwner);
+        } else {
+          setCanEdit(false);
+        }
       } else {
+        setIsAdmin(false);
         setCanEdit(false);
       }
     } catch {
+      setIsAdmin(false);
       setCanEdit(false);
     }
   }, [selectedImpresa]);
@@ -459,7 +469,12 @@ export default function VetrinePage() {
                 variant="ghost"
                 size="icon"
                 className="text-primary-foreground hover:bg-primary-foreground/20"
-                onClick={() => window.history.back()}
+                onClick={() => {
+                  // Naviga esplicitamente alla lista vetrine invece di history.back()
+                  // per evitare loop di navigazione
+                  setSelectedImpresa(null);
+                  navigate('/vetrine');
+                }}
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -687,13 +702,14 @@ export default function VetrinePage() {
                 </div>
               </CardHeader>
               <CardContent className="pt-4 px-0 sm:px-6">
-                {/* Mobile: Swipe orizzontale fullscreen */}
-                <div className="sm:hidden overflow-x-auto scrollbar-hide">
+                {/* Mobile: Swipe orizzontale fullscreen con snap */}
+                <div className="sm:hidden overflow-x-auto scrollbar-hide scroll-smooth">
                   <div className="flex gap-0 snap-x snap-mandatory">
                     {selectedImpresa.vetrina_gallery.map((imageUrl, index) => (
                       <div
                         key={index}
-                        className="flex-shrink-0 w-full snap-center"
+                        className="flex-shrink-0 w-full snap-center snap-always"
+                        style={{ scrollSnapStop: 'always' }}
                       >
                         <img
                           src={imageUrl}
@@ -996,17 +1012,20 @@ export default function VetrinePage() {
       </header>
 
       <div className="w-full px-4 md:px-8 py-6 space-y-6">
-        {/* Tabs: Lista Vetrine / Nuovo Negozio */}
+        {/* Tabs: Lista Vetrine / Nuovo Negozio (solo admin) */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} mb-6`}>
             <TabsTrigger value="lista" className="flex items-center gap-2">
               <Store className="h-4 w-4" />
               Lista Vetrine
             </TabsTrigger>
-            <TabsTrigger value="nuovo" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Nuovo Negozio
-            </TabsTrigger>
+            {/* Tab Nuovo Negozio - visibile solo per Admin */}
+            {isAdmin && (
+              <TabsTrigger value="nuovo" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Nuovo Negozio
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Tab Lista Vetrine */}
@@ -1078,13 +1097,15 @@ export default function VetrinePage() {
             )}
           </TabsContent>
 
-          {/* Tab Nuovo Negozio */}
-          <TabsContent value="nuovo">
-            <NuovoNegozioForm 
-              onSuccess={handleNuovoNegozioSuccess}
-              onCancel={() => setActiveTab('lista')}
-            />
-          </TabsContent>
+          {/* Tab Nuovo Negozio - solo per Admin */}
+          {isAdmin && (
+            <TabsContent value="nuovo">
+              <NuovoNegozioForm 
+                onSuccess={handleNuovoNegozioSuccess}
+                onCancel={() => setActiveTab('lista')}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
