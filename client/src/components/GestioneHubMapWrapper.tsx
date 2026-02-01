@@ -28,6 +28,16 @@ import {
 // Componenti Layer Trasporto Pubblico
 import { MapWithTransportLayer } from './MapWithTransportLayer';
 
+// Props per routing esterno
+interface GestioneHubMapWrapperProps {
+  routeConfig?: {
+    enabled: boolean;
+    userLocation: { lat: number; lng: number };
+    destination: { lat: number; lng: number };
+    mode: 'walking' | 'cycling' | 'driving';
+  };
+}
+
 // Interfacce
 interface Market {
   id: number;
@@ -136,7 +146,7 @@ const StatIndicator = ({
   );
 };
 
-export default function GestioneHubMapWrapper() {
+export default function GestioneHubMapWrapper({ routeConfig }: GestioneHubMapWrapperProps = {}) {
   // Stati
   const [mode, setMode] = useState<'mercato' | 'hub'>('hub');
   const [loading, setLoading] = useState(true);
@@ -1002,6 +1012,7 @@ export default function GestioneHubMapWrapper() {
             ] : customCenter || undefined
           ) : customCenter || undefined}
           customZoom={customZoom || undefined}
+          routeConfig={routeConfig}
         />
         </MapWithTransportLayer>
       </div>

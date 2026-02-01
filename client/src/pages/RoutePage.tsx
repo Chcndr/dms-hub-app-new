@@ -53,12 +53,43 @@ export default function RoutePage() {
   const [gisSearchQuery, setGisSearchQuery] = useState('');
   const [gisStatusFilter, setGisStatusFilter] = useState<string>('all');
   const gisMarketId = 1; // Mercato Grosseto ID=1
+  
+  // State per routing sulla mappa GIS
+  const [routeConfig, setRouteConfig] = useState<{
+    enabled: boolean;
+    userLocation: { lat: number; lng: number };
+    destination: { lat: number; lng: number };
+    mode: 'walking' | 'cycling' | 'driving';
+  } | undefined>(undefined);
+  
   // State rimossi - navigazione gestita da app native
   // const [navigationActive, setNavigationActive] = useState(false);
   // const [directions, setDirections] = useState<any>(null);
   // const [currentStep, setCurrentStep] = useState(0);
   
   // const mobilityData = trpc.mobility.list.useQuery(); // Rimosso - non più utilizzato
+
+  // Auto-geolocalizzazione all'apertura della pagina
+  useEffect(() => {
+    if (navigator.geolocation && !userLocation) {
+      setLoadingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          setOrigin(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+          setLoadingLocation(false);
+          toast.success('📍 Posizione GPS rilevata');
+        },
+        (error) => {
+          console.warn('Geolocation denied:', error);
+          setLoadingLocation(false);
+          // Non mostrare errore, l'utente può cliccare manualmente
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }, []);
 
   // Auto-carica destinazione da URL params (coordinate o indirizzo)
   useEffect(() => {
@@ -264,6 +295,23 @@ export default function RoutePage() {
       setPlan(plan);
       // setDirections(route); // Rimosso - non più utilizzato
       
+      // Configura routing per visualizzazione su mappa GIS
+      if (userLocation && destLat && destLng) {
+        const modeMap: Record<string, 'walking' | 'cycling' | 'driving'> = {
+          'walk': 'walking',
+          'bike': 'cycling',
+          'transit': 'walking', // Transit usa walking per ultimo miglio
+          'car': 'driving'
+        };
+        setRouteConfig({
+          enabled: true,
+          userLocation: userLocation,
+          destination: { lat: destLat, lng: destLng },
+          mode: modeMap[mode] || 'walking'
+        });
+        toast.success('🗺️ Percorso visualizzato sulla mappa');
+      }
+      
       // Calcola anche altre modalità per confronto
       const modes = ['walking', 'cycling', 'bus', 'driving'];
       const options = await Promise.all(
@@ -306,19 +354,39 @@ export default function RoutePage() {
   };
 
   const handleStartNavigation = () => {
-    if (!plan || !userLocation) {
+    if (!plan || !userLocation || !routeConfig) {
       toast.error('Calcola prima il percorso');
       return;
     }
     
-    // Scroll alla mappa GIS
-    const mapElement = document.querySelector('.leaflet-container')?.parentElement?.parentElement;
-    if (mapElement) {
-      mapElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const { destination } = routeConfig;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    // Mappa modalità per navigazione
+    const modeMap: Record<string, string> = {
+      walk: 'walking',
+      bike: 'bicycling',
+      transit: 'transit',
+      car: 'driving'
+    };
+    const navMode = modeMap[mode] || 'walking';
+    
+    let url: string;
+    
+    if (isIOS) {
+      // Apple Maps deep link
+      const dirflg = navMode === 'walking' ? 'w' : navMode === 'driving' ? 'd' : 'r';
+      url = `maps://maps.apple.com/?saddr=${userLocation.lat},${userLocation.lng}&daddr=${destination.lat},${destination.lng}&dirflg=${dirflg}`;
+    } else {
+      // Google Maps deep link (funziona su Android e web)
+      url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${destination.lat},${destination.lng}&travelmode=${navMode}`;
     }
     
-    // Toast con istruzioni
-    toast.success('🧭 Navigazione attiva! Segui il percorso verde sulla mappa. +' + plan.creditsEarned + ' crediti al completamento', {
+    // Apri navigazione esterna
+    window.open(url, '_blank');
+    
+    // Toast con crediti guadagnati
+    toast.success(`🧭 Navigazione avviata! +${plan.creditsEarned} crediti al completamento`, {
       duration: 5000
     });
   };
@@ -821,7 +889,7 @@ export default function RoutePage() {
             </CardHeader>
             <CardContent>
               <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20">
-                <GestioneHubMapWrapper />
+                <GestioneHubMapWrapper routeConfig={routeConfig} />
               </div>
             </CardContent>
           </Card>

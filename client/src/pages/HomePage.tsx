@@ -157,8 +157,18 @@ export default function HomePage() {
   };
 
   const handleResultClick = (result: SearchResult) => {
-    // Naviga alla MapPage con parametri
-    setLocation(`/mappa?lat=${result.lat}&lng=${result.lng}&zoom=15&id=${result.id}`);
+    // Per imprese, negozi e vetrine -> apri la vetrina
+    if (result.type === 'impresa' || result.type === 'negozio' || result.type === 'vetrina') {
+      // Estrai ID numerico da "impresa_25" -> 25
+      const numericId = result.id.replace(/\D/g, '');
+      setLocation(`/vetrine/${numericId}?from=search&q=${encodeURIComponent(searchQuery)}`);
+    } else if (result.type === 'mercato' || result.type === 'hub') {
+      // Per mercati e hub -> vai alla mappa GIS nella dashboard
+      setLocation(`/dashboard-pa?tab=mappa&lat=${result.lat}&lng=${result.lng}&zoom=15`);
+    } else {
+      // Fallback per città, merceologia, ecc.
+      setLocation(`/dashboard-pa?tab=mappa&lat=${result.lat}&lng=${result.lng}&zoom=12`);
+    }
   };
 
   const getTypeIcon = (type: string) => {
