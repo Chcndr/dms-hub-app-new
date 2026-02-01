@@ -608,14 +608,14 @@ export default function WalletPage() {
         {/* Header */}
         <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-4 shadow-lg">
           <div className="w-full px-4 md:px-8 flex items-center gap-4">
-            <button
-              onClick={() => window.history.back()}
+            <a
+              href="/"
               className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-            </button>
+            </a>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 rounded-xl">
                 <Wallet className="h-7 w-7" />
@@ -694,14 +694,14 @@ export default function WalletPage() {
       <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-2 sm:p-4 shadow-lg">
         <div className="w-full px-2 sm:px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => window.history.back()}
+            <a
+              href="/"
               className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-            </button>
+            </a>
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-1.5 sm:p-2 bg-white/20 rounded-lg sm:rounded-xl">
                 <Wallet className="h-5 w-5 sm:h-7 sm:w-7" />
@@ -763,21 +763,22 @@ export default function WalletPage() {
               </CardContent>
             </Card>
 
-            {/* QR Code per RICEVERE crediti - Mobile: grande centrato, Desktop: card */}
-            <div className="flex-1 flex flex-col items-center justify-center bg-muted/20 sm:hidden p-4">
+            {/* QR Code per RICEVERE crediti - Mobile: compatto, Desktop: card */}
+            <div className="flex flex-col items-center justify-center sm:hidden py-3 px-4">
               <p className="text-xs text-muted-foreground mb-2">Mostra al negoziante per ricevere crediti</p>
-              <div className="bg-white p-4 rounded-xl shadow-lg">
-                <QRCodeSVG value={qrData?.qr_string || `tcc://${userId}/demo`} size={180} level="H" />
+              <div className="bg-white p-3 rounded-xl shadow-lg">
+                <QRCodeSVG value={qrData?.qr_string || `tcc://${userId}/demo`} size={150} level="H" />
               </div>
-              {qrData?.expires_at && (
-                <p className="text-[10px] text-muted-foreground mt-2">
-                  Valido: {new Date(qrData.expires_at).toLocaleString('it-IT')}
-                </p>
-              )}
-              <Button variant="ghost" size="sm" onClick={refreshQRCode} disabled={refreshingQR} className="mt-2">
-                <RefreshCw className={`h-4 w-4 mr-1 ${refreshingQR ? 'animate-spin' : ''}`} />
-                Aggiorna
-              </Button>
+              <div className="flex items-center gap-2 mt-2">
+                {qrData?.expires_at && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Valido: {new Date(qrData.expires_at).toLocaleString('it-IT')}
+                  </p>
+                )}
+                <Button variant="ghost" size="sm" onClick={refreshQRCode} disabled={refreshingQR} className="h-6 px-2">
+                  <RefreshCw className={`h-3 w-3 ${refreshingQR ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
             </div>
             {/* Desktop: card QR */}
             <Card className="hidden sm:block rounded-lg border shadow">
@@ -804,15 +805,19 @@ export default function WalletPage() {
               </CardContent>
             </Card>
 
-            {/* 2 Tab in basso per mobile: Paga e Storico */}
-            <div className="grid grid-cols-2 gap-2 p-2 sm:hidden">
-              <a href="/wallet/paga" className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-lg">
-                <Euro className="h-5 w-5" />
-                Paga
+            {/* 2 Tab in basso per mobile: Paga e Storico - stile trasparente elegante */}
+            <div className="grid grid-cols-2 gap-3 p-3 mt-auto sm:hidden">
+              <a href="/wallet/paga" className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border border-border/30 bg-muted/20 backdrop-blur-sm hover:bg-muted/40 transition-all shadow-sm">
+                <div className="p-2 bg-amber-500/20 rounded-lg">
+                  <Euro className="h-6 w-6 text-amber-500" />
+                </div>
+                <span className="text-sm font-semibold">Paga</span>
               </a>
-              <a href="/wallet/storico" className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg">
-                <History className="h-5 w-5" />
-                Storico
+              <a href="/wallet/storico" className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border border-border/30 bg-muted/20 backdrop-blur-sm hover:bg-muted/40 transition-all shadow-sm">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <History className="h-6 w-6 text-blue-500" />
+                </div>
+                <span className="text-sm font-semibold">Storico</span>
               </a>
             </div>
 

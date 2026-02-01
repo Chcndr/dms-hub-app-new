@@ -23,13 +23,15 @@ export default function WalletPaga() {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="bg-amber-500 text-white p-3 flex items-center gap-3">
-        <a href="/wallet" className="p-2 rounded-full bg-white/20 hover:bg-white/30">
+      {/* Header - stile coerente con Wallet */}
+      <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-3 flex items-center gap-3 shadow-lg">
+        <a href="/wallet" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all">
           <ArrowLeft className="h-5 w-5" />
         </a>
         <div className="flex items-center gap-2">
-          <Euro className="h-5 w-5" />
+          <div className="p-1.5 bg-white/20 rounded-lg">
+            <Euro className="h-5 w-5" />
+          </div>
           <span className="font-bold text-lg">Paga con TCC</span>
         </div>
       </header>
