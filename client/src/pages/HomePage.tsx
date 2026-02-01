@@ -34,20 +34,9 @@ export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
   
   // Permessi utente per controllare visibilità tab
   const { canViewTab, canViewQuickAccess, loading: permissionsLoading } = usePermissions();
-
-  // Detect mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Controlla autenticazione all'avvio
   useEffect(() => {
@@ -111,322 +100,105 @@ export default function HomePage() {
     }
   };
 
-  // Ricerca globale
+  // Dati demo per la ricerca
+  const allResults: SearchResult[] = [
+    { id: '1', name: 'Mercato Esperanto', type: 'mercato', city: 'Grosseto', distance: 0.5, isOpen: true, lat: 42.7634, lng: 11.1136 },
+    { id: '2', name: 'Hub Sostenibile Roma', type: 'hub', city: 'Roma', distance: 150, isOpen: true, lat: 41.9028, lng: 12.4964 },
+    { id: '3', name: 'Mercato Centrale', type: 'mercato', city: 'Firenze', distance: 120, isOpen: false, lat: 43.7696, lng: 11.2558 },
+    { id: '4', name: 'Bio Market Milano', type: 'mercato', city: 'Milano', distance: 300, isOpen: true, lat: 45.4642, lng: 9.1900 },
+    { id: '5', name: 'Negozio KM0 Toscana', type: 'negozio', city: 'Siena', distance: 45, isOpen: true, lat: 43.3188, lng: 11.3308 },
+    { id: '6', name: 'Servizio Riparazione', type: 'servizio', city: 'Grosseto', distance: 1.2, isOpen: true, lat: 42.7634, lng: 11.1136 },
+  ];
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
+      setSearchResults([]);
       setShowResults(false);
       return;
     }
+
+    // Chiamata API backend
+    const { data, error } = await geoAPI.search(searchQuery, 42.7634, 11.1136);
     
-    try {
-      const results = await geoAPI.searchGlobal(searchQuery);
-      setSearchResults(results);
+    if (error || !data) {
+      console.error('Search error:', error);
+      // Fallback a dati mock in caso di errore
+      const filtered = allResults
+        .filter(r => 
+          r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          r.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          r.type.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .sort((a, b) => a.distance - b.distance);
+      setSearchResults(filtered);
       setShowResults(true);
-    } catch (error) {
-      console.error('Errore ricerca:', error);
-      setSearchResults([]);
-      setShowResults(true);
+      return;
     }
+
+    // Mappa risultati API al formato locale
+    const mapped = data.results.map(r => ({
+      id: r.id,
+      name: r.name,
+      type: r.type as SearchResult['type'],
+      city: r.city || 'N/A',
+      distance: r.distance ? r.distance / 1000 : undefined,
+      isOpen: r.isOpen,
+      lat: r.lat || 0,
+      lng: r.lng || 0,
+      mercato: r.mercato,
+      impresa: r.impresa,
+      descrizione: r.descrizione,
+    }));
+    
+    const filtered = mapped;
+
+    setSearchResults(filtered);
+    setShowResults(true);
   };
 
-  // Click su risultato ricerca
   const handleResultClick = (result: SearchResult) => {
-    setShowResults(false);
-    setSearchQuery('');
-    
-    // Naviga in base al tipo
-    switch (result.type) {
-      case 'mercato':
-      case 'hub':
-        setLocation(`/mappa-italia?focus=${result.id}&lat=${result.lat}&lng=${result.lng}`);
-        break;
-      case 'negozio':
-      case 'vetrina':
-        setLocation(`/vetrine?search=${encodeURIComponent(result.name)}`);
-        break;
-      case 'impresa':
-        setLocation(`/vetrine?impresa=${result.id}`);
-        break;
-      case 'citta':
-        setLocation(`/mappa-italia?city=${encodeURIComponent(result.name)}`);
-        break;
-      default:
-        setLocation(`/mappa-italia?search=${encodeURIComponent(result.name)}`);
+    // Per imprese, negozi e vetrine -> apri la vetrina
+    if (result.type === 'impresa' || result.type === 'negozio' || result.type === 'vetrina') {
+      // Estrai ID numerico da "impresa_25" -> 25
+      const numericId = result.id.replace(/\D/g, '');
+      setLocation(`/vetrine/${numericId}?from=search&q=${encodeURIComponent(searchQuery)}`);
+    } else if (result.type === 'mercato' || result.type === 'hub') {
+      // Per mercati e hub -> vai alla mappa GIS nella dashboard
+      setLocation(`/dashboard-pa?tab=mappa&lat=${result.lat}&lng=${result.lng}&zoom=15`);
+    } else {
+      // Fallback per città, merceologia, ecc.
+      setLocation(`/dashboard-pa?tab=mappa&lat=${result.lat}&lng=${result.lng}&zoom=12`);
     }
   };
 
-  // Icona per tipo risultato
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'mercato': return <Store className="w-5 h-5" />;
-      case 'hub': return <Building2 className="w-5 h-5" />;
-      case 'negozio': return <Store className="w-5 h-5" />;
-      case 'vetrina': return <Store className="w-5 h-5" />;
-      case 'impresa': return <Building2 className="w-5 h-5" />;
-      case 'citta': return <MapPin className="w-5 h-5" />;
-      default: return <Search className="w-5 h-5" />;
+      case 'mercato': return <Store className="w-4 h-4" />;
+      case 'hub': return <Building2 className="w-4 h-4" />;
+      case 'negozio': return <MapPin className="w-4 h-4" />;
+      case 'servizio': return <TrendingUp className="w-4 h-4" />;
+      case 'impresa': return <Building2 className="w-4 h-4" />;
+      case 'vetrina': return <Store className="w-4 h-4" />;
+      case 'merceologia': return <Leaf className="w-4 h-4" />;
+      case 'citta': return <MapPin className="w-4 h-4" />;
+      default: return <MapPin className="w-4 h-4" />;
     }
   };
 
-  // Label per tipo risultato
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'mercato': return 'Mercato';
       case 'hub': return 'Hub';
       case 'negozio': return 'Negozio';
-      case 'vetrina': return 'Vetrina';
-      case 'impresa': return 'Impresa';
-      case 'citta': return 'Città';
-      case 'merceologia': return 'Categoria';
       case 'servizio': return 'Servizio';
+      case 'impresa': return 'Impresa';
+      case 'vetrina': return 'Vetrina';
+      case 'merceologia': return 'Merceologia';
+      case 'citta': return 'Città';
       default: return type;
     }
   };
 
-  // ============================================
-  // VERSIONE MOBILE FULLSCREEN
-  // ============================================
-  if (isMobile) {
-    return (
-      <div className="fixed inset-0 bg-slate-900 flex flex-col overflow-hidden">
-        {/* Header compatto mobile */}
-        <header className="bg-emerald-600 px-3 py-2 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <Store className="w-6 h-6 text-white" />
-            <span className="text-white font-bold text-sm">DMS Hub</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              <button
-                onClick={() => {
-                  localStorage.removeItem('user');
-                  localStorage.removeItem('token');
-                  localStorage.removeItem('permissions');
-                  setIsAuthenticated(false);
-                  window.location.reload();
-                }}
-                className="text-white/80 text-xs px-2 py-1 rounded bg-red-500/30"
-              >
-                Esci
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowLoginModal(true)}
-                className="text-white text-xs px-2 py-1 rounded bg-white/20"
-              >
-                Accedi
-              </button>
-            )}
-          </div>
-        </header>
-
-        {/* Sfondo Italia centrato e piccolo */}
-        <div className="flex-1 flex flex-col items-center justify-start px-2 py-3 overflow-hidden relative">
-          {/* Italia piccola centrata */}
-          <div 
-            className="w-32 h-32 bg-contain bg-center bg-no-repeat opacity-30 absolute top-4 left-1/2 -translate-x-1/2"
-            style={{ backgroundImage: 'url(/italia-network.png)' }}
-          />
-          
-          {/* Titolo compatto */}
-          <div className="text-center mb-3 relative z-10">
-            <h1 className="text-lg font-bold text-white">Rete Mercati</h1>
-            <p className="text-emerald-400 text-xs">Made in Italy</p>
-          </div>
-
-          {/* Barra ricerca compatta */}
-          <div className="w-full mb-3 relative z-10">
-            <div className="flex gap-1">
-              <Input
-                type="text"
-                placeholder="Cerca..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1 h-10 text-sm bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-              />
-              <Button 
-                size="sm" 
-                onClick={handleSearch}
-                className="h-10 px-3 bg-emerald-600 hover:bg-emerald-700"
-              >
-                <Search className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {/* Risultati ricerca mobile */}
-            {showResults && (
-              <Card className="absolute top-12 left-0 right-0 bg-slate-800 border-slate-700 max-h-48 overflow-y-auto z-50">
-                {searchResults.length === 0 ? (
-                  <div className="p-3 text-center text-slate-400 text-sm">
-                    Nessun risultato
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-700">
-                    {searchResults.slice(0, 5).map((result) => (
-                      <button
-                        key={result.id}
-                        onClick={() => handleResultClick(result)}
-                        className="w-full p-2 hover:bg-slate-700 text-left flex items-center gap-2"
-                      >
-                        <span className="text-emerald-400">{getTypeIcon(result.type)}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm truncate">{result.name}</p>
-                          <p className="text-slate-400 text-xs">{result.city}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            )}
-          </div>
-
-          {/* GRIGLIA PULSANTI - 2 colonne, rettangolari, tutto in una schermata */}
-          <div className="w-full grid grid-cols-2 gap-2 relative z-10 flex-1 overflow-hidden">
-            {/* Tab Pubblici */}
-            <button
-              onClick={() => handleProtectedNavigation('/mappa-italia')}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-            >
-              <MapPin className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span className="text-white text-sm font-medium">Mappa</span>
-            </button>
-            
-            <button
-              onClick={() => handleProtectedNavigation('/route')}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-            >
-              <TrendingUp className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span className="text-white text-sm font-medium">Route</span>
-            </button>
-            
-            <button
-              onClick={() => handleProtectedNavigation('/wallet')}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-            >
-              <Leaf className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span className="text-white text-sm font-medium">Wallet</span>
-            </button>
-            
-            <button
-              onClick={() => handleProtectedNavigation('/civic')}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-            >
-              <Search className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span className="text-white text-sm font-medium">Segnala</span>
-            </button>
-            
-            <button
-              onClick={() => handleProtectedNavigation('/vetrine')}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-            >
-              <Store className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span className="text-white text-sm font-medium">Vetrine</span>
-            </button>
-            
-            <button
-              onClick={() => setLocation('/presentazione')}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-            >
-              <Presentation className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span className="text-white text-sm font-medium">Info</span>
-            </button>
-
-            {/* Tab Impresa - mostrati solo se permessi */}
-            {(permissionsLoading || canViewTab('presenze')) && (
-              <button
-                onClick={() => handleProtectedNavigation('/app/impresa/presenze')}
-                className="bg-blue-900/50 hover:bg-blue-800/50 border border-blue-700/50 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-              >
-                <ClipboardList className="w-5 h-5 text-blue-400 shrink-0" />
-                <span className="text-white text-sm font-medium">Presenze</span>
-              </button>
-            )}
-            
-            {(permissionsLoading || canViewTab('wallet_impresa')) && (
-              <button
-                onClick={() => handleProtectedNavigation('/app/impresa/wallet')}
-                className="bg-blue-900/50 hover:bg-blue-800/50 border border-blue-700/50 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-              >
-                <Wallet className="w-5 h-5 text-blue-400 shrink-0" />
-                <span className="text-white text-sm font-medium">Wallet Imp.</span>
-              </button>
-            )}
-            
-            {(permissionsLoading || canViewQuickAccess('hub_operatore')) && (
-              <button
-                onClick={() => handleProtectedNavigation('/hub-operatore')}
-                className="bg-orange-900/50 hover:bg-orange-800/50 border border-orange-700/50 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-              >
-                <Activity className="w-5 h-5 text-orange-400 shrink-0" />
-                <span className="text-white text-sm font-medium">Hub Op.</span>
-              </button>
-            )}
-            
-            {(permissionsLoading || canViewQuickAccess('notifiche')) && (
-              <button
-                onClick={() => handleProtectedNavigation('/app/impresa/notifiche')}
-                className="bg-purple-900/50 hover:bg-purple-800/50 border border-purple-700/50 rounded-lg p-3 flex items-center gap-2 text-left transition-colors relative"
-              >
-                <Bell className="w-5 h-5 text-purple-400 shrink-0" />
-                <span className="text-white text-sm font-medium">Notifiche</span>
-                {unreadNotifications > 0 && (
-                  <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
-                  </span>
-                )}
-              </button>
-            )}
-            
-            {(permissionsLoading || canViewTab('anagrafica')) && (
-              <button
-                onClick={() => handleProtectedNavigation('/app/impresa/anagrafica')}
-                className="bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600/50 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-              >
-                <Menu className="w-5 h-5 text-slate-400 shrink-0" />
-                <span className="text-white text-sm font-medium">Anagrafica</span>
-              </button>
-            )}
-            
-            {(permissionsLoading || canViewTab('dashboard')) && (
-              <button
-                onClick={() => isAuthenticated ? setLocation('/dashboard-pa') : handleProtectedNavigation('/dashboard-pa')}
-                className="bg-teal-900/50 hover:bg-teal-800/50 border border-teal-700/50 rounded-lg p-3 flex items-center gap-2 text-left transition-colors"
-              >
-                <BarChart3 className="w-5 h-5 text-teal-400 shrink-0" />
-                <span className="text-white text-sm font-medium">Dashboard</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Footer minimo */}
-        <footer className="bg-slate-800 px-2 py-1 text-center shrink-0">
-          <p className="text-slate-500 text-[10px]">PA Digitale 2026 • Cloud First</p>
-        </footer>
-
-        {/* Login Modal */}
-        <LoginModal 
-          isOpen={showLoginModal}
-          redirectRoute={pendingRoute || '/'}
-          onClose={() => {
-            setShowLoginModal(false);
-            setPendingRoute(null);
-            const userStr = localStorage.getItem('user');
-            const token = localStorage.getItem('token');
-            if (userStr && token) {
-              setIsAuthenticated(true);
-            }
-          }} 
-        />
-      </div>
-    );
-  }
-
-  // ============================================
-  // VERSIONE DESKTOP/TABLET (invariata)
-  // ============================================
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Sfondo Italia con rete digitale */}
@@ -473,7 +245,7 @@ export default function HomePage() {
                   Dashboard PA
                 </Button>
               )}
-              {isAuthenticated ? (
+{isAuthenticated ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -505,35 +277,35 @@ export default function HomePage() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col items-center justify-center p-6 space-y-8">
+        <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 space-y-4 sm:space-y-8">
           {/* Titolo */}
-          <div className="text-center space-y-3 w-full px-4">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+          <div className="text-center space-y-1 sm:space-y-3 max-w-2xl">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-foreground">
               Rete Mercati <span className="text-primary">Made in Italy</span>
             </h2>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-sm sm:text-lg text-muted-foreground">
               Scopri mercati, hub e negozi sostenibili in tutta Italia
             </p>
           </div>
 
           {/* Barra di ricerca */}
-          <div className="w-full px-4 space-y-4">
-            <div className="flex gap-2">
+          <div className="w-full max-w-2xl space-y-2 sm:space-y-4 px-2">
+            <div className="flex gap-1 sm:gap-2">
               <Input
                 type="text"
-                placeholder="Cerca mercato, hub, città, azienda, servizio..."
+                placeholder="Cerca..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1 h-14 text-lg bg-card/90 backdrop-blur-sm border-primary/30 focus:border-primary"
+                className="flex-1 h-10 sm:h-14 text-sm sm:text-lg bg-card/90 backdrop-blur-sm border-primary/30 focus:border-primary"
               />
               <Button 
                 size="lg" 
                 onClick={handleSearch}
-                className="h-14 px-6"
+                className="h-10 sm:h-14 px-3 sm:px-6"
               >
-                <Search className="w-5 h-5 mr-2" />
-                Cerca
+                <Search className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+                <span className="hidden sm:inline">Cerca</span>
               </Button>
             </div>
 
@@ -585,66 +357,66 @@ export default function HomePage() {
           </div>
 
           {/* Tab Pubblici - Riga 1 (v3.70.0) */}
-          <div className="flex flex-wrap justify-center gap-4 w-full px-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap md:justify-center gap-2 sm:gap-4 w-full max-w-4xl px-2">
             <Button
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/mappa-italia')}
-              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
-              <MapPin className="w-6 h-6" />
-              <span>Mappa</span>
+              <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm">Mappa</span>
             </Button>
             <Button
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/route')}
-              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
-              <TrendingUp className="w-6 h-6" />
-              <span>Route</span>
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm">Route</span>
             </Button>
             <Button
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/wallet')}
-              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
-              <Leaf className="w-6 h-6" />
-              <span>Wallet</span>
+              <Leaf className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm">Wallet</span>
             </Button>
             <Button
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/civic')}
-              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
             >
-              <Search className="w-6 h-6" />
-              <span>Segnala</span>
+              <Search className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm">Segnala</span>
             </Button>
             <Button
               variant="outline"
               size="lg"
               onClick={() => handleProtectedNavigation('/vetrine')}
-              className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+              className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30 col-span-2 sm:col-span-1"
             >
-              <Store className="w-6 h-6" />
-              <span>Vetrine</span>
+              <Store className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm">Vetrine</span>
             </Button>
           </div>
 
           {/* Tab Impresa - Riga 2 (v3.70.0) */}
-          <div className="flex flex-wrap justify-center gap-4 w-full px-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap md:justify-center gap-2 sm:gap-4 w-full max-w-4xl px-2">
             {/* Presenze - apre app Heroku */}
             {(permissionsLoading || canViewTab('presenze')) && (
               <Button
                 variant="outline"
                 size="lg"
                 onClick={() => handleProtectedNavigation('/app/impresa/presenze')}
-                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+                className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
               >
-                <ClipboardList className="w-6 h-6" />
-                <span>Presenze</span>
+                <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="text-xs sm:text-sm">Presenze</span>
               </Button>
             )}
             {/* Wallet Impresa - pagamenti PagoPA */}
@@ -653,10 +425,10 @@ export default function HomePage() {
                 variant="outline"
                 size="lg"
                 onClick={() => handleProtectedNavigation('/app/impresa/wallet')}
-                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+                className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
               >
-                <Wallet className="w-6 h-6" />
-                <span>Wallet Impresa</span>
+                <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="text-xs sm:text-sm">Wallet Imp.</span>
               </Button>
             )}
             {/* Hub Operatore - già esistente */}
@@ -665,10 +437,10 @@ export default function HomePage() {
                 variant="outline"
                 size="lg"
                 onClick={() => handleProtectedNavigation('/hub-operatore')}
-                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+                className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
               >
-                <Activity className="w-6 h-6" />
-                <span>Hub Operatore</span>
+                <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="text-xs sm:text-sm">Hub Op.</span>
               </Button>
             )}
             {/* Notifiche - già esistente */}
@@ -677,10 +449,10 @@ export default function HomePage() {
                 variant="outline"
                 size="lg"
                 onClick={() => handleProtectedNavigation('/app/impresa/notifiche')}
-                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30 relative"
+                className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30 relative"
               >
-                <Bell className="w-6 h-6" />
-                <span>Notifiche</span>
+                <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="text-xs sm:text-sm">Notifiche</span>
                 {unreadNotifications > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                     {unreadNotifications > 99 ? '99+' : unreadNotifications}
@@ -694,10 +466,10 @@ export default function HomePage() {
                 variant="outline"
                 size="lg"
                 onClick={() => handleProtectedNavigation('/app/impresa/anagrafica')}
-                className="h-24 w-36 flex-col gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
+                className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30"
               >
-                <Menu className="w-6 h-6" />
-                <span>Anagrafica</span>
+                <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="text-xs sm:text-sm">Anagrafica</span>
               </Button>
             )}
           </div>
