@@ -744,8 +744,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
       
       
       
-      {/* Header unico con Titolo + Indicatori nella stessa barra */}
-      <div className="flex flex-nowrap items-center gap-1.5 sm:gap-4 bg-[#0b1220] sm:rounded-lg px-2 py-2 sm:p-4 sm:border border-[#14b8a6]/30">
+      {/* Header unico con Titolo + Indicatori nella stessa barra - NASCOSTO su mobile */}
+      <div className="hidden sm:flex flex-nowrap items-center gap-1.5 sm:gap-4 bg-[#0b1220] sm:rounded-lg px-2 py-2 sm:p-4 sm:border border-[#14b8a6]/30">
         {/* Titolo e Vista - come primo indicatore */}
         <div className="hidden sm:block px-5 py-2 bg-[#1a2332] rounded border border-[#14b8a6]/40 min-w-[280px] flex-shrink-0">
           <div className="text-xs text-white uppercase tracking-wider font-bold">GEMELLO DIGITALE DEL COMMERCIO</div>
@@ -792,19 +792,20 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
       </div>
 
       {/* Barra controlli - Layout mobile ottimizzato */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 px-2 sm:px-0">
-        {/* Riga 1: Selettore Mercato/HUB - full width */}
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-1 sm:gap-2 px-1 sm:px-0">
+        
+        {/* Riga 1: Selettore Mercato/HUB */}
         <div className="flex w-full sm:w-auto bg-[#0b1220] rounded-lg p-1 border border-[#14b8a6]/30">
           <Button
             variant={mode === 'mercato' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => { setMode('mercato'); handleBackToItaly(); }}
             className={mode === 'mercato' 
-              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white h-11 sm:h-8 text-sm flex-1' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-11 sm:h-8 text-sm flex-1'
+              ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white h-9 sm:h-8 text-xs sm:text-sm flex-1' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-9 sm:h-8 text-xs sm:text-sm flex-1'
             }
           >
-            <Store className="h-4 w-4 mr-1" />
+            <Store className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
             Mercati ({markets.length})
           </Button>
           <Button
@@ -812,17 +813,17 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
             size="sm"
             onClick={() => { setMode('hub'); handleBackToItaly(); }}
             className={mode === 'hub' 
-              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white h-11 sm:h-8 text-sm flex-1' 
-              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-11 sm:h-8 text-sm flex-1'
+              ? 'bg-[#9C27B0] hover:bg-[#7B1FA2] text-white h-9 sm:h-8 text-xs sm:text-sm flex-1' 
+              : 'text-[#e8fbff]/70 hover:text-[#e8fbff] h-9 sm:h-8 text-xs sm:text-sm flex-1'
             }
           >
-            <Building2 className="h-4 w-4 mr-1" />
+            <Building2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
             HUB ({hubs.length})
           </Button>
         </div>
 
-        {/* Riga 2: Ricerca - full width */}
-        <div className="w-full sm:flex-1 sm:min-w-[180px] sm:max-w-[300px]">
+        {/* Riga 2: Ricerca - NASCOSTA su mobile */}
+        <div className="hidden sm:block sm:flex-1 sm:min-w-[180px] sm:max-w-[300px]">
           <Input
             placeholder={`Cerca ${mode === 'mercato' ? 'mercato' : 'hub'}...`}
             value={searchQuery}
@@ -831,20 +832,20 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
           />
         </div>
 
-        {/* Riga 3 Mobile: Regione - full width, stessa altezza */}
-        <div className="sm:hidden w-full">
+        {/* Riga 3 Mobile: Regione - tab piccolo */}
+        <div className="sm:hidden flex-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                className={`w-full border-[#14b8a6]/30 h-11 text-sm justify-between ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
+                className={`w-full border-[#14b8a6]/30 h-9 text-xs px-2 justify-between ${selectedRegione ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'text-[#e8fbff]'}`}
               >
                 <div className="flex items-center">
-                  <Map className="h-4 w-4 mr-2" />
-                  {selectedRegione ? selectedRegione.nome : 'Seleziona Regione'}
+                  <Map className="h-3 w-3 mr-1" />
+                  {selectedRegione ? selectedRegione.nome.substring(0, 8) : 'Regione'}
                 </div>
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-[#1a2332] border-[#14b8a6]/30 max-h-[300px] overflow-y-auto z-[9999] w-[calc(100vw-32px)]" style={{ maxHeight: '300px', overflowY: 'auto' }}>
@@ -872,21 +873,21 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
           </DropdownMenu>
         </div>
 
-        {/* Riga 4 Mobile: Provincia - full width, stessa altezza */}
-        <div className="sm:hidden w-full">
+        {/* Riga 4 Mobile: Provincia - tab piccolo */}
+        <div className="sm:hidden flex-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
                 disabled={!selectedRegione}
-                className={`w-full border-[#14b8a6]/30 h-11 text-sm justify-between ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
+                className={`w-full border-[#14b8a6]/30 h-9 text-xs px-2 justify-between ${selectedProvincia ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]'} ${!selectedRegione ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-center">
-                  <Navigation className="h-4 w-4 mr-2" />
-                  {selectedProvincia ? `${selectedProvincia.nome} (${selectedProvincia.sigla})` : 'Seleziona Provincia'}
+                  <Navigation className="h-3 w-3 mr-1" />
+                  {selectedProvincia ? selectedProvincia.sigla : 'Prov.'}
                 </div>
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-[#1a2332] border-[#14b8a6]/30 max-h-[300px] overflow-y-auto z-[9999] w-[calc(100vw-32px)]" style={{ maxHeight: '300px', overflowY: 'auto' }}>
@@ -914,7 +915,17 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
           </DropdownMenu>
         </div>
 
-        {/* Pulsante Vista Italia - solo desktop */}
+        {/* Pulsante Vista Italia - mobile piccolo */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleResetGeo}
+          className="sm:hidden flex-1 text-[#14b8a6] border-[#14b8a6]/50 hover:bg-[#14b8a6]/20 h-9 text-xs px-2"
+        >
+          🇮🇹 Italia
+        </Button>
+
+        {/* Pulsante Vista Italia - desktop */}
         <Button
           variant="outline"
           size="sm"
@@ -1087,8 +1098,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         })}
       </div>
 
-      {/* MAPPA MOBILE FULLSCREEN - montata SOLO quando showMobileMap=true */}
-      {showMobileMap && isMobile && (
+      {/* MAPPA MOBILE FULLSCREEN - NASCOSTA per ora */}
+      {false && showMobileMap && isMobile && (
         <div className="fixed inset-0 z-[9999] bg-[#0b1220] flex flex-col">
           {/* Header overlay mobile */}
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] flex-shrink-0">
@@ -1176,8 +1187,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         </div>
       )}
 
-      {/* MAPPA DESKTOP - sempre visibile su desktop, nascosta su mobile */}
-      <div className="hidden sm:block h-[calc(100vh-320px)] min-h-[500px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
+      {/* MAPPA - visibile su desktop e mobile */}
+      <div className="h-[calc(100vh-280px)] sm:h-[calc(100vh-320px)] min-h-[300px] sm:min-h-[500px] rounded-lg overflow-hidden border border-[#14b8a6]/30">
         <MapWithTransportLayer
           referencePoint={(() => {
             // Determina il punto di riferimento corrente (HUB o Mercato selezionato)
