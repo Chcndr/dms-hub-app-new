@@ -239,6 +239,9 @@ export function HubMarketMapComponent({
   navigationMode
 }: HubMarketMapComponentProps) {
   
+  console.log('[DEBUG HubMarketMapComponent] navigationMode:', navigationMode);
+  console.log('[DEBUG HubMarketMapComponent] routeConfig:', routeConfig);
+  
   // Ottieni lo stato di animazione dal context per nascondere poligoni durante zoom
   const { isAnimating } = useAnimation();
   

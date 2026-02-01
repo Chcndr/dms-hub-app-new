@@ -35,6 +35,7 @@ export function NavigationMode({
   onClose,
   routeGeometry 
 }: NavigationModeProps) {
+  console.log('[DEBUG NavigationMode] MOUNTED! destination:', destination, 'mode:', mode);
   const map = useMap();
   const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [heading, setHeading] = useState<number>(0);
