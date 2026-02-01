@@ -220,23 +220,37 @@ export function NavigationMode({
     }
   }, [instructions, routeCoords, destination, mode, currentStep, speakInstruction]);
 
+  // Stato per loading GPS
+  const [gpsLoading, setGpsLoading] = useState(true);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+
+  // Zoom iniziale sulla destinazione quando parte la navigazione
+  useEffect(() => {
+    // Centra subito sulla destinazione mentre aspetta GPS
+    map.setView([destination.lat, destination.lng], 15, { animate: true });
+  }, [map, destination]);
+
   // Avvia GPS tracking
   useEffect(() => {
     if (!navigator.geolocation) {
-      console.error('Geolocalizzazione non supportata');
+      setGpsError('Geolocalizzazione non supportata');
+      setGpsLoading(false);
       return;
     }
 
     // Opzioni GPS ad alta precisione
     const geoOptions: PositionOptions = {
       enableHighAccuracy: true,
-      timeout: 10000,
+      timeout: 15000,
       maximumAge: 0
     };
 
     // Watch position per tracking continuo
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
+        setGpsLoading(false);
+        setGpsError(null);
+        
         const newPos = {
           lat: position.coords.latitude,
           lng: position.coords.longitude
@@ -256,6 +270,14 @@ export function NavigationMode({
       },
       (error) => {
         console.error('Errore GPS:', error);
+        setGpsLoading(false);
+        if (error.code === 1) {
+          setGpsError('Permesso GPS negato. Abilita la posizione.');
+        } else if (error.code === 2) {
+          setGpsError('Posizione non disponibile.');
+        } else {
+          setGpsError('Timeout GPS. Riprova.');
+        }
       },
       geoOptions
     );
@@ -380,6 +402,19 @@ export function NavigationMode({
               <span className="text-2xl">🎉</span>
               <p className="text-emerald-400 font-bold text-lg mt-2">Sei arrivato!</p>
               <p className="text-slate-400 text-sm">{destinationName}</p>
+            </div>
+          ) : gpsError ? (
+            <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
+              <p className="text-red-400">❌ {gpsError}</p>
+              <p className="text-slate-400 text-sm mt-1">Verifica le impostazioni GPS del dispositivo</p>
+            </div>
+          ) : gpsLoading ? (
+            <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-5 w-5 border-2 border-blue-400 border-t-transparent rounded-full"></div>
+                <p className="text-blue-400">Acquisizione posizione GPS...</p>
+              </div>
+              <p className="text-slate-400 text-sm mt-1">Assicurati che il GPS sia attivo</p>
             </div>
           ) : instructions[currentStep] ? (
             <div className="bg-slate-800/50 rounded-lg p-3">
