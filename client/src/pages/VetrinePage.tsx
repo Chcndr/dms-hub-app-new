@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/_core/hooks/useAuth';
 import NuovoNegozioForm from '@/components/NuovoNegozioForm';
 import { useRoute, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -80,15 +79,26 @@ export default function VetrinePage() {
   const [imprese, setImprese] = useState<Impresa[]>([]);
   const [selectedImpresa, setSelectedImpresa] = useState<Impresa | null>(null);
   
-  // Auth per controllo proprietario vetrina
-  const { user, isAuthenticated } = useAuth();
+  // Stato per controllo permessi modifica (senza useAuth per evitare errori OAuth)
+  const [canEdit, setCanEdit] = useState(false);
   
-  // Verifica se l'utente può modificare la vetrina:
-  // 1. Admin ha accesso totale (role === 'admin')
-  // 2. Impresa titolare può modificare solo la propria vetrina
-  const isAdmin = isAuthenticated && user?.role === 'admin';
-  const isImpresaTitolare = isAuthenticated && selectedImpresa && user?.id === selectedImpresa.id;
-  const canEdit = isAdmin || isImpresaTitolare;
+  // Verifica permessi modifica da localStorage (salvato da useAuth quando disponibile)
+  useEffect(() => {
+    try {
+      const userInfoStr = localStorage.getItem('manus-runtime-user-info');
+      if (userInfoStr && selectedImpresa) {
+        const userInfo = JSON.parse(userInfoStr);
+        // Admin ha accesso totale, oppure impresa titolare
+        const isAdmin = userInfo?.role === 'admin';
+        const isOwner = userInfo?.id === selectedImpresa.id;
+        setCanEdit(isAdmin || isOwner);
+      } else {
+        setCanEdit(false);
+      }
+    } catch {
+      setCanEdit(false);
+    }
+  }, [selectedImpresa]);
   
   // Estrai query param 'q' dall'URL
   const getQueryParam = (name: string) => {
