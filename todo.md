@@ -1027,3 +1027,20 @@
 - [ ] Mantenere wallet con canone già versato
 - [ ] Aggiornare connessioni impresa automaticamente
 
+
+
+## UI Improvements - 01/02/2026 📱
+
+### Home - Filtro Ruoli Header
+- [ ] Filtrare "Presentazione" solo per PA
+- [ ] Mostrare "Esci" per Cittadino/Impresa
+
+### Wallet - Miglioramenti Layout
+- [ ] Rimuovere freccia "Esci" dall'header
+- [ ] Barra saldo più alta con scritte più grandi
+- [ ] Aggiungere nome intestatario del wallet
+- [ ] Abbassare QR code e tasti Paga/Storico
+- [ ] Tasti Paga/Storico stile Home (elegante trasparente, no icone colorate)
+
+### Paga - Stile Tasto
+- [ ] Tasto "Genera QR" stile elegante trasparente (non giallo)

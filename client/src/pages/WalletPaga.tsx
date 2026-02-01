@@ -68,7 +68,8 @@ export default function WalletPaga() {
             <Button 
               onClick={handleGeneraQR}
               disabled={!importo || parseFloat(importo) <= 0}
-              className="mt-6 bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 text-lg"
+              className="mt-6 px-8 py-3 text-lg border border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/70 text-foreground"
+              variant="outline"
             >
               <QrCode className="h-5 w-5 mr-2" />
               Genera QR Pagamento

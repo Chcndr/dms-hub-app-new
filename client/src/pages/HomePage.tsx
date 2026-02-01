@@ -223,16 +223,18 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {/* Presentazione - link pubblico senza login (v3.74.0) */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLocation('/presentazione')}
-                className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
-              >
-                <Presentation className="w-4 h-4 mr-2" />
-                Presentazione
-              </Button>
+              {/* Presentazione - visibile SOLO per PA (v3.75.0) */}
+              {(permissionsLoading || canViewTab('dashboard')) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLocation('/presentazione')}
+                  className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
+                >
+                  <Presentation className="w-4 h-4 mr-2" />
+                  Presentazione
+                </Button>
+              )}
               {/* Dashboard PA - spostato nell'header (v3.70.0) */}
               {(permissionsLoading || canViewTab('dashboard')) && (
                 <Button

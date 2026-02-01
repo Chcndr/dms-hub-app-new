@@ -690,40 +690,21 @@ export default function WalletPage() {
 
   return (
     <div className="h-screen sm:min-h-screen bg-background pb-0 sm:pb-20 overflow-hidden sm:overflow-auto">
-      {/* Header con logout - Mobile: compatto, Desktop: invariato */}
-      <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-2 sm:p-4 shadow-lg">
-        <div className="w-full px-2 sm:px-4 md:px-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <a
-              href="/"
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </a>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 bg-white/20 rounded-lg sm:rounded-xl">
-                <Wallet className="h-5 w-5 sm:h-7 sm:w-7" />
-              </div>
-              <div>
-                <h1 className="text-base sm:text-xl font-bold">Wallet TCC</h1>
-                <p className="text-[10px] sm:text-xs text-white/70 truncate max-w-[120px] sm:max-w-none">
-                  {currentUser?.name || walletData?.user?.name || 'I tuoi eco-crediti'}
-                </p>
-              </div>
+      {/* Header con logout - Mobile: compatto, Desktop: invariato - v3.75.0: rimossa freccia indietro */}
+      <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-3 sm:p-4 shadow-lg">
+        <div className="w-full px-3 sm:px-4 md:px-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 sm:p-2 bg-white/20 rounded-xl">
+              <Wallet className="h-6 w-6 sm:h-7 sm:w-7" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold">Wallet TCC</h1>
+              <p className="text-xs sm:text-xs text-white/70">
+                {currentUser?.name || walletData?.user?.name || 'I tuoi eco-crediti'}
+              </p>
             </div>
           </div>
-          {/* Pulsante Logout */}
-          <button
-            onClick={handleLogout}
-            className="p-2 rounded-full bg-white/10 hover:bg-red-500/50 transition-all text-white/80 hover:text-white"
-            title="Esci"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
+          {/* Pulsante Logout - rimosso, si esce dalla Home */}
         </div>
       </header>
 
@@ -736,13 +717,15 @@ export default function WalletPage() {
           {/* TAB CLIENTE */}
           {/* ================================================================ */}
           <TabsContent value="cliente" className="flex flex-col h-[calc(100vh-60px)] sm:h-auto sm:space-y-6 mt-0 sm:mt-4 px-0 sm:px-0 overflow-hidden sm:overflow-visible">
-            {/* Saldo Principale - Mobile: barra compatta, Desktop: card grande */}
-            <div className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-2 sm:hidden flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Wallet className="h-5 w-5" />
-                <span className="font-bold text-lg">{balance} TCC</span>
+            {/* Saldo Principale - Mobile: barra più alta con nome, Desktop: card grande - v3.75.0 */}
+            <div className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-4 sm:hidden">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Wallet className="h-6 w-6" />
+                  <span className="font-bold text-2xl">{balance} TCC</span>
+                </div>
+                <span className="text-lg text-white/90 font-semibold">€{(balance * 0.089).toLocaleString('it-IT', {minimumFractionDigits: 2})}</span>
               </div>
-              <span className="text-sm text-white/80">€{(balance * 0.089).toLocaleString('it-IT', {minimumFractionDigits: 2})}</span>
             </div>
             {/* Desktop: card grande */}
             <Card className="hidden sm:block bg-gradient-to-br from-primary via-primary/90 to-emerald-600 text-primary-foreground border-0 sm:border shadow-none sm:shadow-2xl rounded-none sm:rounded-lg">
@@ -805,19 +788,15 @@ export default function WalletPage() {
               </CardContent>
             </Card>
 
-            {/* 2 Tab in basso per mobile: Paga e Storico - stile trasparente elegante */}
-            <div className="grid grid-cols-2 gap-3 p-3 mt-auto sm:hidden">
-              <a href="/wallet/paga" className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border border-border/30 bg-muted/20 backdrop-blur-sm hover:bg-muted/40 transition-all shadow-sm">
-                <div className="p-2 bg-amber-500/20 rounded-lg">
-                  <Euro className="h-6 w-6 text-amber-500" />
-                </div>
-                <span className="text-sm font-semibold">Paga</span>
+            {/* 2 Tab in basso per mobile: Paga e Storico - stile Home elegante trasparente v3.75.0 */}
+            <div className="grid grid-cols-2 gap-4 p-4 mt-auto sm:hidden">
+              <a href="/wallet/paga" className="flex flex-col items-center justify-center gap-3 py-6 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-all">
+                <Euro className="h-7 w-7 text-foreground/80" />
+                <span className="text-base font-semibold text-foreground">Paga</span>
               </a>
-              <a href="/wallet/storico" className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border border-border/30 bg-muted/20 backdrop-blur-sm hover:bg-muted/40 transition-all shadow-sm">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <History className="h-6 w-6 text-blue-500" />
-                </div>
-                <span className="text-sm font-semibold">Storico</span>
+              <a href="/wallet/storico" className="flex flex-col items-center justify-center gap-3 py-6 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-all">
+                <History className="h-7 w-7 text-foreground/80" />
+                <span className="text-base font-semibold text-foreground">Storico</span>
               </a>
             </div>
 
