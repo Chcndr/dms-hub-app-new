@@ -689,7 +689,7 @@ export default function WalletPage() {
   }
 
   return (
-    <div className="min-h-screen sm:min-h-screen bg-background pb-20 sm:pb-20">
+    <div className="h-screen sm:min-h-screen bg-background pb-0 sm:pb-20 overflow-hidden sm:overflow-auto">
       {/* Header con logout - Mobile: compatto, Desktop: invariato */}
       <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-2 sm:p-4 shadow-lg">
         <div className="w-full px-2 sm:px-4 md:px-8 flex items-center justify-between">
@@ -735,9 +735,17 @@ export default function WalletPage() {
           {/* ================================================================ */}
           {/* TAB CLIENTE */}
           {/* ================================================================ */}
-          <TabsContent value="cliente" className="space-y-3 sm:space-y-6 mt-2 sm:mt-4 px-2 sm:px-0">
-            {/* Saldo Principale - Mobile: compatto fullscreen, Desktop: card */}
-            <Card className="bg-gradient-to-br from-primary via-primary/90 to-emerald-600 text-primary-foreground border-0 sm:border shadow-none sm:shadow-2xl rounded-none sm:rounded-lg">
+          <TabsContent value="cliente" className="flex flex-col h-[calc(100vh-60px)] sm:h-auto sm:space-y-6 mt-0 sm:mt-4 px-0 sm:px-0 overflow-hidden sm:overflow-visible">
+            {/* Saldo Principale - Mobile: barra compatta, Desktop: card grande */}
+            <div className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-2 sm:hidden flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                <span className="font-bold text-lg">{balance} TCC</span>
+              </div>
+              <span className="text-sm text-white/80">€{(balance * 0.089).toLocaleString('it-IT', {minimumFractionDigits: 2})}</span>
+            </div>
+            {/* Desktop: card grande */}
+            <Card className="hidden sm:block bg-gradient-to-br from-primary via-primary/90 to-emerald-600 text-primary-foreground border-0 sm:border shadow-none sm:shadow-2xl rounded-none sm:rounded-lg">
               <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl">
@@ -755,34 +763,61 @@ export default function WalletPage() {
               </CardContent>
             </Card>
 
-            {/* QR Code - Mobile: compatto fullscreen, Desktop: card */}
-            <Card className="rounded-none sm:rounded-lg border-0 sm:border shadow-none sm:shadow">
-              <CardHeader className="p-3 sm:p-6">
+            {/* QR Code per RICEVERE crediti - Mobile: grande centrato, Desktop: card */}
+            <div className="flex-1 flex flex-col items-center justify-center bg-muted/20 sm:hidden p-4">
+              <p className="text-xs text-muted-foreground mb-2">Mostra al negoziante per ricevere crediti</p>
+              <div className="bg-white p-4 rounded-xl shadow-lg">
+                <QRCodeSVG value={qrData?.qr_string || `tcc://${userId}/demo`} size={180} level="H" />
+              </div>
+              {qrData?.expires_at && (
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  Valido: {new Date(qrData.expires_at).toLocaleString('it-IT')}
+                </p>
+              )}
+              <Button variant="ghost" size="sm" onClick={refreshQRCode} disabled={refreshingQR} className="mt-2">
+                <RefreshCw className={`h-4 w-4 mr-1 ${refreshingQR ? 'animate-spin' : ''}`} />
+                Aggiorna
+              </Button>
+            </div>
+            {/* Desktop: card QR */}
+            <Card className="hidden sm:block rounded-lg border shadow">
+              <CardHeader className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-sm sm:text-base">Il tuo QR Code</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">Mostra per ricevere crediti</CardDescription>
+                    <CardTitle>Il tuo QR Code</CardTitle>
+                    <CardDescription>Mostra questo codice al negoziante per ricevere i crediti</CardDescription>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={refreshQRCode} disabled={refreshingQR} className="h-8 w-8 sm:h-10 sm:w-10">
-                    <RefreshCw className={`h-4 w-4 sm:h-5 sm:w-5 ${refreshingQR ? 'animate-spin' : ''}`} />
+                  <Button variant="ghost" size="icon" onClick={refreshQRCode} disabled={refreshingQR}>
+                    <RefreshCw className={`h-5 w-5 ${refreshingQR ? 'animate-spin' : ''}`} />
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="flex flex-col items-center p-3 sm:p-6 pt-0">
-                <div className="bg-white p-3 sm:p-4 rounded-lg shadow-inner">
-                  <QRCodeSVG value={qrData?.qr_string || `tcc://${userId}/demo`} size={160} level="H" className="sm:hidden" />
-                  <QRCodeSVG value={qrData?.qr_string || `tcc://${userId}/demo`} size={200} level="H" className="hidden sm:block" />
+              <CardContent className="flex flex-col items-center p-6 pt-0">
+                <div className="bg-white p-4 rounded-lg shadow-inner">
+                  <QRCodeSVG value={qrData?.qr_string || `tcc://${userId}/demo`} size={200} level="H" />
                 </div>
                 {qrData?.expires_at && (
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 sm:mt-3">
+                  <p className="text-xs text-muted-foreground mt-3">
                     Valido fino: {new Date(qrData.expires_at).toLocaleString('it-IT')}
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Impatto Ambientale - Mobile: compatto, Desktop: invariato */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-4">
+            {/* 2 Tab in basso per mobile: Paga e Storico */}
+            <div className="grid grid-cols-2 gap-2 p-2 sm:hidden">
+              <a href="/wallet/paga" className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-lg">
+                <Euro className="h-5 w-5" />
+                Paga
+              </a>
+              <a href="/wallet/storico" className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg">
+                <History className="h-5 w-5" />
+                Storico
+              </a>
+            </div>
+
+            {/* Impatto Ambientale - SOLO Desktop */}
+            <div className="hidden sm:grid grid-cols-2 gap-4">
               {/* Card Verde - Ultima Operazione */}
               <Card className="border-0 shadow-none sm:shadow-lg bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-none sm:rounded-lg">
                 <CardContent className="pt-3 sm:pt-6 text-center p-2 sm:p-6">
@@ -795,8 +830,8 @@ export default function WalletPage() {
                 </CardContent>
               </Card>
 
-              {/* Card Livello - Sfondo che cresce dal basso */}
-              <Card className="border-0 shadow-none sm:shadow-lg overflow-hidden relative rounded-none sm:rounded-lg">
+              {/* Card Livello - SOLO Desktop */}
+              <Card className="border-0 shadow-lg overflow-hidden relative rounded-lg">
                 {/* Sfondo arancione base */}
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-amber-600/10" />
                 {/* Sfondo verde che cresce dal basso */}
@@ -816,8 +851,8 @@ export default function WalletPage() {
               </Card>
             </div>
 
-            {/* Paga con TCC - Mobile: compatto, Desktop: invariato */}
-            <Card className="border-0 sm:border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5 rounded-none sm:rounded-lg shadow-none sm:shadow">
+            {/* Paga con TCC - SOLO Desktop */}
+            <Card className="hidden sm:block border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5 rounded-lg shadow">
               <CardHeader className="p-3 sm:p-6">
                 <CardTitle className="flex items-center gap-2 text-amber-600 text-sm sm:text-base">
                   <Euro className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -890,8 +925,8 @@ export default function WalletPage() {
               </CardContent>
             </Card>
 
-            {/* Storico Transazioni - Mobile: compatto, Desktop: invariato */}
-            <Card className="rounded-none sm:rounded-lg border-0 sm:border shadow-none sm:shadow">
+            {/* Storico Transazioni - SOLO Desktop */}
+            <Card className="hidden sm:block rounded-lg border shadow">
               <CardHeader className="p-3 sm:p-6">
                 <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -927,7 +962,10 @@ export default function WalletPage() {
         </Tabs>
       </div>
 
-      <BottomNav />
+      {/* BottomNav nascosto su mobile */}
+      <div className="hidden sm:block">
+        <BottomNav />
+      </div>
     </div>
   );
 }

@@ -42,6 +42,9 @@ import AnagraficaPage from "./pages/AnagraficaPage";
 import PresentazionePage from "./pages/PresentazionePage";
 // v3.80.0 - Verbali PM Professionali
 import NuovoVerbalePage from "./pages/NuovoVerbalePage";
+// v3.85.3 - Wallet mobile pages
+import WalletPaga from "./pages/WalletPaga";
+import WalletStorico from "./pages/WalletStorico";
 
 function Router() {
   return (
@@ -49,6 +52,8 @@ function Router() {
       <Route path="/" sonnElement={'exact'} component={HomePage} />
       <Route path="/mappa" component={MapPage} />
       <Route path="/wallet" component={WalletPage} />
+      <Route path="/wallet/paga" component={WalletPaga} />
+      <Route path="/wallet/storico" component={WalletStorico} />
       <Route path="/civic" component={CivicPage} />
       <Route path="/route" component={RoutePage} />
       <Route path="/vetrine/:id" component={VetrinePage} />
