@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.55.0  
-> **Data:** 29 Gennaio 2026  
+> **Versione:** 3.56.0  
+> **Data:** 01 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -1856,6 +1856,55 @@ const forcedZoom = roundedToQuarter + 0.25;
 **Endpoint:**
 - `POST /api/test-mercato/inizia-mercato`
 - `POST /api/test-mercato/chiudi-mercato`
+
+---
+
+### v3.56.0 (01/02/2026) - Navigazione Turn-by-Turn su Mappa GIS
+
+**Nuove Funzionalità:**
+- **Flusso Ricerca → Vetrina**: Click su risultato ricerca ora apre VetrinePage invece di Dashboard PA
+- **NavigationMode.tsx**: Nuovo componente per navigazione turn-by-turn sulla mappa GIS
+- **GPS Tracking Real-time**: `watchPosition` per aggiornamento posizione continuo
+- **Istruzioni OSRM**: Istruzioni di navigazione ("Gira a destra", "Prosegui dritto", ecc.)
+- **Sintesi Vocale**: Istruzioni lette in italiano con Web Speech API
+- **Ricalcolo Automatico**: Se fuori percorso >50m, ricalcola automaticamente
+- **UI Overlay Navigazione**: Distanza/tempo rimanente, step corrente, pulsante termina
+- **Marker Utente Direzionale**: Freccia blu che ruota in base alla direzione GPS
+- **Percorso Tracciato**: Polyline verde sulla mappa Leaflet
+
+**Flusso Completo Implementato:**
+1. **HomePage** → Ricerca impresa/mercato → Click risultato → **VetrinePage**
+2. **VetrinePage** → "Come Arrivare" → **RoutePage** (destinazione precompilata)
+3. **RoutePage** → GPS/coordinate → "Pianifica Percorso" → Calcolo distanza/CO₂/crediti
+4. **RoutePage** → "Avvia Navigazione" → **Navigazione sulla mappa GIS**
+
+**File Modificati:**
+- `client/src/pages/HomePage.tsx` - handleResultClick naviga a /vetrine/:id
+- `client/src/pages/RoutePage.tsx` - Integrazione NavigationMode, fix destLat/destLng
+- `client/src/components/NavigationMode.tsx` - NUOVO componente navigazione
+- `client/src/components/GestioneHubMapWrapper.tsx` - Props navigationMode
+- `client/src/components/HubMarketMapComponent.tsx` - Props navigationMode, integrazione NavigationMode
+
+**Props NavigationMode:**
+```typescript
+interface NavigationModeProps {
+  destination: { lat: number; lng: number };
+  destinationName: string;
+  mode: 'walking' | 'cycling' | 'driving';
+  onClose: () => void;
+}
+```
+
+**Commit:**
+- `045e9be` - feat: Flusso ricerca → vetrina + routeConfig
+- `9b966e5` - feat: Input manuale coordinate in RoutePage
+- `e624e25` - fix: handleStartNavigation usa routeConfig.userLocation
+- `5c88673` - feat: Navigazione turn-by-turn sulla mappa GIS
+- `1b80586` - fix: Definire destLat/destLng per routeConfig
+
+**Punto di Ripristino:**
+- Tag: `v3.55.0-stable-pre-routing`
+- Commit: `26ba096`
 
 ---
 
