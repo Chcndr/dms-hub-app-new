@@ -186,6 +186,9 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
   const [customCenter, setCustomCenter] = useState<[number, number] | null>(null);
   const [customZoom, setCustomZoom] = useState<number | null>(null);
 
+  // Rileva se smartphone (per layout mobile)
+  const [isMobile, setIsMobile] = useState(false);
+
   // Statistiche aggregate (Italia/Regione/Provincia)
   const [marketStats, setMarketStats] = useState<{
     markets: number;
@@ -209,6 +212,14 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
       loadMarketStats(selectedRegione?.id, selectedProvincia?.id);
     }
   }, [mode, selectedRegione?.id, selectedProvincia?.id]);
+
+  // Rileva se smartphone per layout mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Carica statistiche aggregate mercati (con filtri opzionali)
   const loadMarketStats = async (regioneId?: number, provinciaId?: number) => {
@@ -703,16 +714,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
       </div>
     );
   }
-
-  // Rileva se è smartphone
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Su smartphone: solo mappa fullscreen
   if (isMobile) {
