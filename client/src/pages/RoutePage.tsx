@@ -434,31 +434,31 @@ export default function RoutePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header con gradient */}
-      <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-4 shadow-lg">
-        <div className="w-full px-4 md:px-8 flex items-center gap-4">
+      {/* Header con gradient - Compatto su smartphone */}
+      <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-2 sm:p-4 shadow-lg">
+        <div className="w-full px-2 sm:px-4 md:px-8 flex items-center gap-2 sm:gap-4">
           <button
             onClick={() => window.history.back()}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+            className="p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-105"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-xl">
-              <Navigation className="h-7 w-7" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-white/20 rounded-lg sm:rounded-xl">
+              <Navigation className="h-5 w-5 sm:h-7 sm:w-7" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Shopping Route Etico</h1>
-              <p className="text-xs text-white/70">Naviga sostenibile, guadagna crediti</p>
+              <h1 className="text-base sm:text-xl font-bold">Route Etico</h1>
+              <p className="text-[10px] sm:text-xs text-white/70 hidden sm:block">Naviga sostenibile, guadagna crediti</p>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="w-full px-4 md:px-8 py-6 space-y-6">
-        {/* Form Pianificazione */}
+      <div className="w-full px-2 sm:px-4 md:px-8 py-3 sm:py-6 space-y-3 sm:space-y-6">
+        {/* Form Pianificazione - Compatto su smartphone */}
         <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 overflow-hidden">
-          <CardHeader className="pb-4">
+          <CardHeader className="pb-4 sm:pb-4 p-3 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-gradient-to-br from-primary to-emerald-500 rounded-xl shadow-lg">
                 <MapPin className="h-6 w-6 text-white" />
@@ -471,7 +471,7 @@ export default function RoutePage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6 pt-0">
             {/* Modalità trasporto */}
             <div className="space-y-2">
               <Label htmlFor="mode">Modalità di trasporto</Label>
@@ -593,51 +593,51 @@ export default function RoutePage() {
         {/* Risultato Pianificazione */}
         {plan && (
           <>
-            {/* Statistiche */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Statistiche - Grid 2x2 su smartphone */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-blue-500/10 to-blue-600/5">
-                <CardContent className="pt-6 text-center">
-                  <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <MapPin className="h-6 w-6 text-white" />
+                <CardContent className="pt-3 sm:pt-6 text-center p-2 sm:p-6">
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                    <MapPin className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="text-3xl font-bold text-blue-600">{plan.totalDistance}</div>
-                  <div className="text-sm text-muted-foreground font-medium">km totali</div>
+                  <div className="text-xl sm:text-3xl font-bold text-blue-600">{plan.totalDistance}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground font-medium">km</div>
                 </CardContent>
               </Card>
 
               <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-purple-500/10 to-purple-600/5">
-                <CardContent className="pt-6 text-center">
-                  <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Clock className="h-6 w-6 text-white" />
+                <CardContent className="pt-3 sm:pt-6 text-center p-2 sm:p-6">
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                    <Clock className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="text-3xl font-bold text-purple-600">{plan.totalTime}</div>
-                  <div className="text-sm text-muted-foreground font-medium">minuti</div>
+                  <div className="text-xl sm:text-3xl font-bold text-purple-600">{plan.totalTime}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground font-medium">min</div>
                 </CardContent>
               </Card>
 
               <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-green-500/10 to-green-600/5">
-                <CardContent className="pt-6 text-center">
-                  <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Leaf className="h-6 w-6 text-white" />
+                <CardContent className="pt-3 sm:pt-6 text-center p-2 sm:p-6">
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                    <Leaf className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="text-3xl font-bold text-green-600">{plan.co2Saved}g</div>
-                  <div className="text-sm text-muted-foreground font-medium">CO₂ evitata</div>
+                  <div className="text-xl sm:text-3xl font-bold text-green-600">{plan.co2Saved}g</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground font-medium">CO₂</div>
                 </CardContent>
               </Card>
 
               <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-amber-500/10 to-amber-600/5">
-                <CardContent className="pt-6 text-center">
-                  <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <TrendingUp className="h-6 w-6 text-white" />
+                <CardContent className="pt-3 sm:pt-6 text-center p-2 sm:p-6">
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                    <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="text-3xl font-bold text-amber-600">+{plan.creditsEarned}</div>
-                  <div className="text-sm text-muted-foreground font-medium">crediti</div>
+                  <div className="text-xl sm:text-3xl font-bold text-amber-600">+{plan.creditsEarned}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground font-medium">crediti</div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Punteggio Sostenibilità */}
-            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+            {/* Punteggio Sostenibilità - Nascosto su smartphone */}
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hidden sm:block">
               <CardHeader>
                 <CardTitle className="text-green-900 flex items-center gap-2">
                   <Leaf className="h-5 w-5" />
@@ -706,8 +706,8 @@ export default function RoutePage() {
 
             {/* Mappa Percorso rimossa - Navigazione gestita da Google/Apple Maps nativa */}
 
-            {/* Tappe del percorso */}
-            <Card>
+            {/* Tappe del percorso - Nascosto su smartphone */}
+            <Card className="hidden sm:block">
               <CardHeader>
                 <CardTitle>Tappe del Percorso</CardTitle>
                 <CardDescription>Percorso ottimizzato con algoritmo TSP</CardDescription>
@@ -737,29 +737,29 @@ export default function RoutePage() {
 
             {/* Turn-by-turn navigation gestita da Google/Apple Maps */}
 
-            {/* Azioni */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Azioni - Compatto su smartphone */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <Button 
                 variant="outline" 
                 onClick={() => setPlan(null)}
-                className="h-14 text-lg font-semibold border-2 hover:bg-muted/50 transition-all duration-300"
+                className="h-10 sm:h-14 text-sm sm:text-lg font-semibold border-2 hover:bg-muted/50 transition-all duration-300"
               >
-                <ArrowLeft className="h-5 w-5 mr-2" />
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                 Modifica
               </Button>
               <Button 
                 onClick={handleStartNavigation} 
-                className="h-14 text-lg font-semibold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                className="h-10 sm:h-14 text-sm sm:text-lg font-semibold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
               >
-                <Navigation className="h-5 w-5 mr-2" />
-                Avvia Navigazione
+                <Navigation className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Avvia </span>Navigazione
               </Button>
             </div>
           </>
         )}
 
-        {/* Info Box */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-teal-500/10 overflow-hidden">
+        {/* Info Box - Nascosto su smartphone */}
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-teal-500/10 overflow-hidden hidden sm:block">
           <CardContent className="pt-6">
             <div className="flex gap-4">
               <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg flex-shrink-0">
@@ -791,8 +791,8 @@ export default function RoutePage() {
         </Card>
 
         {/* Mappa GIS Mercato - Sempre Visibile */}
-          {/* Barra Ricerca e Filtri */}
-          <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+          {/* Barra Ricerca e Filtri - Nascosto su smartphone */}
+          <Card className="bg-[#1a2332] border-[#14b8a6]/30 hidden sm:block">
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row gap-4">
                 {/* Input Ricerca */}
@@ -859,8 +859,8 @@ export default function RoutePage() {
             </CardContent>
           </Card>
 
-          {/* Statistiche Mercato */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Statistiche Mercato - Nascosto su smartphone */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 hidden sm:grid">
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -942,8 +942,8 @@ export default function RoutePage() {
             </CardContent>
           </Card>
 
-          {/* Legenda */}
-          <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+          {/* Legenda - Nascosto su smartphone */}
+          <Card className="bg-[#1a2332] border-[#14b8a6]/30 hidden sm:block">
             <CardHeader>
               <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
                 <Filter className="h-4 w-4 text-[#14b8a6]" />
