@@ -24,7 +24,7 @@ interface CivicReport {
   lng: string | number;
   status: string;
   priority?: string;
-  created_at?: string;
+  createdAt?: string;
 }
 
 interface CivicReportsHeatmapProps {
@@ -36,56 +36,78 @@ interface CivicReportsHeatmapProps {
   onReportClick?: (report: CivicReport) => void;
 }
 
+// Componente per centrare automaticamente la mappa sui reports
+function MapCenterUpdater({ reports }: { reports: CivicReport[] }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (!map || !reports || reports.length === 0) return;
+    
+    const validReports = reports.filter(r => r.lat && r.lng);
+    if (validReports.length === 0) return;
+    
+    // Calcola il centro medio
+    const avgLat = validReports.reduce((sum, r) => 
+      sum + (typeof r.lat === 'string' ? parseFloat(r.lat) : r.lat), 0) / validReports.length;
+    const avgLng = validReports.reduce((sum, r) => 
+      sum + (typeof r.lng === 'string' ? parseFloat(r.lng) : r.lng), 0) / validReports.length;
+    
+    // Sposta la mappa con animazione
+    map.flyTo([avgLat, avgLng], 16, { duration: 1 });
+  }, [map, reports]);
+  
+  return null;
+}
+
 // Componente interno per aggiungere la heatmap
 function HeatmapLayer({ reports }: { reports: CivicReport[] }) {
   const map = useMap();
-
+  
   useEffect(() => {
     if (!map || !reports || reports.length === 0) return;
-
+    
     // Converti reports in punti heatmap
-    // Formato: [lat, lng, intensity]
     const heatData: [number, number, number][] = reports
       .filter(r => r.lat && r.lng)
       .map(r => {
         const lat = typeof r.lat === 'string' ? parseFloat(r.lat) : r.lat;
         const lng = typeof r.lng === 'string' ? parseFloat(r.lng) : r.lng;
-        // Intensità basata su priorità e status
         let intensity = 0.5;
         if (r.priority === 'URGENT') intensity = 1.0;
         if (r.status === 'pending') intensity += 0.3;
         return [lat, lng, Math.min(intensity, 1.0)];
       });
-
-    // Crea layer heatmap con gradiente rosso-arancio-giallo
+    
+    if (heatData.length === 0) return;
+    
+    // Crea layer heatmap
     const heatLayer = (L as any).heatLayer(heatData, {
-      radius: 30,
-      blur: 20,
-      maxZoom: 17,
+      radius: 35,
+      blur: 25,
+      maxZoom: 18,
       max: 1.0,
       gradient: {
-        0.0: '#00ff00',  // Verde (bassa densità)
-        0.25: '#adff2f', // Verde-giallo
-        0.5: '#ffff00',  // Giallo
-        0.75: '#ffa500', // Arancione
-        1.0: '#ff0000'   // Rosso (alta densità)
+        0.0: '#00ff00',
+        0.25: '#adff2f',
+        0.5: '#ffff00',
+        0.75: '#ffa500',
+        1.0: '#ff0000'
       }
     }).addTo(map);
-
-    // Cleanup
+    
     return () => {
       if (map && heatLayer) {
         map.removeLayer(heatLayer);
       }
     };
   }, [map, reports]);
-
+  
   return null;
 }
 
 // Icone personalizzate per tipo segnalazione
 const getMarkerIcon = (type: string, status: string) => {
-  const emoji = {
+  const emoji: Record<string, string> = {
     'Degrado': '🏚️',
     'Rifiuti': '🗑️',
     'Illuminazione': '💡',
@@ -94,11 +116,11 @@ const getMarkerIcon = (type: string, status: string) => {
     'Microcriminalità': '⚠️',
     'Abusivismo': '🚫',
     'Altro': '📝'
-  }[type] || '📍';
-
+  };
+  
   const bgColor = status === 'resolved' ? '#10b981' : 
                   status === 'in_progress' ? '#06b6d4' : '#f59e0b';
-
+  
   return L.divIcon({
     className: 'civic-marker',
     html: `<div style="
@@ -113,7 +135,7 @@ const getMarkerIcon = (type: string, status: string) => {
       font-size: 16px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       border: 2px solid white;
-    ">${emoji}</div>`,
+    ">${emoji[type] || '📍'}</div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16]
   });
@@ -121,37 +143,24 @@ const getMarkerIcon = (type: string, status: string) => {
 
 /**
  * Componente mappa termica per segnalazioni civiche
- * NON modifica MapReteHubWrapper - usa una MapContainer separata
+ * Si centra automaticamente sulle segnalazioni reali
  */
 export function CivicReportsHeatmap({
-  reports,
-  center = [44.4898, 11.0123], // Default: Bologna
-  zoom = 16,
+  reports = [],
+  center = [44.4949, 11.3426],
+  zoom = 13,
   height = '400px',
   showMarkers = true,
   onReportClick
 }: CivicReportsHeatmapProps) {
-  console.log("CivicReportsHeatmap received reports:", reports);
-  const [mapCenter, setMapCenter] = useState<[number, number]>(center);
-
-  // Calcola centro automatico basato sui reports
-  useEffect(() => {
-    if (reports && reports.length > 0) {
-      const validReports = reports.filter(r => r.lat && r.lng);
-      if (validReports.length > 0) {
-        const avgLat = validReports.reduce((sum, r) => 
-          sum + (typeof r.lat === 'string' ? parseFloat(r.lat) : r.lat), 0) / validReports.length;
-        const avgLng = validReports.reduce((sum, r) => 
-          sum + (typeof r.lng === 'string' ? parseFloat(r.lng) : r.lng), 0) / validReports.length;
-        setMapCenter([avgLat, avgLng]);
-      }
-    }
-  }, [reports]);
-
+  
+  // Debug: log dei dati ricevuti
+  console.log('CivicReportsHeatmap - reports ricevuti:', reports?.length || 0, reports);
+  
   return (
-    <div style={{ height, width: '100%' }} className="rounded-lg overflow-hidden">
+    <div style={{ height, width: '100%' }} className="rounded-lg overflow-hidden border border-[#f59e0b]/30">
       <MapContainer
-        center={mapCenter}
+        center={center}
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
@@ -161,10 +170,13 @@ export function CivicReportsHeatmap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
+        {/* Componente per centrare automaticamente */}
+        <MapCenterUpdater reports={reports} />
+        
         {/* Layer Heatmap */}
         <HeatmapLayer reports={reports} />
         
-        {/* Marker individuali (opzionali) */}
+        {/* Marker individuali */}
         {showMarkers && reports.filter(r => r.lat && r.lng).map(report => {
           const lat = typeof report.lat === 'string' ? parseFloat(report.lat) : report.lat;
           const lng = typeof report.lng === 'string' ? parseFloat(report.lng) : report.lng;
