@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.79.0  
+> **Versione:** 3.80.0  
 > **Data:** 02 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -1987,6 +1987,113 @@ interface NavigationModeProps {
 **Punto di Ripristino:**
 - Tag: `v3.55.0-stable-pre-routing`
 - Commit: `26ba096`
+
+---
+
+### v3.80.0 (02/02/2026) - Ottimizzazione Tab Route e Fix Navigazione
+
+**Obiettivo**: Ottimizzare completamente il tab Route dell'app pubblica con layout fullscreen, navigazione migliorata e traduzioni italiane.
+
+**Layout Fullscreen Mobile:**
+- ✅ Rimossi tutti i container e padding su mobile
+- ✅ Card senza bordi arrotondati su mobile (`rounded-none`)
+- ✅ Header verde abbassato (da `p-4` a `p-3`)
+- ✅ Card statistiche (km, minuti, CO₂, crediti) compattate
+
+**Sezione "Perché usare Shopping Route?":**
+- ✅ Compattata con padding ridotti
+- ✅ Testi più piccoli per ottimizzare spazio
+
+**Sezioni RIMOSSE (duplicate):**
+- ❌ Barra ricerca posteggi (già presente in tab Mappa)
+- ❌ Statistiche posteggi (Totali, Liberi, Occupati, Riservati)
+- ❌ Card Legenda Mappa
+
+**Fix Popup Indicazioni Leaflet Routing Machine:**
+- ✅ Nascosto completamente con CSS `!important`
+- ✅ Aggiunto in `index.css` regole per `.leaflet-routing-container`
+
+**Fix Popup Navigazione Nero:**
+- ✅ Spostato FUORI dalla mappa usando React Portal
+- ✅ Ora appare SOPRA i controlli (HUB, Regione, ecc.)
+- ✅ Funziona su mobile, iPad e PC
+- ✅ Pulsante X funzionante per chiudere
+
+**Traduzioni Navigazione in ITALIANO:**
+- ✅ Ignorata istruzione inglese dall'API OSRM
+- ✅ Traduzione completa per tutti i tipi di manovra:
+  - Svolte: "Gira a destra", "Gira a sinistra", "Svolta leggera a destra/sinistra"
+  - Continua: "Continua dritto", "Continua"
+  - Bivio: "Tieni la destra al bivio", "Tieni la sinistra al bivio" (era "fork slight right")
+  - Rotonde: "Entra nella rotonda", "Esci dalla rotonda"
+  - Rampe: "Prendi la rampa", "Esci dalla rampa"
+  - Merge, End of road, New name tradotti
+- ✅ Nome strada in italiano ("su Via...")
+
+**Zoom Vista Mercato:**
+- ✅ Aumentato da 19 a **20** per far comparire i numeri dei posteggi
+
+**Dimensioni Marker Ridotte (uniformate ~20px):**
+- ✅ **Marker HUB viola**: 20/18/16px (capoluogo/provincia/comune)
+- ✅ **Marker Mercato rosso**: 20px
+- ✅ **Marker Negozi**: 20px
+- ✅ Font ridotti a 11px
+- ✅ Bordi ridotti a 1-2px
+
+**File Modificati:**
+- `client/src/pages/RoutePage.tsx` - Layout fullscreen, sezioni rimosse
+- `client/src/components/NavigationMode.tsx` - Portal per popup, traduzioni italiane
+- `client/src/components/RouteLayer.tsx` - Nascosto pannello LRM
+- `client/src/components/HubMarketMapComponent.tsx` - Zoom mercato, dimensioni marker
+- `client/src/index.css` - CSS per nascondere pannello LRM
+
+**Commit:**
+- Frontend: Multipli commit per ottimizzazione Route
+
+---
+
+### v3.79.0 (02/02/2026) - Ottimizzazione Tab CivicPage e GPS Nativo
+
+**Obiettivo**: Ottimizzare il tab Civic (Segnalazioni Cittadino) con layout fullscreen e GPS nativo.
+
+**Layout Fullscreen Mobile:**
+- ✅ Rimossi container e padding su mobile
+- ✅ Card senza bordi arrotondati su mobile
+- ✅ Form compatto per stare in una singola schermata
+
+**GPS con Popup Nativo:**
+- ✅ Usa `navigator.geolocation.getCurrentPosition()` per triggerare popup nativo iOS/browser
+- ✅ Stato GPS migliorato: idle, requesting, success, error
+- ✅ Pulsante "Riprova GPS" se fallisce
+
+**Indicatori spostati nel Popup Info:**
+- ✅ I 3 indicatori (Crediti +20, Tempo 48h, Risolte 94%) ora nel popup informativo (icona ℹ️)
+- ✅ Non più visibili nella pagina principale
+
+**File Modificati:**
+- `client/src/pages/CivicPage.tsx` - Layout fullscreen, GPS nativo, popup info
+
+**Commit:**
+- Frontend: `fix: CivicPage fullscreen layout, native GPS popup, indicators in info popup`
+
+---
+
+### v3.78.0 (02/02/2026) - Ottimizzazione Tab Mappa Fullscreen
+
+**Obiettivo**: Ottimizzare il tab Mappa dell'app pubblica con layout fullscreen e controlli compatti.
+
+**Layout Fullscreen Mobile:**
+- ✅ Mappa a tutto schermo senza container
+- ✅ Controlli (Mercati/HUB, Regione, Provincia) compattati
+- ✅ Card HUB scrollabili orizzontalmente
+
+**Vista iPad/PC:**
+- ✅ Layout responsive con controlli sopra la mappa
+- ✅ Popup navigazione fuori dalla mappa
+
+**File Modificati:**
+- `client/src/pages/MapPage.tsx` - Layout fullscreen
+- `client/src/components/GestioneHubMapWrapper.tsx` - Controlli compatti
 
 ---
 
