@@ -2,19 +2,31 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  History, TrendingUp, Leaf, ArrowLeft, Loader2
+  History, Leaf, ArrowLeft, Loader2, Award, Trophy
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { Link } from 'wouter';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
 
+// Livelli di score con soglie TCC
+const SCORE_LEVELS = [
+  { name: 'Principiante', min: 0, max: 500, color: 'from-red-500 to-orange-500' },
+  { name: 'Eco-Curioso', min: 500, max: 2000, color: 'from-orange-500 to-yellow-500' },
+  { name: 'Eco-Attivo', min: 2000, max: 5000, color: 'from-yellow-500 to-lime-500' },
+  { name: 'Eco-Champion', min: 5000, max: 10000, color: 'from-lime-500 to-green-500' },
+  { name: 'Eco-Hero', min: 10000, max: 20000, color: 'from-green-500 to-emerald-500' },
+  { name: 'Eco-Legend', min: 20000, max: Infinity, color: 'from-emerald-500 to-teal-500' },
+];
+
 interface Transaction {
   id: number;
   type: string;
   amount: number;
+  euro_value?: number;
   description: string;
   created_at: string;
+  shop_name?: string;
 }
 
 export default function WalletStorico() {
@@ -59,12 +71,49 @@ export default function WalletStorico() {
   }, [currentUser?.id]);
 
   // Calcoli
-  const totalCO2 = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-  const totalTrees = (totalCO2 / 22).toFixed(1);
+  const totalTCC = transactions.reduce((sum, tx) => {
+    // Solo le transazioni earn contano per lo score
+    return tx.type === 'earn' ? sum + Math.abs(tx.amount) : sum;
+  }, 0);
+  const totalTrees = (totalTCC / 22).toFixed(1);
   
   // Ultima transazione
   const lastTx = transactions.length > 0 ? transactions[0] : null;
-  const lastCO2 = lastTx ? Math.abs(lastTx.amount) : 0;
+  const lastTCC = lastTx ? Math.abs(lastTx.amount) : 0;
+  const lastTrees = (lastTCC / 22).toFixed(1);
+
+  // Calcola livello score
+  const getCurrentLevel = () => {
+    for (let i = SCORE_LEVELS.length - 1; i >= 0; i--) {
+      if (totalTCC >= SCORE_LEVELS[i].min) {
+        return { ...SCORE_LEVELS[i], index: i };
+      }
+    }
+    return { ...SCORE_LEVELS[0], index: 0 };
+  };
+  
+  const currentLevel = getCurrentLevel();
+  const nextLevel = SCORE_LEVELS[Math.min(currentLevel.index + 1, SCORE_LEVELS.length - 1)];
+  const progressInLevel = totalTCC - currentLevel.min;
+  const levelRange = currentLevel.max === Infinity ? 10000 : currentLevel.max - currentLevel.min;
+  const progressPercent = Math.min(100, (progressInLevel / levelRange) * 100);
+
+  // Formatta data e ora
+  const formatDateTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return {
+      date: date.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }),
+      time: date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+    };
+  };
+
+  // Estrai nome negozio dalla description o usa shop_name
+  const getShopName = (tx: Transaction) => {
+    if (tx.shop_name) return tx.shop_name;
+    // Fallback: cerca nel description
+    const match = tx.description.match(/presso (.+?)(?:\s*-|$)/i);
+    return match ? match[1] : (tx.type === 'earn' ? 'Acquisto' : 'Pagamento');
+  };
 
   // Se non autenticato
   if (!isAuthenticated && !loading) {
@@ -113,56 +162,73 @@ export default function WalletStorico() {
         </Link>
         <History className="h-5 w-5 sm:h-6 sm:w-6" />
         <div>
-          <h1 className="text-base sm:text-lg font-bold">Storico</h1>
+          <h1 className="text-base sm:text-lg font-bold">Storico & Impatto</h1>
           <p className="text-xs text-white/70">{transactions.length} transazioni</p>
         </div>
       </header>
 
       {/* Statistiche - Due colonne affiancate */}
       <div className="shrink-0 p-3 sm:p-4 grid grid-cols-2 gap-2 sm:gap-3">
-        {/* Colonna 1: CO2 e Alberi */}
-        <Card className="border-0 shadow-md bg-gradient-to-br from-green-500/10 to-green-600/5">
+        {/* Colonna 1: Ultima Transazione (verde) */}
+        <Card className="border-0 shadow-md bg-gradient-to-br from-green-500/20 to-green-600/10">
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                <Leaf className="h-4 w-4 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Leaf className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xs text-muted-foreground">Impatto</span>
+              <span className="text-xs text-muted-foreground">Ultima Transazione</span>
             </div>
             <div className="space-y-1">
               <div>
-                <p className="text-xl sm:text-2xl font-bold text-green-600">{totalCO2.toLocaleString('it-IT')} kg</p>
-                <p className="text-xs text-muted-foreground">CO₂ totale</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-600">{lastTCC}</p>
+                <p className="text-sm font-medium text-green-700">kg CO₂</p>
               </div>
               <div className="pt-2 border-t border-green-500/20">
-                <p className="text-lg font-semibold text-green-600">🌳 {totalTrees}</p>
-                <p className="text-xs text-muted-foreground">alberi equiv.</p>
+                <p className="text-sm text-green-600 font-medium">≈ {lastTrees} alberi</p>
+                {lastTx && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {lastTx.type === 'earn' ? '↑ Accredito' : '↓ Pagamento'} • {formatDateTime(lastTx.created_at).date}
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Colonna 2: Trend */}
-        <Card className="border-0 shadow-md bg-gradient-to-br from-blue-500/10 to-blue-600/5">
+        {/* Colonna 2: Score / Livello (barra di progresso) */}
+        <Card className="border-0 shadow-md bg-gradient-to-br from-amber-500/20 to-orange-500/10">
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Trophy className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xs text-muted-foreground">Trend</span>
+              <span className="text-xs text-muted-foreground">Il Tuo Score</span>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-2">
               <div>
-                <p className="text-xl sm:text-2xl font-bold text-blue-600">{lastCO2} kg</p>
-                <p className="text-xs text-muted-foreground">ultima op.</p>
+                <p className="text-lg sm:text-xl font-bold text-amber-600">{currentLevel.name}</p>
+                <p className="text-xs text-muted-foreground">{totalTCC.toLocaleString('it-IT')} TCC totali</p>
               </div>
-              <div className="pt-2 border-t border-blue-500/20">
-                <p className="text-sm font-medium text-blue-600">
-                  {lastTx?.type === 'earn' ? '↑ Accredito' : '↓ Pagamento'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {lastTx ? new Date(lastTx.created_at).toLocaleDateString('it-IT') : '-'}
-                </p>
+              
+              {/* Barra di progresso */}
+              <div className="pt-2 border-t border-amber-500/20">
+                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full bg-gradient-to-r ${currentLevel.color} transition-all duration-500`}
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-xs text-muted-foreground">{currentLevel.min}</span>
+                  <span className="text-xs text-amber-600 font-medium">
+                    {currentLevel.max === Infinity ? '∞' : currentLevel.max} TCC
+                  </span>
+                </div>
+                {currentLevel.max !== Infinity && (
+                  <p className="text-xs text-center text-muted-foreground mt-1">
+                    Prossimo: <span className="text-amber-600 font-medium">{nextLevel.name}</span>
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -175,7 +241,7 @@ export default function WalletStorico() {
           <CardHeader className="p-3 pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <History className="h-4 w-4" />
-              Transazioni
+              Transazioni Recenti
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3 pt-0">
@@ -183,21 +249,42 @@ export default function WalletStorico() {
               {transactions.length === 0 ? (
                 <p className="text-center text-muted-foreground py-4 text-sm">Nessuna transazione</p>
               ) : (
-                transactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-2 sm:p-3 bg-muted/30 rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{tx.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(tx.created_at).toLocaleDateString('it-IT', {
-                          day: '2-digit', month: 'short', year: 'numeric'
-                        })}
-                      </p>
+                transactions.map((tx) => {
+                  const { date, time } = formatDateTime(tx.created_at);
+                  const shopName = getShopName(tx);
+                  return (
+                    <div key={tx.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        {/* Nome negozio/impresa */}
+                        <p className="font-semibold text-sm truncate">{shopName}</p>
+                        {/* Data e ora */}
+                        <p className="text-xs text-muted-foreground">
+                          {date} • {time}
+                        </p>
+                        {/* Badge tipo */}
+                        <span className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${
+                          tx.type === 'earn' 
+                            ? 'bg-green-500/20 text-green-600' 
+                            : 'bg-red-500/20 text-red-500'
+                        }`}>
+                          {tx.type === 'earn' ? 'Acquisto' : 'Pagamento TCC'}
+                        </span>
+                      </div>
+                      <div className="text-right ml-3">
+                        {/* Euro */}
+                        {tx.euro_value && (
+                          <p className="text-sm font-medium">
+                            €{(tx.euro_value / 100).toFixed(2)}
+                          </p>
+                        )}
+                        {/* TCC */}
+                        <p className={`text-lg font-bold ${tx.type === 'earn' ? 'text-green-600' : 'text-red-500'}`}>
+                          {tx.type === 'earn' ? '+' : '-'}{Math.abs(tx.amount)} TCC
+                        </p>
+                      </div>
                     </div>
-                    <div className={`text-base sm:text-lg font-semibold ml-2 ${tx.type === 'earn' ? 'text-green-600' : 'text-red-500'}`}>
-                      {tx.type === 'earn' ? '+' : '-'}{Math.abs(tx.amount)}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </CardContent>
