@@ -1990,6 +1990,29 @@ interface NavigationModeProps {
 
 ---
 
+### PUNTO DI RIPRISTINO STABILE v3.80.0 (02/02/2026)
+
+**Sistema Completamente Verificato e Allineato:**
+
+| Componente | Stato | Tag/Commit | URL |
+|------------|-------|------------|-----|
+| **Frontend GitHub** | ✅ OK | `v3.80.0-stable` (`aaf088e`) | github.com/Chcndr/dms-hub-app-new |
+| **Backend GitHub** | ✅ OK | `v3.54.0-stable` (`c486929`) | github.com/Chcndr/mihub-backend-rest |
+| **Vercel** | ✅ OK | Deploy automatico | dms-hub-app-new.vercel.app |
+| **Hetzner** | ✅ OK | API v2.0.0 online | orchestratore.mio-hub.me |
+| **Neon DB** | ✅ OK | 2 mercati attivi | - |
+
+**Per ripristinare a questo punto:**
+```bash
+# Frontend
+git checkout v3.80.0-stable
+
+# Backend
+git checkout v3.54.0-stable
+```
+
+---
+
 ### v3.80.0 (02/02/2026) - Ottimizzazione Tab Route e Fix Navigazione
 
 **Obiettivo**: Ottimizzare completamente il tab Route dell'app pubblica con layout fullscreen, navigazione migliorata e traduzioni italiane.
