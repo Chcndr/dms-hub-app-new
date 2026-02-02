@@ -1717,7 +1717,7 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-md w-full p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">
@@ -1782,11 +1782,7 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
                 required
                 value={formData.data_rilascio}
                 onChange={(e) => setFormData({ ...formData, data_rilascio: e.target.value })}
-                onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                onFocus={(e) => e.stopPropagation()}
-                onBlur={(e) => e.stopPropagation()}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 relative z-[100]"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
               />
             </div>
             <div>
@@ -1795,11 +1791,7 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
                 type="date"
                 value={formData.data_scadenza}
                 onChange={(e) => setFormData({ ...formData, data_scadenza: e.target.value })}
-                onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                onFocus={(e) => e.stopPropagation()}
-                onBlur={(e) => e.stopPropagation()}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 relative z-[100]"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
               />
             </div>
           </div>
