@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.77.0  
+> **Versione:** 3.78.0  
 > **Data:** 02 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -1171,6 +1171,43 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 ### 📝 CHANGELOG
+
+### v3.78.0 (02/02/2026) - Ottimizzazione UX Mobile Mappa e Vetrine
+
+**Mappa Italia (HubMarketMapComponent):**
+- Zoom iniziale ridotto da 6 a 5 per visualizzare tutta la penisola su mobile
+- Rimosso tab "Italia" ridondante (sostituito da pulsante "Indietro")
+- Mappa fullscreen 100vh su mobile per massimizzare area visibile
+- Scroll automatico alla mappa su selezione Regione/Provincia/Indietro
+
+**Pagina Vetrina Mobile:**
+- Layout fullscreen senza container su mobile
+- Tasto "Modifica" visibile solo per Admin e impresa titolare
+- Galleria prodotti con swipe orizzontale fullscreen e snap obbligatorio
+- Rimossi numeri dalle foto galleria
+- Indicatori pallini per navigazione galleria
+
+**Pagina Lista Vetrine (Redesign Completo):**
+- Header verde con pulsante "Nuovo Negozio" a destra (stesso stile "Modifica")
+- Rimossi tabs "Lista Vetrine" e "Nuovo Negozio"
+- Barra ricerca spostata fuori dal container, subito sotto header
+- Schede negozi più compatte (padding ridotto)
+- Pagina statica: header e ricerca fissi, solo schede scrollabili
+- Navigazione indietro corretta (naviga a /vetrine invece di history.back)
+
+**Fix Tecnici:**
+- Rimosso useAuth da VetrinePage per evitare errori OAuth su pagina pubblica
+- Scroll snap galleria con `scrollSnapType: 'x mandatory'` e `scrollSnapStop: 'always'`
+- `-webkit-overflow-scrolling: touch` per iOS
+
+**Commit:**
+- `e198179` - Mappa zoom ridotto, fullscreen mobile, scroll automatico
+- `a42bc70` - Fix useAuth VetrinePage
+- `05489a0` - Tab Nuovo Negozio solo admin, galleria snap
+- `a14939d` - Abilitare sempre tab e modifica
+- `6ed1593` - Redesign lista vetrine completo
+
+---
 
 ### v3.55.0 (29/01/2026) - Modulo Segnalazioni Civiche Completo
 
