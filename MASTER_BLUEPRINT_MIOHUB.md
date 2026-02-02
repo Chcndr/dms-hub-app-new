@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
 > **Versione:** 3.52.0  
-> **Data:** 27 Gennaio 2026  
+> **Data:** 30 Gennaio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -388,12 +388,6 @@ Gli endpoint sono documentati in:
 | **Imprese** | `/api/imprese/*` | qualificazioni, rating |
 | **SUAP** | `/api/suap/*` | pratiche, stats, evaluate |
 | **TCC v2** | `/api/tcc/v2/*` | wallet-impresa, qualifiche, settlement |
-| **Notifiche** | `/api/notifiche/*` | suap, impresa, risposte, invio |
-| **Controlli** | `/api/inspections/*` | stats, list, create |
-| **Sanzioni** | `/api/sanctions/*` | list, create, update |
-| **Verbali** | `/api/verbali/*` | pdf, invia, list |
-| **Watchlist** | `/api/watchlist/*` | list, update, resolve |
-| **Presenze** | `/api/presenze/*` | sessioni, dettaglio, chiudi |
 
 ---
 
@@ -1151,26 +1145,6 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 
 ### 📝 CHANGELOG
 
-### v3.52.0 (27/01/2026) - Fix Storico Sessioni Mercato + Ottimizzazione Polling Vercel
-
-**Bug Fix:**
-- **Endpoint `/api/test-mercato/chiudi-mercato`** ora salva correttamente lo storico in `market_sessions` e `market_session_details`
-  - Prima: l'endpoint chiudeva il mercato ma NON salvava lo storico
-  - Ora: salva sessione + dettagli presenze per consultazione futura
-  - Usa UPSERT per evitare duplicati in caso di ri-chiusura
-- **Polling agenti DashboardPA** ridotto da 10s a 30s + controllo `document.hidden`
-  - Risparmio stimato: 90%+ del consumo CPU Vercel
-  - Il polling si ferma quando la tab è in background
-
-**Endpoint Modificati:**
-- `POST /api/test-mercato/chiudi-mercato` - Aggiunto salvataggio in `market_sessions` + `market_session_details`
-
-**File Modificati:**
-- Backend: `routes/test-mercato.js` (linee 590-750)
-- Frontend: `client/src/pages/DashboardPA.tsx` (linee 1475-1530)
-
----
-
 ### v3.35.0 (14/01/2026) - Progettazione Gestione Canone Unico e More
 
 **Nuove Funzionalità Progettate:**
@@ -1439,45 +1413,6 @@ const forcedZoom = roundedToQuarter + 0.25;
 ---
 
 
-
-### v3.52.0 (27 Gennaio 2026) - Filtro Comune e Notifiche Verbali con PDF
-
-**Obiettivo**: Implementare filtro per comune_id in tutti gli endpoint Controlli/Sanzioni e migliorare sistema notifiche verbali.
-
-**Backend (Hetzner):**
-- ✅ Tutti gli endpoint Controlli/Sanzioni ora filtrano per `comune_id`
-- ✅ Endpoint `/api/notifiche/suap?comune_id=X` per notifiche SUAP filtrate
-- ✅ Endpoint `/api/inspections/stats?comune_id=X` per statistiche filtrate
-- ✅ Endpoint `/api/watchlist?comune_id=X` per watchlist filtrata
-- ✅ Endpoint `/api/sanctions?comune_id=X` per sanzioni filtrate
-- ✅ Endpoint `/api/presenze/sessioni?comune_id=X` per sessioni filtrate
-- ✅ Migliorato `POST /api/verbali/:id/invia` con link diretto al PDF
-- ✅ Notifica verbale ora include: 🔴 semaforo, importo, scadenza, link PDF
-
-**Frontend (Vercel):**
-- ✅ `ControlliSanzioniPanel.tsx` accetta prop `comuneId`
-- ✅ `DashboardPA.tsx` passa `selectedComuneId` al pannello
-- ✅ Tutti gli endpoint chiamati con filtro comune
-- ✅ UI notifiche SUAP con semafori (🟢🟡🔴)
-
-**Guardian**: 556 endpoint totali (+79)
-
-**Nuovi Endpoint Documentati:**
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/notifiche/suap` | GET | Notifiche SUAP filtrate per comune |
-| `/api/inspections/stats` | GET | Statistiche controlli per comune |
-| `/api/watchlist` | GET | Watchlist imprese per comune |
-| `/api/sanctions` | GET | Lista sanzioni per comune |
-| `/api/presenze/sessioni` | GET | Storico sessioni mercato per comune |
-| `/api/verbali/:id/pdf` | GET | Download PDF verbale |
-| `/api/verbali/:id/invia` | POST | Invio notifica verbale con link PDF |
-
-**Commit:**
-- Frontend: `dba4a68` - feat(controlli-sanzioni): filtro notifiche SUAP per comune_id
-- Backend: Modifica diretta `verbali.js` - Notifica con link PDF
-
----
 
 ### v3.51.0 (26 Gennaio 2026) - Sistema Controlli/Sanzioni e Storico Mercati
 
@@ -3949,177 +3884,556 @@ const handleStallUpdate = async () => {
 
 *Aggiornamento del 20 Gennaio 2026 - Manus AI*
 
----
-
-## 🔧 PATCH BUS HUB EDITOR - 30 GENNAIO 2026
-
-### Sessione Manus AI - Fix e Miglioramenti
-
-#### ✅ P13 - Salvataggio Completo Immagine/Corner/Centro
-
-**Problema:** Il pulsante "Salva nel Database" salvava solo nome, indirizzo, coordinate e negozi, ma NON salvava l'immagine PNG trasparente e i corner (angoli per posizione/rotazione/scala).
-
-**Soluzione implementata:**
-
-**1. Modifica `saveToDatabase()` in bus_hub.html:**
-```javascript
-// ========== P13 FIX: Aggiungi immagine trasparente e corner ==========
-// Recupera immagine trasparente dal BUS
-const pngData = await DMSBUS.get('png_transparent');
-if (pngData) photoUrl = pngData;
-
-// Recupera corner/GCP dal BUS
-const gcp = await DMSBUS.getJSON('gcp');
-if (gcp && gcp.corners) cornerGeojson = JSON.stringify(gcp.corners);
-
-// Aggiungi al payload
-payload.photoUrl = photoUrl;
-payload.cornerGeojson = cornerGeojson;
-// ========== FINE P13 FIX ==========
-```
-
-**2. Modifica `loadFromDb()` in bus_hub.html:**
-```javascript
-// ========== P13 FIX: Carica immagine e corner dal database ==========
-// Carica immagine trasparente nel BUS
-if (result.photo_url) {
-  await DMSBUS.put('png_transparent', result.photo_url);
-}
-
-// Carica corner/GCP nel BUS
-if (result.corner_geojson) {
-  const corners = JSON.parse(result.corner_geojson);
-  await DMSBUS.putJSON('gcp', { corners: corners });
-}
-
-// Salva dati mercato nel BUS per Editor V3
-await DMSBUS.putJSON('market_data', {
-  market_lat: result.center_lat,
-  market_lng: result.center_lng,
-  market_name: result.name,
-  market_address: result.address,
-  market_city: result.city
-});
-// ========== FINE P13 FIX ==========
-```
-
-**Flusso completo ora funzionante:**
-```
-[PNG Tool] → Crea immagine trasparente → [DMSBUS: png_transparent]
-                                              ↓
-[Slot Editor V3] → Posiziona con corner → [DMSBUS: gcp.corners]
-                                              ↓
-[BUS HUB] → "Salva nel Database" → [PostgreSQL: photo_url, corner_geojson]
-                                              ↓
-[BUS HUB] → "Carica" → [DMSBUS: png_transparent, gcp.corners]
-                                              ↓
-[Slot Editor V3] → Visualizza pianta già posizionata
-```
-
-**Campi database utilizzati (hub_locations):**
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| photo_url | TEXT | Immagine PNG trasparente (base64) |
-| corner_geojson | JSONB | 4 angoli con coordinate {nw, ne, se, sw} |
-| center_lat | NUMERIC | Latitudine centro mercato |
-| center_lng | NUMERIC | Longitudine centro mercato |
-
-**Backup creato:** `bus_hub.html.bak.P13.20260130`
 
 ---
 
-#### ✅ Fix Coordinate Mercato Grosseto
+## 💡 AGGIORNAMENTO 30 GENNAIO 2026 - AUTOMAZIONE FLUSSO EDITOR V3 → DATABASE
 
-**Problema:** Durante i test API, le coordinate del Mercato Grosseto erano state erroneamente modificate, spostando il marker M fuori dal centro.
+### 1. Riepilogo Fix Implementati
 
-**Soluzione:** Ripristinate le coordinate corrette via API PATCH:
-- **Prima (errato):** 42.7589, 11.1135 (Cinema Marraccini)
-- **Adesso (corretto):** 42.7587, 11.1143 (Piazza del Sale)
-
-Coordinate verificate tramite OpenStreetMap Nominatim.
-
----
-
-### 📋 Riepilogo Patch Completate (Sessione 30/01/2026)
-
-| Patch | Descrizione | File Modificato | Stato |
-|-------|-------------|-----------------|-------|
-| P1 | Fix coordinate hardcoded | slot_editor_v3_unified.html | ✅ |
-| P2 | Fix variabile plantOverlay | slot_editor_v3_unified.html | ✅ |
-| P5 | Pre-popola nome/indirizzo/città | slot_editor_v3_unified.html | ✅ |
-| P6 | Fix INSERT backend | hub.js | ✅ |
-| P7 | UPSERT logic HUB | bus_hub.html | ✅ |
-| P7b | UPSERT logic Markets | slot_editor_v3_unified.html | ✅ |
-| P13 | Salvataggio immagine/corner/centro | bus_hub.html | ✅ |
-| P15 | Fix hubCorner.getLatLng() + proprietà aree | slot_editor_v3_unified.html | ✅ |
-
-### 📁 Backup Creati
-
-| File | Backup | Data |
-|------|--------|------|
-| slot_editor_v3_unified.html | .bak.20260130 | 30/01/2026 |
-| bus_hub.html | .bak.20260130, .bak.P13.20260130 | 30/01/2026 |
-| hub.js | .bak.20260130 | 30/01/2026 |
+| Fix | File | Repository | Descrizione |
+|-----|------|------------|-------------|
+| P17 | `routes/hub.js` | mihub-backend-rest | Aggiunto `areaSqm` nel PUT per aggiornare area in mq |
+| P18 | `slot_editor_v3_unified.html` | mihub-backend-rest | Dialog selezione ID HUB manuale prima del salvataggio |
+| P20 | `useMapAnimation.ts` | dms-hub-app-new | Corner area a filo schermo - rimosso padding e margine |
 
 ---
 
-#### ✅ P15: Fix hubCorner.getLatLng() e Proprietà Aree (30/01/2026)
+### 2. P17 FIX - areaSqm nel PUT (Backend)
 
-**Problema critico risolto:**
-- Errore JavaScript `window.hubCorner.getLatLng is not a function` bloccava il salvataggio nel database
-- Le proprietà delle aree (fillColor, borderColor, fillOpacity, name, type) non venivano salvate
+**Problema:** Quando si aggiornava un HUB esistente, il campo `area_sqm` non veniva salvato nel database. Il calcolo automatico dell'area in mq funzionava solo per i nuovi HUB (POST), non per gli aggiornamenti (PUT).
 
-**Causa:**
-- `window.hubCorner` è un oggetto `{bounds, rotation, scale, fixed}`, NON un marker Leaflet
-- Il codice tentava di chiamare `.getLatLng()` su un oggetto semplice
-- Le proprietà di stile venivano aggiornate solo nel poligono Leaflet, non nell'oggetto `window.hubArea`
+**File:** `/root/mihub-backend-rest/routes/hub.js`
 
-**Soluzione implementata:**
+**Posizione:** Riga 340 (dentro il blocco PUT `/api/hub/locations/:id`)
 
-**1. Fix cornerGeojson (righe 4417-4440):**
+**Modifica:**
 ```javascript
-// ========== P15 FIX: Prepara corner GeoJSON corretto ==========
-let cornerGeojson = null;
-if (window.hubCorner && window.hubCorner.bounds) {
-  cornerGeojson = {
-    type: 'Feature',
-    properties: {
-      rotation: window.hubCorner.rotation || 0,
-      scale: window.hubCorner.scale || 1,
-      fixed: window.hubCorner.fixed || false
-    },
-    geometry: {
-      type: 'Polygon',
-      coordinates: [[...bounds as polygon...]]
-    }
-  };
-}
+// P17 FIX: Aggiunto areaSqm nel PUT
+if (areaSqm !== undefined) { updates.push(`area_sqm = $${paramCount++}`); values.push(areaSqm); }
 ```
 
-**2. Fix areaGeojson con proprietà (righe 4396-4415):**
+**Commit:** `6b24d70` - "fix: add areaSqm update in PUT /api/hub/locations/:id - P17 FIX"
+
+**Test:** Aggiornare un HUB esistente dall'Editor V3 e verificare che `area_sqm` sia popolato nel database.
+
+---
+
+### 3. P18 FIX - Selezione ID HUB Manuale (Editor V3)
+
+**Problema:** Quando si salvava dall'Editor V3, il sistema cercava per NOME e se non trovava creava un NUOVO HUB con ID diverso. Questo causava duplicati invece di aggiornare l'HUB esistente (es. gli HUB dell'Emilia Romagna già presenti nel database).
+
+**File:** `/root/mihub-backend-rest/public/tools/slot_editor_v3_unified.html`
+
+**Posizione:** Righe 4524-4576 (blocco P7b FIX sostituito)
+
+**Funzionalità Implementate:**
+1. Cerca automaticamente HUB con stesso nome nel database
+2. Mostra lista di TUTTI gli HUB della stessa città con i loro ID
+3. Permette di inserire manualmente l'ID dell'HUB esistente
+4. Se lasci vuoto, crea un nuovo HUB
+
+**Codice Chiave:**
 ```javascript
-areaGeojson = {
-  type: 'Feature',
-  properties: {
-    name: window.hubArea.name || 'Area HUB',
-    type: window.hubArea.type || 'hub',
-    fillColor: window.hubArea.fillColor || '#9C27B0',
-    fillOpacity: window.hubArea.fillOpacity || 0.2,
-    borderColor: window.hubArea.borderColor || '#9C27B0',
-    borderWidth: window.hubArea.borderWidth || 3
-  },
-  geometry: { type: 'Polygon', coordinates: [...] }
-};
+// ========== P18 FIX: Logica UPSERT con selezione ID manuale ==========
+// Cerca HUB della stessa città per suggerire
+const hubsInCity = hubsList.filter(h => h.city && h.city.toLowerCase() === exportData.city.toLowerCase());
+let suggestedIds = hubsInCity.map(h => `ID ${h.id}: ${h.name}`).join('\n');
+
+const idMessage = existingHubId 
+  ? `🔍 HUB trovato con stesso nome!\n\nID: ${existingHubId}\nNome: ${exportData.name}\n\n✏️ Inserisci ID per AGGIORNARE un HUB esistente\n(lascia vuoto per CREARE nuovo)\n\n📋 HUB nella città "${exportData.city}":\n${suggestedIds}`
+  : `⚠️ Nessun HUB trovato con nome "${exportData.name}"\n\n✏️ Inserisci ID per AGGIORNARE un HUB esistente\n(lascia vuoto per CREARE nuovo)\n\n📋 HUB nella città "${exportData.city}":\n${suggestedIds}`;
+
+const userInputId = prompt(idMessage, existingHubId || '');
 ```
 
-**3. Sincronizzazione proprietà (righe 2988-3019):**
-- Quando l'utente modifica colore/spessore/opacità nel popup, le proprietà vengono salvate anche in `window.hubArea`
+**Come Usare:**
+1. Apri Slot Editor V3: `https://api.mio-hub.me/tools/slot_editor_v3_unified.html`
+2. Disegna Area HUB (poligono viola)
+3. Aggiungi Negozi se necessario
+4. Clicca "🗄️ Salva nel Database (Pepe GIS)"
+5. Inserisci Nome, Indirizzo, Città
+6. Appare dialog con lista HUB della città (es. "ID 37: HUB Carpi")
+7. Inserisci l'ID esistente per aggiornare, o lascia vuoto per creare nuovo
+8. Conferma salvataggio
 
-**4. Inizializzazione proprietà (righe 3047-3058):**
-- Quando viene creata una nuova area HUB, le proprietà di default vengono inizializzate
+---
 
-**File modificato:** `slot_editor_v3_unified.html`
+### 4. P20 FIX - Corner Area a Filo Schermo (Frontend)
+
+**Problema:** Lo zoom si fermava troppo presto o troppo tardi quando si cliccava su un HUB nella Dashboard GIS. I corner dell'area dovevano arrivare esattamente ai bordi dello schermo, indipendentemente dalla dimensione dell'area (funziona sia per Carpi ~522.000 mq che per Grosseto più piccolo).
+
+**File:** `client/src/hooks/useMapAnimation.ts`
+
+**Posizione:** Righe 34-41
+
+**Prima (non funzionante):**
+```javascript
+const rawZoom = map.getBoundsZoom(latLngBounds, false, [50, 50]); // padding 50px
+const roundedToQuarter = Math.round(rawZoom * 4) / 4;
+const forcedZoom = Math.min(roundedToQuarter - 0.5, 19); // margine -0.5
+```
+
+**Dopo (P20 FIX - corner a filo):**
+```javascript
+// P20 FIX: Corner a filo schermo
+// Calcola lo zoom ottimale per i bounds SENZA padding
+// così i corner dell'area arrivano esattamente ai bordi dello schermo
+const rawZoom = map.getBoundsZoom(latLngBounds, false, [0, 0]); // RIMOSSO padding
+// Arrotonda a 0.25 più vicino per quarti di scatto (la mappa ha zoomSnap: 0.25)
+const roundedToQuarter = Math.round(rawZoom * 4) / 4;
+// Usa lo zoom calcolato direttamente, senza margini aggiuntivi
+const forcedZoom = Math.min(roundedToQuarter, 19); // RIMOSSO margine
+```
+
+**Commit:** `d0c8986` - "fix: P20 corner area a filo schermo - rimosso padding e margine"
+
+**Note Tecniche:**
+- La mappa ha `zoomSnap: 0.25`, quindi gli scatti sono a quarti di livello (17.00, 17.25, 17.50, 17.75, 18.00...)
+- `getBoundsZoom` calcola automaticamente lo zoom in base alla dimensione dell'area
+- Rimuovendo padding e margine, i corner arrivano esattamente ai bordi dello schermo
+
+---
+
+### 5. Flusso Editor V3 → Database (Schema Aggiornato)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SLOT EDITOR V3                                │
+│          https://api.mio-hub.me/tools/slot_editor_v3_unified.html│
+├─────────────────────────────────────────────────────────────────┤
+│  1. Carica pianta PNG (opzionale)                               │
+│  2. Disegna Area HUB (poligono viola) - calcola area_sqm auto   │
+│  3. Aggiungi Negozi (marker con lettera A, B, C...)             │
+│  4. Fissa Corner Pianta (se hai caricato PNG)                   │
+│  5. Clicca "🗄️ Salva nel Database (Pepe GIS)"                  │
+├─────────────────────────────────────────────────────────────────┤
+│  6. Inserisci Nome, Indirizzo, Città                            │
+│  7. [P18 FIX] Appare dialog con:                                │
+│     - ID trovato automaticamente (se stesso nome)               │
+│     - Lista HUB della stessa città con ID                       │
+│     - Campo per inserire ID manualmente                         │
+│  8. Inserisci ID esistente (es. 37) o lascia vuoto per nuovo    │
+├─────────────────────────────────────────────────────────────────┤
+│  9. Dati salvati nel database (hub_locations):                  │
+│     - name, address, city                                       │
+│     - center_lat, center_lng                                    │
+│     - area_geojson (poligono GeoJSON)                           │
+│     - area_sqm (superficie in mq) [P17 FIX]                     │
+│     - corner_geojson (bounds pianta per overlay)                │
+│     - shops (negozi collegati via hub_shops)                    │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    API BACKEND                                   │
+│                 POST/PUT /api/hub/locations                      │
+├─────────────────────────────────────────────────────────────────┤
+│  - POST: Crea nuovo HUB (ID auto-generato)                      │
+│  - PUT: Aggiorna HUB esistente (con ID specificato)             │
+│  - [P17 FIX] area_sqm ora salvato anche in PUT                  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    DASHBOARD GIS (Frontend)                      │
+│                 dms-hub-app-new.vercel.app                       │
+├─────────────────────────────────────────────────────────────────┤
+│  - Visualizza HUB con area colorata                             │
+│  - Click su HUB → Zoom animato [P20 FIX]                        │
+│  - Corner area a filo schermo                                   │
+│  - Funziona per aree grandi (Carpi) e piccole (Grosseto)        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 6. Commit 30 Gennaio 2026
+
+| Repository | Commit | Descrizione |
+|------------|--------|-------------|
+| mihub-backend-rest | `6b24d70` | P17: areaSqm nel PUT /api/hub/locations/:id |
+| dms-hub-app-new | `d0c8986` | P20: corner area a filo schermo |
+
+---
+
+### 7. File Modificati
+
+| File | Repository | Righe | Modifiche |
+|------|------------|-------|-----------|
+| routes/hub.js | mihub-backend-rest | 340 | +1 riga per areaSqm nel PUT |
+| slot_editor_v3_unified.html | mihub-backend-rest | 4524-4576 | Dialog selezione ID HUB manuale |
+| useMapAnimation.ts | dms-hub-app-new | 34-41 | Rimosso padding e margine zoom |
+
+---
+
+### 8. Note Importanti
+
+1. **Editor V3 modificato direttamente sul server** - Il file `slot_editor_v3_unified.html` è stato caricato via SCP, non committato su GitHub. Per persistere la modifica su GitHub, fare commit manuale.
+
+2. **Procedura per nuovi HUB Emilia Romagna:**
+   - Gli HUB sono già nel database con i loro ID
+   - Usare l'Editor V3 per disegnare l'area
+   - Nel dialog P18, inserire l'ID esistente per aggiornare
+
+3. **zoomSnap 0.25** - La mappa ha scatti a quarti di livello (17.00, 17.25, 17.50, 17.75, 18.00...)
 
 ---
 
 *Aggiornamento del 30 Gennaio 2026 - Manus AI*
+
+
+---
+
+## 📋 PROGETTO: INTEGRAZIONE CENTRO MOBILITÀ E ROUTE ETICO
+
+> **Data Progetto:** 31 Gennaio 2026  
+> **Versione Target:** 3.53.0  
+> **Stato:** 📝 PIANIFICATO - In attesa autorizzazione
+
+---
+
+### 1. OBIETTIVO
+
+Rendere **Route Etico** e **Centro Mobilità** pienamente funzionali e integrati con:
+- Sistema **TCC (Token Carbon Credit)** per accredito automatico crediti
+- Tracking **CO2 risparmiata** per mobilità sostenibile
+- Dati **TPL reali** (fermate, orari tempo reale)
+- Navigazione verso **negozi/mercati** nel Gemello Digitale
+
+---
+
+### 2. STATO ATTUALE
+
+#### 2.1 Route Etico ✅ Parzialmente Funzionante
+
+| Funzionalità | Stato | Note |
+|--------------|-------|------|
+| Calcolo percorso (ORS) | ✅ | OpenRouteService integrato |
+| Modalità trasporto | ✅ | walking, cycling, bus, driving |
+| Calcolo CO2 risparmiata | ✅ | Formula implementata |
+| Calcolo crediti | ✅ | Formula implementata |
+| Deep link da negozi | ✅ | Coordinate GPS passate |
+| **Accredito TCC Wallet** | ❌ | **NON IMPLEMENTATO** |
+| **Verifica completamento** | ❌ | **NON IMPLEMENTATO** |
+| **Storico percorsi** | ❌ | **NON IMPLEMENTATO** |
+
+#### 2.2 Centro Mobilità ⚠️ Dati Mock
+
+| Funzionalità | Stato | Note |
+|--------------|-------|------|
+| Tab Dashboard PA | ✅ | Visibile e navigabile |
+| MobilityMap | ✅ | Componente funzionante |
+| Statistiche | ⚠️ | Dati mock hardcoded |
+| Fermate TPL | ⚠️ | Mock data (2 fermate) |
+| Orari tempo reale | ❌ | Non implementato |
+| Database fermate | ❌ | Tabella non esiste |
+
+---
+
+### 3. ARCHITETTURA TARGET
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         GEMELLO DIGITALE DEL COMMERCIO                   │
+│                                                                          │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐              │
+│  │   NEGOZI     │    │   MERCATI    │    │     HUB      │              │
+│  │   (shops)    │    │  (markets)   │    │ (hub_locations)│            │
+│  └──────┬───────┘    └──────┬───────┘    └──────┬───────┘              │
+│         │                   │                   │                       │
+│         └───────────────────┼───────────────────┘                       │
+│                             │                                           │
+│                             ▼                                           │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │                      ROUTE ETICO                                  │  │
+│  │                                                                   │  │
+│  │  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐            │  │
+│  │  │ Calcolo     │   │ Navigazione │   │ Verifica    │            │  │
+│  │  │ Percorso    │──►│ GPS         │──►│ Completamento│           │  │
+│  │  │ (ORS API)   │   │ (Leaflet)   │   │ (Geofence)  │            │  │
+│  │  └─────────────┘   └─────────────┘   └──────┬──────┘            │  │
+│  │                                              │                   │  │
+│  └──────────────────────────────────────────────┼───────────────────┘  │
+│                                                 │                      │
+│                                                 ▼                      │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │                    CENTRO MOBILITÀ                                │  │
+│  │                                                                   │  │
+│  │  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐            │  │
+│  │  │ Fermate TPL │   │ Orari RT    │   │ Percorsi    │            │  │
+│  │  │ (Database)  │   │ (GTFS-RT)   │   │ Multimodali │            │  │
+│  │  └─────────────┘   └─────────────┘   └─────────────┘            │  │
+│  │                                                                   │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│                                                 │                      │
+│                                                 ▼                      │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │                    SISTEMA CARBON CREDIT                          │  │
+│  │                                                                   │  │
+│  │  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐            │  │
+│  │  │ TCC Wallet  │   │ Transazioni │   │ Leaderboard │            │  │
+│  │  │ (Cittadino) │   │ (Storico)   │   │ (Gamification)│          │  │
+│  │  └─────────────┘   └─────────────┘   └─────────────┘            │  │
+│  │                                                                   │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 4. FASI IMPLEMENTAZIONE
+
+#### FASE 1 - Collegamento TCC Wallet (Priorità 🔴 ALTA)
+
+| # | Task | Stima | File | Stato |
+|---|------|-------|------|-------|
+| 1.1 | Creare endpoint `POST /api/tcc/route-credit` | 2h | routes/tcc.js | ⬜ |
+| 1.2 | Creare tabella `route_completions` | 1h | schema.sql | ⬜ |
+| 1.3 | Implementare verifica geofence completamento | 3h | services/routingService.js | ⬜ |
+| 1.4 | Collegare RoutePage a TCC wallet | 2h | RoutePage.tsx | ⬜ |
+| 1.5 | Aggiungere notifica accredito | 1h | RoutePage.tsx | ⬜ |
+
+**Totale Fase 1:** 9 ore
+
+#### FASE 2 - Centro Mobilità Reale (Priorità 🟡 MEDIA)
+
+| # | Task | Stima | File | Stato |
+|---|------|-------|------|-------|
+| 2.1 | Creare tabella `tpl_stops` | 1h | schema.sql | ⬜ |
+| 2.2 | Importare dati GTFS Emilia-Romagna | 4h | scripts/import-gtfs.js | ⬜ |
+| 2.3 | Creare API `/api/mobility/stops` | 2h | routes/mobility.js | ⬜ |
+| 2.4 | Integrare feed GTFS-RT per orari | 4h | services/gtfsService.js | ⬜ |
+| 2.5 | Aggiornare MobilityMap con dati reali | 2h | MobilityMap.tsx | ⬜ |
+
+**Totale Fase 2:** 13 ore
+
+#### FASE 3 - Gamification (Priorità 🟢 BASSA)
+
+| # | Task | Stima | File | Stato |
+|---|------|-------|------|-------|
+| 3.1 | Creare tabella `achievements` | 1h | schema.sql | ⬜ |
+| 3.2 | Implementare badge per km percorsi | 2h | services/achievementService.js | ⬜ |
+| 3.3 | Creare leaderboard CO2 risparmiata | 2h | routes/leaderboard.js | ⬜ |
+| 3.4 | UI badge e progressi | 3h | components/Achievements.tsx | ⬜ |
+
+**Totale Fase 3:** 8 ore
+
+---
+
+### 5. DATABASE SCHEMA
+
+```sql
+-- Tabella completamenti percorsi (FASE 1)
+CREATE TABLE route_completions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  route_id UUID NOT NULL,
+  start_lat DECIMAL(10,8),
+  start_lng DECIMAL(11,8),
+  end_lat DECIMAL(10,8),
+  end_lng DECIMAL(11,8),
+  destination_type VARCHAR(20), -- 'shop', 'market', 'hub'
+  destination_id INTEGER,
+  mode VARCHAR(20), -- 'walking', 'cycling', 'bus'
+  distance_m INTEGER,
+  duration_s INTEGER,
+  co2_saved_g INTEGER,
+  credits_earned INTEGER,
+  started_at TIMESTAMP,
+  completed_at TIMESTAMP,
+  status VARCHAR(20) DEFAULT 'started', -- 'started', 'completed', 'abandoned'
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabella fermate TPL (FASE 2)
+CREATE TABLE tpl_stops (
+  id SERIAL PRIMARY KEY,
+  stop_id VARCHAR(50) UNIQUE NOT NULL,
+  stop_name VARCHAR(255) NOT NULL,
+  latitude DECIMAL(10,8) NOT NULL,
+  longitude DECIMAL(11,8) NOT NULL,
+  city VARCHAR(100),
+  region VARCHAR(100),
+  lines TEXT[], -- Array di linee che passano
+  stop_type VARCHAR(20), -- 'bus', 'tram', 'metro', 'train'
+  wheelchair_accessible BOOLEAN DEFAULT false,
+  gtfs_source VARCHAR(100),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabella achievements (FASE 3)
+CREATE TABLE achievements (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  achievement_type VARCHAR(50) NOT NULL,
+  achievement_name VARCHAR(100) NOT NULL,
+  description TEXT,
+  icon VARCHAR(50),
+  threshold INTEGER,
+  current_value INTEGER DEFAULT 0,
+  unlocked_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indici
+CREATE INDEX idx_route_completions_user ON route_completions(user_id);
+CREATE INDEX idx_route_completions_status ON route_completions(status);
+CREATE INDEX idx_tpl_stops_city ON tpl_stops(city);
+```
+
+---
+
+### 6. API ENDPOINTS DA CREARE
+
+#### Route Etico - Completamento (FASE 1)
+
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| POST | `/api/routing/start-tracking` | Inizia tracking percorso |
+| POST | `/api/routing/complete` | Verifica e completa percorso |
+| GET | `/api/routing/history` | Storico percorsi utente |
+
+#### Centro Mobilità (FASE 2)
+
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| GET | `/api/mobility/stops` | Lista fermate (con filtri) |
+| GET | `/api/mobility/stops/:id` | Dettaglio fermata |
+| GET | `/api/mobility/stops/nearby` | Fermate vicine a coordinate |
+| GET | `/api/mobility/realtime/:stopId` | Orari tempo reale |
+
+#### Gamification (FASE 3)
+
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| GET | `/api/achievements` | Lista achievement utente |
+| GET | `/api/leaderboard/co2` | Classifica CO2 risparmiata |
+| GET | `/api/leaderboard/credits` | Classifica crediti guadagnati |
+
+---
+
+### 7. LOGICA CALCOLO CO2 E CREDITI (Esistente)
+
+```javascript
+// Emissioni CO2 per km
+const emissionFactors = {
+  walking: 0,      // 0 g/km
+  cycling: 0,      // 0 g/km
+  bus: 68,         // 68 g/km
+  driving: 192     // 192 g/km (auto benzina)
+};
+
+// Crediti per km
+const creditFactors = {
+  walking: 10,     // 10 crediti/km
+  cycling: 8,      // 8 crediti/km
+  bus: 5,          // 5 crediti/km
+  driving: 0       // 0 crediti
+};
+
+// CO2 risparmiata = (emissioni auto - emissioni modalità) * km
+// Crediti = creditFactor[modalità] * km
+```
+
+---
+
+### 8. FLUSSO UTENTE TARGET
+
+```
+1. UTENTE seleziona negozio/mercato/HUB
+         │
+         ▼
+2. ROUTE ETICO mostra percorso con:
+   - Distanza e durata
+   - CO2 risparmiata (vs auto)
+   - Crediti TCC guadagnabili
+         │
+         ▼
+3. UTENTE clicca "Avvia Navigazione"
+         │
+         ▼
+4. SISTEMA crea record in route_completions
+   status = 'started'
+         │
+         ▼
+5. UTENTE segue navigazione GPS
+         │
+         ▼
+6. SISTEMA verifica arrivo (geofence 50m)
+         │
+         ▼
+7. SISTEMA aggiorna route_completions
+   status = 'completed'
+         │
+         ▼
+8. SISTEMA accredita TCC nel wallet
+   POST /api/tcc/route-credit
+         │
+         ▼
+9. UTENTE riceve notifica:
+   "Hai guadagnato 15 TCC! CO2 risparmiata: 450g"
+```
+
+---
+
+### 9. DIPENDENZE ESTERNE
+
+| Servizio | Utilizzo | Stato |
+|----------|----------|-------|
+| OpenRouteService | Calcolo percorsi | ✅ Integrato |
+| GTFS Emilia-Romagna | Dati fermate TPL | ⬜ Da importare |
+| GTFS-RT TPER | Orari tempo reale | ⬜ Da integrare |
+| Google Maps | Backup navigazione | ✅ Disponibile |
+
+---
+
+### 10. FILE DA MODIFICARE
+
+#### Backend (mihub-backend-rest)
+
+| File | Azione | Fase |
+|------|--------|------|
+| routes/routing.js | Aggiungere start-tracking, complete | 1 |
+| routes/tcc.js | Aggiungere route-credit | 1 |
+| routes/mobility.js | NUOVO - API fermate TPL | 2 |
+| routes/leaderboard.js | NUOVO - API classifica | 3 |
+| services/routingService.js | Aggiungere verifica geofence | 1 |
+| services/gtfsService.js | NUOVO - Parser GTFS | 2 |
+| services/achievementService.js | NUOVO - Logica badge | 3 |
+
+#### Frontend (dms-hub-app-new)
+
+| File | Azione | Fase |
+|------|--------|------|
+| pages/RoutePage.tsx | Aggiungere tracking e completamento | 1 |
+| components/MobilityMap.tsx | Collegare a dati reali | 2 |
+| components/Achievements.tsx | NUOVO - UI badge | 3 |
+
+---
+
+### 11. STIMA TOTALE
+
+| Fase | Ore | Priorità |
+|------|-----|----------|
+| Fase 1 - TCC | 9h | 🔴 ALTA |
+| Fase 2 - Mobilità | 13h | 🟡 MEDIA |
+| Fase 3 - Gamification | 8h | 🟢 BASSA |
+| **TOTALE** | **30h** | |
+
+---
+
+### 12. NOTE IMPLEMENTAZIONE
+
+1. **Non modificare componenti esistenti funzionanti** - Clonare e rinominare se necessario
+2. **Testare su ambiente staging** prima di deploy produzione
+3. **Aggiornare questo blueprint** dopo ogni fase completata
+4. **Creare tag Git** dopo ogni fase: `v3.53.0-fase1`, `v3.53.0-fase2`, etc.
+
+---
+
+*Progetto creato il 31 Gennaio 2026 - Manus AI*
+*In attesa di autorizzazione per implementazione*
+
