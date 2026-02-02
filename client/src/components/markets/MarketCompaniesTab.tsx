@@ -1717,8 +1717,14 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-md w-full p-6 space-y-6">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-gray-900 border border-gray-700 rounded-lg max-w-md w-full p-6 space-y-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">
             {qualificazione ? 'Modifica Qualificazione' : 'Nuova Qualificazione'}
