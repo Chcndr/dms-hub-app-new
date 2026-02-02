@@ -149,7 +149,7 @@ export function CivicReportsHeatmap({
   reports = [],
   center = [44.4949, 11.3426],
   zoom = 13,
-  height = '400px',
+  height = '600px',
   showMarkers = true,
   onReportClick
 }: CivicReportsHeatmapProps) {
