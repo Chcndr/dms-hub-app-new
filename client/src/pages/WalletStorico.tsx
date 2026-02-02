@@ -193,8 +193,12 @@ export default function WalletStorico() {
                 <p className="text-sm font-semibold text-emerald-100">CO₂ totale</p>
               </div>
               <div className="pt-2 border-t border-emerald-400/30">
-                <p className="text-lg text-white font-bold flex items-center gap-1">🌳 {totalTrees}</p>
-                <p className="text-xs text-emerald-200">alberi equiv.</p>
+                <p className="text-lg text-white font-bold flex items-center gap-1">🌳 {totalTrees} alberi equiv.</p>
+                {lastTx && (
+                  <p className="text-xs text-emerald-200 mt-1">
+                    Ultima: <span className="font-bold text-white">{lastTx.type === 'earn' ? '+' : '-'}{Math.abs(lastTx.amount)} TCC</span>
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
