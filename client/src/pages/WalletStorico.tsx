@@ -169,22 +169,32 @@ export default function WalletStorico() {
 
       {/* Statistiche - Due colonne affiancate */}
       <div className="shrink-0 p-3 sm:p-4 grid grid-cols-2 gap-2 sm:gap-3">
-        {/* Colonna 1: Ultima Transazione - VERDE VIVIDO */}
-        <Card className="border-0 shadow-xl overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)' }}>
+        {/* Colonna 1: Ultima Transazione - VERDE SFUMATO BELLO come albero */}
+        <Card 
+          className="border-0 shadow-xl overflow-hidden relative"
+          style={{ 
+            background: 'linear-gradient(145deg, #065f46 0%, #047857 25%, #059669 50%, #10b981 75%, #34d399 95%)',
+            boxShadow: '0 10px 40px -10px rgba(16, 185, 129, 0.5)'
+          }}
+        >
           <CardContent className="p-3 sm:p-4 relative z-10">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center shadow-lg">
-                <Leaf className="h-5 w-5 text-white" />
+              <div 
+                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%)' }}
+              >
+                <Leaf className="h-5 w-5 text-white drop-shadow" />
               </div>
-              <span className="text-xs text-white/80 font-medium">Impatto</span>
+              <span className="text-xs text-emerald-100 font-medium">Impatto</span>
             </div>
             <div className="space-y-1">
               <div>
-                <p className="text-3xl sm:text-4xl font-black text-white drop-shadow-lg">{(totalTCC * 0.022).toFixed(3)}</p>
-                <p className="text-sm font-semibold text-white/90">kg CO₂ totale</p>
+                <p className="text-3xl sm:text-4xl font-black text-white drop-shadow-lg">{(totalTCC * 0.022).toFixed(3)} kg</p>
+                <p className="text-sm font-semibold text-emerald-100">CO₂ totale</p>
               </div>
-              <div className="pt-2 border-t border-white/20">
-                <p className="text-base text-white font-bold flex items-center gap-1">🌳 {totalTrees} alberi equiv.</p>
+              <div className="pt-2 border-t border-emerald-400/30">
+                <p className="text-lg text-white font-bold flex items-center gap-1">🌳 {totalTrees}</p>
+                <p className="text-xs text-emerald-200">alberi equiv.</p>
               </div>
             </div>
           </CardContent>
