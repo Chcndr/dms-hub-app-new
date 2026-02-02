@@ -25,6 +25,7 @@ import GestioneMercati from '@/components/GestioneMercati';
 import Integrazioni from '@/components/Integrazioni';
 import { GISMap } from '@/components/GISMap';
 import { MarketMapComponent } from '@/components/MarketMapComponent';
+import CivicReportsHeatmap from '@/components/CivicReportsHeatmap';
 import SuapPanel from '@/components/SuapPanel';
 
 import MIOAgent from '@/components/MIOAgent';
@@ -4382,6 +4383,8 @@ export default function DashboardPA() {
           <TabsContent value="civic" className="space-y-6">
             {/* Pannello Segnalazioni Civiche con dati reali e config TCC */}
             <CivicReportsPanel />
+            {/* Mappa Termica Segnalazioni */}
+            <CivicReportsHeatmap />
 
             {/* Mappa Rete HUB Italia - Segnalazioni Civiche */}
             <GestioneHubMapWrapper />
