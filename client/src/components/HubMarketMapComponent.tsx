@@ -262,13 +262,16 @@ export function HubMarketMapComponent({
   );
   
   // Calcola zoom in base alla vista
-  // Vista Italia: zoom 5 per vedere tutta Italia (ridotto per mobile)
+  // Vista Italia: zoom 5 su mobile, zoom 6 su iPad/desktop
   // Vista HUB: zoom 16 per vedere i negozi
   // Vista Mercato: zoom 17 per vedere i posteggi
+  const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+  const italyZoom = isMobileDevice ? 5 : 6;  // Zoom ridotto solo su mobile
+  
   const effectiveZoom = customZoom 
     ? customZoom  // Zoom personalizzato per navigazione regione/provincia
     : showItalyView 
-      ? 5  // Ridotto da 6 a 5 per vedere tutta Italia su mobile
+      ? italyZoom  // Zoom differenziato mobile/desktop
       : mode === 'hub' && hubCenterFixed 
         ? 16 
         : mode === 'mercato' && marketCenterFixed

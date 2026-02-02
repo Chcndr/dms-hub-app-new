@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.78.0  
+> **Versione:** 3.79.0  
 > **Data:** 02 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -1171,6 +1171,51 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 ### 📝 CHANGELOG
+
+### v3.79.0 (02/02/2026) - Segnalazioni Civiche Mobile Redesign + Fix Zoom Mappa
+
+**Fix Zoom Mappa Italia:**
+- Zoom 5 solo per mobile (< 768px), zoom 6 per iPad/desktop
+- Condizione responsive per non alterare esperienza tablet/PC
+
+**Pagina Segnalazioni Civiche (CivicPage) - Redesign Mobile:**
+- Layout fullscreen senza container su mobile
+- Rimossa barra bottom (BottomNav) e 5 tabs
+- Rimosso pulsante "Acquisisci Posizione GPS" (acquisizione automatica)
+- GPS automatico all'apertura pagina con toast conferma
+- Popup istruzioni con icona info (i) nell'header
+- Upload foto funzionante (max 3 foto) con preview
+- Pagina statica con form compatto
+- Colori gradient sfumati mantenuti
+
+**Schema Connessione Segnalazioni Civiche:**
+```
+┌─────────────────┐     POST /api/civic-reports     ┌─────────────────┐
+│  CivicPage.tsx  │ ─────────────────────────────► │  civic_reports  │
+│  (App Mobile)   │   {type, description, lat,     │   (Database)    │
+│                 │    lng, photos[], comune_id}   │                 │
+└─────────────────┘                                 └────────┬────────┘
+                                                             │
+         ┌───────────────────────────────────────────────────┼───────────────────────────────────────────────────┐
+         │                                                   │                                                   │
+         ▼                                                   ▼                                                   ▼
+┌─────────────────┐                               ┌─────────────────┐                               ┌─────────────────┐
+│  Dashboard PA   │                               │  Controlli PM   │                               │   Notifiche     │
+│  Tab Segnalaz.  │                               │  Subtab Segnala │                               │   (Sistema)     │
+│  + Config TCC   │                               │  + Azioni PM    │                               │                 │
+└─────────────────┘                               └─────────────────┘                               └─────────────────┘
+```
+
+**Colonne Database `civic_reports` per foto:**
+- `photos` TEXT[] - Array URL S3 delle foto allegate
+- Le foto vengono caricate su S3 e i link salvati nel DB
+
+**File Modificati:**
+- `client/src/components/HubMarketMapComponent.tsx` - Zoom condizionale mobile/desktop
+- `client/src/pages/CivicPage.tsx` - Redesign completo mobile
+- `client/src/index.css` - Classe scrollbar-hide per galleria
+
+---
 
 ### v3.78.0 (02/02/2026) - Ottimizzazione UX Mobile Mappa e Vetrine
 
