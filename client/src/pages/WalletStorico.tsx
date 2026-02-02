@@ -233,21 +233,21 @@ export default function WalletStorico() {
               <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center shadow-lg">
                 <Trophy className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xs text-white/80 font-medium">Trend</span>
+              <span className="text-xs text-white/80 font-medium">Il Tuo Score</span>
             </div>
             <div className="space-y-1">
               <div>
                 <p className="text-2xl sm:text-3xl font-black text-white drop-shadow-lg">
-                  {lastTx ? Math.abs(lastTx.amount) : 0} kg
+                  {currentLevel.name}
                 </p>
-                <p className="text-sm font-semibold text-white/90">ultima op.</p>
+                <p className="text-sm font-semibold text-white/90">{totalTCC.toLocaleString('it-IT')} TCC</p>
               </div>
               <div className="pt-2 border-t border-white/20">
-                <p className={`text-sm font-bold ${lastTx?.type === 'earn' ? 'text-emerald-300' : 'text-orange-300'}`}>
-                  {lastTx?.type === 'earn' ? '↑ Accredito' : '↓ Pagamento'}
+                <p className="text-sm font-bold text-white/90">
+                  {Math.round(progressPercent)}% completato
                 </p>
                 <p className="text-xs text-white/70">
-                  {lastTx ? formatDateTime(lastTx.created_at).date : '-'}
+                  {currentLevel.max === Infinity ? '🏆 Livello MAX!' : `Prossimo: ${nextLevel.name}`}
                 </p>
               </div>
             </div>
