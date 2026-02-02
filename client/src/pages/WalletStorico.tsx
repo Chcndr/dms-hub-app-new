@@ -70,10 +70,9 @@ export default function WalletStorico() {
     }
   }, [currentUser?.id]);
 
-  // Calcoli
+  // Calcoli - somma TUTTI i token (guadagnati + spesi)
   const totalTCC = transactions.reduce((sum, tx) => {
-    // Solo le transazioni earn contano per lo score
-    return tx.type === 'earn' ? sum + Math.abs(tx.amount) : sum;
+    return sum + Math.abs(tx.amount);
   }, 0);
   const totalTrees = (totalTCC / 22).toFixed(1);
   
