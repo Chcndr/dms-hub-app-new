@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogClose,
 } from '@/components/ui/dialog';
-import { AlertCircle, ArrowLeft, Camera, CheckCircle2, Shield, Clock, Award, Send, Info, X, Image, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Camera, CheckCircle2, Shield, Clock, Award, Send, Info, X } from 'lucide-react';
 import { Link } from 'wouter';
 import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
@@ -45,6 +45,7 @@ export default function CivicPage() {
   const [photos, setPhotos] = useState<File[]>([]);
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [gpsStatus, setGpsStatus] = useState<'idle' | 'requesting' | 'success' | 'error'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { comuneId } = useImpersonation();
@@ -69,25 +70,62 @@ export default function CivicPage() {
     loadConfig();
   }, [comuneId]);
 
-  // GPS automatico all'apertura pagina (solo mobile)
+  // GPS automatico all'apertura pagina - usa popup nativo del browser
   useEffect(() => {
-    if (isMobile && !location) {
+    if (!location && gpsStatus === 'idle') {
+      setGpsStatus('requesting');
+      
+      // Questo triggera il popup nativo del browser/iOS per chiedere permesso GPS
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setLocation({
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
           });
-          toast.success('📍 Posizione GPS acquisita automaticamente');
+          setGpsStatus('success');
+          toast.success('📍 Posizione GPS acquisita');
         },
         (error) => {
           console.error('GPS error:', error);
-          toast.error('Attiva il GPS per inviare la segnalazione');
+          setGpsStatus('error');
+          // Non mostrare toast di errore subito, l'utente potrebbe aver negato
+          if (error.code === error.PERMISSION_DENIED) {
+            toast.error('Permesso GPS negato. Abilita la localizzazione nelle impostazioni.');
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            toast.error('Posizione non disponibile. Riprova.');
+          } else if (error.code === error.TIMEOUT) {
+            toast.error('Timeout acquisizione GPS. Riprova.');
+          }
         },
-        { enableHighAccuracy: true, timeout: 10000 }
+        { 
+          enableHighAccuracy: true, 
+          timeout: 15000,
+          maximumAge: 0 
+        }
       );
     }
-  }, [isMobile]);
+  }, []);
+
+  // Funzione per ritentare acquisizione GPS
+  const retryGPS = () => {
+    setGpsStatus('requesting');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setGpsStatus('success');
+        toast.success('📍 Posizione GPS acquisita');
+      },
+      (error) => {
+        console.error('GPS error:', error);
+        setGpsStatus('error');
+        toast.error('Impossibile acquisire la posizione GPS');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
 
   // Gestione foto
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,7 +196,7 @@ export default function CivicPage() {
     }
 
     if (!location) {
-      toast.error('Posizione GPS non disponibile. Attiva il GPS.');
+      toast.error('Posizione GPS non disponibile. Clicca su "Riprova GPS".');
       return;
     }
 
@@ -195,7 +233,7 @@ export default function CivicPage() {
       if (data.success) {
         setLoading(false);
         setSubmitted(true);
-        toast.success(`Segnalazione inviata con successo! +${tccReward} crediti alla risoluzione`);
+        toast.success(`Segnalazione inviata! +${tccReward} crediti alla risoluzione`);
       } else {
         throw new Error(data.error || 'Errore invio segnalazione');
       }
@@ -232,10 +270,10 @@ export default function CivicPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header con gradient - fullscreen su mobile */}
-      <header className="bg-gradient-to-r from-orange-500 via-red-500 to-rose-600 text-white p-4 shadow-lg">
-        <div className={`flex items-center justify-between ${isMobile ? 'px-2' : 'px-4 md:px-8'}`}>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header con gradient - fullscreen */}
+      <header className="bg-gradient-to-r from-orange-500 via-red-500 to-rose-600 text-white p-4 shadow-lg flex-shrink-0">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/">
               <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300">
@@ -262,12 +300,12 @@ export default function CivicPage() {
         </div>
       </header>
 
-      {/* Form - fullscreen su mobile */}
-      <div className={`py-4 space-y-4 ${isMobile ? 'px-3' : 'px-4 md:px-8'}`}>
-        {/* Card principale */}
-        <Card className={`border-0 shadow-xl overflow-hidden ${isMobile ? 'mx-0 rounded-xl' : ''}`}>
+      {/* Form - fullscreen, no container su mobile */}
+      <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-0' : 'px-4 md:px-8 py-4'}`}>
+        {/* Card principale - fullscreen su mobile */}
+        <Card className={`border-0 shadow-xl overflow-hidden ${isMobile ? 'rounded-none border-0' : 'rounded-xl my-4'}`}>
           <div className="h-1 bg-gradient-to-r from-orange-500 via-red-500 to-rose-600"></div>
-          <CardHeader className="pb-3">
+          <CardHeader className={`pb-2 ${isMobile ? 'px-4 pt-4' : ''}`}>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg">
                 <Shield className="h-5 w-5 text-white" />
@@ -280,13 +318,13 @@ export default function CivicPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className={isMobile ? 'px-4 pb-4' : ''}>
+            <form onSubmit={handleSubmit} className="space-y-3">
               {/* Categoria */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="category" className="text-sm font-semibold">Categoria *</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger id="category" className="h-12 text-base">
+                  <SelectTrigger id="category" className="h-11 text-base">
                     <SelectValue placeholder="Seleziona categoria" />
                   </SelectTrigger>
                   <SelectContent>
@@ -303,38 +341,57 @@ export default function CivicPage() {
               </div>
 
               {/* Descrizione */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="description" className="text-sm font-semibold">Descrizione *</Label>
                 <Textarea
                   id="description"
                   placeholder="Descrivi il problema in dettaglio..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
+                  rows={3}
                   className="resize-none text-base"
                 />
               </div>
 
-              {/* GPS Status - mostrato solo come indicatore */}
-              {location && (
-                <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/30">
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+              {/* GPS Status */}
+              {gpsStatus === 'success' && location && (
+                <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
                   <span className="text-sm text-green-600 font-medium">
                     📍 Posizione acquisita
                   </span>
                 </div>
               )}
-              {!location && (
-                <div className="flex items-center gap-2 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
-                  <AlertCircle className="h-5 w-5 text-yellow-500" />
+              {gpsStatus === 'requesting' && (
+                <div className="flex items-center gap-2 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                  <AlertCircle className="h-4 w-4 text-yellow-500 animate-pulse" />
                   <span className="text-sm text-yellow-600 font-medium">
                     ⏳ Acquisizione GPS in corso...
                   </span>
                 </div>
               )}
+              {gpsStatus === 'error' && (
+                <div className="flex items-center justify-between gap-2 p-2 bg-red-500/10 rounded-lg border border-red-500/30">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-sm text-red-600 font-medium">
+                      GPS non disponibile
+                    </span>
+                  </div>
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="outline"
+                    onClick={retryGPS}
+                    className="h-7 text-xs"
+                  >
+                    Riprova
+                  </Button>
+                </div>
+              )}
 
               {/* Foto - Upload funzionante */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label className="text-sm font-semibold">Foto (max 3)</Label>
                 
                 {/* Preview foto */}
@@ -345,12 +402,12 @@ export default function CivicPage() {
                         <img 
                           src={preview} 
                           alt={`Foto ${index + 1}`}
-                          className="w-20 h-20 object-cover rounded-lg border-2 border-primary/30"
+                          className="w-16 h-16 object-cover rounded-lg border-2 border-primary/30"
                         />
                         <button
                           type="button"
                           onClick={() => removePhoto(index)}
-                          className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white shadow-lg"
+                          className="absolute -top-1 -right-1 p-0.5 bg-red-500 rounded-full text-white shadow-lg"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -373,10 +430,10 @@ export default function CivicPage() {
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="w-full h-12 text-base"
+                      className="w-full h-10 text-sm"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <Camera className="h-5 w-5 mr-2" />
+                      <Camera className="h-4 w-4 mr-2" />
                       Aggiungi Foto ({photos.length}/3)
                     </Button>
                   </>
@@ -386,58 +443,25 @@ export default function CivicPage() {
               {/* Submit */}
               <div className="flex gap-3 pt-2">
                 <Link href="/" className="flex-1">
-                  <Button type="button" variant="outline" className="w-full h-12 text-base font-semibold">
+                  <Button type="button" variant="outline" className="w-full h-11 text-base font-semibold">
                     Annulla
                   </Button>
                 </Link>
                 <Button 
                   type="submit" 
-                  className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg"
+                  className="flex-1 h-11 text-base font-semibold bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg"
                   disabled={loading || uploadingPhotos || !location}
                 >
-                  <Send className="h-5 w-5 mr-2" />
+                  <Send className="h-4 w-4 mr-2" />
                   {loading || uploadingPhotos ? 'Invio...' : 'Invia'}
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
-
-        {/* Stats Cards - compatte su mobile */}
-        <div className="grid grid-cols-3 gap-2">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500/10 to-green-600/5">
-            <CardContent className="pt-3 pb-3 text-center">
-              <div className="w-8 h-8 mx-auto mb-1 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow">
-                <Award className="h-4 w-4 text-white" />
-              </div>
-              <div className="text-xl font-bold text-green-600">+{tccReward}</div>
-              <div className="text-xs text-muted-foreground">Crediti</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500/10 to-blue-600/5">
-            <CardContent className="pt-3 pb-3 text-center">
-              <div className="w-8 h-8 mx-auto mb-1 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow">
-                <Clock className="h-4 w-4 text-white" />
-              </div>
-              <div className="text-xl font-bold text-blue-600">48h</div>
-              <div className="text-xs text-muted-foreground">Tempo</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500/10 to-purple-600/5">
-            <CardContent className="pt-3 pb-3 text-center">
-              <div className="w-8 h-8 mx-auto mb-1 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow">
-                <Shield className="h-4 w-4 text-white" />
-              </div>
-              <div className="text-xl font-bold text-purple-600">94%</div>
-              <div className="text-xs text-muted-foreground">Risolte</div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
-      {/* Dialog Info - Istruzioni */}
+      {/* Dialog Info - Istruzioni CON indicatori */}
       <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -489,6 +513,34 @@ export default function CivicPage() {
                 <p className="text-sm text-muted-foreground">Quando il problema sarà risolto, riceverai +{tccReward} eco-crediti come premio.</p>
               </div>
             </div>
+
+            {/* Indicatori informativi nel popup */}
+            <div className="border-t pt-4 mt-4">
+              <p className="font-semibold mb-3">Statistiche del servizio</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center p-3 bg-green-500/10 rounded-lg">
+                  <div className="w-8 h-8 mx-auto mb-1 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                    <Award className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="text-lg font-bold text-green-600">+{tccReward}</div>
+                  <div className="text-xs text-muted-foreground">Crediti Premio</div>
+                </div>
+                <div className="text-center p-3 bg-blue-500/10 rounded-lg">
+                  <div className="w-8 h-8 mx-auto mb-1 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <Clock className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="text-lg font-bold text-blue-600">48h</div>
+                  <div className="text-xs text-muted-foreground">Tempo Medio</div>
+                </div>
+                <div className="text-center p-3 bg-purple-500/10 rounded-lg">
+                  <div className="w-8 h-8 mx-auto mb-1 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="text-lg font-bold text-purple-600">94%</div>
+                  <div className="text-xs text-muted-foreground">Risolte</div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <DialogClose asChild>
@@ -498,8 +550,6 @@ export default function CivicPage() {
           </DialogClose>
         </DialogContent>
       </Dialog>
-
-      {/* NO BottomNav su mobile - rimosso */}
     </div>
   );
 }
