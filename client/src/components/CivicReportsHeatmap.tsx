@@ -145,9 +145,9 @@ export function CivicReportsHeatmap() {
         const response = await fetch('https://api.mio-hub.me/api/civic-reports/stats');
         const data = await response.json();
         
-        if (data.success && data.data?.reports) {
-          console.log('Segnalazioni caricate:', data.data.reports.length, data.data.reports);
-          setReports(data.data.reports);
+        if (data.success && data.data?.recent) {
+          console.log('Segnalazioni caricate:', data.data.recent.length, data.data.recent);
+          setReports(data.data.recent);
         } else {
           console.error('Formato dati non valido:', data);
           setError('Formato dati non valido');
