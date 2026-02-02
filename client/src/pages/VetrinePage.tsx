@@ -982,118 +982,110 @@ export default function VetrinePage() {
 
   // Vista lista imprese
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground p-3 shadow-md">
-        <div className="w-full px-4 md:px-8 flex items-center gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/20">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Store className="h-6 w-6" />
-            <h1 className="text-lg font-bold">Vetrine Commercianti</h1>
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      {/* Header con pulsante Nuovo Negozio */}
+      <header className="bg-primary text-primary-foreground p-3 shadow-md flex-shrink-0">
+        <div className="w-full px-2 sm:px-4 md:px-8 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link href="/">
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/20">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="flex items-center gap-2">
+              <Store className="h-5 w-5 sm:h-6 sm:w-6" />
+              <h1 className="text-base sm:text-lg font-bold">Vetrine Commercianti</h1>
+            </div>
           </div>
+          {/* Pulsante Nuovo Negozio nell'header */}
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={() => setActiveTab('nuovo')}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Negozio
+            </Button>
+          )}
         </div>
       </header>
 
-      <div className="w-full px-4 md:px-8 py-6 space-y-6">
-        {/* Tabs: Lista Vetrine / Nuovo Negozio (solo admin) */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} mb-6`}>
-            <TabsTrigger value="lista" className="flex items-center gap-2">
-              <Store className="h-4 w-4" />
-              Lista Vetrine
-            </TabsTrigger>
-            {/* Tab Nuovo Negozio - visibile solo per Admin */}
-            {isAdmin && (
-              <TabsTrigger value="nuovo" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Nuovo Negozio
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          {/* Tab Lista Vetrine */}
-          <TabsContent value="lista" className="space-y-6">
-            {/* Ricerca */}
-            <Card>
-              <CardContent className="pt-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Cerca negozio o categoria..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Lista Imprese */}
-            <div className="space-y-4">
-              {filteredImprese.map((impresa) => (
-                <Card
-                  key={impresa.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => navigate(`/vetrine/${impresa.id}`)}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle>{impresa.denominazione}</CardTitle>
-                        <CardDescription>{impresa.settore || 'Commercio'}</CardDescription>
-                      </div>
-                      <div className="flex items-center gap-1 text-amber-500">
-                        <Star className="h-4 w-4 fill-current" />
-                        <span className="text-sm font-semibold">{(Number(impresa.rating) || 4.5).toFixed(1)}</span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {impresa.vetrina_descrizione || `${impresa.denominazione} - ${impresa.comune}`}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {impresa.settore && (
-                        <Badge variant="secondary" className="text-xs">
-                          {impresa.settore}
-                        </Badge>
-                      )}
-                      {impresa.comune && (
-                        <Badge variant="outline" className="text-xs">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {impresa.comune}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+      {/* Contenuto principale - pagina statica con scroll interno */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {activeTab === 'lista' ? (
+          <>
+            {/* Barra ricerca fuori dal container */}
+            <div className="px-4 md:px-8 py-4 flex-shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca negozio o categoria..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-card border-border"
+                />
+              </div>
             </div>
 
-            {filteredImprese.length === 0 && (
-              <Card>
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                  <Store className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Nessun negozio trovato</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+            {/* Lista Imprese scrollabile */}
+            <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-4">
+              <div className="space-y-3">
+                {filteredImprese.map((impresa) => (
+                  <Card
+                    key={impresa.id}
+                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => navigate(`/vetrine/${impresa.id}`)}
+                  >
+                    <CardContent className="py-3 px-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <CardTitle className="text-base">{impresa.denominazione}</CardTitle>
+                        <div className="flex items-center gap-1 text-amber-500">
+                          <Star className="h-4 w-4 fill-current" />
+                          <span className="text-sm font-semibold">{(Number(impresa.rating) || 4.5).toFixed(1)}</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {impresa.settore || 'Commercio'}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {impresa.settore && (
+                          <Badge variant="secondary" className="text-xs">
+                            {impresa.settore}
+                          </Badge>
+                        )}
+                        {impresa.comune && (
+                          <Badge variant="outline" className="text-xs">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {impresa.comune}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
 
-          {/* Tab Nuovo Negozio - solo per Admin */}
-          {isAdmin && (
-            <TabsContent value="nuovo">
-              <NuovoNegozioForm 
-                onSuccess={handleNuovoNegozioSuccess}
-                onCancel={() => setActiveTab('lista')}
-              />
-            </TabsContent>
-          )}
-        </Tabs>
+              {filteredImprese.length === 0 && (
+                <Card>
+                  <CardContent className="pt-6 text-center text-muted-foreground">
+                    <Store className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nessun negozio trovato</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </>
+        ) : (
+          /* Form Nuovo Negozio */
+          <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4">
+            <NuovoNegozioForm 
+              onSuccess={handleNuovoNegozioSuccess}
+              onCancel={() => setActiveTab('lista')}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
