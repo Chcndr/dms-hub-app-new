@@ -319,26 +319,27 @@ export default function GamingRewardsPanel() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/config?comune_id=${currentComuneId}`);
       if (response.ok) {
-        const data = await response.json();
-        if (data.config) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const cfg = result.data;
           setConfig({
             comune_id: currentComuneId,
-            civic_enabled: data.config.civic_enabled ?? true,
-            civic_tcc_default: data.config.civic_tcc_default ?? 10,
-            civic_tcc_urgent: data.config.civic_tcc_urgent ?? 5,
-            civic_tcc_photo_bonus: data.config.civic_tcc_photo_bonus ?? 5,
-            mobility_enabled: data.config.mobility_enabled ?? false,
-            mobility_tcc_bus: data.config.mobility_tcc_bus ?? 10,
-            mobility_tcc_bike_km: data.config.mobility_tcc_bike_km ?? 3,
-            mobility_tcc_walk_km: data.config.mobility_tcc_walk_km ?? 5,
-            culture_enabled: data.config.culture_enabled ?? false,
-            culture_tcc_museum: data.config.culture_tcc_museum ?? 100,
-            culture_tcc_monument: data.config.culture_tcc_monument ?? 50,
-            culture_tcc_route: data.config.culture_tcc_route ?? 300,
-            shopping_enabled: data.config.shopping_enabled ?? false,
-            shopping_cashback_percent: data.config.shopping_cashback_percent ?? 1,
-            shopping_km0_bonus: data.config.shopping_km0_bonus ?? 20,
-            shopping_market_bonus: data.config.shopping_market_bonus ?? 10,
+            civic_enabled: cfg.civic_enabled ?? true,
+            civic_tcc_default: cfg.civic_tcc_default ?? 10,
+            civic_tcc_urgent: cfg.civic_tcc_urgent ?? 5,
+            civic_tcc_photo_bonus: cfg.civic_tcc_photo_bonus ?? 5,
+            mobility_enabled: cfg.mobility_enabled ?? false,
+            mobility_tcc_bus: cfg.mobility_tcc_bus ?? 10,
+            mobility_tcc_bike_km: cfg.mobility_tcc_bike_km ?? 3,
+            mobility_tcc_walk_km: cfg.mobility_tcc_walk_km ?? 5,
+            culture_enabled: cfg.culture_enabled ?? false,
+            culture_tcc_museum: cfg.culture_tcc_museum ?? 100,
+            culture_tcc_monument: cfg.culture_tcc_monument ?? 50,
+            culture_tcc_route: cfg.culture_tcc_route ?? 300,
+            shopping_enabled: cfg.shopping_enabled ?? false,
+            shopping_cashback_percent: parseFloat(cfg.shopping_cashback_percent) || 1,
+            shopping_km0_bonus: cfg.shopping_km0_bonus ?? 20,
+            shopping_market_bonus: cfg.shopping_market_bonus ?? 10,
           });
         }
       }
