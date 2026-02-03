@@ -48,6 +48,7 @@ export default function CivicReportsPanel() {
   const [loading, setLoading] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
   const { selectedComune } = useImpersonation();
   const comuneId = selectedComune?.id || 1;
@@ -144,10 +145,10 @@ export default function CivicReportsPanel() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => { loadStats(); loadConfig(); }}
+              onClick={async () => { setRefreshing(true); await Promise.all([loadStats(), loadConfig()]); setRefreshing(false); }}
               className="border-[#06b6d4]/30 text-[#06b6d4] hover:bg-[#06b6d4]/10"
             >
-              <RefreshCw className="h-4 w-4 mr-1" />
+              <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} />
               Aggiorna
             </Button>
             <Button 
@@ -239,7 +240,7 @@ export default function CivicReportsPanel() {
           )}
 
           {/* Lista segnalazioni recenti */}
-          <div className="space-y-2">
+          <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
             {stats?.recent && stats.recent.length > 0 ? (
               stats.recent.map((report: any) => (
                 <div key={report.id} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between">

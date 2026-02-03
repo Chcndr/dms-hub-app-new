@@ -700,7 +700,7 @@ export default function GamingRewardsPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[400px] rounded-lg overflow-hidden">
+          <div className="h-[600px] rounded-lg overflow-hidden">
             <MapContainer
               center={getInitialCenter()}
               zoom={14}
