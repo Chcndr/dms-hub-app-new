@@ -509,13 +509,14 @@ export default function GamingRewardsPanel() {
       const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/stats?comune_id=${currentComuneId}`);
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data && result.data.stats) {
-          const s = result.data.stats;
+        if (result.success && result.data) {
+          // Il backend ritorna i dati direttamente in result.data (non in result.data.stats)
+          const s = result.data;
           setStats({
-            total_tcc_issued: s.total_tcc_earned || 0,
-            total_tcc_spent: s.total_tcc_spent || 0,
-            active_users: s.active_users || 0,
-            co2_saved_kg: s.co2_saved || 0,
+            total_tcc_issued: s.tcc_emessi || s.total_tcc_earned || 0,
+            total_tcc_spent: s.tcc_spesi || s.total_tcc_spent || 0,
+            active_users: s.utenti_attivi || s.active_users || 0,
+            co2_saved_kg: s.co2_risparmiata_kg || s.co2_saved || 0,
             top_shops: s.top_shops || []
           });
         }
@@ -591,7 +592,14 @@ export default function GamingRewardsPanel() {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data)) {
-          setTopShops(result.data.slice(0, 5)); // Prendi solo i primi 5
+          // Mappa i campi del backend ai campi del frontend
+          const mappedShops: TopShop[] = result.data.slice(0, 5).map((shop: any) => ({
+            name: shop.shop_name || shop.name || 'Negozio',
+            tcc_earned: parseInt(shop.total_tcc) || shop.tcc_earned || 0,
+            tcc_spent: parseInt(shop.tcc_spent) || 0,
+            transactions: parseInt(shop.transaction_count) || shop.transactions || 0,
+          }));
+          setTopShops(mappedShops);
         }
       }
     } catch (error) {
@@ -606,7 +614,14 @@ export default function GamingRewardsPanel() {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data)) {
-          setTrendData(result.data);
+          // Mappa i campi del backend ai campi del frontend
+          const mappedTrend: TrendDataPoint[] = result.data.map((day: any) => ({
+            date: day.date,
+            tcc_earned: parseInt(day.tcc_earned) || 0,
+            tcc_spent: parseInt(day.tcc_spent) || 0,
+            reports: parseInt(day.reports) || 0,
+          }));
+          setTrendData(mappedTrend);
         }
       }
     } catch (error) {
