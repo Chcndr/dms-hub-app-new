@@ -152,15 +152,23 @@ function HeatmapLayer({ points }: { points: HeatmapPoint[] }) {
     if (!map || !points || points.length === 0) return;
     
     const heatData: [number, number, number][] = points.map(p => {
-      const intensity = Math.min((p.tcc_earned + p.tcc_spent) / 5000, 1.0);
+      // Per le segnalazioni civiche (type='civic') usa un'intensità fissa alta
+      // Per gli altri punti usa tcc_earned + tcc_spent
+      let intensity: number;
+      if (p.type === 'civic') {
+        intensity = 0.8; // Intensità alta per segnalazioni
+      } else {
+        intensity = Math.min((p.tcc_earned + p.tcc_spent) / 5000, 1.0);
+        if (intensity === 0) intensity = 0.3; // Minimo visibile per mercati
+      }
       return [p.lat, p.lng, intensity];
     });
     
     if (heatData.length === 0) return;
     
     const heatLayer = (L as any).heatLayer(heatData, {
-      radius: 50,
-      blur: 35,
+      radius: 40,
+      blur: 25,
       maxZoom: 18,
       max: 1.0,
       gradient: {
@@ -168,7 +176,7 @@ function HeatmapLayer({ points }: { points: HeatmapPoint[] }) {
         0.25: '#84cc16',
         0.5: '#eab308',
         0.75: '#f97316',
-        1.0: '#8b5cf6'
+        1.0: '#ef4444'
       }
     }).addTo(map);
     
