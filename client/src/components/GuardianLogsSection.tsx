@@ -66,8 +66,7 @@ export default function GuardianLogsSection() {
   // Filtra log per agente
   const systemLogs = guardianLogs.filter((log: any) => log.agent === 'system' || log.agent === 'anonymous');
   const guardianOnlyLogs = guardianLogs.filter((log: any) => 
-    log.agent === 'guardian' || log.agent === 'mio' || log.agent === 'dev' || log.agent === 'manus' ||
-    log.agent === 'imprese' || log.agent === 'mercati'
+    log.agent === 'guardian' || log.agent === 'mio' || log.agent === 'dev' || log.agent === 'manus'
   );
 
   return (
@@ -122,7 +121,7 @@ export default function GuardianLogsSection() {
             System Logs
           </TabsTrigger>
           <TabsTrigger value="guardian" className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white">
-            Guardian Logs
+            MIO Agent Logs
           </TabsTrigger>
           <TabsTrigger value="imprese" className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white">
             Imprese API
@@ -263,13 +262,13 @@ export default function GuardianLogsSection() {
             <CardHeader>
               <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                 <Shield className="h-5 w-5 text-[#14b8a6]" />
-                Guardian API Logs ({guardianOnlyLogs.length})
+                MIO Agent Logs ({guardianOnlyLogs.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               {guardianOnlyLogs.length === 0 ? (
                 <div className="text-center py-8 text-[#e8fbff]/60">
-                  Nessun log Guardian disponibile.
+                  Nessuna conversazione MIO Agent registrata.
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
