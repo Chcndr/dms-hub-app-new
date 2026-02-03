@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
+import { trpc } from '@/lib/trpc';
 
 // Fix per icone marker Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -338,26 +339,47 @@ export default function GamingRewardsPanel() {
     }
   };
 
-  // Carica punti heatmap (hub_shops con coordinate)
+  // Query tRPC per hub_locations e hub_shops
+  const hubLocationsQuery = trpc.dmsHub.hub.locations.list.useQuery();
+  const hubShopsQuery = trpc.dmsHub.hub.shops.list.useQuery({});
+
+  // Carica punti heatmap (hub_shops con coordinate) dai dati reali
   const loadHeatmapPoints = async () => {
     try {
-      // Per ora usiamo dati mock basati sui comuni
-      // TODO: Implementare API reale per hub_shops con transazioni
-      const mockPoints: HeatmapPoint[] = [];
+      // Usa i dati reali da tRPC
+      const shops = hubShopsQuery.data || [];
+      const locations = hubLocationsQuery.data || [];
       
-      if (currentComuneId === 1) { // Grosseto
-        mockPoints.push(
-          { id: 1, lat: 42.7589, lng: 11.1135, name: 'Blanchard UOMO', type: 'shop', tcc_earned: 1250, tcc_spent: 890, transactions: 47 },
-          { id: 2, lat: 42.7597, lng: 11.1149, name: 'Enoteca Gustangolo', type: 'shop', tcc_earned: 750, tcc_spent: 620, transactions: 32 },
-          { id: 3, lat: 42.7598, lng: 11.1134, name: 'Farmacia Severi', type: 'shop', tcc_earned: 980, tcc_spent: 540, transactions: 28 },
-        );
-      } else if (currentComuneId === 8) { // Modena
-        mockPoints.push(
-          { id: 4, lat: 44.6480, lng: 10.9227, name: 'DUGONI calzature', type: 'shop', tcc_earned: 580, tcc_spent: 420, transactions: 19 },
-        );
+      // Filtra i negozi con coordinate e del comune corrente
+      const points: HeatmapPoint[] = [];
+      
+      for (const shop of shops) {
+        if (!shop.lat || !shop.lng) continue;
+        
+        // Trova la location per ottenere la città
+        const location = locations.find((l: any) => l.id === shop.hubId);
+        if (!location) continue;
+        
+        // Filtra per comune se impersonato
+        const shopCity = location.city?.toLowerCase();
+        const comuneCoords = COMUNI_COORDS[currentComuneId];
+        if (comuneCoords && shopCity !== comuneCoords.nome.toLowerCase()) continue;
+        
+        points.push({
+          id: shop.id,
+          lat: parseFloat(shop.lat),
+          lng: parseFloat(shop.lng),
+          name: shop.name,
+          type: 'shop',
+          // Per ora TCC sono 0 perché non abbiamo shop_id nelle transactions
+          // Quando le transazioni avranno shop_id, questi dati saranno reali
+          tcc_earned: 0,
+          tcc_spent: 0,
+          transactions: 0,
+        });
       }
       
-      setHeatmapPoints(mockPoints);
+      setHeatmapPoints(points);
     } catch (error) {
       console.error('Errore caricamento heatmap:', error);
     }
@@ -393,15 +415,22 @@ export default function GamingRewardsPanel() {
     }
   };
 
-  // Carica dati all'avvio
+  // Carica dati all'avvio e quando cambiano i dati tRPC
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints()]);
+      await Promise.all([loadConfig(), loadStats()]);
       setLoading(false);
     };
     loadData();
   }, [currentComuneId]);
+
+  // Aggiorna heatmap quando arrivano i dati tRPC
+  useEffect(() => {
+    if (hubShopsQuery.data && hubLocationsQuery.data) {
+      loadHeatmapPoints();
+    }
+  }, [hubShopsQuery.data, hubLocationsQuery.data, currentComuneId]);
 
   // Determina centro iniziale mappa
   const getInitialCenter = (): [number, number] => {
