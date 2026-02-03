@@ -353,14 +353,17 @@ export default function GamingRewardsPanel() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/stats?comune_id=${currentComuneId}`);
       if (response.ok) {
-        const data = await response.json();
-        setStats({
-          total_tcc_issued: data.stats?.total_tcc_earned || 0,
-          total_tcc_spent: data.stats?.total_tcc_spent || 0,
-          active_users: data.stats?.active_users || 0,
-          co2_saved_kg: data.stats?.co2_saved || 0,
-          top_shops: data.stats?.top_shops || []
-        });
+        const result = await response.json();
+        if (result.success && result.data && result.data.stats) {
+          const s = result.data.stats;
+          setStats({
+            total_tcc_issued: s.total_tcc_earned || 0,
+            total_tcc_spent: s.total_tcc_spent || 0,
+            active_users: s.active_users || 0,
+            co2_saved_kg: s.co2_saved || 0,
+            top_shops: s.top_shops || []
+          });
+        }
       }
     } catch (error) {
       console.error('Errore caricamento stats:', error);
@@ -832,7 +835,7 @@ export default function GamingRewardsPanel() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               <MapCenterUpdater points={heatmapPoints} civicReports={civicReports} comuneId={currentComuneId} />
-              <HeatmapLayer points={heatmapPoints} />
+              <HeatmapLayer points={[...heatmapPoints, ...civicReports]} />
               {/* Marker negozi/hub/mercati */}
               {(selectedLayer === 'all' || selectedLayer === 'shopping') && heatmapPoints.map((point) => {
                 const intensity = Math.min((point.tcc_earned + point.tcc_spent) / 5000, 1.0);
