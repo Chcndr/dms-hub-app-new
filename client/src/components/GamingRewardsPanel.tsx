@@ -80,7 +80,7 @@ interface HeatmapPoint {
   lat: number;
   lng: number;
   name: string;
-  type: 'shop' | 'hub' | 'market';
+  type: 'shop' | 'hub' | 'market' | 'civic';
   tcc_earned: number;
   tcc_spent: number;
   transactions: number;
@@ -288,6 +288,8 @@ export default function GamingRewardsPanel() {
   const [config, setConfig] = useState<GamingConfig>(DEFAULT_CONFIG);
   const [stats, setStats] = useState<GamingStats | null>(null);
   const [heatmapPoints, setHeatmapPoints] = useState<HeatmapPoint[]>([]);
+  const [civicReports, setCivicReports] = useState<HeatmapPoint[]>([]);
+  const [selectedLayer, setSelectedLayer] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
   const [configExpanded, setConfigExpanded] = useState(true);
@@ -347,6 +349,40 @@ export default function GamingRewardsPanel() {
     }
   }, [currentComuneId]);
 
+  // Funzione per caricare le segnalazioni civiche
+  const loadCivicReports = useCallback(async () => {
+    if (!config.civic_enabled) {
+      setCivicReports([]);
+      return;
+    }
+    try {
+      const url = currentComuneId 
+        ? `${API_BASE_URL}/api/civic-reports/stats?comune_id=${currentComuneId}`
+        : `${API_BASE_URL}/api/civic-reports/stats`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.recent) {
+          const points: HeatmapPoint[] = data.data.recent
+            .filter((r: any) => r.lat && r.lng)
+            .map((r: any) => ({
+              id: r.id,
+              lat: parseFloat(r.lat),
+              lng: parseFloat(r.lng),
+              name: r.type || 'Segnalazione',
+              type: 'civic' as const,
+              tcc_earned: r.tcc_reward || 0,
+              tcc_spent: 0,
+              transactions: 1,
+            }));
+          setCivicReports(points);
+        }
+      }
+    } catch (error) {
+      console.error('Errore caricamento segnalazioni:', error);
+    }
+  }, [currentComuneId, config.civic_enabled]);
+
   // Funzione per caricare i punti heatmap via REST API
   const loadHeatmapPoints = useCallback(async () => {
     try {
@@ -376,11 +412,11 @@ export default function GamingRewardsPanel() {
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
-      await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints()]);
+      await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports()]);
       setLoading(false);
     };
     loadAllData();
-  }, [loadConfig, loadStats, loadHeatmapPoints]);
+  }, [loadConfig, loadStats, loadHeatmapPoints, loadCivicReports]);
 
   // Salva configurazione via REST API
   const saveConfig = async () => {
@@ -431,7 +467,7 @@ export default function GamingRewardsPanel() {
   // Funzione refresh dati
   const refreshData = async () => {
     setLoading(true);
-    await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints()]);
+    await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports()]);
     setLoading(false);
     toast.success('Dati aggiornati');
   };
@@ -700,6 +736,67 @@ export default function GamingRewardsPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Filtri Layer */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              onClick={() => setSelectedLayer('all')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                selectedLayer === 'all' 
+                  ? 'bg-[#8b5cf6] text-white' 
+                  : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
+              }`}
+            >
+              🌐 Tutti
+            </button>
+            {config.civic_enabled && (
+              <button
+                onClick={() => setSelectedLayer('civic')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedLayer === 'civic' 
+                    ? 'bg-[#f97316] text-white' 
+                    : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
+                }`}
+              >
+                📢 Segnalazioni ({civicReports.length})
+              </button>
+            )}
+            {config.shopping_enabled && (
+              <button
+                onClick={() => setSelectedLayer('shopping')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedLayer === 'shopping' 
+                    ? 'bg-[#22c55e] text-white' 
+                    : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
+                }`}
+              >
+                🛒 Acquisti ({heatmapPoints.filter(p => p.type === 'shop').length})
+              </button>
+            )}
+            {config.mobility_enabled && (
+              <button
+                onClick={() => setSelectedLayer('mobility')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedLayer === 'mobility' 
+                    ? 'bg-[#06b6d4] text-white' 
+                    : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
+                }`}
+              >
+                🚲 Mobilità
+              </button>
+            )}
+            {config.culture_enabled && (
+              <button
+                onClick={() => setSelectedLayer('culture')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedLayer === 'culture' 
+                    ? 'bg-[#a855f7] text-white' 
+                    : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
+                }`}
+              >
+                🏛️ Cultura
+              </button>
+            )}
+          </div>
           <div className="h-[600px] rounded-lg overflow-hidden">
             <MapContainer
               center={getInitialCenter()}
@@ -713,11 +810,12 @@ export default function GamingRewardsPanel() {
               />
               <MapCenterUpdater points={heatmapPoints} comuneId={currentComuneId} />
               <HeatmapLayer points={heatmapPoints} />
-              {heatmapPoints.map((point) => {
+              {/* Marker negozi/hub/mercati */}
+              {(selectedLayer === 'all' || selectedLayer === 'shopping') && heatmapPoints.map((point) => {
                 const intensity = Math.min((point.tcc_earned + point.tcc_spent) / 5000, 1.0);
                 return (
                   <Marker
-                    key={point.id}
+                    key={`shop-${point.id}`}
                     position={[point.lat, point.lng]}
                     icon={getMarkerIcon(point.type, intensity)}
                   >
@@ -732,6 +830,22 @@ export default function GamingRewardsPanel() {
                   </Marker>
                 );
               })}
+              {/* Marker segnalazioni civiche */}
+              {(selectedLayer === 'all' || selectedLayer === 'civic') && civicReports.map((report) => (
+                <Marker
+                  key={`civic-${report.id}`}
+                  position={[report.lat, report.lng]}
+                  icon={getMarkerIcon('civic', 0.8)}
+                >
+                  <Popup>
+                    <div className="text-sm">
+                      <div className="font-bold text-orange-600">📢 {report.name}</div>
+                      <div>TCC Reward: {report.tcc_earned}</div>
+                      <div className="text-xs text-gray-500">Segnalazione Civica</div>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
             </MapContainer>
           </div>
           <div className="flex items-center justify-center gap-4 mt-4 text-sm text-[#e8fbff]/70">
