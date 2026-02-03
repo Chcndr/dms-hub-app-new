@@ -1,12 +1,14 @@
 /**
  * GamingRewardsPanel - Pannello Gaming & Rewards per Dashboard PA
- * Versione: 1.0.0
+ * Versione: 1.1.0
  * Data: 03 Febbraio 2026
  * 
  * Sistema unificato di gamification e incentivi per l'ecosistema MioHub.
  * Include: Regolatori TCC, Heatmap Commerciale, Statistiche, Classifiche.
+ * 
+ * NOTA: Usa REST API invece di tRPC per compatibilità con Vercel static deployment
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -24,7 +26,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
-import { trpc } from '@/lib/trpc';
 
 // Fix per icone marker Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -38,6 +39,7 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// URL API REST Backend Hetzner
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 // Coordinate centri comuni
@@ -55,22 +57,18 @@ const DEFAULT_ZOOM = 6;
 // Interfacce
 interface GamingConfig {
   comune_id: number;
-  // Segnalazioni Civiche
   civic_enabled: boolean;
   civic_tcc_default: number;
   civic_tcc_urgent: number;
   civic_tcc_photo_bonus: number;
-  // Mobilità Sostenibile
   mobility_enabled: boolean;
   mobility_tcc_bus: number;
   mobility_tcc_bike_km: number;
   mobility_tcc_walk_km: number;
-  // Cultura & Turismo
   culture_enabled: boolean;
   culture_tcc_museum: number;
   culture_tcc_monument: number;
   culture_tcc_route: number;
-  // Acquisti Locali
   shopping_enabled: boolean;
   shopping_cashback_percent: number;
   shopping_km0_bonus: number;
@@ -163,11 +161,11 @@ function HeatmapLayer({ points }: { points: HeatmapPoint[] }) {
       maxZoom: 18,
       max: 1.0,
       gradient: {
-        0.0: '#22c55e',  // Verde
-        0.25: '#84cc16', // Lime
-        0.5: '#eab308',  // Giallo
-        0.75: '#f97316', // Arancione
-        1.0: '#8b5cf6'   // Viola (hotspot)
+        0.0: '#22c55e',
+        0.25: '#84cc16',
+        0.5: '#eab308',
+        0.75: '#f97316',
+        1.0: '#8b5cf6'
       }
     }).addTo(map);
     
@@ -189,7 +187,7 @@ const getMarkerIcon = (type: string, intensity: number) => {
     'market': '🛒',
   };
   
-  const icon = emoji[type] || '📍';
+  const iconEmoji = emoji[type] || '📍';
   const bgColor = intensity > 0.7 ? '#8b5cf6' : intensity > 0.4 ? '#f97316' : '#22c55e';
   
   return L.divIcon({
@@ -204,7 +202,7 @@ const getMarkerIcon = (type: string, intensity: number) => {
       font-size: 12px;
       border: 2px solid white;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    ">${icon}</div>`,
+    ">${iconEmoji}</div>`,
     className: 'custom-marker',
     iconSize: [20, 20],
     iconAnchor: [10, 10],
@@ -297,123 +295,146 @@ export default function GamingRewardsPanel() {
   const { selectedComune, comuneId, comuneNome, isImpersonating } = useImpersonation();
   const currentComuneId = comuneId ? parseInt(comuneId) : 1;
 
-  // Query tRPC per hub_locations e hub_shops
-  const hubLocationsQuery = trpc.dmsHub.hub.locations.list.useQuery();
-  const hubShopsQuery = trpc.dmsHub.hub.shops.list.useQuery({});
-  
-  // Query tRPC per Gaming & Rewards
-  const gamingConfigQuery = trpc.dmsHub.gamingRewards.getConfig.useQuery(
-    { comuneId: currentComuneId },
-    { enabled: currentComuneId > 0 }
-  );
-  const gamingStatsQuery = trpc.dmsHub.gamingRewards.getStats.useQuery(
-    { comuneId: currentComuneId },
-    { enabled: currentComuneId > 0 }
-  );
-  const heatmapPointsQuery = trpc.dmsHub.gamingRewards.getHeatmapPoints.useQuery(
-    { comuneId: currentComuneId },
-    { enabled: currentComuneId > 0 }
-  );
-  const saveConfigMutation = trpc.dmsHub.gamingRewards.saveConfig.useMutation();
-
-  // Carica configurazione da tRPC
-  useEffect(() => {
-    if (gamingConfigQuery.data) {
-      const data = gamingConfigQuery.data;
-      setConfig({
-        comune_id: currentComuneId,
-        civic_enabled: data.civicEnabled ?? true,
-        civic_tcc_default: data.civicTccDefault ?? 10,
-        civic_tcc_urgent: data.civicTccUrgent ?? 5,
-        civic_tcc_photo_bonus: data.civicTccPhotoBonus ?? 5,
-        mobility_enabled: data.mobilityEnabled ?? false,
-        mobility_tcc_bus: data.mobilityTccBus ?? 10,
-        mobility_tcc_bike_km: data.mobilityTccBikeKm ?? 3,
-        mobility_tcc_walk_km: data.mobilityTccWalkKm ?? 5,
-        culture_enabled: data.cultureEnabled ?? false,
-        culture_tcc_museum: data.cultureTccMuseum ?? 100,
-        culture_tcc_monument: data.cultureTccMonument ?? 50,
-        culture_tcc_route: data.cultureTccRoute ?? 300,
-        shopping_enabled: data.shoppingEnabled ?? false,
-        shopping_cashback_percent: data.shoppingCashbackPercent ?? 1,
-        shopping_km0_bonus: data.shoppingKm0Bonus ?? 20,
-        shopping_market_bonus: data.shoppingMarketBonus ?? 10,
-      });
+  // Funzione per caricare la configurazione via REST API
+  const loadConfig = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/config?comune_id=${currentComuneId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.config) {
+          setConfig({
+            comune_id: currentComuneId,
+            civic_enabled: data.config.civic_enabled ?? true,
+            civic_tcc_default: data.config.civic_tcc_default ?? 10,
+            civic_tcc_urgent: data.config.civic_tcc_urgent ?? 5,
+            civic_tcc_photo_bonus: data.config.civic_tcc_photo_bonus ?? 5,
+            mobility_enabled: data.config.mobility_enabled ?? false,
+            mobility_tcc_bus: data.config.mobility_tcc_bus ?? 10,
+            mobility_tcc_bike_km: data.config.mobility_tcc_bike_km ?? 3,
+            mobility_tcc_walk_km: data.config.mobility_tcc_walk_km ?? 5,
+            culture_enabled: data.config.culture_enabled ?? false,
+            culture_tcc_museum: data.config.culture_tcc_museum ?? 100,
+            culture_tcc_monument: data.config.culture_tcc_monument ?? 50,
+            culture_tcc_route: data.config.culture_tcc_route ?? 300,
+            shopping_enabled: data.config.shopping_enabled ?? false,
+            shopping_cashback_percent: data.config.shopping_cashback_percent ?? 1,
+            shopping_km0_bonus: data.config.shopping_km0_bonus ?? 20,
+            shopping_market_bonus: data.config.shopping_market_bonus ?? 10,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Errore caricamento config:', error);
     }
-  }, [gamingConfigQuery.data, currentComuneId]);
+  }, [currentComuneId]);
 
-  // Carica statistiche TCC da tRPC
-  useEffect(() => {
-    if (gamingStatsQuery.data) {
-      const data = gamingStatsQuery.data;
-      setStats({
-        total_tcc_issued: data.totalTccEarned || 0,
-        total_tcc_spent: data.totalTccSpent || 0,
-        active_users: data.totalEarnTransactions + data.totalSpendTransactions || 0,
-        co2_saved_kg: data.co2Saved || 0,
-        top_shops: []
-      });
+  // Funzione per caricare le statistiche via REST API
+  const loadStats = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/stats?comune_id=${currentComuneId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setStats({
+          total_tcc_issued: data.stats?.total_tcc_earned || 0,
+          total_tcc_spent: data.stats?.total_tcc_spent || 0,
+          active_users: data.stats?.active_users || 0,
+          co2_saved_kg: data.stats?.co2_saved || 0,
+          top_shops: data.stats?.top_shops || []
+        });
+      }
+    } catch (error) {
+      console.error('Errore caricamento stats:', error);
     }
-  }, [gamingStatsQuery.data]);
+  }, [currentComuneId]);
 
-  // Carica punti heatmap da tRPC
-  useEffect(() => {
-    if (heatmapPointsQuery.data) {
-      const points: HeatmapPoint[] = heatmapPointsQuery.data.map((p: any) => ({
-        id: p.id,
-        lat: p.lat,
-        lng: p.lng,
-        name: p.name,
-        type: 'shop' as const,
-        tcc_earned: p.tccEarned || 0,
-        tcc_spent: p.tccSpent || 0,
-        transactions: p.transactionCount || 0,
-      }));
-      setHeatmapPoints(points);
+  // Funzione per caricare i punti heatmap via REST API
+  const loadHeatmapPoints = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/heatmap?comune_id=${currentComuneId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.points && Array.isArray(data.points)) {
+          const points: HeatmapPoint[] = data.points.map((p: any) => ({
+            id: p.id,
+            lat: parseFloat(p.lat) || 0,
+            lng: parseFloat(p.lng) || 0,
+            name: p.name || 'Punto',
+            type: p.type || 'shop',
+            tcc_earned: p.tcc_earned || 0,
+            tcc_spent: p.tcc_spent || 0,
+            transactions: p.transactions || 0,
+          }));
+          setHeatmapPoints(points);
+        }
+      }
+    } catch (error) {
+      console.error('Errore caricamento heatmap:', error);
     }
-  }, [heatmapPointsQuery.data]);
+  }, [currentComuneId]);
 
-  // Salva configurazione con tRPC mutation
+  // Carica tutti i dati all'avvio e quando cambia il comune
+  useEffect(() => {
+    const loadAllData = async () => {
+      setLoading(true);
+      await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints()]);
+      setLoading(false);
+    };
+    loadAllData();
+  }, [loadConfig, loadStats, loadHeatmapPoints]);
+
+  // Salva configurazione via REST API
   const saveConfig = async () => {
     setSavingConfig(true);
     try {
-      await saveConfigMutation.mutateAsync({
-        comuneId: currentComuneId,
-        civicEnabled: config.civic_enabled,
-        civicTccDefault: config.civic_tcc_default,
-        civicTccUrgent: config.civic_tcc_urgent,
-        civicTccPhotoBonus: config.civic_tcc_photo_bonus,
-        mobilityEnabled: config.mobility_enabled,
-        mobilityTccBus: config.mobility_tcc_bus,
-        mobilityTccBikeKm: config.mobility_tcc_bike_km,
-        mobilityTccWalkKm: config.mobility_tcc_walk_km,
-        cultureEnabled: config.culture_enabled,
-        cultureTccMuseum: config.culture_tcc_museum,
-        cultureTccMonument: config.culture_tcc_monument,
-        cultureTccRoute: config.culture_tcc_route,
-        shoppingEnabled: config.shopping_enabled,
-        shoppingCashbackPercent: config.shopping_cashback_percent,
-        shoppingKm0Bonus: config.shopping_km0_bonus,
-        shoppingMarketBonus: config.shopping_market_bonus,
+      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          comune_id: currentComuneId,
+          civic_enabled: config.civic_enabled,
+          civic_tcc_default: config.civic_tcc_default,
+          civic_tcc_urgent: config.civic_tcc_urgent,
+          civic_tcc_photo_bonus: config.civic_tcc_photo_bonus,
+          mobility_enabled: config.mobility_enabled,
+          mobility_tcc_bus: config.mobility_tcc_bus,
+          mobility_tcc_bike_km: config.mobility_tcc_bike_km,
+          mobility_tcc_walk_km: config.mobility_tcc_walk_km,
+          culture_enabled: config.culture_enabled,
+          culture_tcc_museum: config.culture_tcc_museum,
+          culture_tcc_monument: config.culture_tcc_monument,
+          culture_tcc_route: config.culture_tcc_route,
+          shopping_enabled: config.shopping_enabled,
+          shopping_cashback_percent: config.shopping_cashback_percent,
+          shopping_km0_bonus: config.shopping_km0_bonus,
+          shopping_market_bonus: config.shopping_market_bonus,
+        }),
       });
-      toast.success('Configurazione Gaming & Rewards salvata!');
-      // Ricarica i dati
-      gamingConfigQuery.refetch();
+
+      if (response.ok) {
+        toast.success('Configurazione Gaming & Rewards salvata!');
+        // Ricarica i dati
+        await loadConfig();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore sconosciuto');
+      }
     } catch (error) {
       console.error('Errore salvataggio config:', error);
-      toast.error('Errore nel salvataggio della configurazione');
+      toast.error(`Errore nel salvataggio: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
     } finally {
       setSavingConfig(false);
     }
   };
 
-  // Gestione loading state
-  useEffect(() => {
-    const isLoading = gamingConfigQuery.isLoading || gamingStatsQuery.isLoading || heatmapPointsQuery.isLoading;
-    setLoading(isLoading);
-  }, [gamingConfigQuery.isLoading, gamingStatsQuery.isLoading, heatmapPointsQuery.isLoading]);
-
-
+  // Funzione refresh dati
+  const refreshData = async () => {
+    setLoading(true);
+    await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints()]);
+    setLoading(false);
+    toast.success('Dati aggiornati');
+  };
 
   // Determina centro iniziale mappa
   const getInitialCenter = (): [number, number] => {
@@ -449,8 +470,8 @@ export default function GamingRewardsPanel() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => { gamingConfigQuery.refetch(); gamingStatsQuery.refetch(); heatmapPointsQuery.refetch(); }}
-              className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
+              onClick={refreshData}
+              className="border-[#8b5cf6]/50 text-[#e8fbff] hover:bg-[#8b5cf6]/20"
             >
               <RefreshCw className="h-4 w-4 mr-1" />
               Aggiorna
@@ -459,7 +480,7 @@ export default function GamingRewardsPanel() {
               variant="outline" 
               size="sm"
               onClick={() => setConfigExpanded(!configExpanded)}
-              className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
+              className="border-[#8b5cf6]/50 text-[#e8fbff] hover:bg-[#8b5cf6]/20"
             >
               <Settings className="h-4 w-4 mr-1" />
               Configura
@@ -479,29 +500,29 @@ export default function GamingRewardsPanel() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Segnalazioni Civiche */}
               <CategoryCard
                 title="Segnalazioni Civiche"
                 icon={Radio}
-                color="[#06b6d4]"
+                color="orange-500"
                 enabled={config.civic_enabled}
                 onToggle={(v) => setConfig({ ...config, civic_enabled: v })}
               >
                 <div className="space-y-3">
-                  <ParamInput 
-                    label="TCC Default (risolta)" 
-                    value={config.civic_tcc_default} 
+                  <ParamInput
+                    label="TCC Default (risolta)"
+                    value={config.civic_tcc_default}
                     onChange={(v) => setConfig({ ...config, civic_tcc_default: v })}
                   />
-                  <ParamInput 
-                    label="TCC Urgenti" 
-                    value={config.civic_tcc_urgent} 
+                  <ParamInput
+                    label="TCC Urgenti"
+                    value={config.civic_tcc_urgent}
                     onChange={(v) => setConfig({ ...config, civic_tcc_urgent: v })}
                   />
-                  <ParamInput 
-                    label="Bonus Foto" 
-                    value={config.civic_tcc_photo_bonus} 
+                  <ParamInput
+                    label="Bonus Foto"
+                    value={config.civic_tcc_photo_bonus}
                     onChange={(v) => setConfig({ ...config, civic_tcc_photo_bonus: v })}
                   />
                 </div>
@@ -511,24 +532,24 @@ export default function GamingRewardsPanel() {
               <CategoryCard
                 title="Mobilità Sostenibile"
                 icon={Bus}
-                color="[#10b981]"
+                color="green-500"
                 enabled={config.mobility_enabled}
                 onToggle={(v) => setConfig({ ...config, mobility_enabled: v })}
               >
                 <div className="space-y-3">
-                  <ParamInput 
-                    label="TCC per corsa Bus/Tram" 
-                    value={config.mobility_tcc_bus} 
+                  <ParamInput
+                    label="TCC Bus/Tram"
+                    value={config.mobility_tcc_bus}
                     onChange={(v) => setConfig({ ...config, mobility_tcc_bus: v })}
                   />
-                  <ParamInput 
-                    label="TCC per km Bici" 
-                    value={config.mobility_tcc_bike_km} 
+                  <ParamInput
+                    label="TCC/km Bici"
+                    value={config.mobility_tcc_bike_km}
                     onChange={(v) => setConfig({ ...config, mobility_tcc_bike_km: v })}
                   />
-                  <ParamInput 
-                    label="TCC per km a Piedi" 
-                    value={config.mobility_tcc_walk_km} 
+                  <ParamInput
+                    label="TCC/km Piedi"
+                    value={config.mobility_tcc_walk_km}
                     onChange={(v) => setConfig({ ...config, mobility_tcc_walk_km: v })}
                   />
                 </div>
@@ -538,24 +559,24 @@ export default function GamingRewardsPanel() {
               <CategoryCard
                 title="Cultura & Turismo"
                 icon={Landmark}
-                color="[#f59e0b]"
+                color="purple-500"
                 enabled={config.culture_enabled}
                 onToggle={(v) => setConfig({ ...config, culture_enabled: v })}
               >
                 <div className="space-y-3">
-                  <ParamInput 
-                    label="TCC per Museo" 
-                    value={config.culture_tcc_museum} 
+                  <ParamInput
+                    label="TCC Museo"
+                    value={config.culture_tcc_museum}
                     onChange={(v) => setConfig({ ...config, culture_tcc_museum: v })}
                   />
-                  <ParamInput 
-                    label="TCC per Monumento" 
-                    value={config.culture_tcc_monument} 
+                  <ParamInput
+                    label="TCC Monumento"
+                    value={config.culture_tcc_monument}
                     onChange={(v) => setConfig({ ...config, culture_tcc_monument: v })}
                   />
-                  <ParamInput 
-                    label="TCC Percorso Completo" 
-                    value={config.culture_tcc_route} 
+                  <ParamInput
+                    label="TCC Percorso"
+                    value={config.culture_tcc_route}
                     onChange={(v) => setConfig({ ...config, culture_tcc_route: v })}
                   />
                 </div>
@@ -565,28 +586,28 @@ export default function GamingRewardsPanel() {
               <CategoryCard
                 title="Acquisti Locali"
                 icon={ShoppingCart}
-                color="[#ec4899]"
+                color="blue-500"
                 enabled={config.shopping_enabled}
                 onToggle={(v) => setConfig({ ...config, shopping_enabled: v })}
               >
                 <div className="space-y-3">
-                  <ParamInput 
-                    label="Cashback" 
-                    value={config.shopping_cashback_percent} 
+                  <ParamInput
+                    label="Cashback"
+                    value={config.shopping_cashback_percent}
                     onChange={(v) => setConfig({ ...config, shopping_cashback_percent: v })}
                     suffix="%"
-                    max={10}
+                    max={100}
                   />
-                  <ParamInput 
-                    label="Bonus Km0" 
-                    value={config.shopping_km0_bonus} 
+                  <ParamInput
+                    label="Bonus Km0"
+                    value={config.shopping_km0_bonus}
                     onChange={(v) => setConfig({ ...config, shopping_km0_bonus: v })}
                     suffix="%"
                     max={100}
                   />
-                  <ParamInput 
-                    label="Bonus Mercato" 
-                    value={config.shopping_market_bonus} 
+                  <ParamInput
+                    label="Bonus Mercato"
+                    value={config.shopping_market_bonus}
                     onChange={(v) => setConfig({ ...config, shopping_market_bonus: v })}
                     suffix="%"
                     max={100}
@@ -597,103 +618,101 @@ export default function GamingRewardsPanel() {
 
             {/* Pulsante Salva */}
             <div className="flex justify-end mt-6">
-              <Button 
+              <Button
                 onClick={saveConfig}
                 disabled={savingConfig}
-                className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white"
+                className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white"
               >
                 {savingConfig ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Salvataggio...
+                  </>
                 ) : (
-                  <Save className="h-4 w-4 mr-2" />
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Salva Configurazione
+                  </>
                 )}
-                Salva Configurazione
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Statistiche Rapide */}
+      {/* Statistiche */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-[#1a2332] border-[#10b981]/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Coins className="h-5 w-5 text-[#10b981]" />
-              <span className="text-[#e8fbff]/70 text-sm">TCC Emessi</span>
-            </div>
-            <div className="text-2xl font-bold text-[#10b981]">
-              {(stats?.total_tcc_issued || 0).toLocaleString('it-IT')}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-[#1a2332] border-[#f59e0b]/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-5 w-5 text-[#f59e0b]" />
-              <span className="text-[#e8fbff]/70 text-sm">TCC Spesi</span>
-            </div>
-            <div className="text-2xl font-bold text-[#f59e0b]">
-              {(stats?.total_tcc_spent || 0).toLocaleString('it-IT')}
-            </div>
-          </CardContent>
-        </Card>
-        
         <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="h-5 w-5 text-[#8b5cf6]" />
-              <span className="text-[#e8fbff]/70 text-sm">Utenti Attivi</span>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-[#e8fbff]/70 text-sm mb-1">
+              <Coins className="h-4 w-4 text-yellow-500" />
+              TCC Emessi
+            </div>
+            <div className="text-2xl font-bold text-[#22c55e]">
+              {stats?.total_tcc_issued?.toLocaleString() || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-[#e8fbff]/70 text-sm mb-1">
+              <TrendingUp className="h-4 w-4 text-blue-500" />
+              TCC Spesi
+            </div>
+            <div className="text-2xl font-bold text-[#3b82f6]">
+              {stats?.total_tcc_spent?.toLocaleString() || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-[#e8fbff]/70 text-sm mb-1">
+              <Users className="h-4 w-4 text-purple-500" />
+              Utenti Attivi
             </div>
             <div className="text-2xl font-bold text-[#8b5cf6]">
-              {(stats?.active_users || 0).toLocaleString('it-IT')}
+              {stats?.active_users?.toLocaleString() || 0}
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Leaf className="h-5 w-5 text-[#14b8a6]" />
-              <span className="text-[#e8fbff]/70 text-sm">CO₂ Risparmiata</span>
+
+        <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-[#e8fbff]/70 text-sm mb-1">
+              <Leaf className="h-4 w-4 text-green-500" />
+              CO₂ Risparmiata
             </div>
-            <div className="text-2xl font-bold text-[#14b8a6]">
-              {((stats?.co2_saved_kg || 0) / 1000).toFixed(1)}t
+            <div className="text-2xl font-bold text-[#22c55e]">
+              {(stats?.co2_saved_kg || 0).toFixed(1)}t
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Heatmap Commerciale */}
+      {/* Heatmap */}
       <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
         <CardHeader>
           <CardTitle className="text-[#e8fbff] flex items-center gap-2">
             <MapPin className="h-5 w-5 text-[#8b5cf6]" />
             Heatmap Ecosistema
-            {comuneNome && <span className="text-[#8b5cf6] text-sm ml-2">({comuneNome})</span>}
-            {heatmapPoints.length > 0 && (
-              <span className="text-xs text-emerald-400 ml-auto">● {heatmapPoints.length} punti attivi</span>
-            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[500px] rounded-lg overflow-hidden">
+          <div className="h-[400px] rounded-lg overflow-hidden">
             <MapContainer
               center={getInitialCenter()}
-              zoom={currentComuneId ? 14 : DEFAULT_ZOOM}
+              zoom={14}
               style={{ height: '100%', width: '100%' }}
-              scrollWheelZoom={false}
-              dragging={true}
+              className="rounded-lg"
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              
               <MapCenterUpdater points={heatmapPoints} comuneId={currentComuneId} />
               <HeatmapLayer points={heatmapPoints} />
-              
               {heatmapPoints.map((point) => {
                 const intensity = Math.min((point.tcc_earned + point.tcc_spent) / 5000, 1.0);
                 return (
@@ -703,22 +722,11 @@ export default function GamingRewardsPanel() {
                     icon={getMarkerIcon(point.type, intensity)}
                   >
                     <Popup>
-                      <div className="text-sm min-w-[200px]">
-                        <strong className="text-base">{point.name}</strong>
-                        <div className="mt-2 space-y-1">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">TCC Guadagnati:</span>
-                            <span className="font-semibold text-green-600">{point.tcc_earned.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">TCC Spesi:</span>
-                            <span className="font-semibold text-orange-600">{point.tcc_spent.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Transazioni:</span>
-                            <span className="font-semibold">{point.transactions}</span>
-                          </div>
-                        </div>
+                      <div className="text-sm">
+                        <div className="font-bold">{point.name}</div>
+                        <div>TCC Guadagnati: {point.tcc_earned}</div>
+                        <div>TCC Spesi: {point.tcc_spent}</div>
+                        <div>Transazioni: {point.transactions}</div>
                       </div>
                     </Popup>
                   </Marker>
@@ -726,69 +734,14 @@ export default function GamingRewardsPanel() {
               })}
             </MapContainer>
           </div>
-          
-          {/* Legenda */}
-          <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-[#22c55e]"></div>
-              <span className="text-[#e8fbff]/70">Bassa</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-[#eab308]"></div>
-              <span className="text-[#e8fbff]/70">Media</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-[#f97316]"></div>
-              <span className="text-[#e8fbff]/70">Alta</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-[#8b5cf6]"></div>
-              <span className="text-[#e8fbff]/70">Hotspot</span>
-            </div>
+          <div className="flex items-center justify-center gap-4 mt-4 text-sm text-[#e8fbff]/70">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#22c55e]"></span> Bassa</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#eab308]"></span> Media</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#f97316]"></span> Buona</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#8b5cf6]"></span> Hotspot</span>
           </div>
         </CardContent>
       </Card>
-
-      {/* Top Negozi */}
-      {heatmapPoints.length > 0 && (
-        <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-          <CardHeader>
-            <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-[#f59e0b]" />
-              Top Negozi per TCC
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {heatmapPoints
-                .sort((a, b) => (b.tcc_earned + b.tcc_spent) - (a.tcc_earned + a.tcc_spent))
-                .slice(0, 5)
-                .map((point, index) => (
-                  <div key={point.id} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <span className={`text-lg font-bold ${
-                        index === 0 ? 'text-[#f59e0b]' : 
-                        index === 1 ? 'text-[#94a3b8]' : 
-                        index === 2 ? 'text-[#cd7f32]' : 'text-[#e8fbff]/50'
-                      }`}>
-                        #{index + 1}
-                      </span>
-                      <span className="text-[#e8fbff]">{point.name}</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[#8b5cf6] font-bold">
-                        {(point.tcc_earned + point.tcc_spent).toLocaleString()} TCC
-                      </div>
-                      <div className="text-xs text-[#e8fbff]/50">
-                        {point.transactions} transazioni
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
