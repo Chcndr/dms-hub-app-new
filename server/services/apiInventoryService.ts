@@ -13,7 +13,7 @@ export interface APIEndpoint {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   path: string;
   description: string;
-  category: 'analytics' | 'integrations' | 'mobility' | 'logs' | 'system' | 'guardian' | 'dms' | 'carbon' | 'users' | 'sustainability' | 'businesses' | 'inspections' | 'notifications' | 'civic' | 'wallet' | 'imprese' | 'suap' | 'concessioni' | 'tariffe' | 'qualificazioni' | 'tcc';
+  category: 'analytics' | 'integrations' | 'mobility' | 'logs' | 'system' | 'guardian' | 'dms' | 'carbon' | 'users' | 'sustainability' | 'businesses' | 'inspections' | 'notifications' | 'civic' | 'wallet' | 'imprese' | 'suap' | 'concessioni' | 'tariffe' | 'qualificazioni' | 'tcc' | 'gaming';
   status: 'active' | 'deprecated' | 'beta' | 'maintenance';
   version: string;
   requiresAuth: boolean;
@@ -2264,6 +2264,57 @@ export function getAPIInventory(): APIEndpoint[] {
       version: '3.81.0',
       requiresAuth: true,
       documentation: 'Esegue manualmente il CRON job per rilevamento trasgressioni e verifica scadenze giustifiche',
+    },
+
+    // ============================================================================
+    // GAMING & REWARDS - Sistema di Gamification
+    // ============================================================================
+    {
+      id: 'gamingRewards.getConfig',
+      method: 'GET',
+      path: '/api/trpc/dmsHub.gamingRewards.getConfig',
+      description: 'Ottieni configurazione Gaming & Rewards per comune',
+      category: 'gaming',
+      status: 'active',
+      version: '4.0.0',
+      requiresAuth: false,
+      documentation: 'Ritorna la configurazione completa del sistema Gaming & Rewards per un comune specifico. Include parametri per segnalazioni civiche, mobilità sostenibile, cultura & turismo, acquisti locali e challenge.',
+      testParams: { comuneId: 1 },
+    },
+    {
+      id: 'gamingRewards.saveConfig',
+      method: 'POST',
+      path: '/api/trpc/dmsHub.gamingRewards.saveConfig',
+      description: 'Salva configurazione Gaming & Rewards',
+      category: 'gaming',
+      status: 'active',
+      version: '4.0.0',
+      requiresAuth: true,
+      documentation: 'Salva o aggiorna la configurazione del sistema Gaming & Rewards per un comune. Supporta UPSERT (insert or update).',
+    },
+    {
+      id: 'gamingRewards.getStats',
+      method: 'GET',
+      path: '/api/trpc/dmsHub.gamingRewards.getStats',
+      description: 'Statistiche TCC per comune',
+      category: 'gaming',
+      status: 'active',
+      version: '4.0.0',
+      requiresAuth: false,
+      documentation: 'Ritorna statistiche aggregate sui TCC per un comune: totale emessi, spesi, transazioni, CO2 risparmiata.',
+      testParams: { comuneId: 1 },
+    },
+    {
+      id: 'gamingRewards.getHeatmapPoints',
+      method: 'GET',
+      path: '/api/trpc/dmsHub.gamingRewards.getHeatmapPoints',
+      description: 'Punti heatmap commerciale',
+      category: 'gaming',
+      status: 'active',
+      version: '4.0.0',
+      requiresAuth: false,
+      documentation: 'Ritorna i punti per la heatmap commerciale: negozi HUB con coordinate e aggregazione TCC (guadagnati/spesi/transazioni).',
+      testParams: { comuneId: 1 },
     },
   ];
 }

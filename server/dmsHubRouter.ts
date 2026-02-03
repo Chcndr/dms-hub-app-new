@@ -1582,6 +1582,324 @@ export const dmsHubRouter = router({
         return { success: true, concession: updated };
       }),
   }),
+
+  // ============================================================================
+  // GAMING & REWARDS - Sistema di Gamification per Comuni
+  // ============================================================================
+  gamingRewards: router({
+    // GET config per comune
+    getConfig: publicProcedure
+      .input(z.object({
+        comuneId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        
+        const [config] = await db.execute(sql`
+          SELECT * FROM gaming_rewards_config WHERE comune_id = ${input.comuneId}
+        `);
+        
+        if (!config || (Array.isArray(config) && config.length === 0)) {
+          // Ritorna configurazione di default se non esiste
+          return {
+            comuneId: input.comuneId,
+            civicEnabled: true,
+            civicTccDefault: 10,
+            civicTccUrgent: 5,
+            civicTccPhotoBonus: 5,
+            mobilityEnabled: false,
+            mobilityTccBus: 10,
+            mobilityTccBikeKm: 3,
+            mobilityTccWalkKm: 5,
+            mobilityTccTrain: 15,
+            mobilityRushHourBonus: 0,
+            cultureEnabled: false,
+            cultureTccMuseum: 100,
+            cultureTccMonument: 50,
+            cultureTccRoute: 300,
+            cultureTccEvent: 50,
+            cultureWeekendBonus: 0,
+            shoppingEnabled: false,
+            shoppingCashbackPercent: 1.00,
+            shoppingKm0Bonus: 20,
+            shoppingArtisanBonus: 15,
+            shoppingMarketBonus: 10,
+            challengeEnabled: false,
+            challengeMaxActive: 3,
+            challengeDefaultBonus: 50,
+          };
+        }
+        
+        const row = Array.isArray(config) ? config[0] : config;
+        return {
+          id: row.id,
+          comuneId: row.comune_id,
+          civicEnabled: row.civic_enabled,
+          civicTccDefault: row.civic_tcc_default,
+          civicTccUrgent: row.civic_tcc_urgent,
+          civicTccPhotoBonus: row.civic_tcc_photo_bonus,
+          mobilityEnabled: row.mobility_enabled,
+          mobilityTccBus: row.mobility_tcc_bus,
+          mobilityTccBikeKm: row.mobility_tcc_bike_km,
+          mobilityTccWalkKm: row.mobility_tcc_walk_km,
+          mobilityTccTrain: row.mobility_tcc_train,
+          mobilityRushHourBonus: row.mobility_rush_hour_bonus,
+          cultureEnabled: row.culture_enabled,
+          cultureTccMuseum: row.culture_tcc_museum,
+          cultureTccMonument: row.culture_tcc_monument,
+          cultureTccRoute: row.culture_tcc_route,
+          cultureTccEvent: row.culture_tcc_event,
+          cultureWeekendBonus: row.culture_weekend_bonus,
+          shoppingEnabled: row.shopping_enabled,
+          shoppingCashbackPercent: parseFloat(row.shopping_cashback_percent) || 1.00,
+          shoppingKm0Bonus: row.shopping_km0_bonus,
+          shoppingArtisanBonus: row.shopping_artisan_bonus,
+          shoppingMarketBonus: row.shopping_market_bonus,
+          challengeEnabled: row.challenge_enabled,
+          challengeMaxActive: row.challenge_max_active,
+          challengeDefaultBonus: row.challenge_default_bonus,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+      }),
+
+    // SAVE config per comune
+    saveConfig: publicProcedure
+      .input(z.object({
+        comuneId: z.number(),
+        civicEnabled: z.boolean().optional(),
+        civicTccDefault: z.number().optional(),
+        civicTccUrgent: z.number().optional(),
+        civicTccPhotoBonus: z.number().optional(),
+        mobilityEnabled: z.boolean().optional(),
+        mobilityTccBus: z.number().optional(),
+        mobilityTccBikeKm: z.number().optional(),
+        mobilityTccWalkKm: z.number().optional(),
+        mobilityTccTrain: z.number().optional(),
+        mobilityRushHourBonus: z.number().optional(),
+        cultureEnabled: z.boolean().optional(),
+        cultureTccMuseum: z.number().optional(),
+        cultureTccMonument: z.number().optional(),
+        cultureTccRoute: z.number().optional(),
+        cultureTccEvent: z.number().optional(),
+        cultureWeekendBonus: z.number().optional(),
+        shoppingEnabled: z.boolean().optional(),
+        shoppingCashbackPercent: z.number().optional(),
+        shoppingKm0Bonus: z.number().optional(),
+        shoppingArtisanBonus: z.number().optional(),
+        shoppingMarketBonus: z.number().optional(),
+        challengeEnabled: z.boolean().optional(),
+        challengeMaxActive: z.number().optional(),
+        challengeDefaultBonus: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        
+        const { comuneId, ...configData } = input;
+        
+        // Costruisci i valori da aggiornare
+        const updateFields: string[] = [];
+        const values: any[] = [];
+        
+        if (configData.civicEnabled !== undefined) {
+          updateFields.push('civic_enabled = $' + (values.length + 1));
+          values.push(configData.civicEnabled);
+        }
+        if (configData.civicTccDefault !== undefined) {
+          updateFields.push('civic_tcc_default = $' + (values.length + 1));
+          values.push(configData.civicTccDefault);
+        }
+        if (configData.civicTccUrgent !== undefined) {
+          updateFields.push('civic_tcc_urgent = $' + (values.length + 1));
+          values.push(configData.civicTccUrgent);
+        }
+        if (configData.civicTccPhotoBonus !== undefined) {
+          updateFields.push('civic_tcc_photo_bonus = $' + (values.length + 1));
+          values.push(configData.civicTccPhotoBonus);
+        }
+        if (configData.mobilityEnabled !== undefined) {
+          updateFields.push('mobility_enabled = $' + (values.length + 1));
+          values.push(configData.mobilityEnabled);
+        }
+        if (configData.mobilityTccBus !== undefined) {
+          updateFields.push('mobility_tcc_bus = $' + (values.length + 1));
+          values.push(configData.mobilityTccBus);
+        }
+        if (configData.mobilityTccBikeKm !== undefined) {
+          updateFields.push('mobility_tcc_bike_km = $' + (values.length + 1));
+          values.push(configData.mobilityTccBikeKm);
+        }
+        if (configData.mobilityTccWalkKm !== undefined) {
+          updateFields.push('mobility_tcc_walk_km = $' + (values.length + 1));
+          values.push(configData.mobilityTccWalkKm);
+        }
+        if (configData.mobilityTccTrain !== undefined) {
+          updateFields.push('mobility_tcc_train = $' + (values.length + 1));
+          values.push(configData.mobilityTccTrain);
+        }
+        if (configData.mobilityRushHourBonus !== undefined) {
+          updateFields.push('mobility_rush_hour_bonus = $' + (values.length + 1));
+          values.push(configData.mobilityRushHourBonus);
+        }
+        if (configData.cultureEnabled !== undefined) {
+          updateFields.push('culture_enabled = $' + (values.length + 1));
+          values.push(configData.cultureEnabled);
+        }
+        if (configData.cultureTccMuseum !== undefined) {
+          updateFields.push('culture_tcc_museum = $' + (values.length + 1));
+          values.push(configData.cultureTccMuseum);
+        }
+        if (configData.cultureTccMonument !== undefined) {
+          updateFields.push('culture_tcc_monument = $' + (values.length + 1));
+          values.push(configData.cultureTccMonument);
+        }
+        if (configData.cultureTccRoute !== undefined) {
+          updateFields.push('culture_tcc_route = $' + (values.length + 1));
+          values.push(configData.cultureTccRoute);
+        }
+        if (configData.cultureTccEvent !== undefined) {
+          updateFields.push('culture_tcc_event = $' + (values.length + 1));
+          values.push(configData.cultureTccEvent);
+        }
+        if (configData.cultureWeekendBonus !== undefined) {
+          updateFields.push('culture_weekend_bonus = $' + (values.length + 1));
+          values.push(configData.cultureWeekendBonus);
+        }
+        if (configData.shoppingEnabled !== undefined) {
+          updateFields.push('shopping_enabled = $' + (values.length + 1));
+          values.push(configData.shoppingEnabled);
+        }
+        if (configData.shoppingCashbackPercent !== undefined) {
+          updateFields.push('shopping_cashback_percent = $' + (values.length + 1));
+          values.push(configData.shoppingCashbackPercent);
+        }
+        if (configData.shoppingKm0Bonus !== undefined) {
+          updateFields.push('shopping_km0_bonus = $' + (values.length + 1));
+          values.push(configData.shoppingKm0Bonus);
+        }
+        if (configData.shoppingArtisanBonus !== undefined) {
+          updateFields.push('shopping_artisan_bonus = $' + (values.length + 1));
+          values.push(configData.shoppingArtisanBonus);
+        }
+        if (configData.shoppingMarketBonus !== undefined) {
+          updateFields.push('shopping_market_bonus = $' + (values.length + 1));
+          values.push(configData.shoppingMarketBonus);
+        }
+        if (configData.challengeEnabled !== undefined) {
+          updateFields.push('challenge_enabled = $' + (values.length + 1));
+          values.push(configData.challengeEnabled);
+        }
+        if (configData.challengeMaxActive !== undefined) {
+          updateFields.push('challenge_max_active = $' + (values.length + 1));
+          values.push(configData.challengeMaxActive);
+        }
+        if (configData.challengeDefaultBonus !== undefined) {
+          updateFields.push('challenge_default_bonus = $' + (values.length + 1));
+          values.push(configData.challengeDefaultBonus);
+        }
+        
+        // Aggiungi updated_at
+        updateFields.push('updated_at = NOW()');
+        
+        // UPSERT: Insert or Update
+        await db.execute(sql`
+          INSERT INTO gaming_rewards_config (comune_id, ${sql.raw(updateFields.map(f => f.split(' = ')[0]).join(', '))})
+          VALUES (${comuneId}, ${sql.raw(values.map((_, i) => '$' + (i + 1)).join(', '))})
+          ON CONFLICT (comune_id) DO UPDATE SET
+          ${sql.raw(updateFields.join(', '))}
+        `);
+        
+        await logAction("UPDATE_GAMING_REWARDS_CONFIG", "gaming_rewards_config", comuneId, null, null, configData);
+        
+        return { success: true, message: "Configurazione Gaming & Rewards salvata" };
+      }),
+
+    // GET statistiche TCC per comune (per heatmap)
+    getStats: publicProcedure
+      .input(z.object({
+        comuneId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        
+        // Statistiche aggregate per comune
+        const [stats] = await db.execute(sql`
+          SELECT 
+            COUNT(CASE WHEN type = 'earn' THEN 1 END) as total_earn_transactions,
+            COUNT(CASE WHEN type = 'spend' THEN 1 END) as total_spend_transactions,
+            COALESCE(SUM(CASE WHEN type = 'earn' THEN amount ELSE 0 END), 0) as total_tcc_earned,
+            COALESCE(SUM(CASE WHEN type = 'spend' THEN amount ELSE 0 END), 0) as total_tcc_spent
+          FROM transactions
+        `);
+        
+        const row = Array.isArray(stats) ? stats[0] : stats;
+        
+        return {
+          totalEarnTransactions: parseInt(row?.total_earn_transactions || '0'),
+          totalSpendTransactions: parseInt(row?.total_spend_transactions || '0'),
+          totalTccEarned: parseInt(row?.total_tcc_earned || '0'),
+          totalTccSpent: parseInt(row?.total_tcc_spent || '0'),
+          co2Saved: Math.round((parseInt(row?.total_tcc_earned || '0') * 0.1) * 10) / 10, // Stima CO2
+        };
+      }),
+
+    // GET punti heatmap (negozi con TCC)
+    getHeatmapPoints: publicProcedure
+      .input(z.object({
+        comuneId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        
+        // Recupera hub_shops con coordinate e aggregazione TCC
+        let query = sql`
+          SELECT 
+            hs.id,
+            hs.name,
+            hs.category,
+            hs.latitude,
+            hs.longitude,
+            hs.address,
+            hs.city,
+            hl.comune_id,
+            COALESCE(SUM(CASE WHEN t.type = 'earn' THEN t.amount ELSE 0 END), 0) as tcc_earned,
+            COALESCE(SUM(CASE WHEN t.type = 'spend' THEN t.amount ELSE 0 END), 0) as tcc_spent,
+            COUNT(t.id) as transaction_count
+          FROM hub_shops hs
+          LEFT JOIN hub_locations hl ON hs.hub_location_id = hl.id
+          LEFT JOIN transactions t ON t.shop_id = hs.id
+          WHERE hs.latitude IS NOT NULL AND hs.longitude IS NOT NULL
+        `;
+        
+        if (input.comuneId) {
+          query = sql`${query} AND hl.comune_id = ${input.comuneId}`;
+        }
+        
+        query = sql`${query} GROUP BY hs.id, hs.name, hs.category, hs.latitude, hs.longitude, hs.address, hs.city, hl.comune_id`;
+        
+        const results = await db.execute(query);
+        const rows = Array.isArray(results) ? results : [results];
+        
+        return rows.map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          category: row.category,
+          lat: parseFloat(row.latitude),
+          lng: parseFloat(row.longitude),
+          address: row.address,
+          city: row.city,
+          comuneId: row.comune_id,
+          tccEarned: parseInt(row.tcc_earned || '0'),
+          tccSpent: parseInt(row.tcc_spent || '0'),
+          transactionCount: parseInt(row.transaction_count || '0'),
+          intensity: Math.min(100, parseInt(row.tcc_earned || '0') / 10), // Intensità per heatmap
+        }));
+      }),
+  }),
 });
 
 export type DmsHubRouter = typeof dmsHubRouter;

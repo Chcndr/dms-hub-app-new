@@ -297,116 +297,99 @@ export default function GamingRewardsPanel() {
   const { selectedComune, comuneId, comuneNome, isImpersonating } = useImpersonation();
   const currentComuneId = comuneId ? parseInt(comuneId) : 1;
 
-  // Carica configurazione
-  const loadConfig = async () => {
-    try {
-      // Prima prova a caricare da civic_config esistente
-      const response = await fetch(`${API_BASE_URL}/api/civic-reports/config?comune_id=${currentComuneId}`);
-      const data = await response.json();
-      
-      if (data.success && data.data) {
-        // Mappa i dati esistenti alla nuova struttura
-        setConfig(prev => ({
-          ...prev,
-          comune_id: currentComuneId,
-          civic_tcc_default: data.data.tcc_reward_default || 10,
-          civic_tcc_urgent: data.data.tcc_reward_urgent || 5,
-          civic_tcc_photo_bonus: data.data.tcc_reward_photo_bonus || 5,
-        }));
-      }
-    } catch (error) {
-      console.error('Errore caricamento config:', error);
+  // Carica configurazione da tRPC
+  useEffect(() => {
+    if (gamingConfigQuery.data) {
+      const data = gamingConfigQuery.data;
+      setConfig({
+        comune_id: currentComuneId,
+        civic_enabled: data.civicEnabled ?? true,
+        civic_tcc_default: data.civicTccDefault ?? 10,
+        civic_tcc_urgent: data.civicTccUrgent ?? 5,
+        civic_tcc_photo_bonus: data.civicTccPhotoBonus ?? 5,
+        mobility_enabled: data.mobilityEnabled ?? false,
+        mobility_tcc_bus: data.mobilityTccBus ?? 10,
+        mobility_tcc_bike_km: data.mobilityTccBikeKm ?? 3,
+        mobility_tcc_walk_km: data.mobilityTccWalkKm ?? 5,
+        culture_enabled: data.cultureEnabled ?? false,
+        culture_tcc_museum: data.cultureTccMuseum ?? 100,
+        culture_tcc_monument: data.cultureTccMonument ?? 50,
+        culture_tcc_route: data.cultureTccRoute ?? 300,
+        shopping_enabled: data.shoppingEnabled ?? false,
+        shopping_cashback_percent: data.shoppingCashbackPercent ?? 1,
+        shopping_km0_bonus: data.shoppingKm0Bonus ?? 20,
+        shopping_market_bonus: data.shoppingMarketBonus ?? 10,
+      });
     }
-  };
+  }, [gamingConfigQuery.data, currentComuneId]);
 
-  // Carica statistiche TCC
-  const loadStats = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/stats/overview?comune_id=${currentComuneId}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setStats({
-          total_tcc_issued: data.data?.tcc?.total_issued || 0,
-          total_tcc_spent: data.data?.tcc?.total_redeemed || 0,
-          active_users: data.data?.tcc?.total_users || 0,
-          co2_saved_kg: data.data?.sustainability?.co2_saved || 0,
-          top_shops: []
-        });
-      }
-    } catch (error) {
-      console.error('Errore caricamento stats:', error);
+  // Carica statistiche TCC da tRPC
+  useEffect(() => {
+    if (gamingStatsQuery.data) {
+      const data = gamingStatsQuery.data;
+      setStats({
+        total_tcc_issued: data.totalTccEarned || 0,
+        total_tcc_spent: data.totalTccSpent || 0,
+        active_users: data.totalEarnTransactions + data.totalSpendTransactions || 0,
+        co2_saved_kg: data.co2Saved || 0,
+        top_shops: []
+      });
     }
-  };
+  }, [gamingStatsQuery.data]);
 
   // Query tRPC per hub_locations e hub_shops
   const hubLocationsQuery = trpc.dmsHub.hub.locations.list.useQuery();
   const hubShopsQuery = trpc.dmsHub.hub.shops.list.useQuery({});
+  
+  // Query tRPC per Gaming & Rewards
+  const gamingConfigQuery = trpc.dmsHub.gamingRewards.getConfig.useQuery({ comuneId: currentComuneId });
+  const gamingStatsQuery = trpc.dmsHub.gamingRewards.getStats.useQuery({ comuneId: currentComuneId });
+  const heatmapPointsQuery = trpc.dmsHub.gamingRewards.getHeatmapPoints.useQuery({ comuneId: currentComuneId });
+  const saveConfigMutation = trpc.dmsHub.gamingRewards.saveConfig.useMutation();
 
-  // Carica punti heatmap (hub_shops con coordinate) dai dati reali
-  const loadHeatmapPoints = async () => {
-    try {
-      // Usa i dati reali da tRPC
-      const shops = hubShopsQuery.data || [];
-      const locations = hubLocationsQuery.data || [];
-      
-      // Filtra i negozi con coordinate e del comune corrente
-      const points: HeatmapPoint[] = [];
-      
-      for (const shop of shops) {
-        if (!shop.lat || !shop.lng) continue;
-        
-        // Trova la location per ottenere la città
-        const location = locations.find((l: any) => l.id === shop.hubId);
-        if (!location) continue;
-        
-        // Filtra per comune se impersonato
-        const shopCity = location.city?.toLowerCase();
-        const comuneCoords = COMUNI_COORDS[currentComuneId];
-        if (comuneCoords && shopCity !== comuneCoords.nome.toLowerCase()) continue;
-        
-        points.push({
-          id: shop.id,
-          lat: parseFloat(shop.lat),
-          lng: parseFloat(shop.lng),
-          name: shop.name,
-          type: 'shop',
-          // Per ora TCC sono 0 perché non abbiamo shop_id nelle transactions
-          // Quando le transazioni avranno shop_id, questi dati saranno reali
-          tcc_earned: 0,
-          tcc_spent: 0,
-          transactions: 0,
-        });
-      }
-      
+  // Carica punti heatmap da tRPC
+  useEffect(() => {
+    if (heatmapPointsQuery.data) {
+      const points: HeatmapPoint[] = heatmapPointsQuery.data.map((p: any) => ({
+        id: p.id,
+        lat: p.lat,
+        lng: p.lng,
+        name: p.name,
+        type: 'shop' as const,
+        tcc_earned: p.tccEarned || 0,
+        tcc_spent: p.tccSpent || 0,
+        transactions: p.transactionCount || 0,
+      }));
       setHeatmapPoints(points);
-    } catch (error) {
-      console.error('Errore caricamento heatmap:', error);
     }
-  };
+  }, [heatmapPointsQuery.data]);
 
-  // Salva configurazione
+  // Salva configurazione con tRPC mutation
   const saveConfig = async () => {
     setSavingConfig(true);
     try {
-      // Salva nella tabella civic_config esistente
-      const response = await fetch(`${API_BASE_URL}/api/civic-reports/config`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          comune_id: currentComuneId,
-          tcc_reward_default: config.civic_tcc_default,
-          tcc_reward_urgent: config.civic_tcc_urgent,
-          tcc_reward_photo_bonus: config.civic_tcc_photo_bonus,
-        })
+      await saveConfigMutation.mutateAsync({
+        comuneId: currentComuneId,
+        civicEnabled: config.civic_enabled,
+        civicTccDefault: config.civic_tcc_default,
+        civicTccUrgent: config.civic_tcc_urgent,
+        civicTccPhotoBonus: config.civic_tcc_photo_bonus,
+        mobilityEnabled: config.mobility_enabled,
+        mobilityTccBus: config.mobility_tcc_bus,
+        mobilityTccBikeKm: config.mobility_tcc_bike_km,
+        mobilityTccWalkKm: config.mobility_tcc_walk_km,
+        cultureEnabled: config.culture_enabled,
+        cultureTccMuseum: config.culture_tcc_museum,
+        cultureTccMonument: config.culture_tcc_monument,
+        cultureTccRoute: config.culture_tcc_route,
+        shoppingEnabled: config.shopping_enabled,
+        shoppingCashbackPercent: config.shopping_cashback_percent,
+        shoppingKm0Bonus: config.shopping_km0_bonus,
+        shoppingMarketBonus: config.shopping_market_bonus,
       });
-      
-      const data = await response.json();
-      if (data.success) {
-        toast.success('Configurazione Gaming & Rewards salvata!');
-      } else {
-        throw new Error(data.error);
-      }
+      toast.success('Configurazione Gaming & Rewards salvata!');
+      // Ricarica i dati
+      gamingConfigQuery.refetch();
     } catch (error) {
       console.error('Errore salvataggio config:', error);
       toast.error('Errore nel salvataggio della configurazione');
@@ -415,22 +398,13 @@ export default function GamingRewardsPanel() {
     }
   };
 
-  // Carica dati all'avvio e quando cambiano i dati tRPC
+  // Gestione loading state
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await Promise.all([loadConfig(), loadStats()]);
-      setLoading(false);
-    };
-    loadData();
-  }, [currentComuneId]);
+    const isLoading = gamingConfigQuery.isLoading || gamingStatsQuery.isLoading || heatmapPointsQuery.isLoading;
+    setLoading(isLoading);
+  }, [gamingConfigQuery.isLoading, gamingStatsQuery.isLoading, heatmapPointsQuery.isLoading]);
 
-  // Aggiorna heatmap quando arrivano i dati tRPC
-  useEffect(() => {
-    if (hubShopsQuery.data && hubLocationsQuery.data) {
-      loadHeatmapPoints();
-    }
-  }, [hubShopsQuery.data, hubLocationsQuery.data, currentComuneId]);
+
 
   // Determina centro iniziale mappa
   const getInitialCenter = (): [number, number] => {
@@ -466,7 +440,7 @@ export default function GamingRewardsPanel() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => { loadConfig(); loadStats(); loadHeatmapPoints(); }}
+              onClick={() => { gamingConfigQuery.refetch(); gamingStatsQuery.refetch(); heatmapPointsQuery.refetch(); }}
               className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
             >
               <RefreshCw className="h-4 w-4 mr-1" />
