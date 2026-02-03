@@ -66,7 +66,8 @@ export default function GuardianLogsSection() {
   // Filtra log per agente
   const systemLogs = guardianLogs.filter((log: any) => log.agent === 'system' || log.agent === 'anonymous');
   const guardianOnlyLogs = guardianLogs.filter((log: any) => 
-    log.agent === 'guardian' || log.agent === 'mio' || log.agent === 'dev' || log.agent === 'manus'
+    log.agent === 'guardian' || log.agent === 'mio' || log.agent === 'dev' || log.agent === 'manus' ||
+    log.agent === 'imprese' || log.agent === 'mercati'
   );
 
   return (
