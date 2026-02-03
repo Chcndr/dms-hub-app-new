@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
+import { useCivicReports } from '@/contexts/CivicReportsContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
@@ -51,6 +52,7 @@ export default function CivicReportsPanel() {
   const [refreshing, setRefreshing] = useState(false);
   
   const { selectedComune } = useImpersonation();
+  const { setSelectedReport } = useCivicReports();
   const comuneId = selectedComune?.id || 1;
 
   // Carica statistiche
@@ -243,7 +245,7 @@ export default function CivicReportsPanel() {
           <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
             {stats?.recent && stats.recent.length > 0 ? (
               stats.recent.map((report: any) => (
-                <div key={report.id} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between">
+                <div key={report.id} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between cursor-pointer hover:bg-[#0b1220]/80 transition-colors" onClick={() => { if (report.lat && report.lng) { setSelectedReport({ id: report.id, lat: parseFloat(report.lat), lng: parseFloat(report.lng), type: report.type }); toast.info(`Centrato su: ${report.type}`); } }}>
                   <div className="flex-1">
                     <div className="text-[#e8fbff] font-semibold">{report.type}</div>
                     <div className="text-sm text-[#e8fbff]/70">
