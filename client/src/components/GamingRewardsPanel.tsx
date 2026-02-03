@@ -96,33 +96,32 @@ interface GamingStats {
   top_shops: Array<{ name: string; tcc: number }>;
 }
 
-// Interfaccia per Mobilità Sostenibile (fermate trasporto pubblico)
-interface MobilityPoint {
+// Interfaccia per Azioni Mobilità Sostenibile (percorsi completati dai cittadini)
+interface MobilityAction {
   id: number;
-  stop_id: string;
   name: string;
   lat: number;
   lng: number;
-  type: string; // bus, tram, train
-  provider: string;
+  type: string; // bus, bike, walk
   tcc_reward: number;
+  co2_saved_g: number;
+  completed_at: string;
+  user_id?: number;
+  point_type: 'mobility_action';
 }
 
-// Interfaccia per POI Culturali (OpenStreetMap)
-interface CulturePOI {
+// Interfaccia per Azioni Cultura (visite effettuate dai cittadini)
+interface CultureAction {
   id: number;
-  osm_id: string;
   name: string;
-  type: string; // museum, castle, monument, archaeological, theatre
   lat: number;
   lng: number;
-  region: string;
-  wikidata?: string;
-  wikipedia?: string;
-  opening_hours?: string;
-  fee: boolean;
-  wheelchair?: string;
+  type: string; // museum, castle, monument, archaeological, theatre
   tcc_reward: number;
+  visit_date: string;
+  user_id?: number;
+  poi_id?: number;
+  point_type: 'culture_action';
 }
 
 // Interfaccia per Top 5 Negozi
@@ -468,8 +467,8 @@ export default function GamingRewardsPanel() {
   const [stats, setStats] = useState<GamingStats | null>(null);
   const [heatmapPoints, setHeatmapPoints] = useState<HeatmapPoint[]>([]);
   const [civicReports, setCivicReports] = useState<HeatmapPoint[]>([]);
-  const [mobilityPoints, setMobilityPoints] = useState<MobilityPoint[]>([]);
-  const [culturePOIs, setCulturePOIs] = useState<CulturePOI[]>([]);
+  const [mobilityActions, setMobilityActions] = useState<MobilityAction[]>([]);
+  const [cultureActions, setCultureActions] = useState<CultureAction[]>([]);
   const [selectedLayer, setSelectedLayer] = useState<string>('all');
   const [layerTrigger, setLayerTrigger] = useState<number>(0); // Trigger per forzare flyTo su cambio layer
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month' | 'year'>('all');
@@ -678,10 +677,10 @@ export default function GamingRewardsPanel() {
     }
   }, [currentComuneId]);
 
-  // Funzione per caricare i punti Mobilità Sostenibile (fermate trasporto pubblico)
-  const loadMobilityPoints = useCallback(async () => {
+  // Funzione per caricare le Azioni Mobilità (percorsi completati dai cittadini)
+  const loadMobilityActions = useCallback(async () => {
     if (!config.mobility_enabled) {
-      setMobilityPoints([]);
+      setMobilityActions([]);
       return;
     }
     try {
@@ -689,32 +688,46 @@ export default function GamingRewardsPanel() {
       const coords = COMUNI_COORDS[currentComuneId];
       const lat = coords?.lat || 44.49;
       const lng = coords?.lng || 11.34;
-      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/mobility/heatmap?lat=${lat}&lng=${lng}&radius=15`);
+      // Mappa timeFilter al parametro period dell'API
+      const periodMap: Record<string, string> = {
+        'all': 'all',
+        'today': 'today',
+        'week': '7days',
+        'month': '30days',
+        'year': '1year'
+      };
+      const period = periodMap[timeFilter] || 'all';
+      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/mobility/heatmap?lat=${lat}&lng=${lng}&radius=50&period=${period}`);
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.stops && Array.isArray(result.stops)) {
-          const points: MobilityPoint[] = result.stops.map((s: any) => ({
-            id: s.id,
-            stop_id: s.stop_id || '',
-            name: s.name || 'Fermata',
-            lat: parseFloat(s.lat) || 0,
-            lng: parseFloat(s.lng) || 0,
-            type: s.type || 'bus',
-            provider: s.provider || 'TPER',
-            tcc_reward: s.tcc_reward || 10,
+        if (result.success && result.data && Array.isArray(result.data)) {
+          const actions: MobilityAction[] = result.data.map((a: any) => ({
+            id: a.id,
+            name: a.name || 'Percorso sostenibile',
+            lat: parseFloat(a.lat) || 0,
+            lng: parseFloat(a.lng) || 0,
+            type: a.type || 'bus',
+            tcc_reward: a.tcc_reward || 10,
+            co2_saved_g: parseFloat(a.co2_saved_g) || 0,
+            completed_at: a.completed_at,
+            user_id: a.user_id,
+            point_type: 'mobility_action' as const,
           }));
-          setMobilityPoints(points);
+          setMobilityActions(actions);
+        } else {
+          setMobilityActions([]);
         }
       }
     } catch (error) {
-      console.error('Errore caricamento mobility points:', error);
+      console.error('Errore caricamento mobility actions:', error);
+      setMobilityActions([]);
     }
-  }, [currentComuneId, config.mobility_enabled]);
+  }, [currentComuneId, config.mobility_enabled, timeFilter]);
 
-  // Funzione per caricare i POI Culturali (OpenStreetMap)
-  const loadCulturePOIs = useCallback(async () => {
+  // Funzione per caricare le Azioni Cultura (visite effettuate dai cittadini)
+  const loadCultureActions = useCallback(async () => {
     if (!config.culture_enabled) {
-      setCulturePOIs([]);
+      setCultureActions([]);
       return;
     }
     try {
@@ -722,32 +735,41 @@ export default function GamingRewardsPanel() {
       const coords = COMUNI_COORDS[currentComuneId];
       const lat = coords?.lat || 44.49;
       const lng = coords?.lng || 11.34;
-      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/culture/heatmap?lat=${lat}&lng=${lng}&radius=20`);
+      // Mappa timeFilter al parametro period dell'API
+      const periodMap: Record<string, string> = {
+        'all': 'all',
+        'today': 'today',
+        'week': '7days',
+        'month': '30days',
+        'year': '1year'
+      };
+      const period = periodMap[timeFilter] || 'all';
+      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/culture/heatmap?lat=${lat}&lng=${lng}&radius=50&period=${period}`);
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.pois && Array.isArray(result.pois)) {
-          const pois: CulturePOI[] = result.pois.map((p: any) => ({
-            id: p.id,
-            osm_id: p.osm_id || '',
-            name: p.name || 'Luogo culturale',
-            type: p.type || 'museum',
-            lat: parseFloat(p.lat) || 0,
-            lng: parseFloat(p.lng) || 0,
-            region: p.region || '',
-            wikidata: p.wikidata,
-            wikipedia: p.wikipedia,
-            opening_hours: p.opening_hours,
-            fee: p.fee || false,
-            wheelchair: p.wheelchair,
-            tcc_reward: p.tcc_reward || 15,
+        if (result.success && result.data && Array.isArray(result.data)) {
+          const actions: CultureAction[] = result.data.map((v: any) => ({
+            id: v.id,
+            name: v.name || 'Visita culturale',
+            lat: parseFloat(v.lat) || 0,
+            lng: parseFloat(v.lng) || 0,
+            type: v.type || 'museum',
+            tcc_reward: v.tcc_reward || 15,
+            visit_date: v.visit_date,
+            user_id: v.user_id,
+            poi_id: v.poi_id,
+            point_type: 'culture_action' as const,
           }));
-          setCulturePOIs(pois);
+          setCultureActions(actions);
+        } else {
+          setCultureActions([]);
         }
       }
     } catch (error) {
-      console.error('Errore caricamento culture POIs:', error);
+      console.error('Errore caricamento culture actions:', error);
+      setCultureActions([]);
     }
-  }, [currentComuneId, config.culture_enabled]);
+  }, [currentComuneId, config.culture_enabled, timeFilter]);
 
   // Carica tutti i dati all'avvio e quando cambia il comune
   useEffect(() => {
@@ -760,13 +782,13 @@ export default function GamingRewardsPanel() {
         loadCivicReports(), 
         loadTopShops(), 
         loadTrendData(),
-        loadMobilityPoints(),
-        loadCulturePOIs()
+        loadMobilityActions(),
+        loadCultureActions()
       ]);
       setLoading(false);
     };
     loadAllData();
-  }, [loadConfig, loadStats, loadHeatmapPoints, loadCivicReports, loadTopShops, loadTrendData, loadMobilityPoints, loadCulturePOIs]);
+  }, [loadConfig, loadStats, loadHeatmapPoints, loadCivicReports, loadTopShops, loadTrendData, loadMobilityActions, loadCultureActions]);
 
   // Salva configurazione via REST API
   const saveConfig = async () => {
@@ -824,8 +846,8 @@ export default function GamingRewardsPanel() {
       loadCivicReports(), 
       loadTopShops(), 
       loadTrendData(),
-      loadMobilityPoints(),
-      loadCulturePOIs()
+      loadMobilityActions(),
+      loadCultureActions()
     ]);
     setLoading(false);
     toast.success('Dati aggiornati');
@@ -1143,7 +1165,7 @@ export default function GamingRewardsPanel() {
                     : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
                 }`}
               >
-                🚌 Mobilità ({mobilityPoints.length})
+                🚌 Mobilità ({mobilityActions.length})
               </button>
             )}
             {config.culture_enabled && (
@@ -1155,7 +1177,7 @@ export default function GamingRewardsPanel() {
                     : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
                 }`}
               >
-                🏛️ Cultura ({culturePOIs.length})
+                🏛️ Cultura ({cultureActions.length})
               </button>
             )}
             
@@ -1269,60 +1291,54 @@ export default function GamingRewardsPanel() {
                   </Popup>
                 </Marker>
               ))}
-              {/* Marker Mobilità Sostenibile - fermate trasporto pubblico */}
-              {(selectedLayer === 'all' || selectedLayer === 'mobility') && config.mobility_enabled && mobilityPoints.map((stop) => (
+              {/* Marker Mobilità Sostenibile - azioni cittadini (percorsi completati) */}
+              {(selectedLayer === 'all' || selectedLayer === 'mobility') && config.mobility_enabled && mobilityActions.map((action) => (
                 <Marker
-                  key={`mobility-${stop.id}`}
-                  position={[stop.lat, stop.lng]}
-                  icon={getMarkerIcon(stop.type || 'bus')}
+                  key={`mobility-${action.id}`}
+                  position={[action.lat, action.lng]}
+                  icon={getMarkerIcon(action.type || 'bus')}
                 >
                   <Popup>
                     <div className="text-sm">
-                      <div className="font-bold text-cyan-600">🚌 {stop.name}</div>
-                      <div className="text-xs text-gray-600">{stop.provider}</div>
-                      <div>TCC Reward: <span className="text-green-600 font-semibold">+{stop.tcc_reward}</span></div>
-                      <div className="text-xs text-gray-500">Fermata {stop.type}</div>
+                      <div className="font-bold text-cyan-600">
+                        {action.type === 'bus' && '🚌 '}
+                        {action.type === 'bike' && '🚲 '}
+                        {action.type === 'walk' && '🚶 '}
+                        {action.name}
+                      </div>
+                      <div className="text-xs text-gray-600 capitalize">Percorso {action.type}</div>
+                      <div>TCC Guadagnati: <span className="text-green-600 font-semibold">+{action.tcc_reward}</span></div>
+                      {action.co2_saved_g > 0 && (
+                        <div className="text-xs text-emerald-600">🌿 CO₂ risparmiata: {(action.co2_saved_g / 1000).toFixed(2)} kg</div>
+                      )}
+                      {action.completed_at && (
+                        <div className="text-xs text-gray-500">📅 {new Date(action.completed_at).toLocaleDateString('it-IT')}</div>
+                      )}
                     </div>
                   </Popup>
                 </Marker>
               ))}
-              {/* Marker Cultura - POI OpenStreetMap */}
-              {(selectedLayer === 'all' || selectedLayer === 'culture') && config.culture_enabled && culturePOIs.map((poi) => (
+              {/* Marker Cultura - visite effettuate dai cittadini */}
+              {(selectedLayer === 'all' || selectedLayer === 'culture') && config.culture_enabled && cultureActions.map((visit) => (
                 <Marker
-                  key={`culture-${poi.id}`}
-                  position={[poi.lat, poi.lng]}
-                  icon={getMarkerIcon(poi.type || 'museum')}
+                  key={`culture-${visit.id}`}
+                  position={[visit.lat, visit.lng]}
+                  icon={getMarkerIcon(visit.type || 'museum')}
                 >
                   <Popup>
                     <div className="text-sm max-w-xs">
                       <div className="font-bold text-purple-600">
-                        {poi.type === 'museum' && '🏛️ '}
-                        {poi.type === 'castle' && '🏰 '}
-                        {poi.type === 'monument' && '🗿 '}
-                        {poi.type === 'archaeological' && '⛏️ '}
-                        {poi.type === 'theatre' && '🎭 '}
-                        {poi.name}
+                        {visit.type === 'museum' && '🏛️ '}
+                        {visit.type === 'castle' && '🏰 '}
+                        {visit.type === 'monument' && '🗿 '}
+                        {visit.type === 'archaeological' && '⛏️ '}
+                        {visit.type === 'theatre' && '🎭 '}
+                        {visit.name}
                       </div>
-                      <div className="text-xs text-gray-600 capitalize">{poi.type}</div>
-                      {poi.opening_hours && (
-                        <div className="text-xs text-gray-500">🕒 {poi.opening_hours}</div>
-                      )}
-                      {poi.fee && (
-                        <div className="text-xs text-amber-600">🎫 Ingresso a pagamento</div>
-                      )}
-                      {poi.wheelchair && (
-                        <div className="text-xs text-blue-600">♿ {poi.wheelchair === 'yes' ? 'Accessibile' : poi.wheelchair}</div>
-                      )}
-                      <div>TCC Reward: <span className="text-green-600 font-semibold">+{poi.tcc_reward}</span></div>
-                      {poi.wikidata && (
-                        <a 
-                          href={`https://www.wikidata.org/wiki/${poi.wikidata}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-500 hover:underline"
-                        >
-                          📚 Wikidata
-                        </a>
+                      <div className="text-xs text-gray-600 capitalize">Visita {visit.type}</div>
+                      <div>TCC Guadagnati: <span className="text-green-600 font-semibold">+{visit.tcc_reward}</span></div>
+                      {visit.visit_date && (
+                        <div className="text-xs text-gray-500">📅 {new Date(visit.visit_date).toLocaleDateString('it-IT')}</div>
                       )}
                     </div>
                   </Popup>
@@ -1336,10 +1352,10 @@ export default function GamingRewardsPanel() {
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#eab308]"></span> 🛒 Mercati</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#8b5cf6]"></span> 🏢 Hub</span>
             {config.mobility_enabled && (
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#06b6d4]"></span> 🚌 Fermate</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#06b6d4]"></span> 🚌 Percorsi Sostenibili</span>
             )}
             {config.culture_enabled && (
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#a855f7]"></span> 🏛️ Cultura</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#a855f7]"></span> 🏛️ Visite Culturali</span>
             )}
           </div>
         </CardContent>
