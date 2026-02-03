@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Gamepad2, Settings, Save, RefreshCw, Loader2, 
   Radio, Bus, Landmark, ShoppingCart, Gift, Trophy,
-  TrendingUp, Users, Leaf, Coins, MapPin, ChevronDown, ChevronUp
+  TrendingUp, Users, Leaf, Coins, MapPin, ChevronDown, ChevronUp, Target, Plus, Shield, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
