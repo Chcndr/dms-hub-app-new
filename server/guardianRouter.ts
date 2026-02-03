@@ -35,16 +35,19 @@ export const guardianRouter = router({
   // ============================================================================
   integrations: publicProcedure.query(async () => {
     const inventory = getAPIInventory();
-    const stats = getAPIStats();
+    const stats = getAPIStats() as any;
     
     // Ottieni il conteggio dinamico dal backend Hetzner
     try {
       const response = await fetch('https://api.mio-hub.me/api/dashboard/integrations/endpoint-count');
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.total) {
-          stats.total = data.total;
-          stats.backendEndpoints = data.byFile || {};
+        if (data.success) {
+          stats.active = data.active || 0;
+          stats.backup = data.backup || 0;
+          stats.total = data.total || data.active || 0;
+          stats.activeByFile = data.activeByFile || {};
+          stats.backupByFile = data.backupByFile || {};
           stats.lastUpdated = data.lastUpdated;
         }
       }

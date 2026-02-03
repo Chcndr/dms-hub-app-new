@@ -178,25 +178,13 @@ export default function GuardianIntegrations() {
     <div className="space-y-6">
       {/* Header con statistiche */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <Card className="bg-[#1a2332] border-[#10b981]/30">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[#e8fbff]/60 text-sm">Totale API</p>
-                  <p className="text-2xl font-bold text-[#14b8a6]">{stats.total}</p>
-                </div>
-                <Code className="h-8 w-8 text-[#14b8a6]/50" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[#e8fbff]/60 text-sm">Attive</p>
-                  <p className="text-2xl font-bold text-[#10b981]">{stats.byStatus.active || 0}</p>
+                  <p className="text-[#e8fbff]/60 text-sm">Endpoint Attivi</p>
+                  <p className="text-2xl font-bold text-[#10b981]">{stats.active || stats.total}</p>
                 </div>
                 <CheckCircle2 className="h-8 w-8 text-[#10b981]/50" />
               </div>
@@ -204,6 +192,30 @@ export default function GuardianIntegrations() {
           </Card>
           
           <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[#e8fbff]/60 text-sm">Endpoint Totali</p>
+                  <p className="text-2xl font-bold text-[#14b8a6]">{stats.total}</p>
+                </div>
+                <Code className="h-8 w-8 text-[#14b8a6]/50" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[#e8fbff]/60 text-sm">Backup</p>
+                  <p className="text-2xl font-bold text-[#f59e0b]">{stats.backup || 0}</p>
+                </div>
+                <Database className="h-8 w-8 text-[#f59e0b]/50" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -215,14 +227,14 @@ export default function GuardianIntegrations() {
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+          <Card className="bg-[#1a2332] border-[#06b6d4]/30">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[#e8fbff]/60 text-sm">Categorie</p>
                   <p className="text-2xl font-bold text-[#06b6d4]">{Object.keys(stats.byCategory).length}</p>
                 </div>
-                <Database className="h-8 w-8 text-[#06b6d4]/50" />
+                <Code className="h-8 w-8 text-[#06b6d4]/50" />
               </div>
             </CardContent>
           </Card>
