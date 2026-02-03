@@ -297,6 +297,25 @@ export default function GamingRewardsPanel() {
   const { selectedComune, comuneId, comuneNome, isImpersonating } = useImpersonation();
   const currentComuneId = comuneId ? parseInt(comuneId) : 1;
 
+  // Query tRPC per hub_locations e hub_shops
+  const hubLocationsQuery = trpc.dmsHub.hub.locations.list.useQuery();
+  const hubShopsQuery = trpc.dmsHub.hub.shops.list.useQuery({});
+  
+  // Query tRPC per Gaming & Rewards
+  const gamingConfigQuery = trpc.dmsHub.gamingRewards.getConfig.useQuery(
+    { comuneId: currentComuneId },
+    { enabled: currentComuneId > 0 }
+  );
+  const gamingStatsQuery = trpc.dmsHub.gamingRewards.getStats.useQuery(
+    { comuneId: currentComuneId },
+    { enabled: currentComuneId > 0 }
+  );
+  const heatmapPointsQuery = trpc.dmsHub.gamingRewards.getHeatmapPoints.useQuery(
+    { comuneId: currentComuneId },
+    { enabled: currentComuneId > 0 }
+  );
+  const saveConfigMutation = trpc.dmsHub.gamingRewards.saveConfig.useMutation();
+
   // Carica configurazione da tRPC
   useEffect(() => {
     if (gamingConfigQuery.data) {
@@ -336,16 +355,6 @@ export default function GamingRewardsPanel() {
       });
     }
   }, [gamingStatsQuery.data]);
-
-  // Query tRPC per hub_locations e hub_shops
-  const hubLocationsQuery = trpc.dmsHub.hub.locations.list.useQuery();
-  const hubShopsQuery = trpc.dmsHub.hub.shops.list.useQuery({});
-  
-  // Query tRPC per Gaming & Rewards
-  const gamingConfigQuery = trpc.dmsHub.gamingRewards.getConfig.useQuery({ comuneId: currentComuneId });
-  const gamingStatsQuery = trpc.dmsHub.gamingRewards.getStats.useQuery({ comuneId: currentComuneId });
-  const heatmapPointsQuery = trpc.dmsHub.gamingRewards.getHeatmapPoints.useQuery({ comuneId: currentComuneId });
-  const saveConfigMutation = trpc.dmsHub.gamingRewards.saveConfig.useMutation();
 
   // Carica punti heatmap da tRPC
   useEffect(() => {
