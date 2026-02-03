@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.52.0  
-> **Data:** 30 Gennaio 2026  
+> **Versione:** 3.53.0  
+> **Data:** 3 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -4512,8 +4512,17 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 | Marker segnalazioni visibili | ❌ | Layer marker non renderizzato |
 | Heatmap visibile | ❌ | Dati non passati correttamente al layer |
 | Lista segnalazioni cliccabile | ❌ | Non implementata |
-| CO2 Risparmiata | ❌ | Nessun dato in route_completions |
 | Sezione Challenges | ❌ | Rimosso con rollback |
+
+### Funzionalità FIXATE (3 Feb 2026) ✅
+| Funzionalità | Fix | Commit |
+|--------------|-----|--------|
+| CO2 Risparmiata | Calcolo da TCC spesi (1 TCC = 10g CO2) | Backend `6401500` |
+| Visualizzazione CO2 | Mostra kg + tonnellate (118.8 kg / 0.12t) | Frontend `1f7e1f6` |
+| Top 5 Imprese | Legge da operator_transactions + imprese | Backend `84bdcad` |
+| Trend Segnalazioni | Aggiunto conteggio segnalazioni nel trend | Backend `6401500` |
+| Grafico Trend | Aggiunta barra arancione per segnalazioni | Frontend `7564156` |
+| Heatmap Acquisti | Endpoint /heatmap con coordinate da hub_shops | Backend `196b085` |
 
 ### Commit Cancellati con Rollback (da 09b0bac a e7aa61b)
 | Commit | Descrizione | Errore |
