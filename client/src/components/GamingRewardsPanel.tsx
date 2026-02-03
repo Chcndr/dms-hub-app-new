@@ -104,28 +104,6 @@ interface TopShop {
   transactions: number;
 }
 
-// Interfaccia per punti Mobilità Sostenibile
-interface MobilityPoint {
-  id: string;
-  lat: number;
-  lng: number;
-  mode: 'walking' | 'cycling' | 'bus' | 'tram';
-  credits_earned: number;
-  co2_saved_g: number;
-  completed_at: string;
-}
-
-// Interfaccia per punti Cultura & Turismo
-interface CulturePoint {
-  id: number;
-  lat: number;
-  lng: number;
-  poi_type: 'museo' | 'monumento' | 'percorso' | 'altro';
-  poi_name: string;
-  credits_earned: number;
-  visit_date: string;
-}
-
 // Interfaccia per Trend TCC giornaliero
 interface TrendDataPoint {
   date: string;
@@ -160,16 +138,12 @@ const DEFAULT_CONFIG: GamingConfig = {
 function MapCenterUpdater({ 
   points, 
   civicReports, 
-  mobilityPoints,
-  culturePoints,
   comuneId, 
   selectedLayer,
   layerTrigger 
 }: { 
   points: HeatmapPoint[]; 
   civicReports: HeatmapPoint[]; 
-  mobilityPoints: MobilityPoint[];
-  culturePoints: CulturePoint[];
   comuneId: number | null;
   selectedLayer: string;
   layerTrigger: number;
@@ -186,29 +160,8 @@ function MapCenterUpdater({
       targetPoints = civicReports;
     } else if (selectedLayer === 'shopping') {
       targetPoints = points.filter(p => p.type === 'shop' || p.type === 'market');
-    } else if (selectedLayer === 'mobility') {
-      // Converti MobilityPoint in HeatmapPoint per il bounding box
-      targetPoints = mobilityPoints.map(p => ({
-        id: 0, lat: p.lat, lng: p.lng, name: p.mode, type: 'civic' as const,
-        tcc_earned: p.credits_earned, tcc_spent: 0, transactions: 1
-      }));
-    } else if (selectedLayer === 'culture') {
-      // Converti CulturePoint in HeatmapPoint per il bounding box
-      targetPoints = culturePoints.map(p => ({
-        id: p.id, lat: p.lat, lng: p.lng, name: p.poi_name, type: 'civic' as const,
-        tcc_earned: p.credits_earned, tcc_spent: 0, transactions: 1
-      }));
     } else if (selectedLayer === 'all') {
-      // Includi tutti i punti
-      const mobAsHeatmap = mobilityPoints.map(p => ({
-        id: 0, lat: p.lat, lng: p.lng, name: p.mode, type: 'civic' as const,
-        tcc_earned: p.credits_earned, tcc_spent: 0, transactions: 1
-      }));
-      const culAsHeatmap = culturePoints.map(p => ({
-        id: p.id, lat: p.lat, lng: p.lng, name: p.poi_name, type: 'civic' as const,
-        tcc_earned: p.credits_earned, tcc_spent: 0, transactions: 1
-      }));
-      targetPoints = [...points, ...civicReports, ...mobAsHeatmap, ...culAsHeatmap];
+      targetPoints = [...points, ...civicReports];
     } else {
       targetPoints = [...points, ...civicReports];
     }
@@ -473,8 +426,6 @@ export default function GamingRewardsPanel() {
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month' | 'year'>('all');
   const [topShops, setTopShops] = useState<TopShop[]>([]);
   const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
-  const [mobilityPoints, setMobilityPoints] = useState<MobilityPoint[]>([]);
-  const [culturePoints, setCulturePoints] = useState<CulturePoint[]>([]);
   const [selectedReport, setSelectedReport] = useState<HeatmapPoint | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -657,89 +608,15 @@ export default function GamingRewardsPanel() {
     }
   }, [currentComuneId]);
 
-  // Funzione per caricare i punti Mobilità Sostenibile via REST API
-  const loadMobilityHeatmap = useCallback(async () => {
-    if (!config.mobility_enabled) {
-      setMobilityPoints([]);
-      return;
-    }
-    try {
-      const periodMap: Record<string, string> = {
-        'all': 'all',
-        'today': 'today',
-        'week': '7days',
-        'month': '30days',
-        'year': '1year'
-      };
-      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/mobility/heatmap?period=${periodMap[timeFilter] || 'all'}`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data && Array.isArray(result.data)) {
-          const points: MobilityPoint[] = result.data
-            .filter((p: any) => p.lat && p.lng)
-            .map((p: any) => ({
-              id: p.route_id || `mob_${Math.random()}`,
-              lat: parseFloat(p.lat),
-              lng: parseFloat(p.lng),
-              mode: p.mode || 'walking',
-              credits_earned: p.credits_earned || 0,
-              co2_saved_g: p.co2_saved_g || 0,
-              completed_at: p.completed_at || new Date().toISOString(),
-            }));
-          setMobilityPoints(points);
-        }
-      }
-    } catch (error) {
-      console.error('Errore caricamento mobility heatmap:', error);
-    }
-  }, [config.mobility_enabled, timeFilter]);
-
-  // Funzione per caricare i punti Cultura & Turismo via REST API
-  const loadCultureHeatmap = useCallback(async () => {
-    if (!config.culture_enabled) {
-      setCulturePoints([]);
-      return;
-    }
-    try {
-      const periodMap: Record<string, string> = {
-        'all': 'all',
-        'today': 'today',
-        'week': '7days',
-        'month': '30days',
-        'year': '1year'
-      };
-      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/culture/heatmap?period=${periodMap[timeFilter] || 'all'}`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data && Array.isArray(result.data)) {
-          const points: CulturePoint[] = result.data
-            .filter((p: any) => p.lat && p.lng)
-            .map((p: any) => ({
-              id: p.id || Math.random(),
-              lat: parseFloat(p.lat),
-              lng: parseFloat(p.lng),
-              poi_type: p.poi_type || 'altro',
-              poi_name: p.poi_name || 'POI Culturale',
-              credits_earned: p.credits_earned || 0,
-              visit_date: p.visit_date || new Date().toISOString(),
-            }));
-          setCulturePoints(points);
-        }
-      }
-    } catch (error) {
-      console.error('Errore caricamento culture heatmap:', error);
-    }
-  }, [config.culture_enabled, timeFilter]);
-
   // Carica tutti i dati all'avvio e quando cambia il comune
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
-      await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports(), loadTopShops(), loadTrendData(), loadMobilityHeatmap(), loadCultureHeatmap()]);
+      await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports(), loadTopShops(), loadTrendData()]);
       setLoading(false);
     };
     loadAllData();
-  }, [loadConfig, loadStats, loadHeatmapPoints, loadCivicReports, loadTopShops, loadTrendData, loadMobilityHeatmap, loadCultureHeatmap]);
+  }, [loadConfig, loadStats, loadHeatmapPoints, loadCivicReports, loadTopShops, loadTrendData]);
 
   // Salva configurazione via REST API
   const saveConfig = async () => {
@@ -790,7 +667,7 @@ export default function GamingRewardsPanel() {
   // Funzione refresh dati
   const refreshData = async () => {
     setLoading(true);
-    await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports(), loadTopShops(), loadTrendData(), loadMobilityHeatmap(), loadCultureHeatmap()]);
+    await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports(), loadTopShops(), loadTrendData()]);
     setLoading(false);
     toast.success('Dati aggiornati');
   };
@@ -1104,7 +981,7 @@ export default function GamingRewardsPanel() {
                     : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
                 }`}
               >
-                🚲 Mobilità ({mobilityPoints.length})
+                🚲 Mobilità
               </button>
             )}
             {config.culture_enabled && (
@@ -1116,7 +993,7 @@ export default function GamingRewardsPanel() {
                     : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
                 }`}
               >
-                🏛️ Cultura ({culturePoints.length})
+                🏛️ Cultura
               </button>
             )}
             
@@ -1192,7 +1069,7 @@ export default function GamingRewardsPanel() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <MapCenterUpdater points={heatmapPoints} civicReports={civicReports} mobilityPoints={mobilityPoints} culturePoints={culturePoints} comuneId={currentComuneId} selectedLayer={selectedLayer} layerTrigger={layerTrigger} />
+              <MapCenterUpdater points={heatmapPoints} civicReports={civicReports} comuneId={currentComuneId} selectedLayer={selectedLayer} layerTrigger={layerTrigger} />
               <HeatmapLayer points={[...heatmapPoints, ...filterByTime(civicReports, 'created_at')]} />
               {/* Marker negozi/hub/mercati */}
               {(selectedLayer === 'all' || selectedLayer === 'shopping') && heatmapPoints.map((point) => {
@@ -1230,94 +1107,6 @@ export default function GamingRewardsPanel() {
                   </Popup>
                 </Marker>
               ))}
-              {/* Marker Mobilità Sostenibile */}
-              {(selectedLayer === 'all' || selectedLayer === 'mobility') && mobilityPoints.map((point, idx) => {
-                const modeEmoji: Record<string, string> = {
-                  'walking': '🚶',
-                  'cycling': '🚲',
-                  'bus': '🚌',
-                  'tram': '🚊'
-                };
-                const modeColor: Record<string, string> = {
-                  'walking': '#22c55e',
-                  'cycling': '#06b6d4',
-                  'bus': '#f59e0b',
-                  'tram': '#8b5cf6'
-                };
-                return (
-                  <Marker
-                    key={`mob-${point.id}-${idx}`}
-                    position={[point.lat, point.lng]}
-                    icon={L.divIcon({
-                      html: `<div style="
-                        background: ${modeColor[point.mode] || '#06b6d4'};
-                        border-radius: 50%;
-                        width: 18px;
-                        height: 18px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 10px;
-                        border: 2px solid white;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                      ">${modeEmoji[point.mode] || '🚲'}</div>`,
-                      className: 'custom-marker',
-                      iconSize: [18, 18],
-                      iconAnchor: [9, 9],
-                    })}
-                  >
-                    <Popup>
-                      <div className="text-sm">
-                        <div className="font-bold text-cyan-600">{modeEmoji[point.mode]} {point.mode.charAt(0).toUpperCase() + point.mode.slice(1)}</div>
-                        <div>TCC Guadagnati: <span className="text-green-600 font-bold">{point.credits_earned}</span></div>
-                        <div>CO₂ Risparmiata: {(point.co2_saved_g / 1000).toFixed(2)} kg</div>
-                        <div className="text-xs text-gray-500">{new Date(point.completed_at).toLocaleString('it-IT')}</div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-              {/* Marker Cultura & Turismo */}
-              {(selectedLayer === 'all' || selectedLayer === 'culture') && culturePoints.map((point) => {
-                const poiEmoji: Record<string, string> = {
-                  'museo': '🏛️',
-                  'monumento': '🗿',
-                  'percorso': '🚶',
-                  'altro': '📍'
-                };
-                return (
-                  <Marker
-                    key={`cul-${point.id}`}
-                    position={[point.lat, point.lng]}
-                    icon={L.divIcon({
-                      html: `<div style="
-                        background: #a855f7;
-                        border-radius: 50%;
-                        width: 18px;
-                        height: 18px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 10px;
-                        border: 2px solid white;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                      ">${poiEmoji[point.poi_type] || '🏛️'}</div>`,
-                      className: 'custom-marker',
-                      iconSize: [18, 18],
-                      iconAnchor: [9, 9],
-                    })}
-                  >
-                    <Popup>
-                      <div className="text-sm">
-                        <div className="font-bold text-purple-600">{poiEmoji[point.poi_type]} {point.poi_name}</div>
-                        <div>Tipo: {point.poi_type.charAt(0).toUpperCase() + point.poi_type.slice(1)}</div>
-                        <div>TCC Guadagnati: <span className="text-green-600 font-bold">{point.credits_earned}</span></div>
-                        <div className="text-xs text-gray-500">{new Date(point.visit_date).toLocaleString('it-IT')}</div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
             </MapContainer>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-sm text-[#e8fbff]/70">
@@ -1325,8 +1114,6 @@ export default function GamingRewardsPanel() {
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#22c55e]"></span> 🏪 Negozi</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#eab308]"></span> 🛒 Mercati</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#8b5cf6]"></span> 🏢 Hub</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#06b6d4]"></span> 🚲 Mobilità</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#a855f7]"></span> 🏛️ Cultura</span>
           </div>
         </CardContent>
       </Card>
