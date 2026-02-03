@@ -22,7 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Gamepad2, Settings, Save, RefreshCw, Loader2, 
   Radio, Bus, Landmark, ShoppingCart, Gift, Trophy,
-  TrendingUp, Users, Leaf, Coins, MapPin, ChevronDown, ChevronUp
+  TrendingUp, Users, Leaf, Coins, MapPin, ChevronDown, ChevronUp,
+  BarChart3, Store
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
@@ -92,6 +93,22 @@ interface GamingStats {
   active_users: number;
   co2_saved_kg: number;
   top_shops: Array<{ name: string; tcc: number }>;
+}
+
+// Interfaccia per Top 5 Negozi
+interface TopShop {
+  name: string;
+  tcc_earned: number;
+  tcc_spent: number;
+  transactions: number;
+}
+
+// Interfaccia per Trend TCC giornaliero
+interface TrendDataPoint {
+  date: string;
+  tcc_earned: number;
+  tcc_spent: number;
+  reports: number;
 }
 
 // Default config
@@ -406,6 +423,8 @@ export default function GamingRewardsPanel() {
   const [selectedLayer, setSelectedLayer] = useState<string>('all');
   const [layerTrigger, setLayerTrigger] = useState<number>(0); // Trigger per forzare flyTo su cambio layer
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month' | 'year'>('all');
+  const [topShops, setTopShops] = useState<TopShop[]>([]);
+  const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
   const [configExpanded, setConfigExpanded] = useState(true);
@@ -556,15 +575,45 @@ export default function GamingRewardsPanel() {
     }
   }, [currentComuneId]);
 
+  // Funzione per caricare Top 5 Negozi via REST API
+  const loadTopShops = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/top-shops?comune_id=${currentComuneId}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data && Array.isArray(result.data)) {
+          setTopShops(result.data.slice(0, 5)); // Prendi solo i primi 5
+        }
+      }
+    } catch (error) {
+      console.error('Errore caricamento top shops:', error);
+    }
+  }, [currentComuneId]);
+
+  // Funzione per caricare Trend TCC (ultimi 7 giorni) via REST API
+  const loadTrendData = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/trend?comune_id=${currentComuneId}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data && Array.isArray(result.data)) {
+          setTrendData(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Errore caricamento trend data:', error);
+    }
+  }, [currentComuneId]);
+
   // Carica tutti i dati all'avvio e quando cambia il comune
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
-      await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports()]);
+      await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports(), loadTopShops(), loadTrendData()]);
       setLoading(false);
     };
     loadAllData();
-  }, [loadConfig, loadStats, loadHeatmapPoints, loadCivicReports]);
+  }, [loadConfig, loadStats, loadHeatmapPoints, loadCivicReports, loadTopShops, loadTrendData]);
 
   // Salva configurazione via REST API
   const saveConfig = async () => {
@@ -615,7 +664,7 @@ export default function GamingRewardsPanel() {
   // Funzione refresh dati
   const refreshData = async () => {
     setLoading(true);
-    await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports()]);
+    await Promise.all([loadConfig(), loadStats(), loadHeatmapPoints(), loadCivicReports(), loadTopShops(), loadTrendData()]);
     setLoading(false);
     toast.success('Dati aggiornati');
   };
@@ -1065,6 +1114,132 @@ export default function GamingRewardsPanel() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Sezione Top 5 Negozi e Trend TCC */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top 5 Negozi */}
+        <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+          <CardHeader>
+            <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+              <Store className="h-5 w-5 text-[#22c55e]" />
+              Top 5 Negozi
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topShops.length > 0 ? (
+              <div className="space-y-3">
+                {topShops.map((shop, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        index === 0 ? 'bg-yellow-500 text-black' :
+                        index === 1 ? 'bg-gray-400 text-black' :
+                        index === 2 ? 'bg-amber-700 text-white' :
+                        'bg-[#1a2332] text-[#e8fbff]/70'
+                      }`}>
+                        {index + 1}
+                      </span>
+                      <div>
+                        <div className="text-[#e8fbff] font-medium">{shop.name}</div>
+                        <div className="text-xs text-[#e8fbff]/50">{shop.transactions} transazioni</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[#22c55e] font-bold">+{shop.tcc_earned}</div>
+                      <div className="text-xs text-[#e8fbff]/50">TCC guadagnati</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-[#e8fbff]/50 py-8">
+                <Store className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>Nessun dato disponibile</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Trend TCC - Ultimi 7 giorni */}
+        <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+          <CardHeader>
+            <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-[#3b82f6]" />
+              Trend TCC - Ultimi 7 giorni
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {trendData.length > 0 ? (
+              <div className="space-y-4">
+                {/* Grafico a barre semplice */}
+                <div className="flex items-end justify-between h-40 gap-2">
+                  {trendData.map((day, index) => {
+                    const maxValue = Math.max(...trendData.map(d => Math.max(d.tcc_earned, d.tcc_spent)));
+                    const earnedHeight = maxValue > 0 ? (day.tcc_earned / maxValue) * 100 : 0;
+                    const spentHeight = maxValue > 0 ? (day.tcc_spent / maxValue) * 100 : 0;
+                    const dayName = new Date(day.date).toLocaleDateString('it-IT', { weekday: 'short' });
+                    
+                    return (
+                      <div key={index} className="flex-1 flex flex-col items-center">
+                        <div className="flex gap-1 items-end h-32">
+                          <div 
+                            className="w-3 bg-[#22c55e] rounded-t transition-all" 
+                            style={{ height: `${earnedHeight}%`, minHeight: day.tcc_earned > 0 ? '4px' : '0' }}
+                            title={`Guadagnati: ${day.tcc_earned}`}
+                          />
+                          <div 
+                            className="w-3 bg-[#3b82f6] rounded-t transition-all" 
+                            style={{ height: `${spentHeight}%`, minHeight: day.tcc_spent > 0 ? '4px' : '0' }}
+                            title={`Spesi: ${day.tcc_spent}`}
+                          />
+                        </div>
+                        <span className="text-xs text-[#e8fbff]/50 mt-2 capitalize">{dayName}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Legenda */}
+                <div className="flex justify-center gap-6 text-sm">
+                  <span className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-[#22c55e]"></span>
+                    <span className="text-[#e8fbff]/70">TCC Guadagnati</span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-[#3b82f6]"></span>
+                    <span className="text-[#e8fbff]/70">TCC Spesi</span>
+                  </span>
+                </div>
+                {/* Totali periodo */}
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#e8fbff]/10">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-[#22c55e]">
+                      {trendData.reduce((sum, d) => sum + d.tcc_earned, 0)}
+                    </div>
+                    <div className="text-xs text-[#e8fbff]/50">TCC Totali Guadagnati</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-[#3b82f6]">
+                      {trendData.reduce((sum, d) => sum + d.tcc_spent, 0)}
+                    </div>
+                    <div className="text-xs text-[#e8fbff]/50">TCC Totali Spesi</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-[#f97316]">
+                      {trendData.reduce((sum, d) => sum + d.reports, 0)}
+                    </div>
+                    <div className="text-xs text-[#e8fbff]/50">Segnalazioni</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-[#e8fbff]/50 py-8">
+                <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>Nessun dato disponibile</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
