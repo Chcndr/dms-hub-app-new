@@ -803,6 +803,11 @@ export default function GamingRewardsPanel() {
               zoom={14}
               style={{ height: '100%', width: '100%' }}
               className="rounded-lg"
+              scrollWheelZoom={false}
+              doubleClickZoom={false}
+              touchZoom={false}
+              dragging={true}
+              zoomControl={true}
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
