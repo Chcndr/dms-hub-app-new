@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.76.1  
-> **Data:** 4 Febbraio 2026 (Aggiornamento ECO CREDIT)  
+> **Versione:** 3.78.0  
+> **Data:** 4 Febbraio 2026 (Sistema GPS POI + Heatmap Layer)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -5107,6 +5107,723 @@ WHERE comune_id = ${comuneId}
 | Integrazione GPS per check-in automatico | ALTA | ❌ Da fare |
 | Endpoint `/api/eco-credit/checkin` | ALTA | ❌ Da fare |
 | Notifiche push quando vicino a POI | BASSA | ❌ Da fare |
+
+---
+
+
+
+## 🎯 SISTEMA RILEVAMENTO GPS → POI → CHECK-IN (v3.77.0)
+
+> **Data Progettazione:** 4 Febbraio 2026
+> **Stato:** 🔧 IN SVILUPPO
+
+---
+
+### 1. Architettura Sistema
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         FLUSSO CHECK-IN AUTOMATICO                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────┐      ┌──────────────┐      ┌──────────────┐              │
+│  │  SMARTPHONE  │      │   BACKEND    │      │   DATABASE   │              │
+│  │  (App React) │      │  (Hetzner)   │      │    (Neon)    │              │
+│  └──────┬───────┘      └──────┬───────┘      └──────┬───────┘              │
+│         │                     │                     │                       │
+│    1. Rileva GPS              │                     │                       │
+│    lat: 42.7613               │                     │                       │
+│    lng: 11.1137               │                     │                       │
+│         │                     │                     │                       │
+│         │  GET /nearby-pois   │                     │                       │
+│         │  ?lat=42.7613       │                     │                       │
+│         │  &lng=11.1137       │                     │                       │
+│         │  &comune_id=1       │                     │                       │
+│         ├────────────────────►│                     │                       │
+│         │                     │  SELECT * FROM      │                       │
+│         │                     │  cultural_pois      │                       │
+│         │                     │  WHERE distance     │                       │
+│         │                     │  < 50m              │                       │
+│         │                     ├────────────────────►│                       │
+│         │                     │◄────────────────────┤                       │
+│         │                     │  [Museo Archeologico│                       │
+│         │                     │   dist: 12m]        │                       │
+│         │◄────────────────────┤                     │                       │
+│         │                     │                     │                       │
+│    2. Mostra popup:           │                     │                       │
+│    "Sei vicino a              │                     │                       │
+│     Museo Archeologico!       │                     │                       │
+│     Vuoi fare check-in?"      │                     │                       │
+│         │                     │                     │                       │
+│    3. Utente conferma         │                     │                       │
+│         │                     │                     │                       │
+│         │  POST /culture/checkin                    │                       │
+│         │  {user_id, poi_id,  │                     │                       │
+│         │   lat, lng, ...}    │                     │                       │
+│         ├────────────────────►│                     │                       │
+│         │                     │  INSERT INTO        │                       │
+│         │                     │  cultural_visits    │                       │
+│         │                     ├────────────────────►│                       │
+│         │                     │◄────────────────────┤                       │
+│         │◄────────────────────┤                     │                       │
+│         │  {success: true,    │                     │                       │
+│         │   tcc_earned: 50}   │                     │                       │
+│         │                     │                     │                       │
+│    4. Mostra conferma:        │                     │                       │
+│    "Hai guadagnato 50 TCC!"   │                     │                       │
+│                               │                     │                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 2. Nuovo Endpoint API
+
+#### `GET /api/gaming-rewards/nearby-pois`
+
+**Descrizione:** Trova POI (culturali + fermate GTFS) vicini alle coordinate GPS dello smartphone.
+
+**Parametri:**
+| Parametro | Tipo | Obbligatorio | Descrizione |
+|-----------|------|--------------|-------------|
+| `lat` | float | ✅ | Latitudine GPS smartphone |
+| `lng` | float | ✅ | Longitudine GPS smartphone |
+| `comune_id` | int | ✅ | ID comune per filtro multi-tenant |
+| `radius` | int | ❌ | Raggio ricerca in metri (default: 50) |
+| `types` | string | ❌ | Tipi POI: "culture", "mobility", "all" (default: "all") |
+
+**Risposta:**
+```json
+{
+  "success": true,
+  "nearby_pois": [
+    {
+      "id": 123,
+      "type": "culture",
+      "poi_type": "museo",
+      "name": "Museo Archeologico e d'Arte della Maremma",
+      "lat": 42.7613170,
+      "lng": 11.1137600,
+      "distance_m": 12,
+      "tcc_reward": 50,
+      "already_visited_today": false
+    },
+    {
+      "id": 456,
+      "type": "mobility",
+      "poi_type": "bus_stop",
+      "name": "Fermata Piazza Dante",
+      "lat": 42.7615000,
+      "lng": 11.1140000,
+      "distance_m": 35,
+      "tcc_reward": 10,
+      "already_visited_today": false
+    }
+  ],
+  "count": 2
+}
+```
+
+**Query SQL:**
+```sql
+-- POI Culturali vicini
+SELECT 
+  id, 'culture' as type, type as poi_type, name, lat, lng,
+  tcc_reward,
+  (6371000 * acos(
+    cos(radians($1)) * cos(radians(lat))
+    * cos(radians(lng) - radians($2))
+    + sin(radians($1)) * sin(radians(lat))
+  )) as distance_m
+FROM cultural_pois
+WHERE comune_id = $3
+  AND (6371000 * acos(...)) <= $4
+ORDER BY distance_m ASC
+LIMIT 10;
+
+-- Fermate GTFS vicine
+SELECT 
+  id, 'mobility' as type, stop_type as poi_type, stop_name as name, lat, lng,
+  10 as tcc_reward,
+  (6371000 * acos(...)) as distance_m
+FROM gtfs_stops
+WHERE comune_id = $3
+  AND (6371000 * acos(...)) <= $4
+ORDER BY distance_m ASC
+LIMIT 10;
+```
+
+---
+
+### 3. Tabelle Database
+
+#### 3.1 `cultural_pois` (esistente, aggiornata)
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `id` | SERIAL | PK |
+| `osm_id` | BIGINT | ID OpenStreetMap |
+| `name` | TEXT | Nome POI |
+| `type` | TEXT | museo, monumento, teatro, sito_archeologico, etc. |
+| `lat` | FLOAT | Latitudine |
+| `lng` | FLOAT | Longitudine |
+| `region` | TEXT | Regione (legacy) |
+| `comune_id` | INT | **NUOVO** - FK a comuni per multi-tenant |
+| `tcc_reward` | INT | TCC guadagnati per visita |
+| `created_at` | TIMESTAMP | Data inserimento |
+
+**Stato attuale:**
+- Totale POI: 1.127
+- POI con `comune_id=1` (Grosseto): **44**
+- POI senza `comune_id` (Emilia-Romagna): 1.083
+
+#### 3.2 `cultural_visits` (esistente)
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `id` | SERIAL | PK |
+| `user_id` | TEXT | ID utente cittadino |
+| `poi_id` | TEXT | ID POI visitato |
+| `poi_type` | TEXT | Tipo POI |
+| `poi_name` | TEXT | Nome POI |
+| `lat` | FLOAT | Latitudine check-in |
+| `lng` | FLOAT | Longitudine check-in |
+| `comune_id` | INT | FK a comuni |
+| `credits_earned` | INT | TCC guadagnati |
+| `visit_date` | DATE | Data visita (per anti-abuse) |
+| `created_at` | TIMESTAMP | Timestamp esatto |
+
+#### 3.3 `gtfs_stops` (esistente)
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `id` | SERIAL | PK |
+| `stop_id` | TEXT | ID fermata GTFS |
+| `stop_name` | TEXT | Nome fermata |
+| `lat` | FLOAT | Latitudine |
+| `lng` | FLOAT | Longitudine |
+| `stop_type` | TEXT | bus, tram, metro |
+| `provider` | TEXT | Gestore (TPER, Tiemme, etc.) |
+| `comune_id` | INT | FK a comuni |
+
+**Stato attuale:**
+- Fermate TPER Bologna: 385
+- Fermate Grosseto: 0 (da importare GTFS Tiemme)
+
+---
+
+### 4. Implementazione Frontend
+
+#### 4.1 Hook `useNearbyPOIs`
+
+**File:** `client/src/hooks/useNearbyPOIs.ts`
+
+```typescript
+import { useState, useEffect } from 'react';
+
+interface NearbyPOI {
+  id: number;
+  type: 'culture' | 'mobility';
+  poi_type: string;
+  name: string;
+  lat: number;
+  lng: number;
+  distance_m: number;
+  tcc_reward: number;
+  already_visited_today: boolean;
+}
+
+export function useNearbyPOIs(comuneId: number, enabled: boolean) {
+  const [nearbyPOIs, setNearbyPOIs] = useState<NearbyPOI[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [userPosition, setUserPosition] = useState<{lat: number; lng: number} | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    // Richiedi posizione GPS
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserPosition({ lat: latitude, lng: longitude });
+          
+          // Chiama API per trovare POI vicini
+          try {
+            setLoading(true);
+            const res = await fetch(
+              `${API_BASE}/api/gaming-rewards/nearby-pois?lat=${latitude}&lng=${longitude}&comune_id=${comuneId}&radius=50`
+            );
+            const data = await res.json();
+            if (data.success) {
+              setNearbyPOIs(data.nearby_pois);
+            }
+          } catch (err) {
+            setError('Errore ricerca POI vicini');
+          } finally {
+            setLoading(false);
+          }
+        },
+        (err) => {
+          setError('GPS non disponibile');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }, [enabled, comuneId]);
+
+  return { nearbyPOIs, loading, error, userPosition };
+}
+```
+
+#### 4.2 Componente `NearbyPOIPopup`
+
+**File:** `client/src/components/NearbyPOIPopup.tsx`
+
+```typescript
+interface Props {
+  poi: NearbyPOI;
+  onCheckin: (poi: NearbyPOI) => void;
+  onDismiss: () => void;
+}
+
+export function NearbyPOIPopup({ poi, onCheckin, onDismiss }: Props) {
+  return (
+    <div className="fixed bottom-20 left-4 right-4 bg-white rounded-xl shadow-2xl p-4 z-50 border-2 border-emerald-500">
+      <div className="flex items-start gap-3">
+        <div className="p-3 bg-emerald-100 rounded-xl">
+          {poi.type === 'culture' ? <Award className="h-6 w-6 text-emerald-600" /> : <Bus className="h-6 w-6 text-blue-600" />}
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-lg">{poi.name}</p>
+          <p className="text-sm text-muted-foreground">
+            {poi.distance_m}m da te • {poi.tcc_reward} TCC
+          </p>
+        </div>
+      </div>
+      
+      <div className="flex gap-2 mt-4">
+        <Button variant="outline" onClick={onDismiss} className="flex-1">
+          Non ora
+        </Button>
+        <Button 
+          onClick={() => onCheckin(poi)} 
+          className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+          disabled={poi.already_visited_today}
+        >
+          {poi.already_visited_today ? 'Già visitato oggi' : 'Check-in'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+```
+
+#### 4.3 Integrazione in WalletPage
+
+**Modifiche a:** `client/src/pages/WalletPage.tsx`
+
+```typescript
+// Aggiungere import
+import { useNearbyPOIs } from '@/hooks/useNearbyPOIs';
+import { NearbyPOIPopup } from '@/components/NearbyPOIPopup';
+
+// Nel componente WalletPage
+const { nearbyPOIs, loading: loadingPOIs } = useNearbyPOIs(
+  comuneId, 
+  ecoCreditsEnabled && isAuthenticated
+);
+
+const [showPOIPopup, setShowPOIPopup] = useState(true);
+const nearestPOI = nearbyPOIs[0]; // POI più vicino
+
+const handleCheckin = async (poi: NearbyPOI) => {
+  const res = await fetch(`${API_BASE}/api/gaming-rewards/culture/checkin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: currentUser.id,
+      poi_id: poi.id,
+      poi_type: poi.poi_type,
+      poi_name: poi.name,
+      lat: userPosition.lat,
+      lng: userPosition.lng,
+      comune_id: comuneId
+    })
+  });
+  const data = await res.json();
+  if (data.success) {
+    // Aggiorna saldo wallet
+    fetchWalletData();
+    // Mostra toast successo
+    toast.success(`Hai guadagnato ${data.credits_earned} TCC!`);
+  }
+  setShowPOIPopup(false);
+};
+
+// Nel JSX, dopo il contenuto principale
+{ecoCreditsEnabled && nearestPOI && showPOIPopup && (
+  <NearbyPOIPopup 
+    poi={nearestPOI}
+    onCheckin={handleCheckin}
+    onDismiss={() => setShowPOIPopup(false)}
+  />
+)}
+```
+
+---
+
+### 5. Implementazione Backend
+
+#### 5.1 Nuovo Endpoint `/nearby-pois`
+
+**File:** `mihub-backend-rest/routes/gaming-rewards.js`
+
+```javascript
+/**
+ * GET /api/gaming-rewards/nearby-pois
+ * Trova POI vicini alle coordinate GPS dello smartphone
+ */
+router.get('/nearby-pois', async (req, res) => {
+  try {
+    logRequest('GET', '/api/gaming-rewards/nearby-pois', req.query);
+    const { lat, lng, comune_id, radius = 50, types = 'all' } = req.query;
+    
+    if (!lat || !lng || !comune_id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Parametri mancanti: lat, lng, comune_id' 
+      });
+    }
+    
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+    const searchRadius = parseInt(radius);
+    const comuneIdInt = parseInt(comune_id);
+    
+    const nearbyPOIs = [];
+    
+    // 1. Cerca POI Culturali vicini
+    if (types === 'all' || types === 'culture') {
+      const culturalQuery = `
+        SELECT 
+          id, 
+          'culture' as type,
+          type as poi_type, 
+          name, 
+          lat::float, 
+          lng::float,
+          tcc_reward,
+          (6371000 * acos(
+            cos(radians($1)) * cos(radians(lat::float))
+            * cos(radians(lng::float) - radians($2))
+            + sin(radians($1)) * sin(radians(lat::float))
+          )) as distance_m
+        FROM cultural_pois
+        WHERE comune_id = $3
+          AND (6371000 * acos(
+            cos(radians($1)) * cos(radians(lat::float))
+            * cos(radians(lng::float) - radians($2))
+            + sin(radians($1)) * sin(radians(lat::float))
+          )) <= $4
+        ORDER BY distance_m ASC
+        LIMIT 5
+      `;
+      
+      const culturalResult = await pool.query(culturalQuery, [userLat, userLng, comuneIdInt, searchRadius]);
+      nearbyPOIs.push(...culturalResult.rows);
+    }
+    
+    // 2. Cerca Fermate GTFS vicine
+    if (types === 'all' || types === 'mobility') {
+      const gtfsQuery = `
+        SELECT 
+          id,
+          'mobility' as type,
+          COALESCE(stop_type, 'bus') as poi_type,
+          stop_name as name,
+          lat::float,
+          lng::float,
+          10 as tcc_reward,
+          (6371000 * acos(
+            cos(radians($1)) * cos(radians(lat::float))
+            * cos(radians(lng::float) - radians($2))
+            + sin(radians($1)) * sin(radians(lat::float))
+          )) as distance_m
+        FROM gtfs_stops
+        WHERE comune_id = $3
+          AND (6371000 * acos(
+            cos(radians($1)) * cos(radians(lat::float))
+            * cos(radians(lng::float) - radians($2))
+            + sin(radians($1)) * sin(radians(lat::float))
+          )) <= $4
+        ORDER BY distance_m ASC
+        LIMIT 5
+      `;
+      
+      const gtfsResult = await pool.query(gtfsQuery, [userLat, userLng, comuneIdInt, searchRadius]);
+      nearbyPOIs.push(...gtfsResult.rows);
+    }
+    
+    // Ordina per distanza
+    nearbyPOIs.sort((a, b) => a.distance_m - b.distance_m);
+    
+    // Verifica visite già effettuate oggi (per ogni POI)
+    // TODO: Ottimizzare con una singola query
+    
+    res.json({
+      success: true,
+      nearby_pois: nearbyPOIs.slice(0, 10),
+      count: nearbyPOIs.length,
+      search_params: { lat: userLat, lng: userLng, radius: searchRadius, comune_id: comuneIdInt }
+    });
+    
+  } catch (error) {
+    console.error('[GAMING-REWARDS] Error GET /nearby-pois:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+```
+
+---
+
+### 6. POI Culturali Grosseto (44 importati)
+
+| Tipo | Quantità | TCC Reward |
+|------|----------|------------|
+| Museo | 3 | 50 TCC |
+| Teatro | 2 | 45 TCC |
+| Sito Archeologico | 2 | 60 TCC |
+| Edificio Storico | 3 | 25 TCC |
+| Monumento | 28 | 30 TCC |
+| Memoriale | 6 | 15 TCC |
+
+**Esempi POI:**
+- Museo Archeologico e d'Arte della Maremma (42.7613, 11.1137)
+- Museo di Storia Naturale della Maremma (42.7604, 11.1163)
+- Teatro degli Industri (42.7602, 11.1117)
+- Palazzo Aldobrandeschi (42.7596, 11.1142)
+
+---
+
+### 7. Flusso Heatmap Mappa PA
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    MAPPA GAMING & REWARDS (PA)                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Layer CULTURA (viola):                                         │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  GET /api/gaming-rewards/culture/heatmap?comune_id=1        ││
+│  │                         │                                   ││
+│  │                         ▼                                   ││
+│  │  SELECT * FROM cultural_visits WHERE comune_id = 1          ││
+│  │                         │                                   ││
+│  │                         ▼                                   ││
+│  │  Mostra pallini viola dove cittadini hanno fatto check-in   ││
+│  │  (NON mostra i POI disponibili, solo le VISITE effettuate)  ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                 │
+│  Layer MOBILITÀ (cyan):                                         │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  GET /api/gaming-rewards/mobility/heatmap?comune_id=1       ││
+│  │                         │                                   ││
+│  │                         ▼                                   ││
+│  │  SELECT * FROM route_completions WHERE comune_id = 1        ││
+│  │                         │                                   ││
+│  │                         ▼                                   ││
+│  │  Mostra pallini cyan dove cittadini hanno completato        ││
+│  │  percorsi sostenibili (bus, bici, piedi)                    ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                 │
+│  ⚠️ I POI (cultural_pois, gtfs_stops) NON appaiono sulla mappa │
+│     Servono SOLO come punti di riferimento per il check-in     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 8. TODO Implementazione
+
+| # | Task | File | Priorità | Stato |
+|---|------|------|----------|-------|
+| 8.1 | Creare endpoint `/nearby-pois` | gaming-rewards.js | CRITICA | ⬜ |
+| 8.2 | Creare hook `useNearbyPOIs` | hooks/useNearbyPOIs.ts | CRITICA | ⬜ |
+| 8.3 | Creare componente `NearbyPOIPopup` | components/NearbyPOIPopup.tsx | CRITICA | ⬜ |
+| 8.4 | Integrare in WalletPage | pages/WalletPage.tsx | CRITICA | ⬜ |
+| 8.5 | Testare con coordinate Grosseto | - | ALTA | ⬜ |
+| 8.6 | Importare fermate GTFS Tiemme | scripts/import-gtfs-tiemme.js | MEDIA | ⬜ |
+| 8.7 | Aggiungere `comune_id` ai POI Emilia | scripts/update-pois-comune.js | BASSA | ⬜ |
+
+---
+
+### 9. Test Manuale
+
+Per testare il sistema senza smartphone:
+
+```bash
+# 1. Simula coordinate GPS vicino al Museo Archeologico di Grosseto
+curl "https://orchestratore.mio-hub.me/api/gaming-rewards/nearby-pois?lat=42.7613&lng=11.1137&comune_id=1&radius=50"
+
+# Risposta attesa:
+# {
+#   "success": true,
+#   "nearby_pois": [
+#     {
+#       "id": 123,
+#       "type": "culture",
+#       "poi_type": "museo",
+#       "name": "Museo Archeologico e d'Arte della Maremma",
+#       "distance_m": 5,
+#       "tcc_reward": 50
+#     }
+#   ]
+# }
+
+# 2. Simula check-in
+curl -X POST "https://orchestratore.mio-hub.me/api/gaming-rewards/culture/checkin" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "test_user_001",
+    "poi_id": 123,
+    "poi_type": "museo",
+    "poi_name": "Museo Archeologico e d'Arte della Maremma",
+    "lat": 42.7613,
+    "lng": 11.1137,
+    "comune_id": 1
+  }'
+
+# 3. Verifica heatmap
+curl "https://orchestratore.mio-hub.me/api/gaming-rewards/culture/heatmap?comune_id=1"
+```
+
+---
+
+### 10. Versioni
+
+| Versione | Data | Modifiche |
+|----------|------|-----------|
+| v3.78.0 | 04/02/2026 | **IMPLEMENTAZIONE COMPLETA**: Endpoint /nearby-pois, hook useNearbyPOIs, heatmap isolata per layer, marker 15px |
+| v3.77.0 | 04/02/2026 | Progettazione sistema GPS → POI → Check-in |
+
+---
+
+## 📍 SISTEMA GPS → POI → CHECK-IN - IMPLEMENTAZIONE (v3.78.0)
+
+> **Data Implementazione:** 4 Febbraio 2026  
+> **Stato:** ✅ COMPLETATO E FUNZIONANTE
+
+---
+
+### 1. Endpoint Backend Creato
+
+**`GET /api/gaming-rewards/nearby-pois`**
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `lat` | float | Latitudine GPS smartphone |
+| `lng` | float | Longitudine GPS smartphone |
+| `comune_id` | int | ID comune per filtro multi-tenant |
+| `radius` | int | Raggio ricerca in metri (default 50) |
+| `user_id` | string | ID utente per verifica visite giornaliere |
+
+**Risposta:**
+```json
+{
+  "success": true,
+  "nearby_pois": [
+    {
+      "id": 123,
+      "source": "culture",
+      "type": "museo",
+      "name": "Museo Archeologico",
+      "lat": 42.7613,
+      "lng": 11.1137,
+      "distance_m": 5,
+      "tcc_reward": 50,
+      "already_visited_today": false
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
+### 2. Database Aggiornato
+
+| Tabella | Modifica | Stato |
+|---------|----------|-------|
+| `cultural_pois` | Aggiunta colonna `comune_id` | ✅ |
+| `gtfs_stops` | Aggiunta colonna `comune_id` | ✅ |
+
+**Dati Grosseto (comune_id=1):**
+- 44 POI culturali (musei, monumenti, teatri, ecc.)
+- 349 fermate trasporto pubblico
+
+---
+
+### 3. Frontend Creato
+
+| File | Componente | Descrizione |
+|------|------------|-------------|
+| `hooks/useNearbyPOIs.ts` | Hook | Rileva GPS, chiama /nearby-pois, gestisce check-in |
+| `components/NearbyPOIPopup.tsx` | Popup | Mostra POI vicino con pulsante check-in |
+| `components/NearbyPOIPopup.tsx` | Lista | Lista tutti POI vicini |
+| `components/NearbyPOIPopup.tsx` | Banner | Notifica in alto quando vicino a POI |
+| `pages/WalletPage.tsx` | Integrazione | Sezione "POI Vicini" in ECO CREDIT |
+
+---
+
+### 4. Mappa Gaming & Rewards - Modifiche
+
+#### 4.1 Marker Uniformi
+Tutti i marker ora hanno dimensione **15px** con emoji **9px**.
+
+#### 4.2 Heatmap Isolata per Layer
+Quando si seleziona un layer, la zona di calore mostra SOLO i punti di quel layer:
+
+| Layer | Filtro Heatmap |
+|-------|----------------|
+| Tutti | Tutti i punti |
+| Segnalazioni | Solo `type === 'civic'` |
+| Acquisti | Solo `type === 'shop' \|\| 'market' \|\| 'hub'` |
+| Mobilità | Solo `type === 'mobility'` |
+| Cultura | Solo `type === 'culture'` |
+
+#### 4.3 Intensità Calore Ridotta
+Intensità base abbassata a **0.25** per tutti i tipi:
+- 1 punto = calore verde/giallo chiaro
+- Più punti vicini = calore arancio/rosso (si sommano)
+
+#### 4.4 FlyTo su Click Tab
+Cliccando sui tab (Mobilità, Cultura, ecc.) la mappa si centra sui punti con animazione.
+
+---
+
+### 5. Test Endpoint
+
+```bash
+# Test /nearby-pois vicino al Museo Archeologico di Grosseto
+curl "https://orchestratore.mio-hub.me/api/gaming-rewards/nearby-pois?lat=42.7613&lng=11.1137&comune_id=1&radius=50"
+
+# Risposta attesa: Museo (5m) + Stazione (27m)
+```
+
+---
+
+### 6. File Modificati
+
+| File | Modifiche |
+|------|-----------|
+| `mihub-backend-rest/routes/gaming-rewards.js` | Aggiunto endpoint /nearby-pois |
+| `dms-hub-app-new/client/src/hooks/useNearbyPOIs.ts` | Nuovo hook GPS |
+| `dms-hub-app-new/client/src/components/NearbyPOIPopup.tsx` | Nuovi componenti UI |
+| `dms-hub-app-new/client/src/pages/WalletPage.tsx` | Integrazione ECO CREDIT |
+| `dms-hub-app-new/client/src/components/GamingRewardsPanel.tsx` | Heatmap isolata, marker 15px, flyTo |
 
 ---
 
