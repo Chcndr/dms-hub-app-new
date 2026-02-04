@@ -806,12 +806,18 @@ export default function GamingRewardsPanel() {
     }
   }, [configComuneId, config.culture_enabled, timeFilter]);
 
-  // Carica tutti i dati all'avvio e quando cambia il comune
+  // Carica la configurazione SOLO all'avvio o quando cambia il comune
+  // NON ricaricare quando cambiano i toggle (altrimenti sovrascrive le modifiche utente)
+  useEffect(() => {
+    loadConfig();
+  }, [configComuneId]); // Solo quando cambia il comune, non loadConfig stesso
+
+  // Carica i dati (stats, heatmap, etc.) all'avvio e quando cambiano le dipendenze
+  // ESCLUSO loadConfig per evitare di sovrascrivere i toggle modificati dall'utente
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
       await Promise.all([
-        loadConfig(), 
         loadStats(), 
         loadHeatmapPoints(), 
         loadCivicReports(), 
@@ -823,7 +829,7 @@ export default function GamingRewardsPanel() {
       setLoading(false);
     };
     loadAllData();
-  }, [loadConfig, loadStats, loadHeatmapPoints, loadCivicReports, loadTopShops, loadTrendData, loadMobilityActions, loadCultureActions]);
+  }, [loadStats, loadHeatmapPoints, loadCivicReports, loadTopShops, loadTrendData, loadMobilityActions, loadCultureActions]);
 
   // Salva configurazione via REST API
   const saveConfig = async () => {
