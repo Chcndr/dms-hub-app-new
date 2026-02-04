@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useNearbyPOIs, type NearbyPOI } from '@/hooks/useNearbyPOIs';
+import { NearbyPOIPopup, NearbyPOIBanner, NearbyPOIList } from '@/components/NearbyPOIPopup';
 import { Html5Qrcode } from 'html5-qrcode';
 import LoginModal from '@/components/LoginModal';
 import { Button } from '@/components/ui/button';
@@ -12,7 +14,7 @@ import {
   Wallet, Leaf, TrendingUp, Award, RefreshCw, Loader2,
   User, Store, QrCode, Camera, CameraOff, Keyboard,
   CheckCircle2, XCircle, ShoppingBag, Bike, Footprints, Bus,
-  Euro, ArrowDownToLine, History, ChevronLeft
+  Euro, ArrowDownToLine, History, ChevronLeft, MapPin, Landmark
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 
@@ -130,6 +132,47 @@ export default function WalletPage() {
     setEcoCreditsEnabled(enabled);
     localStorage.setItem('eco_credit_enabled', enabled ? 'true' : 'false');
   };
+  
+  // Stato per POI vicini e popup check-in
+  const [selectedPOI, setSelectedPOI] = useState<NearbyPOI | null>(null);
+  const [showPOIPopup, setShowPOIPopup] = useState(false);
+  
+  // Hook per rilevamento POI vicini (attivo solo se ECO CREDIT è abilitato)
+  const comuneId = 1; // TODO: recuperare da profilo utente o geolocalizzazione
+  const {
+    nearbyPOIs,
+    currentPosition,
+    permissionStatus,
+    isLoading: gpsLoading,
+    error: gpsError,
+    doCheckin,
+    refreshPosition,
+    hasUnvisitedPOIs,
+    unvisitedCount,
+    totalTCCAvailable,
+  } = useNearbyPOIs({
+    comuneId,
+    userId: currentUser?.id?.toString(),
+    radius: 50,
+    types: 'all',
+    enabled: ecoCreditsEnabled && isAuthenticated,
+    onPOIFound: (pois) => {
+      // Mostra popup automatico per il primo POI non visitato
+      if (pois.length > 0 && !showPOIPopup) {
+        setSelectedPOI(pois[0]);
+        setShowPOIPopup(true);
+      }
+    },
+    onCheckinSuccess: (poi, credits) => {
+      // Aggiorna il wallet dopo check-in
+      if (walletData) {
+        setWalletData({
+          ...walletData,
+          balance: walletData.balance + credits
+        });
+      }
+    },
+  });
   
   // Stato per Paga con TCC
   const [spendAmount, setSpendAmount] = useState('');
@@ -1055,6 +1098,85 @@ export default function WalletPage() {
               </CardContent>
             </Card>
 
+            {/* POI Vicini - Solo se ECO CREDIT attivo */}
+            {ecoCreditsEnabled && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-emerald-600" />
+                    Luoghi Vicini
+                    {gpsLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                  </CardTitle>
+                  <CardDescription>
+                    {currentPosition 
+                      ? `Posizione rilevata (precisione: ${Math.round(currentPosition.accuracy)}m)`
+                      : 'Rilevamento posizione in corso...'
+                    }
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* Banner POI vicino */}
+                  {hasUnvisitedPOIs && nearbyPOIs.filter(p => !p.already_visited_today)[0] && (
+                    <div className="mb-4">
+                      <NearbyPOIBanner 
+                        poi={nearbyPOIs.filter(p => !p.already_visited_today)[0]}
+                        onTap={() => {
+                          setSelectedPOI(nearbyPOIs.filter(p => !p.already_visited_today)[0]);
+                          setShowPOIPopup(true);
+                        }}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Stato GPS */}
+                  {permissionStatus === 'denied' && (
+                    <div className="p-3 bg-red-50 rounded-lg text-red-700 text-sm mb-4">
+                      <strong>Permesso GPS negato.</strong> Abilita la geolocalizzazione nelle impostazioni del browser per rilevare i POI vicini.
+                    </div>
+                  )}
+                  
+                  {gpsError && (
+                    <div className="p-3 bg-amber-50 rounded-lg text-amber-700 text-sm mb-4">
+                      {gpsError}
+                    </div>
+                  )}
+                  
+                  {/* Lista POI */}
+                  {nearbyPOIs.length > 0 ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm text-muted-foreground">
+                          {unvisitedCount} luoghi da visitare ({totalTCCAvailable} TCC disponibili)
+                        </p>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={refreshPosition}
+                          disabled={gpsLoading}
+                        >
+                          <RefreshCw className={`h-4 w-4 ${gpsLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </div>
+                      <NearbyPOIList 
+                        pois={nearbyPOIs}
+                        onSelectPOI={(poi) => {
+                          setSelectedPOI(poi);
+                          setShowPOIPopup(true);
+                        }}
+                        isLoading={gpsLoading}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <MapPin className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                      <p>Nessun luogo nelle vicinanze</p>
+                      <p className="text-sm">Avvicinati a un museo, monumento o fermata</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Informativa */}
             <Card>
               <CardHeader>
@@ -1161,6 +1283,18 @@ export default function WalletPage() {
       <div className="hidden sm:block">
         <BottomNav />
       </div>
+      
+      {/* Popup Check-in POI */}
+      <NearbyPOIPopup
+        poi={selectedPOI}
+        isOpen={showPOIPopup}
+        onClose={() => {
+          setShowPOIPopup(false);
+          setSelectedPOI(null);
+        }}
+        onCheckin={doCheckin}
+        isLoading={gpsLoading}
+      />
     </div>
   );
 }
