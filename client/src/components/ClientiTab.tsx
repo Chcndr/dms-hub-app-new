@@ -16,7 +16,8 @@ import {
   UserCheck,
   UserX,
   TrendingUp,
-  Download
+  Download,
+  Leaf
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
@@ -31,6 +32,7 @@ interface Citizen {
   wallet_balance: number;
   total_earned: number;
   total_spent: number;
+  eco_credit_active?: boolean; // Stato programma ECO CREDIT
 }
 
 interface CitizenStats {
@@ -60,9 +62,9 @@ export default function ClientiTab() {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
       // Dati mock per testing
       setCitizens([
-        { id: 1, name: 'Mario Rossi', email: 'mario.rossi@email.com', auth_provider: 'email', email_verified: true, created_at: '2026-01-10T10:30:00Z', wallet_balance: 150, total_earned: 200, total_spent: 50 },
-        { id: 2, name: 'Laura Bianchi', email: 'laura.bianchi@email.com', auth_provider: 'google', email_verified: true, created_at: '2026-01-09T14:20:00Z', wallet_balance: 75, total_earned: 100, total_spent: 25 },
-        { id: 3, name: 'Giuseppe Verdi', email: 'giuseppe.verdi@email.com', auth_provider: 'spid', email_verified: true, created_at: '2026-01-08T09:15:00Z', wallet_balance: 320, total_earned: 400, total_spent: 80 },
+        { id: 1, name: 'Mario Rossi', email: 'mario.rossi@email.com', auth_provider: 'email', email_verified: true, created_at: '2026-01-10T10:30:00Z', wallet_balance: 150, total_earned: 200, total_spent: 50, eco_credit_active: true },
+        { id: 2, name: 'Laura Bianchi', email: 'laura.bianchi@email.com', auth_provider: 'google', email_verified: true, created_at: '2026-01-09T14:20:00Z', wallet_balance: 75, total_earned: 100, total_spent: 25, eco_credit_active: false },
+        { id: 3, name: 'Giuseppe Verdi', email: 'giuseppe.verdi@email.com', auth_provider: 'spid', email_verified: true, created_at: '2026-01-08T09:15:00Z', wallet_balance: 320, total_earned: 400, total_spent: 80, eco_credit_active: true },
       ]);
       setStats({
         total_citizens: 3,
@@ -218,6 +220,7 @@ export default function ClientiTab() {
                   <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">Nome</th>
                   <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">Email</th>
                   <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">Metodo</th>
+                  <th className="text-center py-3 px-4 text-[#e8fbff]/70 font-medium">ECO CREDIT</th>
                   <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">Registrato</th>
                   <th className="text-right py-3 px-4 text-[#e8fbff]/70 font-medium">Saldo TCC</th>
                   <th className="text-right py-3 px-4 text-[#e8fbff]/70 font-medium">Guadagnati</th>
@@ -240,12 +243,25 @@ export default function ClientiTab() {
                         <Mail className="h-4 w-4 text-[#e8fbff]/50" />
                         <span className="text-[#e8fbff]/70">{citizen.email}</span>
                         {citizen.email_verified && (
-                          <UserCheck className="h-4 w-4 text-[#10b981]" title="Email verificata" />
+                          <UserCheck className="h-4 w-4 text-[#10b981]" />
                         )}
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       {getAuthProviderBadge(citizen.auth_provider)}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {citizen.eco_credit_active ? (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-[#10b981]/20 border border-[#10b981]/30 rounded-full" title="ECO CREDIT Attivo">
+                          <Leaf className="h-3 w-3 text-[#10b981]" />
+                          <span className="text-xs text-[#10b981] font-medium">Attivo</span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-[#ef4444]/20 border border-[#ef4444]/30 rounded-full" title="ECO CREDIT Non Attivo">
+                          <Leaf className="h-3 w-3 text-[#ef4444]" />
+                          <span className="text-xs text-[#ef4444] font-medium">Inattivo</span>
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
