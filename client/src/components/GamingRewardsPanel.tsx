@@ -265,17 +265,18 @@ function HeatmapLayer({ points, selectedLayer }: { points: HeatmapPoint[]; selec
     if (filteredPoints.length === 0) return;
     
     const heatData: [number, number, number][] = filteredPoints.map(p => {
-      // Intensità base bassa per singoli punti, aumenta con più punti vicini
+      // Intensità base bassa per tutti i tipi - più punti vicini = più calore
       let intensity: number;
       if (p.type === 'civic') {
-        intensity = 0.4; // Intensità media per segnalazioni
+        intensity = 0.25; // Intensità bassa per segnalazioni
       } else if (p.type === 'mobility') {
-        intensity = 0.35; // Intensità media per mobilità
+        intensity = 0.25; // Intensità bassa per mobilità
       } else if (p.type === 'culture') {
-        intensity = 0.4; // Intensità media per cultura
+        intensity = 0.25; // Intensità bassa per cultura
       } else {
-        intensity = Math.min((p.tcc_earned + p.tcc_spent) / 5000, 1.0);
-        if (intensity === 0) intensity = 0.2; // Minimo visibile per mercati
+        // Acquisti: intensità bassa, scala con TCC ma max 0.3
+        intensity = Math.min((p.tcc_earned + p.tcc_spent) / 20000, 0.3);
+        if (intensity === 0) intensity = 0.15; // Minimo visibile per mercati
       }
       return [p.lat, p.lng, intensity];
     });
