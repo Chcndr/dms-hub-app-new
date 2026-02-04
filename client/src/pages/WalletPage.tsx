@@ -12,7 +12,7 @@ import {
   Wallet, Leaf, TrendingUp, Award, RefreshCw, Loader2,
   User, Store, QrCode, Camera, CameraOff, Keyboard,
   CheckCircle2, XCircle, ShoppingBag, Bike, Footprints, Bus,
-  Euro, ArrowDownToLine, History
+  Euro, ArrowDownToLine, History, ChevronLeft
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 
@@ -1004,10 +1004,16 @@ export default function WalletPage() {
           {/* TAB ECO CREDIT */}
           {/* ================================================================ */}
           <TabsContent value="eco_credit" className="space-y-4 px-2 sm:px-0">
-            {/* Header ECO CREDIT */}
+            {/* Header ECO CREDIT con pulsante torna */}
             <Card className="bg-gradient-to-br from-emerald-600 via-emerald-500 to-green-500 text-white border-0 shadow-xl">
               <CardHeader>
                 <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setActiveTab('cliente')}
+                    className="p-3 bg-white/20 rounded-xl hover:bg-white/30 transition-colors"
+                  >
+                    <ChevronLeft className="h-8 w-8" />
+                  </button>
                   <div className="p-3 bg-white/20 rounded-xl">
                     <Leaf className="h-8 w-8" />
                   </div>
@@ -1146,14 +1152,6 @@ export default function WalletPage() {
               </Card>
             )}
 
-            {/* Pulsante Torna al Wallet */}
-            <Button
-              variant="outline"
-              className="w-full mt-4 mb-20"
-              onClick={() => setActiveTab('cliente')}
-            >
-              ← Torna al Wallet
-            </Button>
           </TabsContent>
 
         </Tabs>
