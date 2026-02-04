@@ -242,36 +242,47 @@ function MapCenterUpdater({
   return null;
 }
 
-// Componente Heatmap Layer
-function HeatmapLayer({ points }: { points: HeatmapPoint[] }) {
+// Componente Heatmap Layer - filtra per selectedLayer
+function HeatmapLayer({ points, selectedLayer }: { points: HeatmapPoint[]; selectedLayer: string }) {
   const map = useMap();
   
   useEffect(() => {
     if (!map || !points || points.length === 0) return;
     
-    const heatData: [number, number, number][] = points.map(p => {
-      // Per le segnalazioni civiche (type='civic') usa un'intensità fissa alta
-      // Per mobility e culture usa intensità media-alta
-      // Per gli altri punti usa tcc_earned + tcc_spent
+    // Filtra i punti in base al layer selezionato
+    let filteredPoints = points;
+    if (selectedLayer === 'civic') {
+      filteredPoints = points.filter(p => p.type === 'civic');
+    } else if (selectedLayer === 'shopping') {
+      filteredPoints = points.filter(p => p.type === 'shop' || p.type === 'market' || p.type === 'hub');
+    } else if (selectedLayer === 'mobility') {
+      filteredPoints = points.filter(p => p.type === 'mobility');
+    } else if (selectedLayer === 'culture') {
+      filteredPoints = points.filter(p => p.type === 'culture');
+    }
+    // 'all' mostra tutti i punti
+    
+    if (filteredPoints.length === 0) return;
+    
+    const heatData: [number, number, number][] = filteredPoints.map(p => {
+      // Intensità base bassa per singoli punti, aumenta con più punti vicini
       let intensity: number;
       if (p.type === 'civic') {
-        intensity = 0.8; // Intensità alta per segnalazioni
+        intensity = 0.4; // Intensità media per segnalazioni
       } else if (p.type === 'mobility') {
-        intensity = 0.7; // Intensità media-alta per mobilità
+        intensity = 0.35; // Intensità media per mobilità
       } else if (p.type === 'culture') {
-        intensity = 0.75; // Intensità media-alta per cultura
+        intensity = 0.4; // Intensità media per cultura
       } else {
         intensity = Math.min((p.tcc_earned + p.tcc_spent) / 5000, 1.0);
-        if (intensity === 0) intensity = 0.3; // Minimo visibile per mercati
+        if (intensity === 0) intensity = 0.2; // Minimo visibile per mercati
       }
       return [p.lat, p.lng, intensity];
     });
     
-    if (heatData.length === 0) return;
-    
     const heatLayer = (L as any).heatLayer(heatData, {
-      radius: 40,
-      blur: 25,
+      radius: 35,
+      blur: 20,
       maxZoom: 18,
       max: 1.0,
       gradient: {
@@ -288,7 +299,7 @@ function HeatmapLayer({ points }: { points: HeatmapPoint[] }) {
         map.removeLayer(heatLayer);
       }
     };
-  }, [map, points]);
+  }, [map, points, selectedLayer]);
   
    return null;
 }
@@ -380,10 +391,9 @@ const getMarkerIcon = (type: string, intensity: number = 0.5) => {
     bgColor = '#eab308'; // Giallo per media intensità
   }
   
-  // Dimensione marker - civic e mobility più piccoli
-  const smallTypes = ['civic', 'bus', 'tram', 'train', 'stop'];
-  const size = smallTypes.includes(type) ? 18 : 22;
-  const fontSize = smallTypes.includes(type) ? 10 : 13;
+  // Dimensione marker - tutti uniformi a 15px
+  const size = 15;
+  const fontSize = 9;
   
   return L.divIcon({
     html: `<div style="
@@ -1297,7 +1307,7 @@ export default function GamingRewardsPanel() {
                   tcc_spent: 0,
                   transactions: 1
                 }))
-              ]} />
+              ]} selectedLayer={selectedLayer} />
               {/* Marker negozi/hub/mercati - con offset spirale per punti sovrapposti */}
               {(selectedLayer === 'all' || selectedLayer === 'shopping') && applySpiralOffset(heatmapPoints).map((point) => {
                 const intensity = Math.min((point.tcc_earned + point.tcc_spent) / 5000, 1.0);
