@@ -640,7 +640,7 @@ export default function GamingRewardsPanel() {
     } catch (error) {
       console.error('Errore caricamento segnalazioni:', error);
     }
-  }, [currentComuneId, config.civic_enabled]);
+  }, [configComuneId, config.civic_enabled]);
 
   // Funzione per caricare i punti heatmap via REST API
   const loadHeatmapPoints = useCallback(async () => {
@@ -720,7 +720,7 @@ export default function GamingRewardsPanel() {
     }
     try {
       // Usa le coordinate del comune per centrare la ricerca
-      const coords = COMUNI_COORDS[currentComuneId];
+      const coords = COMUNI_COORDS[configComuneId];
       const lat = coords?.lat || 44.49;
       const lng = coords?.lng || 11.34;
       // Mappa timeFilter al parametro period dell'API
@@ -757,7 +757,7 @@ export default function GamingRewardsPanel() {
       console.error('Errore caricamento mobility actions:', error);
       setMobilityActions([]);
     }
-  }, [currentComuneId, config.mobility_enabled, timeFilter]);
+  }, [configComuneId, config.mobility_enabled, timeFilter]);
 
   // Funzione per caricare le Azioni Cultura (visite effettuate dai cittadini)
   const loadCultureActions = useCallback(async () => {
@@ -767,7 +767,7 @@ export default function GamingRewardsPanel() {
     }
     try {
       // Usa le coordinate del comune per centrare la ricerca
-      const coords = COMUNI_COORDS[currentComuneId];
+      const coords = COMUNI_COORDS[configComuneId];
       const lat = coords?.lat || 44.49;
       const lng = coords?.lng || 11.34;
       // Mappa timeFilter al parametro period dell'API
@@ -804,7 +804,7 @@ export default function GamingRewardsPanel() {
       console.error('Errore caricamento culture actions:', error);
       setCultureActions([]);
     }
-  }, [currentComuneId, config.culture_enabled, timeFilter]);
+  }, [configComuneId, config.culture_enabled, timeFilter]);
 
   // Carica tutti i dati all'avvio e quando cambia il comune
   useEffect(() => {
@@ -890,8 +890,8 @@ export default function GamingRewardsPanel() {
 
   // Determina centro iniziale mappa
   const getInitialCenter = (): [number, number] => {
-    if (currentComuneId && COMUNI_COORDS[currentComuneId]) {
-      return [COMUNI_COORDS[currentComuneId].lat, COMUNI_COORDS[currentComuneId].lng];
+    if (configComuneId && COMUNI_COORDS[configComuneId]) {
+      return [COMUNI_COORDS[configComuneId].lat, COMUNI_COORDS[configComuneId].lng];
     }
     return [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng];
   };
