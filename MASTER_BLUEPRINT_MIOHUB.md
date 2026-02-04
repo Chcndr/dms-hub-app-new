@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.54.0  
-> **Data:** 3 Febbraio 2026 (Aggiornamento Serale)  
+> **Versione:** 3.76.1  
+> **Data:** 4 Febbraio 2026 (Aggiornamento ECO CREDIT)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -4953,6 +4953,160 @@ WHERE comune_id = ${comuneId}
 | Heatmap Densità | ❌ Non implementato | ✅ Zoom < 10 |
 | Report Analytics | ❌ Non implementato | ✅ Dashboard dedicata |
 | Impersonalizzazione | ✅ Funzionante | ✅ Mantenuto |
+
+---
+
+
+## 🌿 ECO CREDIT - PROGRAMMA CITTADINO (v3.76.0)
+
+> **Data Implementazione:** 4 Febbraio 2026
+> **Stato:** ✅ IMPLEMENTATO
+
+---
+
+### 1. Cos'è ECO CREDIT?
+
+**ECO CREDIT** è il programma di gamification per i cittadini che premia le azioni sostenibili con Token Carbon Credit (TCC). Il cittadino può attivare il programma dal proprio Wallet e guadagnare TCC attraverso:
+
+| Azione | Descrizione | TCC Reward |
+|--------|-------------|------------|
+| 🚌 **Mobilità Sostenibile** | Usa bus, bici, cammina | 5-50 TCC |
+| 🏛️ **Cultura & Turismo** | Visita musei e monumenti | 10-30 TCC |
+| 🛒 **Acquisti Locali** | Compra nei negozi del territorio | Cashback % |
+| 📢 **Segnalazioni Civiche** | Segnala problemi alla PA | 5-20 TCC |
+
+---
+
+### 2. Posizione nel Sistema
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    APP CITTADINO (Roote)                     │
+├─────────────────────────────────────────────────────────────┤
+│  BottomNav: [Home] [Mappa] [Route] [Wallet] [Segnala] [Vetrine] │
+│                              │                               │
+│                              ▼                               │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │                    WALLET PAGE                          │ │
+│  │  ┌─────────────────────────────────────────────────────┐│ │
+│  │  │  Header Verde: Saldo TCC + QR Code                  ││ │
+│  │  ├─────────────────────────────────────────────────────┤│ │
+│  │  │  Tab Mobile: [Paga] [Storico] [🌿 ECO]              ││ │
+│  │  │                              │                      ││ │
+│  │  │                              ▼                      ││ │
+│  │  │  ┌─────────────────────────────────────────────────┐││ │
+│  │  │  │           ECO CREDIT PAGE                       │││ │
+│  │  │  │  • Header verde con pulsante ← torna            │││ │
+│  │  │  │  • Toggle Attivazione ON/OFF                    │││ │
+│  │  │  │  • Come Funziona (4 card)                       │││ │
+│  │  │  │  • Informativa GPS e Privacy                    │││ │
+│  │  │  │  • Statistiche personali                        │││ │
+│  │  │  └─────────────────────────────────────────────────┘││ │
+│  │  └─────────────────────────────────────────────────────┘│ │
+│  └─────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 3. Componenti UI
+
+#### 3.1 Vista Mobile (Smartphone)
+
+| Elemento | Descrizione |
+|----------|-------------|
+| **Tab ECO** | Terzo tab in basso (grid 3 colonne) |
+| **Colore** | Verde emerald con bordo evidenziato |
+| **Icona** | 🌿 Leaf da lucide-react |
+
+#### 3.2 Vista Desktop (iPad/PC)
+
+| Elemento | Descrizione |
+|----------|-------------|
+| **Card ECO CREDIT** | Nella sezione wallet, dopo "Paga con TCC" |
+| **Colore** | Bordo verde emerald, sfondo gradient |
+| **Click** | Apre la pagina ECO CREDIT |
+
+#### 3.3 Pagina ECO CREDIT
+
+| Sezione | Contenuto |
+|---------|-----------|
+| **Header** | Barra verde con pulsante ← torna, icona foglia, titolo |
+| **Toggle** | Attiva/Disattiva con stato visivo (CheckCircle/XCircle) |
+| **Come Funziona** | 4 card con icone: Mobilità, Cultura, Acquisti, Segnalazioni |
+| **Privacy GPS** | Informativa su utilizzo GPS (solo quando app aperta) |
+| **Statistiche** | TCC totali e valore in euro (visibile se attivo) |
+
+---
+
+### 4. Logica GPS
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    RILEVAMENTO GPS                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. Utente APRE l'app                                       │
+│           │                                                 │
+│           ▼                                                 │
+│  2. App richiede posizione GPS (una volta)                  │
+│           │                                                 │
+│           ▼                                                 │
+│  3. Confronta con POI nel database:                         │
+│     • Fermate GTFS (raggio 50m)                             │
+│     • POI Culturali (raggio 30m)                            │
+│     • Negozi aderenti (raggio 20m)                          │
+│           │                                                 │
+│           ▼                                                 │
+│  4. SE match trovato:                                       │
+│     → Mostra pulsante "Check-in" / "Guadagna TCC"           │
+│           │                                                 │
+│           ▼                                                 │
+│  5. Utente conferma → TCC accreditati                       │
+│                                                             │
+│  ⚠️ GPS NON attivo in background                            │
+│  ⚠️ Nessun tracking continuo                                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 5. Storage Preferenze
+
+| Campo | Storage | Descrizione |
+|-------|---------|-------------|
+| `eco_credit_enabled` | localStorage | Stato attivazione (true/false) |
+
+**Nota:** Per ora lo stato è salvato in localStorage. In futuro sarà salvato nel profilo utente sul backend.
+
+---
+
+### 6. File Modificati
+
+| File | Modifiche |
+|------|-----------|
+| `client/src/pages/WalletPage.tsx` | Aggiunto tab ECO, card desktop, pagina ECO CREDIT |
+
+---
+
+### 7. Versioni
+
+| Versione | Data | Modifiche |
+|----------|------|-----------|
+| v3.76.0 | 04/02/2026 | Implementazione iniziale ECO CREDIT |
+| v3.76.1 | 04/02/2026 | Spostato pulsante torna nella barra verde header |
+
+---
+
+### 8. Prossimi Sviluppi
+
+| Funzionalità | Priorità | Stato |
+|--------------|----------|-------|
+| Salvataggio preferenze su backend | MEDIA | ❌ Da fare |
+| Popup onboarding al primo login | MEDIA | ❌ Da fare |
+| Integrazione GPS per check-in automatico | ALTA | ❌ Da fare |
+| Endpoint `/api/eco-credit/checkin` | ALTA | ❌ Da fare |
+| Notifiche push quando vicino a POI | BASSA | ❌ Da fare |
 
 ---
 
