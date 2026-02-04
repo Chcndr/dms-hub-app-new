@@ -164,15 +164,20 @@ const DEFAULT_CONFIG: GamingConfig = {
 
 // Componente per centrare la mappa
 // Aggiornato: ora reagisce anche al cambio di selectedLayer per flyTo sui punti filtrati
+// v1.2.0: Aggiunto supporto per mobility e culture layers
 function MapCenterUpdater({ 
   points, 
   civicReports, 
+  mobilityActions,
+  cultureActions,
   comuneId, 
   selectedLayer,
   layerTrigger 
 }: { 
   points: HeatmapPoint[]; 
   civicReports: HeatmapPoint[]; 
+  mobilityActions: MobilityAction[];
+  cultureActions: CultureAction[];
   comuneId: number | null;
   selectedLayer: string;
   layerTrigger: number;
@@ -183,12 +188,18 @@ function MapCenterUpdater({
     if (!map) return;
     
     // Determina quali punti mostrare in base al layer selezionato
-    let targetPoints: HeatmapPoint[] = [];
+    let targetPoints: Array<{lat: number; lng: number}> = [];
     
     if (selectedLayer === 'civic') {
       targetPoints = civicReports;
     } else if (selectedLayer === 'shopping') {
       targetPoints = points.filter(p => p.type === 'shop' || p.type === 'market');
+    } else if (selectedLayer === 'mobility') {
+      // Converti mobilityActions in punti con lat/lng
+      targetPoints = mobilityActions.map(m => ({ lat: parseFloat(String(m.start_lat)), lng: parseFloat(String(m.start_lng)) }));
+    } else if (selectedLayer === 'culture') {
+      // Converti cultureActions in punti con lat/lng
+      targetPoints = cultureActions.map(c => ({ lat: parseFloat(String(c.lat)), lng: parseFloat(String(c.lng)) }));
     } else if (selectedLayer === 'all') {
       targetPoints = [...points, ...civicReports];
     } else {
@@ -1255,7 +1266,7 @@ export default function GamingRewardsPanel() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <MapCenterUpdater points={heatmapPoints} civicReports={filterByTime(civicReports, 'created_at')} comuneId={currentComuneId} selectedLayer={selectedLayer} layerTrigger={layerTrigger} />
+              <MapCenterUpdater points={heatmapPoints} civicReports={filterByTime(civicReports, 'created_at')} mobilityActions={mobilityActions} cultureActions={cultureActions} comuneId={currentComuneId} selectedLayer={selectedLayer} layerTrigger={layerTrigger} />
               <HeatmapLayer points={[...heatmapPoints, ...filterByTime(civicReports, 'created_at')]} />
               {/* Marker negozi/hub/mercati - con offset spirale per punti sovrapposti */}
               {(selectedLayer === 'all' || selectedLayer === 'shopping') && applySpiralOffset(heatmapPoints).map((point) => {
