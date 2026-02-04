@@ -462,7 +462,8 @@ export default function WalletPanel() {
       const params = new URLSearchParams();
       if (impresaId) params.append('impresa_id', impresaId);
       
-      const response = await fetch(`${API_URL}/api/canone-unico/posteggi-mercato/${mercatoId}?${params.toString()}`);
+      // v3.90.0: Filtro per comune_id durante impersonificazione
+      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/canone-unico/posteggi-mercato/${mercatoId}?${params.toString()}`));
       const data = await response.json();
       if (data.success) {
         setStraordinarioPosteggiList({
@@ -490,7 +491,8 @@ export default function WalletPanel() {
     
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
-      const response = await fetch(`${API_URL}/api/imprese?search=${encodeURIComponent(search)}&limit=5`);
+      // v3.90.0: Filtro per comune_id durante impersonificazione
+      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/imprese?search=${encodeURIComponent(search)}&limit=5`));
       const data = await response.json();
       if (data.success) {
         setStraordinarioImpreseSuggestions(data.data || []);
@@ -546,7 +548,8 @@ export default function WalletPanel() {
       if (impreseSearch) params.append('search', impreseSearch);
       if (tipoOperatore && tipoOperatore !== 'all') params.append('tipo_operatore', tipoOperatore);
       
-      const response = await fetch(`${API_URL}/api/canone-unico/imprese-concessioni?${params.toString()}`);
+      // v3.90.0: Filtro per comune_id durante impersonificazione
+      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/canone-unico/imprese-concessioni?${params.toString()}`));
       const data = await response.json();
       if (data.success) {
         setImpreseConcessioni(data.data || []);

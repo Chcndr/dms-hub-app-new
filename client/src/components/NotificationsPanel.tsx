@@ -8,6 +8,7 @@ import {
   ArrowDownLeft, ArrowUpRight, Phone, Loader2, Search, Building2, X, Landmark,
   Filter, Eye, Calendar, ChevronDown
 } from 'lucide-react';
+import { addComuneIdToUrl, getImpersonationParams } from '@/hooks/useImpersonation';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.mio-hub.me';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
@@ -119,7 +120,8 @@ export function NotificationsPanel() {
     const fetchImprese = async () => {
       setLoadingImprese(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/imprese`);
+        // v3.90.0: Filtro per comune_id durante impersonificazione
+        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese`));
         const data = await response.json();
         if (data.success && data.data) {
           setImprese(data.data);
@@ -275,7 +277,8 @@ export function NotificationsPanel() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/api/mihub/notifications/all`);
+      // v3.90.0: Filtro per comune_id durante impersonificazione
+      const response = await fetch(addComuneIdToUrl(`${BACKEND_URL}/api/mihub/notifications/all`));
       const data = await response.json();
       
       if (data.success) {
