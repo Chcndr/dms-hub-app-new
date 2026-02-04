@@ -1065,7 +1065,7 @@ export default function GamingRewardsPanel() {
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 text-[#e8fbff]/70 text-sm mb-1">
               <Coins className="h-4 w-4 text-yellow-500" />
-              TCC Emessi
+              TCC Rilasciati
             </div>
             <div className="text-2xl font-bold text-[#22c55e]">
               {stats?.total_tcc_issued?.toLocaleString() || 0}
@@ -1077,7 +1077,7 @@ export default function GamingRewardsPanel() {
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 text-[#e8fbff]/70 text-sm mb-1">
               <TrendingUp className="h-4 w-4 text-blue-500" />
-              TCC Spesi
+              TCC Riscattati
             </div>
             <div className="text-2xl font-bold text-[#3b82f6]">
               {stats?.total_tcc_spent?.toLocaleString() || 0}
@@ -1255,7 +1255,7 @@ export default function GamingRewardsPanel() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <MapCenterUpdater points={heatmapPoints} civicReports={civicReports} comuneId={currentComuneId} selectedLayer={selectedLayer} layerTrigger={layerTrigger} />
+              <MapCenterUpdater points={heatmapPoints} civicReports={filterByTime(civicReports, 'created_at')} comuneId={currentComuneId} selectedLayer={selectedLayer} layerTrigger={layerTrigger} />
               <HeatmapLayer points={[...heatmapPoints, ...filterByTime(civicReports, 'created_at')]} />
               {/* Marker negozi/hub/mercati - con offset spirale per punti sovrapposti */}
               {(selectedLayer === 'all' || selectedLayer === 'shopping') && applySpiralOffset(heatmapPoints).map((point) => {
@@ -1308,7 +1308,7 @@ export default function GamingRewardsPanel() {
                         {action.name}
                       </div>
                       <div className="text-xs text-gray-600 capitalize">Percorso {action.type}</div>
-                      <div>TCC Guadagnati: <span className="text-green-600 font-semibold">+{action.tcc_reward}</span></div>
+                      <div>TCC Rilasciati: <span className="text-green-600 font-semibold">+{action.tcc_reward}</span></div>
                       {action.co2_saved_g > 0 && (
                         <div className="text-xs text-emerald-600">🌿 CO₂ risparmiata: {(action.co2_saved_g / 1000).toFixed(2)} kg</div>
                       )}
@@ -1337,7 +1337,7 @@ export default function GamingRewardsPanel() {
                         {visit.name}
                       </div>
                       <div className="text-xs text-gray-600 capitalize">Visita {visit.type}</div>
-                      <div>TCC Guadagnati: <span className="text-green-600 font-semibold">+{visit.tcc_reward}</span></div>
+                      <div>TCC Rilasciati: <span className="text-green-600 font-semibold">+{visit.tcc_reward}</span></div>
                       {visit.visit_date && (
                         <div className="text-xs text-gray-500">📅 {new Date(visit.visit_date).toLocaleDateString('it-IT')}</div>
                       )}
@@ -1393,7 +1393,7 @@ export default function GamingRewardsPanel() {
                     </div>
                     <div className="text-right">
                       <div className="text-[#22c55e] font-bold">+{shop.tcc_earned.toLocaleString('it-IT')}</div>
-                      <div className="text-xs text-[#e8fbff]/50">TCC guadagnati</div>
+                      <div className="text-xs text-[#e8fbff]/50">TCC rilasciati</div>
                     </div>
                   </div>
                 ))}
@@ -1434,7 +1434,7 @@ export default function GamingRewardsPanel() {
                           <div 
                             className="w-3 bg-[#22c55e] rounded-t transition-all" 
                             style={{ height: `${earnedHeight}%`, minHeight: day.tcc_earned > 0 ? '4px' : '0' }}
-                            title={`Guadagnati: ${day.tcc_earned}`}
+                            title={`Rilasciati: ${day.tcc_earned}`}
                           />
                           <div 
                             className="w-3 bg-[#3b82f6] rounded-t transition-all" 
@@ -1456,11 +1456,11 @@ export default function GamingRewardsPanel() {
                 <div className="flex justify-center gap-4 text-sm flex-wrap">
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-[#22c55e]"></span>
-                    <span className="text-[#e8fbff]/70">TCC Guadagnati</span>
+                    <span className="text-[#e8fbff]/70">TCC Rilasciati</span>
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-[#3b82f6]"></span>
-                    <span className="text-[#e8fbff]/70">TCC Spesi</span>
+                    <span className="text-[#e8fbff]/70">TCC Riscattati</span>
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-[#f97316]"></span>
@@ -1473,13 +1473,13 @@ export default function GamingRewardsPanel() {
                     <div className="text-lg font-bold text-[#22c55e]">
                       {trendData.reduce((sum, d) => sum + d.tcc_earned, 0)}
                     </div>
-                    <div className="text-xs text-[#e8fbff]/50">TCC Totali Guadagnati</div>
+                    <div className="text-xs text-[#e8fbff]/50">TCC Totali Rilasciati</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-bold text-[#3b82f6]">
                       {trendData.reduce((sum, d) => sum + d.tcc_spent, 0)}
                     </div>
-                    <div className="text-xs text-[#e8fbff]/50">TCC Totali Spesi</div>
+                    <div className="text-xs text-[#e8fbff]/50">TCC Totali Riscattati</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-bold text-[#f97316]">
@@ -1592,7 +1592,7 @@ export default function GamingRewardsPanel() {
               {/* TCC Reward */}
               <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                 <span className="text-[#e8fbff]/70 flex items-center gap-2">
-                  <Coins className="h-4 w-4" /> TCC Guadagnati
+                  <Coins className="h-4 w-4" /> TCC Rilasciati
                 </span>
                 <span className="text-[#22c55e] font-bold text-lg">
                   +{selectedReport.tcc_earned}
