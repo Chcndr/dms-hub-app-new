@@ -305,7 +305,56 @@ function HeatmapLayer({ points, selectedLayer }: { points: HeatmapPoint[]; selec
    return null;
 }
 
-// Funzione per calcolare offset spirale per punti sovrapposti
+// Funzione generica per calcolare offset spirale per punti sovrapposti
+// Funziona con qualsiasi tipo di punto che abbia lat e lng
+function applySpiralOffsetGeneric<T extends { lat: number; lng: number }>(points: T[]): (T & { offsetLat: number; offsetLng: number })[] {
+  // Raggruppa per posizione (arrotondando a 5 decimali per raggruppare punti molto vicini)
+  const groups: Map<string, T[]> = new Map();
+  
+  points.forEach(point => {
+    const key = `${point.lat.toFixed(5)}_${point.lng.toFixed(5)}`;
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(point);
+  });
+  
+  const result: (T & { offsetLat: number; offsetLng: number })[] = [];
+  
+  groups.forEach((groupPoints) => {
+    if (groupPoints.length === 1) {
+      // Singolo punto, nessun offset
+      result.push({ ...groupPoints[0], offsetLat: 0, offsetLng: 0 });
+    } else {
+      // Multipli punti - disponi in spirale
+      const baseRadius = 0.00004; // Raggio base in gradi (~4m) - marker appoggiati
+      const radiusIncrement = 0.00003; // Incremento raggio per ogni giro
+      const pointsPerRing = 6; // Punti per ogni anello della spirale
+      
+      groupPoints.forEach((point, index) => {
+        if (index === 0) {
+          // Primo punto al centro
+          result.push({ ...point, offsetLat: 0, offsetLng: 0 });
+        } else {
+          // Calcola posizione spirale
+          const ring = Math.floor((index - 1) / pointsPerRing); // Quale anello
+          const posInRing = (index - 1) % pointsPerRing; // Posizione nell'anello
+          const radius = baseRadius + (ring * radiusIncrement);
+          const angle = (posInRing / pointsPerRing) * 2 * Math.PI + (ring * 0.5); // Angolo con rotazione per ogni anello
+          
+          const offsetLat = radius * Math.cos(angle);
+          const offsetLng = radius * Math.sin(angle);
+          
+          result.push({ ...point, offsetLat, offsetLng });
+        }
+      });
+    }
+  });
+  
+  return result;
+}
+
+// Funzione per calcolare offset spirale per punti sovrapposti (HeatmapPoint)
 // Raggruppa i punti per posizione e li dispone in cerchi concentrici
 function applySpiralOffset(points: HeatmapPoint[]): (HeatmapPoint & { offsetLat: number; offsetLng: number })[] {
   // Raggruppa per posizione (arrotondando a 5 decimali per raggruppare punti molto vicini)
@@ -1356,11 +1405,11 @@ export default function GamingRewardsPanel() {
                   </Popup>
                 </Marker>
               ))}
-              {/* Marker Mobilità Sostenibile - azioni cittadini (percorsi completati) */}
-              {(selectedLayer === 'all' || selectedLayer === 'mobility') && config.mobility_enabled && mobilityActions.map((action) => (
+              {/* Marker Mobilità Sostenibile - azioni cittadini (percorsi completati) - con offset spirale */}
+              {(selectedLayer === 'all' || selectedLayer === 'mobility') && config.mobility_enabled && applySpiralOffsetGeneric(mobilityActions).map((action) => (
                 <Marker
                   key={`mobility-${action.id}`}
-                  position={[action.lat, action.lng]}
+                  position={[action.lat + action.offsetLat, action.lng + action.offsetLng]}
                   icon={getMarkerIcon(action.type || 'bus')}
                 >
                   <Popup>
@@ -1383,11 +1432,11 @@ export default function GamingRewardsPanel() {
                   </Popup>
                 </Marker>
               ))}
-              {/* Marker Cultura - visite effettuate dai cittadini */}
-              {(selectedLayer === 'all' || selectedLayer === 'culture') && config.culture_enabled && cultureActions.map((visit) => (
+              {/* Marker Cultura - visite effettuate dai cittadini - con offset spirale */}
+              {(selectedLayer === 'all' || selectedLayer === 'culture') && config.culture_enabled && applySpiralOffsetGeneric(cultureActions).map((visit) => (
                 <Marker
                   key={`culture-${visit.id}`}
-                  position={[visit.lat, visit.lng]}
+                  position={[visit.lat + visit.offsetLat, visit.lng + visit.offsetLng]}
                   icon={getMarkerIcon(visit.type || 'museum')}
                 >
                   <Popup>
