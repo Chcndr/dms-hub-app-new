@@ -139,6 +139,9 @@ interface TrendDataPoint {
   tcc_earned: number;
   tcc_spent: number;
   reports: number;
+  mobility?: number;  // Azioni mobilità sostenibile
+  culture?: number;   // Visite culturali
+  shopping?: number;  // Transazioni acquisti
 }
 
 // Default config
@@ -752,6 +755,9 @@ export default function GamingRewardsPanel() {
             tcc_earned: parseInt(day.tcc_earned) || 0,
             tcc_spent: parseInt(day.tcc_spent) || 0,
             reports: parseInt(day.reports) || 0,
+            mobility: parseInt(day.mobility) || 0,
+            culture: parseInt(day.culture) || 0,
+            shopping: parseInt(day.shopping) || 0,
           }));
           setTrendData(mappedTrend);
         }
@@ -1535,30 +1541,54 @@ export default function GamingRewardsPanel() {
                 <div className="flex items-end justify-between h-40 gap-2">
                   {trendData.map((day, index) => {
                     const maxValue = Math.max(...trendData.map(d => Math.max(d.tcc_earned, d.tcc_spent)));
-                    const maxReports = Math.max(...trendData.map(d => d.reports || 0));
+                    const maxActivities = Math.max(...trendData.map(d => Math.max(d.reports || 0, d.mobility || 0, d.culture || 0, d.shopping || 0)));
                     const earnedHeight = maxValue > 0 ? (day.tcc_earned / maxValue) * 100 : 0;
                     const spentHeight = maxValue > 0 ? (day.tcc_spent / maxValue) * 100 : 0;
-                    const reportsHeight = maxReports > 0 ? ((day.reports || 0) / maxReports) * 100 : 0;
+                    const reportsHeight = maxActivities > 0 ? ((day.reports || 0) / maxActivities) * 100 : 0;
+                    const mobilityHeight = maxActivities > 0 ? ((day.mobility || 0) / maxActivities) * 100 : 0;
+                    const cultureHeight = maxActivities > 0 ? ((day.culture || 0) / maxActivities) * 100 : 0;
+                    const shoppingHeight = maxActivities > 0 ? ((day.shopping || 0) / maxActivities) * 100 : 0;
                     const dayName = new Date(day.date).toLocaleDateString('it-IT', { weekday: 'short' });
                     
                     return (
                       <div key={index} className="flex-1 flex flex-col items-center">
-                        <div className="flex gap-1 items-end h-32">
+                        <div className="flex gap-0.5 items-end h-32">
                           <div 
-                            className="w-3 bg-[#22c55e] rounded-t transition-all" 
+                            className="w-2 bg-[#22c55e] rounded-t transition-all" 
                             style={{ height: `${earnedHeight}%`, minHeight: day.tcc_earned > 0 ? '4px' : '0' }}
-                            title={`Rilasciati: ${day.tcc_earned}`}
+                            title={`TCC Rilasciati: ${day.tcc_earned}`}
                           />
                           <div 
-                            className="w-3 bg-[#3b82f6] rounded-t transition-all" 
+                            className="w-2 bg-[#3b82f6] rounded-t transition-all" 
                             style={{ height: `${spentHeight}%`, minHeight: day.tcc_spent > 0 ? '4px' : '0' }}
-                            title={`Spesi: ${day.tcc_spent}`}
+                            title={`TCC Spesi: ${day.tcc_spent}`}
                           />
                           <div 
-                            className="w-3 bg-[#f97316] rounded-t transition-all" 
+                            className="w-2 bg-[#f97316] rounded-t transition-all" 
                             style={{ height: `${reportsHeight}%`, minHeight: (day.reports || 0) > 0 ? '4px' : '0' }}
                             title={`Segnalazioni: ${day.reports || 0}`}
                           />
+                          {config.mobility_enabled && (
+                            <div 
+                              className="w-2 bg-[#06b6d4] rounded-t transition-all" 
+                              style={{ height: `${mobilityHeight}%`, minHeight: (day.mobility || 0) > 0 ? '4px' : '0' }}
+                              title={`Mobilità: ${day.mobility || 0}`}
+                            />
+                          )}
+                          {config.culture_enabled && (
+                            <div 
+                              className="w-2 bg-[#a855f7] rounded-t transition-all" 
+                              style={{ height: `${cultureHeight}%`, minHeight: (day.culture || 0) > 0 ? '4px' : '0' }}
+                              title={`Cultura: ${day.culture || 0}`}
+                            />
+                          )}
+                          {config.shopping_enabled && (
+                            <div 
+                              className="w-2 bg-[#eab308] rounded-t transition-all" 
+                              style={{ height: `${shoppingHeight}%`, minHeight: (day.shopping || 0) > 0 ? '4px' : '0' }}
+                              title={`Acquisti: ${day.shopping || 0}`}
+                            />
+                          )}
                         </div>
                         <span className="text-xs text-[#e8fbff]/50 mt-2 capitalize">{dayName}</span>
                       </div>
@@ -1566,40 +1596,82 @@ export default function GamingRewardsPanel() {
                   })}
                 </div>
                 {/* Legenda */}
-                <div className="flex justify-center gap-4 text-sm flex-wrap">
-                  <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded bg-[#22c55e]"></span>
-                    <span className="text-[#e8fbff]/70">TCC Rilasciati</span>
+                <div className="flex justify-center gap-3 text-xs flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded bg-[#22c55e]"></span>
+                    <span className="text-[#e8fbff]/70">TCC+</span>
                   </span>
-                  <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded bg-[#3b82f6]"></span>
-                    <span className="text-[#e8fbff]/70">TCC Riscattati</span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded bg-[#3b82f6]"></span>
+                    <span className="text-[#e8fbff]/70">TCC-</span>
                   </span>
-                  <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded bg-[#f97316]"></span>
-                    <span className="text-[#e8fbff]/70">Segnalazioni</span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded bg-[#f97316]"></span>
+                    <span className="text-[#e8fbff]/70">Civic</span>
                   </span>
+                  {config.mobility_enabled && (
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded bg-[#06b6d4]"></span>
+                      <span className="text-[#e8fbff]/70">Mobilità</span>
+                    </span>
+                  )}
+                  {config.culture_enabled && (
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded bg-[#a855f7]"></span>
+                      <span className="text-[#e8fbff]/70">Cultura</span>
+                    </span>
+                  )}
+                  {config.shopping_enabled && (
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded bg-[#eab308]"></span>
+                      <span className="text-[#e8fbff]/70">Acquisti</span>
+                    </span>
+                  )}
                 </div>
                 {/* Totali periodo */}
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#e8fbff]/10">
+                <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 pt-4 border-t border-[#e8fbff]/10">
                   <div className="text-center">
-                    <div className="text-lg font-bold text-[#22c55e]">
+                    <div className="text-sm font-bold text-[#22c55e]">
                       {trendData.reduce((sum, d) => sum + d.tcc_earned, 0)}
                     </div>
-                    <div className="text-xs text-[#e8fbff]/50">TCC Totali Rilasciati</div>
+                    <div className="text-xs text-[#e8fbff]/50">TCC+</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-[#3b82f6]">
+                    <div className="text-sm font-bold text-[#3b82f6]">
                       {trendData.reduce((sum, d) => sum + d.tcc_spent, 0)}
                     </div>
-                    <div className="text-xs text-[#e8fbff]/50">TCC Totali Riscattati</div>
+                    <div className="text-xs text-[#e8fbff]/50">TCC-</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-[#f97316]">
+                    <div className="text-sm font-bold text-[#f97316]">
                       {trendData.reduce((sum, d) => sum + d.reports, 0)}
                     </div>
-                    <div className="text-xs text-[#e8fbff]/50">Segnalazioni</div>
+                    <div className="text-xs text-[#e8fbff]/50">Civic</div>
                   </div>
+                  {config.mobility_enabled && (
+                    <div className="text-center">
+                      <div className="text-sm font-bold text-[#06b6d4]">
+                        {trendData.reduce((sum, d) => sum + (d.mobility || 0), 0)}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">Mobilità</div>
+                    </div>
+                  )}
+                  {config.culture_enabled && (
+                    <div className="text-center">
+                      <div className="text-sm font-bold text-[#a855f7]">
+                        {trendData.reduce((sum, d) => sum + (d.culture || 0), 0)}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">Cultura</div>
+                    </div>
+                  )}
+                  {config.shopping_enabled && (
+                    <div className="text-center">
+                      <div className="text-sm font-bold text-[#eab308]">
+                        {trendData.reduce((sum, d) => sum + (d.shopping || 0), 0)}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">Acquisti</div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1669,6 +1741,187 @@ export default function GamingRewardsPanel() {
           )}
         </CardContent>
       </Card>
+
+      {/* Sezione Lista Mobilità Sostenibile */}
+      {config.mobility_enabled && (
+        <Card className="bg-[#1a2332] border-[#06b6d4]/30">
+          <CardHeader>
+            <CardTitle className="text-[#e8fbff] flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Bus className="h-5 w-5 text-[#06b6d4]" />
+                Mobilità Sostenibile
+              </span>
+              <Badge variant="outline" className="text-[#06b6d4] border-[#06b6d4]/50">
+                {filterByTime(mobilityActions, 'completed_at').length} totali
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filterByTime(mobilityActions, 'completed_at').length > 0 ? (
+              <div className="max-h-80 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-[#06b6d4]/30 scrollbar-track-transparent">
+                {filterByTime(mobilityActions, 'completed_at').map((action) => (
+                  <div 
+                    key={`mobility-list-${action.id}`}
+                    className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg hover:bg-[#0b1220]/80 hover:border-[#06b6d4]/50 border border-transparent transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-[#06b6d4]/20 flex items-center justify-center text-lg">
+                        {action.type === 'bus' && '🚌'}
+                        {action.type === 'bike' && '🚲'}
+                        {action.type === 'walk' && '🚶'}
+                        {action.type === 'tram' && '🚊'}
+                        {action.type === 'train' && '🚆'}
+                        {!['bus', 'bike', 'walk', 'tram', 'train'].includes(action.type) && '🚏'}
+                      </span>
+                      <div>
+                        <div className="text-[#e8fbff] font-medium">
+                          {action.name}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50 flex items-center gap-2">
+                          <span className="capitalize">{action.type}</span>
+                          {action.co2_saved_g > 0 && (
+                            <span className="text-emerald-400">🌿 {(action.co2_saved_g / 1000).toFixed(2)} kg CO₂</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[#22c55e] font-bold">+{action.tcc_reward}</div>
+                      <div className="text-xs text-[#e8fbff]/50">TCC</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-[#e8fbff]/50 py-8">
+                <Bus className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>Nessun percorso nel periodo selezionato</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sezione Lista Cultura & Turismo */}
+      {config.culture_enabled && (
+        <Card className="bg-[#1a2332] border-[#a855f7]/30">
+          <CardHeader>
+            <CardTitle className="text-[#e8fbff] flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Landmark className="h-5 w-5 text-[#a855f7]" />
+                Cultura & Turismo
+              </span>
+              <Badge variant="outline" className="text-[#a855f7] border-[#a855f7]/50">
+                {filterByTime(cultureActions, 'visit_date').length} totali
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filterByTime(cultureActions, 'visit_date').length > 0 ? (
+              <div className="max-h-80 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-[#a855f7]/30 scrollbar-track-transparent">
+                {filterByTime(cultureActions, 'visit_date').map((visit) => (
+                  <div 
+                    key={`culture-list-${visit.id}`}
+                    className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg hover:bg-[#0b1220]/80 hover:border-[#a855f7]/50 border border-transparent transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-[#a855f7]/20 flex items-center justify-center text-lg">
+                        {visit.type === 'museum' && '🏛️'}
+                        {visit.type === 'castle' && '🏰'}
+                        {visit.type === 'monument' && '🗿'}
+                        {visit.type === 'archaeological' && '⛏️'}
+                        {visit.type === 'theatre' && '🎭'}
+                        {!['museum', 'castle', 'monument', 'archaeological', 'theatre'].includes(visit.type) && '📍'}
+                      </span>
+                      <div>
+                        <div className="text-[#e8fbff] font-medium">
+                          {visit.name}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50 flex items-center gap-2">
+                          <span className="capitalize">{visit.type}</span>
+                          {visit.visit_date && (
+                            <span>📅 {new Date(visit.visit_date).toLocaleDateString('it-IT')}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[#22c55e] font-bold">+{visit.tcc_reward}</div>
+                      <div className="text-xs text-[#e8fbff]/50">TCC</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-[#e8fbff]/50 py-8">
+                <Landmark className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>Nessuna visita nel periodo selezionato</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sezione Lista Acquisti */}
+      {config.shopping_enabled && (
+        <Card className="bg-[#1a2332] border-[#22c55e]/30">
+          <CardHeader>
+            <CardTitle className="text-[#e8fbff] flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5 text-[#22c55e]" />
+                Acquisti & Cashback
+              </span>
+              <Badge variant="outline" className="text-[#22c55e] border-[#22c55e]/50">
+                {filterByTime(heatmapPoints, 'created_at').length} totali
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filterByTime(heatmapPoints, 'created_at').length > 0 ? (
+              <div className="max-h-80 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-[#22c55e]/30 scrollbar-track-transparent">
+                {filterByTime(heatmapPoints, 'created_at').map((point) => (
+                  <div 
+                    key={`shopping-list-${point.id}`}
+                    className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg hover:bg-[#0b1220]/80 hover:border-[#22c55e]/50 border border-transparent transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-lg">
+                        {point.type === 'shop' && '🏪'}
+                        {point.type === 'hub' && '🏢'}
+                        {point.type === 'market' && '🛒'}
+                        {!['shop', 'hub', 'market'].includes(point.type) && '📍'}
+                      </span>
+                      <div>
+                        <div className="text-[#e8fbff] font-medium">
+                          {point.name}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50 flex items-center gap-2">
+                          <span className="capitalize">{point.type}</span>
+                          <span>{point.transactions} transazioni</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {point.tcc_earned > 0 && (
+                        <div className="text-[#22c55e] font-bold">+{point.tcc_earned}</div>
+                      )}
+                      {point.tcc_spent > 0 && (
+                        <div className="text-[#3b82f6] font-bold">-{point.tcc_spent}</div>
+                      )}
+                      <div className="text-xs text-[#e8fbff]/50">TCC</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-[#e8fbff]/50 py-8">
+                <ShoppingCart className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>Nessun acquisto nel periodo selezionato</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Modal Dettagli Segnalazione */}
       <Dialog open={showReportModal} onOpenChange={setShowReportModal}>
