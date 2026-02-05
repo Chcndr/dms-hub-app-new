@@ -210,8 +210,24 @@ export default function CivicPage() {
       const currentComuneId = comuneId ? parseInt(comuneId) : 1;
       
       // Recupera user_id dall'utente loggato per il sistema TCC
-      const currentUser = getCachedUser();
-      const currentUserId = currentUser?.id || null;
+      // Supporta sia login ARPA (miohub_user_info) che login email (user)
+      let currentUserId = null;
+      try {
+        // Prima prova login ARPA
+        const arpaUser = getCachedUser();
+        if (arpaUser?.id) {
+          currentUserId = arpaUser.id;
+        } else {
+          // Fallback a login email
+          const emailUserStr = localStorage.getItem('user');
+          if (emailUserStr) {
+            const emailUser = JSON.parse(emailUserStr);
+            currentUserId = emailUser?.id || null;
+          }
+        }
+      } catch (e) {
+        console.error('Errore recupero user_id:', e);
+      }
       
       const payload = {
         type: category,
