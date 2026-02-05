@@ -3584,7 +3584,7 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
             <TableBody>
               {concessions.map((concession) => {
                 // Priorità: stato dal DB (CESSATA, SOSPESA) > calcolo dinamico (SCADUTA) > ATTIVA
-                const isCessata = concession.stato === 'CESSATA' || concession.stato_calcolato === 'CESSATA';
+                const isCessata = concession.status === 'CESSATA' || concession.stato === 'CESSATA' || concession.stato_calcolato === 'CESSATA';
                 const isSospesa = concession.stato === 'SOSPESA' || concession.stato_calcolato === 'SOSPESA';
                 const isExpired = !isCessata && !isSospesa && concession.valid_to && new Date(concession.valid_to) < new Date();
                 const displayStato = isCessata ? 'Cessata' : isSospesa ? 'Sospesa' : isExpired ? 'Scaduta' : 'Attiva';

@@ -414,7 +414,7 @@ export default function ControlliSanzioniPanel() {
           const oggi = new Date();
           const concessioniWithStatus = (concessioniData.data || []).map((c: any) => {
             if (c.stato_calcolato) return c;
-            if (c.stato === 'CESSATA') return { ...c, stato_calcolato: 'CESSATA' };
+            if (c.status === 'CESSATA' || c.stato === 'CESSATA') return { ...c, stato_calcolato: 'CESSATA' };
             let stato_calcolato = c.stato || 'ATTIVA';
             if (c.valid_to) {
               const scadenza = new Date(c.valid_to);

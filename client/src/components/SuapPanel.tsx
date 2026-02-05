@@ -302,7 +302,7 @@ export default function SuapPanel() {
             return conc;
           }
           // Se lo stato è CESSATA, mantienilo
-          if (conc.stato === 'CESSATA') {
+          if (conc.status === 'CESSATA' || conc.stato === 'CESSATA') {
             return { ...conc, stato_calcolato: 'CESSATA' };
           }
           // Altrimenti calcola lo stato basato sulla data di scadenza

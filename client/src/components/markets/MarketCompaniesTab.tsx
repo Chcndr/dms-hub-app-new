@@ -483,7 +483,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
             tipo_concessione: c.type || c.tipo_concessione || 'N/A',
             valida_dal: c.valid_from || c.valida_dal,
             valida_al: c.valid_to || c.valida_al,
-            stato: (c.stato === 'CESSATA' || c.stato === 'SOSPESA') ? c.stato : (
+            stato: (c.status === 'CESSATA' || c.stato === 'CESSATA' || c.stato === 'SOSPESA') ? (c.status || c.stato) : (
               (c.valid_to && new Date(c.valid_to) < new Date()) ? 'SCADUTA' : (c.stato || 'ATTIVA')
             ),
             stato_calcolato: (c.valid_to && new Date(c.valid_to) < new Date()) ? 'SCADUTA' : (c.stato || 'ATTIVA'),
@@ -553,7 +553,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         valida_dal: c.valid_from || c.valida_dal,
         valida_al: c.valid_to || c.valida_al,
         // Priorità: CESSATA/SOSPESA dal DB > stato_calcolato > stato generico
-        stato: (c.stato === 'CESSATA' || c.stato === 'SOSPESA') ? c.stato : (c.stato_calcolato || c.stato || c.status || 'ATTIVA'),
+        stato: (c.status === 'CESSATA' || c.stato === 'CESSATA' || c.stato === 'SOSPESA') ? (c.status || c.stato) : (c.stato_calcolato || c.stato || c.status || 'ATTIVA'),
         stato_calcolato: c.stato_calcolato,
         settore_merceologico: c.settore_merceologico || 'Alimentare',
         comune_rilascio: c.comune_rilascio || '',
