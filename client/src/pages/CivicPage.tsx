@@ -21,6 +21,7 @@ import { AlertCircle, ArrowLeft, Camera, CheckCircle2, Shield, Clock, Award, Sen
 import { Link } from 'wouter';
 import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
+import { getCachedUser } from '@/api/authClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
@@ -208,13 +209,17 @@ export default function CivicPage() {
       
       const currentComuneId = comuneId ? parseInt(comuneId) : 1;
       
+      // Recupera user_id dall'utente loggato per il sistema TCC
+      const currentUser = getCachedUser();
+      const currentUserId = currentUser?.id || null;
+      
       const payload = {
         type: category,
         description: description,
         lat: location.lat.toString(),
         lng: location.lng.toString(),
         comune_id: currentComuneId,
-        user_id: null,
+        user_id: currentUserId,
         impresa_id: null,
         priority: 'NORMAL',
         photos: photoUrls.length > 0 ? JSON.stringify(photoUrls) : null
