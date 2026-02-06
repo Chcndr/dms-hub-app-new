@@ -1641,9 +1641,9 @@ export default function GamingRewardsPanel() {
                           )}
                           {config.shopping_enabled && (
                             <div 
-                              className="w-2 bg-[#eab308] rounded-t transition-all" 
+                              className="w-2 bg-[#EC4899] rounded-t transition-all" 
                               style={{ height: `${shoppingHeight}%`, minHeight: (day.shopping || 0) > 0 ? '4px' : '0' }}
-                              title={`Acquisti: ${day.shopping || 0}`}
+                              title={`Referral: ${day.shopping || 0}`}
                             />
                           )}
                         </div>
@@ -1680,8 +1680,8 @@ export default function GamingRewardsPanel() {
                   )}
                   {config.shopping_enabled && (
                     <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded bg-[#eab308]"></span>
-                      <span className="text-[#e8fbff]/70">Acquisti</span>
+                      <span className="w-2 h-2 rounded bg-[#EC4899]"></span>
+                      <span className="text-[#e8fbff]/70">Referral</span>
                     </span>
                   )}
                 </div>
@@ -1723,10 +1723,10 @@ export default function GamingRewardsPanel() {
                   )}
                   {config.shopping_enabled && (
                     <div className="text-center">
-                      <div className="text-sm font-bold text-[#eab308]">
+                      <div className="text-sm font-bold text-[#EC4899]">
                         {trendData.reduce((sum, d) => sum + (d.shopping || 0), 0)}
                       </div>
-                      <div className="text-xs text-[#e8fbff]/50">Acquisti</div>
+                      <div className="text-xs text-[#e8fbff]/50">Referral</div>
                     </div>
                   )}
                 </div>
