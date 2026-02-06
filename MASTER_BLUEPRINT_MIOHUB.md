@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.93.4  
-> **Data:** 5 Febbraio 2026 (Fix Badge Concessioni CESSATA + Esclusione CESSATE da Canone)  
+> **Versione:** 3.98.0  
+> **Data:** 6 Febbraio 2026 (Refactoring Gaming & Rewards: Negozio/Mercato separati + Presenta un Amico)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -4540,12 +4540,111 @@ const creditFactors = {
 
 ---
 
-## 🎮 GAMING & REWARDS PANEL - STATO ATTUALE (3 Febbraio 2026)
+## 🎮 GAMING & REWARDS PANEL - STATO ATTUALE (6 Febbraio 2026)
 
 ### Commit Stabile Attuale
-- **Commit:** `6e36393` (frontend) + `aa4c085` (backend)
+- **Commit:** `cfe42a4` (frontend) + `aa4c085` (backend)
 - **Branch:** master
-- **Stato:** Funzionante con dati reali + Mobilità Sostenibile + Cultura & Turismo
+- **Stato:** Funzionante con dati reali + Mobilità + Cultura + Negozio/Mercato separati + Presenta un Amico
+
+### 🚀 AGGIORNAMENTO v3.98.0 - 6 FEBBRAIO 2026 - REFACTORING GAMING & REWARDS
+
+#### Obiettivo
+Separare le transazioni shopping in due categorie distinte (Negozio e Mercato) e trasformare lo slot "Acquisti Locali" in "Presenta un Amico" (Referral).
+
+#### Modifiche Completate
+
+**Step 1 — Card Configurazione "Presenta un Amico"** ✅
+- Trasformata card da "Acquisti Locali" a "Presenta un Amico"
+- Colore: fuchsia/pink `#EC4899` (era blue-500)
+- Icona: `Gift` (era `ShoppingCart`)
+- Label: TCC Invito, TCC Benvenuto, Bonus Primo Acquisto (erano Cashback%, Bonus Km0%, Bonus Mercato%)
+- Suffisso: TCC (era %)
+- Commit: `1369d12`
+
+**Step 2 — Backend Trend API separata Shop/Market** ✅
+- Endpoint `/api/gaming-rewards/trend` ora ritorna due campi separati:
+  - `shopping_shop`: transazioni da imprese con `hub_shops` (negozi fissi)
+  - `shopping_market`: transazioni da imprese con `autorizzazioni` → `stalls` → `markets` (ambulanti)
+- Query SQL con LEFT JOIN su hub_shops e autorizzazioni+stalls per distinguere
+- Commit backend: deploy manuale su Hetzner
+
+**Step 3 — Frontend Grafico Trend con 7 barre** ✅
+- Aggiunta barra "Negozio" (lime `#84cc16`) — dati da `shopping_shop`
+- Aggiunta barra "Mercato" (giallo `#eab308`) — dati da `shopping_market`
+- Rimossa vecchia barra unica "Acquisti"
+- Totale barre nel trend: TCC+, TCC-, Negozio, Mercato, Civic, Mobilità, Cultura
+- Commit: `e6fd700`
+
+**Step 4 — Heatmap Tab separati Negozio/Mercato/Referral** ✅
+- Backend `/api/gaming-rewards/heatmap` aggiornato per distinguere `shop` e `market`
+- Tab "🏪 Negozio" (lime `#84cc16`) — filtra `type=shop`
+- Tab "🛒 Mercato" (giallo `#eab308`) — filtra `type=market`
+- Tab "🎁 Referral" (fuchsia `#EC4899`) — vuoto per ora (0 dati)
+- MapFlyController e HeatmapLayer aggiornati per gestire i nuovi tipi
+- Commit: `521e61d`
+
+**Step 5 — Liste separate Negozio/Mercato** ✅
+- Lista "Acquisti Negozio" (lime `#84cc16`, icona `Store`) — filtra `type=shop`
+- Lista "Acquisti Mercato" (giallo `#eab308`, icona `ShoppingCart`) — filtra `type=market`
+- Lista "Presenta un Amico" (fuchsia `#EC4899`, icona `Gift`) — vuota con messaggio "Nessun referral"
+- Commit: `cfe42a4`
+
+#### Logica Distinzione Shop vs Market
+
+| Tipo | Tabelle DB | Logica Query |
+|------|-----------|---------------|
+| **Shop** (Negozio) | `imprese` → `hub_shops` | Impresa ha record in `hub_shops` |
+| **Market** (Mercato) | `imprese` → `autorizzazioni` → `stalls` → `markets` | Impresa ha autorizzazione con stallo in un mercato |
+
+```sql
+-- Query per identificare transazioni SHOP
+SELECT ot.* FROM operator_transactions ot
+JOIN imprese i ON ot.operator_id = i.id
+JOIN hub_shops hs ON i.id = hs.impresa_id
+WHERE ot.type = 'issue' AND ot.comune_id = $1;
+
+-- Query per identificare transazioni MARKET
+SELECT ot.* FROM operator_transactions ot
+JOIN imprese i ON ot.operator_id = i.id
+JOIN autorizzazioni a ON i.id = a.impresa_id
+JOIN stalls s ON a.id = s.autorizzazione_id
+JOIN markets m ON s.market_id = m.id
+WHERE ot.type = 'issue' AND ot.comune_id = $1;
+```
+
+#### Palette Colori Completa (8 serie)
+
+| # | Elemento | Colore | Hex | Icona |
+|---|----------|--------|-----|-------|
+| 1 | TCC+ (Rilasciati) | Verde | `#22c55e` | TrendingUp |
+| 2 | TCC- (Riscattati) | Blu | `#3b82f6` | Coins |
+| 3 | Negozio (Shop) | Verde lime | `#84cc16` | Store |
+| 4 | Mercato (Market) | Giallo | `#eab308` | ShoppingCart |
+| 5 | Segnalazioni Civiche | Arancione | `#f97316` | Radio |
+| 6 | Mobilità Sostenibile | Cyan | `#06b6d4` | Bus |
+| 7 | Cultura & Turismo | Viola | `#a855f7` | Landmark |
+| 8 | Presenta un Amico | Fuchsia | `#EC4899` | Gift |
+
+#### Commit Frontend (GitHub → Vercel auto-deploy)
+
+| Commit | Descrizione |
+|--------|-------------|
+| `1369d12` | Card Acquisti Locali → Presenta un Amico (icona Gift, colore pink, label TCC) |
+| `20d7290` | Fix: ripristino lista Acquisti/Trend/Heatmap originali |
+| `b1b014b` | Fix: grafico Trend barra Acquisti → Referral fucsia |
+| `47fa642` | Barra Acquisti gialla, lista Presenta un Amico, tab Heatmap Referral |
+| `e6fd700` | Trend separa Negozio (lime) e Mercato (giallo) — 7 barre |
+| `521e61d` | Heatmap separa Negozio e Mercato — tab e filtri indipendenti |
+| `cfe42a4` | Liste separate Acquisti Negozio e Acquisti Mercato |
+
+#### Note Importanti
+- La lista "Acquisti & Cashback" originale (verde, ShoppingCart) è stata **rimossa** e sostituita dalle due liste separate
+- TCC+ (verde) e TCC- (blu) nel trend rappresentano i **token Carbon Credit regionali** (rilasciati/riscattati)
+- Le barre Negozio e Mercato nel trend contano le **transazioni** (non i TCC), per mostrare l'attività commerciale
+- Il sistema "Presenta un Amico" è predisposto nell'UI ma **non ha ancora dati backend** — la tabella `referrals` e gli endpoint dedicati sono da implementare
+
+---
 
 ### 🚀 AGGIORNAMENTO 3 FEBBRAIO 2026 - SESSIONE SERALE
 
@@ -4661,24 +4760,39 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 | Funzionalità | Stato | Note |
 |--------------|-------|------|
 | Dashboard statistiche TCC | ✅ | Legge da operator_transactions (dati reali) |
-| Configurazione parametri TCC | ✅ | Per categoria (Civic, Mobility, Culture, Shopping) |
+| Configurazione parametri TCC | ✅ | Per categoria (Civic, Mobility, Culture, Shopping/Referral) |
+| Card "Presenta un Amico" | ✅ | Fuchsia #EC4899, icona Gift, label TCC Invito/Benvenuto/Bonus |
 | Salvataggio configurazione | ✅ | POST/PUT su gaming_rewards_config |
 | Top 5 Imprese | ✅ | Legge da imprese + operator_transactions |
-| Trend TCC 7 giorni | ✅ | Legge da operator_transactions |
-| Filtri layer mappa | ✅ | Tutti, Segnalazioni, Acquisti |
+| Trend TCC 7 giorni (7 barre) | ✅ | TCC+, TCC-, Negozio, Mercato, Civic, Mobilità, Cultura |
+| Trend Negozio separato | ✅ | Lime #84cc16, dati da shopping_shop (hub_shops) |
+| Trend Mercato separato | ✅ | Giallo #eab308, dati da shopping_market (autorizzazioni+stalls) |
+| Heatmap tab Negozio | ✅ | Filtra type=shop, lime #84cc16 |
+| Heatmap tab Mercato | ✅ | Filtra type=market, giallo #eab308 |
+| Heatmap tab Referral | ✅ | Fuchsia #EC4899, vuoto (predisposto) |
+| Lista Acquisti Negozio | ✅ | Lime #84cc16, icona Store, filtra type=shop |
+| Lista Acquisti Mercato | ✅ | Giallo #eab308, icona ShoppingCart, filtra type=market |
+| Lista Presenta un Amico | ✅ | Fuchsia #EC4899, icona Gift, vuota (predisposta) |
+| Filtri layer mappa | ✅ | Tutti, Segnalazioni, Negozio, Mercato, Mobilità, Cultura, Referral |
 | Filtri temporali | ✅ | Tutto, Oggi, 7gg, 30gg, 1 anno |
 | API civic-reports | ✅ | 19 segnalazioni nel DB |
 | API gaming-rewards/config | ✅ | Configurazione per comune |
-| Legenda mappa | ✅ | Segnalazioni, Negozi, Mercati, Hub |
+| API trend (shop/market separati) | ✅ | Ritorna shopping_shop e shopping_market |
+| API heatmap (shop/market separati) | ✅ | Ritorna type=shop e type=market |
+| Legenda mappa | ✅ | Segnalazioni, Negozi, Mercati, Hub, Mobilità, Cultura |
+
+### Funzionalità PREDISPOSTE (UI pronta, backend da implementare) 🟡
+| Funzionalità | Stato | Note |
+|--------------|-------|------|
+| Sistema Referral completo | 🟡 | UI pronta, manca tabella `referrals` e endpoint backend |
+| Heatmap Referral con dati | 🟡 | Tab presente, nessun dato (0 punti) |
+| Lista Referral con dati | 🟡 | Container presente, messaggio "Nessun referral" |
 
 ### Funzionalità NON OPERATIVE ❌
 | Funzionalità | Stato | Causa |
 |--------------|-------|-------|
-| Mappa centra su segnalazioni | ❌ | Click su filtro non triggera flyTo |
-| Marker segnalazioni visibili | ❌ | Layer marker non renderizzato |
-| Heatmap visibile | ❌ | Dati non passati correttamente al layer |
-| Lista segnalazioni cliccabile | ❌ | Non implementata |
-| Sezione Challenges | ❌ | Rimosso con rollback |
+| Sezione Challenges | ❌ | Rimosso con rollback (priorità bassa) |
+| Backend legge TCC da config DB | ❌ | mobility/checkin e culture/checkin usano valori hardcoded |
 
 ### Funzionalità FIXATE (3 Feb 2026) ✅
 | Funzionalità | Fix | Commit |
@@ -4702,34 +4816,27 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 
 ### TODO Prossima Sessione
 
-#### FASE 1: Fix Mappa Gaming (Priorità ALTA - 2 ore)
-- [ ] Aggiungere Marker individuali per segnalazioni civiche
-- [ ] Implementare click su marker per popup dettagli
-- [ ] Implementare flyTo quando si clicca filtro "Segnalazioni"
-- [ ] Verificare che heatmap sia visibile
-- [ ] Testare su Vercel prima di procedere
+#### FASE 1: Backend — Leggere TCC da Config DB (Priorità ALTA - 2 ore)
+- [ ] Creare helper `getConfigForComune(comune_id)` con cache 60s
+- [ ] Modificare `mobility/checkin` (riga ~350): leggere `config.mobility_tcc_bus` invece di hardcoded 15
+- [ ] Modificare `culture/checkin` (righe ~687-691): leggere `config.culture_tcc_*` invece di hardcoded
+- [ ] Rendere `calculateCredits()` async e leggere `mobility_tcc_walk/bike/bus` da config
+- [ ] Aggiornare chiamata a `calculateCredits` con `await` e `comune_id`
+- [ ] Test endpoint con diversi comuni
 
-#### FASE 2: Reimplementare Top 5 Negozi (Priorità MEDIA - 1 ora)
-- [ ] Aggiungere useState per `topShops` e `trendData`
-- [ ] Aggiungere useEffect per caricare dati
-- [ ] Aggiungere import `BarChart3` da lucide-react
-- [ ] Aggiungere sezione UI Top 5 Negozi
-- [ ] Aggiungere sezione UI Trend 7 giorni
-- [ ] Testare compilazione PRIMA del commit
+#### FASE 2: Backend — Sistema Referral (Priorità MEDIA - 4 ore)
+- [ ] Creare tabella `referrals` (referrer_user_id, referred_user_id, referral_code, status, comune_id)
+- [ ] Endpoint POST `/api/gaming-rewards/referral/generate` — genera link referral
+- [ ] Endpoint GET `/api/gaming-rewards/referral/validate/:code` — valida codice
+- [ ] Endpoint POST `/api/gaming-rewards/referral/register` — registra nuovo utente da referral
+- [ ] Endpoint POST `/api/gaming-rewards/referral/first-purchase` — primo acquisto
+- [ ] Endpoint GET `/api/gaming-rewards/referral/heatmap` — dati per heatmap referral
+- [ ] Rinominare colonne config: shopping_* → referral_* (o aggiungere alias)
 
 #### FASE 3: Reimplementare Challenges (Priorità BASSA - 2 ore)
 - [ ] Verificare che API `/api/gaming-rewards/challenges` esista
 - [ ] Creare tabella `gaming_challenges` se non esiste
-- [ ] Aggiungere tutti gli useState necessari PRIMA del JSX
-- [ ] Aggiungere tutte le funzioni useCallback PRIMA del useEffect
-- [ ] Aggiungere tutti gli import icone necessari
-- [ ] Testare compilazione PRIMA del commit
-
-#### FASE 4: Lista Segnalazioni Scrollabile (Priorità MEDIA - 1 ora)
-- [ ] Aggiungere pannello laterale con lista segnalazioni
-- [ ] Implementare scroll con max-height
-- [ ] Implementare click su item per flyTo sulla mappa
-- [ ] Mostrare badge stato (pending/in_progress/resolved)
+- [ ] Implementare UI Challenges nel pannello
 
 ### Regole da Seguire per Modifiche Future
 1. **SEMPRE testare compilazione** prima di ogni commit
@@ -4774,15 +4881,15 @@ Con l'aumento delle segnalazioni civiche, transazioni, percorsi mobilità e visi
 │                    SISTEMA VISUALIZZAZIONE INTELLIGENTE                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │ SEGNALAZIONI │  │   ACQUISTI   │  │  MOBILITÀ    │  │   CULTURA    │    │
-│  │   CIVICHE    │  │    LOCALI    │  │ SOSTENIBILE  │  │  & TURISMO   │    │
-│  │              │  │              │  │              │  │              │    │
-│  │ civic_reports│  │ operator_    │  │ route_       │  │ cultural_    │    │
-│  │              │  │ transactions │  │ completions  │  │ visits       │    │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
-│         │                 │                 │                 │            │
-│         └─────────────────┴─────────────────┴─────────────────┘            │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐│
+│  │SEGNALAZIONI│ │  NEGOZIO   │ │  MERCATO   │ │ MOBILITÀ   │ │  CULTURA   │ │ REFERRAL   ││
+│  │  CIVICHE   │ │   (Shop)   │ │  (Market)  │ │SOSTENIBILE │ │ & TURISMO  │ │  (Amico)   ││
+│  │            │ │            │ │            │ │            │ │            │ │            ││
+│  │civic_report│ │operator_tx │ │operator_tx │ │route_compl.│ │cultural_   │ │ referrals  ││
+│  │            │ │+ hub_shops │ │+ stalls    │ │            │ │visits      │ │ (futuro)   ││
+│  └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘│
+│        │              │              │              │              │              │       │
+│        └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘       │
 │                                   │                                        │
 │                                   ▼                                        │
 │  ┌────────────────────────────────────────────────────────────────────┐   │
@@ -4822,12 +4929,14 @@ Con l'aumento delle segnalazioni civiche, transazioni, percorsi mobilità e visi
 
 Ogni tipo di dato ha stati diversi che determinano la visualizzazione sulla mappa:
 
-| Layer | Stati | Default Mappa | Logica |
-|-------|-------|---------------|--------|
-| **Segnalazioni** | pending, in_progress, resolved | pending + in_progress | Resolved sparisce dalla mappa (toggle per storico) |
-| **Acquisti** | completed | completed | Tutte le transazioni completate |
-| **Mobilità** | in_progress, completed | completed | Solo percorsi completati (in_progress = tracking attivo) |
-| **Cultura** | visited | visited | Tutte le visite effettuate |
+| Layer | Colore | Stati | Default Mappa | Logica |
+|-------|--------|-------|---------------|--------|
+| **Segnalazioni** | Arancione `#f97316` | pending, in_progress, resolved | pending + in_progress | Resolved sparisce dalla mappa (toggle per storico) |
+| **Negozio** (Shop) | Lime `#84cc16` | completed | completed | Transazioni da imprese con hub_shops |
+| **Mercato** (Market) | Giallo `#eab308` | completed | completed | Transazioni da imprese con autorizzazioni+stalls |
+| **Mobilità** | Cyan `#06b6d4` | in_progress, completed | completed | Solo percorsi completati (in_progress = tracking attivo) |
+| **Cultura** | Viola `#a855f7` | visited | visited | Tutte le visite effettuate |
+| **Referral** | Fuchsia `#EC4899` | pending, registered, first_purchase, completed | tutti | Dati referral (futuro) |
 
 **Comportamento Segnalazioni:**
 1. Cittadino invia segnalazione → **pallino arancione** appare sulla mappa
