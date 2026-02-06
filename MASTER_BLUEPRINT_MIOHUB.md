@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.99.0  
-> **Data:** 6 Febbraio 2026 (Refactoring Gaming & Rewards + Referral Backend + Challenges Backend)  
+> **Versione:** 3.99.1  
+> **Data:** 6 Febbraio 2026 (Fix Filtri Gaming & Rewards per Impersonalizzazione Comune)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -6071,7 +6071,76 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/nearby-pois?lat=42.761
 | `dms-hub-app-new/client/src/hooks/useNearbyPOIs.ts` | Nuovo hook GPS |
 | `dms-hub-app-new/client/src/components/NearbyPOIPopup.tsx` | Nuovi componenti UI |
 | `dms-hub-app-new/client/src/pages/WalletPage.tsx` | Integrazione ECO CREDIT |
-| `dms-hub-app-new/client/src/components/GamingRewardsPanel.tsx` | Heatmap isolata, marker 15px, flyTo |
+| `dms-hub-app-new/client/src/components/GamingRewardsPanel.tsx` | Heatmap isolata, marker 15px, flyTo, filtri geoFilter v1.3.0 |
+
+---
+
+## 🔧 FIX FILTRI GAMING & REWARDS v1.3.0 (6 Febbraio 2026)
+
+### Problema Riscontrato
+Quando si impersonalizzava un comune (es. Carpi), la sezione Gaming & Rewards mostrava dati di TUTTI i comuni invece di filtrare solo quelli del comune selezionato:
+- Heatmap mostrava Mobilità (7) e Cultura (12) globali invece dei valori locali
+- Liste Mobilità mostravano check-in di Modena (MASERATI, STAZIONE FS) sotto Carpi
+- Contatori tab non coerenti con i dati filtrati
+- Mappa non zoomava sul comune selezionato
+
+### Causa Root
+1. Le API `mobility/heatmap` e `culture/heatmap` ricevevano `lat/lng` dal frontend → il backend usava filtro geografico (raggio 50km) IGNORANDO `comune_id`
+2. `comuneQueryParam` passava sempre `comune_id` indipendentemente dal tab selezionato
+3. `geoFilter` partiva come `'italia'` anche durante impersonalizzazione
+4. `COMUNI_COORDS` mancava Sassuolo (10), Casalecchio di Reno (12), Ravenna (13)
+
+### Fix Implementati
+
+| Fix | Descrizione | Commit |
+|-----|-------------|--------|
+| **geoFilter default** | Default `'comune'` quando impersonalizzazione attiva, `'italia'` altrimenti | `0761110` |
+| **API mobility** | Usa `comune_id` invece di `lat/lng` per filtrare lato server | `0761110` |
+| **API culture** | Usa `comune_id` invece di `lat/lng` per filtrare lato server | `0761110` |
+| **comuneQueryParam** | Rispetta `geoFilter`: se `'italia'` → nessun filtro, se `'comune'` → filtra | `0761110` |
+| **loadCivicReports** | Rispetta `geoFilter` per filtrare segnalazioni | `0761110` |
+| **loadReferralList** | Rispetta `geoFilter` per filtrare referral | `0761110` |
+| **COMUNI_COORDS** | Aggiunto Sassuolo (10), Casalecchio (12), Ravenna (13) | `0761110` |
+| **Contatori tab** | Usano `filterData()` per coerenza con filtri attivi | `0761110` |
+| **MapCenterUpdater** | Gestisce `geoFilter`: vista Italia (zoom 6) vs zoom comune (14) | `0761110` |
+| **getInitialCenter** | Rispetta `geoFilter` per centro mappa iniziale | `0761110` |
+
+### Logica Filtri Corretta
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ IMPERSONALIZZAZIONE ATTIVA (es. Carpi)                  │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Tab "🇮🇹 Tutta Italia"  (geoFilter='italia')           │
+│  ├─ API: NESSUN filtro comune_id                        │
+│  ├─ Mappa: Vista Italia (zoom 6, centro 42.5/12.5)     │
+│  ├─ Contatori: TUTTI i dati sommati                     │
+│  ├─ Trend: TUTTI i comuni                               │
+│  └─ Liste: TUTTE le notifiche                           │
+│                                                         │
+│  Tab "📍 Carpi"  (geoFilter='comune')                   │
+│  ├─ API: comune_id=X (filtra lato server)               │
+│  ├─ Mappa: Zoom su Carpi (zoom 14)                      │
+│  ├─ Contatori: SOLO dati Carpi                          │
+│  ├─ Trend: SOLO Carpi                                   │
+│  └─ Liste: SOLO notifiche Carpi                         │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### COMUNI_COORDS Completo
+
+| ID | Comune | Lat | Lng |
+|----|--------|-----|-----|
+| 1 | Grosseto | 42.7635 | 11.1124 |
+| 2 | Bologna | 44.4949 | 11.3426 |
+| 3 | Vignola | 44.4783 | 11.0083 |
+| 4 | Modena | 44.6471 | 10.9252 |
+| 5 | Carpi | 44.7833 | 10.8833 |
+| 10 | Sassuolo | 44.5430 | 10.7840 |
+| 12 | Casalecchio di Reno | 44.4730 | 11.2750 |
+| 13 | Ravenna | 44.4175 | 12.1996 |
 
 ---
 
