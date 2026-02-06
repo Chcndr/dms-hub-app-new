@@ -4543,14 +4543,14 @@ const creditFactors = {
 ## 🎮 GAMING & REWARDS PANEL - STATO ATTUALE (6 Febbraio 2026)
 
 ### Commit Stabile Attuale
-- **Commit:** `cfe42a4` (frontend) + `aa4c085` (backend)
+- **Commit:** `171ac36` (frontend) + `d405e35` (backend)
 - **Branch:** master
-- **Stato:** Funzionante con dati reali + Mobilità + Cultura + Negozio/Mercato separati + Presenta un Amico
+- **Stato:** Funzionante con dati reali + Mobilità + Cultura + Negozio/Mercato separati + Presenta un Amico + Config DB collegata
 
 ### 🚀 AGGIORNAMENTO v3.98.0 - 6 FEBBRAIO 2026 - REFACTORING GAMING & REWARDS
 
 #### Obiettivo
-Separare le transazioni shopping in due categorie distinte (Negozio e Mercato) e trasformare lo slot "Acquisti Locali" in "Presenta un Amico" (Referral).
+Separare le transazioni shopping in due categorie distinte (Negozio e Mercato), trasformare lo slot "Acquisti Locali" in "Presenta un Amico" (Referral), e collegare le slot impostazioni PA al sistema reale di assegnazione TCC.
 
 #### Modifiche Completate
 
@@ -4637,6 +4637,14 @@ WHERE ot.type = 'issue' AND ot.comune_id = $1;
 | `e6fd700` | Trend separa Negozio (lime) e Mercato (giallo) — 7 barre |
 | `521e61d` | Heatmap separa Negozio e Mercato — tab e filtri indipendenti |
 | `cfe42a4` | Liste separate Acquisti Negozio e Acquisti Mercato |
+| `a344594` | Aggiunge Presenta un Amico in legenda mappa + trend (fuchsia) |
+| `171ac36` | Rimuove Hub dalla legenda mappa (non necessario) |
+
+#### Commit Backend (GitHub → Hetzner git pull + PM2 restart)
+
+| Commit | Descrizione |
+|--------|-------------|
+| `d405e35` | Collega config DB a sistema assegnazione TCC (v2.0.0 gaming-rewards.js) |
 
 #### Note Importanti
 - La lista "Acquisti & Cashback" originale (verde, ShoppingCart) è stata **rimossa** e sostituita dalle due liste separate
@@ -4779,7 +4787,11 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 | API gaming-rewards/config | ✅ | Configurazione per comune |
 | API trend (shop/market separati) | ✅ | Ritorna shopping_shop e shopping_market |
 | API heatmap (shop/market separati) | ✅ | Ritorna type=shop e type=market |
-| Legenda mappa | ✅ | Segnalazioni, Negozi, Mercati, Hub, Mobilità, Cultura |
+| Legenda mappa | ✅ | Segnalazioni, Negozi, Mercati, Mobilità, Cultura, Presenta un Amico |
+| Backend legge TCC da config DB | ✅ | getConfigForComune() con cache 60s, ogni comune ha la sua config |
+| mobility/checkin legge config | ✅ | Legge mobility_tcc_bus da gaming_rewards_config |
+| culture/checkin legge config | ✅ | Legge culture_tcc_museum/monument/route da config |
+| calculateCredits() da config | ✅ | Async, legge mobility_tcc_walk/bike/bus da config per comune |
 
 ### Funzionalità PREDISPOSTE (UI pronta, backend da implementare) 🟡
 | Funzionalità | Stato | Note |
@@ -4792,7 +4804,7 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 | Funzionalità | Stato | Causa |
 |--------------|-------|-------|
 | Sezione Challenges | ❌ | Rimosso con rollback (priorità bassa) |
-| Backend legge TCC da config DB | ❌ | mobility/checkin e culture/checkin usano valori hardcoded |
+
 
 ### Funzionalità FIXATE (3 Feb 2026) ✅
 | Funzionalità | Fix | Commit |
@@ -4816,13 +4828,13 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 
 ### TODO Prossima Sessione
 
-#### FASE 1: Backend — Leggere TCC da Config DB (Priorità ALTA - 2 ore)
-- [ ] Creare helper `getConfigForComune(comune_id)` con cache 60s
-- [ ] Modificare `mobility/checkin` (riga ~350): leggere `config.mobility_tcc_bus` invece di hardcoded 15
-- [ ] Modificare `culture/checkin` (righe ~687-691): leggere `config.culture_tcc_*` invece di hardcoded
-- [ ] Rendere `calculateCredits()` async e leggere `mobility_tcc_walk/bike/bus` da config
-- [ ] Aggiornare chiamata a `calculateCredits` con `await` e `comune_id`
-- [ ] Test endpoint con diversi comuni
+#### FASE 1: Backend — Leggere TCC da Config DB (Priorità ALTA) ✅ COMPLETATA
+- [x] Creare helper `getConfigForComune(comune_id)` con cache 60s
+- [x] Modificare `mobility/checkin`: leggere `config.mobility_tcc_bus` invece di hardcoded 15
+- [x] Modificare `culture/checkin`: leggere `config.culture_tcc_*` invece di hardcoded
+- [x] Rendere `calculateCredits()` async e leggere `mobility_tcc_walk/bike/bus` da config
+- [x] Aggiornare chiamata a `calculateCredits` con `await` e `comune_id`
+- [x] Deploy su Hetzner — Commit `d405e35` — PM2 online
 
 #### FASE 2: Backend — Sistema Referral (Priorità MEDIA - 4 ore)
 - [ ] Creare tabella `referrals` (referrer_user_id, referred_user_id, referral_code, status, comune_id)
