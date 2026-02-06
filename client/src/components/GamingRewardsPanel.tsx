@@ -1981,48 +1981,103 @@ export default function GamingRewardsPanel() {
         </Card>
       )}
 
-      {/* Sezione Lista Acquisti */}
+      {/* Sezione Lista Acquisti Negozio */}
       {config.shopping_enabled && (
-        <Card className="bg-[#1a2332] border-[#22c55e]/30">
+        <Card className="bg-[#1a2332] border-[#84cc16]/30">
           <CardHeader>
             <CardTitle className="text-[#e8fbff] flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-[#22c55e]" />
-                Acquisti & Cashback
+                <Store className="h-5 w-5 text-[#84cc16]" />
+                Acquisti Negozio
               </span>
-              <Badge variant="outline" className="text-[#22c55e] border-[#22c55e]/50">
-                {filterData(heatmapPoints, 'created_at').length} totali
+              <Badge variant="outline" className="text-[#84cc16] border-[#84cc16]/50">
+                {filterData(heatmapPoints, 'created_at').filter(p => p.type === 'shop').length} totali
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {filterData(heatmapPoints, 'created_at').length > 0 ? (
-              <div className="max-h-80 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-[#22c55e]/30 scrollbar-track-transparent">
-                {filterData(heatmapPoints, 'created_at').map((point) => (
+            {filterData(heatmapPoints, 'created_at').filter(p => p.type === 'shop').length > 0 ? (
+              <div className="max-h-80 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-[#84cc16]/30 scrollbar-track-transparent">
+                {filterData(heatmapPoints, 'created_at').filter(p => p.type === 'shop').map((point) => (
                   <div 
-                    key={`shopping-list-${point.id}`}
-                    className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg hover:bg-[#0b1220]/80 hover:border-[#22c55e]/50 border border-transparent transition-all"
+                    key={`shop-list-${point.id}`}
+                    className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg hover:bg-[#0b1220]/80 hover:border-[#84cc16]/50 border border-transparent transition-all"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-lg">
-                        {point.type === 'shop' && '🏪'}
-                        {point.type === 'hub' && '🏢'}
-                        {point.type === 'market' && '🛒'}
-                        {!['shop', 'hub', 'market'].includes(point.type) && '📍'}
+                      <span className="w-8 h-8 rounded-full bg-[#84cc16]/20 flex items-center justify-center text-lg">
+                        🏪
                       </span>
                       <div>
                         <div className="text-[#e8fbff] font-medium">
                           {point.name}
                         </div>
                         <div className="text-xs text-[#e8fbff]/50 flex items-center gap-2">
-                          <span className="capitalize">{point.type}</span>
+                          <span>Negozio</span>
                           <span>{point.transactions} transazioni</span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
                       {point.tcc_earned > 0 && (
-                        <div className="text-[#22c55e] font-bold">+{point.tcc_earned}</div>
+                        <div className="text-[#84cc16] font-bold">+{point.tcc_earned}</div>
+                      )}
+                      {point.tcc_spent > 0 && (
+                        <div className="text-[#3b82f6] font-bold">-{point.tcc_spent}</div>
+                      )}
+                      <div className="text-xs text-[#e8fbff]/50">TCC</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-[#e8fbff]/50 py-8">
+                <Store className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>Nessun acquisto in negozio nel periodo selezionato</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sezione Lista Acquisti Mercato */}
+      {config.shopping_enabled && (
+        <Card className="bg-[#1a2332] border-[#eab308]/30">
+          <CardHeader>
+            <CardTitle className="text-[#e8fbff] flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5 text-[#eab308]" />
+                Acquisti Mercato
+              </span>
+              <Badge variant="outline" className="text-[#eab308] border-[#eab308]/50">
+                {filterData(heatmapPoints, 'created_at').filter(p => p.type === 'market').length} totali
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filterData(heatmapPoints, 'created_at').filter(p => p.type === 'market').length > 0 ? (
+              <div className="max-h-80 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-[#eab308]/30 scrollbar-track-transparent">
+                {filterData(heatmapPoints, 'created_at').filter(p => p.type === 'market').map((point) => (
+                  <div 
+                    key={`market-list-${point.id}`}
+                    className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg hover:bg-[#0b1220]/80 hover:border-[#eab308]/50 border border-transparent transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-[#eab308]/20 flex items-center justify-center text-lg">
+                        🛒
+                      </span>
+                      <div>
+                        <div className="text-[#e8fbff] font-medium">
+                          {point.name}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50 flex items-center gap-2">
+                          <span>Mercato</span>
+                          <span>{point.transactions} transazioni</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {point.tcc_earned > 0 && (
+                        <div className="text-[#eab308] font-bold">+{point.tcc_earned}</div>
                       )}
                       {point.tcc_spent > 0 && (
                         <div className="text-[#3b82f6] font-bold">-{point.tcc_spent}</div>
@@ -2035,7 +2090,7 @@ export default function GamingRewardsPanel() {
             ) : (
               <div className="text-center text-[#e8fbff]/50 py-8">
                 <ShoppingCart className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                <p>Nessun acquisto nel periodo selezionato</p>
+                <p>Nessun acquisto in mercato nel periodo selezionato</p>
               </div>
             )}
           </CardContent>
