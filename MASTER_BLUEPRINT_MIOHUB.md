@@ -1145,6 +1145,16 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 
 #### 📝 CHANGELOG
 
+### v3.99.2 (06/02/2026) - Fix Completo Filtri Gaming & Rewards v1.3.2
+
+**Fix Frontend (3 commit iterativi):**
+
+Il sistema di filtraggio della sezione Gaming & Rewards è stato completamente riprogettato per gestire correttamente l'impersonalizzazione dei comuni. La v1.3.0 ha introdotto il `geoFilter` con default `'comune'` durante l'impersonalizzazione, aggiunto i comuni mancanti (Sassuolo, Casalecchio, Ravenna) a `COMUNI_COORDS`, e implementato il `MapCenterUpdater` per gestire zoom Italia (6) vs zoom comune (14). La v1.3.1 ha rimosso `geoFilter` dalle dipendenze di tutte le funzioni `load*` per rendere lo switch tra tab istantaneo senza reload API. La v1.3.2 ha rimosso `comune_id` da tutte le API (le API caricano SEMPRE tutti i dati), implementato il filtro solo client-side via `filterByGeo()`, calcolato le stats TCC sommando dalle azioni caricate, e applicato `filterData()` a HeatmapLayer e marker.
+
+**Commit:** `0761110` (v1.3.0) → `af5c77a` (v1.3.1) → `1d9bcfe` (v1.3.2)
+
+---
+
 ### v3.93.4 (05/02/2026) - Esclusione Concessioni CESSATE dalla Sezione Canone
 
 **Fix Backend:**
@@ -4873,10 +4883,13 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 - [x] Deploy su Hetzner — Commit `6e96306` — PM2 online
 
 #### FASE 4: Prossimi Step (Priorità MEDIA)
-- [ ] Collegare frontend referral agli endpoint backend (lista, heatmap, stats)
-- [ ] Creare UI Challenges nel pannello Gaming & Rewards
-- [ ] Collegare frontend challenges agli endpoint CRUD
-- [ ] Aggiungere contatore referral/challenges nel trend
+- [x] Collegare frontend referral agli endpoint backend (lista, heatmap, stats) — Commit `668c8a1`
+- [x] Creare UI Challenges nel pannello Gaming & Rewards — Commit `668c8a1`
+- [x] Collegare frontend challenges agli endpoint CRUD — Commit `668c8a1`
+- [x] Aggiungere contatore referral/challenges nel trend — Commit `a344594`
+- [x] Fix filtri impersonalizzazione comune (v1.3.0 → v1.3.2) — Commit `0761110` → `1d9bcfe`
+- [x] Simulazione check-in mobilità + cultura per 8 comuni — 26 notifiche TCC_REWARD
+- [ ] Test completo filtri da parte dell'utente (in corso)
 
 ### Regole da Seguire per Modifiche Future
 1. **SEMPRE testare compilazione** prima di ogni commit
@@ -5898,11 +5911,11 @@ router.get('/nearby-pois', async (req, res) => {
 
 | # | Task | File | Priorità | Stato |
 |---|------|------|----------|-------|
-| 8.1 | Creare endpoint `/nearby-pois` | gaming-rewards.js | CRITICA | ⬜ |
-| 8.2 | Creare hook `useNearbyPOIs` | hooks/useNearbyPOIs.ts | CRITICA | ⬜ |
-| 8.3 | Creare componente `NearbyPOIPopup` | components/NearbyPOIPopup.tsx | CRITICA | ⬜ |
-| 8.4 | Integrare in WalletPage | pages/WalletPage.tsx | CRITICA | ⬜ |
-| 8.5 | Testare con coordinate Grosseto | - | ALTA | ⬜ |
+| 8.1 | Creare endpoint `/nearby-pois` | gaming-rewards.js | CRITICA | ✅ |
+| 8.2 | Creare hook `useNearbyPOIs` | hooks/useNearbyPOIs.ts | CRITICA | ✅ |
+| 8.3 | Creare componente `NearbyPOIPopup` | components/NearbyPOIPopup.tsx | CRITICA | ✅ |
+| 8.4 | Integrare in WalletPage | pages/WalletPage.tsx | CRITICA | ✅ |
+| 8.5 | Testare con coordinate Grosseto | - | ALTA | ✅ |
 | 8.6 | Importare fermate GTFS Tiemme | scripts/import-gtfs-tiemme.js | MEDIA | ⬜ |
 | 8.7 | Aggiungere `comune_id` ai POI Emilia | scripts/update-pois-comune.js | BASSA | ⬜ |
 
@@ -5954,6 +5967,9 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/culture/heatmap?comune
 
 | Versione | Data | Modifiche |
 |----------|------|-----------|
+| v3.99.2 | 06/02/2026 | **FIX FILTRI v1.3.2**: API caricano TUTTO, filtro solo client-side, stats TCC calcolate da azioni, HeatmapLayer filtrata |
+| v3.99.1 | 06/02/2026 | **FIX FILTRI v1.3.1**: Switch tab Italia/Comune senza reload API |
+| v3.99.0 | 06/02/2026 | **FIX FILTRI v1.3.0**: geoFilter default, COMUNI_COORDS completo, MapCenterUpdater |
 | v3.78.0 | 04/02/2026 | **IMPLEMENTAZIONE COMPLETA**: Endpoint /nearby-pois, hook useNearbyPOIs, heatmap isolata per layer, marker 15px |
 | v3.77.0 | 04/02/2026 | Progettazione sistema GPS → POI → Check-in |
 
@@ -6071,7 +6087,7 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/nearby-pois?lat=42.761
 | `dms-hub-app-new/client/src/hooks/useNearbyPOIs.ts` | Nuovo hook GPS |
 | `dms-hub-app-new/client/src/components/NearbyPOIPopup.tsx` | Nuovi componenti UI |
 | `dms-hub-app-new/client/src/pages/WalletPage.tsx` | Integrazione ECO CREDIT |
-| `dms-hub-app-new/client/src/components/GamingRewardsPanel.tsx` | Heatmap isolata, marker 15px, flyTo, filtri geoFilter v1.3.0 |
+| `dms-hub-app-new/client/src/components/GamingRewardsPanel.tsx` | Heatmap isolata, marker 15px, flyTo, filtri geoFilter v1.3.2 (API senza filtro, filtro client-side, stats TCC da azioni) |
 
 ---
 
@@ -6129,18 +6145,91 @@ Quando si impersonalizzava un comune (es. Carpi), la sezione Gaming & Rewards mo
 └─────────────────────────────────────────────────────────┘
 ```
 
-### COMUNI_COORDS Completo
+### COMUNI_COORDS Completo (ID = comune_id nel DB)
 
 | ID | Comune | Lat | Lng |
 |----|--------|-----|-----|
-| 1 | Grosseto | 42.7635 | 11.1124 |
-| 2 | Bologna | 44.4949 | 11.3426 |
-| 3 | Vignola | 44.4783 | 11.0083 |
-| 4 | Modena | 44.6471 | 10.9252 |
-| 5 | Carpi | 44.7833 | 10.8833 |
-| 10 | Sassuolo | 44.5430 | 10.7840 |
-| 12 | Casalecchio di Reno | 44.4730 | 11.2750 |
+| 1 | Grosseto | 42.7635 | 11.1126 |
+| 6 | Bologna | 44.4949 | 11.3426 |
+| 7 | Vignola | 44.4898 | 11.0123 |
+| 8 | Modena | 44.6471 | 10.9252 |
+| 9 | Carpi | 44.7842 | 10.8847 |
+| 10 | Sassuolo | 44.5343 | 10.7847 |
+| 12 | Casalecchio di Reno | 44.4726 | 11.2755 |
 | 13 | Ravenna | 44.4175 | 12.1996 |
+
+### Architettura Filtri v1.3.2 — Dettaglio Tecnico
+
+Il sistema di filtraggio è stato completamente riprogettato nella v1.3.2 per risolvere problemi di coerenza dati e performance. L'architettura si basa su un principio fondamentale: **le API caricano SEMPRE tutti i dati**, e il filtro per comune avviene esclusivamente lato client.
+
+**Funzioni di caricamento dati (useCallback):**
+
+| Funzione | Endpoint API | Filtro comune_id | Note |
+|----------|-------------|-------------------|------|
+| `loadStats` | `/api/gaming-rewards/stats` | NO (rimosso v1.3.2) | Carica stats globali |
+| `loadHeatmapPoints` | `/api/gaming-rewards/heatmap` | NO (rimosso v1.3.2) | Tutti i punti commerciali |
+| `loadMobilityActions` | `/api/gaming-rewards/mobility/heatmap` | NO (rimosso v1.3.2) | Tutte le route_completions |
+| `loadCultureActions` | `/api/gaming-rewards/culture/heatmap` | NO (rimosso v1.3.2) | Tutte le cultural_visits |
+| `loadCivicReports` | `/api/gaming-rewards/civic/reports` | NO (rimosso v1.3.2) | Tutte le segnalazioni |
+| `loadReferralList` | `/api/gaming-rewards/referral/list` | NO (rimosso v1.3.2) | Tutti i referral |
+| `loadTopShops` | `/api/gaming-rewards/top-shops` | NO (rimosso v1.3.2) | Top 5 negozi globali |
+| `loadTrendData` | `/api/gaming-rewards/trend` | NO (rimosso v1.3.2) | Trend 7 giorni globale |
+
+**Filtro client-side `filterByGeo()`:**
+
+Quando `geoFilter === 'comune'`, la funzione `filterByGeo()` filtra i dati usando le coordinate del comune impersonalizzato con un raggio di 30km. Viene applicata a:
+- Contatori tab heatmap (Segnalazioni, Negozio, Mercato, Mobilità, Cultura, Referral)
+- Marker sulla mappa (tutti i tipi)
+- HeatmapLayer (zona di calore)
+- Liste sotto la mappa (Segnalazioni Civiche, Mobilità, Cultura, Referral)
+
+Quando `geoFilter === 'italia'`, `filterByGeo()` restituisce tutti i dati senza filtro.
+
+**Stats grandi (TCC Rilasciati/Riscattati):**
+
+Calcolate sommando i TCC dalle azioni caricate:
+```
+tccRilasciati = stats.tcc_issued 
+  + Σ(mobilityActions.tcc_earned) 
+  + Σ(cultureActions.tcc_earned) 
+  + Σ(civicReports.tcc_earned)
+  + Σ(purchaseList.tcc_earned)
+
+tccRiscattati = stats.tcc_redeemed
+```
+
+Questo garantisce che i TCC siano visibili anche per comuni senza `operator_transactions` nel DB.
+
+---
+
+## 📊 STATO DATI SIMULATI (6 Febbraio 2026)
+
+> **User test:** Andrea Checchi (user_id=32)  
+> **Tipo notifiche:** TCC_REWARD  
+> **Target:** target_id='32', target_tipo='UTENTE'
+
+### Distribuzione Check-in per Comune
+
+| Comune | ID | Mobilità (route_completions) | Cultura (cultural_visits) | Notifiche TCC_REWARD |
+|--------|----|-----------------------------|---------------------------|----------------------|
+| Grosseto | 1 | 1 | 4 | 5 |
+| Bologna | 6 | 0 | 2 | 4 |
+| Vignola | 7 | 0 | 2 | 4 |
+| Modena | 8 | 0 | 3 | 2 |
+| Carpi | 9 | 0 | 2 | 2 |
+| Sassuolo | 10 | 0 | 2 | 2 |
+| Casalecchio di Reno | 12 | 0 | 1 | 3 |
+| Ravenna | 13 | 0 | 2 | 4 |
+| **TOTALE** | | **1** | **18** | **26** |
+
+### Commit Frontend Fix Filtri (GitHub → Vercel auto-deploy)
+
+| Commit | Versione | Descrizione |
+|--------|----------|-------------|
+| `0761110` | v1.3.0 | Fix iniziale: geoFilter default, COMUNI_COORDS completo, MapCenterUpdater |
+| `af5c77a` | v1.3.1 | Switch tab Italia/Comune senza reload API |
+| `1d9bcfe` | v1.3.2 | API senza filtro, filtro solo client-side, stats TCC da azioni, HeatmapLayer filtrata |
+| `5f3c0dc` | docs | Aggiornamento blueprint v3.99.2 |
 
 ---
 

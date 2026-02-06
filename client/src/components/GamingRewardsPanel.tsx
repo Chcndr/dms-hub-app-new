@@ -90,6 +90,7 @@ interface HeatmapPoint {
   tcc_spent: number;
   transactions: number;
   created_at?: string;
+  comune_id?: number; // v1.3.3: per filtro preciso per comune
 }
 
 interface GamingStats {
@@ -112,6 +113,7 @@ interface MobilityAction {
   completed_at: string;
   user_id?: number;
   point_type: 'mobility_action';
+  comune_id?: number; // v1.3.3: per filtro preciso per comune
 }
 
 // Interfaccia per Azioni Cultura (visite effettuate dai cittadini)
@@ -126,6 +128,7 @@ interface CultureAction {
   user_id?: number;
   poi_id?: number;
   point_type: 'culture_action';
+  comune_id?: number; // v1.3.3: per filtro preciso per comune
 }
 
 // Interfaccia per Referral
@@ -176,6 +179,7 @@ interface TopShop {
   tcc_earned: number;
   tcc_spent: number;
   transactions: number;
+  comune_id?: number; // v1.3.3: per filtro preciso per comune
 }
 
 // Interfaccia per Trend TCC giornaliero
@@ -631,33 +635,38 @@ export default function GamingRewardsPanel() {
   // Se admin non sta impersonando, non filtrare per comune (vede tutto)
   // Se sta impersonando, usa il comune selezionato
   const currentComuneId = isImpersonating && comuneId ? parseInt(comuneId) : null;
-  // v1.3.2: Le API caricano SEMPRE TUTTI i dati (senza filtro comune)
-  // Il filtro per comune è SOLO client-side via filterByGeo
-  // Così "Tutta Italia" mostra tutto e "[Comune]" filtra localmente
+  // v1.3.3: Le API caricano SEMPRE TUTTI i dati (senza filtro comune)
+  // Il filtro per comune è SOLO client-side via filterByGeo con comune_id diretto
+  // Così "Tutta Italia" mostra tutto e "[Comune]" filtra localmente per comune_id
   const comuneQueryParam = ''; // Non filtrare mai lato server
   // Per la configurazione: usare sempre un comune_id valido (default Grosseto=1)
   const configComuneId = currentComuneId || 1;
 
-  // Funzione per filtrare per area geografica (Italia vs Comune)
+  // v1.3.3: Filtro per comune_id DIRETTO (non più coordinate+raggio)
+  // Quando geoFilter='comune': filtra per item.comune_id === currentComuneId (match esatto)
+  // Quando geoFilter='italia': ritorna tutti i dati
+  // Fallback: se item non ha comune_id, usa coordinate con raggio 5km (molto stretto)
   const filterByGeo = useCallback((items: any[]) => {
     if (geoFilter === 'italia' || !currentComuneId) return items;
     
-    // Filtra per comune usando le coordinate del comune selezionato
     const comuneCoords = COMUNI_COORDS[currentComuneId];
-    if (!comuneCoords) return items;
     
-    // Raggio di 30km dal centro del comune
-    const radiusKm = 30;
     return items.filter(item => {
+      // Priorità 1: filtro per comune_id diretto (preciso)
+      if (item.comune_id !== undefined && item.comune_id !== null) {
+        return parseInt(item.comune_id) === currentComuneId;
+      }
+      
+      // Fallback: se non ha comune_id, usa coordinate con raggio 5km (stretto)
+      if (!comuneCoords) return false;
       const lat = parseFloat(item.lat) || 0;
       const lng = parseFloat(item.lng) || 0;
       if (!lat || !lng) return false;
       
-      // Calcolo distanza approssimativa in km
       const dLat = (lat - comuneCoords.lat) * 111;
       const dLng = (lng - comuneCoords.lng) * 111 * Math.cos(comuneCoords.lat * Math.PI / 180);
       const distance = Math.sqrt(dLat * dLat + dLng * dLng);
-      return distance <= radiusKm;
+      return distance <= 5; // 5km fallback (era 30km)
     });
   }, [geoFilter, currentComuneId]);
 
@@ -781,6 +790,7 @@ export default function GamingRewardsPanel() {
               tcc_earned: r.tcc_reward || 0,
               tcc_spent: 0,
               transactions: 1,
+              comune_id: r.comune_id ? parseInt(r.comune_id) : undefined, // v1.3.3
             }));
           setCivicReports(points);
         }
@@ -807,6 +817,7 @@ export default function GamingRewardsPanel() {
             tcc_spent: p.tcc_spent || 0,
             transactions: p.transaction_count || 1,
             created_at: p.created_at || new Date().toISOString(),
+            comune_id: p.comune_id ? parseInt(p.comune_id) : undefined, // v1.3.3
           }));
           setHeatmapPoints(points);
         }
@@ -829,6 +840,7 @@ export default function GamingRewardsPanel() {
             tcc_earned: parseInt(shop.total_tcc) || shop.tcc_earned || 0,
             tcc_spent: parseInt(shop.tcc_spent) || 0,
             transactions: parseInt(shop.transaction_count) || shop.transactions || 0,
+            comune_id: shop.comune_id ? parseInt(shop.comune_id) : undefined, // v1.3.3
           }));
           setTopShops(mappedShops);
         }
@@ -900,6 +912,7 @@ export default function GamingRewardsPanel() {
             completed_at: a.completed_at,
             user_id: a.user_id,
             point_type: 'mobility_action' as const,
+            comune_id: a.comune_id ? parseInt(a.comune_id) : undefined, // v1.3.3
           }));
           setMobilityActions(actions);
         } else {
@@ -947,6 +960,7 @@ export default function GamingRewardsPanel() {
             user_id: v.user_id,
             poi_id: v.poi_id,
             point_type: 'culture_action' as const,
+            comune_id: v.comune_id ? parseInt(v.comune_id) : undefined, // v1.3.3
           }));
           setCultureActions(actions);
         } else {
@@ -1309,8 +1323,9 @@ export default function GamingRewardsPanel() {
       )}
 
       {/* Statistiche */}
-      {/* v1.3.2: Stats calcolate combinando API /stats + somma TCC dalle azioni caricate */}
-      {/* Quando geoFilter='comune', filtra anche le stats per il comune selezionato */}
+      {/* v1.3.3: Stats calcolate combinando API /stats + somma TCC dalle azioni caricate */}
+      {/* Quando geoFilter='comune': usa SOLO dati filtrati localmente (no stats API globali) */}
+      {/* Quando geoFilter='italia': usa stats API + dati locali */}
       {(() => {
         // Calcola TCC dalle azioni caricate (mobilità + cultura + segnalazioni + acquisti)
         const filteredMobility = filterData(mobilityActions, 'completed_at');
@@ -1318,26 +1333,33 @@ export default function GamingRewardsPanel() {
         const filteredCivic = filterData(civicReports, 'created_at');
         const filteredShops = filterData(heatmapPoints, 'created_at');
         
-        // TCC rilasciati = somma TCC da tutte le azioni + stats API (operator_transactions)
+        // TCC rilasciati = somma TCC da tutte le azioni
         const tccFromMobility = filteredMobility.reduce((sum, a) => sum + (a.tcc_reward || 0), 0);
         const tccFromCulture = filteredCulture.reduce((sum, a) => sum + (a.tcc_reward || 0), 0);
         const tccFromCivic = filteredCivic.reduce((sum, r) => sum + (r.tcc_earned || 0), 0);
         const tccFromShops = filteredShops.reduce((sum, p) => sum + (p.tcc_earned || 0), 0);
-        const tccFromApi = stats?.total_tcc_issued || 0;
+        // v1.3.3: stats API sono globali, usale SOLO in vista Italia
+        const tccFromApi = geoFilter === 'italia' ? (stats?.total_tcc_issued || 0) : 0;
         const totalTccIssued = tccFromMobility + tccFromCulture + tccFromCivic + tccFromShops + tccFromApi;
         
-        // TCC riscattati = stats API (operator_transactions)
-        const totalTccSpent = stats?.total_tcc_spent || 0;
+        // v1.3.3: TCC riscattati - in vista comune, calcola dai dati filtrati
+        // In vista Italia, usa stats API
+        const tccSpentFromShops = filteredShops.reduce((sum, p) => sum + (p.tcc_spent || 0), 0);
+        const totalTccSpent = geoFilter === 'italia' ? (stats?.total_tcc_spent || 0) : tccSpentFromShops;
         
-        // Utenti attivi = stats API + utenti unici dalle azioni
+        // Utenti attivi = utenti unici dalle azioni filtrate
         const uniqueUserIds = new Set<number>();
         filteredMobility.forEach(a => a.user_id && uniqueUserIds.add(a.user_id));
         filteredCulture.forEach(a => a.user_id && uniqueUserIds.add(a.user_id));
-        const totalActiveUsers = Math.max(stats?.active_users || 0, uniqueUserIds.size);
+        const totalActiveUsers = geoFilter === 'italia'
+          ? Math.max(stats?.active_users || 0, uniqueUserIds.size)
+          : uniqueUserIds.size;
         
-        // CO2 = stats API + CO2 dalla mobilità
+        // CO2 = in vista comune solo dalla mobilità filtrata, in vista Italia anche stats API
         const co2FromMobility = filteredMobility.reduce((sum, a) => sum + (a.co2_saved_g || 0), 0) / 1000;
-        const totalCo2 = (stats?.co2_saved_kg || 0) + co2FromMobility;
+        const totalCo2 = geoFilter === 'italia'
+          ? (stats?.co2_saved_kg || 0) + co2FromMobility
+          : co2FromMobility;
         
         return (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1734,9 +1756,14 @@ export default function GamingRewardsPanel() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {topShops.length > 0 ? (
+            {/* v1.3.3: Filtro top shops per comune_id */}
+            {(() => {
+              const filteredShops = geoFilter === 'comune' && currentComuneId
+                ? topShops.filter(s => s.comune_id !== undefined ? parseInt(String(s.comune_id)) === currentComuneId : false)
+                : topShops;
+              return filteredShops.length > 0 ? (
               <div className="space-y-3">
-                {topShops.map((shop, index) => (
+                {filteredShops.map((shop, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                     <div className="flex items-center gap-3">
                       <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -1764,7 +1791,8 @@ export default function GamingRewardsPanel() {
                 <Store className="h-12 w-12 mx-auto mb-2 opacity-30" />
                 <p>Nessun dato disponibile</p>
               </div>
-            )}
+            );
+            })()}
           </CardContent>
         </Card>
 
