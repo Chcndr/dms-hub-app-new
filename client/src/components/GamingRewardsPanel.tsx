@@ -141,7 +141,9 @@ interface TrendDataPoint {
   reports: number;
   mobility?: number;  // Azioni mobilità sostenibile
   culture?: number;   // Visite culturali
-  shopping?: number;  // Transazioni acquisti
+  shopping?: number;  // Transazioni acquisti (totale, legacy)
+  shopping_shop?: number;  // Acquisti Negozio
+  shopping_market?: number;  // Acquisti Mercato
 }
 
 // Default config
@@ -792,6 +794,8 @@ export default function GamingRewardsPanel() {
             mobility: parseInt(day.mobility) || 0,
             culture: parseInt(day.culture) || 0,
             shopping: parseInt(day.shopping) || 0,
+            shopping_shop: parseInt(day.shopping_shop) || 0,
+            shopping_market: parseInt(day.shopping_market) || 0,
           }));
           setTrendData(mappedTrend);
         }
@@ -1615,13 +1619,14 @@ export default function GamingRewardsPanel() {
                 <div className="flex items-end justify-between h-40 gap-2">
                   {trendData.map((day, index) => {
                     const maxValue = Math.max(...trendData.map(d => Math.max(d.tcc_earned, d.tcc_spent)));
-                    const maxActivities = Math.max(...trendData.map(d => Math.max(d.reports || 0, d.mobility || 0, d.culture || 0, d.shopping || 0)));
+                    const maxActivities = Math.max(...trendData.map(d => Math.max(d.reports || 0, d.mobility || 0, d.culture || 0, d.shopping_shop || 0, d.shopping_market || 0)));
                     const earnedHeight = maxValue > 0 ? (day.tcc_earned / maxValue) * 100 : 0;
                     const spentHeight = maxValue > 0 ? (day.tcc_spent / maxValue) * 100 : 0;
                     const reportsHeight = maxActivities > 0 ? ((day.reports || 0) / maxActivities) * 100 : 0;
                     const mobilityHeight = maxActivities > 0 ? ((day.mobility || 0) / maxActivities) * 100 : 0;
                     const cultureHeight = maxActivities > 0 ? ((day.culture || 0) / maxActivities) * 100 : 0;
-                    const shoppingHeight = maxActivities > 0 ? ((day.shopping || 0) / maxActivities) * 100 : 0;
+                    const shopHeight = maxActivities > 0 ? ((day.shopping_shop || 0) / maxActivities) * 100 : 0;
+                    const marketHeight = maxActivities > 0 ? ((day.shopping_market || 0) / maxActivities) * 100 : 0;
                     const dayName = new Date(day.date).toLocaleDateString('it-IT', { weekday: 'short' });
                     
                     return (
@@ -1639,9 +1644,16 @@ export default function GamingRewardsPanel() {
                           />
                           {config.shopping_enabled && (
                             <div 
+                              className="w-2 bg-[#84cc16] rounded-t transition-all" 
+                              style={{ height: `${shopHeight}%`, minHeight: (day.shopping_shop || 0) > 0 ? '4px' : '0' }}
+                              title={`Negozio: ${day.shopping_shop || 0}`}
+                            />
+                          )}
+                          {config.shopping_enabled && (
+                            <div 
                               className="w-2 bg-[#eab308] rounded-t transition-all" 
-                              style={{ height: `${shoppingHeight}%`, minHeight: (day.shopping || 0) > 0 ? '4px' : '0' }}
-                              title={`Acquisti: ${day.shopping || 0}`}
+                              style={{ height: `${marketHeight}%`, minHeight: (day.shopping_market || 0) > 0 ? '4px' : '0' }}
+                              title={`Mercato: ${day.shopping_market || 0}`}
                             />
                           )}
                           <div 
@@ -1682,8 +1694,14 @@ export default function GamingRewardsPanel() {
                   </span>
                   {config.shopping_enabled && (
                     <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded bg-[#84cc16]"></span>
+                      <span className="text-[#e8fbff]/70">Negozio</span>
+                    </span>
+                  )}
+                  {config.shopping_enabled && (
+                    <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded bg-[#eab308]"></span>
-                      <span className="text-[#e8fbff]/70">Acquisti</span>
+                      <span className="text-[#e8fbff]/70">Mercato</span>
                     </span>
                   )}
                   <span className="flex items-center gap-1">
@@ -1705,7 +1723,7 @@ export default function GamingRewardsPanel() {
 
                 </div>
                 {/* Totali periodo */}
-                <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 pt-4 border-t border-[#e8fbff]/10">
+                <div className="grid grid-cols-4 lg:grid-cols-7 gap-2 pt-4 border-t border-[#e8fbff]/10">
                   <div className="text-center">
                     <div className="text-sm font-bold text-[#22c55e]">
                       {trendData.reduce((sum, d) => sum + d.tcc_earned, 0)}
@@ -1720,10 +1738,18 @@ export default function GamingRewardsPanel() {
                   </div>
                   {config.shopping_enabled && (
                     <div className="text-center">
-                      <div className="text-sm font-bold text-[#eab308]">
-                        {trendData.reduce((sum, d) => sum + (d.shopping || 0), 0)}
+                      <div className="text-sm font-bold text-[#84cc16]">
+                        {trendData.reduce((sum, d) => sum + (d.shopping_shop || 0), 0)}
                       </div>
-                      <div className="text-xs text-[#e8fbff]/50">Acquisti</div>
+                      <div className="text-xs text-[#e8fbff]/50">Negozio</div>
+                    </div>
+                  )}
+                  {config.shopping_enabled && (
+                    <div className="text-center">
+                      <div className="text-sm font-bold text-[#eab308]">
+                        {trendData.reduce((sum, d) => sum + (d.shopping_market || 0), 0)}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">Mercato</div>
                     </div>
                   )}
                   <div className="text-center">
