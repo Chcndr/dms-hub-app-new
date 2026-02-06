@@ -203,6 +203,9 @@ function MapCenterUpdater({
     } else if (selectedLayer === 'culture') {
       // Converti cultureActions in punti con lat/lng
       targetPoints = cultureActions.map(c => ({ lat: parseFloat(String(c.lat)), lng: parseFloat(String(c.lng)) }));
+    } else if (selectedLayer === 'referral') {
+      // Per ora nessun punto referral
+      targetPoints = [];
     } else if (selectedLayer === 'all') {
       targetPoints = [...points, ...civicReports];
     } else {
@@ -262,6 +265,8 @@ function HeatmapLayer({ points, selectedLayer }: { points: HeatmapPoint[]; selec
       filteredPoints = points.filter(p => p.type === 'mobility');
     } else if (selectedLayer === 'culture') {
       filteredPoints = points.filter(p => p.type === 'culture');
+    } else if (selectedLayer === 'referral') {
+      filteredPoints = points.filter(p => p.type === 'referral');
     }
     // 'all' mostra tutti i punti
     
@@ -1333,6 +1338,18 @@ export default function GamingRewardsPanel() {
                 🏛️ Cultura ({cultureActions.length})
               </button>
             )}
+            {config.shopping_enabled && (
+              <button
+                onClick={() => { setSelectedLayer('referral'); setLayerTrigger(t => t + 1); }}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedLayer === 'referral' 
+                    ? 'bg-[#EC4899] text-white' 
+                    : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
+                }`}
+              >
+                🎁 Referral (0)
+              </button>
+            )}
             
             {/* Separatore */}
             <div className="w-px h-6 bg-[#e8fbff]/20 mx-2"></div>
@@ -1620,6 +1637,13 @@ export default function GamingRewardsPanel() {
                             style={{ height: `${spentHeight}%`, minHeight: day.tcc_spent > 0 ? '4px' : '0' }}
                             title={`TCC Spesi: ${day.tcc_spent}`}
                           />
+                          {config.shopping_enabled && (
+                            <div 
+                              className="w-2 bg-[#eab308] rounded-t transition-all" 
+                              style={{ height: `${shoppingHeight}%`, minHeight: (day.shopping || 0) > 0 ? '4px' : '0' }}
+                              title={`Acquisti: ${day.shopping || 0}`}
+                            />
+                          )}
                           <div 
                             className="w-2 bg-[#f97316] rounded-t transition-all" 
                             style={{ height: `${reportsHeight}%`, minHeight: (day.reports || 0) > 0 ? '4px' : '0' }}
@@ -1639,13 +1663,7 @@ export default function GamingRewardsPanel() {
                               title={`Cultura: ${day.culture || 0}`}
                             />
                           )}
-                          {config.shopping_enabled && (
-                            <div 
-                              className="w-2 bg-[#EC4899] rounded-t transition-all" 
-                              style={{ height: `${shoppingHeight}%`, minHeight: (day.shopping || 0) > 0 ? '4px' : '0' }}
-                              title={`Referral: ${day.shopping || 0}`}
-                            />
-                          )}
+
                         </div>
                         <span className="text-xs text-[#e8fbff]/50 mt-2 capitalize">{dayName}</span>
                       </div>
@@ -1662,6 +1680,12 @@ export default function GamingRewardsPanel() {
                     <span className="w-2 h-2 rounded bg-[#3b82f6]"></span>
                     <span className="text-[#e8fbff]/70">TCC-</span>
                   </span>
+                  {config.shopping_enabled && (
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded bg-[#eab308]"></span>
+                      <span className="text-[#e8fbff]/70">Acquisti</span>
+                    </span>
+                  )}
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded bg-[#f97316]"></span>
                     <span className="text-[#e8fbff]/70">Civic</span>
@@ -1678,12 +1702,7 @@ export default function GamingRewardsPanel() {
                       <span className="text-[#e8fbff]/70">Cultura</span>
                     </span>
                   )}
-                  {config.shopping_enabled && (
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded bg-[#EC4899]"></span>
-                      <span className="text-[#e8fbff]/70">Referral</span>
-                    </span>
-                  )}
+
                 </div>
                 {/* Totali periodo */}
                 <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 pt-4 border-t border-[#e8fbff]/10">
@@ -1699,6 +1718,14 @@ export default function GamingRewardsPanel() {
                     </div>
                     <div className="text-xs text-[#e8fbff]/50">TCC-</div>
                   </div>
+                  {config.shopping_enabled && (
+                    <div className="text-center">
+                      <div className="text-sm font-bold text-[#eab308]">
+                        {trendData.reduce((sum, d) => sum + (d.shopping || 0), 0)}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">Acquisti</div>
+                    </div>
+                  )}
                   <div className="text-center">
                     <div className="text-sm font-bold text-[#f97316]">
                       {trendData.reduce((sum, d) => sum + d.reports, 0)}
@@ -1721,14 +1748,7 @@ export default function GamingRewardsPanel() {
                       <div className="text-xs text-[#e8fbff]/50">Cultura</div>
                     </div>
                   )}
-                  {config.shopping_enabled && (
-                    <div className="text-center">
-                      <div className="text-sm font-bold text-[#EC4899]">
-                        {trendData.reduce((sum, d) => sum + (d.shopping || 0), 0)}
-                      </div>
-                      <div className="text-xs text-[#e8fbff]/50">Referral</div>
-                    </div>
-                  )}
+
                 </div>
               </div>
             ) : (
@@ -1976,6 +1996,29 @@ export default function GamingRewardsPanel() {
                 <p>Nessun acquisto nel periodo selezionato</p>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sezione Lista Presenta un Amico (Referral) */}
+      {config.shopping_enabled && (
+        <Card className="bg-[#1a2332] border-[#EC4899]/30">
+          <CardHeader>
+            <CardTitle className="text-[#e8fbff] flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Gift className="h-5 w-5 text-[#EC4899]" />
+                Presenta un Amico
+              </span>
+              <Badge variant="outline" className="text-[#EC4899] border-[#EC4899]/50">
+                0 totali
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center text-[#e8fbff]/50 py-8">
+              <Gift className="h-12 w-12 mx-auto mb-2 opacity-30" />
+              <p>Nessun referral nel periodo selezionato</p>
+            </div>
           </CardContent>
         </Card>
       )}
