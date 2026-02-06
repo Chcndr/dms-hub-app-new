@@ -197,8 +197,10 @@ function MapCenterUpdater({
     
     if (selectedLayer === 'civic') {
       targetPoints = civicReports;
-    } else if (selectedLayer === 'shopping') {
-      targetPoints = points.filter(p => p.type === 'shop' || p.type === 'market');
+    } else if (selectedLayer === 'shop') {
+      targetPoints = points.filter(p => p.type === 'shop');
+    } else if (selectedLayer === 'market') {
+      targetPoints = points.filter(p => p.type === 'market');
     } else if (selectedLayer === 'mobility') {
       // Converti mobilityActions in punti con lat/lng
       targetPoints = mobilityActions.map(m => ({ lat: parseFloat(String(m.lat)), lng: parseFloat(String(m.lng)) }));
@@ -261,8 +263,10 @@ function HeatmapLayer({ points, selectedLayer }: { points: HeatmapPoint[]; selec
     let filteredPoints = points;
     if (selectedLayer === 'civic') {
       filteredPoints = points.filter(p => p.type === 'civic');
-    } else if (selectedLayer === 'shopping') {
-      filteredPoints = points.filter(p => p.type === 'shop' || p.type === 'market' || p.type === 'hub');
+    } else if (selectedLayer === 'shop') {
+      filteredPoints = points.filter(p => p.type === 'shop');
+    } else if (selectedLayer === 'market') {
+      filteredPoints = points.filter(p => p.type === 'market');
     } else if (selectedLayer === 'mobility') {
       filteredPoints = points.filter(p => p.type === 'mobility');
     } else if (selectedLayer === 'culture') {
@@ -1308,14 +1312,26 @@ export default function GamingRewardsPanel() {
             )}
             {config.shopping_enabled && (
               <button
-                onClick={() => { setSelectedLayer('shopping'); setLayerTrigger(t => t + 1); }}
+                onClick={() => { setSelectedLayer('shop'); setLayerTrigger(t => t + 1); }}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedLayer === 'shopping' 
-                    ? 'bg-[#22c55e] text-white' 
+                  selectedLayer === 'shop' 
+                    ? 'bg-[#84cc16] text-white' 
                     : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
                 }`}
               >
-                🛒 Acquisti ({heatmapPoints.filter(p => p.type === 'shop').length})
+                🏪 Negozio ({heatmapPoints.filter(p => p.type === 'shop').length})
+              </button>
+            )}
+            {config.shopping_enabled && (
+              <button
+                onClick={() => { setSelectedLayer('market'); setLayerTrigger(t => t + 1); }}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedLayer === 'market' 
+                    ? 'bg-[#eab308] text-black' 
+                    : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-[#0b1220]/80'
+                }`}
+              >
+                🛒 Mercato ({heatmapPoints.filter(p => p.type === 'market').length})
               </button>
             )}
             {config.mobility_enabled && (
@@ -1455,7 +1471,7 @@ export default function GamingRewardsPanel() {
                 }))
               ]} selectedLayer={selectedLayer} />
               {/* Marker negozi/hub/mercati - con offset spirale per punti sovrapposti */}
-              {(selectedLayer === 'all' || selectedLayer === 'shopping') && applySpiralOffset(heatmapPoints).map((point) => {
+              {(selectedLayer === 'all' || selectedLayer === 'shop' || selectedLayer === 'market') && applySpiralOffset(heatmapPoints).filter(p => selectedLayer === 'all' || p.type === selectedLayer).map((point) => {
                 const intensity = Math.min((point.tcc_earned + point.tcc_spent) / 5000, 1.0);
                 return (
                   <Marker
