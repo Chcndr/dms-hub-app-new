@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.99.1  
-> **Data:** 6 Febbraio 2026 (Fix Filtri Gaming & Rewards per Impersonalizzazione Comune)  
+> **Versione:** 3.99.2  
+> **Data:** 6 Febbraio 2026 (Fix Completo Filtri Gaming & Rewards v1.3.2)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -6075,7 +6075,7 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/nearby-pois?lat=42.761
 
 ---
 
-## 🔧 FIX FILTRI GAMING & REWARDS v1.3.0 (6 Febbraio 2026)
+## 🔧 FIX FILTRI GAMING & REWARDS v1.3.2 (6 Febbraio 2026)
 
 ### Problema Riscontrato
 Quando si impersonalizzava un comune (es. Carpi), la sezione Gaming & Rewards mostrava dati di TUTTI i comuni invece di filtrare solo quelli del comune selezionato:
@@ -6090,20 +6090,19 @@ Quando si impersonalizzava un comune (es. Carpi), la sezione Gaming & Rewards mo
 3. `geoFilter` partiva come `'italia'` anche durante impersonalizzazione
 4. `COMUNI_COORDS` mancava Sassuolo (10), Casalecchio di Reno (12), Ravenna (13)
 
-### Fix Implementati
+### Fix Implementati (v1.3.0 → v1.3.2)
 
 | Fix | Descrizione | Commit |
 |-----|-------------|--------|
 | **geoFilter default** | Default `'comune'` quando impersonalizzazione attiva, `'italia'` altrimenti | `0761110` |
-| **API mobility** | Usa `comune_id` invece di `lat/lng` per filtrare lato server | `0761110` |
-| **API culture** | Usa `comune_id` invece di `lat/lng` per filtrare lato server | `0761110` |
-| **comuneQueryParam** | Rispetta `geoFilter`: se `'italia'` → nessun filtro, se `'comune'` → filtra | `0761110` |
-| **loadCivicReports** | Rispetta `geoFilter` per filtrare segnalazioni | `0761110` |
-| **loadReferralList** | Rispetta `geoFilter` per filtrare referral | `0761110` |
 | **COMUNI_COORDS** | Aggiunto Sassuolo (10), Casalecchio (12), Ravenna (13) | `0761110` |
-| **Contatori tab** | Usano `filterData()` per coerenza con filtri attivi | `0761110` |
 | **MapCenterUpdater** | Gestisce `geoFilter`: vista Italia (zoom 6) vs zoom comune (14) | `0761110` |
 | **getInitialCenter** | Rispetta `geoFilter` per centro mappa iniziale | `0761110` |
+| **v1.3.1 — Switch senza reload** | Rimosso `geoFilter` dalle dipendenze di tutte le funzioni load* → switch tab istantaneo | `af5c77a` |
+| **v1.3.2 — API senza filtro** | Rimosso `comune_id` da TUTTE le API → caricano SEMPRE tutti i dati | `1d9bcfe` |
+| **v1.3.2 — Filtro solo client** | `filterByGeo()` filtra client-side: `italia`=tutto, `comune`=raggio 30km | `1d9bcfe` |
+| **v1.3.2 — Stats grandi** | TCC Rilasciati/Riscattati calcolati sommando TCC da azioni (mobilità+cultura+segnalazioni+acquisti) | `1d9bcfe` |
+| **v1.3.2 — HeatmapLayer** | HeatmapLayer e tutti i marker usano `filterData()` per rispettare geoFilter | `1d9bcfe` |
 
 ### Logica Filtri Corretta
 
@@ -6120,11 +6119,12 @@ Quando si impersonalizzava un comune (es. Carpi), la sezione Gaming & Rewards mo
 │  └─ Liste: TUTTE le notifiche                           │
 │                                                         │
 │  Tab "📍 Carpi"  (geoFilter='comune')                   │
-│  ├─ API: comune_id=X (filtra lato server)               │
+│  ├─ API: stessi dati (già caricati, NO reload)          │
+│  ├─ Filtro: filterByGeo() client-side (raggio 30km)     │
 │  ├─ Mappa: Zoom su Carpi (zoom 14)                      │
-│  ├─ Contatori: SOLO dati Carpi                          │
+│  ├─ Contatori: SOLO dati Carpi (filtrati client-side)   │
 │  ├─ Trend: SOLO Carpi                                   │
-│  └─ Liste: SOLO notifiche Carpi                         │
+│  └─ Liste: SOLO notifiche Carpi (filtrate client-side)  │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
