@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.98.0  
-> **Data:** 6 Febbraio 2026 (Refactoring Gaming & Rewards: Negozio/Mercato separati + Presenta un Amico)  
+> **Versione:** 3.99.0  
+> **Data:** 6 Febbraio 2026 (Refactoring Gaming & Rewards + Referral Backend + Challenges Backend)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -4543,9 +4543,9 @@ const creditFactors = {
 ## 🎮 GAMING & REWARDS PANEL - STATO ATTUALE (6 Febbraio 2026)
 
 ### Commit Stabile Attuale
-- **Commit:** `171ac36` (frontend) + `d405e35` (backend)
+- **Commit:** `171ac36` (frontend) + `6e96306` (backend)
 - **Branch:** master
-- **Stato:** Funzionante con dati reali + Mobilità + Cultura + Negozio/Mercato separati + Presenta un Amico + Config DB collegata
+- **Stato:** Funzionante con dati reali + Mobilità + Cultura + Negozio/Mercato separati + Presenta un Amico + Config DB collegata + Referral Backend + Challenges Backend
 
 ### 🚀 AGGIORNAMENTO v3.98.0 - 6 FEBBRAIO 2026 - REFACTORING GAMING & REWARDS
 
@@ -4645,6 +4645,7 @@ WHERE ot.type = 'issue' AND ot.comune_id = $1;
 | Commit | Descrizione |
 |--------|-------------|
 | `d405e35` | Collega config DB a sistema assegnazione TCC (v2.0.0 gaming-rewards.js) |
+| `6e96306` | FASE 2+3: Referral backend (7 endpoint) + Challenges (6 endpoint) + tabelle DB + Guardian (v2.1.0) |
 
 #### Note Importanti
 - La lista "Acquisti & Cashback" originale (verde, ShoppingCart) è stata **rimossa** e sostituita dalle due liste separate
@@ -4793,17 +4794,22 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 | culture/checkin legge config | ✅ | Legge culture_tcc_museum/monument/route da config |
 | calculateCredits() da config | ✅ | Async, legge mobility_tcc_walk/bike/bus da config per comune |
 
-### Funzionalità PREDISPOSTE (UI pronta, backend da implementare) 🟡
+| Sistema Referral backend | ✅ | 7 endpoint, tabella referrals, creditTCC(), notifyWalletCredit() |
+| Challenges backend | ✅ | 6 endpoint CRUD + join + progress, tabella challenge_participations |
+| Tabella wallet_notifications | ✅ | Notifiche wallet per accrediti TCC |
+| Endpoint referral nel Guardian | ✅ | 13 nuovi endpoint visibili nella sezione Integrazioni |
+
+### Funzionalità PREDISPOSTE (backend pronto, UI da collegare) 🟡
 | Funzionalità | Stato | Note |
 |--------------|-------|------|
-| Sistema Referral completo | 🟡 | UI pronta, manca tabella `referrals` e endpoint backend |
-| Heatmap Referral con dati | 🟡 | Tab presente, nessun dato (0 punti) |
-| Lista Referral con dati | 🟡 | Container presente, messaggio "Nessun referral" |
+| Heatmap Referral con dati reali | 🟡 | Backend pronto, frontend chiama endpoint ma 0 dati reali |
+| Lista Referral con dati reali | 🟡 | Backend pronto, frontend mostra "Nessun referral" |
+| UI Challenges nel pannello | 🟡 | Backend CRUD pronto, manca UI nel pannello Gaming |
 
 ### Funzionalità NON OPERATIVE ❌
 | Funzionalità | Stato | Causa |
 |--------------|-------|-------|
-| Sezione Challenges | ❌ | Rimosso con rollback (priorità bassa) |
+| (nessuna — tutto il backend è operativo) | — | — |
 
 
 ### Funzionalità FIXATE (3 Feb 2026) ✅
@@ -4836,19 +4842,38 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 - [x] Aggiornare chiamata a `calculateCredits` con `await` e `comune_id`
 - [x] Deploy su Hetzner — Commit `d405e35` — PM2 online
 
-#### FASE 2: Backend — Sistema Referral (Priorità MEDIA - 4 ore)
-- [ ] Creare tabella `referrals` (referrer_user_id, referred_user_id, referral_code, status, comune_id)
-- [ ] Endpoint POST `/api/gaming-rewards/referral/generate` — genera link referral
-- [ ] Endpoint GET `/api/gaming-rewards/referral/validate/:code` — valida codice
-- [ ] Endpoint POST `/api/gaming-rewards/referral/register` — registra nuovo utente da referral
-- [ ] Endpoint POST `/api/gaming-rewards/referral/first-purchase` — primo acquisto
-- [ ] Endpoint GET `/api/gaming-rewards/referral/heatmap` — dati per heatmap referral
-- [ ] Rinominare colonne config: shopping_* → referral_* (o aggiungere alias)
+#### FASE 2: Backend — Sistema Referral ✅ COMPLETATA
+- [x] Creare tabella `referrals` (referrer_user_id, referred_user_id, referral_code, status, comune_id)
+- [x] Creare tabella `wallet_notifications` (notifiche wallet per accrediti TCC)
+- [x] Helper riusabili: `creditTCC()`, `notifyWalletCredit()`, `generateReferralCode()`
+- [x] Endpoint POST `/api/gaming-rewards/referral/generate` — genera link referral
+- [x] Endpoint GET `/api/gaming-rewards/referral/validate/:code` — valida codice
+- [x] Endpoint POST `/api/gaming-rewards/referral/register` — registra + accredita TCC
+- [x] Endpoint POST `/api/gaming-rewards/referral/first-purchase` — primo acquisto + bonus
+- [x] Endpoint GET `/api/gaming-rewards/referral/stats/:user_id` — statistiche referral
+- [x] Endpoint GET `/api/gaming-rewards/referral/heatmap` — dati per heatmap referral
+- [x] Endpoint GET `/api/gaming-rewards/referral/list` — lista per dashboard PA
+- [x] 7 endpoint aggiunti all'inventario Guardian/Integrazioni
+- [x] Config TCC referral letta da gaming_rewards_config (shopping_cashback_percent=TCC Invito, shopping_km0_bonus=TCC Benvenuto, shopping_market_bonus=Bonus Primo Acquisto)
+- [x] Deploy su Hetzner — Commit `6e96306` — PM2 online
 
-#### FASE 3: Reimplementare Challenges (Priorità BASSA - 2 ore)
-- [ ] Verificare che API `/api/gaming-rewards/challenges` esista
-- [ ] Creare tabella `gaming_challenges` se non esiste
-- [ ] Implementare UI Challenges nel pannello
+#### FASE 3: Challenges Backend ✅ COMPLETATA
+- [x] Tabella `gaming_challenges` già esistente con 4 sfide attive
+- [x] Creata tabella `challenge_participations` (tracking progresso utenti)
+- [x] Endpoint GET `/api/gaming-rewards/challenges` — lista sfide con progresso utente
+- [x] Endpoint POST `/api/gaming-rewards/challenges` — crea sfida (PA admin)
+- [x] Endpoint PUT `/api/gaming-rewards/challenges/:id` — aggiorna sfida
+- [x] Endpoint DELETE `/api/gaming-rewards/challenges/:id` — disattiva sfida (soft delete)
+- [x] Endpoint POST `/api/gaming-rewards/challenges/:id/join` — utente si unisce
+- [x] Endpoint POST `/api/gaming-rewards/challenges/:id/progress` — aggiorna progresso + accredito TCC automatico
+- [x] 6 endpoint aggiunti all'inventario Guardian/Integrazioni
+- [x] Deploy su Hetzner — Commit `6e96306` — PM2 online
+
+#### FASE 4: Prossimi Step (Priorità MEDIA)
+- [ ] Collegare frontend referral agli endpoint backend (lista, heatmap, stats)
+- [ ] Creare UI Challenges nel pannello Gaming & Rewards
+- [ ] Collegare frontend challenges agli endpoint CRUD
+- [ ] Aggiungere contatore referral/challenges nel trend
 
 ### Regole da Seguire per Modifiche Future
 1. **SEMPRE testare compilazione** prima di ogni commit
