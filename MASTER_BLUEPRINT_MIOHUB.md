@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 3.99.4  
-> **Data:** 6 Febbraio 2026 (Fix Completo Filtri Gaming & Rewards v1.3.4 — Trend TCC filtrato per comune)  
+> **Versione:** 3.99.5  
+> **Data:** 7 Febbraio 2026 (v1.3.5 — Trend TCC connesso ai filtri temporali Tutto/Oggi/7gg/30gg/1anno)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -1144,6 +1144,23 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 #### 📝 CHANGELOG
+
+### v3.99.5 (07/02/2026) - Trend TCC connesso ai filtri temporali v1.3.5
+
+**Problema v1.3.4:** Il grafico "Trend TCC" mostrava SEMPRE gli ultimi 7 giorni fissi, non rispondeva ai filtri temporali (Tutto, Oggi, 7gg, 30gg, 1 anno) che controllavano solo la heatmap e le liste.
+
+**Causa root:** `loadTrendData` chiamava l'API `/trend` senza il parametro `days`, usando il default backend di 7 giorni.
+
+**Soluzione v1.3.5:**
+1. Creato mapping `trendDaysMap`: `all`→`3650`, `today`→1, `week`→7, `month`→30, `year`→365
+2. `trendComuneQueryParam` ora include SEMPRE `days=N` + eventuale `comune_id=X`
+3. Titolo grafico dinamico: "Trend TCC - [periodo selezionato]"
+4. Contatori sotto il grafico si aggiornano di conseguenza
+5. Reload silenzioso in background (no spinner)
+
+**Commit Frontend:** `e185bb8` (v1.3.5)
+
+---
 
 ### v3.99.4 (06/02/2026) - Fix Trend TCC filtrato per comune v1.3.4
 
@@ -4768,7 +4785,7 @@ WHERE ot.type = 'issue' AND ot.comune_id = $1;
 | `/api/gaming-rewards/culture/stats` | GET | Statistiche cultura |
 | `/api/gaming-rewards/culture/heatmap` | GET | Heatmap visite effettuate |
 | `/api/gaming-rewards/top-shops` | GET | Top 5 negozi per TCC |
-| `/api/gaming-rewards/trend` | GET | Trend TCC ultimi 7 giorni |
+| `/api/gaming-rewards/trend` | GET | Trend TCC (periodo dinamico via `days` param) |
 | `/api/gaming-rewards/stats` | GET | Statistiche generali gaming |
 | `/api/gaming-rewards/heatmap` | GET | Heatmap transazioni TCC |
 
@@ -4949,6 +4966,7 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 - [x] Aggiungere contatore referral/challenges nel trend — Commit `a344594`
 - [x] Fix filtri impersonalizzazione comune (v1.3.0 → v1.3.2) — Commit `0761110` → `1d9bcfe`
 - [x] **FIX DEFINITIVO filtri v1.3.3** — `filterByGeo()` usa `comune_id` diretto (match esatto) — Commit `180787c` + Backend v2.1.0
+- [x] **Trend TCC connesso ai filtri temporali v1.3.5** — Grafico risponde a Tutto/Oggi/7gg/30gg/1anno — Commit `e185bb8`
 - [x] Simulazione check-in mobilità + cultura per 8 comuni — 26 notifiche TCC_REWARD
 - [x] Test completo filtri — Verificato: ogni comune vede SOLO i propri dati (Vignola=22 civic, Grosseto=MIO TEST)
 
@@ -6028,6 +6046,7 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/culture/heatmap?comune
 
 | Versione | Data | Modifiche |
 |----------|------|-----------|
+| v3.99.5 | 07/02/2026 | **TREND FILTRI TEMPORALI v1.3.5**: Grafico Trend TCC connesso ai filtri temporali (Tutto/Oggi/7gg/30gg/1anno). Titolo dinamico. Backend già supportava `days` param. |
 | v3.99.4 | 06/02/2026 | **FIX TREND v1.3.4**: Grafico Trend TCC e contatori sotto filtrati per comune via API `?comune_id=X`. Creato `trendComuneQueryParam` che dipende da `geoFilter`. |
 | v3.99.3 | 06/02/2026 | **FIX DEFINITIVO FILTRI v1.3.3**: `filterByGeo()` usa `comune_id` diretto (match esatto) invece di coordinate+raggio 30km. Backend v2.1.0 aggiunge `comune_id` a tutti i SELECT. Stats TCC in vista comune usano SOLO dati filtrati. Top 5 Negozi filtrati per `comune_id`. |
 | v3.99.2 | 06/02/2026 | **FIX FILTRI v1.3.2**: API caricano TUTTO, filtro solo client-side, stats TCC calcolate da azioni, HeatmapLayer filtrata |
@@ -6150,11 +6169,11 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/nearby-pois?lat=42.761
 | `dms-hub-app-new/client/src/hooks/useNearbyPOIs.ts` | Nuovo hook GPS |
 | `dms-hub-app-new/client/src/components/NearbyPOIPopup.tsx` | Nuovi componenti UI |
 | `dms-hub-app-new/client/src/pages/WalletPage.tsx` | Integrazione ECO CREDIT |
-| `dms-hub-app-new/client/src/components/GamingRewardsPanel.tsx` | Heatmap isolata, marker 15px, flyTo, filtri geoFilter **v1.3.4** (filtro `comune_id` diretto, stats TCC in vista comune solo da dati filtrati, Top 5 filtrati per `comune_id`, **Trend TCC filtrato per comune via API**) |
+| `dms-hub-app-new/client/src/components/GamingRewardsPanel.tsx` | Heatmap isolata, marker 15px, flyTo, filtri geoFilter **v1.3.5** (filtro `comune_id` diretto, stats TCC in vista comune solo da dati filtrati, Top 5 filtrati per `comune_id`, **Trend TCC filtrato per comune via API + connesso ai filtri temporali**) |
 
 ---
 
-## 🔧 FIX FILTRI GAMING & REWARDS v1.3.0 → v1.3.4 (6 Febbraio 2026)
+## 🔧 FIX FILTRI GAMING & REWARDS v1.3.0 → v1.3.5 (7 Febbraio 2026)
 
 ### Problema Originale (v1.3.0–v1.3.2)
 Quando si impersonalizzava un comune (es. Carpi), la sezione Gaming & Rewards mostrava dati di TUTTI i comuni invece di filtrare solo quelli del comune selezionato:
@@ -6238,7 +6257,7 @@ Il sistema di filtraggio è stato completamente riprogettato nella v1.3.2 e **pe
 | `loadCivicReports` | `/api/gaming-rewards/civic/reports` | NO | Segnalazioni **con `comune_id`** |
 | `loadReferralList` | `/api/gaming-rewards/referral/list` | NO | Referral **con `comune_id`** |
 | `loadTopShops` | `/api/gaming-rewards/top-shops` | NO | Top negozi **con `comune_id`** |
-| `loadTrendData` | `/api/gaming-rewards/trend` | **SÌ (v1.3.4)**: `trendComuneQueryParam` | Trend 7 giorni **filtrato per comune** quando `geoFilter='comune'` |
+| `loadTrendData` | `/api/gaming-rewards/trend` | **SÌ (v1.3.5)**: `trendComuneQueryParam` con `days` + `comune_id` | Trend **periodo dinamico** (Tutto/Oggi/7gg/30gg/1anno) + **filtrato per comune** |
 
 **Filtro client-side `filterByGeo()` — v1.3.3 (DEFINITIVO):**
 
@@ -6287,21 +6306,26 @@ const filterByGeo = useCallback((items: any[]) => {
 
 Quando `geoFilter === 'italia'`, `filterByGeo()` restituisce tutti i dati senza filtro.
 
-**⚠️ ECCEZIONE TREND TCC (v1.3.4):**
+**⚠️ ECCEZIONE TREND TCC (v1.3.4 + v1.3.5):**
 
-Il grafico "Trend TCC - Ultimi 7 giorni" e i contatori sotto (TCC+, TCC-, Negozio, Mercato, Civic, Mobilità, Cultura, Referral) **NON possono** essere filtrati client-side con `filterByGeo()` perché il trend è un'aggregazione giornaliera (SUM per date), non una lista di items con `comune_id`.
+Il grafico Trend TCC e i contatori sotto **NON possono** essere filtrati client-side con `filterByGeo()` perché il trend è un'aggregazione giornaliera (SUM per date), non una lista di items con `comune_id`.
 
-Soluzione: `loadTrendData` usa `trendComuneQueryParam` (NON `comuneQueryParam`):
+Soluzione: `loadTrendData` usa `trendComuneQueryParam` con **DUE parametri** (NON `comuneQueryParam`):
 
 ```javascript
-// v1.3.4: Il trend è un'aggregazione, NON può essere filtrato client-side
-const trendComuneQueryParam = (geoFilter === 'comune' && currentComuneId) 
-  ? `comune_id=${currentComuneId}` 
-  : '';
+// v1.3.5: Il trend risponde sia al filtro GEO che al filtro TEMPORALE
+const trendDaysMap = { 'all': 3650, 'today': 1, 'week': 7, 'month': 30, 'year': 365 };
+const trendDays = trendDaysMap[timeFilter] || 7;
+const trendQueryParams = [];
+if (geoFilter === 'comune' && currentComuneId) trendQueryParams.push(`comune_id=${currentComuneId}`);
+trendQueryParams.push(`days=${trendDays}`);
+const trendComuneQueryParam = trendQueryParams.join('&');
 
-// loadTrendData usa trendComuneQueryParam (dipende da geoFilter)
-const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/trend${trendComuneQueryParam ? '?' + trendComuneQueryParam : ''}`);
+// loadTrendData usa trendComuneQueryParam (dipende da geoFilter + timeFilter)
+const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/trend?${trendComuneQueryParam}`);
 ```
+
+**Titolo dinamico:** "Trend TCC - [Tutto il periodo / Oggi / Ultimi 7 giorni / Ultimi 30 giorni / Ultimo anno]"
 
 Questo è l'UNICO dato che usa filtro server-side (API `?comune_id=X`). Tutti gli altri dati usano filtro client-side con `filterByGeo()`.
 
