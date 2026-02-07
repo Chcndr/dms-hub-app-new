@@ -14,7 +14,8 @@ import {
   Wallet, Leaf, TrendingUp, Award, RefreshCw, Loader2,
   User, Store, QrCode, Camera, CameraOff, Keyboard,
   CheckCircle2, XCircle, ShoppingBag, Bike, Footprints, Bus,
-  Euro, ArrowDownToLine, History, ChevronLeft, MapPin, Landmark
+  Euro, ArrowDownToLine, History, ChevronLeft, MapPin, Landmark,
+  Share2, Gift, Copy, Check
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 
@@ -129,6 +130,11 @@ export default function WalletPage() {
   });
   const [ecoToggleLoading, setEcoToggleLoading] = useState(false);
   
+  // Stato Referral "Presenta un Amico"
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralCopied, setReferralCopied] = useState(false);
+  
   const toggleEcoCredit = async (enabled: boolean) => {
     // Aggiorna subito lo stato locale per UX reattiva
     setEcoCreditsEnabled(enabled);
@@ -166,6 +172,59 @@ export default function WalletPage() {
     }
   };
   
+  // Genera link referral "Presenta un Amico"
+  const generateReferralLink = async () => {
+    if (!currentUser?.id) return;
+    setReferralLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/gaming-rewards/referral/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ user_id: currentUser.id, comune_id: comuneId })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.referral_code) {
+          setReferralCode(result.data.referral_code);
+        }
+      }
+    } catch (error) {
+      console.error('Errore generazione referral:', error);
+    } finally {
+      setReferralLoading(false);
+    }
+  };
+
+  const copyReferralLink = () => {
+    if (!referralCode) return;
+    const link = `${window.location.origin}/#/register?ref=${referralCode}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setReferralCopied(true);
+      setTimeout(() => setReferralCopied(false), 2000);
+    });
+  };
+
+  const shareReferralLink = async () => {
+    if (!referralCode) return;
+    const link = `${window.location.origin}/#/register?ref=${referralCode}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Unisciti a MIO HUB!',
+          text: 'Registrati con il mio codice e guadagna TCC!',
+          url: link
+        });
+      } catch (e) {
+        // Utente ha annullato la condivisione
+      }
+    } else {
+      copyReferralLink();
+    }
+  };
+
   // Stato per POI vicini e popup check-in
   const [selectedPOI, setSelectedPOI] = useState<NearbyPOI | null>(null);
   const [showPOIPopup, setShowPOIPopup] = useState(false);
@@ -1166,6 +1225,59 @@ export default function WalletPage() {
                     {ecoCreditsEnabled ? 'Disattiva' : 'Attiva'}
                   </Button>
                 </div>
+
+                {/* Presenta un Amico - dentro lo stesso container */}
+                {ecoCreditsEnabled && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-pink-100">
+                          <Gift className="h-5 w-5 text-pink-500" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">Presenta un Amico</p>
+                          <p className="text-xs text-muted-foreground">Invita e guadagna TCC</p>
+                        </div>
+                      </div>
+                      {!referralCode ? (
+                        <Button
+                          size="sm"
+                          onClick={generateReferralLink}
+                          disabled={referralLoading}
+                          className="bg-pink-500 hover:bg-pink-600 text-white"
+                        >
+                          {referralLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <><Share2 className="h-4 w-4 mr-1" /> Genera Link</>
+                          )}
+                        </Button>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={copyReferralLink}
+                            className="text-xs px-2"
+                          >
+                            {referralCopied ? (
+                              <><Check className="h-3 w-3 mr-1 text-emerald-500" /> Copiato!</>
+                            ) : (
+                              <><Copy className="h-3 w-3 mr-1" /> Copia</>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={shareReferralLink}
+                            className="bg-pink-500 hover:bg-pink-600 text-white text-xs px-2"
+                          >
+                            <Share2 className="h-3 w-3 mr-1" /> Invia
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

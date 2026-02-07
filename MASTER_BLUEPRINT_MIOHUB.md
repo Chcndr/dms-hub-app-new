@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
 > **Versione:** 4.0.0  
-> **Data:** 7 Febbraio 2026 (v1.3.8 — Fix segnalazioni civiche, default TCC azzerati, UI wallet ECO, mappa mobile scroll)  
+> **Data:** 7 Febbraio 2026 (v1.3.14 — Fix mappa interazione, storico wallet desktop, gaming rewards descrizioni, tasto referral wallet)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -6639,7 +6639,7 @@ if (el) {
 
 | Componente | Versione | Ultimo Commit | Deploy |
 |------------|----------|---------------|--------|
-| Frontend (dms-hub-app-new) | v1.3.7.4 | `dc04cc9` | Vercel (auto da GitHub) |
+| Frontend (dms-hub-app-new) | v1.3.14 | — | Vercel (auto da GitHub) |
 | Backend (mihub-backend) | v1.3.8 | `3ceac46` | Hetzner (push manuale) |
 | Database | aggiornato | — | Neon PostgreSQL |
 
@@ -6653,6 +6653,123 @@ if (el) {
 - [x] Fix tab ECO: sezione istruzioni scrollabile su mobile (v1.3.7)
 - [x] Rimozione BottomNav da pagina Storico (v1.3.7)
 - [x] Fix mappa mobile: scroll con offset 120px su tutti i punti di navigazione (v1.3.7.4)
+- [x] Fix mappa mobile: InteractionController dinamico per dragging/touchZoom senza ricreare MapContainer (v1.3.11)
+- [x] Fix storico wallet desktop/iPad: +TCC verde per accrediti (civic/mobility/culture), badge colorati e semaforino (v1.3.12)
+- [x] Fix gaming rewards: data/ora e descrizioni leggibili in italiano per tutte le sezioni (v1.3.13)
+- [x] Tasto "Genera Link" referral nel wallet mobile, dentro container Partecipazione al Programma (v1.3.14)
+
+---
+
+## 🔄 AGGIORNAMENTO SESSIONE 7 FEBBRAIO 2026 — NOTTE (v1.3.11 → v1.3.13)
+
+> **Data:** 7 Febbraio 2026 (notte)
+> **Sessione:** Fix interazione mappa, storico wallet, gaming rewards
+
+#### FRONTEND (dms-hub-app-new → GitHub → Vercel)
+
+| Commit | Versione | File Modificato | Descrizione |
+|--------|----------|-----------------|-------------|
+| `5151af6` | v1.3.11 | `HubMarketMapComponent.tsx` | Fix mappa: InteractionController dinamico con useMap() — preserva animazione zoom |
+| `5fced0b` | v1.3.12 | `WalletPage.tsx` | Fix storico wallet desktop/iPad: +TCC verde, badge colorati, semaforino per tipo |
+| `637ab9a` | v1.3.13 | `GamingRewardsPanel.tsx` | Gaming rewards: data/ora e descrizioni leggibili per tutte le sezioni |
+| — | v1.3.14 | `WalletPage.tsx` | Tasto "Genera Link" referral dentro container Partecipazione al Programma |
+
+### 🗺️ FIX #7: MAPPA MOBILE — INTERAZIONE DINAMICA (v1.3.11)
+
+**Problema:** L'aggiunta di `interactionDisabled` alla `key` del MapContainer causava la distruzione e ricreazione della mappa quando si cliccava un hub. Risultato: l'animazione di zoom non funzionava più, la mappa "saltava" direttamente alla vista hub.
+
+**Causa root:** `key={map-${refreshKey}-${interactionDisabled}}` — quando `interactionDisabled` cambiava da `true` a `false` (cliccando un hub), React distruggeva il vecchio MapContainer e ne creava uno nuovo, perdendo l'animazione flyTo.
+
+**Soluzione:** Creato componente `InteractionController` interno al MapContainer che usa `useMap()` hook di Leaflet per abilitare/disabilitare dragging e touchZoom dinamicamente:
+
+```tsx
+function InteractionController({ disabled }: { disabled: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    if (disabled) {
+      map.dragging.disable();
+      map.touchZoom.disable();
+    } else {
+      map.dragging.enable();
+      map.touchZoom.enable();
+    }
+  }, [disabled, map]);
+  return null;
+}
+```
+
+Rimosso `interactionDisabled` dalla key del MapContainer. L'animazione zoom è preservata al 100%.
+
+**File:** `HubMarketMapComponent.tsx`
+**Commit:** `5151af6`
+
+---
+
+### 💰 FIX #8: STORICO WALLET DESKTOP/iPad — SEGNO E TIPO TRANSAZIONE (v1.3.12)
+
+**Problema:** Nella vista desktop/iPad del wallet, la sezione "Storico" mostrava "-5" in rosso per le segnalazioni civiche risolte, invece di "+5" in verde. Mancavano anche il badge del tipo di accredito e il semaforino colorato.
+
+**Causa root:** Il codice controllava solo `tx.type === 'earn'` per decidere il segno. Ma il backend invia `type: 'civic'` per le segnalazioni risolte → il codice lo trattava come "spesa" → mostrava -5 in rosso.
+
+**Soluzione:** Allineata la vista desktop alla vista mobile (WalletStorico.tsx):
+
+| Tipo | Semaforino | Badge | Segno/Colore |
+|------|-----------|-------|-------------|
+| `civic` | Arancione | "Segnalazione Civica" | +TCC verde |
+| `mobility` | Blu | "Mobilità Sostenibile" | +TCC verde |
+| `culture` | Viola | "Cultura & Turismo" | +TCC verde |
+| `earn` | Verde | "Acquisto" | +TCC verde |
+| `spend` | Rosso | "Pagamento TCC" | -TCC rosso |
+
+**File:** `WalletPage.tsx`
+**Commit:** `5fced0b`
+
+---
+
+### 🎮 FIX #9: GAMING REWARDS — DESCRIZIONI E DATA/ORA (v1.3.13)
+
+**Problema:** Le sezioni del pannello Gaming & Rewards mostravano dati tecnici poco leggibili:
+- Segnalazioni Civiche: coordinate GPS (42.7635, 11.1134) invece di data/ora
+- Mobilità: solo "Train"/"Checkin" in inglese senza data/ora
+- Acquisti Negozio: "Negozio 1 transazioni" senza data/ora
+- Cultura: data senza ora, tipo in inglese
+
+**Soluzione:**
+
+| Sezione | Prima | Dopo |
+|---------|-------|------|
+| Segnalazioni Civiche | Coordinate GPS | Data/ora + stato "Risolta" in verde |
+| Mobilità Sostenibile | "Train"/"Checkin" | Tipo in italiano (Treno, Autobus, Bicicletta, A piedi) + data/ora + CO₂ |
+| Cultura & Turismo | Data senza ora, tipo inglese | Tipo in italiano (Museo, Monumento, Castello, Teatro) + data con ora |
+| Acquisti Negozio | "Negozio 1 transazioni" | 🏠 Negozio + data/ora + operazioni (solo se > 1) |
+| Acquisti Mercato | "Mercato 1 transazioni" | 🛒 Mercato + data/ora + operazioni (solo se > 1) |
+
+Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva passato dall'API).
+
+**File:** `GamingRewardsPanel.tsx`
+**Commit:** `637ab9a`
+
+---
+
+### 🎁 FIX #10: TASTO "GENERA LINK" REFERRAL NEL WALLET MOBILE (v1.3.14)
+
+**Richiesta:** Aggiungere un tasto "Genera Link" per il sistema "Presenta un Amico" nella pagina ECO Credit del wallet mobile, dentro il container "Partecipazione al Programma" senza aumentare l'altezza della pagina.
+
+**Implementazione:**
+- Aggiunto dentro il `<Card>` "Partecipazione al Programma" (sotto il toggle Attiva/Disattiva)
+- Separato da un `border-t` sottile per distinguerlo visivamente
+- Icona `Gift` fuchsia `#EC4899` con label "Presenta un Amico"
+- Tasto "Genera Link" chiama `POST /api/gaming-rewards/referral/generate` (backend Hetzner già pronto)
+- Dopo generazione: due tasti "Copia" (clipboard) e "Invia" (navigator.share nativo su mobile)
+- Visibile solo quando il programma ECO CREDIT è attivo
+- File: `client/src/pages/WalletPage.tsx`
+- Commit: `v1.3.14`
+
+| Stato | Azione | Risultato |
+|-------|--------|-----------|
+| ECO CREDIT disattivo | Sezione nascosta | Nessun tasto visibile |
+| ECO CREDIT attivo, link non generato | Tasto "Genera Link" fuchsia | Chiama API generate |
+| ECO CREDIT attivo, link generato | Tasti "Copia" + "Invia" | Condivisione link |
 
 ---
 
@@ -6665,5 +6782,7 @@ if (el) {
 5. **Il wallet ha due viste**: iPad/PC (funziona bene) e smartphone/app (pagine diverse, riconosce quando è smartphone)
 6. **I 4 slot gaming configurabili sono**: Civic, Cultura, Mobilità, Presenta un amico — NON toccare Shopping/Acquisti
 7. **Carbon credit regionali** (tcc.js) sono separati e funzionano correttamente — NON modificare
+8. **NON aggiungere `interactionDisabled` alla key del MapContainer** — usare InteractionController con useMap() per abilitare/disabilitare dragging dinamicamente
+9. **Storico wallet desktop**: i tipi `civic`, `mobility`, `culture` sono accrediti (+TCC verde), non spese
 
 ---
