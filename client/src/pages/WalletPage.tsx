@@ -1079,7 +1079,7 @@ export default function WalletPage() {
           {/* ================================================================ */}
           {/* TAB ECO CREDIT */}
           {/* ================================================================ */}
-          <TabsContent value="eco_credit" className="space-y-4 px-2 sm:px-0">
+          <TabsContent value="eco_credit" className="flex flex-col gap-4 px-2 sm:px-0 h-[calc(100vh-70px)] sm:h-auto overflow-hidden sm:overflow-visible">
             {/* Header ECO CREDIT con pulsante torna */}
             <Card className="bg-gradient-to-br from-emerald-600 via-emerald-500 to-green-500 text-white border-0 shadow-xl">
               <CardHeader>
@@ -1210,7 +1210,8 @@ export default function WalletPage() {
               </Card>
             )}
 
-            {/* Informativa */}
+            {/* Sezione scrollabile - istruzioni */}
+            <div className="flex-1 overflow-y-auto space-y-4 sm:overflow-visible">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1306,6 +1307,7 @@ export default function WalletPage() {
                 </CardContent>
               </Card>
             )}
+            </div>{/* Fine sezione scrollabile */}
 
           </TabsContent>
 

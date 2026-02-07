@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   History, Leaf, ArrowLeft, Loader2, Award, Trophy
 } from 'lucide-react';
-import BottomNav from '@/components/BottomNav';
 import { Link } from 'wouter';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
@@ -145,7 +144,6 @@ export default function WalletStorico() {
             </CardContent>
           </Card>
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -336,7 +334,6 @@ export default function WalletStorico() {
         </Card>
       </div>
 
-      <BottomNav />
     </div>
   );
 }
