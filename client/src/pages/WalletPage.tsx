@@ -135,14 +135,22 @@ export default function WalletPage() {
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
 
-  // Lista comuni con Hub attivo (per mostrare dove il programma è disponibile)
-  const [activeComuni, setActiveComuni] = useState<{id: number; nome: string; provincia: string}[]>([]);
+  // Lista comuni con Hub attivo + stato 4 slot gaming
+  const [activeComuni, setActiveComuni] = useState<{id: number; nome: string; provincia: string; civic: boolean; mobility: boolean; culture: boolean; shopping: boolean}[]>([]);
   useEffect(() => {
-    fetch(`${API_BASE}/api/tcc/v2/comuni`)
+    fetch(`${API_BASE}/api/gaming-rewards/config/all`)
       .then(r => r.json())
       .then(data => {
-        if (data.success && Array.isArray(data.comuni)) {
-          setActiveComuni(data.comuni.map((c: any) => ({ id: c.hub_id, nome: c.nome, provincia: c.provincia || '' })));
+        if (data.success && Array.isArray(data.data)) {
+          setActiveComuni(data.data.map((c: any) => ({
+            id: c.comune_id,
+            nome: c.nome || `Comune ${c.comune_id}`,
+            provincia: c.provincia || '',
+            civic: !!c.civic,
+            mobility: !!c.mobility,
+            culture: !!c.culture,
+            shopping: !!c.shopping
+          })));
         }
       })
       .catch(() => {});
@@ -1309,13 +1317,13 @@ export default function WalletPage() {
                   </p>
                 </div>
 
-                {/* Presenta un Amico - compatto sotto la barra verde */}
+                {/* Presenta un Amico - compatto sotto la barra verde - DARK */}
                 {ecoCreditsEnabled && (
-                  <div className="px-3 py-2 bg-pink-50 border-b border-pink-200">
+                  <div className="px-3 py-2 bg-pink-950/40 border-b border-pink-500/20">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Gift className="h-4 w-4 text-pink-500" />
-                        <span className="text-sm font-semibold text-pink-700">Presenta un Amico</span>
+                        <Gift className="h-4 w-4 text-pink-400" />
+                        <span className="text-sm font-semibold text-pink-300">Presenta un Amico</span>
                       </div>
                       {!referralCode ? (
                         <Button
@@ -1332,8 +1340,8 @@ export default function WalletPage() {
                         </Button>
                       ) : (
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="outline" onClick={copyReferralLink} className="text-xs px-2 h-7">
-                            {referralCopied ? <><Check className="h-3 w-3 mr-1 text-emerald-500" /> Copiato!</> : <><Copy className="h-3 w-3 mr-1" /> Copia</>}
+                          <Button size="sm" variant="outline" onClick={copyReferralLink} className="text-xs px-2 h-7 border-pink-500/30 text-pink-300 hover:bg-pink-500/10">
+                            {referralCopied ? <><Check className="h-3 w-3 mr-1 text-emerald-400" /> Copiato!</> : <><Copy className="h-3 w-3 mr-1" /> Copia</>}
                           </Button>
                           <Button size="sm" onClick={shareReferralLink} className="bg-pink-500 hover:bg-pink-600 text-white text-xs px-2 h-7">
                             <Share2 className="h-3 w-3 mr-1" /> Invia
@@ -1342,7 +1350,7 @@ export default function WalletPage() {
                       )}
                     </div>
                     {referralCode && (
-                      <div className="mt-2 text-[11px] text-pink-600 flex gap-3">
+                      <div className="mt-2 text-[11px] text-pink-400 flex gap-3">
                         <span>🎁 +5 TCC per invito</span>
                         <span>👋 +5 TCC amico</span>
                         <span>🛒 +5 TCC 1° acquisto</span>
@@ -1351,16 +1359,16 @@ export default function WalletPage() {
                   </div>
                 )}
 
-                {/* Statistiche compatte - solo se attivo */}
+                {/* Statistiche compatte - DARK */}
                 {ecoCreditsEnabled && (
-                  <div className="grid grid-cols-2 gap-2 px-3 py-2 bg-muted/30 border-b">
-                    <div className="text-center p-2 bg-emerald-50 rounded-lg">
-                      <p className="text-lg font-bold text-emerald-600">{walletData?.balance || 0}</p>
-                      <p className="text-[10px] text-emerald-700">TCC Totali</p>
+                  <div className="grid grid-cols-2 gap-2 px-3 py-2 border-b border-slate-700/50">
+                    <div className="text-center p-2 rounded-lg border border-emerald-500/30 bg-emerald-950/30">
+                      <p className="text-lg font-bold text-emerald-400">{walletData?.balance || 0}</p>
+                      <p className="text-[10px] text-emerald-300/70">TCC Totali</p>
                     </div>
-                    <div className="text-center p-2 bg-blue-50 rounded-lg">
-                      <p className="text-lg font-bold text-blue-600">{((walletData?.balance || 0) * 0.089).toFixed(2)}€</p>
-                      <p className="text-[10px] text-blue-700">Valore in Euro</p>
+                    <div className="text-center p-2 rounded-lg border border-blue-500/30 bg-blue-950/30">
+                      <p className="text-lg font-bold text-blue-400">{((walletData?.balance || 0) * 0.089).toFixed(2)}€</p>
+                      <p className="text-[10px] text-blue-300/70">Valore in Euro</p>
                     </div>
                   </div>
                 )}
@@ -1368,16 +1376,16 @@ export default function WalletPage() {
 
               {/* CONTAINER SCROLLABILE INTERNO */}
               <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-6">
-                {/* POI Vicini - Solo se ECO CREDIT attivo */}
+                {/* POI Vicini - DARK */}
                 {ecoCreditsEnabled && (
-                  <div className="bg-white rounded-lg border shadow-sm p-3">
+                  <div className="rounded-xl border border-emerald-500/20 bg-slate-800/50 p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="h-4 w-4 text-emerald-600" />
-                      <span className="font-semibold text-sm">Luoghi Vicini</span>
-                      {gpsLoading && <Loader2 className="h-3 w-3 animate-spin ml-1" />}
+                      <MapPin className="h-4 w-4 text-emerald-400" />
+                      <span className="font-semibold text-sm text-white">Luoghi Vicini</span>
+                      {gpsLoading && <Loader2 className="h-3 w-3 animate-spin ml-1 text-emerald-400" />}
                     </div>
                     {currentPosition && (
-                      <p className="text-[10px] text-muted-foreground mb-2">Posizione rilevata (precisione: {Math.round(currentPosition.accuracy)}m)</p>
+                      <p className="text-[10px] text-slate-400 mb-2">Posizione rilevata (precisione: {Math.round(currentPosition.accuracy)}m)</p>
                     )}
                     {hasUnvisitedPOIs && nearbyPOIs.filter(p => !p.already_visited_today)[0] && (
                       <div className="mb-2">
@@ -1391,15 +1399,15 @@ export default function WalletPage() {
                       </div>
                     )}
                     {permissionStatus === 'denied' && (
-                      <div className="p-2 bg-red-50 rounded text-red-700 text-xs mb-2">
+                      <div className="p-2 bg-red-950/30 border border-red-500/30 rounded text-red-400 text-xs mb-2">
                         <strong>GPS negato.</strong> Abilita la geolocalizzazione nelle impostazioni.
                       </div>
                     )}
                     {nearbyPOIs.length > 0 ? (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs text-muted-foreground">{unvisitedCount} luoghi ({totalTCCAvailable} TCC)</p>
-                          <Button variant="ghost" size="sm" onClick={refreshPosition} disabled={gpsLoading} className="h-6 w-6 p-0">
+                          <p className="text-xs text-slate-400">{unvisitedCount} luoghi ({totalTCCAvailable} TCC)</p>
+                          <Button variant="ghost" size="sm" onClick={refreshPosition} disabled={gpsLoading} className="h-6 w-6 p-0 text-slate-400 hover:text-white">
                             <RefreshCw className={`h-3 w-3 ${gpsLoading ? 'animate-spin' : ''}`} />
                           </Button>
                         </div>
@@ -1410,98 +1418,118 @@ export default function WalletPage() {
                         />
                       </div>
                     ) : (
-                      <div className="text-center py-3 text-muted-foreground">
-                        <MapPin className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                        <p className="text-xs">Nessun luogo nelle vicinanze</p>
+                      <div className="text-center py-3">
+                        <MapPin className="h-6 w-6 mx-auto mb-1 text-slate-600" />
+                        <p className="text-xs text-slate-500">Nessun luogo nelle vicinanze</p>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Come guadagnare TCC - lista compatta */}
-                <div className="bg-white rounded-lg border shadow-sm p-3">
+                {/* Come guadagnare TCC - DARK */}
+                <div className="rounded-xl border border-emerald-500/20 bg-slate-800/50 p-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <Award className="h-4 w-4 text-emerald-600" />
-                    <span className="font-semibold text-sm">Come guadagnare TCC</span>
+                    <Award className="h-4 w-4 text-emerald-400" />
+                    <span className="font-semibold text-sm text-white">Come guadagnare TCC</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
-                      <Bus className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <div className="flex items-center gap-2 p-2 rounded-lg border border-blue-500/20 bg-blue-950/20">
+                      <Bus className="h-4 w-4 text-blue-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-blue-900">Mobilità Sostenibile</p>
-                        <p className="text-[10px] text-blue-700">Bus, bici, a piedi — rilevamento automatico</p>
+                        <p className="text-xs font-medium text-blue-300">Mobilità Sostenibile</p>
+                        <p className="text-[10px] text-blue-400/60">Bus, bici, a piedi — rilevamento automatico</p>
                       </div>
-                      <span className="text-xs font-bold text-blue-600 flex-shrink-0">+10 TCC</span>
+                      <span className="text-xs font-bold text-blue-400 flex-shrink-0">+10 TCC</span>
                     </div>
-                    <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
-                      <Award className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                    <div className="flex items-center gap-2 p-2 rounded-lg border border-purple-500/20 bg-purple-950/20">
+                      <Award className="h-4 w-4 text-purple-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-purple-900">Cultura & Turismo</p>
-                        <p className="text-[10px] text-purple-700">Musei, monumenti, percorsi culturali</p>
+                        <p className="text-xs font-medium text-purple-300">Cultura & Turismo</p>
+                        <p className="text-[10px] text-purple-400/60">Musei, monumenti, percorsi culturali</p>
                       </div>
-                      <span className="text-xs font-bold text-purple-600 flex-shrink-0">+50 TCC</span>
+                      <span className="text-xs font-bold text-purple-400 flex-shrink-0">+50 TCC</span>
                     </div>
-                    <div className="flex items-center gap-2 p-2 bg-amber-50 rounded">
-                      <Store className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                    <div className="flex items-center gap-2 p-2 rounded-lg border border-amber-500/20 bg-amber-950/20">
+                      <Store className="h-4 w-4 text-amber-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-amber-900">Acquisti Locali</p>
-                        <p className="text-[10px] text-amber-700">Cashback sostenibile nei negozi aderenti</p>
+                        <p className="text-xs font-medium text-amber-300">Acquisti Locali</p>
+                        <p className="text-[10px] text-amber-400/60">Cashback sostenibile nei negozi aderenti</p>
                       </div>
-                      <span className="text-xs font-bold text-amber-600 flex-shrink-0">1-3%</span>
+                      <span className="text-xs font-bold text-amber-400 flex-shrink-0">1-3%</span>
                     </div>
-                    <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
-                      <TrendingUp className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                    <div className="flex items-center gap-2 p-2 rounded-lg border border-orange-500/20 bg-orange-950/20">
+                      <TrendingUp className="h-4 w-4 text-orange-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-orange-900">Segnalazioni Civiche</p>
-                        <p className="text-[10px] text-orange-700">Segnala problemi alla PA, ricevi TCC</p>
+                        <p className="text-xs font-medium text-orange-300">Segnalazioni Civiche</p>
+                        <p className="text-[10px] text-orange-400/60">Segnala problemi alla PA, ricevi TCC</p>
                       </div>
-                      <span className="text-xs font-bold text-orange-600 flex-shrink-0">+20 TCC</span>
+                      <span className="text-xs font-bold text-orange-400 flex-shrink-0">+20 TCC</span>
                     </div>
-                    <div className="flex items-center gap-2 p-2 bg-pink-50 rounded">
-                      <Gift className="h-4 w-4 text-pink-500 flex-shrink-0" />
+                    <div className="flex items-center gap-2 p-2 rounded-lg border border-pink-500/20 bg-pink-950/20">
+                      <Gift className="h-4 w-4 text-pink-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-pink-900">Presenta un Amico</p>
-                        <p className="text-[10px] text-pink-700">Invita amici e guadagna entrambi</p>
+                        <p className="text-xs font-medium text-pink-300">Presenta un Amico</p>
+                        <p className="text-[10px] text-pink-400/60">Invita amici e guadagna entrambi</p>
                       </div>
-                      <span className="text-xs font-bold text-pink-500 flex-shrink-0">+5 TCC</span>
+                      <span className="text-xs font-bold text-pink-400 flex-shrink-0">+5 TCC</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Comuni con Hub Attivo */}
+                {/* Comuni con Hub Attivo - CARD SCROLL ORIZZONTALE - DARK */}
                 {activeComuni.length > 0 && (
-                  <div className="bg-white rounded-lg border shadow-sm p-3">
+                  <div className="rounded-xl border border-emerald-500/20 bg-slate-800/50 p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Landmark className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-sm">Comuni con Hub Attivo</span>
-                      <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">{activeComuni.length}</span>
+                      <Landmark className="h-4 w-4 text-emerald-400" />
+                      <span className="font-semibold text-sm text-white">Comuni con Hub Attivo</span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium">{activeComuni.length}</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-2">Il programma ECO CREDIT è disponibile in questi comuni:</p>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory" style={{scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch'}}>
                       {activeComuni.map((c) => (
-                        <span key={c.id} className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[11px] font-medium border border-emerald-200">
-                          <MapPin className="h-2.5 w-2.5" />
-                          {c.nome}{c.provincia ? ` (${c.provincia})` : ''}
-                        </span>
+                        <div key={c.id} className="flex-shrink-0 w-[160px] snap-start rounded-xl border border-slate-600/40 bg-slate-900/60 p-3 space-y-2">
+                          <div className="flex items-center gap-1.5">
+                            <Landmark className="h-3.5 w-3.5 text-emerald-400" />
+                            <p className="text-xs font-semibold text-white truncate">{c.nome}</p>
+                          </div>
+                          {c.provincia && <p className="text-[10px] text-slate-400 -mt-1">({c.provincia})</p>}
+                          <div className="grid grid-cols-2 gap-1">
+                            <div className="flex items-center gap-1">
+                              <div className={`h-2 w-2 rounded-full ${c.civic ? 'bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.5)]' : 'bg-slate-600'}`} />
+                              <span className={`text-[9px] ${c.civic ? 'text-emerald-400' : 'text-slate-500'}`}>Civic</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className={`h-2 w-2 rounded-full ${c.mobility ? 'bg-blue-400 shadow-[0_0_4px_rgba(96,165,250,0.5)]' : 'bg-slate-600'}`} />
+                              <span className={`text-[9px] ${c.mobility ? 'text-blue-400' : 'text-slate-500'}`}>Mobilità</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className={`h-2 w-2 rounded-full ${c.culture ? 'bg-purple-400 shadow-[0_0_4px_rgba(192,132,252,0.5)]' : 'bg-slate-600'}`} />
+                              <span className={`text-[9px] ${c.culture ? 'text-purple-400' : 'text-slate-500'}`}>Cultura</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className={`h-2 w-2 rounded-full ${c.shopping ? 'bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.5)]' : 'bg-slate-600'}`} />
+                              <span className={`text-[9px] ${c.shopping ? 'text-amber-400' : 'text-slate-500'}`}>Shopping</span>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Informativa GPS compatta */}
-                <div className="bg-muted/30 rounded-lg p-3 border">
-                  <p className="text-[10px] text-muted-foreground">
-                    📍 <strong>GPS e Privacy:</strong> La posizione viene rilevata solo quando apri l'app, non in background. 
+                {/* Informativa GPS - DARK */}
+                <div className="rounded-xl border border-slate-700/50 bg-slate-800/30 p-3">
+                  <p className="text-[10px] text-slate-500">
+                    📍 <strong className="text-slate-400">GPS e Privacy:</strong> La posizione viene rilevata solo quando apri l'app, non in background. 
                     Serve per rilevare fermate bus, musei e percorsi sostenibili. Dati trattati in conformità al GDPR.
                   </p>
                 </div>
               </div>{/* Fine container scrollabile mobile */}
             </div>{/* Fine layout mobile */}
 
-            {/* ===== DESKTOP/TABLET: Layout classico con cards ===== */}
+            {/* ===== DESKTOP/TABLET: Layout classico con cards - DARK ===== */}
             <div className="hidden sm:flex sm:flex-col sm:gap-4">
-              {/* Card Programma + Toggle */}
-              <Card className="border-0 shadow-xl">
+              {/* Card Programma + Toggle - DARK */}
+              <Card className="border border-emerald-500/20 shadow-xl bg-slate-800/50">
                 <div className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-500 p-4 rounded-t-lg">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-white/20 rounded-xl">
@@ -1516,16 +1544,16 @@ export default function WalletPage() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${ecoCreditsEnabled ? 'bg-emerald-100' : 'bg-gray-100'}`}>
+                      <div className={`p-2 rounded-full ${ecoCreditsEnabled ? 'bg-emerald-500/20' : 'bg-slate-700'}`}>
                         {ecoCreditsEnabled ? (
-                          <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                          <CheckCircle2 className="h-6 w-6 text-emerald-400" />
                         ) : (
-                          <XCircle className="h-6 w-6 text-gray-400" />
+                          <XCircle className="h-6 w-6 text-slate-500" />
                         )}
                       </div>
                       <div>
-                        <p className="font-semibold">Partecipazione al Programma</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-semibold text-white">Partecipazione al Programma</p>
+                        <p className="text-sm text-slate-400">
                           {ecoCreditsEnabled ? 'Attivo - Stai guadagnando TCC!' : 'Non attivo'}
                         </p>
                       </div>
@@ -1539,17 +1567,17 @@ export default function WalletPage() {
                     </Button>
                   </div>
 
-                  {/* Presenta un Amico - Desktop */}
+                  {/* Presenta un Amico - Desktop DARK */}
                   {ecoCreditsEnabled && (
-                    <div className="mt-4 pt-4 border-t border-border">
+                    <div className="mt-4 pt-4 border-t border-slate-700">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-full bg-pink-100">
-                            <Gift className="h-5 w-5 text-pink-500" />
+                          <div className="p-2 rounded-full bg-pink-500/20">
+                            <Gift className="h-5 w-5 text-pink-400" />
                           </div>
                           <div>
-                            <p className="font-semibold text-sm">Presenta un Amico</p>
-                            <p className="text-xs text-muted-foreground">Condividi il tuo link e guadagna TCC per ogni amico che si registra!</p>
+                            <p className="font-semibold text-sm text-white">Presenta un Amico</p>
+                            <p className="text-xs text-slate-400">Condividi il tuo link e guadagna TCC per ogni amico che si registra!</p>
                           </div>
                         </div>
                         {!referralCode ? (
@@ -1567,8 +1595,8 @@ export default function WalletPage() {
                           </Button>
                         ) : (
                           <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                            <Button size="sm" variant="outline" onClick={copyReferralLink} className="text-xs">
-                              {referralCopied ? <><Check className="h-3 w-3 mr-1 text-emerald-500" /> Copiato!</> : <><Copy className="h-3 w-3 mr-1" /> Copia</>}
+                            <Button size="sm" variant="outline" onClick={copyReferralLink} className="text-xs border-pink-500/30 text-pink-300 hover:bg-pink-500/10">
+                              {referralCopied ? <><Check className="h-3 w-3 mr-1 text-emerald-400" /> Copiato!</> : <><Copy className="h-3 w-3 mr-1" /> Copia</>}
                             </Button>
                             <Button size="sm" onClick={shareReferralLink} className="bg-pink-500 hover:bg-pink-600 text-white text-xs">
                               <Share2 className="h-3 w-3 mr-1" /> Invia
@@ -1577,12 +1605,12 @@ export default function WalletPage() {
                         )}
                       </div>
                       {referralCode && (
-                        <div className="mt-3 p-3 bg-pink-50 rounded-lg border border-pink-200">
-                          <p className="text-xs text-pink-700 font-medium mb-1">Il tuo link referral:</p>
-                          <p className="text-xs text-pink-600 break-all font-mono bg-white/50 p-2 rounded">
+                        <div className="mt-3 p-3 bg-pink-950/30 rounded-lg border border-pink-500/20">
+                          <p className="text-xs text-pink-300 font-medium mb-1">Il tuo link referral:</p>
+                          <p className="text-xs text-pink-400 break-all font-mono bg-slate-900/50 p-2 rounded">
                             {`${window.location.origin}/#/register?ref=${referralCode}`}
                           </p>
-                          <div className="mt-2 text-xs text-pink-600 flex gap-4">
+                          <div className="mt-2 text-xs text-pink-400 flex gap-4">
                             <span>🎁 Tu ricevi <strong>+5 TCC</strong> per ogni invito</span>
                             <span>👋 Il tuo amico riceve <strong>+5 TCC</strong> di benvenuto</span>
                             <span>🛒 Bonus <strong>+5 TCC</strong> al primo acquisto</span>
@@ -1594,40 +1622,40 @@ export default function WalletPage() {
                 </CardContent>
               </Card>
 
-              {/* Statistiche - Desktop */}
+              {/* Statistiche - Desktop DARK */}
               {ecoCreditsEnabled && (
-                <Card>
+                <Card className="border border-slate-700/50 bg-slate-800/50">
                   <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-emerald-600" />
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <TrendingUp className="h-5 w-5 text-emerald-400" />
                       Le Tue Statistiche
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center p-4 bg-emerald-50 rounded-lg">
-                        <p className="text-3xl font-bold text-emerald-600">{walletData?.balance || 0}</p>
-                        <p className="text-xs text-emerald-700">TCC Totali</p>
+                      <div className="text-center p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/30">
+                        <p className="text-3xl font-bold text-emerald-400">{walletData?.balance || 0}</p>
+                        <p className="text-xs text-emerald-300/70">TCC Totali</p>
                       </div>
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <p className="text-3xl font-bold text-blue-600">{((walletData?.balance || 0) * 0.089).toFixed(2)}€</p>
-                        <p className="text-xs text-blue-700">Valore in Euro</p>
+                      <div className="text-center p-4 rounded-xl border border-blue-500/30 bg-blue-950/30">
+                        <p className="text-3xl font-bold text-blue-400">{((walletData?.balance || 0) * 0.089).toFixed(2)}€</p>
+                        <p className="text-xs text-blue-300/70">Valore in Euro</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* POI Vicini - Desktop */}
+              {/* POI Vicini - Desktop DARK */}
               {ecoCreditsEnabled && (
-                <Card>
+                <Card className="border border-emerald-500/20 bg-slate-800/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-emerald-600" />
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <MapPin className="h-5 w-5 text-emerald-400" />
                       Luoghi Vicini
-                      {gpsLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                      {gpsLoading && <Loader2 className="h-4 w-4 animate-spin ml-2 text-emerald-400" />}
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-slate-400">
                       {currentPosition 
                         ? `Posizione rilevata (precisione: ${Math.round(currentPosition.accuracy)}m)`
                         : 'Rilevamento posizione in corso...'
@@ -1647,18 +1675,18 @@ export default function WalletPage() {
                       </div>
                     )}
                     {permissionStatus === 'denied' && (
-                      <div className="p-3 bg-red-50 rounded-lg text-red-700 text-sm mb-4">
+                      <div className="p-3 bg-red-950/30 border border-red-500/30 rounded-lg text-red-400 text-sm mb-4">
                         <strong>Permesso GPS negato.</strong> Abilita la geolocalizzazione nelle impostazioni del browser.
                       </div>
                     )}
                     {gpsError && (
-                      <div className="p-3 bg-amber-50 rounded-lg text-amber-700 text-sm mb-4">{gpsError}</div>
+                      <div className="p-3 bg-amber-950/30 border border-amber-500/30 rounded-lg text-amber-400 text-sm mb-4">{gpsError}</div>
                     )}
                     {nearbyPOIs.length > 0 ? (
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <p className="text-sm text-muted-foreground">{unvisitedCount} luoghi da visitare ({totalTCCAvailable} TCC disponibili)</p>
-                          <Button variant="ghost" size="sm" onClick={refreshPosition} disabled={gpsLoading}>
+                          <p className="text-sm text-slate-400">{unvisitedCount} luoghi da visitare ({totalTCCAvailable} TCC disponibili)</p>
+                          <Button variant="ghost" size="sm" onClick={refreshPosition} disabled={gpsLoading} className="text-slate-400 hover:text-white">
                             <RefreshCw className={`h-4 w-4 ${gpsLoading ? 'animate-spin' : ''}`} />
                           </Button>
                         </div>
@@ -1669,104 +1697,129 @@ export default function WalletPage() {
                         />
                       </div>
                     ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <MapPin className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                        <p>Nessun luogo nelle vicinanze</p>
-                        <p className="text-sm">Avvicinati a un museo, monumento o fermata</p>
+                      <div className="text-center py-6">
+                        <MapPin className="h-10 w-10 mx-auto mb-2 text-slate-600" />
+                        <p className="text-slate-400">Nessun luogo nelle vicinanze</p>
+                        <p className="text-sm text-slate-500">Avvicinati a un museo, monumento o fermata</p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
               )}
 
-              {/* Come Funziona - Desktop (cards grandi) */}
-              <Card>
+              {/* Come Funziona - Desktop DARK */}
+              <Card className="border border-emerald-500/20 bg-slate-800/50">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-emerald-600" />
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Award className="h-5 w-5 text-emerald-400" />
                     Come Funziona
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">
-                    Il programma ECO CREDIT ti premia per le tue azioni sostenibili con <strong>Token Commercio Circolare (TCC)</strong>, 
+                  <p className="text-slate-400">
+                    Il programma ECO CREDIT ti premia per le tue azioni sostenibili con <strong className="text-white">Token Commercio Circolare (TCC)</strong>, 
                     che puoi spendere nei negozi aderenti del territorio.
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                      <Bus className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div className="flex items-start gap-3 p-3 rounded-xl border border-blue-500/20 bg-blue-950/20">
+                      <Bus className="h-5 w-5 text-blue-400 mt-0.5" />
                       <div>
-                        <p className="font-medium text-blue-900">Mobilità Sostenibile</p>
-                        <p className="text-sm text-blue-700">Guadagna TCC usando bus, bici o camminando. Rilevamento automatico vicino alle fermate.</p>
+                        <p className="font-medium text-blue-300">Mobilità Sostenibile</p>
+                        <p className="text-sm text-blue-400/60">Guadagna TCC usando bus, bici o camminando. Rilevamento automatico vicino alle fermate.</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
-                      <Award className="h-5 w-5 text-purple-600 mt-0.5" />
+                    <div className="flex items-start gap-3 p-3 rounded-xl border border-purple-500/20 bg-purple-950/20">
+                      <Award className="h-5 w-5 text-purple-400 mt-0.5" />
                       <div>
-                        <p className="font-medium text-purple-900">Cultura & Turismo</p>
-                        <p className="text-sm text-purple-700">Visita musei, monumenti e luoghi culturali del territorio per ricevere TCC.</p>
+                        <p className="font-medium text-purple-300">Cultura & Turismo</p>
+                        <p className="text-sm text-purple-400/60">Visita musei, monumenti e luoghi culturali del territorio per ricevere TCC.</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg">
-                      <Store className="h-5 w-5 text-amber-600 mt-0.5" />
+                    <div className="flex items-start gap-3 p-3 rounded-xl border border-amber-500/20 bg-amber-950/20">
+                      <Store className="h-5 w-5 text-amber-400 mt-0.5" />
                       <div>
-                        <p className="font-medium text-amber-900">Acquisti Locali</p>
-                        <p className="text-sm text-amber-700">Compra nei negozi aderenti e ricevi TCC come cashback sostenibile.</p>
+                        <p className="font-medium text-amber-300">Acquisti Locali</p>
+                        <p className="text-sm text-amber-400/60">Compra nei negozi aderenti e ricevi TCC come cashback sostenibile.</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-orange-600 mt-0.5" />
+                    <div className="flex items-start gap-3 p-3 rounded-xl border border-orange-500/20 bg-orange-950/20">
+                      <TrendingUp className="h-5 w-5 text-orange-400 mt-0.5" />
                       <div>
-                        <p className="font-medium text-orange-900">Segnalazioni Civiche</p>
-                        <p className="text-sm text-orange-700">Segnala problemi alla PA e ricevi TCC quando vengono risolti.</p>
+                        <p className="font-medium text-orange-300">Segnalazioni Civiche</p>
+                        <p className="text-sm text-orange-400/60">Segnala problemi alla PA e ricevi TCC quando vengono risolti.</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3 p-3 bg-pink-50 rounded-lg">
-                      <Gift className="h-5 w-5 text-pink-500 mt-0.5" />
+                    <div className="flex items-start gap-3 p-3 rounded-xl border border-pink-500/20 bg-pink-950/20">
+                      <Gift className="h-5 w-5 text-pink-400 mt-0.5" />
                       <div>
-                        <p className="font-medium text-pink-900">Presenta un Amico</p>
-                        <p className="text-sm text-pink-700">Invita amici e guadagna +5 TCC per ogni registrazione.</p>
+                        <p className="font-medium text-pink-300">Presenta un Amico</p>
+                        <p className="text-sm text-pink-400/60">Invita amici e guadagna +5 TCC per ogni registrazione.</p>
                       </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Comuni con Hub Attivo - Desktop */}
+              {/* Comuni con Hub Attivo - Desktop DARK - SCROLL ORIZZONTALE */}
               {activeComuni.length > 0 && (
-                <Card>
+                <Card className="border border-emerald-500/20 bg-slate-800/50">
                   <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2">
-                      <Landmark className="h-5 w-5 text-primary" />
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <Landmark className="h-5 w-5 text-emerald-400" />
                       Comuni con Hub Attivo
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">{activeComuni.length}</span>
+                      <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium">{activeComuni.length}</span>
                     </CardTitle>
-                    <CardDescription>Il programma ECO CREDIT è disponibile in questi comuni</CardDescription>
+                    <CardDescription className="text-slate-400">Il programma ECO CREDIT è disponibile in questi comuni</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory" style={{scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch'}}>
                       {activeComuni.map((c) => (
-                        <span key={c.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium border border-emerald-200">
-                          <MapPin className="h-3 w-3" />
-                          {c.nome}{c.provincia ? ` (${c.provincia})` : ''}
-                        </span>
+                        <div key={c.id} className="flex-shrink-0 w-[200px] snap-start rounded-xl border border-slate-600/40 bg-slate-900/60 p-4 space-y-3 hover:border-emerald-500/30 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-emerald-500/10">
+                              <Landmark className="h-4 w-4 text-emerald-400" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-white truncate">{c.nome}</p>
+                              {c.provincia && <p className="text-[10px] text-slate-400">({c.provincia})</p>}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`h-2.5 w-2.5 rounded-full ${c.civic ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-slate-600'}`} />
+                              <span className={`text-[10px] ${c.civic ? 'text-emerald-400' : 'text-slate-500'}`}>Civic</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className={`h-2.5 w-2.5 rounded-full ${c.mobility ? 'bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.5)]' : 'bg-slate-600'}`} />
+                              <span className={`text-[10px] ${c.mobility ? 'text-blue-400' : 'text-slate-500'}`}>Mobilità</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className={`h-2.5 w-2.5 rounded-full ${c.culture ? 'bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)]' : 'bg-slate-600'}`} />
+                              <span className={`text-[10px] ${c.culture ? 'text-purple-400' : 'text-slate-500'}`}>Cultura</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className={`h-2.5 w-2.5 rounded-full ${c.shopping ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)]' : 'bg-slate-600'}`} />
+                              <span className={`text-[10px] ${c.shopping ? 'text-amber-400' : 'text-slate-500'}`}>Shopping</span>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Privacy e GPS - Desktop */}
-              <Card className="bg-muted/20">
+              {/* Privacy e GPS - Desktop DARK */}
+              <Card className="border border-slate-700/50 bg-slate-800/30">
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
+                  <CardTitle className="flex items-center gap-2 text-base text-slate-300">
                     📍 Informativa GPS e Privacy
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-500">
                     Attivando il programma ECO CREDIT, autorizzi l'app a utilizzare la tua posizione GPS per rilevare fermate bus/tram, 
-                    musei, luoghi culturali e percorsi sostenibili. <strong>La posizione viene rilevata solo quando apri l'app</strong>, 
+                    musei, luoghi culturali e percorsi sostenibili. <strong className="text-slate-400">La posizione viene rilevata solo quando apri l'app</strong>, 
                     non in background. I tuoi dati sono trattati in conformità al GDPR e non vengono condivisi con terze parti.
                   </p>
                 </CardContent>
