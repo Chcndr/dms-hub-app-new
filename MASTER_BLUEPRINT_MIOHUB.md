@@ -6680,6 +6680,8 @@ if (el) {
 | — | v1.3.14 | `WalletPage.tsx` | Tasto "Genera Link" referral dentro container Partecipazione al Programma |
 | `c753ca5` | v1.3.15 | `WalletPage.tsx`, `WalletStorico.tsx` | Fix referral storico (+5 verde badge fuchsia), rimuovi container verde, restyling Partecipazione |
 | — | v1.3.16 | `WalletPage.tsx`, `WalletStorico.tsx` | Fix scroll ECO Credit, score TCC da wallet API (total_earned reale) |
+| `03af0dd` | v1.3.17 | `GamingRewardsPanel.tsx`, `WalletPage.tsx` | Marker referral mappa + barra trend + orario notifiche + info link referral |
+| — | v1.3.18 | `WalletPage.tsx` | RIPRISTINO scroll fisso mobile (h-screen, h-[calc], overflow) rotto dal FIX #13 |
 
 ### 🗺️ FIX #7: MAPPA MOBILE — INTERAZIONE DINAMICA (v1.3.11)
 
@@ -6845,6 +6847,48 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 
 ---
 
+### 🔧 FIX #14: RIPRISTINO SCROLL FISSO WALLET MOBILE (v1.3.18)
+
+**Problema:** Il FIX #13 ha introdotto una regressione critica nel WalletPage.tsx mobile:
+- La pagina scrollava all'infinito verso l'alto invece di essere fissa
+- Le istruzioni ECO Credit non scrollavano più dentro il container interno
+- Il tab Cliente non aveva più l'altezza fissa
+
+**Causa root:** Nel FIX #13 sono state rimosse per errore 3 classi CSS critiche:
+1. Wrapper principale: `h-screen overflow-hidden` → cambiato in `min-h-screen overflow-auto` (SBAGLIATO)
+2. Tab Cliente: `h-[calc(100vh-60px)] overflow-hidden` → rimosso (SBAGLIATO)
+3. Tab ECO Credit: `h-[calc(100vh-70px)] overflow-y-auto` → rimosso (SBAGLIATO)
+
+**Soluzione:** Ripristinate esattamente le classi CSS della v1.3.16:
+1. Wrapper: `h-screen sm:min-h-screen bg-background pb-0 sm:pb-20 overflow-hidden sm:overflow-auto`
+2. Tab Cliente: `flex flex-col h-[calc(100vh-60px)] sm:h-auto sm:space-y-6 mt-0 sm:mt-4 px-0 sm:px-0 overflow-hidden sm:overflow-visible`
+3. Tab ECO Credit: `flex flex-col gap-4 px-2 sm:px-0 h-[calc(100vh-70px)] sm:h-auto overflow-y-auto sm:overflow-visible pb-20 sm:pb-0`
+
+**Struttura mobile corretta (INVARIANTE):**
+```
+┌─────────────────────────────┐ ← h-screen overflow-hidden
+│ Header Wallet TCC           │ ← fisso
+├─────────────────────────────┤
+│ Tab Cliente:                │ ← h-[calc(100vh-60px)] overflow-hidden
+│   Saldo + QR + 3 bottoni    │ ← contenuto fisso, non scorre
+├─────────────────────────────┤
+│ Tab ECO Credit:             │ ← h-[calc(100vh-70px)] overflow-y-auto
+│   Partecipazione (toggle)   │ ← scrollabile internamente
+│   Presenta un Amico         │ ← scrollabile internamente
+│   Luoghi Vicini             │ ← scrollabile internamente
+│   Come Funziona             │ ← scrollabile internamente
+│   Privacy                   │ ← scrollabile internamente
+│   Statistiche               │ ← scrollabile internamente
+└─────────────────────────────┘
+```
+
+**Nota su Gaming (marker + trend):** Il codice frontend per marker referral fuchsia sulla mappa e barra fuchsia nel trend chart è CORRETTO e pronto. Il problema è lato backend (Hetzner): l'API `referral/list` non restituisce `lat/lng` (sono null) e l'API `trend` non restituisce il campo `referral`. Quando il backend verrà aggiornato, i marker e la barra appariranno automaticamente.
+
+**File modificato:** `client/src/pages/WalletPage.tsx`
+**Commit:** v1.3.18
+
+---
+
 ### ⚠️ NOTE IMPORTANTI PER SESSIONI FUTURE
 
 1. **NON rimettere `comune_id` nel POST body di CivicPage.tsx** — il backend lo determina dalle coordinate GPS
@@ -6859,6 +6903,13 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 10. **Tipo `referral`**: badge fuchsia (pink-500), semaforino fuchsia, label "Presenta un Amico" — vale sia per storico mobile che desktop
 11. **Score TCC**: DEVE usare `walletStats.total_earned + walletStats.total_spent` dal wallet API — ENTRAMBE sono azioni sostenibili (guadagnare E spendere TCC nel territorio)
 12. **NON usare `overflow-hidden` su TabsContent mobile** — impedisce lo scroll. Usare `overflow-y-auto`
+16. **INVARIANTE CRITICO: Le 3 classi CSS del wallet mobile NON devono MAI essere cambiate:**
+    - Wrapper: `h-screen sm:min-h-screen ... overflow-hidden sm:overflow-auto`
+    - Tab Cliente: `h-[calc(100vh-60px)] ... overflow-hidden sm:overflow-visible`
+    - Tab ECO Credit: `h-[calc(100vh-70px)] ... overflow-y-auto sm:overflow-visible`
+    Queste garantiscono pagina fissa su mobile con scroll interno nel tab ECO Credit.
+17. **NON rimuovere `h-screen` dal wrapper mobile** — senza di esso la pagina scorre all'infinito
+18. **NON rimuovere `h-[calc(100vh-Xpx)]` dai TabsContent mobile** — sono i container con altezza fissa
 13. **Marker referral sulla mappa**: usano `getMarkerIcon('referral')` con colore `#EC4899` fuchsia — richiedono che `referralList` abbia `lat/lng` non null
 14. **Barra referral nel trend chart**: campo `referral` in `TrendDataPoint` — il backend deve restituire `referral` nel JSON del trend
 15. **Orario nelle notifiche**: TUTTE le date nelle liste e popup devono avere `{ hour: '2-digit', minute: '2-digit' }` — non solo giorno/mese/anno

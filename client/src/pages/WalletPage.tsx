@@ -834,7 +834,7 @@ export default function WalletPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-0 sm:pb-20 overflow-auto">
+    <div className="h-screen sm:min-h-screen bg-background pb-0 sm:pb-20 overflow-hidden sm:overflow-auto">
       {/* Header - v3.75.2: freccia visibile sempre, logout solo PC/Tablet */}
       <header className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-3 sm:p-4 shadow-lg">
         <div className="w-full px-3 sm:px-4 md:px-8 flex items-center justify-between">
@@ -879,7 +879,7 @@ export default function WalletPage() {
           {/* ================================================================ */}
           {/* TAB CLIENTE */}
           {/* ================================================================ */}
-          <TabsContent value="cliente" className="flex flex-col sm:h-auto sm:space-y-6 mt-0 sm:mt-4 px-0 sm:px-0 pb-20 sm:pb-0">
+          <TabsContent value="cliente" className="flex flex-col h-[calc(100vh-60px)] sm:h-auto sm:space-y-6 mt-0 sm:mt-4 px-0 sm:px-0 overflow-hidden sm:overflow-visible">
             {/* Saldo Principale - Mobile: barra più alta con nome, Desktop: card grande - v3.75.0 */}
             <div className="bg-gradient-to-r from-primary via-primary/90 to-emerald-600 text-primary-foreground p-4 sm:hidden">
               <div className="flex items-center justify-between">
@@ -1179,7 +1179,7 @@ export default function WalletPage() {
           {/* ================================================================ */}
           {/* TAB ECO CREDIT */}
           {/* ================================================================ */}
-          <TabsContent value="eco_credit" className="flex flex-col gap-4 px-2 sm:px-0 pb-20">
+          <TabsContent value="eco_credit" className="flex flex-col gap-4 px-2 sm:px-0 h-[calc(100vh-70px)] sm:h-auto overflow-y-auto sm:overflow-visible pb-20 sm:pb-0">
 
             {/* Tasto torna al Wallet - solo mobile */}
             <button 
