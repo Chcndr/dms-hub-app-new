@@ -167,6 +167,21 @@ function MapCenterController(props: MapControllerProps) {
   return null;
 }
 
+// Controller per abilitare/disabilitare dragging e touchZoom dinamicamente
+function InteractionController({ disabled }: { disabled: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    if (disabled) {
+      map.dragging.disable();
+      map.touchZoom.disable();
+    } else {
+      map.dragging.enable();
+      map.touchZoom.enable();
+    }
+  }, [disabled, map]);
+  return null;
+}
+
 // Controller per centrare mappa su posteggio selezionato (pan senza animazione lunga)
 function StallCenterController({ stallCenter }: { stallCenter?: [number, number] }) {
   const map = useMap();
@@ -420,13 +435,11 @@ export function HubMarketMapComponent({
       
       <div style={{ height, width: '100%' }}>
         <MapContainer
-          key={`map-${refreshKey}-${interactionDisabled}`}
+          key={`map-${refreshKey}`}
           center={mapCenter}
           zoom={effectiveZoom}
           scrollWheelZoom={false}
           doubleClickZoom={false}
-          dragging={!interactionDisabled}
-          touchZoom={!interactionDisabled}
           zoomDelta={0.25}
           zoomSnap={0.25}
           className="h-full w-full"
@@ -473,6 +486,9 @@ export function HubMarketMapComponent({
           
           {/* Controller per centrare su posteggio selezionato dalla lista */}
           <StallCenterController stallCenter={selectedStallCenter} />
+          
+          {/* Controller per abilitare/disabilitare interazione mappa (dragging/touch) */}
+          <InteractionController disabled={interactionDisabled} />
           
           {/* Routing layer (opzionale) */}
           {routeConfig?.enabled && !navigationMode?.active && (
