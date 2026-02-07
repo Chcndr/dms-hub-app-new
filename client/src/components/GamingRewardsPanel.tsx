@@ -623,8 +623,9 @@ export default function GamingRewardsPanel() {
   // v1.3.0: Leggo impersonalizzazione PRIMA di inizializzare geoFilter
   const { comuneId, comuneNome, isImpersonating } = useImpersonation();
   
-  // geoFilter default: 'comune' se impersonalizzazione attiva, 'italia' altrimenti
-  const [geoFilter, setGeoFilter] = useState<'italia' | 'comune'>(isImpersonating && comuneId ? 'comune' : 'italia');
+  // geoFilter default: sempre 'italia' all'ingresso, così l'utente vede la mappa Italia
+  // e cliccando il tab del comune parte l'animazione zoom
+  const [geoFilter, setGeoFilter] = useState<'italia' | 'comune'>('italia');
   const [topShops, setTopShops] = useState<TopShop[]>([]);
   const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
   const [selectedReport, setSelectedReport] = useState<HeatmapPoint | null>(null);
