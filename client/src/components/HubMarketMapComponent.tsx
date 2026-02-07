@@ -148,6 +148,9 @@ interface HubMarketMapComponentProps {
     destinationName: string;
     onClose: () => void;
   };
+  
+  // ============ PROPS PER CONTROLLO INTERAZIONE MAPPA ============
+  interactionDisabled?: boolean; // Disabilita dragging/touch quando true (vista Italia/Regione/Provincia)
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -236,7 +239,8 @@ export function HubMarketMapComponent({
   onShopClick,
   hubCenterFixed,
   customZoom,
-  navigationMode
+  navigationMode,
+  interactionDisabled = false
 }: HubMarketMapComponentProps) {
   
   console.log('[DEBUG HubMarketMapComponent] navigationMode:', navigationMode);
@@ -416,11 +420,13 @@ export function HubMarketMapComponent({
       
       <div style={{ height, width: '100%' }}>
         <MapContainer
-          key={`map-${refreshKey}`}
+          key={`map-${refreshKey}-${interactionDisabled}`}
           center={mapCenter}
           zoom={effectiveZoom}
           scrollWheelZoom={false}
           doubleClickZoom={false}
+          dragging={!interactionDisabled}
+          touchZoom={!interactionDisabled}
           zoomDelta={0.25}
           zoomSnap={0.25}
           className="h-full w-full"

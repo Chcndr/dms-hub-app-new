@@ -1191,6 +1191,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
               customZoom={mobileMapZoomed ? 15 : 6}
               routeConfig={routeConfig}
               navigationMode={navigationMode}
+              interactionDisabled={!selectedHub && !selectedMarket}
             />
             
             {/* Tab galleggianti Apri/Italia */}
@@ -1283,6 +1284,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
           customZoom={customZoom || undefined}
           routeConfig={routeConfig}
           navigationMode={navigationMode}
+          interactionDisabled={!selectedHub && !selectedMarket}
         />
         </MapWithTransportLayer>
       </div>
