@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 4.1.0  
-> **Data:** 7 Febbraio 2026 (v1.3.21 — Referral GPS auto-detect, filtri heatmap, spirale marker, trend filtrato, animazione zoom)  
+> **Versione:** 4.2.0  
+> **Data:** 7 Febbraio 2026 (v4.2.0 — Redesign Wallet ECO Credit Tab Dark Theme & Comuni Cards)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -1144,6 +1144,42 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 ---
 
 #### 📝 CHANGELOG
+
+### v4.2.0 (07/02/2026) - Redesign Wallet ECO Credit Tab (Dark Theme & Comuni Cards)
+
+**Obiettivo:** Allineare il design del tab "ECO Credit" nel wallet del cittadino al tema dark del resto dell'app, migliorando l'usabilità e l'impatto visivo.
+
+**Modifiche Frontend (Commit `7aafdeb`):**
+
+1.  **Tema Dark Completo:**
+    *   Tutte le card e i container del tab ECO Credit ora usano uno sfondo scuro (`slate-800/900`) con bordi colorati a bassa opacità, in linea con le sezioni "Wallet" e "Storico".
+    *   Rimossi tutti gli sfondi chiari (`bg-white`, `bg-blue-50`, etc.) per un'esperienza visiva coerente.
+    *   Testo e icone sono stati ricolorati per garantire leggibilità su sfondo scuro.
+
+2.  **Card Comuni con Hub Attivo (con Semaforini):**
+    *   La lista di comuni è stata trasformata da semplici "chip" a **card interattive con scorrimento orizzontale**.
+    *   Ogni card mostra:
+        *   Nome del comune e provincia.
+        *   **4 semaforini colorati** che indicano lo stato di attivazione dei 4 slot gaming:
+            *   🟢 **Civic** (Segnalazioni)
+            *   🔵 **Mobilità** (Sostenibile)
+            *   🟣 **Cultura** (Turismo)
+            *   🟡 **Shopping** (Acquisti Locali)
+    *   I dati sullo stato degli slot sono caricati dal nuovo endpoint backend `config/all`.
+
+**Modifiche Backend (Commit `2168b4c`):**
+
+1.  **Nuovo Endpoint API:**
+    *   Aggiunto `GET /api/gaming-rewards/config/all`.
+    *   Questo endpoint restituisce un array di tutte le configurazioni gaming per ogni comune, includendo lo stato booleano di `civic_enabled`, `mobility_enabled`, `culture_enabled`, e `shopping_enabled`.
+    *   Questo permette al frontend di costruire dinamicamente le card dei comuni con i semaforini corretti.
+
+**File Modificati:**
+-   `dms-hub-app-new/client/src/pages/WalletPage.tsx`
+-   `mihub-backend-rest/routes/gaming-rewards.js`
+
+---
+
 
 ### v3.99.5 (07/02/2026) - Trend TCC connesso ai filtri temporali v1.3.5
 
@@ -4775,6 +4811,7 @@ WHERE ot.type = 'issue' AND ot.comune_id = $1;
 | `/api/gaming-rewards/config` | GET | Legge configurazione gaming per comune |
 | `/api/gaming-rewards/config` | POST | Crea nuova configurazione |
 | `/api/gaming-rewards/config` | PUT | Aggiorna configurazione esistente |
+| `/api/gaming-rewards/config/all` | GET | Legge la configurazione gaming per TUTTI i comuni con lo stato dei 4 slot |
 | `/api/gaming-rewards/mobility/start-tracking` | POST | Avvia tracciamento percorso |
 | `/api/gaming-rewards/mobility/complete` | POST | Completa percorso e assegna TCC |
 | `/api/gaming-rewards/mobility/history` | GET | Storico percorsi utente |
