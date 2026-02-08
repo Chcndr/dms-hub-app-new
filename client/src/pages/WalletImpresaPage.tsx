@@ -957,39 +957,39 @@ export default function WalletImpresaPage() {
         </Tabs>
       </div>
 
-      {/* Dialog Pagamento Scadenza (v4.3.5 - fix mobile padding e overflow) */}
+      {/* Dialog Pagamento Scadenza (v4.3.5b - fix aggressivo mobile overflow) */}
       <Dialog open={showPagamentoDialog} onOpenChange={setShowPagamentoDialog}>
-        <DialogContent className="bg-[#1a2332] border-[#14b8a6]/20 text-[#e8fbff] max-w-[90vw] sm:max-w-lg mx-auto p-4 sm:p-6">
+        <DialogContent className="bg-[#1a2332] border-[#14b8a6]/20 text-[#e8fbff] w-[calc(100vw-2rem)] sm:max-w-lg mx-auto p-3 sm:p-6 overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <CreditCard className="w-5 h-5 text-[#14b8a6] flex-shrink-0" />
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-lg">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-[#14b8a6] flex-shrink-0" />
               Pagamento Canone
             </DialogTitle>
-            <DialogDescription className="text-[#e8fbff]/70 text-xs sm:text-sm">
-              {selectedScadenza?.mercato_nome} - Posteggio {selectedScadenza?.posteggio}
+            <DialogDescription className="text-[#e8fbff]/70 text-xs sm:text-sm truncate">
+              {selectedScadenza?.mercato_nome} - Post. {selectedScadenza?.posteggio}
             </DialogDescription>
           </DialogHeader>
           
           {selectedScadenza && (
-            <div className="space-y-3 sm:space-y-4">
-              <div className="bg-[#0b1220] p-3 sm:p-4 rounded-lg">
-                <div className="flex justify-between mb-2 text-sm sm:text-base">
+            <div className="space-y-3 sm:space-y-4 overflow-hidden">
+              <div className="bg-[#0b1220] p-2.5 sm:p-4 rounded-lg overflow-hidden">
+                <div className="flex justify-between mb-2 text-xs sm:text-base">
                   <span className="text-[#e8fbff]/70">Rata {selectedScadenza.rata_numero}/{selectedScadenza.rata_totale}</span>
                   <span className="text-[#e8fbff]">€{parseFloat(selectedScadenza.importo_dovuto).toFixed(2)}</span>
                 </div>
                 {parseFloat(selectedScadenza.importo_mora) > 0 && (
-                  <div className="flex justify-between mb-2 text-red-400 text-sm sm:text-base">
+                  <div className="flex justify-between mb-2 text-red-400 text-xs sm:text-base">
                     <span>Mora ({selectedScadenza.giorni_ritardo_calc} gg)</span>
                     <span>+€{parseFloat(selectedScadenza.importo_mora).toFixed(2)}</span>
                   </div>
                 )}
                 {parseFloat(selectedScadenza.importo_interessi) > 0 && (
-                  <div className="flex justify-between mb-2 text-red-400 text-sm sm:text-base">
+                  <div className="flex justify-between mb-2 text-red-400 text-xs sm:text-base">
                     <span>Interessi</span>
                     <span>+€{parseFloat(selectedScadenza.importo_interessi).toFixed(2)}</span>
                   </div>
                 )}
-                <div className="border-t border-[#14b8a6]/20 pt-2 mt-2 flex justify-between font-bold text-base sm:text-lg">
+                <div className="border-t border-[#14b8a6]/20 pt-2 mt-2 flex justify-between font-bold text-sm sm:text-lg">
                   <span>TOTALE</span>
                   <span className="text-[#14b8a6]">
                     €{(parseFloat(selectedScadenza.importo_dovuto) + parseFloat(selectedScadenza.importo_mora || '0') + parseFloat(selectedScadenza.importo_interessi || '0')).toFixed(2)}
@@ -997,13 +997,13 @@ export default function WalletImpresaPage() {
                 </div>
               </div>
               
-              <div className="flex gap-2 sm:gap-3 justify-end">
-                <Button variant="outline" onClick={() => setShowPagamentoDialog(false)} className="border-[#14b8a6]/30 text-xs sm:text-sm px-3 sm:px-4">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end">
+                <Button variant="outline" onClick={() => setShowPagamentoDialog(false)} className="border-[#14b8a6]/30 text-xs sm:text-sm w-full sm:w-auto">
                   Annulla
                 </Button>
-                <Button onClick={handleConfirmaPagamento} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-xs sm:text-sm px-3 sm:px-4">
+                <Button onClick={handleConfirmaPagamento} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-xs sm:text-sm w-full sm:w-auto">
                   <CreditCard className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
-                  Paga Ora (Simulazione)
+                  Paga Ora
                 </Button>
               </div>
             </div>
@@ -1013,20 +1013,20 @@ export default function WalletImpresaPage() {
 
       {/* v3.53.0: Dialog Pagamento Sanzione */}
       <Dialog open={showPagamentoSanzioneDialog} onOpenChange={setShowPagamentoSanzioneDialog}>
-        <DialogContent className="bg-[#1a2332] border-[#f59e0b]/20 text-[#e8fbff] max-w-[95vw] sm:max-w-lg">
+        <DialogContent className="bg-[#1a2332] border-[#f59e0b]/20 text-[#e8fbff] w-[calc(100vw-2rem)] sm:max-w-lg mx-auto p-3 sm:p-6 overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-[#f59e0b]" />
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-lg">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-[#f59e0b] flex-shrink-0" />
               Pagamento Sanzione
             </DialogTitle>
-            <DialogDescription className="text-[#e8fbff]/70">
+            <DialogDescription className="text-[#e8fbff]/70 text-xs sm:text-sm">
               Verbale {selectedSanzione?.verbale_code}
             </DialogDescription>
           </DialogHeader>
           
           {selectedSanzione && (
-            <div className="space-y-4">
-              <div className="bg-[#0b1220] p-4 rounded-lg">
+            <div className="space-y-3 sm:space-y-4 overflow-hidden">
+              <div className="bg-[#0b1220] p-2.5 sm:p-4 rounded-lg overflow-hidden">
                 <p className="text-sm text-[#e8fbff]/70 mb-2">
                   {selectedSanzione.infraction_description || selectedSanzione.infraction_code}
                 </p>
@@ -1057,21 +1057,21 @@ export default function WalletImpresaPage() {
                 )}
               </div>
               
-              <div className="flex gap-3 justify-end">
-                <Button variant="outline" onClick={() => setShowPagamentoSanzioneDialog(false)} className="border-[#f59e0b]/30">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end">
+                <Button variant="outline" onClick={() => setShowPagamentoSanzioneDialog(false)} className="border-[#f59e0b]/30 text-xs sm:text-sm w-full sm:w-auto">
                   Annulla
                 </Button>
                 <Button 
                   onClick={handleConfirmaPagamentoSanzione} 
-                  className="bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-black"
+                  className="bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-black text-xs sm:text-sm w-full sm:w-auto"
                   disabled={isProcessingSanzione}
                 >
                   {isProcessingSanzione ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 mr-1 sm:mr-2 animate-spin" />
                   ) : (
-                    <CreditCard className="w-4 h-4 mr-2" />
+                    <CreditCard className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
                   )}
-                  Paga Ora (PagoPA)
+                  Paga Ora
                 </Button>
               </div>
             </div>
