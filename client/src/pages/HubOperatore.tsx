@@ -572,63 +572,15 @@ export default function HubOperatore() {
       </header>
 
       <div className="w-full px-2 py-4 space-y-4">
-        {/* Gestione Presenze */}
-        <Card className="bg-[#1e293b] border-[#334155]">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[#e8fbff]">
-              <Clock className="w-5 h-5" />
-              Gestione Presenze
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                {isCheckedIn ? (
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-[#10b981]" />
-                    <span className="text-[#10b981] font-semibold">Check-in effettuato</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <XCircle className="w-5 h-5 text-[#ef4444]" />
-                    <span className="text-[#94a3b8]">Non in servizio</span>
-                  </div>
-                )}
-                {checkInTime && (
-                  <p className="text-sm text-[#94a3b8] mt-1">Entrata: {checkInTime}</p>
-                )}
-              </div>
-              {!isCheckedIn ? (
-                <Button 
-                  onClick={handleCheckIn}
-                  className="bg-[#10b981] hover:bg-[#059669] active:bg-[#047857] active:scale-95 transition-all duration-150 text-white"
-                >
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Check-in
-                </Button>
-              ) : (
-                <Button 
-                  onClick={handleCheckOut}
-                  variant="destructive"
-                  className="active:scale-95 transition-all duration-150"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Check-out
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Gestione Presenze RIMOSSO in v4.3.4 — residuo non necessario */}
 
-        {/* Statistiche Giornaliere dal Wallet Reale (v4.3.3 - fix mobile overflow) */}
+        {/* Statistiche Giornaliere dal Wallet Reale (v4.3.4 - card compatte su mobile) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden">
-            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
-              <CardDescription className="text-[#94a3b8] text-xs sm:text-sm">Vendite Oggi</CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <CardContent className="p-2 sm:p-4">
+              <p className="text-[10px] sm:text-sm text-[#94a3b8]">Vendite Oggi</p>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-lg sm:text-2xl font-bold text-[#e8fbff] truncate">
+                <p className="text-base sm:text-2xl font-bold text-[#e8fbff] truncate">
                   €{parseFloat(operatorWallet?.euro_sales || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 </p>
                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[#10b981] flex-shrink-0" />
@@ -637,12 +589,10 @@ export default function HubOperatore() {
           </Card>
 
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden">
-            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
-              <CardDescription className="text-[#94a3b8] text-xs sm:text-sm">TCC Rilasciati</CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <CardContent className="p-2 sm:p-4">
+              <p className="text-[10px] sm:text-sm text-[#94a3b8]">TCC Rilasciati</p>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-lg sm:text-2xl font-bold text-[#14b8a6] truncate">
+                <p className="text-base sm:text-2xl font-bold text-[#14b8a6] truncate">
                   {operatorWallet?.tcc_issued || 0}
                 </p>
                 <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#14b8a6] flex-shrink-0" />
@@ -651,12 +601,10 @@ export default function HubOperatore() {
           </Card>
 
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden">
-            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
-              <CardDescription className="text-[#94a3b8] text-xs sm:text-sm">TCC Riscattati</CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <CardContent className="p-2 sm:p-4">
+              <p className="text-[10px] sm:text-sm text-[#94a3b8]">TCC Riscattati</p>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-lg sm:text-2xl font-bold text-[#f59e0b] truncate">
+                <p className="text-base sm:text-2xl font-bold text-[#f59e0b] truncate">
                   {operatorWallet?.tcc_redeemed || 0}
                 </p>
                 <ArrowDownCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#f59e0b] flex-shrink-0" />
@@ -665,12 +613,10 @@ export default function HubOperatore() {
           </Card>
 
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden">
-            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
-              <CardDescription className="text-[#94a3b8] text-xs sm:text-sm">Differenza</CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <CardContent className="p-2 sm:p-4">
+              <p className="text-[10px] sm:text-sm text-[#94a3b8]">Differenza</p>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-lg sm:text-2xl font-bold text-[#10b981] truncate">
+                <p className="text-base sm:text-2xl font-bold text-[#10b981] truncate">
                   {operatorWallet?.difference || 0}
                 </p>
                 <Leaf className="w-4 h-4 sm:w-5 sm:h-5 text-[#10b981] flex-shrink-0" />

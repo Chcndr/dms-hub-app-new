@@ -515,32 +515,32 @@ export default function WalletImpresaPage() {
       </div>
 
       <div className="w-full px-1 sm:px-2 py-2 sm:py-4 space-y-3 sm:space-y-4">
-        {/* Cards Riepilogo */}
+        {/* Cards Riepilogo (v4.3.4 - altezza dimezzata su mobile) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-[#1a2332] border-[#14b8a6]/20">
-            <CardContent className="p-4">
-              <p className="text-xs sm:text-sm text-[#e8fbff]/50">Saldo Totale</p>
-              <p className={`text-lg sm:text-2xl font-bold ${totaleSaldo >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+            <CardContent className="p-2 sm:p-4">
+              <p className="text-[10px] sm:text-sm text-[#e8fbff]/50">Saldo Totale</p>
+              <p className={`text-base sm:text-2xl font-bold ${totaleSaldo >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
                 €{totaleSaldo.toFixed(2)}
               </p>
             </CardContent>
           </Card>
           <Card className="bg-[#1a2332] border-[#14b8a6]/20">
-            <CardContent className="p-4">
-              <p className="text-xs sm:text-sm text-[#e8fbff]/50">Wallet Spunta</p>
-              <p className="text-lg sm:text-2xl font-bold text-[#14b8a6]">{company?.spunta_wallets?.length || 0}</p>
+            <CardContent className="p-2 sm:p-4">
+              <p className="text-[10px] sm:text-sm text-[#e8fbff]/50">Wallet Spunta</p>
+              <p className="text-base sm:text-2xl font-bold text-[#14b8a6]">{company?.spunta_wallets?.length || 0}</p>
             </CardContent>
           </Card>
           <Card className="bg-[#1a2332] border-[#14b8a6]/20">
-            <CardContent className="p-4">
-              <p className="text-xs sm:text-sm text-[#e8fbff]/50">Concessioni</p>
-              <p className="text-lg sm:text-2xl font-bold text-[#3b82f6]">{company?.concession_wallets?.length || 0}</p>
+            <CardContent className="p-2 sm:p-4">
+              <p className="text-[10px] sm:text-sm text-[#e8fbff]/50">Concessioni</p>
+              <p className="text-base sm:text-2xl font-bold text-[#3b82f6]">{company?.concession_wallets?.length || 0}</p>
             </CardContent>
           </Card>
           <Card className="bg-[#1a2332] border-[#14b8a6]/20">
-            <CardContent className="p-4">
-              <p className="text-xs sm:text-sm text-[#e8fbff]/50">Da Pagare</p>
-              <p className="text-lg sm:text-2xl font-bold text-[#ef4444]">€{totaleDaPagare.toFixed(2)}</p>
+            <CardContent className="p-2 sm:p-4">
+              <p className="text-[10px] sm:text-sm text-[#e8fbff]/50">Da Pagare</p>
+              <p className="text-base sm:text-2xl font-bold text-[#ef4444] truncate">€{totaleDaPagare.toFixed(2)}</p>
             </CardContent>
           </Card>
         </div>
@@ -564,22 +564,22 @@ export default function WalletImpresaPage() {
 
           {/* Tab Wallet */}
           <TabsContent value="wallet">
-            <Card className="bg-[#1a2332] border-[#14b8a6]/20">
-              <CardHeader className="border-b border-[#14b8a6]/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Building2 className="w-6 h-6 text-[#14b8a6]" />
-                    <div>
-                      <CardTitle className="text-[#e8fbff]">{company?.ragione_sociale}</CardTitle>
-                      <CardDescription className="text-[#e8fbff]/50">P.IVA: {company?.partita_iva}</CardDescription>
+            <Card className="bg-[#1a2332] border-[#14b8a6]/20 overflow-hidden">
+              <CardHeader className="border-b border-[#14b8a6]/10 p-3 sm:p-6">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-[#14b8a6] flex-shrink-0" />
+                    <div className="min-w-0">
+                      <CardTitle className="text-[#e8fbff] text-sm sm:text-base truncate">{company?.ragione_sociale}</CardTitle>
+                      <CardDescription className="text-[#e8fbff]/50 text-xs">P.IVA: {company?.partita_iva}</CardDescription>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Badge variant="outline" className="border-[#14b8a6]/30 text-[#14b8a6]">
+                  <div className="text-right flex-shrink-0">
+                    <Badge variant="outline" className="border-[#14b8a6]/30 text-[#14b8a6] text-[10px] sm:text-xs">
                       WALLET: {(company?.spunta_wallets?.length || 0) + (company?.concession_wallets?.length || 0)}
                     </Badge>
-                    <p className={`text-lg font-bold ${totaleSaldo >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                      TOTALE: €{totaleSaldo.toFixed(2)}
+                    <p className={`text-sm sm:text-lg font-bold ${totaleSaldo >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+                      €{totaleSaldo.toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -658,30 +658,24 @@ export default function WalletImpresaPage() {
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-2 space-y-2">
                         {company?.concession_wallets?.map((wallet) => (
-                          <div key={wallet.id} className="p-4 bg-[#0b1220]/50 rounded-lg border border-[#3b82f6]/10">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                              <div className="flex items-center gap-3">
-                                <Badge className="bg-[#3b82f6]/20 text-[#3b82f6]">{wallet.market_name}</Badge>
-                                <div>
-                                  <p className="font-medium text-[#e8fbff]">Posteggio {wallet.stall_number}</p>
-                                  <p className="text-sm text-[#e8fbff]/50">
-                                    Area: {wallet.stall_area} mq
-                                  </p>
-                                </div>
+                          <div key={wallet.id} className="p-3 sm:p-4 bg-[#0b1220]/50 rounded-lg border border-[#3b82f6]/10">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <Badge className="bg-[#3b82f6]/20 text-[#3b82f6] text-[10px] sm:text-xs mb-1">{wallet.market_name}</Badge>
+                                <p className="font-medium text-[#e8fbff] text-sm sm:text-base">Posteggio {wallet.stall_number}</p>
+                                <p className="text-xs sm:text-sm text-[#e8fbff]/50">Area: {wallet.stall_area} mq</p>
                               </div>
-                              
-                              <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                  <p className="text-xs text-[#e8fbff]/50 uppercase">Saldo Wallet</p>
-                                  <p className={`text-xl font-bold ${wallet.balance >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                                    €{wallet.balance.toFixed(2)}
-                                  </p>
-                                  <p className={`text-xs ${wallet.balance <= 0 ? 'text-red-400' : 'text-green-400'}`}>
-                                    {wallet.balance <= 0 ? 'Da Ricaricare' : 'In Regola'}
-                                  </p>
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-[10px] sm:text-xs text-[#e8fbff]/50 uppercase">Saldo Wallet</p>
+                                <p className={`text-base sm:text-xl font-bold ${wallet.balance >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+                                  €{wallet.balance.toFixed(2)}
+                                </p>
+                                <div className="flex items-center gap-1 justify-end">
+                                  <Badge className={`${getStatusColor(wallet.status)} text-[10px] sm:text-xs`}>{wallet.status}</Badge>
                                 </div>
-                                
-                                <Badge className={getStatusColor(wallet.status)}>{wallet.status}</Badge>
+                                <p className={`text-[10px] sm:text-xs ${wallet.balance <= 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                  {wallet.balance <= 0 ? 'Da Ricaricare' : 'In Regola'}
+                                </p>
                               </div>
                             </div>
                           </div>

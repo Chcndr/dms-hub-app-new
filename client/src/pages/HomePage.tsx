@@ -223,25 +223,25 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {/* Presentazione - visibile SOLO per PA (v3.75.0) */}
+              {/* Presentazione - visibile SOLO per PA, nascosto su mobile (v4.3.4) */}
               {(permissionsLoading || canViewTab('dashboard')) && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setLocation('/presentazione')}
-                  className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
+                  className="hidden sm:inline-flex bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
                 >
                   <Presentation className="w-4 h-4 mr-2" />
                   Presentazione
                 </Button>
               )}
-              {/* Dashboard PA - spostato nell'header (v3.70.0) */}
+              {/* Dashboard PA - spostato nell'header, nascosto su mobile (v4.3.4) */}
               {(permissionsLoading || canViewTab('dashboard')) && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => isAuthenticated ? setLocation('/dashboard-pa') : handleProtectedNavigation('/dashboard-pa')}
-                  className="bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
+                  className="hidden sm:inline-flex bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20 text-primary-foreground"
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Dashboard PA
@@ -407,20 +407,8 @@ export default function HomePage() {
             </Button>
           </div>
 
-          {/* Tab Impresa - Riga 2 (v4.3.3) */}
+          {/* Tab Impresa - Riga 2 (v4.3.4 - Presenze in fondo, col-span-2) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap md:justify-center gap-2 sm:gap-4 w-full max-w-4xl px-2">
-            {/* Presenze - apre app DMS (grande come Vetrine, col-span-2 su mobile) */}
-            {(permissionsLoading || canViewTab('presenze')) && (
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => handleProtectedNavigation('/app/impresa/presenze')}
-                className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30 col-span-2 sm:col-span-1"
-              >
-                <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="text-xs sm:text-sm">Presenze</span>
-              </Button>
-            )}
             {/* Wallet Impresa - pagamenti PagoPA */}
             {(permissionsLoading || canViewTab('wallet_impresa')) && (
               <Button
@@ -433,7 +421,7 @@ export default function HomePage() {
                 <span className="text-xs sm:text-sm">Wallet Imp.</span>
               </Button>
             )}
-            {/* Hub Operatore - già esistente */}
+            {/* Hub Operatore */}
             {(permissionsLoading || canViewQuickAccess('hub_operatore')) && (
               <Button
                 variant="outline"
@@ -445,7 +433,7 @@ export default function HomePage() {
                 <span className="text-xs sm:text-sm">Hub Op.</span>
               </Button>
             )}
-            {/* Notifiche - già esistente */}
+            {/* Notifiche */}
             {(permissionsLoading || canViewQuickAccess('notifiche')) && (
               <Button
                 variant="outline"
@@ -472,6 +460,18 @@ export default function HomePage() {
               >
                 <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="text-xs sm:text-sm">Anagrafica</span>
+              </Button>
+            )}
+            {/* Presenze - in fondo, grande come Vetrine (col-span-2 su mobile) */}
+            {(permissionsLoading || canViewTab('presenze')) && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => handleProtectedNavigation('/app/impresa/presenze')}
+                className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-card/80 backdrop-blur-sm hover:bg-primary/20 border-primary/30 col-span-2 sm:col-span-1"
+              >
+                <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="text-xs sm:text-sm">Presenze</span>
               </Button>
             )}
           </div>
