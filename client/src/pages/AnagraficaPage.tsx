@@ -51,8 +51,8 @@ export default function AnagraficaPage() {
 
       {/* Main Content */}
       <div className="w-full px-1 sm:container sm:mx-auto sm:p-6 p-2">
-        <Card className="bg-[#1a2332] border-[#14b8a6]/20 mb-3 sm:mb-6">
-          <CardHeader>
+        <Card className="bg-[#1a2332] border-[#14b8a6]/20 mb-3 sm:mb-6 py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+          <CardHeader className="px-3 sm:px-6">
             <CardTitle className="text-[#e8fbff] flex items-center gap-2">
               <Menu className="w-5 h-5 text-[#14b8a6]" />
               Menu Anagrafica
@@ -61,7 +61,7 @@ export default function AnagraficaPage() {
               Seleziona una sezione per gestire i dati della tua impresa
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2 sm:px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {menuItems.map((item, index) => (
                 <button
@@ -94,8 +94,8 @@ export default function AnagraficaPage() {
         </Card>
 
         {/* Info Card */}
-        <Card className="bg-[#14b8a6]/10 border-[#14b8a6]/30">
-          <CardContent className="p-4">
+        <Card className="bg-[#14b8a6]/10 border-[#14b8a6]/30 py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+          <CardContent className="p-3 sm:p-4 px-2 sm:px-6">
             <p className="text-sm text-[#e8fbff]/70 text-center">
               🚧 Questa sezione è in fase di sviluppo. Le funzionalità saranno disponibili a breve.
             </p>

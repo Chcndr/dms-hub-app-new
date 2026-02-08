@@ -247,8 +247,8 @@ export default function AppImpresaNotifiche() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4">
           {/* Lista Notifiche - nascosta su mobile quando c'è dettaglio selezionato */}
           <div className={`lg:col-span-1 ${notificaSelezionata ? 'hidden sm:block' : ''}`}>
-            <Card className="bg-[#1a2332] border-[#3b82f6]/20">
-              <CardHeader className="pb-2">
+            <Card className="bg-[#1a2332] border-[#3b82f6]/20 py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+              <CardHeader className="pb-2 px-3 sm:px-6">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-[#e8fbff] text-lg flex items-center gap-2">
                     <Mail className="w-5 h-5 text-[#3b82f6]" />
@@ -265,7 +265,7 @@ export default function AppImpresaNotifiche() {
                   </select>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-2 sm:px-6">
                 {/* v3.73.1: Ripristinati filtri Tutti/Ricevuti/Inviati */}
                 <div className="flex gap-2 mb-4">
                   <button
@@ -393,8 +393,8 @@ export default function AppImpresaNotifiche() {
           {/* Dettaglio Notifica - su mobile occupa tutto lo schermo */}
           <div className={`lg:col-span-2 ${!notificaSelezionata ? 'hidden sm:block' : ''}`}>
             {notificaSelezionata ? (
-              <Card className="bg-[#1a2332] border-[#3b82f6]/20">
-                <CardHeader>
+              <Card className="bg-[#1a2332] border-[#3b82f6]/20 py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+                <CardHeader className="px-3 sm:px-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       {getMittenteIcon(notificaSelezionata.mittente_tipo)}
@@ -420,7 +420,7 @@ export default function AppImpresaNotifiche() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-2 sm:px-6">
                   {/* Messaggio */}
                   <div className="bg-[#0b1220] rounded-lg p-4 border border-[#3b82f6]/10">
                     <div className="prose prose-invert max-w-none">
@@ -527,8 +527,8 @@ export default function AppImpresaNotifiche() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="bg-[#1a2332] border-[#3b82f6]/20 h-full flex items-center justify-center">
-                <CardContent className="text-center py-8 sm:py-16">
+              <Card className="bg-[#1a2332] border-[#3b82f6]/20 h-full flex items-center justify-center py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+                <CardContent className="text-center py-8 sm:py-16 px-2 sm:px-6">
                   <Mail className="w-16 h-16 mx-auto mb-4 text-[#3b82f6]/30" />
                   <p className="text-[#e8fbff]/50 text-lg">Seleziona un messaggio per visualizzarlo</p>
                   <p className="text-[#e8fbff]/30 text-sm mt-2">
@@ -547,29 +547,29 @@ export default function AppImpresaNotifiche() {
             Azioni Rapide
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-            <Card className="bg-[#1a2332] border-[#3b82f6]/20 hover:border-[#3b82f6]/50 cursor-pointer transition-all">
-              <CardContent className="p-4 text-center">
+            <Card className="bg-[#1a2332] border-[#3b82f6]/20 hover:border-[#3b82f6]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl">
+              <CardContent className="p-3 sm:p-4 text-center">
                 <GraduationCap className="w-8 h-8 mx-auto mb-2 text-[#3b82f6]" />
                 <p className="text-sm font-medium">Corsi Disponibili</p>
                 <p className="text-xs text-[#e8fbff]/50">Visualizza e iscriviti</p>
               </CardContent>
             </Card>
-            <Card className="bg-[#1a2332] border-[#10b981]/20 hover:border-[#10b981]/50 cursor-pointer transition-all">
-              <CardContent className="p-4 text-center">
+            <Card className="bg-[#1a2332] border-[#10b981]/20 hover:border-[#10b981]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl">
+              <CardContent className="p-3 sm:p-4 text-center">
                 <FileText className="w-8 h-8 mx-auto mb-2 text-[#10b981]" />
                 <p className="text-sm font-medium">Bandi Aperti</p>
                 <p className="text-xs text-[#e8fbff]/50">Opportunità di finanziamento</p>
               </CardContent>
             </Card>
-            <Card className="bg-[#1a2332] border-[#8b5cf6]/20 hover:border-[#8b5cf6]/50 cursor-pointer transition-all">
-              <CardContent className="p-4 text-center">
+            <Card className="bg-[#1a2332] border-[#8b5cf6]/20 hover:border-[#8b5cf6]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl">
+              <CardContent className="p-3 sm:p-4 text-center">
                 <Calendar className="w-8 h-8 mx-auto mb-2 text-[#8b5cf6]" />
                 <p className="text-sm font-medium">Prenota Appuntamento</p>
                 <p className="text-xs text-[#e8fbff]/50">Con l'associazione</p>
               </CardContent>
             </Card>
-            <Card className="bg-[#1a2332] border-[#f59e0b]/20 hover:border-[#f59e0b]/50 cursor-pointer transition-all">
-              <CardContent className="p-4 text-center">
+            <Card className="bg-[#1a2332] border-[#f59e0b]/20 hover:border-[#f59e0b]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl">
+              <CardContent className="p-3 sm:p-4 text-center">
                 <AlertCircle className="w-8 h-8 mx-auto mb-2 text-[#f59e0b]" />
                 <p className="text-sm font-medium">Stato Regolarità</p>
                 <p className="text-xs text-[#e8fbff]/50">DURC, SCIA, Attestati</p>
