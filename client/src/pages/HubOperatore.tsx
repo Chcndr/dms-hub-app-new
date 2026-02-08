@@ -571,16 +571,16 @@ export default function HubOperatore() {
         </div>
       </header>
 
-      <div className="w-full px-2 py-4 space-y-4">
+      <div className="w-full px-0 sm:px-2 py-4 space-y-4">
         {/* Gestione Presenze RIMOSSO in v4.3.4 — residuo non necessario */}
 
-        {/* Statistiche Giornaliere dal Wallet Reale (v4.3.4 - card compatte su mobile) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+        {/* Statistiche Giornaliere (v4.3.6 - card più larghe, font più grande) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4">
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden">
-            <CardContent className="p-2 sm:p-4">
-              <p className="text-[10px] sm:text-sm text-[#94a3b8]">Vendite Oggi</p>
+            <CardContent className="p-2.5 sm:p-4">
+              <p className="text-xs sm:text-sm text-[#94a3b8]">Vendite Oggi</p>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-base sm:text-2xl font-bold text-[#e8fbff] truncate">
+                <p className="text-lg sm:text-2xl font-bold text-[#e8fbff] truncate">
                   €{parseFloat(operatorWallet?.euro_sales || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 </p>
                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[#10b981] flex-shrink-0" />
@@ -589,10 +589,10 @@ export default function HubOperatore() {
           </Card>
 
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden">
-            <CardContent className="p-2 sm:p-4">
-              <p className="text-[10px] sm:text-sm text-[#94a3b8]">TCC Rilasciati</p>
+            <CardContent className="p-2.5 sm:p-4">
+              <p className="text-xs sm:text-sm text-[#94a3b8]">TCC Rilasciati</p>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-base sm:text-2xl font-bold text-[#14b8a6] truncate">
+                <p className="text-lg sm:text-2xl font-bold text-[#14b8a6] truncate">
                   {operatorWallet?.tcc_issued || 0}
                 </p>
                 <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#14b8a6] flex-shrink-0" />
@@ -601,10 +601,10 @@ export default function HubOperatore() {
           </Card>
 
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden">
-            <CardContent className="p-2 sm:p-4">
-              <p className="text-[10px] sm:text-sm text-[#94a3b8]">TCC Riscattati</p>
+            <CardContent className="p-2.5 sm:p-4">
+              <p className="text-xs sm:text-sm text-[#94a3b8]">TCC Riscattati</p>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-base sm:text-2xl font-bold text-[#f59e0b] truncate">
+                <p className="text-lg sm:text-2xl font-bold text-[#f59e0b] truncate">
                   {operatorWallet?.tcc_redeemed || 0}
                 </p>
                 <ArrowDownCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#f59e0b] flex-shrink-0" />
@@ -613,10 +613,10 @@ export default function HubOperatore() {
           </Card>
 
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden">
-            <CardContent className="p-2 sm:p-4">
-              <p className="text-[10px] sm:text-sm text-[#94a3b8]">Differenza</p>
+            <CardContent className="p-2.5 sm:p-4">
+              <p className="text-xs sm:text-sm text-[#94a3b8]">Differenza</p>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-base sm:text-2xl font-bold text-[#10b981] truncate">
+                <p className="text-lg sm:text-2xl font-bold text-[#10b981] truncate">
                   {operatorWallet?.difference || 0}
                 </p>
                 <Leaf className="w-4 h-4 sm:w-5 sm:h-5 text-[#10b981] flex-shrink-0" />

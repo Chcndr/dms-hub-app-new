@@ -504,8 +504,8 @@ function PosteggiTabPubblica({
             <MarketMapComponent
               refreshKey={0}
               mapData={mapData}
-              center={viewMode === 'mercato' ? marketCenter : [42.5, 12.5] as [number, number]}
-              zoom={viewMode === 'mercato' ? 17 : 6}
+              center={viewMode === 'mercato' ? marketCenter : [41.5, 12.5] as [number, number]}
+              zoom={viewMode === 'mercato' ? 17 : 6.3}
               height="100%"
               isSpuntaMode={false}
               onStallClick={(stallNumber) => {
