@@ -197,50 +197,56 @@ export default function AppImpresaNotifiche() {
   return (
     <div className="min-h-screen bg-[#0b1220] text-[#e8fbff]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#3b82f6]/20 p-4">
-        <div className="w-full px-2 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#3b82f6]/20 p-2 sm:p-4">
+        <div className="w-full sm:px-2 flex items-center justify-between">
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => setLocation('/')}
-            className="text-[#e8fbff]/70 hover:text-[#e8fbff]"
+            onClick={() => {
+              if (notificaSelezionata && window.innerWidth < 640) {
+                setNotificaSelezionata(null);
+              } else {
+                setLocation('/');
+              }
+            }}
+            className="text-[#e8fbff]/70 hover:text-[#e8fbff] px-1 sm:px-3"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna alla Home
+            <ArrowLeft className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">{notificaSelezionata ? 'Torna alla lista' : 'Torna alla Home'}</span>
           </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#3b82f6] to-[#8b5cf6] flex items-center justify-center">
-              <Bell className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-[#3b82f6] to-[#8b5cf6] flex items-center justify-center">
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-[#e8fbff]">Notifiche Impresa</h1>
-              <p className="text-sm text-[#e8fbff]/50">{IMPRESA_NOME}</p>
+              <h1 className="text-base sm:text-xl font-bold text-[#e8fbff]">Notifiche</h1>
+              <p className="text-xs sm:text-sm text-[#e8fbff]/50 truncate max-w-[120px] sm:max-w-none">{IMPRESA_NOME}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {nonLette > 0 && (
-              <Badge className="bg-red-500 text-white animate-pulse">
-                {nonLette} nuove
+              <Badge className="bg-red-500 text-white animate-pulse text-xs">
+                {nonLette}
               </Badge>
             )}
             <Button 
               variant="outline" 
               size="sm" 
               onClick={fetchNotifiche}
-              className="border-[#3b82f6]/30 text-[#3b82f6] hover:bg-[#3b82f6]/10"
+              className="border-[#3b82f6]/30 text-[#3b82f6] hover:bg-[#3b82f6]/10 px-2 sm:px-3"
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Aggiorna
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline ml-2">Aggiorna</span>
             </Button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="w-full px-2 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Lista Notifiche */}
-          <div className="lg:col-span-1">
+      <div className="w-full px-1 sm:px-2 py-2 sm:py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4">
+          {/* Lista Notifiche - nascosta su mobile quando c'è dettaglio selezionato */}
+          <div className={`lg:col-span-1 ${notificaSelezionata ? 'hidden sm:block' : ''}`}>
             <Card className="bg-[#1a2332] border-[#3b82f6]/20">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -384,8 +390,8 @@ export default function AppImpresaNotifiche() {
             </Card>
           </div>
 
-          {/* Dettaglio Notifica */}
-          <div className="lg:col-span-2">
+          {/* Dettaglio Notifica - su mobile occupa tutto lo schermo */}
+          <div className={`lg:col-span-2 ${!notificaSelezionata ? 'hidden sm:block' : ''}`}>
             {notificaSelezionata ? (
               <Card className="bg-[#1a2332] border-[#3b82f6]/20">
                 <CardHeader>
@@ -463,10 +469,10 @@ export default function AppImpresaNotifiche() {
                   )}
 
                   {/* Azioni Rapide */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     <Button 
                       variant="outline"
-                      className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
+                      className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10 text-sm"
                       onClick={() => {
                         setRispostaText('Vorrei richiedere un appuntamento per discutere di questo argomento.');
                       }}
@@ -522,7 +528,7 @@ export default function AppImpresaNotifiche() {
               </Card>
             ) : (
               <Card className="bg-[#1a2332] border-[#3b82f6]/20 h-full flex items-center justify-center">
-                <CardContent className="text-center py-16">
+                <CardContent className="text-center py-8 sm:py-16">
                   <Mail className="w-16 h-16 mx-auto mb-4 text-[#3b82f6]/30" />
                   <p className="text-[#e8fbff]/50 text-lg">Seleziona un messaggio per visualizzarlo</p>
                   <p className="text-[#e8fbff]/30 text-sm mt-2">
@@ -535,12 +541,12 @@ export default function AppImpresaNotifiche() {
         </div>
 
         {/* Sezione Azioni Rapide */}
-        <div className="mt-6">
+        <div className={`mt-4 sm:mt-6 ${notificaSelezionata ? 'hidden sm:block' : ''}`}>
           <h2 className="text-lg font-semibold text-[#e8fbff] mb-4 flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-[#3b82f6]" />
             Azioni Rapide
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
             <Card className="bg-[#1a2332] border-[#3b82f6]/20 hover:border-[#3b82f6]/50 cursor-pointer transition-all">
               <CardContent className="p-4 text-center">
                 <GraduationCap className="w-8 h-8 mx-auto mb-2 text-[#3b82f6]" />

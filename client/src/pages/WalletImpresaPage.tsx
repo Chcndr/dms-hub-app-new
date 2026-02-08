@@ -463,8 +463,8 @@ export default function WalletImpresaPage() {
   if (!IMPRESA_ID) {
     return (
       <div className="min-h-screen bg-[#0b1220] text-[#e8fbff] flex items-center justify-center">
-        <Card className="bg-[#1a2332] border-[#14b8a6]/20 max-w-md">
-          <CardContent className="p-8 text-center">
+        <Card className="bg-[#1a2332] border-[#14b8a6]/20 max-w-md mx-2 sm:mx-auto">
+          <CardContent className="p-4 sm:p-8 text-center">
             <AlertCircle className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
             <h2 className="text-xl font-bold mb-2">Accesso non autorizzato</h2>
             <p className="text-[#e8fbff]/70 mb-4">
@@ -482,16 +482,16 @@ export default function WalletImpresaPage() {
   return (
     <div className="min-h-screen bg-[#0b1220] text-[#e8fbff]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#14b8a6]/20 p-4">
-        <div className="w-full px-2 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#14b8a6]/20 p-2 sm:p-4">
+        <div className="w-full sm:px-2 flex items-center justify-between">
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => setLocation('/')}
-            className="text-[#e8fbff]/70 hover:text-[#e8fbff]"
+            className="text-[#e8fbff]/70 hover:text-[#e8fbff] px-1 sm:px-3"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna alla Home
+            <ArrowLeft className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Torna alla Home</span>
           </Button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#14b8a6]/20 flex items-center justify-center">
@@ -506,48 +506,48 @@ export default function WalletImpresaPage() {
             variant="outline" 
             size="sm" 
             onClick={fetchData}
-            className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
+            className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10 px-2 sm:px-3"
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Aggiorna
+            <RefreshCw className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Aggiorna</span>
           </Button>
         </div>
       </div>
 
-      <div className="w-full px-2 py-4 space-y-4">
+      <div className="w-full px-1 sm:px-2 py-2 sm:py-4 space-y-3 sm:space-y-4">
         {/* Cards Riepilogo */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-[#1a2332] border-[#14b8a6]/20">
             <CardContent className="p-4">
-              <p className="text-sm text-[#e8fbff]/50">Saldo Totale</p>
-              <p className={`text-2xl font-bold ${totaleSaldo >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+              <p className="text-xs sm:text-sm text-[#e8fbff]/50">Saldo Totale</p>
+              <p className={`text-lg sm:text-2xl font-bold ${totaleSaldo >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
                 €{totaleSaldo.toFixed(2)}
               </p>
             </CardContent>
           </Card>
           <Card className="bg-[#1a2332] border-[#14b8a6]/20">
             <CardContent className="p-4">
-              <p className="text-sm text-[#e8fbff]/50">Wallet Spunta</p>
-              <p className="text-2xl font-bold text-[#14b8a6]">{company?.spunta_wallets?.length || 0}</p>
+              <p className="text-xs sm:text-sm text-[#e8fbff]/50">Wallet Spunta</p>
+              <p className="text-lg sm:text-2xl font-bold text-[#14b8a6]">{company?.spunta_wallets?.length || 0}</p>
             </CardContent>
           </Card>
           <Card className="bg-[#1a2332] border-[#14b8a6]/20">
             <CardContent className="p-4">
-              <p className="text-sm text-[#e8fbff]/50">Concessioni</p>
-              <p className="text-2xl font-bold text-[#3b82f6]">{company?.concession_wallets?.length || 0}</p>
+              <p className="text-xs sm:text-sm text-[#e8fbff]/50">Concessioni</p>
+              <p className="text-lg sm:text-2xl font-bold text-[#3b82f6]">{company?.concession_wallets?.length || 0}</p>
             </CardContent>
           </Card>
           <Card className="bg-[#1a2332] border-[#14b8a6]/20">
             <CardContent className="p-4">
-              <p className="text-sm text-[#e8fbff]/50">Da Pagare</p>
-              <p className="text-2xl font-bold text-[#ef4444]">€{totaleDaPagare.toFixed(2)}</p>
+              <p className="text-xs sm:text-sm text-[#e8fbff]/50">Da Pagare</p>
+              <p className="text-lg sm:text-2xl font-bold text-[#ef4444]">€{totaleDaPagare.toFixed(2)}</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-[#1a2332] border border-[#14b8a6]/20">
+          <TabsList className="bg-[#1a2332] border border-[#14b8a6]/20 w-full sm:w-auto overflow-x-auto">
             <TabsTrigger value="wallet" className="data-[state=active]:bg-[#14b8a6]/20">
               <Wallet className="w-4 h-4 mr-2" />
               Wallet
@@ -965,7 +965,7 @@ export default function WalletImpresaPage() {
 
       {/* Dialog Pagamento Scadenza */}
       <Dialog open={showPagamentoDialog} onOpenChange={setShowPagamentoDialog}>
-        <DialogContent className="bg-[#1a2332] border-[#14b8a6]/20 text-[#e8fbff]">
+        <DialogContent className="bg-[#1a2332] border-[#14b8a6]/20 text-[#e8fbff] max-w-[95vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-[#14b8a6]" />
@@ -1019,7 +1019,7 @@ export default function WalletImpresaPage() {
 
       {/* v3.53.0: Dialog Pagamento Sanzione */}
       <Dialog open={showPagamentoSanzioneDialog} onOpenChange={setShowPagamentoSanzioneDialog}>
-        <DialogContent className="bg-[#1a2332] border-[#f59e0b]/20 text-[#e8fbff]">
+        <DialogContent className="bg-[#1a2332] border-[#f59e0b]/20 text-[#e8fbff] max-w-[95vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-[#f59e0b]" />
@@ -1087,7 +1087,7 @@ export default function WalletImpresaPage() {
 
       {/* Dialog Ricarica Wallet GENERICO */}
       <Dialog open={showRicaricaDialog} onOpenChange={setShowRicaricaDialog}>
-        <DialogContent className="bg-[#1a2332] border-[#14b8a6]/20 text-[#e8fbff] sm:max-w-[500px]">
+        <DialogContent className="bg-[#1a2332] border-[#14b8a6]/20 text-[#e8fbff] max-w-[95vw] sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="w-5 h-5 text-[#14b8a6]" />

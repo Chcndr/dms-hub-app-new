@@ -25,16 +25,16 @@ export default function AnagraficaPage() {
   return (
     <div className="min-h-screen bg-[#0b1220] text-[#e8fbff]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#14b8a6]/20 p-4">
-        <div className="container mx-auto flex items-center justify-between">
+      <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#14b8a6]/20 p-2 sm:p-4">
+        <div className="w-full sm:container sm:mx-auto flex items-center justify-between">
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => setLocation('/')}
-            className="text-[#e8fbff]/70 hover:text-[#e8fbff]"
+            className="text-[#e8fbff]/70 hover:text-[#e8fbff] px-1 sm:px-3"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna alla Home
+            <ArrowLeft className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Torna alla Home</span>
           </Button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#14b8a6] to-[#3b82f6] flex items-center justify-center">
@@ -45,13 +45,13 @@ export default function AnagraficaPage() {
               <p className="text-sm text-[#e8fbff]/50">Gestione dati impresa</p>
             </div>
           </div>
-          <div className="w-24" /> {/* Spacer per centrare */}
+          <div className="w-8 sm:w-24" /> {/* Spacer per centrare */}
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto p-6">
-        <Card className="bg-[#1a2332] border-[#14b8a6]/20 mb-6">
+      <div className="w-full px-1 sm:container sm:mx-auto sm:p-6 p-2">
+        <Card className="bg-[#1a2332] border-[#14b8a6]/20 mb-3 sm:mb-6">
           <CardHeader>
             <CardTitle className="text-[#e8fbff] flex items-center gap-2">
               <Menu className="w-5 h-5 text-[#14b8a6]" />

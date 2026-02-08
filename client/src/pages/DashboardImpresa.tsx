@@ -134,19 +134,19 @@ export default function DashboardImpresa() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="bg-slate-800/50 border-b border-slate-700 px-6 py-4">
-        <div className="w-full px-4 flex items-center justify-between">
+      <header className="bg-slate-800/50 border-b border-slate-700 px-2 sm:px-6 py-3 sm:py-4">
+        <div className="w-full sm:px-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Building2 className="h-8 w-8 text-teal-500" />
+            <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-teal-500" />
             <div>
-              <h1 className="text-xl font-bold text-white">Dashboard Impresa</h1>
+              <h1 className="text-base sm:text-xl font-bold text-white">Dashboard Impresa</h1>
               <p className="text-sm text-gray-400">
                 {impresa?.denominazione || 'Nessuna impresa collegata'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-white">{user?.name}</p>
               <p className="text-xs text-gray-400">{user?.email}</p>
             </div>
@@ -154,26 +154,26 @@ export default function DashboardImpresa() {
               variant="outline"
               size="sm"
               onClick={() => navigate('/')}
-              className="border-slate-600 text-gray-300 hover:bg-slate-700"
+              className="border-slate-600 text-gray-300 hover:bg-slate-700 px-2 sm:px-3"
             >
-              <Home className="h-4 w-4 mr-2" />
-              Home
+              <Home className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Home</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleLogout}
-              className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+              className="border-red-500/50 text-red-400 hover:bg-red-500/10 px-2 sm:px-3"
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              Esci
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Esci</span>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="w-full px-4 py-6">
+      <main className="w-full px-1 sm:px-4 py-3 sm:py-6">
         {!impresa ? (
           <Card className="bg-slate-800/50 border-slate-700">
             <CardContent className="py-12 text-center">
@@ -195,7 +195,7 @@ export default function DashboardImpresa() {
           </Card>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-slate-800/50 border border-slate-700 mb-6">
+            <TabsList className="bg-slate-800/50 border border-slate-700 mb-4 sm:mb-6 w-full sm:w-auto overflow-x-auto">
               <TabsTrigger value="overview">
                 <Building2 className="h-4 w-4 mr-2" />
                 Panoramica
@@ -213,17 +213,17 @@ export default function DashboardImpresa() {
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6">
               {/* KPI Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
                 <Card className="bg-gradient-to-br from-teal-500/20 to-teal-600/10 border-teal-500/30">
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-400">Stato Impresa</p>
-                        <p className="text-2xl font-bold text-white mt-1">
+                        <p className="text-xs sm:text-sm text-gray-400">Stato Impresa</p>
+                        <p className="text-lg sm:text-2xl font-bold text-white mt-1">
                           {impresa.stato || 'Attiva'}
                         </p>
                       </div>
-                      <CheckCircle2 className="h-10 w-10 text-teal-500" />
+                      <CheckCircle2 className="h-7 w-7 sm:h-10 sm:w-10 text-teal-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -232,12 +232,12 @@ export default function DashboardImpresa() {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-400">Pratiche Attive</p>
-                        <p className="text-2xl font-bold text-white mt-1">
+                        <p className="text-xs sm:text-sm text-gray-400">Pratiche Attive</p>
+                        <p className="text-lg sm:text-2xl font-bold text-white mt-1">
                           {pratiche.filter(p => p.stato !== 'completata').length}
                         </p>
                       </div>
-                      <FileText className="h-10 w-10 text-blue-500" />
+                      <FileText className="h-7 w-7 sm:h-10 sm:w-10 text-blue-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -246,12 +246,12 @@ export default function DashboardImpresa() {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-400">Dipendenti</p>
-                        <p className="text-2xl font-bold text-white mt-1">
+                        <p className="text-xs sm:text-sm text-gray-400">Dipendenti</p>
+                        <p className="text-lg sm:text-2xl font-bold text-white mt-1">
                           {impresa.numero_dipendenti || 0}
                         </p>
                       </div>
-                      <User className="h-10 w-10 text-purple-500" />
+                      <User className="h-7 w-7 sm:h-10 sm:w-10 text-purple-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -260,19 +260,19 @@ export default function DashboardImpresa() {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-400">Capitale Sociale</p>
-                        <p className="text-2xl font-bold text-white mt-1">
+                        <p className="text-xs sm:text-sm text-gray-400">Capitale Sociale</p>
+                        <p className="text-lg sm:text-2xl font-bold text-white mt-1">
                           €{(impresa.capitale_sociale || 0).toLocaleString()}
                         </p>
                       </div>
-                      <Award className="h-10 w-10 text-amber-500" />
+                      <Award className="h-7 w-7 sm:h-10 sm:w-10 text-amber-500" />
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Dettagli Impresa */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
                 <Card className="bg-slate-800/50 border-slate-700">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
@@ -280,8 +280,8 @@ export default function DashboardImpresa() {
                       Dati Aziendali
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <CardContent className="space-y-3 sm:space-y-4">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
                       <div>
                         <p className="text-xs text-gray-500">Denominazione</p>
                         <p className="text-white font-medium">{impresa.denominazione}</p>
@@ -331,7 +331,7 @@ export default function DashboardImpresa() {
                         {impresa.sede_legale_cap} {impresa.sede_legale_comune} ({impresa.sede_legale_provincia})
                       </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
                       <div>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
                           <Mail className="h-3 w-3" /> PEC
