@@ -1438,28 +1438,25 @@ export default function ControlliSanzioniPanel() {
                               size="sm"
                               className="bg-red-600 hover:bg-red-700 text-white"
                               onClick={async () => {
-                                if (!confirm(`Emettere sanzione per ${t.business_name}?`)) return;
+                                if (!confirm(`Emettere sanzione per ${t.business_name}?\n\nVerrà creato un verbale automatico con importo predefinito.`)) return;
                                 try {
                                   const res = await fetch(`${MIHUB_API}/market-settings/transgressions/${t.id}/sanction`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ sanction_id: null })
+                                    body: JSON.stringify({})
                                   });
-                                  if (res.ok) {
+                                  const data = await res.json();
+                                  if (res.ok && data.success) {
+                                    alert(`Verbale ${data.data?.verbale_code || ''} creato con successo!`);
                                     setTransgressions(prev => prev.map(tr => 
-                                      tr.id === t.id ? { ...tr, status: 'SANCTIONED', justification_display_status: 'VERBALE_AUTOMATICO', sanction_id: -1 } : tr
+                                      tr.id === t.id ? { ...tr, status: 'SANCTIONED', justification_display_status: 'VERBALE_AUTOMATICO', sanction_id: data.data?.id || -1 } : tr
                                     ));
-                                    // Aggiorna anche la watchlist
-                                    try {
-                                      await fetch(`${MIHUB_API}/watchlist`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({})
-                                      });
-                                    } catch (_) {}
+                                  } else {
+                                    alert(`Errore: ${data.error || 'Errore sconosciuto'}`);
                                   }
                                 } catch (err) {
                                   console.error('Errore emissione sanzione:', err);
+                                  alert('Errore di rete durante l\'emissione della sanzione');
                                 }
                               }}
                             >
