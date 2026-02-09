@@ -12,7 +12,7 @@ import { useLocation } from 'wouter';
 import { 
   ArrowLeft, Building2, MapPin, FileText, Users, Shield, ClipboardList,
   RefreshCw, Loader2, Calendar, Phone, Globe, ChevronRight,
-  CheckCircle, XCircle, Store, User, Wallet, FileCheck
+  CheckCircle, XCircle, Store, User, Wallet, FileCheck, Clock, TrendingUp, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -158,6 +158,36 @@ interface DomandaSpuntaData {
   autorizzazione_tipo: string;
   wallet_id: number;
   wallet_balance: string;
+}
+
+interface PresenzaData {
+  id: number;
+  session_id: number | null;
+  stall_id: number;
+  stall_number: string;
+  area_mq: string;
+  impresa_id: number;
+  impresa_nome: string;
+  tipo_presenza: string;
+  giorno: string;
+  market_name: string;
+  comune: string;
+  ora_accesso: string;
+  ora_uscita: string;
+  ora_rifiuti: string | null;
+  importo_addebitato: string;
+  mq_posteggio: string;
+  notes: string | null;
+  presenze_totali: number;
+  assenze_non_giustificate: number;
+}
+
+interface PresenzeStats {
+  totale_presenze: number;
+  totale_incassato: string;
+  mercati_frequentati: number;
+  presenze_totali_graduatoria: number;
+  assenze_non_giustificate: number;
 }
 
 // ============================================================================
@@ -985,6 +1015,168 @@ function CollaboratoriSection({ impresaId, impresa }: { impresaId: number | null
 }
 
 // ============================================================================
+// PRESENZE SECTION — Storico presenze giornate di mercato
+// ============================================================================
+function PresenzeSection({ presenze, stats, loading }: { presenze: PresenzaData[]; stats: PresenzeStats | null; loading: boolean }) {
+  if (loading) return <LoadingSpinner />;
+  
+  // Raggruppa presenze per giorno + mercato
+  const grouped = presenze.reduce((acc, p) => {
+    const key = `${p.giorno?.split('T')[0]}_${p.market_name}`;
+    if (!acc[key]) {
+      acc[key] = {
+        giorno: p.giorno,
+        market_name: p.market_name,
+        comune: p.comune,
+        presenze: []
+      };
+    }
+    acc[key].presenze.push(p);
+    return acc;
+  }, {} as Record<string, { giorno: string; market_name: string; comune: string; presenze: PresenzaData[] }>);
+
+  const giornate = Object.values(grouped).sort((a, b) => 
+    new Date(b.giorno).getTime() - new Date(a.giorno).getTime()
+  );
+
+  return (
+    <div className="space-y-3 sm:space-y-4">
+      {/* Stats Summary */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <Card className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+            <CardContent className="p-3 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+              </div>
+              <p className="text-xl sm:text-2xl font-bold text-green-400">{stats.presenze_totali_graduatoria}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500">Presenze Totali</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+            <CardContent className="p-3 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <XCircle className="w-4 h-4 text-red-400" />
+              </div>
+              <p className="text-xl sm:text-2xl font-bold text-red-400">{stats.assenze_non_giustificate}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500">Assenze</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+            <CardContent className="p-3 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Wallet className="w-4 h-4 text-[#14b8a6]" />
+              </div>
+              <p className="text-xl sm:text-2xl font-bold text-[#14b8a6]">&euro;{stats.totale_incassato}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500">Totale Pagato</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+            <CardContent className="p-3 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Store className="w-4 h-4 text-purple-400" />
+              </div>
+              <p className="text-xl sm:text-2xl font-bold text-purple-400">{stats.mercati_frequentati}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500">Mercati</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Giornate di mercato */}
+      {giornate.length === 0 ? (
+        <EmptyState text="Nessuna presenza registrata" />
+      ) : (
+        giornate.map((g, idx) => {
+          const dataStr = g.giorno ? new Date(g.giorno).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+          const totalePagato = g.presenze.reduce((sum, p) => sum + parseFloat(p.importo_addebitato || '0'), 0);
+          
+          return (
+            <Card key={idx} className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x overflow-hidden">
+              {/* Header giornata */}
+              <div className="bg-[#14b8a6]/5 border-b border-[#14b8a6]/10 px-3 sm:px-4 py-2.5 sm:py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#14b8a6]" />
+                    <div>
+                      <p className="text-sm sm:text-base font-semibold text-[#e8fbff] capitalize">{dataStr}</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500">{g.market_name} &middot; {g.comune}</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-xs">
+                    &euro;{totalePagato.toFixed(2)}
+                  </Badge>
+                </div>
+              </div>
+              
+              {/* Dettaglio presenze della giornata */}
+              <CardContent className="p-0">
+                {g.presenze.map((p, pIdx) => (
+                  <div key={pIdx} className={`px-3 sm:px-4 py-2.5 sm:py-3 ${pIdx > 0 ? 'border-t border-[#14b8a6]/5' : ''}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-[#14b8a6]/10 flex items-center justify-center">
+                          <span className="text-xs font-bold text-[#14b8a6]">{p.stall_number}</span>
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm font-medium text-[#e8fbff]">Posteggio {p.stall_number}</p>
+                          <p className="text-[10px] text-gray-500">{p.tipo_presenza === 'CONCESSION' ? 'Concessione' : 'Spunta'} &middot; {p.mq_posteggio} mq</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold text-[#14b8a6]">&euro;{parseFloat(p.importo_addebitato || '0').toFixed(2)}</span>
+                    </div>
+                    
+                    {/* Timeline orari */}
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      <div className="bg-[#0b1220]/50 rounded-lg p-2 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                          <Clock className="w-3 h-3 text-green-400" />
+                        </div>
+                        <p className="text-xs sm:text-sm font-mono font-bold text-green-400">{p.ora_accesso || '--:--'}</p>
+                        <p className="text-[9px] text-gray-500">Entrata</p>
+                      </div>
+                      <div className="bg-[#0b1220]/50 rounded-lg p-2 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                          <Trash2 className="w-3 h-3 text-yellow-400" />
+                        </div>
+                        <p className="text-xs sm:text-sm font-mono font-bold text-yellow-400">{p.ora_rifiuti || '--:--'}</p>
+                        <p className="text-[9px] text-gray-500">Rifiuti</p>
+                      </div>
+                      <div className="bg-[#0b1220]/50 rounded-lg p-2 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                          <ArrowLeft className="w-3 h-3 text-red-400" />
+                        </div>
+                        <p className="text-xs sm:text-sm font-mono font-bold text-red-400">{p.ora_uscita || '--:--'}</p>
+                        <p className="text-[9px] text-gray-500">Uscita</p>
+                      </div>
+                    </div>
+                    
+                    {/* Contatori */}
+                    <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[#14b8a6]/5">
+                      <div className="flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3 text-[#14b8a6]" />
+                        <span className="text-[10px] text-gray-400">Presenze: <span className="text-[#14b8a6] font-semibold">{p.presenze_totali}</span></span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <XCircle className="w-3 h-3 text-red-400/60" />
+                        <span className="text-[10px] text-gray-400">Assenze: <span className="text-red-400 font-semibold">{p.assenze_non_giustificate}</span></span>
+                      </div>
+                      {p.notes && (
+                        <span className="text-[10px] text-yellow-400/60 ml-auto">Note: {p.notes}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
 // SHARED COMPONENTS
 // ============================================================================
 function LoadingSpinner() {
@@ -1020,6 +1212,8 @@ export default function AnagraficaPage() {
   const [qualificazioni, setQualificazioni] = useState<QualificazioneData[]>([]);
   const [autorizzazioni, setAutorizzazioni] = useState<AutorizzazioneData[]>([]);
   const [domande, setDomande] = useState<DomandaSpuntaData[]>([]);
+  const [presenze, setPresenze] = useState<PresenzaData[]>([]);
+  const [presenzeStats, setPresenzeStats] = useState<PresenzeStats | null>(null);
 
   const [selectedConcessione, setSelectedConcessione] = useState<ConcessioneData | null>(null);
   const [selectedAutorizzazione, setSelectedAutorizzazione] = useState<AutorizzazioneData | null>(null);
@@ -1086,6 +1280,15 @@ export default function AnagraficaPage() {
         if (domJson.success) setDomande(domJson.data || []);
       } catch { /* silenzioso */ }
 
+      try {
+        const presRes = await fetch(`${API_BASE_URL}/api/presenze/impresa/${IMPRESA_ID}`);
+        const presJson = await presRes.json();
+        if (presJson.success) {
+          setPresenze(presJson.data || []);
+          setPresenzeStats(presJson.stats || null);
+        }
+      } catch { /* silenzioso */ }
+
     } catch (err) {
       console.error('Errore fetch anagrafica:', err);
     } finally {
@@ -1108,6 +1311,7 @@ export default function AnagraficaPage() {
     { id: 'qualificazioni', label: 'Qualifiche', icon: Shield, count: qualificazioni.length },
     { id: 'autorizzazioni', label: 'Autoriz.', icon: FileCheck, count: autorizzazioni.length },
     { id: 'domande', label: 'Spunta', icon: ClipboardList, count: domande.length },
+    { id: 'presenze', label: 'Presenze', icon: Clock, count: presenze.length },
     { id: 'collaboratori', label: 'Team', icon: Users, count: null },
   ];
 
@@ -1181,6 +1385,7 @@ export default function AnagraficaPage() {
             ? <DomandaSpuntaDetailView domanda={selectedDomanda} onBack={() => setSelectedDomanda(null)} />
             : <DomandeSpuntaSection domande={domande} loading={loading} onSelect={setSelectedDomanda} />
         )}
+        {activeTab === 'presenze' && <PresenzeSection presenze={presenze} stats={presenzeStats} loading={loading} />}
         {activeTab === 'collaboratori' && <CollaboratoriSection impresaId={IMPRESA_ID} impresa={impresa} />}
 
         {/* Summary indicators */}

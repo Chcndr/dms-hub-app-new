@@ -6804,7 +6804,7 @@ if (el) {
 
 | Commit | Versione | File Modificato | Descrizione |
 |---|---|---|---|
-| `[da inserire]` | v4.4.2 | `client/src/pages/AnagraficaPage.tsx` | **4 FIX CHIRURGICI:** 1) Concessioni trovate (fix tipo `impresa_id`), 2) Stato DURC corretto (calcolo da date), 3) Caricamento impresa veloce (API `?fields=light`), 4) Team connesso a DB reale. |
+| `2f19d7c` | v4.4.2 | `client/src/pages/AnagraficaPage.tsx` | **4 FIX CHIRURGICI:** 1) Concessioni trovate (fix tipo `impresa_id`), 2) Stato DURC corretto (calcolo da date), 3) Caricamento impresa veloce (API `?fields=light`), 4) Team connesso a DB reale. |
 
 ### 🚀 BACKEND (mihub-backend-rest → GitHub → Hetzner)
 

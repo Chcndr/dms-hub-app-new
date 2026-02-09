@@ -584,8 +584,49 @@ function APIDashboard() {
             headers: { 'Content-Type': 'application/json' },
           });
           data = await qualificazioniByImpresaResponse.json();
+           break;
+
+        // COLLABORATORI IMPRESA - chiamate REST dirette
+        case '/api/collaboratori?impresa_id=:id':
+          const collabImpresaId = parsedBody.impresa_id || 38;
+          const collabResponse = await fetch(`https://api.mio-hub.me/api/collaboratori?impresa_id=${collabImpresaId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          data = await collabResponse.json();
           break;
-          
+        case '/api/collaboratori':
+          const createCollabResponse = await fetch('https://api.mio-hub.me/api/collaboratori', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsedBody),
+          });
+          data = await createCollabResponse.json();
+          break;
+        case '/api/collaboratori/:id':
+          if (parsedBody._method === 'DELETE') {
+            const deleteCollabResponse = await fetch(`https://api.mio-hub.me/api/collaboratori/${parsedBody.id || 1}`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+            });
+            data = await deleteCollabResponse.json();
+          } else {
+            const updateCollabResponse = await fetch(`https://api.mio-hub.me/api/collaboratori/${parsedBody.id || 1}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(parsedBody),
+            });
+            data = await updateCollabResponse.json();
+          }
+          break;
+        case '/api/collaboratori/:id/toggle-presenze':
+          const toggleCollabResponse = await fetch(`https://api.mio-hub.me/api/collaboratori/${parsedBody.id || 1}/toggle-presenze`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          data = await toggleCollabResponse.json();
+          break;
+           
         // WALLET / PAGOPA - chiamate tRPC
         case '/api/trpc/wallet.stats':
           data = await utils.client.wallet.stats.query();
