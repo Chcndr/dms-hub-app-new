@@ -1236,15 +1236,21 @@ function GiustificazioniSection({ impresaId, giustificazioni, concessioni, onRef
     concessione_idx: '', // indice nella lista concessioni per selezionare comune/mercato
   });
 
-  // Estrai lista unica di comuni/mercati dalle concessioni attive
+  // Estrai lista unica di comuni/mercati dalle concessioni attive (deduplicata per market_name)
   const comuniMercati = concessioni
     .filter(c => c.stato_calcolato === 'ATTIVA' || c.stato === 'ATTIVA')
-    .map((c, idx) => ({
-      idx,
-      label: `${c.market_name || 'Mercato N/D'} - ${c.comune_rilascio || 'Comune N/D'}`,
-      market_name: c.market_name,
-      comune_rilascio: c.comune_rilascio,
-    }));
+    .reduce((acc, c) => {
+      const key = `${c.market_name || ''}_${c.comune_rilascio || ''}`;
+      if (!acc.find(x => `${x.market_name || ''}_${x.comune_rilascio || ''}` === key)) {
+        acc.push({
+          idx: acc.length,
+          label: `${c.market_name || 'Mercato N/D'} - ${c.comune_rilascio || 'Comune N/D'}`,
+          market_name: c.market_name,
+          comune_rilascio: c.comune_rilascio,
+        });
+      }
+      return acc;
+    }, [] as { idx: number; label: string; market_name: string; comune_rilascio: string }[]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
