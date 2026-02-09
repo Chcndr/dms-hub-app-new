@@ -563,7 +563,7 @@ export default function WalletImpresaPage() {
           </TabsList>
 
           {/* Tab Wallet */}
-          <TabsContent value="wallet">
+          <TabsContent value="wallet" className="max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-340px)] overflow-y-auto scrollbar-thin pr-1">
             <Card className="bg-[#1a2332] border-[#14b8a6]/20 overflow-hidden py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
               <CardHeader className="border-b border-[#14b8a6]/10 p-3 sm:p-6 px-3 sm:px-6">
                 <div className="flex items-center justify-between gap-2">
@@ -692,7 +692,7 @@ export default function WalletImpresaPage() {
           </TabsContent>
 
           {/* Tab Scadenze */}
-          <TabsContent value="scadenze">
+          <TabsContent value="scadenze" className="max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-340px)] overflow-y-auto scrollbar-thin pr-1">
             <Card className="bg-[#1a2332] border-[#14b8a6]/20 py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
               <CardHeader className="px-3 sm:px-6">
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
@@ -844,7 +844,7 @@ export default function WalletImpresaPage() {
           </TabsContent>
 
           {/* Tab Storico */}
-          <TabsContent value="storico">
+          <TabsContent value="storico" className="max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-340px)] overflow-y-auto scrollbar-thin pr-1">
             <Card className="bg-[#1a2332] border-[#14b8a6]/20 py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
               <CardHeader className="px-3 sm:px-6">
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
