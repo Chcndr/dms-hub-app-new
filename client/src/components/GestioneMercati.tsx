@@ -2555,9 +2555,12 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                           
                           {/* Giorno */}
                           <TableCell className="text-xs text-[#e8fbff]/70">
-                            {spuntista.giorno_presenza || presenzaOggi?.giorno || presenzaOggi?.data ? (
-                              new Date(spuntista.giorno_presenza || presenzaOggi?.giorno || presenzaOggi?.data).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })
-                            ) : '-'}
+                            {(() => {
+                              const raw = spuntista.giorno_presenza || presenzaOggi?.giorno || presenzaOggi?.data;
+                              if (!raw) return '-';
+                              const d = new Date(String(raw).includes('T') ? raw : raw + 'T00:00:00');
+                              return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                            })()}
                           </TableCell>
                           
                           {/* Accesso */}
@@ -2749,9 +2752,12 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     
                     {/* Giorno */}
                     <TableCell className="text-xs text-[#e8fbff]/70">
-                      {presenzaOggi?.giorno || presenzaOggi?.data ? (
-                        new Date(presenzaOggi.giorno || presenzaOggi.data).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })
-                      ) : '-'}
+                      {(() => {
+                        const raw = presenzaOggi?.giorno || presenzaOggi?.data;
+                        if (!raw) return '-';
+                        const d = new Date(String(raw).includes('T') ? raw : raw + 'T00:00:00');
+                        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                      })()}
                     </TableCell>
                     
                     {/* Accesso */}
