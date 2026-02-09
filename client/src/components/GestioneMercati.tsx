@@ -2558,8 +2558,15 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                             {(() => {
                               const raw = spuntista.giorno_presenza || presenzaOggi?.giorno || presenzaOggi?.data;
                               if (!raw) return '-';
-                              const d = new Date(String(raw).includes('T') ? raw : raw + 'T00:00:00');
-                              return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                              const s = String(raw).split('T')[0];
+                              const parts = s.split('-');
+                              if (parts.length === 3) {
+                                const days = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+                                const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                const wd = !isNaN(dt.getTime()) ? days[dt.getDay()] : '';
+                                return `${wd} ${parts[2]}/${parts[1]}`;
+                              }
+                              return '-';
                             })()}
                           </TableCell>
                           
@@ -2755,8 +2762,15 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                       {(() => {
                         const raw = presenzaOggi?.giorno || presenzaOggi?.data;
                         if (!raw) return '-';
-                        const d = new Date(String(raw).includes('T') ? raw : raw + 'T00:00:00');
-                        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                        const s = String(raw).split('T')[0];
+                        const parts = s.split('-');
+                        if (parts.length === 3) {
+                          const days = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+                          const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                          const wd = !isNaN(dt.getTime()) ? days[dt.getDay()] : '';
+                          return `${wd} ${parts[2]}/${parts[1]}`;
+                        }
+                        return '-';
                       })()}
                     </TableCell>
                     

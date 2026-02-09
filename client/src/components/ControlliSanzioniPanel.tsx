@@ -1238,7 +1238,7 @@ export default function ControlliSanzioniPanel() {
             className="data-[state=active]:bg-[#10b981]/20 data-[state=active]:text-[#10b981]"
           >
             <FileCheck className="h-4 w-4 mr-2" />
-            Giustifiche ({transgressions.length + giustificazioniManuali.length})
+            Giustifiche ({transgressions.filter(t => t.justification_display_status !== 'SEGNALAZIONE' && t.justification_display_status !== 'VERBALE_AUTOMATICO').length + giustificazioniManuali.length})
           </TabsTrigger>
           <TabsTrigger 
             value="storico" 
@@ -2025,7 +2025,7 @@ export default function ControlliSanzioniPanel() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {transgressions.length === 0 ? (
+              {transgressions.filter(t => t.justification_display_status !== 'SEGNALAZIONE' && t.justification_display_status !== 'VERBALE_AUTOMATICO').length === 0 ? (
                 <div className="text-center py-12">
                   <CheckCircle className="h-16 w-16 text-[#10b981]/30 mx-auto mb-4" />
                   <p className="text-[#e8fbff]/50 text-lg">Nessuna giustifica in attesa</p>
@@ -2039,9 +2039,9 @@ export default function ControlliSanzioniPanel() {
                   <div className="grid grid-cols-5 gap-3 mb-6">
                     <div className="bg-[#0f1729] rounded-lg p-3 text-center">
                       <p className="text-2xl font-bold text-amber-400">
-                        {transgressions.filter(t => t.justification_display_status === 'SEGNALAZIONE' || t.justification_display_status === 'VERBALE_AUTOMATICO').length}
+                        {transgressions.filter(t => t.justification_display_status === 'IN_ATTESA').length + transgressions.filter(t => t.justification_display_status === 'CERTIFICATO_INVIATO').length}
                       </p>
-                      <p className="text-xs text-[#e8fbff]/50">Segnalazioni</p>
+                      <p className="text-xs text-[#e8fbff]/50">In Gestione</p>
                     </div>
                     <div className="bg-[#0f1729] rounded-lg p-3 text-center">
                       <p className="text-2xl font-bold text-yellow-400">
@@ -2063,7 +2063,7 @@ export default function ControlliSanzioniPanel() {
                     </div>
                     <div className="bg-[#0f1729] rounded-lg p-3 text-center">
                       <p className="text-2xl font-bold text-[#10b981]">
-                        {transgressions.length}
+                        {transgressions.filter(t => t.justification_display_status !== 'SEGNALAZIONE' && t.justification_display_status !== 'VERBALE_AUTOMATICO').length}
                       </p>
                       <p className="text-xs text-[#e8fbff]/50">Totale</p>
                     </div>
@@ -2071,7 +2071,7 @@ export default function ControlliSanzioniPanel() {
 
                   {/* Lista trasgressioni */}
                   <div className="space-y-3">
-                    {transgressions.map((t) => (
+                    {transgressions.filter(t => t.justification_display_status !== 'SEGNALAZIONE' && t.justification_display_status !== 'VERBALE_AUTOMATICO').map((t) => (
                       <div 
                         key={t.id} 
                         className="bg-[#0f1729] rounded-lg p-4 border border-[#10b981]/20 hover:border-[#10b981]/40 transition-colors"
