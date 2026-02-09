@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 4.4.2  
-> **Data:** 9 Febbraio 2026 (v4.4.2 — Tab Presenze, Fix Concessioni/DURC/Team DB, Guardian Collaboratori+Presenze)  
+> **Versione:** 4.5.6d  
+> **Data:** 9 Febbraio 2026 (v4.5.6d — Fix Controlli e Sanzioni, Notifiche PM, Giustifiche, Wallet, KPI Dashboard)  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
 
@@ -7184,5 +7184,88 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 13. **Marker referral sulla mappa**: usano `getMarkerIcon('referral')` con colore `#EC4899` fuchsia — richiedono che `referralList` abbia `lat/lng` non null
 14. **Barra referral nel trend chart**: campo `referral` in `TrendDataPoint` — il backend deve restituire `referral` nel JSON del trend
 15. **Orario nelle notifiche**: TUTTE le date nelle liste e popup devono avere `{ hour: '2-digit', minute: '2-digit' }` — non solo giorno/mese/anno
+
+---
+
+
+## 🔄 AGGIORNAMENTO SESSIONE 9 FEBBRAIO 2026 — POMERIGGIO/SERA (v4.5.6d)
+
+> **Data:** 9 Febbraio 2026
+> **Sessione:** Fix Controlli e Sanzioni, Notifiche PM, Giustifiche, Wallet Impresa, KPI Dashboard
+
+### 🚀 FRONTEND (dms-hub-app-new → GitHub → Vercel)
+
+| Commit | Versione | File Modificati | Descrizione |
+|---|---|---|---|
+| `71deec4` | v4.5.6 | `ControlliSanzioniPanel.tsx`, `WalletImpresaPage.tsx`, `AnagraficaPage.tsx` | **FIX NOTIFICHE + ARCHIVIAZIONE + GIUSTIFICHE + WALLET:** 1) Note archiviazione: stato locale aggiornato con dati backend. 2) Wallet overflow: flex-shrink-0 su card sanzioni. 3) Giustifica: comune_id da concessione + selettore posteggio. 4) Indicatori colorati giustifiche. |
+| `f3d06e2` | v4.5.6b | `ControlliSanzioniPanel.tsx`, `WalletImpresaPage.tsx`, `AnagraficaPage.tsx` | **FIX NOTIFICHE PM + OVERFLOW + PREFILL + KPI:** 1) Overflow card sanzioni con overflow-hidden. 2) Prefill giustifica con useRef robusto. 3) KPI indicatori popolati da API stats. |
+| `e858688` | v4.5.6d | `AnagraficaPage.tsx`, `WalletImpresaPage.tsx` | **FIX PRESENZE STATO + WALLET SCROLL + SCONTO 30%:** 1) Presenze: banner Da giustificare cambia colore (rosso→giallo→verde) in base allo stato giustifica. 2) Wallet: scroll contenuto nei tab con max-h e overflow-y-auto. |
+
+### 🚀 BACKEND (mihub-backend-rest → GitHub → Hetzner)
+
+| Commit | Versione | File Modificati | Descrizione |
+|---|---|---|---|
+| `21e6945` | v4.5.6 | `routes/notifiche.js`, `cron/market-transgressions.js` | **FIX NOTIFICHE PM + CRON:** 1) Endpoint messaggi include notifiche SISTEMA. 2) CRON usa POLIZIA_MUNICIPALE come mittente_tipo e comune_id come mittente_id. |
+| `be81b93` | v4.5.6b | `routes/inspections.js`, `cron/market-transgressions.js` | **FIX KPI STATS:** 1) Corretto nomi tabella (concessioni→concessions, mercato_id→market_id, impresa_id→business_id). 2) Rimosso filtro data inesistente su sanctions. |
+| `1c9c26b` | v4.5.6d | `cron/market-transgressions.js` | **FIX SCONTO 30%:** CRON imposta notified=true e notified_at=NOW() alla creazione della sanzione per abilitare il calcolo dello sconto. |
+
+### 🗄️ DATABASE (Neon) — Correzioni Dati
+
+| Operazione | Descrizione |
+|---|---|
+| Giustifiche comune_id | Aggiornato comune_id da 1 (Grosseto) a 8 (Modena) per le giustifiche dell'impresa MIO TEST |
+| Notifiche risposte | Aggiornato target_id da 1 a 8 e target_tipo da SISTEMA a POLIZIA_MUNICIPALE per le risposte impresa |
+| Sanctions notified_at | Impostato notified_at=created_at per tutte le sanzioni con notified_at NULL |
+
+### 📊 KPI DASHBOARD — STATO ATTUALE (Modena, comune_id=8)
+
+| Indicatore | Valore | Note |
+|---|---|---|
+| Controlli Totali | 2 | 2 regolari, 0 non regolari |
+| Verbali | 22 | 12 pagati, 10 non pagati |
+| Importo Sanzioni | €6.000,00 | Totale importi |
+| Da Controllare | 13 | Watchlist attiva |
+| Notifiche PM | 32 | 27 inviati + 5 ricevuti |
+| Giustifiche | 3 | 1 in attesa, 2 accettate |
+
+### 🔧 BUG RISOLTI — DETTAGLIO TECNICO
+
+**1. Notifiche PM — Sezione Controlli e Sanzioni (Dashboard)**
+Il NotificationManager nel ControlliSanzioniPanel usava `mittente_tipo=POLIZIA_MUNICIPALE` per filtrare i messaggi, ma le notifiche CRON venivano inviate con `mittente_tipo=SISTEMA`. Corretto il CRON per usare `POLIZIA_MUNICIPALE` e l'endpoint backend per includere anche le notifiche SISTEMA nella query UNION. Inoltre, le risposte dell'impresa avevano `target_id=1` (Grosseto) invece di `target_id=8` (Modena) — corretto nel DB.
+
+**2. Note Archiviazione — Tab Da Controllare**
+Le note venivano salvate correttamente nel DB ma lo stato locale React non veniva aggiornato con il campo `justification_notes` dopo l'archiviazione. Il `setTransgressions` aggiornava solo `status` e `justification_display_status` ma non le note. Corretto per usare i dati completi restituiti dal backend.
+
+**3. Tab Giustifiche Vuoto**
+Le giustifiche inviate dall'impresa avevano `comune_id=1` (default dal localStorage utente) invece di `comune_id=8` (Modena, derivato dal mercato della concessione). Il dashboard filtrava per `comune_id=8` e non le trovava. Corretto l'app mobile per derivare il `comune_id` dalla concessione selezionata e aggiornati i dati storici nel DB.
+
+**4. Wallet Card Overflow**
+Le card sanzioni nel wallet (sia attive che storico) non avevano `overflow-hidden` sul contenitore esterno, causando il testo lungo (es. "SPAZZATURA_NON_CONSEGNATA") a uscire dalla card. Aggiunto `overflow-hidden` e `flex-shrink-0` al div destro.
+
+**5. Flusso Giustifica da Presenze**
+Quando l'utente cliccava "Da giustificare" nelle presenze, veniva portato al tab Giustificazioni ma il form era vuoto. Implementato un sistema di prefill con `useRef` che passa i dati della presenza (mercato, posteggio, giorno) al form di giustificazione.
+
+**6. Selettore Posteggio nel Form Giustifica**
+Il form di giustificazione manuale aveva solo il selettore mercato. Aggiunto il selettore posteggio che mostra i posteggi disponibili dalla lista concessioni dell'impresa, filtrati per il mercato selezionato.
+
+**7. Indicatori Colorati KPI**
+Gli indicatori grandi colorati sopra la sezione giustifiche nel dashboard erano sempre a 0. Corretto l'endpoint `inspections/stats` nel backend: nomi tabella errati (`concessioni` → `concessions`, `mercato_id` → `market_id`, `impresa_id` → `business_id`) e rimosso filtro data inesistente su sanctions.
+
+**8. Stato Giustifica in Presenze**
+Il banner "Da giustificare" nelle presenze rimaneva sempre rosso anche dopo l'invio della giustifica. Implementato cross-reference tra presenze e giustificazioni per mostrare: rosso "Da giustificare" → giallo "In Attesa" → verde "Accettata".
+
+**9. Wallet Scroll Contenuto**
+Le liste nei tab del wallet (Wallet, Scadenze, Storico) facevano scorrere l'intera pagina all'infinito. Aggiunto contenimento scroll con `max-h-[calc(100vh-380px)]` e `overflow-y-auto` per ogni TabsContent.
+
+**10. Sconto 30% Sanzioni**
+Il CRON non impostava `notified=true` e `notified_at=NOW()` alla creazione della sanzione, quindi il calcolo dello sconto 30% (entro 5 giorni dalla notifica) restituiva sempre `false`. Corretto il CRON e aggiornate le sanzioni esistenti nel DB.
+
+### ⚠️ NOTE IMPORTANTI AGGIUNTIVE PER SESSIONI FUTURE
+
+19. **Notifiche CRON**: Le notifiche automatiche del CRON alle imprese DEVONO usare `mittente_tipo='POLIZIA_MUNICIPALE'` e `mittente_id=comune_id` del mercato — NON usare `SISTEMA` o `0`
+20. **Giustifiche comune_id**: Il `comune_id` nelle giustifiche DEVE essere derivato dalla concessione selezionata (tramite il mercato), NON dal localStorage dell'utente
+21. **Sanctions notified_at**: L'INSERT delle sanzioni nel CRON DEVE includere `notified=true, notified_at=NOW()` per abilitare il calcolo dello sconto 30%
+22. **KPI Stats tabelle**: L'endpoint `inspections/stats` usa `concessions` (NON `concessioni`), `market_id` (NON `mercato_id`), `business_id` per inspections (NON `impresa_id`)
+23. **Wallet Impresa scroll**: I tab del wallet usano `max-h-[calc(100vh-380px)] overflow-y-auto` per contenere lo scroll — NON rimuovere
 
 ---
