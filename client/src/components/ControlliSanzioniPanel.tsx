@@ -1917,7 +1917,13 @@ export default function ControlliSanzioniPanel() {
               ) : (
                 <div className="space-y-4">
                   {/* Stats rapide */}
-                  <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="grid grid-cols-5 gap-3 mb-6">
+                    <div className="bg-[#0f1729] rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-amber-400">
+                        {transgressions.filter(t => t.justification_display_status === 'SEGNALAZIONE' || t.justification_display_status === 'VERBALE_AUTOMATICO').length}
+                      </p>
+                      <p className="text-xs text-[#e8fbff]/50">Segnalazioni</p>
+                    </div>
                     <div className="bg-[#0f1729] rounded-lg p-3 text-center">
                       <p className="text-2xl font-bold text-yellow-400">
                         {transgressions.filter(t => t.justification_display_status === 'IN_ATTESA').length}
@@ -1967,14 +1973,20 @@ export default function ControlliSanzioniPanel() {
                               </Badge>
                               <Badge 
                                 className={`${
-                                  t.justification_display_status === 'SCADUTA'
+                                  t.justification_display_status === 'SEGNALAZIONE'
+                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                    : t.justification_display_status === 'VERBALE_AUTOMATICO'
+                                    ? 'bg-red-600/20 text-red-400 border-red-600/30'
+                                    : t.justification_display_status === 'SCADUTA'
                                     ? 'bg-red-500/20 text-red-400 border-red-500/30'
                                     : t.justification_display_status === 'CERTIFICATO_INVIATO'
                                     ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                                     : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
                                 }`}
                               >
-                                {t.justification_display_status === 'SCADUTA' ? 'Scaduta' 
+                                {t.justification_display_status === 'SEGNALAZIONE' ? 'Segnalazione CRON'
+                                  : t.justification_display_status === 'VERBALE_AUTOMATICO' ? 'Verbale Automatico'
+                                  : t.justification_display_status === 'SCADUTA' ? 'Scaduta' 
                                   : t.justification_display_status === 'CERTIFICATO_INVIATO' ? 'Certificato Inviato'
                                   : 'In Attesa'}
                               </Badge>
