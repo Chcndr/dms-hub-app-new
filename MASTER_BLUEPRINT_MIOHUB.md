@@ -148,9 +148,24 @@ Il diagramma seguente illustra l'architettura proposta per far coesistere e comu
 
 ![Diagramma di Interoperabilità DMS Legacy e MioHub](https://files.manuscdn.com/user_upload_by_module/session_file/310519663287267762/jNOCHZnIJLMBCPyY.png)
 
-### 🔌 Modulo Integrazione DMS Legacy — v2.0.0 (Connessione Diretta DB)
+### 🔌 Modulo Integrazione DMS Legacy — v2.1.0 (Connessione Diretta DB)
 
-**Stato: ✅ IMPLEMENTATO E ATTIVO** — Deploy 9 Febbraio 2026
+**Stato: ✅ IMPLEMENTATO, TESTATO E ATTIVO** — Deploy 9 Febbraio 2026
+
+**Risultati Test Live (9 Feb 2026 ore 22:41 UTC):**
+
+| Endpoint | Stato | Dati Restituiti |
+|---|---|---|
+| `/health` | ✅ healthy | Connessione DB attiva, response 405ms |
+| `/stats` | ✅ OK | 2 mercati, 29 ambulanti, 25 concessioni, 451 piazzole, 731 istanze, 8 spuntisti |
+| `/markets` | ✅ OK | DMS-1: Test Bologna (436 piazzole), DMS-14: Cervia Demo (15 piazzole) |
+| `/vendors` | ✅ OK | 29 ambulanti con denominazione, CF, PIVA, indirizzo |
+| `/concessions` | ✅ OK | 25 concessioni con mercato, ambulante, piazzola, stato |
+| `/stalls/1` | ✅ OK | 436 piazzole con mq, alimentare, posizione, concessione attiva |
+| `/spuntisti` | ✅ OK | 8 spuntisti tutti ATTIVO |
+| `/market-sessions/1` | ✅ OK | 365 giornate di mercato con date e conteggi |
+| `/presences/1` | ✅ OK | 0 presenze (nessuna registrata al momento) |
+| `/import/market` | ✅ 403 Bloccato | Import correttamente disabilitato |
 
 Questa sezione documenta l'implementazione del modulo di integrazione con il DMS Legacy. L'approccio è stato aggiornato da **API Proxy** a **Connessione Diretta al Database PostgreSQL** su AWS RDS, per maggiore affidabilità e indipendenza dal backend Heroku.
 
@@ -195,9 +210,9 @@ Questa sezione documenta l'implementazione del modulo di integrazione con il DMS
 
 | File | Funzione | Stato |
 |---|---|---|
-| `routes/dms-legacy-service.js` | Pool connessione DB RDS, query SELECT, guard import, health check, fetch per ogni entità | ✅ Attivo |
-| `routes/dms-legacy-transformer.js` | Mapping colonna per colonna: mercati, ambulanti→imprese, concessioni, presenze, sessioni | ✅ Attivo |
-| `routes/dms-legacy.js` | 14 endpoint REST (9 export + 3 import bloccati + 2 sync) | ✅ Attivo |
+| `routes/dms-legacy-service.js` | Pool connessione DB RDS, query SELECT con nomi colonne verificati (mkt_id, amb_id, pz_id, conc_id, pre_id, ist_id, sp_id, doc_id), guard import, health check, 9 fetch + stats | ✅ Testato |
+| `routes/dms-legacy-transformer.js` | 8 transformer con nomi colonne reali: transformMarket, transformVendor, transformConcession, transformPresence, transformMarketSession, transformStall, transformSpuntista, transformDocument | ✅ Testato |
+| `routes/dms-legacy.js` | 14 endpoint REST (9 export + 3 import bloccati + 2 sync) + health + status | ✅ Testato |
 | `index.js` | +2 righe: import route + mount `/api/integrations/dms-legacy` + CRON ogni 60 min | ✅ Attivo |
 
 ##### Frontend (`dms-hub-app-new`)
