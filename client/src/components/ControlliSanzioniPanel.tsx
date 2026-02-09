@@ -415,7 +415,7 @@ export default function ControlliSanzioniPanel() {
 
       // Fetch giustificazioni manuali inviate dalle imprese (certificati medici, ecc.)
       try {
-        const giustManualiRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/giustificazioni/pendenti`));
+        const giustManualiRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/giustificazioni`));
         const giustManualiData = await giustManualiRes.json();
         if (giustManualiData.success) setGiustificazioniManuali(giustManualiData.data || []);
       } catch (e) { console.error('Errore fetch giustificazioni manuali:', e); }
