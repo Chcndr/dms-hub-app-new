@@ -1571,15 +1571,19 @@ export const integrations: IntegrationConfig[] = [
   {
     id: 'dms-legacy',
     name: 'DMS Legacy (Heroku)',
-    description: 'Sistema DMS precedente ospitato su Heroku. Contiene dati storici e alcune funzionalità legacy ancora in uso.',
-    baseUrl: 'https://dms-legacy.herokuapp.com',
-    status: 'in_preparation',
-    dataOwner: 'DMS Legacy',
-    notes: 'In fase di migrazione verso il nuovo sistema. Alcuni dati devono ancora essere sincronizzati. Master dei dati: DMS Legacy per dati storici pre-2025.',
+    description: 'Integrazione attiva con il sistema DMS Legacy su Heroku (Lapsy srl). Proxy API per mercati Bologna/Cervia, ambulanti, concessioni e presenze real-time.',
+    baseUrl: 'https://mihub.157-90-29-66.nip.io',
+    status: 'active',
+    dataOwner: 'DMS Legacy (Lapsy srl)',
+    notes: 'Integrazione attiva via API Proxy. I dati vengono letti dal backend Heroku e trasformati nel formato MioHub. Sync automatico ogni ora. SOLA LETTURA verso Heroku.',
     endpoints: [
-      '/api/legacy/markets',
-      '/api/legacy/vendors',
-      '/api/legacy/transactions'
+      '/api/integrations/dms-legacy/markets',
+      '/api/integrations/dms-legacy/vendors',
+      '/api/integrations/dms-legacy/concessions',
+      '/api/integrations/dms-legacy/presences/:marketId',
+      '/api/integrations/dms-legacy/market-sessions/:marketId',
+      '/api/integrations/dms-legacy/sync',
+      '/api/integrations/dms-legacy/cron-sync'
     ]
   },
   {

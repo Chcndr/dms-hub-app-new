@@ -11,13 +11,16 @@ import {
   Clock,
   Database,
   RefreshCw,
-  Info
+  Info,
+  Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { integrations, type IntegrationConfig } from '@/config/realEndpoints';
+import { integrations, API_BASE_URL, type IntegrationConfig } from '@/config/realEndpoints';
 
 export default function ConnessioniV2() {
   const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
+  const [syncingIntegration, setSyncingIntegration] = useState<string | null>(null);
+  const [lastSyncInfo, setLastSyncInfo] = useState<Record<string, { timestamp: string; status: string; details?: any }>>({});
 
   const getStatusBadge = (status: IntegrationConfig['status']) => {
     switch (status) {
@@ -49,17 +52,67 @@ export default function ConnessioniV2() {
     setTestingIntegration(integration.id);
     
     try {
-      // Testa connessione all'integrazione
-      const response = await fetch(integration.baseUrl, {
-        method: 'HEAD',
-        mode: 'no-cors' // Evita problemi CORS per test semplice
-      });
-      
-      toast.success(`Connessione a ${integration.name} verificata`);
+      if (integration.id === 'dms-legacy') {
+        // Per DMS Legacy, usa l'endpoint health dedicato
+        const response = await fetch(`${API_BASE_URL}/api/integrations/dms-legacy/health`);
+        const data = await response.json();
+        if (data.success && data.data?.status === 'healthy') {
+          toast.success(`DMS Legacy: Connessione OK - Auth ${data.data.auth?.responseTime}, API ${data.data.api?.responseTime}`);
+        } else {
+          toast.error(`DMS Legacy: ${data.data?.error || 'Non raggiungibile'}`);
+        }
+      } else {
+        // Per le altre integrazioni, test generico
+        const response = await fetch(integration.baseUrl, {
+          method: 'HEAD',
+          mode: 'no-cors'
+        });
+        toast.success(`Connessione a ${integration.name} verificata`);
+      }
     } catch (error: any) {
       toast.error(`Errore connessione a ${integration.name}: ${error.message}`);
     } finally {
       setTestingIntegration(null);
+    }
+  };
+
+  const handleSync = async (integration: IntegrationConfig) => {
+    if (integration.id !== 'dms-legacy') return;
+    
+    setSyncingIntegration(integration.id);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/integrations/dms-legacy/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        const syncData = data.data;
+        setLastSyncInfo(prev => ({
+          ...prev,
+          'dms-legacy': {
+            timestamp: syncData.timestamp,
+            status: syncData.status,
+            details: syncData.details
+          }
+        }));
+        
+        const marketCount = syncData.details?.markets?.count || 0;
+        const vendorCount = syncData.details?.vendors?.count || 0;
+        const concessionCount = syncData.details?.concessions?.count || 0;
+        
+        toast.success(
+          `Sync DMS Legacy completata in ${syncData.duration} - Mercati: ${marketCount}, Ambulanti: ${vendorCount}, Concessioni: ${concessionCount}`
+        );
+      } else {
+        toast.error(`Errore sync: ${data.error}`);
+      }
+    } catch (error: any) {
+      toast.error(`Errore sync DMS Legacy: ${error.message}`);
+    } finally {
+      setSyncingIntegration(null);
     }
   };
 
@@ -162,6 +215,24 @@ export default function ConnessioniV2() {
                 </div>
               </div>
 
+              {/* Ultimo Sync (solo per DMS Legacy) */}
+              {integration.id === 'dms-legacy' && lastSyncInfo['dms-legacy'] && (
+                <div className="bg-green-500/10 p-3 rounded-lg border border-green-500/20">
+                  <p className="text-xs text-green-300 font-semibold mb-1">Ultimo Sync:</p>
+                  <p className="text-xs text-green-200/70">
+                    {new Date(lastSyncInfo['dms-legacy'].timestamp).toLocaleString('it-IT')} - 
+                    Stato: {lastSyncInfo['dms-legacy'].status}
+                  </p>
+                  {lastSyncInfo['dms-legacy'].details && (
+                    <div className="mt-1 flex gap-3 text-xs text-green-200/60">
+                      <span>Mercati: {lastSyncInfo['dms-legacy'].details.markets?.count || 0}</span>
+                      <span>Ambulanti: {lastSyncInfo['dms-legacy'].details.vendors?.count || 0}</span>
+                      <span>Concessioni: {lastSyncInfo['dms-legacy'].details.concessions?.count || 0}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Note Tecniche */}
               <div className="bg-[#0a1628] p-3 rounded-lg border border-[#14b8a6]/20">
                 <p className="text-xs text-[#e8fbff]/70 mb-1 font-semibold">Note Tecniche:</p>
@@ -173,7 +244,7 @@ export default function ConnessioniV2() {
                 <div>
                   <p className="text-sm text-[#e8fbff]/70 mb-2 flex items-center gap-2">
                     <Database className="h-4 w-4 text-[#14b8a6]" />
-                    Endpoint Disponibili:
+                    Endpoint Disponibili ({integration.endpoints.length}):
                   </p>
                   <div className="space-y-1">
                     {integration.endpoints.map((endpoint, idx) => (
@@ -210,13 +281,34 @@ export default function ConnessioniV2() {
                         </>
                       )}
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 border-green-500/30 text-green-400 hover:bg-green-500/10"
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Connesso
-                    </Button>
+                    {integration.id === 'dms-legacy' ? (
+                      <Button
+                        variant="outline"
+                        className="flex-1 border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                        onClick={() => handleSync(integration)}
+                        disabled={syncingIntegration === integration.id}
+                      >
+                        {syncingIntegration === integration.id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-400 mr-2"></div>
+                            Sync...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="h-4 w-4 mr-2" />
+                            Sincronizza Ora
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="flex-1 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Connesso
+                      </Button>
+                    )}
                   </>
                 ) : integration.status === 'in_preparation' ? (
                   <Button
@@ -255,7 +347,7 @@ export default function ConnessioniV2() {
             <div className="bg-[#0a1628] p-4 rounded-lg border border-[#14b8a6]/20">
               <h4 className="text-sm font-semibold text-[#14b8a6] mb-2">DMS Legacy</h4>
               <p className="text-xs text-[#e8fbff]/70">
-                Master dei dati storici pre-2025. In fase di migrazione verso il nuovo sistema Core.
+                Master dei dati mercati Bologna/Cervia e app di spunta. Integrazione attiva via API Proxy (Lapsy srl - Heroku).
               </p>
             </div>
             
