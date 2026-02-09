@@ -1810,7 +1810,7 @@ export default function ControlliSanzioniPanel() {
                             </div>
                             <p className="text-[#e8fbff] font-medium">{t.business_name}</p>
                             <p className="text-[#e8fbff]/50 text-sm">{t.market_name} &middot; {new Date(t.market_date).toLocaleDateString('it-IT')}</p>
-                            <p className="text-[#e8fbff]/40 text-xs mt-1">{t.notes || 'Archiviata senza note'}</p>
+                            <p className="text-[#e8fbff]/40 text-xs mt-1">{t.justification_notes || 'Archiviata senza note'}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">
