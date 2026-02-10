@@ -1536,6 +1536,93 @@ export const tccWalletImpresaEndpoints: EndpointConfig[] = [
 /**
  * TUTTI GLI ENDPOINT ORGANIZZATI
  */
+/**
+ * CATEGORIA: FIREBASE AUTH
+ * Autenticazione Firebase (Google, Apple, Email) + Legacy
+ */
+export const firebaseAuthEndpoints: EndpointConfig[] = [
+  {
+    id: 'firebase-sync',
+    method: 'POST',
+    path: '/api/auth/firebase/sync',
+    name: 'Firebase Sync',
+    description: 'Sincronizza utente Firebase con MioHub (crea/aggiorna profilo dopo login social)',
+    category: 'Firebase Auth',
+    requiresAuth: true,
+    exampleBody: { uid: 'firebase-uid', email: 'user@example.com', displayName: 'Nome Utente', provider: 'google.com', role: 'citizen' },
+    exampleResponse: { success: true, user: { uid: 'firebase-uid', email: 'user@example.com', role: 'citizen', permissions: ['view_markets', 'view_wallet'] } },
+    notes: 'Richiede Bearer Token Firebase nell\'header Authorization'
+  },
+  {
+    id: 'firebase-verify',
+    method: 'POST',
+    path: '/api/auth/firebase/verify',
+    name: 'Firebase Verify Token',
+    description: 'Verifica validità di un Firebase ID Token',
+    category: 'Firebase Auth',
+    requiresAuth: true,
+    exampleResponse: { valid: true, uid: 'firebase-uid', email: 'user@example.com', provider: 'google.com' },
+    notes: 'Utilizzato per validare sessioni esistenti'
+  },
+  {
+    id: 'firebase-me',
+    method: 'GET',
+    path: '/api/auth/firebase/me',
+    name: 'Firebase User Profile',
+    description: 'Ottieni profilo utente Firebase corrente con ruoli e permessi MioHub',
+    category: 'Firebase Auth',
+    requiresAuth: true,
+    exampleResponse: { success: true, user: { uid: 'firebase-uid', email: 'user@example.com', role: 'citizen', permissions: [] } },
+    notes: 'Richiede sessione Firebase attiva'
+  },
+  {
+    id: 'firebase-logout',
+    method: 'POST',
+    path: '/api/auth/firebase/logout',
+    name: 'Firebase Logout',
+    description: 'Logout utente Firebase e invalidazione sessione server-side',
+    category: 'Firebase Auth',
+    requiresAuth: true,
+    exampleResponse: { success: true, message: 'Logout effettuato' },
+    notes: 'Invalida sessione e rimuove cookie'
+  },
+  {
+    id: 'auth-login-legacy',
+    method: 'POST',
+    path: '/api/auth/login',
+    name: 'Login Legacy',
+    description: 'Login con email/password (fallback per compatibilità)',
+    category: 'Firebase Auth',
+    requiresAuth: false,
+    exampleBody: { email: 'user@example.com', password: '***' },
+    exampleResponse: { success: true, user: { email: 'user@example.com', role: 'citizen' } },
+    notes: 'Endpoint di fallback, preferire Firebase SDK'
+  },
+  {
+    id: 'auth-register',
+    method: 'POST',
+    path: '/api/auth/register',
+    name: 'Registrazione Utente',
+    description: 'Registrazione nuovo utente con email/password',
+    category: 'Firebase Auth',
+    requiresAuth: false,
+    exampleBody: { email: 'user@example.com', password: '***', displayName: 'Nome Utente', role: 'citizen' },
+    exampleResponse: { success: true, user: { email: 'user@example.com', role: 'citizen' } },
+    notes: 'Crea profilo Firebase + profilo MioHub'
+  },
+  {
+    id: 'auth-config',
+    method: 'GET',
+    path: '/api/auth/config',
+    name: 'Firebase Config',
+    description: 'Configurazione pubblica Firebase per inizializzare il client SDK',
+    category: 'Firebase Auth',
+    requiresAuth: false,
+    exampleResponse: { projectId: 'dmshub-auth-2975e', authDomain: 'dmshub-auth-2975e.firebaseapp.com' },
+    notes: 'Endpoint pubblico, nessuna autenticazione richiesta'
+  }
+];
+
 export const allRealEndpoints: EndpointConfig[] = [
   ...marketsEndpoints,
   ...stallsEndpoints,
@@ -1549,7 +1636,8 @@ export const allRealEndpoints: EndpointConfig[] = [
   ...qualificazioniEndpoints,
   ...gisEndpoints,
   ...abacusSqlEndpoints,
-  ...abacusGithubEndpoints
+  ...abacusGithubEndpoints,
+  ...firebaseAuthEndpoints
   // ...mobilityEndpoints
 ];
 
@@ -1610,6 +1698,24 @@ export const integrations: IntegrationConfig[] = [
       '/api/mobility/stops',
       '/api/mobility/lines',
       '/api/mobility/parking'
+    ]
+  },
+  {
+    id: 'firebase-auth',
+    name: 'Firebase Authentication',
+    description: 'Sistema di autenticazione ibrido Firebase (Google, Apple, Email/Password) integrato con il backend MioHub per la gestione dei profili utente e dei ruoli.',
+    baseUrl: 'https://orchestratore.mio-hub.me',
+    status: 'active',
+    dataOwner: 'Firebase (Google Cloud) + MioHub',
+    notes: 'Progetto Firebase: dmshub-auth-2975e. Provider attivi: Google, Apple, Email/Password. Sincronizzazione automatica con profili MioHub. Fallback locale disponibile.',
+    endpoints: [
+      '/api/auth/firebase/sync',
+      '/api/auth/firebase/verify',
+      '/api/auth/firebase/me',
+      '/api/auth/firebase/logout',
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/auth/config'
     ]
   }
 ];

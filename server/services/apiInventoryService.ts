@@ -65,6 +65,87 @@ export function getAPIInventory(): APIEndpoint[] {
     },
 
     // ============================================================================
+    // FIREBASE AUTH (v2.0)
+    // ============================================================================
+    {
+      id: 'auth.firebase.sync',
+      method: 'POST',
+      path: '/api/auth/firebase/sync',
+      description: 'Sincronizza utente Firebase con MioHub (crea/aggiorna profilo)',
+      category: 'system',
+      status: 'active',
+      version: '2.0',
+      requiresAuth: true,
+      documentation: 'Riceve un Firebase ID Token, lo verifica con Firebase Admin SDK, crea o aggiorna il profilo utente nel database MioHub e restituisce il profilo unificato con ruoli e permessi.',
+    },
+    {
+      id: 'auth.firebase.verify',
+      method: 'POST',
+      path: '/api/auth/firebase/verify',
+      description: 'Verifica validità di un Firebase ID Token',
+      category: 'system',
+      status: 'active',
+      version: '2.0',
+      requiresAuth: true,
+      documentation: 'Verifica un Firebase ID Token e restituisce i dati decodificati (uid, email, provider). Utilizzato per validare sessioni esistenti.',
+    },
+    {
+      id: 'auth.firebase.me',
+      method: 'GET',
+      path: '/api/auth/firebase/me',
+      description: 'Ottieni profilo utente Firebase corrente',
+      category: 'system',
+      status: 'active',
+      version: '2.0',
+      requiresAuth: true,
+      documentation: 'Restituisce il profilo completo dell\'utente autenticato tramite Firebase, inclusi ruoli e permessi MioHub.',
+    },
+    {
+      id: 'auth.firebase.logout',
+      method: 'POST',
+      path: '/api/auth/firebase/logout',
+      description: 'Logout utente Firebase e invalidazione sessione',
+      category: 'system',
+      status: 'active',
+      version: '2.0',
+      requiresAuth: true,
+      documentation: 'Effettua il logout dell\'utente Firebase, invalida la sessione lato server e rimuove i cookie.',
+    },
+    {
+      id: 'auth.login',
+      method: 'POST',
+      path: '/api/auth/login',
+      description: 'Login legacy con email/password (fallback)',
+      category: 'system',
+      status: 'active',
+      version: '2.0',
+      requiresAuth: false,
+      documentation: 'Endpoint di login legacy per compatibilità. Accetta email e password, restituisce profilo utente.',
+    },
+    {
+      id: 'auth.register',
+      method: 'POST',
+      path: '/api/auth/register',
+      description: 'Registrazione nuovo utente con email/password',
+      category: 'system',
+      status: 'active',
+      version: '2.0',
+      requiresAuth: false,
+      documentation: 'Registra un nuovo utente nel sistema con email e password. Crea il profilo Firebase e il profilo MioHub.',
+    },
+    {
+      id: 'auth.config',
+      method: 'GET',
+      path: '/api/auth/config',
+      description: 'Configurazione pubblica Firebase per il client',
+      category: 'system',
+      status: 'active',
+      version: '2.0',
+      requiresAuth: false,
+      documentation: 'Restituisce la configurazione Firebase pubblica (apiKey, authDomain, projectId) necessaria per inizializzare il client SDK.',
+    },
+
+    // ============================================================================
     // ANALYTICS
     // ============================================================================
     {
