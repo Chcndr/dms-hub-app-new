@@ -6,6 +6,7 @@ import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
+import firebaseAuthRouter from "../firebaseAuthRouter";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { addLog } from "../services/apiLogsService";
@@ -134,6 +135,9 @@ async function startServer() {
   });
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Firebase Authentication routes
+  app.use("/api/auth", firebaseAuthRouter);
   
   // REST endpoint for Slot Editor v3 import (CORS-enabled)
   app.post("/api/import-from-slot-editor", async (req, res) => {

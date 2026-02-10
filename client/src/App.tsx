@@ -8,6 +8,7 @@ import { MioProvider } from "./contexts/MioContext";
 import { AnimationProvider } from "./contexts/AnimationContext";
 import { PermissionsProvider } from "./contexts/PermissionsContext";
 import { TransportProvider } from "./contexts/TransportContext";
+import { FirebaseAuthProvider } from "./contexts/FirebaseAuthContext";
 import ChatWidget from "./components/ChatWidget";
 import HomePage from "./pages/HomePage";
 import MapPage from "./pages/MapPage";
@@ -97,20 +98,22 @@ function App() {
       <ThemeProvider
         defaultTheme="dark"
       >
-        <AnimationProvider>
-          <MioProvider>
-            <PermissionsProvider>
-              <TransportProvider>
-                <TooltipProvider>
-                <ImpersonationBanner />
-              <Toaster />
-              <Router />
-              <ChatWidget userRole="client" />
-                </TooltipProvider>
-              </TransportProvider>
-            </PermissionsProvider>
-          </MioProvider>
-        </AnimationProvider>
+        <FirebaseAuthProvider>
+          <AnimationProvider>
+            <MioProvider>
+              <PermissionsProvider>
+                <TransportProvider>
+                  <TooltipProvider>
+                    <ImpersonationBanner />
+                    <Toaster />
+                    <Router />
+                    <ChatWidget userRole="client" />
+                  </TooltipProvider>
+                </TransportProvider>
+              </PermissionsProvider>
+            </MioProvider>
+          </AnimationProvider>
+        </FirebaseAuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
