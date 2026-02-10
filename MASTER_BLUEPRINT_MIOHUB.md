@@ -111,218 +111,318 @@
 
 ---
 
-## 🏛️ INTEGRAZIONE DMS LEGACY (Heroku)
+## 🏛️ INTEGRAZIONE DMS LEGACY (Heroku) — PROGETTO COMPLETO v3.0
 
-Questa sezione documenta l'architettura e la strategia di integrazione per il sistema DMS Legacy, ospitato su Heroku, che gestisce i mercati di Bologna e Cervia e l'app di spunta.
+> **Versione progetto:** 3.0.0  
+> **Data:** 10 Febbraio 2026  
+> **Principio fondamentale:** MioHub si adatta al formato del Legacy. Quando ci connettiamo, i dati sono già nel formato che il Legacy si aspetta — stessi nomi colonne, stessi tipi, stessi valori. Il Legacy non deve cambiare nulla.
 
-### Architettura e Credenziali
+### 1. Visione Strategica
+
+**MioHub è il CERVELLO** — elabora, decide, autorizza. Si connette a SUAP, PagoPA, PDND, ANPR. Gestisce login imprese (SPID/CIE), concessioni, canone, more, mappa GIS, wallet TCC, 23 controlli SCIA, verbali automatici.
+
+**DMS Legacy è il BRACCIO** — opera sul campo, raccoglie dati grezzi. L'app tablet registra presenze fisiche, uscite, deposito spazzatura, scelte alla spunta.
+
+**Il dialogo:** MioHub riceve il dato grezzo dal campo → lo lavora → restituisce il dato elaborato al Legacy per dirgli cosa deve fare con ogni impresa.
+
+| Ruolo | Sistema | Cosa fa |
+|---|---|---|
+| **CERVELLO** | MioHub | Login SPID/CIE, SUAP, PagoPA, PDND, concessioni, canone, more, mappa GIS, wallet, controlli, verbali |
+| **BRACCIO** | DMS Legacy | App tablet spunta, presenze fisiche, uscite, spazzatura, scelte spunta |
+
+### 2. Architettura DMS Legacy
 
 | Componente | Dettagli |
 |---|---|
-| **Piattaforma** | Heroku |
-| **Applicazione** | `lapsy-dms` |
+| **Piattaforma** | Heroku (app `lapsy-dms`) |
 | **URL Gestionale** | `https://lapsy-dms.herokuapp.com/index.html` |
-| **Credenziali Gestionale** | `checchi@me.com` / `Dms2022!` |
-| **Backend** | Node.js + Express (con Webix UI) |
-| **Database** | PostgreSQL (su AWS RDS `eu-west-1`) |
+| **Credenziali Gestionale** | `checchi@me.com` / `Dms2022!` (accesso frontend) |
+| **Backend** | Node.js + Express — **thin layer** sopra stored functions |
+| **Database** | PostgreSQL su AWS RDS (`eu-west-1`) — **25 tabelle, 117 stored functions** |
 | **URI Database** | `postgres://u4gjr63u7b0f3k:p813...scl.eu-west-1.rds.amazonaws.com:5432/d18d7n7ncg8ao7` |
-| **Comunicazione Real-time** | Socket.IO per l'app di spunta |
+| **Real-time** | Socket.IO namespace `/ac.mappe` per aggiornamento mappe tablet |
+| **Pattern** | Ogni API chiama una stored function: `Express → SELECT funzione(json) → PostgreSQL` |
+| **CRUD** | Funzioni `_crup`: se ID è NULL → INSERT, se valorizzato → UPDATE |
 
-### API Endpoints Funzionanti
+### 3. Diagramma Architettura Bidirezionale
 
-Il backend del DMS Legacy espone una serie di endpoint REST-like (non pienamente RESTful) che richiedono autenticazione via JWT. Di seguito i principali endpoint funzionanti scoperti durante l'analisi.
+![Architettura Bidirezionale MioHub ↔ DMS Legacy](https://files.manuscdn.com/user_upload_by_module/session_file/310519663287267762/fSuZPPQqEMGIJtjI.png)
 
-| Endpoint | Metodo | Descrizione |
+### 4. Flusso Dati Bidirezionale
+
+#### 4.1 MioHub → Legacy (76% dei dati — NOI DIAMO A LORO)
+
+Noi mandiamo al Legacy tutti i dati elaborati nel **formato esatto delle sue colonne**:
+
+| Dato che mandiamo | Tabella Legacy | Colonne Legacy (formato esatto) | Nostra sorgente |
+|---|---|---|---|
+| **Anagrafica imprese** | `amb` | `amb_ragsoc`, `amb_piva`, `amb_cfisc`, `amb_email`, `amb_phone`, `amb_addr_via`, `amb_addr_civ`, `amb_addr_cap`, `amb_addr_city`, `amb_addr_prov` | `imprese` (dati verificati SUAP/SPID) |
+| **Saldo wallet** | `amb` | `amb_saldo_bors` (numeric 8,2) | `wallets.balance` |
+| **Punteggio graduatoria** | `amb` | `amb_punti_grad_dfl` (integer) | `graduatoria_presenze.punteggio` |
+| **Fido impresa** | `amb` | `amb_fido` (numeric 8,2) | `imprese.fido` (campo da creare) |
+| **Mercati** | `mercati` | `mkt_desc`, `mkt_city`, `mkt_addr`, `mkt_lat`, `mkt_lng`, `mkt_prezzo`, `mkt_dal`, `mkt_al` | `markets` |
+| **Posteggi con mappa** | `piazzole` | `pz_numero`, `pz_mq`, `pz_lat`, `pz_lng`, `pz_height`, `pz_width`, `pz_alimentare`, `pz_enabled` | `stalls` + `geometry_geojson` |
+| **Concessioni** | `conc_std` | `conc_dal`, `conc_al`, `conc_stato`, `conc_importo`, `conc_alimentare`, `amb_id`, `mkt_id`, `pz_id` | `concessions` |
+| **Autorizzazioni spunta** | `spuntisti` | `sp_dal`, `sp_al`, `sp_stato`, `sp_importo`, `amb_id`, `mkt_id` | `wallets` (type=SPUNTA) |
+| **Utenti/operatori** | `suser` | `suser_email`, `suser_nome`, `suser_cognome`, `suser_phone`, `suser_role`, `suser_enabled`, `suser_badge` (CIE) | `users` |
+| **Regolarità impresa** | via `conc_stato` | `ATTIVA` = può operare, `REVOCATA`/`SOSPESA` = bloccata | Calcolata da 23 controlli SCIA |
+
+#### 4.2 Legacy → MioHub (11% dei dati — RICEVIAMO DA LORO)
+
+Il Legacy ci manda i dati grezzi raccolti dall'app tablet sul campo:
+
+| Dato che riceviamo | Tabella Legacy | Colonne Legacy | Nostra destinazione |
+|---|---|---|---|
+| **Presenza ingresso** | `presenze` | `pre_ingresso` (time), `amb_id`, `pz_id`, `ist_id` | `vendor_presences.checkin_time` |
+| **Uscita** | `presenze` | `pre_uscita` (time) | `vendor_presences.checkout_time` |
+| **Deposito spazzatura** | `presenze` | `pre_spazzatura` (boolean) | `vendor_presences.orario_deposito_rifiuti` |
+| **Presenza rifiutata** | `presenze` | `pre_rifiutata` (boolean) | Flag nella nostra presenza |
+| **Note operatore** | `presenze` | `pre_note` (text) | `vendor_presences.note` |
+| **Prezzo calcolato** | `presenze` | `pre_prezzo` (numeric 8,2) | `vendor_presences.importo_addebitato` |
+| **Tipo presenza** | `presenze` | `pre_tipo` (varchar) | `vendor_presences.tipo_presenza` |
+| **Operatore che registra** | `presenze` | `suser_id` (integer) | Tracciabilità |
+| **Giornata mercato** | `istanze` | `ist_id`, `ist_stato` | `market_sessions` |
+| **Posti scelti spunta** | `presenze` | `pz_id` (posteggio scelto dallo spuntista) | `vendor_presences.stall_id` |
+
+#### 4.3 Dati Bidirezionali (4%)
+
+| Dato | Direzione | Spiegazione |
 |---|---|---|
-| `/auth/login` | POST | Ottiene il JWT per le chiamate successive. |
-| `/ui/mercati` | GET | Restituisce la lista dei mercati gestiti (Bologna, Cervia). |
-| `/ui/amb` | GET | Restituisce la lista completa degli ambulanti (29 record). |
-| `/ui/concessioni` | GET | Fornisce l'elenco delle concessioni attive (25 record). |
-| `/ui/spuntisti` | GET | Lista degli operatori di spunta. |
-| `/presense/mercato/:id` | GET | Dati sulle presenze per un dato mercato, usata dall'app di spunta. |
-| `/mercato/:id/istanze/date` | GET | Fornisce le giornate di mercato (istanze) per un dato mercato. |
+| `pre_prezzo` | ↔ | Noi calcoliamo (mq × costo_mq) e lo diamo, il Legacy lo conferma nella presenza |
+| `pre_tipo` | ↔ | Noi definiamo CONCESSIONARIO/SPUNTISTA, il Legacy lo registra |
+| `ist_id` | ↔ | Noi creiamo la sessione, il Legacy la usa per le presenze |
+| `ist_stato` | ↔ | Noi apriamo/chiudiamo, il Legacy aggiorna durante la giornata |
 
-### Diagramma di Interoperabilità
+### 5. Diagramma Flusso Giornata Mercato
 
-Il diagramma seguente illustra l'architettura proposta per far coesistere e comunicare i due sistemi, MioHub e DMS Legacy, tramite un "ponte" di interoperabilità.
+![Flusso Giornata Mercato Bidirezionale](https://files.manuscdn.com/user_upload_by_module/session_file/310519663287267762/IcweRpMTLsIHVzOX.png)
 
-![Diagramma di Interoperabilità DMS Legacy e MioHub](https://files.manuscdn.com/user_upload_by_module/session_file/310519663287267762/jNOCHZnIJLMBCPyY.png)
+**Il flusso completo di una giornata di mercato con interoperabilità:**
 
-### 🔌 Modulo Integrazione DMS Legacy — v2.1.0 (Connessione Diretta DB)
+| Fase | Cosa succede | Chi lo fa | Dati che passano |
+|---|---|---|---|
+| **0. Sync preventivo** | Prima della giornata, MioHub manda al Legacy tutti i dati aggiornati | MioHub → Legacy | Imprese, concessioni, piazzole, wallet, regolarità |
+| **1. Apertura mercato** | Dashboard PA avvia la giornata, Legacy riceve la sessione | MioHub → Legacy | `istanza_start(mercato_id)` |
+| **2. Arrivo concessionari** | Operatore tablet registra ingresso | Legacy → MioHub | `pre_ingresso`, `amb_id`, `pz_id` |
+| **3. Preparazione spunta** | Dashboard PA conta assenze, prepara posti arancioni | MioHub → Legacy | Posti liberi per spunta |
+| **4. Spunta** | Spuntisti scelgono posti dall'app tablet | Legacy → MioHub | `pz_id` scelto, `pre_ingresso` |
+| **5. Durante mercato** | Operatore registra spazzatura | Legacy → MioHub | `pre_spazzatura` |
+| **6. Chiusura** | Operatore registra uscite, Dashboard chiude giornata | Legacy → MioHub | `pre_uscita` per tutti |
+| **7. Post-mercato** | CRON MioHub controlla orari, genera verbali automatici | Solo MioHub | Controlli e sanzioni |
 
-**Stato: ✅ IMPLEMENTATO, TESTATO E ATTIVO** — Deploy 9 Febbraio 2026
+### 6. Diagramma Trasformazione Dati
 
-**Risultati Test Live (9 Feb 2026 ore 22:41 UTC):**
+![Trasformazione Dati MioHub → Formato Legacy](https://files.manuscdn.com/user_upload_by_module/session_file/310519663287267762/duptrGdSsGerdsvD.png)
 
-| Endpoint | Stato | Dati Restituiti |
+### 7. Transformer Bidirezionale — Adattamento al Formato Legacy
+
+**Regola fondamentale:** Noi ci adattiamo al formato del Legacy. I dati escono dal nostro sistema già pronti per essere inseriti nelle sue tabelle.
+
+#### 7.1 Funzioni SYNC OUT (MioHub → Legacy)
+
+Ogni funzione prende i dati dal nostro DB Neon e li trasforma nel formato esatto delle colonne Legacy, poi chiama la stored function `_crup` del Legacy per inserirli/aggiornarli.
+
+| Funzione | Input (MioHub) | Output (Legacy) | Stored Function Legacy |
+|---|---|---|---|
+| `toAmbFormat(impresa)` | `imprese` + `wallets` + `graduatoria` | JSON con `amb_ragsoc`, `amb_piva`, `amb_cfisc`, `amb_email`, `amb_phone`, `amb_addr_via/civ/cap/city/prov`, `amb_saldo_bors`, `amb_punti_grad_dfl`, `amb_fido` | `amb_crup(json)` |
+| `toMercatiFormat(market)` | `markets` | JSON con `mkt_desc`, `mkt_city`, `mkt_addr`, `mkt_lat`, `mkt_lng`, `mkt_prezzo`, `mkt_dal`, `mkt_al` | `mercati_crup(json)` |
+| `toPiazzoleFormat(stall)` | `stalls` + `geometry_geojson` | JSON con `pz_numero`, `pz_mq`, `pz_lat`, `pz_lng`, `pz_height`, `pz_width`, `pz_alimentare`, `pz_enabled`, `mkt_id` | `piazzole_crup(json)` |
+| `toConcStdFormat(concession)` | `concessions` | JSON con `conc_dal`, `conc_al`, `conc_stato`, `conc_importo`, `conc_alimentare`, `amb_id`, `mkt_id`, `pz_id` | `conc_std_crup(json)` |
+| `toSpuntistiFormat(wallet)` | `wallets` (type=SPUNTA) | JSON con `sp_dal`, `sp_al`, `sp_stato`, `sp_importo`, `amb_id`, `mkt_id` | `spuntisti_crup(json)` |
+| `toSuserFormat(user)` | `users` | JSON con `suser_email`, `suser_nome`, `suser_cognome`, `suser_phone`, `suser_role`, `suser_enabled`, `suser_badge` | `suser_crup(json)` |
+
+**Trasformazioni specifiche:**
+
+| Campo MioHub | Trasformazione | Campo Legacy |
 |---|---|---|
-| `/health` | ✅ healthy | Connessione DB attiva, response 405ms |
-| `/stats` | ✅ OK | 2 mercati, 29 ambulanti, 25 concessioni, 451 piazzole, 731 istanze, 8 spuntisti |
-| `/markets` | ✅ OK | DMS-1: Test Bologna (436 piazzole), DMS-14: Cervia Demo (15 piazzole) |
-| `/vendors` | ✅ OK | 29 ambulanti con denominazione, CF, PIVA, indirizzo |
-| `/concessions` | ✅ OK | 25 concessioni con mercato, ambulante, piazzola, stato |
-| `/stalls/1` | ✅ OK | 436 piazzole con mq, alimentare, posizione, concessione attiva |
-| `/spuntisti` | ✅ OK | 8 spuntisti tutti ATTIVO |
-| `/market-sessions/1` | ✅ OK | 365 giornate di mercato con date e conteggi |
-| `/presences/1` | ✅ OK | 0 presenze (nessuna registrata al momento) |
-| `/import/market` | ✅ 403 Bloccato | Import correttamente disabilitato |
+| `imprese.indirizzo_sede_legale` | Parsing indirizzo → via, civico, CAP, città, provincia | `amb_addr_via`, `amb_addr_civ`, `amb_addr_cap`, `amb_addr_city`, `amb_addr_prov` |
+| `stalls.geometry_geojson` | Estrazione centroide → lat, lng | `pz_lat`, `pz_lng` |
+| `stalls.geometry_geojson` | Calcolo bounding box → altezza, larghezza | `pz_height`, `pz_width` |
+| `stalls.settore_merceologico` | Se contiene "alimentare" → `true` | `pz_alimentare` (boolean) |
+| `stalls.status` | Se != "disabilitato" → `true` | `pz_enabled` (boolean) |
+| `concessions.settore_merceologico` | Se contiene "alimentare" → `true` | `conc_alimentare` (boolean) |
+| `users.role` | `admin` → `ADMIN`, `pa` → `OP`, `vendor` → `AMB` | `suser_role` |
+| `users.cie_id` (nuovo campo) | Passato direttamente | `suser_badge` (al posto del NFC) |
+| `wallets.balance` | Passato come numeric(8,2) | `amb_saldo_bors` |
+| `graduatoria_presenze.punteggio` | Passato come integer | `amb_punti_grad_dfl` |
 
-Questa sezione documenta l'implementazione del modulo di integrazione con il DMS Legacy. L'approccio è stato aggiornato da **API Proxy** a **Connessione Diretta al Database PostgreSQL** su AWS RDS, per maggiore affidabilità e indipendenza dal backend Heroku.
+#### 7.2 Funzioni SYNC IN (Legacy → MioHub)
 
-#### 1. Architettura: Dialogo Bidirezionale (v3.0.0)
+Ogni funzione prende i dati dal DB Legacy e li trasforma nel formato MioHub.
 
-L'architettura si basa su un **dialogo bidirezionale** tra MioHub (il cervello gestionale) e il DMS Legacy (il braccio operativo sul campo). Il modulo di integrazione nel nostro backend (`mihub-backend-rest`) gestisce questo dialogo.
+| Funzione | Input (Legacy) | Output (MioHub) | Tabella Destinazione |
+|---|---|---|---|
+| `fromPresenzeFormat(presenza)` | `presenze` con `pre_ingresso`, `pre_uscita`, `pre_spazzatura`, `pre_prezzo`, `pre_tipo` | `vendor_presences` con `checkin_time`, `checkout_time`, `orario_deposito_rifiuti`, `importo_addebitato`, `tipo_presenza` | `vendor_presences` |
+| `fromIstanzeFormat(istanza)` | `istanze` con `ist_data`, `ist_ora_inizio`, `ist_ora_fine`, `ist_stato` | `market_sessions` con `data_sessione`, `ora_apertura`, `ora_chiusura` | `market_sessions` |
 
-- **MioHub → DMS Legacy (Import)**: Inviamo dati elaborati e autorizzazioni.
-- **DMS Legacy → MioHub (Export)**: Riceviamo dati grezzi e operativi dal campo.
+**Trasformazioni specifiche in ingresso:**
 
-La comunicazione avviene tramite **connessione diretta al database PostgreSQL** del DMS Legacy, come concordato, per garantire affidabilità e performance.
-
-| Direzione | Dati | Sorgente | Destinazione | Scopo |
-|---|---|---|---|---|
-| **MioHub → Legacy** | Regolarità impresa, importo wallet, dati concessione, mappa posti liberi | MioHub (Neon DB) | DMS Legacy (RDS DB) | Fornire al sistema di spunta i dati per operare |
-| **Legacy → MioHub** | Presenze, uscite, spazzatura, posti spunta scelti | DMS Legacy (App Tablet) | MioHub (Neon DB) | Ricevere i dati grezzi dal campo per elaborarli |
-
-```
-┌─────────────────┐     SELECT only      ┌──────────────────────┐
-│  MioHub Backend  │ ──────────────────── │  DB DMS Legacy       │
-│  (Hetzner)       │     Pool max 3       │  (AWS RDS eu-west-1) │
-│                  │                      │  PostgreSQL          │
-│  dms-legacy/     │                      │  25 tabelle          │
-│  service.js      │ ◄─── Dati Legacy ─── │  amb, mercati,       │
-│  transformer.js  │                      │  conc_std, presenze  │
-│  routes.js       │                      │  piazzole, istanze   │
-└─────────────────┘                      └──────────────────────┘
-        │
-        │  Trasformazione
-        │  Legacy → MioHub
-        ▼
-┌─────────────────┐
-│  Frontend MioHub │
-│  Tab Connessioni │
-│  Health Check    │
-│  Sincronizza Ora │
-└─────────────────┘
-```
-
-**Architettura BIDIREZIONALE predisposta:**
-
-| Direzione | Stato | Descrizione |
+| Campo Legacy | Trasformazione | Campo MioHub |
 |---|---|---|
-| **EXPORT** (Legacy → MioHub) | ✅ **ATTIVO** | Lettura dati dal DB Legacy via SELECT |
-| **IMPORT** (MioHub → Legacy) | 🔒 **BLOCCATO** | Predisposto nel codice, da sbloccare in futuro |
+| `pre_spazzatura` (boolean) | Se `true` → salva orario corrente | `vendor_presences.orario_deposito_rifiuti` (timestamp) |
+| `pre_tipo` (varchar) | `CONCESSIONARIO` → `CONCESSION`, `SPUNTISTA` → `SPUNTA` | `vendor_presences.tipo_presenza` |
+| `pre_rifiutata` (boolean) | Salvato come flag | Nuovo campo `vendor_presences.rifiutata` |
 
-#### 2. Componenti Implementati
+### 8. API Legacy — Inventario Completo Stored Functions
 
-##### Backend (`mihub-backend-rest`)
+Il backend Legacy espone queste API che chiamano stored functions PostgreSQL. **Noi ci connettiamo direttamente al DB e chiamiamo le stesse funzioni.**
 
-| File | Funzione | Stato |
+#### 8.1 Funzioni di Scrittura (MioHub → Legacy)
+
+| Stored Function | Endpoint Legacy | Cosa fa | Noi la chiamiamo per |
+|---|---|---|---|
+| `amb_crup(json)` | `POST ui/amb` | Crea/aggiorna ambulante | Mandare anagrafica impresa |
+| `mercati_crup(json)` | `POST ui/mercati` | Crea/aggiorna mercato | Mandare dati mercato |
+| `piazzole_crup(json)` | `POST ui/piazzole` | Crea/aggiorna posteggio | Mandare piazzole con mappa |
+| `conc_std_crup(json)` | `POST ui/concessioni` | Crea/aggiorna concessione | Mandare concessioni con stato |
+| `spuntisti_crup(json)` | `POST ui/spuntisti` | Crea/aggiorna spuntista | Mandare autorizzazioni spunta |
+| `suser_crup(json)` | `POST /auth/suser` | Crea/aggiorna utente app | Mandare operatori |
+| `mercati_sched_crup(json)` | `POST ui/mercati/sched` | Crea/aggiorna programmazione | Mandare calendario mercato |
+| `istanza_start(json)` | (chiamata interna) | Avvia giornata mercato | Aprire la giornata |
+
+#### 8.2 Funzioni di Lettura (Legacy → MioHub)
+
+| Stored Function | Endpoint Legacy | Cosa fa | Noi la chiamiamo per |
+|---|---|---|---|
+| `presenze_get(json)` | `GET /presense/mercato/:id` | Legge presenze mercato | Ricevere presenze dal campo |
+| `instanze_mercato(json)` | `GET /mercato/:id/istanze/date` | Legge giornate mercato | Ricevere stato giornate |
+| `presenze_in_data_mkt_id(json)` | `GET docs/mercato/presenze` | Presenze per data e mercato | Ricevere presenze specifiche |
+| `piazzole_spunta_get(json)` | (chiamata interna) | Piazzole libere per spunta | Sapere quali posti sono stati scelti |
+
+#### 8.3 Funzioni Presenze (chiamate dall'App Tablet)
+
+Queste funzioni vengono chiamate dall'app tablet sul campo. **Noi le monitoriamo per ricevere i dati.**
+
+| Stored Function | Cosa fa | Dato che riceviamo |
 |---|---|---|
-| `routes/dms-legacy-service.js` | Pool connessione DB RDS, query SELECT con nomi colonne verificati (mkt_id, amb_id, pz_id, conc_id, pre_id, ist_id, sp_id, doc_id), guard import, health check, 9 fetch + stats | ✅ Testato |
-| `routes/dms-legacy-transformer.js` | 8 transformer con nomi colonne reali: transformMarket, transformVendor, transformConcession, transformPresence, transformMarketSession, transformStall, transformSpuntista, transformDocument | ✅ Testato |
-| `routes/dms-legacy.js` | 14 endpoint REST (9 export + 3 import bloccati + 2 sync) + health + status | ✅ Testato |
-| `index.js` | +2 righe: import route + mount `/api/integrations/dms-legacy` + CRON ogni 60 min | ✅ Attivo |
+| `presenze_registrazione(json)` | Registra arrivo ambulante | Timestamp registrazione |
+| `presenze_entrata(json)` | Segna ingresso + calcola prezzo (mq × prezzo) | `pre_ingresso`, `pre_prezzo` |
+| `presenze_entrata_spunta(json)` | Segna ingresso spuntista + calcola prezzo | `pre_ingresso` spuntista |
+| `presenze_uscita(json)` | Segna uscita ambulante | `pre_uscita` |
+| `presenze_spazzatura(json)` | Segna deposito spazzatura | `pre_spazzatura` |
+| `presenze_presenza(json)` | Conferma presenza fisica | Conferma |
+| `termina_spunta(json)` | Chiude fase spunta | Fine spunta |
+| `istanza_cleanup(json)` | Pulisce presenze + rimborsa saldi | Reset giornata |
 
-##### Frontend (`dms-hub-app-new`)
-
-| File | Modifica | Stato |
-|---|---|---|
-| `client/src/config/realEndpoints.ts` | DMS Legacy: `status: 'active'`, 7 endpoint reali, URL corretto | ✅ Attivo |
-| `client/src/components/ConnessioniV2.tsx` | Card DMS Legacy con Health Check, Sincronizza Ora, ultimo sync | ✅ Attivo |
-
-#### 3. Endpoint API Completi
+### 9. Endpoint MioHub Implementati
 
 Tutti gli endpoint sono prefissati con `/api/integrations/dms-legacy/`.
 
-##### EXPORT (Legacy → MioHub) — ✅ ATTIVI
+#### 9.1 EXPORT (Legacy → MioHub) — ✅ ATTIVI
 
-| # | Metodo | Endpoint | Query DB Legacy | Descrizione |
+| # | Metodo | Endpoint | Descrizione | Stato |
 |---|---|---|---|---|
-| 1 | `GET` | `/markets` | `SELECT * FROM mercati` + conteggi piazzole/concessioni | Mercati DMS mappati formato MioHub |
-| 2 | `GET` | `/vendors` | `SELECT * FROM amb` + conteggi concessioni/documenti | Ambulanti mappati come Imprese MioHub |
-| 3 | `GET` | `/concessions` | `SELECT * FROM conc_std` + JOIN mercati/amb/piazzole | Concessioni con dati relazionati |
-| 4 | `GET` | `/presences/:marketId` | `SELECT * FROM presenze` + JOIN amb/piazzole/mercati | Presenze per mercato specifico |
-| 5 | `GET` | `/market-sessions/:marketId` | `SELECT * FROM istanze` + conteggi presenti/assenti/spuntisti | Giornate di mercato con statistiche |
-| 6 | `GET` | `/stalls/:marketId` | `SELECT * FROM piazzole` + JOIN concessione attiva + ambulante | Piazzole con assegnatario |
-| 7 | `GET` | `/spuntisti` | `SELECT * FROM spuntisti` + JOIN mercati | Operatori di spunta |
-| 8 | `GET` | `/documents` | `SELECT * FROM amb_doc` + JOIN amb/tipi_doc | Documenti ambulanti |
-| 9 | `GET` | `/stats` | Conteggi aggregati su tutte le tabelle | Statistiche generali DB Legacy |
+| 1 | `GET` | `/markets` | Mercati Legacy trasformati formato MioHub | ✅ Testato |
+| 2 | `GET` | `/vendors` | Ambulanti mappati come Imprese | ✅ Testato |
+| 3 | `GET` | `/concessions` | Concessioni con dati relazionati | ✅ Testato |
+| 4 | `GET` | `/presences/:marketId` | Presenze per mercato | ✅ Testato |
+| 5 | `GET` | `/market-sessions/:marketId` | Giornate mercato con statistiche | ✅ Testato |
+| 6 | `GET` | `/stalls/:marketId` | Piazzole con assegnatario | ✅ Testato |
+| 7 | `GET` | `/spuntisti` | Operatori di spunta | ✅ Testato |
+| 8 | `GET` | `/documents` | Documenti ambulanti | ✅ Testato |
+| 9 | `GET` | `/stats` | Statistiche generali | ✅ Testato |
 
-**Parametro `?raw=true`:** Aggiungendo `?raw=true` a qualsiasi endpoint EXPORT, la risposta include anche i dati grezzi originali del DB Legacy (campo `raw`), utile per debug e confronto.
+> **Nota:** Questi endpoint servono anche per l'interoperabilità con **MercaWeb** (software Polizia Municipale Grosseto).
 
-##### IMPORT (MioHub → Legacy) — 🔒 BLOCCATI
+#### 9.2 SYNC OUT (MioHub → Legacy) — DA IMPLEMENTARE
 
-| # | Metodo | Endpoint | Stato | Note |
+| # | Metodo | Endpoint | Stored Function Legacy | Descrizione |
 |---|---|---|---|---|
-| 10 | `POST` | `/import/market` | 🔒 Bloccato | Restituisce 403 + messaggio |
-| 11 | `POST` | `/import/vendor` | 🔒 Bloccato | Restituisce 403 + messaggio |
-| 12 | `POST` | `/import/concession` | 🔒 Bloccato | Restituisce 403 + messaggio |
+| 10 | `POST` | `/sync-out/vendors` | `amb_crup(json)` | Manda imprese al Legacy |
+| 11 | `POST` | `/sync-out/markets` | `mercati_crup(json)` | Manda mercati al Legacy |
+| 12 | `POST` | `/sync-out/stalls` | `piazzole_crup(json)` | Manda piazzole al Legacy |
+| 13 | `POST` | `/sync-out/concessions` | `conc_std_crup(json)` | Manda concessioni al Legacy |
+| 14 | `POST` | `/sync-out/spuntisti` | `spuntisti_crup(json)` | Manda autorizzazioni spunta |
+| 15 | `POST` | `/sync-out/users` | `suser_crup(json)` | Manda operatori |
+| 16 | `POST` | `/sync-out/all` | Tutte le `_crup` | Sincronizzazione completa |
 
-**Per sbloccare l'import:** Modificare `SYNC_CONFIG.import.enabled = true` in `dms-legacy-service.js`.
+#### 9.3 SYNC IN (Legacy → MioHub) — DA IMPLEMENTARE
 
-##### SYNC & UTILITY
+| # | Metodo | Endpoint | Stored Function Legacy | Descrizione |
+|---|---|---|---|---|
+| 17 | `POST` | `/sync-in/presences` | `presenze_get(json)` | Riceve presenze dal campo |
+| 18 | `POST` | `/sync-in/market-sessions` | `instanze_mercato(json)` | Riceve stato giornate |
+| 19 | `POST` | `/sync-in/all` | Tutte le `_get` presenze | Sincronizzazione completa in ingresso |
 
-| # | Metodo | Endpoint | Descrizione |
+#### 9.4 UTILITY — ✅ ATTIVI
+
+| # | Metodo | Endpoint | Descrizione | Stato |
+|---|---|---|---|---|
+| 20 | `GET` | `/health` | Health check connessione DB | ✅ Testato |
+| 21 | `GET` | `/status` | Stato integrazione completo | ✅ Testato |
+| 22 | `POST` | `/sync` | Sync manuale on-demand | ✅ Testato |
+| 23 | `POST` | `/cron-sync` | Sync CRON periodica (60 min) | ✅ Attivo |
+
+### 10. Campi da Creare nel DB MioHub (Neon)
+
+Per completare l'interoperabilità, questi campi vanno aggiunti alle nostre tabelle:
+
+| Tabella | Campo | Tipo | Scopo |
 |---|---|---|---|
-| 13 | `POST` | `/sync` | Sincronizzazione manuale on-demand (solo export) |
-| 14 | `POST` | `/cron-sync` | Sincronizzazione CRON periodica (ogni 60 min) |
-| — | `GET` | `/health` | Health check: connessione DB + stats + ultimo sync |
-| — | `GET` | `/status` | Stato integrazione + lista endpoint + config sync |
+| `imprese` | `fido` | `numeric(8,2) DEFAULT 0` | Fido/credito concesso, compatibilità con `amb_fido` |
+| `imprese` | `legacy_amb_id` | `integer` | ID ambulante nel Legacy per tracciare la corrispondenza |
+| `markets` | `data_creazione` | `date` | Data inizio attività mercato, compatibilità con `mkt_dal` |
+| `markets` | `data_scadenza` | `date NULL` | Data fine attività mercato, compatibilità con `mkt_al` |
+| `markets` | `legacy_mkt_id` | `integer` | ID mercato nel Legacy |
+| `stalls` | `legacy_pz_id` | `integer` | ID piazzola nel Legacy |
+| `concessions` | `legacy_conc_id` | `integer` | ID concessione nel Legacy |
+| `users` | `cie_id` | `varchar(32)` | ID Carta d'Identità Elettronica (sostituisce badge NFC) |
+| `vendor_presences` | `legacy_pre_id` | `integer` | ID presenza nel Legacy |
+| `vendor_presences` | `rifiutata` | `boolean DEFAULT false` | Se la presenza è stata rifiutata dal Legacy |
 
-#### 4. Flusso di Sincronizzazione
-
-1.  **Periodica (Automatica):** CRON job ogni 60 minuti su Hetzner.
-2.  Il CRON chiama `POST /api/integrations/dms-legacy/cron-sync`.
-3.  Il backend esegue SELECT su mercati, ambulanti, concessioni dal DB Legacy.
-4.  I dati vengono trasformati nel formato MioHub e il risultato viene loggato.
-5.  **Manuale (On-demand):** Click su "Sincronizza Ora" nel tab Connessioni → `POST /sync`.
-
-#### 5. Sicurezza
+### 11. Sicurezza
 
 | Aspetto | Implementazione |
 |---|---|
-| **Connessione DB** | URL in variabile d'ambiente `DMS_LEGACY_DB_URL` su Hetzner |
-| **Blocco Scrittura** | Guard hardware: qualsiasi query non-SELECT viene rifiutata con errore |
+| **Connessione DB Legacy** | URL in variabile d'ambiente `DMS_LEGACY_DB_URL` su Hetzner |
 | **Pool Limitato** | Max 3 connessioni simultanee per non sovraccaricare il DB Legacy |
-| **Import Bloccato** | Flag `SYNC_CONFIG.import.enabled = false` + funzione `guardImport()` |
-| **Sola Lettura** | Nessuna operazione INSERT/UPDATE/DELETE verso il DB Legacy |
+| **Dati MAI trasferiti** | Password (`suser_password`), OTP (`suser_otp`, `suser_otp_creation`) |
+| **Scrittura controllata** | Solo tramite stored functions `_crup` (mai INSERT/UPDATE diretti) |
+| **Guard SYNC OUT** | Flag `SYNC_CONFIG.syncOut.enabled` per abilitare/disabilitare |
+| **Guard SYNC IN** | Flag `SYNC_CONFIG.syncIn.enabled` per abilitare/disabilitare |
+| **Logging** | Ogni operazione di sync viene loggata con timestamp e risultato |
 
-#### 6. Monitoraggio Guardian
+### 12. Monitoraggio Guardian
 
-7 endpoint principali registrati in Guardian (`MIO-hub/api/index.json`):
+| # | Endpoint | Metodo | Categoria | Stato |
+|---|---|---|---|---|
+| 1-9 | `/api/integrations/dms-legacy/*` (export) | GET | DMS Legacy Integration | ✅ Attivo |
+| 10-16 | `/api/integrations/dms-legacy/sync-out/*` | POST | DMS Legacy Sync Out | Da registrare |
+| 17-19 | `/api/integrations/dms-legacy/sync-in/*` | POST | DMS Legacy Sync In | Da registrare |
+| 20-23 | `/api/integrations/dms-legacy/health,status,sync,cron` | GET/POST | DMS Legacy Utility | ✅ Attivo |
 
-| # | Endpoint | Metodo | Categoria Guardian |
+**Totale endpoint DMS Legacy:** 23 (di cui 13 attivi, 10 da implementare)
+
+### 13. Frontend — Tab Connessioni
+
+Nella Dashboard PA → Integrazioni → Tab Connessioni:
+
+| Elemento | Stato | Descrizione |
+|---|---|---|
+| Card "DMS Legacy (Heroku)" | ✅ Attiva | Mostra stato connessione, ultimo sync, contatori |
+| Health Check | ✅ Attivo | Verifica connessione DB Legacy in tempo reale |
+| Pulsante "Sincronizza Ora" | ✅ Attivo | Lancia sync manuale on-demand |
+| CRON automatico | ✅ Attivo | Ogni 60 minuti |
+| Contatori dati | ✅ Attivo | Mercati, ambulanti, concessioni, piazzole sincronizzati |
+
+### 14. Piano di Implementazione
+
+| Fase | Descrizione | Stato | Stima |
 |---|---|---|---|
-| 1 | `/api/integrations/dms-legacy/markets` | GET | DMS Legacy Integration |
-| 2 | `/api/integrations/dms-legacy/vendors` | GET | DMS Legacy Integration |
-| 3 | `/api/integrations/dms-legacy/concessions` | GET | DMS Legacy Integration |
-| 4 | `/api/integrations/dms-legacy/presences/:marketId` | GET | DMS Legacy Integration |
-| 5 | `/api/integrations/dms-legacy/market-sessions/:marketId` | GET | DMS Legacy Integration |
-| 6 | `/api/integrations/dms-legacy/sync` | POST | DMS Legacy Integration |
-| 7 | `/api/integrations/dms-legacy/cron-sync` | POST | DMS Legacy Integration |
+| **Fase 1** | Endpoint EXPORT (lettura Legacy) | ✅ **COMPLETATA** | — |
+| **Fase 2** | Transformer bidirezionale + endpoint SYNC OUT (scrittura verso Legacy) | 🔧 **DA FARE** | 3-4 ore |
+| **Fase 3** | Endpoint SYNC IN (ricezione presenze dal campo) | 🔧 **DA FARE** | 2-3 ore |
+| **Fase 4** | Campi nuovi nel DB Neon + migrazione dati | 🔧 **DA FARE** | 1-2 ore |
+| **Fase 5** | Registrazione Guardian + aggiornamento frontend | 🔧 **DA FARE** | 1 ora |
+| **Fase 6** | Test integrato con dati reali + connessione a Heroku | 🔧 **DA FARE** | 2 ore |
 
-**Totale endpoint Guardian:** 761 monitorati.
+> **Nota importante:** La Fase 6 (connessione reale a Heroku) richiede il coordinamento con Marco Malaguti (Lapsy srl) per verificare che i dati arrivino correttamente all'app di spunta.
 
-#### 7. Sostituzione API Placeholder
+### 15. Interoperabilità con MercaWeb (Polizia Municipale Grosseto)
 
-I 3 endpoint placeholder originali sono stati **rimossi e sostituiti**:
+Gli endpoint EXPORT esistenti (sezione 9.1) servono anche per l'interoperabilità con **MercaWeb**, il software della Polizia Municipale in uso a Grosseto. Questi endpoint restituiscono i dati in formato JSON standard e possono essere consumati da qualsiasi sistema esterno autorizzato.
 
-| Prima (placeholder) | Dopo (reale) |
-|---|---|
-| `status: 'in_preparation'` | `status: 'active'` |
-| `baseUrl: 'https://dms-legacy.herokuapp.com'` | `baseUrl: 'https://mihub.157-90-29-66.nip.io'` |
-| 3 endpoint mai implementati | 7+ endpoint funzionanti |
-
-#### 8. Evoluzione Futura
-
-L'architettura bidirezionale è predisposta per le seguenti evoluzioni:
-
-1.  **Fase attuale:** EXPORT only (Legacy → MioHub) — sola lettura
-2.  **Fase 2:** Sblocco IMPORT selettivo — scrivere nel DB Legacy solo entità specifiche
-3.  **Fase 3:** Sincronizzazione bidirezionale completa — entrambe le direzioni attive
-4.  **Fase 4:** Migrazione graduale — spostamento progressivo dei mercati dal DMS Legacy a MioHub
-
-(Per l'inventario completo colonna per colonna, fare riferimento al file `INVENTARIO_COMPLETO_DMS_vs_MIOHUB.xlsx`)
+(Per l'inventario completo colonna per colonna, fare riferimento ai file `MAPPATURA_LEGACY_MIOHUB_v2.md`, `INVENTARIO_DATI_DMS_LEGACY.md` e `INVENTARIO_DATI_MIOHUB.md`)
 
 ---
 
