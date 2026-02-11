@@ -213,11 +213,22 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
   const provider = firebaseUser.providerData[0]?.providerId || 'email';
 
   // ============================================
-  // STEP 1: Prova il sync con il backend Firebase (Vercel)
+  // STEP 1: Cerca l'utente nel DB legacy (orchestratore)
+  // Questo è il passo critico per recuperare id, impresa_id, wallet_balance
+  // ============================================
+  let legacyUser: LegacyUserData | null = null;
+  if (email) {
+    legacyUser = await lookupLegacyUser(email);
+  }
+
+  // ============================================
+  // STEP 2: Sync con backend Firebase (Vercel serverless function)
+  // URL RELATIVO: va a Vercel (dove gira il client), NON a Hetzner
+  // Include trackLogin per registrare il login nel DB
   // ============================================
   let backendSyncData: any = null;
   try {
-    const response = await fetch(`${API_BASE}/api/auth/firebase/sync`, {
+    const response = await fetch(`/api/auth/firebase/sync`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -230,6 +241,11 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
         photoURL: firebaseUser.photoURL,
         provider,
         role,
+        // Login tracking data
+        trackLogin: true,
+        legacyUserId: legacyUser?.id || 0,
+        userName: legacyUser?.name || firebaseUser.displayName || '',
+        userEmail: firebaseUser.email || email,
       }),
     });
 
@@ -238,22 +254,16 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
       if (data.success && data.user) {
         backendSyncData = data.user;
       }
+      if (data.loginTracked) {
+        console.log('[FirebaseAuth] Login tracciato con successo nel DB');
+      }
     }
   } catch (err) {
     console.warn('[FirebaseAuth] Backend sync fallito:', err);
   }
 
   // ============================================
-  // STEP 2: Cerca l'utente nel DB legacy (orchestratore)
-  // Questo è il passo critico per recuperare id, impresa_id, wallet_balance
-  // ============================================
-  let legacyUser: LegacyUserData | null = null;
-  if (email) {
-    legacyUser = await lookupLegacyUser(email);
-  }
-
-  // ============================================
-  // STEP 3: Registra evento di login
+  // STEP 3: Registra evento di login nel sistema di sicurezza
   // ============================================
   if (legacyUser) {
     trackLoginEvent(legacyUser.id, email, provider, true);

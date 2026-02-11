@@ -2,8 +2,14 @@
  * Vercel Serverless Function: Firebase Auth Sync
  * POST /api/auth/firebase/sync
  * 
- * Sincronizza un utente Firebase con MioHub
- * Questa è la versione serverless per Vercel (il progetto usa anche Express su Hetzner)
+ * Sincronizza un utente Firebase con MioHub.
+ * Se il body contiene trackLogin: true e legacyUserId > 0,
+ * inserisce un record in login_attempts e aggiorna lastSignedIn.
+ * 
+ * Colonne REALI della tabella login_attempts nel DB Neon:
+ * id, username, user_id, ip_address, user_agent, success, failure_reason, created_at, user_email, user_name
+ * 
+ * Colonna users: "lastSignedIn" (camelCase, richiede virgolette doppie nel SQL)
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -28,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const idToken = authHeader.substring(7);
-    const { uid, email, displayName, photoURL, provider, role } = req.body;
+    const { uid, email, displayName, photoURL, provider, role, trackLogin, legacyUserId, userName, userEmail } = req.body;
 
     // Verifica il token Firebase usando Firebase Admin SDK
     let decodedToken;
@@ -49,8 +55,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       decodedToken = await getAuth().verifyIdToken(idToken);
     } catch (verifyError: any) {
       console.error('[Firebase Sync] Token verification failed:', verifyError.message);
-      // Fallback: accetta il token e usa i dati dal body
-      // In produzione con FIREBASE_SERVICE_ACCOUNT_KEY, la verifica funzionerà
       decodedToken = null;
     }
 
@@ -80,7 +84,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break;
     }
 
-    return res.status(200).json({ success: true, user });
+    // ============================================
+    // LOGIN TRACKING: INSERT login_attempts + UPDATE lastSignedIn
+    // ============================================
+    let loginTracked = false;
+    if (trackLogin === true && legacyUserId && legacyUserId > 0) {
+      try {
+        const dbUrl = process.env.DATABASE_URL;
+        if (dbUrl) {
+          const postgres = (await import('postgres')).default;
+          const sql = postgres(dbUrl, { ssl: 'require' });
+
+          const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() 
+            || req.socket?.remoteAddress 
+            || 'unknown';
+          const clientUserAgent = (req.headers['user-agent'] as string) || 'unknown';
+          const loginEmail = userEmail || user.email || email || '';
+          const loginName = userName || user.displayName || displayName || '';
+
+          // INSERT login_attempt con le colonne REALI del DB
+          await sql`
+            INSERT INTO login_attempts (username, user_id, ip_address, user_agent, success, created_at, user_email, user_name)
+            VALUES (${loginName}, ${legacyUserId}, ${clientIp}, ${clientUserAgent}, true, NOW(), ${loginEmail}, ${loginName})
+          `;
+
+          // UPDATE lastSignedIn nella tabella users
+          await sql`
+            UPDATE users SET "lastSignedIn" = NOW(), "updatedAt" = NOW() WHERE id = ${legacyUserId}
+          `;
+
+          await sql.end();
+          loginTracked = true;
+          console.log(`[Firebase Sync] Login tracked: user_id=${legacyUserId}, email=${loginEmail}`);
+        } else {
+          console.warn('[Firebase Sync] DATABASE_URL non configurato, login tracking saltato');
+        }
+      } catch (trackError: any) {
+        console.error('[Firebase Sync] Errore login tracking:', trackError.message);
+        // Non bloccare il login se il tracking fallisce
+      }
+    }
+
+    return res.status(200).json({ success: true, user, loginTracked });
   } catch (error: any) {
     console.error('[Firebase Sync] Error:', error);
     return res.status(500).json({ success: false, error: 'Errore interno del server' });

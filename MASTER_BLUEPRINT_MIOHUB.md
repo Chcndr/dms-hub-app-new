@@ -7707,3 +7707,99 @@ Tutte le variabili sono state aggiunte al progetto Vercel `dms-hub-app-new` per 
 28. **Domini autorizzati Firebase**: `dms.associates` e `dms-hub-app-new.vercel.app` devono essere nella lista dei domini autorizzati nella console Firebase
 
 ---
+
+
+## 🔧 FIX: Login Tracking — Sessione 11 Feb 2026
+
+### Problema
+
+Dopo l'integrazione Firebase Auth, il login funziona correttamente (bridge Firebase → orchestratore legacy DB), ma:
+1. I **login riusciti non appaiono** nella tab Sicurezza → Accessi ("Tentativi di Login Recenti")
+2. Il campo **"Ultimo accesso"** nella lista Utenti non si aggiorna
+
+### Analisi Root Cause
+
+#### Tabella `login_attempts` — Schema REALE nel DB Neon (verificato via API orchestratore)
+
+| Colonna | Tipo | Note |
+|---------|------|------|
+| `id` | serial | PK auto-increment |
+| `username` | varchar | nome utente (può essere null) |
+| `user_id` | integer | FK → users.id |
+| `ip_address` | varchar | IP del client |
+| `user_agent` | text | browser/client info |
+| `success` | boolean | true = login riuscito, false = fallito |
+| `failure_reason` | varchar | motivo fallimento (null se success) |
+| `created_at` | timestamp | data/ora tentativo |
+| `user_email` | varchar | email dell'utente |
+| `user_name` | varchar | nome completo utente |
+
+> **ATTENZIONE**: Lo schema Drizzle (`drizzle/schema.ts`) è **disallineato** con la tabella reale.
+> Il Drizzle schema ha `email` (non esiste nel DB), e manca `username`, `user_id`, `user_email`, `user_name`.
+> Le tabelle security sono state create via SQL diretto sull'orchestratore Hetzner, non via Drizzle migrations.
+
+#### Tabella `users` — Colonna `lastSignedIn`
+
+- Nel DB la colonna è `"lastSignedIn"` (camelCase, richiede virgolette doppie nel SQL)
+- L'API orchestratore `/api/security/users` restituisce `last_signed_in` (snake_case mapping fatto dall'orchestratore)
+- Il SecurityTab legge `user.last_signed_in` — corretto
+
+#### SecurityTab rendering — Bug preesistente
+
+Il SecurityTab (riga 1709) renderizza `attempt.email_attempted`, ma l'API orchestratore restituisce il campo come `user_email`. L'interfaccia `LoginAttempt` nel client ha entrambi i campi (`user_email` e `email_attempted`), ma il rendering usa `email_attempted` che non corrisponde al campo API. Questo causa la visualizzazione dell'IP ma non dell'email nei tentativi di login.
+
+#### Flusso attuale (commit 6ee46df — stabile)
+
+1. Login Firebase → `onAuthStateChanged` → `syncUserWithBackend()`
+2. `syncUserWithBackend()` chiama `POST /api/auth/firebase/sync` (Vercel serverless)
+3. `syncUserWithBackend()` chiama `lookupLegacyUser(email)` → orchestratore API
+4. `trackLoginEvent()` crea un `security_event` (tabella `security_events`) — **NON** un `login_attempt`
+5. **Nessun INSERT in `login_attempts`** → tab Accessi non mostra login riusciti
+6. **Nessun UPDATE di `"lastSignedIn"`** → data ferma
+
+### Soluzione — Modifiche (3 file, 1 commit)
+
+#### File 1: `api/auth/firebase/sync.ts` (Vercel serverless function)
+
+Aggiungere dopo la verifica del token Firebase:
+- Se il body contiene `trackLogin: true` e `legacyUserId > 0`:
+  1. **INSERT** in `login_attempts` con le colonne reali:
+     ```sql
+     INSERT INTO login_attempts (username, user_id, ip_address, user_agent, success, created_at, user_email, user_name)
+     VALUES ($1, $2, $3, $4, true, NOW(), $5, $6)
+     ```
+  2. **UPDATE** `users` per aggiornare `lastSignedIn`:
+     ```sql
+     UPDATE users SET "lastSignedIn" = NOW(), "updatedAt" = NOW() WHERE id = $1
+     ```
+- Usa `import('postgres')` dinamico per accedere al DB via `DATABASE_URL` (già configurato su Vercel)
+
+#### File 2: `client/src/contexts/FirebaseAuthContext.tsx`
+
+Nella funzione `syncUserWithBackend()`, dopo il lookup dell'utente legacy (STEP 2):
+- Passare nel body della chiamata sync: `trackLogin: true`, `legacyUserId`, `userName`, `userEmail`
+- Spostare la chiamata sync DOPO il lookup legacy, così ha i dati dell'utente da passare
+- Questo permette al backend di sapere quale utente ha fatto login e scrivere nel DB
+
+#### File 3: `client/src/components/SecurityTab.tsx`
+
+- Riga 1709: cambiare `attempt.email_attempted` in `attempt.user_email || attempt.email_attempted`
+- Questo fixa il bug preesistente del rendering email nei tentativi di login
+
+### Endpoint coinvolti
+
+| Endpoint | Metodo | Dove | Modifica |
+|----------|--------|------|----------|
+| `/api/auth/firebase/sync` | POST | Vercel serverless (`api/auth/firebase/sync.ts`) | Aggiungere INSERT `login_attempts` + UPDATE `"lastSignedIn"` |
+
+### Test di verifica
+
+1. Fare logout e login con `chcndr@gmail.com`
+2. Sicurezza → Accessi: deve apparire un record con pallino verde, email, e data di oggi
+3. Sicurezza → Utenti: "Mio" deve mostrare "Ultimo accesso: 11/02/2026"
+
+### Note per sessioni future
+
+29. **Colonne login_attempts**: Le colonne reali nel DB sono `username`, `user_id`, `ip_address`, `user_agent`, `success`, `failure_reason`, `created_at`, `user_email`, `user_name` — NON usare lo schema Drizzle che è sbagliato
+30. **lastSignedIn**: La colonna nel DB è camelCase con virgolette (`"lastSignedIn"`), l'API la restituisce come `last_signed_in`
+31. **Drizzle schema disallineato**: Le tabelle `login_attempts`, `security_events`, `ip_blacklist` sono state create via SQL diretto, non via Drizzle — lo schema Drizzle per queste tabelle è inaffidabile
