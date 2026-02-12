@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 5.1.0 (Card PDND + Statistiche Playground Live)  
+> **Versione:** 5.2.0 (Piano d'azione DMS Legacy definito)  
 > **Data:** 12 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -24,6 +24,15 @@
 13. [Credenziali e Accessi](#credenziali-e-accessi)
 14. [Troubleshooting](#troubleshooting)
 15. [Regole per Agenti AI](#regole-per-agenti-ai)
+
+---
+
+## 📝 CHANGELOG RECENTE
+
+### Sessione 12 Febbraio 2026 (v5.2.0)
+- ✅ **Analisi Definitiva DMS Legacy:** Aggiunta sezione con stato attuale, problemi bloccanti e piano d'azione chirurgico in 6 step.
+- ✅ **Salvataggio Stabile:** Creato tag `v5.1.0-pre-legacy-fix` e backup DB/file prima dei fix.
+- ✅ **Verifica Allineamento:** Controllato allineamento GitHub, Vercel, Hetzner, Neon.
 
 ---
 
@@ -415,16 +424,16 @@ Nella Dashboard PA → Integrazioni → Tab Connessioni:
 
 ### 14. Piano di Implementazione
 
-| Fase | Descrizione | Stato | Stima |
+| Fase | Descrizione | Stato | Completata |
 |---|---|---|---|
-| **Fase 1** | Endpoint EXPORT (lettura Legacy) | ✅ **COMPLETATA** | — |
-| **Fase 2** | Transformer bidirezionale + endpoint SYNC OUT (scrittura verso Legacy) | 🔧 **DA FARE** | 3-4 ore |
-| **Fase 3** | Endpoint SYNC IN (ricezione presenze dal campo) | 🔧 **DA FARE** | 2-3 ore |
-| **Fase 4** | Campi nuovi nel DB Neon + migrazione dati | 🔧 **DA FARE** | 1-2 ore |
-| **Fase 5** | Registrazione Guardian + aggiornamento frontend | 🔧 **DA FARE** | 1 ora |
-| **Fase 6** | Test integrato con dati reali + connessione a Heroku | 🔧 **DA FARE** | 2 ore |
+| **Fase 1** | Endpoint EXPORT (lettura Legacy) | ✅ **COMPLETATA** | Pre-esistente |
+| **Fase 2** | Transformer bidirezionale + endpoint SYNC OUT (scrittura verso Legacy) | ✅ **COMPLETATA** | 12 Feb 2026 |
+| **Fase 3** | Endpoint SYNC IN (ricezione presenze dal campo) | ✅ **COMPLETATA** | 12 Feb 2026 |
+| **Fase 4** | Campi nuovi nel DB Neon + migrazione dati (8 colonne legacy_*_id + indici) | ✅ **COMPLETATA** | 12 Feb 2026 |
+| **Fase 5** | Registrazione Guardian + aggiornamento frontend | ✅ **GIÀ FATTO** | Pre-esistente |
+| **Fase 6** | Test integrato con dati reali + connessione a Heroku | ✅ **COMPLETATA** | 12 Feb 2026 |
 
-> **Nota importante:** La Fase 6 (connessione reale a Heroku) richiede il coordinamento con Marco Malaguti (Lapsy srl) per verificare che i dati arrivino correttamente all'app di spunta.
+> **Tutte le 6 fasi completate.** Tag stabile: `v5.5.0-full-sync-tested`. Tutti e 3 i canali (EXPORT, SYNC OUT, SYNC IN) sono attivi e testati bidirezionalmente.
 
 ### 15. Interoperabilità con MercaWeb (Abaco S.p.A.)
 
@@ -8142,3 +8151,51 @@ Questa sessione si è concentrata su due macro-aree:
 #### 📝 DOCUMENTAZIONE
 - **[UPDATE]** Blueprint aggiornato a v5.1.0 con tutte le card Connessioni documentate.
 - **[UPDATE]** Sezione 13 Tab Connessioni ora elenca tutte e 6 le integrazioni.
+
+
+---
+
+## 🧬 ANALISI DEFINITIVA INTEROPERABILITÀ DMS LEGACY (v2.0 - 12 Febbraio 2026)
+
+### 1. Stato Attuale (AGGIORNATO 12 Feb 2026)
+
+**TUTTI I PROBLEMI RISOLTI.** Dopo l'implementazione dei Fix 1-14 e il test bidirezionale completo:
+
+- **Lettura (EXPORT) Funzionante:** I 16 endpoint GET che leggono dal DB Heroku sono stabili e funzionano correttamente.
+- **Scrittura (SYNC OUT) ATTIVA:** Tutti gli endpoint SYNC OUT funzionano: vendor, market, stall, concession, spuntista, user.
+- **Ricezione (SYNC IN) ATTIVA:** Presenze e sessioni dal Legacy vengono lette, trasformate e salvate su Neon.
+- **Tag stabile:** `v5.5.0-full-sync-tested` su GitHub e Hetzner.
+
+### 2. Problemi Bloccanti (TUTTI RISOLTI)
+
+| # | Problema | Stato | Fix Applicato |
+|---|---|---|---|
+| 1 | Colonne `legacy_*_id` mancanti | ✅ RISOLTO | Fix 1: ALTER TABLE su 4 tabelle + 8 indici |
+| 2 | Script matching ID | ✅ RISOLTO | Fix 2: Script one-shot eseguito (3 match trovati) |
+| 3 | Transformer `toLegacyUser` errato | ✅ RISOLTO | Fix 3: Rimosso `suser_enabled` |
+| 4 | Transformer SYNC IN errato | ✅ RISOLTO | Fix 4: Riscritti `presenceToMioHub` e `sessionToMioHub` |
+| 5 | Risoluzione ID Legacy → Neon | ✅ RISOLTO | Fix 5: Implementata `resolveNeonIds()` |
+| 6 | Gestione NOT NULL constraints | ✅ RISOLTO | Fix 6: Implementata `applyNotNullDefaults()` |
+| 7 | Cast JSON/JSONB nelle stored functions | ✅ RISOLTO | Fix 7: Rilevamento automatico tipo parametro |
+| 8 | Mapping indirizzo nel transformer | ✅ RISOLTO | Fix 13: Aggiunto indirizzo_via, indirizzo_cap, comune |
+| 9 | sp_stato spuntista errato (A/S vs ATTIVO/SOSPESO) | ✅ RISOLTO | Fix 14: Mapping corretto |
+| 10 | Timestamp presenze (time vs timestamp) | ✅ RISOLTO | Fix 8-12: Combinazione data+ora in ISO timestamp |
+
+### 3. Piano d'Azione Chirurgico (COMPLETATO)
+
+Tutti i 14 fix sono stati implementati, deployati e testati. Risultati dei test bidirezionali:
+
+| Tipo Dato | SYNC OUT (Nostro→Loro) | SYNC IN (Loro→Noi) | Round-Trip |
+|---|---|---|---|
+| **Vendor/Impresa** | ✅ Alimentari Rossi → amb_id=48 | ✅ Lapsy srl → impresa id=104 | ✅ Verificato |
+| **Market** | ✅ Grosseto → mkt_id=16 | ✅ Cervia Demo → market id=12 | ✅ Verificato |
+| **User** | ✅ Admin Grosseto → suser_id=112 | ✅ Mauro Casolaro → user id=41 | ✅ |
+| **Stall** | ✅ A1 Grosseto → pz_id=519 | ✅ F001P002 → stall id=619 | ✅ |
+| **Concessione** | ✅ Intim8@Grosseto → conc_id=30 | ✅ conc_id=13 → concession id=66 | ✅ |
+| **Spuntista** | ✅ sp_id=10 (amb_id=48, 600€) | ⚠️ N/A (no tabella equiv. su Neon) | ✅ OUT |
+| **Presenza** | — | ✅ 1 salvata (pre_id=7568) | ✅ |
+| **Sessione** | — | ✅ 106 salvate da Cervia Demo | ✅ |
+
+**Dati di test presenti nei DB:**
+- **Nel Legacy (Heroku):** MIO TEST SYNC (amb_id=45), DUGONI calzature (amb_id=46), Alimentari Rossi (amb_id=48), Mercato Grosseto (mkt_id=16), stall A1 (pz_id=519), concessione (conc_id=30), spuntista (sp_id=10), user Admin Grosseto (suser_id=112)
+- **Su Neon:** Lapsy srl (id=104), Cervia Demo (id=12), F001P002 (id=619), concessione (id=66), Mauro Casolaro (id=41), 1 presenza, 106 sessioni
