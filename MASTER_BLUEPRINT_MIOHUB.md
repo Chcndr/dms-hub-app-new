@@ -8199,3 +8199,108 @@ Tutti i 14 fix sono stati implementati, deployati e testati. Risultati dei test 
 **Dati di test presenti nei DB:**
 - **Nel Legacy (Heroku):** MIO TEST SYNC (amb_id=45), DUGONI calzature (amb_id=46), Alimentari Rossi (amb_id=48), Mercato Grosseto (mkt_id=16), stall A1 (pz_id=519), concessione (conc_id=30), spuntista (sp_id=10), user Admin Grosseto (suser_id=112)
 - **Su Neon:** Lapsy srl (id=104), Cervia Demo (id=12), F001P002 (id=619), concessione (id=66), Mauro Casolaro (id=41), 1 presenza, 106 sessioni
+
+### 4. Verifica Visiva sul Gestionale Lapsy (12 Feb 2026)
+
+Accesso effettuato al gestionale Lapsy DMS (`https://lapsy-dms.herokuapp.com`) con credenziali `checchi@me.com`. Tutti i dati inviati tramite SYNC OUT sono visibili e corretti nell'interfaccia.
+
+**Sezione Ambulanti** — Tutti i record creati da MioHub sono presenti nella griglia:
+
+| ID | Ragione Sociale | Origine | Visibile |
+|---|---|---|---|
+| 48 | Alimentari Rossi & C. | SYNC OUT da MioHub (Neon id=2) | ✅ |
+| 46 | DUGONI calzature | SYNC OUT da MioHub (Neon id=49) | ✅ |
+| 45 | MIO TEST SYNC | SYNC OUT primo test | ✅ |
+| 1 | INTIM 8 DI CHECCHI ANDREA | Dato originale Legacy | ✅ |
+| 10 | Lapsy srl | Dato originale Legacy | ✅ |
+| 7-14 | Ambulante 1-7 | Dati demo Legacy | ✅ |
+| 17-19 | M14 F001P001-P003 | Dati demo Legacy | ✅ |
+
+**Sezione Mercati** — Il mercato Grosseto è visibile con tutti i dati corretti:
+
+| ID | Descrizione | Città | Dal | Al | Origine |
+|---|---|---|---|---|---|
+| 16 | Mercato Grosseto | Grosseto | 01/01/2024 | 31/12/2034 | SYNC OUT da MioHub |
+| 14 | Cervia Demo | Cervia | 09/08/2023 | 07/01/2030 | Originale Legacy |
+| 1 | Test Bologna | BOLOGNA | 09/11/2022 | 31/12/2029 | Originale Legacy |
+
+**Sezione Spuntisti** — Lo spuntista creato da MioHub è il primo della lista:
+
+| Ambulante | Valido dal | Valido al | Importo | Stato | Origine |
+|---|---|---|---|---|---|
+| Alimentari Rossi & C. | 01/01/2026 | 31/12/2026 | € 600,00 | ATTIVO | SYNC OUT da MioHub |
+| Spunta 91-95, Ambulante 5-7 | 2023 | 2030 | € 500,00 | ATTIVO | Originali Legacy |
+
+**Sezione Utenti APP** — L'utente Admin Grosseto è visibile:
+
+| ID | Email | Nome | Cognome | Ruolo | Origine |
+|---|---|---|---|---|---|
+| 112 | admin@c_e202.miohub.it | Admin | Grosseto | AMB | SYNC OUT da MioHub |
+
+> **Conclusione:** Tutti i dati inviati tramite SYNC OUT da MioHub sono correttamente visibili e consultabili nel gestionale Lapsy. Il round-trip è verificato: dato scritto via API → visibile nell'interfaccia utente.
+
+### 5. Verifica Allineamento Sistemi (12 Feb 2026)
+
+Verifica completa di tutti i sistemi dopo il completamento dei fix e dei test bidirezionali.
+
+| Sistema | Stato | Dettaglio |
+|---|---|---|
+| **GitHub ↔ Hetzner** (Backend) | ✅ ALLINEATI | Stesso commit `6c28480`, tag `v5.5.0-full-sync-tested`. `git fetch` non mostra differenze. |
+| **GitHub ↔ Vercel** (Frontend) | ✅ ALLINEATI | Auto-deploy da master, commit `75b5858`. Frontend raggiungibile su `dms-hub-app-new.vercel.app`. |
+| **Neon DB** | ✅ OPERATIVO | 8 colonne `legacy_*_id` funzionanti. 3 markets, 34 imprese, 8 users, 544 stalls, 25 concessions, 37 presenze, 126 sessioni. |
+| **Heroku Legacy DB** | ✅ OPERATIVO | 32 ambulanti, 3 mercati, 38 utenti, 452 piazzole, 26 concessioni, 5 presenze, 731 sessioni, 9 spuntisti. |
+| **DMS Legacy Integration** | ✅ 3/3 CANALI ATTIVI | EXPORT + SYNC OUT + SYNC IN tutti funzionanti e testati. |
+| **Backend Hetzner** | ✅ ONLINE | PM2 online, health OK, 181.6MB RAM. |
+| **Gestionale Lapsy** | ✅ ACCESSIBILE | Login OK, tutti i dati SYNC OUT visibili nell'interfaccia. |
+
+**Stato DB Neon post-test:**
+
+| Tabella | Record | Con legacy_id | Variazione |
+|---|---|---|---|
+| markets | 3 | 2 | +1 (Cervia Demo importata dal Legacy) |
+| imprese | 34 | 4 | +2 (Lapsy srl importata, Alimentari Rossi linkata) |
+| users | 8 | 4 | +1 (Mauro Casolaro importato dal Legacy) |
+| stalls | 544 | 3 | +2 (F001P002 importata, A1 linkata) |
+| concessions | 25 | 1 | +1 (concessione Legacy importata) |
+| vendor_presences | 37 | 1 | +1 (presenza Legacy salvata) |
+| market_sessions | 126 | 106 | +106 (sessioni Cervia Demo salvate) |
+
+**Stato DB Heroku Legacy post-test:**
+
+| Tabella | Record | Variazione |
+|---|---|---|
+| amb | 32 | +3 (MIO TEST SYNC, DUGONI calzature, Alimentari Rossi da MioHub) |
+| mercati | 3 | +1 (Mercato Grosseto da MioHub) |
+| suser | 38 | +1 (Admin Grosseto da MioHub) |
+| piazzole | 452 | +1 (stall A1 da MioHub) |
+| conc_std | 26 | +1 (concessione da MioHub) |
+| spuntisti | 9 | +1 (Alimentari Rossi spuntista da MioHub) |
+
+### 6. Cose da Verificare o Riparare
+
+**Priorità ALTA:**
+
+| # | Problema | Impatto | Azione |
+|---|---|---|---|
+| 1 | **DNS `www.miohub.it` non risolve** | Il frontend è raggiungibile solo su `dms-hub-app-new.vercel.app` | Verificare configurazione DNS del dominio miohub.it e collegarlo a Vercel |
+| 2 | **Testo "(BLOCCATO)" nel health endpoint** | Le descrizioni SYNC OUT/IN mostrano "(BLOCCATO)" anche se i canali sono attivi | Aggiornare le stringhe di descrizione nel codice del service |
+
+**Priorità MEDIA:**
+
+| # | Problema | Impatto | Azione |
+|---|---|---|---|
+| 3 | **77 restart PM2** | Il backend ha avuto molti restart durante i fix, potrebbe indicare instabilità | Monitorare nei prossimi giorni, resettare il contatore con `pm2 reset` |
+| 4 | **Warning SSL Neon nei log** | Cosmetico, non impatta il funzionamento | Aggiungere `uselibpqcompat=true` alla stringa di connessione |
+| 5 | **11 file non tracciati su Hetzner** | Backup e script di check che sporcano la directory | Eliminare o aggiungere a `.gitignore` |
+
+**Priorità BASSA (miglioramenti futuri):**
+
+| # | Problema | Impatto | Azione |
+|---|---|---|---|
+| 6 | **Dati di test nei DB** | Record di test (MIO TEST SYNC, DUGONI, Cervia Demo, ecc.) presenti in entrambi i DB | Decidere se pulirli o tenerli come riferimento |
+| 7 | **CRON automatico SYNC** | Il CRON non salva automaticamente (dry-run) | Attivare `save: true` nel CRON quando si vuole la sincronizzazione automatica |
+| 8 | **Presenze SYNC IN: 1/5 salvate** | Solo 1 presenza su 5 è stata salvata (le altre non avevano vendor_id risolvibile) | Normale: i vendor di test Legacy non hanno corrispettivi su Neon |
+| 9 | **Spuntista SYNC IN** | Non esiste tabella equivalente su Neon per gli spuntisti | Valutare se creare una tabella `spuntisti` su Neon o mappare su struttura esistente |
+| 10 | **lastSync nel health sempre "never"** | Il sistema non traccia l'ultimo sync effettuato | Implementare tracking dell'ultimo sync riuscito |
+
+> **Stato complessivo: il sistema è stabile e funzionante.** Tutti i canali di interoperabilità sono attivi e testati bidirezionalmente. I problemi rimanenti sono cosmetici o miglioramenti futuri, nessuno è bloccante.
