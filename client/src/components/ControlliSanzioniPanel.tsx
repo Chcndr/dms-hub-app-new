@@ -430,19 +430,11 @@ export default function ControlliSanzioniPanel() {
         if (giustManualiData.success) setGiustificazioniManuali(giustManualiData.data || []);
       } catch (e) { console.error('Errore fetch giustificazioni manuali:', e); }
 
-      // Fetch storico sessioni mercato - filtrato per comune se in impersonificazione
-      const sessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni?limit=100`); // Prendiamo più dati per filtrare lato frontend
+      // Fetch storico sessioni mercato - v4.6.0: filtrato lato backend con comune_id
+      const sessionsRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/presenze/sessioni?limit=100`));
       const sessionsData = await sessionsRes.json();
       if (sessionsData.success) {
-        let sessionsFiltered = sessionsData.data || [];
-        // Filtro lato frontend per comune se in impersonificazione
-        if (urlParams.get('impersonate') === 'true' && urlParams.get('comune_nome')) {
-          const comuneNome = urlParams.get('comune_nome');
-          sessionsFiltered = sessionsFiltered.filter((s: MarketSession) => 
-            s.comune?.toLowerCase().includes(comuneNome?.toLowerCase() || '')
-          );
-        }
-        setMarketSessions(sessionsFiltered);
+        setMarketSessions(sessionsData.data || []);
       }
 
       // Fetch concessioni dal SUAP - filtrato per comune se in impersonificazione

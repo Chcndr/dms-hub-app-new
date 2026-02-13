@@ -740,8 +740,10 @@ export default function WalletPanel() {
   const loadNotificheCount = async () => {
     try {
       const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
-      // Usa comune_id 1 come default (Grosseto) - in futuro sarà dinamico
-      const url = addComuneIdToUrl(`${MIHUB_API}/notifiche/messaggi/TRIBUTI/1`);
+      // v4.6.0: Usa comune_id dinamico dall'impersonificazione (fix bug cross-comune)
+      const { comuneId } = getImpersonationParams();
+      const tributiId = comuneId || '1'; // fallback a 1 se non in impersonificazione
+      const url = addComuneIdToUrl(`${MIHUB_API}/notifiche/messaggi/TRIBUTI/${tributiId}`);
       const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
