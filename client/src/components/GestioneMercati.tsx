@@ -2455,7 +2455,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       )}
 
       {/* NUOVO LAYOUT: Mappa in alto (rettangolare) */}
-      <div className={`relative border border-[#14b8a6]/20 rounded-lg overflow-hidden ${isMapExpanded ? 'h-[850px]' : 'h-[600px]'}`}>
+      <div className={`relative border border-[#14b8a6]/20 rounded-lg overflow-hidden ${isMapExpanded ? 'h-[850px]' : 'h-[700px]'}`}>
         <Button
           size="sm"
           variant="outline"
@@ -3182,66 +3182,160 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
               {/* Contenuto Vista Domanda Spunta */}
               {sidebarView === 'domanda_spunta' && (
+                sidebarDomandaSpuntaData ? (
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {sidebarDomandaSpuntaData ? (
-                    <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-[#e8fbff]/50 text-xs uppercase">N. Domanda</p>
-                          <p className="text-[#e8fbff] text-sm font-medium">#{sidebarDomandaSpuntaData.id}</p>
-                        </div>
-                        <div>
-                          <p className="text-[#e8fbff]/50 text-xs uppercase">Stato</p>
-                          <Badge className={`text-xs ${
-                            sidebarDomandaSpuntaData.stato === 'APPROVATA' ? 'bg-[#10b981]/20 text-[#10b981]' :
-                            sidebarDomandaSpuntaData.stato === 'RIFIUTATA' ? 'bg-[#ef4444]/20 text-[#ef4444]' :
-                            'bg-[#f59e0b]/20 text-[#f59e0b]'
-                          }`}>{sidebarDomandaSpuntaData.stato}</Badge>
-                        </div>
-                        <div>
-                          <p className="text-[#e8fbff]/50 text-xs uppercase">Data Richiesta</p>
-                          <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.data_richiesta ? new Date(sidebarDomandaSpuntaData.data_richiesta).toLocaleDateString('it-IT') : '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-[#e8fbff]/50 text-xs uppercase">Settore Richiesto</p>
-                          <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.settore_richiesto || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-[#e8fbff]/50 text-xs uppercase">Giorno</p>
-                          <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.giorno || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-[#e8fbff]/50 text-xs uppercase">Note</p>
-                          <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.note || 'Nessuna'}</p>
-                        </div>
+                  {/* Dati Domanda */}
+                  <div className="bg-[#0d1829] rounded-lg p-3 border border-[#f59e0b]/20">
+                    <h4 className="text-[#f59e0b] font-semibold mb-3 flex items-center gap-2 text-sm">
+                      <FileText className="h-4 w-4" /> Dati Domanda
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">N. Domanda</span>
+                        <p className="text-[#e8fbff] text-sm">#{sidebarDomandaSpuntaData.id || '-'}</p>
                       </div>
-                      {/* Richiedente */}
-                      <div className="border border-[#f59e0b]/20 rounded-lg p-3 mt-4">
-                        <h4 className="text-[#f59e0b] text-sm font-semibold mb-2 flex items-center gap-2">
-                          <Users className="h-4 w-4" /> Richiedente
-                        </h4>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <p className="text-[#e8fbff]/50 text-xs uppercase">Ragione Sociale</p>
-                            <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.ragione_sociale || sidebarCompanyData?.denominazione || selectedSpuntistaForDetail.impresa_name || '-'}</p>
-                          </div>
-                          <div>
-                            <p className="text-[#e8fbff]/50 text-xs uppercase">Partita IVA</p>
-                            <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.partita_iva || sidebarCompanyData?.partita_iva || '-'}</p>
-                          </div>
-                          <div>
-                            <p className="text-[#e8fbff]/50 text-xs uppercase">Codice Fiscale</p>
-                            <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.codice_fiscale || sidebarCompanyData?.codice_fiscale || sidebarCompanyData?.code || '-'}</p>
-                          </div>
-                        </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Stato</span>
+                        <p><Badge className={`text-xs ${sidebarDomandaSpuntaData.stato === 'APPROVATA' ? 'bg-green-500/20 text-green-400' : sidebarDomandaSpuntaData.stato === 'RIFIUTATA' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{sidebarDomandaSpuntaData.stato || '-'}</Badge></p>
                       </div>
-                    </>
-                  ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-                      <FileText className="h-12 w-12 text-[#f59e0b]/30 mb-4" />
-                      <p className="text-[#e8fbff]/50 text-sm">Nessuna domanda di spunta trovata</p>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Data Richiesta</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.data_richiesta ? new Date(sidebarDomandaSpuntaData.data_richiesta).toLocaleDateString('it-IT') : '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Settore Richiesto</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.settore_richiesto || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Giorno</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.giorno_settimana || sidebarDomandaSpuntaData.giorno || sidebarDomandaSpuntaData.market_days || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Note</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.note || 'Nessuna'}</p>
+                      </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Richiedente */}
+                  <div className="bg-[#0d1829] rounded-lg p-3 border border-[#f59e0b]/20">
+                    <h4 className="text-[#f59e0b] font-semibold mb-3 flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4" /> Richiedente
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Ragione Sociale</span>
+                        <p className="text-[#e8fbff] font-semibold text-sm">{sidebarDomandaSpuntaData.ragione_sociale || sidebarCompanyData?.denominazione || selectedSpuntistaForDetail?.impresa_name || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Partita IVA</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.partita_iva || sidebarCompanyData?.partita_iva || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Codice Fiscale</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.codice_fiscale || sidebarCompanyData?.codice_fiscale || sidebarCompanyData?.code || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Nome</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.rappresentante_legale_nome || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Cognome</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.rappresentante_legale_cognome || '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Autorizzazione */}
+                  <div className="bg-[#0d1829] rounded-lg p-3 border border-[#f59e0b]/20">
+                    <h4 className="text-[#f59e0b] font-semibold mb-3 flex items-center gap-2 text-sm">
+                      <FileText className="h-4 w-4" /> Autorizzazione
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Numero</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.numero_autorizzazione || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Tipo</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.autorizzazione_tipo === 'A' ? 'Tipo A - Posteggio' : sidebarDomandaSpuntaData.autorizzazione_tipo === 'B' ? 'Tipo B - Itinerante' : '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Ente Rilascio</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.autorizzazione_ente || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Data Rilascio</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.autorizzazione_data ? new Date(sidebarDomandaSpuntaData.autorizzazione_data).toLocaleDateString('it-IT') : '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Presenze e Wallet */}
+                  <div className="bg-[#0d1829] rounded-lg p-3 border border-[#f59e0b]/20">
+                    <h4 className="text-[#f59e0b] font-semibold mb-3 flex items-center gap-2 text-sm">
+                      <Wallet className="h-4 w-4" /> Presenze e Wallet
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Presenze</span>
+                        <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.numero_presenze || selectedSpuntistaForDetail?.presenze_totali || 0}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Saldo Wallet</span>
+                        <p className={`font-semibold text-sm ${parseFloat(sidebarDomandaSpuntaData.wallet_balance || selectedSpuntistaForDetail?.wallet_balance || '0') >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          &euro; {parseFloat(sidebarDomandaSpuntaData.wallet_balance || selectedSpuntistaForDetail?.wallet_balance || '0').toFixed(2)}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">Stato Wallet</span>
+                        <p className={`text-sm ${(sidebarDomandaSpuntaData.wallet_id || selectedSpuntistaForDetail?.wallet_id) ? 'text-green-400' : 'text-red-400'}`}>
+                          {(sidebarDomandaSpuntaData.wallet_id || selectedSpuntistaForDetail?.wallet_id) ? '\u2713 Attivo' : '\u2717 Non creato'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f59e0b]"></div>
+                </div>
+                )
+              )}
+
+              {/* Pulsante Modifica Impresa per spuntista */}
+              {selectedSpuntistaForDetail?.impresa_id && (
+                <div className="p-4 border-t border-[#f59e0b]/20 bg-[#0b1220]/50">
+                  <Button
+                    onClick={async () => {
+                      const companyId = selectedSpuntistaForDetail.impresa_id;
+                      if (companyId) {
+                        try {
+                          const response = await fetch(`${API_BASE_URL}/api/imprese/${companyId}`);
+                          const data = await response.json();
+                          if (data.success && data.data) {
+                            setSelectedCompanyForModal({
+                              id: data.data.id,
+                              code: data.data.codice_fiscale || data.data.code,
+                              denominazione: data.data.denominazione,
+                              partita_iva: data.data.partita_iva,
+                              referente: data.data.referente || data.data.email,
+                              telefono: data.data.telefono,
+                              stato: data.data.stato || 'active',
+                              ...data.data
+                            });
+                            setShowCompanyModal(true);
+                          }
+                        } catch (error) {
+                          console.error('Error loading company:', error);
+                          toast.error("Errore nel caricamento dell'impresa");
+                        }
+                      }
+                    }}
+                    className="w-full bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
+                  >
+                    <Edit className="h-4 w-4 mr-2" /> Modifica Impresa (38 campi)
+                  </Button>
                 </div>
               )}
             </div>
