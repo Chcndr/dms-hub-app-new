@@ -37,8 +37,8 @@ export function useMapAnimation({ center, zoom, trigger, bounds, isMarketView }:
           const rawZoom = map.getBoundsZoom(latLngBounds, false, [0, 0]);
           // Arrotonda a 0.25 più vicino per quarti di scatto (la mappa ha zoomSnap: 0.25)
           const roundedToQuarter = Math.round(rawZoom * 4) / 4;
-          // Usa lo zoom calcolato direttamente, senza margini aggiuntivi
-          const forcedZoom = Math.min(roundedToQuarter, 19);
+          // Aggiunge +0.25 (uno scatto di zoom) per far apparire i numeri dei posteggi
+          const forcedZoom = Math.min(roundedToQuarter + 0.25, 19);
           
           const currentZoom = map.getZoom();
           const zoomDiff = Math.abs(forcedZoom - currentZoom);
