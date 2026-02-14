@@ -3119,7 +3119,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             </div>
           ) : selectedSpuntistaForDetail && !selectedStall ? (
             /* Pannello dettaglio spuntista (senza posteggio selezionato) */
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col overflow-y-auto">
               <div className="flex items-center justify-between p-4 border-b border-[#f59e0b]/20 bg-[#f59e0b]/5">
                 <div>
                   <h3 className="text-sm font-semibold text-[#e8fbff]">
@@ -3223,15 +3223,15 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                         <div className="grid grid-cols-3 gap-2">
                           <div>
                             <p className="text-[#e8fbff]/50 text-xs uppercase">Ragione Sociale</p>
-                            <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.ragione_sociale || selectedSpuntistaForDetail.impresa_name || '-'}</p>
+                            <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.ragione_sociale || sidebarCompanyData?.denominazione || selectedSpuntistaForDetail.impresa_name || '-'}</p>
                           </div>
                           <div>
                             <p className="text-[#e8fbff]/50 text-xs uppercase">Partita IVA</p>
-                            <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.partita_iva || '-'}</p>
+                            <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.partita_iva || sidebarCompanyData?.partita_iva || '-'}</p>
                           </div>
                           <div>
                             <p className="text-[#e8fbff]/50 text-xs uppercase">Codice Fiscale</p>
-                            <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.codice_fiscale || '-'}</p>
+                            <p className="text-[#e8fbff] text-sm">{sidebarDomandaSpuntaData.codice_fiscale || sidebarCompanyData?.codice_fiscale || sidebarCompanyData?.code || '-'}</p>
                           </div>
                         </div>
                       </div>
