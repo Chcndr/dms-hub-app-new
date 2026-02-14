@@ -2579,7 +2579,12 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                       return (
                         <TableRow 
                           key={spuntista.id}
-                          className="cursor-pointer hover:bg-[#14b8a6]/10 border-[#14b8a6]/10"
+                          className={`cursor-pointer hover:bg-[#14b8a6]/10 border-[#14b8a6]/10 ${posteggioAssegnato && selectedStallId === posteggioAssegnato.id ? 'bg-[#14b8a6]/20' : ''}`}
+                          onClick={() => {
+                            if (posteggioAssegnato) {
+                              handleRowClick(posteggioAssegnato);
+                            }
+                          }}
                         >
                           {/* # Posizione Graduatoria */}
                           <TableCell className="font-medium text-[#14b8a6] text-sm">{index + 1}</TableCell>
