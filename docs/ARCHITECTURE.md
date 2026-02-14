@@ -5,6 +5,11 @@
 ## Overview
 
 DMS Hub e' un monorepo con frontend e backend nello stesso repository.
+**E' un'unica app web pubblica** che serve PA, imprese, operatori e cittadini
+dallo stesso indirizzo. La differenziazione avviene tramite il sistema RBAC:
+ogni utente vede solo le funzionalita' del suo ruolo grazie a `ProtectedTab`,
+`PermissionsContext` e il sistema di impersonazione per comune.
+
 Il sistema e' composto da 4 layer principali:
 
 ```
@@ -163,15 +168,85 @@ Tutte le funzioni helper gestiscono il caso `null` con graceful degradation.
 6. Backend setta cookie JWT
 ```
 
-### RBAC
+### RBAC (Role-Based Access Control)
+
+Un'unica app web, stesse rotte — il contenuto visibile dipende dal ruolo utente.
+
 ```
 users → user_role_assignments → user_roles → role_permissions → permissions
-                                                    ↓
-                                        modulo.azione (es. dmsHub.markets.read)
-                                        scope: all/territory/market/own/none
+              ↓                     ↓                                ↓
+     territory_type/id        settore + livello          modulo.azione + scope
+     (municipal, market...)   (pa, impresa, mercato...)  (dmsHub.markets.read, tab.view.security)
 ```
 
-Ruoli predefiniti: `system`, `pa`, `mercato`, `impresa`, `esterno`, `pubblico`
+**Settori ruoli**: sistema, pa, mercato, impresa, esterno, pubblico
+**Livelli**: 0 = super_admin → 99 = cittadino
+**Scope permessi**: all, territory, market, own, delegated, none
+
+**Ruoli principali**:
+| ID | Codice | Settore | Chi e' |
+|----|--------|---------|--------|
+| 1 | super_admin | sistema | Admin globale (hardcoded: chcndr@gmail.com) |
+| 2 | admin_pa | pa | Amministratore PA (Pubblica Amministrazione) |
+| - | operatore | pa | Operatore PA |
+| - | viewer | pa | PA sola lettura |
+| - | manager | mercato | Gestore mercato |
+| - | owner | impresa | Titolare impresa |
+| - | dipendente | impresa | Dipendente impresa |
+| 13 | cittadino | pubblico | Cittadino (nessun accesso admin) |
+
+**Risoluzione ruolo** (priorita' in `PermissionsContext.tsx`):
+1. Impersonazione attiva (`?impersonate=true`) → admin_pa (ID=2)
+2. `assigned_roles[0]` dall'utente salvato in localStorage
+3. `base_role === 'admin'` → admin_pa (ID=2)
+4. Email super admin o flag `is_super_admin` → super_admin (ID=1)
+5. Default → cittadino (ID=13, nessun permesso)
+
+**Tab Security nel frontend**:
+```tsx
+// Ogni tab e' wrappato cosi':
+<ProtectedTab tabId="security">
+  <TabsTrigger value="security">Sicurezza</TabsTrigger>
+</ProtectedTab>
+
+// Internamente chiama: canViewTab("security")
+// Che verifica il permesso: "tab.view.security"
+```
+
+**Permessi formato**:
+- `tab.view.{tabId}` → visibilita' tab (es. `tab.view.dashboard`, `tab.view.security`)
+- `quick.view.{quickId}` → accesso rapido sidebar
+- `modulo.azione` → operazioni (es. `dmsHub.markets.read`, `wallet.pagopa.manage`)
+
+### Impersonazione per Comune
+
+Il super admin puo' "vedere come" un PA di un comune specifico:
+
+```
+URL: /dashboard-pa?impersonate=true&comune_id=96&comune_nome=Grosseto&user_email=mario@grosseto.it
+
+Effetti:
+1. PermissionsContext usa ruolo admin_pa (ID=2)
+2. Header X-Comune-Id aggiunto a tutte le fetch (via useImpersonation)
+3. Tab nascosti: security, sistema, ai, integrations, comuni, reports, workspace
+4. Banner giallo "MODALITA' VISUALIZZAZIONE - Stai visualizzando come: Grosseto"
+5. Tutte le azioni sono registrate nell'audit log
+```
+
+**Persistenza**: `sessionStorage['miohub_impersonation']` (sopravvive alla navigazione, muore con il tab)
+**Hook**: `useImpersonation()` in `client/src/hooks/useImpersonation.ts`
+**Banner**: `ImpersonationBanner.tsx`
+
+### Gestione Sicurezza (SecurityTab)
+
+La tab Sicurezza nella DashboardPA offre all'admin:
+- **Ruoli** → Matrice RBAC completa (ruoli ↔ permessi)
+- **Utenti** → Blocco/sblocco account
+- **Eventi** → Incidenti sicurezza
+- **Login** → Tentativi falliti
+- **IP Blacklist** → Blocco IP
+- **Tab Permissions** → Quale ruolo vede quale tab
+- **Quick Access** → Quale ruolo vede quale accesso rapido
 
 ## Deployment
 

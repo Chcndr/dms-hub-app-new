@@ -9,6 +9,17 @@
 ambulanti italiani. Gestisce mercati, posteggi, operatori, concessioni, pagamenti PagoPA,
 mobilita' e monitoraggio. Il sistema e' progettato per scalare a **8.000 mercati**.
 
+**E' un'unica app web** (`dms-hub-app-new.vercel.app`) che serve TUTTI i tipi di utente:
+- **PA (Pubblica Amministrazione)** → `/dashboard-pa` con 14+ tab
+- **Imprese/Operatori** → `/dashboard-impresa`, `/app/impresa/*`, `/hub-operatore`
+- **Cittadini** → `/mappa`, `/civic`, `/wallet`, `/route`
+- **Pubblico** → Home page, mappa pubblica, presentazione
+
+La **stessa interfaccia** mostra funzionalita' diverse in base al **ruolo dell'utente**,
+controllato dal sistema RBAC con `ProtectedTab` + `PermissionsContext`.
+Il sistema di **impersonazione per comune** permette al super admin di vedere
+l'app come un PA di uno specifico comune.
+
 **Stack tecnologico:**
 - Frontend: React 19 + Vite 7 + Wouter + Tailwind 4 + shadcn/ui
 - Backend: Express 4 + tRPC 11 + Drizzle ORM 0.44
@@ -101,13 +112,29 @@ pnpm docs:update            # Sincronizza docs API + blueprint
 - **Rotte**: Definite in `client/src/App.tsx` con `<Switch>` di Wouter
 - **Nuove pagine**: Aggiungi in `client/src/pages/` e registra la rotta in `App.tsx`
 
-### 4. Autenticazione
+### 4. Autenticazione e RBAC
 
 - **Firebase** e' il provider primario (progetto `dmshub-auth-2975e`)
 - **OAuth/SPID** via callback in `server/_core/oauth.ts`
 - **Session**: Cookie JWT (`session`) con scadenza 1 anno
-- **RBAC**: Ruoli in `user_roles`, permessi in `permissions`, mapping in `role_permissions`
 - **Context**: `FirebaseAuthContext` sul frontend, `ctx.user` nel backend tRPC
+
+**Sistema RBAC (Role-Based Access Control):**
+- 4 tabelle: `user_roles` → `role_permissions` → `permissions` + `user_role_assignments`
+- **Settori ruoli**: sistema, pa, mercato, impresa, esterno, pubblico
+- **Livelli**: 0 = super_admin, 99 = cittadino (nessun accesso admin)
+- **Scope permessi**: all, territory, market, own, delegated, none
+- **Tab security**: `ProtectedTab` wrappa ogni tab con `canViewTab(tabId)`
+- **Quick access**: `ProtectedQuickAccess` controlla la sidebar
+- Permessi formato: `tab.view.{tabId}`, `quick.view.{quickId}`, `modulo.azione` (es. `dmsHub.markets.read`)
+
+**Sistema impersonazione per comune:**
+- URL: `/dashboard-pa?impersonate=true&comune_id=96&comune_nome=Grosseto&user_email=...`
+- Persiste in `sessionStorage['miohub_impersonation']`
+- Hook: `useImpersonation()` in `client/src/hooks/useImpersonation.ts`
+- Banner giallo visibile: `ImpersonationBanner.tsx`
+- Tab nascosti durante impersonazione: security, sistema, ai, integrations, comuni
+- **MAI modificare il sistema di impersonazione** senza test completi su tutti i ruoli
 
 ### 5. Codice
 
@@ -195,18 +222,65 @@ VITE_FIREBASE_PROJECT_ID
 | logs | logs.* | System logs |
 | carbonCredits | carbonCredits.* | Crediti carbonio TCC |
 
-## Pagine frontend principali
+## Pagine frontend e accesso per ruolo
 
+Un'unica app web, stesse rotte — il contenuto visibile dipende dal ruolo utente.
+
+### Pagine PA (Pubblica Amministrazione)
 | Rotta | Componente | Descrizione |
 |-------|-----------|-------------|
-| /dashboard-pa | DashboardPA | Dashboard admin principale (14 tab) |
-| /dashboard-impresa | DashboardImpresa | Dashboard per imprese/operatori |
-| /wallet | WalletPage | Gestione pagamenti |
-| /mappa | MapPage | Mappa interattiva mercati |
-| /hub-operatore | HubOperatore | Dashboard operatore hub |
-| /suap | SuapDashboard | Gestione autorizzazioni SUAP |
-| /guardian/* | Guardian* | Monitoring sistema |
+| /dashboard-pa | DashboardPA | Dashboard admin principale (14+ tab protetti da RBAC) |
+| /guardian/* | Guardian* | Monitoring sistema (endpoints, logs, debug) |
 | /council | CouncilPage | Assistente AI legale |
+| /pm/nuovo-verbale | NuovoVerbalePage | Creazione verbali polizia municipale |
+
+### Pagine Imprese/Operatori
+| Rotta | Componente | Descrizione |
+|-------|-----------|-------------|
+| /dashboard-impresa | DashboardImpresa | Dashboard impresa (anagrafica, concessioni, pratiche) |
+| /app/impresa/wallet | WalletImpresaPage | Wallet operatore |
+| /app/impresa/presenze | PresenzePage | Registrazione presenze |
+| /app/impresa/anagrafica | AnagraficaPage | Dati anagrafici impresa |
+| /app/impresa/notifiche | AppImpresaNotifiche | Notifiche impresa |
+| /hub-operatore | HubOperatore | Dashboard operatore hub |
+
+### Pagine condivise (PA + Imprese)
+| Rotta | Componente | Descrizione |
+|-------|-----------|-------------|
+| /suap | SuapDashboard | Gestione autorizzazioni SUAP |
+| /wallet | WalletPage | Gestione pagamenti |
+
+### Pagine pubbliche (tutti)
+| Rotta | Componente | Descrizione |
+|-------|-----------|-------------|
+| / | HomePage | Home con ricerca e accesso rapido |
+| /mappa | MapPage | Mappa interattiva mercati |
+| /mappa-italia | MappaItaliaPage | Mappa nazionale mercati |
+| /civic | CivicPage | Segnalazioni civiche |
+| /route | RoutePage | Percorso ottimale |
+| /vetrine | VetrinePage | Vetrine negozi |
+| /presentazione | PresentazionePage | Presentazione pubblica |
+
+### Tab della DashboardPA (protetti da RBAC)
+Ogni tab e' wrappato in `<ProtectedTab tabId="...">` e visibile solo
+se il ruolo dell'utente ha il permesso `tab.view.{tabId}`.
+
+| Tab ID | Nome | Nascosto in impersonazione? |
+|--------|------|----------------------------|
+| dashboard | Overview | No |
+| mercati | Mercati | No |
+| imprese | Imprese | No |
+| commercio | Commercio | No |
+| wallet | Wallet | No |
+| hub | Hub | No |
+| controlli | Controlli | No |
+| comuni | Comuni | Si |
+| security | Sicurezza (RBAC) | Si |
+| sistema | Sistema | Si |
+| ai | MIO Agent | Si |
+| integrations | Integrazioni | Si |
+| reports | Report | Si |
+| workspace | Workspace | Si |
 
 ## Documentazione di riferimento
 
