@@ -749,5 +749,154 @@ La maggior parte dei comuni gestisce ancora con Excel, carta o software desktop 
 
 ---
 
+## APPENDICE C: BIBLIOTECA DOCUMENTALE DMS (42 PDF + 14 Riferimenti Normativi)
+
+Il progetto DMS Hub e' accompagnato da una **biblioteca documentale completa** di 42 documenti PDF
+che coprono analisi di mercato, studi normativi, modelli economici e progettazione di sistema.
+
+**Sito web**: `https://chcndr.github.io/dms-gemello-news/landing/home.html`
+**Pagina SPOT (documenti)**: `spot.html`
+**Accesso dall'app**: Dashboard PA > barra rapida > pulsante blu "DMS News"
+**Repository**: `github.com/Chcndr/dms-gemello-news`
+
+### C.1 Documenti Base (19 PDF)
+
+| # | Titolo | File | Contenuto |
+|---|--------|------|-----------|
+| 1 | Hub Nazionale del Commercio | HUBNAZIONALEDELCOMMERCIO(2).pdf | Visione hub nazionale mercati |
+| 2 | DMS & CLUST-ER | DMSECLUST-ER(4).pdf | Partnership Emilia-Romagna |
+| 3 | Dossier Nazionale | DOSSIERNAZIONALE(3).pdf | Analisi situazione nazionale |
+| 4 | DMS - Riaccendiamo i Mercati | DMS-RiaccendiamoiMercati-RivitalizziamoleCitta.pdf | Manifesto progetto |
+| 5 | Passaporto EU | PASSAPORTOEU(3).pdf | Passaporto Digitale Europeo prodotti |
+| 6 | Presentazione DMS Bologna | PRESENTAZIONEDMS-CITTAMETROPOLITANADIBOLOGNA-3.pdf | Case study Bologna |
+| 7 | Hub Urbani e di Prossimita' | HubUrbaniediProssimita-EmiliaRomagna-1.pdf | Modello hub ER |
+| 8 | Gemello DMS / Infrastruttura Rete | INFRASTRUTTURARETEDMSEUROPA.pdf | Architettura rete europea |
+| 9 | DMS ECC (narrativo) | EQUILIBRIOECOSOSTENIBILE.pdf | Equilibrio ecosostenibile |
+| 10 | DMS ECC (tecnico) | DMSECC(3).pdf | Specifiche carbon credit |
+| 11 | Carbon Credit - Logica | LOGICACARBONCREDIT(3).pdf | Modello economico TCC |
+| 12 | Carbon Credit DMS | CARBONCREDITDMS-4.pdf | Implementazione carbon credit |
+| 13 | Ecosistema Costi PA | EcosistemaDMS-hub-costiPA-2.pdf | Analisi costi per PA |
+| 14 | Analisi & Soluzione DMS | ANALISIESOLUZIONEDMS(1).pdf | Analisi problemi + soluzione |
+| 15 | Scenario Futuro | ScenarioFuturo(3).pdf | Proiezioni e roadmap |
+| 16 | Presentazione DMS Compressa | PRESENTAZIONE DMS -compressed.pdf | Overview sintetica |
+| 17 | DMS ALL-IN-ONE | DMS ALL-IN-ONE .pdf | Documento unificato |
+| 18 | DMS ONCE ONLY Single Digital Gateway | DMS ONCE ONLY SINGLE DIGITAL GATEWAY.pdf | Conformita' EU SDG |
+| 19 | Hub DMS Web3 Europa | HUB DMS The First Web3-Ready Public Market Platform in Europe.pdf | Visione Web3 |
+
+### C.2 Analisi e Ricerche (6 PDF)
+
+| # | Titolo | File | Contenuto |
+|---|--------|------|-----------|
+| 1 | Analisi Commercio Ambulante | Relazionecalocommercioambulante.pdf | Calo 190.000 negozi, -25.6% ambulanti |
+| 2 | Report Controlli PA | Relazionesuicontrolli(1).pdf | Analisi controlli e costi |
+| 3 | Analisi Dati Sistema | DATI.pdf | Dataset e statistiche |
+| 4 | Mercato dell'Usato | USATO.pdf | Traffico rimanenze e usato |
+| 5 | Riequilibrio Economico | RIEQUILIBRIO.pdf | Modello riequilibrio |
+| 6 | Relazione Approfondita DMS | ANALISIESOLUZIONEDMS(1).pdf | 102 pagine analisi completa |
+
+### C.3 Implementazione Tecnica (6 PDF)
+
+| # | Titolo | File | Contenuto |
+|---|--------|------|-----------|
+| 1 | DMS Sistema Completo | DMScompleto2(1).pdf | Architettura completa |
+| 2 | Implementazioni Avanzate | IMPLEMENTAZIONI(1).pdf | Feature avanzate |
+| 3 | DMS Offline con CIE | DMSofflineconCIE(1).pdf | Funzionamento offline + CIE |
+| 4 | Gestione Servizi Accessori | GESTIONESERVIZIACCESSORI(1).pdf | Servizi aggiuntivi |
+| 5 | DMS al Centro di Tutto | DMSalCENTROdiTUTTO(1).pdf | DMS come piattaforma centrale |
+| 6 | Frammentazione Digitale PA | Vuoto1332(1).pdf | Analisi frammentazione |
+
+### C.4 FinTech e Carbon Credit (4 PDF)
+
+| # | Titolo | File | Contenuto |
+|---|--------|------|-----------|
+| 1 | DMS FinTech | DMSFINTECH.pdf | Modello fintech integrato |
+| 2 | Eco Carbon Credit | ECOCOCREDOIT.pdf | Sistema eco-crediti |
+| 3 | Logica Carbon Credit Avanzata | LOGICACARBONCREDIT(3).pdf | Formula TPASS/TCO2 |
+| 4 | Eventi Straordinari | EVENTISTRAORDINARI(2).pdf | Gestione eventi speciali |
+
+### C.5 Progetto Nazionale (4 PDF)
+
+| # | Titolo | File | Contenuto |
+|---|--------|------|-----------|
+| 1 | Progetto Nazionale | PROGETTONAZIONALE1(1).pdf | Piano nazionale DMS |
+| 2 | Hub DMS Web3 / Smart Contract | DMSWeb3-SmartContract(2).pdf | Blockchain e smart contract |
+| 3 | Premessa Politica | PREMESSAPOLITICA.pdf | Contesto politico-istituzionale |
+| 4 | Bolkestein Commercio | BOLKESTEINCOMMERCIOSUAREAPUBBLICA.pdf | Direttiva Bolkestein e impatto |
+
+### C.6 App e Strumenti (3 PDF)
+
+| # | Titolo | File | Contenuto |
+|---|--------|------|-----------|
+| 1 | App DMS Assistente Personale | APPDMSAssistentePersonale.pdf | Specifiche app mobile |
+| 2 | DMS Locandina | DMSLOCANDINA.pdf | Materiale promozionale |
+| 3 | DMS SSET (InfoCamere) | DMSSSET(2).pdf | Integrazione InfoCamere |
+
+### C.7 TPASS - Documento Strategico Principale (155 pagine)
+
+Il documento **TPASS** (Token di Prodotto per Aree di Scambio Sostenibili) e' il documento
+strategico piu' importante del progetto. Definisce:
+
+- Il sistema **TCO2/TCC** (Token Carbon Credit)
+- La formula economica: `TCO2 (EUR) = PCF (kgCO2e) x (ETS_anchor EUR/t / 1000) x PM`
+- Il modello di business scalabile
+- Le proiezioni di gettito:
+
+| Scenario | Volume TPASS/anno | Ricavi DMS |
+|----------|-------------------|------------|
+| Italia | 100M | 5,97M EUR |
+| UE Top-5 | 600M | 32,28M EUR |
+| UE-27 | 1 miliardo | 54,60M EUR |
+
+### C.8 Riferimenti Normativi EU/Italia (14 riferimenti interattivi)
+
+La pagina SPOT include anche 14 pulsanti interattivi che collegano alla normativa di riferimento:
+
+| # | Normativa | Riferimento |
+|---|-----------|-------------|
+| 1 | Single Digital Gateway | Reg. UE 2018/1724 |
+| 2 | Interoperable Europe | Reg. UE 2024/903 |
+| 3 | eIDAS 2 - Digital Wallet | Reg. UE 2024/1183 |
+| 4 | CBAM (Carbon Border Adjustment) | Reg. UE 2023/956 |
+| 5 | EU ETS (Emission Trading) | Direttiva 2003/87/CE |
+| 6 | CSRD (Corporate Sustainability) | Direttiva 2022/2464 |
+| 7 | AI Act | Reg. UE 2024/1689 |
+| 8 | ESPR (Ecodesign) | Reg. UE 2024/1781 |
+| 9 | Digital Product Passport | Reg. UE 2024/1781 (Art. 9-12) |
+| 10 | Once Only Principle | Reg. UE 2018/1724 (Art. 14) |
+| 11 | Open Data | Direttiva UE 2019/1024 |
+| 12 | GDPR | Reg. UE 2016/679 |
+| 13 | NIS2 | Direttiva UE 2022/2555 |
+| 14 | PSD2 (Payment Services) | Direttiva UE 2015/2366 |
+
+### C.9 Sito DMS Gemello News - Struttura Completa
+
+| Pagina | URL | Contenuto |
+|--------|-----|-----------|
+| Home | `landing/home.html` | Landing page progetto per decisori politici |
+| SPOT | `landing/spot.html` | 42 PDF + 14 riferimenti normativi |
+| Mappa Ministeri | `landing/mappa.html` | Mappa interattiva ministeri coinvolti |
+| PDF Viewer | `landing/pdf-viewer.html` | Visualizzatore PDF integrato |
+| Admin | `landing/admin/` | Pannello amministrativo sito |
+| Videos | `landing/videos/` | Contenuti video |
+
+### C.10 Valore della Biblioteca per la Vendita
+
+Questa biblioteca documentale rappresenta un **asset immateriale significativo**:
+
+| Aspetto | Valore |
+|---------|--------|
+| Ore di ricerca e analisi stimate | 200-400 ore |
+| Copertura normativa | EU + Italia completa |
+| Modello economico | Validato con formule e proiezioni |
+| Analisi di mercato | Dati reali 2003-2023 |
+| Case study | Bologna, Grosseto, Emilia-Romagna |
+| Proiezione scalabilita' | Italia + EU-27 |
+| Integrazione nel prodotto | Knowledge Base MIO Agent (30 doc riassunti) |
+
+**Stima valore consulenziale equivalente**: 30.000-60.000 EUR
+(ricerche di mercato, analisi normative, business plan, studi di fattibilita')
+
+---
+
 *Documento generato il 15 Febbraio 2026*
 *Per aggiornamenti: eseguire nuova analisi del codice sorgente*
