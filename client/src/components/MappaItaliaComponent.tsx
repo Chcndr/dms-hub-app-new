@@ -20,13 +20,15 @@ import {
   Mail,
   User,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  Wallet,
+  Calendar
 } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MarketMapComponent } from './MarketMapComponent';
-import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData, FORMA_GIURIDICA_OPTIONS, STATO_IMPRESA_OPTIONS } from './markets/MarketCompaniesTab';
+import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData } from './markets/MarketCompaniesTab';
 import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL_STATUS_OPTIONS } from '@/lib/stallStatus';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -80,6 +82,7 @@ interface Stall {
   vendor_business_name: string | null;
   vendor_contact_name: string | null;
   impresa_id: number | null;
+  dimensions?: string;
 }
 
 interface Vendor {
@@ -105,6 +108,11 @@ interface Concession {
   stall_number: string;
   vendor_business_name: string;
   vendor_code: string;
+  status?: string;
+  stato?: string;
+  stato_calcolato?: string;
+  settore_merceologico?: string;
+  comune_rilascio?: string;
 }
 
 interface MarketMapData {
@@ -378,9 +386,6 @@ function MarketDetail({ market, allMarkets, onUpdate }: { market: Market; allMar
               // Trigger per assicurare che la mappa si posizioni correttamente
               setTimeout(() => setViewTrigger(prev => prev + 1), 100);
             } else {
-              // Quando si esce dal tab posteggi, resetta selezioni
-              setSelectedStallId(null);
-              setSelectedStallCenter(null);
               // Resetta anche viewMode per sicurezza
               setViewMode('italia');
             }
@@ -1615,14 +1620,14 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           return (
             <MarketMapComponent
               refreshKey={mapRefreshKey}
-              mapData={mapData}  // Passa sempre mapData così i posteggi sono visibili durante l'animazione
+              mapData={mapData as any}  // Passa sempre mapData così i posteggi sono visibili durante l'animazione
               center={viewMode === 'mercato' ? marketCenter : [43.5, 12.5] as [number, number]}
               zoom={viewMode === 'mercato' ? 17 : 6.3}
               height="100%"
               isSpuntaMode={isSpuntaMode}
               onConfirmAssignment={handleConfirmAssignment}
               onStallClick={(stallNumber) => {
-                const dbStall = stallsByNumber.get(stallNumber);
+                const dbStall = stallsByNumber.get(String(stallNumber));
                 if (dbStall) {
                   setSelectedStallId(dbStall.id);
                   // Scroll alla riga nella lista (solo dentro il container, non la pagina)
@@ -1641,8 +1646,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   }, 100);
                 }
               }}
-              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
-              stallsData={stallsDataForMap}
+              selectedStallNumber={(() => { const n = stalls.find(s => s.id === selectedStallId)?.number; return n != null ? parseInt(n, 10) : undefined; })()}
+              stallsData={stallsDataForMap.map(s => ({ ...s, number: parseInt(String(s.number), 10) }))}
               allMarkets={allMarkets.map(m => ({
                 id: m.id,
                 name: m.name,
