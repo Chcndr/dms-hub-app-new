@@ -41,7 +41,6 @@ export function useAgentLogs({
   // 🔥 FIX: Funzione refetch per ricaricare i messaggi manualmente
   const refetch = useCallback(async () => {
     if (loadRef.current) {
-      console.log('[useAgentLogs] Manual refetch triggered');
       await loadRef.current();
     }
   }, []);
@@ -57,7 +56,6 @@ export function useAgentLogs({
     let isFirstLoad = true;
 
     const load = async () => {
-      console.log('[useAgentLogs] Loading messages:', { conversationId, agentName, excludeUserMessages });
       try {
         // Loading solo al primo caricamento, non durante polling
         if (isFirstLoad) {
@@ -68,7 +66,6 @@ export function useAgentLogs({
           conversation_id: conversationId,
           limit: '500',  // Massimo consentito dal backend
         });
-        console.log('[useAgentLogs] Initial params:', params.toString());
         if (agentName) params.set('agent_name', agentName);
         if (excludeUserMessages) {
           params.set('exclude_user_messages', 'true'); // 🔥 VISTA 4 AGENTI
@@ -78,13 +75,11 @@ export function useAgentLogs({
 
         // 🚀 TUBO DIRETTO DATABASE→FRONTEND (bypassa Hetzner)
         const url = `/api/mihub/get-messages?${params.toString()}`;
-        console.log('[useAgentLogs] Fetching:', url);
         const res = await fetch(url);
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
         const data = await res.json();
-        console.log('[useAgentLogs] Response data:', data);
 
         if (!cancelled) {
           // 🔥 FIX: Sostituisci completamente i messaggi invece di fare merge
@@ -138,12 +133,12 @@ export function useAgentLogs({
         const wsPath = window.location.hostname === 'localhost' ? '' : '/ws';
         const wsUrl = `${wsProtocol}//${wsHost}${wsPath}`;
 
-        console.log('[useAgentLogs] Connecting to WebSocket:', wsUrl);
+        console.warn('[useAgentLogs] Connecting to WebSocket:', wsUrl);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log('[useAgentLogs] WebSocket connected');
+          console.warn('[useAgentLogs] WebSocket connected');
           wsConnectedRef.current = true;
           // Subscribe to conversation
           ws.send(JSON.stringify({
@@ -155,7 +150,6 @@ export function useAgentLogs({
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            console.log('[useAgentLogs] WebSocket message:', data);
 
             // Gestisci nuovo messaggio
             if (data.action === 'new_message' && data.message) {
@@ -189,14 +183,13 @@ export function useAgentLogs({
         };
 
         ws.onclose = () => {
-          console.log('[useAgentLogs] WebSocket disconnected');
+          console.warn('[useAgentLogs] WebSocket disconnected');
           wsRef.current = null;
           wsConnectedRef.current = false;
 
           // Riconnetti dopo 5 secondi se non cancellato
           if (!cancelled && useWebSocket) {
             reconnectTimeoutRef.current = window.setTimeout(() => {
-              console.log('[useAgentLogs] Reconnecting WebSocket...');
               connectWebSocket();
             }, 5000);
           }
@@ -213,10 +206,7 @@ export function useAgentLogs({
     let fallbackTimeout: number | undefined;
     
     if (enablePolling) {
-      console.log('[useAgentLogs] Polling ABILITATO (vista 4 agenti)');
       intervalId = window.setInterval(load, pollMs);
-    } else {
-      console.log('[useAgentLogs] Polling DISABILITATO - Caricamento solo al mount');
     }
 
     return () => {

@@ -54,6 +54,7 @@ export interface MioHubUser {
   }>;
   permissions?: string[];
   openId?: string;
+  isSuperAdmin?: boolean;
 }
 
 interface FirebaseAuthState {
@@ -157,7 +158,7 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
     }
 
     const fullUser = detailData.data;
-    console.log(`[FirebaseAuth] Utente legacy trovato: ID=${fullUser.id}, impresa_id=${fullUser.impresa_id}, wallet=${fullUser.wallet_balance}`);
+    console.warn(`[FirebaseAuth] Utente legacy trovato: ID=${fullUser.id}, impresa_id=${fullUser.impresa_id}, wallet=${fullUser.wallet_balance}`);
 
     return {
       id: fullUser.id,
@@ -197,7 +198,7 @@ async function trackLoginEvent(userId: number, email: string, provider: string, 
         details: { provider, email, timestamp: new Date().toISOString() },
       }),
     });
-    console.log(`[FirebaseAuth] Evento login registrato per user_id=${userId}`);
+    console.warn(`[FirebaseAuth] Evento login registrato per user_id=${userId}`);
   } catch (err) {
     console.warn('[FirebaseAuth] Registrazione evento login fallita:', err);
   }
@@ -255,7 +256,7 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
         backendSyncData = data.user;
       }
       if (data.loginTracked) {
-        console.log('[FirebaseAuth] Login tracciato con successo nel DB');
+        console.warn('[FirebaseAuth] Login tracciato con successo nel DB');
       }
     }
   } catch (err) {
@@ -288,6 +289,9 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
     assignedRoles: legacyUser?.assigned_roles || [],
     openId: legacyUser?.openId || undefined,
     permissions: backendSyncData?.permissions || [],
+    isSuperAdmin: (legacyUser?.assigned_roles || []).some(
+      (r: { role_id: number }) => r.role_id === 1
+    ) || legacyUser?.is_super_admin === true,
   };
 
   return miohubUser;
@@ -303,7 +307,7 @@ function buildLegacyUser(miohubUser: MioHubUser): Record<string, any> {
     email: miohubUser.email,
     name: miohubUser.displayName || miohubUser.email,
     base_role: miohubUser.role === 'pa' ? 'admin' : miohubUser.role,
-    is_super_admin: miohubUser.email === 'chcndr@gmail.com',
+    is_super_admin: miohubUser.isSuperAdmin === true,
     assigned_roles: miohubUser.assignedRoles && miohubUser.assignedRoles.length > 0
       ? miohubUser.assignedRoles
       : [{ role_id: miohubUser.role === 'pa' ? 2 : 13, role_code: miohubUser.role }],
@@ -364,7 +368,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           // Dispatch storage event per notificare HomePage e altri componenti
           window.dispatchEvent(new Event('storage'));
           
-          console.log(`[FirebaseAuth] Bridge completato: id=${miohubUser.miohubId}, impresa_id=${miohubUser.impresaId}, wallet=${miohubUser.walletBalance}`);
+          console.warn(`[FirebaseAuth] Bridge completato: id=${miohubUser.miohubId}, impresa_id=${miohubUser.impresaId}, wallet=${miohubUser.walletBalance}`);
         } catch (err) {
           console.error('[FirebaseAuth] Errore sync utente:', err);
           setState({

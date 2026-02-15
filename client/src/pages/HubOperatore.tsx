@@ -454,7 +454,6 @@ export default function HubOperatore() {
         return;
       }
       
-      console.log('Starting camera scanner...');
       const html5QrCode = new Html5Qrcode('qr-reader');
       html5QrCodeRef.current = html5QrCode;
       
@@ -473,7 +472,6 @@ export default function HubOperatore() {
         },
         async (decodedText) => {
           // QR Code scansionato con successo
-          console.log('QR Code scansionato:', decodedText);
           toast.success('QR Code letto!');
           setScannedData(decodedText);
           
@@ -492,7 +490,6 @@ export default function HubOperatore() {
         }
       );
       setCameraActive(true);
-      console.log('Camera scanner started successfully');
     } catch (err) {
       console.error('Errore avvio camera:', err);
       toast.error('Errore avvio fotocamera: ' + (err as Error).message);

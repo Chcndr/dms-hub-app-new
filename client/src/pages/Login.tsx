@@ -57,6 +57,7 @@ export default function Login() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [gdprConsent, setGdprConsent] = useState(false);
 
   // Leggi returnUrl dai query params
   const searchParams = new URLSearchParams(window.location.search);
@@ -135,6 +136,10 @@ export default function Login() {
     }
     if (password !== confirmPassword) {
       setError('Le password non coincidono');
+      return;
+    }
+    if (!gdprConsent) {
+      setError('Devi accettare la Privacy Policy per registrarti');
       return;
     }
 
@@ -376,6 +381,25 @@ export default function Login() {
                     />
                   </div>
                 </div>
+              )}
+
+              {citizenMode === 'register' && (
+                <label className="flex items-start gap-2 text-xs text-gray-400 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={gdprConsent}
+                    onChange={(e) => setGdprConsent(e.target.checked)}
+                    className="mt-0.5 accent-teal-500"
+                    aria-required="true"
+                  />
+                  <span>
+                    Accetto la{' '}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline">
+                      Privacy Policy
+                    </a>{' '}
+                    e il trattamento dei dati personali ai sensi del GDPR (Reg. UE 2016/679)
+                  </span>
+                </label>
               )}
 
               <button

@@ -170,8 +170,6 @@ export default function SuapDashboard({ embedded = false }: { embedded?: boolean
   // Handler per submit SCIA
   const handleSciaSubmit = async (data: any) => {
     try {
-      console.log('Dati SCIA da inviare:', data);
-      
       // Prepara i dati completi per la creazione della pratica
       const praticaData = {
         // Dati base
@@ -249,12 +247,8 @@ export default function SuapDashboard({ embedded = false }: { embedded?: boolean
         del_residenza_cap: data.delegato_cap
       };
       
-      console.log('Payload pratica:', praticaData);
-      
       // Crea la pratica nel backend
       const newPratica = await createSuapPratica('00000000-0000-0000-0000-000000000001', praticaData);
-      
-      console.log('Pratica creata:', newPratica);
       
       setShowSciaForm(false);
       toast.success("SCIA Inviata con successo!", { 

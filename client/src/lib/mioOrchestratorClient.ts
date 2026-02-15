@@ -17,15 +17,10 @@ export async function sendMioMessage(
   text: string,
   currentConversationId: string | null
 ): Promise<{ messages: MioChatMessage[]; conversationId: string }> {
-  debugger; // FORCE STOP HERE - 2025-12-03 07:43
   const body: any = { message: text, mode: 'auto' };
   if (currentConversationId) {
     body.conversationId = currentConversationId;
   }
-
-  console.log('[sendMioMessage] Request:', body);
-  console.error('🚨🚨🚨 [FORCE REBUILD 2025-12-03 07:38] sendMioMessage CALLED! URL: https://orchestratore.mio-hub.me/api/mihub/orchestrator 🚨🚨🚨');
-  console.error('🚨🚨🚨 THIS IS THE NEW CODE! 🚨🚨🚨');
 
   // DIRECT LINK: Bypassiamo il proxy Vercel e chiamiamo direttamente Hetzner
   const res = await fetch('/api/mihub/orchestrator', {
@@ -39,7 +34,6 @@ export async function sendMioMessage(
   }
 
   const data = await res.json();
-  console.log('[sendMioMessage] Response:', data);
 
   // Controlla se il backend ha restituito un errore nel JSON
   if (data.error || data.success === false) {
@@ -99,17 +93,12 @@ export async function sendAgentMessage(
     conversationId: null, // 🔥 RESET: Forza nuova conversazione
   };
 
-  console.log('🔥 [sendAgentMessage] Agent:', agent);
-  console.log('🔥 [sendAgentMessage] Payload:', JSON.stringify(body, null, 2));
-
   // DIRECT LINK: Bypassiamo il proxy Vercel e chiamiamo direttamente Hetzner
   const res = await fetch('/api/mihub/orchestrator', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-
-  console.log('🔥 [sendAgentMessage] Status:', res.status);
 
   if (!res.ok) {
     const errText = await res.text();
@@ -118,7 +107,6 @@ export async function sendAgentMessage(
   }
 
   const data = await res.json();
-  console.log('[sendAgentMessage] Response:', data);
 
   // Controlla se il backend ha restituito un errore nel JSON
   if (data.error || data.success === false) {
@@ -130,7 +118,6 @@ export async function sendAgentMessage(
   // Aggiorna conversationId se il backend ne ha restituito uno nuovo
   const newConversationId = data.conversationId ?? conversationId ?? '';
   if (newConversationId && newConversationId !== conversationId) {
-    console.log('[sendAgentMessage] Updating conversationId:', newConversationId);
     setConversationId(newConversationId);
   }
 

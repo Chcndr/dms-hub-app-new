@@ -24,6 +24,28 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('[ErrorBoundary] Errore non gestito:', error.message);
     console.error('[ErrorBoundary] Component stack:', info.componentStack);
+
+    // Invia errore al backend per monitoring persistente
+    try {
+      const trpcUrl = import.meta.env.VITE_TRPC_URL || '';
+      if (trpcUrl) {
+        fetch(`${trpcUrl}/api/trpc/logs.reportClientError`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            json: {
+              message: error.message,
+              stack: error.stack?.slice(0, 2000),
+              componentStack: info.componentStack?.slice(0, 1000),
+              url: window.location.href,
+              userAgent: navigator.userAgent,
+            },
+          }),
+        }).catch(() => {});
+      }
+    } catch {
+      // Non bloccare il rendering in caso di errore nel reporting
+    }
   }
 
   render() {

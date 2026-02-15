@@ -26,6 +26,7 @@ export interface EndpointConfig {
   exampleResponse?: Record<string, any>;
   requiresAuth?: boolean;
   notes?: string;
+  mockResponse?: Record<string, any>;
 }
 
 /**

@@ -146,10 +146,9 @@ export default function MapPage() {
             height="100%"
             stallsData={stallsData}
             onStallClick={(stallNumber) => {
-              setSelectedStallNumber(stallNumber);
-              console.log('Clicked stall:', stallNumber);
+              setSelectedStallNumber(String(stallNumber));
             }}
-            selectedStallNumber={selectedStallNumber}
+            selectedStallNumber={selectedStallNumber ? Number(selectedStallNumber) : undefined}
             routeConfig={routeConfig}
           />
         ) : (

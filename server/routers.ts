@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -75,12 +76,36 @@ export const appRouter = router({
     }),
   }),
 
-  // System Logs (richiede admin)
+  // System Logs (richiede admin) + Client Error Reporting
   logs: router({
     system: adminProcedure.query(async () => {
       const { getSystemLogs } = await import("./db");
       return await getSystemLogs();
     }),
+    reportClientError: publicProcedure
+      .input(z.object({
+        message: z.string(),
+        stack: z.string().optional(),
+        componentStack: z.string().optional(),
+        url: z.string().optional(),
+        userAgent: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { addLog } = await import("./services/apiLogsService");
+        addLog({
+          level: 'error',
+          app: 'DMS_HUB',
+          type: 'ERROR',
+          endpoint: input.url || 'unknown',
+          message: `[Client Error] ${input.message}`,
+          details: {
+            stack: input.stack,
+            componentStack: input.componentStack,
+            userAgent: input.userAgent,
+          },
+        });
+        return { received: true };
+      }),
   }),
 
   // User Analytics (richiede autenticazione)

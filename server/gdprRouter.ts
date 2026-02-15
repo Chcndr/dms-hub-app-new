@@ -302,6 +302,36 @@ export const gdprRouter = router({
   }),
 
   /**
+   * Registra l'accettazione del consenso GDPR
+   */
+  acceptConsent: protectedProcedure
+    .input(z.object({
+      certificateType: z.enum(["gdpr_consent", "privacy_policy", "terms_accepted"]),
+      version: z.string().default("1.0"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = ctx.user;
+      if (!user) throw new Error("Utente non autenticato");
+
+      const { getDb } = await import("./db");
+      const schema = await import("../drizzle/schema");
+      const db = await getDb();
+      if (!db) throw new Error("Database non disponibile");
+
+      await db.insert(schema.complianceCertificates).values({
+        userId: user.id,
+        certificateType: input.certificateType,
+        version: input.version,
+        metadata: JSON.stringify({
+          acceptedVia: "web_app",
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      return { success: true, certificateType: input.certificateType };
+    }),
+
+  /**
    * Stato consenso utente corrente
    */
   myConsents: protectedProcedure.query(async ({ ctx }) => {
