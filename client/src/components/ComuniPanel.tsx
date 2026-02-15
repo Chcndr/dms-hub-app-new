@@ -810,7 +810,7 @@ export default function ComuniPanel() {
   // Importa automaticamente i settori da IPA dopo la creazione del comune
   const importSettoriAutomatici = async (comuneId: number, codiceIPA: string) => {
     try {
-      console.log(`Importazione automatica settori per comune ${comuneId} da IPA ${codiceIPA}`);
+      console.warn(`[ComuniPanel] Importazione automatica settori per comune ${comuneId} da IPA ${codiceIPA}`);
       
       // Recupera le UO da IndicePA
       const resUO = await fetch(`${API_BASE_URL}/api/ipa/uo/${codiceIPA}`);
@@ -848,10 +848,10 @@ export default function ComuniPanel() {
           }
         }
         
-        console.log(`Importati ${importati} settori da IndicePA`);
+        console.warn(`[ComuniPanel] Importati ${importati} settori da IndicePA`);
         alert(`Comune creato con successo!\n\nImportati automaticamente ${importati} settori da IndicePA.`);
       } else {
-        console.log('Nessun settore trovato su IndicePA');
+        console.warn('[ComuniPanel] Nessun settore trovato su IndicePA');
       }
     } catch (error) {
       console.error('Errore import settori automatici:', error);

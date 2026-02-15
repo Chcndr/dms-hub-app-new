@@ -37,17 +37,12 @@ export const sendDirectMessageToHetzner = async (
     payload.conversationId = conversationId;
   }
   
-  console.log("👻 GHOSTBUSTER: Chiamata partita verso", URL);
-  console.log("👻 GHOSTBUSTER: Payload:", payload);
-  
   try {
     const response = await fetch(URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    
-    console.log("👻 GHOSTBUSTER: Response status:", response.status);
     
     if (!response.ok) {
       const txt = await response.text();
@@ -56,8 +51,7 @@ export const sendDirectMessageToHetzner = async (
     }
     
     const data = await response.json();
-    console.log("👻 GHOSTBUSTER: Response data:", data);
-    
+
     // Parse response
     const messages: DirectMioMessage[] = [];
     const returnedConversationId = data.conversationId ?? conversationId ?? "";
@@ -71,8 +65,6 @@ export const sendDirectMessageToHetzner = async (
         createdAt: new Date().toISOString(),
       });
     }
-    
-    console.log("👻 GHOSTBUSTER: SUCCESS! Returning", messages.length, "messages");
     
     return {
       messages,

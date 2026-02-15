@@ -14,7 +14,7 @@ export interface APILog {
   id: string;
   timestamp: Date;
   level: 'info' | 'warn' | 'error' | 'debug';
-  app: 'DMS_HUB' | 'MIHUB' | 'MIO_AGENT' | 'GUARDIAN' | 'API_TEST' | 'TRPC';
+  app: 'DMS_HUB' | 'MIHUB' | 'MIO_AGENT' | 'GUARDIAN' | 'API_TEST' | 'TRPC' | 'REST';
   type: 'API_CALL' | 'DATABASE' | 'INTEGRATION' | 'SECURITY' | 'ERROR';
   endpoint?: string;
   method?: string;

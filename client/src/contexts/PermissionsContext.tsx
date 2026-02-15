@@ -62,14 +62,14 @@ async function determineUserRoleId(): Promise<{ roleId: number; isImpersonating:
   // 1. Controlla se siamo in modalità impersonificazione
   const impersonation = getImpersonationParams();
   if (impersonation.isImpersonating && impersonation.comuneId) {
-    console.log('[PermissionsContext] Modalità impersonificazione - usando ruolo admin_pa');
+    console.warn('[PermissionsContext] Modalita impersonificazione - usando ruolo admin_pa');
     return { roleId: ROLE_IDS.ADMIN_PA, isImpersonating: true };
   }
 
   // 2. Controlla se c'è un utente loggato in localStorage
   const userStr = localStorage.getItem('user');
   if (!userStr) {
-    console.log('[PermissionsContext] Nessun utente loggato - usando ruolo citizen');
+    console.warn('[PermissionsContext] Nessun utente loggato - usando ruolo citizen');
     return { roleId: ROLE_IDS.CITIZEN, isImpersonating: false };
   }
 
@@ -85,18 +85,18 @@ async function determineUserRoleId(): Promise<{ roleId: number; isImpersonating:
     // 4. Se l'utente ha assigned_roles, usa il primo
     if (user.assigned_roles && user.assigned_roles.length > 0) {
       const firstRole = user.assigned_roles[0];
-      console.log(`[PermissionsContext] Utente con ruolo assegnato: ${firstRole.role_code} (ID=${firstRole.role_id})`);
+      console.warn(`[PermissionsContext] Utente con ruolo assegnato: ${firstRole.role_code} (ID=${firstRole.role_id})`);
       return { roleId: firstRole.role_id, isImpersonating: false };
     }
 
     // 5. Se l'utente ha base_role "admin", usa admin_pa
     if (user.base_role === 'admin') {
-      console.log('[PermissionsContext] Utente admin - usando ruolo admin_pa');
+      console.warn('[PermissionsContext] Utente admin - usando ruolo admin_pa');
       return { roleId: ROLE_IDS.ADMIN_PA, isImpersonating: false };
     }
 
     // 6. Default: citizen
-    console.log('[PermissionsContext] Utente standard - usando ruolo citizen');
+    console.warn('[PermissionsContext] Utente standard - usando ruolo citizen');
     return { roleId: ROLE_IDS.CITIZEN, isImpersonating: false };
 
   } catch (err) {
@@ -125,7 +125,7 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
       setUserRoleId(roleId);
       setIsImpersonating(impersonating);
       
-      console.log(`[PermissionsContext] Caricamento permessi per ruolo ID=${roleId}`);
+      console.warn(`[PermissionsContext] Caricamento permessi per ruolo ID=${roleId}`);
       
       // Carica i permessi del ruolo
       const response = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${roleId}/permissions`);
@@ -135,12 +135,12 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
         const perms = data.data.permissions;
         setPermissions(perms);
         setPermissionCodes(perms.map((p: Permission) => p.code));
-        console.log(`[PermissionsContext] Caricati ${perms.length} permessi`);
+        console.warn(`[PermissionsContext] Caricati ${perms.length} permessi`);
       } else if (data.success && Array.isArray(data.data)) {
         // Fallback per vecchio formato API
         setPermissions(data.data);
         setPermissionCodes(data.data.map((p: Permission) => p.code));
-        console.log(`[PermissionsContext] Caricati ${data.data.length} permessi (formato legacy)`);
+        console.warn(`[PermissionsContext] Caricati ${data.data.length} permessi (formato legacy)`);
       } else {
         throw new Error(data.error || 'Errore nel caricamento permessi');
       }

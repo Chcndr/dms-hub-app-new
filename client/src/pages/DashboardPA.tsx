@@ -36,7 +36,7 @@ import ImpreseQualificazioniPanel from '@/components/ImpreseQualificazioniPanel'
 import { MarketCompaniesTab } from '@/components/markets/MarketCompaniesTab';
 import { NativeReportComponent } from '@/components/NativeReportComponent';
 import { LegacyReportCards } from '@/components/LegacyReportCards';
-import { MultiAgentChatView } from '@/components/multi-agent/MultiAgentChatView';
+import { MultiAgentChatView, type AgentMessage } from '@/components/multi-agent/MultiAgentChatView';
 import { SharedWorkspace } from '@/components/SharedWorkspace';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import ComuniPanel from '@/components/ComuniPanel';
@@ -57,6 +57,7 @@ import { callOrchestrator } from '@/api/orchestratorClient';
 import { sendAgentMessage, AgentChatMessage } from '@/lib/mioOrchestratorClient';
 import { sendDirectMessageToHetzner, DirectMioMessage } from '@/lib/DirectMioClient';
 import { sendToAgent } from '@/lib/agentHelper';
+import { toast } from 'sonner';
 
 // 👻 GHOSTBUSTER: MioChatMessage sostituito con DirectMioMessage
 // 🔥 FORCE REBUILD: 2024-12-20 12:46 - Fix agentName filter removed from single chats
@@ -111,7 +112,7 @@ function useDashboardData() {
           setStatsOverview(data.data);
         }
       })
-      .catch(err => console.log('Stats overview fetch error:', err));
+      .catch(err => console.error('Stats overview fetch error:', err));
     
     // Fetch realtime
     fetch(`${MIHUB_API}/stats/realtime`)
@@ -121,7 +122,7 @@ function useDashboardData() {
           setStatsRealtime(data.data);
         }
       })
-      .catch(err => console.log('Stats realtime fetch error:', err));
+      .catch(err => console.error('Stats realtime fetch error:', err));
     
     // Fetch growth
     fetch(`${MIHUB_API}/stats/growth`)
@@ -131,7 +132,7 @@ function useDashboardData() {
           setStatsGrowth(data.data);
         }
       })
-      .catch(err => console.log('Stats growth fetch error:', err));
+      .catch(err => console.error('Stats growth fetch error:', err));
     
     // Fetch qualificazione (Tab Imprese)
     fetch(`${MIHUB_API}/stats/qualificazione/overview`)
@@ -155,7 +156,7 @@ function useDashboardData() {
           });
         }
       })
-      .catch(err => console.log('Stats qualificazione fetch error:', err));
+      .catch(err => console.error('Stats qualificazione fetch error:', err));
     
     // Fetch formazione stats (enti formatori e corsi)
     fetch(`${MIHUB_API}/formazione/stats`)
@@ -177,7 +178,7 @@ function useDashboardData() {
           });
         }
       })
-      .catch(err => console.log('Formazione stats fetch error:', err));
+      .catch(err => console.error('Formazione stats fetch error:', err));
     
     // Fetch bandi stats (associazioni e catalogo bandi)
     fetch(`${MIHUB_API}/bandi/stats`)
@@ -203,7 +204,7 @@ function useDashboardData() {
           });
         }
       })
-      .catch(err => console.log('Bandi stats fetch error:', err));
+      .catch(err => console.error('Bandi stats fetch error:', err));
   }, []);
 
   // Combina dati tRPC con dati REST
@@ -561,7 +562,7 @@ export default function DashboardPA() {
     const TARGET_ID = 'dfab3001-0969-4d6d-93b5-e6f69eecb794';
     
     if (localStorage.getItem('mihub_global_conversation_id') !== TARGET_ID) {
-      console.log("⚠️ RIPRISTINO CHAT STORICA...");
+      console.warn('[DashboardPA] Ripristino chat storica');
       localStorage.setItem('mihub_global_conversation_id', TARGET_ID);
       window.location.reload(); // Ricarica per applicare
     }
@@ -871,7 +872,7 @@ export default function DashboardPA() {
         if (data.success && data.data) {
           const imprese = data.data;
           const totalConcessioni = imprese.reduce((acc: number, i: any) => acc + (i.concessioni_attive?.length || 0), 0);
-          const comuniUnici = [...new Set(imprese.map((i: any) => i.comune).filter(Boolean))].length;
+          const comuniUnici = Array.from(new Set(imprese.map((i: any) => i.comune).filter(Boolean))).length;
           const media = imprese.length > 0 ? (totalConcessioni / imprese.length).toFixed(1) : '0';
           setImpreseStats({ total: imprese.length, concessioni: totalConcessioni, comuni: comuniUnici, media });
         }
@@ -928,7 +929,6 @@ export default function DashboardPA() {
   } = useAgentLogs({
     conversationId: viewMode === 'quad' ? mioGptdevConversationId : null, // 🔥 Chat MIO ↔ GPT Dev (isolata)
     agentName: 'gptdev',
-    mode: 'auto',  // 🎯 Vista 4: coordinamento MIO
     enablePolling: viewMode === 'quad',
     excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ GPT Dev
   });
@@ -939,7 +939,6 @@ export default function DashboardPA() {
   } = useAgentLogs({
     conversationId: viewMode === 'quad' ? mioManusConversationId : null, // 🔥 Chat MIO ↔ Manus (isolata)
     agentName: 'manus',
-    mode: 'auto',  // 🎯 Vista 4: coordinamento MIO
     enablePolling: viewMode === 'quad',
     excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Manus
   });
@@ -950,7 +949,6 @@ export default function DashboardPA() {
   } = useAgentLogs({
     conversationId: viewMode === 'quad' ? mioAbacusConversationId : null, // 🔥 Chat MIO ↔ Abacus (isolata)
     agentName: 'abacus',
-    mode: 'auto',  // 🎯 Vista 4: coordinamento MIO
     enablePolling: viewMode === 'quad',
     excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Abacus
   });
@@ -961,7 +959,6 @@ export default function DashboardPA() {
   } = useAgentLogs({
     conversationId: viewMode === 'quad' ? mioZapierConversationId : null, // 🔥 Chat MIO ↔ Zapier (isolata)
     agentName: 'zapier',
-    mode: 'auto',  // 🎯 Vista 4: coordinamento MIO
     enablePolling: viewMode === 'quad',
     excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Zapier
   });
@@ -981,7 +978,7 @@ export default function DashboardPA() {
   });
   
   const manusMessages = manusMessagesRaw.map(msg => ({
-    role: msg.role as 'user' | 'assistant',
+    role: msg.role as 'user' | 'assistant' | 'system',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
     sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
@@ -1003,7 +1000,7 @@ export default function DashboardPA() {
   });
   
   const abacusMessages = abacusMessagesRaw.map(msg => ({
-    role: msg.role as 'user' | 'assistant',
+    role: msg.role as 'user' | 'assistant' | 'system',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
     sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
@@ -1038,7 +1035,7 @@ export default function DashboardPA() {
   });
   
   const gptdevMessages = gptdevMessagesRaw.map(msg => ({
-    role: msg.role as 'user' | 'assistant',
+    role: msg.role as 'user' | 'assistant' | 'system',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
     sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
@@ -1047,7 +1044,7 @@ export default function DashboardPA() {
   }));
   
   const zapierMessages = zapierMessagesRaw.map(msg => ({
-    role: msg.role as 'user' | 'assistant',
+    role: msg.role as 'user' | 'assistant' | 'system',
     content: msg.content,  // Backend ora restituisce già 'content'
     agent: msg.agent_name,
     sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
@@ -1088,9 +1085,9 @@ export default function DashboardPA() {
     if (!storedId || !isValidUUID(storedId)) {
       storedId = crypto.randomUUID(); // Genera UUID valido
       localStorage.setItem('mihub_global_conversation_id', storedId);
-      console.log('♾️ [DashboardPA Chat Eterna] Nuovo conversation_id generato:', storedId);
+      console.warn('[DashboardPA] Nuovo conversation_id generato:', storedId);
     } else {
-      console.log('♾️ [DashboardPA Chat Eterna] Conversation_id esistente caricato:', storedId);
+      // Conversation_id esistente caricato
     }
 
     // 3. Usa quell'ID. Punto.
@@ -1173,7 +1170,7 @@ export default function DashboardPA() {
           // NON settare notificheNonLette qui - viene calcolato dalle risposte
         }
       })
-      .catch(err => console.log('Notifiche stats fetch error:', err));
+      .catch(err => console.error('Notifiche stats fetch error:', err));
     
     // Fetch risposte (messaggi dalle imprese) - separate per Enti e Associazioni
     fetch(`${MIHUB_API}/notifiche/risposte`)
@@ -1191,7 +1188,7 @@ export default function DashboardPA() {
           setNotificheNonLette(totaleNonLette);
         }
       })
-      .catch(err => console.log('Notifiche risposte fetch error:', err));
+      .catch(err => console.error('Notifiche risposte fetch error:', err));
     
     // Fetch messaggi inviati - Enti Formatori (ID=1)
     fetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/1?filtro=inviati`)
@@ -1205,7 +1202,7 @@ export default function DashboardPA() {
           })));
         }
       })
-      .catch(err => console.log('Messaggi inviati Enti fetch error:', err));
+      .catch(err => console.error('Messaggi inviati Enti fetch error:', err));
     
     // Fetch messaggi inviati - Associazioni (ID=2)
     fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/2?filtro=inviati`)
@@ -1219,7 +1216,7 @@ export default function DashboardPA() {
           })));
         }
       })
-      .catch(err => console.log('Messaggi inviati Assoc fetch error:', err));
+      .catch(err => console.error('Messaggi inviati Assoc fetch error:', err));
     
     // Fetch lista mercati
     fetch(`${MIHUB_API}/stats/overview`)
@@ -1231,7 +1228,7 @@ export default function DashboardPA() {
           setMercatiList(mercatiRes.data);
         }
       })
-      .catch(err => console.log('Mercati fetch error:', err));
+      .catch(err => console.error('Mercati fetch error:', err));
     
     // Fetch lista hub
     fetch(`${MIHUB_API}/tcc/v2/comuni`)
@@ -1241,7 +1238,7 @@ export default function DashboardPA() {
           setHubList(data.comuni);
         }
       })
-      .catch(err => console.log('Hub fetch error:', err));
+      .catch(err => console.error('Hub fetch error:', err));
     
     // Fetch lista imprese
     fetch('https://api.mio-hub.me/api/imprese')
@@ -1251,7 +1248,7 @@ export default function DashboardPA() {
           setImpreseList(data.data);
         }
       })
-      .catch(err => console.log('Imprese fetch error:', err));
+      .catch(err => console.error('Imprese fetch error:', err));
     
     // Polling ogni 30 secondi per aggiornare notifiche
     const interval = setInterval(() => {
@@ -1262,7 +1259,7 @@ export default function DashboardPA() {
             setNotificheStats(data.data);
           }
         })
-        .catch(err => console.log('Notifiche stats poll error:', err));
+        .catch(err => console.error('Notifiche stats poll error:', err));
       // Aggiorna anche risposte non lette
       fetch(`${MIHUB_API}/notifiche/risposte`)
         .then(res => res.json())
@@ -1274,7 +1271,7 @@ export default function DashboardPA() {
             setNotificheNonLette(data.data.filter((r: any) => !r.letta).length);
           }
         })
-        .catch(err => console.log('Notifiche risposte poll error:', err));
+        .catch(err => console.error('Notifiche risposte poll error:', err));
     }, 30000);
     
     return () => clearInterval(interval);
@@ -1489,7 +1486,6 @@ export default function DashboardPA() {
     const fetchAgentActivity = async () => {
       // Non fare polling se la tab non è visibile (risparmia CPU Vercel)
       if (document.hidden) {
-        console.log('[DashboardPA] Tab non visibile, skip polling agenti');
         return;
       }
       try {
@@ -1572,7 +1568,7 @@ export default function DashboardPA() {
             }));
           }
         })
-        .catch(err => console.log('Realtime refresh error:', err));
+        .catch(err => console.error('Realtime refresh error:', err));
     }, 30000);
 
     return () => clearInterval(interval);
@@ -1907,17 +1903,17 @@ export default function DashboardPA() {
     };
 
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3" role="status" aria-live="polite" aria-label="Stato dei servizi">
         {/* Backend API Indicator */}
         <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20">
-          <div className={`w-2 h-2 rounded-full ${getStatusColor(apiStatus)} ${apiStatus === 'online' ? 'animate-pulse' : ''}`} />
+          <div className={`w-2 h-2 rounded-full ${getStatusColor(apiStatus)} ${apiStatus === 'online' ? 'animate-pulse' : ''}`} aria-hidden="true" />
           <span className="text-xs font-medium">API</span>
           <span className="text-xs opacity-75">{getStatusText(apiStatus)}</span>
         </div>
 
         {/* PM2 Status Indicator */}
         <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20">
-          <div className={`w-2 h-2 rounded-full ${getStatusColor(pm2Status)} ${pm2Status === 'online' ? 'animate-pulse' : ''}`} />
+          <div className={`w-2 h-2 rounded-full ${getStatusColor(pm2Status)} ${pm2Status === 'online' ? 'animate-pulse' : ''}`} aria-hidden="true" />
           <span className="text-xs font-medium">PM2</span>
           <span className="text-xs opacity-75">{getStatusText(pm2Status)}</span>
         </div>
@@ -1926,20 +1922,21 @@ export default function DashboardPA() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b1220] overflow-x-hidden">
+    <div className="min-h-screen bg-[#0b1220] overflow-x-hidden" role="main" aria-label="Dashboard Pubblica Amministrazione">
       {/* Header */}
       <header className="bg-gradient-to-r from-[#8b5cf6] to-[#6d28d9] text-white py-3 px-6 sticky top-0 z-50 shadow-lg">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Pulsante Home per tornare alla pagina principale */}
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => setLocation('/')}
               className="bg-white/20 hover:bg-white/30 text-white border-none"
               title="Torna alla Home"
+              aria-label="Torna alla Home"
             >
-              <Home className="h-5 w-5" />
+              <Home className="h-5 w-5" aria-hidden="true" />
             </Button>
             <BarChart3 className="h-6 w-6" />
             <div>
@@ -1956,6 +1953,7 @@ export default function DashboardPA() {
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value)}
               className="bg-white/20 text-white px-4 py-2 rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              aria-label="Seleziona periodo di analisi"
             >
               <option value="day">Oggi</option>
               <option value="week">Settimana</option>
@@ -1971,7 +1969,7 @@ export default function DashboardPA() {
       </header>
 
       {/* Quick Access Navigation */}
-      <div className="bg-[#1a2332] border-b border-[#14b8a6]/30 py-4 px-6">
+      <nav className="bg-[#1a2332] border-b border-[#14b8a6]/30 py-4 px-6" aria-label="Accesso rapido applicativi">
         <div className="max-w-7xl mx-auto">
           <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">Accesso Rapido Applicativi</h3>
           <div className="grid grid-cols-11 gap-2">
@@ -2041,7 +2039,7 @@ export default function DashboardPA() {
             </ProtectedQuickAccess>
           </div>
         </div>
-      </div>
+      </nav>
 
 
 
@@ -2075,7 +2073,7 @@ export default function DashboardPA() {
 
         {/* Loading State */}
         {realData.isLoading && (
-          <div className="flex items-center justify-center p-8">
+          <div className="flex items-center justify-center p-8" role="status" aria-live="polite" aria-busy="true">
             <div className="text-[#14b8a6] animate-pulse">Caricamento dati dal backend MIHUB...</div>
           </div>
         )}
@@ -3573,12 +3571,12 @@ export default function DashboardPA() {
                   {(!fundStats?.transactions || !Array.isArray(fundStats.transactions) || fundStats.transactions.length === 0) ? (
                     <p className="text-center text-[#94a3b8] py-8">Nessun movimento registrato</p>
                   ) : (
-                    fundStats.transactions.filter(tx => {
+                    fundStats.transactions.filter((tx: any) => {
                       if (fundMovementFilter === 'all') return true;
                       if (fundMovementFilter === 'deposit') return tx.type === 'deposit';
                       if (fundMovementFilter === 'reimbursement') return tx.type === 'reimbursement' || tx.type === 'reimbursement_batch';
                       return true;
-                    }).map((tx, i) => {
+                    }).map((tx: any, i: number) => {
                       const isDeposit = tx.type === 'deposit';
                       const euroValue = tx.euro_value ? (tx.euro_value / 100) : (tx.amount || 0);
                       return (
@@ -6677,10 +6675,10 @@ export default function DashboardPA() {
 
                     {viewMode === 'quad' && (
                       <MultiAgentChatView
-                        gptdevMessages={gptdevQuadMessages}
-                        manusMessages={manusQuadMessages}
-                        abacusMessages={abacusQuadMessages}
-                        zapierMessages={zapierQuadMessages}
+                        gptdevMessages={gptdevQuadMessages as AgentMessage[]}
+                        manusMessages={manusQuadMessages as AgentMessage[]}
+                        abacusMessages={abacusQuadMessages as AgentMessage[]}
+                        zapierMessages={zapierQuadMessages as AgentMessage[]}
                         gptdevLoading={gptdevQuadLoading}
                         manusLoading={manusQuadLoading}
                         abacusLoading={abacusQuadLoading}
@@ -6704,10 +6702,10 @@ export default function DashboardPA() {
                 <p className="text-[#e8fbff]/70 text-sm mb-4">
                   Area di staging per output complessi, diagrammi e annotazioni. Gli agenti possono disegnare automaticamente schemi e report.
                 </p>
-                <SharedWorkspace 
-                  conversationId={mioMainConversationId}
-                  onSave={(snapshot) => {
-                    console.log('[Dashboard] Workspace saved:', snapshot);
+                <SharedWorkspace
+                  conversationId={mioMainConversationId ?? undefined}
+                  onSave={(_snapshot) => {
+                    // Workspace saved
                   }}
                 />
               </CardContent>
@@ -6789,7 +6787,7 @@ export default function DashboardPA() {
                 <BusHubEditor
                   onClose={() => setShowBusHubEditor(false)}
                   onSave={async (data) => {
-                    console.log('Dati ricevuti da editor:', data);
+                    // Dati ricevuti da editor, processa salvataggio
                     try {
                       // Estrai i dati nel formato corretto per il backend
                       const areaGeojson = data.hub_geojson?.area?.geometry || null;
@@ -6810,7 +6808,7 @@ export default function DashboardPA() {
                           }),
                         });
                         if (response.ok) {
-                          console.log('Hub aggiornato con successo!');
+                          // Hub aggiornato con successo
                         } else {
                           console.error('Errore aggiornamento hub:', await response.text());
                         }
@@ -6860,6 +6858,7 @@ export default function DashboardPA() {
 function LogsSection() {
   const [guardianLogs, setGuardianLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showBusHubEditor, setShowBusHubEditor] = useState(false);
 
   useEffect(() => {
     // Load Guardian logs from backend API
@@ -7072,7 +7071,7 @@ function LogsSection() {
                 <BusHubEditor
                   onClose={() => setShowBusHubEditor(false)}
                   onSave={async (data) => {
-                    console.log('Dati ricevuti da editor:', data);
+                    // Dati ricevuti da editor, processa salvataggio
                     try {
                       // Estrai i dati nel formato corretto per il backend
                       const areaGeojson = data.hub_geojson?.area?.geometry || null;
@@ -7093,7 +7092,7 @@ function LogsSection() {
                           }),
                         });
                         if (response.ok) {
-                          console.log('Hub aggiornato con successo!');
+                          // Hub aggiornato con successo
                         } else {
                           console.error('Errore aggiornamento hub:', await response.text());
                         }

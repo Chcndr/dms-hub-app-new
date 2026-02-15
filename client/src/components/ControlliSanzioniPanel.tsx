@@ -345,7 +345,7 @@ export default function ControlliSanzioniPanel() {
     
     // Log impersonificazione per debug
     if (isImpersonatingFromUrl && comuneNomeFromUrl) {
-      console.log('[ControlliSanzioni] Modalità impersonificazione attiva, comune:', comuneNomeFromUrl);
+      console.warn('[ControlliSanzioni] Modalita impersonificazione attiva, comune:', comuneNomeFromUrl);
     }
     
     try {
@@ -467,7 +467,7 @@ export default function ControlliSanzioniPanel() {
           setConcessioni(sorted);
         }
       } catch (concErr) {
-        console.log('[ControlliSanzioni] Errore fetch concessioni:', concErr);
+        console.warn('[ControlliSanzioni] Errore fetch concessioni:', concErr);
       }
 
       // Fetch autorizzazioni dal SUAP - filtrato per comune se in impersonificazione
@@ -483,7 +483,7 @@ export default function ControlliSanzioniPanel() {
           setAutorizzazioni(sorted);
         }
       } catch (autErr) {
-        console.log('[ControlliSanzioni] Errore fetch autorizzazioni:', autErr);
+        console.warn('[ControlliSanzioni] Errore fetch autorizzazioni:', autErr);
       }
 
       // Fetch notifiche SUAP per PM - notifiche di cambio stato pratiche
@@ -552,7 +552,7 @@ export default function ControlliSanzioniPanel() {
           setNotificheSuap(allNotifiche);
         }
       } catch (notifErr) {
-        console.log('[ControlliSanzioni] Endpoint notifiche-pm non disponibile, usando fallback');
+        console.warn('[ControlliSanzioni] Endpoint notifiche-pm non disponibile, usando fallback');
         // Fallback: generiamo le notifiche da domande spunta, concessioni e autorizzazioni
         const notificheFromDomande = (domandeData.data || []).map((d: DomandaSpunta, idx: number) => ({
           id: idx + 1,
@@ -628,13 +628,13 @@ export default function ControlliSanzioniPanel() {
                 allGraduatoria = [...allGraduatoria, ...gradData.data];
               }
             } catch (gradErr) {
-              console.log(`[ControlliSanzioni] Errore fetch graduatoria mercato ${mId}:`, gradErr);
+              console.warn(`[ControlliSanzioni] Errore fetch graduatoria mercato ${mId}:`, gradErr);
             }
           }
           setGraduatoriaSpunta(allGraduatoria);
         }
       } catch (gradErr) {
-        console.log('[ControlliSanzioni] Errore fetch graduatoria:', gradErr);
+        console.warn('[ControlliSanzioni] Errore fetch graduatoria:', gradErr);
       } finally {
         setGraduatoriaLoading(false);
       }

@@ -79,11 +79,8 @@ export default function HubMapTest() {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
       
-      console.log('[HubMapTest] API Response:', json);
-      
       if (json.success && Array.isArray(json.data)) {
         setAllHubs(json.data);
-        console.log('[HubMapTest] Loaded', json.data.length, 'HUBs');
       } else {
         throw new Error('Formato risposta non valido');
       }
@@ -102,8 +99,6 @@ export default function HubMapTest() {
       const response = await fetch(`${API_BASE_URL}/api/hub/locations/${hubId}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
-      
-      console.log('[HubMapTest] HUB Details:', json);
       
       if (json.success && json.data) {
         setSelectedHub(json.data);
@@ -133,7 +128,6 @@ export default function HubMapTest() {
   // Click su negozio
   const handleShopClick = (shop: HubShop) => {
     setSelectedShop(shop);
-    console.log('[HubMapTest] Shop clicked:', shop);
   };
 
   if (loading && allHubs.length === 0) {

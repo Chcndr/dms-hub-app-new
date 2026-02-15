@@ -510,11 +510,12 @@ function APIDashboard() {
       .flatMap(cat => cat.endpoints)
       .find(ep => ep.path === endpointPath);
     
+    // Parse request body se presente (dichiarato fuori try per usarlo nel catch)
+    let parsedBody: any = {};
+
     try {
       let data: any = null;
-      
-      // Parse request body se presente
-      let parsedBody: any = {};
+
       const bodyToUse = customBody || requestBody;
       if (bodyToUse && bodyToUse.trim()) {
         try {
@@ -638,19 +639,19 @@ function APIDashboard() {
         // DMSHUB - LOCATIONS (path tRPC)
         // ============================================
         case '/api/trpc/dmsHub.locations.list':
-          data = await utils.client.dmsHub.locations.list.query();
+          data = await (utils.client.dmsHub as any).locations.list.query();
           break;
         case '/api/trpc/dmsHub.locations.getById':
-          data = await utils.client.dmsHub.locations.getById.query(parsedBody);
+          data = await (utils.client.dmsHub as any).locations.getById.query(parsedBody);
           break;
         case '/api/trpc/dmsHub.locations.create':
-          data = await utils.client.dmsHub.locations.create.mutate(parsedBody);
+          data = await (utils.client.dmsHub as any).locations.create.mutate(parsedBody);
           break;
         case '/api/trpc/dmsHub.locations.update':
-          data = await utils.client.dmsHub.locations.update.mutate(parsedBody);
+          data = await (utils.client.dmsHub as any).locations.update.mutate(parsedBody);
           break;
         case '/api/trpc/dmsHub.locations.delete':
-          data = await utils.client.dmsHub.locations.delete.mutate(parsedBody);
+          data = await (utils.client.dmsHub as any).locations.delete.mutate(parsedBody);
           break;
           
         // MIO AGENT - chiamate REST dirette
@@ -914,7 +915,7 @@ function APIDashboard() {
           data = await utils.client.wallet.upsertTariffa.mutate(parsedBody);
           break;
         case '/api/trpc/wallet.verificaSaldoPresenza':
-          data = await utils.client.wallet.verificaSaldoPresenza.mutate(parsedBody);
+          data = await utils.client.wallet.verificaSaldoPresenza.query(parsedBody);
           break;
         case '/api/trpc/wallet.ricercaPagamentiGiornalieri':
           data = await utils.client.wallet.ricercaPagamentiGiornalieri.query(parsedBody);
@@ -1356,10 +1357,10 @@ function APIDashboard() {
     };
     
     // Cerca esempio per endpoint selezionato
-    const example = examplesByEndpoint[selectedEndpoint] || { marketId: 1, id: 1 };
-    
-    setRequestBody(JSON.stringify(example, null, 2));
-    toast.success('JSON esempio caricato per: ' + selectedEndpoint.split('/').pop());
+    const example = selectedEndpoint ? examplesByEndpoint[selectedEndpoint] : null;
+
+    setRequestBody(JSON.stringify(example || { marketId: 1, id: 1 }, null, 2));
+    toast.success('JSON esempio caricato per: ' + (selectedEndpoint || '').split('/').pop());
   };
 
   return (
@@ -1402,7 +1403,7 @@ function APIDashboard() {
         <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
           <CardContent className="p-3">
             <p className="text-[#e8fbff]/60 text-xs">Richieste Oggi</p>
-            <p className="text-xl font-bold text-[#8b5cf6]">{apiStats?.totalRequests || 0}</p>
+            <p className="text-xl font-bold text-[#8b5cf6]">{(apiStats as any)?.totalRequests || apiStats?.requestsToday || 0}</p>
           </CardContent>
         </Card>
         

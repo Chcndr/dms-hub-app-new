@@ -49,7 +49,6 @@ export function MioProvider({ children }: { children: ReactNode }) {
 
       try {
         // 🚀 TUBO DRITTO - Connessione diretta database → frontend (via Vercel API)
-        console.log('🔥 [MioContext] Caricamento messaggi da:', MIO_MAIN_CONVERSATION_ID);
         const response = await fetch(`/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}`);
         if (!response.ok) {
           console.error('🔥 [MioContext] Errore API:', response.status);
@@ -69,7 +68,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
           }));
           
           setMessages(loadedMessages);
-          console.log('🔥 [MioContext] Cronologia caricata:', loadedMessages.length, 'messaggi');
+          console.warn('[MioContext] Cronologia caricata:', loadedMessages.length, 'messaggi');
         }
       } catch (err) {
         console.error('🔥 [MioContext] Errore caricamento cronologia:', err);
@@ -97,9 +96,6 @@ export function MioProvider({ children }: { children: ReactNode }) {
     setMessages(prev => [...prev, userMsg]);
 
     try {
-      console.log('🔥 [MioContext] Invio messaggio a MIO via Hetzner...');
-      console.log('🔥 [MioContext] ConversationId:', MIO_MAIN_CONVERSATION_ID);
-      
       // 🚀 CHIAMATA DIRETTA A HETZNER - NON PASSA PER VERCEL PROXY
       // Usa callOrchestrator() che chiama https://orchestratore.mio-hub.me/api/mihub/orchestrator
       const data = await callOrchestrator({
@@ -109,7 +105,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
         meta: { ...meta, source: meta.source || "mio_context" }
       });
 
-      console.log('🔥 [MioContext] Dati ricevuti da Hetzner:', data);
+      // Dati ricevuti da Hetzner
 
       // 🔥 RECONCILIAZIONE: Sostituisci messaggio temporaneo con quello reale dal server
       setMessages(prev => {
@@ -134,13 +130,12 @@ export function MioProvider({ children }: { children: ReactNode }) {
         
         return [...withoutTemp, userMsgConfirmed, aiMsg];
       });
-      console.log('🔥 [MioContext] SUCCESS! ✅');
+      // Messaggio inviato con successo
 
       // 🔥 POLLING TEMPORANEO: Ricarica messaggi dopo 5s per catturare eventuali risposte aggiuntive
       // 🔧 FIX: Aumentato a 5s e usa merge intelligente invece di sovrascrivere
       setTimeout(async () => {
         try {
-          console.log('🔄 [MioContext] Polling post-invio per nuove risposte...');
           const response = await fetch(`/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}`);
           if (response.ok) {
             const pollData = await response.json();
@@ -173,7 +168,6 @@ export function MioProvider({ children }: { children: ReactNode }) {
                   // 🔥 FIX v2: Salta se stesso contenuto+ruolo già esiste (ignora timestamp completamente)
                   const contentKey = `${m.role}:${(m.content || '').trim()}`;
                   if (existingContentMap.has(contentKey)) {
-                    console.log('🚫 [MioContext] Skipping duplicate by content:', contentKey.substring(0, 50));
                     return false;
                   }
                   
@@ -181,7 +175,6 @@ export function MioProvider({ children }: { children: ReactNode }) {
                 });
                 
                 if (newMessages.length > 0) {
-                  console.log('✅ [MioContext] Aggiunti', newMessages.length, 'nuovi messaggi dal polling');
                   // Ordina per timestamp
                   const merged = [...prev, ...newMessages].sort((a, b) => 
                     new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -202,7 +195,6 @@ export function MioProvider({ children }: { children: ReactNode }) {
       
       // Se l'errore è dovuto all'abort, non mostrare errore
       if (err.name === 'AbortError') {
-        console.log('🛑 [MioContext] Richiesta interrotta dall\'utente');
         const stopMsg: MioMessage = {
           id: crypto.randomUUID(),
           role: 'system',
@@ -230,7 +222,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
 
   const stopGeneration = useCallback(() => {
     if (abortControllerRef.current) {
-      console.log('🛑 [MioContext] Interruzione generazione...');
+      console.warn('[MioContext] Interruzione generazione');
       abortControllerRef.current.abort();
     }
   }, []);

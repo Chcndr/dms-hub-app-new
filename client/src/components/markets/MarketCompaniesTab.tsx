@@ -67,6 +67,11 @@ export type CompanyRow = {
   spunta_wallets?: { id: number; market_id: number; market_name: string; balance: number }[];
   qualificazioni?: { id: number; type: string; status: string; start_date: string; end_date: string }[];
   hub_shop_id?: number;   // ID del negozio HUB collegato (se presente = è un negozio HUB)
+  // Sede legale
+  indirizzo_via?: string;
+  indirizzo_civico?: string;
+  indirizzo_cap?: string;
+  indirizzo_provincia?: string;
 };
 
 type ConcessionRow = {
@@ -108,6 +113,46 @@ type ConcessionRow = {
   impresa_denominazione?: string;
   impresa_partita_iva?: string;
   notes?: string;
+  // Campi concessionario - sede legale
+  vendor_business_name?: string;
+  sede_legale_via?: string;
+  sede_legale_cap?: string;
+  sede_legale_comune?: string;
+  sede_legale_provincia?: string;
+  // Campi posteggio/mercato aggiuntivi
+  mercato?: string;
+  stall_number?: string;
+  posteggio?: string;
+  // Campi cedente (subingresso)
+  cedente_ragione_sociale?: string;
+  cedente_cf?: string;
+  cedente_partita_iva?: string;
+  cedente_nome?: string;
+  cedente_cognome?: string;
+  cedente_sede_legale?: string;
+  cedente_indirizzo_via?: string;
+  cedente_indirizzo_cap?: string;
+  cedente_indirizzo_comune?: string;
+  cedente_indirizzo_provincia?: string;
+  // Campi autorizzazione/SCIA precedente
+  autorizzazione_precedente_pg?: string;
+  autorizzazione_precedente_data?: string;
+  autorizzazione_precedente_intestatario?: string;
+  scia_precedente_numero?: string;
+  scia_precedente_data?: string;
+  scia_precedente_comune?: string;
+  // Campi economici e attrezzature
+  canone_unico?: string | number;
+  attrezzature?: string;
+  tipo_posteggio?: string;
+  // Campi wallet
+  wallet_id?: string | number;
+  wallet_balance?: number;
+  wallet_status?: string;
+  // Campi requisiti e documentazione
+  durc_scadenza_qualifica?: string;
+  requisiti_morali?: boolean | string;
+  requisiti_professionali?: boolean | string;
 };
 
 export type CompanyFormData = {
@@ -959,7 +1004,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                         <div><p className="text-xs text-gray-500 uppercase tracking-wide">Tipo Concessione</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.tipo_concessione || '-'}</p></div>
                         <div><p className="text-xs text-gray-500 uppercase tracking-wide">Durata</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.durata_anni ? `${selectedConcessionDetail.durata_anni} anni` : '-'}</p></div>
                         <div><p className="text-xs text-gray-500 uppercase tracking-wide">Settore Merceologico</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.settore_merceologico || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Data Decorrenza</p><p className="text-[#e8fbff] font-medium">{(selectedConcessionDetail.data_decorrenza || selectedConcessionDetail.valida_dal) ? new Date(selectedConcessionDetail.data_decorrenza || selectedConcessionDetail.valida_dal).toLocaleDateString('it-IT') : '-'}</p></div>
+                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Data Decorrenza</p><p className="text-[#e8fbff] font-medium">{(selectedConcessionDetail.data_decorrenza || selectedConcessionDetail.valida_dal) ? new Date((selectedConcessionDetail.data_decorrenza || selectedConcessionDetail.valida_dal)!).toLocaleDateString('it-IT') : '-'}</p></div>
                         <div><p className="text-xs text-gray-500 uppercase tracking-wide">Scadenza</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.valida_al ? new Date(selectedConcessionDetail.valida_al).toLocaleDateString('it-IT') : '-'}</p></div>
                         <div><p className="text-xs text-gray-500 uppercase tracking-wide">Oggetto</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.oggetto || '-'}</p></div>
                       </div>
@@ -1459,10 +1504,10 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       )}
 
       {searchType === 'autorizzazione' && (
-        <MarketAutorizzazioniTab 
-          companies={companies} 
-          searchQuery={searchQuery} 
-          marketId={parseInt(marketId)}
+        <MarketAutorizzazioniTab
+          companies={companies}
+          searchQuery={searchQuery}
+          marketId={typeof marketId === 'number' ? marketId : parseInt(String(marketId))}
           marketName={marketName}
           municipality={municipality}
         />
@@ -1471,7 +1516,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       {/* Modals */}
       {showCompanyModal && (
         <CompanyModal
-          marketId={marketId}
+          marketId={String(marketId)}
           company={selectedCompany}
           onClose={handleCloseCompanyModal}
           onSaved={handleCompanySaved}
@@ -1480,11 +1525,11 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
 
       {showConcessionModal && (
         <ConcessionForm
-          marketId={marketId}
+          marketId={String(marketId)}
           marketName={marketName}
-          concession={selectedConcession}
+          concession={selectedConcession as any}
           companies={companies}
-          stalls={stalls}
+          stalls={stalls || []}
           onClose={handleCloseConcessionModal}
           onSaved={handleConcessionSaved}
           onDeleted={handleConcessionSaved}
@@ -1806,7 +1851,7 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
             <label className="block text-sm font-medium text-gray-300 mb-1">Stato</label>
             <select
               value={formData.stato}
-              onChange={(e) => setFormData({ ...formData, stato: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, stato: e.target.value as 'ATTIVA' | 'SCADUTA' | 'IN_VERIFICA' })}
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="ATTIVA">ATTIVA</option>
@@ -1895,7 +1940,7 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
     const quals = qualificazioni.length > 0 ? qualificazioni : (company.qualificazioni || []);
     const oggi = new Date();
     oggi.setHours(0, 0, 0, 0);
-    return quals.map(q => {
+    return quals.map((q: any) => {
       // Calcola lo stato DINAMICAMENTE dalla data di scadenza, ignorando lo stato del DB
       // perché il DB potrebbe avere uno stato obsoleto
       let stato = q.status || q.stato || 'ATTIVA';

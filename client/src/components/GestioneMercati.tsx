@@ -89,6 +89,8 @@ interface Stall {
   wallet_id: number | null; // ID wallet per detrazione importo
   spuntista_impresa_id: number | null;
   spuntista_nome: string | null;
+  wallet_balance?: string | null;
+  area_mq?: string | null;
 }
 
 interface Vendor {
@@ -114,6 +116,7 @@ interface Concession {
   stall_number: string;
   vendor_business_name: string;
   vendor_code: string;
+  status?: string;
   stato?: string;
   stato_calcolato?: string;
   settore_merceologico?: string;
@@ -201,7 +204,7 @@ export default function GestioneMercati() {
         if (userStr) {
           try {
             const user = JSON.parse(userStr);
-            isSuperAdmin = user.email === 'chcndr@gmail.com' || user.is_super_admin;
+            isSuperAdmin = user.is_super_admin === true;
             // Se l'utente ha un comune assegnato nei ruoli
             if (user.assigned_roles && user.assigned_roles.length > 0) {
               userComune = user.assigned_roles[0].comune_nome || null;
@@ -219,9 +222,9 @@ export default function GestioneMercati() {
           filteredMarkets = data.data.filter((market: Market) => 
             market.municipality?.toLowerCase() === comuneFilter.toLowerCase()
           );
-          console.log(`[GestioneMercati] Filtro mercati per comune: ${comuneFilter} - ${filteredMarkets.length} mercati`);
+          console.warn(`[GestioneMercati] Filtro mercati per comune: ${comuneFilter} - ${filteredMarkets.length} mercati`);
         } else {
-          console.log(`[GestioneMercati] Super Admin o nessun filtro - ${filteredMarkets.length} mercati totali`);
+          console.warn(`[GestioneMercati] Nessun filtro comune - ${filteredMarkets.length} mercati totali`);
         }
         
         setMarkets(filteredMarkets);
@@ -1560,20 +1563,11 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       const presenzeData = await presenzeRes.json();
       const graduatoriaData = await graduatoriaRes.json();
 
-      console.log('[DEBUG fetchData] Dati ricevuti:', {
-        stallsCount: stallsData.data?.length,
-        firstStall: stallsData.data?.[0],
-        mapDataExists: !!mapDataRes.data,
-        concessionsCount: concessionsData.data?.length
-      });
-
       if (stallsData.success) {
         setStalls(stallsData.data);
-        console.log('[DEBUG fetchData] stalls aggiornato, length:', stallsData.data.length);
       }
       if (mapDataRes.success) {
         setMapData(mapDataRes.data);
-        console.log('[DEBUG fetchData] mapData aggiornato');
       }
       if (concessionsData.success && Array.isArray(concessionsData.data)) {
         const map: Record<string, any> = {};
@@ -1587,22 +1581,17 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           };
         }
         setConcessionsByStallId(map);
-        console.log('[DEBUG fetchData] concessioni caricate:', Object.keys(map).length);
       }
       // Carica presenze e graduatoria - RESET se non ci sono dati
       if (presenzeData.success && Array.isArray(presenzeData.data)) {
         setPresenze(presenzeData.data);
-        console.log('[DEBUG fetchData] presenze caricate:', presenzeData.data.length);
       } else {
         setPresenze([]);
-        console.log('[DEBUG fetchData] presenze azzerate (nessun dato)');
       }
       if (graduatoriaData.success && Array.isArray(graduatoriaData.data)) {
         setGraduatoria(graduatoriaData.data);
-        console.log('[DEBUG fetchData] graduatoria caricata:', graduatoriaData.data.length);
       } else {
         setGraduatoria([]);
-        console.log('[DEBUG fetchData] graduatoria azzerata (nessun dato)');
       }
       // Carica spuntisti da endpoint /api/spuntisti/mercato/:id (già arricchito con dati impresa e wallet)
       const spuntistiArray = spuntistiData.data || spuntistiData;
@@ -1612,10 +1601,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           (a.posizione_graduatoria || 999) - (b.posizione_graduatoria || 999)
         );
         setSpuntisti(spuntistiOrdinati);
-        console.log('[DEBUG fetchData] spuntisti caricati:', spuntistiOrdinati.length);
       } else {
         setSpuntisti([]);
-        console.log('[DEBUG fetchData] nessun spuntista trovato per questo mercato');
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -1646,15 +1633,9 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       const data = await response.json();
       if (data.success) {
-        console.log('[DEBUG handleSave] Posteggio aggiornato:', stallId, editData);
         toast.success('Posteggio aggiornato con successo');
         await fetchData(); // Ricarica dati
-        console.log('[DEBUG handleSave] PRIMA refreshKey:', mapRefreshKey);
-        setMapRefreshKey(prev => {
-          const newKey = prev + 1;
-          console.log('[DEBUG handleSave] DOPO refreshKey:', newKey);
-          return newKey;
-        });
+        setMapRefreshKey(prev => prev + 1);
         setEditingId(null);
         setEditData({});
       } else {
@@ -1670,7 +1651,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   // Esteso per calcolare importo e addebitare wallet
   const handleConfirmAssignment = async (stallId: number, impresaId?: number, walletId?: number) => {
     try {
-      console.log('[DEBUG handleConfirmAssignment] Confermando assegnazione posteggio:', stallId, 'isSpuntaMode:', isSpuntaMode);
+      // Confermando assegnazione posteggio
       
       // Se siamo in modalità spunta, usa l'endpoint dedicato che:
       // - Assegna al primo spuntista in graduatoria
@@ -1688,7 +1669,6 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         if (data.success) {
           // Caso: nessuno spuntista disponibile - posteggio torna libero
           if (data.no_spuntisti) {
-            console.log('[DEBUG handleConfirmAssignment] Nessuno spuntista disponibile, posteggio liberato:', data);
             toast.info(
               `📭 Posteggio ${data.data.stall_number} - Nessuno spuntista disponibile\n` +
               `Stato: LIBERO`,
@@ -1705,7 +1685,6 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           }
           
           // Caso normale: spuntista assegnato
-          console.log('[DEBUG handleConfirmAssignment] Spunta assegnata:', data);
           const spuntista = data.data.spuntista;
           const costo = data.data.costo_posteggio;
           const nuovoSaldo = data.data.nuovo_saldo_wallet;
@@ -1752,8 +1731,6 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       const data = await response.json();
       if (data.success) {
-        console.log('[DEBUG handleConfirmAssignment] Posteggio assegnato:', stallId);
-        
         // Se abbiamo impresa e wallet, registra presenza con calcolo importo
         if (impresaId && walletId) {
           try {
@@ -1808,7 +1785,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   // Occupa un posteggio libero (registra arrivo/presenza)
   const handleOccupaStall = async (stallId: number, impresaId?: number, walletId?: number) => {
     try {
-      console.log('[DEBUG handleOccupaStall] Occupando posteggio:', stallId);
+      // Occupando posteggio
       
       // 1. Aggiorna stato posteggio a occupato
       const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
@@ -1819,7 +1796,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       const data = await response.json();
       if (data.success) {
-        console.log('[DEBUG handleOccupaStall] Posteggio occupato:', stallId);
+        // Posteggio occupato con successo
         
         // 2. Registra presenza (arrivo) se abbiamo impresa e wallet
         if (impresaId && walletId) {
@@ -1869,7 +1846,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   // Libera un posteggio occupato (registra uscita)
   const handleLiberaStall = async (stallId: number) => {
     try {
-      console.log('[DEBUG handleLiberaStall] Liberando posteggio:', stallId);
+      // Liberando posteggio
       
       // 1. Aggiorna stato posteggio a libero
       const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
@@ -1880,7 +1857,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       const data = await response.json();
       if (data.success) {
-        console.log('[DEBUG handleLiberaStall] Posteggio liberato:', stallId);
+        // Posteggio liberato con successo
         
         // 2. Registra uscita (aggiorna presenza esistente)
         try {
@@ -2510,8 +2487,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   }, 100);
                 }
               }}
-              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
-              stallsData={stallsDataForMap}
+              selectedStallNumber={(() => { const n = stalls.find(s => s.id === selectedStallId)?.number; return n != null ? parseInt(n, 10) : undefined; })()}
+              stallsData={stallsDataForMap.map(s => ({ ...s, number: parseInt(String(s.number), 10) }))}
               allMarkets={allMarkets.map(m => ({
                 id: m.id,
                 name: m.name,
@@ -2861,8 +2838,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     <TableCell className="text-xs text-center">
                       {/* Mostra wallet solo se: ha concessionario O ha spuntista assegnato O è occupato */}
                       {(stall.vendor_business_name || stall.spuntista_nome || concessionsByStallId[stall.number] || stall.status === 'occupato') && stall.wallet_balance !== undefined ? (
-                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${parseFloat(stall.wallet_balance) > 0 ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
-                          €{parseFloat(stall.wallet_balance || 0).toFixed(2)}
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${parseFloat(stall.wallet_balance || '0') > 0 ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
+                          €{parseFloat(stall.wallet_balance || '0').toFixed(2)}
                         </span>
                       ) : (
                         <span className="text-[#e8fbff]/30">-</span>
@@ -2874,7 +2851,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                       {(() => {
                         // Prima controlla se c'è un importo dalla presenza di oggi
                         if (presenzaOggi?.importo_addebitato || gradRecord?.presenza_importo) {
-                          const importo = parseFloat(presenzaOggi?.importo_addebitato || gradRecord?.presenza_importo || 0);
+                          const importo = parseFloat(presenzaOggi?.importo_addebitato || gradRecord?.presenza_importo || '0');
                           return <span className="text-[#f59e0b] font-medium">€{importo.toFixed(2)}</span>;
                         }
                         // Se c'è uno spuntista assegnato, cerca il suo importo
@@ -2885,7 +2862,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                           }
                         }
                         // Altrimenti calcola l'importo teorico del posteggio
-                        const areaMq = parseFloat(stall.area_mq || 0);
+                        const areaMq = parseFloat(stall.area_mq || '0');
                         const costPerSqm = 0.90; // Default cost per sqm
                         if (areaMq > 0) {
                           const importoTeorico = areaMq * costPerSqm;
@@ -3339,7 +3316,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 </div>
               )}
             </div>
-          ) : !selectedStall.vendor_business_name && !concessionsByStallId[selectedStall.number] && !selectedStall.spuntista_impresa_id ? (
+          ) : selectedStall && !selectedStall.vendor_business_name && !concessionsByStallId[selectedStall.number] && !selectedStall.spuntista_impresa_id ? (
             <div className="h-full flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-[#14b8a6]/20">
                 <h3 className="text-sm font-semibold text-[#e8fbff]">
@@ -3359,7 +3336,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 </p>
               </div>
             </div>
-          ) : (
+          ) : selectedStall ? (
             <div className="h-full flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-[#14b8a6]/20 bg-[#14b8a6]/5">
                 <div>
@@ -3374,7 +3351,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              
+
               {/* Tab switcher Vista Impresa / Vista Concessione */}
               {selectedStall.concession_id && (
                 <div className="flex border-b border-[#14b8a6]/20">
@@ -3802,7 +3779,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 </div>
               )}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 

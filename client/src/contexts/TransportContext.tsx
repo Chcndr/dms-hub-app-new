@@ -138,7 +138,7 @@ export function TransportProvider({ children }: TransportProviderProps) {
           busStops: busCount,
           trainStops: trainCount,
         });
-        console.log('[TransportContext] Stats caricate:', data.stats);
+        console.warn('[TransportContext] Stats caricate:', data.stats);
       }
     } catch (err) {
       console.error('[TransportContext] Errore caricamento stats:', err);
@@ -174,7 +174,7 @@ export function TransportProvider({ children }: TransportProviderProps) {
         if (busData.success && Array.isArray(busData.data)) {
           const busStops = busData.data.map(transformApiStop);
           allStops = [...allStops, ...busStops];
-          console.log('[TransportContext] Caricate', busStops.length, 'fermate bus');
+          console.warn('[TransportContext] Caricate', busStops.length, 'fermate bus');
         }
       }
       
@@ -184,13 +184,13 @@ export function TransportProvider({ children }: TransportProviderProps) {
         if (trainData.success && Array.isArray(trainData.data)) {
           const trainStops = trainData.data.map(transformApiStop);
           allStops = [...allStops, ...trainStops];
-          console.log('[TransportContext] Caricate', trainStops.length, 'stazioni treni');
+          console.warn('[TransportContext] Caricate', trainStops.length, 'stazioni treni');
         }
       }
       
       if (allStops.length > 0) {
         setStops(allStops);
-        console.log('[TransportContext] Totale fermate caricate:', allStops.length);
+        console.warn('[TransportContext] Totale fermate caricate:', allStops.length);
       } else {
         throw new Error('Nessuna fermata trovata');
       }
@@ -230,7 +230,7 @@ export function TransportProvider({ children }: TransportProviderProps) {
       
       if (data.success && Array.isArray(data.data)) {
         const transformedStops = data.data.map(transformApiStop);
-        console.log('[TransportContext] Trovate', transformedStops.length, 'fermate vicine');
+        console.warn('[TransportContext] Trovate', transformedStops.length, 'fermate vicine');
         return transformedStops;
       }
       
@@ -249,7 +249,7 @@ export function TransportProvider({ children }: TransportProviderProps) {
     limit: number = 10
   ): Promise<StopTime[]> => {
     // TODO: Implementare quando avremo i dati degli orari
-    console.log('[TransportContext] getNextDepartures non ancora implementato');
+    console.warn('[TransportContext] getNextDepartures non ancora implementato');
     return [];
   }, []);
 
@@ -292,7 +292,7 @@ export function TransportProvider({ children }: TransportProviderProps) {
 
   // Carica dati demo per sviluppo/fallback
   const loadDemoStops = () => {
-    console.log('[TransportContext] Caricamento dati demo (fallback)...');
+    console.warn('[TransportContext] Caricamento dati demo (fallback)...');
     
     // Fermate demo minime per fallback
     const demoStops: TransportStop[] = [
@@ -329,7 +329,7 @@ export function TransportProvider({ children }: TransportProviderProps) {
     ];
     
     setStops(demoStops);
-    console.log('[TransportContext] Caricate', demoStops.length, 'fermate demo (fallback)');
+    console.warn('[TransportContext] Caricate', demoStops.length, 'fermate demo (fallback)');
   };
 
   // Carica dati iniziali dalle API reali

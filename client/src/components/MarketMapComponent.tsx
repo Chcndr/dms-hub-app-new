@@ -107,7 +107,6 @@ function MapCenterController(props: MapControllerProps) {
   // Forza invalidateSize quando cambia il trigger (es. cambio tab o vista)
   useEffect(() => {
     if (props.trigger !== undefined) {
-      console.log('[MapCenterController] Forzando invalidateSize per trigger:', props.trigger);
       // Invalidate size immediato e uno ritardato per sicurezza
       map.invalidateSize();
       const timer = setTimeout(() => {
@@ -137,8 +136,6 @@ function StallCenterController({ stallCenter }: { stallCenter?: [number, number]
     // Evita di ri-centrare se è lo stesso punto
     if (lastCenterRef.current === centerKey) return;
     lastCenterRef.current = centerKey;
-    
-    console.log('[StallCenterController] Centrando su posteggio:', stallCenter);
     
     // Pan veloce verso il posteggio con zoom appropriato
     map.flyTo(stallCenter, 19, {
@@ -227,7 +224,6 @@ export function MarketMapComponent({
     if (areaFeature && areaFeature.geometry.coordinates?.[0]) {
       // Usa le coordinate del poligono area
       allCoords = areaFeature.geometry.coordinates[0].map((c: number[]) => [c[1], c[0]] as [number, number]);
-      console.log('[DEBUG] Bounds calcolati da area mercato, punti:', allCoords.length);
     } else {
       // Fallback: calcola bounds da tutti i posteggi
       mapData.stalls_geojson.features.forEach((feature: any) => {
@@ -237,24 +233,14 @@ export function MarketMapComponent({
           });
         }
       });
-      console.log('[DEBUG] Bounds calcolati da posteggi, punti:', allCoords.length);
     }
-    
+
     if (allCoords.length === 0) return null;
-    
+
     // Crea LatLngBounds da tutte le coordinate
     const bounds = L.latLngBounds(allCoords);
-    console.log('[DEBUG] Bounds mercato:', bounds.toBBoxString());
     return bounds;
   }, [mapData]);
-  
-  console.log('[DEBUG MarketMapComponent] RICEVUTO:', {
-    refreshKey,
-    stallsDataLength: stallsData.length,
-    firstStall: stallsData[0],
-    mapDataFeaturesCount: mapData?.stalls_geojson?.features?.length ?? 0,
-    showItalyView
-  });
   
   // Mappa stallsData per accesso rapido
   // Crea due chiavi: sia numero che stringa per gestire entrambi i casi
@@ -266,18 +252,11 @@ export function MarketMapComponent({
     stallsByNumber.set(s.number, s);
   });
   
-  // DEBUG: Log stallsData
-  console.log('[DEBUG MarketMapComponent] stallsData length:', stallsData.length);
-  console.log('[DEBUG MarketMapComponent] stallsData sample:', stallsData.slice(0, 5));
-  console.log('[DEBUG MarketMapComponent] impresa_id check:', stallsData.filter(s => s.vendor_name).map(s => ({ number: s.number, vendor: s.vendor_name, impresa_id: s.impresa_id })));
-  console.log('[DEBUG MarketMapComponent] stallsByNumber keys sample:', Array.from(stallsByNumber.keys()).slice(0, 10));
-  
   // Funzione per determinare il colore in base allo stato
   // USA SOLO stallsData, IGNORA il GeoJSON statico!
   const getStallColor = (stallNumber: number): string => {
     const dbStall = stallsByNumber.get(stallNumber);
     const status = dbStall?.status || 'libero';
-    console.log(`[DEBUG getStallColor] Posteggio ${stallNumber}: dbStall=${!!dbStall}, status=${status}`);
     return getStallMapFillColor(status);
   };
   
@@ -496,10 +475,7 @@ export function MarketMapComponent({
           ))}
 
           {/* Piazzole (stalls) - solo se mapData esiste */}
-          {mapData && (() => {
-            console.log('[VERCEL DEBUG] MarketMapComponent - Rendering', mapData.stalls_geojson.features.length, 'stalls');
-            return null;
-          })()}
+          {/* Stalls rendering */}
           {/* Layer Macchia Verde (Area Mercato) - Renderizza PRIMA dei posteggi */}
           {mapData && !showItalyView && mapData.stalls_geojson.features
             .filter(f => (f.properties?.kind === 'area' || f.properties?.type === 'mercato') && f.geometry.type === 'Polygon')
@@ -535,14 +511,6 @@ export function MarketMapComponent({
               return null;
             }
             
-            if (idx === 0) {
-              console.log('[VERCEL DEBUG] First feature:', {
-                type: feature.geometry.type,
-                properties: props,
-                coordsLength: feature.geometry.coordinates?.[0]?.length
-              });
-            }
-            
             // Converti coordinate Polygon in formato Leaflet [lat, lng][]
             let positions: [number, number][] = [];
             
@@ -564,21 +532,8 @@ export function MarketMapComponent({
             const dbStall = stallsByNumber.get(props.number);
             const displayStatus = dbStall?.status || 'libero'; // USA SOLO stallsData!
             
-            // DEBUG: Log primi 3 posteggi
-            if (idx < 3) {
-              console.log(`[DEBUG] Stall ${props.number}:`, {
-                dbStatus: dbStall?.status,
-                propsStatus: props.status,
-                finalStatus: dbStall?.status || props.status || 'libero',
-                fillColor
-              });
-            }
             const displayVendor = dbStall?.vendor_name || props.vendor_name || '-';
             
-            if (idx === 0) {
-              console.log('[VERCEL DEBUG] First polygon positions:', positions.length, 'points');
-              console.log('[VERCEL DEBUG] First polygon color:', fillColor);
-            }
             
             // Colore magenta flash per posteggio selezionato (massima visibilità)
             const selectedColor = '#ff00ff'; // Magenta/Fucsia

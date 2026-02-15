@@ -62,9 +62,6 @@ export async function callOrchestrator(
 ): Promise<OrchestratorResponse> {
   const url = `${baseUrl}/api/mihub/orchestrator`;
 
-  console.log("[OrchestratorClient] Chiamata a:", url);
-  console.log("[OrchestratorClient] Payload:", payload);
-
   // 🔥 Timeout aumentato a 60s per agenti lenti (Manus, Zapier)
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 secondi
@@ -80,8 +77,6 @@ export async function callOrchestrator(
     });
     
     clearTimeout(timeoutId);
-
-    console.log("[OrchestratorClient] Status:", res.status);
 
     // 🔥 FIX: Verifica Content-Type prima di parsare JSON
     const contentType = res.headers.get("content-type") || "";
@@ -114,8 +109,6 @@ export async function callOrchestrator(
       throw new Error("Risposta malformata dal server. Riprova.");
     }
     
-    console.log("[OrchestratorClient] Risposta:", data);
-
     // 🔥 FIX: Gestisci errori nel body JSON
     if (!data.success && data.error) {
       const errorMessage = data.error.message || data.error.type || "Errore sconosciuto";

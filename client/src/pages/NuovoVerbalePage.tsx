@@ -163,7 +163,7 @@ export default function NuovoVerbalePage() {
       const comuneExists = comuni.some(c => c.id === impersonatedComuneId);
       if (comuneExists) {
         setSelectedComuneId(impersonatedComuneId);
-        console.log('[Verbale] Impersonificazione: selezionato comune', impersonatedComuneId);
+        console.warn('[Verbale] Impersonificazione: selezionato comune', impersonatedComuneId);
       }
     }
   }, [isImpersonating, impersonatedComuneId, comuni]);
@@ -177,7 +177,7 @@ export default function NuovoVerbalePage() {
       const urlImpersonate = impState.isImpersonating;
       const urlComuneId = impState.comuneId ? parseInt(impState.comuneId) : null;
       
-      console.log('[Verbale] Impersonation params - impersonate:', urlImpersonate, 'comune_id:', urlComuneId, '(from:', impState.comuneId ? 'storage/url' : 'none', ')');
+      console.warn('[Verbale] Impersonation params - impersonate:', urlImpersonate, 'comune_id:', urlComuneId, '(from:', impState.comuneId ? 'storage/url' : 'none', ')');
       
       // Timeout controller
       const controller = new AbortController();
@@ -195,7 +195,7 @@ export default function NuovoVerbalePage() {
           const comuneExists = comuniData.data?.some((c: any) => c.id === urlComuneId);
           if (comuneExists) {
             setSelectedComuneId(urlComuneId);
-            console.log('[Verbale] Usando comune da impersonificazione:', urlComuneId);
+            console.warn('[Verbale] Usando comune da impersonificazione:', urlComuneId);
           } else {
             console.warn('[Verbale] Comune impersonificato non trovato:', urlComuneId);
             if (comuniData.data?.length > 0) {
@@ -222,7 +222,7 @@ export default function NuovoVerbalePage() {
         let impreseUrl = `${MIHUB_API}/imprese?limit=100`;
         if (urlImpersonate && urlComuneId) {
           impreseUrl += `&comune_id=${urlComuneId}`;
-          console.log('[Verbale] Filtrando imprese per comune:', urlComuneId);
+          console.warn('[Verbale] Filtrando imprese per comune:', urlComuneId);
         }
         const impreseRes = await fetch(impreseUrl, { signal: controller.signal });
         const impreseData = await impreseRes.json();

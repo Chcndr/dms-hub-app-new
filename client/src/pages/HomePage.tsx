@@ -130,14 +130,14 @@ export default function HomePage() {
           r.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
           r.type.toLowerCase().includes(searchQuery.toLowerCase())
         )
-        .sort((a, b) => a.distance - b.distance);
+        .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
       setSearchResults(filtered);
       setShowResults(true);
       return;
     }
 
     // Mappa risultati API al formato locale
-    const mapped = data.results.map(r => ({
+    const mapped = data.results.map((r: any) => ({
       id: r.id,
       name: r.name,
       type: r.type as SearchResult['type'],

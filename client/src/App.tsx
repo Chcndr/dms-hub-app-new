@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
+import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { MioProvider } from "./contexts/MioContext";
@@ -10,49 +11,57 @@ import { PermissionsProvider } from "./contexts/PermissionsContext";
 import { TransportProvider } from "./contexts/TransportContext";
 import { FirebaseAuthProvider } from "./contexts/FirebaseAuthContext";
 import ChatWidget from "./components/ChatWidget";
-import HomePage from "./pages/HomePage";
-import MapPage from "./pages/MapPage";
-import WalletPage from "./pages/WalletPage";
-import CivicPage from "./pages/CivicPage";
-import RoutePage from "./pages/RoutePage";
-import VetrinePage from "./pages/VetrinePage";
-import HubOperatore from "./pages/HubOperatore";
-import DashboardPA from "./pages/DashboardPA";
-import MioPage from "./pages/mio";
-import GuardianEndpoints from "./pages/GuardianEndpoints";
-import GuardianLogs from "./pages/GuardianLogs";
-import GuardianDebug from "./pages/GuardianDebug";
-import MarketGISPage from "./pages/MarketGISPage";
-import LogDebugPage from "./pages/LogDebugPage";
-import MappaItaliaPage from "./pages/MappaItaliaPage";
-import APITokensPage from "./pages/APITokensPage";
-import CouncilPage from "./pages/CouncilPage";
-import SuapDashboard from "./pages/suap/SuapDashboard";
-import SuapList from "./pages/suap/SuapList";
-import SuapDetail from "./pages/suap/SuapDetail";
-import HubMapTestPage from "./pages/HubMapTestPage";
-import Login from "./pages/Login";
-import AuthCallback from "./pages/AuthCallback";
-import DashboardImpresa from "./pages/DashboardImpresa";
-import AppImpresaNotifiche from "./pages/AppImpresaNotifiche";
 import ImpersonationBanner from "./components/ImpersonationBanner";
-// v3.70.0 - Nuove pagine App Impresa
-import WalletImpresaPage from "./pages/WalletImpresaPage";
-import PresenzePage from "./pages/PresenzePage";
-import AnagraficaPage from "./pages/AnagraficaPage";
-import PresentazionePage from "./pages/PresentazionePage";
-// v3.80.0 - Verbali PM Professionali
-import NuovoVerbalePage from "./pages/NuovoVerbalePage";
-// v3.85.3 - Wallet mobile pages
-import WalletPaga from "./pages/WalletPaga";
-import WalletStorico from "./pages/WalletStorico";
-// GDPR & Compliance pages
-import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import AccessibilityPage from "./pages/AccessibilityPage";
-import ProfiloPage from "./pages/ProfiloPage";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import SkipToContent from "./components/SkipToContent";
 import GlobalFooter from "./components/GlobalFooter";
+
+// Pagine critiche — caricate subito (first paint)
+import HomePage from "./pages/HomePage";
+import Login from "./pages/Login";
+import AuthCallback from "./pages/AuthCallback";
+
+// Lazy loading — pagine caricate on-demand per ridurre bundle iniziale
+const MapPage = lazy(() => import("./pages/MapPage"));
+const WalletPage = lazy(() => import("./pages/WalletPage"));
+const CivicPage = lazy(() => import("./pages/CivicPage"));
+const RoutePage = lazy(() => import("./pages/RoutePage"));
+const VetrinePage = lazy(() => import("./pages/VetrinePage"));
+const HubOperatore = lazy(() => import("./pages/HubOperatore"));
+const DashboardPA = lazy(() => import("./pages/DashboardPA"));
+const MioPage = lazy(() => import("./pages/mio"));
+const GuardianEndpoints = lazy(() => import("./pages/GuardianEndpoints"));
+const GuardianLogs = lazy(() => import("./pages/GuardianLogs"));
+const GuardianDebug = lazy(() => import("./pages/GuardianDebug"));
+const MarketGISPage = lazy(() => import("./pages/MarketGISPage"));
+const LogDebugPage = lazy(() => import("./pages/LogDebugPage"));
+const MappaItaliaPage = lazy(() => import("./pages/MappaItaliaPage"));
+const APITokensPage = lazy(() => import("./pages/APITokensPage"));
+const CouncilPage = lazy(() => import("./pages/CouncilPage"));
+const SuapDashboard = lazy(() => import("./pages/suap/SuapDashboard"));
+const SuapList = lazy(() => import("./pages/suap/SuapList"));
+const SuapDetail = lazy(() => import("./pages/suap/SuapDetail"));
+const HubMapTestPage = lazy(() => import("./pages/HubMapTestPage"));
+const DashboardImpresa = lazy(() => import("./pages/DashboardImpresa"));
+const AppImpresaNotifiche = lazy(() => import("./pages/AppImpresaNotifiche"));
+const WalletImpresaPage = lazy(() => import("./pages/WalletImpresaPage"));
+const PresenzePage = lazy(() => import("./pages/PresenzePage"));
+const AnagraficaPage = lazy(() => import("./pages/AnagraficaPage"));
+const PresentazionePage = lazy(() => import("./pages/PresentazionePage"));
+const NuovoVerbalePage = lazy(() => import("./pages/NuovoVerbalePage"));
+const WalletPaga = lazy(() => import("./pages/WalletPaga"));
+const WalletStorico = lazy(() => import("./pages/WalletStorico"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const AccessibilityPage = lazy(() => import("./pages/AccessibilityPage"));
+const ProfiloPage = lazy(() => import("./pages/ProfiloPage"));
+
+function LazyFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background" role="status" aria-live="polite">
+      <div className="text-teal-400 animate-pulse text-lg">Caricamento...</div>
+    </div>
+  );
+}
 
 function Router() {
   return (
@@ -119,7 +128,9 @@ function App() {
                     <ImpersonationBanner />
                     <Toaster />
                     <main id="main-content" role="main">
-                      <Router />
+                      <Suspense fallback={<LazyFallback />}>
+                        <Router />
+                      </Suspense>
                     </main>
                     <GlobalFooter />
                     <ChatWidget userRole="client" />

@@ -37,6 +37,7 @@ export default function LoginModal({ isOpen, onClose, redirectRoute }: LoginModa
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [emailForm, setEmailForm] = useState({ email: '', password: '', name: '', confirmPassword: '' });
+  const [gdprConsent, setGdprConsent] = useState(false);
 
   // Firebase Auth context
   const { 
@@ -153,6 +154,10 @@ export default function LoginModal({ isOpen, onClose, redirectRoute }: LoginModa
     }
     if (emailForm.password.length < 6) {
       setError('La password deve essere di almeno 6 caratteri');
+      return;
+    }
+    if (!gdprConsent) {
+      setError('Devi accettare la Privacy Policy per registrarti');
       return;
     }
     setLoading(true);
@@ -446,6 +451,25 @@ export default function LoginModal({ isOpen, onClose, redirectRoute }: LoginModa
           onKeyDown={(e) => e.key === 'Enter' && handleEmailRegister()}
           className="w-full px-4 py-3 bg-card/80 border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary"
         />
+      )}
+
+      {isRegistering && (
+        <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
+          <input
+            type="checkbox"
+            checked={gdprConsent}
+            onChange={(e) => setGdprConsent(e.target.checked)}
+            className="mt-0.5 accent-teal-500"
+            aria-required="true"
+          />
+          <span>
+            Accetto la{' '}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline">
+              Privacy Policy
+            </a>{' '}
+            e il trattamento dei dati personali ai sensi del GDPR (Reg. UE 2016/679)
+          </span>
+        </label>
       )}
 
       <button

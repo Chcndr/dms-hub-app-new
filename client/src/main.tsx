@@ -61,6 +61,44 @@ createRoot(document.getElementById("root")!).render(
   </trpc.Provider>
 );
 
+// Global error monitoring — cattura errori non gestiti e li invia al backend
+window.addEventListener('error', (event) => {
+  const trpcUrl = import.meta.env.VITE_TRPC_URL || '';
+  if (trpcUrl && event.error) {
+    fetch(`${trpcUrl}/api/trpc/logs.reportClientError`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        json: {
+          message: event.error?.message || event.message,
+          stack: event.error?.stack?.slice(0, 2000),
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+        },
+      }),
+    }).catch(() => {});
+  }
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  const trpcUrl = import.meta.env.VITE_TRPC_URL || '';
+  if (trpcUrl) {
+    const reason = event.reason;
+    fetch(`${trpcUrl}/api/trpc/logs.reportClientError`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        json: {
+          message: reason?.message || String(reason),
+          stack: reason?.stack?.slice(0, 2000),
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+        },
+      }),
+    }).catch(() => {});
+  }
+});
+
 // Registra Service Worker per PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
