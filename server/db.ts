@@ -504,3 +504,45 @@ export async function testDatabaseConnection() {
     };
   }
 }
+
+
+// ============================================
+// Data Retention / Cleanup
+// ============================================
+
+/**
+ * Delete old api_metrics and mio_agent_logs rows.
+ * Call periodically (e.g., daily cron or on-demand from Guardian).
+ */
+export async function cleanupOldData(retentionDays = 30) {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Database not available" };
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - retentionDays);
+
+  try {
+    const metricsDeleted = await db
+      .delete(schema.apiMetrics)
+      .where(lt(schema.apiMetrics.createdAt, cutoff))
+      .returning({ id: schema.apiMetrics.id });
+
+    const logsDeleted = await db
+      .delete(schema.mioAgentLogs)
+      .where(lt(schema.mioAgentLogs.createdAt, cutoff))
+      .returning({ id: schema.mioAgentLogs.id });
+
+    return {
+      success: true,
+      message: `Cleanup completed: ${metricsDeleted.length} api_metrics + ${logsDeleted.length} mio_agent_logs deleted (older than ${retentionDays} days)`,
+      metricsDeleted: metricsDeleted.length,
+      logsDeleted: logsDeleted.length,
+    };
+  } catch (error) {
+    console.error("[Database] Cleanup failed:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}

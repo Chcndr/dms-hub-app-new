@@ -49,10 +49,11 @@ export async function getTPERStops(): Promise<TPERStop[]> {
 	  try {
 	    const response = await axios.get(url, {
       params: {
-        limit: 5000, // Carichiamo tutte le fermate (max 5000 richieste/giorno)
+        limit: 5000,
         where: 'comune="BOLOGNA"',
         select: 'codice,codice_linea,denominazione,ubicazione,comune,geopoint,quartiere'
-      }
+      },
+      timeout: 15000, // 15s timeout for external TPER API
     });
 
     console.log(`[TPER Service] Risposta API TPER (Status: ${response.status}, Body: ${JSON.stringify(response.data).substring(0, 200)}...)`);
@@ -96,7 +97,8 @@ export async function getTPERBusTimes(stopCode: number, lineNumber: string): Pro
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
         'SOAPAction': 'https://hellobuswsweb.tper.it/web-services/hello-bus.asmx/QueryHellobus'
-      }
+      },
+      timeout: 10000, // 10s timeout for TPER SOAP real-time API
     });
 
     // Parse della risposta XML
