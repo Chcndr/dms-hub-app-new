@@ -487,8 +487,13 @@ export default function HomePage() {
         </main>
 
         {/* Footer */}
-        <footer className="p-4 text-center text-sm text-muted-foreground">
+        <footer className="p-4 text-center text-sm text-muted-foreground space-y-2">
           <p>PA Digitale 2026 • Cloud First • Rete Mercati Made in Italy</p>
+          <div className="flex justify-center gap-4">
+            <a href="/privacy" className="hover:text-teal-400 transition-colors">Privacy Policy</a>
+            <span>•</span>
+            <a href="/accessibilita" className="hover:text-teal-400 transition-colors">Accessibilita'</a>
+          </div>
         </footer>
       </div>
 
