@@ -103,6 +103,7 @@ interface LegacyUserData {
   impresa_id?: number;
   wallet_balance?: number;
   base_role: string;
+  is_super_admin?: boolean;
   assigned_roles: Array<{
     role_id: number;
     role_code: string;
@@ -143,6 +144,7 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
         name: basicUser.name || email,
         email: basicUser.email,
         base_role: basicUser.base_role || 'user',
+        is_super_admin: basicUser.is_super_admin === true,
         assigned_roles: basicUser.assigned_roles || [],
       };
     }
@@ -153,12 +155,13 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
         name: basicUser.name || email,
         email: basicUser.email,
         base_role: basicUser.base_role || 'user',
+        is_super_admin: basicUser.is_super_admin === true,
         assigned_roles: basicUser.assigned_roles || [],
       };
     }
 
     const fullUser = detailData.data;
-    console.warn(`[FirebaseAuth] Utente legacy trovato: ID=${fullUser.id}, impresa_id=${fullUser.impresa_id}, wallet=${fullUser.wallet_balance}`);
+    console.warn(`[FirebaseAuth] Utente legacy trovato: ID=${fullUser.id}, impresa_id=${fullUser.impresa_id}, wallet=${fullUser.wallet_balance}, is_super_admin=${fullUser.is_super_admin}`);
 
     return {
       id: fullUser.id,
@@ -168,6 +171,7 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
       impresa_id: fullUser.impresa_id || undefined,
       wallet_balance: fullUser.wallet_balance || 0,
       base_role: fullUser.role || 'user',
+      is_super_admin: fullUser.is_super_admin === true,
       assigned_roles: (fullUser.roles || []).map((r: any) => ({
         role_id: r.role_id,
         role_code: r.role_code,
@@ -279,7 +283,7 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
     displayName: firebaseUser.displayName,
     photoURL: firebaseUser.photoURL,
     provider,
-    role: backendSyncData?.role || role,
+    role: backendSyncData?.role || (legacyUser?.base_role === 'admin' ? 'pa' : undefined) || role,
     fiscalCode: backendSyncData?.fiscalCode || undefined,
     verified: firebaseUser.emailVerified,
     // Dati dal DB legacy (orchestratore) - questi sono i dati critici
