@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, text, timestamp, varchar, integer, boolean, serial, json, index } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, text, timestamp, varchar, integer, boolean, serial, json, index, numeric } from "drizzle-orm/pg-core";
 
 // Enum definitions
 export const roleEnum = pgEnum("role", ["user", "admin"]);
@@ -21,6 +21,7 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: roleEnum("role").default("user").notNull(),
+  cieId: varchar("cie_id", { length: 32 }), // ID Carta d'Identità Elettronica (per lettura NFC sul campo)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -52,6 +53,7 @@ export const markets = pgTable("markets", {
   active: integer("active").default(1).notNull(), // 1=true, 0=false
   mobilityProvider: varchar("mobility_provider", { length: 100 }), // e.g., 'tper-toscana', 'atm-milano'
   mobilityConfig: text("mobility_config"), // JSON config for mobility provider
+  legacyMktId: integer("legacy_mkt_id"), // Map a mercato DMS Legacy (tabella mercati.mkt_id)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -341,6 +343,7 @@ export const stalls = pgTable("stalls", {
   status: varchar("status", { length: 50 }).default("free").notNull(), // free, reserved, occupied, booked, maintenance
   category: varchar("category", { length: 100 }), // alimentari, abbigliamento, artigianato, etc.
   notes: text("notes"),
+  legacyPzId: integer("legacy_pz_id"), // Map a piazzola DMS Legacy (tabella piazzole.pz_id)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -364,6 +367,7 @@ export const vendors = pgTable("vendors", {
   status: varchar("status", { length: 50 }).default("active").notNull(), // active, suspended, inactive
   rating: integer("rating").default(0), // 0-5 stars (x100 per decimali)
   totalSales: integer("total_sales").default(0).notNull(),
+  legacyAmbId: integer("legacy_amb_id"), // Map a ambulante DMS Legacy (tabella amb.amb_id)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -382,6 +386,7 @@ export const concessions = pgTable("concessions", {
   fee: integer("fee"), // Cents
   paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // pending, paid, overdue
   notes: text("notes"),
+  legacyConcId: integer("legacy_conc_id"), // Map a concessione DMS Legacy (tabella conc_std.conc_id)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -424,18 +429,78 @@ export const vendorPresences = pgTable("vendor_presences", {
   vendorId: integer("vendor_id").references(() => vendors.id).notNull(),
   stallId: integer("stall_id").references(() => stalls.id).notNull(),
   bookingId: integer("booking_id").references(() => bookings.id),
+  sessionId: integer("session_id"), // FK verso market_sessions (aggiunta dopo definizione tabella)
   checkinTime: timestamp("checkin_time").notNull(),
   checkoutTime: timestamp("checkout_time"),
   duration: integer("duration"), // Minuti
   lat: varchar("lat", { length: 20 }), // GPS check-in
   lng: varchar("lng", { length: 20 }),
+  // Campi interoperabilità DMS Legacy
+  legacyPreId: integer("legacy_pre_id"), // Map a presenza DMS Legacy (tabella presenze.pre_id)
+  rifiutata: boolean("rifiutata").default(false), // Presenza rifiutata dal sistema Legacy
+  tipoPresenza: varchar("tipo_presenza", { length: 50 }), // CONCESSIONARIO, SPUNTISTA, ABUSIVO
+  orarioDepositoRifiuti: timestamp("orario_deposito_rifiuti"), // Timestamp deposito spazzatura (da tablet Legacy)
+  importoAddebitato: numeric("importo_addebitato", { precision: 10, scale: 2 }), // Importo calcolato (mq × tariffa)
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   vendorIdx: index("presences_vendor_idx").on(table.vendorId),
   stallIdx: index("presences_stall_idx").on(table.stallId),
   checkinIdx: index("presences_checkin_idx").on(table.checkinTime),
+  legacyPreIdx: index("presences_legacy_pre_idx").on(table.legacyPreId),
 }));
+
+// Sessioni giornata mercato (interop con DMS Legacy tabella "istanze")
+export const marketSessions = pgTable("market_sessions", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  marketId: integer("market_id").references(() => markets.id).notNull(),
+  legacyIstId: integer("legacy_ist_id"), // Map a istanza DMS Legacy (tabella istanze.ist_id)
+  sessionDate: timestamp("session_date").notNull(), // Data della giornata di mercato
+  status: varchar("status", { length: 50 }).default("planned").notNull(), // planned, open, closed, cancelled
+  openedAt: timestamp("opened_at"), // Quando la giornata è stata aperta
+  closedAt: timestamp("closed_at"), // Quando la giornata è stata chiusa
+  openedBy: varchar("opened_by", { length: 255 }), // Email operatore PA che ha aperto
+  closedBy: varchar("closed_by", { length: 255 }), // Email operatore PA che ha chiuso
+  totalPresences: integer("total_presences").default(0), // Conteggio presenze registrate
+  totalConcessionari: integer("total_concessionari").default(0), // Concessionari presenti
+  totalSpuntisti: integer("total_spuntisti").default(0), // Spuntisti ammessi
+  totalAbsences: integer("total_absences").default(0), // Assenze registrate
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  marketIdx: index("sessions_market_idx").on(table.marketId),
+  dateIdx: index("sessions_date_idx").on(table.sessionDate),
+  legacyIstIdx: index("sessions_legacy_ist_idx").on(table.legacyIstId),
+}));
+
+export type MarketSession = typeof marketSessions.$inferSelect;
+export type InsertMarketSession = typeof marketSessions.$inferInsert;
+
+// Spuntisti - Autorizzazioni spunta per operatori senza concessione fissa
+// Interop con DMS Legacy tabella "spuntisti" (sp_amb_id, sp_mkt_id, sp_autorizzato)
+export const spuntisti = pgTable("spuntisti", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  vendorId: integer("vendor_id").references(() => vendors.id).notNull(),
+  marketId: integer("market_id").references(() => markets.id).notNull(),
+  legacySpId: integer("legacy_sp_id"), // Map a spuntista DMS Legacy (tabella spuntisti.sp_id)
+  autorizzato: boolean("autorizzato").default(true).notNull(), // Se autorizzato alla spunta
+  priorita: integer("priorita"), // Posizione in graduatoria (1 = prima scelta)
+  settoreMerceologico: varchar("settore_merceologico", { length: 100 }), // ALIMENTARE, NON_ALIMENTARE, etc.
+  dataAutorizzazione: timestamp("data_autorizzazione"),
+  dataScadenza: timestamp("data_scadenza"),
+  motivoRevoca: text("motivo_revoca"), // Se autorizzazione revocata
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  vendorIdx: index("spuntisti_vendor_idx").on(table.vendorId),
+  marketIdx: index("spuntisti_market_idx").on(table.marketId),
+  legacySpIdx: index("spuntisti_legacy_sp_idx").on(table.legacySpId),
+}));
+
+export type Spuntista = typeof spuntisti.$inferSelect;
+export type InsertSpuntista = typeof spuntisti.$inferInsert;
 
 // Controlli dettagliati (per Polizia Municipale)
 export const inspectionsDetailed = pgTable("inspections_detailed", {
@@ -857,7 +922,7 @@ export const walletStatusEnum = pgEnum("wallet_status", ["ATTIVO", "BLOCCATO", "
 // Wallet per ogni impresa/operatore
 export const operatoreWallet = pgTable("operatore_wallet", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-  impresaId: integer("impresa_id").notNull(), // FK verso tabella imprese
+  impresaId: integer("impresa_id").notNull().references(() => vendors.id), // FK verso vendors (imprese/operatori)
   saldo: integer("saldo").default(0).notNull(), // Saldo in centesimi (€10.50 = 1050)
   saldoMinimo: integer("saldo_minimo").default(0).notNull(), // Soglia minima per blocco
   status: walletStatusEnum("status").default("ATTIVO").notNull(),
@@ -919,7 +984,7 @@ export const tariffePosteggio = pgTable("tariffe_posteggio", {
 export const avvisiPagopa = pgTable("avvisi_pagopa", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   walletId: integer("wallet_id").notNull().references(() => operatoreWallet.id),
-  impresaId: integer("impresa_id").notNull(),
+  impresaId: integer("impresa_id").notNull().references(() => vendors.id), // FK verso vendors (imprese/operatori)
   iuv: varchar("iuv", { length: 50 }).notNull().unique(), // Identificativo Univoco Versamento
   importo: integer("importo").notNull(), // In centesimi
   causale: varchar("causale", { length: 255 }).notNull(),
