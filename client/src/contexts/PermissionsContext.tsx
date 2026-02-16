@@ -1,17 +1,22 @@
 /**
  * PermissionsContext - Gestione Permessi Tab Dashboard
- * 
+ *
  * Questo context carica e memorizza i permessi dell'utente loggato
  * per controllare la visibilità dei tab nella dashboard.
- * 
- * @version 2.0.0
- * @date 24 Gennaio 2026
- * 
+ *
+ * @version 2.1.0
+ * @date 16 Febbraio 2026
+ *
  * LOGICA RUOLI:
- * 1. Se utente ha assigned_roles → usa il primo ruolo assegnato
- * 2. Se utente ha base_role: "admin" → usa ruolo admin_pa (ID=2)
- * 3. Se in impersonificazione → usa ruolo admin_pa (ID=2) del comune
- * 4. Altrimenti → usa ruolo citizen (ID=13) - nessun permesso dashboard
+ * 1. Se in impersonificazione → usa ruolo admin_pa (ID=2) del comune
+ * 2. Se utente è super_admin → usa ruolo super_admin (ID=1)
+ * 3. Se utente ha assigned_roles NON-citizen → usa il primo ruolo non-citizen
+ * 4. Se utente ha base_role: "admin" → usa ruolo admin_pa (ID=2)
+ * 5. Altrimenti → usa ruolo citizen (ID=13)
+ *
+ * PERMESSI CLIENT-SIDE:
+ * - Utenti con impresa_id o base_role "business" → tab impresa
+ * - Utenti con base_role "admin" o is_super_admin → tab dashboard PA
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -24,6 +29,53 @@ const ROLE_IDS = {
   ADMIN_PA: 2,
   CITIZEN: 13,
 };
+
+// Permessi client-side per utenti business (impresa)
+const IMPRESA_PERMISSION_CODES = [
+  'tab.view.wallet_impresa',
+  'quick.view.hub_operatore',
+  'quick.view.notifiche',
+  'tab.view.anagrafica',
+  'tab.view.presenze',
+];
+
+// Permessi client-side per utenti admin/PA
+const ADMIN_PERMISSION_CODES = [
+  'tab.view.dashboard',
+];
+
+/**
+ * Genera permessi extra basati sui dati utente in localStorage.
+ * Questi si aggiungono ai permessi caricati dall'orchestratore.
+ */
+function getClientSidePermissions(): Permission[] {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return [];
+
+  try {
+    const user = JSON.parse(userStr);
+    const extraPerms: Permission[] = [];
+    let id = 9000;
+
+    // Utenti business (con impresa_id o base_role 'business') → tab impresa
+    if (user.impresa_id || user.base_role === 'business') {
+      for (const code of IMPRESA_PERMISSION_CODES) {
+        extraPerms.push({ id: id++, code, name: code, category: code.startsWith('tab') ? 'tab' : 'quick', is_sensitive: false });
+      }
+    }
+
+    // Utenti admin/super_admin → tab dashboard PA
+    if (user.is_super_admin || user.base_role === 'admin') {
+      for (const code of ADMIN_PERMISSION_CODES) {
+        extraPerms.push({ id: id++, code, name: code, category: 'tab', is_sensitive: false });
+      }
+    }
+
+    return extraPerms;
+  } catch {
+    return [];
+  }
+}
 
 // Tipi
 interface Permission {
@@ -82,11 +134,16 @@ async function determineUserRoleId(): Promise<{ roleId: number; isImpersonating:
       return { roleId: ROLE_IDS.SUPER_ADMIN, isImpersonating: false };
     }
 
-    // 4. Se l'utente ha assigned_roles, usa il primo
+    // 4. Se l'utente ha assigned_roles NON-citizen, usa il primo non-citizen
     if (user.assigned_roles && user.assigned_roles.length > 0) {
-      const firstRole = user.assigned_roles[0];
-      console.warn(`[PermissionsContext] Utente con ruolo assegnato: ${firstRole.role_code} (ID=${firstRole.role_id})`);
-      return { roleId: firstRole.role_id, isImpersonating: false };
+      const nonCitizenRole = user.assigned_roles.find(
+        (r: { role_id: number; role_code: string }) => r.role_id !== ROLE_IDS.CITIZEN
+      );
+      if (nonCitizenRole) {
+        console.warn(`[PermissionsContext] Utente con ruolo assegnato: ${nonCitizenRole.role_code} (ID=${nonCitizenRole.role_id})`);
+        return { roleId: nonCitizenRole.role_id, isImpersonating: false };
+      }
+      // Se solo ruoli citizen, prosegui con i check base_role
     }
 
     // 5. Se l'utente ha base_role "admin", usa admin_pa
@@ -96,7 +153,8 @@ async function determineUserRoleId(): Promise<{ roleId: number; isImpersonating:
     }
 
     // 6. Default: citizen
-    console.warn('[PermissionsContext] Utente standard - usando ruolo citizen');
+    // Nota: utenti business con impresa_id riceveranno permessi impresa via client-side injection
+    console.warn(`[PermissionsContext] Utente standard (base_role=${user.base_role || 'none'}) - usando ruolo citizen`);
     return { roleId: ROLE_IDS.CITIZEN, isImpersonating: false };
 
   } catch (err) {
@@ -131,26 +189,42 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
       const response = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${roleId}/permissions`);
       const data = await response.json();
 
+      let serverPerms: Permission[] = [];
       if (data.success && data.data && data.data.permissions) {
-        const perms = data.data.permissions;
-        setPermissions(perms);
-        setPermissionCodes(perms.map((p: Permission) => p.code));
-        console.warn(`[PermissionsContext] Caricati ${perms.length} permessi`);
+        serverPerms = data.data.permissions;
+        console.warn(`[PermissionsContext] Caricati ${serverPerms.length} permessi dal server`);
       } else if (data.success && Array.isArray(data.data)) {
-        // Fallback per vecchio formato API
-        setPermissions(data.data);
-        setPermissionCodes(data.data.map((p: Permission) => p.code));
-        console.warn(`[PermissionsContext] Caricati ${data.data.length} permessi (formato legacy)`);
+        serverPerms = data.data;
+        console.warn(`[PermissionsContext] Caricati ${serverPerms.length} permessi (formato legacy)`);
       } else {
         throw new Error(data.error || 'Errore nel caricamento permessi');
       }
+
+      // Unisci permessi server con permessi client-side basati su dati utente
+      const clientPerms = getClientSidePermissions();
+      const serverCodes = new Set(serverPerms.map((p: Permission) => p.code));
+      const extraPerms = clientPerms.filter(p => !serverCodes.has(p.code));
+      const allPerms = [...serverPerms, ...extraPerms];
+
+      if (extraPerms.length > 0) {
+        console.warn(`[PermissionsContext] Aggiunti ${extraPerms.length} permessi client-side: ${extraPerms.map(p => p.code).join(', ')}`);
+      }
+
+      setPermissions(allPerms);
+      setPermissionCodes(allPerms.map((p: Permission) => p.code));
     } catch (err: any) {
       console.error('[PermissionsContext] Errore:', err);
       setError(err.message);
-      // In caso di errore, impostiamo permessi vuoti
-      // Il fallback NON concede più accesso automatico
-      setPermissions([]);
-      setPermissionCodes([]);
+      // In caso di errore, usa solo permessi client-side basati su dati utente
+      const clientPerms = getClientSidePermissions();
+      if (clientPerms.length > 0) {
+        console.warn(`[PermissionsContext] Fallback: usando ${clientPerms.length} permessi client-side`);
+        setPermissions(clientPerms);
+        setPermissionCodes(clientPerms.map(p => p.code));
+      } else {
+        setPermissions([]);
+        setPermissionCodes([]);
+      }
     } finally {
       setLoading(false);
     }
