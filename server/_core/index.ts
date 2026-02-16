@@ -259,6 +259,98 @@ async function startServer() {
     }
   });
   
+  // ============================================
+  // REST Endpoints: DMS Legacy Interoperabilità
+  // Proxy da REST → tRPC per compatibilità con documentazione
+  // ============================================
+  const legacyApiPrefix = "/api/integrations/dms-legacy";
+
+  // EXPORT endpoints (GET)
+  const exportEndpoints = ["markets", "vendors", "concessions", "spuntisti", "documents", "stats"] as const;
+  for (const endpoint of exportEndpoints) {
+    app.get(`${legacyApiPrefix}/${endpoint}`, async (req, res) => {
+      try {
+        const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+        const result = await (caller.dmsLegacy.export as any)[endpoint]();
+        res.json(result);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+  }
+
+  // EXPORT endpoints con parametri
+  app.get(`${legacyApiPrefix}/presences/:marketId`, async (req, res) => {
+    try {
+      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const result = await caller.dmsLegacy.export.presences({ marketId: Number(req.params.marketId) });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get(`${legacyApiPrefix}/market-sessions/:marketId`, async (req, res) => {
+    try {
+      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const result = await caller.dmsLegacy.export.marketSessions({ marketId: Number(req.params.marketId) });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get(`${legacyApiPrefix}/stalls/:marketId`, async (req, res) => {
+    try {
+      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const result = await caller.dmsLegacy.export.stalls({ marketId: Number(req.params.marketId) });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // UTILITY endpoints
+  app.get(`${legacyApiPrefix}/health`, async (req, res) => {
+    try {
+      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const result = await caller.dmsLegacy.health();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get(`${legacyApiPrefix}/status`, async (req, res) => {
+    try {
+      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const result = await caller.dmsLegacy.status();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post(`${legacyApiPrefix}/sync`, async (req, res) => {
+    try {
+      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const result = await caller.dmsLegacy.sync(req.body || undefined);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post(`${legacyApiPrefix}/cron-sync`, async (req, res) => {
+    try {
+      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const result = await caller.dmsLegacy.cronSync();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
@@ -311,13 +403,60 @@ async function startServer() {
     console.log(`Server running on http://localhost:${port}/`);
   });
 
+  // ============================================
+  // DMS Legacy CRON Sync — ogni 5 minuti (configurabile)
+  // ============================================
+  let cronSyncInterval: ReturnType<typeof setInterval> | null = null;
+
+  async function startLegacyCronSync() {
+    try {
+      const { isLegacyConfigured } = await import("../services/dmsLegacyService");
+      if (!isLegacyConfigured()) {
+        console.log("[DMS Legacy CRON] Legacy DB non configurato — CRON sync disabilitata");
+        return;
+      }
+
+      const db = await getDb();
+      if (!db) return;
+
+      // Leggi frequenza dalla config
+      const [config] = await db.select().from(schema.syncConfig).limit(1);
+      const frequency = (config?.frequency || 300) * 1000; // Default 5 min in ms
+
+      if (config && config.enabled !== 1) {
+        console.log("[DMS Legacy CRON] Sync automatica disabilitata nella configurazione");
+        return;
+      }
+
+      cronSyncInterval = setInterval(async () => {
+        try {
+          const caller = appRouter.createCaller(await createContext({ req: {} as any, res: {} as any, info: {} as any }));
+          await caller.dmsLegacy.cronSync();
+          console.log(`[DMS Legacy CRON] Sync completata — prossima in ${frequency / 1000}s`);
+        } catch (error: any) {
+          console.error("[DMS Legacy CRON] Errore:", error.message);
+        }
+      }, frequency);
+
+      console.log(`[DMS Legacy CRON] Sync automatica avviata — ogni ${frequency / 1000}s`);
+    } catch (error: any) {
+      console.error("[DMS Legacy CRON] Errore avvio:", error.message);
+    }
+  }
+
+  // Avvia CRON dopo 10s per dare tempo al server di stabilizzarsi
+  setTimeout(startLegacyCronSync, 10000);
+
   // Graceful shutdown: close connections cleanly on restart/stop
   const shutdown = async (signal: string) => {
     console.log(`\n[Server] ${signal} received, shutting down gracefully...`);
+    if (cronSyncInterval) clearInterval(cronSyncInterval);
     server.close(async () => {
       try {
         const { closeDb } = await import("../db");
         await closeDb();
+        const { closeLegacyDb } = await import("../services/dmsLegacyService");
+        await closeLegacyDb();
         console.log("[Server] Database connections closed.");
       } catch {}
       process.exit(0);

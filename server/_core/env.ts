@@ -19,4 +19,6 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: optionalEnv("BUILT_IN_FORGE_API_URL"),
   forgeApiKey: optionalEnv("BUILT_IN_FORGE_API_KEY"),
+  // DMS Legacy (Heroku) — connessione opzionale al DB PostgreSQL Legacy
+  dmsLegacyDbUrl: optionalEnv("DMS_LEGACY_DB_URL"),
 };

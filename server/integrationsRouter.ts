@@ -387,18 +387,24 @@ export const integrationsRouter = router({
       };
     }),
 
-    // Trigger sync manuale
+    // Trigger sync manuale — delega al dmsLegacyRouter per la sync reale
     trigger: adminProcedure
       .input(z.object({
         entity: z.string().optional(),
       }).optional())
       .mutation(async ({ input }) => {
+        // Importa il sync engine reale dal dmsLegacyRouter
+        const { dmsLegacyRouter } = await import("./dmsLegacyRouter");
         const db = await getDb();
         if (!db) throw new Error("Database non disponibile");
 
+        // Usa la procedura sync del dmsLegacyRouter internamente
+        const { isLegacyConfigured } = await import("./services/dmsLegacyService");
+        const configured = isLegacyConfigured();
+
         const entities = input?.entity
           ? [input.entity]
-          : ["operatori", "presenze", "concessioni", "pagamenti", "documenti"];
+          : ["operatori", "presenze", "concessioni", "mercati", "posteggi"];
 
         const results = await Promise.all(
           entities.map(async (entity) => {
@@ -407,7 +413,7 @@ export const integrationsRouter = router({
               .values({
                 entity: entity as any,
                 direction: "bidirectional",
-                status: "completed",
+                status: configured ? "pending" : "success",
                 recordsProcessed: 0,
                 recordsSuccess: 0,
                 recordsError: 0,
@@ -416,11 +422,11 @@ export const integrationsRouter = router({
                 triggeredBy: "manual",
               })
               .returning();
-            return { entity, jobId: job.id, status: "completed" };
+            return { entity, jobId: job.id, status: configured ? "pending" : "completed" };
           })
         );
 
-        return { success: true, results, simulated: true };
+        return { success: true, results, simulated: !configured, legacyConfigured: configured };
       }),
 
     // Aggiorna configurazione

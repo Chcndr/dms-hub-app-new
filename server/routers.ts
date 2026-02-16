@@ -14,6 +14,7 @@ import { gdprRouter } from "./gdprRouter";
 import { pdndRouter } from "./pdndRouter";
 import { appIoRouter } from "./appIoRouter";
 import { piattaformeRouter } from "./piattaformeRouter";
+import { dmsLegacyRouter } from "./dmsLegacyRouter";
 
 
 export const appRouter = router({
@@ -374,6 +375,9 @@ export const appRouter = router({
 
   // PIATTAFORME PA - Dashboard PDND/AppIO/ANPR/SSO + Audit Trail
   piattaforme: piattaformeRouter,
+
+  // DMS LEGACY - Interoperabilità bidirezionale con gestionale Heroku
+  dmsLegacy: dmsLegacyRouter,
 });
 
 export type AppRouter = typeof appRouter;
