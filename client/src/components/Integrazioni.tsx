@@ -1964,9 +1964,13 @@ function APIKeysManager() {
 // ============================================================================
 function WebhookManager() {
   const { data: webhooks = [], refetch } = trpc.integrations.webhooks.list.useQuery();
+  const createMutation = trpc.integrations.webhooks.create.useMutation();
   const testMutation = trpc.integrations.webhooks.test.useMutation();
   const deleteMutation = trpc.integrations.webhooks.delete.useMutation();
-  
+
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newWebhook, setNewWebhook] = useState({ name: '', url: '', events: ['market.updated', 'wallet.transaction'] });
+
   const handleTestWebhook = async (id: number) => {
     try {
       const result = await testMutation.mutateAsync({ id });
@@ -1975,7 +1979,7 @@ function WebhookManager() {
       toast.error('Test fallito: ' + error.message);
     }
   };
-  
+
   const handleDeleteWebhook = async (id: number) => {
     try {
       await deleteMutation.mutateAsync({ id });
@@ -1985,8 +1989,26 @@ function WebhookManager() {
       toast.error('Errore: ' + error.message);
     }
   };
-  
 
+  const handleCreateWebhook = async () => {
+    if (!newWebhook.name.trim() || !newWebhook.url.trim()) {
+      toast.error('Nome e URL sono obbligatori');
+      return;
+    }
+    try {
+      await createMutation.mutateAsync({
+        name: newWebhook.name,
+        url: newWebhook.url,
+        events: newWebhook.events,
+      });
+      await refetch();
+      setShowCreateDialog(false);
+      setNewWebhook({ name: '', url: '', events: ['market.updated', 'wallet.transaction'] });
+      toast.success('Webhook creato con successo');
+    } catch (error: any) {
+      toast.error('Errore: ' + error.message);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -1996,11 +2018,56 @@ function WebhookManager() {
           <h3 className="text-lg font-semibold text-[#e8fbff]">Webhook Configurati</h3>
           <p className="text-sm text-[#e8fbff]/60">Ricevi notifiche real-time su eventi del sistema</p>
         </div>
-        <Button className="bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white">
+        <Button className="bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white" onClick={() => setShowCreateDialog(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nuovo Webhook
         </Button>
       </div>
+
+      {/* Create Webhook Dialog */}
+      {showCreateDialog && (
+        <Card className="bg-[#0b1220] border-[#14b8a6]/50">
+          <CardContent className="p-6 space-y-4">
+            <h4 className="text-[#e8fbff] font-semibold">Nuovo Webhook</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm text-[#e8fbff]/70">Nome</label>
+                <input
+                  className="w-full px-3 py-2 bg-[#1a2332] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm"
+                  placeholder="Es. Notifica Pagamenti"
+                  value={newWebhook.name}
+                  onChange={(e) => setNewWebhook(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-[#e8fbff]/70">URL Endpoint</label>
+                <input
+                  className="w-full px-3 py-2 bg-[#1a2332] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm"
+                  placeholder="https://example.com/webhook"
+                  value={newWebhook.url}
+                  onChange={(e) => setNewWebhook(prev => ({ ...prev, url: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm text-[#e8fbff]/70">Eventi (separati da virgola)</label>
+              <input
+                className="w-full px-3 py-2 bg-[#1a2332] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm"
+                value={newWebhook.events.join(', ')}
+                onChange={(e) => setNewWebhook(prev => ({ ...prev, events: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="border-[#14b8a6]/30 text-[#e8fbff]">
+                Annulla
+              </Button>
+              <Button onClick={handleCreateWebhook} disabled={createMutation.isPending} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white">
+                {createMutation.isPending ? 'Creazione...' : 'Crea Webhook'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Lista Webhook */}
       <div className="grid grid-cols-1 gap-4">

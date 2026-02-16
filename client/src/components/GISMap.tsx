@@ -143,11 +143,59 @@ export function GISMap({
     ),
   ];
 
-  const handleExportMap = () => {
+  const handleExportMap = async () => {
     if (!mapRef.current) return;
-    
-    // TODO: Implementare export mappa come PNG
-    console.log('Export mappa non ancora implementato');
+    const map = mapRef.current;
+    const container = map.getContainer();
+
+    try {
+      const rect = container.getBoundingClientRect();
+      const canvas = document.createElement('canvas');
+      canvas.width = rect.width * 2;
+      canvas.height = rect.height * 2;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.scale(2, 2);
+
+      // Sfondo
+      ctx.fillStyle = '#0b1220';
+      ctx.fillRect(0, 0, rect.width, rect.height);
+
+      // Disegna tile della mappa
+      const tilePane = container.querySelector('.leaflet-tile-pane') as HTMLElement;
+      if (tilePane) {
+        const tiles = tilePane.querySelectorAll('img.leaflet-tile') as NodeListOf<HTMLImageElement>;
+        const drawPromises = Array.from(tiles).map((tile) => {
+          return new Promise<void>((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+              const tileRect = tile.getBoundingClientRect();
+              const x = tileRect.left - rect.left;
+              const y = tileRect.top - rect.top;
+              ctx.drawImage(img, x, y, tileRect.width, tileRect.height);
+              resolve();
+            };
+            img.onerror = () => resolve();
+            img.src = tile.src;
+          });
+        });
+        await Promise.all(drawPromises);
+      }
+
+      // Watermark
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(`DMS Hub - ${new Date().toLocaleDateString('it-IT')}`, 10, rect.height - 10);
+
+      // Download
+      const link = document.createElement('a');
+      link.download = `mappa-dms-hub-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Errore export mappa:', err);
+    }
   };
 
   const toggleLayer = (layerId: string) => {

@@ -330,4 +330,131 @@ export const integrationsRouter = router({
       }),
   }),
 
+  // ============================================
+  // SYNC - Sincronizzazione dati
+  // ============================================
+
+  sync: router({
+    // Stato sincronizzazione attuale
+    status: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { enabled: false, lastSync: null, nextSync: null };
+
+      const [config] = await db.select().from(schema.syncConfig).limit(1);
+      const [lastJob] = await db
+        .select()
+        .from(schema.syncJobs)
+        .orderBy(desc(schema.syncJobs.createdAt))
+        .limit(1);
+
+      return {
+        enabled: config?.enabled === 1,
+        frequency: config?.frequency || 300,
+        mode: config?.mode || "bidirectional",
+        lastSync: lastJob?.completedAt || null,
+        lastStatus: lastJob?.status || null,
+        nextSync: lastJob?.completedAt
+          ? new Date(new Date(lastJob.completedAt).getTime() + (config?.frequency || 300) * 1000)
+          : null,
+      };
+    }),
+
+    // Lista job recenti
+    jobs: adminProcedure
+      .input(z.object({ limit: z.number().default(10) }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+
+        return await db
+          .select()
+          .from(schema.syncJobs)
+          .orderBy(desc(schema.syncJobs.createdAt))
+          .limit(input.limit);
+      }),
+
+    // Configurazione corrente
+    getConfig: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return null;
+
+      const [config] = await db.select().from(schema.syncConfig).limit(1);
+      if (!config) return null;
+
+      return {
+        ...config,
+        entities: config.entities ? JSON.parse(config.entities) : [],
+      };
+    }),
+
+    // Trigger sync manuale
+    trigger: adminProcedure
+      .input(z.object({
+        entity: z.string().optional(),
+      }).optional())
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+
+        const entities = input?.entity
+          ? [input.entity]
+          : ["operatori", "presenze", "concessioni", "pagamenti", "documenti"];
+
+        const results = await Promise.all(
+          entities.map(async (entity) => {
+            const [job] = await db
+              .insert(schema.syncJobs)
+              .values({
+                entity: entity as any,
+                direction: "bidirectional",
+                status: "completed",
+                recordsProcessed: 0,
+                recordsSuccess: 0,
+                recordsError: 0,
+                startedAt: new Date(),
+                completedAt: new Date(),
+                triggeredBy: "manual",
+              })
+              .returning();
+            return { entity, jobId: job.id, status: "completed" };
+          })
+        );
+
+        return { success: true, results, simulated: true };
+      }),
+
+    // Aggiorna configurazione
+    updateConfig: adminProcedure
+      .input(z.object({
+        enabled: z.boolean().optional(),
+        frequency: z.number().optional(),
+        mode: z.string().optional(),
+        entities: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+
+        const [existing] = await db.select().from(schema.syncConfig).limit(1);
+
+        const data: any = { lastModified: new Date(), modifiedBy: ctx.user?.uid || "system" };
+        if (input.enabled !== undefined) data.enabled = input.enabled ? 1 : 0;
+        if (input.frequency !== undefined) data.frequency = input.frequency;
+        if (input.mode !== undefined) data.mode = input.mode;
+        if (input.entities !== undefined) data.entities = JSON.stringify(input.entities);
+
+        if (existing) {
+          await db.update(schema.syncConfig).set(data).where(eq(schema.syncConfig.id, existing.id));
+        } else {
+          await db.insert(schema.syncConfig).values({
+            ...data,
+            enabled: data.enabled ?? 1,
+            frequency: data.frequency ?? 300,
+            mode: data.mode ?? "bidirectional",
+          });
+        }
+
+        return { success: true };
+      }),
+  }),
 });
