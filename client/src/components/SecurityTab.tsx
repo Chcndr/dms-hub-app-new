@@ -1062,7 +1062,7 @@ export default function SecurityTab() {
                       <Label className="text-[#e8fbff]">Tipo Territorio</Label>
                       <Select value={assignRole.territoryType} onValueChange={(v) => setAssignRole({...assignRole, territoryType: v})}>
                         <SelectTrigger className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]">
-                          <SelectValue />
+                          <SelectValue placeholder="Seleziona tipo..." />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a2332] border-[#14b8a6]/30">
                           <SelectItem value="comune" className="text-[#e8fbff]">Comune</SelectItem>
@@ -1142,7 +1142,7 @@ export default function SecurityTab() {
                         <Label className="text-[#e8fbff]">Settore</Label>
                         <Select value={newRole.sector} onValueChange={(v) => setNewRole({...newRole, sector: v})}>
                           <SelectTrigger className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]">
-                            <SelectValue />
+                            <SelectValue placeholder="Seleziona settore..." />
                           </SelectTrigger>
                           <SelectContent className="bg-[#1a2332] border-[#14b8a6]/30">
                             <SelectItem value="system" className="text-[#e8fbff]">System</SelectItem>
