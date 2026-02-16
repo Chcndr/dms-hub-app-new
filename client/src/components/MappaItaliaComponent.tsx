@@ -1646,8 +1646,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   }, 100);
                 }
               }}
-              selectedStallNumber={(() => { const n = stalls.find(s => s.id === selectedStallId)?.number; return n != null ? parseInt(n, 10) : undefined; })()}
-              stallsData={stallsDataForMap.map(s => ({ ...s, number: parseInt(String(s.number), 10) }))}
+              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
+              stallsData={stallsDataForMap}
               allMarkets={allMarkets.map(m => ({
                 id: m.id,
                 name: m.name,
@@ -1688,11 +1688,8 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
               </TableHeader>
               <TableBody>
                 {[...stalls].sort((a, b) => {
-                  // Ordina per numero crescente (gestisce sia numeri che stringhe)
-                  const numA = parseInt(a.number, 10);
-                  const numB = parseInt(b.number, 10);
-                  if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-                  return a.number.localeCompare(b.number);
+                  // Ordina alfanumerico naturale: 1, 2, 22, 22A, 22B, 23
+                  return a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' });
                 }).map((stall) => (
                   <TableRow 
                     key={stall.id}

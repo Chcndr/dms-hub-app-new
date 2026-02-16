@@ -31,7 +31,7 @@ interface StallFeature {
     coordinates: any;
   };
   properties: {
-    number: number;
+    number: number | string;
     dimensions?: string;
     rotation?: number;
     status?: string;
@@ -370,20 +370,16 @@ export function HubMarketMapComponent({
     }
   }, [selectedHub]);
   
-  // Mappa stallsData per accesso rapido
-  // Crea due chiavi: sia numero che stringa per gestire entrambi i casi
-  const stallsByNumber = new Map<number | string, typeof stallsData[0]>();
+  // Mappa stallsData per accesso rapido — chiavi STRINGA per supportare numeri alfanumerici (22A, 22B)
+  const stallsByNumber = new Map<string, typeof stallsData[0]>();
   stallsData.forEach(s => {
-    // Aggiungi sia come numero che come stringa
-    const num = typeof s.number === 'string' ? parseInt(s.number, 10) : s.number;
-    stallsByNumber.set(num, s);
-    stallsByNumber.set(s.number, s);
+    stallsByNumber.set(String(s.number), s);
   });
-  
+
   // Funzione per determinare il colore in base allo stato
   // USA SOLO stallsData, IGNORA il GeoJSON statico!
-  const getStallColor = (stallNumber: number): string => {
-    const dbStall = stallsByNumber.get(stallNumber);
+  const getStallColor = (stallNumber: number | string): string => {
+    const dbStall = stallsByNumber.get(String(stallNumber));
     const status = dbStall?.status || 'libero';
     return getStallMapFillColor(status);
   };
