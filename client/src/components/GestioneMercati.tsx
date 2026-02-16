@@ -2876,7 +2876,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                         }
                         // Altrimenti calcola l'importo teorico del posteggio
                         const areaMq = parseFloat(stall.area_mq || '0');
-                        const costPerSqm = 0.90; // Default cost per sqm
+                        const costPerSqm = allMarkets.find(m => m.id === marketId)?.cost_per_sqm || 0.90;
                         if (areaMq > 0) {
                           const importoTeorico = areaMq * costPerSqm;
                           return <span className="text-[#e8fbff]/50">€{importoTeorico.toFixed(2)}</span>;
