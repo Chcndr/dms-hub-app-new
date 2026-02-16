@@ -243,21 +243,22 @@ export function MarketMapComponent({
   }, [mapData]);
   
   // Mappa stallsData per accesso rapido
-  // Crea due chiavi: sia numero che stringa per gestire entrambi i casi
+  // Crea SEMPRE chiavi sia stringa che numero per garantire il match
+  // (il GeoJSON può avere props.number come stringa O come numero)
   const stallsByNumber = new Map<number | string, typeof stallsData[0]>();
   stallsData.forEach(s => {
-    // Aggiungi sia come numero che come stringa
-    const num = typeof s.number === 'string' ? parseInt(s.number, 10) : s.number;
-    stallsByNumber.set(num, s);
-    stallsByNumber.set(s.number, s);
+    const numKey = typeof s.number === 'string' ? parseInt(s.number, 10) : s.number;
+    const strKey = String(s.number);
+    stallsByNumber.set(numKey, s);  // key numerica (es: 1)
+    stallsByNumber.set(strKey, s);  // key stringa (es: "1")
   });
   
   // Funzione per determinare il colore in base allo stato
   // USA SOLO stallsData, IGNORA il GeoJSON statico!
   // Normalizza lo stato per gestire sia formato inglese (DB) che italiano (frontend)
   const getStallColor = (stallNumber: number): string => {
-    const dbStall = stallsByNumber.get(stallNumber);
-    const status = normalizeStallStatus(dbStall?.status || 'libero');
+    const dbStall = stallsByNumber.get(stallNumber) || stallsByNumber.get(String(stallNumber));
+    const status = normalizeStallStatus(dbStall?.status);
     return getStallMapFillColor(status);
   };
   
@@ -529,9 +530,9 @@ export function MarketMapComponent({
             // Confronto robusto (gestisce stringhe e numeri)
             const isSelected = String(selectedStallNumber) === String(props.number);
             
-            // Recupera dati aggiornati dal database
-            const dbStall = stallsByNumber.get(props.number);
-            const displayStatus: string = normalizeStallStatus(dbStall?.status || 'libero'); // Normalizza EN/IT
+            // Recupera dati aggiornati dal database (prova sia numero che stringa)
+            const dbStall = stallsByNumber.get(props.number) || stallsByNumber.get(String(props.number));
+            const displayStatus: string = normalizeStallStatus(dbStall?.status); // Normalizza EN→IT, null-safe
             
             const displayVendor = dbStall?.vendor_name || props.vendor_name || '-';
             

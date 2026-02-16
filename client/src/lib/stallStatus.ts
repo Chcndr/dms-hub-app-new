@@ -27,10 +27,33 @@ const STATUS_NORMALIZE_MAP: Record<string, StallStatus> = {
 };
 
 /**
- * Normalizza uno stato posteggio (inglese o italiano) al formato italiano standard
+ * Mappa Italian→English per inviare stati al backend DB
  */
-export function normalizeStallStatus(status: string): StallStatus {
-  return STATUS_NORMALIZE_MAP[status.toLowerCase()] || 'libero';
+const STATUS_IT_TO_EN: Record<string, string> = {
+  libero: 'free',
+  occupato: 'occupied',
+  riservato: 'reserved',
+  free: 'free',
+  occupied: 'occupied',
+  reserved: 'reserved',
+  booked: 'booked',
+  maintenance: 'maintenance',
+};
+
+/**
+ * Normalizza uno stato posteggio (inglese o italiano) al formato italiano standard.
+ * Gestisce null/undefined in modo sicuro.
+ */
+export function normalizeStallStatus(status: string | undefined | null): StallStatus {
+  if (!status) return 'libero';
+  return STATUS_NORMALIZE_MAP[status.toLowerCase().trim()] || 'libero';
+}
+
+/**
+ * Converte stato italiano in formato inglese per il backend DB/tRPC.
+ */
+export function stallStatusToEnglish(status: string): string {
+  return STATUS_IT_TO_EN[status.toLowerCase().trim()] || 'free';
 }
 
 export interface StallStatusConfig {
