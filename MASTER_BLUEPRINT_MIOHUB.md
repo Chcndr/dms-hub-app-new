@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 6.4.0 (Roadmap 10/10 + Lazy Loading + ARIA + API Key Auth + Error Monitoring)
-> **Data:** 15 Febbraio 2026
+> **Versione:** 6.5.0 (Fix Auth/RBAC Completo + Accesso Admin Full)
+> **Data:** 16 Febbraio 2026
 > **Autore:** Sistema documentato da Manus AI + Claude Code
 > **Stato:** PRODUZIONE
 
@@ -30,6 +30,28 @@
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 16 Febbraio 2026 — (v6.5.0) — Fix Autenticazione + RBAC Accesso Admin Completo
+
+#### Fix Critico Autenticazione Login
+- **[FIX] `server/_core/oauth.ts`:** Cookie sessione JWT ora include TUTTI i campi necessari: `impresa_id`, `base_role`, `is_super_admin`, `assigned_roles`. Prima mancavano e il frontend non riconosceva l'utente come admin.
+- **[FIX] `server/_core/oauth.ts`:** Aggiunta query DB per caricare `impresa_id` da tabella `imprese` e `assigned_roles` da `user_role_assignments` + `user_roles` al momento del login OAuth.
+- **[FIX] `client/src/contexts/FirebaseAuthContext.tsx`:** `fetchMioHubUser()` ora propaga `impresa_id`, `base_role`, `is_super_admin`, `assigned_roles` nel localStorage user object, leggendoli dal JWT decodificato.
+
+#### Fix Sistema Permessi RBAC — Accesso Admin Completo
+- **[FIX] `client/src/contexts/PermissionsContext.tsx`:** Aggiornato con TUTTI i 28 tab + 11 quick access della DashboardPA.
+- **28 tab Dashboard PA:** dashboard, users, wallet, gaming, sustainability, tpas, carboncredits, realtime, sistema, ai, security, ssosuap, businesses, civic, comuni, inspections, notifications, mobility, reports, integrations, settings, mercati, imprese, docs, mio, mappa, workspace, council.
+- **11 quick access barra rapida:** home, wallet, route, civic, vetrine, hub_operatore, bus_hub, core_map, sito_pubblico, dms_news, gestionale.
+- **Logica:** Utenti con `impresa_id` OR `base_role=business/admin` OR `is_super_admin` ottengono automaticamente TUTTI i permessi client-side (full admin access).
+- **Prima del fix:** Solo 14 dei 28 tab erano inclusi, mancavano: users, gaming, sustainability, tpas, carboncredits, realtime, ssosuap, businesses, civic, inspections, notifications, mobility, settings, docs, mio, mappa, council. Quick access quasi tutti mancanti.
+
+#### Riepilogo Sessione v6.5.0
+- **4 commit** su branch `claude/explore-repository-fA9m8`
+- **3 file modificati:** `server/_core/oauth.ts`, `client/src/contexts/FirebaseAuthContext.tsx`, `client/src/contexts/PermissionsContext.tsx`
+- **Root cause:** Il cookie JWT del login OAuth non includeva `impresa_id`, `base_role`, `assigned_roles` — il frontend non poteva determinare il ruolo dell'utente e negava l'accesso a tutti i tab.
+- **Fix definitivo:** Login OAuth carica dati completi dal DB → JWT li include → Frontend li legge e sblocca tutti i 28 tab + 11 quick access.
+
+---
 
 ### Sessione 15 Febbraio 2026 — Notte (v6.4.0) — Roadmap 10/10 Completa + Performance + ARIA + API Security + Monitoring
 
@@ -3014,10 +3036,11 @@ const forcedZoom = roundedToQuarter + 0.25;
 **Backend (Hetzner):**
 - ✅ Nuovo endpoint `PUT /api/security/roles/:id/permissions` per aggiornare i permessi di un ruolo
 - ✅ Nuovo endpoint `GET /api/security/permissions/tabs` per ottenere la lista dei permessi tab
-- ✅ Migration `017_add_tab_permissions.sql` con 39 nuovi permessi:
-  - 27 permessi per tab sidebar (es. `tab.view.dashboard`, `tab.view.security`)
-  - 12 permessi per accesso rapido (es. `quick.view.home`, `quick.view.bus_hub`)
-- ✅ Permessi sensibili assegnati solo a `super_admin`: Sistema, Sicurezza, Comuni, Report, Integrazioni, Impostazioni, Documentazione, Workspace, BUS HUB
+- ✅ Migration `017_add_tab_permissions.sql` con permessi iniziali
+  - 28 permessi per tab sidebar (es. `tab.view.dashboard`, `tab.view.security`, `tab.view.council`)
+  - 11 permessi per accesso rapido (es. `quick.view.home`, `quick.view.bus_hub`, `quick.view.gestionale`)
+- ✅ **v6.5.0 update:** Tutti i 28 tab + 11 quick access concessi client-side a utenti con `impresa_id`/admin/super_admin
+- ✅ Permessi sensibili: la gestione granulare per ruolo avviene tramite l'orchestratore API (server-side)
 
 **Frontend (Vercel):**
 - ✅ Nuovo `PermissionsContext` (`/contexts/PermissionsContext.tsx`) per gestire i permessi utente
