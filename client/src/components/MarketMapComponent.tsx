@@ -30,7 +30,7 @@ interface StallFeature {
     coordinates: any;
   };
   properties: {
-    number: number;
+    number: number | string;
     dimensions?: string;
     rotation?: number;
     status?: string;
@@ -58,11 +58,11 @@ interface MarketMapComponentProps {
   center?: [number, number];
   zoom?: number;
   height?: string;
-  onStallClick?: (stallNumber: number) => void;
-  selectedStallNumber?: number;
+  onStallClick?: (stallNumber: number | string) => void;
+  selectedStallNumber?: number | string;
   stallsData?: Array<{
     id: number;
-    number: number;
+    number: number | string;
     status: string;
     type?: string;
     vendor_name?: string;
@@ -242,22 +242,17 @@ export function MarketMapComponent({
     return bounds;
   }, [mapData]);
   
-  // Mappa stallsData per accesso rapido
-  // Crea SEMPRE chiavi sia stringa che numero per garantire il match
-  // (il GeoJSON può avere props.number come stringa O come numero)
-  const stallsByNumber = new Map<number | string, typeof stallsData[0]>();
+  // Mappa stallsData per accesso rapido — chiavi STRINGA per supportare numeri alfanumerici (22A, 22B)
+  const stallsByNumber = new Map<string, typeof stallsData[0]>();
   stallsData.forEach(s => {
-    const numKey = typeof s.number === 'string' ? parseInt(s.number, 10) : s.number;
-    const strKey = String(s.number);
-    stallsByNumber.set(numKey, s);  // key numerica (es: 1)
-    stallsByNumber.set(strKey, s);  // key stringa (es: "1")
+    stallsByNumber.set(String(s.number), s);
   });
-  
+
   // Funzione per determinare il colore in base allo stato
   // USA SOLO stallsData, IGNORA il GeoJSON statico!
   // Normalizza lo stato per gestire sia formato inglese (DB) che italiano (frontend)
-  const getStallColor = (stallNumber: number): string => {
-    const dbStall = stallsByNumber.get(stallNumber) || stallsByNumber.get(String(stallNumber));
+  const getStallColor = (stallNumber: number | string): string => {
+    const dbStall = stallsByNumber.get(String(stallNumber));
     const status = normalizeStallStatus(dbStall?.status);
     return getStallMapFillColor(status);
   };
@@ -530,8 +525,8 @@ export function MarketMapComponent({
             // Confronto robusto (gestisce stringhe e numeri)
             const isSelected = String(selectedStallNumber) === String(props.number);
             
-            // Recupera dati aggiornati dal database (prova sia numero che stringa)
-            const dbStall = stallsByNumber.get(props.number) || stallsByNumber.get(String(props.number));
+            // Recupera dati aggiornati dal database (chiave stringa per supporto alfanumerico)
+            const dbStall = stallsByNumber.get(String(props.number));
             const displayStatus: string = normalizeStallStatus(dbStall?.status); // Normalizza EN→IT, null-safe
             
             const displayVendor = dbStall?.vendor_name || props.vendor_name || '-';
