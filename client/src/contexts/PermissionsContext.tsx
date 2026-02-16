@@ -30,32 +30,65 @@ const ROLE_IDS = {
   CITIZEN: 13,
 };
 
-// Tutti i permessi tab della Dashboard PA
+// TUTTI i 28 tab della Dashboard PA
 const ALL_DASHBOARD_TAB_CODES = [
   'tab.view.dashboard',
-  'tab.view.mercati',
-  'tab.view.imprese',
-  'tab.view.commercio',
+  'tab.view.users',
   'tab.view.wallet',
-  'tab.view.hub',
-  'tab.view.controlli',
-  'tab.view.comuni',
-  'tab.view.security',
+  'tab.view.gaming',
+  'tab.view.sustainability',
+  'tab.view.tpas',
+  'tab.view.carboncredits',
+  'tab.view.realtime',
   'tab.view.sistema',
   'tab.view.ai',
-  'tab.view.integrations',
+  'tab.view.security',
+  'tab.view.ssosuap',
+  'tab.view.businesses',
+  'tab.view.civic',
+  'tab.view.comuni',
+  'tab.view.inspections',
+  'tab.view.notifications',
+  'tab.view.mobility',
   'tab.view.reports',
+  'tab.view.integrations',
+  'tab.view.settings',
+  'tab.view.mercati',
+  'tab.view.imprese',
+  'tab.view.docs',
+  'tab.view.mio',
+  'tab.view.mappa',
   'tab.view.workspace',
+  'tab.view.council',
 ];
 
-// Permessi client-side per utenti business (impresa) - tutti i tab
-const IMPRESA_PERMISSION_CODES = [
-  ...ALL_DASHBOARD_TAB_CODES,
-  'tab.view.wallet_impresa',
+// TUTTI gli 11 quick access della barra rapida
+const ALL_QUICK_ACCESS_CODES = [
+  'quick.view.home',
+  'quick.view.wallet',
+  'quick.view.route',
+  'quick.view.civic',
+  'quick.view.vetrine',
   'quick.view.hub_operatore',
-  'quick.view.notifiche',
+  'quick.view.bus_hub',
+  'quick.view.core_map',
+  'quick.view.sito_pubblico',
+  'quick.view.dms_news',
+  'quick.view.gestionale',
+];
+
+// Permessi COMPLETI: tutti i 28 tab + 11 quick access + tab impresa
+const FULL_ACCESS_PERMISSION_CODES = [
+  ...ALL_DASHBOARD_TAB_CODES,
+  ...ALL_QUICK_ACCESS_CODES,
+  'tab.view.wallet_impresa',
   'tab.view.anagrafica',
   'tab.view.presenze',
+  'quick.view.notifiche',
+  // Alias legacy per compatibilita'
+  'tab.view.commercio',
+  'tab.view.hub',
+  'tab.view.controlli',
 ];
 
 /**
@@ -71,9 +104,9 @@ function getClientSidePermissions(): Permission[] {
     const extraPerms: Permission[] = [];
     let id = 9000;
 
-    // Utenti con impresa_id o base_role business/admin → tutti i tab
+    // Utenti con impresa_id o base_role business/admin → TUTTI i permessi (28 tab + 11 quick)
     if (user.impresa_id || user.base_role === 'business' || user.base_role === 'admin' || user.is_super_admin) {
-      for (const code of IMPRESA_PERMISSION_CODES) {
+      for (const code of FULL_ACCESS_PERMISSION_CODES) {
         extraPerms.push({ id: id++, code, name: code, category: code.startsWith('tab') ? 'tab' : 'quick', is_sensitive: false });
       }
     }
