@@ -13,7 +13,7 @@ export interface APIEndpoint {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   path: string;
   description: string;
-  category: 'analytics' | 'integrations' | 'mobility' | 'logs' | 'system' | 'guardian' | 'dms' | 'carbon' | 'users' | 'sustainability' | 'businesses' | 'inspections' | 'notifications' | 'civic' | 'wallet' | 'imprese' | 'suap' | 'concessioni' | 'tariffe' | 'qualificazioni' | 'tcc' | 'gaming';
+  category: 'analytics' | 'integrations' | 'mobility' | 'logs' | 'system' | 'guardian' | 'dms' | 'carbon' | 'users' | 'sustainability' | 'businesses' | 'inspections' | 'notifications' | 'civic' | 'wallet' | 'imprese' | 'suap' | 'concessioni' | 'tariffe' | 'qualificazioni' | 'tcc' | 'gaming' | 'pdnd' | 'appio';
   status: 'active' | 'deprecated' | 'beta' | 'maintenance';
   version: string;
   requiresAuth: boolean;
@@ -2636,6 +2636,127 @@ export function getAPIInventory(): APIEndpoint[] {
       requiresAuth: false,
       documentation: 'Ritorna POI culturali da OpenStreetMap: musei, castelli, monumenti, teatri, siti archeologici. Supporta filtro per lat/lng/radius/type/region',
       testParams: { lat: 44.49, lng: 11.34, radius: 15 },
+    },
+
+    // ============================================================================
+    // PDND - Piattaforma Digitale Nazionale Dati + ANPR
+    // ============================================================================
+    {
+      id: 'pdnd.getStatus',
+      method: 'GET',
+      path: '/api/trpc/pdnd.getStatus',
+      description: 'Stato connessione PDND',
+      category: 'pdnd',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Verifica stato della connessione PDND (mock o live), configurazione chiavi RSA e purpose ID',
+    },
+    {
+      id: 'pdnd.listEServices',
+      method: 'GET',
+      path: '/api/trpc/pdnd.listEServices',
+      description: 'Lista e-Service PDND',
+      category: 'pdnd',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Ritorna i 3 e-Service esposti: dms-mercati, dms-concessioni, dms-operatori con stato di pubblicazione',
+    },
+    {
+      id: 'pdnd.publishEService',
+      method: 'POST',
+      path: '/api/trpc/pdnd.publishEService',
+      description: 'Pubblica e-Service su PDND',
+      category: 'pdnd',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Pubblica un e-Service su PDND Interop. Input: serviceId (dms-mercati|dms-concessioni|dms-operatori) + metadata',
+    },
+    {
+      id: 'pdnd.testConnection',
+      method: 'POST',
+      path: '/api/trpc/pdnd.testConnection',
+      description: 'Test connettivita\' PDND',
+      category: 'pdnd',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Testa la connettivita\' verso PDND generando un voucher JWT e verificando la risposta',
+    },
+    {
+      id: 'pdnd.verificaCF',
+      method: 'GET',
+      path: '/api/trpc/pdnd.verificaCF',
+      description: 'Verifica Codice Fiscale (ANPR via PDND)',
+      category: 'pdnd',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Verifica esistenza di un codice fiscale su ANPR tramite PDND. Ritorna dati anagrafici (nome, cognome, data nascita)',
+      testParams: { codiceFiscale: 'RSSMRA85M01H501Z' },
+    },
+    {
+      id: 'pdnd.verificaResidenza',
+      method: 'GET',
+      path: '/api/trpc/pdnd.verificaResidenza',
+      description: 'Verifica Residenza (ANPR via PDND)',
+      category: 'pdnd',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Lookup residenza da codice fiscale su ANPR via PDND. Ritorna indirizzo, CAP, comune, provincia',
+      testParams: { codiceFiscale: 'RSSMRA85M01H501Z' },
+    },
+
+    // ============================================================================
+    // APP IO - Notifiche cittadini tramite App IO
+    // ============================================================================
+    {
+      id: 'appIo.sendNotification',
+      method: 'POST',
+      path: '/api/trpc/appIo.sendNotification',
+      description: 'Invia notifica App IO',
+      category: 'appio',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Invia una notifica a un cittadino tramite App IO usando template predefiniti (scadenza_concessione, avviso_pagamento, verbale_emesso, conferma_prenotazione)',
+    },
+    {
+      id: 'appIo.checkProfile',
+      method: 'GET',
+      path: '/api/trpc/appIo.checkProfile',
+      description: 'Verifica profilo App IO',
+      category: 'appio',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Verifica se un cittadino ha App IO attiva e quali canali di notifica sono abilitati',
+      testParams: { fiscalCode: 'RSSMRA85M01H501Z' },
+    },
+    {
+      id: 'appIo.getStatus',
+      method: 'GET',
+      path: '/api/trpc/appIo.getStatus',
+      description: 'Stato connessione App IO',
+      category: 'appio',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Verifica stato della connessione App IO (mock o live), API key configurata, numero template disponibili',
+    },
+    {
+      id: 'appIo.listTemplates',
+      method: 'GET',
+      path: '/api/trpc/appIo.listTemplates',
+      description: 'Lista template notifiche App IO',
+      category: 'appio',
+      status: 'beta',
+      version: '1.0.0',
+      requiresAuth: true,
+      documentation: 'Ritorna i 4 template messaggi predefiniti: scadenza_concessione, avviso_pagamento, verbale_emesso, conferma_prenotazione',
     },
   ];
 }

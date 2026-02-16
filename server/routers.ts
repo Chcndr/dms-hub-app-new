@@ -11,6 +11,8 @@ import { guardianRouter } from "./guardianRouter";
 import { walletRouter } from "./walletRouter";
 import { tccSecurityRouter } from "./tccSecurityRouter";
 import { gdprRouter } from "./gdprRouter";
+import { pdndRouter } from "./pdndRouter";
+import { appIoRouter } from "./appIoRouter";
 
 
 export const appRouter = router({
@@ -362,6 +364,12 @@ export const appRouter = router({
 
   // GDPR - Export dati, diritto all'oblio, data retention
   gdpr: gdprRouter,
+
+  // PDND - Piattaforma Digitale Nazionale Dati + ANPR
+  pdnd: pdndRouter,
+
+  // APP IO - Notifiche cittadini tramite App IO
+  appIo: appIoRouter,
 });
 
 export type AppRouter = typeof appRouter;
