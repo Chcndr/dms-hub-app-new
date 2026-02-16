@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polygon, LayersControl, Tooltip
 import { Link } from 'wouter';
 import { ZoomFontUpdater } from './ZoomFontUpdater';
 import { RouteLayer } from './RouteLayer';
-import { getStallMapFillColor, getStallStatusLabel } from '@/lib/stallStatus';
+import { getStallMapFillColor, getStallStatusLabel, normalizeStallStatus } from '@/lib/stallStatus';
 import { calculatePolygonDimensions } from '@/lib/geodesic';
 import { useMapAnimation } from '@/hooks/useMapAnimation';
 import { useAnimation } from '@/contexts/AnimationContext';
@@ -254,9 +254,10 @@ export function MarketMapComponent({
   
   // Funzione per determinare il colore in base allo stato
   // USA SOLO stallsData, IGNORA il GeoJSON statico!
+  // Normalizza lo stato per gestire sia formato inglese (DB) che italiano (frontend)
   const getStallColor = (stallNumber: number): string => {
     const dbStall = stallsByNumber.get(stallNumber);
-    const status = dbStall?.status || 'libero';
+    const status = normalizeStallStatus(dbStall?.status || 'libero');
     return getStallMapFillColor(status);
   };
   
@@ -530,7 +531,7 @@ export function MarketMapComponent({
             
             // Recupera dati aggiornati dal database
             const dbStall = stallsByNumber.get(props.number);
-            const displayStatus = dbStall?.status || 'libero'; // USA SOLO stallsData!
+            const displayStatus: string = normalizeStallStatus(dbStall?.status || 'libero'); // Normalizza EN/IT
             
             const displayVendor = dbStall?.vendor_name || props.vendor_name || '-';
             
@@ -548,7 +549,7 @@ export function MarketMapComponent({
             const actualBorderColor = isTrulySelected ? selectedColor : fillColor; 
             
             return (
-              <React.Fragment key={`stall-${props.number}-${dbStall?.status || props.status}`}>
+              <React.Fragment key={`stall-${props.number}-${displayStatus}`}>
                 <Polygon
                   positions={positions}
                   className={isTrulySelected ? 'selected-stall-glow' : ''}
@@ -580,8 +581,8 @@ export function MarketMapComponent({
                   
                   {/* Popup informativo */}
                   <Popup className="stall-popup" minWidth={280}>
-                    {/* Popup OCCUPA per posteggi liberi/riservati/in_assegnazione - ROSSO */}
-                    {isOccupaMode && (displayStatus === 'libero' || displayStatus === 'riservato' || displayStatus === 'in_assegnazione') ? (
+                    {/* Popup OCCUPA per posteggi liberi/riservati - ROSSO */}
+                    {isOccupaMode && (displayStatus === 'libero' || displayStatus === 'riservato') ? (
                       <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
                         <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
                           <div className="font-bold text-lg text-white">
@@ -617,8 +618,8 @@ export function MarketMapComponent({
                           </button>
                         </div>
                       </div>
-                    ) : isLiberaMode && (displayStatus === 'occupato' || displayStatus === 'riservato' || displayStatus === 'in_assegnazione') ? (
-                      /* Popup LIBERA per posteggi occupati/riservati/in_assegnazione - VERDE */
+                    ) : isLiberaMode && (displayStatus === 'occupato' || displayStatus === 'riservato') ? (
+                      /* Popup LIBERA per posteggi occupati/riservati - VERDE */
                       <div className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden" style={{ minWidth: '280px' }}>
                         <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
                           <div className="font-bold text-lg text-white">
@@ -816,7 +817,7 @@ export function MarketMapComponent({
                           })()}
 
 	                          {/* PULSANTI DI AZIONE (OCCUPA / LIBERA / SPUNTA) */}
-	                          {isOccupaMode && (displayStatus === 'libero' || displayStatus === 'riservato' || displayStatus === 'in_assegnazione') && (
+	                          {isOccupaMode && (displayStatus === 'libero' || displayStatus === 'riservato') && (
 	                            <button
 	                              className="w-full bg-[#ef4444] hover:bg-[#ef4444]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 	                              onClick={async (e) => {
@@ -828,7 +829,7 @@ export function MarketMapComponent({
 	                            </button>
 	                          )}
 
-	                          {isLiberaMode && (displayStatus === 'occupato' || displayStatus === 'riservato' || displayStatus === 'in_assegnazione') && (
+	                          {isLiberaMode && (displayStatus === 'occupato' || displayStatus === 'riservato') && (
 	                            <button
 	                              className="w-full bg-[#10b981] hover:bg-[#10b981]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 	                              onClick={async (e) => {

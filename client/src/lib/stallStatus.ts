@@ -1,11 +1,37 @@
 /**
  * Utilità per gestione stati posteggi
- * 
- * Stati tecnici (backend): libero, occupato, riservato
- * Mappati a etichette italiane e colori per il frontend
+ *
+ * Il DB Drizzle usa stati in inglese: free, occupied, reserved, booked, maintenance
+ * Il frontend usa stati in italiano: libero, occupato, riservato
+ * Questa utility normalizza entrambi i formati.
  */
 
 export type StallStatus = 'libero' | 'occupato' | 'riservato';
+
+/**
+ * Mappa di normalizzazione: accetta sia inglese che italiano
+ * e restituisce sempre lo stato italiano standard
+ */
+const STATUS_NORMALIZE_MAP: Record<string, StallStatus> = {
+  // Italiano (frontend)
+  libero: 'libero',
+  occupato: 'occupato',
+  riservato: 'riservato',
+  in_assegnazione: 'riservato',
+  // Inglese (DB Drizzle)
+  free: 'libero',
+  occupied: 'occupato',
+  reserved: 'riservato',
+  booked: 'riservato',
+  maintenance: 'libero',
+};
+
+/**
+ * Normalizza uno stato posteggio (inglese o italiano) al formato italiano standard
+ */
+export function normalizeStallStatus(status: string): StallStatus {
+  return STATUS_NORMALIZE_MAP[status.toLowerCase()] || 'libero';
+}
 
 export interface StallStatusConfig {
   label: string;
@@ -46,29 +72,26 @@ export const STALL_STATUS_CONFIG: Record<StallStatus, StallStatusConfig> = {
  * Ottiene l'etichetta italiana per uno stato
  */
 export function getStallStatusLabel(status: string): string {
-  const normalizedStatus = status.toLowerCase() as StallStatus;
-  return STALL_STATUS_CONFIG[normalizedStatus]?.label || status.toUpperCase();
+  return STALL_STATUS_CONFIG[normalizeStallStatus(status)]?.label || status.toUpperCase();
 }
 
 /**
  * Ottiene il colore per uno stato (per badge, testo, ecc.)
  */
 export function getStallStatusColor(status: string): string {
-  const normalizedStatus = status.toLowerCase() as StallStatus;
-  return STALL_STATUS_CONFIG[normalizedStatus]?.color || '#14b8a6';
+  return STALL_STATUS_CONFIG[normalizeStallStatus(status)]?.color || '#14b8a6';
 }
 
 /**
  * Ottiene le classi CSS Tailwind per un badge di stato
  */
 export function getStallStatusClasses(status: string): string {
-  const normalizedStatus = status.toLowerCase() as StallStatus;
-  const config = STALL_STATUS_CONFIG[normalizedStatus];
-  
+  const config = STALL_STATUS_CONFIG[normalizeStallStatus(status)];
+
   if (!config) {
     return 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30';
   }
-  
+
   return `${config.bgColor} text-[${config.color}] ${config.borderColor}`;
 }
 
@@ -76,8 +99,7 @@ export function getStallStatusClasses(status: string): string {
  * Ottiene il colore di riempimento per la mappa
  */
 export function getStallMapFillColor(status: string): string {
-  const normalizedStatus = status.toLowerCase() as StallStatus;
-  return STALL_STATUS_CONFIG[normalizedStatus]?.mapFillColor || '#14b8a6';
+  return STALL_STATUS_CONFIG[normalizeStallStatus(status)]?.mapFillColor || '#14b8a6';
 }
 
 /**

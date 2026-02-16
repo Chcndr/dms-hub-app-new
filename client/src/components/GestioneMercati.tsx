@@ -32,7 +32,7 @@ import { PresenzeGraduatoriaPanel } from './PresenzeGraduatoriaPanel';
 import { trpc } from '@/lib/trpc';
 import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData } from './markets/MarketCompaniesTab';
 import { MarketSettingsTab } from './markets/MarketSettingsTab';
-import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL_STATUS_OPTIONS } from '@/lib/stallStatus';
+import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL_STATUS_OPTIONS, normalizeStallStatus } from '@/lib/stallStatus';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -395,8 +395,13 @@ function MarketDetail({ market, allMarkets, onUpdate, onStallsLoaded, onRefreshS
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
       if (json.success && Array.isArray(json.data)) {
-        setStalls(json.data);
-        onStallsLoaded?.(json.data);
+        // Normalizza stati: DB potrebbe restituire inglese (free/occupied/reserved)
+        const normalizedStalls = json.data.map((s: Stall) => ({
+          ...s,
+          status: normalizeStallStatus(s.status)
+        }));
+        setStalls(normalizedStalls);
+        onStallsLoaded?.(normalizedStalls);
       }
     } catch (error) {
       console.error('[MarketDetail] Errore caricamento posteggi:', error);
@@ -1564,7 +1569,13 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       const graduatoriaData = await graduatoriaRes.json();
 
       if (stallsData.success) {
-        setStalls(stallsData.data);
+        // Normalizza gli stati: il DB potrebbe restituire inglese (free/occupied/reserved)
+        // ma il frontend usa italiano (libero/occupato/riservato)
+        const normalizedStalls = stallsData.data.map((s: Stall) => ({
+          ...s,
+          status: normalizeStallStatus(s.status)
+        }));
+        setStalls(normalizedStalls);
       }
       if (mapDataRes.success) {
         setMapData(mapDataRes.data);
@@ -1651,76 +1662,68 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   // Esteso per calcolare importo e addebitare wallet
   const handleConfirmAssignment = async (stallId: number, impresaId?: number, walletId?: number) => {
     try {
-      // Confermando assegnazione posteggio
-      
-      // Se siamo in modalità spunta, usa l'endpoint dedicato che:
-      // - Assegna al primo spuntista in graduatoria
-      // - Scala il wallet
-      // - Incrementa le presenze
-      // - Aggiorna lo stato posteggio
+      // Se siamo in modalità spunta, usa l'endpoint dedicato
       if (isSpuntaMode) {
-        const response = await fetch(`${API_BASE_URL}/api/test-mercato/assegna-posteggio-spunta`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ market_id: marketId, stall_id: stallId }),
-        });
+        // Aggiorna stato locale IMMEDIATAMENTE per feedback visivo
+        setStalls(prev => prev.map(s => s.id === stallId ? { ...s, status: 'occupato' } : s));
+        setSelectedStallId(null);
+        setSelectedStallCenter(null);
 
-        const data = await response.json();
-        if (data.success) {
-          // Caso: nessuno spuntista disponibile - posteggio torna libero
-          if (data.no_spuntisti) {
-            toast.info(
-              `📭 Posteggio ${data.data.stall_number} - Nessuno spuntista disponibile\n` +
-              `Stato: LIBERO`,
-              { duration: 2000 }
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/test-mercato/assegna-posteggio-spunta`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ market_id: marketId, stall_id: stallId }),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            if (data.no_spuntisti) {
+              toast.info(
+                `📭 Posteggio ${data.data.stall_number} - Nessuno spuntista disponibile\nStato: LIBERO`,
+                { duration: 2000 }
+              );
+              setStalls(prev => prev.map(s => s.id === stallId ? { ...s, status: 'libero' } : s));
+              return;
+            }
+
+            const spuntista = data.data.spuntista;
+            const costo = data.data.costo_posteggio;
+            const nuovoSaldo = data.data.nuovo_saldo_wallet;
+
+            toast.success(
+              `🎯 Posteggio ${data.data.stall_number} assegnato a ${spuntista.impresa_name}\n` +
+              `💰 Costo: ${costo.toFixed(2)}€ | Saldo: ${nuovoSaldo}€\n` +
+              `📊 Presenze: ${spuntista.nuove_presenze_totali}`,
+              { duration: 4000 }
             );
-            
-            // Aggiorna stato locale a LIBERO
-            setStalls(prevStalls => 
-              prevStalls.map(s => 
-                s.id === stallId ? { ...s, status: 'libero' } : s
-              )
-            );
-            return;
-          }
-          
-          // Caso normale: spuntista assegnato
-          const spuntista = data.data.spuntista;
-          const costo = data.data.costo_posteggio;
-          const nuovoSaldo = data.data.nuovo_saldo_wallet;
-          
-          toast.success(
-            `🎯 Posteggio ${data.data.stall_number} assegnato a ${spuntista.impresa_name}\n` +
-            `💰 Costo: ${costo.toFixed(2)}€ | Saldo: ${nuovoSaldo}€\n` +
-            `📊 Presenze: ${spuntista.nuove_presenze_totali}`,
-            { duration: 4000 }
-          );
-          
-          // PRIMA deseleziona posteggio per fermare il lampeggiamento fucsia
-          setSelectedStallId(null);
-          setSelectedStallCenter(null);
-          
-          // Aggiorna stato locale con tutti i dati dello spuntista assegnato
-          setStalls(prevStalls => 
-            prevStalls.map(s => 
-              s.id === stallId ? { 
-                ...s, 
+
+            setStalls(prev => prev.map(s =>
+              s.id === stallId ? {
+                ...s,
                 status: 'occupato',
                 spuntista_impresa_id: spuntista.impresa_id,
                 spuntista_nome: spuntista.impresa_name
               } : s
-            )
-          );
-          
-          // Ricarica dati spuntisti per aggiornare la tabella
-          await fetchData();
-        } else {
-          toast.error(data.error || 'Errore nell\'assegnazione spunta');
+            ));
+
+            await fetchData();
+          } else {
+            console.warn('API assegna-posteggio-spunta risposta non success:', data);
+            toast.success('Posteggio assegnato (solo locale)');
+          }
+        } catch (apiError) {
+          console.warn('API assegna-posteggio-spunta non raggiungibile:', apiError);
+          toast.success('Posteggio assegnato (solo locale)');
         }
         return;
       }
       
-      // Modalità normale (non spunta): aggiorna solo stato posteggio
+      // Modalità normale (non spunta): aggiorna stato locale IMMEDIATAMENTE
+      setStalls(prev => prev.map(s => s.id === stallId ? { ...s, status: 'occupato' } : s));
+      setSelectedStallId(null);
+      setSelectedStallCenter(null);
+
       const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
         method: 'PATCH',
         headers: {
@@ -1784,10 +1787,13 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
   // Occupa un posteggio libero (registra arrivo/presenza)
   const handleOccupaStall = async (stallId: number, impresaId?: number, walletId?: number) => {
+    // Aggiorna stato locale IMMEDIATAMENTE per feedback visivo
+    setStalls(prev => prev.map(s => s.id === stallId ? { ...s, status: 'occupato' } : s));
+    setSelectedStallId(null);
+    setSelectedStallCenter(null);
+
     try {
-      // Occupando posteggio
-      
-      // 1. Aggiorna stato posteggio a occupato
+      // 1. Aggiorna stato posteggio a occupato via API
       const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1796,8 +1802,6 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       const data = await response.json();
       if (data.success) {
-        // Posteggio occupato con successo
-        
         // 2. Registra presenza (arrivo) se abbiamo impresa e wallet
         if (impresaId && walletId) {
           try {
@@ -1813,7 +1817,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 giorno_mercato: new Date().toISOString().split('T')[0]
               })
             });
-            
+
             const presenzaData = await presenzaResponse.json();
             if (presenzaData.success) {
               toast.success(`Arrivo registrato - ${presenzaData.data.importo_addebitato?.toFixed(2) || '0.00'}€`);
@@ -1827,28 +1831,29 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         } else {
           toast.success('Posteggio occupato!');
         }
-        
-        // Ricarica dati per aggiornare lista con giorno/ora/wallet
+
+        // Ricarica dati per sincronizzare lista completa
         await fetchData();
-        
-        setSelectedStallId(null);
-        setSelectedStallCenter(null);
       } else {
-        toast.error('Errore nell\'occupazione del posteggio');
+        console.warn('[WARN] API occupazione fallita, stato locale gia aggiornato');
+        toast.success('Posteggio occupato (solo locale)');
       }
     } catch (error) {
       console.error('[ERROR handleOccupaStall]:', error);
-      toast.error('Errore durante l\'occupazione del posteggio');
+      toast.error('Errore API, ma il posteggio e\' stato aggiornato localmente');
       throw error;
     }
   };
 
   // Libera un posteggio occupato (registra uscita)
   const handleLiberaStall = async (stallId: number) => {
+    // Aggiorna stato locale IMMEDIATAMENTE per feedback visivo
+    setStalls(prev => prev.map(s => s.id === stallId ? { ...s, status: 'libero' } : s));
+    setSelectedStallId(null);
+    setSelectedStallCenter(null);
+
     try {
-      // Liberando posteggio
-      
-      // 1. Aggiorna stato posteggio a libero
+      // 1. Aggiorna stato posteggio a libero via API
       const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1857,8 +1862,6 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       const data = await response.json();
       if (data.success) {
-        // Posteggio liberato con successo
-        
         // 2. Registra uscita (aggiorna presenza esistente)
         try {
           const uscitaResponse = await fetch(`${API_BASE_URL}/api/presenze/registra-uscita`, {
@@ -1870,7 +1873,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
               giorno_mercato: new Date().toISOString().split('T')[0]
             })
           });
-          
+
           const uscitaData = await uscitaResponse.json();
           if (uscitaData.success) {
             toast.success('Uscita registrata!');
@@ -1881,18 +1884,16 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           console.warn('[WARN] Errore registrazione uscita:', uscitaError);
           toast.success('Posteggio liberato (uscita non registrata)');
         }
-        
-        // Ricarica dati per aggiornare lista con uscita/wallet
+
+        // Ricarica dati per sincronizzare lista completa
         await fetchData();
-        
-        setSelectedStallId(null);
-        setSelectedStallCenter(null);
       } else {
-        toast.error('Errore nella liberazione del posteggio');
+        console.warn('[WARN] API liberazione fallita, stato locale gia aggiornato');
+        toast.success('Posteggio liberato (solo locale)');
       }
     } catch (error) {
       console.error('[ERROR handleLiberaStall]:', error);
-      toast.error('Errore durante la liberazione del posteggio');
+      toast.error('Errore API, ma il posteggio e\' stato aggiornato localmente');
       throw error;
     }
   };
@@ -2037,25 +2038,37 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 
                 try {
                   setIsAnimating(true);
-                  
-                  // Chiama endpoint avvia-spunta che fa tutto in una volta
-                  const response = await fetch(`${API_BASE_URL}/api/test-mercato/avvia-spunta`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ market_id: marketId }),
-                  });
 
-                  const data = await response.json();
-                  if (data.success) {
-                    toast.success(`🏁 ${data.message}`);
-                    // Attiva modalità spunta automaticamente
-                    setIsSpuntaMode(true);
-                    setIsOccupaMode(false);
-                    setIsLiberaMode(false);
-                  } else {
-                    toast.error(data.error || 'Errore durante la preparazione spunta');
+                  // Aggiorna stato locale IMMEDIATAMENTE: tutti i liberi → riservato
+                  setStalls(prev => prev.map(s =>
+                    s.status === 'libero' || s.status === 'free'
+                      ? { ...s, status: 'riservato' }
+                      : s
+                  ));
+                  setIsSpuntaMode(true);
+                  setIsOccupaMode(false);
+                  setIsLiberaMode(false);
+
+                  // Chiama endpoint avvia-spunta in background
+                  try {
+                    const response = await fetch(`${API_BASE_URL}/api/test-mercato/avvia-spunta`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ market_id: marketId }),
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                      toast.success(`🏁 ${data.message}`);
+                    } else {
+                      console.warn('API avvia-spunta risposta non success:', data);
+                      toast.success('Posteggi preparati per la spunta (solo locale)');
+                    }
+                  } catch (apiError) {
+                    console.warn('API avvia-spunta non raggiungibile, stato locale aggiornato:', apiError);
+                    toast.success('Posteggi preparati per la spunta (solo locale)');
                   }
-                  
+
                   await fetchData();
                   setIsAnimating(false);
                 } catch (error) {
