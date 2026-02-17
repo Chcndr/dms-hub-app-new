@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 7.1.0 (Ripristino Architettura, Pulizia Codice e Fix Canone)
+> **Versione:** 7.2.0 (Merge FASE 2 e Fix PermissionsContext)
 > **Data:** 17 Febbraio 2026
 > **Autore:** Sistema documentato da Manus AI + Claude Code
 > **Stato:** PRODUZIONE
@@ -30,6 +30,28 @@
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 17 Febbraio 2026 (sera) — v7.2.0
+
+**Commit:** `16c7c12` (master)
+
+**Intervento:** Merge FASE 2 e Fix PermissionsContext
+
+**Dettagli:**
+- **FASE 2 (auth tRPC → Firebase):** Mergiato il commit `835e57d` che migra l'autenticazione del `DashboardLayout` da `useAuth` (tRPC) a `useFirebaseAuth` (Firebase). Questo rimuove una dipendenza critica dal backend tRPC e stabilizza l'autenticazione del frontend.
+- **Fix PermissionsContext:** Mergiato il commit `cd35bd2` che risolve un race condition nel caricamento dei permessi. Aggiunto un listener all'evento `storage` per ricaricare i permessi dopo che `FirebaseAuth` ha completato il sync, garantendo che i tab della Dashboard PA vengano visualizzati correttamente.
+
+**Stato Lavori Claude:**
+
+| # | Commit | Stato | Note |
+|---|---|---|---|
+| 1 | `99e2957` | ✅ **Mergiato** | FASE 1 stacco backend (tRPC) |
+| 2 | `835e57d` | ✅ **Mergiato** | FASE 2 stacco backend (auth) |
+| 3 | `cd35bd2` | ✅ **Mergiato** | Fix PermissionsContext |
+
+**Tutti i commit di Claude sono stati mergiati in master.**
+
+---
 
 ### Sessione 17 Febbraio 2026 — (v7.1.0) — Ripristino Architettura, Pulizia Codice e Fix Canone
 
