@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 7.0.0 (DMS Legacy Interop Completa + Piattaforme PA + PDND/AppIO/ANPR/SSO)
-> **Data:** 16 Febbraio 2026
+> **Versione:** 7.1.0 (Ripristino Architettura, Pulizia Codice e Fix Canone)
+> **Data:** 17 Febbraio 2026
 > **Autore:** Sistema documentato da Manus AI + Claude Code
 > **Stato:** PRODUZIONE
 
@@ -30,6 +30,50 @@
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 17 Febbraio 2026 — (v7.1.0) — Ripristino Architettura, Pulizia Codice e Fix Canone
+
+Questa sessione si è resa necessaria per risolvere un incidente notturno e ripristinare la corretta architettura di produzione, seguita da una pulizia del codice e la risoluzione di un bug critico.
+
+#### Incidente Notturno: Attivazione Backend Errato
+
+- **Problema**: Durante la notte, è stato attivato il backend tRPC (dormiente) invece del backend REST corretto. Questo ha causato la perdita di dati nella dashboard, in quanto il backend tRPC ha uno schema Drizzle non allineato con il database di produzione (25 tabelle su 73 non corrispondono).
+- **Causa**: Conflitto nel nome del processo PM2. Entrambi i backend (`mihub-backend-rest` e `dms-hub-app-new`) usavano il nome `mihub-backend`.
+- **Soluzione**: Ripristinato il backend REST corretto (`mihub-backend-rest`, commit `51fcc2f`) sulla porta 3000. Verificato che tutte le API rispondono correttamente (200 su tutti gli endpoint).
+
+#### Pulizia Codice e Architettura (`04c46bd`, `0145c5f`)
+
+| File Rimosso/Modificato | Tipo | Motivo |
+|---|---|---|
+| `server/index.ts` | Rimosso | Codice morto, non usato |
+| `server/_core/index.ts` | Modificato | Rimosso meccanismo auto-discovery porta |
+| `server/services/appIoService.ts` | Rimosso | Duplicato |
+| `server/services/pdndService.ts` | Rimosso | Duplicato |
+| `server/services/piattaformeService.ts` | Rimosso | Duplicato |
+| `server/appIoRouter.ts` | Rimosso | Duplicato |
+| `server/pdndRouter.ts` | Rimosso | Duplicato |
+| `server/piattaformeRouter.ts` | Rimosso | Duplicato |
+
+#### FASE 1 Decoupling Frontend-Backend (`ae94a37`)
+
+Rimosse 12 chiamate tRPC duplicate dal componente `DashboardPA.tsx`. Il frontend ora usa esclusivamente le API REST per i dati della dashboard. Questo è il primo passo per disaccoppiare completamente il frontend dal backend tRPC obsoleto.
+
+#### Bug Fix: Scadenze Canone Scompaiono per Admin (`5835c9f`)
+
+- **Problema**: Nel tab "Canone" del Wallet PagoPA, le scadenze apparivano brevemente e poi scomparivano per l'utente admin.
+- **Root cause**: `fetchMercatiList()` in `WalletPanel.tsx` pre-selezionava automaticamente il primo mercato ("Cervia Demo", id 12, con 0 scadenze) nel filtro `canoneFilters`. Questo causava un re-fetch con `mercato_id=12` che restituiva 0 risultati.
+- **Fix**: La pre-selezione del filtro canone avviene **solo se c'è un solo mercato** (tipico dell'impersonificazione di un comune). Se l'admin vede tutti i mercati, il filtro resta su "Tutti" mostrando tutte le 68 scadenze.
+
+#### Stato Lavori Decoupling (Branch `claude/explore-repository-fA9m8`)
+
+| Fase | Commit | Stato | Descrizione |
+|---|---|---|---|
+| **FASE 1** | `99e2957` (mergiato come `ae94a37`) | ✅ **MERGIATO** | Rimosse 12 chiamate tRPC duplicate da DashboardPA |
+| **FASE 2** | `835e57d` | ⏳ **IN ATTESA** | Migra auth da tRPC a Firebase direct |
+| **Fix Permessi** | `cd35bd2` | ⏳ **IN ATTESA** | Fix visibilità tab dopo sync Firebase |
+| **Fix Canone** | `eb0326c` (cherry-pick) | ✅ **ALLINEATO** | Cherry-pick della fix canone nel branch Claude |
+
+---
 
 ### Sessione 16 Febbraio 2026 — (v7.0.0) — DMS Legacy Interop Completa + Piattaforme PA
 
@@ -2348,7 +2392,7 @@ fi
 
 ---
 
-## 📊 STATO ATTUALE SISTEMA (15 Febbraio 2026)
+## 📊 STATO ATTUALE SISTEMA (17 Febbraio 2026)
 
 ### Servizi Online ✅
 
@@ -2362,7 +2406,7 @@ fi
 | TCC Security | /api/trpc/tccSecurity.* | ✅ Funzionante |
 | GDPR Router | /api/trpc/gdpr.* | ✅ Funzionante |
 | CI/CD Pipeline | GitHub Actions | ✅ Attiva |
-| PM2 | mihub-backend v1.1.0 cluster | ✅ Online (pid 711337, 168MB RAM) |
+| PM2 | mihub-backend (REST) porta 3000 | ✅ Online — Backend REST corretto ripristinato |
 
 ### Statistiche (Dati Reali 16 Feb 2026 — v6.7.0)
 
@@ -2421,7 +2465,8 @@ fi
 ### Problemi Noti
 
 - **Connection timeout sporadici:** su `security.js` verso Neon pooler (Neon cold-start su free tier) — mitigato con retry automatico e connection pool
-- **PM2 restart count:** 21 restart (autoheal funzionante)
+- **Backend tRPC dormiente:** Il backend tRPC in `dms-hub-app-new/server/` ha uno schema Drizzle non allineato (25/73 tabelle). NON deve essere attivato. Il backend corretto è `mihub-backend-rest` sulla porta 3000.
+- **Conflitto nomi PM2 risolto:** L'incidente del 17 Feb era causato da entrambi i backend che usavano il nome `mihub-backend`. Ora solo il backend REST è attivo.
 
 ---
 
