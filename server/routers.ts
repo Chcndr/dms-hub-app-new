@@ -228,7 +228,7 @@ export const appRouter = router({
         });
 
         console.warn(`[Auth] Firebase session creata per ${email} (openId=${openId})`);
-        return { success: true, email, openId };
+        return { success: true, email, openId, sessionToken };
       }),
   }),
 

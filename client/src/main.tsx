@@ -44,8 +44,16 @@ const trpcClient = trpc.createClient({
       url: import.meta.env.VITE_TRPC_URL || "https://mihub.157-90-29-66.nip.io",
       transformer: superjson,
       fetch(input, init) {
+        // Invia Authorization: Bearer <token> come fallback per i cookie cross-domain.
+        // Il backend accetta sia il cookie app_session_id che l'header Authorization.
+        const headers = new Headers(init?.headers);
+        const sessionToken = localStorage.getItem('miohub_session_token');
+        if (sessionToken) {
+          headers.set('Authorization', `Bearer ${sessionToken}`);
+        }
         return globalThis.fetch(input, {
           ...(init ?? {}),
+          headers,
           credentials: "include",
         });
       },

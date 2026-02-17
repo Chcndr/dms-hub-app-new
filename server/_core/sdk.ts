@@ -256,11 +256,29 @@ class SDKServer {
     } as GetUserInfoWithJwtResponse;
   }
 
-  async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
+  /**
+   * Estrae il token JWT dalla request: prima dal cookie, poi dall'header Authorization.
+   * L'header Authorization: Bearer <token> è il fallback per i browser che bloccano
+   * i cookie cross-domain (Safari ITP, Chrome SameSite policy, ecc.).
+   */
+  private extractSessionToken(req: Request): string | undefined {
+    // 1. Prova dal cookie (metodo tradizionale)
     const cookies = this.parseCookies(req.headers.cookie);
-    const sessionCookie = cookies.get(COOKIE_NAME);
-    const session = await this.verifySession(sessionCookie);
+    const cookieToken = cookies.get(COOKIE_NAME);
+    if (cookieToken) return cookieToken;
+
+    // 2. Fallback: Authorization: Bearer <token>
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      return authHeader.slice(7);
+    }
+
+    return undefined;
+  }
+
+  async authenticateRequest(req: Request): Promise<User> {
+    const sessionToken = this.extractSessionToken(req);
+    const session = await this.verifySession(sessionToken);
 
     if (!session) {
       throw ForbiddenError("Invalid session cookie");
@@ -271,9 +289,9 @@ class SDKServer {
     let user = await db.getUserByOpenId(sessionUserId);
 
     // If user not in DB, sync from OAuth server automatically
-    if (!user) {
+    if (!user && sessionToken) {
       try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+        const userInfo = await this.getUserInfoWithJwt(sessionToken);
         await db.upsertUser({
           openId: userInfo.openId,
           name: userInfo.name || null,

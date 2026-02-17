@@ -250,6 +250,13 @@ async function tryBootstrapAdmin(email: string): Promise<boolean> {
  * Questo è il passo critico: setta il cookie app_session_id sul dominio del backend,
  * così le successive chiamate tRPC protectedProcedure funzionano.
  */
+/**
+ * Chiave localStorage per il session token JWT del backend.
+ * Usato come fallback quando i cookie cross-domain non funzionano
+ * (Safari ITP, Chrome SameSite, .nip.io domains, ecc.)
+ */
+const SESSION_TOKEN_KEY = 'miohub_session_token';
+
 async function createFirebaseSession(idToken: string): Promise<boolean> {
   try {
     const res = await fetch(`${TRPC_BASE}/api/trpc/auth.createFirebaseSession?batch=1`, {
@@ -265,6 +272,11 @@ async function createFirebaseSession(idToken: string): Promise<boolean> {
     const data = await res.json();
     const result = data?.[0]?.result?.data?.json || data?.[0]?.result?.data;
     if (result?.success) {
+      // Salva il sessionToken in localStorage come fallback per Authorization header.
+      // Questo risolve il problema dei cookie cross-domain bloccati dai browser.
+      if (result.sessionToken) {
+        localStorage.setItem(SESSION_TOKEN_KEY, result.sessionToken);
+      }
       console.warn(`[FirebaseAuth] Sessione JWT creata con successo per ${result.email}`);
       return true;
     }
@@ -549,6 +561,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('token');
         localStorage.removeItem('auth_token');
         localStorage.removeItem('permissions');
+        localStorage.removeItem(SESSION_TOKEN_KEY);
         // Dispatch storage event per notificare HomePage
         window.dispatchEvent(new Event('storage'));
       }
@@ -636,6 +649,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('token');
       localStorage.removeItem('auth_token');
       localStorage.removeItem('permissions');
+      localStorage.removeItem(SESSION_TOKEN_KEY);
       // Dispatch storage event
       window.dispatchEvent(new Event('storage'));
       // onAuthStateChanged gestirà il reset dello stato
