@@ -11,6 +11,9 @@
  * POST /api/auth/register          - Registrazione email/password (legacy compat)
  */
 import { Router, type Request, type Response } from 'express';
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { getSessionCookieOptions } from "./_core/cookies";
+import { sdk } from "./_core/sdk";
 import type { App as FirebaseAdminApp } from 'firebase-admin/app';
 
 const router = Router();
@@ -157,6 +160,20 @@ router.post('/firebase/sync', async (req: Request, res: Response) => {
     }
 
     console.log(`[FirebaseAuth] Utente sincronizzato: ${user.email} (${user.role})`);
+
+    // Crea cookie di sessione JWT per le chiamate tRPC protette
+    try {
+      const openId = `firebase_${user.email}`;
+      const sessionToken = await sdk.createSessionToken(openId, {
+        name: user.displayName || user.email || '',
+        expiresInMs: ONE_YEAR_MS,
+      });
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      console.log(`[FirebaseAuth] Cookie sessione creato per ${user.email}`);
+    } catch (cookieErr) {
+      console.error('[FirebaseAuth] Errore creazione cookie:', cookieErr);
+    }
 
     res.json({
       success: true,

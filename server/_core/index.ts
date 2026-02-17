@@ -240,6 +240,26 @@ async function startServer() {
   // Questo router è solo per sviluppo locale
   app.use("/api/auth", firebaseAuthRouter);
   
+  // System status endpoints (usati dal frontend useSystemStatus hook)
+  app.get("/api/system/health", (_req, res) => {
+    res.json({
+      status: "online",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: "7.0.0",
+    });
+  });
+
+  app.get("/api/system/pm2-status", (_req, res) => {
+    res.json({
+      status: "online",
+      pid: process.pid,
+      uptime: process.uptime(),
+      memory: process.memoryUsage().rss,
+      pm2_env: { status: "online" },
+    });
+  });
+
   // REST endpoint for Slot Editor v3 import (CORS-enabled)
   app.post("/api/import-from-slot-editor", async (req, res) => {
     try {
