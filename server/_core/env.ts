@@ -11,7 +11,7 @@ function optionalEnv(key: string, defaultValue = ""): string {
 }
 
 export const ENV = {
-  appId: optionalEnv("VITE_APP_ID"),
+  appId: optionalEnv("VITE_APP_ID") || "dms-hub-app",
   cookieSecret: requireEnv("JWT_SECRET"),
   databaseUrl: requireEnv("DATABASE_URL"),
   oAuthServerUrl: optionalEnv("OAUTH_SERVER_URL"),
