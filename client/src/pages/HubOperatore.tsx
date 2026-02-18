@@ -1,16 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { 
-  BarChart3, 
-  QrCode, 
+import {
+  BarChart3,
+  QrCode,
   Wallet,
-  TrendingUp, 
-  Users, 
+  TrendingUp,
+  Users,
   Leaf,
   LogIn,
   LogOut,
@@ -23,12 +23,17 @@ import {
   Send,
   Clock,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  WifiOff
 } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
+import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 
-// API Base URL
-const API_BASE = 'https://orchestratore.mio-hub.me/api/tcc/v2';
+// API Base URL — passa per il proxy Vercel (/api/tcc/* → orchestratore.mio-hub.me)
+// Fallback diretto se in sviluppo locale
+const API_BASE = import.meta.env.DEV
+  ? 'https://orchestratore.mio-hub.me/api/tcc/v2'
+  : '/api/tcc/v2';
 
 // ============================================================================
 // WALLET STATUS INDICATOR (v5.7.0)
@@ -37,53 +42,73 @@ const API_BASE = 'https://orchestratore.mio-hub.me/api/tcc/v2';
 
 interface WalletStatusIndicatorProps {
   operatorId: number;
+  authToken: string | null;
+  onStatusChange?: (status: 'loading' | 'active' | 'suspended' | 'none' | 'error', impresaName?: string | null) => void;
 }
 
-function WalletStatusIndicator({ operatorId }: WalletStatusIndicatorProps) {
-  const [status, setStatus] = useState<'loading' | 'active' | 'suspended' | 'none'>('loading');
+function WalletStatusIndicator({ operatorId, authToken, onStatusChange }: WalletStatusIndicatorProps) {
+  const [status, setStatus] = useState<'loading' | 'active' | 'suspended' | 'none' | 'error'>('loading');
   const [qualification, setQualification] = useState<any>(null);
   const [impresaName, setImpresaName] = useState<string | null>(null);
-  
-  useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        // Fetch wallet status tramite operator_id (v5.7.0 fix)
-        const token = localStorage.getItem('token') || '';
-        const response = await fetch(`${API_BASE}/operator/wallet/${operatorId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.wallet) {
-            // Verifica se il wallet ha un'impresa collegata
-            if (data.impresa) {
-              setImpresaName(data.impresa.denominazione);
-              // Usa lo stato qualifiche per determinare se attivo o sospeso
-              if (data.qualification?.walletEnabled) {
-                setStatus('active');
-              } else {
-                setStatus('suspended');
-              }
-              setQualification(data.qualification);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const fetchStatus = useCallback(async () => {
+    if (!operatorId || operatorId <= 0) {
+      setStatus('none');
+      onStatusChange?.('none');
+      return;
+    }
+
+    setStatus('loading');
+    try {
+      const token = authToken || localStorage.getItem('token') || '';
+      const response = await fetch(`${API_BASE}/operator/wallet/${operatorId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.wallet) {
+          if (data.impresa) {
+            setImpresaName(data.impresa.denominazione);
+            if (data.qualification?.walletEnabled) {
+              setStatus('active');
+              onStatusChange?.('active', data.impresa.denominazione);
             } else {
-              // Wallet esiste ma senza impresa collegata
-              setStatus('none');
+              setStatus('suspended');
+              onStatusChange?.('suspended', data.impresa.denominazione);
             }
+            setQualification(data.qualification);
           } else {
             setStatus('none');
+            onStatusChange?.('none');
           }
         } else {
           setStatus('none');
+          onStatusChange?.('none');
         }
-      } catch (error) {
-        console.error('Error fetching wallet status:', error);
+      } else if (response.status >= 500) {
+        console.error('Server error fetching wallet status:', response.status);
+        setStatus('error');
+        onStatusChange?.('error');
+      } else {
         setStatus('none');
+        onStatusChange?.('none');
       }
-    };
-    
+    } catch (error) {
+      console.error('Error fetching wallet status:', error);
+      setStatus('error');
+      onStatusChange?.('error');
+    }
+  }, [operatorId, authToken, onStatusChange]);
+
+  useEffect(() => {
     fetchStatus();
-  }, [operatorId]);
-  
+  }, [fetchStatus, retryCount]);
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
+
   if (status === 'loading') {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-lg">
@@ -92,17 +117,34 @@ function WalletStatusIndicator({ operatorId }: WalletStatusIndicatorProps) {
       </div>
     );
   }
-  
+
+  if (status === 'error') {
+    return (
+      <button
+        onClick={handleRetry}
+        className="flex items-center gap-2 px-3 py-1.5 bg-red-500/40 rounded-lg cursor-pointer hover:bg-red-500/60 transition-colors"
+      >
+        <WifiOff className="w-4 h-4 text-white" />
+        <span className="text-sm font-medium text-white">Disconnesso</span>
+        <RefreshCw className="w-3 h-3 text-white/80" />
+      </button>
+    );
+  }
+
   if (status === 'none') {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-lg">
+      <button
+        onClick={handleRetry}
+        className="flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-lg cursor-pointer hover:bg-white/30 transition-colors"
+      >
         <div className="w-3 h-3 rounded-full bg-gray-400" />
         <Wallet className="w-4 h-4 text-white/60" />
         <span className="text-sm font-medium text-white/60">No Wallet</span>
-      </div>
+        <RefreshCw className="w-3 h-3 text-white/40" />
+      </button>
     );
   }
-  
+
   if (status === 'suspended') {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-red-600 rounded-lg shadow-lg">
@@ -117,7 +159,7 @@ function WalletStatusIndicator({ operatorId }: WalletStatusIndicatorProps) {
       </div>
     );
   }
-  
+
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-green-600 rounded-lg shadow-lg">
       <div className="w-3 h-3 rounded-full bg-white" />
@@ -130,9 +172,12 @@ function WalletStatusIndicator({ operatorId }: WalletStatusIndicatorProps) {
 }
 
 export default function HubOperatore() {
+  // Firebase Auth — fonte primaria dei dati utente
+  const { user: authUser, isAuthenticated, getToken } = useFirebaseAuth();
+
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
-  
+
   // Stati per Scanner e TCC
   const [scanMode, setScanMode] = useState<'issue' | 'redeem'>('issue');
   const [isScanning, setIsScanning] = useState(false);
@@ -144,7 +189,7 @@ export default function HubOperatore() {
   const [calculatedCredits, setCalculatedCredits] = useState(0);
   const [co2Saved, setCo2Saved] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Camera Scanner
   const [cameraActive, setCameraActive] = useState(false);
   const [inputMode, setInputMode] = useState<'camera' | 'manual'>('manual');
@@ -156,35 +201,73 @@ export default function HubOperatore() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [tccConfig, setTccConfig] = useState<any>(null);
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'issue' | 'redeem' | 'settlement' | 'reimbursement_received'>('all');
-  
+
   // Nome impresa collegata al wallet (v5.7.0)
   const [impresaNome, setImpresaNome] = useState<string | null>(null);
   // Stato abilitazione wallet (v5.7.0) - false se qualifiche scadute/mancanti
   const [walletEnabled, setWalletEnabled] = useState<boolean>(true);
+  // Stato connessione API
+  const [apiConnected, setApiConnected] = useState<boolean | null>(null);
+  // Token auth corrente
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
-  // Operatore da autenticazione (localStorage)
+  // Operatore da Firebase Auth (con fallback a localStorage per backward compat)
   const operatore = (() => {
+    if (authUser && authUser.miohubId && authUser.miohubId > 0) {
+      return {
+        id: authUser.miohubId,
+        nome: authUser.displayName || 'Operatore',
+        negozio: authUser.displayName || 'Negozio',
+        ruolo: 'Operatore',
+      };
+    }
     try {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        return {
-          id: user.id || 1,
-          nome: user.name || 'Operatore',
-          negozio: user.shopName || 'Negozio',
-          ruolo: 'Operatore',
-        };
+        if (user.id && user.id > 0) {
+          return {
+            id: user.id,
+            nome: user.name || 'Operatore',
+            negozio: user.shopName || user.name || 'Negozio',
+            ruolo: 'Operatore',
+          };
+        }
       }
     } catch {}
-    return { id: 1, nome: 'Operatore', negozio: 'Negozio', ruolo: 'Operatore' };
+    return { id: 0, nome: 'Operatore', negozio: 'Negozio', ruolo: 'Operatore' };
   })();
 
-  // Carica dati iniziali
+  // Recupera il token auth all'avvio e quando cambia l'utente
   useEffect(() => {
-    loadOperatorWallet();
-    loadTransactions();
+    const refreshToken = async () => {
+      if (getToken) {
+        const token = await getToken();
+        setAuthToken(token);
+      } else {
+        setAuthToken(localStorage.getItem('token'));
+      }
+    };
+    refreshToken();
+  }, [authUser, getToken]);
+
+  // Helper per ottenere token corrente
+  const getCurrentToken = useCallback(async (): Promise<string> => {
+    if (getToken) {
+      const token = await getToken();
+      if (token) return token;
+    }
+    return authToken || localStorage.getItem('token') || '';
+  }, [getToken, authToken]);
+
+  // Carica dati iniziali quando abbiamo un operatore valido e il token
+  useEffect(() => {
+    if (operatore.id > 0) {
+      loadOperatorWallet();
+      loadTransactions();
+    }
     loadTccConfig();
-  }, []);
+  }, [operatore.id, authToken]);
 
   // Calcolo automatico crediti
   useEffect(() => {
@@ -196,33 +279,42 @@ export default function HubOperatore() {
   }, [amount, selectedCerts]);
 
   const loadOperatorWallet = async () => {
+    if (operatore.id <= 0) return;
     try {
-      const token = localStorage.getItem('token') || '';
-      // Aggiungo timestamp per evitare cache del browser (specialmente Safari/iPad)
+      const token = await getCurrentToken();
       const res = await fetch(`${API_BASE}/operator/wallet/${operatore.id}?_t=${Date.now()}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      if (!res.ok) {
+        console.error('Errore wallet HTTP:', res.status);
+        setApiConnected(false);
+        return;
+      }
       const data = await res.json();
       if (data.success) {
+        setApiConnected(true);
         setOperatorWallet(data.wallet);
-        // Salva nome impresa collegata (v5.7.0)
         if (data.impresa?.denominazione) {
           setImpresaNome(data.impresa.denominazione);
         }
-        // Salva stato abilitazione wallet (v5.7.0)
         setWalletEnabled(data.qualification?.walletEnabled ?? true);
+      } else {
+        setApiConnected(true);
       }
     } catch (error) {
       console.error('Errore caricamento wallet:', error);
+      setApiConnected(false);
     }
   };
 
   const loadTransactions = async () => {
+    if (operatore.id <= 0) return;
     try {
-      const token = localStorage.getItem('token') || '';
+      const token = await getCurrentToken();
       const res = await fetch(`${API_BASE}/operator/transactions/${operatore.id}?limit=20`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      if (!res.ok) return;
       const data = await res.json();
       if (data.success && Array.isArray(data.transactions)) {
         setTransactions(data.transactions);
@@ -238,6 +330,7 @@ export default function HubOperatore() {
   const loadTccConfig = async () => {
     try {
       const res = await fetch(`${API_BASE}/config`);
+      if (!res.ok) return;
       const data = await res.json();
       if (data.success) {
         setTccConfig(data.config);
@@ -268,8 +361,11 @@ export default function HubOperatore() {
   // Valida QR Code cliente (per assegnazione TCC)
   const validateCustomerQR = async (qrData: string) => {
     try {
-      const token = localStorage.getItem('token') || '';
-      const res = await fetch('https://orchestratore.mio-hub.me/api/tcc/validate-qr', {
+      const token = await getCurrentToken();
+      const qrValidateUrl = import.meta.env.DEV
+        ? 'https://orchestratore.mio-hub.me/api/tcc/validate-qr'
+        : '/api/tcc/validate-qr';
+      const res = await fetch(qrValidateUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -305,7 +401,7 @@ export default function HubOperatore() {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token') || '';
+      const token = await getCurrentToken();
       const res = await fetch(`${API_BASE}/operator/issue`, {
         method: 'POST',
         headers: {
@@ -357,7 +453,7 @@ export default function HubOperatore() {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token') || '';
+      const token = await getCurrentToken();
       const res = await fetch(`${API_BASE}/operator/redeem-spend`, {
         method: 'POST',
         headers: {
@@ -403,7 +499,7 @@ export default function HubOperatore() {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token') || '';
+      const token = await getCurrentToken();
       const res = await fetch(`${API_BASE}/operator/settlement`, {
         method: 'POST',
         headers: {
@@ -531,7 +627,7 @@ export default function HubOperatore() {
   // Valida QR di spesa e recupera info cliente
   const validateSpendQR = async (qrData: string) => {
     try {
-      const token = localStorage.getItem('token') || '';
+      const token = await getCurrentToken();
       const res = await fetch(`${API_BASE}/operator/validate-spend-qr`, {
         method: 'POST',
         headers: {
@@ -594,6 +690,34 @@ export default function HubOperatore() {
         </Link>
       </div>
       
+      {/* Banner connessione API */}
+      {apiConnected === false && (
+        <div className="bg-red-600/90 px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <WifiOff className="w-4 h-4 text-white" />
+            <span className="text-sm text-white">API TCC non raggiungibile — Verifica la connessione</span>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-white/20"
+            onClick={() => { loadOperatorWallet(); loadTransactions(); loadTccConfig(); }}
+          >
+            <RefreshCw className="w-4 h-4 mr-1" />
+            Riprova
+          </Button>
+        </div>
+      )}
+
+      {/* Banner utente non autenticato */}
+      {operatore.id <= 0 && (
+        <div className="bg-amber-600/90 px-4 py-2 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-white" />
+          <span className="text-sm text-white">Effettua il login per accedere al wallet TCC</span>
+          <Link href="/login" className="text-white underline text-sm ml-2">Accedi</Link>
+        </div>
+      )}
+
       {/* Header (v4.3.3 - fix mobile overflow + dati corretti) */}
       <header className="bg-gradient-to-r from-[#f97316] to-[#f59e0b] p-3 sm:p-4 shadow-lg mt-2">
         <div className="w-full px-1 sm:px-2 flex items-center justify-between gap-2">
@@ -602,10 +726,17 @@ export default function HubOperatore() {
               <h1 className="text-lg sm:text-2xl font-bold text-white truncate">HUB Operatore</h1>
             </div>
             {/* Semaforo Wallet TCC (v5.7.0) */}
-            <WalletStatusIndicator operatorId={operatore.id} />
+            <WalletStatusIndicator
+              operatorId={operatore.id}
+              authToken={authToken}
+              onStatusChange={(status, name) => {
+                if (name) setImpresaNome(name);
+                setApiConnected(status !== 'error');
+              }}
+            />
           </div>
           <div className="text-right flex-shrink-0">
-            <p className="font-semibold text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{impresaNome || 'MIO TEST'}</p>
+            <p className="font-semibold text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{impresaNome || operatore.nome}</p>
           </div>
         </div>
       </header>
