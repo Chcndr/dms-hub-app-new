@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 7.3.0 (Analisi dipendenze tRPC + Fix utente duplicato)
-> **Data:** 17 Febbraio 2026
+> **Versione:** 7.5.0 (Stacco Backend Completo)
+> **Data:** 18 Febbraio 2026
 > **Autore:** Sistema documentato da Manus AI + Claude Code
 > **Stato:** PRODUZIONE
 
@@ -30,6 +30,50 @@
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 18 Febbraio 2026 — v7.5.0 — Stacco Backend Completo (FASE 3, 4, 5)
+
+**Commit:** `4902938` (master)
+
+Questa sessione segna la **fine dello stacco del backend tRPC**. Il repository `dms-hub-app-new` è ora **frontend-only** e connette al backend REST su Hetzner tramite chiamate `fetch()` dirette.
+
+#### FASE 3: Migrazione 4 Componenti a REST (`109e41f`)
+
+- **10 chiamate tRPC rimosse** e sostituite con chiamate REST dirette al backend Hetzner.
+- **File modificati:**
+  - `GuardianIntegrations.tsx` → REST `/api/guardian/integrations`
+  - `MIOLogs.tsx` → REST `/api/mihub/logs`
+  - `useOrchestrator.ts` → REST `/api/mihub/conversations`
+  - `FraudMonitorPanel.tsx` → REST `/api/tcc/v2/fraud/*`
+
+#### FASE 4: Eliminazione ~45 Chiamate tRPC Residue (`45d0e3b`)
+
+- **~45 chiamate tRPC eliminate** dai 4 componenti rimanenti.
+- **Nuovo file**: `client/src/lib/trpcHttp.ts` (helper per chiamare tRPC via fetch).
+- **Security fix**: `bootstrapAdmin` protetto con `adminProcedure` + 6 procedure `dmsHub` protette.
+- **File modificati:** `GestioneMercati.tsx`, `GestioneHubNegozi.tsx`, `PiattaformePA.tsx`, `Integrazioni.tsx`.
+
+#### FASE 5: Pulizia Totale Backend Morto (`7784917`, `525c17f`)
+
+- **Rimozione totale dell'infrastruttura tRPC** dal frontend.
+- **Directory `server/` e `drizzle/`** → spostate in `_cantina/` come archivio.
+- **27 dipendenze backend rimosse** dal `package.json` (express, drizzle-orm, firebase-admin, @trpc/server, ecc.).
+- **-36.306 righe** di codice morto.
+- Da 104 a 77 dipendenze.
+
+#### Stato Architettura Attuale (v7.5.0)
+
+- **Frontend:** React/Vite, deployato su Vercel. **100% disaccoppiato** dal backend tRPC.
+- **Backend:** Node.js/Express, deployato su Hetzner (PM2). Espone API REST.
+- **Database:** Neon (PostgreSQL).
+- **Autenticazione:** Firebase Authentication.
+- **Comunicazione Frontend ↔ Backend:** Chiamate `fetch()` dirette dal client al server REST.
+
+**Salvataggi Stabili Creati:**
+- `v7.3.1-stable` → pre-FASE 4
+- `v7.4.0-stable` → post-FASE 4, pre-FASE 5
+
+---
 
 ### Sessione 17 Febbraio 2026 (notte) — v7.3.0
 
@@ -63,14 +107,14 @@ Questo meccanismo è fondamentale e va rispettato:
 
 4. **Regola:** Gli utenti team/legacy **non devono avere la stessa email** dell'admin Firebase, altrimenti si crea conflitto. Devono avere solo il telefono come identificativo.
 
-#### Analisi Dipendenze tRPC Residue (Corretta)
+#### Analisi Dipendenze tRPC Residue (Pre-Stacco)
 
 **Cosa è stato già rimosso:**
 - **FASE 1 (Claude):** 12 chiamate tRPC da `DashboardPA.tsx`.
 - **Pulizia (Manus):** 6 file server (`appIoRouter`, `pdndRouter`, `piattaformeRouter` + relativi services).
 - **FASE 2 (Claude):** `useAuth.ts` eliminato, `DashboardLayout` migrato a `useFirebaseAuth`.
 
-**Cosa resta ancora attivo:**
+**Cosa restava attivo (prima della FASE 3, 4, 5):**
 
 | Categoria | Quantità | Dettaglio |
 |---|---|---|
@@ -152,7 +196,7 @@ Rimosse 12 chiamate tRPC duplicate dal componente `DashboardPA.tsx`. Il frontend
 - **Root cause**: `fetchMercatiList()` in `WalletPanel.tsx` pre-selezionava automaticamente il primo mercato ("Cervia Demo", id 12, con 0 scadenze) nel filtro `canoneFilters`. Questo causava un re-fetch con `mercato_id=12` che restituiva 0 risultati.
 - **Fix**: La pre-selezione del filtro canone avviene **solo se c'è un solo mercato** (tipico dell'impersonificazione di un comune). Se l'admin vede tutti i mercati, il filtro resta su "Tutti" mostrando tutte le 68 scadenze.
 
-#### Stato Lavori Decoupling (Branch `claude/explore-repository-fA9m8`)
+#### Stato Lavori Decoupling (Archiviato)
 
 | Fase | Commit | Stato | Descrizione |
 |---|---|---|---|
