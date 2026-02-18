@@ -15,7 +15,7 @@ import BottomNav from '@/components/BottomNav';
 import { Link, useLocation } from 'wouter';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
-import { trpc } from '@/lib/trpc';
+
 import GestioneHubMapWrapper from '@/components/GestioneHubMapWrapper';
 
 interface RouteStop {

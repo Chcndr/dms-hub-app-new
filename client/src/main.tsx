@@ -1,9 +1,6 @@
-import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
-import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
 import "./index.css";
@@ -12,7 +9,7 @@ import "./index.css";
 const queryClient = new QueryClient();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
-  if (!(error instanceof TRPCClientError)) return;
+  if (!(error instanceof Error)) return;
   if (typeof window === "undefined") return;
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
@@ -38,35 +35,10 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
-const trpcClient = trpc.createClient({
-  links: [
-    httpBatchLink({
-      url: ((import.meta.env.VITE_TRPC_URL || "https://orchestratore.mio-hub.me").trim() + "/api/trpc"),
-      transformer: superjson,
-      fetch(input, init) {
-        // Invia Authorization: Bearer <token> come fallback per i cookie cross-domain.
-        // Il backend accetta sia il cookie app_session_id che l'header Authorization.
-        const headers = new Headers(init?.headers);
-        const sessionToken = localStorage.getItem('miohub_session_token');
-        if (sessionToken) {
-          headers.set('Authorization', `Bearer ${sessionToken}`);
-        }
-        return globalThis.fetch(input, {
-          ...(init ?? {}),
-          headers,
-          credentials: "include",
-        });
-      },
-    }),
-  ],
-});
-
 createRoot(document.getElementById("root")!).render(
-  <trpc.Provider client={trpcClient} queryClient={queryClient}>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </trpc.Provider>
+  <QueryClientProvider client={queryClient}>
+    <App />
+  </QueryClientProvider>
 );
 
 // Global error monitoring — cattura errori non gestiti e li invia al backend
