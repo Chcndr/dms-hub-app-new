@@ -28,6 +28,10 @@
       "destination": "https://api.mio-hub.me/api/abacus/:path*"
     },
     {
+      "source": "/api/trpc/:path*",
+      "destination": "https://mihub.157-90-29-66.nip.io/api/trpc/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

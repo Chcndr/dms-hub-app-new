@@ -28,12 +28,66 @@ import {
   Loader2
 } from 'lucide-react';
 import { getCachedUser, logout, type User as AuthUser } from '@/api/authClient';
-import { ORCHESTRATORE_API_BASE_URL } from '@/config/api';
+import { ORCHESTRATORE_API_BASE_URL, MIHUB_API_BASE_URL } from '@/config/api';
 import { toast } from 'sonner';
+
+/**
+ * Recupera i dati utente da tutte le sorgenti localStorage disponibili.
+ * Ordine di priorità:
+ * 1. miohub_firebase_user (Firebase auth - MioHubUser con impresaId)
+ * 2. user (legacy bridge - con impresa_id)
+ * 3. miohub_user_info (ARPA auth - con fiscalCode)
+ */
+function getEffectiveUser(): { user: AuthUser | null; impresaId: number | null } {
+  // 1. Firebase user (ha impresaId nel formato MioHubUser)
+  try {
+    const firebaseRaw = localStorage.getItem('miohub_firebase_user');
+    if (firebaseRaw) {
+      const fbUser = JSON.parse(firebaseRaw);
+      return {
+        user: {
+          id: fbUser.miohubId || 0,
+          email: fbUser.email || '',
+          name: fbUser.displayName || fbUser.email || '',
+          fiscalCode: fbUser.fiscalCode,
+          authMethod: fbUser.provider,
+        },
+        impresaId: fbUser.impresaId || null,
+      };
+    }
+  } catch { /* ignore */ }
+
+  // 2. Legacy bridge user (ha impresa_id dal bridge FirebaseAuthContext)
+  try {
+    const legacyRaw = localStorage.getItem('user');
+    if (legacyRaw) {
+      const legacyUser = JSON.parse(legacyRaw);
+      return {
+        user: {
+          id: legacyUser.id || 0,
+          email: legacyUser.email || '',
+          name: legacyUser.name || legacyUser.email || '',
+          fiscalCode: legacyUser.fiscal_code || legacyUser.fiscalCode,
+          authMethod: legacyUser.provider,
+        },
+        impresaId: legacyUser.impresa_id || null,
+      };
+    }
+  } catch { /* ignore */ }
+
+  // 3. ARPA auth user (getCachedUser da authClient.ts - legge miohub_user_info)
+  const arpaUser = getCachedUser();
+  if (arpaUser) {
+    return { user: arpaUser, impresaId: null };
+  }
+
+  return { user: null, impresaId: null };
+}
 
 interface Impresa {
   id: number;
   denominazione: string;
+  ragione_sociale?: string;
   partita_iva: string;
   codice_fiscale: string;
   forma_giuridica: string;
@@ -76,32 +130,123 @@ export default function DashboardImpresa() {
 
   useEffect(() => {
     const loadData = async () => {
-      // Recupera utente dalla cache
-      const cachedUser = getCachedUser();
-      if (!cachedUser) {
+      // Recupera utente da tutte le sorgenti (Firebase, bridge, ARPA)
+      const { user: effectiveUser, impresaId } = getEffectiveUser();
+      if (!effectiveUser) {
         navigate('/login');
         return;
       }
-      setUser(cachedUser);
+      setUser(effectiveUser);
 
-      // Carica dati impresa
+      // Carica dati impresa con fallback multipli
       try {
-        if (cachedUser.fiscalCode) {
-          const response = await fetch(
-            `${ORCHESTRATORE_API_BASE_URL}/api/imprese?rappresentante_legale_cf=${cachedUser.fiscalCode}`
-          );
-          const data = await response.json();
-          if (data.success && data.data.length > 0) {
-            setImpresa(data.data[0]);
-            
-            // Carica pratiche dell'impresa
-            const praticheResponse = await fetch(
-              `${ORCHESTRATORE_API_BASE_URL}/api/suap/pratiche?impresa_id=${data.data[0].id}`
+        let impresaData: Impresa | null = null;
+
+        // Strategia 1: Carica impresa direttamente per ID (dal bridge Firebase)
+        if (impresaId) {
+          try {
+            const response = await fetch(
+              `${MIHUB_API_BASE_URL}/api/imprese/${impresaId}`
             );
-            const praticheData = await praticheResponse.json();
-            if (praticheData.success) {
-              setPratiche(praticheData.data || []);
+            if (response.ok) {
+              const data = await response.json();
+              const raw = data.success ? data.data : data;
+              if (raw && raw.id) {
+                impresaData = {
+                  ...raw,
+                  denominazione: raw.denominazione || raw.ragione_sociale || 'N/D',
+                };
+              }
             }
+          } catch (err) {
+            console.warn('[DashboardImpresa] Lookup per ID su MIHUB fallito:', err);
+          }
+        }
+
+        // Strategia 2: Cerca per ID su orchestratore
+        if (!impresaData && impresaId) {
+          try {
+            const response = await fetch(
+              `${ORCHESTRATORE_API_BASE_URL}/api/imprese/${impresaId}`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.data) {
+                impresaData = data.data;
+              }
+            }
+          } catch (err) {
+            console.warn('[DashboardImpresa] Lookup per ID su orchestratore fallito:', err);
+          }
+        }
+
+        // Strategia 3: Cerca per email su orchestratore
+        if (!impresaData && effectiveUser.email) {
+          try {
+            const response = await fetch(
+              `${ORCHESTRATORE_API_BASE_URL}/api/imprese?email=${encodeURIComponent(effectiveUser.email)}`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.data && data.data.length > 0) {
+                impresaData = data.data[0];
+              }
+            }
+          } catch (err) {
+            console.warn('[DashboardImpresa] Lookup per email fallito:', err);
+          }
+        }
+
+        // Strategia 4: Cerca per codice fiscale su orchestratore (fallback originale)
+        if (!impresaData && effectiveUser.fiscalCode) {
+          try {
+            const response = await fetch(
+              `${ORCHESTRATORE_API_BASE_URL}/api/imprese?rappresentante_legale_cf=${effectiveUser.fiscalCode}`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.data && data.data.length > 0) {
+                impresaData = data.data[0];
+              }
+            }
+          } catch (err) {
+            console.warn('[DashboardImpresa] Lookup per CF fallito:', err);
+          }
+        }
+
+        // Strategia 5: Cerca per user_id su orchestratore
+        if (!impresaData && effectiveUser.id) {
+          try {
+            const response = await fetch(
+              `${ORCHESTRATORE_API_BASE_URL}/api/imprese?user_id=${effectiveUser.id}`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.data && data.data.length > 0) {
+                impresaData = data.data[0];
+              }
+            }
+          } catch (err) {
+            console.warn('[DashboardImpresa] Lookup per user_id fallito:', err);
+          }
+        }
+
+        if (impresaData) {
+          setImpresa(impresaData);
+
+          // Carica pratiche dell'impresa
+          try {
+            const praticheResponse = await fetch(
+              `${ORCHESTRATORE_API_BASE_URL}/api/suap/pratiche?impresa_id=${impresaData.id}`
+            );
+            if (praticheResponse.ok) {
+              const praticheData = await praticheResponse.json();
+              if (praticheData.success) {
+                setPratiche(praticheData.data || []);
+              }
+            }
+          } catch (err) {
+            console.warn('[DashboardImpresa] Caricamento pratiche fallito:', err);
           }
         }
       } catch (error) {
@@ -141,7 +286,7 @@ export default function DashboardImpresa() {
             <div>
               <h1 className="text-base sm:text-xl font-bold text-white">Dashboard Impresa</h1>
               <p className="text-sm text-gray-400">
-                {impresa?.denominazione || 'Nessuna impresa collegata'}
+                {impresa?.denominazione || impresa?.ragione_sociale || 'Nessuna impresa collegata'}
               </p>
             </div>
           </div>
@@ -182,7 +327,7 @@ export default function DashboardImpresa() {
                 Nessuna impresa collegata
               </h2>
               <p className="text-gray-400 mb-6">
-                Il tuo codice fiscale non è associato a nessuna impresa nel sistema.
+                Il tuo account ({user?.email}) non è associato a nessuna impresa nel sistema.
               </p>
               <Button
                 onClick={() => navigate('/suap')}
@@ -284,7 +429,7 @@ export default function DashboardImpresa() {
                     <div className="grid grid-cols-2 gap-2 sm:gap-4">
                       <div>
                         <p className="text-xs text-gray-500">Denominazione</p>
-                        <p className="text-white font-medium">{impresa.denominazione}</p>
+                        <p className="text-white font-medium">{impresa.denominazione || impresa.ragione_sociale}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Forma Giuridica</p>
