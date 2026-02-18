@@ -138,23 +138,137 @@ export default function WalletImpresaPage() {
   
   // Stato per transazioni (storico ricariche)
   const [transactions, setTransactions] = useState<any[]>([]);
-  
-  // ID impresa dall'utente loggato
-  const getImpresaId = () => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      return user.impresa_id || null;
-    }
-    return null;
-  };
-  
-  const IMPRESA_ID = getImpresaId();
+
+  // ID impresa risolto con multi-strategia (v5.8.0)
+  const [resolvedImpresaId, setResolvedImpresaId] = useState<number | null>(null);
+  const [impresaResolving, setImpresaResolving] = useState(true);
+
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+  const ORCHESTRATORE_URL = 'https://orchestratore.mio-hub.me';
+  const MIHUB_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
+
+  // Risolvi impresa_id con multi-strategia (come DashboardImpresa)
+  useEffect(() => {
+    async function resolveImpresa() {
+      let impresaId: number | null = null;
+      let userEmail = '';
+      let userId = 0;
+      let userCF = '';
+
+      // Strategia 1: da miohub_firebase_user (Firebase format)
+      try {
+        const fbStr = localStorage.getItem('miohub_firebase_user');
+        if (fbStr) {
+          const fbUser = JSON.parse(fbStr);
+          if (fbUser.impresaId) impresaId = fbUser.impresaId;
+          userEmail = fbUser.email || '';
+          userId = fbUser.miohubId || 0;
+          userCF = fbUser.fiscalCode || '';
+        }
+      } catch { /* ignore */ }
+
+      // Strategia 2: da localStorage['user'] (legacy bridge)
+      if (!impresaId) {
+        try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            if (user.impresa_id) impresaId = user.impresa_id;
+            if (!userEmail) userEmail = user.email || '';
+            if (!userId) userId = user.id || 0;
+            if (!userCF) userCF = user.fiscal_code || user.fiscalCode || '';
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Se trovato via localStorage, usa direttamente
+      if (impresaId) {
+        setResolvedImpresaId(impresaId);
+        setImpresaResolving(false);
+        return;
+      }
+
+      // Strategia 3: cerca impresa per email su MIHUB
+      if (userEmail) {
+        try {
+          const res = await fetch(`${MIHUB_URL}/api/imprese?email=${encodeURIComponent(userEmail)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const list = data.success ? data.data : (Array.isArray(data) ? data : null);
+            if (list && list.length > 0 && list[0].id) {
+              impresaId = list[0].id;
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Strategia 4: cerca impresa per email su orchestratore
+      if (!impresaId && userEmail) {
+        try {
+          const res = await fetch(`${ORCHESTRATORE_URL}/api/imprese?email=${encodeURIComponent(userEmail)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.data && data.data.length > 0) {
+              impresaId = data.data[0].id;
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Strategia 5: cerca per user_id su orchestratore
+      if (!impresaId && userId) {
+        try {
+          const res = await fetch(`${ORCHESTRATORE_URL}/api/imprese?user_id=${userId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.data && data.data.length > 0) {
+              impresaId = data.data[0].id;
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Strategia 6: cerca per codice fiscale su orchestratore
+      if (!impresaId && userCF) {
+        try {
+          const res = await fetch(`${ORCHESTRATORE_URL}/api/imprese?rappresentante_legale_cf=${userCF}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.data && data.data.length > 0) {
+              impresaId = data.data[0].id;
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Se trovato, salva in localStorage per le prossime volte
+      if (impresaId) {
+        try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            user.impresa_id = impresaId;
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+          const fbStr = localStorage.getItem('miohub_firebase_user');
+          if (fbStr) {
+            const fbUser = JSON.parse(fbStr);
+            fbUser.impresaId = impresaId;
+            localStorage.setItem('miohub_firebase_user', JSON.stringify(fbUser));
+          }
+        } catch { /* ignore */ }
+      }
+
+      setResolvedImpresaId(impresaId);
+      setImpresaResolving(false);
+    }
+
+    resolveImpresa();
+  }, []);
 
   // Carica dati wallet impresa
   const fetchData = async () => {
-    if (!IMPRESA_ID) {
+    if (!resolvedImpresaId) {
       setLoading(false);
       return;
     }
@@ -162,7 +276,7 @@ export default function WalletImpresaPage() {
     setLoading(true);
     try {
       // Fetch wallet impresa
-      const walletsRes = await fetch(`${API_BASE_URL}/api/wallets/company/${IMPRESA_ID}`);
+      const walletsRes = await fetch(`${API_BASE_URL}/api/wallets/company/${resolvedImpresaId}`);
       const walletsData = await walletsRes.json();
       
       let spuntaWallets: WalletItem[] = [];
@@ -194,11 +308,11 @@ export default function WalletImpresaPage() {
       }
       
       // Fetch dati impresa
-      const impresaRes = await fetch(`${API_BASE_URL}/api/imprese/${IMPRESA_ID}`);
+      const impresaRes = await fetch(`${API_BASE_URL}/api/imprese/${resolvedImpresaId}`);
       const impresaData = await impresaRes.json();
       
       setCompany({
-        company_id: IMPRESA_ID,
+        company_id: resolvedImpresaId,
         ragione_sociale: impresaData.success ? impresaData.data?.denominazione : 'Impresa',
         partita_iva: impresaData.success ? impresaData.data?.partita_iva : 'N/A',
         spunta_wallets: spuntaWallets,
@@ -217,7 +331,7 @@ export default function WalletImpresaPage() {
       
       // v3.53.0: Fetch sanzioni/verbali PM non pagati
       try {
-        const sanzioniRes = await fetch(`${API_BASE_URL}/api/sanctions/impresa/${IMPRESA_ID}/da-pagare`);
+        const sanzioniRes = await fetch(`${API_BASE_URL}/api/sanctions/impresa/${resolvedImpresaId}/da-pagare`);
         const sanzioniData = await sanzioniRes.json();
         if (sanzioniData.success) {
           setSanzioni(sanzioniData.data || []);
@@ -228,7 +342,7 @@ export default function WalletImpresaPage() {
       
       // v3.54.1: Fetch sanzioni pagate per storico
       try {
-        const sanzioniPagateRes = await fetch(`${API_BASE_URL}/api/sanctions?impresa_id=${IMPRESA_ID}&payment_status=PAGATO&limit=50`);
+        const sanzioniPagateRes = await fetch(`${API_BASE_URL}/api/sanctions?impresa_id=${resolvedImpresaId}&payment_status=PAGATO&limit=50`);
         const sanzioniPagateData = await sanzioniPagateRes.json();
         if (sanzioniPagateData.success) {
           // Calcola importo effettivo pagato per ogni sanzione
@@ -291,8 +405,10 @@ export default function WalletImpresaPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!impresaResolving) {
+      fetchData();
+    }
+  }, [resolvedImpresaId, impresaResolving]);
 
   // Calcola totali
   const totaleSaldo = company ? 
@@ -459,16 +575,29 @@ export default function WalletImpresaPage() {
     }
   };
 
-  // Se non c'è impresa_id, mostra messaggio
-  if (!IMPRESA_ID) {
+  // Se sta ancora risolvendo l'impresa, mostra loading
+  if (impresaResolving) {
+    return (
+      <div className="min-h-screen bg-[#0b1220] text-[#e8fbff] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 mx-auto text-[#14b8a6] animate-spin" />
+          <p className="mt-4 text-[#e8fbff]/70">Ricerca impresa associata...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se non c'è impresa_id dopo la risoluzione, mostra messaggio
+  if (!resolvedImpresaId) {
     return (
       <div className="min-h-screen bg-[#0b1220] text-[#e8fbff] flex items-center justify-center">
         <Card className="bg-[#1a2332] border-[#14b8a6]/20 max-w-md mx-2 sm:mx-auto">
           <CardContent className="p-4 sm:p-8 text-center">
             <AlertCircle className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
-            <h2 className="text-xl font-bold mb-2">Accesso non autorizzato</h2>
+            <h2 className="text-xl font-bold mb-2">Nessuna impresa collegata</h2>
             <p className="text-[#e8fbff]/70 mb-4">
-              Per visualizzare il wallet devi effettuare il login con un account impresa.
+              Il tuo account non risulta associato a nessuna impresa.
+              Contatta l'amministratore per collegare il tuo account all'impresa.
             </p>
             <Button onClick={() => setLocation('/')} className="bg-[#14b8a6] hover:bg-[#14b8a6]/80">
               Torna alla Home

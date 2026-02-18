@@ -115,6 +115,66 @@ interface LegacyUserData {
 }
 
 /**
+ * Cerca l'impresa associata all'utente tramite ricerca multi-strategia.
+ * Usata come fallback quando lookupLegacyUser non trova impresa_id.
+ * Strategie: email su orchestratore, email su MIHUB, user_id su orchestratore.
+ */
+async function lookupImpresaForUser(email: string, userId?: number): Promise<{ id: number; denominazione: string } | null> {
+  // Strategia 1: Cerca impresa per email su orchestratore
+  if (email) {
+    try {
+      const res = await fetch(`${API_BASE}/api/imprese?email=${encodeURIComponent(email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const list = data.success ? data.data : (Array.isArray(data) ? data : null);
+        if (list && list.length > 0 && list[0].id) {
+          console.warn(`[FirebaseAuth] Impresa trovata per email: ID=${list[0].id}, nome=${list[0].denominazione}`);
+          return { id: list[0].id, denominazione: list[0].denominazione || list[0].ragione_sociale || '' };
+        }
+      }
+    } catch (err) {
+      console.warn('[FirebaseAuth] Lookup impresa per email fallito:', err);
+    }
+  }
+
+  // Strategia 2: Cerca impresa per email su MIHUB (Hetzner)
+  if (email) {
+    try {
+      const res = await fetch(`${TRPC_BASE}/api/imprese?email=${encodeURIComponent(email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const raw = data.success ? data.data : (Array.isArray(data) ? data : null);
+        if (raw && raw.length > 0 && raw[0].id) {
+          console.warn(`[FirebaseAuth] Impresa trovata per email (MIHUB): ID=${raw[0].id}, nome=${raw[0].denominazione}`);
+          return { id: raw[0].id, denominazione: raw[0].denominazione || raw[0].ragione_sociale || '' };
+        }
+      }
+    } catch (err) {
+      console.warn('[FirebaseAuth] Lookup impresa per email MIHUB fallito:', err);
+    }
+  }
+
+  // Strategia 3: Cerca impresa per user_id su orchestratore
+  if (userId && userId > 0) {
+    try {
+      const res = await fetch(`${API_BASE}/api/imprese?user_id=${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const list = data.success ? data.data : (Array.isArray(data) ? data : null);
+        if (list && list.length > 0 && list[0].id) {
+          console.warn(`[FirebaseAuth] Impresa trovata per user_id=${userId}: ID=${list[0].id}, nome=${list[0].denominazione}`);
+          return { id: list[0].id, denominazione: list[0].denominazione || list[0].ragione_sociale || '' };
+        }
+      }
+    } catch (err) {
+      console.warn('[FirebaseAuth] Lookup impresa per user_id fallito:', err);
+    }
+  }
+
+  return null;
+}
+
+/**
  * Cerca l'utente nel database legacy dell'orchestratore tramite email.
  * Prima fa una ricerca per email, poi recupera i dettagli completi.
  */
@@ -326,6 +386,35 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
   let legacyUser: LegacyUserData | null = null;
   if (email) {
     legacyUser = await lookupLegacyUser(email);
+  }
+
+  // ============================================
+  // STEP 1.5: Se impresa_id non trovata nel legacy user, cerca con multi-strategia
+  // Cerca l'impresa associata all'utente via email, user_id, ecc.
+  // ============================================
+  if (legacyUser && !legacyUser.impresa_id && email) {
+    const impresaResult = await lookupImpresaForUser(email, legacyUser.id);
+    if (impresaResult) {
+      legacyUser.impresa_id = impresaResult.id;
+      console.warn(`[FirebaseAuth] Impresa associata via fallback: impresa_id=${impresaResult.id} (${impresaResult.denominazione})`);
+    }
+  }
+  // Se non c'è neanche il legacy user, prova comunque a cercare l'impresa
+  if (!legacyUser && email) {
+    const impresaResult = await lookupImpresaForUser(email);
+    if (impresaResult) {
+      // Crea un legacyUser minimo con solo l'impresa
+      legacyUser = {
+        id: 0,
+        name: firebaseUser.displayName || email,
+        email,
+        base_role: 'business',
+        is_super_admin: false,
+        assigned_roles: [],
+        impresa_id: impresaResult.id,
+      };
+      console.warn(`[FirebaseAuth] Creato legacyUser minimo con impresa_id=${impresaResult.id}`);
+    }
   }
 
   // ============================================
