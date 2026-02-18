@@ -843,7 +843,7 @@ export default function DashboardPA() {
   
   // Carica statistiche imprese (REST + fallback tRPC)
   useEffect(() => {
-    fetch('https://api.mio-hub.me/api/imprese')
+    fetch('/api/imprese')
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
@@ -1233,7 +1233,7 @@ export default function DashboardPA() {
       .catch(err => console.error('Hub fetch error:', err));
     
     // Fetch lista imprese
-    fetch('https://api.mio-hub.me/api/imprese')
+    fetch('/api/imprese')
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data) {
