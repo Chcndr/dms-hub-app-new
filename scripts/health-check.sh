@@ -59,7 +59,6 @@ echo ""
 
 echo "--- Backend (Hetzner) ---"
 check "Backend tRPC" "$BACKEND_URL/api/trpc/auth.me"
-check "System health" "$BACKEND_URL/api/trpc/system.health" "200"
 echo ""
 
 echo "--- Database ---"
