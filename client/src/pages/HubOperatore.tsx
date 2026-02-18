@@ -42,18 +42,38 @@ const API_BASE = import.meta.env.DEV
 
 interface WalletStatusIndicatorProps {
   operatorId: number;
+  impresaId?: number | null;
   authToken: string | null;
   onStatusChange?: (status: 'loading' | 'active' | 'suspended' | 'none' | 'error', impresaName?: string | null) => void;
 }
 
-function WalletStatusIndicator({ operatorId, authToken, onStatusChange }: WalletStatusIndicatorProps) {
+function WalletStatusIndicator({ operatorId, impresaId, authToken, onStatusChange }: WalletStatusIndicatorProps) {
   const [status, setStatus] = useState<'loading' | 'active' | 'suspended' | 'none' | 'error'>('loading');
   const [qualification, setQualification] = useState<any>(null);
   const [impresaName, setImpresaName] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Helper per processare la risposta wallet
+  const processWalletResponse = useCallback((data: any): boolean => {
+    if (data.success && data.wallet) {
+      if (data.impresa) {
+        setImpresaName(data.impresa.denominazione);
+        if (data.qualification?.walletEnabled) {
+          setStatus('active');
+          onStatusChange?.('active', data.impresa.denominazione);
+        } else {
+          setStatus('suspended');
+          onStatusChange?.('suspended', data.impresa.denominazione);
+        }
+        setQualification(data.qualification);
+        return true;
+      }
+    }
+    return false;
+  }, [onStatusChange]);
+
   const fetchStatus = useCallback(async () => {
-    if (!operatorId || operatorId <= 0) {
+    if ((!operatorId || operatorId <= 0) && !impresaId) {
       setStatus('none');
       onStatusChange?.('none');
       return;
@@ -62,44 +82,51 @@ function WalletStatusIndicator({ operatorId, authToken, onStatusChange }: Wallet
     setStatus('loading');
     try {
       const token = authToken || localStorage.getItem('token') || '';
-      const response = await fetch(`${API_BASE}/operator/wallet/${operatorId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.wallet) {
-          if (data.impresa) {
-            setImpresaName(data.impresa.denominazione);
-            if (data.qualification?.walletEnabled) {
-              setStatus('active');
-              onStatusChange?.('active', data.impresa.denominazione);
-            } else {
-              setStatus('suspended');
-              onStatusChange?.('suspended', data.impresa.denominazione);
-            }
-            setQualification(data.qualification);
-          } else {
-            setStatus('none');
-            onStatusChange?.('none');
+
+      // Tentativo 1: cerca per operatorId (endpoint originale)
+      if (operatorId && operatorId > 0) {
+        try {
+          const response = await fetch(`${API_BASE}/operator/wallet/${operatorId}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (processWalletResponse(data)) return;
+          } else if (response.status >= 500) {
+            console.error('Server error fetching operator wallet:', response.status);
+            setStatus('error');
+            onStatusChange?.('error');
+            return;
           }
-        } else {
-          setStatus('none');
-          onStatusChange?.('none');
+        } catch (err) {
+          console.warn('Operator wallet lookup failed:', err);
         }
-      } else if (response.status >= 500) {
-        console.error('Server error fetching wallet status:', response.status);
-        setStatus('error');
-        onStatusChange?.('error');
-      } else {
-        setStatus('none');
-        onStatusChange?.('none');
       }
+
+      // Tentativo 2: cerca per impresaId (endpoint diretto impresa)
+      if (impresaId && impresaId > 0) {
+        try {
+          const response = await fetch(`${API_BASE}/impresa/${impresaId}/wallet`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (processWalletResponse(data)) return;
+          }
+        } catch (err) {
+          console.warn('Impresa wallet lookup failed:', err);
+        }
+      }
+
+      // Nessun wallet trovato con nessuna strategia
+      setStatus('none');
+      onStatusChange?.('none');
     } catch (error) {
       console.error('Error fetching wallet status:', error);
       setStatus('error');
       onStatusChange?.('error');
     }
-  }, [operatorId, authToken, onStatusChange]);
+  }, [operatorId, impresaId, authToken, onStatusChange, processWalletResponse]);
 
   useEffect(() => {
     fetchStatus();
@@ -212,6 +239,7 @@ export default function HubOperatore() {
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   // Operatore da Firebase Auth (con fallback a localStorage per backward compat)
+  // Include impresaId per fallback wallet lookup (v5.8.0)
   const operatore = (() => {
     if (authUser && authUser.miohubId && authUser.miohubId > 0) {
       return {
@@ -219,6 +247,7 @@ export default function HubOperatore() {
         nome: authUser.displayName || 'Operatore',
         negozio: authUser.displayName || 'Negozio',
         ruolo: 'Operatore',
+        impresaId: authUser.impresaId || null,
       };
     }
     try {
@@ -231,11 +260,26 @@ export default function HubOperatore() {
             nome: user.name || 'Operatore',
             negozio: user.shopName || user.name || 'Negozio',
             ruolo: 'Operatore',
+            impresaId: user.impresa_id || null,
           };
         }
       }
     } catch {}
-    return { id: 0, nome: 'Operatore', negozio: 'Negozio', ruolo: 'Operatore' };
+    // Ultimo fallback: prova miohub_firebase_user
+    try {
+      const fbStr = localStorage.getItem('miohub_firebase_user');
+      if (fbStr) {
+        const fbUser = JSON.parse(fbStr);
+        return {
+          id: fbUser.miohubId || 0,
+          nome: fbUser.displayName || 'Operatore',
+          negozio: fbUser.displayName || 'Negozio',
+          ruolo: 'Operatore',
+          impresaId: fbUser.impresaId || null,
+        };
+      }
+    } catch {}
+    return { id: 0, nome: 'Operatore', negozio: 'Negozio', ruolo: 'Operatore', impresaId: null as number | null };
   })();
 
   // Recupera il token auth all'avvio e quando cambia l'utente
@@ -262,12 +306,12 @@ export default function HubOperatore() {
 
   // Carica dati iniziali quando abbiamo un operatore valido e il token
   useEffect(() => {
-    if (operatore.id > 0) {
+    if (operatore.id > 0 || operatore.impresaId) {
       loadOperatorWallet();
       loadTransactions();
     }
     loadTccConfig();
-  }, [operatore.id, authToken]);
+  }, [operatore.id, operatore.impresaId, authToken]);
 
   // Calcolo automatico crediti
   useEffect(() => {
@@ -279,19 +323,45 @@ export default function HubOperatore() {
   }, [amount, selectedCerts]);
 
   const loadOperatorWallet = async () => {
-    if (operatore.id <= 0) return;
+    if (operatore.id <= 0 && !operatore.impresaId) return;
     try {
       const token = await getCurrentToken();
-      const res = await fetch(`${API_BASE}/operator/wallet/${operatore.id}?_t=${Date.now()}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        console.error('Errore wallet HTTP:', res.status);
-        setApiConnected(false);
-        return;
+      let data: any = null;
+
+      // Tentativo 1: cerca per operatorId
+      if (operatore.id > 0) {
+        try {
+          const res = await fetch(`${API_BASE}/operator/wallet/${operatore.id}?_t=${Date.now()}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (res.ok) {
+            data = await res.json();
+            if (!data.success || !data.wallet) data = null;
+          } else if (res.status >= 500) {
+            setApiConnected(false);
+            return;
+          }
+        } catch (err) {
+          console.warn('Operator wallet fetch failed:', err);
+        }
       }
-      const data = await res.json();
-      if (data.success) {
+
+      // Tentativo 2: cerca per impresaId (fallback v5.8.0)
+      if (!data && operatore.impresaId) {
+        try {
+          const res = await fetch(`${API_BASE}/impresa/${operatore.impresaId}/wallet?_t=${Date.now()}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (res.ok) {
+            data = await res.json();
+            if (!data.success || !data.wallet) data = null;
+          }
+        } catch (err) {
+          console.warn('Impresa wallet fetch failed:', err);
+        }
+      }
+
+      if (data && data.success) {
         setApiConnected(true);
         setOperatorWallet(data.wallet);
         if (data.impresa?.denominazione) {
@@ -308,15 +378,40 @@ export default function HubOperatore() {
   };
 
   const loadTransactions = async () => {
-    if (operatore.id <= 0) return;
+    if (operatore.id <= 0 && !operatore.impresaId) return;
     try {
       const token = await getCurrentToken();
-      const res = await fetch(`${API_BASE}/operator/transactions/${operatore.id}?limit=20`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.success && Array.isArray(data.transactions)) {
+      let data: any = null;
+
+      // Tentativo 1: transazioni per operatorId
+      if (operatore.id > 0) {
+        try {
+          const res = await fetch(`${API_BASE}/operator/transactions/${operatore.id}?limit=20`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (res.ok) {
+            data = await res.json();
+          }
+        } catch (err) {
+          console.warn('Operator transactions fetch failed:', err);
+        }
+      }
+
+      // Tentativo 2: transazioni per impresaId (fallback v5.8.0)
+      if ((!data || !data.success || !Array.isArray(data.transactions) || data.transactions.length === 0) && operatore.impresaId) {
+        try {
+          const res = await fetch(`${API_BASE}/impresa/${operatore.impresaId}/wallet/transactions?limit=20`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (res.ok) {
+            data = await res.json();
+          }
+        } catch (err) {
+          console.warn('Impresa transactions fetch failed:', err);
+        }
+      }
+
+      if (data && data.success && Array.isArray(data.transactions)) {
         setTransactions(data.transactions);
       } else {
         setTransactions([]);
@@ -725,9 +820,10 @@ export default function HubOperatore() {
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-white truncate">HUB Operatore</h1>
             </div>
-            {/* Semaforo Wallet TCC (v5.7.0) */}
+            {/* Semaforo Wallet TCC (v5.7.0 + v5.8.0 fallback impresaId) */}
             <WalletStatusIndicator
               operatorId={operatore.id}
+              impresaId={operatore.impresaId}
               authToken={authToken}
               onStatusChange={(status, name) => {
                 if (name) setImpresaNome(name);
