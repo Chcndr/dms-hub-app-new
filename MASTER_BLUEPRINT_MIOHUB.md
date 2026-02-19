@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 7.7.0 (Verifica Completa + Analisi Integrazioni)
-> **Data:** 19 Febbraio 2026 (notte)
+> **Versione:** 7.8.0 (Fix RBAC Citizen + Reconnect Gaming/Civic + Coordinate Vetrine)
+> **Data:** 19 Febbraio 2026 (mattina)
 > **Autore:** Sistema documentato da Manus AI + Claude Code
 > **Stato:** PRODUZIONE
 
@@ -30,6 +30,66 @@
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 19 Febbraio 2026 (mattina) — v7.8.0 — Fix RBAC Citizen + Reconnect Gaming/Civic + Coordinate Vetrine
+
+**Commit finale:** `fd1ec77` (master)
+
+Sessione dedicata al **merge controllato uno alla volta** dei 3 fix rimasti sul branch `claude/explore-repository-fA9m8`. Ogni commit è stato applicato con **cherry-pick** (non merge) per evitare di tirare dentro commit non voluti.
+
+#### 1. Fix RBAC Citizen — Login checchi@me.com (commit `52f4d22`)
+
+**Problema:** L'utente `checchi@me.com` entrava come `business` con impresa Alimentari Rossi, pur essendo registrato come `citizen` nel DB.
+
+**Causa root:** La funzione `lookupImpresaForUser()` in `FirebaseAuthContext.tsx` cercava imprese per email. L'impresa Intim8 (id=9) aveva `email=checchi@me.com` come email DI CONTATTO, non come email del proprietario. La multi-strategy lookup la trovava e forzava `impresa_id=9` → `effectiveRole='business'`.
+
+**Fix applicata:**
+- Rimosse Strategie 1 e 2 (lookup per email su orchestratore e MIHUB)
+- Rimosso blocco che creava legacyUser fittizio con `base_role: 'business'`
+- Aggiunto check RBAC esplicito: se l'utente ha ruolo `citizen` nel Neon DB (user_role_assignments), questo ha priorità sull'associazione impresa
+- Gerarchia ruoli ora: `admin > citizen RBAC esplicito > business (ha impresa) > ruolo Firebase`
+
+**File modificato:** `client/src/contexts/FirebaseAuthContext.tsx` (+27/-56 righe)
+
+#### 2. Reconnect Gaming Rewards, Civic Reports, Transactions (commit `867eaa9`)
+
+**Fix applicata:**
+- **GamingRewardsPanel:** fix API base URL — usa proxy orchestratore invece di `api.mio-hub.me`
+- **GamingRewardsPanel:** carica TUTTI i civic reports via `/api/civic-reports?limit=200` (prima ne mostrava solo 2)
+- **CivicReportsPanel:** carica storico completo report, fallback su `stats.recent`
+- **ControlliSanzioniPanel:** limit segnalazioni da 50 a 200, refresh stats dopo resolve, passa `credit_tcc` flag
+- **WalletPage/WalletStorico:** limit=500 per storico transazioni
+- **DashboardPA:** limit=500 per fund transactions
+- **vercel.json:** aggiunte regole proxy per `/api/civic-reports/*` e `/api/citizens/*`
+
+**File modificati:** 7 file, +82/-36 righe
+
+#### 3. Fix Coordinate Sporche Vetrine (commit `fd1ec77`)
+
+**Problema:** Le imprese create tramite Vetrine > Crea Negozio non ricevevano coordinate perché `NuovoNegozioForm` non inviava lat/lng al backend.
+
+**Fix applicata:**
+- **NuovoNegozioForm:** passa coordinate dell'HUB selezionato come default
+- **HubMapComponent:** filtra negozi con coordinate invalide (NaN/null/fuori range)
+- **VetrinePage:** validazione robusta coordinate nella navigazione
+
+**File modificati:** 3 file, +50/-16 righe
+
+#### 4. Stato Branch Claude
+
+Dopo questi 3 cherry-pick, **tutti i commit del branch `claude/explore-repository-fA9m8` sono stati applicati a master**. Il branch non ha più commit pendenti.
+
+#### 5. Cronologia Commit Master (dal più recente)
+
+| Commit | Descrizione | Metodo |
+|--------|-------------|--------|
+| `fd1ec77` | Fix coordinate sporche vetrine | Cherry-pick |
+| `867eaa9` | Reconnect gaming rewards, civic reports, transactions | Cherry-pick |
+| `52f4d22` | Fix RBAC citizen — rimozione lookup impresa per email | Cherry-pick |
+| `1ebd481` | Blueprint v7.7.0 | Commit diretto |
+| `7429a27` | Merge branch claude (FASE 3-5 + tutti fix) | Merge |
+
+---
 
 ### Sessione 19 Febbraio 2026 (notte) — v7.7.0 — Verifica Completa, Analisi Integrazioni, Aggiornamento Blueprint
 
@@ -123,8 +183,8 @@ I numeri mostrati nella sezione "Integrazioni e API" sono stati verificati:
 | 🔴 ALTA | Migrare le 16 chiamate tRPC residue nella sezione Integrazioni a REST API | Elimina tutti gli errori 404 |
 | 🔴 ALTA | Correggere i numeri Inventario e TOTALE nel frontend | Dati corretti nella dashboard |
 | 🟡 MEDIA | Rifare il tab "API Dashboard" per mostrare solo endpoint REST reali | UI accurata |
-| 🟡 MEDIA | Testare singolarmente tutti i fix di Claude (punti 1-9 sopra) | Garanzia di stabilità |
-| 🟢 BASSA | Creare tag `v7.7.0-stable` dopo verifica completa | Punto di ripristino aggiornato |
+| 🟡 MEDIA | ~~Testare singolarmente tutti i fix di Claude (punti 1-9 sopra)~~ → **FATTO in v7.8.0** | ~~Garanzia di stabilità~~ |
+| 🟢 BASSA | Creare tag `v7.8.0-stable` dopo verifica completa | Punto di ripristino aggiornato |
 
 ---
 
