@@ -216,7 +216,8 @@ export default function GestioneMercati() {
 
     const comuneFilter = isImpersonating ? comuneNome : userComune;
 
-    if (!isSuperAdmin && comuneFilter) {
+    // Durante impersonazione, filtra SEMPRE per comune (anche per super admin)
+    if (comuneFilter && (isImpersonating || !isSuperAdmin)) {
       const filtered = rawMarkets.filter((market: Market) =>
         market.municipality?.toLowerCase() === comuneFilter.toLowerCase()
       );
@@ -1738,9 +1739,19 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 ...s,
                 status: 'occupato',
                 spuntista_impresa_id: spuntista.impresa_id,
-                spuntista_nome: spuntista.impresa_name
+                spuntista_nome: spuntista.impresa_name,
+                wallet_balance: String(nuovoSaldo)
               } : s
             ));
+
+            // Aggiorna saldo wallet nello stato locale degli spuntisti
+            if (spuntista.impresa_id && nuovoSaldo !== undefined) {
+              setSpuntisti(prev => prev.map(sp =>
+                sp.impresa_id === spuntista.impresa_id
+                  ? { ...sp, wallet_balance: nuovoSaldo, wallet_saldo: nuovoSaldo, importo_pagato: costo, stall_scelto: data.data.stall_number }
+                  : sp
+              ));
+            }
 
             await fetchData();
           } else {
