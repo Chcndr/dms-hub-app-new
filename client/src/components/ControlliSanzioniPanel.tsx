@@ -908,6 +908,29 @@ export default function ControlliSanzioniPanel() {
       const result = await response.json();
       
       if (result.success) {
+        // v5.9.0: Invio automatico notifica all'impresa quando viene creato un verbale
+        if (impresaId) {
+          const impresaNome = impreseList.find(i => i.id === parseInt(impresaId as string))?.denominazione || '';
+          try {
+            await fetch(`${MIHUB_API}/notifiche/send`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                mittente_tipo: 'POLIZIA_MUNICIPALE',
+                mittente_id: 1,
+                mittente_nome: 'Polizia Municipale',
+                titolo: `Verbale ${verbaleCode} emesso`,
+                messaggio: `È stato emesso il verbale ${verbaleCode} per infrazione ${infractionCode}. Importo: €${parseFloat(amount as string || '0').toFixed(2)}. ${description || ''}`.trim(),
+                tipo_messaggio: 'SANZIONE',
+                target_tipo: 'IMPRESA',
+                target_id: impresaId,
+                target_nome: impresaNome
+              })
+            });
+          } catch (notifErr) {
+            console.error('Errore invio notifica automatica:', notifErr);
+          }
+        }
         alert(`✅ Verbale ${verbaleCode} emesso con successo! Notifica inviata all'impresa.`);
         setShowNuovoVerbaleModal(false);
         fetchAllData();

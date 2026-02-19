@@ -63,7 +63,11 @@ export default function AppImpresaNotifiche() {
   const IMPRESA_ID = impresaData.id;
   const IMPRESA_NOME = impresaData.nome;
   
-  const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://api.mio-hub.me') + '/api';
+  // v5.9.0: Usa MIHUB Hetzner (stesso backend dove le notifiche vengono create da ControlliSanzioniPanel)
+  // In produzione usa proxy Vercel (/api/notifiche/* → mihub Hetzner), in dev URL diretto
+  const API_BASE_URL = import.meta.env.DEV
+    ? (import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io') + '/api'
+    : '/api';
 
   // Carica notifiche
   const fetchNotifiche = async () => {

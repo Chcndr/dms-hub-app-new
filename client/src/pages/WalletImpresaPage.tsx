@@ -315,9 +315,10 @@ export default function WalletImpresaPage() {
         }
       }
       
-      // v3.53.0: Fetch sanzioni/verbali PM non pagati
+      // v5.9.0: Fetch sanzioni/verbali PM non pagati - usa MIHUB (stesso backend dove vengono create)
+      const SANCTIONS_URL = import.meta.env.DEV ? MIHUB_URL : '';
       try {
-        const sanzioniRes = await fetch(`${API_BASE_URL}/api/sanctions/impresa/${resolvedImpresaId}/da-pagare`);
+        const sanzioniRes = await fetch(`${SANCTIONS_URL}/api/sanctions/impresa/${resolvedImpresaId}/da-pagare`);
         const sanzioniData = await sanzioniRes.json();
         if (sanzioniData.success) {
           setSanzioni(sanzioniData.data || []);
@@ -325,10 +326,10 @@ export default function WalletImpresaPage() {
       } catch (e) {
         console.error('Errore fetch sanzioni:', e);
       }
-      
-      // v3.54.1: Fetch sanzioni pagate per storico
+
+      // v5.9.0: Fetch sanzioni pagate per storico - usa MIHUB (stesso backend dove vengono create)
       try {
-        const sanzioniPagateRes = await fetch(`${API_BASE_URL}/api/sanctions?impresa_id=${resolvedImpresaId}&payment_status=PAGATO&limit=50`);
+        const sanzioniPagateRes = await fetch(`${SANCTIONS_URL}/api/sanctions?impresa_id=${resolvedImpresaId}&payment_status=PAGATO&limit=50`);
         const sanzioniPagateData = await sanzioniPagateRes.json();
         if (sanzioniPagateData.success) {
           // Calcola importo effettivo pagato per ogni sanzione
@@ -924,7 +925,7 @@ export default function WalletImpresaPage() {
                                 size="sm" 
                                 variant="outline"
                                 className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
-                                onClick={() => window.open(`https://api.mio-hub.me/api/verbali/${sanzione.id}/pdf`, '_blank')}
+                                onClick={() => window.open(`https://mihub.157-90-29-66.nip.io/api/verbali/${sanzione.id}/pdf`, '_blank')}
                               >
                                 <FileText className="w-4 h-4" />
                               </Button>
@@ -972,31 +973,39 @@ export default function WalletImpresaPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {/* v3.73.1: Ricariche Wallet - Solo wallet SPUNTISTA/GENERICO, non CONCESSION */}
-                    {transactions.filter(tx => tx.type === 'DEPOSIT' && tx.wallet_type === 'GENERICO').map((tx) => (
-                      <div key={`tx-${tx.id}`} className="p-4 bg-[#0b1220] rounded-lg border border-blue-500/10">
+                    {/* v5.9.0: Storico completo - mostra TUTTE le transazioni di tutti i wallet */}
+                    {transactions.map((tx) => {
+                      const isDeposit = tx.type === 'DEPOSIT';
+                      const walletLabel = tx.wallet_type === 'GENERICO' ? 'Generico' : tx.wallet_type === 'CONCESSIONE' ? 'Concessione' : tx.market_name || 'Spunta';
+                      return (
+                      <div key={`tx-${tx.id}`} className={`p-4 bg-[#0b1220] rounded-lg border ${isDeposit ? 'border-blue-500/10' : 'border-orange-500/10'}`}>
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium text-[#e8fbff]">
-                              <Plus className="w-4 h-4 inline mr-1 text-blue-400" />
-                              Ricarica Wallet {tx.wallet_type === 'GENERICO' ? 'Generico' : tx.market_name || 'Spunta'}
+                              {isDeposit ? (
+                                <Plus className="w-4 h-4 inline mr-1 text-blue-400" />
+                              ) : (
+                                <Receipt className="w-4 h-4 inline mr-1 text-orange-400" />
+                              )}
+                              {isDeposit ? 'Ricarica' : 'Addebito'} Wallet {walletLabel}
                             </p>
                             <p className="text-sm text-[#e8fbff]/50">
-                              {tx.description || 'Ricarica PagoPA'}
+                              {tx.description || (isDeposit ? 'Ricarica PagoPA' : 'Decurtazione')}
                             </p>
                             <p className="text-xs text-[#e8fbff]/30">
                               {new Date(tx.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                           <div className="text-right">
-                            <Badge className="bg-blue-500/20 text-blue-400">RICARICA</Badge>
-                            <p className="text-lg font-bold text-blue-400">
-                              +€{parseFloat(tx.amount).toFixed(2)}
+                            <Badge className={isDeposit ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}>{isDeposit ? 'RICARICA' : 'ADDEBITO'}</Badge>
+                            <p className={`text-lg font-bold ${isDeposit ? 'text-blue-400' : 'text-orange-400'}`}>
+                              {isDeposit ? '+' : '-'}€{parseFloat(tx.amount).toFixed(2)}
                             </p>
                           </div>
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
                     {/* Pagamenti Canone */}
                     {scadenze.filter(s => s.stato === 'PAGATO').map((scadenza) => (
                       <div key={scadenza.id} className="p-4 bg-[#0b1220] rounded-lg border border-green-500/10">
@@ -1043,7 +1052,7 @@ export default function WalletImpresaPage() {
                               size="sm" 
                               variant="outline"
                               className="mt-2 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
-                              onClick={() => window.open(`https://api.mio-hub.me/api/verbali/${sanzione.id}/pdf`, '_blank')}
+                              onClick={() => window.open(`https://mihub.157-90-29-66.nip.io/api/verbali/${sanzione.id}/pdf`, '_blank')}
                             >
                               <FileText className="w-4 h-4 mr-1" />
                               Vedi Verbale

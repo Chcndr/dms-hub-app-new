@@ -41,7 +41,15 @@
     },
     {
       "source": "/api/sanctions/:path*",
-      "destination": "https://api.mio-hub.me/api/sanctions/:path*"
+      "destination": "https://mihub.157-90-29-66.nip.io/api/sanctions/:path*"
+    },
+    {
+      "source": "/api/notifiche/:path*",
+      "destination": "https://mihub.157-90-29-66.nip.io/api/notifiche/:path*"
+    },
+    {
+      "source": "/api/verbali/:path*",
+      "destination": "https://mihub.157-90-29-66.nip.io/api/verbali/:path*"
     },
     {
       "source": "/api/imprese/:path*",
