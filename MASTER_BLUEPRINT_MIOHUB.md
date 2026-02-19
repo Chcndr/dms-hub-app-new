@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 7.9.0 (Fix Multipli e Allineamento)
-> **Data:** 19 Febbraio 2026 (pomeriggio)
+> **Versione:** 7.9.0 (Fix Multipli + Migrazione URL + Allineamento Completo)
+> **Data:** 19 Febbraio 2026 (sera)
 > **Autore:** Sistema documentato da Manus AI + Claude Code
 > **Stato:** PRODUZIONE
 
@@ -30,6 +30,56 @@
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 19 Febbraio 2026 (sera) — v7.9.0 — Fix Backend Dismesso + Migrazione URL + Savepoint
+
+**Commit finale:** `91689d4` (master) — **Tag stabile: `v7.9.0-stable`**
+
+Sessione dedicata a: fix impersonazione Grosseto, migrazione da api.mio-hub.me dismesso, storico wallet/sanzioni, e creazione savepoint stabile.
+
+#### 7. Fix Impersonazione Grosseto (commit `b880e51`)
+
+- **GestioneMercati.tsx:** Durante impersonazione, il super admin vede solo i mercati del comune impersonato (prima vedeva tutti).
+- **ControlliSanzioniPanel.tsx:** Storico sessioni Grosseto con fallback client-side + wallet spuntisti aggiornamento locale immediato del saldo dopo assegnazione spunta.
+
+**File modificati:** 2 file, +53/-7 righe
+
+#### 8. Fix Storico Vuoto Controlli/Sanzioni + Doppio Caricamento (commit `259d639`)
+
+- **ControlliSanzioniPanel.tsx:** Migrato da `api.mio-hub.me` (backend dismesso!) a `MIHUB_API_BASE_URL` (Hetzner) per tutte le API (presenze/sessioni, concessioni, autorizzazioni, domande-spunta, giustificazioni). Rimosso filtro `comune_id` lato backend (non funzionante), ora filtra client-side per nome comune.
+- **DashboardPA.tsx:** Rimosso `window.location.reload()` hack che causava doppio caricamento.
+- **NuovoVerbalePage.tsx:** Migrato da `api.mio-hub.me` a backend Hetzner.
+
+**File modificati:** 3 file, +34/-49 righe
+
+#### 9. Fix Storico Wallet + Sanzioni Impresa + Notifiche Verbale (commit `91689d4`)
+
+- **Storico wallet:** Rimosso filtro troppo restrittivo che nascondeva transazioni.
+- **Sanzioni:** Allineato proxy Vercel (`vercel.json`) per leggere da Hetzner.
+- **Notifiche verbale:** Aggiunto invio automatico notifica post-emissione verbale.
+- **vercel.json:** Aggiunte regole proxy per `/api/notifiche/*` e `/api/verbali/*`.
+
+**File modificati:** 5 file, +65/-20 righe
+
+#### Savepoint Stabile Creato
+
+- **Tag `v7.9.0-stable`** creato su commit `b880e51` come punto di ripristino sicuro.
+- Rollback: `git reset --hard v7.9.0-stable && git push origin master --force`
+
+#### Stato Migrazione URL api.mio-hub.me
+
+Analisi completa dei riferimenti residui nel codice sorgente:
+
+| Tipo URL | Riferimenti | File | Stato |
+|----------|-------------|------|-------|
+| `api.mio-hub.me` (da migrare) | 39 | 24 | ⚠️ Pendente (commit `a67857d` pronto) |
+| `api.mio-hub.me` in Integrazioni.tsx | 32 | 1 | ✅ OK — dashboard test/inventario |
+| `mihub.157-90-29-66.nip.io` (diretto) | 15 | 9 | ✅ OK |
+| `MIHUB_API_BASE_URL` (corretto) | 75 | 27 | ✅ OK |
+
+**Nota:** `api.mio-hub.me` funziona ancora perché nginx fa proxy a porta 3000, ma è il dominio del vecchio backend e va eliminato dal codice.
+
+---
 
 ### Sessione 19 Febbraio 2026 (pomeriggio) — v7.9.0 — Fix Multipli e Allineamento
 
