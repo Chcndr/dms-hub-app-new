@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 7.8.0 (Fix RBAC Citizen + Reconnect Gaming/Civic + Coordinate Vetrine)
-> **Data:** 19 Febbraio 2026 (mattina)
+> **Versione:** 7.9.0 (Fix Multipli e Allineamento)
+> **Data:** 19 Febbraio 2026 (pomeriggio)
 > **Autore:** Sistema documentato da Manus AI + Claude Code
 > **Stato:** PRODUZIONE
 
@@ -30,6 +30,56 @@
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 19 Febbraio 2026 (pomeriggio) — v7.9.0 — Fix Multipli e Allineamento
+
+**Commit finale:** `0be27f9` (master)
+
+Sessione dedicata al merge di 5 fix critici dal branch di Claude, applicati con cherry-pick per garantire stabilità.
+
+#### 1. Fix Popup Login Mobile + Tab Impresa Citizen (commit `d0e3a49`)
+
+- **Fix 1: Popup login mobile** — `LoginModal.tsx` ora mantiene lo spinner visibile fino al completamento del sync backend, risolvendo il problema del form bloccato su connessioni lente.
+- **Fix 2: Tab impresa citizen** — `PermissionsContext.tsx` ora separa i permessi per ruolo: `admin` ha accesso completo, `business` solo ai 5 tab impresa, e `citizen` nessun permesso extra, anche se ha un `impresa_id` nel DB.
+- **Fix 3: impresaId citizen** — `FirebaseAuthContext.tsx` non salva più `impresaId` nel localStorage se `effectiveRole` è `citizen`.
+- **Fix 4: Ricerca email rimossa** — `DashboardImpresa.tsx` e `WalletImpresaPage.tsx` non cercano più imprese per email, risolvendo l'associazione errata.
+
+**File modificati:** 5 file, +55/-50 righe
+
+#### 2. Velocizzazione Login + Rispetto Ruolo Citizen (commit `92089f9`)
+
+- **Login ~3x più veloce:** Le chiamate API nel flusso di login ora girano in parallelo con `Promise.all()`, riducendo il tempo da ~6s a ~2s.
+- **Ruolo citizen rispettato:** La scelta dell'utente "Cittadino" al login ha ora priorità sull'associazione `impresa_id` nel DB.
+- **Rimossi dati mock:** `ImpreseQualificazioniPanel` ora mostra uno stato vuoto invece di dati finti quando l'API non risponde.
+
+**File modificati:** 2 file, +65/-263 righe
+
+#### 3. Mobile-Only Impresa View per Test (commit `41f5a2f`)
+
+- Feature di test per `chcndr@gmail.com`: su smartphone (<768px), l'app mostra solo i tab impresa e fa redirect a `/dashboard-impresa`.
+
+**File modificati:** 2 file, +58/-2 righe
+
+#### 4. Fix Login Admin con Email (commit `f5a382c`)
+
+- `Login.tsx` ora usa il flusso di autenticazione Firebase (`useFirebaseAuth()`) invece di un endpoint legacy. Questo garantisce che un admin che accede con email venga riconosciuto correttamente.
+
+**File modificati:** 1 file, +131/-111 righe
+
+#### 5. Fix Flash Tab PA per Citizen (commit `7b071cb`)
+
+- `ProtectedTab.tsx` e `PermissionsContext.tsx` ora nascondono i tab di default durante il caricamento, eliminando il flash dei tab PA per gli utenti citizen.
+
+**File modificati:** 3 file, +49/-24 righe
+
+#### 6. Fix React Error #300 + Bottoni Impresa per Ruolo (commit `0be27f9`)
+
+- **DashboardPA.tsx:** Risolto l'errore "Rendered fewer hooks than expected" spostando un return dopo gli hooks.
+- **HomePage.tsx:** I bottoni (cittadino/impresa) ora vengono mostrati in base al `userRole` nel localStorage, garantendo coerenza.
+
+**File modificati:** 2 file, +84/-73 righe
+
+---
 
 ### Sessione 19 Febbraio 2026 (mattina) — v7.8.0 — Fix RBAC Citizen + Reconnect Gaming/Civic + Coordinate Vetrine
 
