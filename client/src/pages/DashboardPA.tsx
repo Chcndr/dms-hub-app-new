@@ -568,14 +568,11 @@ export default function DashboardPA() {
     } catch { /* ignore */ }
   }, []);
 
-  // 🆘 FORZATURA DI EMERGENZA: Ripristino conversation_id storico
+  // Ripristino conversation_id storico (senza reload pagina)
   useEffect(() => {
     const TARGET_ID = 'dfab3001-0969-4d6d-93b5-e6f69eecb794';
-
     if (localStorage.getItem('mihub_global_conversation_id') !== TARGET_ID) {
-      console.warn('[DashboardPA] Ripristino chat storica');
       localStorage.setItem('mihub_global_conversation_id', TARGET_ID);
-      window.location.reload(); // Ricarica per applicare
     }
   }, []);
 

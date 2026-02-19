@@ -31,9 +31,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import NotificationManager from '@/components/suap/NotificationManager';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
-// API Base URL
-const MIHUB_API = 'https://api.mio-hub.me/api';
+// API Base URL - usa lo stesso backend Hetzner di GestioneMercati
+const MIHUB_API = MIHUB_API_BASE_URL + '/api';
 
 // Types
 interface InspectionStats {
@@ -397,8 +398,7 @@ export default function ControlliSanzioniPanel() {
       if (typesData.success) setInfractionTypes(typesData.data || []);
 
       // Fetch domande spunta dal SUAP - filtrato per comune se in impersonificazione
-      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
-      const domandeRes = await fetch(addComuneIdToUrl(`${API_URL}/api/domande-spunta`));
+      const domandeRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/domande-spunta`));
       const domandeData = await domandeRes.json();
       if (domandeData.success) {
         // Ordina per data (più recenti prima)
@@ -436,29 +436,20 @@ export default function ControlliSanzioniPanel() {
         if (giustManualiData.success) setGiustificazioniManuali(giustManualiData.data || []);
       } catch (e) { console.error('Errore fetch giustificazioni manuali:', e); }
 
-      // Fetch storico sessioni mercato - filtrato lato backend con comune_id
-      // Fallback: se il backend restituisce vuoto durante impersonazione, riprova senza filtro e filtra client-side
-      const sessionsRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/presenze/sessioni`));
+      // Fetch storico sessioni mercato - SEMPRE fetch tutte le sessioni e filtra client-side
+      // Il filtro comune_id lato backend spesso non funziona, quindi filtriamo in locale
+      const sessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni`);
       const sessionsData = await sessionsRes.json();
       if (sessionsData.success) {
         const sessionsArray = sessionsData.data || [];
-        if (sessionsArray.length === 0 && isImpersonating && impersonatedComuneNome) {
-          // Fallback: fetch senza filtro comune_id e filtra client-side per nome comune
-          try {
-            const allSessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni`);
-            const allSessionsData = await allSessionsRes.json();
-            if (allSessionsData.success && allSessionsData.data?.length > 0) {
-              const filtered = allSessionsData.data.filter((s: MarketSession) =>
-                s.comune?.toLowerCase() === impersonatedComuneNome.toLowerCase()
-              );
-              setMarketSessions(filtered);
-            } else {
-              setMarketSessions([]);
-            }
-          } catch (fallbackErr) {
-            console.warn('[ControlliSanzioni] Fallback sessioni fallito:', fallbackErr);
-            setMarketSessions([]);
-          }
+        if (isImpersonating && impersonatedComuneNome) {
+          // Filtra client-side per nome comune (case-insensitive, con trim)
+          const comuneTarget = impersonatedComuneNome.toLowerCase().trim();
+          const filtered = sessionsArray.filter((s: MarketSession) =>
+            s.comune?.toLowerCase().trim() === comuneTarget ||
+            s.market_name?.toLowerCase().includes(comuneTarget)
+          );
+          setMarketSessions(filtered);
         } else {
           setMarketSessions(sessionsArray);
         }
@@ -467,7 +458,7 @@ export default function ControlliSanzioniPanel() {
       // Fetch concessioni dal SUAP - filtrato per comune se in impersonificazione
       let concessioniData: any = { data: [] };
       try {
-        const concessioniRes = await fetch(addComuneIdToUrl('https://orchestratore.mio-hub.me/api/concessions'));
+        const concessioniRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/concessions`));
         concessioniData = await concessioniRes.json();
         if (concessioniData.success) {
           // Calcola stato se non presente
@@ -495,7 +486,7 @@ export default function ControlliSanzioniPanel() {
       // Fetch autorizzazioni dal SUAP - filtrato per comune se in impersonificazione
       let autorizzazioniData: any = { data: [] };
       try {
-        const autorizzazioniRes = await fetch(addComuneIdToUrl(`${API_URL}/api/autorizzazioni`));
+        const autorizzazioniRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/autorizzazioni`));
         autorizzazioniData = await autorizzazioniRes.json();
         if (autorizzazioniData.success || autorizzazioniData.data) {
           // Ordina per data creazione (più recenti prima)
@@ -633,24 +624,20 @@ export default function ControlliSanzioniPanel() {
       }
 
       // Fetch graduatoria spuntisti per tutti i mercati del comune
+      // Riusa le sessioni gia' caricate (marketSessions) per prendere i market_id
       try {
         setGraduatoriaLoading(true);
-        // Prendi i mercati dal comune per fetchare la graduatoria
-        // Usa le sessioni gia' caricate (con fallback client-side)
-        const marketsRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/presenze/sessioni`));
-        const marketsData = await marketsRes.json();
-        let sessionsForGrad = (marketsData.success && marketsData.data?.length > 0) ? marketsData.data : [];
-        // Fallback client-side: se vuoto durante impersonazione, fetch senza filtro e filtra per comune
-        if (sessionsForGrad.length === 0 && isImpersonating && impersonatedComuneNome) {
-          try {
-            const allRes = await fetch(`${MIHUB_API}/presenze/sessioni`);
-            const allData = await allRes.json();
-            if (allData.success && allData.data?.length > 0) {
-              sessionsForGrad = allData.data.filter((s: any) =>
-                s.comune?.toLowerCase() === impersonatedComuneNome.toLowerCase()
-              );
-            }
-          } catch (_e) { /* fallback silenzioso */ }
+        // Usa le sessioni gia' filtrate (fetch senza comune_id, filtrate client-side sopra)
+        const gradSessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni`);
+        const gradSessionsData = await gradSessionsRes.json();
+        let sessionsForGrad = (gradSessionsData.success && gradSessionsData.data?.length > 0) ? gradSessionsData.data : [];
+        // Filtra client-side per comune se in impersonazione
+        if (isImpersonating && impersonatedComuneNome && sessionsForGrad.length > 0) {
+          const comuneTarget = impersonatedComuneNome.toLowerCase().trim();
+          sessionsForGrad = sessionsForGrad.filter((s: any) =>
+            s.comune?.toLowerCase().trim() === comuneTarget ||
+            s.market_name?.toLowerCase().includes(comuneTarget)
+          );
         }
         if (sessionsForGrad.length > 0) {
           // Prendi i market_id unici dalle sessioni
@@ -2487,7 +2474,7 @@ export default function ControlliSanzioniPanel() {
                                 size="sm"
                                 variant="outline"
                                 className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
-                                onClick={() => window.open(`https://api.mio-hub.me${g.justification_file_url}`, '_blank')}
+                                onClick={() => window.open(`${MIHUB_API_BASE_URL}${g.justification_file_url}`, '_blank')}
                               >
                                 <Eye className="h-4 w-4 mr-1" />
                                 Vedi
