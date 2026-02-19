@@ -9,9 +9,10 @@ import {
   Filter, Eye, Calendar, ChevronDown
 } from 'lucide-react';
 import { addComuneIdToUrl, getImpersonationParams } from '@/hooks/useImpersonation';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.mio-hub.me';
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const BACKEND_URL = MIHUB_API_BASE_URL;
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 interface Notification {
   id: string;

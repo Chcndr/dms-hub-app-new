@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 export interface AgentLogMessage {
   id: string;
@@ -129,7 +130,7 @@ export function useAgentLogs({
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsHost = window.location.hostname === 'localhost' 
           ? 'localhost:8080' 
-          : 'api.mio-hub.me';
+          : new URL(MIHUB_API_BASE_URL).host;
         const wsPath = window.location.hostname === 'localhost' ? '' : '/ws';
         const wsUrl = `${wsProtocol}//${wsHost}${wsPath}`;
 

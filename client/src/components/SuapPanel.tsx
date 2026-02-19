@@ -28,6 +28,7 @@ import DomandaSpuntaDetail from '@/components/suap/DomandaSpuntaDetail';
 import NotificationManager from '@/components/suap/NotificationManager';
 import { toast } from 'sonner';
 import { getImpersonationParams } from '@/hooks/useImpersonation';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // Ente ID hardcoded per ora - in futuro da contesto utente
 const ENTE_ID = 'ente_modena';
@@ -330,7 +331,7 @@ export default function SuapPanel() {
 
   const loadDomandeSpuntaDashboard = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const API_URL = MIHUB_API_BASE_URL;
       // Usa addComuneIdToUrl per filtrare per comune
       const response = await fetch(addComuneIdToUrl(`${API_URL}/api/domande-spunta`));
       const data = await response.json();

@@ -69,6 +69,7 @@ import { useConversationPersistence } from '@/hooks/useConversationPersistence';
 import { useAgentLogs } from '@/hooks/useAgentLogs';
 import { useMio } from '@/contexts/MioContext';
 import { useSystemStatus } from '@/hooks/useSystemStatus';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // API TCC Carbon Credit — in produzione usa proxy Vercel (/api/tcc/* → orchestratore.mio-hub.me)
@@ -579,7 +580,7 @@ export default function DashboardPA() {
   // Dati reali dal backend MIHUB
   const realData = useDashboardData();
   
-  // Dati GTFS reali dal TransportContext (api.mio-hub.me/api/gtfs)
+  // Dati GTFS reali dal TransportContext (MIHUB_API_BASE_URL/api/gtfs)
   const { stops: gtfsStops, stats: gtfsStats, loadStats: loadGtfsStats, isLoading: gtfsLoading } = useTransport();
   
   const [selectedPeriod, setSelectedPeriod] = useState('month');
@@ -1735,7 +1736,7 @@ export default function DashboardPA() {
           <p class="mt-3"><b>Domini Attivi:</b></p>
           <ul>
             <li>✅ <code>app.mio-hub.me</code> - Dashboard PA</li>
-            <li>✅ <code>api.mio-hub.me</code> - Backend API (porta 3000)</li>
+            <li>✅ <code>mihub.157-90-29-66.nip.io</code> - Backend API (porta 3000)</li>
             <li>✅ <code>council.mio-hub.me</code> - LLM Council Frontend (porta 8002)</li>
             <li>✅ <code>council-api.mio-hub.me</code> - LLM Council API (porta 8001)</li>
           </ul>
@@ -2023,7 +2024,7 @@ export default function DashboardPA() {
 
             <ProtectedQuickAccess quickId="bus_hub">
             <button
-              onClick={() => window.open('https://api.mio-hub.me/tools/bus_hub.html', '_blank')}
+              onClick={() => window.open(`${MIHUB_API_BASE_URL}/tools/bus_hub.html`, '_blank')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
             >
               <Wrench className="h-5 w-5" />
@@ -4424,7 +4425,7 @@ export default function DashboardPA() {
             <NotificationsPanel />
           </TabsContent>
 
-          {/* TAB 18: CENTRO MOBILITÀ - Dati GTFS Reali da api.mio-hub.me */}
+          {/* TAB 18: CENTRO MOBILITÀ - Dati GTFS Reali da MIHUB_API_BASE_URL */}
           <TabsContent value="mobility" className="space-y-6">
             <Card className="bg-[#1a2332] border-[#3b82f6]/30">
               <CardHeader>

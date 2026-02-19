@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { useCivicReports } from '@/contexts/CivicReportsContext';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // Fix per icone marker Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -210,7 +211,7 @@ export default function CivicReportsHeatmap() {
       
       try {
         // Costruisci URL con filtro comune se in impersonificazione
-        let url = 'https://api.mio-hub.me/api/civic-reports/stats';
+        let url = `${MIHUB_API_BASE_URL}/api/civic-reports/stats`;
         if (currentComuneId) {
           url += `?comune_id=${currentComuneId}`;
         }

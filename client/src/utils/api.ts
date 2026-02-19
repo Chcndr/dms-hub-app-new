@@ -1,5 +1,7 @@
 // API Client per DMS Backend
 
+import { MIHUB_API_BASE_URL } from '@/config/api';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://8000-iot4ac202gehqh0qqxx5z-ce5d3831.manusvm.computer/api/v1';
 
 interface ApiResponse<T> {
@@ -39,7 +41,7 @@ export const geoAPI = {
     if (category) params.append('category', category);
 
     // Usa il nuovo endpoint di ricerca pubblica
-    const response = await fetch(`https://api.mio-hub.me/api/public/search?query=${encodeURIComponent(query || '')}`);
+    const response = await fetch(`${MIHUB_API_BASE_URL}/api/public/search?query=${encodeURIComponent(query || '')}`);
     if (!response.ok) {
       return { error: 'Search failed' };
     }

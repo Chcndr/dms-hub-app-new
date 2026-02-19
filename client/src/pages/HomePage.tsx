@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { geoAPI } from '@/utils/api';
 import { firebaseLogout } from '@/lib/firebase';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 interface SearchResult {
   id: string;
@@ -79,7 +80,7 @@ export default function HomePage() {
         const impresaId = user.impresa_id;
         if (!impresaId) return;
         
-        const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+        const API_BASE_URL = MIHUB_API_BASE_URL;
         const response = await fetch(`${API_BASE_URL}/api/notifiche/impresa/${impresaId}?limit=100`);
         if (response.ok) {
           const data = await response.json();

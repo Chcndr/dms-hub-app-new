@@ -2,10 +2,12 @@
  * MIHUB Backend REST API Client
  * 
  * Client per comunicare con il backend REST su Hetzner
- * Base URL: https://orchestratore.mio-hub.me
+ * Base URL: MIHUB_API_BASE_URL (mihub.157-90-29-66.nip.io)
  */
 
-const MIHUB_API_URL = import.meta.env.VITE_TRPC_URL || 'https://api.mio-hub.me';
+import { MIHUB_API_BASE_URL } from '@/config/api';
+
+const MIHUB_API_URL = MIHUB_API_BASE_URL;
 
 interface ApiResponse<T> {
   success: boolean;

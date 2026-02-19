@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Tldraw, TLEditorComponents, TLUiOverrides, useEditor, exportToBlob, AssetRecordType, getSnapshot, loadSnapshot } from 'tldraw';
 import 'tldraw/tldraw.css';
 import { Maximize2, Minimize2, Save, Download, Upload, RefreshCw } from 'lucide-react';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 interface SharedWorkspaceProps {
   conversationId?: string;
@@ -24,7 +25,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
   const loadWorkspaceState = useCallback(async () => {
     try {
       console.log('[SharedWorkspace] Loading workspace for conversationId:', effectiveConversationId);
-      const response = await fetch(`https://api.mio-hub.me/api/workspace/load?conversationId=${effectiveConversationId}`);
+      const response = await fetch(`${MIHUB_API_BASE_URL}/api/workspace/load?conversationId=${effectiveConversationId}`);
       if (response.ok) {
         const data = await response.json();
         // Backend restituisce { success, data: { snapshot } }
@@ -102,7 +103,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       const snapshot = { document, session };
       
       console.log('[SharedWorkspace] Saving workspace for conversationId:', effectiveConversationId);
-      const response = await fetch('https://api.mio-hub.me/api/workspace/save', {
+      const response = await fetch(`${MIHUB_API_BASE_URL}/api/workspace/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

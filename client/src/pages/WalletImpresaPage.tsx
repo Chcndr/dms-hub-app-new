@@ -31,6 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // Tipi wallet
 interface WalletItem {
@@ -143,9 +144,9 @@ export default function WalletImpresaPage() {
   const [resolvedImpresaId, setResolvedImpresaId] = useState<number | null>(null);
   const [impresaResolving, setImpresaResolving] = useState(true);
 
-  // In produzione usa proxy Vercel (/api/wallets/* → api.mio-hub.me), in dev URL diretto
+  // In produzione usa proxy Vercel, in dev URL diretto
   const API_BASE_URL = import.meta.env.DEV
-    ? (import.meta.env.VITE_API_URL || 'https://api.mio-hub.me')
+    ? MIHUB_API_BASE_URL
     : '';
   const ORCHESTRATORE_URL = import.meta.env.DEV
     ? 'https://orchestratore.mio-hub.me'

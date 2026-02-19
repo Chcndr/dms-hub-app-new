@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // Fix per icone marker Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -47,8 +48,8 @@ const API_BASE_URL = import.meta.env.DEV
   ? 'https://orchestratore.mio-hub.me'
   : '';
 
-// URL API Hetzner per civic-reports (servite da api.mio-hub.me)
-const HETZNER_API_URL = 'https://api.mio-hub.me';
+// URL API Hetzner per civic-reports
+const HETZNER_API_URL = MIHUB_API_BASE_URL;
 
 // Coordinate centri comuni
 const COMUNI_COORDS: Record<number, { lat: number; lng: number; nome: string }> = {

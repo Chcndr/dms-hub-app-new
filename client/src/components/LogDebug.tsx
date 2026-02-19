@@ -20,6 +20,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // ============================================================================
 // TYPES
@@ -562,7 +563,7 @@ function SystemStatusTab() {
         // Converti formato backend in formato componente
         const convertedStatus: SystemStatus = {
           backend: {
-            url: 'https://api.mio-hub.me',
+            url: MIHUB_API_BASE_URL,
             status: data.status.processes.find((p: any) => p.name === 'mihub-backend')?.status === 'online' ? 'up' : 'down',
             uptime: (() => {
               const proc = data.status.processes.find((p: any) => p.name === 'mihub-backend');

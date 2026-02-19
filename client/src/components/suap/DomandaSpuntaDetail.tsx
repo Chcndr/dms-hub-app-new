@@ -11,8 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, FileCheck, FileText, User, MapPin, Wallet, Calendar, ClipboardCheck, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const API_URL = MIHUB_API_BASE_URL;
 
 interface DomandaSpuntaDetailProps {
   domandaId: number;

@@ -18,8 +18,9 @@ import {
 import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { useCivicReports } from '@/contexts/CivicReportsContext';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 interface CivicStats {
   pending: number;

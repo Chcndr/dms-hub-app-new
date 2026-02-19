@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // ============================================================================
 // TYPES
@@ -218,7 +219,7 @@ interface PresenzeStats {
 // ============================================================================
 // HELPERS
 // ============================================================================
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 const getImpresaId = (): number | null => {
   try {

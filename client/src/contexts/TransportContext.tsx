@@ -4,14 +4,15 @@
  * Context React per gestire i dati GTFS del trasporto pubblico.
  * Fornisce accesso centralizzato a fermate, linee e orari.
  * 
- * AGGIORNATO: Ora usa le API GTFS reali su api.mio-hub.me
+ * AGGIORNATO: Ora usa le API GTFS reali via MIHUB_API_BASE_URL
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { TransportStop, TransportRoute, StopTime } from '@/components/TransportStopsLayer';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // API base URL - Backend MioHub con dati GTFS reali
-const API_BASE = 'https://api.mio-hub.me/api/gtfs';
+const API_BASE = `${MIHUB_API_BASE_URL}/api/gtfs`;
 
 interface TransportContextType {
   // Dati

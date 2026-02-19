@@ -35,11 +35,11 @@ import {
 } from "@/components/ui/collapsible";
 import { addComuneIdToUrl, getImpersonationParams } from '@/hooks/useImpersonation';
 import NotificationManager from '@/components/suap/NotificationManager';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
-// API Base URL — in produzione usa proxy Vercel (/api/wallets/* → api.mio-hub.me)
-// In sviluppo locale usa URL diretto per evitare problemi CORS
+// API Base URL — in produzione usa proxy Vercel, in sviluppo locale URL diretto
 const WALLET_API_BASE = import.meta.env.DEV
-  ? (import.meta.env.VITE_API_URL || 'https://api.mio-hub.me')
+  ? MIHUB_API_BASE_URL
   : '';
 
 // --- TIPI ---
@@ -2226,7 +2226,7 @@ export default function WalletPanel() {
                               size="sm"
                               variant="outline"
                               className="border-slate-600 text-slate-300"
-                              onClick={() => window.open(`https://api.mio-hub.me/api/verbali/${sanzione.id}/pdf`, '_blank')}
+                              onClick={() => window.open(`${MIHUB_API_BASE_URL}/api/verbali/${sanzione.id}/pdf`, '_blank')}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>

@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Building2, FileCheck, AlertCircle, CheckCircle, Clock, Users, Search, X, TrendingUp } from 'lucide-react';
 import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // ============================================================================
 // INTERFACCE TYPESCRIPT
@@ -43,7 +44,7 @@ export interface QualificazioneDTO {
 // API CONFIGURATION
 // ============================================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 // NOTA: Dati mock rimossi. Se l'API non risponde, mostrare stato vuoto.
 

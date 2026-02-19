@@ -1,11 +1,13 @@
 /**
  * Configurazione Endpoint Reali - DMS HUB
- * 
+ *
  * Questo file contiene la configurazione di tutti gli endpoint REALI
  * utilizzati dal sistema DMS HUB, organizzati per categoria.
- * 
- * Base URL: https://orchestratore.mio-hub.me
+ *
+ * Base URL: MIHUB_API_BASE_URL (mihub.157-90-29-66.nip.io)
  */
+
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // AGGIORNATO: 28 novembre 2025 - Audit endpoint reali
 // Solo endpoint FUNZIONANTI (testati con curl, 200 OK)
@@ -1701,10 +1703,10 @@ export const integrations: IntegrationConfig[] = [
     id: 'mobility-tper',
     name: 'Mobility / TPER',
     description: 'Sistema di mobilità urbana e trasporto pubblico. Fornisce dati su fermate bus, tram e parcheggi.',
-    baseUrl: 'https://api.mio-hub.me',
+    baseUrl: MIHUB_API_BASE_URL,
     status: 'active',
     dataOwner: 'TPER / Comune',
-    notes: 'Integrato con API GTFS (api.mio-hub.me). Dati reali TPER Bologna/Ferrara + Trenitalia + Tiemme importati nel database.',
+    notes: 'Integrato con API GTFS (MIHUB_API_BASE_URL). Dati reali TPER Bologna/Ferrara + Trenitalia + Tiemme importati nel database.',
     endpoints: [
       '/api/mobility/stops',
       '/api/mobility/lines',
@@ -1715,7 +1717,7 @@ export const integrations: IntegrationConfig[] = [
     id: 'mercaweb',
     name: 'MercaWeb — Abaco S.p.A.',
     description: 'Integrazione bidirezionale con MercaWeb (Abaco S.p.A.) per sincronizzazione anagrafiche mercati, ambulanti, piazzole, concessioni e presenze.',
-    baseUrl: 'https://api.mio-hub.me',
+    baseUrl: MIHUB_API_BASE_URL,
     status: 'active',
     dataOwner: 'Abaco S.p.A.',
     notes: 'Integrazione attiva. Import anagrafiche via POST, export presenze via GET. Autenticazione tramite API Key (header X-MercaWeb-API-Key). Logica UPSERT basata su mercaweb_id.',

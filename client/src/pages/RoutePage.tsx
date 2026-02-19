@@ -13,6 +13,7 @@ import {
 import { Navigation, ArrowLeft, Leaf, Clock, MapPin, TrendingUp, Car, Bike, Footprints, Bus, Loader2, Store } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { Link, useLocation } from 'wouter';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 
@@ -170,7 +171,7 @@ export default function RoutePage() {
 
       const apiMode = modeMap[mode] || 'walking';
 
-      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+      const API_URL = MIHUB_API_BASE_URL;
       const requestPayload = {
         start: {
           lat: currentUserLocation.lat,
