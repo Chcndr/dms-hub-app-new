@@ -115,46 +115,22 @@ interface LegacyUserData {
 }
 
 /**
- * Cerca l'impresa associata all'utente tramite ricerca multi-strategia.
+ * Cerca l'impresa associata all'utente tramite user_id nel DB legacy.
  * Usata come fallback quando lookupLegacyUser non trova impresa_id.
- * Strategie: email su orchestratore, email su MIHUB, user_id su orchestratore.
+ *
+ * NOTA: Le strategie di ricerca per email sono state RIMOSSE perché l'email
+ * dell'impresa è l'email DI CONTATTO dell'azienda, NON l'email del proprietario.
+ * Cercando per email si associavano erroneamente imprese a utenti cittadini
+ * che condividevano la stessa email (es. checchi@me.com era email di contatto
+ * dell'impresa Intim8, ma l'utente è un cittadino).
+ *
+ * Il match corretto avviene solo tramite:
+ * 1. impresa_id nella tabella users (match diretto, già gestito in lookupLegacyUser)
+ * 2. user_id nel DB legacy (questa funzione)
+ * 3. user_role_assignments nel RBAC (gestito da checkNeonRoles)
  */
-async function lookupImpresaForUser(email: string, userId?: number): Promise<{ id: number; denominazione: string } | null> {
-  // Strategia 1: Cerca impresa per email su orchestratore
-  if (email) {
-    try {
-      const res = await fetch(`${API_BASE}/api/imprese?email=${encodeURIComponent(email)}`);
-      if (res.ok) {
-        const data = await res.json();
-        const list = data.success ? data.data : (Array.isArray(data) ? data : null);
-        if (list && list.length > 0 && list[0].id) {
-          console.warn(`[FirebaseAuth] Impresa trovata per email: ID=${list[0].id}, nome=${list[0].denominazione}`);
-          return { id: list[0].id, denominazione: list[0].denominazione || list[0].ragione_sociale || '' };
-        }
-      }
-    } catch (err) {
-      console.warn('[FirebaseAuth] Lookup impresa per email fallito:', err);
-    }
-  }
-
-  // Strategia 2: Cerca impresa per email su MIHUB (Hetzner)
-  if (email) {
-    try {
-      const res = await fetch(`${TRPC_BASE}/api/imprese?email=${encodeURIComponent(email)}`);
-      if (res.ok) {
-        const data = await res.json();
-        const raw = data.success ? data.data : (Array.isArray(data) ? data : null);
-        if (raw && raw.length > 0 && raw[0].id) {
-          console.warn(`[FirebaseAuth] Impresa trovata per email (MIHUB): ID=${raw[0].id}, nome=${raw[0].denominazione}`);
-          return { id: raw[0].id, denominazione: raw[0].denominazione || raw[0].ragione_sociale || '' };
-        }
-      }
-    } catch (err) {
-      console.warn('[FirebaseAuth] Lookup impresa per email MIHUB fallito:', err);
-    }
-  }
-
-  // Strategia 3: Cerca impresa per user_id su orchestratore
+async function lookupImpresaForUser(_email: string, userId?: number): Promise<{ id: number; denominazione: string } | null> {
+  // Cerca impresa per user_id su orchestratore (associazione diretta utente-impresa)
   if (userId && userId > 0) {
     try {
       const res = await fetch(`${API_BASE}/api/imprese?user_id=${userId}`);
@@ -399,23 +375,10 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
       console.warn(`[FirebaseAuth] Impresa associata via fallback: impresa_id=${impresaResult.id} (${impresaResult.denominazione})`);
     }
   }
-  // Se non c'è neanche il legacy user, prova comunque a cercare l'impresa
-  if (!legacyUser && email) {
-    const impresaResult = await lookupImpresaForUser(email);
-    if (impresaResult) {
-      // Crea un legacyUser minimo con solo l'impresa
-      legacyUser = {
-        id: 0,
-        name: firebaseUser.displayName || email,
-        email,
-        base_role: 'business',
-        is_super_admin: false,
-        assigned_roles: [],
-        impresa_id: impresaResult.id,
-      };
-      console.warn(`[FirebaseAuth] Creato legacyUser minimo con impresa_id=${impresaResult.id}`);
-    }
-  }
+  // NOTA: Rimosso il blocco che creava un legacyUser fittizio basato sulla ricerca
+  // per email dell'impresa. L'email dell'impresa è l'email di contatto dell'azienda,
+  // NON identifica il proprietario. Senza un user_id valido, non possiamo associare
+  // un'impresa in modo affidabile.
 
   // ============================================
   // STEP 2: Sync con backend Firebase (Vercel serverless function)
@@ -522,10 +485,18 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
   // STEP 6: Costruisci il MioHubUser con tutti i dati
   // ============================================
 
-  // Determina ruolo effettivo: admin > business (ha impresa) > Firebase > citizen
+  // Determina ruolo effettivo: admin > RBAC esplicito > business (ha impresa) > Firebase > citizen
+  // Il ruolo RBAC dal Neon DB (user_role_assignments) ha priorità sull'associazione impresa,
+  // perché un utente può avere la stessa email di contatto di un'impresa senza esserne titolare.
+  const hasExplicitCitizenRole = neonRoles.length > 0 && neonRoles.some(
+    (r: any) => r.role_code === 'citizen' || r.role_code === 'cittadino'
+  );
   let effectiveRole: UserRole;
   if (isAdmin) {
     effectiveRole = 'pa';
+  } else if (hasExplicitCitizenRole) {
+    // L'utente ha un ruolo citizen esplicito nel RBAC - rispettarlo
+    effectiveRole = 'citizen';
   } else if (hasImpresa) {
     effectiveRole = 'business';
   } else {
