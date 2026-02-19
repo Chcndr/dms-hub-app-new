@@ -270,7 +270,7 @@ interface GiustificazioneManuale {
 
 export default function ControlliSanzioniPanel() {
   // Hook per impersonificazione - legge comune_id dall'URL
-  const { isImpersonating, comuneId: impersonatedComuneId, addComuneIdToUrl } = useImpersonation();
+  const { isImpersonating, comuneId: impersonatedComuneId, comuneNome: impersonatedComuneNome, addComuneIdToUrl } = useImpersonation();
   
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [stats, setStats] = useState<InspectionStats | null>(null);
@@ -436,11 +436,32 @@ export default function ControlliSanzioniPanel() {
         if (giustManualiData.success) setGiustificazioniManuali(giustManualiData.data || []);
       } catch (e) { console.error('Errore fetch giustificazioni manuali:', e); }
 
-      // Fetch storico sessioni mercato - v4.6.0: filtrato lato backend con comune_id (senza limite)
+      // Fetch storico sessioni mercato - filtrato lato backend con comune_id
+      // Fallback: se il backend restituisce vuoto durante impersonazione, riprova senza filtro e filtra client-side
       const sessionsRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/presenze/sessioni`));
       const sessionsData = await sessionsRes.json();
       if (sessionsData.success) {
-        setMarketSessions(sessionsData.data || []);
+        const sessionsArray = sessionsData.data || [];
+        if (sessionsArray.length === 0 && isImpersonating && impersonatedComuneNome) {
+          // Fallback: fetch senza filtro comune_id e filtra client-side per nome comune
+          try {
+            const allSessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni`);
+            const allSessionsData = await allSessionsRes.json();
+            if (allSessionsData.success && allSessionsData.data?.length > 0) {
+              const filtered = allSessionsData.data.filter((s: MarketSession) =>
+                s.comune?.toLowerCase() === impersonatedComuneNome.toLowerCase()
+              );
+              setMarketSessions(filtered);
+            } else {
+              setMarketSessions([]);
+            }
+          } catch (fallbackErr) {
+            console.warn('[ControlliSanzioni] Fallback sessioni fallito:', fallbackErr);
+            setMarketSessions([]);
+          }
+        } else {
+          setMarketSessions(sessionsArray);
+        }
       }
 
       // Fetch concessioni dal SUAP - filtrato per comune se in impersonificazione
@@ -615,11 +636,25 @@ export default function ControlliSanzioniPanel() {
       try {
         setGraduatoriaLoading(true);
         // Prendi i mercati dal comune per fetchare la graduatoria
+        // Usa le sessioni gia' caricate (con fallback client-side)
         const marketsRes = await fetch(addComuneIdToUrl(`${MIHUB_API}/presenze/sessioni`));
         const marketsData = await marketsRes.json();
-        if (marketsData.success && marketsData.data?.length > 0) {
+        let sessionsForGrad = (marketsData.success && marketsData.data?.length > 0) ? marketsData.data : [];
+        // Fallback client-side: se vuoto durante impersonazione, fetch senza filtro e filtra per comune
+        if (sessionsForGrad.length === 0 && isImpersonating && impersonatedComuneNome) {
+          try {
+            const allRes = await fetch(`${MIHUB_API}/presenze/sessioni`);
+            const allData = await allRes.json();
+            if (allData.success && allData.data?.length > 0) {
+              sessionsForGrad = allData.data.filter((s: any) =>
+                s.comune?.toLowerCase() === impersonatedComuneNome.toLowerCase()
+              );
+            }
+          } catch (_e) { /* fallback silenzioso */ }
+        }
+        if (sessionsForGrad.length > 0) {
           // Prendi i market_id unici dalle sessioni
-          const marketIds = Array.from(new Set((marketsData.data || []).map((s: any) => s.market_id)));
+          const marketIds = Array.from(new Set((sessionsForGrad || []).map((s: any) => s.market_id)));
           let allGraduatoria: any[] = [];
           for (const mId of marketIds) {
             try {
