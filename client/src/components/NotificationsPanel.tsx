@@ -136,22 +136,22 @@ export function NotificationsPanel() {
     fetchImprese();
   }, []);
 
-  // Carica lista comuni e settori
+  // Carica lista comuni e settori (filtrata per comune durante impersonazione)
   useEffect(() => {
     const fetchComuniAndSettori = async () => {
       setLoadingSettori(true);
       try {
-        // Carica comuni
-        const comuniRes = await fetch(`${API_BASE_URL}/api/comuni`);
+        // Carica comuni — filtra per comune_id durante impersonazione
+        const comuniRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/comuni`));
         const comuniData = await comuniRes.json();
         if (comuniData.success && comuniData.data) {
           setComuni(comuniData.data);
-          
+
           // Carica settori per ogni comune
           const allSettori: SettoreComune[] = [];
           for (const comune of comuniData.data) {
             try {
-              const settoriRes = await fetch(`${API_BASE_URL}/api/comuni/${comune.id}/settori`);
+              const settoriRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/comuni/${comune.id}/settori`));
               const settoriData = await settoriRes.json();
               if (settoriData.success && settoriData.data) {
                 // Aggiungi il nome del comune a ogni settore

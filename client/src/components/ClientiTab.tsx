@@ -5,13 +5,13 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Users, 
-  Wallet, 
-  Search, 
-  RefreshCw, 
-  Mail, 
-  Calendar, 
+import {
+  Users,
+  Wallet,
+  Search,
+  RefreshCw,
+  Mail,
+  Calendar,
   Coins,
   UserCheck,
   UserX,
@@ -19,8 +19,10 @@ import {
   Download,
   Leaf
 } from 'lucide-react';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import { MIHUB_API_BASE_URL } from '@/config/api';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+const API_BASE = MIHUB_API_BASE_URL;
 
 interface Citizen {
   id: number;
@@ -53,7 +55,7 @@ export default function ClientiTab() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE}/api/citizens`);
+      const response = await fetch(addComuneIdToUrl(`${API_BASE}/api/citizens`));
       if (!response.ok) throw new Error('Errore nel caricamento cittadini');
       const data = await response.json();
       setCitizens(data.citizens || []);

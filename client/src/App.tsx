@@ -15,6 +15,7 @@ import ImpersonationBanner from "./components/ImpersonationBanner";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import SkipToContent from "./components/SkipToContent";
 import GlobalFooter from "./components/GlobalFooter";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Pagine critiche — caricate subito (first paint)
 import HomePage from "./pages/HomePage";
@@ -76,32 +77,32 @@ function Router() {
       <Route path="/vetrine/:id" component={VetrinePage} />
       <Route path="/vetrine" component={VetrinePage} />
       <Route path="/hub-operatore" component={HubOperatore} />
-      <Route path="/dashboard-pa" component={DashboardPA} />
-      <Route path="/mio" component={MioPage} />
-      <Route path="/guardian/endpoints" component={GuardianEndpoints} />
-      <Route path="/guardian/logs" component={GuardianLogs} />
-      <Route path="/guardian/debug" component={GuardianDebug} />
+      <Route path="/dashboard-pa">{() => <ProtectedRoute component={DashboardPA} adminOnly />}</Route>
+      <Route path="/mio">{() => <ProtectedRoute component={MioPage} adminOnly />}</Route>
+      <Route path="/guardian/endpoints">{() => <ProtectedRoute component={GuardianEndpoints} adminOnly />}</Route>
+      <Route path="/guardian/logs">{() => <ProtectedRoute component={GuardianLogs} adminOnly />}</Route>
+      <Route path="/guardian/debug">{() => <ProtectedRoute component={GuardianDebug} adminOnly />}</Route>
       <Route path="/market-gis" component={MarketGISPage} />
       <Route path="/mappa-italia" component={MappaItaliaPage} />
-      <Route path="/log-debug" component={LogDebugPage} />
-      <Route path="/settings/api-tokens" component={APITokensPage} />
-      <Route path="/council" component={CouncilPage} />
+      <Route path="/log-debug">{() => <ProtectedRoute component={LogDebugPage} adminOnly />}</Route>
+      <Route path="/settings/api-tokens">{() => <ProtectedRoute component={APITokensPage} adminOnly />}</Route>
+      <Route path="/council">{() => <ProtectedRoute component={CouncilPage} adminOnly />}</Route>
       <Route path="/suap" component={() => <SuapDashboard />} />
       <Route path="/suap/list" component={SuapList} />
       <Route path="/suap/detail/:id" component={SuapDetail} />
       <Route path="/hub-map-test" component={HubMapTestPage} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />
-      <Route path="/dashboard-impresa" component={DashboardImpresa} />
-      <Route path="/app/impresa/notifiche" component={AppImpresaNotifiche} />
+      <Route path="/dashboard-impresa">{() => <ProtectedRoute component={DashboardImpresa} />}</Route>
+      <Route path="/app/impresa/notifiche">{() => <ProtectedRoute component={AppImpresaNotifiche} />}</Route>
       {/* v3.70.0 - Nuove route App Impresa */}
-      <Route path="/app/impresa/wallet" component={WalletImpresaPage} />
-      <Route path="/app/impresa/presenze" component={PresenzePage} />
-      <Route path="/app/impresa/anagrafica" component={AnagraficaPage} />
+      <Route path="/app/impresa/wallet">{() => <ProtectedRoute component={WalletImpresaPage} />}</Route>
+      <Route path="/app/impresa/presenze">{() => <ProtectedRoute component={PresenzePage} />}</Route>
+      <Route path="/app/impresa/anagrafica">{() => <ProtectedRoute component={AnagraficaPage} />}</Route>
       {/* v3.74.0 - Presentazione pubblica */}
       <Route path="/presentazione" component={PresentazionePage} />
       {/* v3.80.0 - Verbali PM Professionali */}
-      <Route path="/pm/nuovo-verbale" component={NuovoVerbalePage} />
+      <Route path="/pm/nuovo-verbale">{() => <ProtectedRoute component={NuovoVerbalePage} adminOnly />}</Route>
       {/* GDPR & Compliance */}
       <Route path="/privacy" component={PrivacyPolicyPage} />
       <Route path="/accessibilita" component={AccessibilityPage} />
