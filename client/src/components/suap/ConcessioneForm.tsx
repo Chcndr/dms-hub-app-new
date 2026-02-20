@@ -761,7 +761,20 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
       console.log('[ConcessioneForm] Response body:', result);
 
       if (result.success) {
-        toast.success(isEditMode ? 'Concessione aggiornata con successo!' : 'Concessione creata con successo!');
+        // Toast progressivi: mostra ogni step con delay sequenziale (v8.1.4)
+        if (result.steps && result.steps.length > 0) {
+          result.steps.forEach((step: { tipo: string; msg: string }, index: number) => {
+            setTimeout(() => {
+              if (step.tipo === 'success') {
+                toast.success(step.msg, { duration: 3000 });
+              } else {
+                toast.info(step.msg, { duration: 2500 });
+              }
+            }, index * 800);
+          });
+        } else {
+          toast.success(isEditMode ? 'Concessione aggiornata con successo!' : 'Concessione creata con successo!');
+        }
         onSubmit(result.data);
       } else {
         // Gestione errori specifici

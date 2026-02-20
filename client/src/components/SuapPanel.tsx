@@ -2346,9 +2346,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                 ));
               }
               setActiveTab('concessioni'); // Vai al tab concessioni
-              toast.success(concessioneMode === 'edit' ? 'Concessione aggiornata!' : 'Concessione salvata!', { 
-                description: `N. ${savedConcessione?.numero_protocollo || savedConcessione?.id}` 
-              });
+              // Toast progressivi gestiti direttamente dal ConcessioneForm (v8.1.4)
             }}
             onCancel={() => {
               setShowConcessioneForm(false);
