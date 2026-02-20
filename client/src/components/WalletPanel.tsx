@@ -546,16 +546,14 @@ export default function WalletPanel() {
         const mercati = data.data.map((m: any) => ({ id: m.id, name: m.name }));
         setMercatiList(mercati);
         
-        // v3.60.0 fix: Pre-seleziona il primo mercato SOLO per la sezione imprese/concessioni
-        // NON modificare canoneFilters per evitare re-fetch che azzera le scadenze visibili
-        if (mercati.length > 0 && !selectedMercatoId) {
+        // v8.2.2 fix: Auto-seleziona mercato SOLO quando impersonalizzato come comune
+        // Quando admin vede tutti i mercati, NON pre-selezionare (evita bug Cervia Demo)
+        const { isImpersonating } = getImpersonationParams();
+        if (mercati.length > 0 && !selectedMercatoId && isImpersonating) {
           const primoMercato = mercati[0].id.toString();
           setSelectedMercatoId(primoMercato);
-          // Pre-seleziona il filtro canone SOLO se c'è un solo mercato (impersonificazione comune)
-          // Se admin vede tutti i mercati, lascia il filtro su 'all' per mostrare tutte le scadenze
-          if (mercati.length === 1) {
-            setCanoneFilters(prev => ({ ...prev, mercato_id: primoMercato }));
-          }
+          // Impersonalizzazione attiva: pre-seleziona anche il filtro canone
+          setCanoneFilters(prev => ({ ...prev, mercato_id: primoMercato }));
         }
       }
     } catch (err) {
