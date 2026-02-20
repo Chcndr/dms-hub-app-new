@@ -1975,7 +1975,9 @@ export default function WalletPanel() {
                                 `📅 Valida dal: ${impresa.valid_from ? new Date(impresa.valid_from).toLocaleDateString('it-IT') : 'N/A'}\n` +
                                 `📅 Scadenza: ${impresa.valid_to ? new Date(impresa.valid_to).toLocaleDateString('it-IT') : 'N/A'}\n` +
                                 `💵 Canone Annuo: € ${Number(impresa.canone_unico || 0).toFixed(2)}\n` +
-                                `⚠️ Scadenze non pagate: ${impresa.scadenze_non_pagate || 0}\n` +
+                                `🔴 Rate in mora: ${impresa.scadenze_in_mora || 0}\n` +
+                                `🟡 Rate da pagare: ${(impresa.scadenze_non_pagate || 0) - (impresa.scadenze_in_mora || 0)}\n` +
+                                `🟢 Rate pagate: ${impresa.scadenze_pagate || 0}\n` +
                                 `💸 Totale dovuto: € ${Number(impresa.totale_dovuto || 0).toFixed(2)}`;
                             alert(info);
                           }}
@@ -2044,13 +2046,30 @@ export default function WalletPanel() {
                           <div className="text-slate-400">
                             Scadenza: {impresa.valid_to ? new Date(impresa.valid_to).toLocaleDateString('it-IT') : 'N/A'}
                           </div>
-                          {impresa.scadenze_non_pagate > 0 && (
-                            <Badge className="bg-red-500/20 text-red-400">
-                              {impresa.scadenze_non_pagate} scadenze non pagate
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {(impresa.scadenze_in_mora || 0) > 0 && (
+                              <Badge className="bg-red-500/20 text-red-400">
+                                {impresa.scadenze_in_mora} in mora
+                              </Badge>
+                            )}
+                            {(impresa.scadenze_non_pagate - (impresa.scadenze_in_mora || 0)) > 0 && (
+                              <Badge className="bg-yellow-500/20 text-yellow-400">
+                                {impresa.scadenze_non_pagate - (impresa.scadenze_in_mora || 0)} da pagare
+                              </Badge>
+                            )}
+                            {(impresa.scadenze_pagate || 0) > 0 && (
+                              <Badge className="bg-green-500/20 text-green-400">
+                                {impresa.scadenze_pagate} pagate
+                              </Badge>
+                            )}
+                            {impresa.scadenze_non_pagate === 0 && (impresa.scadenze_pagate || 0) === 0 && (
+                              <Badge className="bg-slate-500/20 text-slate-400">
+                                Nessuna scadenza
+                              </Badge>
+                            )}
+                          </div>
                           {impresa.totale_dovuto > 0 && (
-                            <span className="text-red-400 font-bold">
+                            <span className="text-red-400 font-bold text-xs">
                               Dovuto: € {Number(impresa.totale_dovuto).toFixed(2)}
                             </span>
                           )}
