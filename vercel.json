@@ -80,6 +80,14 @@
       "destination": "https://mihub.157-90-29-66.nip.io/api/trpc/:path*"
     },
     {
+      "source": "/api/markets",
+      "destination": "https://api.mio-hub.me/api/markets"
+    },
+    {
+      "source": "/api/markets/:path*",
+      "destination": "https://api.mio-hub.me/api/markets/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

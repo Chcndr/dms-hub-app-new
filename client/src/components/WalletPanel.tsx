@@ -535,18 +535,25 @@ export default function WalletPanel() {
     }
   }, [subTab, canoneFilters]);
 
-  // --- LISTA IMPRESE/CONCESSIONI (v3.36.0) ---
+  // --- LISTA IMPRESE/CONCESSIONI (v8.3.0 - auto-load senza selettore mercato) ---
   const fetchMercatiList = async () => {
     try {
       const API_URL = WALLET_API_BASE;
-      // Usa addComuneIdToUrl per filtrare i mercati per comune (v3.60.0)
+      // Usa addComuneIdToUrl per filtrare i mercati per comune
       const response = await fetch(addComuneIdToUrl(`${API_URL}/api/markets`));
       const data = await response.json();
       if (data.success && data.data) {
         const mercati = data.data.map((m: any) => ({ id: m.id, name: m.name }));
         setMercatiList(mercati);
         
-        // v8.2.2: Non pre-selezionare qui, delegato a useEffect dedicato sotto
+        // v8.3.0: Auto-seleziona primo mercato e carica imprese direttamente
+        if (mercati.length > 0 && !selectedMercatoId) {
+          const primoId = mercati[0].id.toString();
+          setSelectedMercatoId(primoId);
+          setCanoneFilters(prev => ({ ...prev, mercato_id: primoId }));
+          // Carica imprese subito senza aspettare re-render
+          fetchImpreseConcessioni(primoId, impreseTipoOperatore);
+        }
       }
     } catch (err) {
       console.error('Errore caricamento mercati:', err);
@@ -562,7 +569,6 @@ export default function WalletPanel() {
       if (impreseSearch) params.append('search', impreseSearch);
       if (tipoOperatore && tipoOperatore !== 'all') params.append('tipo_operatore', tipoOperatore);
       
-      // v3.90.0: Filtro per comune_id durante impersonificazione
       const response = await fetch(addComuneIdToUrl(`${API_URL}/api/canone-unico/imprese-concessioni?${params.toString()}`));
       const data = await response.json();
       if (data.success) {
@@ -575,25 +581,14 @@ export default function WalletPanel() {
     }
   };
 
-  // v8.2.3 fix: Auto-seleziona mercato quando impersonalizzato e mercatiList è caricata
-  // Usa useEffect separato per evitare problemi di closure con selectedMercatoId
-  useEffect(() => {
-    if (subTab !== 'canone') return;
-    const { isImpersonating } = getImpersonationParams();
-    if (isImpersonating && mercatiList.length > 0 && !selectedMercatoId) {
-      const primoMercato = mercatiList[0].id.toString();
-      setSelectedMercatoId(primoMercato);
-      setCanoneFilters(prev => ({ ...prev, mercato_id: primoMercato }));
-    }
-  }, [subTab, mercatiList, selectedMercatoId]);
-
-  // Sincronizza selectedMercatoId con il filtro mercato principale (v3.57.0)
+  // v8.3.0: Sincronizza selectedMercatoId con il filtro mercato principale
   useEffect(() => {
     if (canoneFilters.mercato_id && canoneFilters.mercato_id !== 'all') {
       setSelectedMercatoId(canoneFilters.mercato_id);
     }
   }, [canoneFilters.mercato_id]);
 
+  // v8.3.0: Ricarica imprese quando cambiano filtri secondari (search, tipo operatore)
   useEffect(() => {
     if (selectedMercatoId) {
       fetchImpreseConcessioni(selectedMercatoId, impreseTipoOperatore);
@@ -1899,34 +1894,20 @@ export default function WalletPanel() {
             </Card>
           )}
 
-          {/* Lista Imprese/Concessioni (v3.36.0 - v3.57.0 sincronizzato con filtro principale) */}
+          {/* Lista Imprese/Concessioni (v8.3.0 - auto-load senza selettore mercato) */}
           <Card className="bg-[#1e293b] border-slate-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Users className="h-5 w-5 text-blue-400" />
-                Lista Imprese per Mercato
+                Lista Imprese {mercatiList.length > 0 ? `— ${mercatiList.find(m => m.id.toString() === selectedMercatoId)?.name || mercatiList[0]?.name || ''}` : ''}
+                <span className="text-sm font-normal text-slate-400 ml-2">
+                  ({impreseConcessioni.length} {impreseConcessioni.length === 1 ? 'impresa' : 'imprese'})
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Filtri Lista Imprese - v3.57.0/v3.58.0: sincronizzato con filtro principale + tipo operatore */}
+              {/* Filtri Lista Imprese - v8.3.0: rimosso selettore mercato, solo tipo operatore e ricerca */}
               <div className="flex flex-wrap gap-4 items-end mb-6">
-                <div className="w-[250px]">
-                  <Label className="text-slate-400 text-sm">Seleziona Mercato</Label>
-                  <Select value={selectedMercatoId} onValueChange={(v) => {
-                    setSelectedMercatoId(v);
-                    // Sincronizza anche il filtro principale
-                    setCanoneFilters({...canoneFilters, mercato_id: v});
-                  }}>
-                    <SelectTrigger className="bg-[#0f172a] border-slate-700 text-white">
-                      <SelectValue placeholder="Seleziona un mercato..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1e293b] border-slate-700">
-                      {mercatiList.map((m) => (
-                        <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="w-[150px]">
                   <Label className="text-slate-400 text-sm">Tipo Operatore</Label>
                   <Select value={impreseTipoOperatore} onValueChange={(v) => setImpreseTipoOperatore(v)}>
@@ -1952,17 +1933,12 @@ export default function WalletPanel() {
               </div>
 
               {/* Risultati */}
-              {!selectedMercatoId ? (
-                <div className="text-center py-8 text-slate-400">
-                  <Store className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                  <p>Seleziona un mercato per visualizzare le imprese</p>
-                </div>
-              ) : isLoadingImprese ? (
+              {isLoadingImprese ? (
                 <div className="flex justify-center py-8"><Loader2 className="animate-spin h-8 w-8 text-blue-500" /></div>
               ) : impreseConcessioni.length === 0 ? (
                 <div className="text-center py-8 text-slate-400">
                   <Building2 className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                  <p>Nessuna impresa trovata per questo mercato</p>
+                  <p>{mercatiList.length === 0 ? 'Caricamento mercato in corso...' : 'Nessuna impresa trovata per questo mercato'}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
