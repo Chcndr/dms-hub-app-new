@@ -95,7 +95,7 @@ export default function ImpreseQualificazioniPanel() {
       const fetchQualificazioni = async () => {
         setLoading(true);
         try {
-          const response = await fetch(`${API_BASE_URL}/api/imprese/${selectedImpresa.id}/qualificazioni`);
+          const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${selectedImpresa.id}/qualificazioni`));
           const data = await response.json();
           if (data.success) {
             setQualificazioni(data.data);
