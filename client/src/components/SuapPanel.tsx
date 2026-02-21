@@ -235,15 +235,18 @@ export default function SuapPanel() {
           const data = await response.json();
           if (data.success && data.data) {
             setComuneData({ id: parseInt(comuneId), nome: data.data.nome });
+            setComuneDataLoaded(true);
             return;
           }
         }
         setComuneData({ id: parseInt(comuneId), nome: comuneNome || 'Comune' });
+        setComuneDataLoaded(true);
         return;
       }
       
-      // Nessuna impersonalizzazione attiva - non settare un comune di default
+      // Nessuna impersonalizzazione attiva - admin globale, vede tutto
       setComuneData(null);
+      setComuneDataLoaded(true);
     } catch (error) {
       console.error('Error loading comune data:', error);
       setComuneData(null);
@@ -251,20 +254,27 @@ export default function SuapPanel() {
   };
 
   // Carica dati iniziali - ricarica quando cambia il comune
+  // Usa un flag per sapere se loadComuneData ha finito (comuneData può essere null legittimamente per admin globale)
+  const [comuneDataLoaded, setComuneDataLoaded] = useState(false);
+  
   useEffect(() => {
-    if (comuneData) {
+    if (comuneDataLoaded) {
       loadData();
     }
-  }, [comuneData]);
+  }, [comuneDataLoaded, comuneData]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      // Filtra le pratiche SCIA per comune tramite mercato.municipality
+      // Filtra le pratiche SCIA per comune (se impersonalizzato) o mostra tutte (admin globale)
       const comuneNomeFilter = comuneData?.nome?.toUpperCase() || '';
+      const filters: any = {};
+      if (comuneNomeFilter) {
+        filters.comune_nome = comuneNomeFilter;
+      }
       const [statsData, praticheData] = await Promise.all([
         getSuapStats(ENTE_ID),
-        getSuapPratiche(ENTE_ID, { comune_nome: comuneNomeFilter })
+        getSuapPratiche(ENTE_ID, filters)
       ]);
       setStats(statsData);
       // Ordina per data creazione (più recenti prima)
@@ -347,7 +357,7 @@ export default function SuapPanel() {
     try {
       const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
       // Usa il comune_id dinamico dal contesto
-      const currentComuneId = comuneData?.id || 1;
+      const currentComuneId = comuneData?.id || 0;
       const response = await fetch(`${MIHUB_API}/notifiche/messaggi/SUAP/${currentComuneId}`);
       const data = await response.json();
       if (data.success) {
