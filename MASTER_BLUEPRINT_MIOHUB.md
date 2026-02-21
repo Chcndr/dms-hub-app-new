@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 8.6.0 (Fix SUAP Engine v2.1 + Validazione SciaForm + Rimozione Hardcoded)  
+> **Versione:** 8.7.0 (Inventario DB Neon + Pulizia Pratiche Test + Fix Admin Globale SUAP)  
 > **Data:** 21 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -50,6 +50,12 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 21 Febbraio 2026 (v8.6.0 → v8.7.0)
+- ✅ **Inventario Completo Database Neon:** Censimento di tutte le 152 tabelle del database con colonne, records e descrizione. Organizzato per categorie: Core, SUAP/SCIA, Qualificazione, Segnalazioni, Mobilità, Gaming, Utenti, Notifiche, Agente AI, Storico, Geografiche, HUB. Nessuna tabella duplicata trovata.
+- ✅ **Pulizia Pratiche Test:** Eliminate 12 pratiche SCIA vuote/test dal DB (2025/001-003, TESTBROWSERDIR, TESTBODY, TESTCF, TESTDEL, NON_SPECIFICATO, VERDI, ecc.) con relativi 34 checks, 13 eventi e 3 decisioni. Restano 17 pratiche pulite con dati completi.
+- ✅ **Fix Admin Globale SUAP:** Il SuapPanel non caricava dati senza impersonalizzazione (comuneData=null bloccava loadData). Introdotto flag `comuneDataLoaded` per distinguere "non ancora caricato" da "admin globale senza filtro". Ora l'admin vede tutte le pratiche di tutti i comuni.
+- ✅ **Fix Notifiche SUAP:** Rimosso ultimo fallback `comuneData?.id || 1` → `comuneData?.id || 0` per le notifiche.
 
 ### Sessione 21 Febbraio 2026 (v8.5.0 → v8.6.0)
 - **SUAP Engine v2.1**: DELETE vecchi check v1.0 prima di ri-valutare (fix ON CONFLICT DO NOTHING)
@@ -782,21 +788,146 @@ POST /api/guardian/debug/testEndpoint
 
 **Connection String:** Vedi variabile `DATABASE_URL` o `NEON_POSTGRES_URL`
 
-### Tabelle Principali (Dati Reali - 2 Gennaio 2026)
+### Inventario Completo Tabelle (Aggiornato 21 Febbraio 2026)
 
-| Tabella | Descrizione | Records |
-|---------|-------------|-----------------||
-| `markets` | Mercati | **2** |
-| `stalls` | Posteggi | **564** |
-| `imprese` | Imprese | **13** |
-| `vendors` | Operatori | **11** |
-| `concessions` | Concessioni | **34** |
-| `agent_messages` | Chat agenti | ~500 |
-| `mio_agent_logs` | Log API | ~1500 |
-| `suap_pratiche` | Pratiche SUAP | **9** |
-| `suap_eventi` | Eventi SUAP | variabile |
+**Totale tabelle nel database:** 152
 
-**Totale tabelle nel database:** 81
+#### Tabelle Core (Dati Operativi)
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `markets` | 18 | 6 | Mercati comunali |
+| `stalls` | 28 | 583 | Posteggi nei mercati |
+| `imprese` | 18 | 20 | Anagrafica imprese |
+| `vendors` | 14 | 15 | Operatori ambulanti |
+| `concessions` | 30 | 83 | Concessioni posteggio |
+| `wallets` | 10 | 90 | Wallet PagoPA |
+| `wallet_scadenze` | 21 | 77 | Scadenze canone unico |
+| `wallet_history` | 13 | 135 | Storico eventi wallet |
+| `wallet_transactions` | 8 | 1344 | Transazioni wallet |
+| `transactions` | 10 | 116 | Transazioni generali |
+| `comuni` | 16 | 34 | Anagrafica comuni |
+| `settori_comune` | 24 | 94 | Settori merceologici per comune |
+
+#### Tabelle SUAP/SCIA
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `suap_pratiche` | 73 | 17 | Pratiche SCIA (dopo pulizia test) |
+| `suap_checks` | 7 | 226 | Check valutazione automatica |
+| `suap_eventi` | 8 | 38 | Eventi pratica |
+| `suap_decisioni` | 8 | 22 | Decisioni pratica |
+| `suap_documenti` | 7 | 0 | Documenti allegati |
+| `suap_azioni` | 9 | 0 | Azioni pratica |
+| `suap_regole` | 8 | 0 | Regole valutazione |
+| `dms_suap_instances` | 25 | 1 | Istanze SUAP |
+
+#### Tabelle Qualificazione e Compliance
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `qualification_types` | 12 | 10 | Tipi qualificazione |
+| `qualificazioni` | 12 | 50 | Qualificazioni imprese |
+| `regolarita_imprese` | 12 | 20 | Regolarità DURC/Antimafia |
+| `autorizzazioni` | 22 | 50 | Autorizzazioni PM |
+| `domande_spunta` | 30 | 35 | Domande spunta giornaliere |
+| `sanctions` | 33 | 39 | Sanzioni |
+
+#### Tabelle Segnalazioni e IoT
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `civic_reports` | 22 | 44 | Segnalazioni civiche |
+| `civic_report_config` | 10 | 2 | Config segnalazioni per comune |
+| `civic_report_categories` | 8 | 14 | Categorie segnalazioni |
+| `civic_report_comments` | 8 | 0 | Commenti segnalazioni |
+| `civic_report_photos` | 7 | 0 | Foto segnalazioni |
+
+#### Tabelle Mobilità e Sostenibilità
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `mobility_data` | 14 | 9554 | Dati mobilità |
+| `gtfs_stops` | 14 | 3117 | Fermate GTFS |
+| `cultural_pois` | 24 | 1277 | Punti di interesse culturali |
+| `route_completions` | 20 | 1 | Percorsi completati |
+
+#### Tabelle Gaming & Rewards (TCC)
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `operator_daily_wallet` | 14 | 26 | Wallet giornaliero operatori |
+| `operator_transactions` | 12 | 26 | Transazioni operatori |
+| `spend_qr_tokens` | 10 | 52 | Token QR spesa |
+| `qr_tokens` | 5 | 5 | Token QR |
+| `challenges` | 15 | 3 | Sfide gamification |
+| `challenge_participations` | 10 | 0 | Partecipazioni sfide |
+| `referrals` | 12 | 4 | Referral |
+
+#### Tabelle Utenti e Sicurezza
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `users` | 19 | 9 | Utenti sistema |
+| `user_roles` | 11 | 14 | Ruoli utente |
+| `user_role_assignments` | 10 | 6 | Assegnazioni ruoli |
+| `user_sessions` | 14 | 66 | Sessioni utente |
+| `permissions` | 10 | 102 | Permessi |
+| `role_permissions` | 7 | 285 | Permessi per ruolo |
+| `security_events` | 14 | 859 | Eventi sicurezza |
+| `secure_credentials` | 8 | 9 | Credenziali sicure |
+| `secrets` | 3 | 5 | Segreti |
+| `secrets_meta` | 9 | 10 | Metadati segreti |
+
+#### Tabelle Notifiche e Comunicazione
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `notifiche` | 19 | 401 | Notifiche sistema |
+| `notifiche_destinatari` | 6 | 948 | Destinatari notifiche |
+| `wallet_notifications` | 11 | 4 | Notifiche wallet |
+| `chat_messages` | 14 | 23 | Messaggi chat |
+
+#### Tabelle Agente AI
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `agent_messages` | 9 | 466 | Messaggi agente |
+| `mio_agent_logs` | 12 | 1627 | Log API agente |
+| `agent_conversations` | 10 | 32 | Conversazioni agente |
+
+#### Tabelle Storico e Audit
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `storico_titolarita_posteggio` | 34 | 4 | Storico titolarità posteggi |
+| `vendor_presences` | 23 | 48 | Presenze operatori |
+| `pm_watchlist` | 12 | 63 | Watchlist PM |
+| `audit_trail` | 12 | 13 | Trail audit |
+
+#### Tabelle Geografiche
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `regioni` | 8 | 20 | Regioni italiane |
+| `province` | 9 | 107 | Province italiane |
+
+#### Tabelle HUB/Negozi
+
+| Tabella | Colonne | Records | Descrizione |
+|---------|---------|---------|-------------|
+| `hub_shops` | 14 | 3 | Negozi HUB |
+| `shops` | 9 | 3 | Negozi |
+| `servizi_associazioni` | 14 | 24 | Servizi associazioni |
+| `richieste_servizi` | 17 | 10 | Richieste servizi |
+
+#### Tabelle Vuote/Non Utilizzate (39 tabelle con 0 records)
+
+Includono: `agent_brain`, `agent_context`, `agent_projects`, `agent_tasks`, `api_keys`, `audit_logs`, `bookings`, `business_analytics`, `carbon_footprint`, `compliance_certificates`, `comune_contratti`, `comune_fatture`, `concession_payments`, `notifications`, `product_tracking`, `products`, `reimbursements`, `sustainability_metrics`, `system_events`, `system_logs`, `tcc_daily_limits`, `tcc_fraud_events`, `tcc_idempotency_keys`, `tcc_qr_tokens`, `tcc_rate_limits`, `tcc_rewards_config`, `user_analytics`, `vendor_documents`, `violations`, `wallet_balance_snapshots`, `webhook_logs`, `webhooks`, `zapier_webhook_logs`, `security_delegations`, e altre.
+
+#### Tabelle Backup (5 tabelle)
+
+`agent_logs_backup_20251204_174125`, `agent_messages_backup_20251204_174125`, `carbon_credits_config_backup_20260203`, `carbon_credits_rules_backup_20260203`, `civic_config_backup_20260203`
 
 ### Storage S3
 
