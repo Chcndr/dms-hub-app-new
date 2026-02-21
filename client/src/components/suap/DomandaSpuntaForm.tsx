@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FileText, Send, Loader2, Wallet, AlertCircle } from 'lucide-react';
+import { FileText, Send, Loader2, Wallet, AlertCircle, Stamp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -141,9 +141,16 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
     dichiarazione_requisiti: false,
     dichiarazione_durc: false,
     dichiarazione_antimafia: false,
-    
+
     // Note
-    note: ''
+    note: '',
+
+    // Imposta di Bollo (Fase 1 - Dichiarazione Sostitutiva)
+    bollo_1_numero: '',
+    bollo_1_data: '',
+    bollo_2_numero: '',
+    bollo_2_data: '',
+    bollo_dichiarazione_sostitutiva: false as boolean
   });
 
   // Carica mercati e imprese all'avvio
@@ -813,10 +820,99 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
           />
         </div>
 
+        {/* IMPOSTA DI BOLLO */}
+        <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
+          <h3 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2">
+            <Stamp className="w-4 h-4 text-[#f59e0b]" />
+            Imposta di Bollo
+          </h3>
+          <p className="text-xs text-[#e8fbff]/50">
+            Due marche da bollo da 16,00€: una per la domanda di autorizzazione e una per il rilascio della concessione (D.M. 10/11/2011).
+          </p>
+
+          {/* Bollo 1 */}
+          <div className="p-3 bg-[#020817] rounded-lg border border-[#f59e0b]/20">
+            <h4 className="text-xs font-semibold text-[#f59e0b] mb-2">Marca da Bollo n. 1 (Domanda - 16,00€)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[#e8fbff] text-xs">Numero Identificativo (14 cifre) *</Label>
+                <Input
+                  value={formData.bollo_1_numero}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 14);
+                    setFormData({...formData, bollo_1_numero: val});
+                  }}
+                  placeholder="01234567890123"
+                  maxLength={14}
+                  className="bg-[#0a1628] border-[#f59e0b]/30 text-[#e8fbff] font-mono tracking-wider"
+                  disabled={isViewMode}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[#e8fbff] text-xs">Data Emissione *</Label>
+                <Input
+                  type="date"
+                  value={formData.bollo_1_data}
+                  onChange={(e) => setFormData({...formData, bollo_1_data: e.target.value})}
+                  className="bg-[#0a1628] border-[#f59e0b]/30 text-[#e8fbff]"
+                  disabled={isViewMode}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Bollo 2 */}
+          <div className="p-3 bg-[#020817] rounded-lg border border-[#f59e0b]/20">
+            <h4 className="text-xs font-semibold text-[#f59e0b] mb-2">Marca da Bollo n. 2 (Concessione - 16,00€)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[#e8fbff] text-xs">Numero Identificativo (14 cifre) *</Label>
+                <Input
+                  value={formData.bollo_2_numero}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 14);
+                    setFormData({...formData, bollo_2_numero: val});
+                  }}
+                  placeholder="01234567890123"
+                  maxLength={14}
+                  className="bg-[#0a1628] border-[#f59e0b]/30 text-[#e8fbff] font-mono tracking-wider"
+                  disabled={isViewMode}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[#e8fbff] text-xs">Data Emissione *</Label>
+                <Input
+                  type="date"
+                  value={formData.bollo_2_data}
+                  onChange={(e) => setFormData({...formData, bollo_2_data: e.target.value})}
+                  className="bg-[#0a1628] border-[#f59e0b]/30 text-[#e8fbff]"
+                  disabled={isViewMode}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Dichiarazione sostitutiva */}
+          <div className="p-3 bg-[#020817] rounded-lg border border-[#f59e0b]/30">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="bollo_dichiarazione_spunta"
+                checked={formData.bollo_dichiarazione_sostitutiva}
+                onCheckedChange={(checked) => setFormData({...formData, bollo_dichiarazione_sostitutiva: checked as boolean})}
+                className="border-[#f59e0b] data-[state=checked]:bg-[#f59e0b] data-[state=checked]:text-black mt-1"
+                disabled={isViewMode}
+              />
+              <Label htmlFor="bollo_dichiarazione_spunta" className="text-[#e8fbff] text-xs leading-relaxed cursor-pointer">
+                <strong>Dichiarazione sostitutiva di atto di notorietà</strong> (ai sensi dell'art. 47 del D.P.R. 28 dicembre 2000, n. 445) — Il/La sottoscritto/a dichiara di aver assolto l'imposta di bollo ai sensi del D.M. 10 novembre 2011, di aver annullato le marche da bollo sopra indicate apponendovi la data e la propria firma, e che le stesse non sono state e non saranno utilizzate per qualsiasi altro adempimento. Il/La sottoscritto/a è consapevole che, ai sensi dell'art. 76 del D.P.R. 445/2000, le dichiarazioni mendaci sono punite ai sensi del codice penale e delle leggi speciali in materia.
+              </Label>
+            </div>
+          </div>
+        </div>
+
         {/* PULSANTI */}
         <div className="flex justify-end gap-3 pt-4 border-t border-[#1e293b]">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={onCancel}
             className="border-[#1e293b] text-[#e8fbff] hover:bg-[#1e293b]"
           >
