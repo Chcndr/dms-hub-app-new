@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 8.9.0 (Fix UX SUAP: Stato, Numero Concessione, Form SCIA, Autocomplete, Score)  
+> **Versione:** 8.9.1 (Pre-compilazione SCIA Precedente + Nota Score Pesato)  
 > **Data:** 21 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -50,6 +50,11 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 21 Febbraio 2026 (v8.9.0 → v8.9.1)
+- ✅ **Nota Score Pesato:** Aggiunta nota esplicativa sotto il cerchio score nel dettaglio pratica: "Score pesato: ogni controllo ha un peso diverso (4-15 pt)". Lo score 55 con 10/14 PASS è corretto perché i 4 check falliti pesano 45 punti (CHECK_CANONE_UNICO=10, CHECK_ANTIMAFIA_CED=10, CHECK_ONORABILITA_CED=10, CHECK_DATI_COMPLETI=15).
+- ✅ **Pre-compilazione SCIA Precedente:** Quando si seleziona un posteggio nel form SCIA, il sistema cerca automaticamente la SCIA più recente (APPROVED/EVALUATED) per quel posteggio e pre-compila i campi `scia_precedente_protocollo`, `scia_precedente_data` e `scia_precedente_comune`.
+- ✅ **Nuovo filtro backend `posteggio_id`:** Aggiunto supporto per `?posteggio_id=X` nell'endpoint `GET /api/suap/pratiche` (route + service). Permette di cercare pratiche SCIA associate a un posteggio specifico.
 
 ### Sessione 21 Febbraio 2026 (v8.8.0 → v8.9.0)
 - ✅ **Fix Stato APPROVED dopo Concessione:** Il callback `onSubmit` di ConcessioneForm ora cattura `selectedPratica` in variabile locale PRIMA del reset degli stati React, evitando che `selectedPratica` sia null al momento della chiamata API. Aggiunto fallback: anche senza `savedConcessione.id`, aggiorna lo stato a APPROVED.
