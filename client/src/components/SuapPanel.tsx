@@ -182,7 +182,12 @@ function timeAgo(dateStr?: string | null) {
 // COMPONENTE PRINCIPALE
 // ============================================================================
 
-export default function SuapPanel() {
+interface SuapPanelProps {
+  mode?: 'suap' | 'associazione';
+}
+
+export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
+  const isAssociazione = mode === 'associazione';
   // State
   const [activeTab, setActiveTab] = useState<'dashboard' | 'lista' | 'dettaglio' | 'concessioni' | 'autorizzazioni' | 'domandespunta' | 'notifiche'>('dashboard');
   const [stats, setStats] = useState<SuapStats | null>(null);
@@ -554,7 +559,7 @@ export default function SuapPanel() {
         value={activeTab} 
         onValueChange={(v) => setActiveTab(v as 'dashboard' | 'lista' | 'dettaglio' | 'concessioni' | 'autorizzazioni' | 'domandespunta' | 'notifiche')}
       >
-        <TabsList className="grid w-full grid-cols-7 bg-[#0b1220]/50">
+        <TabsList className={`grid w-full ${isAssociazione ? 'grid-cols-5' : 'grid-cols-7'} bg-[#0b1220]/50`}>
           <TabsTrigger 
             value="dashboard"
             className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
@@ -584,13 +589,13 @@ export default function SuapPanel() {
             <ScrollText className="mr-2 h-4 w-4" />
             Lista Concessioni
           </TabsTrigger>
-          <TabsTrigger 
+          {!isAssociazione && <TabsTrigger 
             value="autorizzazioni"
             className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400"
           >
             <FileCheck className="mr-2 h-4 w-4" />
             Autorizzazioni
-          </TabsTrigger>
+          </TabsTrigger>}
           <TabsTrigger 
             value="domandespunta"
             className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400"
@@ -610,13 +615,13 @@ export default function SuapPanel() {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger 
+          {!isAssociazione && <TabsTrigger 
             value="storico-titolarita"
             className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400"
           >
             <History className="mr-2 h-4 w-4" />
             Storico Titolarità
-          </TabsTrigger>
+          </TabsTrigger>}
         </TabsList>
 
         {/* ================================================================== */}
@@ -935,7 +940,7 @@ export default function SuapPanel() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                {!isAssociazione && <div className="flex gap-2">
                   <Button 
                     onClick={handleEvaluate}
                     disabled={loading}
@@ -1010,7 +1015,7 @@ export default function SuapPanel() {
                     <Stamp className="mr-2 h-4 w-4" />
                     Genera Concessione
                   </Button>
-                </div>
+                </div>}
               </div>
 
               {/* ============================================================== */}
