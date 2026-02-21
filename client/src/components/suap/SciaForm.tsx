@@ -443,6 +443,7 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
       sede_via_sub: `${impresa.indirizzo_via || ''} ${impresa.indirizzo_civico || ''}`.trim(),
       sede_comune_sub: impresa.comune || '',
       sede_cap_sub: impresa.indirizzo_cap || '',
+      sede_provincia_sub: impresa.indirizzo_provincia || '',
       pec_sub: impresa.pec || '',
       telefono_sub: impresa.telefono || ''
     }));
