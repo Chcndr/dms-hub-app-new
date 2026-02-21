@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { 
   getSuapStats, getSuapPratiche, getSuapPraticaById, 
-  createSuapPratica, evaluateSuapPratica,
+  createSuapPratica, evaluateSuapPratica, updateSuapPraticaStato,
   SuapStats, SuapPratica, SuapEvento, SuapCheck 
 } from '@/api/suap';
 import SciaForm from '@/components/suap/SciaForm';
@@ -2339,6 +2339,8 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
             <SciaForm
               onSubmit={handleSciaSubmit}
               onCancel={() => setShowSciaForm(false)}
+              comuneNome={comuneData?.nome || ''}
+              comuneId={comuneData?.id}
             />
           </div>
         </div>
@@ -2348,7 +2350,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
       {showConcessioneForm && (
         <div className="fixed inset-0 z-50 bg-[#0b1220] overflow-y-auto p-4">
           <ConcessioneForm 
-            onSubmit={(savedConcessione) => {
+            onSubmit={async (savedConcessione) => {
               setShowConcessioneForm(false);
               setConcessionePreData(null);
               setConcessioneMode('create');
@@ -2356,14 +2358,29 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               loadConcessioni(); // Ricarica le concessioni
               // Aggiorna la pratica selezionata con il nuovo concessione_id
               if (selectedPratica && savedConcessione?.id) {
+                // Aggiorna stato pratica a APPROVED nel backend
+                try {
+                  await updateSuapPraticaStato(
+                    String(selectedPratica.id), 
+                    ENTE_ID, 
+                    'APPROVED', 
+                    'Concessione generata - pratica approvata automaticamente'
+                  );
+                  toast.success('Stato pratica aggiornato a APPROVED');
+                } catch (err) {
+                  console.error('Errore aggiornamento stato pratica:', err);
+                  toast.error('Concessione salvata ma errore aggiornamento stato pratica');
+                }
+                
                 setSelectedPratica({
                   ...selectedPratica,
-                  concessione_id: savedConcessione.id
+                  concessione_id: savedConcessione.id,
+                  stato: 'APPROVED' as any
                 });
                 // Aggiorna anche nella lista pratiche
                 setPratiche(prev => prev.map(p => 
                   p.id === selectedPratica.id 
-                    ? { ...p, concessione_id: savedConcessione.id }
+                    ? { ...p, concessione_id: savedConcessione.id, stato: 'APPROVED' as any }
                     : p
                 ));
               }

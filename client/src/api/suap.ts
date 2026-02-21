@@ -153,3 +153,24 @@ export async function evaluateSuapPratica(id: string, enteId: string): Promise<a
   const json = await res.json();
   return json.data;
 }
+
+/**
+ * Aggiorna lo stato di una pratica (es. da EVALUATED a APPROVED dopo generazione concessione)
+ */
+export async function updateSuapPraticaStato(id: string, enteId: string, nuovoStato: string, motivazione?: string): Promise<any> {
+  const res = await fetch(`${baseUrl}/api/suap/pratiche/${id}/stato`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ 
+      ente_id: enteId,
+      nuovo_stato: nuovoStato,
+      motivazione: motivazione || `Stato aggiornato a ${nuovoStato}`
+    })
+  });
+
+  if (!res.ok) throw new Error('Failed to update SUAP pratica stato');
+  const json = await res.json();
+  return json.data;
+}

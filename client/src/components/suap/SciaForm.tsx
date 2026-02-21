@@ -68,7 +68,7 @@ interface Impresa {
   rappresentante_legale_residenza_provincia: string;
 }
 
-export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void, onSubmit: (data: any) => void }) {
+export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId }: { onCancel: () => void, onSubmit: (data: any) => void, comuneNome?: string, comuneId?: number }) {
   // Stati per dati dal database
   const [markets, setMarkets] = useState<Market[]>([]);
   const [stalls, setStalls] = useState<Stall[]>([]);
@@ -301,8 +301,11 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
       try {
         setLoadingMarkets(true);
         
-        // Carica mercati
-        const marketsRes = await fetch(`${API_URL}/api/markets`);
+        // Carica mercati (filtrati per comune se impersonalizzato)
+        const marketsUrl = comuneId 
+          ? `${API_URL}/api/markets?comune_id=${comuneId}`
+          : `${API_URL}/api/markets`;
+        const marketsRes = await fetch(marketsUrl);
         const marketsJson = await marketsRes.json();
         if (marketsJson.success && marketsJson.data) {
           setMarkets(marketsJson.data);
@@ -323,7 +326,7 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
     };
     
     fetchData();
-  }, []);
+  }, [comuneId]);
 
   // Carica posteggi quando cambia mercato e filtra per impresa selezionata
   useEffect(() => {
