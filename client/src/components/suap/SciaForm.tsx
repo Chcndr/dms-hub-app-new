@@ -109,7 +109,7 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
     // Dati Protocollo SCIA
     numero_protocollo: generateProtocollo(),
     data_presentazione: new Date().toISOString().split('T')[0],
-    comune_presentazione: 'MODENA',
+    comune_presentazione: comuneNome?.toUpperCase() || '',
     
     // Motivazione SCIA
     motivazione_scia: 'subingresso',
@@ -720,7 +720,7 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Comune Presentazione</Label>
                 <Input 
-                  value={formData.comune_presentazione || 'MODENA'}
+                  value={formData.comune_presentazione}
                   onChange={(e) => setFormData({...formData, comune_presentazione: e.target.value})}
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
