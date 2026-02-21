@@ -583,6 +583,44 @@ export default function SciaForm({ onCancel, onSubmit }: { onCancel: () => void,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validazione campi obbligatori
+    const errori: string[] = [];
+    
+    if (!formData.cf_subentrante?.trim()) {
+      errori.push('CF/P.IVA Subentrante');
+    }
+    if (!formData.ragione_sociale_sub?.trim() && !formData.nome_sub?.trim()) {
+      errori.push('Ragione Sociale o Nome Subentrante');
+    }
+    if (!formData.motivazione_scia) {
+      errori.push('Tipo di Segnalazione');
+    }
+    if (!formData.mercato?.trim() && !formData.mercato_id) {
+      errori.push('Mercato');
+    }
+    if (!formData.posteggio?.trim() && !formData.posteggio_id) {
+      errori.push('Posteggio');
+    }
+    
+    // Per subingresso, il cedente è obbligatorio
+    if (formData.motivazione_scia === 'subingresso') {
+      if (!formData.cf_cedente?.trim()) {
+        errori.push('CF/P.IVA Cedente');
+      }
+      if (!formData.ragione_sociale_ced?.trim() && !formData.nome_ced?.trim()) {
+        errori.push('Ragione Sociale o Nome Cedente');
+      }
+    }
+    
+    if (errori.length > 0) {
+      toast.error('Campi obbligatori mancanti', {
+        description: errori.join(', '),
+        duration: 6000
+      });
+      return;
+    }
+    
     onSubmit(formData);
   };
 
