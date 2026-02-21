@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 8.8.0 (Fix Market Filtering + Auto-APPROVED + Data Cleanup)  
+> **Versione:** 8.9.0 (Fix UX SUAP: Stato, Numero Concessione, Form SCIA, Autocomplete, Score)  
 > **Data:** 21 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI  
 > **Stato:** PRODUZIONE
@@ -50,6 +50,15 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 21 Febbraio 2026 (v8.8.0 → v8.9.0)
+- ✅ **Fix Stato APPROVED dopo Concessione:** Il callback `onSubmit` di ConcessioneForm ora cattura `selectedPratica` in variabile locale PRIMA del reset degli stati React, evitando che `selectedPratica` sia null al momento della chiamata API. Aggiunto fallback: anche senza `savedConcessione.id`, aggiorna lo stato a APPROVED.
+- ✅ **Fix Numero Concessione:** Il `preData` passato da "Genera Concessione" non include più `numero_protocollo` della SCIA. Il ConcessioneForm genera automaticamente il numero progressivo (#N+1) tramite il suo useEffect interno.
+- ✅ **Form SCIA Full-Width:** Il modal SCIA è stato allargato da `max-w-4xl` (896px) con overlay nero a pagina intera (`fixed inset-0 bg-[#0b1220]`), identico al layout del form Concessione.
+- ✅ **Fix Default Durata 10 Anni:** Dopo lo spread di `initialData`, il campo `durata_anni` viene forzato a `'10'` se vuoto o undefined, evitando che il Select resti senza valore selezionato.
+- ✅ **Autocomplete Imprese Ottimizzato:** Endpoint leggero con `?fields=...` (escluse immagini base64 e subquery aggregate: da 26MB a pochi KB). Filtro migliorato: minimo 2 caratteri, priorità denominazione, CF/P.IVA solo con 3+ caratteri. Limite aumentato da 15 a 25 risultati. Applicato sia a SciaForm che a ConcessioneForm.
+- ✅ **Fix Score Coerente:** Il dettaglio pratica ora usa `selectedPratica.score` dal DB (calcolato con pesi reali dal backend) invece di ricalcolare `passedChecks/totalChecks*100`. Lo score nella lista e nel dettaglio ora coincidono.
+- ✅ **Fix Dati Impresa Bio Market Italia:** Corretti `indirizzo_provincia` da "GR" a "RE" e `indirizzo_cap` da "58100" a "42121" nel DB (sede legale era Reggio Emilia con dati Grosseto).
 
 ### Sessione 21 Febbraio 2026 (v8.7.0 → v8.8.0)
 - ✅ **Fix Market Dropdown SciaForm:** Aggiunta dipendenza `comuneId` nell'useEffect di SciaForm per ricaricare i mercati quando cambia il comune impersonato. Il filtro `?comune_id=X` era già implementato ma non si riattivava al cambio comune.
