@@ -481,6 +481,14 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
         del_pec: formData.pec_del,
       };
 
+      // Se in impersonazione associazione, aggiungi associazione_id
+      if (isAssociazione) {
+        const { associazioneId } = getImpersonationParams();
+        if (associazioneId) {
+          (praticaData as any).associazione_id = parseInt(associazioneId);
+        }
+      }
+
       console.log('Dati pratica da inviare:', praticaData);  // Debug
 
       await createSuapPratica(ENTE_ID, praticaData);
