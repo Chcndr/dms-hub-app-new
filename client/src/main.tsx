@@ -41,42 +41,36 @@ createRoot(document.getElementById("root")!).render(
   </QueryClientProvider>
 );
 
-// Global error monitoring — cattura errori non gestiti e li invia al backend
+// Global error monitoring — cattura errori non gestiti e li invia al backend REST
+const API_ERROR_URL = `${(import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io')}/api/logs/client-error`;
+
 window.addEventListener('error', (event) => {
-  const trpcUrl = (import.meta.env.VITE_TRPC_URL || '').trim();
-  if (trpcUrl && event.error) {
-    fetch(`${trpcUrl}/api/trpc/logs.reportClientError`, {
+  if (event.error) {
+    fetch(API_ERROR_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        json: {
-          message: event.error?.message || event.message,
-          stack: event.error?.stack?.slice(0, 2000),
-          url: window.location.href,
-          userAgent: navigator.userAgent,
-        },
+        message: event.error?.message || event.message,
+        stack: event.error?.stack?.slice(0, 2000),
+        url: window.location.href,
+        userAgent: navigator.userAgent,
       }),
     }).catch(() => {});
   }
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-  const trpcUrl = (import.meta.env.VITE_TRPC_URL || '').trim();
-  if (trpcUrl) {
-    const reason = event.reason;
-    fetch(`${trpcUrl}/api/trpc/logs.reportClientError`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        json: {
-          message: reason?.message || String(reason),
-          stack: reason?.stack?.slice(0, 2000),
-          url: window.location.href,
-          userAgent: navigator.userAgent,
-        },
-      }),
-    }).catch(() => {});
-  }
+  const reason = event.reason;
+  fetch(API_ERROR_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: reason?.message || String(reason),
+      stack: reason?.stack?.slice(0, 2000),
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+    }),
+  }).catch(() => {});
 });
 
 // Registra Service Worker per PWA

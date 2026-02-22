@@ -224,22 +224,20 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
 }
 
 /**
- * Controlla i ruoli dell'utente nel Neon DB (il vero RBAC system).
- * Chiama il tRPC backend su Hetzner che ha accesso al Neon DB.
- * Formato: httpBatchLink + superjson
+ * Controlla i ruoli dell'utente nel backend REST (il vero RBAC system).
+ * Chiama l'endpoint REST su Hetzner che ha accesso al Neon DB.
  */
 async function checkNeonRoles(email: string): Promise<{ roles: any[]; isAdmin: boolean }> {
   try {
-    const input = encodeURIComponent(JSON.stringify({ "0": { json: { email } } }));
-    const url = `${TRPC_BASE}/api/trpc/auth.checkRoles?batch=1&input=${input}`;
-    const res = await fetch(url, { credentials: 'include' });
+    const res = await fetch(`${TRPC_BASE}/api/auth/check-roles?email=${encodeURIComponent(email)}`, {
+      credentials: 'include',
+    });
     if (!res.ok) {
       console.warn('[FirebaseAuth] Neon checkRoles fallito:', res.status);
       return { roles: [], isAdmin: false };
     }
     const data = await res.json();
-    // httpBatchLink response: [{ result: { data: { json: ... } } }]
-    const result = data?.[0]?.result?.data?.json || data?.[0]?.result?.data;
+    const result = data?.data || data;
     if (result) {
       console.warn(`[FirebaseAuth] Neon roles: isAdmin=${result.isAdmin}, roles=${JSON.stringify(result.roles)}`);
       return result;
@@ -253,22 +251,21 @@ async function checkNeonRoles(email: string): Promise<{ roles: any[]; isAdmin: b
 
 /**
  * Tenta il bootstrap admin nel Neon DB (one-time, solo se non esiste admin).
- * Formato: httpBatchLink + superjson mutation
  */
 async function tryBootstrapAdmin(email: string): Promise<boolean> {
   try {
-    const res = await fetch(`${TRPC_BASE}/api/trpc/auth.bootstrapAdmin?batch=1`, {
+    const res = await fetch(`${TRPC_BASE}/api/auth/bootstrap-admin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ "0": { json: { email } } }),
+      body: JSON.stringify({ email }),
     });
     if (!res.ok) {
       console.warn('[FirebaseAuth] Bootstrap admin HTTP fallito:', res.status);
       return false;
     }
     const data = await res.json();
-    const result = data?.[0]?.result?.data?.json || data?.[0]?.result?.data;
+    const result = data?.data || data;
     if (result?.success) {
       console.warn('[FirebaseAuth] Bootstrap admin riuscito:', result.message);
       return true;
@@ -282,34 +279,26 @@ async function tryBootstrapAdmin(email: string): Promise<boolean> {
 }
 
 /**
- * Crea una sessione JWT sul backend tRPC (Hetzner) dopo login Firebase.
- * Questo è il passo critico: setta il cookie app_session_id sul dominio del backend,
- * così le successive chiamate tRPC protectedProcedure funzionano.
- */
-/**
- * Chiave localStorage per il session token JWT del backend.
- * Usato come fallback quando i cookie cross-domain non funzionano
- * (Safari ITP, Chrome SameSite, .nip.io domains, ecc.)
+ * Crea una sessione JWT sul backend REST (Hetzner) dopo login Firebase.
+ * Setta il cookie app_session_id sul dominio del backend.
  */
 const SESSION_TOKEN_KEY = 'miohub_session_token';
 
 async function createFirebaseSession(idToken: string): Promise<boolean> {
   try {
-    const res = await fetch(`${TRPC_BASE}/api/trpc/auth.createFirebaseSession?batch=1`, {
+    const res = await fetch(`${TRPC_BASE}/api/auth/firebase-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ "0": { json: { token: idToken } } }),
+      body: JSON.stringify({ token: idToken }),
     });
     if (!res.ok) {
       console.warn('[FirebaseAuth] createFirebaseSession HTTP fallito:', res.status);
       return false;
     }
     const data = await res.json();
-    const result = data?.[0]?.result?.data?.json || data?.[0]?.result?.data;
+    const result = data?.data || data;
     if (result?.success) {
-      // Salva il sessionToken in localStorage come fallback per Authorization header.
-      // Questo risolve il problema dei cookie cross-domain bloccati dai browser.
       if (result.sessionToken) {
         localStorage.setItem(SESSION_TOKEN_KEY, result.sessionToken);
       }

@@ -184,14 +184,14 @@ export default function GestioneMercati() {
   // Hook per impersonificazione - filtro mercati per comune
   const { isImpersonating, comuneNome } = useImpersonation();
 
-  // Fallback REST: carica mercati dal Neon DB via tRPC HTTP
-  const trpcMarketsQuery = useQuery({
+  // Fallback REST: carica mercati dal Neon DB
+  const restMarketsQuery = useQuery({
     queryKey: ['dmsHub-markets-list-fallback'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}/api/trpc/dmsHub.markets.list`);
+      const res = await fetch(`${API_BASE_URL}/api/markets`);
       if (!res.ok) return [];
       const json = await res.json();
-      return json?.result?.data?.json ?? json?.result?.data ?? [];
+      return json?.data ?? json ?? [];
     },
     enabled: markets.length === 0,
   });
@@ -248,14 +248,14 @@ export default function GestioneMercati() {
     } catch (error) {
       console.error('Error fetching markets from REST:', error);
     }
-    // REST failed or returned empty — tRPC fallback will handle via useEffect
+    // REST failed or returned empty — fallback query will handle via useEffect
     setLoading(false);
   };
 
-  // Fallback tRPC: se REST non ha caricato mercati, usa dati dal Neon DB
+  // Fallback: se REST primario non ha caricato mercati, usa dati dal Neon DB
   useEffect(() => {
-    if (markets.length === 0 && trpcMarketsQuery.data && trpcMarketsQuery.data.length > 0) {
-      const mapped: Market[] = trpcMarketsQuery.data.map((m: any) => ({
+    if (markets.length === 0 && restMarketsQuery.data && restMarketsQuery.data.length > 0) {
+      const mapped: Market[] = restMarketsQuery.data.map((m: any) => ({
         id: m.id,
         code: String(m.id),
         name: m.name,
@@ -274,7 +274,7 @@ export default function GestioneMercati() {
       }
       setLoading(false);
     }
-  }, [trpcMarketsQuery.data, markets.length]);
+  }, [restMarketsQuery.data, markets.length]);
 
   if (loading) {
     return (
