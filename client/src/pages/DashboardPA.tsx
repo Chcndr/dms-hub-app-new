@@ -4624,6 +4624,12 @@ export default function DashboardPA() {
                   <FileText className="w-4 h-4 mr-2" />
                   SCIA & Pratiche
                 </TabsTrigger>
+                {isAssociazioneImpersonation() && (
+                  <TabsTrigger value="associati" className="data-[state=active]:bg-[#8b5cf6]/20 data-[state=active]:text-[#8b5cf6]">
+                    <Users className="w-4 h-4 mr-2" />
+                    Associati
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               {/* SOTTO-TAB: ENTI FORMATORI */}
@@ -6025,6 +6031,13 @@ export default function DashboardPA() {
               <TabsContent value="scia-pratiche" className="space-y-6">
                 <SuapPanel mode="associazione" />
               </TabsContent>
+
+              {/* SOTTO-TAB: ASSOCIATI (Tesserati dell'Associazione) */}
+              {isAssociazioneImpersonation() && (
+                <TabsContent value="associati" className="space-y-6">
+                  <PresenzeAssociatiPanel />
+                </TabsContent>
+              )}
             </Tabs>
           </TabsContent>
 
