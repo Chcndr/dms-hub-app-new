@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 8.12.0 (Impersonificazione Associazioni + Tesseramenti + Fix Sicurezza)  
+> **Versione:** 8.13.0 (Scheda Associato + Tab Associati + Fix Filtri SUAP Associazione)  
 > **Data:** 22 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI & Claude AI  
 > **Stato:** PRODUZIONE
@@ -50,6 +50,26 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 22 Febbraio 2026 — Sera (v8.12.0 → v8.13.0)
+
+**Backend (mihub-backend-rest) — 9 commit:**
+- ✅ **Endpoint Scheda Associato:** Nuovo `GET /api/associazioni/:id/tesseramenti/:tid/scheda` — restituisce dettaglio completo: dati impresa, dati tessera (scadenza, stato pagamento), tipo impresa (ambulante/negozio_fisso basato su `descrizione_ateco`), pratiche SCIA collegate, concessioni collegate.
+- ✅ **Fix Type Mismatch Concessions:** Cast `scia_id::uuid` nella query concessions per filtro `associazione_id` (colonna `scia_id` è `text`, `suap_pratiche.id` è `uuid`).
+- ✅ **Fix Type Mismatch Domande-Spunta:** Rimosso riferimento a colonna inesistente `concession_id`, usato JOIN tramite `impresa_id` via `tesseramenti_associazione`.
+- ✅ **Fix Colonna `associazione_id` su `suap_pratiche`:** Migrazione diretta con `ALTER TABLE ADD COLUMN IF NOT EXISTS` + filtro diretto senza subquery.
+- ✅ **Pulizia DB:** Rimosso `associazione_id` da 6 pratiche di test vecchie per partire puliti.
+- ✅ **Permessi Ruolo ASSOCIATION (ID=10):** Aggiunti e poi RIMOSSI `tab.view.ssosuap` e `tab.view.tpas` — questi tab NON devono essere visibili per le associazioni (il SuapPanel è già dentro Enti & Associazioni).
+
+**Frontend (dms-hub-app-new) — 4 commit:**
+- ✅ **Tab Associati (4° sotto-tab):** Aggiunto come sotto-tab esterno in Enti & Associazioni: `Enti Formatori | Associazioni & Bandi | SCIA & Pratiche | Associati`. Visibile solo in impersonazione associazione. Monta `PresenzeAssociatiPanel`.
+- ✅ **Icona Occhio Scheda Associato:** Ogni tesserato nella lista ha icona Eye che apre dialog fullscreen con: badge tipo impresa (Ambulante/Negozio Fisso), badge stato tessera, dati impresa completi, dati tessera (scadenza, stato pagamento, importi), pratiche SCIA collegate, concessioni collegate.
+- ✅ **Fix Domande Spunta Filtro:** Aggiunto `addAssociazioneIdToUrl` in `ListaDomandeSpuntaSuap.tsx` — prima mostrava tutte le domande spunta senza filtro.
+- ✅ **Revert mode SuapPanel:** Il `SuapPanel` nel tab SSO SUAP resta senza `mode` — il SuapPanel `mode='associazione'` è già correttamente in Enti & Associazioni → SCIA & Pratiche.
+
+**Lezione Appresa:**
+- Il tab SSO SUAP e il tab Associazioni (TPAS) NON devono essere visibili per le associazioni. La sezione SUAP per le associazioni è già dentro il tab "Enti & Associazioni" → sotto-tab "SCIA & Pratiche".
+- Il tab Associazioni (TPAS) è la sezione admin per gestire TUTTE le associazioni, non per la vista impersonata.
 
 ### Sessione 22 Febbraio 2026 (v8.11.3 → v8.12.0)
 - ✅ **Impersonificazione Associazioni COMPLETA:** Quando si impersonifica un'associazione, tutti i tab (Dashboard, Gaming, Civic, Imprese, Gestione HUB, SUAP) mostrano solo i dati pertinenti all'associazione, partendo da zero se non ci sono dati.
@@ -8754,15 +8774,24 @@ Componente completo per la gestione CRUD delle associazioni di categoria, montat
 - Lista associazioni con ricerca e paginazione
 - Form creazione/modifica associazione
 - Bottone "Accedi come" per impersonificare
-- Sotto-tab: Enti Formatori, Associazioni & Bandi, SCIA & Pratiche
+- Sotto-tab: Enti Formatori, Associazioni & Bandi, SCIA & Pratiche, **Associati** (visibile solo in impersonazione associazione)
 
-### Pannello Tesserati (`TesseratiAssociazionePanel.tsx`)
+### Pannello Tesserati (`PresenzeAssociatiPanel.tsx`)
 
 Gestisce la lista delle imprese tesserate all'associazione (quelle che pagano la quota annuale per farsi rappresentare).
 
 **KPI:** Tesserati Totali, Attivi, Scaduti, Sospesi
 **Lista:** Nome impresa, città, P.IVA, anno, quota, stato (badge colorato)
 **Filtro:** Per stato (attivo/scaduto/sospeso/revocato)
+**Icona Occhio:** Apre dialog fullscreen "Scheda Associato" con:
+- Badge tipo impresa: **Ambulante** (icona Truck, arancione) o **Negozio Fisso** (icona Store, viola) — determinato da `descrizione_ateco` (contiene "ambulante" → ambulante, altrimenti negozio fisso)
+- Badge stato tessera: ATTIVO (verde), SCADUTO (rosso), SOSPESO (giallo), REVOCATO (grigio)
+- **Dati Impresa:** denominazione, CF, P.IVA, settore, indirizzo, codice ATECO, telefono, email, PEC
+- **Dati Tessera:** numero tessera, data iscrizione, **scadenza tessera**, data rinnovo, importo annuale, importo pagato, **stato pagamento** (Pagato/Da Pagare/Non definito), metodo pagamento
+- **Pratiche SCIA:** lista pratiche dell'impresa con CUI, tipo, stato, score, mercato, posteggio
+- **Concessioni:** lista concessioni dell'impresa con protocollo, tipo, stato, scadenza, mercato
+
+**Posizione nel layout:** 4° sotto-tab in Enti & Associazioni (dopo SCIA & Pratiche), visibile SOLO in impersonazione associazione
 
 ### Pannello Anagrafica (`AnagraficaAssociazionePanel.tsx`)
 
@@ -8806,6 +8835,7 @@ CREATE TABLE IF NOT EXISTS tesseramenti_associazione (
 | `/api/associazioni/:id/tesseramenti` | POST | Crea tesseramento |
 | `/api/associazioni/:id/tesseramenti/:tid` | PUT | Aggiorna tesseramento |
 | `/api/associazioni/:id/tesseramenti/:tid` | DELETE | Elimina tesseramento |
+| `/api/associazioni/:id/tesseramenti/:tid/scheda` | GET | **Scheda completa associato:** dati impresa, dati tessera (scadenza, stato pagamento), tipo impresa (ambulante/negozio_fisso), pratiche SCIA collegate, concessioni collegate |
 | `/api/associazioni/:id/contratti` | GET | Lista contratti associazione |
 | `/api/associazioni/:id/fatture` | GET | Lista fatture associazione |
 | `/api/associazioni/:id/servizi` | GET | Lista servizi associazione |
@@ -8819,6 +8849,45 @@ Le modifiche sono state progettate per **adattarsi al sistema esistente senza to
 - Il flusso impersonificazione comuni è invariato: `comune_id` viene valutato PRIMA di `associazione_id`
 - Il `SuapPanel` nel tab SSO SUAP viene montato SENZA la prop `mode`, quindi `mode = 'suap'` (default) → tutto il codice originale funziona identico
 - Nessuna modifica al backend dei comuni
+
+### Architettura Tab per Associazioni (v8.13.0)
+
+**IMPORTANTE:** I tab SSO SUAP e Associazioni (TPAS) NON sono visibili per le associazioni.
+
+La sezione SUAP per le associazioni è dentro:
+```
+Enti & Associazioni (tab principale)
+  ├─ Enti Formatori
+  ├─ Associazioni & Bandi
+  ├─ SCIA & Pratiche → SuapPanel mode='associazione'
+  └─ Associati → PresenzeAssociatiPanel (solo in impersonazione)
+```
+
+Il tab "Associazioni" (TPAS) è la sezione ADMIN per gestire tutte le associazioni (CRUD, lista, "Accedi come"). NON deve essere visibile quando si è già in impersonazione associazione.
+
+### Filtri SUAP per Associazione (v8.13.0)
+
+| Componente | File | Filtro | Stato |
+|---|---|---|---|
+| Stats Dashboard | `SuapPanel.tsx` → `api/suap.ts` | `addAssociazioneIdToUrl` | ✅ Funzionante |
+| Lista Pratiche | `SuapPanel.tsx` → `api/suap.ts` | `addAssociazioneIdToUrl` | ✅ Funzionante |
+| Lista Concessioni | `SuapPanel.tsx` loadConcessioni | `addAssociazioneIdToUrl` | ✅ Funzionante |
+| Domande Spunta (dashboard) | `SuapPanel.tsx` loadDomandeSpuntaDashboard | `addAssociazioneIdToUrl` | ✅ Funzionante |
+| Domande Spunta (lista) | `ListaDomandeSpuntaSuap.tsx` fetchDomande | `addAssociazioneIdToUrl` | ✅ Fix v8.13.0 |
+| Notifiche SUAP | `SuapPanel.tsx` | `addAssociazioneIdToUrl` | ✅ Funzionante |
+
+**Backend filtri:**
+- `suap_pratiche.associazione_id = $N` — filtro diretto sulla colonna
+- `concessions`: JOIN su `suap_pratiche` con cast `scia_id::uuid`
+- `domande-spunta`: JOIN su `tesseramenti_associazione` via `impresa_id`
+
+### Type Mismatch Noti (v8.13.0)
+
+| Tabella A | Colonna | Tipo | Tabella B | Colonna | Tipo | Fix |
+|---|---|---|---|---|---|---|
+| `concessions` | `scia_id` | text | `suap_pratiche` | `id` | uuid | Cast `scia_id::uuid` |
+| `suap_pratiche` | `impresa_id` | uuid | `tesseramenti_associazione` | `impresa_id` | integer | Cast `::text` su entrambi |
+| `suap_pratiche` | `mercato_id` | varchar | `markets` | `id` | integer | Cast `::text` su entrambi |
 
 ### Fix Sicurezza (v8.12.0)
 
