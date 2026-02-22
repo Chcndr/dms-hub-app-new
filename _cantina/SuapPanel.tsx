@@ -9,11 +9,11 @@ import {
   FileText, CheckCircle2, XCircle, Clock, Loader2, 
   Search, Filter, Eye, Play, User, Building2, MapPin, FileCheck, Users,
   Plus, LayoutDashboard, List, FileSearch, AlertCircle, TrendingUp, ScrollText, Stamp,
-  ArrowLeft, RefreshCw, AlertTriangle, Bell, Inbox, Edit, Trash2, CreditCard, Wallet, Calendar, History
+  ArrowLeft, RefreshCw, AlertTriangle, Bell, Inbox, Edit, Trash2, CreditCard, Wallet, Calendar
 } from 'lucide-react';
 import { 
   getSuapStats, getSuapPratiche, getSuapPraticaById, 
-  createSuapPratica, evaluateSuapPratica, updateSuapPraticaStato,
+  createSuapPratica, evaluateSuapPratica,
   SuapStats, SuapPratica, SuapEvento, SuapCheck 
 } from '@/api/suap';
 import SciaForm from '@/components/suap/SciaForm';
@@ -26,10 +26,8 @@ import ListaDomandeSpuntaSuap from '@/components/suap/ListaDomandeSpuntaSuap';
 import AutorizzazioneDetail from '@/components/suap/AutorizzazioneDetail';
 import DomandaSpuntaDetail from '@/components/suap/DomandaSpuntaDetail';
 import NotificationManager from '@/components/suap/NotificationManager';
-import StoricoTitolarita from '@/components/suap/StoricoTitolarita';
 import { toast } from 'sonner';
 import { getImpersonationParams } from '@/hooks/useImpersonation';
-import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // Ente ID hardcoded per ora - in futuro da contesto utente
 const ENTE_ID = 'ente_modena';
@@ -182,12 +180,7 @@ function timeAgo(dateStr?: string | null) {
 // COMPONENTE PRINCIPALE
 // ============================================================================
 
-interface SuapPanelProps {
-  mode?: 'suap' | 'associazione';
-}
-
-export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
-  const isAssociazione = mode === 'associazione';
+export default function SuapPanel() {
   // State
   const [activeTab, setActiveTab] = useState<'dashboard' | 'lista' | 'dettaglio' | 'concessioni' | 'autorizzazioni' | 'domandespunta' | 'notifiche'>('dashboard');
   const [stats, setStats] = useState<SuapStats | null>(null);
@@ -240,46 +233,42 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
           const data = await response.json();
           if (data.success && data.data) {
             setComuneData({ id: parseInt(comuneId), nome: data.data.nome });
-            setComuneDataLoaded(true);
             return;
           }
         }
         setComuneData({ id: parseInt(comuneId), nome: comuneNome || 'Comune' });
-        setComuneDataLoaded(true);
         return;
       }
       
-      // Nessuna impersonalizzazione attiva - admin globale, vede tutto
-      setComuneData(null);
-      setComuneDataLoaded(true);
+      // Default: Grosseto (id=1)
+      const response = await fetch(`${MIHUB_API}/comuni/1`);
+      const data = await response.json();
+      if (data.success && data.data) {
+        setComuneData({ id: 1, nome: data.data.nome });
+      } else {
+        setComuneData({ id: 1, nome: 'Grosseto' });
+      }
     } catch (error) {
       console.error('Error loading comune data:', error);
-      setComuneData(null);
+      setComuneData({ id: 1, nome: 'Grosseto' });
     }
   };
 
   // Carica dati iniziali - ricarica quando cambia il comune
-  // Usa un flag per sapere se loadComuneData ha finito (comuneData può essere null legittimamente per admin globale)
-  const [comuneDataLoaded, setComuneDataLoaded] = useState(false);
-  
   useEffect(() => {
-    if (comuneDataLoaded) {
+    if (comuneData) {
       loadData();
     }
-  }, [comuneDataLoaded, comuneData]);
+  }, [comuneData]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      // Filtra le pratiche SCIA per comune (se impersonalizzato) o mostra tutte (admin globale)
+      // Filtra le pratiche SCIA per comune tramite mercato.municipality
       const comuneNomeFilter = comuneData?.nome?.toUpperCase() || '';
-      const filters: any = {};
-      if (comuneNomeFilter) {
-        filters.comune_nome = comuneNomeFilter;
-      }
       const [statsData, praticheData] = await Promise.all([
         getSuapStats(ENTE_ID),
-        getSuapPratiche(ENTE_ID, filters)
+        getSuapPratiche(ENTE_ID, { comune_nome: comuneNomeFilter })
       ]);
       setStats(statsData);
       // Ordina per data creazione (più recenti prima)
@@ -341,7 +330,7 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
 
   const loadDomandeSpuntaDashboard = async () => {
     try {
-      const API_URL = MIHUB_API_BASE_URL;
+      const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
       // Usa addComuneIdToUrl per filtrare per comune
       const response = await fetch(addComuneIdToUrl(`${API_URL}/api/domande-spunta`));
       const data = await response.json();
@@ -362,7 +351,7 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
     try {
       const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
       // Usa il comune_id dinamico dal contesto
-      const currentComuneId = comuneData?.id || 0;
+      const currentComuneId = comuneData?.id || 1;
       const response = await fetch(`${MIHUB_API}/notifiche/messaggi/SUAP/${currentComuneId}`);
       const data = await response.json();
       if (data.success) {
@@ -484,19 +473,8 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
     if (!selectedPratica) return;
     setLoading(true);
     try {
-      const evalResult = await evaluateSuapPratica(String(selectedPratica.id), ENTE_ID);
-      toast.success('Valutazione completata');
-      
-      // Aggiorna score e stato nella lista pratiche (fix: prima non si aggiornava)
-      if (evalResult) {
-        setPratiche(prev => prev.map(p => 
-          p.id === selectedPratica.id 
-            ? { ...p, score: evalResult.score, stato: evalResult.status || p.stato }
-            : p
-        ));
-      }
-      
-      // Ricarica il dettaglio pratica con i nuovi check
+      await evaluateSuapPratica(String(selectedPratica.id), ENTE_ID);
+      toast.success('Valutazione avviata');
       await loadPraticaDetail(selectedPratica.id);
     } catch (error) {
       console.error('Error evaluating pratica:', error);
@@ -559,7 +537,7 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
         value={activeTab} 
         onValueChange={(v) => setActiveTab(v as 'dashboard' | 'lista' | 'dettaglio' | 'concessioni' | 'autorizzazioni' | 'domandespunta' | 'notifiche')}
       >
-        <TabsList className={`grid w-full ${isAssociazione ? 'grid-cols-5' : 'grid-cols-7'} bg-[#0b1220]/50`}>
+        <TabsList className="grid w-full grid-cols-7 bg-[#0b1220]/50">
           <TabsTrigger 
             value="dashboard"
             className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
@@ -589,13 +567,13 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
             <ScrollText className="mr-2 h-4 w-4" />
             Lista Concessioni
           </TabsTrigger>
-          {!isAssociazione && <TabsTrigger 
+          <TabsTrigger 
             value="autorizzazioni"
             className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400"
           >
             <FileCheck className="mr-2 h-4 w-4" />
             Autorizzazioni
-          </TabsTrigger>}
+          </TabsTrigger>
           <TabsTrigger 
             value="domandespunta"
             className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400"
@@ -615,13 +593,6 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
               </Badge>
             )}
           </TabsTrigger>
-          {!isAssociazione && <TabsTrigger 
-            value="storico-titolarita"
-            className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400"
-          >
-            <History className="mr-2 h-4 w-4" />
-            Storico Titolarità
-          </TabsTrigger>}
         </TabsList>
 
         {/* ================================================================== */}
@@ -940,7 +911,7 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
                     )}
                   </div>
                 </div>
-                {!isAssociazione && <div className="flex gap-2">
+                <div className="flex gap-2">
                   <Button 
                     onClick={handleEvaluate}
                     disabled={loading}
@@ -954,8 +925,7 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
                       // Pre-compila il form concessione con i dati della SCIA
                       const preData = {
                         // Dati Generali - Pre-compilati dalla SCIA
-                        // NON passare numero_protocollo: il ConcessioneForm genera automaticamente #N+1
-                        // numero_protocollo viene lasciato vuoto per triggerare l'auto-generazione
+                        numero_protocollo: selectedPratica.numero_protocollo || '',
                         data_protocollazione: new Date().toISOString().split('T')[0],
                         comune_rilascio: selectedPratica.comune_presentazione || '',
                         oggetto: `Subingresso ${selectedPratica.sub_ragione_sociale || selectedPratica.richiedente_nome || ''} - Posteggio ${selectedPratica.posteggio_numero || ''}`,
@@ -1015,7 +985,7 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
                     <Stamp className="mr-2 h-4 w-4" />
                     Genera Concessione
                   </Button>
-                </div>}
+                </div>
               </div>
 
               {/* ============================================================== */}
@@ -1139,144 +1109,100 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
                   <CardContent>
                     {selectedPratica.checks && selectedPratica.checks.length > 0 ? (
                       <div className="space-y-4">
+                        {/* Raggruppa per categoria */}
                         {(() => {
                           const allChecks = selectedPratica.checks || [];
                           
-                          // Raggruppa per evaluation_run_id (o per timestamp se non presente)
-                          const runGroups: Record<string, typeof allChecks> = {};
-                          allChecks.forEach(check => {
-                            let runId = 'unknown';
+                          // Filtra per mostrare solo ultima verifica o tutto
+                          let checks = allChecks;
+                          if (!showAllChecks && allChecks.length > 0) {
+                            // Trova il timestamp più recente
+                            const latestTime = Math.max(...allChecks.map(c => 
+                              new Date(c.data_check || c.created_at || 0).getTime()
+                            ));
+                            // Considera "ultima verifica" i check entro 5 minuti dal più recente
+                            const threshold = latestTime - (5 * 60 * 1000); // 5 minuti
+                            checks = allChecks.filter(c => {
+                              const checkTime = new Date(c.data_check || c.created_at || 0).getTime();
+                              return checkTime >= threshold;
+                            });
+                          }
+                          const grouped: Record<string, typeof checks> = {};
+                          
+                          checks.forEach(check => {
+                            // Estrai categoria dal dettaglio o dal check_code
+                            let categoria = 'PRATICA';
                             try {
-                              const det = typeof check.dettaglio === 'string' ? JSON.parse(check.dettaglio) : check.dettaglio;
-                              runId = det?.evaluation_run_id || 'legacy';
+                              const dettaglio = typeof check.dettaglio === 'string' ? JSON.parse(check.dettaglio) : check.dettaglio;
+                              categoria = dettaglio?.categoria || 'PRATICA';
                             } catch {
-                              runId = 'legacy';
+                              // Determina categoria dal nome del check
+                              if (check.check_code?.includes('_SUB')) categoria = 'SUBENTRANTE';
+                              else if (check.check_code?.includes('_CED') || check.check_code?.includes('CANONE')) categoria = 'CEDENTE';
                             }
-                            // Fallback: raggruppa per finestra temporale di 5 minuti
-                            if (runId === 'legacy') {
-                              const checkTime = new Date(check.data_check || check.created_at || 0).getTime();
-                              const roundedTime = Math.floor(checkTime / (5 * 60 * 1000)) * (5 * 60 * 1000);
-                              runId = `legacy-${roundedTime}`;
-                            }
-                            if (!runGroups[runId]) runGroups[runId] = [];
-                            runGroups[runId].push(check);
+                            if (!grouped[categoria]) grouped[categoria] = [];
+                            grouped[categoria].push(check);
                           });
-                          
-                          // Ordina i run dal più recente al più vecchio
-                          const sortedRuns = Object.entries(runGroups).sort((a, b) => {
-                            const timeA = Math.max(...a[1].map(c => new Date(c.data_check || c.created_at || 0).getTime()));
-                            const timeB = Math.max(...b[1].map(c => new Date(c.data_check || c.created_at || 0).getTime()));
-                            return timeB - timeA;
-                          });
-                          
-                          // Se non storico, mostra solo l'ultimo run
-                          const runsToShow = showAllChecks ? sortedRuns : sortedRuns.slice(0, 1);
                           
                           const categorieOrder = ['SUBENTRANTE', 'CEDENTE', 'PRATICA'];
                           const categorieLabels: Record<string, { label: string; color: string; icon: string }> = {
-                            'SUBENTRANTE': { label: 'Subentrante', color: '#00f0ff', icon: '\u{1F464}' },
-                            'CEDENTE': { label: 'Cedente', color: '#f59e0b', icon: '\u{1F4E4}' },
-                            'PRATICA': { label: 'Pratica', color: '#8b5cf6', icon: '\u{1F4C4}' }
+                            'SUBENTRANTE': { label: 'Subentrante', color: '#00f0ff', icon: '👤' },
+                            'CEDENTE': { label: 'Cedente', color: '#f59e0b', icon: '📤' },
+                            'PRATICA': { label: 'Pratica', color: '#8b5cf6', icon: '📄' }
                           };
                           
-                          return runsToShow.map(([runId, runChecks], runIdx) => {
-                            const runTime = Math.max(...runChecks.map(c => new Date(c.data_check || c.created_at || 0).getTime()));
-                            const passedInRun = runChecks.filter(c => c.esito === true || c.esito === 'PASS' || c.esito === 'true').length;
-                            const isLatest = runIdx === 0;
-                            
-                            // Raggruppa per categoria
-                            const grouped: Record<string, typeof runChecks> = {};
-                            runChecks.forEach(check => {
-                              let categoria = 'PRATICA';
-                              try {
-                                const dettaglio = typeof check.dettaglio === 'string' ? JSON.parse(check.dettaglio) : check.dettaglio;
-                                categoria = dettaglio?.categoria || 'PRATICA';
-                              } catch {
-                                if (check.check_code?.includes('_SUB')) categoria = 'SUBENTRANTE';
-                                else if (check.check_code?.includes('_CED') || check.check_code?.includes('CANONE')) categoria = 'CEDENTE';
-                              }
-                              if (!grouped[categoria]) grouped[categoria] = [];
-                              grouped[categoria].push(check);
-                            });
+                          return categorieOrder.map(cat => {
+                            const catChecks = grouped[cat];
+                            if (!catChecks || catChecks.length === 0) return null;
+                            const catInfo = categorieLabels[cat] || { label: cat, color: '#6b7280', icon: '✓' };
                             
                             return (
-                              <div key={runId} className={`space-y-3 ${!isLatest ? 'opacity-70' : ''}`}>
-                                {/* Header del run di valutazione */}
-                                {showAllChecks && (
-                                  <div className={`flex items-center justify-between p-2 rounded-lg ${isLatest ? 'bg-green-500/10 border border-green-500/30' : 'bg-gray-500/10 border border-gray-500/20'}`}>
-                                    <div className="flex items-center gap-2">
-                                      <span className={`text-xs font-bold ${isLatest ? 'text-green-400' : 'text-gray-400'}`}>
-                                        {isLatest ? 'ULTIMA VALUTAZIONE' : `Valutazione #${sortedRuns.length - runIdx}`}
-                                      </span>
-                                      <span className="text-xs text-gray-500">
-                                        {new Date(runTime).toLocaleString('it-IT')}
-                                      </span>
-                                    </div>
-                                    <span className={`text-xs font-medium ${passedInRun === runChecks.length ? 'text-green-400' : 'text-amber-400'}`}>
-                                      {passedInRun}/{runChecks.length} superati
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {categorieOrder.map(cat => {
-                                  const catChecks = grouped[cat];
-                                  if (!catChecks || catChecks.length === 0) return null;
-                                  const catInfo = categorieLabels[cat] || { label: cat, color: '#6b7280', icon: '\u2713' };
-                                  
-                                  return (
-                                    <div key={`${runId}-${cat}`} className="space-y-2">
-                                      <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: catInfo.color }}>
-                                        <span>{catInfo.icon}</span>
-                                        <span>{catInfo.label}</span>
-                                        <span className="text-xs text-gray-500">({catChecks.length})</span>
+                              <div key={cat} className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: catInfo.color }}>
+                                  <span>{catInfo.icon}</span>
+                                  <span>{catInfo.label}</span>
+                                  <span className="text-xs text-gray-500">({catChecks.length})</span>
+                                </div>
+                                <div className="space-y-2 pl-4 border-l-2" style={{ borderColor: catInfo.color + '40' }}>
+                                  {catChecks.map((check, idx) => {
+                                    const isPassed = check.esito === true || check.esito === 'PASS' || check.esito === 'true';
+                                    const checkName = check.tipo_check || check.check_code || 'Controllo';
+                                    const checkTime = check.data_check || check.created_at;
+                                    
+                                    // Estrai motivo dal dettaglio
+                                    let motivo = '';
+                                    try {
+                                      const dettaglio = typeof check.dettaglio === 'string' ? JSON.parse(check.dettaglio) : check.dettaglio;
+                                      motivo = dettaglio?.motivo || '';
+                                    } catch {}
+                                    
+                                    return (
+                                      <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-[#0b1220]/50">
+                                        <div className="flex items-center gap-2">
+                                          {isPassed ? (
+                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                          ) : (
+                                            <XCircle className="h-4 w-4 text-red-500" />
+                                          )}
+                                          <div>
+                                            <p className="text-[#e8fbff] text-sm">{checkName}</p>
+                                            {motivo && <p className="text-xs text-gray-500">{motivo}</p>}
+                                          </div>
+                                        </div>
+                                        <div className="text-right">
+                                          <span className={`text-xs font-medium ${isPassed ? 'text-green-400' : 'text-red-400'}`}>
+                                            {isPassed ? 'PASS' : 'FAIL'}
+                                          </span>
+                                          {checkTime && (
+                                            <p className="text-xs text-gray-500">
+                                              {formatDateTime(checkTime)}
+                                            </p>
+                                          )}
+                                        </div>
                                       </div>
-                                      <div className="space-y-2 pl-4 border-l-2" style={{ borderColor: catInfo.color + '40' }}>
-                                        {catChecks.map((check: any, idx: number) => {
-                                          const isPassed = check.esito === true || check.esito === 'PASS' || check.esito === 'true';
-                                          const checkName = check.tipo_check || check.check_code || 'Controllo';
-                                          const checkTime = check.data_check || check.created_at;
-                                          
-                                          let motivo = '';
-                                          try {
-                                            const dettaglio = typeof check.dettaglio === 'string' ? JSON.parse(check.dettaglio) : check.dettaglio;
-                                            motivo = dettaglio?.motivo || '';
-                                          } catch {}
-                                          
-                                          return (
-                                            <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-[#0b1220]/50">
-                                              <div className="flex items-center gap-2">
-                                                {isPassed ? (
-                                                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                ) : (
-                                                  <XCircle className="h-4 w-4 text-red-500" />
-                                                )}
-                                                <div>
-                                                  <p className="text-[#e8fbff] text-sm">{checkName}</p>
-                                                  {motivo && <p className="text-xs text-gray-500">{motivo}</p>}
-                                                </div>
-                                              </div>
-                                              <div className="text-right">
-                                                <span className={`text-xs font-medium ${isPassed ? 'text-green-400' : 'text-red-400'}`}>
-                                                  {isPassed ? 'PASS' : 'FAIL'}
-                                                </span>
-                                                {checkTime && (
-                                                  <p className="text-xs text-gray-500">
-                                                    {formatDateTime(checkTime)}
-                                                  </p>
-                                                )}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                                
-                                {/* Separatore tra run */}
-                                {showAllChecks && runIdx < runsToShow.length - 1 && (
-                                  <hr className="border-gray-700/50 my-4" />
-                                )}
+                                    );
+                                  })}
+                                </div>
                               </div>
                             );
                           });
@@ -1295,34 +1221,20 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
                   </CardHeader>
                   <CardContent className="flex flex-col items-center justify-center py-8">
                     {(() => {
-                      // Calcola statistiche dai controlli - SOLO ULTIMA VALUTAZIONE
+                      // Calcola statistiche dai controlli - SOLO ULTIMA VERIFICA
                       const allChecks = selectedPratica.checks || [];
                       
-                      // Trova l'ultimo evaluation_run_id e filtra solo quei check
+                      // Filtra per mostrare solo ultima verifica (stesso filtro usato nella lista)
                       let checks = allChecks;
                       if (allChecks.length > 0) {
-                        // Raggruppa per evaluation_run_id
-                        const runGroups: Record<string, typeof allChecks> = {};
-                        allChecks.forEach(c => {
-                          let runId = 'legacy';
-                          try {
-                            const det = typeof c.dettaglio === 'string' ? JSON.parse(c.dettaglio) : c.dettaglio;
-                            runId = det?.evaluation_run_id || 'legacy';
-                          } catch {}
-                          if (runId === 'legacy') {
-                            const t = new Date(c.data_check || c.created_at || 0).getTime();
-                            runId = `legacy-${Math.floor(t / (5 * 60 * 1000)) * (5 * 60 * 1000)}`;
-                          }
-                          if (!runGroups[runId]) runGroups[runId] = [];
-                          runGroups[runId].push(c);
+                        const latestTime = Math.max(...allChecks.map(c => 
+                          new Date(c.data_check || c.created_at || 0).getTime()
+                        ));
+                        const threshold = latestTime - (5 * 60 * 1000); // 5 minuti
+                        checks = allChecks.filter(c => {
+                          const checkTime = new Date(c.data_check || c.created_at || 0).getTime();
+                          return checkTime >= threshold;
                         });
-                        // Prendi il run più recente
-                        const latestRun = Object.entries(runGroups).sort((a, b) => {
-                          const tA = Math.max(...a[1].map(c => new Date(c.data_check || c.created_at || 0).getTime()));
-                          const tB = Math.max(...b[1].map(c => new Date(c.data_check || c.created_at || 0).getTime()));
-                          return tB - tA;
-                        })[0];
-                        checks = latestRun ? latestRun[1] : allChecks;
                       }
                       
                       const totalChecks = checks.length;
@@ -1331,8 +1243,8 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
                       ).length;
                       const failedChecks = totalChecks - passedChecks;
                       
-                      // Usa lo score dal DB (calcolato dal backend con pesi reali) per coerenza con la lista
-                      const score = selectedPratica?.score ?? (totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0);
+                      // Ricalcola score basato solo sull'ultima verifica
+                      const score = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0;
                       const scoreColor = score >= 70 ? '#22c55e' : score >= 40 ? '#eab308' : '#ef4444';
                       
                       return (
@@ -1367,9 +1279,6 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
                                   su {totalChecks} controlli totali
-                                </p>
-                                <p className="text-xs text-gray-600 mt-2 italic">
-                                  Score pesato: ogni controllo ha un peso diverso (4-15 pt)
                                 </p>
                               </>
                             ) : (
@@ -2085,6 +1994,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                       <TableHead className="text-gray-400">N. Protocollo</TableHead>
                       <TableHead className="text-gray-400">Tipo</TableHead>
                       <TableHead className="text-gray-400">Concessionario</TableHead>
+                      <TableHead className="text-gray-400">Sede Legale</TableHead>
                       <TableHead className="text-gray-400">Mercato</TableHead>
                       <TableHead className="text-gray-400">Posteggio</TableHead>
                       <TableHead className="text-gray-400">Scadenza</TableHead>
@@ -2140,6 +2050,9 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                             <p className="text-[#e8fbff]">{conc.ragione_sociale || conc.vendor_business_name || '-'}</p>
                             <p className="text-xs text-gray-500">{conc.cf_concessionario || conc.partita_iva || '-'}</p>
                           </div>
+                        </TableCell>
+                        <TableCell className="text-[#e8fbff] text-xs">
+                          {[conc.sede_legale_via, conc.sede_legale_comune, conc.sede_legale_provincia].filter(Boolean).join(', ') || '-'}
                         </TableCell>
                         <TableCell className="text-[#e8fbff]">{conc.market_name || '-'}</TableCell>
                         <TableCell className="text-[#e8fbff]">{conc.stall_number || '-'}</TableCell>
@@ -2389,31 +2302,22 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
         <TabsContent value="notifiche" className="space-y-6 mt-6">
           <NotificationManager 
             mittenteTipo="SUAP"
-            mittenteId={comuneData?.id || 0}
-            mittenteNome={`SUAP${comuneData?.nome ? ` Comune di ${comuneData.nome}` : ''}`}
+            mittenteId={comuneData?.id || 1}
+            mittenteNome={`SUAP Comune di ${comuneData?.nome || 'Grosseto'}`}
             onNotificheUpdate={loadNotificheCount}
-          />
-        </TabsContent>
-
-        {/* ================================================================== */}
-        {/* TAB STORICO TITOLARITA */}
-        {/* ================================================================== */}
-        <TabsContent value="storico-titolarita" className="space-y-6 mt-6">
-          <StoricoTitolarita 
-            comuneId={comuneData?.id}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Form SCIA - Modal allargato a pagina intera (come Concessione) */}
+      {/* Modal Form SCIA */}
       {showSciaForm && (
-        <div className="fixed inset-0 z-50 bg-[#0b1220] overflow-y-auto p-4">
-          <SciaForm
-            onSubmit={handleSciaSubmit}
-            onCancel={() => setShowSciaForm(false)}
-            comuneNome={comuneData?.nome || ''}
-            comuneId={comuneData?.id}
-          />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1e293b] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <SciaForm
+              onSubmit={handleSciaSubmit}
+              onCancel={() => setShowSciaForm(false)}
+            />
+          </div>
         </div>
       )}
 
@@ -2421,68 +2325,29 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
       {showConcessioneForm && (
         <div className="fixed inset-0 z-50 bg-[#0b1220] overflow-y-auto p-4">
           <ConcessioneForm 
-            onSubmit={async (savedConcessione) => {
-              // IMPORTANTE: Cattura selectedPratica PRIMA di resettare gli stati
-              const praticaCorrente = selectedPratica;
-              
+            onSubmit={(savedConcessione) => {
               setShowConcessioneForm(false);
               setConcessionePreData(null);
               setConcessioneMode('create');
               setSelectedConcessioneId(null);
               loadConcessioni(); // Ricarica le concessioni
-              
-              // Aggiorna la pratica collegata a APPROVED
-              if (praticaCorrente && savedConcessione?.id) {
-                // Aggiorna stato pratica a APPROVED nel backend
-                try {
-                  await updateSuapPraticaStato(
-                    String(praticaCorrente.id), 
-                    ENTE_ID, 
-                    'APPROVED', 
-                    `Concessione #${savedConcessione.id} generata - pratica approvata automaticamente`
-                  );
-                  toast.success(`Pratica ${praticaCorrente.cui || ''} aggiornata a APPROVED`);
-                } catch (err) {
-                  console.error('Errore aggiornamento stato pratica:', err);
-                  toast.error('Concessione salvata ma errore aggiornamento stato pratica');
-                }
-                
+              // Aggiorna la pratica selezionata con il nuovo concessione_id
+              if (selectedPratica && savedConcessione?.id) {
                 setSelectedPratica({
-                  ...praticaCorrente,
-                  concessione_id: savedConcessione.id,
-                  stato: 'APPROVED' as any
+                  ...selectedPratica,
+                  concessione_id: savedConcessione.id
                 });
                 // Aggiorna anche nella lista pratiche
                 setPratiche(prev => prev.map(p => 
-                  p.id === praticaCorrente.id 
-                    ? { ...p, concessione_id: savedConcessione.id, stato: 'APPROVED' as any }
+                  p.id === selectedPratica.id 
+                    ? { ...p, concessione_id: savedConcessione.id }
                     : p
                 ));
-              } else if (praticaCorrente) {
-                // Anche senza id concessione, prova ad aggiornare lo stato
-                try {
-                  await updateSuapPraticaStato(
-                    String(praticaCorrente.id), 
-                    ENTE_ID, 
-                    'APPROVED', 
-                    'Concessione generata - pratica approvata automaticamente'
-                  );
-                  toast.success(`Pratica ${praticaCorrente.cui || ''} aggiornata a APPROVED`);
-                  setSelectedPratica({
-                    ...praticaCorrente,
-                    stato: 'APPROVED' as any
-                  });
-                  setPratiche(prev => prev.map(p => 
-                    p.id === praticaCorrente.id 
-                      ? { ...p, stato: 'APPROVED' as any }
-                      : p
-                  ));
-                } catch (err) {
-                  console.error('Errore aggiornamento stato pratica:', err);
-                }
               }
               setActiveTab('concessioni'); // Vai al tab concessioni
-              // Toast progressivi gestiti direttamente dal ConcessioneForm (v8.1.4)
+              toast.success(concessioneMode === 'edit' ? 'Concessione aggiornata!' : 'Concessione salvata!', { 
+                description: `N. ${savedConcessione?.numero_protocollo || savedConcessione?.id}` 
+              });
             }}
             onCancel={() => {
               setShowConcessioneForm(false);

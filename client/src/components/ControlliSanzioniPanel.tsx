@@ -150,6 +150,7 @@ interface NotificaSUAP {
   messaggio: string;
   data_cambio_stato: string;
   letta: boolean;
+  score?: number;
 }
 
 // Interfaccia per le Concessioni dal SUAP
@@ -786,6 +787,48 @@ export default function ControlliSanzioniPanel() {
         text: 'text-purple-400', 
         dot: 'bg-purple-500',
         label: 'VALUTATA'
+      },
+      'ATTIVA': { 
+        bg: 'bg-green-500/10', 
+        border: 'border-green-500', 
+        text: 'text-green-400', 
+        dot: 'bg-green-500',
+        label: 'ATTIVA'
+      },
+      'CESSATA': { 
+        bg: 'bg-gray-500/10', 
+        border: 'border-gray-500', 
+        text: 'text-gray-400', 
+        dot: 'bg-gray-500',
+        label: 'CESSATA'
+      },
+      'SOSPESA': { 
+        bg: 'bg-orange-500/10', 
+        border: 'border-orange-500', 
+        text: 'text-orange-400', 
+        dot: 'bg-orange-500 animate-pulse',
+        label: 'SOSPESA'
+      },
+      'SCADUTA': { 
+        bg: 'bg-red-500/10', 
+        border: 'border-red-500', 
+        text: 'text-red-400', 
+        dot: 'bg-red-500',
+        label: 'SCADUTA'
+      },
+      'SUBMITTED': { 
+        bg: 'bg-cyan-500/10', 
+        border: 'border-cyan-500', 
+        text: 'text-cyan-400', 
+        dot: 'bg-cyan-500 animate-pulse',
+        label: 'INVIATA'
+      },
+      'PENDING': { 
+        bg: 'bg-amber-500/10', 
+        border: 'border-amber-500', 
+        text: 'text-amber-400', 
+        dot: 'bg-amber-500 animate-pulse',
+        label: 'IN ATTESA'
       }
     };
     
@@ -1301,7 +1344,7 @@ export default function ControlliSanzioniPanel() {
             className="data-[state=active]:bg-[#8b5cf6]/20 data-[state=active]:text-[#8b5cf6]"
           >
             <Briefcase className="h-4 w-4 mr-2" />
-            Pratiche SUAP ({domandeSpunta.length})
+            Pratiche SUAP ({notificheSuap.length})
           </TabsTrigger>
           <TabsTrigger 
             value="notifiche" 
@@ -2098,8 +2141,8 @@ export default function ControlliSanzioniPanel() {
                   <p className="text-[#e8fbff]/30 text-sm mt-1">Le notifiche di cambio stato pratiche appariranno qui</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                  {notificheSuap.slice(0, 5).map((notifica) => (
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {notificheSuap.map((notifica) => (
                     <div 
                       key={notifica.id} 
                       className={`p-4 rounded-lg border transition-all ${
@@ -2112,7 +2155,13 @@ export default function ControlliSanzioniPanel() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-[#8b5cf6] font-mono text-sm">{notifica.numero_pratica}</span>
-                            <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
+                            <Badge className={`text-xs border ${
+                              notifica.tipo_pratica === 'Subingresso' ? 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30' :
+                              notifica.tipo_pratica === 'SCIA' ? 'bg-[#22c55e]/20 text-[#22c55e] border-[#22c55e]/30' :
+                              notifica.tipo_pratica === 'Concessione' ? 'bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30' :
+                              notifica.tipo_pratica === 'Domanda Spunta' ? 'bg-[#3b82f6]/20 text-[#3b82f6] border-[#3b82f6]/30' :
+                              'bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30'
+                            }`}>
                               {notifica.tipo_pratica}
                             </Badge>
                             {!notifica.letta && (
@@ -2357,7 +2406,7 @@ export default function ControlliSanzioniPanel() {
                   <p className="text-[#e8fbff]/30 text-sm mt-1">Le comunicazioni del SUAP appariranno qui</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
                   {notificheSuap.map((notifica) => (
                     <div 
                       key={notifica.id} 
@@ -2374,7 +2423,13 @@ export default function ControlliSanzioniPanel() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-[#e8fbff] font-medium">SUAP</span>
-                            <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
+                            <Badge className={`text-xs border ${
+                              notifica.tipo_pratica === 'Subingresso' ? 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30' :
+                              notifica.tipo_pratica === 'SCIA' ? 'bg-[#22c55e]/20 text-[#22c55e] border-[#22c55e]/30' :
+                              notifica.tipo_pratica === 'Concessione' ? 'bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30' :
+                              notifica.tipo_pratica === 'Domanda Spunta' ? 'bg-[#3b82f6]/20 text-[#3b82f6] border-[#3b82f6]/30' :
+                              'bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30'
+                            }`}>
                               {notifica.tipo_pratica}
                             </Badge>
                             {!notifica.letta && (
@@ -2400,8 +2455,8 @@ export default function ControlliSanzioniPanel() {
           {/* Sezione Notifiche Manuali PM */}
           <NotificationManager 
             mittenteTipo="POLIZIA_MUNICIPALE"
-            mittenteId={isImpersonating && impersonatedComuneId ? parseInt(impersonatedComuneId) : 1}
-            mittenteNome={`Polizia Municipale${isImpersonating ? '' : ' - Comune di Grosseto'}`}
+            mittenteId={isImpersonating && impersonatedComuneId ? parseInt(impersonatedComuneId) : 0}
+            mittenteNome={`Polizia Municipale${isImpersonating && impersonatedComuneNome ? ` - Comune di ${impersonatedComuneNome}` : ''}`}
             comuneId={isImpersonating && impersonatedComuneId ? parseInt(impersonatedComuneId) : undefined}
           />
         </TabsContent>

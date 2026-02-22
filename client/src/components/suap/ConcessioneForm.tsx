@@ -199,9 +199,27 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
         autorizzazione_precedente_data: formatDate(initialData.autorizzazione_precedente_data),
       };
       
+      // Calcola durata e scadenza
+      const durataAnni = formattedData.durata_anni || '10';
+      const dataDecorrenza = formattedData.data_decorrenza || new Date().toISOString().split('T')[0];
+      let dataScadenza = formattedData.data_scadenza;
+      
+      // Se data_scadenza è vuota, la calcoliamo da data_decorrenza + durata_anni
+      if (!dataScadenza && dataDecorrenza) {
+        const d = new Date(dataDecorrenza);
+        d.setFullYear(d.getFullYear() + parseInt(durataAnni));
+        dataScadenza = d.toISOString().split('T')[0];
+      }
+      
       setFormData(prev => ({
         ...prev,
-        ...formattedData
+        ...formattedData,
+        // Assicura che durata_anni sia sempre un valore valido (default 10)
+        durata_anni: durataAnni,
+        // Assicura data_scadenza calcolata
+        data_scadenza: dataScadenza || prev.data_scadenza,
+        // Assicura tipo_concessione valido
+        tipo_concessione: formattedData.tipo_concessione || prev.tipo_concessione || 'subingresso'
       }));
       
       // NOTA: La pre-selezione del mercato viene gestita nell'useEffect che carica i mercati
@@ -306,8 +324,9 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
           }
         }
         
-        // Carica tutte le imprese per autocomplete
-        const impreseRes = await fetch(`${API_URL}/api/imprese`);
+        // Carica tutte le imprese per autocomplete (versione leggera senza immagini/subquery)
+        const lightFields = 'id,denominazione,partita_iva,codice_fiscale,comune,indirizzo_via,indirizzo_civico,indirizzo_cap,indirizzo_provincia,stato_impresa,pec,telefono,email,rappresentante_legale,rappresentante_legale_cognome,rappresentante_legale_nome,rappresentante_legale_cf,rappresentante_legale_data_nascita,rappresentante_legale_luogo_nascita,rappresentante_legale_residenza_via,rappresentante_legale_residenza_civico,rappresentante_legale_residenza_cap,rappresentante_legale_residenza_comune,rappresentante_legale_residenza_provincia';
+        const impreseRes = await fetch(`${API_URL}/api/imprese?fields=${lightFields}`);
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
@@ -363,41 +382,65 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
     fetchData();
   }, [initialData]);
 
-  // Filtra imprese mentre si digita (autocomplete Concessionario)
-  // Mostra risultati dalla prima lettera per una ricerca più reattiva
+   // Filtra imprese mentre si digita (autocomplete Subentrante)
+  // Priorità: denominazione > CF > P.IVA, minimo 2 caratteri per evitare risultati a caso
   useEffect(() => {
-    if (searchQuery.length < 1) {
+    if (searchQuery.length < 2) {
       setFilteredImprese([]);
       setShowSuggestions(false);
       return;
     }
     
-    const query = searchQuery.toUpperCase();
-    const filtered = allImprese.filter(i => 
-      i.denominazione?.toUpperCase().includes(query) ||
-      i.codice_fiscale?.toUpperCase().includes(query) ||
-      i.partita_iva?.includes(query.replace(/\D/g, ''))
-    ).slice(0, 15); // Max 15 suggerimenti per mostrare più risultati
+    const query = searchQuery.toUpperCase().trim();
+    const numericQuery = query.replace(/\D/g, '');
+    
+    const byName = allImprese.filter(i => 
+      i.denominazione?.toUpperCase().includes(query)
+    );
+    
+    let byCfPiva: typeof allImprese = [];
+    if (query.length >= 3) {
+      byCfPiva = allImprese.filter(i => 
+        !i.denominazione?.toUpperCase().includes(query) && (
+          i.codice_fiscale?.toUpperCase().includes(query) ||
+          (numericQuery.length >= 3 && i.partita_iva?.includes(numericQuery))
+        )
+      );
+    }
+    
+    const filtered = [...byName, ...byCfPiva].slice(0, 25);
     
     setFilteredImprese(filtered);
     setShowSuggestions(filtered.length > 0);
   }, [searchQuery, allImprese]);
 
   // Filtra imprese mentre si digita (autocomplete Cedente)
-  // Mostra risultati dalla prima lettera per una ricerca più reattiva
+  // Priorità: denominazione > CF > P.IVA, minimo 2 caratteri
   useEffect(() => {
-    if (cedenteSearchQuery.length < 1) {
+    if (cedenteSearchQuery.length < 2) {
       setFilteredCedenteImprese([]);
       setShowCedenteSuggestions(false);
       return;
     }
     
-    const query = cedenteSearchQuery.toUpperCase();
-    const filtered = allImprese.filter(i => 
-      i.denominazione?.toUpperCase().includes(query) ||
-      i.codice_fiscale?.toUpperCase().includes(query) ||
-      i.partita_iva?.includes(query.replace(/\D/g, ''))
-    ).slice(0, 15); // Max 15 suggerimenti per mostrare più risultati
+    const query = cedenteSearchQuery.toUpperCase().trim();
+    const numericQuery = query.replace(/\D/g, '');
+    
+    const byName = allImprese.filter(i => 
+      i.denominazione?.toUpperCase().includes(query)
+    );
+    
+    let byCfPiva: typeof allImprese = [];
+    if (query.length >= 3) {
+      byCfPiva = allImprese.filter(i => 
+        !i.denominazione?.toUpperCase().includes(query) && (
+          i.codice_fiscale?.toUpperCase().includes(query) ||
+          (numericQuery.length >= 3 && i.partita_iva?.includes(numericQuery))
+        )
+      );
+    }
+    
+    const filtered = [...byName, ...byCfPiva].slice(0, 25);
     
     setFilteredCedenteImprese(filtered);
     setShowCedenteSuggestions(filtered.length > 0);
@@ -761,7 +804,20 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
       console.log('[ConcessioneForm] Response body:', result);
 
       if (result.success) {
-        toast.success(isEditMode ? 'Concessione aggiornata con successo!' : 'Concessione creata con successo!');
+        // Toast progressivi: mostra ogni step con delay sequenziale (v8.1.4)
+        if (result.steps && result.steps.length > 0) {
+          result.steps.forEach((step: { tipo: string; msg: string }, index: number) => {
+            setTimeout(() => {
+              if (step.tipo === 'success') {
+                toast.success(step.msg, { duration: 3000 });
+              } else {
+                toast.info(step.msg, { duration: 2500 });
+              }
+            }, index * 800);
+          });
+        } else {
+          toast.success(isEditMode ? 'Concessione aggiornata con successo!' : 'Concessione creata con successo!');
+        }
         onSubmit(result.data);
       } else {
         // Gestione errori specifici
