@@ -3941,7 +3941,7 @@ export default function DashboardPA() {
 
           {/* TAB: SSO SUAP - Pratiche Ente Sussidiario */}
           <TabsContent value="ssosuap" className="space-y-6">
-            <SuapPanel mode={isAssociazioneImpersonation() ? 'associazione' : 'suap'} />
+            <SuapPanel />
           </TabsContent>
 
           {/* TAB 13: QUALIFICAZIONE IMPRESE */}
