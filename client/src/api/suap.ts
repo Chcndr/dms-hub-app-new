@@ -3,7 +3,7 @@
  * Gestione pratiche amministrative e integrazione PDND
  */
 
-import { addComuneIdToUrl, getImpersonationParams } from '@/hooks/useImpersonation';
+import { addComuneIdToUrl, addAssociazioneIdToUrl, getImpersonationParams, isAssociazioneImpersonation } from '@/hooks/useImpersonation';
 
 const baseUrl = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
 
@@ -59,11 +59,12 @@ export interface SuapFilters {
 
 /**
  * Recupera le statistiche generali per la dashboard SUAP
- * Filtrate per comune_id se in modalità impersonazione
+ * Filtrate per comune_id o associazione_id se in modalità impersonazione
  */
 export async function getSuapStats(enteId: string): Promise<SuapStats> {
-  // Aggiungi comune_id se in modalità impersonazione
-  const url = addComuneIdToUrl(`${baseUrl}/api/suap/stats?ente_id=${enteId}`);
+  // Aggiungi comune_id o associazione_id se in modalità impersonazione
+  let url = addComuneIdToUrl(`${baseUrl}/api/suap/stats?ente_id=${enteId}`);
+  url = addAssociazioneIdToUrl(url);
   
   const res = await fetch(url, {
     headers: {
@@ -78,7 +79,7 @@ export async function getSuapStats(enteId: string): Promise<SuapStats> {
 
 /**
  * Recupera la lista delle pratiche con filtri opzionali
- * Filtrate per comune_id se in modalità impersonazione
+ * Filtrate per comune_id o associazione_id se in modalità impersonazione
  */
 export async function getSuapPratiche(enteId: string, filters: SuapFilters = {}): Promise<SuapPratica[]> {
   const params = new URLSearchParams();
@@ -86,9 +87,10 @@ export async function getSuapPratiche(enteId: string, filters: SuapFilters = {})
   if (filters.stato) params.append('stato', filters.stato);
   if (filters.search) params.append('search', filters.search);
   if (filters.comune_nome) params.append('comune_nome', filters.comune_nome);
-  
-  // Aggiungi comune_id se in modalità impersonazione
-  const url = addComuneIdToUrl(`${baseUrl}/api/suap/pratiche?${params.toString()}`);
+
+  // Aggiungi comune_id o associazione_id se in modalità impersonazione
+  let url = addComuneIdToUrl(`${baseUrl}/api/suap/pratiche?${params.toString()}`);
+  url = addAssociazioneIdToUrl(url);
 
   const res = await fetch(url, {
     headers: {

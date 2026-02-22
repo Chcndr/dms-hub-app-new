@@ -17,7 +17,7 @@ import {
   SuapStats, SuapPratica, SuapEvento, SuapCheck 
 } from '@/api/suap';
 import SciaForm from '@/components/suap/SciaForm';
-import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import { addComuneIdToUrl, addAssociazioneIdToUrl } from '@/hooks/useImpersonation';
 import ConcessioneForm from '@/components/suap/ConcessioneForm';
 import AutorizzazioneForm from '@/components/suap/AutorizzazioneForm';
 import DomandaSpuntaForm from '@/components/suap/DomandaSpuntaForm';
@@ -303,7 +303,7 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
   
   const loadConcessioni = async () => {
     try {
-      const response = await fetch(addComuneIdToUrl('https://orchestratore.mio-hub.me/api/concessions'));
+      const response = await fetch(addAssociazioneIdToUrl(addComuneIdToUrl('https://orchestratore.mio-hub.me/api/concessions')));
       const data = await response.json();
       if (data.success) {
         // Usa stato_calcolato dal backend se presente, altrimenti calcola
@@ -344,7 +344,7 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
     try {
       const API_URL = MIHUB_API_BASE_URL;
       // Usa addComuneIdToUrl per filtrare per comune
-      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/domande-spunta`));
+      const response = await fetch(addAssociazioneIdToUrl(addComuneIdToUrl(`${API_URL}/api/domande-spunta`)));
       const data = await response.json();
       if (data.success && data.data) {
         // Ordina per data creazione (più recenti prima)
@@ -362,12 +362,24 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
   const loadNotificheCount = async () => {
     try {
       const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
-      // Usa il comune_id dinamico dal contesto
-      const currentComuneId = comuneData?.id || 0;
-      const response = await fetch(`${MIHUB_API}/notifiche/messaggi/SUAP/${currentComuneId}`);
-      const data = await response.json();
-      if (data.success) {
-        setNotificheNonLette(data.non_letti || 0);
+      if (isAssociazione) {
+        // Per le associazioni, carica notifiche dall'endpoint associazione
+        const { associazioneId } = getImpersonationParams();
+        if (associazioneId) {
+          const response = await fetch(`${MIHUB_API}/associazioni/${associazioneId}/notifiche?non_lette=true`);
+          const data = await response.json();
+          if (data.success) {
+            setNotificheNonLette(data.count || data.non_letti || 0);
+          }
+        }
+      } else {
+        // Usa il comune_id dinamico dal contesto
+        const currentComuneId = comuneData?.id || 0;
+        const response = await fetch(`${MIHUB_API}/notifiche/messaggi/SUAP/${currentComuneId}`);
+        const data = await response.json();
+        if (data.success) {
+          setNotificheNonLette(data.non_letti || 0);
+        }
       }
     } catch (error) {
       console.error('Error loading notifiche count:', error);
