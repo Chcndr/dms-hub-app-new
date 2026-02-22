@@ -843,16 +843,16 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
                             setFormData(prev => ({
                               ...prev,
                               ruolo_dichiarante: value,
-                              delegato_nome: assoc.referente_nome || assoc.presidente_nome || '',
-                              delegato_cognome: assoc.referente_cognome || assoc.presidente_cognome || '',
-                              delegato_cf: assoc.codice_fiscale_referente || '',
-                              delegato_data_nascita: assoc.data_nascita_referente || '',
-                              delegato_luogo_nascita: assoc.luogo_nascita_referente || '',
-                              delegato_residenza_via: assoc.residenza_referente || '',
-                              delegato_residenza_comune: assoc.comune_referente || '',
-                              delegato_residenza_cap: assoc.cap_referente || '',
-                              delegato_qualifica: 'Delegato Associazione',
-                              pec_del: assoc.pec || '',
+                              delegato_nome: assoc.delegato_nome || assoc.referente_nome || assoc.presidente_nome || '',
+                              delegato_cognome: assoc.delegato_cognome || assoc.referente_cognome || assoc.presidente_cognome || '',
+                              delegato_cf: assoc.delegato_codice_fiscale || '',
+                              delegato_data_nascita: assoc.delegato_data_nascita ? assoc.delegato_data_nascita.split('T')[0] : '',
+                              delegato_luogo_nascita: assoc.delegato_luogo_nascita || '',
+                              delegato_residenza_via: assoc.delegato_residenza_via || '',
+                              delegato_residenza_comune: assoc.delegato_residenza_comune || '',
+                              delegato_residenza_cap: assoc.delegato_residenza_cap || '',
+                              delegato_qualifica: assoc.delegato_qualifica || 'Delegato Associazione',
+                              pec_del: assoc.delegato_pec || assoc.pec || '',
                             }));
                             toast.success('Dati delegato compilati dalla scheda associazione');
                           }
