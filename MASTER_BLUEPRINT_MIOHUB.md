@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 8.13.0 (Scheda Associato + Tab Associati + Fix Filtri SUAP Associazione)  
+> **Versione:** 8.14.0 (Campi Delegato SCIA in Form Associazione + Auto-compilazione)  
 > **Data:** 22 Febbraio 2026  
 > **Autore:** Sistema documentato da Manus AI & Claude AI  
 > **Stato:** PRODUZIONE
@@ -50,6 +50,24 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 22 Febbraio 2026 — Notte (v8.13.0 → v8.14.0)
+
+**Database:**
+- ✅ **10 Colonne Delegato SCIA nella tabella `associazioni`:** `delegato_nome`, `delegato_cognome`, `delegato_codice_fiscale`, `delegato_data_nascita`, `delegato_luogo_nascita`, `delegato_qualifica`, `delegato_residenza_via`, `delegato_residenza_comune`, `delegato_residenza_cap`, `delegato_pec`.
+
+**Backend (mihub-backend-rest):**
+- ✅ **POST/PUT `/api/associazioni`:** Aggiornati per leggere/scrivere i 10 campi delegato.
+- ✅ **GET `/api/associazioni/:id`:** Restituisce i campi delegato nel JSON di risposta.
+
+**Frontend (dms-hub-app-new):**
+- ✅ **Sezione DELEGATO SCIA nel form Modifica Associazione:** Nuova sezione nel dialog `AssociazioniPanel.tsx` con 10 campi: Nome Delegato, Cognome Delegato, Codice Fiscale Delegato, Data di Nascita, Luogo di Nascita, Qualifica/Titolo, Residenza (Via/Piazza), Comune, CAP, PEC Delegato.
+- ✅ **Auto-compilazione SciaForm:** Aggiornato il mapping in `SciaForm.tsx` (riga ~834) per usare i nuovi nomi colonne: `delegato_nome/cognome/codice_fiscale/data_nascita/luogo_nascita/qualifica/residenza_via/residenza_comune/residenza_cap/pec` al posto dei vecchi nomi inesistenti.
+
+**Flusso Auto-compilazione Delegato:**
+1. Admin compila i campi DELEGATO SCIA nella scheda associazione (tab Associazioni → modifica)
+2. Quando si impersonifica l'associazione e si compila una SCIA, i dati del delegato vengono auto-compilati dalla scheda associazione
+3. I campi mappati sono: nome, cognome, CF, data nascita, luogo nascita, qualifica, residenza, comune, CAP, PEC
 
 ### Sessione 22 Febbraio 2026 — Sera (v8.12.0 → v8.13.0)
 
@@ -8772,7 +8790,7 @@ Componente completo per la gestione CRUD delle associazioni di categoria, montat
 
 **Funzionalità:**
 - Lista associazioni con ricerca e paginazione
-- Form creazione/modifica associazione
+- Form creazione/modifica associazione con sezioni: Anagrafica, Presidente, Referente Operativo, **DELEGATO SCIA** (10 campi), Altro
 - Bottone "Accedi come" per impersonificare
 - Sotto-tab: Enti Formatori, Associazioni & Bandi, SCIA & Pratiche, **Associati** (visibile solo in impersonazione associazione)
 
