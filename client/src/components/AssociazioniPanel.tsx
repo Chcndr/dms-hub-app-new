@@ -39,6 +39,16 @@ interface Associazione {
   referente_cognome: string;
   referente_email: string;
   referente_telefono: string;
+  delegato_nome: string;
+  delegato_cognome: string;
+  delegato_codice_fiscale: string;
+  delegato_data_nascita: string;
+  delegato_luogo_nascita: string;
+  delegato_qualifica: string;
+  delegato_residenza_via: string;
+  delegato_residenza_comune: string;
+  delegato_residenza_cap: string;
+  delegato_pec: string;
   num_tesserati: number;
   data_iscrizione: string;
   stato: string;
@@ -155,6 +165,10 @@ export default function AssociazioniPanel() {
     sito_web: '', indirizzo: '', logo_url: '',
     presidente_nome: '', presidente_cognome: '', presidente_email: '',
     referente_nome: '', referente_cognome: '', referente_email: '', referente_telefono: '',
+    delegato_nome: '', delegato_cognome: '', delegato_codice_fiscale: '',
+    delegato_data_nascita: '', delegato_luogo_nascita: '', delegato_qualifica: '',
+    delegato_residenza_via: '', delegato_residenza_comune: '', delegato_residenza_cap: '',
+    delegato_pec: '',
     num_tesserati: '', stato: 'attivo', note: ''
   });
 
@@ -266,6 +280,10 @@ export default function AssociazioniPanel() {
       sito_web: '', indirizzo: '', logo_url: '',
       presidente_nome: '', presidente_cognome: '', presidente_email: '',
       referente_nome: '', referente_cognome: '', referente_email: '', referente_telefono: '',
+      delegato_nome: '', delegato_cognome: '', delegato_codice_fiscale: '',
+      delegato_data_nascita: '', delegato_luogo_nascita: '', delegato_qualifica: '',
+      delegato_residenza_via: '', delegato_residenza_comune: '', delegato_residenza_cap: '',
+      delegato_pec: '',
       num_tesserati: '', stato: 'attivo', note: ''
     });
   };
@@ -282,6 +300,15 @@ export default function AssociazioniPanel() {
       presidente_email: a.presidente_email || '',
       referente_nome: a.referente_nome || '', referente_cognome: a.referente_cognome || '',
       referente_email: a.referente_email || '', referente_telefono: a.referente_telefono || '',
+      delegato_nome: a.delegato_nome || '', delegato_cognome: a.delegato_cognome || '',
+      delegato_codice_fiscale: a.delegato_codice_fiscale || '',
+      delegato_data_nascita: a.delegato_data_nascita ? a.delegato_data_nascita.split('T')[0] : '',
+      delegato_luogo_nascita: a.delegato_luogo_nascita || '',
+      delegato_qualifica: a.delegato_qualifica || '',
+      delegato_residenza_via: a.delegato_residenza_via || '',
+      delegato_residenza_comune: a.delegato_residenza_comune || '',
+      delegato_residenza_cap: a.delegato_residenza_cap || '',
+      delegato_pec: a.delegato_pec || '',
       num_tesserati: String(a.num_tesserati || ''), stato: a.stato || 'attivo', note: a.note || ''
     });
     setShowForm(true);
@@ -834,6 +861,48 @@ export default function AssociazioniPanel() {
                   </div>
                 </div>
 
+                {/* Delegato SCIA */}
+                <div className="p-4 bg-gray-700/30 rounded-lg">
+                  <h4 className="text-sm font-semibold text-orange-400 mb-3 flex items-center gap-2">
+                    <Briefcase className="w-4 h-4" />
+                    Delegato SCIA
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-500">Nome:</span>
+                      <span className="text-white ml-2">
+                        {selectedAssociazione.delegato_nome || '-'} {selectedAssociazione.delegato_cognome || ''}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Codice Fiscale:</span>
+                      <span className="text-white ml-2">{selectedAssociazione.delegato_codice_fiscale || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Data Nascita:</span>
+                      <span className="text-white ml-2">{selectedAssociazione.delegato_data_nascita ? new Date(selectedAssociazione.delegato_data_nascita).toLocaleDateString('it-IT') : '-'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Luogo Nascita:</span>
+                      <span className="text-white ml-2">{selectedAssociazione.delegato_luogo_nascita || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Qualifica:</span>
+                      <span className="text-white ml-2">{selectedAssociazione.delegato_qualifica || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">PEC:</span>
+                      <span className="text-cyan-400 ml-2">{selectedAssociazione.delegato_pec || '-'}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Residenza:</span>
+                      <span className="text-white ml-2">
+                        {selectedAssociazione.delegato_residenza_via || '-'}, {selectedAssociazione.delegato_residenza_comune || ''} {selectedAssociazione.delegato_residenza_cap || ''}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Contatti generali */}
                 <div className="p-4 bg-gray-700/30 rounded-lg">
                   <h4 className="text-sm font-semibold text-cyan-400 mb-3 flex items-center gap-2">
@@ -1186,6 +1255,63 @@ export default function AssociazioniPanel() {
               <div>
                 <label className="text-xs text-gray-400">Telefono Referente</label>
                 <input value={form.referente_telefono} onChange={e => setForm({...form, referente_telefono: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+
+              {/* Delegato SCIA */}
+              <div className="col-span-2 border-t border-gray-700 pt-3 mt-2">
+                <span className="text-xs text-orange-400 font-semibold">DELEGATO SCIA</span>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">Nome Delegato</label>
+                <input value={form.delegato_nome} onChange={e => setForm({...form, delegato_nome: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">Cognome Delegato</label>
+                <input value={form.delegato_cognome} onChange={e => setForm({...form, delegato_cognome: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">Codice Fiscale Delegato</label>
+                <input value={form.delegato_codice_fiscale} onChange={e => setForm({...form, delegato_codice_fiscale: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">Data di Nascita</label>
+                <input type="date" value={form.delegato_data_nascita} onChange={e => setForm({...form, delegato_data_nascita: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">Luogo di Nascita</label>
+                <input value={form.delegato_luogo_nascita} onChange={e => setForm({...form, delegato_luogo_nascita: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">Qualifica / Titolo</label>
+                <input value={form.delegato_qualifica} onChange={e => setForm({...form, delegato_qualifica: e.target.value})}
+                  placeholder="Es. Procuratore, Curatore, Erede..."
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">Residenza (Via/Piazza)</label>
+                <input value={form.delegato_residenza_via} onChange={e => setForm({...form, delegato_residenza_via: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">Comune</label>
+                <input value={form.delegato_residenza_comune} onChange={e => setForm({...form, delegato_residenza_comune: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">CAP</label>
+                <input value={form.delegato_residenza_cap} onChange={e => setForm({...form, delegato_residenza_cap: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">PEC Delegato</label>
+                <input value={form.delegato_pec} onChange={e => setForm({...form, delegato_pec: e.target.value})}
+                  placeholder="delegato@pec.it"
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" />
               </div>
 
