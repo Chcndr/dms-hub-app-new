@@ -114,8 +114,8 @@ const MODULE_DETAILS: Record<string, {
   },
   integrations: {
     stats: [
-      { label: 'Router tRPC', value: '21', color: '#06b6d4' },
-      { label: 'Endpoints', value: '796', color: '#14b8a6' },
+      { label: 'Router tRPC', value: '15', color: '#06b6d4' },
+      { label: 'Endpoints', value: '428+', color: '#14b8a6' },
       { label: 'Auth', value: 'Firebase', color: '#f59e0b' },
     ],
     highlights: [
@@ -128,7 +128,7 @@ const MODULE_DETAILS: Record<string, {
   }
 };
 
-// ─── Schema DB raggruppato (75 tabelle) ──────────────────────────────
+// ─── Schema DB raggruppato (68 tabelle) ──────────────────────────────
 const DB_GROUPS = [
   { name: 'Core Business', color: '#14b8a6', icon: Store, count: 12,
     tables: ['markets', 'stalls', 'vendors', 'concessions', 'presences', 'daily_presences', 'market_sectors', 'stall_types', 'vendor_categories', 'market_schedules', 'market_operators', 'market_fees'] },
@@ -154,7 +154,7 @@ const DB_GROUPS = [
     tables: ['tcc_rate_limits', 'tcc_fraud_events', 'tcc_idempotency_keys', 'tcc_daily_limits', 'tcc_qr_tokens'] },
 ];
 
-// ─── Gruppi componenti (143 totali) ──────────────────────────────────
+// ─── Gruppi componenti (145 totali) ──────────────────────────────────
 const COMPONENT_GROUPS = [
   { name: 'Dashboard PA', count: 14, desc: '28 tab protetti con sistema RBAC + ProtectedTab', color: '#14b8a6', icon: LayoutDashboard },
   { name: 'Gestione Mercati', count: 12, desc: 'Mercati, posteggi, concessioni, presenze, operatori', color: '#06b6d4', icon: Store },
@@ -326,10 +326,10 @@ export function NativeReportComponent() {
             {/* System summary bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Codice attivo', value: '115K righe', color: '#14b8a6' },
-                { label: 'Totale progetto', value: '219K righe', color: '#06b6d4' },
+                { label: 'Codice attivo', value: '106K righe', color: '#14b8a6' },
+                { label: 'Totale progetto', value: '106K righe', color: '#06b6d4' },
                 { label: 'Router tRPC', value: '21', color: '#a855f7' },
-                { label: 'Endpoints API', value: '796', color: '#f59e0b' },
+                { label: 'Endpoints API', value: '428+', color: '#f59e0b' },
               ].map((s, i) => (
                 <Card key={i} className="bg-[#1a2332] border-[#1e293b]">
                   <CardContent className="p-4 text-center">
@@ -436,7 +436,7 @@ export function NativeReportComponent() {
             {/* Header stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Componenti React', value: '143', color: '#14b8a6' },
+                { label: 'Componenti React', value: '145', color: '#14b8a6' },
                 { label: 'Pagine', value: '37', color: '#06b6d4' },
                 { label: 'Framework', value: 'React 19', color: '#a855f7' },
                 { label: 'Build', value: 'Vite 7', color: '#f59e0b' },
@@ -665,8 +665,8 @@ export function NativeReportComponent() {
   const TAB_HEADERS: Record<string, { title: string; subtitle: string }> = {
     architecture: { title: 'Panoramica Architetturale', subtitle: 'Struttura ad alto livello del sistema DMS Hub e moduli core.' },
     dataflow: { title: 'Flussi Dati & Processi', subtitle: 'Architettura e flussi informativi tra frontend, backend e servizi esterni.' },
-    database: { title: 'Schema Database — 75 Tabelle', subtitle: 'PostgreSQL su Neon Serverless — ORM Drizzle — 10 domini funzionali.' },
-    components: { title: 'Componenti Frontend — 143 React', subtitle: 'React 19 + Vite 7 + TypeScript strict + Tailwind 4 + shadcn/ui.' },
+    database: { title: 'Schema Database — 68 Tabelle', subtitle: 'PostgreSQL su Neon Serverless — ORM Drizzle — 10 domini funzionali.' },
+    components: { title: 'Componenti Frontend — 145 React', subtitle: 'React 19 + Vite 7 + TypeScript strict + Tailwind 4 + shadcn/ui.' },
     dossier: { title: 'Dossier Tecnico di Sistema', subtitle: 'Analisi conformità, sicurezza, integrazioni PA e valutazione economica.' },
   };
 

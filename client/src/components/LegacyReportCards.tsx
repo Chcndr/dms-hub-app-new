@@ -66,7 +66,7 @@ export function LegacyReportCards() {
             </p>
             <div className="flex items-center gap-2 text-xs text-[#e8fbff]/50">
               <Server className="h-3 w-3" />
-              218K righe — 70 tabelle — 119 endpoint
+              106K righe — 68 tabelle — 428+ endpoint
             </div>
             <div className="flex gap-2 pt-2">
               <Button

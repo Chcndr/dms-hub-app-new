@@ -1,8 +1,8 @@
-# 📋 STATO PROGETTO DMS HUB - AGGIORNATO 10 NOV 2025
+# 📋 STATO PROGETTO DMS HUB - AGGIORNATO 22 FEB 2026
 
-**Progetto**: Digital Market System - Gemello Digitale del Commercio Nazionale  
-**Versione Attuale**: e7832b70  
-**Ultimo Aggiornamento**: 10 Novembre 2025  
+**Progetto**: Digital Market System - Gemello Digitale del Commercio Nazionale
+**Versione Attuale**: v8.12.0+
+**Ultimo Aggiornamento**: 22 Febbraio 2026
 **Scala Target**: 8.000 mercati, 400.000 posteggi, 160.000 imprese
 
 ---
@@ -11,7 +11,7 @@
 
 Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e del commercio locale sostenibile in Italia. Il sistema integra 8 applicazioni web interconnesse con database PostgreSQL centralizzato, API tRPC type-safe, e integrazioni esterne con TPER, Centro Mobilità Nazionale, ARPAE, e Gestionale Heroku.
 
-**Stato Generale**: ✅ **Sistema Operativo** - Dashboard PA completa con 22 sezioni, Sistema Integrazioni funzionante, Database con 39 tabelle, API real-time
+**Stato Generale**: ✅ **Sistema Operativo** - Dashboard PA completa con 28 tab, Sistema Integrazioni funzionante, Database con 68 tabelle, 15 router tRPC con 100+ procedure, RBAC completo, Impersonificazione comuni operativa, PagoPA/SPID/CIE/CNS integrati, Sistema SUAP completo, Sistema Associazioni in corso
 
 ---
 
@@ -45,7 +45,7 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 - **Heroku** - Gestionale legacy
 - **pnpm** - Package manager veloce
 
-### **Database Schema** (39 Tabelle)
+### **Database Schema** (68 Tabelle)
 
 #### Mercati e Geometria (4 tabelle)
 - `markets` - Anagrafica mercati
@@ -166,9 +166,9 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 
 ### 4. 📊 **DASHBOARD ADMIN PA** (Centro Controllo)
 **URL**: `https://dmshubapp-hkvujnro.manus.space/dashboard-pa`  
-**Stato**: ✅ **OPERATIVO - 22 SEZIONI COMPLETE**
+**Stato**: ✅ **OPERATIVO - 28 TAB COMPLETI**
 
-#### **22 Sezioni Dashboard**
+#### **28 Tab Dashboard (aggiornato Feb 2026)**
 
 ##### Analytics (8 sezioni)
 1. ✅ **Overview** - KPI generali e crescita
@@ -854,7 +854,34 @@ CREATE TABLE external_connections (
 
 ## 📝 CHANGELOG
 
-### **v1.1 - 10 Novembre 2025** ⭐ NUOVO
+### **v8.12.0 - 22 Febbraio 2026** ⭐ ULTIMO
+- ✅ Campi Marca da Bollo (Fase 1) in SciaForm e DomandaSpuntaForm
+- ✅ Dichiarazione sostitutiva atto notorieta' (DPR 445/2000)
+- ✅ Sotto-tab "SCIA & Pratiche" completo (KPI, azioni rapide, tabella pratiche, lista associati)
+- ✅ Analisi completa sistema con 5 agenti AI paralleli
+- ✅ Relazione sistema + roadmap aggiornata
+
+### **v8.11.x - 19-21 Febbraio 2026**
+- ✅ Tab Enti & Associazioni nella DashboardPA
+- ✅ AssociazioniPanel con CRUD + impersonificazione
+- ✅ SuapPanel mode="associazione" (bottoni nascosti)
+- ✅ Impersonificazione associazioni (barra gialla, filtro tab)
+- ✅ Backend 19 endpoint CRUD associazioni
+- ✅ 4 tabelle DB nuove (associazioni, contratti, fatture, utenti)
+
+### **v8.10.x - Feb 2026**
+- ✅ Security audit fix (22 endpoint 500 risolti, 12 auth guard, CORS hardened)
+- ✅ Sistema SUAP completo (SCIA, Domanda Spunta, Concessioni, Storico)
+- ✅ SecurityTab RBAC UI (6 sotto-tab: overview, utenti, ruoli, permessi, eventi, accessi)
+- ✅ Guardian monitoring (endpoints, logs, debug)
+- ✅ Mappa Italia nazionale
+- ✅ Dashboard Impresa + App Impresa (wallet, presenze, anagrafica, notifiche)
+- ✅ Report interattivo NativeReportComponent (5 tab)
+- ✅ Sistema TCC v2.1 (Carbon Credits, QR firmato, anti-frode)
+- ✅ PagoPA E-FIL integrazione
+- ✅ SPID/CIE/CNS OAuth
+
+### **v1.1 - 10 Novembre 2025**
 - ✅ Sistema Integrazioni completo con dati reali
 - ✅ 5 nuove tabelle database (api_keys, api_metrics, webhooks, webhook_logs, external_connections)
 - ✅ Router TRPC integrationsRouter con 15+ endpoint
@@ -879,24 +906,38 @@ CREATE TABLE external_connections (
 
 ---
 
-## 🚀 PROSSIMI STEP IMMEDIATI
+## 🚀 PROSSIMI STEP IMMEDIATI (aggiornato 22 Feb 2026)
 
-### **Questa Settimana**
-1. ✅ ~~Sistema Integrazioni completo~~ **FATTO!**
-2. 🔴 Import automatico Slot Editor v3 → Dashboard Admin
-3. 🔴 Middleware logging automatico API metrics
-4. 🔴 Trigger webhook automatici su eventi sistema
+### **Questa Settimana (23-28 Feb)**
+1. 🔴 Fix vulnerabilita' sicurezza critiche (eval, XSS innerHTML, Firebase keys)
+2. 🔴 Collegamento impersonificazione associazioni (filtro dati nei tab)
+3. 🔴 Creare tab presenze e anagrafica per associazioni
 
-### **Prossime 2 Settimane**
-1. 🟡 Dashboard Analytics Integrazioni con grafici
-2. 🟡 API Bridge Gestionale Heroku
-3. 🟡 Sistema notifiche push real-time
+### **Prossime 2 Settimane (Mar 2026)**
+1. 🟡 Refactoring DashboardPA (splitting in componenti piu' piccoli)
+2. 🟡 Aggiungere useMemo/useCallback nei componenti critici
+3. 🟡 Code-splitting tab con dynamic import
+4. 🟡 Sostituire tipi `any` piu' critici
 
-### **Prossimo Mese**
-1. 🟢 Caching Redis per performance
-2. 🟢 Load balancing e scalabilità
-3. 🟢 Testing automatizzato completo
+### **Prossimo Mese (Apr 2026)**
+1. 🟡 Import automatico Slot Editor v3 → Dashboard Admin
+2. 🟡 Middleware logging automatico API metrics
+3. 🟡 Trigger webhook automatici su eventi
+4. 🟢 Dashboard Analytics Integrazioni con grafici
+
+### **Prossimo Trimestre (Mag-Giu 2026)**
+1. 🟢 API Bridge Gestionale Heroku
+2. 🟢 Caching Redis per performance
+3. 🟢 Load balancing e scalabilita'
+4. 🟢 Testing automatizzato (Vitest, >80% coverage)
+5. 🟢 Migrazione Orchestratore REST → tRPC
+
+### **Secondo Semestre 2026**
+1. Scaling a 8.000 mercati
+2. Accreditamento PDND/ANPR/AppIO
+3. Qualificazione ACN SaaS
+4. Mobile app nativa
 
 ---
 
-**Fine Documento** - Ultimo aggiornamento: 10 Novembre 2025, ore 21:30
+**Fine Documento** - Ultimo aggiornamento: 22 Febbraio 2026
