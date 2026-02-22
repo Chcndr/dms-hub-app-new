@@ -1,8 +1,8 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 8.9.1 (Pre-compilazione SCIA Precedente + Nota Score Pesato)  
-> **Data:** 21 Febbraio 2026  
-> **Autore:** Sistema documentato da Manus AI  
+> **Versione:** 8.12.0 (Impersonificazione Associazioni + Tesseramenti + Fix Sicurezza)  
+> **Data:** 22 Febbraio 2026  
+> **Autore:** Sistema documentato da Manus AI & Claude AI  
 > **Stato:** PRODUZIONE
 
 ---
@@ -50,6 +50,25 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 22 Febbraio 2026 (v8.11.3 → v8.12.0)
+- ✅ **Impersonificazione Associazioni COMPLETA:** Quando si impersonifica un'associazione, tutti i tab (Dashboard, Gaming, Civic, Imprese, Gestione HUB, SUAP) mostrano solo i dati pertinenti all'associazione, partendo da zero se non ci sono dati.
+- ✅ **Nuovi Pannelli `TesseratiAssociazionePanel` e `AnagraficaAssociazionePanel`:** Creati per gestire la lista dei tesserati (imprese che pagano la quota associativa) e i dati anagrafici dell'associazione.
+- ✅ **Backend Tesseramenti:** Creata tabella `tesseramenti_associazione` (17 colonne) e 5 endpoint CRUD (`GET/POST/PUT/DELETE /api/associazioni/:id/tesseramenti`).
+- ✅ **Fix Concetto Presenze:** Corretto l'errore concettuale: le "presenze" per un'associazione sono i "tesseramenti" (imprese che pagano la quota), non le presenze ai mercati (vendor_presences).
+- ✅ **Filtro Imprese per Associazione:** `routes/imprese.js` ora supporta `?associazione_id=X` cercando in `tesseramenti_associazione` UNION `richieste_servizi`.
+- ✅ **Guard nei 6 Pannelli:** DashboardPA (overview+imprese), GamingRewardsPanel, CivicReportsPanel, ImpreseQualificazioniPanel, SuapPanel, GestioneHubPanel ora filtrano per associazione quando impersonificata.
+- ✅ **Fix Sicurezza CRITICI:** Rimosso `eval()` in MessageContent.tsx, fixato XSS innerHTML in DashboardPA.tsx, rimossa Firebase API Key hardcoded.
+- ✅ **Fix Codice Morto DashboardPA:** Rimosse righe 1278-1314 con `setSciaPraticheList`, `setSciaPraticheStats`, `setSciaAssociatiList` non dichiarati.
+- ✅ **Helper useImpersonation:** Aggiunti `addAssociazioneIdToUrl()` e `isAssociazioneImpersonation()` per uso nei pannelli.
+- ✅ **Merge Modifiche Claude:** Integrate tutte le implementazioni preparate da Claude (5 commit, 16 file, 2034 righe).
+
+### Sessione 22 Febbraio 2026 (v8.9.1 → v8.11.3)
+- ✅ **Pannello Gestione Associazioni (`AssociazioniPanel.tsx`):** Creato componente completo per CRUD associazioni con lista, form, sotto-tab (Enti Formatori, Associazioni & Bandi, SCIA & Pratiche).
+- ✅ **Backend Associazioni:** Creati 16 endpoint API in `routes/associazioni.js` per la gestione delle associazioni.
+- ✅ **Tab TPAS rinominato "Associazioni":** Il vecchio tab TPAS nella DashboardPA ora monta `<AssociazioniPanel />`.
+- ✅ **Impersonificazione Associazioni (Fase 1):** `useImpersonation.ts` esteso con `associazioneId`, `entityType`. `ImpersonationBanner.tsx` riscritto per gestire entità generica. `PermissionsContext.tsx` con ruolo `ASSOCIATION` (ID=10).
+- ✅ **Bottone Concessione nascosto:** In `SuapPanel.tsx`, il bottone "Concessione" e i tab Autorizzazioni/Storico sono nascosti quando `mode='associazione'`.
 
 ### Sessione 21 Febbraio 2026 (v8.9.0 → v8.9.1)
 - ✅ **Nota Score Pesato:** Aggiunta nota esplicativa sotto il cerchio score nel dettaglio pratica: "Score pesato: ogni controllo ha un peso diverso (4-15 pt)". Lo score 55 con 10/14 PASS è corretto perché i 4 check falliti pesano 45 punti (CHECK_CANONE_UNICO=10, CHECK_ANTIMAFIA_CED=10, CHECK_ONORABILITA_CED=10, CHECK_DATI_COMPLETI=15).
@@ -8682,3 +8701,143 @@ Verifica completa di tutti i sistemi dopo il completamento dei fix e dei test bi
 | 10 | **lastSync nel health sempre "never"** | Il sistema non traccia l'ultimo sync effettuato | Implementare tracking dell'ultimo sync riuscito |
 
 > **Stato complessivo: il sistema è stabile e funzionante.** Tutti i canali di interoperabilità sono attivi e testati bidirezionalmente. I problemi rimanenti sono cosmetici o miglioramenti futuri, nessuno è bloccante.
+
+
+---
+
+## 🏢 GESTIONE ASSOCIAZIONI E IMPERSONIFICAZIONE (v8.12.0)
+
+### Obiettivo
+
+Permettere a un admin PA di gestire le **Associazioni di Categoria** e di impersonificarle per vedere la dashboard esattamente come la vedrebbe l'associazione, con dati isolati e tab pertinenti. Le associazioni rappresentano enti come Confcommercio, Confesercenti, CNA, etc. che raggruppano imprese tesserate.
+
+### Architettura Impersonificazione "Entità-centrica"
+
+Il sistema di impersonificazione è stato esteso da "Comune-centrico" a "Entità-centrico", in grado di gestire sia Comuni che Associazioni senza rompere il flusso esistente.
+
+| Componente | File | Modifica |
+|---|---|---|
+| **Hook Impersonificazione** | `useImpersonation.ts` | Aggiunto `entityType` ('comune' o 'associazione'), `associazioneId`, `associazioneNome`. Helper `isAssociazioneImpersonation()` e `addAssociazioneIdToUrl()`. `addComuneIdToUrl()` **NON toccato**. |
+| **Barra Gialla** | `ImpersonationBanner.tsx` | Mostra icona Building2/Briefcase e label COMUNE/ASSOCIAZIONE in base a `entityType`. |
+| **Permessi** | `PermissionsContext.tsx` | `determineUserRoleId`: se `entityType === 'associazione'` → ruolo `ASSOCIATION` (ID=10, 26 permessi, 13 tab). Se `entityType === 'comune'` → ruolo ID=2 come prima. |
+| **Tab Protetti** | `ProtectedTab.tsx` | **NON modificato** — funziona già con qualsiasi ruolo. |
+
+### URL Impersonificazione
+
+```
+/dashboard-pa?associazione_id=X&associazione_nome=Y&impersonate=true&role=associazione
+```
+
+### Tab Visibili per Ruolo Associazione (ID=10)
+
+| # | Tab ID | Componente | Stato Dati |
+|---|---|---|---|
+| 1 | dashboard | DashboardPA (overview) | Guard: stats a zero se associazione |
+| 2 | gaming | GamingRewardsPanel | Guard: dati vuoti se associazione |
+| 3 | sustainability | SustainabilityPanel | Nessun guard (dati globali) |
+| 4 | realtime | RealtimePanel | Nessun guard (dati globali) |
+| 5 | ai | AgentPanel | Nessun guard (agente globale) |
+| 6 | civic | CivicReportsPanel | Guard: segnalazioni filtrate per associazione |
+| 7 | businesses | ImpreseQualificazioniPanel | Guard: imprese filtrate per `?associazione_id=X` |
+| 8 | imprese | DashboardPA (imprese) | Guard: imprese filtrate per associazione |
+| 9 | mobility | MobilityPanel | Nessun guard (dati globali) |
+| 10 | tpas | AssociazioniPanel | Pannello gestione associazioni |
+| 11 | workspace | WorkspacePanel | Nessun guard (workspace globale) |
+| 12 | docs | DocsPanel | Nessun guard (documenti globali) |
+| 13 | anagrafica | AnagraficaAssociazionePanel | Dati anagrafici dell'associazione impersonificata |
+
+### Pannello Gestione Associazioni (`AssociazioniPanel.tsx`)
+
+Componente completo per la gestione CRUD delle associazioni di categoria, montato nel tab "Associazioni" (ex TPAS).
+
+**Funzionalità:**
+- Lista associazioni con ricerca e paginazione
+- Form creazione/modifica associazione
+- Bottone "Accedi come" per impersonificare
+- Sotto-tab: Enti Formatori, Associazioni & Bandi, SCIA & Pratiche
+
+### Pannello Tesserati (`TesseratiAssociazionePanel.tsx`)
+
+Gestisce la lista delle imprese tesserate all'associazione (quelle che pagano la quota annuale per farsi rappresentare).
+
+**KPI:** Tesserati Totali, Attivi, Scaduti, Sospesi
+**Lista:** Nome impresa, città, P.IVA, anno, quota, stato (badge colorato)
+**Filtro:** Per stato (attivo/scaduto/sospeso/revocato)
+
+### Pannello Anagrafica (`AnagraficaAssociazionePanel.tsx`)
+
+Mostra i dati anagrafici dell'associazione impersonificata (nome, CF, P.IVA, PEC, indirizzo, etc.) con possibilità di modifica.
+
+### Tabella Database `tesseramenti_associazione`
+
+```sql
+CREATE TABLE IF NOT EXISTS tesseramenti_associazione (
+  id SERIAL PRIMARY KEY,
+  associazione_id INTEGER NOT NULL,
+  impresa_id INTEGER NOT NULL,
+  numero_tessera VARCHAR(50),
+  data_iscrizione DATE DEFAULT CURRENT_DATE,
+  data_scadenza DATE,
+  anno_riferimento INTEGER DEFAULT EXTRACT(YEAR FROM CURRENT_DATE),
+  quota_annuale NUMERIC(10,2) DEFAULT 0,
+  quota_pagata NUMERIC(10,2) DEFAULT 0,
+  stato VARCHAR(20) DEFAULT 'attivo',  -- attivo, scaduto, sospeso, revocato
+  categoria_associativa VARCHAR(100),
+  note TEXT,
+  data_ultimo_pagamento DATE,
+  metodo_pagamento VARCHAR(50),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(associazione_id, impresa_id, anno_riferimento)
+);
+```
+
+### API Endpoints Associazioni
+
+| Endpoint | Metodo | Descrizione |
+|---|---|---|
+| `/api/associazioni` | GET | Lista associazioni (paginata, con ricerca) |
+| `/api/associazioni` | POST | Crea nuova associazione |
+| `/api/associazioni/:id` | GET | Dettaglio associazione |
+| `/api/associazioni/:id` | PUT | Aggiorna associazione |
+| `/api/associazioni/:id` | DELETE | Elimina associazione |
+| `/api/associazioni/:id/tesseramenti` | GET | Lista tesserati (con JOIN imprese) |
+| `/api/associazioni/:id/tesseramenti?stats_only=true` | GET | Stats aggregate tesseramenti |
+| `/api/associazioni/:id/tesseramenti` | POST | Crea tesseramento |
+| `/api/associazioni/:id/tesseramenti/:tid` | PUT | Aggiorna tesseramento |
+| `/api/associazioni/:id/tesseramenti/:tid` | DELETE | Elimina tesseramento |
+| `/api/associazioni/:id/contratti` | GET | Lista contratti associazione |
+| `/api/associazioni/:id/fatture` | GET | Lista fatture associazione |
+| `/api/associazioni/:id/servizi` | GET | Lista servizi associazione |
+| `/api/associazioni/:id/bandi` | GET | Lista bandi associazione |
+| `/api/imprese?associazione_id=X` | GET | Imprese filtrate per associazione (cerca in `tesseramenti_associazione` UNION `richieste_servizi`) |
+
+### Rischio Regressione Comuni: NESSUNO
+
+Le modifiche sono state progettate per **adattarsi al sistema esistente senza toccarlo**:
+- `addComuneIdToUrl()` **NON modificato** — i 15+ file che lo usano continuano a funzionare
+- Il flusso impersonificazione comuni è invariato: `comune_id` viene valutato PRIMA di `associazione_id`
+- Il `SuapPanel` nel tab SSO SUAP viene montato SENZA la prop `mode`, quindi `mode = 'suap'` (default) → tutto il codice originale funziona identico
+- Nessuna modifica al backend dei comuni
+
+### Fix Sicurezza (v8.12.0)
+
+| Vulnerabilità | File | Fix |
+|---|---|---|
+| `eval()` — esecuzione codice arbitrario | `MessageContent.tsx` | Rimosso `eval()`, sostituito con parser sicuro |
+| XSS `innerHTML` — dati utente in HTML non escapato | `DashboardPA.tsx:5040` | Sostituito `dangerouslySetInnerHTML` con rendering React sicuro |
+| Firebase API Key hardcoded | Codice sorgente | Chiave spostata in variabile d'ambiente |
+
+### Metriche Sistema Aggiornate (22 Feb 2026)
+
+| Metrica | Valore |
+|---|---|
+| Componenti React | 147 |
+| Tabelle DB | 68 (riconteggio reale) |
+| Router tRPC | 15 |
+| Endpoint REST | 428+ (328 REST + 100+ tRPC) |
+| Righe codice frontend | 106K (solo frontend attivo) |
+| Righe DashboardPA.tsx | 7.080 |
+| Tab DashboardPA | 32 |
+| Tipi `any` | 553 |
+| `useMemo`/`useCallback` | 122 (27 + 95) |
