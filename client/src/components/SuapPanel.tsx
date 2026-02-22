@@ -551,19 +551,21 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
             <FileText className="mr-2 h-4 w-4" />
             Nuova SCIA
           </Button>
-          <Button 
-            onClick={() => {
-              setConcessioneMode('create');
-              setSelectedConcessioneId(null);
-              setConcessionePreData(null);
-              setShowConcessioneForm(true);
-            }}
-            variant="outline"
-            className="border-[#14b8a6]/30 text-[#e8fbff] hover:bg-[#1e293b]"
-          >
-            <CheckCircle2 className="mr-2 h-4 w-4" />
-            Concessione
-          </Button>
+          {!isAssociazione && (
+            <Button
+              onClick={() => {
+                setConcessioneMode('create');
+                setSelectedConcessioneId(null);
+                setConcessionePreData(null);
+                setShowConcessioneForm(true);
+              }}
+              variant="outline"
+              className="border-[#14b8a6]/30 text-[#e8fbff] hover:bg-[#1e293b]"
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Concessione
+            </Button>
+          )}
         </div>
       </div>
 
@@ -2007,18 +2009,20 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
               <Filter className="mr-2 h-4 w-4" />
               Filtri
             </Button>
-            <Button 
-              onClick={() => {
-                setConcessionePreData(null);
-                setConcessioneMode('create');
-                setSelectedConcessioneId(null);
-                setShowConcessioneForm(true);
-              }}
-              className="bg-[#14b8a6] text-black hover:bg-[#14b8a6]/90"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Nuova Concessione
-            </Button>
+            {!isAssociazione && (
+              <Button
+                onClick={() => {
+                  setConcessionePreData(null);
+                  setConcessioneMode('create');
+                  setSelectedConcessioneId(null);
+                  setShowConcessioneForm(true);
+                }}
+                className="bg-[#14b8a6] text-black hover:bg-[#14b8a6]/90"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nuova Concessione
+              </Button>
+            )}
           </div>
 
           {/* Pannello Filtri Espandibile */}
