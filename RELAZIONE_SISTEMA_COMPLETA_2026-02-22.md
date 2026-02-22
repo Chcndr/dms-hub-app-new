@@ -27,7 +27,7 @@
 Il sistema DMS Hub e' **funzionante e stabile in produzione**. La piattaforma serve correttamente tutti i tipi di utente (PA, imprese, cittadini, pubblico) con un sistema RBAC maturo e un'impersonificazione per comune collaudata.
 
 **Punti di Forza:**
-- 28 tab operativi nella DashboardPA
+- 32 tab operativi nella DashboardPA
 - Sistema RBAC completo con ProtectedTab
 - Impersonificazione comuni stabile (22 file integrati)
 - Integrazione PagoPA, SPID/CIE/CNS operative
@@ -36,9 +36,9 @@ Il sistema DMS Hub e' **funzionante e stabile in produzione**. La piattaforma se
 
 **Aree Critiche da Risolvere:**
 - 3 vulnerabilita di sicurezza CRITICHE (eval, XSS innerHTML, chiavi Firebase esposte)
-- DashboardPA.tsx ha 7.482 righe (file troppo grande)
-- 0 utilizzi di useMemo/useCallback/React.memo (performance)
-- 136 utilizzi di tipo `any` (type safety)
+- DashboardPA.tsx ha 7.080 righe (file troppo grande)
+- 122 utilizzi di useMemo/useCallback (27 useMemo + 95 useCallback) — pochi per la dimensione del progetto
+- 553 utilizzi di tipo `any` (type safety da migliorare)
 - Sistema associazioni non ancora collegato all'impersonificazione
 
 ---
@@ -49,7 +49,7 @@ Il sistema DMS Hub e' **funzionante e stabile in produzione**. La piattaforma se
 
 | Metrica | Valore |
 |---------|--------|
-| Componenti React | 145 |
+| Componenti React | 147 |
 | Pagine | 37 |
 | Hooks custom | 11 |
 | Contexts | 7 |
@@ -64,7 +64,7 @@ Il sistema DMS Hub e' **funzionante e stabile in produzione**. La piattaforma se
 
 | File | Righe | Priorita' refactoring |
 |------|-------|----------------------|
-| DashboardPA.tsx | 7.482 | ALTA |
+| DashboardPA.tsx | 7.080 | ALTA |
 | GestioneMercati.tsx | 4.188 | MEDIA |
 | ControlliSanzioniPanel.tsx | 3.415 | MEDIA |
 | WalletPanel.tsx | 3.006 | BASSA |
@@ -133,7 +133,7 @@ Deploy:   Vercel (frontend) + Hetzner VPS (backend) + PM2
 | dmsLegacy | export.*, sync.*, health | admin |
 | logs | system, reportClientError | admin/public |
 
-### Tab DashboardPA (28 tab)
+### Tab DashboardPA (32 tab)
 
 | Tab ID | Componente | Impersonificazione | Filtro Comune |
 |--------|------------|-------------------|---------------|
@@ -213,7 +213,7 @@ apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBQlKp8jQi7Q19tXQtTYpdgiv
 | # | Problema | Impatto | Fix |
 |---|----------|---------|-----|
 | 9 | 136 tipi `any` | Type safety debole | Sostituire con tipi corretti |
-| 10 | 0 useMemo/useCallback | Re-render eccessivi | Aggiungere memoization |
+| 10 | 122 useMemo/useCallback (pochi per progetto) | Re-render eccessivi | Aggiungere memoization |
 | 11 | No code-splitting tab | Bundle size | Dynamic import per tab |
 | 12 | Error handling inconsistente | UX degradata | Errori strutturati |
 | 13 | Token auth misti | Confusione auth state | Standardizzare pattern |
@@ -264,9 +264,9 @@ apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBQlKp8jQi7Q19tXQtTYpdgiv
 - Liste con map() creano nuove referenze ad ogni render
 - **Impatto**: UI lenta su mobile e dispositivi con risorse limitate
 
-#### 2. DashboardPA Monolitico (7.482 righe)
+#### 2. DashboardPA Monolitico (7.080 righe)
 - Import di 60+ componenti al top level
-- Tutti i 28 tab caricati in memoria anche quando non visibili
+- Tutti i 32 tab caricati in memoria anche quando non visibili
 - Nessun dynamic import per i singoli tab
 - **Impatto**: First Contentful Paint lento, alto consumo RAM
 
@@ -475,7 +475,7 @@ Il SuapPanel gia' supporta `mode="associazione"`:
 
 | # | Feature | Stato | Versione |
 |---|---------|-------|----------|
-| 1 | Dashboard PA 28 tab | COMPLETATO | v7.9 |
+| 1 | Dashboard PA 32 tab | COMPLETATO | v7.9 |
 | 2 | Sistema Integrazioni (API Keys, Webhooks, Connessioni) | COMPLETATO | v7.9 |
 | 3 | App Cittadini (Mappa, Wallet, Route, Civic) | COMPLETATO | v7.9 |
 | 4 | Hub Operatore (Check-in/out, vendite) | COMPLETATO | v7.9 |
@@ -600,7 +600,7 @@ Il SuapPanel gia' supporta `mode="associazione"`:
 
 | Campo | Valore Attuale | Valore Corretto |
 |-------|---------------|-----------------|
-| Componenti React | 143 | 145 |
+| Componenti React | 143 | 147 |
 | Pagine | 37 | 37 (invariato) |
 | Tabelle DB | 75 | 68 (riconteggio) |
 | Righe codice | 115K | 105.659 (frontend) |
@@ -613,7 +613,7 @@ Il SuapPanel gia' supporta `mode="associazione"`:
 1. Data: da "10 NOV 2025" a "22 FEB 2026"
 2. Versione: da "e7832b70" a "v8.12.0+"
 3. Database: da "39 tabelle" a "68 tabelle"
-4. Dashboard PA: da "22 sezioni" a "28 tab"
+4. Dashboard PA: da "22 sezioni" a "32 tab"
 5. API: da "50+ endpoint" a "100+ procedure tRPC + 328 REST"
 6. Changelog: aggiungere v8.10, v8.11, v8.12
 7. TODO: aggiornare stati completamento

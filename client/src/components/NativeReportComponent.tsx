@@ -154,7 +154,7 @@ const DB_GROUPS = [
     tables: ['tcc_rate_limits', 'tcc_fraud_events', 'tcc_idempotency_keys', 'tcc_daily_limits', 'tcc_qr_tokens'] },
 ];
 
-// ─── Gruppi componenti (145 totali) ──────────────────────────────────
+// ─── Gruppi componenti (147 totali) ──────────────────────────────────
 const COMPONENT_GROUPS = [
   { name: 'Dashboard PA', count: 14, desc: '28 tab protetti con sistema RBAC + ProtectedTab', color: '#14b8a6', icon: LayoutDashboard },
   { name: 'Gestione Mercati', count: 12, desc: 'Mercati, posteggi, concessioni, presenze, operatori', color: '#06b6d4', icon: Store },
@@ -436,7 +436,7 @@ export function NativeReportComponent() {
             {/* Header stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Componenti React', value: '145', color: '#14b8a6' },
+                { label: 'Componenti React', value: '147', color: '#14b8a6' },
                 { label: 'Pagine', value: '37', color: '#06b6d4' },
                 { label: 'Framework', value: 'React 19', color: '#a855f7' },
                 { label: 'Build', value: 'Vite 7', color: '#f59e0b' },
@@ -666,7 +666,7 @@ export function NativeReportComponent() {
     architecture: { title: 'Panoramica Architetturale', subtitle: 'Struttura ad alto livello del sistema DMS Hub e moduli core.' },
     dataflow: { title: 'Flussi Dati & Processi', subtitle: 'Architettura e flussi informativi tra frontend, backend e servizi esterni.' },
     database: { title: 'Schema Database — 68 Tabelle', subtitle: 'PostgreSQL su Neon Serverless — ORM Drizzle — 10 domini funzionali.' },
-    components: { title: 'Componenti Frontend — 145 React', subtitle: 'React 19 + Vite 7 + TypeScript strict + Tailwind 4 + shadcn/ui.' },
+    components: { title: 'Componenti Frontend — 147 React', subtitle: 'React 19 + Vite 7 + TypeScript strict + Tailwind 4 + shadcn/ui.' },
     dossier: { title: 'Dossier Tecnico di Sistema', subtitle: 'Analisi conformità, sicurezza, integrazioni PA e valutazione economica.' },
   };
 
