@@ -96,8 +96,20 @@ function useDashboardData() {
   useEffect(() => {
     const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
     
-    // Se impersonificazione associazione, non caricare stats globali (non pertinenti)
-    if (isAssociazioneImpersonation()) return;
+    // Se impersonificazione associazione, setta stats vuote (non pertinenti) e non fare fetch
+    if (isAssociazioneImpersonation()) {
+      setStatsOverview({
+        totalUsers: 0, userGrowth: 0, activeMarkets: 0, totalShops: 0,
+        totalTransactions: 0, transactionGrowth: 0, sustainabilityRating: 0,
+        imprese: 0, autorizzazioni: 0, comuni: 0, tcc: {}, today: {}
+      });
+      setStatsRealtime({ activeUsers: 0, activeVendors: 0, todayCheckins: 0, todayTransactions: 0 });
+      setStatsGrowth({ growth: [] });
+      setStatsQualificazione(null);
+      setFormazioneStats(null);
+      setBandiStats(null);
+      return;
+    }
 
     // Leggi comune_id dall'URL se in modalità impersonificazione
     const urlParams = new URLSearchParams(window.location.search);
@@ -879,7 +891,10 @@ export default function DashboardPA() {
   
   // Carica statistiche imprese (REST leggero + fallback tRPC)
   useEffect(() => {
-    if (isAssociazioneImpersonation()) return;
+    if (isAssociazioneImpersonation()) {
+      setImpreseStats({ total: 0, concessioni: 0, comuni: 0, media: '0' });
+      return;
+    }
     fetch('/api/imprese?stats_only=true')
       .then(r => r.json())
       .then(data => {
