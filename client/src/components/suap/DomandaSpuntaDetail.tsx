@@ -18,9 +18,10 @@ const API_URL = MIHUB_API_BASE_URL;
 interface DomandaSpuntaDetailProps {
   domandaId: number;
   onBack: () => void;
+  isAssociazione?: boolean;
 }
 
-export default function DomandaSpuntaDetail({ domandaId, onBack }: DomandaSpuntaDetailProps) {
+export default function DomandaSpuntaDetail({ domandaId, onBack, isAssociazione = false }: DomandaSpuntaDetailProps) {
   const [domanda, setDomanda] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -273,8 +274,8 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {/* Pulsanti azione per il funzionario SUAP */}
-          {domanda.stato !== 'APPROVATA' && domanda.stato !== 'RIFIUTATA' && (
+          {/* Pulsanti azione per il funzionario SUAP - nascosti in modalità associazione */}
+          {!isAssociazione && domanda.stato !== 'APPROVATA' && domanda.stato !== 'RIFIUTATA' && (
             <>
               <Button
                 className="bg-green-600 hover:bg-green-700 text-white"

@@ -123,6 +123,20 @@ interface SchedaAssociato {
     data_scadenza: string;
     concessionario_nome: string;
   }>;
+  domande_spunta: Array<{
+    id: number;
+    mercato_id: number;
+    stato: string;
+    data_richiesta: string;
+    settore_richiesto: string;
+    numero_presenze: number;
+    wallet_id: number;
+    wallet_balance: number;
+    market_name: string;
+    market_municipality: string;
+    market_days: string;
+    company_name: string;
+  }>;
 }
 
 const STATO_COLORS: Record<string, { text: string; border: string; bg: string }> = {
@@ -1160,6 +1174,68 @@ export default function PresenzeAssociatiPanel() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Domande Spunta */}
+              {schedaData.domande_spunta && (
+              <Card className="bg-[#0b1220] border-[#14b8a6]/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-[#14b8a6] flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Domande Spunta
+                    <Badge variant="outline" className="text-[#14b8a6] border-[#14b8a6]/50 text-xs">
+                      {schedaData.domande_spunta.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {schedaData.domande_spunta.length === 0 ? (
+                    <p className="text-[#e8fbff]/40 text-sm text-center py-4">Nessuna domanda spunta</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {schedaData.domande_spunta.map((ds) => (
+                        <div key={ds.id} className="flex items-center justify-between p-2 bg-[#1a2332] rounded border border-[#334155] hover:bg-[#1a2332]/80 hover:border-[#14b8a6]/40 cursor-pointer transition-colors" onClick={() => {
+                            setSchedaOpen(false);
+                            window.dispatchEvent(new CustomEvent('navigate-to-domanda-spunta', { detail: { domandaId: ds.id } }));
+                          }}>
+                          <div>
+                            <p className="text-sm text-[#e8fbff] font-medium">Domanda #{ds.id}</p>
+                            <p className="text-xs text-[#e8fbff]/50">
+                              {ds.market_name || '—'}
+                              {ds.settore_richiesto && ` · ${ds.settore_richiesto}`}
+                              {ds.data_richiesta && ` · ${formatDate(ds.data_richiesta)}`}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                              ds.stato === 'APPROVATA' ? 'bg-[#10b981]' :
+                              ds.stato === 'RIFIUTATA' ? 'bg-[#ef4444]' :
+                              ds.stato === 'DA_REVISIONARE' ? 'bg-[#f59e0b]' :
+                              ds.stato === 'IN_ATTESA' ? 'bg-[#eab308]' :
+                              'bg-[#6b7280]'
+                            }`} />
+                            <Badge
+                              variant="outline"
+                              className={
+                                ds.stato === 'APPROVATA' ? 'text-[#10b981] border-[#10b981]/50' :
+                                ds.stato === 'RIFIUTATA' ? 'text-[#ef4444] border-[#ef4444]/50' :
+                                ds.stato === 'DA_REVISIONARE' ? 'text-[#f59e0b] border-[#f59e0b]/50' :
+                                ds.stato === 'IN_ATTESA' ? 'text-[#eab308] border-[#eab308]/50' :
+                                'text-[#e8fbff]/50 border-[#e8fbff]/20'
+                              }
+                            >
+                              {ds.stato}
+                            </Badge>
+                            {ds.numero_presenze > 0 && (
+                              <span className="text-xs text-[#e8fbff]/50">{ds.numero_presenze} pres.</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              )}
             </div>
           ) : null}
         </DialogContent>

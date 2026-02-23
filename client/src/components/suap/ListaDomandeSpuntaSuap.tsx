@@ -69,12 +69,14 @@ interface ListaDomandeSpuntaSuapProps {
   onNuovaDomanda: () => void;
   onViewDomanda?: (id: number) => void;
   onEditDomanda?: (id: number) => void;
+  isAssociazione?: boolean;
 }
 
 export default function ListaDomandeSpuntaSuap({ 
   onNuovaDomanda, 
   onViewDomanda,
-  onEditDomanda 
+  onEditDomanda,
+  isAssociazione = false
 }: ListaDomandeSpuntaSuapProps) {
   const [domande, setDomande] = useState<DomandaSpunta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -401,8 +403,8 @@ export default function ListaDomandeSpuntaSuap({
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        {/* Pulsanti per domande IN_ATTESA o DA_REVISIONARE */}
-                        {(dom.stato === 'IN_ATTESA' || dom.stato === 'DA_REVISIONARE') && (
+                        {/* Pulsanti per domande IN_ATTESA o DA_REVISIONARE - solo per PA */}
+                        {!isAssociazione && (dom.stato === 'IN_ATTESA' || dom.stato === 'DA_REVISIONARE') && (
                           <>
                             <Button 
                               size="sm" 
@@ -433,6 +435,7 @@ export default function ListaDomandeSpuntaSuap({
                             </Button>
                           </>
                         )}
+                        {!isAssociazione && (
                         <Button 
                           size="sm" 
                           variant="ghost"
@@ -441,6 +444,7 @@ export default function ListaDomandeSpuntaSuap({
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

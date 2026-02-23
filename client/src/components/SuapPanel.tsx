@@ -291,11 +291,21 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
         }
       }
     };
+    const handleNavigateToDomandaSpunta = (e: CustomEvent) => {
+      const { domandaId } = e.detail;
+      if (domandaId) {
+        setActiveTab('domandespunta');
+        setDomandaSpuntaMode('view');
+        setSelectedDomandaSpuntaId(domandaId);
+      }
+    };
     window.addEventListener('navigate-to-pratica', handleNavigateToPratica as EventListener);
     window.addEventListener('navigate-to-concessione', handleNavigateToConcessione as EventListener);
+    window.addEventListener('navigate-to-domanda-spunta', handleNavigateToDomandaSpunta as EventListener);
     return () => {
       window.removeEventListener('navigate-to-pratica', handleNavigateToPratica as EventListener);
       window.removeEventListener('navigate-to-concessione', handleNavigateToConcessione as EventListener);
+      window.removeEventListener('navigate-to-domanda-spunta', handleNavigateToDomandaSpunta as EventListener);
     };
   }, [concessioni]);
 
@@ -2582,6 +2592,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                 setSelectedDomandaSpuntaId(null);
                 setDomandaSpuntaMode('create');
               }}
+              isAssociazione={isAssociazione}
             />
           ) : (
             <ListaDomandeSpuntaSuap 
@@ -2599,6 +2610,7 @@ Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date(
                 setSelectedDomandaSpuntaId(id);
                 setShowDomandaSpuntaForm(true);
               }}
+              isAssociazione={isAssociazione}
             />
           )}
         </TabsContent>
