@@ -48,6 +48,7 @@ export interface SuapStats {
   in_lavorazione: number;
   approvate: number;
   rigettate: number;
+  in_attesa_integrazione?: number;
 }
 
 export interface SuapFilters {
