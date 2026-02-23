@@ -183,8 +183,6 @@ export default function WalletPage() {
           // Rollback in caso di errore
           setEcoCreditsEnabled(!enabled);
           localStorage.setItem('eco_credit_enabled', !enabled ? 'true' : 'false');
-        } else {
-          console.log(`ECO CREDIT ${enabled ? 'attivato' : 'disattivato'} nel database`);
         }
       } catch (error) {
         console.error('Errore chiamata API ECO CREDIT:', error);
@@ -676,7 +674,6 @@ export default function WalletPage() {
         return;
       }
       
-      console.log('Starting camera scanner...');
       const html5QrCode = new Html5Qrcode('qr-reader');
       html5QrCodeRef.current = html5QrCode;
       

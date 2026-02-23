@@ -166,11 +166,6 @@ export function TransportStopsLayer({
     return result.slice(0, maxStops);
   }, [stops, filterNearPoint, showBus, showTrain, maxStops]);
 
-  // Log per debug
-  useEffect(() => {
-    console.log('[TransportStopsLayer] Fermate filtrate:', filteredStops.length, 'di', stops.length);
-  }, [filteredStops.length, stops.length]);
-
   if (!visible || filteredStops.length === 0) {
     return null;
   }

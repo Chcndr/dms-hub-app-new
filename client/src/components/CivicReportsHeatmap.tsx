@@ -216,14 +216,11 @@ export default function CivicReportsHeatmap() {
           url += `?comune_id=${currentComuneId}`;
         }
         
-        console.log('[CivicReportsHeatmap] Fetching:', url, '| Comune:', comuneNome || 'Tutti');
-        
         const response = await fetch(url);
         const data = await response.json();
         
         if (data.success && data.data?.recent) {
           setReports(data.data.recent);
-          console.log('[CivicReportsHeatmap] Caricate', data.data.recent.length, 'segnalazioni per', comuneNome || 'tutti i comuni');
         } else {
           setReports([]);
         }

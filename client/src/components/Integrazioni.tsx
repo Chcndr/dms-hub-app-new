@@ -1136,8 +1136,6 @@ function APIDashboard() {
               }
             }
             
-            console.log(`[API Test] ${method} ${urlWithParams}`);
-            
             const restResponse = await fetch(urlWithParams, fetchOptions);
             data = await restResponse.json();
           } else {

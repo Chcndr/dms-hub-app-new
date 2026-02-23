@@ -23,6 +23,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDate } from '@/lib/formatUtils';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://mihub.157-90-29-66.nip.io';
 
@@ -163,7 +164,6 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
   // Sincronizzazione Real-Time: Aggiorna quando cambiano i posteggi (stalls)
   useEffect(() => {
     if (marketId && stalls.length > 0) {
-      console.log('[PresenzeGraduatoriaPanel] Rilevato cambiamento posteggi, sincronizzo...');
       fetchGraduatoria();
       fetchPresenze();
       fetchTestMercatoStato();
@@ -448,11 +448,6 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
       default:
         return <Badge className="bg-green-500">✓ OK</Badge>;
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('it-IT');
   };
 
   const formatTime = (timeStr: string) => {

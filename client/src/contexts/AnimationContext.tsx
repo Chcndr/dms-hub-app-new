@@ -11,12 +11,6 @@ export function AnimationProvider({ children }: { children: React.ReactNode }) {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const setAnimating = useCallback((animating: boolean) => {
-    // Aggiungiamo un piccolo debounce/log per debug
-    if (animating) {
-      console.log('[AnimationContext] Animazione INIZIATA - Polling in pausa');
-    } else {
-      console.log('[AnimationContext] Animazione FINITA - Polling ripreso');
-    }
     setIsAnimating(animating);
   }, []);
 

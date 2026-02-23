@@ -1340,21 +1340,12 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       const mapDataRes = await mapRes.json();
       const concessionsData = await concessionsRes.json();
 
-      console.log('[DEBUG fetchData] Dati ricevuti:', {
-        stallsCount: stallsData.data?.length,
-        firstStall: stallsData.data?.[0],
-        mapDataExists: !!mapDataRes.data,
-        concessionsCount: concessionsData.data?.length
-      });
-
       if (stallsData.success) {
         // Normalizza number a stringa — l'API può restituire int o string
         setStalls(stallsData.data.map((s: any) => ({ ...s, number: String(s.number) })));
-        console.log('[DEBUG fetchData] stalls aggiornato, length:', stallsData.data.length);
       }
       if (mapDataRes.success) {
         setMapData(mapDataRes.data);
-        console.log('[DEBUG fetchData] mapData aggiornato');
       }
       if (concessionsData.success && Array.isArray(concessionsData.data)) {
         const map: Record<string, any> = {};
@@ -1368,7 +1359,6 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           };
         }
         setConcessionsByStallId(map);
-        console.log('[DEBUG fetchData] concessioni caricate:', Object.keys(map).length);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -1399,13 +1389,10 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       const data = await response.json();
       if (data.success) {
-        console.log('[DEBUG handleSave] Posteggio aggiornato:', stallId, editData);
         toast.success('Posteggio aggiornato con successo');
         await fetchData(); // Ricarica dati
-        console.log('[DEBUG handleSave] PRIMA refreshKey:', mapRefreshKey);
         setMapRefreshKey(prev => {
           const newKey = prev + 1;
-          console.log('[DEBUG handleSave] DOPO refreshKey:', newKey);
           return newKey;
         });
         setEditingId(null);
@@ -1422,8 +1409,6 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   // Conferma assegnazione posteggio (da riservato a occupato)
   const handleConfirmAssignment = async (stallId: number) => {
     try {
-      console.log('[DEBUG handleConfirmAssignment] Confermando assegnazione posteggio:', stallId);
-      
       const response = await fetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
         method: 'PATCH',
         headers: {
@@ -1434,7 +1419,6 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       const data = await response.json();
       if (data.success) {
-        console.log('[DEBUG handleConfirmAssignment] Posteggio assegnato:', stallId);
         toast.success('Posteggio assegnato con successo!');
         
         // Aggiorna SOLO lo stato locale per evitare reload mappa

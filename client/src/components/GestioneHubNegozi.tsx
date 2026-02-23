@@ -388,7 +388,6 @@ export default function GestioneHubNegozi() {
     try {
       const response = await fetch(`${MIHUB_API_BASE_URL}/api/hub/locations`);
       const json = await response.json();
-      console.log('[GestioneHubNegozi] Loaded HUBs:', json);
       if (json.success && Array.isArray(json.data)) {
         setAllHubLocations(json.data);
       }
@@ -405,7 +404,6 @@ export default function GestioneHubNegozi() {
     try {
       const response = await fetch(`${MIHUB_API_BASE_URL}/api/hub/locations/${hubId}`);
       const json = await response.json();
-      console.log('[GestioneHubNegozi] HUB Details:', json);
       if (json.success && json.data) {
         setSelectedHubLocation(json.data);
         setViewMode('hub');
@@ -425,7 +423,6 @@ export default function GestioneHubNegozi() {
 
   // Handle shop click from map
   const handleShopClick = (shop: any) => {
-    console.log('[GestioneHubNegozi] Shop clicked:', shop);
   };
 
   // Handle map type change

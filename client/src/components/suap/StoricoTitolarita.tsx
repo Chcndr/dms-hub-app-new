@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
+import { formatDate, formatDateTime } from '@/lib/formatUtils';
 
 interface StoricoEvento {
   id: number;
@@ -192,21 +193,6 @@ export default function StoricoTitolarita({ comuneId, marketId: initialMarketId 
       loadStoricoMercato();
     }
   }, [selectedMarketId, loadStalls, loadStoricoMercato]);
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('it-IT', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateStr: string | null) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('it-IT', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
-  };
 
   const getTipoEventoBadge = (tipo: string) => {
     switch (tipo) {

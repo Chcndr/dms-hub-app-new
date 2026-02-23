@@ -152,8 +152,6 @@ const StatIndicator = ({
 };
 
 export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: GestioneHubMapWrapperProps = {}) {
-  console.log('[DEBUG GestioneHubMapWrapper] routeConfig ricevuto:', routeConfig);
-  console.log('[DEBUG GestioneHubMapWrapper] navigationMode ricevuto:', navigationMode);
   // Stati
   const [mode, setMode] = useState<'mercato' | 'hub'>('hub');
   const [loading, setLoading] = useState(true);
@@ -249,7 +247,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         const response = await res.json();
         if (response.success && response.data) {
           setMarketStats(response.data);
-          console.log('[GestioneHubMapWrapper] Loaded market stats:', response.data);
         }
       }
     } catch (error) {
@@ -266,7 +263,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         const marketsResponse = await marketsRes.json();
         if (marketsResponse.success && Array.isArray(marketsResponse.data)) {
           setMarkets(marketsResponse.data);
-          console.log('[GestioneHubMapWrapper] Loaded', marketsResponse.data.length, 'markets');
         } else {
           setMarkets([]);
         }
@@ -278,7 +274,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         const hubsResponse = await hubsRes.json();
         if (hubsResponse.success && Array.isArray(hubsResponse.data)) {
           setHubs(hubsResponse.data);
-          console.log('[GestioneHubMapWrapper] Loaded', hubsResponse.data.length, 'hubs');
         } else {
           setHubs([]);
         }
@@ -290,7 +285,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         const allStallsResponse = await allStallsRes.json();
         if (allStallsResponse.success && Array.isArray(allStallsResponse.data)) {
           setAllStallsData(allStallsResponse.data);
-          console.log('[GestioneHubMapWrapper] Loaded', allStallsResponse.data.length, 'total stalls for area calculation');
         } else {
           setAllStallsData([]);
         }
@@ -491,7 +485,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         const response = await res.json();
         if (response.success && response.data) {
           setMapData(response.data);
-          console.log('[GestioneHubMapWrapper] Loaded mapData with', response.data?.stalls_geojson?.features?.length || 0, 'features');
           setTimeout(() => {
             setShowItalyView(false);
             setViewTrigger(prev => prev + 1);
@@ -507,7 +500,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         const stallsResponse = await stallsRes.json();
         if (stallsResponse.success && Array.isArray(stallsResponse.data)) {
           setStallsData(stallsResponse.data);
-          console.log('[GestioneHubMapWrapper] Loaded', stallsResponse.data.length, 'stalls');
         }
       }
     // Su mobile: scrolla alla mappa lasciando visibile Indietro + lista hub
@@ -556,7 +548,6 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
 
   // Gestione click su shop
   const handleShopClick = (shopId: number) => {
-    console.log('[GestioneHubMapWrapper] Shop clicked:', shopId);
   };
 
   // Torna a vista Italia

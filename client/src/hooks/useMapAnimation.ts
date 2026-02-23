@@ -46,14 +46,6 @@ export function useMapAnimation({ center, zoom, trigger, bounds, isMarketView }:
           // Calcola il centro dei bounds
           const boundsCenter = latLngBounds.getCenter();
 
-          console.log('[useMapAnimation] Animating to bounds center with forced zoom:', {
-            rawZoom,
-            roundedToQuarter,
-            forcedZoom,
-            currentZoom,
-            boundsCenter: [boundsCenter.lat, boundsCenter.lng]
-          });
-
           // USA flyTo con zoom forzato invece di flyToBounds
           // flyToBounds ignora il nostro zoom calcolato, quindi usiamo flyTo
           map.flyTo([boundsCenter.lat, boundsCenter.lng], forcedZoom, {

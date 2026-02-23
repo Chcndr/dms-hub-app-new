@@ -33,6 +33,7 @@ import StoricoTitolarita from '@/components/suap/StoricoTitolarita';
 import { toast } from 'sonner';
 import { getImpersonationParams } from '@/hooks/useImpersonation';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { formatDate, formatDateTime } from '@/lib/formatUtils';
 
 // Ente ID hardcoded per ora - in futuro da contesto utente
 const ENTE_ID = 'ente_modena';
@@ -157,16 +158,6 @@ function getStatoBadge(stato: string) {
       {stato}
     </Badge>
   );
-}
-
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('it-IT');
-}
-
-function formatDateTime(dateStr?: string | null) {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleString('it-IT');
 }
 
 function timeAgo(dateStr?: string | null) {
@@ -527,8 +518,6 @@ export default function SuapPanel({ mode = 'suap' }: SuapPanelProps) {
           (praticaData as any).associazione_id = parseInt(associazioneId);
         }
       }
-
-      console.log('Dati pratica da inviare:', praticaData);  // Debug
 
       await createSuapPratica(ENTE_ID, praticaData);
       toast.success('SCIA creata con successo!');

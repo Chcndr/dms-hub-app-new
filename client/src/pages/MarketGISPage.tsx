@@ -107,8 +107,7 @@ export default function MarketGISPage() {
       }
       
       setMapData(result.data);
-      console.log('✅ Dati mappa caricati:', result.meta);
-      
+
     } catch (err) {
       console.error('❌ Errore caricamento mappa:', err);
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');

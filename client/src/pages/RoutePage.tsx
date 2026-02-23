@@ -182,8 +182,6 @@ export default function RoutePage() {
         includeTPL: mode === 'transit'
       };
       
-      console.log('[DEBUG] API Request:', requestPayload);
-      
       const response = await fetch(`${API_URL}/api/routing/calculate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -196,14 +194,11 @@ export default function RoutePage() {
 
       const data = await response.json();
       
-      console.log('[DEBUG] API Response:', data);
-
       if (!data.success) {
         throw new Error(data.error || 'Errore calcolo percorso');
       }
 
       const route = data.route;
-      console.log('[DEBUG] Route Summary:', route.summary);
       const plan: RoutePlan = {
         stops: [
           {
@@ -226,25 +221,19 @@ export default function RoutePage() {
       if (destinationPayload.lat && destinationPayload.lng) {
         destLat = destinationPayload.lat;
         destLng = destinationPayload.lng;
-        console.log('[DEBUG] destLat/destLng from payload:', destLat, destLng);
-      } 
+      }
       else if (route.geometry?.coordinates?.length > 0) {
         const lastCoord = route.geometry.coordinates[route.geometry.coordinates.length - 1];
         destLat = lastCoord[1];
         destLng = lastCoord[0];
-        console.log('[DEBUG] destLat/destLng from geometry:', destLat, destLng);
       }
       else {
         const destMatch = destination.match(/\(([\d.]+),\s*([\d.]+)\)/);
         if (destMatch) {
           destLat = parseFloat(destMatch[1]);
           destLng = parseFloat(destMatch[2]);
-          console.log('[DEBUG] destLat/destLng from destination string:', destLat, destLng);
         }
       }
-      
-      console.log('[DEBUG] Final destLat/destLng:', destLat, destLng);
-      console.log('[DEBUG] currentUserLocation:', currentUserLocation);
       
       if (currentUserLocation && destLat && destLng) {
         const modeMap: Record<string, 'walking' | 'cycling' | 'driving'> = {
@@ -259,7 +248,6 @@ export default function RoutePage() {
           destination: { lat: destLat, lng: destLng },
           mode: modeMap[mode] || 'walking'
         };
-        console.log('[DEBUG] Setting routeConfig:', newRouteConfig);
         setRouteConfig(newRouteConfig);
       } else {
         console.error('[DEBUG] Cannot set routeConfig - missing data:', {
@@ -311,10 +299,6 @@ export default function RoutePage() {
   };
 
   const handleStartNavigation = () => {
-    console.log('[DEBUG] handleStartNavigation called');
-    console.log('[DEBUG] plan:', plan);
-    console.log('[DEBUG] routeConfig:', routeConfig);
-    
     if (!plan || !routeConfig) {
       toast.error('Calcola prima il percorso');
       console.error('[DEBUG] Missing plan or routeConfig');

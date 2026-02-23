@@ -288,7 +288,6 @@ function MarketDetailPubblica({ market, allMarkets, onMarketChange }: { market: 
 
   // Reset stato e carica i posteggi quando cambia il mercato
   useEffect(() => {
-    console.log('[MarketDetailPubblica] market.id cambiato:', market.id, market.name);
     // NON resettare viewMode qui - lasciamo che sia 'mercato' dopo il click sul marker
     setStalls([]);
     
@@ -387,14 +386,12 @@ function PosteggiTabPubblica({
 
   // Carica nuovi dati quando cambia il mercato
   useEffect(() => {
-    console.log('[PosteggiTabPubblica] marketId cambiato:', marketId, 'pendingMarkerClick:', pendingMarkerClickRef.current);
     setSelectedStallId(null);
     // Carica i nuovi dati - l'animazione partirà DOPO che i dati sono pronti
     fetchData();
   }, [marketId]);
 
   const fetchData = async () => {
-    console.log('[PosteggiTabPubblica] fetchData per marketId:', marketId);
     try {
       const [stallsRes, mapRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`),
@@ -411,7 +408,6 @@ function PosteggiTabPubblica({
         setMapData(mapDataRes.data);
         // Se c'è un click marker pendente, triggera l'animazione ORA che i dati sono pronti
         if (pendingMarkerClickRef.current) {
-          console.log('[PosteggiTabPubblica] Dati GIS pronti, triggero animazione');
           pendingMarkerClickRef.current = false;
           setViewMode('mercato');
           // Piccolo delay per assicurarsi che React abbia aggiornato lo stato
@@ -431,7 +427,6 @@ function PosteggiTabPubblica({
 
   // Funzione per gestire il click su un marker - chiamata da MarketMapComponent
   const handleMarkerClick = (clickedMarketId: number) => {
-    console.log('[PosteggiTabPubblica] handleMarkerClick:', clickedMarketId);
     // Imposta il flag PRIMA di cambiare mercato
     pendingMarkerClickRef.current = true;
     // Aggiorna il mercato nel componente padre - questo triggererà il fetch

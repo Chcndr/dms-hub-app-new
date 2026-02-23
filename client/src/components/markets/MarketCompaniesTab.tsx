@@ -40,6 +40,7 @@ import {
 import { MarketAutorizzazioniTab } from './MarketAutorizzazioniTab';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import { formatDate } from '@/lib/formatUtils';
 
 // ============================================================================
 // TYPES
@@ -308,8 +309,6 @@ export const STATO_IMPRESA_OPTIONS = [
 export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   const { marketId, marketName, municipality, stalls, filterType = 'all', onFilterChange } = props;
   
-  console.log('[MarketCompaniesTab] props', { marketId, stallsLength: stalls?.length });
-
   // State
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [concessions, setConcessions] = useState<ConcessionRow[]>([]);
@@ -399,7 +398,6 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
 
   // Fetch data
   useEffect(() => {
-    console.log('[MarketCompaniesTab] useEffect marketId =', marketId);
     if (!marketId) {
       console.warn('[MarketCompaniesTab] no marketId, skip fetch');
       return;
@@ -494,7 +492,6 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         hub_shop_id: v.hub_shop_id,  // ID del negozio HUB collegato (se presente)
       }));
       
-      console.log('[MarketCompaniesTab] fetchCompanies: caricati', mappedData.length, 'imprese');
       setCompanies(mappedData);
     } catch (err) {
       console.error('[MarketCompaniesTab] fetchCompanies error:', err);
@@ -510,7 +507,6 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/concessions`));
         if (!response.ok) {
           // Se l'endpoint non esiste, non mostrare errore
-          console.log('[MarketCompaniesTab] fetchConcessions ALL: endpoint non disponibile');
           setConcessions([]);
           return;
         }
@@ -567,7 +563,6 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           setConcessions([]);
         }
       } catch (err) {
-        console.log('[MarketCompaniesTab] fetchConcessions ALL: nessuna concessione globale');
         setConcessions([]);
       }
       return;
@@ -582,8 +577,6 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         console.error('[MarketCompaniesTab] fetchConcessions: formato risposta non valido', json);
         throw new Error('Formato risposta non valido');
       }
-      
-      console.log('[MarketCompaniesTab] fetchConcessions: caricate', json.data.length, 'concessioni');
       
       const mappedData = json.data.map((c: any) => ({
         id: c.id,
@@ -660,8 +653,6 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       setConcessions(mappedData);
     } catch (err) {
       console.error('[MarketCompaniesTab] fetchConcessions error:', err);
-      // Non mostrare errore se non ci sono concessioni, solo log
-      console.log('[MarketCompaniesTab] Nessuna concessione trovata o errore API');
       setConcessions([]);
     }
   };
@@ -1729,10 +1720,7 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
   };
 
   const handleDelete = async () => {
-    console.log('[DELETE DEBUG] qualificazione:', qualificazione);
-    console.log('[DELETE DEBUG] company:', company);
     if (!qualificazione) {
-      console.log('[DELETE DEBUG] qualificazione is null, returning');
       return;
     }
     setDeleting(true);
@@ -1740,12 +1728,10 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
 
     try {
       const deleteUrl = `${API_BASE_URL}/api/imprese/${company.id}/qualificazioni/${qualificazione.id}`;
-      console.log('[DELETE DEBUG] URL:', deleteUrl);
       const response = await fetch(
         deleteUrl,
         { method: 'DELETE' }
       );
-      console.log('[DELETE DEBUG] Response status:', response.status);
 
       if (!response.ok) {
         const data = await response.json();
@@ -2160,15 +2146,6 @@ function ConcessionRow({ concession, onView, onEdit }: ConcessionRowProps) {
         return <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">Cessata</span>;
       default:
         return <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">{stato || 'N/A'}</span>;
-    }
-  };
-
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'N/A';
-    try {
-      return new Date(dateStr).toLocaleDateString('it-IT');
-    } catch {
-      return 'N/A';
     }
   };
 

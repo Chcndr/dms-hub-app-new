@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 import { getImpersonationParams, isAssociazioneImpersonation } from '@/hooks/useImpersonation';
+import { formatDateTime as formatDate } from '@/lib/formatUtils';
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -98,17 +99,6 @@ export default function MessaggiPraticaPanel({ praticaId, mittenteId }: Messaggi
       console.error('Errore invio messaggio:', error);
     } finally {
       setSending(false);
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString('it-IT', {
-        day: '2-digit', month: '2-digit',
-        hour: '2-digit', minute: '2-digit',
-      });
-    } catch {
-      return dateStr;
     }
   };
 

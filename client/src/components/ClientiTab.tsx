@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { formatDateTime as formatDate } from '@/lib/formatUtils';
 
 const API_BASE = MIHUB_API_BASE_URL;
 
@@ -87,16 +88,6 @@ export default function ClientiTab() {
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const getAuthProviderBadge = (provider: string) => {
     const badges: Record<string, { bg: string; text: string; label: string }> = {

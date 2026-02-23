@@ -12,7 +12,6 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'free' | 'occupied' | 'reserved'>('all');
 
-  console.log('[MapModal] isOpen:', isOpen);
   if (!isOpen) return null;
 
   return (
@@ -174,7 +173,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
               <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden">
                 <MarketMapComponent
                   mapData={{ center: { lat: 42.7635, lng: 11.1127 }, stalls_geojson: { type: 'FeatureCollection', features: [] } }}
-                  onStallClick={(stallId) => console.log('Stall clicked:', stallId)}
+                  onStallClick={() => {}}
                 />
               </div>
             </CardContent>

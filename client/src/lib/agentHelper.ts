@@ -95,8 +95,6 @@ export async function sendToAgent(params: SendToAgentParams): Promise<void> {
       conversationId,
     });
 
-    console.log(`[AgentHelper] Response from ${targetAgent}:`, response);
-
     // 2. Aggiorna conversation ID se nuovo
     const finalConversationId = response.conversationId || conversationId;
     if (response.conversationId) {

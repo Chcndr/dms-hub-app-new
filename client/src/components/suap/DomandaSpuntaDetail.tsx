@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, FileCheck, FileText, User, MapPin, Wallet, Calendar, ClipboardCheck, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { formatDate } from '@/lib/formatUtils';
 
 const API_URL = MIHUB_API_BASE_URL;
 
@@ -98,11 +99,6 @@ export default function DomandaSpuntaDetail({ domandaId, onBack, isAssociazione 
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('it-IT');
   };
 
   useEffect(() => {

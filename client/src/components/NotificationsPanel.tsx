@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { addComuneIdToUrl, getImpersonationParams } from '@/hooks/useImpersonation';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { formatDateTime as formatDate } from '@/lib/formatUtils';
 
 const BACKEND_URL = MIHUB_API_BASE_URL;
 const API_BASE_URL = MIHUB_API_BASE_URL;
@@ -350,17 +351,6 @@ export function NotificationsPanel() {
     } finally {
       setSending(false);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('it-IT', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   // Filtra notifiche

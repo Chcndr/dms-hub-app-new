@@ -24,7 +24,6 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
   // Memoizza loadWorkspaceState per evitare re-render
   const loadWorkspaceState = useCallback(async () => {
     try {
-      console.log('[SharedWorkspace] Loading workspace for conversationId:', effectiveConversationId);
       const response = await fetch(`${MIHUB_API_BASE_URL}/api/workspace/load?conversationId=${effectiveConversationId}`);
       if (response.ok) {
         const data = await response.json();
@@ -35,8 +34,6 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
           // 🔧 FIX: Converti dal vecchio formato {store, schema} al nuovo formato {document, session}
           // Il nuovo formato tldraw usa loadSnapshot(store, { document, session })
           if (snapshot.store && !snapshot.document) {
-            console.log('[SharedWorkspace] Converting old snapshot format to new format');
-            
             // Filtra asset con dimensioni invalide
             const filteredStore: Record<string, any> = {};
             const assetsToRemove: string[] = [];
@@ -80,12 +77,8 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
             editorRef.current.store.loadSnapshot(snapshot);
           }
           
-          console.log('[SharedWorkspace] Snapshot loaded successfully from database');
         } else {
-          console.log('[SharedWorkspace] No snapshot found in response');
         }
-      } else {
-        console.log('[SharedWorkspace] No saved workspace found');
       }
     } catch (error) {
       console.error('[SharedWorkspace] Failed to load state:', error);
@@ -102,7 +95,6 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       const { document, session } = getSnapshot(editorRef.current.store);
       const snapshot = { document, session };
       
-      console.log('[SharedWorkspace] Saving workspace for conversationId:', effectiveConversationId);
       const response = await fetch(`${MIHUB_API_BASE_URL}/api/workspace/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -115,7 +107,6 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       if (response.ok) {
         setLastSaved(new Date());
         onSave?.(snapshot);
-        console.log('[SharedWorkspace] Workspace saved successfully');
       } else {
         console.error('[SharedWorkspace] Save failed with status:', response.status);
       }
@@ -128,8 +119,6 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
 
   // Auto-save ogni 10 secondi
   useEffect(() => {
-    console.log('[SharedWorkspace] Initialized with conversationId:', effectiveConversationId);
-    
     autoSaveIntervalRef.current = window.setInterval(() => {
       handleAutoSave();
     }, 10000);
@@ -179,7 +168,6 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       a.click();
       window.URL.revokeObjectURL(url);
       
-      console.log('[SharedWorkspace] Exported as PNG');
     } catch (error) {
       console.error('[SharedWorkspace] Export failed:', error);
       alert("Errore durante l'export dell'immagine.");
@@ -236,11 +224,8 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
         }
       });
       
-      console.log('[SharedWorkspace] Image uploaded:', file.name);
-      
       // Salvataggio automatico
       await handleAutoSave();
-      console.log('[SharedWorkspace] Image saved to database');
     };
     reader.readAsDataURL(file);
     
@@ -405,14 +390,11 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
                     },
                     meta: {},
                   } as any);
-                  console.log('[SharedWorkspace] Immagine caricata come Base64:', file.name);
                 };
                 reader.readAsDataURL(file);
               });
             });
             
-            console.log('[SharedWorkspace] API exposed to window.sharedWorkspaceAPI');
-            console.log('[SharedWorkspace] Image upload handler registered (Base64)');
             loadWorkspaceState();
           }}
           components={components}

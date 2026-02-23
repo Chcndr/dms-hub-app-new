@@ -315,16 +315,13 @@ export default function VetrinePage() {
   // Funzione per gestire l'upload dell'immagine
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'principale' | 'gallery') => {
     alert('Upload iniziato! File: ' + (event.target.files?.[0]?.name || 'nessuno'));
-    console.log('handleImageUpload called', { type, files: event.target.files });
     const file = event.target.files?.[0];
     if (!file) {
       alert('Nessun file selezionato');
-      console.log('No file selected');
       return;
     }
     if (!selectedImpresa) {
       alert('Nessuna impresa selezionata');
-      console.log('No selectedImpresa');
       return;
     }
     
@@ -355,7 +352,6 @@ export default function VetrinePage() {
         setPreviewImage(base64Data);
 
         // Invia al backend
-        console.log('Sending to backend:', { type, fileName: file.name, dataLength: base64Data.length });
         try {
           const response = await fetch(`${API_BASE_URL}/api/imprese/${selectedImpresa.id}/vetrina/upload`, {
             method: 'POST',
@@ -369,9 +365,7 @@ export default function VetrinePage() {
             }),
           });
           
-          console.log('Response status:', response.status);
           const result = await response.json();
-          console.log('Response result:', result);
 
         if (result.success) {
           // Aggiorna i dati locali

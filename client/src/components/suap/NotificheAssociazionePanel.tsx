@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getImpersonationParams } from '@/hooks/useImpersonation';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { formatDateTime as formatDate } from '@/lib/formatUtils';
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -114,17 +115,6 @@ export default function NotificheAssociazionePanel({ onNotificheUpdate }: Notifi
   });
 
   const nonLetteCount = notifiche.filter(n => !n.letta).length;
-
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString('it-IT', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
 
   if (!associazioneId) {
     return (

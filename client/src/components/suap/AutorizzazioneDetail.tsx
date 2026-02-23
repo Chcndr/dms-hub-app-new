@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, FileCheck, FileText, User, MapPin, Calendar, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { formatDate } from '@/lib/formatUtils';
 
 const API_URL = MIHUB_API_BASE_URL;
 
@@ -23,11 +24,6 @@ interface AutorizzazioneDetailProps {
 export default function AutorizzazioneDetail({ autorizzazioneId, onBack }: AutorizzazioneDetailProps) {
   const [autorizzazione, setAutorizzazione] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('it-IT');
-  };
 
   useEffect(() => {
     const fetchAutorizzazione = async () => {

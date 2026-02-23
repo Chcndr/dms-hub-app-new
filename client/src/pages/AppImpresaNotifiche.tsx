@@ -100,7 +100,7 @@ export default function AppImpresaNotifiche() {
           setMessaggiInviati(inviatiDaImpresa);
         }
       })
-      .catch(err => console.log('Messaggi inviati fetch error:', err));
+      .catch(err => console.error('Messaggi inviati fetch error:', err));
     // Polling ogni 30 secondi per nuove notifiche
     const interval = setInterval(fetchNotifiche, 30000);
     return () => clearInterval(interval);

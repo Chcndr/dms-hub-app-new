@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { useCivicReports } from '@/contexts/CivicReportsContext';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { formatDate } from '@/lib/formatUtils';
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -139,13 +140,6 @@ export default function CivicReportsPanel() {
     };
     loadData();
   }, [comuneId]);
-
-  // Formatta data
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
 
   if (loading) {
     return (

@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatDateTime as formatDate } from '@/lib/formatUtils';
 
 // v5.9.0: Usa MIHUB Hetzner (stesso backend di ControlliSanzioniPanel per coerenza notifiche)
 const MIHUB_API = (import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io') + '/api';
@@ -230,18 +231,6 @@ export function NotificationManager({ mittenteTipo, mittenteId, mittenteNome, on
     } catch (error) {
       console.error('Errore segna letta:', error);
     }
-  };
-
-  // Formatta data
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('it-IT', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   // Colore tipo messaggio

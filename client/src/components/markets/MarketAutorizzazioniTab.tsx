@@ -19,6 +19,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { formatDate } from '@/lib/formatUtils';
 import { CompanyRow } from './MarketCompaniesTab';
 
 // ============================================================================
@@ -354,15 +355,6 @@ function AutorizzazioneRowItem({ autorizzazione, onEdit, onDelete }: { autorizza
         return <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400 flex items-center gap-1 w-fit"><Clock className="w-3 h-3" /> Sospesa</span>;
       default:
         return <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">{stato}</span>;
-    }
-  };
-
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '-';
-    try {
-      return new Date(dateStr).toLocaleDateString('it-IT');
-    } catch {
-      return '-';
     }
   };
 

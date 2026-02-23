@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import { formatDate } from '@/lib/formatUtils';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
 
@@ -110,12 +111,6 @@ export default function ListaAutorizzazioniSuap({
     
     return matchesSearch && matchesStato && matchesTipo;
   });
-
-  // Formatta data
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('it-IT');
-  };
 
   // Badge stato
   const getStatoBadge = (stato: string) => {

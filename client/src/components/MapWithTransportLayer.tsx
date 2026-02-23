@@ -71,7 +71,6 @@ function MapWithTransportLayerInner({
     setSelectedStop(stop);
     setShowRoute(true); // Attiva il routing quando si clicca sulla freccia
     onStopClick?.(stop);
-    console.log('[MapWithTransportLayer] Fermata selezionata per routing:', stop.stop_name, 'Coordinate:', stop.stop_lat, stop.stop_lon);
   };
 
   // Configura routing se abbiamo sia punto di partenza che fermata selezionata
