@@ -32,6 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // Tipi wallet
 interface WalletItem {
@@ -263,7 +264,7 @@ export default function WalletImpresaPage() {
     setLoading(true);
     try {
       // Fetch wallet impresa
-      const walletsRes = await fetch(`${API_BASE_URL}/api/wallets/company/${resolvedImpresaId}`);
+      const walletsRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/company/${resolvedImpresaId}`));
       const walletsData = await walletsRes.json();
       
       let spuntaWallets: WalletItem[] = [];
@@ -309,7 +310,7 @@ export default function WalletImpresaPage() {
       // Fetch scadenze usando l'endpoint riepilogo con filtro per ragione sociale
       const ragioneSociale = impresaData.success ? impresaData.data?.denominazione : '';
       if (ragioneSociale) {
-        const scadenzeRes = await fetch(`${API_BASE_URL}/api/canone-unico/riepilogo?impresa_search=${encodeURIComponent(ragioneSociale)}`);
+        const scadenzeRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/canone-unico/riepilogo?impresa_search=${encodeURIComponent(ragioneSociale)}`));
         const scadenzeData = await scadenzeRes.json();
         if (scadenzeData.success) {
           setScadenze(scadenzeData.data || []);
@@ -369,7 +370,7 @@ export default function WalletImpresaPage() {
       const allTransactions: any[] = [];
       for (const wallet of allWallets) {
         try {
-          const txRes = await fetch(`${API_BASE_URL}/api/wallets/${wallet.id}/transactions`);
+          const txRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/${wallet.id}/transactions`));
           const txData = await txRes.json();
           if (txData.success && txData.data) {
             allTransactions.push(...txData.data.map((tx: any) => ({
@@ -474,7 +475,7 @@ export default function WalletImpresaPage() {
       const description = `Pagamento Canone ${selectedScadenza.tipo === 'CANONE_ANNUO' ? 'Annuo' : selectedScadenza.tipo} - Rata ${selectedScadenza.rata_numero}/${selectedScadenza.rata_totale} - ${selectedScadenza.mercato_nome} - Posteggio ${selectedScadenza.posteggio}`;
 
       // Usa l'endpoint corretto /api/wallets/deposit (proxy Vercel in prod)
-      const response = await fetch(`${API_BASE_URL}/api/wallets/deposit`, {
+      const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/deposit`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -513,7 +514,7 @@ export default function WalletImpresaPage() {
     try {
       const description = `Ricarica Wallet Generico - ${company?.ragione_sociale}`;
 
-      const response = await fetch(`${API_BASE_URL}/api/wallets/deposit`, {
+      const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/deposit`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
