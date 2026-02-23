@@ -8,10 +8,6 @@
       "destination": "https://api.mio-hub.me/api/auth/:path*"
     },
     {
-      "source": "/api/mihub/get-messages",
-      "destination": "/api/mihub/get-messages"
-    },
-    {
       "source": "/api/mihub/:path*",
       "destination": "https://api.mio-hub.me/api/mihub/:path*"
     },
@@ -74,6 +70,18 @@
     {
       "source": "/api/tcc/:path*",
       "destination": "https://orchestratore.mio-hub.me/api/tcc/:path*"
+    },
+    {
+      "source": "/api/logs/:path*",
+      "destination": "https://api.mio-hub.me/api/logs/:path*"
+    },
+    {
+      "source": "/api/system/:path*",
+      "destination": "https://api.mio-hub.me/api/system/:path*"
+    },
+    {
+      "source": "/api/github/:path*",
+      "destination": "https://orchestratore.mio-hub.me/api/github/:path*"
     },
     {
       "source": "/api/trpc/:path*",
