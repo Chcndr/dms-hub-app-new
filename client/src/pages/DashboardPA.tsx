@@ -64,7 +64,7 @@ import { sendAgentMessage, AgentChatMessage } from '@/lib/mioOrchestratorClient'
 import { sendDirectMessageToHetzner, DirectMioMessage } from '@/lib/DirectMioClient';
 import { sendToAgent } from '@/lib/agentHelper';
 import { toast } from 'sonner';
-import { isAssociazioneImpersonation } from '@/hooks/useImpersonation';
+import { isAssociazioneImpersonation, addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // 👻 GHOSTBUSTER: MioChatMessage sostituito con DirectMioMessage
 // 🔥 FORCE REBUILD: 2024-12-20 12:46 - Fix agentName filter removed from single chats
@@ -908,7 +908,7 @@ export default function DashboardPA() {
   
   // Carica statistiche imprese (REST leggero + fallback tRPC)
   useEffect(() => {
-    fetch('/api/imprese?stats_only=true')
+    fetch(addComuneIdToUrl('/api/imprese?stats_only=true'))
       .then(r => r.json())
       .then(data => {
         if (data.success && data.stats) {
@@ -1301,7 +1301,7 @@ export default function DashboardPA() {
       .catch(err => console.error('Hub fetch error:', err));
     
     // Fetch lista imprese (con limit per ridurre payload)
-    fetch('/api/imprese?limit=200&fields=id,denominazione,partita_iva,codice_fiscale,comune')
+    fetch(addComuneIdToUrl('/api/imprese?limit=200&fields=id,denominazione,partita_iva,codice_fiscale,comune'))
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data) {
@@ -1515,7 +1515,7 @@ export default function DashboardPA() {
     const fetchGisData = async () => {
       try {
         const [stallsRes, mapRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/markets/${gisMarketId}/stalls`),
+          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${gisMarketId}/stalls`)),
           fetch(`${API_BASE_URL}/api/gis/market-map`)
         ]);
 

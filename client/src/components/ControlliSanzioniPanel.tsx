@@ -363,10 +363,7 @@ export default function ControlliSanzioniPanel() {
       if (watchlistData.success) setWatchlist(watchlistData.data || []);
 
       // v3.54.2: Fetch sanctions - filtrato per comune_id lato backend
-      let sanctionsUrl = `${MIHUB_API}/sanctions?limit=100`;
-      if (isImpersonatingFromUrl && comuneIdFromUrl) {
-        sanctionsUrl += `&comune_id=${comuneIdFromUrl}`;
-      }
+      const sanctionsUrl = addComuneIdToUrl(`${MIHUB_API}/sanctions?limit=100`);
       const sanctionsRes = await fetch(sanctionsUrl);
       const sanctionsData = await sanctionsRes.json();
       if (sanctionsData.success) {

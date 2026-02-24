@@ -20,7 +20,7 @@ import {
 import { AlertCircle, ArrowLeft, Camera, CheckCircle2, Shield, Clock, Award, Send, Info, X } from 'lucide-react';
 import { Link } from 'wouter';
 import { toast } from 'sonner';
-import { useImpersonation } from '@/hooks/useImpersonation';
+import { useImpersonation, addComuneIdToUrl } from '@/hooks/useImpersonation';
 import { getCachedUser } from '@/api/authClient';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 
@@ -60,7 +60,7 @@ export default function CivicPage() {
     const loadConfig = async () => {
       const currentComuneId = comuneId ? parseInt(comuneId) : 1;
       try {
-        const response = await fetch(`${API_BASE_URL}/api/civic-reports/config?comune_id=${currentComuneId}`);
+        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/civic-reports/config?comune_id=${currentComuneId}`));
         const data = await response.json();
         if (data.success && data.data) {
           setTccReward(data.data.tcc_reward_default || 20);
@@ -245,7 +245,7 @@ export default function CivicPage() {
         photos: photoUrls.length > 0 ? JSON.stringify(photoUrls) : null
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/civic-reports`, {
+      const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/civic-reports`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

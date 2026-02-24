@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // ============================================================================
 // TYPES
@@ -1424,7 +1425,7 @@ function GiustificazioniSection({ impresaId, giustificazioni, concessioni, onRef
       let comuneId = null;
       if (selectedConc?.market_id) {
         try {
-          const mktRes = await fetch(`${API_BASE_URL}/api/markets/${selectedConc.market_id}`);
+          const mktRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${selectedConc.market_id}`));
           const mktData = await mktRes.json();
           const mkt = mktData?.data || mktData;
           const mktObj = Array.isArray(mkt) ? mkt[0] : mkt;
@@ -1780,7 +1781,7 @@ export default function AnagraficaPage() {
 
     try {
       // Usa fields=light per evitare di caricare vetrina_immagine_principale (4.8MB base64)
-      const impresaRes = await fetch(`${API_BASE_URL}/api/imprese/${IMPRESA_ID}?fields=light`);
+      const impresaRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${IMPRESA_ID}?fields=light`));
       const impresaJson = await impresaRes.json();
       if (impresaJson.success) setImpresa(impresaJson.data);
 
@@ -1795,7 +1796,7 @@ export default function AnagraficaPage() {
           // Step 2: Carica concessioni per ogni vendor dell'impresa
           const allConcessioni: ConcessioneData[] = [];
           for (const vendor of myVendors) {
-            const concRes = await fetch(`${API_BASE_URL}/api/concessions?vendor_id=${vendor.id}`);
+            const concRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/concessions?vendor_id=${vendor.id}`));
             const concJson = await concRes.json();
             if (concJson.success && concJson.data) {
               allConcessioni.push(...concJson.data);
@@ -1826,7 +1827,7 @@ export default function AnagraficaPage() {
       } catch { /* silenzioso */ }
 
       try {
-        const presRes = await fetch(`${API_BASE_URL}/api/presenze/impresa/${IMPRESA_ID}`);
+        const presRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/presenze/impresa/${IMPRESA_ID}`));
         const presJson = await presRes.json();
         if (presJson.success) {
           setPresenze(presJson.data || []);

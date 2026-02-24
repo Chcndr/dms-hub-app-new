@@ -27,7 +27,7 @@ import {
   BarChart3, Store, AlertCircle, Clock, Camera, X, Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useImpersonation } from '@/hooks/useImpersonation';
+import { useImpersonation, addComuneIdToUrl } from '@/hooks/useImpersonation';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // Fix per icone marker Leaflet
@@ -798,8 +798,8 @@ export default function GamingRewardsPanel() {
     try {
       // Carica lista completa segnalazioni, fallback su stats.recent
       const [reportsRes, statsRes] = await Promise.all([
-        fetch(`${HETZNER_API_URL}/api/civic-reports?limit=200`).catch(() => null),
-        fetch(`${HETZNER_API_URL}/api/civic-reports/stats`).catch(() => null),
+        fetch(addComuneIdToUrl(`${HETZNER_API_URL}/api/civic-reports?limit=200`)).catch(() => null),
+        fetch(addComuneIdToUrl(`${HETZNER_API_URL}/api/civic-reports/stats`)).catch(() => null),
       ]);
 
       let rawReports: any[] = [];

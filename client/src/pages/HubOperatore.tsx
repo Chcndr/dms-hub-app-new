@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // API Base URL — passa per il proxy Vercel (/api/tcc/* → orchestratore.mio-hub.me)
 // Fallback diretto se in sviluppo locale
@@ -42,7 +43,7 @@ const MAIN_API_BASE = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-9
 // Stessa logica di WalletTCCBadge in MarketCompaniesTab — calcola stato da data_scadenza
 async function checkQualificationsLocally(impresaId: number): Promise<{ walletEnabled: boolean; label: string }> {
   try {
-    const response = await fetch(`${MAIN_API_BASE}/api/imprese/${impresaId}/qualificazioni`);
+    const response = await fetch(addComuneIdToUrl(`${MAIN_API_BASE}/api/imprese/${impresaId}/qualificazioni`));
     if (!response.ok) return { walletEnabled: false, label: 'Errore verifica' };
     const data = await response.json();
     if (!data.success || !Array.isArray(data.data) || data.data.length === 0) {

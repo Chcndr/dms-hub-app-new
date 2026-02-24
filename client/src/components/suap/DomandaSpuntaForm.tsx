@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { FileText, Send, Loader2, Wallet, AlertCircle, Stamp } from 'lucide-react';
 import { toast } from 'sonner';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // API URL
@@ -160,14 +161,14 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
         setLoadingMarkets(true);
         
         // Carica mercati
-        const marketsRes = await fetch(`${API_URL}/api/markets`);
+        const marketsRes = await fetch(addComuneIdToUrl(`${API_URL}/api/markets`));
         const marketsJson = await marketsRes.json();
         if (marketsJson.success && marketsJson.data) {
           setMarkets(marketsJson.data);
         }
         
         // Carica imprese
-        const impreseRes = await fetch(`${API_URL}/api/imprese`);
+        const impreseRes = await fetch(addComuneIdToUrl(`${API_URL}/api/imprese`));
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
@@ -196,7 +197,7 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
     if (domandaId && (mode === 'view' || mode === 'edit')) {
       const fetchDomanda = async () => {
         try {
-          const res = await fetch(`${API_URL}/api/domande-spunta/${domandaId}`);
+          const res = await fetch(addComuneIdToUrl(`${API_URL}/api/domande-spunta/${domandaId}`));
           const json = await res.json();
           if (json.success && json.data) {
             const dom = json.data;
@@ -276,7 +277,7 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
     // Carica autorizzazioni dell'impresa
     setLoadingAutorizzazioni(true);
     try {
-      const authRes = await fetch(`${API_URL}/api/autorizzazioni?impresa_id=${impresa.id}`);
+      const authRes = await fetch(addComuneIdToUrl(`${API_URL}/api/autorizzazioni?impresa_id=${impresa.id}`));
       const authJson = await authRes.json();
       if (authJson.success && authJson.data) {
         // Filtra solo autorizzazioni attive di tipo B (itinerante)
@@ -306,7 +307,7 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
   // Funzione per verificare i requisiti (DURC, Morali/Requisiti, Antimafia) dalla tabella qualificazioni
   const checkQualificheStatus = async (impresaId: number) => {
     try {
-      const res = await fetch(`${API_URL}/api/qualificazioni/impresa/${impresaId}`);
+      const res = await fetch(addComuneIdToUrl(`${API_URL}/api/qualificazioni/impresa/${impresaId}`));
       const json = await res.json();
       
       if (json.success && json.data && json.data.length > 0) {
@@ -421,7 +422,7 @@ export default function DomandaSpuntaForm({ onCancel, onSubmit, initialData, dom
     setSubmitting(true);
     
     try {
-      const response = await fetch(`${API_URL}/api/domande-spunta`, {
+      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/domande-spunta`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

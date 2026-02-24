@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Printer, Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
@@ -241,7 +242,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
         
         // Carica il prossimo numero di concessione disponibile
         try {
-          const concessionsRes = await fetch(`${API_URL}/api/dmsHub/concessions/list`);
+          const concessionsRes = await fetch(addComuneIdToUrl(`${API_URL}/api/dmsHub/concessions/list`));
           const concessionsJson = await concessionsRes.json();
           if (concessionsJson.success && concessionsJson.data) {
             // Trova il numero massimo e proponi il prossimo
@@ -263,7 +264,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
         }
         
         // Carica mercati
-        const marketsRes = await fetch(`${API_URL}/api/markets`);
+        const marketsRes = await fetch(addComuneIdToUrl(`${API_URL}/api/markets`));
         const marketsJson = await marketsRes.json();
         if (marketsJson.success && marketsJson.data) {
           setMarkets(marketsJson.data);
@@ -326,7 +327,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
         
         // Carica tutte le imprese per autocomplete (versione leggera senza immagini/subquery)
         const lightFields = 'id,denominazione,partita_iva,codice_fiscale,comune,indirizzo_via,indirizzo_civico,indirizzo_cap,indirizzo_provincia,stato_impresa,pec,telefono,email,rappresentante_legale,rappresentante_legale_cognome,rappresentante_legale_nome,rappresentante_legale_cf,rappresentante_legale_data_nascita,rappresentante_legale_luogo_nascita,rappresentante_legale_residenza_via,rappresentante_legale_residenza_civico,rappresentante_legale_residenza_cap,rappresentante_legale_residenza_comune,rappresentante_legale_residenza_provincia';
-        const impreseRes = await fetch(`${API_URL}/api/imprese?fields=${lightFields}`);
+        const impreseRes = await fetch(addComuneIdToUrl(`${API_URL}/api/imprese?fields=${lightFields}`));
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
@@ -456,7 +457,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
     const fetchStalls = async () => {
       try {
         setLoadingStalls(true);
-        const res = await fetch(`${API_URL}/api/markets/${selectedMarketId}/stalls`);
+        const res = await fetch(addComuneIdToUrl(`${API_URL}/api/markets/${selectedMarketId}/stalls`));
         const json = await res.json();
         
         if (json.success && json.data) {
@@ -761,7 +762,7 @@ export default function ConcessioneForm({ onCancel, onSubmit, initialData, mode 
         dataToSave
       });
       
-      const response = await fetch(url, {
+      const response = await fetch(addComuneIdToUrl(url), {
         method: isEditMode ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',

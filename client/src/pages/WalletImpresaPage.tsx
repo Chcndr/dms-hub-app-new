@@ -296,7 +296,7 @@ export default function WalletImpresaPage() {
       }
       
       // Fetch dati impresa
-      const impresaRes = await fetch(`${API_BASE_URL}/api/imprese/${resolvedImpresaId}`);
+      const impresaRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${resolvedImpresaId}`));
       const impresaData = await impresaRes.json();
       
       setCompany({
@@ -320,7 +320,7 @@ export default function WalletImpresaPage() {
       // v5.9.0: Fetch sanzioni/verbali PM non pagati - usa MIHUB (stesso backend dove vengono create)
       const SANCTIONS_URL = import.meta.env.DEV ? MIHUB_URL : '';
       try {
-        const sanzioniRes = await fetch(`${SANCTIONS_URL}/api/sanctions/impresa/${resolvedImpresaId}/da-pagare`);
+        const sanzioniRes = await fetch(addComuneIdToUrl(`${SANCTIONS_URL}/api/sanctions/impresa/${resolvedImpresaId}/da-pagare`));
         const sanzioniData = await sanzioniRes.json();
         if (sanzioniData.success) {
           setSanzioni(sanzioniData.data || []);
@@ -331,7 +331,7 @@ export default function WalletImpresaPage() {
 
       // v5.9.0: Fetch sanzioni pagate per storico - usa MIHUB (stesso backend dove vengono create)
       try {
-        const sanzioniPagateRes = await fetch(`${SANCTIONS_URL}/api/sanctions?impresa_id=${resolvedImpresaId}&payment_status=PAGATO&limit=50`);
+        const sanzioniPagateRes = await fetch(addComuneIdToUrl(`${SANCTIONS_URL}/api/sanctions?impresa_id=${resolvedImpresaId}&payment_status=PAGATO&limit=50`));
         const sanzioniPagateData = await sanzioniPagateRes.json();
         if (sanzioniPagateData.success) {
           // Calcola importo effettivo pagato per ogni sanzione
@@ -927,7 +927,7 @@ export default function WalletImpresaPage() {
                                 size="sm" 
                                 variant="outline"
                                 className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
-                                onClick={() => window.open(`https://mihub.157-90-29-66.nip.io/api/verbali/${sanzione.id}/pdf`, '_blank')}
+                                onClick={() => window.open(`${MIHUB_URL}/api/verbali/${sanzione.id}/pdf`, '_blank')}
                               >
                                 <FileText className="w-4 h-4" />
                               </Button>
@@ -1054,7 +1054,7 @@ export default function WalletImpresaPage() {
                               size="sm" 
                               variant="outline"
                               className="mt-2 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
-                              onClick={() => window.open(`https://mihub.157-90-29-66.nip.io/api/verbali/${sanzione.id}/pdf`, '_blank')}
+                              onClick={() => window.open(`${MIHUB_URL}/api/verbali/${sanzione.id}/pdf`, '_blank')}
                             >
                               <FileText className="w-4 h-4 mr-1" />
                               Vedi Verbale

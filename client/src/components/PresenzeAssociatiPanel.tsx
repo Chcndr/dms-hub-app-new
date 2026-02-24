@@ -29,7 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { getImpersonationParams } from '@/hooks/useImpersonation';
+import { getImpersonationParams, addComuneIdToUrl } from '@/hooks/useImpersonation';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
@@ -330,7 +330,7 @@ export default function PresenzeAssociatiPanel() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE_URL}/api/imprese?search=${encodeURIComponent(query)}&limit=10`);
+      const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese?search=${encodeURIComponent(query)}&limit=10`));
       const data = await res.json();
       if (data.success && data.data) {
         setImpreseSuggestions(data.data);
@@ -352,7 +352,7 @@ export default function PresenzeAssociatiPanel() {
     }
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti`, {
+      const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -12,6 +12,7 @@ import {
 import { geoAPI } from '@/utils/api';
 import { firebaseLogout } from '@/lib/firebase';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 interface SearchResult {
   id: string;
@@ -81,7 +82,7 @@ export default function HomePage() {
         if (!impresaId) return;
         
         const API_BASE_URL = MIHUB_API_BASE_URL;
-        const response = await fetch(`${API_BASE_URL}/api/notifiche/impresa/${impresaId}?limit=100`);
+        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/notifiche/impresa/${impresaId}?limit=100`));
         if (response.ok) {
           const data = await response.json();
           // v3.73.0: Usa il conteggio non_lette dal backend invece di filtrare

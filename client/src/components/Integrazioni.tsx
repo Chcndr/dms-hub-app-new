@@ -41,6 +41,8 @@ import {
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcQuery, trpcMutate } from '@/lib/trpcHttp';
+import { MIHUB_API_BASE_URL } from '@/config/api';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 export default function Integrazioni() {
   const [activeTab, setActiveTab] = useState('api-dashboard');
@@ -771,7 +773,7 @@ function APIDashboard() {
 
         // GIS & ABACUS
         case '/api/stalls/stats/totals':
-          const stallsStatsRes = await fetch('https://mihub.157-90-29-66.nip.io/api/stalls/stats/totals', {
+          const stallsStatsRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/stalls/stats/totals`), {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
@@ -947,7 +949,7 @@ function APIDashboard() {
           
         // HUB SHOPS - chiamate REST dirette a Hetzner
         case '/api/hub/shops/create-with-impresa':
-          const createShopResponse = await fetch('https://mihub.157-90-29-66.nip.io/api/hub/shops/create-with-impresa', {
+          const createShopResponse = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/hub/shops/create-with-impresa`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(parsedBody),
@@ -1076,7 +1078,7 @@ function APIDashboard() {
           // Chiamata REST diretta per tutti gli endpoint non mappati
           // Usa base_url da api/index.json o fallback a Hetzner
           if (endpointInfo) {
-            const baseUrl = endpointInfo.base_url || 'https://mihub.157-90-29-66.nip.io';
+            const baseUrl = endpointInfo.base_url || MIHUB_API_BASE_URL;
             let restPath = endpointPath;
             
             // Converti path tRPC in path REST se necessario

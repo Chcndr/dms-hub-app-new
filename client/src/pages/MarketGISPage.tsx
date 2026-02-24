@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, Loader2, AlertCircle, RefreshCw, Search, ChevronDown } from 'lucide-react';
 import { MarketMapComponent } from '../components/MarketMapComponent';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 interface MarketMapData {
   container: [number, number][];
@@ -66,7 +67,7 @@ export default function MarketGISPage() {
   const loadMarkets = async () => {
     try {
       const apiUrl = import.meta.env.VITE_MIHUB_API_URL || 'https://orchestratore.mio-hub.me';
-      const response = await fetch(`${apiUrl}/api/markets`);
+      const response = await fetch(addComuneIdToUrl(`${apiUrl}/api/markets`));
       const result = await response.json();
       if (result.success && result.data) {
         setMarkets(result.data);
@@ -94,7 +95,7 @@ export default function MarketGISPage() {
         ? `${apiUrl}/api/gis/market-map/${targetMarketId}`
         : `${apiUrl}/api/gis/market-map`; // Endpoint base
 
-      const response = await fetch(endpoint);
+      const response = await fetch(addComuneIdToUrl(endpoint));
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

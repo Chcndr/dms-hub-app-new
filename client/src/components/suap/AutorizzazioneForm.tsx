@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Printer, Search, Loader2, FileCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
@@ -163,7 +164,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
         
         // Carica il prossimo numero autorizzazione
         try {
-          const nextNumRes = await fetch(`${API_URL}/api/autorizzazioni/next-number`);
+          const nextNumRes = await fetch(addComuneIdToUrl(`${API_URL}/api/autorizzazioni/next-number`));
           const nextNumJson = await nextNumRes.json();
           if (nextNumJson.success && nextNumJson.data) {
             setFormData(prev => ({
@@ -182,14 +183,14 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
         }
         
         // Carica mercati
-        const marketsRes = await fetch(`${API_URL}/api/markets`);
+        const marketsRes = await fetch(addComuneIdToUrl(`${API_URL}/api/markets`));
         const marketsJson = await marketsRes.json();
         if (marketsJson.success && marketsJson.data) {
           setMarkets(marketsJson.data);
         }
         
         // Carica imprese
-        const impreseRes = await fetch(`${API_URL}/api/imprese`);
+        const impreseRes = await fetch(addComuneIdToUrl(`${API_URL}/api/imprese`));
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
@@ -218,7 +219,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
     if (autorizzazioneId && (mode === 'view' || mode === 'edit')) {
       const fetchAutorizzazione = async () => {
         try {
-          const res = await fetch(`${API_URL}/api/autorizzazioni/${autorizzazioneId}`);
+          const res = await fetch(addComuneIdToUrl(`${API_URL}/api/autorizzazioni/${autorizzazioneId}`));
           const json = await res.json();
           if (json.success && json.data) {
             const aut = json.data;
@@ -358,7 +359,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
   // Funzione per caricare i dati delle qualifiche (DURC, Morali, Professionali)
   const fetchQualificheData = async (impresaId: number) => {
     try {
-      const res = await fetch(`${API_URL}/api/qualificazioni/impresa/${impresaId}`);
+      const res = await fetch(addComuneIdToUrl(`${API_URL}/api/qualificazioni/impresa/${impresaId}`));
       const json = await res.json();
       
       if (json.success && json.data && json.data.length > 0) {
@@ -447,7 +448,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
     
     // Carica posteggi del mercato
     try {
-      const stallsRes = await fetch(`${API_URL}/api/stalls?market_id=${market.id}`);
+      const stallsRes = await fetch(addComuneIdToUrl(`${API_URL}/api/stalls?market_id=${market.id}`));
       const stallsJson = await stallsRes.json();
       if (stallsJson.success && stallsJson.data) {
         // Filtra solo posteggi liberi
@@ -529,7 +530,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
         : `${API_URL}/api/autorizzazioni`;
       const method = isUpdate ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
+      const response = await fetch(addComuneIdToUrl(url), {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

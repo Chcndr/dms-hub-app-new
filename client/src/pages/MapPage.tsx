@@ -6,6 +6,7 @@ import BottomNav from '@/components/BottomNav';
 import { MarketMapComponent } from '@/components/MarketMapComponent';
 import 'leaflet/dist/leaflet.css';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // Fix per icone marker Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -66,8 +67,8 @@ export default function MapPage() {
     const loadMapData = async () => {
       try {
         const [mapRes, stallsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/gis/market-map`),
-          fetch(`${API_BASE_URL}/api/markets/1/stalls`)
+          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map`)),
+          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/1/stalls`))
         ]);
         
         const mapJson = await mapRes.json();

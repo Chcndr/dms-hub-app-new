@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, FileText, Loader2, Building2, X, Stamp } from 'lucide-react';
 import { toast } from 'sonner';
-import { getImpersonationParams, isAssociazioneImpersonation } from '@/hooks/useImpersonation';
+import { getImpersonationParams, isAssociazioneImpersonation, addComuneIdToUrl } from '@/hooks/useImpersonation';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // API URL
@@ -294,9 +294,9 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
         
         // Per ogni mercato, carica i posteggi e filtra quelli del CEDENTE
         for (const market of markets) {
-          const res = await fetch(`${API_URL}/api/markets/${market.id}/stalls`);
+          const res = await fetch(addComuneIdToUrl(`${API_URL}/api/markets/${market.id}/stalls`));
           const json = await res.json();
-          
+
           if (json.success && json.data) {
             const cedenteStallsInMarket = json.data.filter((s: Stall) => s.impresa_id === selectedCedente.id);
             cedenteStallsInMarket.forEach((s: Stall) => {
@@ -337,10 +337,10 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
         setLoadingMarkets(true);
         
         // Carica mercati (filtrati per comune se impersonalizzato)
-        const marketsUrl = comuneId 
+        const marketsUrl = comuneId
           ? `${API_URL}/api/markets?comune_id=${comuneId}`
           : `${API_URL}/api/markets`;
-        const marketsRes = await fetch(marketsUrl);
+        const marketsRes = await fetch(addComuneIdToUrl(marketsUrl));
         const marketsJson = await marketsRes.json();
         if (marketsJson.success && marketsJson.data) {
           setMarkets(marketsJson.data);
@@ -348,7 +348,7 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
         
         // Carica tutte le imprese per ricerca locale (versione leggera senza immagini/subquery)
         const lightFields = 'id,denominazione,partita_iva,codice_fiscale,comune,indirizzo_via,indirizzo_civico,indirizzo_cap,indirizzo_provincia,stato_impresa,pec,telefono,email,rappresentante_legale,rappresentante_legale_cognome,rappresentante_legale_nome,rappresentante_legale_cf,rappresentante_legale_data_nascita,rappresentante_legale_luogo_nascita,rappresentante_legale_residenza_via,rappresentante_legale_residenza_civico,rappresentante_legale_residenza_cap,rappresentante_legale_residenza_comune,rappresentante_legale_residenza_provincia';
-        const impreseRes = await fetch(`${API_URL}/api/imprese?fields=${lightFields}`);
+        const impreseRes = await fetch(addComuneIdToUrl(`${API_URL}/api/imprese?fields=${lightFields}`));
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
@@ -376,7 +376,7 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
     const fetchStalls = async () => {
       try {
         setLoadingStalls(true);
-        const res = await fetch(`${API_URL}/api/markets/${selectedMarketId}/stalls`);
+        const res = await fetch(addComuneIdToUrl(`${API_URL}/api/markets/${selectedMarketId}/stalls`));
         const json = await res.json();
         
         if (json.success && json.data) {
@@ -598,7 +598,7 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
     if (stall.impresa_id) {
       try {
         setLoadingImpresa(true);
-        const res = await fetch(`${API_URL}/api/imprese/${stall.impresa_id}`);
+        const res = await fetch(addComuneIdToUrl(`${API_URL}/api/imprese/${stall.impresa_id}`));
         const json = await res.json();
         
         if (json.success && json.data) {
@@ -623,7 +623,7 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
 
     // Cerca SCIA precedente per questo posteggio (per pre-compilare i campi SCIA Precedente)
     try {
-      const sciaRes = await fetch(`${API_URL}/api/suap/pratiche?posteggio_id=${stallId}`);
+      const sciaRes = await fetch(addComuneIdToUrl(`${API_URL}/api/suap/pratiche?posteggio_id=${stallId}`));
       const sciaJson = await sciaRes.json();
       if (sciaJson.success && sciaJson.data && sciaJson.data.length > 0) {
         // Cerca la SCIA più recente APPROVED o EVALUATED per questo posteggio
@@ -836,7 +836,7 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
                       const { associazioneId } = getImpersonationParams();
                       if (associazioneId) {
                         try {
-                          const res = await fetch(`${MIHUB_API_BASE_URL}/api/associazioni/${associazioneId}`);
+                          const res = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/associazioni/${associazioneId}`));
                           const data = await res.json();
                           if (data.success && data.data) {
                             const assoc = data.data;

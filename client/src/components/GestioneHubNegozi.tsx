@@ -6,6 +6,7 @@ import { MarketCompaniesTab } from './markets/MarketCompaniesTab';
 import { MarketMapComponent } from './MarketMapComponent';
 import { HubMapComponent } from './HubMapComponent';
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -330,7 +331,7 @@ export default function GestioneHubNegozi() {
     const loadMapData = async () => {
       try {
         // 1. Load Base Map (Italy View or Specific Market)
-        const mapRes = await fetch('https://mihub.157-90-29-66.nip.io/api/gis/market-map');
+        const mapRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/gis/market-map`));
         const mapJson = await mapRes.json();
         
         if (mapJson.success && mapJson.data) {
@@ -339,7 +340,7 @@ export default function GestioneHubNegozi() {
 
         // 2. Load Stalls only if a market is selected
         if (selectedMarketId) {
-          const stallsRes = await fetch(`https://mihub.157-90-29-66.nip.io/api/markets/${selectedMarketId}/stalls`);
+          const stallsRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/markets/${selectedMarketId}/stalls`));
           const stallsJson = await stallsRes.json();
           
           if (stallsJson.success && Array.isArray(stallsJson.data)) {
@@ -386,7 +387,7 @@ export default function GestioneHubNegozi() {
   const loadAllHubs = async () => {
     setHubMapLoading(true);
     try {
-      const response = await fetch(`${MIHUB_API_BASE_URL}/api/hub/locations`);
+      const response = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/hub/locations`));
       const json = await response.json();
       if (json.success && Array.isArray(json.data)) {
         setAllHubLocations(json.data);
@@ -402,7 +403,7 @@ export default function GestioneHubNegozi() {
   const loadHubDetails = async (hubId: number) => {
     setHubMapLoading(true);
     try {
-      const response = await fetch(`${MIHUB_API_BASE_URL}/api/hub/locations/${hubId}`);
+      const response = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/hub/locations/${hubId}`));
       const json = await response.json();
       if (json.success && json.data) {
         setSelectedHubLocation(json.data);

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
-import { useImpersonation } from '@/hooks/useImpersonation';
+import { useImpersonation, addComuneIdToUrl } from '@/hooks/useImpersonation';
 import { useCivicReports } from '@/contexts/CivicReportsContext';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 
@@ -215,8 +215,8 @@ export default function CivicReportsHeatmap() {
         if (currentComuneId) {
           url += `?comune_id=${currentComuneId}`;
         }
-        
-        const response = await fetch(url);
+
+        const response = await fetch(addComuneIdToUrl(url));
         const data = await response.json();
         
         if (data.success && data.data?.recent) {

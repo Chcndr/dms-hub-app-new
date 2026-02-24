@@ -36,6 +36,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import { MIHUB_API_BASE_URL } from '@/config/api';
+import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -117,7 +118,7 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
 
   const fetchMarkets = async () => {
     try {
-     const response = await fetch(`${API_BASE_URL}/api/markets`);
+     const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets`));
       const data = await response.json();
       if (data.success) {
         setMarkets(data.data);
@@ -293,7 +294,7 @@ function MarketDetailPubblica({ market, allMarkets, onMarketChange }: { market: 
     
     const fetchStalls = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/markets/${market.id}/stalls`);
+        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/stalls`));
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const json = await response.json();
         if (json.success && Array.isArray(json.data)) {
@@ -394,8 +395,8 @@ function PosteggiTabPubblica({
   const fetchData = async () => {
     try {
       const [stallsRes, mapRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`),
-        fetch(`${API_BASE_URL}/api/gis/market-map/${marketId}`)
+        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)),
+        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map/${marketId}`))
       ]);
 
       const stallsData = await stallsRes.json();

@@ -243,8 +243,14 @@ export function addComuneIdToUrl(url: string): string {
     return url;
   }
 
+  // Validate comune_id is numeric to prevent injection
+  const sanitizedId = String(parseInt(comuneId, 10));
+  if (sanitizedId === 'NaN') {
+    return url;
+  }
+
   const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}comune_id=${comuneId}`;
+  return `${url}${separator}comune_id=${sanitizedId}`;
 }
 
 // Helper standalone per aggiungere associazione_id alle URL
@@ -253,8 +259,13 @@ export function addAssociazioneIdToUrl(url: string): string {
   if (!isImpersonating || entityType !== 'associazione' || !associazioneId) {
     return url;
   }
+  // Validate associazione_id is numeric to prevent injection
+  const sanitizedId = String(parseInt(associazioneId, 10));
+  if (sanitizedId === 'NaN') {
+    return url;
+  }
   const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}associazione_id=${associazioneId}`;
+  return `${url}${separator}associazione_id=${sanitizedId}`;
 }
 
 // Helper standalone per verificare se siamo in impersonificazione associazione
