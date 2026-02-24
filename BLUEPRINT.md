@@ -396,3 +396,53 @@ Le seguenti variabili sono state aggiunte a `.env.production` e devono essere co
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 - `FIREBASE_SERVICE_ACCOUNT_KEY` (per il backend, in formato JSON) 
+
+
+---
+
+## 🔧 Changelog Tecnico - Sessione 23-24 Febbraio 2026
+
+### v8.17.3 → v8.17.5 - Fix Sicurezza, Performance e Stabilità
+
+#### IDOR Fix (v8.17.3-v8.17.4)
+- **25 endpoint backend** con validazione `comune_id` obbligatoria su POST/PUT/DELETE (`wallets.js`, `canone-unico.js`)
+- **32 fetch frontend** wrappate con `addComuneIdToUrl()` per impersonation (`WalletPanel`, `GestioneMercati`, `SuapPanel`, `MarketCompaniesTab`)
+- `comune_id` letto da `req.body` O `req.query` per flessibilità GET/POST
+- GET endpoints: `comune_id` opzionale (super admin vede tutto), POST/PUT/DELETE: obbligatorio
+
+#### Performance Fix
+- **GET /api/imprese**: escluso `vetrina_immagine_principale` e `vetrina_gallery` dalla lista → risposta da 38MB a ~500KB (615x più veloce, da 3s a 0.27s)
+
+#### Stats.js Fix (Errori Silenti dal 20/01/2026)
+Le query in `stats.js` usavano nomi tabella/colonna errati fin dalla creazione. Il `safeQuery` helper mascherava gli errori restituendo 0.
+
+| Prima (sbagliato) | Dopo (corretto) | Note |
+|---|---|---|
+| `tcc_transactions` | `operator_transactions` | Tabella TCC punti carbon credit |
+| `presenze` + `data_presenza` | `vendor_presences` + `checkin_time` | Tabella presenze operatori |
+| `amount` | `tcc_amount` | Colonna importo TCC in operator_transactions |
+| `type = 'earn'/'spend'` | `type = 'issue'/'redeem'` | Tipi transazione TCC corretti |
+| `user_id` in `wallet_transactions` | `user_id` in `operator_transactions` | user_id esiste solo in operator_transactions |
+
+**Risultato:** Dashboard ora mostra dati TCC reali (3.750 issued, 4.633 redeemed) invece di 0.
+
+#### Sicurezza Rate Limiter IPv6
+- Fix `ERR_ERL_KEY_GEN_IPV6`: usato `ipKeyGenerator` di express-rate-limit v8.2.1 per gestire correttamente indirizzi IPv6 nel rate limiter anti brute-force
+
+#### Health Monitor Fix
+- Rimosso `const pool = pool` (auto-referenza circolare) in `health-monitor.js`
+
+### Distinzione Wallet (IMPORTANTE)
+
+| Sistema | Tabella | Tipo | Colonne chiave |
+|---------|---------|------|----------------|
+| **Wallet Operatore (€ euro)** | `wallets` + `wallet_transactions` | Costi suolo pubblico, depositi | `wallet_id`, `type` (COSTO_POSTEGGIO/PRESENZA_GIORNALIERA/DEPOSIT), `amount` |
+| **TCC Cittadino (punti)** | `operator_transactions` | Token Carbon Credit earn/spend | `user_id`, `type` (issue/redeem), `tcc_amount`, `euro_amount` |
+| **Fondo TCC Comunale** | `fund_transactions` | Movimenti fondo comunale | 4 righe |
+
+### Inventario Tabelle Database (152 tabelle Neon)
+Riferimento completo: `/home/ubuntu/inventario_tabelle_neon.md`
+
+### Stato Allineamento (24/02/2026)
+- **Backend**: GitHub = Sandbox = Hetzner → commit `c4b88ec`
+- **Frontend**: GitHub = Sandbox = Vercel → commit `fefb6fd`
