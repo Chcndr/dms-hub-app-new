@@ -243,7 +243,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         url += `?${params.toString()}`;
       }
 
-      const res = await fetch(addComuneIdToUrl(url));
+      // SENZA filtro comune: statistiche aggregate globali rete Italia
+      const res = await fetch(url);
       if (res.ok) {
         const response = await res.json();
         if (response.success && response.data) {
@@ -258,8 +259,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
   const loadData = async () => {
     setLoading(true);
     try {
-      // Carica mercati
-      const marketsRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/markets`));
+      // Carica mercati - SENZA filtro comune: vista pubblica rete Italia
+      const marketsRes = await fetch(`${MIHUB_API_BASE_URL}/api/markets`);
       if (marketsRes.ok) {
         const marketsResponse = await marketsRes.json();
         if (marketsResponse.success && Array.isArray(marketsResponse.data)) {
@@ -269,8 +270,8 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         }
       }
 
-      // Carica HUB
-      const hubsRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/hub/locations`));
+      // Carica HUB - SENZA filtro comune: vista pubblica rete Italia
+      const hubsRes = await fetch(`${MIHUB_API_BASE_URL}/api/hub/locations`);
       if (hubsRes.ok) {
         const hubsResponse = await hubsRes.json();
         if (hubsResponse.success && Array.isArray(hubsResponse.data)) {
@@ -281,7 +282,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
       }
 
       // Carica TUTTI i posteggi di TUTTI i mercati (per calcolo Area mq)
-      const allStallsRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/stalls`));
+      const allStallsRes = await fetch(`${MIHUB_API_BASE_URL}/api/stalls`);
       if (allStallsRes.ok) {
         const allStallsResponse = await allStallsRes.json();
         if (allStallsResponse.success && Array.isArray(allStallsResponse.data)) {
@@ -301,7 +302,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
   const loadRegioni = async () => {
     setLoadingRegioni(true);
     try {
-      const res = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/regioni`));
+      const res = await fetch(`${MIHUB_API_BASE_URL}/api/regioni`);
       if (res.ok) {
         const response = await res.json();
         if (response.success && Array.isArray(response.data)) {
@@ -319,7 +320,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
   const loadProvince = async (regioneId: number) => {
     setLoadingProvince(true);
     try {
-      const res = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/regioni/${regioneId}/province`));
+      const res = await fetch(`${MIHUB_API_BASE_URL}/api/regioni/${regioneId}/province`);
       if (res.ok) {
         const response = await res.json();
         if (response.success && Array.isArray(response.data)) {
@@ -481,7 +482,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
     setSelectedHub(null);
 
     try {
-      const res = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/gis/market-map/${marketId}`));
+      const res = await fetch(`${MIHUB_API_BASE_URL}/api/gis/market-map/${marketId}`);
       if (res.ok) {
         const response = await res.json();
         if (response.success && response.data) {
@@ -496,7 +497,7 @@ export default function GestioneHubMapWrapper({ routeConfig, navigationMode }: G
         }
       }
 
-      const stallsRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/stalls?market_id=${marketId}`));
+      const stallsRes = await fetch(`${MIHUB_API_BASE_URL}/api/stalls?market_id=${marketId}`);
       if (stallsRes.ok) {
         const stallsResponse = await stallsRes.json();
         if (stallsResponse.success && Array.isArray(stallsResponse.data)) {
