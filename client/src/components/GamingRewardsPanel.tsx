@@ -51,8 +51,8 @@ const API_BASE_URL = import.meta.env.DEV
 // URL API Hetzner per civic-reports
 const HETZNER_API_URL = MIHUB_API_BASE_URL;
 
-// Coordinate centri comuni
-const COMUNI_COORDS: Record<number, { lat: number; lng: number; nome: string }> = {
+// Coordinate centri comuni - fallback hardcoded, sovrascritta dal DB all'init
+const COMUNI_COORDS_FALLBACK: Record<number, { lat: number; lng: number; nome: string }> = {
   1: { lat: 42.7635, lng: 11.1126, nome: 'Grosseto' },
   6: { lat: 44.4949, lng: 11.3426, nome: 'Bologna' },
   7: { lat: 44.4898, lng: 11.0123, nome: 'Vignola' },
@@ -61,6 +61,7 @@ const COMUNI_COORDS: Record<number, { lat: number; lng: number; nome: string }> 
   10: { lat: 44.5343, lng: 10.7847, nome: 'Sassuolo' },
   12: { lat: 44.4726, lng: 11.2755, nome: 'Casalecchio di Reno' },
   13: { lat: 44.4175, lng: 12.1996, nome: 'Ravenna' },
+  14: { lat: 44.2614, lng: 12.3530, nome: 'Cervia' },
 };
 
 const DEFAULT_CENTER = { lat: 42.5, lng: 12.5 };
@@ -236,7 +237,8 @@ function MapCenterUpdater({
   comuneId, 
   selectedLayer,
   layerTrigger,
-  geoFilter = 'italia'
+  geoFilter = 'italia',
+  comuniCoords = COMUNI_COORDS_FALLBACK
 }: { 
   points: HeatmapPoint[]; 
   civicReports: HeatmapPoint[]; 
@@ -247,6 +249,7 @@ function MapCenterUpdater({
   selectedLayer: string;
   layerTrigger: number;
   geoFilter?: 'italia' | 'comune';
+  comuniCoords?: Record<number, { lat: number; lng: number; nome: string }>;
 }) {
   const map = useMap();
   
@@ -260,8 +263,8 @@ function MapCenterUpdater({
     }
     
     // Se geoFilter='comune', centra sul comune selezionato
-    if (comuneId && COMUNI_COORDS[comuneId]) {
-      const coords = COMUNI_COORDS[comuneId];
+    if (comuneId && comuniCoords[comuneId]) {
+      const coords = comuniCoords[comuneId];
       map.flyTo([coords.lat, coords.lng], 14, { duration: 1.5 });
       return;
     }
@@ -307,7 +310,7 @@ function MapCenterUpdater({
     }
     
     map.flyTo([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], DEFAULT_ZOOM, { duration: 1 });
-  }, [map, points, civicReports, comuneId, selectedLayer, layerTrigger, geoFilter]);
+  }, [map, points, civicReports, comuneId, selectedLayer, layerTrigger, geoFilter, comuniCoords]);
   
   return null;
 }
@@ -645,9 +648,36 @@ export default function GamingRewardsPanel() {
   const [challengesList, setChallengesList] = useState<ChallengeItem[]>([]);
   const [challengesExpanded, setChallengesExpanded] = useState(true);
   
+  // v1.4.0: Coordinate comuni dinamiche dal DB (scalabile per nuovi comuni)
+  const [comuniCoords, setComuniCoords] = useState<Record<number, { lat: number; lng: number; nome: string }>>(COMUNI_COORDS_FALLBACK);
+  
   // Se admin non sta impersonando, non filtrare per comune (vede tutto)
   // Se sta impersonando, usa il comune selezionato
   const currentComuneId = isImpersonating && comuneId ? parseInt(comuneId) : null;
+  
+  // v1.4.0: Carica coordinate comuni dal DB all'init (scalabile)
+  useEffect(() => {
+    const loadComuniCoords = async () => {
+      try {
+        const res = await fetch(`${MIHUB_API_BASE_URL}/comuni`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          const coordsMap: Record<number, { lat: number; lng: number; nome: string }> = {};
+          data.data.forEach((c: any) => {
+            if (c.lat && c.lng) {
+              coordsMap[c.id] = { lat: parseFloat(c.lat), lng: parseFloat(c.lng), nome: c.nome };
+            }
+          });
+          if (Object.keys(coordsMap).length > 0) {
+            setComuniCoords(prev => ({ ...prev, ...coordsMap }));
+          }
+        }
+      } catch (err) {
+        console.warn('Fallback a coordinate hardcoded:', err);
+      }
+    };
+    loadComuniCoords();
+  }, []);
   // v1.3.3: Le API caricano SEMPRE TUTTI i dati (senza filtro comune)
   // Il filtro per comune è SOLO client-side via filterByGeo con comune_id diretto
   // Così "Tutta Italia" mostra tutto e "[Comune]" filtra localmente per comune_id
@@ -671,7 +701,7 @@ export default function GamingRewardsPanel() {
   const filterByGeo = useCallback((items: any[]) => {
     if (geoFilter === 'italia' || !currentComuneId) return items;
     
-    const comuneCoords = COMUNI_COORDS[currentComuneId];
+    const comuneCoords = comuniCoords[currentComuneId];
     
     return items.filter(item => {
       // Priorità 1: filtro per comune_id diretto (preciso)
@@ -1169,8 +1199,8 @@ export default function GamingRewardsPanel() {
   // Determina centro iniziale mappa
   // v1.3.0: Rispetta geoFilter - se 'italia' vista Italia, se 'comune' centra sul comune
   const getInitialCenter = (): [number, number] => {
-    if (geoFilter === 'comune' && currentComuneId && COMUNI_COORDS[currentComuneId]) {
-      return [COMUNI_COORDS[currentComuneId].lat, COMUNI_COORDS[currentComuneId].lng];
+    if (geoFilter === 'comune' && currentComuneId && comuniCoords[currentComuneId]) {
+      return [comuniCoords[currentComuneId].lat, comuniCoords[currentComuneId].lng];
     }
     return [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng];
   };
@@ -1662,7 +1692,7 @@ export default function GamingRewardsPanel() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <MapCenterUpdater points={heatmapPoints} civicReports={filterData(civicReports, 'created_at')} mobilityActions={mobilityActions} cultureActions={cultureActions} referralList={referralList} comuneId={currentComuneId} selectedLayer={selectedLayer} layerTrigger={layerTrigger} geoFilter={geoFilter} />
+              <MapCenterUpdater points={heatmapPoints} civicReports={filterData(civicReports, 'created_at')} mobilityActions={mobilityActions} cultureActions={cultureActions} referralList={referralList} comuneId={currentComuneId} selectedLayer={selectedLayer} layerTrigger={layerTrigger} geoFilter={geoFilter} comuniCoords={comuniCoords} />
               <HeatmapLayer points={[
                 ...filterData(heatmapPoints, 'created_at'), 
                 ...filterData(civicReports, 'created_at'),
