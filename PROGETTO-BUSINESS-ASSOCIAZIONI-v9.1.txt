@@ -1,0 +1,669 @@
+================================================================================
+PROGETTO BUSINESS ASSOCIAZIONI v9.1
+Analisi completa + Piano di collegamento Dashboard PA <-> App Impresa
+================================================================================
+
+Data: 25 febbraio 2026
+Branch: claude/review-production-fixes-3sUvQ
+Obiettivo: Rendere operativo il flusso bidirezionale Associazione <-> Impresa
+
+
+================================================================================
+PARTE 1: INVENTARIO — COSA C'E' GIA' E COME FUNZIONA
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+A. LATO DASHBOARD PA — Tab "TPAS" (Enti e Associazioni)
+────────────────────────────────────────────────────────────────────────────────
+
+Il tab TPAS in DashboardPA.tsx (riga ~2786) ha DUE modalita':
+
+1) VISTA PA ADMIN (AssociazioniPanel.tsx — 1514 righe)
+   ├── Header con 4 KPI: Totali, Tesserati, Attive, Media
+   ├── Lista associazioni filtrabile (nome, sigla, citta', tipo)
+   └── Dettaglio con 4 tab:
+       ├── Anagrafica: nome, sigla, tipo, indirizzo, CF, P.IVA, email, PEC, tel
+       ├── Contatti & Referenti: presidente, referente operativo, delegato SCIA
+       ├── Fatturazione: contratti (tipo, importo, date), fatture (IVA, PagoPA IUV)
+       └── Permessi: assegnazione utenti con ruoli (admin, presidente, referente_scia, operatore)
+
+   Endpoint (REST legacy su orchestratore.mio-hub.me):
+   - CRUD /api/associazioni
+   - CRUD /api/associazioni/:id/contratti
+   - CRUD /api/associazioni/:id/fatture
+   - CRUD /api/associazioni/:id/utenti
+
+   Tipi associazione: COMMERCIANTI, AMBULANTI, ARTIGIANI, MISTA,
+                       AGRICOLTORI, INDUSTRIALI, TURISMO, ALTRO
+
+   Stati: attivo, sospeso, cessato
+
+2) VISTA IMPERSONAZIONE ASSOCIAZIONE (quando admin "entra" come un'associazione)
+   ├── AnagraficaAssociazionePanel.tsx (281 righe) — sola lettura
+   │   ├── Tab Dati: CF, P.IVA, indirizzo, citta', presidente, stato
+   │   ├── Tab Contratti: lista contratti attivi
+   │   └── Tab Fatture: lista fatture con stato pagamento
+   │
+   └── PresenzeAssociatiPanel.tsx (1246 righe) — gestione tesserati
+       ├── Form "Nuovo Tesseramento": cerca impresa, anno, quota, note
+       ├── 4 KPI: Totali, Attivi (verde), Scaduti (rosso), Sospesi (arancio)
+       ├── Lista tesseramenti filtrabile
+       └── Dialog "Scheda Associato" con 5 tab:
+           ├── Dati Impresa: CF, P.IVA, indirizzo, ATECO, contatti
+           ├── Dati Tessera: numero, date, importo, stato pagamento
+           ├── Pratiche SCIA: lista pratiche dell'associato
+           ├── Concessioni: protocollo, tipo, stato, scadenza
+           └── Domande Spunta: ID, mercato, settore, presenze, wallet balance
+
+   Endpoint:
+   - GET/POST/PUT/DELETE /api/associazioni/:id/tesseramenti
+   - GET /api/associazioni/:id/tesseramenti/:tid/scheda
+   - GET /api/imprese?search=... (autocomplete)
+
+   Logica impersonazione:
+   - URL: /dashboard-pa?impersonate=true&associazione_id=X&associazione_nome=Y
+   - Hook: useImpersonation() con isAssociazioneImpersonation()
+   - Filtra: addAssociazioneIdToUrl(url)
+
+────────────────────────────────────────────────────────────────────────────────
+B. LATO DASHBOARD PA — Tab SUAP/SCIA (dentro TPAS)
+────────────────────────────────────────────────────────────────────────────────
+
+SuapPanel.tsx (~1500+ righe) con mode="associazione":
+├── Dashboard KPI
+├── Lista Pratiche SCIA (filtrabile per stato, tipo, data)
+├── Dettaglio Pratica con timeline e check PDND (20+ controlli automatici)
+├── Concessioni
+├── Domande Spunta
+└── Notifiche pratica
+
+Sotto-componenti in client/src/components/suap/:
+├── SciaForm.tsx (73K) — form creazione SCIA completo
+├── ConcessioneForm.tsx — form concessione
+├── DomandaSpuntaForm.tsx — form domanda spunta
+├── NotificheAssociazionePanel.tsx — notifiche per associazione
+├── MessaggiPraticaPanel.tsx — messaggi/timeline pratica
+└── StoricoTitolarita.tsx — trasferimenti titolarita'
+
+Endpoint (REST legacy):
+- CRUD /api/suap/pratiche
+- /api/suap/pratiche/:id/valuta (valutazione automatica PDND)
+- /api/suap/pratiche/:id/stato
+- /api/concessions, /api/domande-spunta
+
+────────────────────────────────────────────────────────────────────────────────
+C. LATO APP IMPRESA — Nuovi tab v9.0 (AnagraficaPage.tsx)
+────────────────────────────────────────────────────────────────────────────────
+
+1) Tab "La Mia Associazione" (AssociazioneSection, righe 1472-1657)
+   STATO NON TESSERATA:
+   - Lista associazioni pubbliche da /api/associazioni/pubbliche
+   - Bottone "Associati" -> POST /api/tesseramenti/richiedi
+   - Stato passa a IN_ATTESA
+
+   STATO TESSERATA:
+   - Dati: nome, numero tessera, scadenza, stato, quota, delega
+   - Bottone "Rinnova Quota" -> PagaConWallet (tipo: quota_associativa)
+
+   Endpoint:
+   - GET /api/tesseramenti/impresa/{impresaId}
+   - GET /api/associazioni/pubbliche
+   - POST /api/tesseramenti/richiedi
+
+2) Tab "Servizi" (ServiziSection, righe 1662-1805)
+   - Sotto-tab Catalogo: lista servizi con prezzo base/associati
+   - Sotto-tab Le Mie Richieste: storico con stato
+   - Pagamento via PagaConWallet (tipo: servizio)
+
+   Endpoint:
+   - GET /api/bandi/servizi
+   - GET /api/bandi/richieste?impresa_id=
+   - POST /api/bandi/richieste
+
+3) Tab "Formazione" (FormazioneSection, righe 1810-1988)
+   - Sotto-tab Attestati: qualificazioni raggruppate per tipo
+   - Sotto-tab Corsi: catalogo con iscrizione + pagamento
+   - Sotto-tab Iscrizioni: storico
+
+   Endpoint:
+   - GET /api/formazione/corsi
+   - GET /api/formazione/iscrizioni?impresa_id=
+   - POST /api/formazione/iscrizioni
+
+4) Componente PagaConWallet.tsx (186 righe)
+   - Carica saldo da GET /api/wallets?impresa_id=
+   - Paga via POST /api/pagamenti/servizio
+   - Tipi: quota_associativa, servizio, corso, generico
+
+────────────────────────────────────────────────────────────────────────────────
+D. LATO BACKEND — Cosa esiste nel tRPC
+────────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENTATO:
+├── wallet.* (completo): list, getById, getByImpresa, create, ricarica,
+│   decurtazione, generaAvvisoPagopa, avviaPagamentoPagopa, verificaPagamento,
+│   stats, tariffe, reportMovimenti
+├── dmsHub.concessions.* : create, list, getById, update
+├── dmsHub.hub.services.* : list, create, update, delete (legati a HUB, non associazioni)
+└── notifications.list (solo lettura)
+
+NON IMPLEMENTATO nel tRPC (gestito da REST legacy orchestratore):
+├── Associazioni CRUD
+├── Tesseramenti CRUD
+├── Servizi associativi (catalogo per associazione)
+├── Corsi/Formazione
+├── Bandi
+├── Notifiche invio (POST)
+└── SCIA (ciclo completo)
+
+────────────────────────────────────────────────────────────────────────────────
+E. LATO DATABASE — Schema Drizzle
+────────────────────────────────────────────────────────────────────────────────
+
+TABELLE PRESENTI:
+├── operatore_wallet (saldo in centesimi, status ATTIVO/BLOCCATO/SOSPESO)
+├── wallet_transazioni (RICARICA, DECURTAZIONE, RIMBORSO, CORREZIONE)
+├── avvisi_pagopa (IUV, stato GENERATO/PAGATO/SCADUTO/ANNULLATO)
+├── tariffe_posteggio
+├── concessions
+├── vendors (operatori/ambulanti)
+├── vendor_documents
+├── vendor_presences
+├── notifications (generiche)
+└── autorizzazioni
+
+TABELLE ASSENTI (servite dall'orchestratore legacy):
+├── associazioni
+├── tesseramenti
+├── servizi_associativi
+├── corsi
+├── iscrizioni_corsi
+├── bandi
+└── notifiche_enti (specifiche per enti/associazioni)
+
+
+================================================================================
+PARTE 2: COSA MANCA — Gap Analysis
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+GAP 1: INFORMAZIONI PUBBLICITARIE ASSOCIAZIONE -> APP IMPRESA
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMA: L'impresa vede solo nome, quota e numero servizi.
+Non vede le informazioni complete dell'associazione (descrizione, servizi
+offerti, referenti, benefici, sede, orari, contatti).
+
+SERVE:
+- L'associazione (dalla dashboard PA impersonata) deve poter compilare una
+  "scheda pubblica" con info pubblicitarie:
+  - Logo/immagine
+  - Descrizione estesa (chi siamo, cosa facciamo)
+  - Lista benefici per gli associati
+  - Servizi offerti con prezzi
+  - Corsi disponibili
+  - Sedi e orari di ricevimento
+  - Contatti (email, telefono, PEC, sito web)
+  - Referente per nuove adesioni
+
+- L'app impresa (tab "La Mia Associazione") deve mostrare queste info
+  complete PRIMA che l'impresa decida di associarsi.
+
+────────────────────────────────────────────────────────────────────────────────
+GAP 2: CATALOGO SERVIZI GESTITO DALL'ASSOCIAZIONE
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMA: I servizi nel tab "Servizi" dell'app vengono da un endpoint generico.
+Non sono collegati alle associazioni specifiche. L'associazione non ha modo
+di creare/aggiornare i propri servizi dalla dashboard.
+
+SERVE:
+- Nella dashboard PA impersonata (associazione), aggiungere sezione
+  "Gestione Servizi" dove l'associazione puo':
+  - Creare servizi (nome, descrizione, prezzo, prezzo associati, categoria)
+  - Modificare/disabilitare servizi
+  - Vedere richieste ricevute
+
+- Nell'app impresa, il catalogo servizi deve essere filtrato per associazione
+  di appartenenza (o mostrare tutti se non tesserata, con prezzo pieno).
+
+────────────────────────────────────────────────────────────────────────────────
+GAP 3: CATALOGO CORSI GESTITO DALL'ASSOCIAZIONE/ENTE FORMATORE
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMA: Come per i servizi. I corsi non sono collegati alle associazioni.
+
+SERVE:
+- Nella dashboard PA impersonata, sezione "Gestione Corsi":
+  - Creare corsi (titolo, descrizione, durata, prezzo, data, posti, sede)
+  - Vedere iscrizioni ricevute
+  - Rilasciare attestati
+
+- Nell'app impresa, il catalogo corsi mostra corsi dell'associazione di
+  appartenenza + corsi aperti a tutti.
+
+────────────────────────────────────────────────────────────────────────────────
+GAP 4: FLUSSO PAGAMENTO QUOTA -> ACCREDITO WALLET ASSOCIAZIONE
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMA: PagaConWallet chiama POST /api/pagamenti/servizio ma:
+- Non esiste un wallet per l'associazione dove accreditare
+- Il pagamento viene addebitato al wallet impresa ma NON accreditato da nessuna parte
+- L'associazione non vede il saldo incassato
+
+SERVE:
+- Ogni associazione deve avere un WALLET ASSOCIAZIONE (come operatore_wallet
+  ma per associazioni)
+- Quando l'impresa paga quota/servizio/corso:
+  1. Addebito wallet impresa (gia' fatto)
+  2. Accredito wallet associazione (DA FARE)
+  3. Registrazione transazione bilaterale
+- L'associazione dalla dashboard vede:
+  - Saldo attuale
+  - Storico incassi (quote, servizi, corsi)
+  - Report mensile
+
+────────────────────────────────────────────────────────────────────────────────
+GAP 5: TESSERA AUTOMATICA DOPO PAGAMENTO
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMA: Oggi il flusso e':
+1. Impresa richiede associazione (POST /api/tesseramenti/richiedi)
+2. Stato: IN_ATTESA
+3. L'associazione deve manualmente approvare (dalla dashboard)
+4. Nessun collegamento con il pagamento della quota
+
+SERVE:
+- Flusso diretto:
+  1. Impresa sceglie associazione e clicca "Associati e Paga"
+  2. PagaConWallet addebita la quota annuale
+  3. Se pagamento OK:
+     a. Crea tesseramento automatico (stato: ATTIVO)
+     b. Genera numero tessera
+     c. Accredita wallet associazione
+     d. Notifica all'associazione: "Nuova iscrizione: [nome impresa]"
+     e. Scheda associato creata automaticamente nel PresenzeAssociatiPanel
+  4. L'associazione vede immediatamente il nuovo tesserato nella dashboard
+
+────────────────────────────────────────────────────────────────────────────────
+GAP 6: INTEROPERABILITA' BIDIREZIONALE APP <-> DASHBOARD
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMA: I due sistemi non comunicano. L'associazione gestisce i tesserati
+dalla dashboard, ma l'impresa non riceve feedback. E viceversa.
+
+SERVE:
+- ASSOCIAZIONE -> IMPRESA:
+  - Invia notifiche (scadenze, promozioni, nuovi corsi, rinnovo tessera)
+  - Aggiorna stato tessera (visibile in tempo reale nell'app)
+  - Rilascia attestati (appaiono nel tab Formazione dell'app)
+  - Aggiorna stato richiesta servizio (app mostra progresso)
+
+- IMPRESA -> ASSOCIAZIONE:
+  - Richiede servizi (appare nella dashboard associazione)
+  - Si iscrive ai corsi (dashboard mostra iscrizione + pagamento)
+  - Rinnova tessera (pagamento diretto)
+  - Segnala problemi/richieste (notifiche bidirezionali)
+
+────────────────────────────────────────────────────────────────────────────────
+GAP 7: ENTI FORMATORI
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMA: Il tab "Enti Formatori" nella dashboard PA non ha un pannello
+dedicato. I corsi non sono collegati a enti formatori specifici.
+
+SERVE:
+- Enti formatori come entita' separate (possono anche essere associazioni)
+- Possono creare corsi e rilasciare attestati
+- Dashboard dedicata per ente formatore (impersonazione)
+
+
+================================================================================
+PARTE 3: SCHEMA DI COLLEGAMENTO — Come si connette tutto
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        FLUSSO BUSINESS ASSOCIAZIONE                        │
+│                                                                            │
+│  DASHBOARD PA (Associazione Impersonata)     APP IMPRESA                   │
+│  ════════════════════════════════════════     ═══════════                   │
+│                                                                            │
+│  ┌──────────────────────┐                    ┌──────────────────────┐      │
+│  │ Scheda Pubblica      │ ──── pubblica ──→  │ Tab "La Mia Assoc."  │      │
+│  │ (info, benefici,     │                    │ - Info associazione   │      │
+│  │  logo, contatti)     │                    │ - Bottone "Associati" │      │
+│  └──────────────────────┘                    └──────────┬───────────┘      │
+│                                                         │                  │
+│  ┌──────────────────────┐                    ┌──────────▼───────────┐      │
+│  │ Gestione Servizi     │ ──── catalogo ──→  │ Tab "Servizi"        │      │
+│  │ - Crea/modifica      │                    │ - Catalogo            │      │
+│  │ - Prezzi base/soci   │                    │ - Richiedi + Paga     │      │
+│  │ - Richieste ricevute │ ◀── richiesta ──  │ - Le Mie Richieste    │      │
+│  └──────────────────────┘                    └──────────────────────┘      │
+│                                                                            │
+│  ┌──────────────────────┐                    ┌──────────────────────┐      │
+│  │ Gestione Corsi       │ ──── catalogo ──→  │ Tab "Formazione"     │      │
+│  │ - Crea/modifica      │                    │ - Corsi disponibili   │      │
+│  │ - Iscrizioni         │                    │ - Iscriviti + Paga    │      │
+│  │ - Rilascio attestati │ ──── attestato ─→  │ - I Miei Attestati    │      │
+│  └──────────────────────┘                    └──────────────────────┘      │
+│                                                                            │
+│  ┌──────────────────────┐         €          ┌──────────────────────┐      │
+│  │ Wallet Associazione  │ ◀── pagamento ──   │ PagaConWallet        │      │
+│  │ - Saldo              │                    │ - Quota associativa   │      │
+│  │ - Storico incassi    │                    │ - Servizio            │      │
+│  │ - Report             │                    │ - Corso               │      │
+│  └──────────────────────┘                    └──────────────────────┘      │
+│                                                                            │
+│  ┌──────────────────────┐                    ┌──────────────────────┐      │
+│  │ Tesserati            │ ◀── iscrizione ──  │ Associati + Paga     │      │
+│  │ - Lista associati    │                    │ -> Tessera automatica │      │
+│  │ - Scheda associato   │ ──── notifica ──→  │ -> Conferma tessera   │      │
+│  │ - Stato pagamento    │                    │ -> Dati tessera       │      │
+│  └──────────────────────┘                    └──────────────────────┘      │
+│                                                                            │
+│  ┌──────────────────────┐                    ┌──────────────────────┐      │
+│  │ Notifiche Ente       │ ──── notifica ──→  │ AppImpresaNotifiche  │      │
+│  │ - Invio massivo      │                    │ - Ricezione           │      │
+│  │ - Per singolo        │ ◀── risposta ───   │ - Risposta            │      │
+│  └──────────────────────┘                    └──────────────────────┘      │
+│                                                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+PARTE 4: PIANO DI IMPLEMENTAZIONE — Cosa fare
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+FASE 1: Endpoint Backend (Manus — orchestratore)
+────────────────────────────────────────────────────────────────────────────────
+
+Tutti questi endpoint vanno sull'orchestratore (REST legacy) perche' le
+tabelle associazioni/tesseramenti sono gia' la'.
+
+1.1 SCHEDA PUBBLICA ASSOCIAZIONE
+    GET  /api/associazioni/:id/scheda-pubblica
+         -> { nome, sigla, tipo, descrizione, benefici[], servizi_count,
+              corsi_count, sedi[], orari, contatti, logo_url, referente }
+
+    PUT  /api/associazioni/:id/scheda-pubblica
+         <- { descrizione, benefici, sedi, orari, logo_url, referente_nome,
+              referente_telefono }
+         (chiamato da dashboard PA impersonata)
+
+    GET  /api/associazioni/pubbliche
+         -> [{ id, nome, sigla, tipo, quota_annuale, descrizione,
+                servizi_count, corsi_count, logo_url }]
+         (chiamato da app impresa — ESISTE GIA', va arricchito)
+
+1.2 SERVIZI ASSOCIAZIONE
+    GET  /api/associazioni/:id/servizi
+         -> [{ id, nome, descrizione, categoria, prezzo_base, prezzo_associati,
+                tempo_medio, disponibile }]
+
+    POST /api/associazioni/:id/servizi
+         <- { nome, descrizione, categoria, prezzo_base, prezzo_associati,
+              tempo_medio }
+
+    PUT  /api/associazioni/:id/servizi/:sid
+         <- { ...campi da aggiornare }
+
+    DELETE /api/associazioni/:id/servizi/:sid
+
+    GET  /api/associazioni/:id/richieste-servizi
+         -> [{ id, impresa_id, impresa_nome, servizio_nome, stato, data,
+                importo, pagato }]
+
+    PUT  /api/associazioni/:id/richieste-servizi/:rid/stato
+         <- { stato: 'IN_LAVORAZIONE' | 'COMPLETATA' | 'RIFIUTATA' }
+
+    --- Lato App Impresa ---
+    GET  /api/bandi/servizi?impresa_id=X
+         (ESISTE GIA' — deve filtrare per associazione dell'impresa
+          e mostrare prezzo_associati se tesserata)
+
+    POST /api/bandi/richieste
+         (ESISTE GIA' — deve creare richiesta + notifica all'associazione)
+
+1.3 CORSI/FORMAZIONE
+    GET  /api/associazioni/:id/corsi
+         -> [{ id, titolo, descrizione, durata_ore, prezzo, categoria,
+                prossima_data, posti_disponibili, sede, ente_formatore }]
+
+    POST /api/associazioni/:id/corsi
+         <- { titolo, descrizione, durata_ore, prezzo, categoria,
+              data_inizio, posti, sede }
+
+    PUT  /api/associazioni/:id/corsi/:cid
+    DELETE /api/associazioni/:id/corsi/:cid
+
+    GET  /api/associazioni/:id/iscrizioni-corsi
+         -> [{ id, impresa_id, impresa_nome, corso_titolo, stato,
+                data_iscrizione, pagato }]
+
+    POST /api/associazioni/:id/corsi/:cid/rilascia-attestato
+         <- { impresa_id, numero_attestato, tipo_qualifica }
+         (crea qualificazione nell'impresa + notifica ATTESTATO_RILASCIATO)
+
+    --- Lato App Impresa ---
+    GET  /api/formazione/corsi?impresa_id=X
+         (ESISTE GIA' — deve filtrare per associazione + aperti a tutti)
+
+    POST /api/formazione/iscrizioni
+         (ESISTE GIA' — deve creare iscrizione + notifica)
+
+1.4 TESSERAMENTO DIRETTO CON PAGAMENTO
+    POST /api/tesseramenti/richiedi-e-paga
+         <- { impresa_id, associazione_id }
+         Logica:
+         1. Verifica associazione esiste e accetta iscrizioni
+         2. Verifica impresa non gia' tesserata
+         3. Ritorna { quota_annuale, associazione_nome } per conferma
+         4. L'app chiama PagaConWallet
+         5. POST /api/pagamenti/servizio con tipo: quota_associativa
+         6. Backend al successo del pagamento:
+            a. Crea tesseramento (stato: ATTIVO, numero_tessera generato)
+            b. Accredita wallet associazione
+            c. Crea scheda associato in PresenzeAssociatiPanel
+            d. Invia notifica all'associazione (tipo: RINNOVO_TESSERA)
+            e. Invia notifica all'impresa (tipo: CONFERMA_PAGAMENTO)
+
+    POST /api/tesseramenti/rinnova
+         <- { tesseramento_id }
+         Logica: come sopra ma aggiorna tesseramento esistente
+
+1.5 WALLET ASSOCIAZIONE
+    GET  /api/associazioni/:id/wallet
+         -> { saldo, totale_incassato, incassi_mese, storico[] }
+
+    GET  /api/associazioni/:id/wallet/transazioni
+         -> [{ id, tipo, importo, impresa_nome, descrizione, data }]
+         Tipi: QUOTA_ASSOCIATIVA, SERVIZIO, CORSO, RIMBORSO
+
+    GET  /api/associazioni/:id/wallet/report?mese=&anno=
+         -> { totale_quote, totale_servizi, totale_corsi, dettaglio[] }
+
+1.6 NOTIFICHE BIDIREZIONALI
+    POST /api/associazioni/:id/notifiche/invia
+         <- { destinatario_id (impresa), titolo, messaggio, tipo_messaggio }
+         (gia' parzialmente implementato in NotificheAssociazionePanel)
+
+    POST /api/associazioni/:id/notifiche/invia-massiva
+         <- { titolo, messaggio, tipo_messaggio, filtro: 'tutti'|'attivi'|'scaduti' }
+
+
+────────────────────────────────────────────────────────────────────────────────
+FASE 2: Modifiche Frontend — Dashboard PA (Associazione Impersonata)
+────────────────────────────────────────────────────────────────────────────────
+
+2.1 NUOVO PANNELLO: GestioneServiziAssociazionePanel.tsx
+    Visibile quando: isAssociazioneImpersonation() === true
+    Posizione: nuovo tab dentro il tab TPAS
+
+    UI:
+    ├── Header: "I Miei Servizi" + bottone "Aggiungi Servizio"
+    ├── Lista servizi con card:
+    │   ├── Nome, categoria, prezzo base / prezzo associati
+    │   ├── Stato (attivo/disattivato)
+    │   └── Azioni: Modifica, Disattiva
+    ├── Dialog "Nuovo Servizio":
+    │   ├── Nome, Descrizione, Categoria (dropdown)
+    │   ├── Prezzo Base (EUR), Prezzo Associati (EUR)
+    │   └── Tempo medio evasione
+    └── Tab "Richieste Ricevute":
+        ├── Lista richieste con stato
+        ├── Filtro per stato
+        └── Azioni: Prendi in carico, Completa, Rifiuta
+
+2.2 NUOVO PANNELLO: GestioneCorsiAssociazionePanel.tsx
+    Visibile quando: isAssociazioneImpersonation() === true
+
+    UI:
+    ├── Header: "I Miei Corsi" + bottone "Aggiungi Corso"
+    ├── Lista corsi con card:
+    │   ├── Titolo, durata, prezzo, prossima data
+    │   ├── Posti disponibili / totali
+    │   └── Azioni: Modifica, Cancella
+    ├── Dialog "Nuovo Corso":
+    │   ├── Titolo, Descrizione, Categoria
+    │   ├── Durata (ore), Prezzo (EUR)
+    │   ├── Data inizio, Posti, Sede
+    │   └── (opzionale) Ente formatore
+    └── Tab "Iscrizioni":
+        ├── Lista iscritti per corso
+        ├── Stato: ISCRITTO, FREQUENTANTE, COMPLETATO
+        └── Azione: "Rilascia Attestato" -> crea qualificazione nell'impresa
+
+2.3 NUOVO PANNELLO: SchedaPubblicaPanel.tsx
+    Visibile quando: isAssociazioneImpersonation() === true
+
+    UI:
+    ├── Preview: come appare all'impresa nell'app
+    ├── Form editabile:
+    │   ├── Descrizione estesa (textarea)
+    │   ├── Benefici per gli associati (lista editabile)
+    │   ├── Sedi e orari (lista editabile)
+    │   ├── Logo/immagine (upload)
+    │   └── Referente adesioni (nome, telefono, email)
+    └── Bottone "Salva e Pubblica"
+
+2.4 NUOVO PANNELLO: WalletAssociazionePanel.tsx
+    Visibile quando: isAssociazioneImpersonation() === true
+
+    UI:
+    ├── Card saldo: "Saldo Attuale: EUR XXX"
+    ├── 3 mini-card: Quote incassate, Servizi incassati, Corsi incassati
+    ├── Grafico mensile incassi (opzionale)
+    └── Tab "Movimenti":
+        ├── Lista transazioni (data, tipo, impresa, importo)
+        └── Filtro per tipo e periodo
+
+2.5 MODIFICA: PresenzeAssociatiPanel.tsx (gia' esistente)
+    Aggiungere:
+    - Indicatore "pagamento confermato" per ogni tesserato
+    - Badge "Iscritto da App" per tesseramenti creati automaticamente
+    - Link alla scheda associato con tutti i dati gia' presenti
+
+────────────────────────────────────────────────────────────────────────────────
+FASE 3: Modifiche Frontend — App Impresa
+────────────────────────────────────────────────────────────────────────────────
+
+3.1 MODIFICA: AssociazioneSection (AnagraficaPage.tsx)
+    NON TESSERATA:
+    - Mostrare scheda pubblica completa (descrizione, benefici, servizi,
+      corsi, contatti) quando si seleziona un'associazione dalla lista
+    - Bottone "Associati e Paga" (unico passaggio) invece di "Associati"
+    - Dopo il pagamento: tessera attiva immediatamente
+
+    TESSERATA:
+    - Mostrare info complete dell'associazione (da scheda pubblica)
+    - Stato tessera in tempo reale
+    - Rinnovo con un click (PagaConWallet)
+
+3.2 MODIFICA: ServiziSection (AnagraficaPage.tsx)
+    - Filtrare servizi per associazione di appartenenza
+    - Se tesserata: mostrare prezzo_associati (scontato)
+    - Se non tesserata: mostrare prezzo_base con nota "Associandoti risparmi X%"
+    - Dopo richiesta: notifica in tempo reale quando stato cambia
+
+3.3 MODIFICA: FormazioneSection (AnagraficaPage.tsx)
+    - Filtrare corsi per associazione di appartenenza + aperti
+    - Mostrare attestati rilasciati dall'associazione
+    - Dopo iscrizione: notifica quando attestato e' rilasciato
+
+3.4 MODIFICA: AppImpresaNotifiche.tsx
+    - Gia' supporta i tipi necessari (RINNOVO_TESSERA, CONFERMA_PAGAMENTO,
+      ISCRIZIONE_CORSO, ATTESTATO_RILASCIATO)
+    - Aggiungere azioni rapide contestuali:
+      - Da notifica RINNOVO_TESSERA -> "Rinnova Ora" (apre PagaConWallet)
+      - Da notifica ATTESTATO_RILASCIATO -> "Visualizza" (apre tab Formazione)
+
+
+================================================================================
+PARTE 5: PRIORITA' E SEQUENZA
+================================================================================
+
+PRIORITA' 1 (Core — senza questo nulla funziona):
+  [P1.1] Endpoint scheda pubblica associazione (GET/PUT)
+  [P1.2] Endpoint tesseramento diretto con pagamento
+  [P1.3] Wallet associazione (accredito su pagamento)
+  [P1.4] Modifica AssociazioneSection per flusso diretto
+
+PRIORITA' 2 (Servizi — valore immediato):
+  [P2.1] CRUD servizi per associazione (backend)
+  [P2.2] GestioneServiziAssociazionePanel (dashboard)
+  [P2.3] Collegare ServiziSection dell'app all'associazione
+
+PRIORITA' 3 (Formazione — valore aggiunto):
+  [P3.1] CRUD corsi per associazione (backend)
+  [P3.2] GestioneCorsiAssociazionePanel (dashboard)
+  [P3.3] Collegare FormazioneSection dell'app all'associazione
+  [P3.4] Rilascio attestati automatico
+
+PRIORITA' 4 (Completamento):
+  [P4.1] SchedaPubblicaPanel (dashboard)
+  [P4.2] WalletAssociazionePanel (dashboard)
+  [P4.3] Notifiche bidirezionali complete
+  [P4.4] Report incassi associazione
+
+
+================================================================================
+PARTE 6: RISULTATO FINALE — Cosa ci salta fuori
+================================================================================
+
+Un ecosistema completo e bidirezionale dove:
+
+1. L'ASSOCIAZIONE dalla dashboard PA puo':
+   - Pubblicare la propria scheda informativa
+   - Gestire catalogo servizi con prezzi differenziati (base vs associati)
+   - Gestire corsi di formazione con iscrizioni
+   - Vedere i tesserati (iscritti automaticamente dall'app)
+   - Ricevere pagamenti direttamente nel proprio wallet
+   - Inviare notifiche agli associati
+   - Rilasciare attestati che appaiono nell'app dell'impresa
+   - Gestire pratiche SCIA per conto degli associati
+   - Vedere report incassi mensili
+
+2. L'IMPRESA dall'app puo':
+   - Sfogliare le associazioni disponibili con info complete
+   - Associarsi e pagare con un solo click (wallet generico)
+   - Ricevere tessera attiva immediatamente
+   - Accedere al catalogo servizi a prezzo scontato
+   - Iscriversi ai corsi e pagare dall'app
+   - Ricevere attestati nel proprio profilo
+   - Rinnovare la tessera annuale con un click
+   - Comunicare con l'associazione via notifiche
+
+3. Il FLUSSO ECONOMICO e':
+   Impresa wallet -> pagamento -> wallet associazione
+   (quota, servizi, corsi = tutto tracciato e riconciliabile)
+
+4. Il FLUSSO INFORMATIVO e':
+   Associazione -> pubblica info/servizi/corsi -> App le mostra
+   Impresa -> richiede/iscrive/paga -> Dashboard lo mostra
+   Bidirezionale via notifiche per aggiornamenti e comunicazioni
+
+================================================================================
+FINE PROGETTO
+================================================================================
