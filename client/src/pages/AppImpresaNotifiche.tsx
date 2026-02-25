@@ -6,11 +6,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { 
-  Bell, BellRing, Mail, MailOpen, Send, Calendar, Clock, 
+import {
+  Bell, BellRing, Mail, MailOpen, Send, Calendar, Clock,
   Building2, GraduationCap, Landmark, CheckCircle, Archive,
   MessageSquare, ArrowLeft, User, RefreshCw, Filter, Search,
-  AlertCircle, FileText, Briefcase, ChevronRight, Download, ExternalLink
+  AlertCircle, FileText, Briefcase, ChevronRight, Download, ExternalLink,
+  Wallet, FileCheck, CreditCard
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -195,7 +196,27 @@ export default function AppImpresaNotifiche() {
       case 'INFORMATIVA': return 'bg-blue-500/20 text-blue-400';
       case 'PROMOZIONALE': return 'bg-emerald-500/20 text-emerald-400';
       case 'URGENTE': return 'bg-red-500/20 text-red-400';
+      case 'ALLERTA_ANOMALIA': return 'bg-red-500/20 text-red-400';
+      case 'RICHIESTA_SERVIZIO': return 'bg-purple-500/20 text-purple-400';
+      case 'CONFERMA_PAGAMENTO': return 'bg-green-500/20 text-green-400';
+      case 'ISCRIZIONE_CORSO': return 'bg-blue-500/20 text-blue-400';
+      case 'ATTESTATO_RILASCIATO': return 'bg-green-500/20 text-green-400';
+      case 'RINNOVO_TESSERA': return 'bg-orange-500/20 text-orange-400';
+      case 'NOTIFICA_VERBALE': return 'bg-red-500/20 text-red-400';
       default: return 'bg-gray-500/20 text-gray-400';
+    }
+  };
+
+  // Icona tipo messaggio
+  const getTipoIcon = (tipo: string) => {
+    switch (tipo) {
+      case 'ALLERTA_ANOMALIA': return <AlertCircle className="w-4 h-4 text-red-400" />;
+      case 'RICHIESTA_SERVIZIO': return <Briefcase className="w-4 h-4 text-purple-400" />;
+      case 'CONFERMA_PAGAMENTO': return <Wallet className="w-4 h-4 text-green-400" />;
+      case 'ISCRIZIONE_CORSO': return <GraduationCap className="w-4 h-4 text-blue-400" />;
+      case 'ATTESTATO_RILASCIATO': return <FileCheck className="w-4 h-4 text-green-400" />;
+      case 'RINNOVO_TESSERA': return <CreditCard className="w-4 h-4 text-orange-400" />;
+      default: return null;
     }
   };
 
@@ -474,26 +495,38 @@ export default function AppImpresaNotifiche() {
                   )}
 
                   {/* Azioni Rapide */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                    <Button 
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <Button
                       variant="outline"
                       className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10 text-sm"
-                      onClick={() => {
-                        setRispostaText('Vorrei richiedere un appuntamento per discutere di questo argomento.');
-                      }}
+                      onClick={() => setRispostaText('Vorrei richiedere un appuntamento per discutere di questo argomento.')}
                     >
                       <Calendar className="w-4 h-4 mr-2" />
-                      Richiedi Appuntamento
+                      Appuntamento
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
-                      className="border-[#10b981]/30 text-[#10b981] hover:bg-[#10b981]/10"
-                      onClick={() => {
-                        setRispostaText('Vorrei iscrivermi al corso menzionato. Potete inviarmi maggiori dettagli?');
-                      }}
+                      className="border-[#10b981]/30 text-[#10b981] hover:bg-[#10b981]/10 text-sm"
+                      onClick={() => setRispostaText('Vorrei iscrivermi al corso menzionato. Potete inviarmi maggiori dettagli?')}
                     >
                       <GraduationCap className="w-4 h-4 mr-2" />
                       Iscriviti al Corso
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-sm"
+                      onClick={() => setRispostaText('Vorrei richiedere il rinnovo del DURC. Potete assistirmi nella procedura?')}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Rinnovo DURC
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10 text-sm"
+                      onClick={() => setRispostaText('Vorrei richiedere assistenza per la pratica SCIA. Potete aiutarmi?')}
+                    >
+                      <FileCheck className="w-4 h-4 mr-2" />
+                      Assistenza SCIA
                     </Button>
                   </div>
 
@@ -552,28 +585,46 @@ export default function AppImpresaNotifiche() {
             Azioni Rapide
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-            <Card className="bg-[#1a2332] border-[#3b82f6]/20 hover:border-[#3b82f6]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl">
+            <Card
+              className="bg-[#1a2332] border-[#3b82f6]/20 hover:border-[#3b82f6]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl"
+              onClick={() => setLocation('/app/impresa/anagrafica?tab=formazione')}
+            >
               <CardContent className="p-3 sm:p-4 text-center">
                 <GraduationCap className="w-8 h-8 mx-auto mb-2 text-[#3b82f6]" />
                 <p className="text-sm font-medium">Corsi Disponibili</p>
                 <p className="text-xs text-[#e8fbff]/50">Visualizza e iscriviti</p>
               </CardContent>
             </Card>
-            <Card className="bg-[#1a2332] border-[#10b981]/20 hover:border-[#10b981]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl">
+            <Card
+              className="bg-[#1a2332] border-[#10b981]/20 hover:border-[#10b981]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl"
+              onClick={() => setLocation('/app/impresa/anagrafica?tab=servizi')}
+            >
               <CardContent className="p-3 sm:p-4 text-center">
                 <FileText className="w-8 h-8 mx-auto mb-2 text-[#10b981]" />
                 <p className="text-sm font-medium">Bandi Aperti</p>
                 <p className="text-xs text-[#e8fbff]/50">Opportunità di finanziamento</p>
               </CardContent>
             </Card>
-            <Card className="bg-[#1a2332] border-[#8b5cf6]/20 hover:border-[#8b5cf6]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl">
+            <Card
+              className="bg-[#1a2332] border-[#8b5cf6]/20 hover:border-[#8b5cf6]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl"
+              onClick={() => {
+                if (notificaSelezionata) {
+                  setRispostaText('Vorrei prenotare un appuntamento. Potete indicarmi le disponibilità?');
+                } else {
+                  setLocation('/app/impresa/anagrafica?tab=associazione');
+                }
+              }}
+            >
               <CardContent className="p-3 sm:p-4 text-center">
                 <Calendar className="w-8 h-8 mx-auto mb-2 text-[#8b5cf6]" />
                 <p className="text-sm font-medium">Prenota Appuntamento</p>
                 <p className="text-xs text-[#e8fbff]/50">Con l'associazione</p>
               </CardContent>
             </Card>
-            <Card className="bg-[#1a2332] border-[#f59e0b]/20 hover:border-[#f59e0b]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl">
+            <Card
+              className="bg-[#1a2332] border-[#f59e0b]/20 hover:border-[#f59e0b]/50 cursor-pointer transition-all py-0 sm:py-6 gap-0 sm:gap-6 rounded-md sm:rounded-xl"
+              onClick={() => setLocation('/app/impresa/anagrafica?tab=qualificazioni')}
+            >
               <CardContent className="p-3 sm:p-4 text-center">
                 <AlertCircle className="w-8 h-8 mx-auto mb-2 text-[#f59e0b]" />
                 <p className="text-sm font-medium">Stato Regolarità</p>

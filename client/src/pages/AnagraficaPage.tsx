@@ -9,12 +9,14 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { 
+import {
   ArrowLeft, Building2, MapPin, FileText, Users, Shield, ClipboardList,
   RefreshCw, Loader2, Calendar, Phone, Globe, ChevronRight,
   CheckCircle, XCircle, Store, User, Wallet, FileCheck, Clock, TrendingUp, Trash2,
-  Camera, Upload, AlertCircle, Send, Eye, FileWarning
+  Camera, Upload, AlertCircle, Send, Eye, FileWarning,
+  Landmark, Briefcase, GraduationCap, CreditCard, Heart
 } from 'lucide-react';
+import { PagaConWallet } from '@/components/PagaConWallet';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -476,12 +478,192 @@ function ConcessioneDetailView({ concessione, onBack }: { concessione: Concessio
 // ============================================================================
 // SUB-SECTION: QUALIFICAZIONI
 // ============================================================================
-function QualificazioniSection({ qualificazioni, loading }: { qualificazioni: QualificazioneData[]; loading: boolean }) {
+function QualificazioniSection({ qualificazioni, loading, impresaId }: { qualificazioni: QualificazioneData[]; loading: boolean; impresaId?: number | null }) {
+  const [adempimenti, setAdempimenti] = useState<any[]>([]);
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState<any>(null);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [sendingAlert, setSendingAlert] = useState(false);
+
+  // Carica adempimenti obbligatori
+  useEffect(() => {
+    if (!impresaId) return;
+    fetch(addComuneIdToUrl(`${API_BASE_URL}/api/adempimenti/impresa/${impresaId}`))
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.adempimenti)) {
+          setAdempimenti(data.adempimenti);
+        }
+      })
+      .catch(() => {});
+  }, [impresaId]);
+
+  // Calcola conteggi per il centro allerte
+  const now = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+  const scadute = qualificazioni.filter(q => {
+    const scadenza = q.data_scadenza ? new Date(q.data_scadenza) : null;
+    return scadenza ? scadenza < now : q.stato?.toUpperCase() === 'SCADUTA';
+  });
+  const inScadenza = qualificazioni.filter(q => {
+    const scadenza = q.data_scadenza ? new Date(q.data_scadenza) : null;
+    return scadenza && scadenza >= now && scadenza <= thirtyDaysFromNow;
+  });
+  const mancanti = adempimenti.filter(a => a.mancante === true);
+  const regolari = qualificazioni.filter(q => {
+    const scadenza = q.data_scadenza ? new Date(q.data_scadenza) : null;
+    if (!scadenza) return q.stato?.toUpperCase() !== 'SCADUTA';
+    return scadenza > thirtyDaysFromNow;
+  });
+
+  const handleSendAlert = async (qualifica: any) => {
+    if (!impresaId) return;
+    setSendingAlert(true);
+    try {
+      // Controlla se l'impresa e' tesserata
+      const tessRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`));
+      const tessData = await tessRes.json();
+      const isTestserata = tessData.success && tessData.data && tessData.data.stato === 'ATTIVO';
+
+      if (!isTestserata) {
+        alert('Non sei ancora associato a un\'associazione. Vai al tab "La Mia Associazione" per associarti e poter inviare segnalazioni.');
+        setSendingAlert(false);
+        setShowAlertDialog(false);
+        return;
+      }
+
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/notifiche/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo_messaggio: 'ALLERTA_ANOMALIA',
+          impresa_id: impresaId,
+          anomalia: qualifica.tipo_qualifica || qualifica.tipo || 'Qualifica mancante/scaduta',
+          messaggio: alertMessage || 'Richiesta assistenza per adempimento scaduto/mancante',
+          data_scadenza: qualifica.data_scadenza || qualifica.dataScadenza,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Segnalazione inviata all\'associazione con successo!');
+        setShowAlertDialog(false);
+        setAlertMessage('');
+      } else {
+        alert(data.error || 'Errore invio segnalazione');
+      }
+    } catch {
+      alert('Errore di connessione');
+    } finally {
+      setSendingAlert(false);
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
-  if (qualificazioni.length === 0) return <EmptyState text="Nessuna qualificazione trovata" />;
+  if (qualificazioni.length === 0 && adempimenti.length === 0) return <EmptyState text="Nessuna qualificazione trovata" />;
 
   return (
-    <div className="space-y-2 sm:space-y-3">
+    <div className="space-y-3 sm:space-y-4">
+      {/* Centro Allerte — contatori */}
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        <Card className="bg-red-500/10 border-red-500/30 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+          <CardContent className="p-2 sm:p-3 text-center">
+            <p className="text-lg sm:text-2xl font-bold text-red-400">{scadute.length}</p>
+            <p className="text-[9px] sm:text-xs text-red-400/70">Scadute</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-orange-500/10 border-orange-500/30 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+          <CardContent className="p-2 sm:p-3 text-center">
+            <p className="text-lg sm:text-2xl font-bold text-orange-400">{inScadenza.length}</p>
+            <p className="text-[9px] sm:text-xs text-orange-400/70">In Scadenza</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-yellow-500/10 border-yellow-500/30 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+          <CardContent className="p-2 sm:p-3 text-center">
+            <p className="text-lg sm:text-2xl font-bold text-yellow-400">{mancanti.length}</p>
+            <p className="text-[9px] sm:text-xs text-yellow-400/70">Mancanti</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-500/10 border-green-500/30 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+          <CardContent className="p-2 sm:p-3 text-center">
+            <p className="text-lg sm:text-2xl font-bold text-green-400">{regolari.length}</p>
+            <p className="text-[9px] sm:text-xs text-green-400/70">Regolari</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Schede allerta per qualifiche scadute e mancanti */}
+      {[...scadute.map(q => ({ ...q, alertType: 'scaduta' as const })), ...mancanti.map(a => ({ ...a, alertType: 'mancante' as const, tipo_qualifica: a.tipo }))].map((item, idx) => (
+        <Card key={`alert-${idx}`} className={`py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x ${item.alertType === 'scaduta' ? 'bg-red-500/5 border-red-500/30' : 'bg-yellow-500/5 border-yellow-500/30'}`}>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${item.alertType === 'scaduta' ? 'text-red-400' : 'text-yellow-400'}`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[#e8fbff]">{item.tipo_qualifica || 'Adempimento'}</p>
+                {item.alertType === 'scaduta' && (
+                  <p className="text-xs text-red-400 mt-0.5">Scaduta il {formatDate((item as any).data_scadenza)}</p>
+                )}
+                {item.alertType === 'mancante' && (item as any).normativa && (
+                  <p className="text-xs text-[#e8fbff]/50 mt-0.5">{(item as any).normativa}</p>
+                )}
+                {(item as any).azioneRichiesta && (
+                  <p className="text-xs text-[#e8fbff]/60 mt-1">{(item as any).azioneRichiesta}</p>
+                )}
+                <Button
+                  size="sm"
+                  className="mt-2 bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs h-7"
+                  onClick={() => { setSelectedAlert(item); setShowAlertDialog(true); }}
+                >
+                  <Send className="w-3 h-3 mr-1" />
+                  Segnala all'Associazione e Chiedi Aiuto
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      {/* Dialog invio allerta */}
+      {showAlertDialog && selectedAlert && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowAlertDialog(false)}>
+          <Card className="bg-[#1a2332] border-[#f59e0b]/30 w-full max-w-md py-0 gap-0" onClick={e => e.stopPropagation()}>
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-[#f59e0b]" />
+                <h3 className="text-base font-semibold text-[#e8fbff]">Segnala Anomalia</h3>
+              </div>
+              <div className="bg-[#0b1220]/50 rounded-lg p-3 border border-[#f59e0b]/20">
+                <p className="text-sm text-[#e8fbff]/60">Anomalia</p>
+                <p className="text-base font-medium text-[#e8fbff]">{selectedAlert.tipo_qualifica || 'Adempimento mancante'}</p>
+              </div>
+              <div>
+                <label className="text-sm text-[#e8fbff]/60 block mb-1">Messaggio aggiuntivo</label>
+                <textarea
+                  value={alertMessage}
+                  onChange={e => setAlertMessage(e.target.value)}
+                  rows={3}
+                  placeholder="Descrivi il problema o la richiesta di aiuto..."
+                  className="w-full bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-3 text-[#e8fbff] resize-none focus:outline-none focus:border-[#f59e0b] text-sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" className="flex-1 text-[#e8fbff]/50" onClick={() => setShowAlertDialog(false)}>Annulla</Button>
+                <Button
+                  className="flex-1 bg-[#f59e0b] hover:bg-[#d97706] text-white"
+                  disabled={sendingAlert}
+                  onClick={() => handleSendAlert(selectedAlert)}
+                >
+                  {sendingAlert ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  Invia
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Lista qualificazioni esistenti */}
       {qualificazioni.map((q) => {
         // Calcola lo stato dalla data di scadenza (priorità sulle date reali, non sul campo stato DB)
         const now = new Date();
@@ -1285,6 +1467,527 @@ function PresenzeSection({ presenze, stats, loading, onNavigateGiustifica, giust
 }
 
 // ============================================================================
+// SUB-SECTION: LA MIA ASSOCIAZIONE
+// ============================================================================
+function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
+  const [tesseramento, setTesseramento] = useState<any>(null);
+  const [associazioni, setAssociazioni] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAssociazione, setSelectedAssociazione] = useState<any>(null);
+  const [pagaOpen, setPagaOpen] = useState(false);
+  const [pagaInfo, setPagaInfo] = useState<{ importo: number; descrizione: string; tipo: 'quota_associativa' | 'servizio' | 'corso'; riferimentoId?: number }>({ importo: 0, descrizione: '', tipo: 'quota_associativa' });
+  const [richiestaInCorso, setRichiestaInCorso] = useState(false);
+
+  useEffect(() => {
+    if (!impresaId) { setLoading(false); return; }
+    const load = async () => {
+      setLoading(true);
+      try {
+        // Verifica tesseramento attivo
+        const tessRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`));
+        const tessData = await tessRes.json();
+        if (tessData.success && tessData.data) {
+          setTesseramento(tessData.data);
+        } else {
+          setTesseramento(null);
+          // Carica lista associazioni disponibili
+          const assocRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/pubbliche`));
+          const assocData = await assocRes.json();
+          if (assocData.success && Array.isArray(assocData.data)) {
+            setAssociazioni(assocData.data);
+          }
+        }
+      } catch {
+        setTesseramento(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [impresaId]);
+
+  const handleRichiestaAssociazione = async (associazioneId: number) => {
+    if (!impresaId) return;
+    setRichiestaInCorso(true);
+    try {
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/tesseramenti/richiedi`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ impresa_id: impresaId, associazione_id: associazioneId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Richiesta di adesione inviata con successo! Sarai contattato dall\'associazione.');
+        setTesseramento(data.data || { stato: 'IN_ATTESA' });
+      } else {
+        alert(data.error || 'Errore richiesta adesione');
+      }
+    } catch {
+      alert('Errore di connessione');
+    } finally {
+      setRichiestaInCorso(false);
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+
+  // Impresa tesserata
+  if (tesseramento && tesseramento.stato === 'ATTIVO') {
+    return (
+      <div className="space-y-3 sm:space-y-4">
+        <SectionCard icon={Landmark} title="La Mia Associazione">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Landmark className="w-6 h-6 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-base font-semibold text-[#e8fbff]">{tesseramento.associazione_nome || 'Associazione'}</p>
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">Tesserato</Badge>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              <InfoField label="N. Tessera" value={tesseramento.numero_tessera} />
+              <InfoField label="Scadenza" value={formatDate(tesseramento.data_scadenza)} />
+              <InfoField label="Stato Tesseramento" value={tesseramento.stato} />
+            </div>
+            {/* Quota annuale */}
+            <div className="bg-[#0b1220]/50 rounded-lg p-3 border border-[#14b8a6]/10 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#e8fbff]/50">Quota Annuale</p>
+                <p className="text-base font-bold text-[#e8fbff]">&euro;{parseFloat(tesseramento.quota_annuale || '0').toFixed(2)}</p>
+              </div>
+              <Badge className={tesseramento.quota_pagata ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}>
+                {tesseramento.quota_pagata ? 'Pagata' : 'Da Pagare'}
+              </Badge>
+            </div>
+            {/* Azioni */}
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10">
+                <Send className="w-3 h-3 mr-1" /> Contatta
+              </Button>
+              <Button size="sm" variant="outline" className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10">
+                <Briefcase className="w-3 h-3 mr-1" /> Richiedi Servizio
+              </Button>
+              {!tesseramento.quota_pagata && (
+                <Button
+                  size="sm"
+                  className="bg-[#10b981] hover:bg-[#059669] text-white"
+                  onClick={() => {
+                    setPagaInfo({ importo: parseFloat(tesseramento.quota_annuale || '50'), descrizione: `Quota Associativa ${new Date().getFullYear()} — ${tesseramento.associazione_nome}`, tipo: 'quota_associativa', riferimentoId: tesseramento.id });
+                    setPagaOpen(true);
+                  }}
+                >
+                  <Wallet className="w-3 h-3 mr-1" /> Rinnova Quota
+                </Button>
+              )}
+            </div>
+            {/* Delega procuratore */}
+            <div className="bg-[#0b1220]/30 rounded-lg p-3 border border-[#14b8a6]/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-[#14b8a6]" />
+                <span className="text-sm text-[#e8fbff]/70">Delega come Procuratore</span>
+              </div>
+              <input type="checkbox" className="w-4 h-4 rounded" defaultChecked={tesseramento.delega_procuratore} />
+            </div>
+          </div>
+        </SectionCard>
+        <PagaConWallet open={pagaOpen} onClose={() => setPagaOpen(false)} importo={pagaInfo.importo} descrizione={pagaInfo.descrizione} tipo={pagaInfo.tipo} riferimentoId={pagaInfo.riferimentoId} impresaId={impresaId} onSuccess={() => { setTesseramento({ ...tesseramento, quota_pagata: true }); }} />
+      </div>
+    );
+  }
+
+  // Impresa NON tesserata
+  return (
+    <div className="space-y-3 sm:space-y-4">
+      {/* Banner vantaggi */}
+      <Card className="bg-gradient-to-r from-emerald-500/10 to-[#14b8a6]/10 border-emerald-500/30 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Heart className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="text-base font-semibold text-[#e8fbff] mb-1">Unisciti a un'Associazione</h3>
+              <p className="text-sm text-[#e8fbff]/60">
+                Le associazioni di categoria offrono assistenza burocratica, corsi di formazione,
+                servizi DURC/SCIA, e rappresentanza presso la PA. Associandoti avrai accesso
+                a tariffe agevolate e supporto dedicato.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lista associazioni */}
+      {associazioni.length === 0 ? (
+        <EmptyState text="Nessuna associazione disponibile al momento" />
+      ) : (
+        associazioni.map((assoc) => (
+          <Card key={assoc.id} className="bg-[#1a2332] border-[#14b8a6]/20 hover:border-[#14b8a6]/40 transition-all py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <Landmark className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold text-[#e8fbff]">{assoc.nome}</p>
+                  {assoc.descrizione && <p className="text-xs text-[#e8fbff]/50 mt-1 line-clamp-2">{assoc.descrizione}</p>}
+                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                    {assoc.quota_annuale && <span>Quota: &euro;{parseFloat(assoc.quota_annuale).toFixed(2)}/anno</span>}
+                    {assoc.servizi_count && <span>{assoc.servizi_count} servizi</span>}
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs h-7"
+                      disabled={richiestaInCorso}
+                      onClick={() => handleRichiestaAssociazione(assoc.id)}
+                    >
+                      {richiestaInCorso ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Heart className="w-3 h-3 mr-1" />}
+                      Associati
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// SUB-SECTION: SERVIZI
+// ============================================================================
+function ServiziSection({ impresaId }: { impresaId: number | null }) {
+  const [servizi, setServizi] = useState<any[]>([]);
+  const [richieste, setRichieste] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [subTab, setSubTab] = useState<'catalogo' | 'richieste'>('catalogo');
+  const [pagaOpen, setPagaOpen] = useState(false);
+  const [pagaInfo, setPagaInfo] = useState<{ importo: number; descrizione: string; riferimentoId?: number }>({ importo: 0, descrizione: '' });
+
+  useEffect(() => {
+    if (!impresaId) { setLoading(false); return; }
+    const load = async () => {
+      setLoading(true);
+      try {
+        // Carica catalogo servizi (endpoint gia' esistente)
+        const servRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/bandi/servizi`));
+        const servData = await servRes.json();
+        if (servData.success && Array.isArray(servData.data)) {
+          setServizi(servData.data);
+        }
+        // Carica le mie richieste (endpoint gia' esistente)
+        const richRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/bandi/richieste?impresa_id=${impresaId}`));
+        const richData = await richRes.json();
+        if (richData.success && Array.isArray(richData.data)) {
+          setRichieste(richData.data);
+        }
+      } catch { /* silenzioso */ }
+      setLoading(false);
+    };
+    load();
+  }, [impresaId]);
+
+  const handleRichiestaServizio = async (servizio: any) => {
+    if (!impresaId) return;
+    try {
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/bandi/richieste`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ impresa_id: impresaId, servizio_id: servizio.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Richiesta servizio inviata!');
+        setRichieste(prev => [...prev, data.data || { id: Date.now(), servizio_nome: servizio.nome, stato: 'RICHIESTA', created_at: new Date().toISOString() }]);
+        // Offri pagamento se ha un prezzo
+        if (servizio.prezzo_associati || servizio.prezzo_base) {
+          setPagaInfo({
+            importo: parseFloat(servizio.prezzo_associati || servizio.prezzo_base || '0'),
+            descrizione: `Servizio: ${servizio.nome}`,
+            riferimentoId: servizio.id,
+          });
+          setPagaOpen(true);
+        }
+      } else {
+        alert(data.error || 'Errore invio richiesta');
+      }
+    } catch {
+      alert('Errore di connessione');
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+
+  const getStatoRichiestaColor = (stato: string) => {
+    switch (stato?.toUpperCase()) {
+      case 'RICHIESTA': return 'bg-blue-500/20 text-blue-400';
+      case 'IN_LAVORAZIONE': return 'bg-yellow-500/20 text-yellow-400';
+      case 'COMPLETATA': return 'bg-green-500/20 text-green-400';
+      default: return 'bg-gray-500/20 text-gray-400';
+    }
+  };
+
+  return (
+    <div className="space-y-3 sm:space-y-4">
+      {/* Sub-tab toggle */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setSubTab('catalogo')}
+          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${subTab === 'catalogo' ? 'bg-[#14b8a6] text-white' : 'bg-[#1a2332] text-[#e8fbff]/60 hover:text-[#e8fbff]'}`}
+        >
+          Catalogo Servizi
+        </button>
+        <button
+          onClick={() => setSubTab('richieste')}
+          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${subTab === 'richieste' ? 'bg-[#14b8a6] text-white' : 'bg-[#1a2332] text-[#e8fbff]/60 hover:text-[#e8fbff]'}`}
+        >
+          Le Mie Richieste ({richieste.length})
+        </button>
+      </div>
+
+      {subTab === 'catalogo' && (
+        servizi.length === 0 ? (
+          <EmptyState text="Nessun servizio disponibile" />
+        ) : (
+          servizi.map((s) => (
+            <Card key={s.id} className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm sm:text-base font-semibold text-[#e8fbff]">{s.nome}</p>
+                    {s.categoria && <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] text-xs mt-1">{s.categoria}</Badge>}
+                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                      {s.prezzo_base && <span>Prezzo: &euro;{parseFloat(s.prezzo_base).toFixed(2)}</span>}
+                      {s.prezzo_associati && <span className="text-emerald-400">Soci: &euro;{parseFloat(s.prezzo_associati).toFixed(2)}</span>}
+                      {s.tempo_medio && <span>Tempo: {s.tempo_medio}</span>}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white text-xs h-8"
+                    onClick={() => handleRichiestaServizio(s)}
+                  >
+                    <Briefcase className="w-3 h-3 mr-1" /> Richiedi
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )
+      )}
+
+      {subTab === 'richieste' && (
+        richieste.length === 0 ? (
+          <EmptyState text="Nessuna richiesta di servizio effettuata" />
+        ) : (
+          richieste.map((r) => (
+            <Card key={r.id} className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-[#e8fbff]">{r.servizio_nome || `Richiesta #${r.id}`}</p>
+                    <p className="text-xs text-gray-500 mt-1">{formatDate(r.created_at)}</p>
+                  </div>
+                  <Badge className={getStatoRichiestaColor(r.stato)}>{r.stato}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )
+      )}
+
+      <PagaConWallet open={pagaOpen} onClose={() => setPagaOpen(false)} importo={pagaInfo.importo} descrizione={pagaInfo.descrizione} tipo="servizio" riferimentoId={pagaInfo.riferimentoId} impresaId={impresaId} />
+    </div>
+  );
+}
+
+// ============================================================================
+// SUB-SECTION: FORMAZIONE
+// ============================================================================
+function FormazioneSection({ impresaId, qualificazioni }: { impresaId: number | null; qualificazioni: QualificazioneData[] }) {
+  const [corsi, setCorsi] = useState<any[]>([]);
+  const [iscrizioni, setIscrizioni] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [subTab, setSubTab] = useState<'attestati' | 'corsi' | 'iscrizioni'>('attestati');
+  const [pagaOpen, setPagaOpen] = useState(false);
+  const [pagaInfo, setPagaInfo] = useState<{ importo: number; descrizione: string; riferimentoId?: number }>({ importo: 0, descrizione: '' });
+
+  useEffect(() => {
+    if (!impresaId) { setLoading(false); return; }
+    const load = async () => {
+      setLoading(true);
+      try {
+        // Carica corsi disponibili (endpoint gia' esistente)
+        const corsiRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/formazione/corsi`));
+        const corsiData = await corsiRes.json();
+        if (corsiData.success && Array.isArray(corsiData.data)) {
+          setCorsi(corsiData.data);
+        }
+        // Carica le mie iscrizioni (endpoint gia' esistente)
+        const iscrRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/formazione/iscrizioni?impresa_id=${impresaId}`));
+        const iscrData = await iscrRes.json();
+        if (iscrData.success && Array.isArray(iscrData.data)) {
+          setIscrizioni(iscrData.data);
+        }
+      } catch { /* silenzioso */ }
+      setLoading(false);
+    };
+    load();
+  }, [impresaId]);
+
+  const handleIscrizione = async (corso: any) => {
+    if (!impresaId) return;
+    try {
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/formazione/iscrizioni`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ impresa_id: impresaId, corso_id: corso.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Iscrizione al corso completata!');
+        setIscrizioni(prev => [...prev, data.data || { id: Date.now(), corso_nome: corso.nome, stato: 'ISCRITTO', created_at: new Date().toISOString() }]);
+        // Pagamento se il corso ha un prezzo
+        if (corso.prezzo && parseFloat(corso.prezzo) > 0) {
+          setPagaInfo({
+            importo: parseFloat(corso.prezzo),
+            descrizione: `Iscrizione: ${corso.nome}`,
+            riferimentoId: corso.id,
+          });
+          setPagaOpen(true);
+        }
+      } else {
+        alert(data.error || 'Errore iscrizione');
+      }
+    } catch {
+      alert('Errore di connessione');
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+
+  // Raggruppa qualificazioni per tipo (attestati)
+  const attestatiPerTipo = qualificazioni.reduce((acc, q) => {
+    const tipo = q.tipo_qualifica || 'Altro';
+    if (!acc[tipo]) acc[tipo] = [];
+    acc[tipo].push(q);
+    return acc;
+  }, {} as Record<string, QualificazioneData[]>);
+
+  return (
+    <div className="space-y-3 sm:space-y-4">
+      {/* Sub-tab toggle */}
+      <div className="flex gap-2 overflow-x-auto">
+        <button
+          onClick={() => setSubTab('attestati')}
+          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${subTab === 'attestati' ? 'bg-[#14b8a6] text-white' : 'bg-[#1a2332] text-[#e8fbff]/60 hover:text-[#e8fbff]'}`}
+        >
+          I Miei Attestati ({qualificazioni.length})
+        </button>
+        <button
+          onClick={() => setSubTab('corsi')}
+          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${subTab === 'corsi' ? 'bg-[#14b8a6] text-white' : 'bg-[#1a2332] text-[#e8fbff]/60 hover:text-[#e8fbff]'}`}
+        >
+          Corsi Disponibili ({corsi.length})
+        </button>
+        <button
+          onClick={() => setSubTab('iscrizioni')}
+          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${subTab === 'iscrizioni' ? 'bg-[#14b8a6] text-white' : 'bg-[#1a2332] text-[#e8fbff]/60 hover:text-[#e8fbff]'}`}
+        >
+          Le Mie Iscrizioni ({iscrizioni.length})
+        </button>
+      </div>
+
+      {subTab === 'attestati' && (
+        Object.keys(attestatiPerTipo).length === 0 ? (
+          <EmptyState text="Nessun attestato registrato" />
+        ) : (
+          Object.entries(attestatiPerTipo).map(([tipo, items]) => (
+            <SectionCard key={tipo} icon={FileCheck} title={tipo}>
+              <div className="space-y-2">
+                {items.map(q => {
+                  const scadenza = q.data_scadenza ? new Date(q.data_scadenza) : null;
+                  const isScaduta = scadenza ? scadenza < new Date() : q.stato?.toUpperCase() === 'SCADUTA';
+                  return (
+                    <div key={q.id} className="flex items-center justify-between p-2 bg-[#0b1220]/30 rounded-lg">
+                      <div className="min-w-0">
+                        <p className="text-sm text-[#e8fbff]">{q.ente_rilascio || '-'}</p>
+                        <p className="text-xs text-gray-500">N. {q.numero_attestato || '-'} — Scadenza: {formatDate(q.data_scadenza)}</p>
+                      </div>
+                      {isScaduta ? <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" /> : <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />}
+                    </div>
+                  );
+                })}
+              </div>
+            </SectionCard>
+          ))
+        )
+      )}
+
+      {subTab === 'corsi' && (
+        corsi.length === 0 ? (
+          <EmptyState text="Nessun corso disponibile" />
+        ) : (
+          corsi.map((c) => (
+            <Card key={c.id} className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm sm:text-base font-semibold text-[#e8fbff]">{c.nome}</p>
+                    {c.ente && <p className="text-xs text-gray-400 mt-0.5">{c.ente}</p>}
+                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                      {c.data && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDate(c.data)}</span>}
+                      {c.durata && <span>{c.durata}</span>}
+                      {c.sede && <span>{c.sede}</span>}
+                      {c.posti && <span>Posti: {c.posti}</span>}
+                    </div>
+                    {c.prezzo && <p className="text-xs text-[#14b8a6] font-medium mt-1">&euro;{parseFloat(c.prezzo).toFixed(2)}</p>}
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600 text-white text-xs h-8"
+                    onClick={() => handleIscrizione(c)}
+                  >
+                    <GraduationCap className="w-3 h-3 mr-1" /> Iscriviti
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )
+      )}
+
+      {subTab === 'iscrizioni' && (
+        iscrizioni.length === 0 ? (
+          <EmptyState text="Nessuna iscrizione a corsi" />
+        ) : (
+          iscrizioni.map((i) => (
+            <Card key={i.id} className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-[#e8fbff]">{i.corso_nome || `Iscrizione #${i.id}`}</p>
+                    <p className="text-xs text-gray-500 mt-1">{formatDate(i.created_at)}</p>
+                  </div>
+                  <Badge className={i.stato === 'COMPLETATO' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}>
+                    {i.stato || 'ISCRITTO'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )
+      )}
+
+      <PagaConWallet open={pagaOpen} onClose={() => setPagaOpen(false)} importo={pagaInfo.importo} descrizione={pagaInfo.descrizione} tipo="corso" riferimentoId={pagaInfo.riferimentoId} impresaId={impresaId} />
+    </div>
+  );
+}
+
+// ============================================================================
 // SHARED COMPONENTS
 // ============================================================================
 function LoadingSpinner() {
@@ -1746,7 +2449,14 @@ function GiustificazioniSection({ impresaId, giustificazioni, concessioni, onRef
 // ============================================================================
 export default function AnagraficaPage() {
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState('impresa');
+  // Leggi tab iniziale da URL params (?tab=associazione)
+  const initialTab = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('tab') || 'impresa';
+    } catch { return 'impresa'; }
+  })();
+  const [activeTab, setActiveTab] = useState(initialTab);
   // v4.5.6: Stato per pre-compilare il form giustifica dal banner presenze
   const [prefillGiustifica, setPrefillGiustifica] = useState<{ market_name: string; stall_number: string; giorno: string; comune: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1861,6 +2571,9 @@ export default function AnagraficaPage() {
     { id: 'impresa', label: 'Impresa', icon: Building2, count: null },
     { id: 'concessioni', label: 'Concessioni', icon: MapPin, count: concessioni.length },
     { id: 'qualificazioni', label: 'Qualifiche', icon: Shield, count: qualificazioni.length },
+    { id: 'associazione', label: 'Associazione', icon: Landmark, count: null },
+    { id: 'servizi', label: 'Servizi', icon: Briefcase, count: null },
+    { id: 'formazione', label: 'Formazione', icon: GraduationCap, count: null },
     { id: 'autorizzazioni', label: 'Autoriz.', icon: FileCheck, count: autorizzazioni.length },
     { id: 'domande', label: 'Spunta', icon: ClipboardList, count: domande.length },
     { id: 'presenze', label: 'Presenze', icon: Clock, count: presenze.length },
@@ -1927,7 +2640,10 @@ export default function AnagraficaPage() {
             ? <ConcessioneDetailView concessione={selectedConcessione} onBack={() => setSelectedConcessione(null)} />
             : <ConcessioniSection concessioni={concessioni} loading={loading} onSelect={setSelectedConcessione} />
         )}
-        {activeTab === 'qualificazioni' && <QualificazioniSection qualificazioni={qualificazioni} loading={loading} />}
+        {activeTab === 'qualificazioni' && <QualificazioniSection qualificazioni={qualificazioni} loading={loading} impresaId={IMPRESA_ID} />}
+        {activeTab === 'associazione' && <AssociazioneSection impresaId={IMPRESA_ID} />}
+        {activeTab === 'servizi' && <ServiziSection impresaId={IMPRESA_ID} />}
+        {activeTab === 'formazione' && <FormazioneSection impresaId={IMPRESA_ID} qualificazioni={qualificazioni} />}
         {activeTab === 'autorizzazioni' && (
           selectedAutorizzazione
             ? <AutorizzazioneDetailView autorizzazione={selectedAutorizzazione} onBack={() => setSelectedAutorizzazione(null)} />
