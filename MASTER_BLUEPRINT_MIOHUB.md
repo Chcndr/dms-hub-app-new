@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.0.1 (Tesseramenti & Adempimenti)
+> **Versione:** 9.0.2 (Migrazione URL Backend Unico)
 > **Data:** 25 Febbraio 2026
 > **Autore:** Sistema documentato da Manus AI & Claude AI  
 > **Stato:** PRODUZIONE
@@ -50,6 +50,34 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 25 Febbraio 2026 — v9.0.2 — Migrazione Completa API URL a Backend Unico
+
+**Contesto:** Merge del fix di Claude che rimuove tutti i riferimenti ai backend dismessi (`orchestratore.mio-hub.me`, `mihub.157-90-29-66.nip.io`, `manusvm.computer`) e punta tutto al backend REST unico `api.mio-hub.me`.
+
+**Stato:** ✅ COMPLETATO
+
+**Frontend (dms-hub-app-new) — commit `357bc0f` (merge di `ed51f7f`):**
+- ✅ **42 file modificati** (+147 -116): tutti i fallback URL nel codice sorgente ora puntano a `api.mio-hub.me`
+- ✅ **`config/api.ts`:** `MIHUB_API_BASE_URL`, `ORCHESTRATORE_API_BASE_URL`, `TCC_API_BASE` tutti aggiornati a `api.mio-hub.me`
+- ✅ **`vercel.json`:** +6 rewrites mancanti aggiunti (collaboratori, dashboard, integrations, routing, stalls, hub)
+- ✅ **`vercel.json`:** 8 rewrites corretti da backend dismessi a `api.mio-hub.me`
+- ✅ **Zero riferimenti** a `orchestratore.mio-hub.me` nel codice eseguibile (restano solo in un README di documentazione)
+- ✅ **Zero riferimenti** a `mihub.157-90-29-66.nip.io` in tutto il codebase
+- ✅ **Zero riferimenti** a `manusvm.computer` in tutto il codebase
+
+**Backend dismessi (in cantina):**
+
+| Backend | Status |
+|---|---|
+| `orchestratore.mio-hub.me` | In cantina, rimosso ovunque |
+| `mihub.157-90-29-66.nip.io` | In cantina, rimosso ovunque |
+| `manusvm.computer` | Morto, rimosso ovunque |
+| **`api.mio-hub.me`** | **Unico backend attivo** |
+
+**Pulizia Branch:** Branch `claude/review-production-fixes-3sUvQ` cancellato dopo il merge.
+
+---
 
 ### Sessione 25 Febbraio 2026 — Progetto v9.0.1 — Tesseramenti & Adempimenti
 
