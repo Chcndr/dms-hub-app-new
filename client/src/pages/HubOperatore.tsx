@@ -24,7 +24,8 @@ import {
   Clock,
   AlertCircle,
   ArrowLeft,
-  WifiOff
+  WifiOff,
+  MapPin
 } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
@@ -306,6 +307,8 @@ export default function HubOperatore() {
   const [apiConnected, setApiConnected] = useState<boolean | null>(null);
   // Token auth corrente
   const [authToken, setAuthToken] = useState<string | null>(null);
+  // Hub-today: verifica se oggi c'e' un mercato-hub attivo per l'operatore
+  const [hubToday, setHubToday] = useState<{ isActive: boolean; markets: { name: string; giorno: string; hubLocationId: number }[] } | null>(null);
 
   // Operatore da Firebase Auth (con fallback a localStorage per backward compat)
   // Include impresaId per fallback wallet lookup (v5.8.0)
@@ -378,6 +381,10 @@ export default function HubOperatore() {
   useEffect(() => {
     if (operatore.id > 0 || operatore.impresaId) {
       loadOperatorWallet();
+      // Verifica se oggi c'e' un mercato-hub attivo per l'operatore
+      if (operatore.id > 0) {
+        loadHubToday();
+      }
     }
     loadTccConfig();
   }, [operatore.id, operatore.impresaId, authToken]);
@@ -469,22 +476,8 @@ export default function HubOperatore() {
       // L'impresaId puo' venire dal wallet response (priorita') o dall'operatore
       const impresaId = resolvedImpresaId || operatore.impresaId;
 
-      // Tentativo 1: transazioni per impresaId (endpoint documentato e funzionante)
-      if (impresaId) {
-        try {
-          const res = await fetch(`${API_BASE}/impresa/${impresaId}/wallet/transactions?limit=20`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-          if (res.ok) {
-            data = await res.json();
-          }
-        } catch (err) {
-          console.warn('Impresa transactions fetch failed:', err);
-        }
-      }
-
-      // Tentativo 2: transazioni per operatorId (fallback legacy)
-      if ((!data || !data.success || !Array.isArray(data.transactions) || data.transactions.length === 0) && operatore.id > 0) {
+      // Tentativo 1: transazioni per operatorId (restituisce TUTTE le transazioni, no JOIN rotto sulle date)
+      if (operatore.id > 0) {
         try {
           const res = await fetch(`${API_BASE}/operator/transactions/${operatore.id}?limit=20`, {
             headers: { 'Authorization': `Bearer ${token}` },
@@ -494,6 +487,20 @@ export default function HubOperatore() {
           }
         } catch (err) {
           console.warn('Operator transactions fetch failed:', err);
+        }
+      }
+
+      // Tentativo 2: transazioni per impresaId (fallback — puo' restituire risultati parziali)
+      if ((!data || !data.success || !Array.isArray(data.transactions) || data.transactions.length === 0) && impresaId) {
+        try {
+          const res = await fetch(`${API_BASE}/impresa/${impresaId}/wallet/transactions?limit=20`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (res.ok) {
+            data = await res.json();
+          }
+        } catch (err) {
+          console.warn('Impresa transactions fetch failed:', err);
         }
       }
 
@@ -518,6 +525,23 @@ export default function HubOperatore() {
       }
     } catch (error) {
       console.error('Errore caricamento config:', error);
+    }
+  };
+
+  const loadHubToday = async () => {
+    try {
+      const token = await getCurrentToken();
+      const res = await fetch(`${API_BASE}/operator/${operatore.id}/hub-today`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success !== false) {
+          setHubToday(data);
+        }
+      }
+    } catch {
+      // Silenzioso — endpoint potrebbe non esistere ancora
     }
   };
 
@@ -592,6 +616,7 @@ export default function HubOperatore() {
         },
         body: JSON.stringify({
           operator_id: operatore.id,
+          impresa_id: operatore.impresaId,
           qr_data: scannedData,
           euro_amount: parseFloat(amount),
           certifications: selectedCerts,
@@ -644,6 +669,7 @@ export default function HubOperatore() {
         },
         body: JSON.stringify({
           operator_id: operatore.id,
+          impresa_id: operatore.impresaId,
           qr_data: scannedData,
           timestamp: Date.now(),
         })
@@ -888,6 +914,25 @@ export default function HubOperatore() {
             Riprova
           </Button>
         </div>
+      )}
+
+      {/* Banner hub-today: mostra se oggi c'e' un mercato-hub attivo */}
+      {hubToday && (
+        hubToday.isActive ? (
+          <div className="bg-[#10b981]/90 px-4 py-2 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-white" />
+            <span className="text-sm text-white font-medium">
+              Oggi operi a: {hubToday.markets.map(m => `${m.name} (${m.giorno})`).join(', ')}
+            </span>
+            <div className="w-2 h-2 rounded-full bg-white animate-pulse ml-auto" />
+          </div>
+        ) : (
+          <div className="bg-gray-600/50 px-4 py-2 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-gray-300">Nessun mercato-hub oggi</span>
+            <div className="w-2 h-2 rounded-full bg-gray-400 ml-auto" />
+          </div>
+        )
       )}
 
       {/* Banner utente non autenticato */}

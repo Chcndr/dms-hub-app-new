@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { 
-  MapPin, 
-  Users, 
+import {
+  MapPin,
+  Users,
   Building2,
   Loader2,
   FileText,
@@ -22,7 +22,10 @@ import {
   ExternalLink,
   AlertCircle,
   Wallet,
-  Calendar
+  Calendar,
+  Leaf,
+  RefreshCw,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -67,6 +70,7 @@ interface Market {
   longitude: string;
   cost_per_sqm?: number;
   annual_market_days?: number;
+  hub_location_id?: number | null;
 }
 
 interface Stall {
@@ -701,6 +705,213 @@ function AnagraficaTab({ market, onUpdate }: { market: Market; onUpdate: () => v
           <label className="text-sm font-medium text-[#e8fbff]/50">GIS Market ID</label>
           <p className="text-lg font-semibold text-[#8b5cf6]/70 mt-1">{market.gis_market_id}</p>
         </div>
+      </div>
+
+      {/* Sezione Hub TCC Carbon Credit */}
+      <HubTCCSection market={market} onUpdate={onUpdate} />
+    </div>
+  );
+}
+
+/**
+ * Sezione Hub TCC Carbon Credit — mostra stato hub e permette abilitazione/disabilitazione
+ */
+function HubTCCSection({ market, onUpdate }: { market: Market; onUpdate: () => void }) {
+  const [hubStatus, setHubStatus] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const fetchHubStatus = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/hub-status`));
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setHubStatus(data);
+        } else {
+          setHubStatus(null);
+        }
+      } else {
+        setHubStatus(null);
+      }
+    } catch {
+      setHubStatus(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [market.id]);
+
+  useEffect(() => { fetchHubStatus(); }, [fetchHubStatus]);
+
+  const handleEnable = async () => {
+    if (!window.confirm(`Confermi l'abilitazione di "${market.name}" come Hub TCC?\n\nTutte le imprese con concessione attiva o spunta approvata riceveranno un Hub Operatore.`)) return;
+    setActionLoading(true);
+    try {
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/markets/${market.id}/enable-hub`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || 'Hub TCC abilitato con successo', {
+          description: `Hub ID: ${data.hubLocationId} — ${data.collegamentiCreati || 0} imprese collegate`
+        });
+        fetchHubStatus();
+        onUpdate();
+      } else {
+        toast.error(data.error || 'Errore abilitazione hub');
+      }
+    } catch {
+      toast.error('Errore di connessione');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setActionLoading(true);
+    try {
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/markets/${market.id}/sync-hub`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || 'Sincronizzazione completata', {
+          description: data.nuoviCollegamenti ? `${data.nuoviCollegamenti} nuovi collegamenti` : undefined
+        });
+        fetchHubStatus();
+      } else {
+        toast.error(data.error || 'Errore sincronizzazione');
+      }
+    } catch {
+      toast.error('Errore di connessione');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDisable = async () => {
+    if (!window.confirm(`Confermi la disabilitazione di "${market.name}" come Hub TCC?\n\nGli operatori hub collegati a questo mercato non potranno piu' emettere/riscattare TCC in giornata di mercato.`)) return;
+    setActionLoading(true);
+    try {
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/markets/${market.id}/disable-hub`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || 'Hub TCC disabilitato');
+        fetchHubStatus();
+        onUpdate();
+      } else {
+        toast.error(data.error || 'Errore disabilitazione hub');
+      }
+    } catch {
+      toast.error('Errore di connessione');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
+        <div className="flex items-center gap-2 text-[#e8fbff]/50">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="text-sm">Verifica stato Hub TCC...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const isHub = hubStatus?.isHub || !!market.hub_location_id;
+
+  if (!isHub) {
+    return (
+      <div className="bg-gradient-to-br from-[#0b1220]/50 to-[#0b1220]/30 p-5 rounded-lg border border-[#14b8a6]/20">
+        <div className="flex items-center gap-2 mb-3">
+          <Leaf className="w-5 h-5 text-[#14b8a6]" />
+          <h4 className="text-base font-semibold text-[#e8fbff]">Hub TCC Carbon Credit</h4>
+        </div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-3 h-3 rounded-full bg-red-500" />
+          <span className="text-sm font-medium text-red-400">Non abilitato</span>
+        </div>
+        <p className="text-sm text-[#e8fbff]/60 mb-4">
+          Abilitando questo mercato come Hub TCC, tutte le imprese con concessione attiva o spunta approvata riceveranno un Hub Operatore per emettere e riscattare carbon credit token nel giorno di mercato ({market.days || 'N/D'}).
+        </p>
+        {hubStatus && (
+          <p className="text-xs text-[#e8fbff]/40 mb-4">
+            Imprese coinvolte: <span className="text-[#14b8a6] font-semibold">{hubStatus.concessioni ?? 0}</span> concessionari, <span className="text-[#14b8a6] font-semibold">{hubStatus.spunte ?? 0}</span> spuntisti
+          </p>
+        )}
+        <Button
+          onClick={handleEnable}
+          disabled={actionLoading}
+          className="bg-[#10b981] hover:bg-[#059669] text-white"
+        >
+          {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Leaf className="w-4 h-4 mr-2" />}
+          {actionLoading ? 'Abilitazione...' : 'Abilita come Hub TCC'}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-[#10b981]/5 to-[#0b1220]/30 p-5 rounded-lg border border-[#10b981]/30">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Leaf className="w-5 h-5 text-[#10b981]" />
+          <h4 className="text-base font-semibold text-[#e8fbff]">Hub TCC Carbon Credit</h4>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-[#10b981]" />
+          <span className="text-sm font-medium text-[#10b981]">
+            Abilitato — Hub ID: {hubStatus?.hubLocationId || market.hub_location_id}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="bg-[#0b1220]/40 rounded-lg p-3 text-center">
+          <p className="text-lg font-bold text-[#14b8a6]">{hubStatus?.impreseCollegate ?? '-'}</p>
+          <p className="text-xs text-[#e8fbff]/50">Imprese Collegate</p>
+        </div>
+        <div className="bg-[#0b1220]/40 rounded-lg p-3 text-center">
+          <p className="text-lg font-bold text-[#10b981]">{hubStatus?.walletAttivi ?? '-'}</p>
+          <p className="text-xs text-[#e8fbff]/50">Wallet Attivi</p>
+        </div>
+        <div className="bg-[#0b1220]/40 rounded-lg p-3 text-center">
+          <p className="text-lg font-bold text-[#f59e0b]">{hubStatus?.walletSospesi ?? '-'}</p>
+          <p className="text-xs text-[#e8fbff]/50">Wallet Sospesi</p>
+        </div>
+        <div className="bg-[#0b1220]/40 rounded-lg p-3 text-center">
+          <p className="text-lg font-bold text-[#e8fbff]/70">{market.days || '-'}</p>
+          <p className="text-xs text-[#e8fbff]/50">Giorno Operativo</p>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          onClick={handleSync}
+          disabled={actionLoading}
+          variant="outline"
+          className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
+        >
+          {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+          Sincronizza
+        </Button>
+        <Button
+          onClick={handleDisable}
+          disabled={actionLoading}
+          variant="outline"
+          className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+        >
+          {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+          Disabilita
+        </Button>
       </div>
     </div>
   );
