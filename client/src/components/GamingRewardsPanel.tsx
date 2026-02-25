@@ -42,10 +42,10 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// URL API REST Gaming Rewards — in produzione usa proxy Vercel (/api/gaming-rewards/* → orchestratore.mio-hub.me)
+// URL API REST Gaming Rewards — in produzione usa proxy Vercel (/api/gaming-rewards/* → api.mio-hub.me)
 // In sviluppo usa l'URL diretto dell'orchestratore
 const API_BASE_URL = import.meta.env.DEV
-  ? 'https://orchestratore.mio-hub.me'
+  ? 'https://api.mio-hub.me'
   : '';
 
 // URL API Hetzner per civic-reports

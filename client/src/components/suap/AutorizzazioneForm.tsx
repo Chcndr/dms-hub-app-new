@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { addComuneIdToUrl } from '@/hooks/useImpersonation';
 
 // API URL
-const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 // Tipi per i dati dal database
 interface Market {

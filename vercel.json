@@ -37,15 +37,15 @@
     },
     {
       "source": "/api/sanctions/:path*",
-      "destination": "https://mihub.157-90-29-66.nip.io/api/sanctions/:path*"
+      "destination": "https://api.mio-hub.me/api/sanctions/:path*"
     },
     {
       "source": "/api/notifiche/:path*",
-      "destination": "https://mihub.157-90-29-66.nip.io/api/notifiche/:path*"
+      "destination": "https://api.mio-hub.me/api/notifiche/:path*"
     },
     {
       "source": "/api/verbali/:path*",
-      "destination": "https://mihub.157-90-29-66.nip.io/api/verbali/:path*"
+      "destination": "https://api.mio-hub.me/api/verbali/:path*"
     },
     {
       "source": "/api/imprese/:path*",
@@ -57,19 +57,19 @@
     },
     {
       "source": "/api/citizens/:path*",
-      "destination": "https://orchestratore.mio-hub.me/api/citizens/:path*"
+      "destination": "https://api.mio-hub.me/api/citizens/:path*"
     },
     {
       "source": "/api/citizens",
-      "destination": "https://orchestratore.mio-hub.me/api/citizens"
+      "destination": "https://api.mio-hub.me/api/citizens"
     },
     {
       "source": "/api/gaming-rewards/:path*",
-      "destination": "https://orchestratore.mio-hub.me/api/gaming-rewards/:path*"
+      "destination": "https://api.mio-hub.me/api/gaming-rewards/:path*"
     },
     {
       "source": "/api/tcc/:path*",
-      "destination": "https://orchestratore.mio-hub.me/api/tcc/:path*"
+      "destination": "https://api.mio-hub.me/api/tcc/:path*"
     },
     {
       "source": "/api/logs/:path*",
@@ -81,7 +81,7 @@
     },
     {
       "source": "/api/github/:path*",
-      "destination": "https://orchestratore.mio-hub.me/api/github/:path*"
+      "destination": "https://api.mio-hub.me/api/github/:path*"
     },
     {
       "source": "/api/markets",
@@ -110,6 +110,34 @@
     {
       "source": "/api/pagamenti/:path*",
       "destination": "https://api.mio-hub.me/api/pagamenti/:path*"
+    },
+    {
+      "source": "/api/collaboratori/:path*",
+      "destination": "https://api.mio-hub.me/api/collaboratori/:path*"
+    },
+    {
+      "source": "/api/collaboratori",
+      "destination": "https://api.mio-hub.me/api/collaboratori"
+    },
+    {
+      "source": "/api/dashboard/:path*",
+      "destination": "https://api.mio-hub.me/api/dashboard/:path*"
+    },
+    {
+      "source": "/api/integrations/:path*",
+      "destination": "https://api.mio-hub.me/api/integrations/:path*"
+    },
+    {
+      "source": "/api/routing/:path*",
+      "destination": "https://api.mio-hub.me/api/routing/:path*"
+    },
+    {
+      "source": "/api/stalls/:path*",
+      "destination": "https://api.mio-hub.me/api/stalls/:path*"
+    },
+    {
+      "source": "/api/hub/:path*",
+      "destination": "https://api.mio-hub.me/api/hub/:path*"
     },
     {
       "source": "/(.*)",

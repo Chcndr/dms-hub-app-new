@@ -2,7 +2,7 @@
  * Orchestrator Client - REST API verso backend Hetzner
  * 
  * L'orchestratore vive SOLO su Hetzner (mihub-backend-rest).
- * Questo client chiama direttamente https://orchestratore.mio-hub.me/mihub/orchestrator
+ * Questo client chiama direttamente https://api.mio-hub.me/mihub/orchestrator
  * 
  * NON usa tRPC, NON passa per Vercel serverless functions.
  */
@@ -45,10 +45,10 @@ export interface OrchestratorResponse {
 /**
  * Base URL del backend Hetzner
  * - Production/Preview: usa VITE_API_URL se configurato
- * - Fallback: https://orchestratore.mio-hub.me
+ * - Fallback: https://api.mio-hub.me
  */
 const baseUrl =
-  import.meta.env.VITE_API_URL ?? "https://orchestratore.mio-hub.me";
+  import.meta.env.VITE_API_URL ?? "https://api.mio-hub.me";
 
 /**
  * Chiama l'orchestratore su Hetzner

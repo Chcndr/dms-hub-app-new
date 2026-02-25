@@ -20,10 +20,10 @@ import {
 import BottomNav from '@/components/BottomNav';
 import { authenticatedFetch } from '@/hooks/useImpersonation';
 
-// API Base URL — in produzione usa proxy Vercel (/api/tcc/* → orchestratore.mio-hub.me)
+// API Base URL — in produzione usa proxy Vercel (/api/tcc/* → api.mio-hub.me)
 // MIHUB_API_BASE_URL punta a mihub Hetzner che NON serve API TCC, quindi usiamo il proxy
 const API_BASE = import.meta.env.DEV
-  ? 'https://orchestratore.mio-hub.me'
+  ? 'https://api.mio-hub.me'
   : '';
 
 // ============================================================================

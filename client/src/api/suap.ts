@@ -5,7 +5,7 @@
 
 import { addComuneIdToUrl, addAssociazioneIdToUrl, getImpersonationParams, isAssociazioneImpersonation } from '@/hooks/useImpersonation';
 
-const baseUrl = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+const baseUrl = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 export interface SuapPratica {
   id: number;

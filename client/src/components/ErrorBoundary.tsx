@@ -27,7 +27,7 @@ class ErrorBoundary extends Component<Props, State> {
 
     // Invia errore al backend REST per monitoring persistente
     try {
-      const apiUrl = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
+      const apiUrl = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
       fetch(`${apiUrl}/api/logs/client-error`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

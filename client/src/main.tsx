@@ -42,7 +42,7 @@ createRoot(document.getElementById("root")!).render(
 );
 
 // Global error monitoring — cattura errori non gestiti e li invia al backend REST
-const API_ERROR_URL = `${(import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io')}/api/logs/client-error`;
+const API_ERROR_URL = `${(import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me')}/api/logs/client-error`;
 
 window.addEventListener('error', (event) => {
   if (event.error) {

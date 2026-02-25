@@ -89,8 +89,8 @@ const FirebaseAuthContext = createContext<FirebaseAuthContextType | null>(null);
 // CONSTANTS
 // ============================================
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
-const TRPC_BASE = import.meta.env.VITE_TRPC_URL || 'https://mihub.157-90-29-66.nip.io';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const TRPC_BASE = import.meta.env.VITE_TRPC_URL || 'https://api.mio-hub.me';
 
 // ============================================
 // HELPER: Lookup user in orchestratore legacy DB

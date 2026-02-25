@@ -49,7 +49,7 @@ export function useInternalTraces(
         setLoading(true);
         setError(null);
 
-        const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+        const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
         const response = await fetch(
           `${apiBaseUrl}/api/mio/agent-logs?conversation_id=${conversationId}&limit=100`
         );

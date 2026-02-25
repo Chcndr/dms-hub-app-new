@@ -3,7 +3,7 @@
  * Integrazione con Regione Toscana per SPID/CIE/CNS
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 // Session token in sessionStorage (si cancella alla chiusura del browser, non accessibile da altri tab)
 // User info resta in localStorage per persistenza UX

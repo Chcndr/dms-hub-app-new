@@ -66,7 +66,7 @@ export default function MarketGISPage() {
   // Carica lista mercati all'avvio
   const loadMarkets = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_MIHUB_API_URL || 'https://orchestratore.mio-hub.me';
+      const apiUrl = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
       const response = await fetch(addComuneIdToUrl(`${apiUrl}/api/markets`));
       const result = await response.json();
       if (result.success && result.data) {
@@ -89,7 +89,7 @@ export default function MarketGISPage() {
     setError(null);
     
     try {
-      const apiUrl = import.meta.env.VITE_MIHUB_API_URL || 'https://orchestratore.mio-hub.me';
+      const apiUrl = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
       // Se non c'è targetMarketId, carica la mappa base (Italia)
       const endpoint = targetMarketId 
         ? `${apiUrl}/api/gis/market-map/${targetMarketId}`
