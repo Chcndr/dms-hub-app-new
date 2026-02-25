@@ -92,6 +92,26 @@
       "destination": "https://api.mio-hub.me/api/markets/:path*"
     },
     {
+      "source": "/api/tesseramenti/:path*",
+      "destination": "https://orchestratore.mio-hub.me/api/tesseramenti/:path*"
+    },
+    {
+      "source": "/api/associazioni/:path*",
+      "destination": "https://orchestratore.mio-hub.me/api/associazioni/:path*"
+    },
+    {
+      "source": "/api/bandi/:path*",
+      "destination": "https://orchestratore.mio-hub.me/api/bandi/:path*"
+    },
+    {
+      "source": "/api/formazione/:path*",
+      "destination": "https://orchestratore.mio-hub.me/api/formazione/:path*"
+    },
+    {
+      "source": "/api/pagamenti/:path*",
+      "destination": "https://orchestratore.mio-hub.me/api/pagamenti/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
