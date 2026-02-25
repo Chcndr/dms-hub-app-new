@@ -1,0 +1,181 @@
+# Operazione Congiunta Frontend v9.0 — Riepilogo Completo
+
+Branch: claude/review-production-fixes-3sUvQ
+Base: origin/master @ d9f1ce9
+Tag pre-lavoro: stable-v8.21.1-pre-v9.0
+Build: pnpm check passa senza errori su entrambi i commit
+
+
+## COMMIT 1: Fix Bug Storico Transazioni TCC + Hub Operatore Frontend
+
+Commit: 3d23e8c — Tag: v9.0.0-hub-operatore
+File modificati: 2 (+270/-14 righe)
+
+### 1A — Fix ordine endpoint transazioni (HubOperatore.tsx)
+
+Problema: /impresa/{id}/wallet/transactions fa una JOIN rotta sulle date e restituisce solo 4/16 transazioni. Il fallback su /operator/transactions/{operatorId} non scattava mai perche' il primo endpoint ritorna success: true con risultati parziali.
+
+Fix: invertito l'ordine — ora il primario e' /operator/transactions/{operatorId} (restituisce TUTTE le transazioni), il fallback e' /impresa/{id}/wallet/transactions.
+
+### 1B — Passaggio impresaId nelle chiamate issue/redeem (HubOperatore.tsx)
+
+Aggiunto impresa_id: operatore.impresaId nel body JSON di:
+- POST /api/tcc/v2/operator/issue (emissione crediti)
+- POST /api/tcc/v2/operator/redeem-spend (riscatto spesa)
+
+### 1C — Sezione Hub TCC in Anagrafica mercato (GestioneMercati.tsx)
+
+Nuova sezione HubTCCSection (~160 righe) nel tab Anagrafica di GestioneMercati, dopo il campo GIS Market ID.
+
+Due stati:
+- Non abilitato: pallino rosso, spiegazione, bottone "Abilita Hub TCC"
+- Abilitato: pallino verde, Hub ID, 4 card statistiche (Operatori attivi, Crediti emessi, Transazioni oggi, Volume giornaliero), bottoni Sincronizza/Disabilita
+
+Endpoint attesi da Manus (backend):
+- GET /api/markets/:id/hub-status -> { enabled, hub_location_id, stats: { active_operators, credits_issued, transactions_today, daily_volume } }
+- POST /api/markets/:id/enable-hub -> { success, hub_location_id }
+- POST /api/markets/:id/sync-hub -> { success, synced_operators }
+- DELETE /api/markets/:id/disable-hub -> { success }
+
+### 1D — Verifica hub-today (HubOperatore.tsx)
+
+Nuovo stato hubToday, funzione loadHubToday() che chiama GET /api/tcc/v2/operator/{operatorId}/hub-today.
+
+Banner colorato in cima:
+- Verde se il mercato di oggi ha un hub TCC abilitato (mostra nome mercato + hub)
+- Grigio se nessun hub TCC associato al mercato di oggi
+
+Endpoint atteso da Manus:
+- GET /api/tcc/v2/operator/:operatorId/hub-today -> { success, hub_active, market_name, hub_name }
+
+
+## COMMIT 2: Modello Business Associativo Frontend
+
+Commit: e0a690c — Tag: v9.0.0-modello-associativo
+File modificati: 3 esistenti + 1 nuovo (+978/-25 righe)
+
+### 2A — Centro Allerte in QualificazioniSection (AnagraficaPage.tsx)
+
+Estesa QualificazioniSection con prop impresaId. Aggiunto fetch adempimenti e 4 card contatori colorati:
+- Rosso: Scadute (qualificazioni con data_scadenza passata)
+- Arancio: In Scadenza (scadono entro 30 giorni)
+- Giallo: Mancanti (adempimenti obbligatori senza qualificazione)
+- Verde: Regolari
+
+Card allerta per ogni qualificazione scaduta/mancante con bottone "Segnala all'Associazione" + dialog di conferma.
+
+Endpoint attesi da Manus:
+- GET /api/impresa/:id/adempimenti-obbligatori -> { success, data: [{ codice, nome, descrizione }] }
+- POST /api/impresa/:id/segnala-associazione -> { success } (body: { tipo, codice, note })
+
+### 2B — Estensioni notifiche (AppImpresaNotifiche.tsx)
+
+6 nuovi tipi notifica con colori: ALLERTA_ANOMALIA, RICHIESTA_SERVIZIO, CONFERMA_PAGAMENTO, ISCRIZIONE_CORSO, ATTESTATO_RILASCIATO, RINNOVO_TESSERA
+
+Nuova funzione getTipoIcon che mappa ogni tipo a un'icona Lucide.
+
+Azioni rapide inline estese da 2 a 4: Appuntamento, Corso, Rinnovo DURC, Assistenza SCIA.
+
+4 card azioni in basso ora navigano a:
+- Corsi -> /app/impresa/anagrafica?tab=formazione
+- Bandi -> ?tab=servizi
+- Appuntamento -> ?tab=associazione
+- Regolarita' -> ?tab=qualificazioni
+
+### 2C — Sub-tab "La Mia Associazione" (AnagraficaPage.tsx)
+
+Nuovo tab associazione (icona Landmark) in AnagraficaPage.
+
+Se tesserata: dati associazione, stato quota annuale, bottoni azioni (Rinnova Tessera, Richiedi Assistenza, Contatta), sezione delega con toggle attiva/disattiva.
+
+Se non tesserata: banner benefici + lista associazioni disponibili con bottone "Associati".
+
+Endpoint attesi da Manus:
+- GET /api/impresa/:id/associazione -> { success, data: { nome, tipo, tessera_numero, tessera_scadenza, quota_annuale, quota_pagata, delega_attiva, referente, telefono, email } } oppure { success, data: null } se non tesserata
+- GET /api/associazioni/disponibili -> { success, data: [{ id, nome, tipo, quota_annuale, servizi_inclusi, sedi }] }
+- POST /api/impresa/:id/associazione/azione -> { success } (body: { azione: 'rinnova'|'assistenza'|'contatta'|'associati', associazione_id? })
+- PATCH /api/impresa/:id/associazione/delega -> { success } (body: { attiva: boolean })
+
+### 2D — Sub-tab "Servizi" (AnagraficaPage.tsx)
+
+Nuovo tab servizi (icona Briefcase). Due sotto-tab: Catalogo e Le Mie Richieste.
+
+Catalogo: lista servizi con card, bottone "Richiedi" che apre PagaConWallet per il pagamento.
+Richieste: storico richieste con stato (in_attesa/approvata/completata/rifiutata) e badge colorati.
+
+Endpoint attesi da Manus:
+- GET /api/bandi/servizi?impresa_id=:id -> { success, data: [{ id, nome, descrizione, costo, categoria, disponibile }] }
+- GET /api/impresa/:id/servizi-richiesti -> { success, data: [{ id, servizio_nome, data_richiesta, stato, importo }] }
+- Il pagamento passa per POST /api/pagamenti/servizio (gia' implementato in PagaConWallet)
+
+### 2E — Sub-tab "Formazione" (AnagraficaPage.tsx)
+
+Nuovo tab formazione (icona GraduationCap). Tre sotto-tab: Attestati, Corsi Disponibili, Iscrizioni.
+
+Attestati: qualificazioni raggruppate per tipo con card colorate.
+Corsi: lista corsi disponibili con dettagli (durata, costo, prossima data), bottone Iscriviti con pagamento wallet.
+Iscrizioni: storico iscrizioni con stato.
+
+Endpoint attesi da Manus:
+- GET /api/formazione/corsi?impresa_id=:id -> { success, data: [{ id, titolo, descrizione, durata_ore, costo, categoria, prossima_data, posti_disponibili }] }
+- GET /api/impresa/:id/iscrizioni-corsi -> { success, data: [{ id, corso_titolo, data_iscrizione, stato, data_inizio }] }
+- Il pagamento passa per POST /api/pagamenti/servizio con tipo: 'corso'
+
+### 2F — Componente PagaConWallet (nuovo file)
+
+client/src/components/PagaConWallet.tsx (~170 righe)
+
+Dialog modale riutilizzabile per pagamenti da wallet generico. Props: open, onClose, onSuccess, importo, descrizione, tipo, riferimentoId, impresaId.
+
+Carica saldo da GET /api/wallets?impresa_id= (cerca wallet tipo GENERICO o SPUNTISTA).
+- Se saldo sufficiente: bottone conferma -> POST /api/pagamenti/servizio
+- Se saldo insufficiente: errore + redirect a /app/impresa/wallet
+
+Usato da: ServiziSection, FormazioneSection, AssociazioneSection.
+
+Endpoint gia' esistenti usati:
+- GET /api/wallets?impresa_id=:id (lettura saldo)
+- POST /api/pagamenti/servizio (pagamento — body: { impresa_id, importo, tipo, riferimento_id, descrizione })
+
+
+## Navigazione URL params
+
+AnagraficaPage ora legge ?tab= dall'URL per aprire direttamente un tab specifico:
+- /app/impresa/anagrafica?tab=associazione
+- /app/impresa/anagrafica?tab=servizi
+- /app/impresa/anagrafica?tab=formazione
+- /app/impresa/anagrafica?tab=qualificazioni
+
+
+## Riepilogo Git
+
+Tag: stable-v8.21.1-pre-v9.0  (base master @ d9f1ce9)
+Commit 1: 3d23e8c  Tag: v9.0.0-hub-operatore
+Commit 2: e0a690c  Tag: v9.0.0-modello-associativo
+Branch: claude/review-production-fixes-3sUvQ
+Build: pnpm check PASSA su entrambi i commit
+
+
+## Totale endpoint attesi da Manus (backend)
+
+| Endpoint | Metodo | Usato da |
+|----------|--------|----------|
+| /api/markets/:id/hub-status | GET | GestioneMercati HubTCCSection |
+| /api/markets/:id/enable-hub | POST | GestioneMercati HubTCCSection |
+| /api/markets/:id/sync-hub | POST | GestioneMercati HubTCCSection |
+| /api/markets/:id/disable-hub | DELETE | GestioneMercati HubTCCSection |
+| /api/tcc/v2/operator/:id/hub-today | GET | HubOperatore |
+| /api/impresa/:id/adempimenti-obbligatori | GET | AnagraficaPage QualificazioniSection |
+| /api/impresa/:id/segnala-associazione | POST | AnagraficaPage QualificazioniSection |
+| /api/impresa/:id/associazione | GET | AnagraficaPage AssociazioneSection |
+| /api/associazioni/disponibili | GET | AnagraficaPage AssociazioneSection |
+| /api/impresa/:id/associazione/azione | POST | AnagraficaPage AssociazioneSection |
+| /api/impresa/:id/associazione/delega | PATCH | AnagraficaPage AssociazioneSection |
+| /api/bandi/servizi | GET | AnagraficaPage ServiziSection |
+| /api/impresa/:id/servizi-richiesti | GET | AnagraficaPage ServiziSection |
+| /api/formazione/corsi | GET | AnagraficaPage FormazioneSection |
+| /api/impresa/:id/iscrizioni-corsi | GET | AnagraficaPage FormazioneSection |
+| /api/pagamenti/servizio | POST | PagaConWallet (gia' esistente) |
+| /api/wallets?impresa_id= | GET | PagaConWallet (gia' esistente) |
+
+15 nuovi endpoint + 2 esistenti riutilizzati
