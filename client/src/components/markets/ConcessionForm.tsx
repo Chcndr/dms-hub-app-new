@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FileText, X, AlertCircle, Loader2, Trash2, Users, MapPin, Calendar, Building2 } from 'lucide-react';
 import { authenticatedFetch } from '@/hooks/useImpersonation';
 
-const API_BASE_URL = 'https://orchestratore.mio-hub.me';
+const API_BASE_URL = 'https://api.mio-hub.me';
 
 const TIPO_CONCESSIONE_OPTIONS = [
   { value: 'subingresso', label: 'Subingresso' },

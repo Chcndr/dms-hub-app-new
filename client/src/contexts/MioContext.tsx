@@ -97,7 +97,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
 
     try {
       // 🚀 CHIAMATA DIRETTA A HETZNER - NON PASSA PER VERCEL PROXY
-      // Usa callOrchestrator() che chiama https://orchestratore.mio-hub.me/api/mihub/orchestrator
+      // Usa callOrchestrator() che chiama https://api.mio-hub.me/api/mihub/orchestrator
       const data = await callOrchestrator({
         mode: "auto",
         message: text,

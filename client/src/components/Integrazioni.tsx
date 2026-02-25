@@ -217,7 +217,7 @@ function APIDashboard() {
             enabled: true,
             test: true,
             service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
+            base_url: 'https://api.mio-hub.me'
           },
           {
             id: 'workspace.list',
@@ -228,7 +228,7 @@ function APIDashboard() {
             enabled: true,
             test: true,
             service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
+            base_url: 'https://api.mio-hub.me'
           },
           {
             id: 'chats.list',
@@ -239,7 +239,7 @@ function APIDashboard() {
             enabled: true,
             test: true,
             service_id: 'mihub-backend-rest',
-            base_url: 'https://orchestratore.mio-hub.me'
+            base_url: 'https://api.mio-hub.me'
           }
         ];
         // Add system endpoints only if not already present from index.json
@@ -708,7 +708,7 @@ function APIDashboard() {
           
         // SUAP & PDND - chiamate REST dirette
         case '/api/suap/stats':
-          const suapStatsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/stats`, {
+          const suapStatsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/suap/stats`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
           });
@@ -716,14 +716,14 @@ function APIDashboard() {
           break;
         case '/api/suap/pratiche':
           if (endpointInfo?.method === 'POST') {
-            const suapCreateRes = await authenticatedFetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/pratiche`, {
+            const suapCreateRes = await authenticatedFetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/suap/pratiche`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
               body: JSON.stringify(parsedBody),
             });
             data = await suapCreateRes.json();
           } else {
-            const suapListRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/pratiche?${new URLSearchParams(parsedBody)}`, {
+            const suapListRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/suap/pratiche?${new URLSearchParams(parsedBody)}`, {
               method: 'GET',
               headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
             });
@@ -732,7 +732,7 @@ function APIDashboard() {
           break;
         case '/api/suap/pratiche/:id':
           const suapId = parsedBody.id || 1;
-          const suapDetailRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/pratiche/${suapId}`, {
+          const suapDetailRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/suap/pratiche/${suapId}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
           });
@@ -741,7 +741,7 @@ function APIDashboard() {
 
         case '/api/suap/pratiche/:id/valuta':
           const suapEvalId = parsedBody.id || 1;
-          const suapEvalRes = await authenticatedFetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/suap/pratiche/${suapEvalId}/valuta`, {
+          const suapEvalRes = await authenticatedFetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/suap/pratiche/${suapEvalId}/valuta`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-ente-id': 'MOCK_ENTE_001' },
           });
@@ -750,21 +750,21 @@ function APIDashboard() {
 
         // SYSTEM & WORKSPACE
         case '/api/system/status':
-          const sysStatusRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/system/status`, {
+          const sysStatusRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/system/status`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
           data = await sysStatusRes.json();
           break;
         case '/api/workspace/files':
-          const wsFilesRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/workspace/files`, {
+          const wsFilesRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/workspace/files`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
           data = await wsFilesRes.json();
           break;
         case '/api/mihub/chats':
-          const chatsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/mihub/chats`, {
+          const chatsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/mihub/chats`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
@@ -780,14 +780,14 @@ function APIDashboard() {
           data = await stallsStatsRes.json();
           break;
         case '/api/gis/markets':
-          const gisRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/gis/markets`, {
+          const gisRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/gis/markets`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
           data = await gisRes.json();
           break;
         case '/api/abacus/sql/query':
-          const abacusRes = await authenticatedFetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/abacus/sql/query`, {
+          const abacusRes = await authenticatedFetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/abacus/sql/query`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-agent-id': 'dev' }, // Requires auth
             body: JSON.stringify(parsedBody),
@@ -797,7 +797,7 @@ function APIDashboard() {
 
         // IMPRESE & QUALIFICAZIONI - chiamate REST dirette
         case '/api/imprese':
-          const impreseResponse = await fetch('https://orchestratore.mio-hub.me/api/imprese', {
+          const impreseResponse = await fetch('https://api.mio-hub.me/api/imprese', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
@@ -805,14 +805,14 @@ function APIDashboard() {
           break;
         case '/api/imprese/:id':
           const impresaId = parsedBody.id || 1;
-          const impresaResponse = await fetch(`https://orchestratore.mio-hub.me/api/imprese/${impresaId}`, {
+          const impresaResponse = await fetch(`https://api.mio-hub.me/api/imprese/${impresaId}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
           data = await impresaResponse.json();
           break;
         case '/api/qualificazioni':
-          const qualificazioniResponse = await fetch('https://orchestratore.mio-hub.me/api/qualificazioni', {
+          const qualificazioniResponse = await fetch('https://api.mio-hub.me/api/qualificazioni', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
@@ -820,7 +820,7 @@ function APIDashboard() {
           break;
         case '/api/imprese/:id/qualificazioni':
           const impresaIdForQual = parsedBody.id || 1;
-          const qualificazioniByImpresaResponse = await fetch(`https://orchestratore.mio-hub.me/api/imprese/${impresaIdForQual}/qualificazioni`, {
+          const qualificazioniByImpresaResponse = await fetch(`https://api.mio-hub.me/api/imprese/${impresaIdForQual}/qualificazioni`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });

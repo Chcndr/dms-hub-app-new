@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 interface ServiceStatus {
   name: string;

@@ -44,7 +44,7 @@ import { toast } from 'sonner';
 import { addComuneIdToUrl, addAssociazioneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
 import { formatDate } from '@/lib/formatUtils';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 interface DomandaSpunta {
   id: number;

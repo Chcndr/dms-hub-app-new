@@ -12,7 +12,7 @@ import { getImpersonationParams, isAssociazioneImpersonation, addComuneIdToUrl }
 import { MIHUB_API_BASE_URL } from '@/config/api';
 
 // API URL
-const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 // Funzione per capitalizzare le parole (prima lettera maiuscola)
 const capitalizeWords = (str: string): string => {

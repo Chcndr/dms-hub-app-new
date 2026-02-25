@@ -1,6 +1,6 @@
 /**
  * BUS HUB Editor - Integra gli editor originali via iframe
- * Usa i tool completi hostati su orchestratore.mio-hub.me
+ * Usa i tool completi hostati su api.mio-hub.me
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -20,14 +20,14 @@ export function BusHubEditor({ marketName = '', onClose, onSave }: BusHubEditorP
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // URL degli editor originali sul server Hetzner
-  const BUS_HUB_URL = 'https://orchestratore.mio-hub.me/tools/bus_hub.html';
-  const SLOT_EDITOR_URL = 'https://orchestratore.mio-hub.me/tools/slot_editor_v3_unified.html';
+  const BUS_HUB_URL = 'https://api.mio-hub.me/tools/bus_hub.html';
+  const SLOT_EDITOR_URL = 'https://api.mio-hub.me/tools/slot_editor_v3_unified.html';
 
   // Ascolta messaggi dagli iframe (per comunicazione postMessage)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       // Verifica origine
-      if (!event.origin.includes('orchestratore.mio-hub.me')) return;
+      if (!event.origin.includes('api.mio-hub.me')) return;
 
       const { type, data } = event.data || {};
 

@@ -61,7 +61,7 @@ interface StoricoTitolaritaProps {
   marketId?: number;
 }
 
-const API_BASE = 'https://orchestratore.mio-hub.me/api';
+const API_BASE = 'https://api.mio-hub.me/api';
 
 export default function StoricoTitolarita({ comuneId, marketId: initialMarketId }: StoricoTitolaritaProps) {
   const [searchPosteggio, setSearchPosteggio] = useState('');

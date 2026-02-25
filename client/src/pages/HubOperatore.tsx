@@ -31,14 +31,14 @@ import { useLocation, Link } from 'wouter';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
 
-// API Base URL — passa per il proxy Vercel (/api/tcc/* → orchestratore.mio-hub.me)
+// API Base URL — passa per il proxy Vercel (/api/tcc/* → api.mio-hub.me)
 // Fallback diretto se in sviluppo locale
 const API_BASE = import.meta.env.DEV
-  ? 'https://orchestratore.mio-hub.me/api/tcc/v2'
+  ? 'https://api.mio-hub.me/api/tcc/v2'
   : '/api/tcc/v2';
 
 // API Base URL per il backend principale (Hetzner) — usato per verifica locale qualifiche
-const MAIN_API_BASE = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
+const MAIN_API_BASE = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
 
 // Helper: verifica locale qualifiche impresa dal backend principale
 // Stessa logica di WalletTCCBadge in MarketCompaniesTab — calcola stato da data_scadenza
@@ -568,7 +568,7 @@ export default function HubOperatore() {
     try {
       const token = await getCurrentToken();
       const qrValidateUrl = import.meta.env.DEV
-        ? 'https://orchestratore.mio-hub.me/api/tcc/validate-qr'
+        ? 'https://api.mio-hub.me/api/tcc/validate-qr'
         : '/api/tcc/validate-qr';
       const res = await authenticatedFetch(qrValidateUrl, {
         method: 'POST',

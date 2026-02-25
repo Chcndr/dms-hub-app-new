@@ -760,7 +760,7 @@ export default function WalletPanel() {
   // Carica conteggio notifiche non lette per Tributi
   const loadNotificheCount = async () => {
     try {
-      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
       // v4.6.0: Usa comune_id dinamico dall'impersonificazione (fix bug cross-comune)
       const { comuneId } = getImpersonationParams();
       const tributiId = comuneId || '1'; // fallback a 1 se non in impersonificazione

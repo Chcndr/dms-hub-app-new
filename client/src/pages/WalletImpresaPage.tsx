@@ -150,9 +150,9 @@ export default function WalletImpresaPage() {
     ? MIHUB_API_BASE_URL
     : '';
   const ORCHESTRATORE_URL = import.meta.env.DEV
-    ? 'https://orchestratore.mio-hub.me'
+    ? 'https://api.mio-hub.me'
     : '';
-  const MIHUB_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
+  const MIHUB_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
 
   // Risolvi impresa_id con multi-strategia (come DashboardImpresa)
   useEffect(() => {

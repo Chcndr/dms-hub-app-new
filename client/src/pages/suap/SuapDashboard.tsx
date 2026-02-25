@@ -8,7 +8,7 @@ import ConcessioneForm from '@/components/suap/ConcessioneForm';
 import { toast } from 'sonner';
 import { Link } from 'wouter';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me';
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 interface PraticaPendente {
   id: number;

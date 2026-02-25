@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Building2, Plus, Edit, Trash2, Phone, Mail, Globe, MapPin, Users, Save, X, Search, Loader2, FileText, Shield, CreditCard, Eye, ExternalLink, Briefcase, UserCheck, Hash } from 'lucide-react';
 import { authenticatedFetch } from '@/hooks/useImpersonation';
 
-const API_BASE_URL = 'https://orchestratore.mio-hub.me';
+const API_BASE_URL = 'https://api.mio-hub.me';
 
 // Tipi di associazione
 const TIPI_ASSOCIAZIONE = [

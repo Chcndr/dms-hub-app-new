@@ -78,9 +78,9 @@ import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { MIHUB_API_BASE_URL } from '@/config/api';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// API TCC Carbon Credit — in produzione usa proxy Vercel (/api/tcc/* → orchestratore.mio-hub.me)
+// API TCC Carbon Credit — in produzione usa proxy Vercel (/api/tcc/* → api.mio-hub.me)
 const TCC_API = import.meta.env.DEV
-  ? 'https://orchestratore.mio-hub.me'
+  ? 'https://api.mio-hub.me'
   : '';
 
 // Hook per dati reali da backend (REST — tRPC rimosso in FASE 1 stacco backend)
@@ -94,7 +94,7 @@ function useDashboardData() {
   const [bandiStats, setBandiStats] = useState<any>(null);
   
   useEffect(() => {
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
     
     // Se impersonificazione associazione, carica stats globali (senza filtro comune)
     // ma non caricare stats specifiche (qualificazione, formazione, bandi)
@@ -1198,7 +1198,7 @@ export default function DashboardPA() {
   // Funzione per segnare una risposta come letta
   const segnaRispostaComeLetta = async (risposta: any) => {
     if (risposta.letta) return; // Già letta
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
     try {
       await authenticatedFetch(`${MIHUB_API}/notifiche/risposte/${risposta.id}/letta`, {
         method: 'PUT',
@@ -1219,7 +1219,7 @@ export default function DashboardPA() {
   
   // Fetch notifiche stats e risposte
   useEffect(() => {
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
     
     // Fetch stats notifiche (solo per statistiche generali, NON per badge)
     fetch(`${MIHUB_API}/notifiche/stats`)
@@ -1510,7 +1510,7 @@ export default function DashboardPA() {
   
   // Fetch GIS Map Data (blocco ufficiale da GestioneMercati)
   useEffect(() => {
-    const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
+    const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
     
     const fetchGisData = async () => {
       try {
@@ -1614,7 +1614,7 @@ export default function DashboardPA() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (isAnimating) return;
-      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
       fetch(`${MIHUB_API}/stats/realtime`)
         .then(res => res.json())
         .then(data => {
@@ -1777,7 +1777,7 @@ export default function DashboardPA() {
           <p class="mt-3"><b>Domini Attivi:</b></p>
           <ul>
             <li>✅ <code>app.mio-hub.me</code> - Dashboard PA</li>
-            <li>✅ <code>mihub.157-90-29-66.nip.io</code> - Backend API (porta 3000)</li>
+            <li>✅ <code>api.mio-hub.me</code> - Backend API (porta 3000)</li>
             <li>✅ <code>council.mio-hub.me</code> - LLM Council Frontend (porta 8002)</li>
             <li>✅ <code>council-api.mio-hub.me</code> - LLM Council API (porta 8001)</li>
           </ul>
@@ -4898,7 +4898,7 @@ export default function DashboardPA() {
                         note: formData.get('note')
                       };
                       try {
-                        const res = await authenticatedFetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/formazione/attestati`, {
+                        const res = await authenticatedFetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/formazione/attestati`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(data)
@@ -4927,7 +4927,7 @@ export default function DashboardPA() {
                                 const q = e.target.value;
                                 if (q.length < 2) return;
                                 try {
-                                  const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://orchestratore.mio-hub.me'}/api/formazione/imprese/search?q=${encodeURIComponent(q)}`);
+                                  const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/formazione/imprese/search?q=${encodeURIComponent(q)}`);
                                   const data = await res.json();
                                   const list = document.getElementById('imprese-list');
                                   if (list && data.success) {
@@ -5131,7 +5131,7 @@ export default function DashboardPA() {
                       e.preventDefault();
                       const form = e.target as HTMLFormElement;
                       const formData = new FormData(form);
-                      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+                      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
                       
                       setInvioNotificaLoading(true);
                       try {
@@ -5813,7 +5813,7 @@ export default function DashboardPA() {
                       e.preventDefault();
                       const form = e.target as HTMLFormElement;
                       const formData = new FormData(form);
-                      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://orchestratore.mio-hub.me/api';
+                      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
                       
                       setInvioNotificaLoading(true);
                       try {
@@ -6754,7 +6754,7 @@ export default function DashboardPA() {
                       
                       // Se abbiamo un hubId, aggiorna l'hub esistente
                       if (data.hubId) {
-                        const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
+                        const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
                         const response = await authenticatedFetch(`${API_BASE_URL}/api/hub/locations/${data.hubId}`, {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
@@ -7038,7 +7038,7 @@ function LogsSection() {
                       
                       // Se abbiamo un hubId, aggiorna l'hub esistente
                       if (data.hubId) {
-                        const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
+                        const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
                         const response = await authenticatedFetch(`${API_BASE_URL}/api/hub/locations/${data.hubId}`, {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },

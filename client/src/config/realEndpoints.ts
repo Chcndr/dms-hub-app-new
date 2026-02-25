@@ -4,7 +4,7 @@
  * Questo file contiene la configurazione di tutti gli endpoint REALI
  * utilizzati dal sistema DMS HUB, organizzati per categoria.
  *
- * Base URL: MIHUB_API_BASE_URL (mihub.157-90-29-66.nip.io)
+ * Base URL: MIHUB_API_BASE_URL (api.mio-hub.me)
  */
 
 import { MIHUB_API_BASE_URL } from '@/config/api';
@@ -14,7 +14,7 @@ import { MIHUB_API_BASE_URL } from '@/config/api';
 // ⚠️ ATTENZIONE: Endpoint /api/dmsHub/* NON DEPLOYATI su Hetzner production
 //    Backend Hetzner non ha commit fe1eab7, serve deploy manuale
 //    Runbook: docs/deploy/MIHUB_BACKEND_HETZNER_MANUALE.md
-export const API_BASE_URL = 'https://mihub.157-90-29-66.nip.io';
+export const API_BASE_URL = 'https://api.mio-hub.me';
 
 export interface EndpointConfig {
   id: string;
@@ -1673,7 +1673,7 @@ export const integrations: IntegrationConfig[] = [
     id: 'dms-legacy',
     name: 'DMS Legacy (Heroku)',
     description: 'Integrazione attiva con il sistema DMS Legacy su Heroku (Lapsy srl). Proxy API per mercati Bologna/Cervia, ambulanti, concessioni e presenze real-time.',
-    baseUrl: 'https://mihub.157-90-29-66.nip.io',
+    baseUrl: 'https://api.mio-hub.me',
     status: 'active',
     dataOwner: 'DMS Legacy (Lapsy srl)',
     notes: 'Integrazione attiva via API Proxy. I dati vengono letti dal backend Heroku e trasformati nel formato MioHub. Sync automatico ogni ora. SOLA LETTURA verso Heroku.',
@@ -1691,7 +1691,7 @@ export const integrations: IntegrationConfig[] = [
     id: 'pepe-gis',
     name: 'Pepe GIS / Market Map',
     description: 'Sistema GIS per la gestione delle mappe dei mercati. Fornisce geometrie precise dei posteggi e dati geografici.',
-    baseUrl: 'https://orchestratore.mio-hub.me',
+    baseUrl: 'https://api.mio-hub.me',
     status: 'active',
     dataOwner: 'Pepe GIS Editor',
     notes: 'Master dei dati: Pepe GIS per geometrie e coordinate. File sorgente: editor-v3-full.json. Alimenta MarketMapComponent con 160 posteggi del Mercato Grosseto.',
@@ -1737,7 +1737,7 @@ export const integrations: IntegrationConfig[] = [
     id: 'firebase-auth',
     name: 'Firebase Authentication',
     description: 'Sistema di autenticazione ibrido Firebase (Google, Apple, Email/Password) integrato con il backend MioHub per la gestione dei profili utente e dei ruoli.',
-    baseUrl: 'https://orchestratore.mio-hub.me',
+    baseUrl: 'https://api.mio-hub.me',
     status: 'active',
     dataOwner: 'Firebase (Google Cloud) + MioHub',
     notes: 'Progetto Firebase: dmshub-auth-2975e. Provider attivi: Google, Apple, Email/Password. Sincronizzazione automatica con profili MioHub. Fallback locale disponibile.',

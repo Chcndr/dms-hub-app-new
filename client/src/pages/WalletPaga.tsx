@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { authenticatedFetch } from '@/hooks/useImpersonation';
 import { QRCodeSVG } from 'qrcode.react';
 
-// API Base URL — in produzione usa proxy Vercel (/api/tcc/* → orchestratore.mio-hub.me)
+// API Base URL — in produzione usa proxy Vercel (/api/tcc/* → api.mio-hub.me)
 const API_BASE = import.meta.env.DEV
-  ? 'https://orchestratore.mio-hub.me'
+  ? 'https://api.mio-hub.me'
   : '';
 
 export default function WalletPaga() {

@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 import { formatDate } from '@/lib/formatUtils';
 import { addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://mihub.157-90-29-66.nip.io';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
 
 interface GraduatoriaRecord {
   id: number;
