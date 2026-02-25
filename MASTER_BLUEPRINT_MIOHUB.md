@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.0.0 (Modello Business Associativo)
-> **Data:** 24 Febbraio 2026
+> **Versione:** 9.0.1 (Tesseramenti & Adempimenti)
+> **Data:** 25 Febbraio 2026
 > **Autore:** Sistema documentato da Manus AI & Claude AI  
 > **Stato:** PRODUZIONE
 
@@ -50,6 +50,38 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 25 Febbraio 2026 — Progetto v9.0.1 — Tesseramenti & Adempimenti
+
+**Contesto:** Completamento degli endpoint mancanti per il modello associativo v9.0 e correzione dei rewrites Vercel che puntavano a un backend dismesso.
+
+**Stato:** ✅ COMPLETATO
+
+**Backend (mihub-backend-rest) — commit `5b9edaf`:**
+- ✅ **Nuova route `tesseramenti.js`:** Creato il file `routes/tesseramenti.js` con due endpoint:
+  - `GET /api/tesseramenti/impresa/:id`: Restituisce i tesseramenti attivi per un'impresa.
+  - `POST /api/tesseramenti/richiedi`: Gestisce la richiesta di un nuovo tesseramento (richiede autenticazione).
+- ✅ **Mount in `index.js`:** La nuova route è stata montata correttamente in `index.js` sotto il prefisso `/api/tesseramenti`.
+- ✅ **Alias per `adempimenti`:** Creato un alias route in `index.js` per mappare la chiamata frontend `GET /api/adempimenti/impresa/:id` all'endpoint backend esistente `GET /api/imprese/:id/adempimenti-obbligatori`. Questo risolve il mismatch di path senza modificare il frontend.
+- ✅ **Campo `mancante` in adempimenti:** L'endpoint `adempimenti-obbligatori` è stato modificato per includere il campo booleano `mancante` nella risposta, necessario per la logica del frontend.
+
+**Frontend (dms-hub-app-new) — commit `f089c0a`:**
+- ✅ **Correzione `vercel.json`:** Modificati 5 rewrites che puntavano a `orchestratore.mio-hub.me` (un backend non più in uso). Ora tutti i seguenti path sono correttamente indirizzati a `api.mio-hub.me` (il backend REST unico su Hetzner):
+  - `/api/tesseramenti/:path*`
+  - `/api/associazioni/:path*`
+  - `/api/bandi/:path*`
+  - `/api/formazione/:path*`
+  - `/api/pagamenti/:path*`
+
+**Verifica e Test:**
+- Tutti i 14 endpoint principali chiamati dal frontend sono stati testati e risultano funzionanti in produzione.
+- I due endpoint precedentemente mancanti (`/api/tesseramenti/impresa/:id` e `/api/adempimenti/impresa/:id`) ora rispondono correttamente con HTTP 200.
+
+**Pulizia Branch:**
+- I branch `claude/review-production-fixes-3sUvQ` su entrambi i repository (backend e frontend) sono stati identificati come obsoleti e già inclusi nel branch `master`. Sono stati cancellati per mantenere pulito il repository.
+
+---
+
 
 ### Sessione 24 Febbraio 2026 — Progetto v9.0.0 — Modello Business Associativo
 
