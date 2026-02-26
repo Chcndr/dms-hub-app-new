@@ -39,7 +39,8 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
     // Carica saldo wallet generico dell'impresa
     const loadSaldo = async () => {
       try {
-        const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets?impresa_id=${impresaId}`));
+        // Usa /api/wallets/company/{id} (stesso endpoint di WalletImpresaPage)
+        const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/company/${impresaId}`));
         const data = await res.json();
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           // Trova il wallet GENERICO/SPUNTISTA (case-insensitive)
