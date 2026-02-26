@@ -1745,7 +1745,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
               <p className="text-xs text-[#e8fbff]/40 italic">Informazioni non ancora disponibili</p>
             )}
 
-            <div className="flex items-center justify-between pt-2 border-t border-[#e8fbff]/10">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#e8fbff]/10">
               <div className="text-xs text-[#e8fbff]/50">
                 Quota: <span className="text-[#e8fbff] font-bold">&euro;{parseFloat(selectedAssociazione.quota_annuale || '50').toFixed(2)}/anno</span>
               </div>
@@ -1777,7 +1777,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
                     {assoc.quota_annuale && <span>Quota: &euro;{parseFloat(assoc.quota_annuale).toFixed(2)}/anno</span>}
                     {assoc.servizi_count && <span>{assoc.servizi_count} servizi</span>}
                   </div>
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs h-7"
                       onClick={(e) => { e.stopPropagation(); handleAssociatiEPaga(assoc); }}>
                       <Wallet className="w-3 h-3 mr-1" /> Associati e Paga
