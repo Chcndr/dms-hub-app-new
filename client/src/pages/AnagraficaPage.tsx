@@ -1569,6 +1569,11 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
   // Al successo del pagamento, crea tesseramento diretto
   const onPagamentoSuccess = async () => {
     if (!impresaId || !selectedAssociazione) return;
+    // Calcola scadenza 1 anno da oggi
+    const scadenza = new Date();
+    scadenza.setFullYear(scadenza.getFullYear() + 1);
+    const dataScadenza = scadenza.toISOString().split('T')[0];
+
     try {
       const res = await authenticatedFetch(`${API_BASE_URL}/api/tesseramenti/richiedi-e-paga`, {
         method: 'POST',
@@ -1581,11 +1586,32 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
       });
       const data = await res.json();
       if (data.success) {
-        setTesseramento(data.data || { stato: 'ATTIVO', associazione_nome: selectedAssociazione.nome, quota_pagata: true });
+        setTesseramento(data.data || {
+          stato: 'ATTIVO',
+          associazione_nome: selectedAssociazione.nome,
+          quota_pagata: true,
+          data_scadenza: dataScadenza,
+          quota_annuale: selectedAssociazione.quota_annuale || '50',
+        });
+      } else {
+        // Backend ha gia' creato il tesseramento via /api/pagamenti/quota
+        setTesseramento({
+          stato: 'ATTIVO',
+          associazione_nome: selectedAssociazione.nome,
+          quota_pagata: true,
+          data_scadenza: dataScadenza,
+          quota_annuale: selectedAssociazione.quota_annuale || '50',
+        });
       }
     } catch {
-      // Fallback: il pagamento è andato, mostra comunque come attivo
-      setTesseramento({ stato: 'ATTIVO', associazione_nome: selectedAssociazione?.nome, quota_pagata: true });
+      // Fallback: il pagamento e' andato, mostra comunque come attivo
+      setTesseramento({
+        stato: 'ATTIVO',
+        associazione_nome: selectedAssociazione.nome,
+        quota_pagata: true,
+        data_scadenza: dataScadenza,
+        quota_annuale: selectedAssociazione.quota_annuale || '50',
+      });
     }
   };
 
