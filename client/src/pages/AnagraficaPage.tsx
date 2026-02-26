@@ -1487,8 +1487,10 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
         // Verifica tesseramento attivo
         const tessRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`));
         const tessData = await tessRes.json();
-        if (tessData.success && tessData.data && tessData.data.stato === 'ATTIVO') {
-          setTesseramento(tessData.data);
+        // Supporta formati: { success, data: {...} } e { tesseramento: {...} } e risposta diretta
+        const tess = tessData.data || tessData.tesseramento || (tessData.stato ? tessData : null);
+        if (tess && tess.stato === 'ATTIVO') {
+          setTesseramento(tess);
           hasTesseramento = true;
         } else {
           setTesseramento(null);
@@ -1499,19 +1501,25 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
       // Carica lista associazioni disponibili
       if (!hasTesseramento) {
         try {
-          // Prova endpoint pubblico, fallback a endpoint generico
           let assocList: any[] = [];
           const assocRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/pubbliche`));
           const assocData = await assocRes.json();
-          if (assocData.success && Array.isArray(assocData.data) && assocData.data.length > 0) {
-            assocList = assocData.data;
+          // Supporta entrambi i formati: { success, data: [...] } e { associazioni: [...] }
+          const pubblicheList = Array.isArray(assocData.data) ? assocData.data
+            : Array.isArray(assocData.associazioni) ? assocData.associazioni
+            : Array.isArray(assocData) ? assocData
+            : [];
+          if (pubblicheList.length > 0) {
+            assocList = pubblicheList;
           } else {
             // Fallback: carica tutte le associazioni (stesso endpoint della dashboard admin)
             const fallbackRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni`));
             const fallbackData = await fallbackRes.json();
-            if (fallbackData.success && Array.isArray(fallbackData.data)) {
-              assocList = fallbackData.data.filter((a: any) => a.attiva !== false && a.stato !== 'INATTIVA');
-            }
+            const fallbackList = Array.isArray(fallbackData.data) ? fallbackData.data
+              : Array.isArray(fallbackData.associazioni) ? fallbackData.associazioni
+              : Array.isArray(fallbackData) ? fallbackData
+              : [];
+            assocList = fallbackList.filter((a: any) => a.attiva !== false && a.stato !== 'INATTIVA');
           }
           setAssociazioni(assocList);
         } catch { /* silenzioso */ }
@@ -1531,8 +1539,10 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     try {
       const res = await fetch(`${API_BASE_URL}/api/associazioni/${assoc.id}/scheda-pubblica`);
       const data = await res.json();
-      if (data.success && data.data) {
-        setSchedaPubblica(data.data);
+      // Supporta formati: { success, data: {...} } e { scheda: {...} } e risposta diretta
+      const scheda = data.data || data.scheda || (data.descrizione !== undefined ? data : null);
+      if (scheda) {
+        setSchedaPubblica(scheda);
       } else {
         setSchedaPubblica(null);
       }
@@ -1806,18 +1816,20 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
     const load = async () => {
       setLoading(true);
       try {
-        // Carica catalogo servizi (endpoint gia' esistente)
+        // Carica catalogo servizi
         const servRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/bandi/servizi`));
         const servData = await servRes.json();
-        if (servData.success && Array.isArray(servData.data)) {
-          setServizi(servData.data);
-        }
-        // Carica le mie richieste (endpoint gia' esistente)
+        const servList = Array.isArray(servData.data) ? servData.data
+          : Array.isArray(servData.servizi) ? servData.servizi
+          : Array.isArray(servData) ? servData : [];
+        setServizi(servList);
+        // Carica le mie richieste
         const richRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/bandi/richieste?impresa_id=${impresaId}`));
         const richData = await richRes.json();
-        if (richData.success && Array.isArray(richData.data)) {
-          setRichieste(richData.data);
-        }
+        const richList = Array.isArray(richData.data) ? richData.data
+          : Array.isArray(richData.richieste) ? richData.richieste
+          : Array.isArray(richData) ? richData : [];
+        setRichieste(richList);
       } catch { /* silenzioso */ }
       setLoading(false);
     };
@@ -1955,18 +1967,20 @@ function FormazioneSection({ impresaId, qualificazioni }: { impresaId: number | 
     const load = async () => {
       setLoading(true);
       try {
-        // Carica corsi disponibili (endpoint gia' esistente)
+        // Carica corsi disponibili
         const corsiRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/formazione/corsi`));
         const corsiData = await corsiRes.json();
-        if (corsiData.success && Array.isArray(corsiData.data)) {
-          setCorsi(corsiData.data);
-        }
-        // Carica le mie iscrizioni (endpoint gia' esistente)
+        const corsiList = Array.isArray(corsiData.data) ? corsiData.data
+          : Array.isArray(corsiData.corsi) ? corsiData.corsi
+          : Array.isArray(corsiData) ? corsiData : [];
+        setCorsi(corsiList);
+        // Carica le mie iscrizioni
         const iscrRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/formazione/iscrizioni?impresa_id=${impresaId}`));
         const iscrData = await iscrRes.json();
-        if (iscrData.success && Array.isArray(iscrData.data)) {
-          setIscrizioni(iscrData.data);
-        }
+        const iscrList = Array.isArray(iscrData.data) ? iscrData.data
+          : Array.isArray(iscrData.iscrizioni) ? iscrData.iscrizioni
+          : Array.isArray(iscrData) ? iscrData : [];
+        setIscrizioni(iscrList);
       } catch { /* silenzioso */ }
       setLoading(false);
     };
