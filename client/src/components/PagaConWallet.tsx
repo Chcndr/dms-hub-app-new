@@ -41,10 +41,18 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
       try {
         const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets?impresa_id=${impresaId}`));
         const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          // Trova il wallet GENERICO o SPUNTA
-          const generico = data.data.find((w: any) => w.type === 'GENERICO' || w.type === 'SPUNTISTA');
-          setSaldo(generico ? parseFloat(generico.balance) || 0 : 0);
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          // Trova il wallet GENERICO/SPUNTISTA (case-insensitive)
+          const generico = data.data.find((w: any) => {
+            const t = (w.type || w.tipo || '').toUpperCase();
+            return t === 'GENERICO' || t === 'SPUNTISTA' || t === 'GENERAL' || t === 'MAIN';
+          });
+          // Se non trova un tipo specifico, usa il primo wallet disponibile
+          const wallet = generico || data.data[0];
+          setSaldo(wallet ? parseFloat(wallet.balance || wallet.saldo || '0') || 0 : 0);
+        } else if (data.success && typeof data.data === 'object' && data.data !== null && !Array.isArray(data.data)) {
+          // Risposta singola (non array)
+          setSaldo(parseFloat(data.data.balance || data.data.saldo || '0') || 0);
         } else {
           setSaldo(0);
         }
@@ -58,19 +66,26 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
   }, [open, impresaId]);
 
   const handlePaga = async () => {
-    if (!impresaId) return;
+    if (!impresaId || !importo || importo <= 0) {
+      alert('Importo non valido');
+      return;
+    }
     setPaying(true);
     try {
+      const payload: Record<string, any> = {
+        impresa_id: impresaId,
+        importo,
+        tipo,
+        descrizione,
+      };
+      // Invia riferimento_id solo se presente (il backend potrebbe validarlo)
+      if (riferimentoId) {
+        payload.riferimento_id = riferimentoId;
+      }
       const res = await authenticatedFetch(`${API_BASE_URL}/api/pagamenti/servizio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          impresa_id: impresaId,
-          importo,
-          tipo,
-          riferimento_id: riferimentoId,
-          descrizione,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {

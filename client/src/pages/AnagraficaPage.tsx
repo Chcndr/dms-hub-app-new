@@ -1821,12 +1821,13 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
       if (data.success) {
         alert('Richiesta servizio inviata!');
         setRichieste(prev => [...prev, data.data || { id: Date.now(), servizio_nome: servizio.nome, stato: 'RICHIESTA', created_at: new Date().toISOString() }]);
-        // Offri pagamento se ha un prezzo
-        if (servizio.prezzo_associati || servizio.prezzo_base) {
+        // Offri pagamento se ha un prezzo > 0
+        const prezzoServizio = parseFloat(servizio.prezzo_associati || servizio.prezzo_base || '0') || 0;
+        if (prezzoServizio > 0) {
           setPagaInfo({
-            importo: parseFloat(servizio.prezzo_associati || servizio.prezzo_base || '0'),
+            importo: prezzoServizio,
             descrizione: `Servizio: ${servizio.nome}`,
-            riferimentoId: servizio.id,
+            riferimentoId: data.data?.id || servizio.id,
           });
           setPagaOpen(true);
         }
@@ -1969,12 +1970,13 @@ function FormazioneSection({ impresaId, qualificazioni }: { impresaId: number | 
       if (data.success) {
         alert('Iscrizione al corso completata!');
         setIscrizioni(prev => [...prev, data.data || { id: Date.now(), corso_nome: corso.nome, stato: 'ISCRITTO', created_at: new Date().toISOString() }]);
-        // Pagamento se il corso ha un prezzo
-        if (corso.prezzo && parseFloat(corso.prezzo) > 0) {
+        // Pagamento se il corso ha un prezzo > 0
+        const prezzoCorso = parseFloat(corso.prezzo || '0') || 0;
+        if (prezzoCorso > 0) {
           setPagaInfo({
-            importo: parseFloat(corso.prezzo),
-            descrizione: `Iscrizione: ${corso.nome}`,
-            riferimentoId: corso.id,
+            importo: prezzoCorso,
+            descrizione: `Iscrizione: ${corso.titolo || corso.nome}`,
+            riferimentoId: data.data?.id || corso.id,
           });
           setPagaOpen(true);
         }
