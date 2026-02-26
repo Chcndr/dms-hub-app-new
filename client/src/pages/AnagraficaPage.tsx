@@ -1484,12 +1484,32 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
       setLoading(true);
       let hasTesseramento = false;
       try {
-        // Verifica tesseramento attivo
-        const tessRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`));
-        const tessData = await tessRes.json();
-        // Supporta formati: { success, data: {...} } e { tesseramento: {...} } e risposta diretta
-        const tess = tessData.data || tessData.tesseramento || (tessData.stato ? tessData : null);
+        // Verifica tesseramento attivo — prova endpoint v9 (Manus), poi fallback legacy
+        let tess: any = null;
+        try {
+          const tessV9Res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni-v9/tesseramenti?impresa_id=${impresaId}`));
+          const tessV9Data = await tessV9Res.json();
+          const tessV9List = Array.isArray(tessV9Data.data) ? tessV9Data.data
+            : Array.isArray(tessV9Data.tesseramenti) ? tessV9Data.tesseramenti
+            : Array.isArray(tessV9Data) ? tessV9Data : [];
+          // Cerca il primo tesseramento ATTIVO con importo_pagato > 0
+          tess = tessV9List.find((t: any) => t.stato === 'ATTIVO' && parseFloat(t.importo_pagato || '0') > 0)
+            || tessV9List.find((t: any) => t.stato === 'ATTIVO')
+            || null;
+        } catch { /* fallback sotto */ }
+
+        // Fallback: endpoint legacy
+        if (!tess) {
+          const tessRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`));
+          const tessData = await tessRes.json();
+          tess = tessData.data || tessData.tesseramento || (tessData.stato ? tessData : null);
+        }
+
         if (tess && tess.stato === 'ATTIVO') {
+          // Normalizza: importo_pagato > 0 => quota_pagata
+          if (parseFloat(tess.importo_pagato || '0') > 0) {
+            tess.quota_pagata = true;
+          }
           setTesseramento(tess);
           hasTesseramento = true;
         } else {
@@ -2108,32 +2128,41 @@ function FormazioneSection({ impresaId, qualificazioni }: { impresaId: number | 
         corsi.length === 0 ? (
           <EmptyState text="Nessun corso disponibile" />
         ) : (
-          corsi.map((c) => (
-            <Card key={c.id} className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm sm:text-base font-semibold text-[#e8fbff]">{c.nome}</p>
-                    {c.ente && <p className="text-xs text-gray-400 mt-0.5">{c.ente}</p>}
-                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
-                      {c.data && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDate(c.data)}</span>}
-                      {c.durata && <span>{c.durata}</span>}
-                      {c.sede && <span>{c.sede}</span>}
-                      {c.posti && <span>Posti: {c.posti}</span>}
+          corsi.map((c) => {
+            const iscrizioneEsistente = iscrizioni.find((i: any) => i.corso_id === c.id);
+            return (
+              <Card key={c.id} className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm sm:text-base font-semibold text-[#e8fbff]">{c.nome}</p>
+                      {c.ente && <p className="text-xs text-gray-400 mt-0.5">{c.ente}</p>}
+                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                        {c.data && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDate(c.data)}</span>}
+                        {c.durata && <span>{c.durata}</span>}
+                        {c.sede && <span>{c.sede}</span>}
+                        {c.posti && <span>Posti: {c.posti}</span>}
+                      </div>
+                      {c.prezzo && <p className="text-xs text-[#14b8a6] font-medium mt-1">&euro;{parseFloat(c.prezzo).toFixed(2)}</p>}
                     </div>
-                    {c.prezzo && <p className="text-xs text-[#14b8a6] font-medium mt-1">&euro;{parseFloat(c.prezzo).toFixed(2)}</p>}
+                    {iscrizioneEsistente ? (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs h-8 flex items-center">
+                        <CheckCircle className="w-3 h-3 mr-1" /> Iscritto
+                      </Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="bg-blue-500 hover:bg-blue-600 text-white text-xs h-8"
+                        onClick={() => handleIscrizione(c)}
+                      >
+                        <GraduationCap className="w-3 h-3 mr-1" /> Iscriviti
+                      </Button>
+                    )}
                   </div>
-                  <Button
-                    size="sm"
-                    className="bg-blue-500 hover:bg-blue-600 text-white text-xs h-8"
-                    onClick={() => handleIscrizione(c)}
-                  >
-                    <GraduationCap className="w-3 h-3 mr-1" /> Iscriviti
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            );
+          })
         )
       )}
 

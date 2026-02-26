@@ -74,17 +74,47 @@ export default function WalletAssociazionePanel() {
     if (!associazioneId) return;
     setLoading(true);
     try {
-      const [walletRes, transRes] = await Promise.all([
-        fetch(`${API_BASE}/api/associazioni/${associazioneId}/wallet`),
-        fetch(`${API_BASE}/api/associazioni/${associazioneId}/wallet/transazioni`),
-      ]);
-      const walletData = await walletRes.json();
-      if (walletData.success && walletData.data) {
-        setWallet({ ...EMPTY_WALLET, ...walletData.data });
-      }
-      const transData = await transRes.json();
-      if (transData.success && transData.data) {
-        setTransazioni(transData.data);
+      // Prova endpoint v9 (Manus), poi fallback legacy
+      let walletLoaded = false;
+      let transLoaded = false;
+
+      // Endpoint v9
+      try {
+        const walletRes = await fetch(`${API_BASE}/api/associazioni-v9/wallet/${associazioneId}`);
+        const walletData = await walletRes.json();
+        if (walletData.success && walletData.data) {
+          setWallet({ ...EMPTY_WALLET, ...walletData.data });
+          walletLoaded = true;
+        }
+      } catch { /* fallback sotto */ }
+
+      try {
+        const transRes = await fetch(`${API_BASE}/api/associazioni-v9/wallet/${associazioneId}/transazioni`);
+        const transData = await transRes.json();
+        if (transData.success && transData.data) {
+          setTransazioni(transData.data);
+          transLoaded = true;
+        }
+      } catch { /* fallback sotto */ }
+
+      // Fallback: endpoint legacy
+      if (!walletLoaded || !transLoaded) {
+        const [walletRes, transRes] = await Promise.all([
+          !walletLoaded ? fetch(`${API_BASE}/api/associazioni/${associazioneId}/wallet`) : Promise.resolve(null),
+          !transLoaded ? fetch(`${API_BASE}/api/associazioni/${associazioneId}/wallet/transazioni`) : Promise.resolve(null),
+        ]);
+        if (walletRes) {
+          const walletData = await walletRes.json();
+          if (walletData.success && walletData.data) {
+            setWallet({ ...EMPTY_WALLET, ...walletData.data });
+          }
+        }
+        if (transRes) {
+          const transData = await transRes.json();
+          if (transData.success && transData.data) {
+            setTransazioni(transData.data);
+          }
+        }
       }
     } catch (error) {
       console.error('Errore caricamento wallet associazione:', error);

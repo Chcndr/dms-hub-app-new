@@ -475,15 +475,21 @@ export default function WalletImpresaPage() {
 
   const handleConfirmaPagamento = async () => {
     if (!selectedScadenza) return;
-    
+
     try {
       const importoTotale = parseFloat(selectedScadenza.importo_dovuto) + parseFloat(selectedScadenza.importo_mora || '0') + parseFloat(selectedScadenza.importo_interessi || '0');
       const description = `Pagamento Canone ${selectedScadenza.tipo === 'CANONE_ANNUO' ? 'Annuo' : selectedScadenza.tipo} - Rata ${selectedScadenza.rata_numero}/${selectedScadenza.rata_totale} - ${selectedScadenza.mercato_nome} - Posteggio ${selectedScadenza.posteggio}`;
 
-      // Usa l'endpoint corretto /api/wallets/deposit (proxy Vercel in prod)
-      // Includi comune_id nel body per soddisfare il requisito IDOR del backend
-      const comuneId = company?.spunta_wallets?.find(w => w.comune_id)?.comune_id
-        || company?.concession_wallets?.find(w => w.comune_id)?.comune_id;
+      // Recupera comune_id dal wallet specifico della scadenza, poi fallback su qualsiasi wallet
+      const allWallets = [...(company?.spunta_wallets || []), ...(company?.concession_wallets || [])];
+      const targetWallet = allWallets.find(w => w.id === selectedScadenza.wallet_id);
+      const comuneId = targetWallet?.comune_id
+        || allWallets.find(w => w.comune_id)?.comune_id;
+
+      if (!comuneId) {
+        alert('Errore: impossibile determinare il comune. Ricarica la pagina e riprova.');
+        return;
+      }
 
       const response = await authenticatedFetch(`${API_BASE_URL}/api/wallets/deposit`, {
         method: 'POST',
@@ -493,7 +499,7 @@ export default function WalletImpresaPage() {
           amount: importoTotale,
           description: description,
           scadenza_id: selectedScadenza.id,
-          ...(comuneId && { comune_id: comuneId })
+          comune_id: comuneId
         })
       });
       const data = await response.json();
@@ -525,11 +531,16 @@ export default function WalletImpresaPage() {
     try {
       const description = `Ricarica Wallet Generico - ${company?.ragione_sociale}`;
 
-      // Includi comune_id nel body per soddisfare il requisito IDOR del backend
-      // Il comune_id viene dal wallet (legato al mercato) o dalla prima concessione disponibile
+      // Recupera comune_id dal wallet selezionato o da qualsiasi wallet disponibile
+      const allWallets = [...(company?.spunta_wallets || []), ...(company?.concession_wallets || [])];
       const comuneId = selectedWalletRicarica.comune_id
-        || company?.spunta_wallets?.find(w => w.comune_id)?.comune_id
-        || company?.concession_wallets?.find(w => w.comune_id)?.comune_id;
+        || allWallets.find(w => w.comune_id)?.comune_id;
+
+      if (!comuneId) {
+        alert('Errore: impossibile determinare il comune. Ricarica la pagina e riprova.');
+        setIsProcessingRicarica(false);
+        return;
+      }
 
       const response = await authenticatedFetch(`${API_BASE_URL}/api/wallets/deposit`, {
         method: 'POST',
@@ -538,7 +549,7 @@ export default function WalletImpresaPage() {
           wallet_id: selectedWalletRicarica.id,
           amount: parseFloat(ricaricaAmount),
           description,
-          ...(comuneId && { comune_id: comuneId })
+          comune_id: comuneId
         })
       });
 
