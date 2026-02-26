@@ -11,8 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Wallet, CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
 import { MIHUB_API_BASE_URL } from '@/config/api';
-import { addComuneIdToUrl } from '@/hooks/useImpersonation';
-import { getSessionToken } from '@/api/authClient';
+import { addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -84,13 +83,9 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
       if (riferimentoId) {
         payload.riferimento_id = riferimentoId;
       }
-      const token = getSessionToken();
-      const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/pagamenti/servizio`), {
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/pagamenti/servizio`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
