@@ -1,9 +1,30 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.1.1 (Fix Pagamento Quota Associativa)
+> **Versione:** 9.1.2 (Fix Accredito Servizi + comune_id Canone + Auth session_token)
 > **Data:** 26 Febbraio 2026
 > 
 > --- 
+> ### CHANGELOG v9.1.2 (26 Feb 2026)
+> **Fix accredito wallet associazione per pagamenti servizio + fix canone + fix auth**
+> 
+> **Backend — 4 fix di Manus (commit `75673c7`, `6260adc`, `06958db`, `7a75153`):**
+> - **Fix 1: comune_id per canone** (`75673c7`) — Aggiunto `m.comune_id` alla SELECT in `/api/wallets/company/:id` per includere il comune_id dai markets nelle wallet CONCESSION. Il frontend ne ha bisogno per il pagamento canone.
+> - **Fix 2: Accredito wallet associazione su /servizio** (`6260adc`) — L'endpoint `POST /api/pagamenti/servizio` ora accredita il `wallet_associazione` quando il servizio è collegato a un'associazione (via `servizi_associazioni.associazione_id` o `richieste_servizi.associazione_id`). Auto-crea wallet, aggiorna saldo, registra transazione tipo `SERVIZIO`.
+> - **Fix 3: session_token auth** (`06958db`) — Corretto bug nel middleware `requirePaymentAuth`: cercava colonna `s.token` (inesistente) invece di `s.session_token`. Gli utenti ARPA/email-password ora possono autenticarsi correttamente sugli endpoint pagamenti.
+> - **Cleanup: rimosso endpoint temporaneo** (`7a75153`) — Rimosso `/api/pagamenti/fix-db` dopo correzione manuale DB.
+> 
+> **Correzione manuale DB:**
+> - Accreditati €50 al wallet Confcommercio Bologna (id:1) per pagamento SCIA precedente al fix. Saldo aggiornato da €50 a €100.
+> - Registrata transazione id:2 in `transazioni_wallet_associazione` (tipo SERVIZIO, impresa MIO TEST).
+> 
+> **Frontend — fix di Claude (commit `c0111a7`):**
+> - Fix notifiche colori, stato iscrizione associazione, badge corsi, estrazione comune_id per canone.
+> 
+> **Stato:** Tutti i flussi di pagamento funzionanti end-to-end (quota, servizio, canone).
+> **Autore:** Manus AI (backend) & Claude AI (frontend)
+> **Stato:** PRODUZIONE
+>
+> ---
 > ### CHANGELOG v9.1.1 (26 Feb 2026)
 > **Fix completo del flusso di pagamento quota associativa dall'App Impresa**
 > 
