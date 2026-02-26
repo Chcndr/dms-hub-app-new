@@ -42,27 +42,43 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
     // Usa /api/wallets/company/{id} che non richiede comune_id (a differenza di /api/wallets)
     const loadSaldo = async () => {
       try {
+        // 1. Carica wallet
         const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/company/${impresaId}`));
         const data = await res.json();
+
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          // Trova il wallet GENERICO/SPUNTISTA (case-insensitive)
           const generico = data.data.find((w: any) => {
             const t = (w.type || w.tipo || '').toUpperCase();
             return t === 'GENERICO' || t === 'SPUNTISTA' || t === 'GENERAL' || t === 'MAIN';
           });
-          // Se non trova un tipo specifico, usa il primo wallet disponibile
           const wallet = generico || data.data[0];
           setSaldo(wallet ? parseFloat(wallet.balance || wallet.saldo || '0') || 0 : 0);
           setWalletId(wallet?.id || null);
-          setWalletComuneId(wallet?.comune_id || data.data.find((w: any) => w.comune_id)?.comune_id || null);
         } else if (data.success && typeof data.data === 'object' && data.data !== null && !Array.isArray(data.data)) {
-          // Risposta singola (non array)
           setSaldo(parseFloat(data.data.balance || data.data.saldo || '0') || 0);
           setWalletId(data.data.id || null);
-          setWalletComuneId(data.data.comune_id || null);
         } else {
           setSaldo(0);
         }
+
+        // 2. Recupera comune_id dalla sede dell'impresa
+        let cId: number | null = null;
+        try {
+          const impRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${impresaId}?fields=light`));
+          const impData = await impRes.json();
+          const imp = impData?.data || impData;
+          cId = imp?.comune_id || imp?.municipality_id || imp?.comuneId || null;
+        } catch { /* fallback */ }
+
+        // 3. Fallback: comune_id da qualsiasi wallet nella risposta
+        if (!cId && data.success) {
+          const wallets = Array.isArray(data.data) ? data.data : (data.data ? [data.data] : []);
+          for (const w of wallets) {
+            if (w.comune_id) { cId = w.comune_id; break; }
+          }
+        }
+
+        setWalletComuneId(cId);
       } catch {
         setSaldo(0);
       } finally {
@@ -81,15 +97,18 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
       alert('Wallet non trovato. Riprova.');
       return;
     }
+    // comune_id obbligatorio per IDOR fix backend (v8.17.3)
+    // Priorita': wallet data > impersonation > errore
+    const impState = getImpersonationParams();
+    const comuneId = walletComuneId
+      || (impState.comuneId ? parseInt(impState.comuneId, 10) : null);
+    if (!comuneId) {
+      alert('Impossibile determinare il comune. Riprova dalla pagina Wallet.');
+      return;
+    }
     setPaying(true);
     try {
-      // Usa /api/wallets/withdraw (endpoint FUNZIONANTE) per il prelievo dal wallet
-      // Stesso pattern usato da WalletImpresaPage e WalletPanel per deposit
       const descWithType = `[${tipo}] ${descrizione}${riferimentoId ? ` (rif: ${riferimentoId})` : ''}`;
-      // comune_id: dal wallet, oppure fallback dall'impersonation state
-      const impState = getImpersonationParams();
-      const comuneId = walletComuneId
-        || (impState.comuneId ? parseInt(impState.comuneId, 10) : null);
       const res = await authenticatedFetch(`${API_BASE_URL}/api/wallets/withdraw`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,7 +117,7 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
           amount: importo,
           description: descWithType,
           company_id: impresaId,
-          ...(comuneId && { comune_id: comuneId })
+          comune_id: comuneId
         }),
       });
       const data = await res.json();
