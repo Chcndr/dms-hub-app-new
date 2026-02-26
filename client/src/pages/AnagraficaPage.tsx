@@ -1482,26 +1482,49 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     if (!impresaId) { setLoading(false); return; }
     const load = async () => {
       setLoading(true);
+      let hasTesseramento = false;
       try {
         // Verifica tesseramento attivo
         const tessRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`));
         const tessData = await tessRes.json();
-        if (tessData.success && tessData.data) {
-          setTesseramento(tessData.data);
+        // Supporta formati: { success, data: {...} } e { tesseramento: {...} } e risposta diretta
+        const tess = tessData.data || tessData.tesseramento || (tessData.stato ? tessData : null);
+        if (tess && tess.stato === 'ATTIVO') {
+          setTesseramento(tess);
+          hasTesseramento = true;
         } else {
           setTesseramento(null);
-          // Carica lista associazioni disponibili
-          const assocRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/pubbliche`));
-          const assocData = await assocRes.json();
-          if (assocData.success && Array.isArray(assocData.data)) {
-            setAssociazioni(assocData.data);
-          }
         }
       } catch {
         setTesseramento(null);
-      } finally {
-        setLoading(false);
       }
+      // Carica lista associazioni disponibili
+      if (!hasTesseramento) {
+        try {
+          let assocList: any[] = [];
+          const assocRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/pubbliche`));
+          const assocData = await assocRes.json();
+          // Supporta entrambi i formati: { success, data: [...] } e { associazioni: [...] }
+          const pubblicheList = Array.isArray(assocData.data) ? assocData.data
+            : Array.isArray(assocData.associazioni) ? assocData.associazioni
+            : Array.isArray(assocData) ? assocData
+            : [];
+          if (pubblicheList.length > 0) {
+            assocList = pubblicheList;
+          } else {
+            // Fallback: carica tutte le associazioni (stesso endpoint della dashboard admin)
+            const fallbackRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni`));
+            const fallbackData = await fallbackRes.json();
+            const fallbackList = Array.isArray(fallbackData.data) ? fallbackData.data
+              : Array.isArray(fallbackData.associazioni) ? fallbackData.associazioni
+              : Array.isArray(fallbackData) ? fallbackData
+              : [];
+            assocList = fallbackList.filter((a: any) => a.attiva !== false && a.stato !== 'INATTIVA');
+          }
+          setAssociazioni(assocList);
+        } catch { /* silenzioso */ }
+      }
+      setLoading(false);
     };
     load();
   }, [impresaId]);
@@ -1516,8 +1539,10 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     try {
       const res = await fetch(`${API_BASE_URL}/api/associazioni/${assoc.id}/scheda-pubblica`);
       const data = await res.json();
-      if (data.success && data.data) {
-        setSchedaPubblica(data.data);
+      // Supporta formati: { success, data: {...} } e { scheda: {...} } e risposta diretta
+      const scheda = data.data || data.scheda || (data.descrizione !== undefined ? data : null);
+      if (scheda) {
+        setSchedaPubblica(scheda);
       } else {
         setSchedaPubblica(null);
       }
@@ -1791,18 +1816,20 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
     const load = async () => {
       setLoading(true);
       try {
-        // Carica catalogo servizi (endpoint gia' esistente)
+        // Carica catalogo servizi
         const servRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/bandi/servizi`));
         const servData = await servRes.json();
-        if (servData.success && Array.isArray(servData.data)) {
-          setServizi(servData.data);
-        }
-        // Carica le mie richieste (endpoint gia' esistente)
+        const servList = Array.isArray(servData.data) ? servData.data
+          : Array.isArray(servData.servizi) ? servData.servizi
+          : Array.isArray(servData) ? servData : [];
+        setServizi(servList);
+        // Carica le mie richieste
         const richRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/bandi/richieste?impresa_id=${impresaId}`));
         const richData = await richRes.json();
-        if (richData.success && Array.isArray(richData.data)) {
-          setRichieste(richData.data);
-        }
+        const richList = Array.isArray(richData.data) ? richData.data
+          : Array.isArray(richData.richieste) ? richData.richieste
+          : Array.isArray(richData) ? richData : [];
+        setRichieste(richList);
       } catch { /* silenzioso */ }
       setLoading(false);
     };
@@ -1821,12 +1848,13 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
       if (data.success) {
         alert('Richiesta servizio inviata!');
         setRichieste(prev => [...prev, data.data || { id: Date.now(), servizio_nome: servizio.nome, stato: 'RICHIESTA', created_at: new Date().toISOString() }]);
-        // Offri pagamento se ha un prezzo
-        if (servizio.prezzo_associati || servizio.prezzo_base) {
+        // Offri pagamento se ha un prezzo > 0
+        const prezzoServizio = parseFloat(servizio.prezzo_associati || servizio.prezzo_base || '0') || 0;
+        if (prezzoServizio > 0) {
           setPagaInfo({
-            importo: parseFloat(servizio.prezzo_associati || servizio.prezzo_base || '0'),
+            importo: prezzoServizio,
             descrizione: `Servizio: ${servizio.nome}`,
-            riferimentoId: servizio.id,
+            riferimentoId: data.data?.id || servizio.id,
           });
           setPagaOpen(true);
         }
@@ -1939,18 +1967,20 @@ function FormazioneSection({ impresaId, qualificazioni }: { impresaId: number | 
     const load = async () => {
       setLoading(true);
       try {
-        // Carica corsi disponibili (endpoint gia' esistente)
+        // Carica corsi disponibili
         const corsiRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/formazione/corsi`));
         const corsiData = await corsiRes.json();
-        if (corsiData.success && Array.isArray(corsiData.data)) {
-          setCorsi(corsiData.data);
-        }
-        // Carica le mie iscrizioni (endpoint gia' esistente)
+        const corsiList = Array.isArray(corsiData.data) ? corsiData.data
+          : Array.isArray(corsiData.corsi) ? corsiData.corsi
+          : Array.isArray(corsiData) ? corsiData : [];
+        setCorsi(corsiList);
+        // Carica le mie iscrizioni
         const iscrRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/formazione/iscrizioni?impresa_id=${impresaId}`));
         const iscrData = await iscrRes.json();
-        if (iscrData.success && Array.isArray(iscrData.data)) {
-          setIscrizioni(iscrData.data);
-        }
+        const iscrList = Array.isArray(iscrData.data) ? iscrData.data
+          : Array.isArray(iscrData.iscrizioni) ? iscrData.iscrizioni
+          : Array.isArray(iscrData) ? iscrData : [];
+        setIscrizioni(iscrList);
       } catch { /* silenzioso */ }
       setLoading(false);
     };
@@ -1969,12 +1999,13 @@ function FormazioneSection({ impresaId, qualificazioni }: { impresaId: number | 
       if (data.success) {
         alert('Iscrizione al corso completata!');
         setIscrizioni(prev => [...prev, data.data || { id: Date.now(), corso_nome: corso.nome, stato: 'ISCRITTO', created_at: new Date().toISOString() }]);
-        // Pagamento se il corso ha un prezzo
-        if (corso.prezzo && parseFloat(corso.prezzo) > 0) {
+        // Pagamento se il corso ha un prezzo > 0
+        const prezzoCorso = parseFloat(corso.prezzo || '0') || 0;
+        if (prezzoCorso > 0) {
           setPagaInfo({
-            importo: parseFloat(corso.prezzo),
-            descrizione: `Iscrizione: ${corso.nome}`,
-            riferimentoId: corso.id,
+            importo: prezzoCorso,
+            descrizione: `Iscrizione: ${corso.titolo || corso.nome}`,
+            riferimentoId: data.data?.id || corso.id,
           });
           setPagaOpen(true);
         }
