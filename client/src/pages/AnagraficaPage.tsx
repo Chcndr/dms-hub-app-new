@@ -1555,6 +1555,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
 
   // Flusso "Associati e Paga" — apre PagaConWallet con quota
   const handleAssociatiEPaga = (assoc: any) => {
+    setSelectedAssociazione(assoc);
     const quota = parseFloat(assoc.quota_annuale || '50');
     setPagaInfo({
       importo: quota,
