@@ -28,6 +28,8 @@ interface PagaConWalletProps {
 
 export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, tipo, riferimentoId, impresaId }: PagaConWalletProps) {
   const [saldo, setSaldo] = useState<number | null>(null);
+  const [walletId, setWalletId] = useState<number | null>(null);
+  const [walletComuneId, setWalletComuneId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -51,9 +53,13 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
           // Se non trova un tipo specifico, usa il primo wallet disponibile
           const wallet = generico || data.data[0];
           setSaldo(wallet ? parseFloat(wallet.balance || wallet.saldo || '0') || 0 : 0);
+          setWalletId(wallet?.id || null);
+          setWalletComuneId(wallet?.comune_id || data.data.find((w: any) => w.comune_id)?.comune_id || null);
         } else if (data.success && typeof data.data === 'object' && data.data !== null && !Array.isArray(data.data)) {
           // Risposta singola (non array)
           setSaldo(parseFloat(data.data.balance || data.data.saldo || '0') || 0);
+          setWalletId(data.data.id || null);
+          setWalletComuneId(data.data.comune_id || null);
         } else {
           setSaldo(0);
         }
@@ -71,22 +77,24 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
       alert('Importo non valido');
       return;
     }
+    if (!walletId) {
+      alert('Wallet non trovato. Riprova.');
+      return;
+    }
     setPaying(true);
     try {
-      const payload: Record<string, any> = {
-        impresa_id: impresaId,
-        importo,
-        tipo,
-        descrizione,
-      };
-      // Invia riferimento_id solo se presente (il backend potrebbe validarlo)
-      if (riferimentoId) {
-        payload.riferimento_id = riferimentoId;
-      }
-      const res = await authenticatedFetch(`${API_BASE_URL}/api/pagamenti/servizio`, {
+      // Usa /api/wallets/withdraw (endpoint FUNZIONANTE) per il prelievo dal wallet
+      // Stesso pattern usato da WalletImpresaPage e WalletPanel per deposit
+      const descWithType = `[${tipo}] ${descrizione}${riferimentoId ? ` (rif: ${riferimentoId})` : ''}`;
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/wallets/withdraw`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          wallet_id: walletId,
+          amount: importo,
+          description: descWithType,
+          ...(walletComuneId && { comune_id: walletComuneId })
+        }),
       });
       const data = await res.json();
       if (data.success) {
