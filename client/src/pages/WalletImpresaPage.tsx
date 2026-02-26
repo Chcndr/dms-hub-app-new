@@ -40,7 +40,9 @@ interface WalletItem {
   type: 'SPUNTA' | 'CONCESSIONE' | 'GENERICO';
   balance: number;
   status: 'ACTIVE' | 'BLOCKED' | 'LOW_BALANCE';
+  market_id?: number;
   market_name?: string;
+  comune_id?: number;
   concession_code?: string;
   stall_number?: string;
   stall_area?: number;
@@ -278,7 +280,9 @@ export default function WalletImpresaPage() {
           type: (w.type === 'GENERICO' || w.type === 'SPUNTISTA' ? 'GENERICO' : 'SPUNTA') as 'SPUNTA' | 'GENERICO',
           balance: parseFloat(w.balance) || 0,
           status: w.status,
+          market_id: w.market_id,
           market_name: w.market_name,
+          comune_id: w.comune_id,
           stall_number: w.stall_number,
           updated_at: w.last_update
         }));
@@ -287,7 +291,9 @@ export default function WalletImpresaPage() {
           type: 'CONCESSIONE' as const,
           balance: parseFloat(w.balance) || 0,
           status: w.status,
+          market_id: w.market_id,
           market_name: w.market_name,
+          comune_id: w.comune_id,
           concession_code: w.concession_code,
           stall_number: w.stall_number,
           stall_area: parseFloat(w.stall_area) || 0,
@@ -475,6 +481,10 @@ export default function WalletImpresaPage() {
       const description = `Pagamento Canone ${selectedScadenza.tipo === 'CANONE_ANNUO' ? 'Annuo' : selectedScadenza.tipo} - Rata ${selectedScadenza.rata_numero}/${selectedScadenza.rata_totale} - ${selectedScadenza.mercato_nome} - Posteggio ${selectedScadenza.posteggio}`;
 
       // Usa l'endpoint corretto /api/wallets/deposit (proxy Vercel in prod)
+      // Includi comune_id nel body per soddisfare il requisito IDOR del backend
+      const comuneId = company?.spunta_wallets?.find(w => w.comune_id)?.comune_id
+        || company?.concession_wallets?.find(w => w.comune_id)?.comune_id;
+
       const response = await authenticatedFetch(`${API_BASE_URL}/api/wallets/deposit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -482,7 +492,8 @@ export default function WalletImpresaPage() {
           wallet_id: selectedScadenza.wallet_id,
           amount: importoTotale,
           description: description,
-          scadenza_id: selectedScadenza.id
+          scadenza_id: selectedScadenza.id,
+          ...(comuneId && { comune_id: comuneId })
         })
       });
       const data = await response.json();
@@ -514,13 +525,20 @@ export default function WalletImpresaPage() {
     try {
       const description = `Ricarica Wallet Generico - ${company?.ragione_sociale}`;
 
+      // Includi comune_id nel body per soddisfare il requisito IDOR del backend
+      // Il comune_id viene dal wallet (legato al mercato) o dalla prima concessione disponibile
+      const comuneId = selectedWalletRicarica.comune_id
+        || company?.spunta_wallets?.find(w => w.comune_id)?.comune_id
+        || company?.concession_wallets?.find(w => w.comune_id)?.comune_id;
+
       const response = await authenticatedFetch(`${API_BASE_URL}/api/wallets/deposit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           wallet_id: selectedWalletRicarica.id,
           amount: parseFloat(ricaricaAmount),
-          description
+          description,
+          ...(comuneId && { comune_id: comuneId })
         })
       });
 
