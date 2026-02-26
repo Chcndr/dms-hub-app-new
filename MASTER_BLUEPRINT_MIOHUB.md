@@ -1,9 +1,28 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.1.0 (Business Associazioni)
-> **Data:** 25 Febbraio 2026
+> **Versione:** 9.1.1 (Fix Pagamento Quota Associativa)
+> **Data:** 26 Febbraio 2026
 > 
 > --- 
+> ### CHANGELOG v9.1.1 (26 Feb 2026)
+> **Fix completo del flusso di pagamento quota associativa dall'App Impresa**
+> 
+> **Backend — 3 fix di Manus (commit `4e570ea`, `be1ce6d`, `5dbd206`):**
+> - **Fix 1: Autenticazione pagamenti** — Escluso `/api/pagamenti/*` dal middleware IDOR (`validateImpersonation`) che bloccava i POST con `comune_id`. Aggiunto middleware locale `requirePaymentAuth` che accetta sia Firebase ID Token che MioHub session_token.
+> - **Fix 2: findGenericoWallet fallback** — La funzione cercava solo `type = 'GENERICO'` (inesistente nel DB). Ora cerca con priorità: GENERICO → SPUNTISTA → MAIN → primo disponibile.
+> - **Fix 3: Accredito wallet associazione** — L'endpoint `POST /api/pagamenti/quota` ora: (1) auto-crea `wallet_associazione` se non esiste, (2) aggiorna il saldo (+importo), (3) registra transazione in `transazioni_wallet_associazione` (tipo `QUOTA_ASSOCIATIVA`, stato `completata`). Prima faceva solo il WITHDRAW dal wallet impresa.
+> 
+> **Frontend — 4 fix di Claude (commit `1ef8dd9`):**
+> - **Fix 1: PagaConWallet.tsx** — L'endpoint ora cambia in base al `tipo`: `quota_associativa` → `POST /api/pagamenti/quota` con `{ impresa_id, importo, tesseramento_id, note }`, `corso` → `POST /api/pagamenti/corso`, default → `POST /api/pagamenti/servizio`.
+> - **Fix 2: WalletImpresaPage.tsx** — Il colore delle transazioni ADDEBITO nello storico è ora bianco (`#e8fbff`) invece di arancione, per badge, importo, icona e bordo.
+> - **Fix 3: AnagraficaPage.tsx** — `handleAssociatiEPaga` ora chiama `setSelectedAssociazione(assoc)` prima di aprire il dialog, risolvendo il bug dove `onPagamentoSuccess` usciva al guard `if (!selectedAssociazione) return` senza creare il tesseramento.
+> - **Fix 4: WalletAssociazionePanel.tsx** — Il tab "Riepilogo" ora mostra conteggio transazioni e totale incassato invece del placeholder "I dati verranno popolati dal backend".
+> 
+> **Stato:** Pagamento quota associativa **funzionante end-to-end** in produzione.
+> **Autore:** Manus AI (backend) & Claude AI (frontend)
+> **Stato:** PRODUZIONE
+>
+> ---
 > ### CHANGELOG v9.1.0 (25 Feb 2026)
 > **Implementazione completa del sistema "Business Associazioni"**
 > 
@@ -9539,23 +9558,35 @@ ADD COLUMN IF NOT EXISTS riferimento_id INTEGER;
 | `PUT` | `/api/associazioni/:id/pagina` | Aggiorna pagina (dall'associazione) | `associazioni.js` |
 | `GET` | `/api/tesseramenti/impresa/:id` | I miei tesseramenti | `associazioni.js` |
 | `POST` | `/api/tesseramenti/richiedi` | Richiedi tesseramento + paga da wallet | `associazioni.js` |
-| `POST` | `/api/pagamenti/servizio` | Paga servizio da wallet generico | `pagamenti.js` (nuovo) |
-| `POST` | `/api/pagamenti/corso` | Paga iscrizione corso da wallet generico | `pagamenti.js` (nuovo) |
+| `POST` | `/api/pagamenti/servizio` | Paga servizio da wallet generico | `pagamenti.js` |
+| `POST` | `/api/pagamenti/quota` | Paga quota associativa + accredita wallet associazione | `pagamenti.js` |
+| `POST` | `/api/pagamenti/corso` | Paga iscrizione corso da wallet generico | `pagamenti.js` |
 
 #### B3. Flusso Pagamento Centralizzato
 
 ```
-1. Frontend → POST /api/pagamenti/{tipo}
-   Body: { impresa_id, importo, riferimento_id, descrizione }
+1. Frontend PagaConWallet.tsx → sceglie endpoint in base al tipo:
+   - quota_associativa → POST /api/pagamenti/quota { impresa_id, tesseramento_id, importo, note }
+   - corso → POST /api/pagamenti/corso { impresa_id, corso_id, importo, note }
+   - servizio/generico → POST /api/pagamenti/servizio { impresa_id, importo, tipo, descrizione }
 
-2. Backend:
-   a. SELECT wallet GENERICO WHERE company_id = impresa_id
+2. Autenticazione: middleware requirePaymentAuth (accetta Firebase token O session_token)
+   NOTA: /api/pagamenti/* è ESCLUSO dal middleware IDOR (non è multi-tenant)
+
+3. Backend (tutti gli endpoint):
+   a. findGenericoWallet(impresa_id) — cerca: GENERICO → SPUNTISTA → MAIN → primo
    b. Verifica saldo >= importo
    c. UPDATE wallets SET balance = balance - importo
    d. INSERT wallet_transactions (con riferimento_tipo e riferimento_id)
-   e. Aggiorna record riferimento (tesseramento/servizio/corso)
-   f. INSERT notifica CONFERMA_PAGAMENTO
-   g. Return transazione completata
+
+4. Solo per /quota (accredito associazione):
+   e. Auto-create wallet_associazione (ON CONFLICT DO NOTHING)
+   f. UPDATE wallet_associazione SET saldo = saldo + importo
+   g. INSERT transazioni_wallet_associazione (tipo QUOTA_ASSOCIATIVA)
+   h. UPDATE tesseramenti_associazione SET importo_pagato += importo
+
+5. Notifica CONFERMA_PAGAMENTO all'associazione
+6. Return transazione completata + nuovo saldo
 ```
 
 #### B4. Trigger
