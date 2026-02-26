@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Wallet, CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
 import { MIHUB_API_BASE_URL } from '@/config/api';
-import { addComuneIdToUrl, authenticatedFetch, getImpersonationParams } from '@/hooks/useImpersonation';
+import { addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -28,8 +28,6 @@ interface PagaConWalletProps {
 
 export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, tipo, riferimentoId, impresaId }: PagaConWalletProps) {
   const [saldo, setSaldo] = useState<number | null>(null);
-  const [walletId, setWalletId] = useState<number | null>(null);
-  const [walletComuneId, setWalletComuneId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -39,46 +37,25 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
     setPaid(false);
     setLoading(true);
     // Carica saldo wallet generico dell'impresa
-    // Usa /api/wallets/company/{id} che non richiede comune_id (a differenza di /api/wallets)
     const loadSaldo = async () => {
       try {
-        // 1. Carica wallet
-        const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/company/${impresaId}`));
+        const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets?impresa_id=${impresaId}`));
         const data = await res.json();
-
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          // Trova il wallet GENERICO/SPUNTISTA (case-insensitive)
           const generico = data.data.find((w: any) => {
             const t = (w.type || w.tipo || '').toUpperCase();
             return t === 'GENERICO' || t === 'SPUNTISTA' || t === 'GENERAL' || t === 'MAIN';
           });
+          // Se non trova un tipo specifico, usa il primo wallet disponibile
           const wallet = generico || data.data[0];
           setSaldo(wallet ? parseFloat(wallet.balance || wallet.saldo || '0') || 0 : 0);
-          setWalletId(wallet?.id || null);
         } else if (data.success && typeof data.data === 'object' && data.data !== null && !Array.isArray(data.data)) {
+          // Risposta singola (non array)
           setSaldo(parseFloat(data.data.balance || data.data.saldo || '0') || 0);
-          setWalletId(data.data.id || null);
         } else {
           setSaldo(0);
         }
-
-        // 2. Recupera comune_id dalla sede dell'impresa
-        let cId: number | null = null;
-        try {
-          const impRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${impresaId}?fields=light`));
-          const impData = await impRes.json();
-          const imp = impData?.data || impData;
-          cId = imp?.comune_id || imp?.municipality_id || imp?.comuneId || null;
-        } catch { /* fallback */ }
-
-        // 3. Fallback: comune_id da qualsiasi wallet nella risposta
-        if (!cId && data.success) {
-          const wallets = Array.isArray(data.data) ? data.data : (data.data ? [data.data] : []);
-          for (const w of wallets) {
-            if (w.comune_id) { cId = w.comune_id; break; }
-          }
-        }
-
-        setWalletComuneId(cId);
       } catch {
         setSaldo(0);
       } finally {
@@ -93,32 +70,22 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
       alert('Importo non valido');
       return;
     }
-    if (!walletId) {
-      alert('Wallet non trovato. Riprova.');
-      return;
-    }
-    // comune_id obbligatorio per IDOR fix backend (v8.17.3)
-    // Priorita': wallet data > impersonation > errore
-    const impState = getImpersonationParams();
-    const comuneId = walletComuneId
-      || (impState.comuneId ? parseInt(impState.comuneId, 10) : null);
-    if (!comuneId) {
-      alert('Impossibile determinare il comune. Riprova dalla pagina Wallet.');
-      return;
-    }
     setPaying(true);
     try {
-      const descWithType = `[${tipo}] ${descrizione}${riferimentoId ? ` (rif: ${riferimentoId})` : ''}`;
-      const res = await authenticatedFetch(`${API_BASE_URL}/api/wallets/withdraw`, {
+      const payload: Record<string, any> = {
+        impresa_id: impresaId,
+        importo,
+        tipo,
+        descrizione,
+      };
+      // Invia riferimento_id solo se presente (il backend potrebbe validarlo)
+      if (riferimentoId) {
+        payload.riferimento_id = riferimentoId;
+      }
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/pagamenti/servizio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wallet_id: walletId,
-          amount: importo,
-          description: descWithType,
-          company_id: impresaId,
-          comune_id: comuneId
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
