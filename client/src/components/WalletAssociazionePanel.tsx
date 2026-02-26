@@ -206,8 +206,18 @@ export default function WalletAssociazionePanel() {
         <TabsContent value="riepilogo">
           <Card className="bg-[#1a2332] border-[#3b82f6]/30">
             <CardContent className="pt-6 text-center py-8">
-              <Wallet className="h-12 w-12 mx-auto text-[#3b82f6]/40 mb-3" />
-              <p className="text-[#e8fbff]/50">I dati del wallet verranno popolati dal backend</p>
+              {transazioni.length === 0 ? (
+                <>
+                  <Wallet className="h-12 w-12 mx-auto text-[#3b82f6]/40 mb-3" />
+                  <p className="text-[#e8fbff]/50">Nessuna transazione registrata</p>
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="h-12 w-12 mx-auto text-[#10b981]/60 mb-3" />
+                  <p className="text-lg font-bold text-[#10b981]">{transazioni.length} transazioni</p>
+                  <p className="text-sm text-[#e8fbff]/50 mt-1">Totale incassato: EUR {wallet.totale_incassato.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+                </>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -998,14 +998,14 @@ export default function WalletImpresaPage() {
                       const isDeposit = tx.type === 'DEPOSIT';
                       const walletLabel = tx.wallet_type === 'GENERICO' ? 'Generico' : tx.wallet_type === 'CONCESSIONE' ? 'Concessione' : tx.market_name || 'Spunta';
                       return (
-                      <div key={`tx-${tx.id}`} className={`p-4 bg-[#0b1220] rounded-lg border ${isDeposit ? 'border-blue-500/10' : 'border-orange-500/10'}`}>
+                      <div key={`tx-${tx.id}`} className={`p-4 bg-[#0b1220] rounded-lg border ${isDeposit ? 'border-blue-500/10' : 'border-[#14b8a6]/10'}`}>
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium text-[#e8fbff]">
                               {isDeposit ? (
                                 <Plus className="w-4 h-4 inline mr-1 text-blue-400" />
                               ) : (
-                                <Receipt className="w-4 h-4 inline mr-1 text-orange-400" />
+                                <Receipt className="w-4 h-4 inline mr-1 text-[#e8fbff]" />
                               )}
                               {isDeposit ? 'Ricarica' : 'Addebito'} Wallet {walletLabel}
                             </p>
@@ -1017,8 +1017,8 @@ export default function WalletImpresaPage() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <Badge className={isDeposit ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}>{isDeposit ? 'RICARICA' : 'ADDEBITO'}</Badge>
-                            <p className={`text-lg font-bold ${isDeposit ? 'text-blue-400' : 'text-orange-400'}`}>
+                            <Badge className={isDeposit ? 'bg-blue-500/20 text-blue-400' : 'bg-[#14b8a6]/20 text-[#e8fbff]'}>{isDeposit ? 'RICARICA' : 'ADDEBITO'}</Badge>
+                            <p className={`text-lg font-bold ${isDeposit ? 'text-blue-400' : 'text-[#e8fbff]'}`}>
                               {isDeposit ? '+' : '-'}€{parseFloat(tx.amount).toFixed(2)}
                             </p>
                           </div>

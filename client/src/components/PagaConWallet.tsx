@@ -76,14 +76,25 @@ export function PagaConWallet({ open, onClose, onSuccess, importo, descrizione, 
       const payload: Record<string, any> = {
         impresa_id: impresaId,
         importo,
-        tipo,
-        descrizione,
       };
-      // Invia riferimento_id solo se presente (il backend potrebbe validarlo)
-      if (riferimentoId) {
-        payload.riferimento_id = riferimentoId;
+
+      // Adatta payload e endpoint in base al tipo di pagamento
+      let endpoint = '/api/pagamenti/servizio';
+      if (tipo === 'quota_associativa') {
+        endpoint = '/api/pagamenti/quota';
+        payload.tesseramento_id = riferimentoId;
+        payload.note = descrizione;
+      } else if (tipo === 'corso') {
+        endpoint = '/api/pagamenti/corso';
+        payload.corso_id = riferimentoId;
+        payload.note = descrizione;
+      } else {
+        payload.tipo = tipo;
+        payload.descrizione = descrizione;
+        if (riferimentoId) payload.riferimento_id = riferimentoId;
       }
-      const res = await authenticatedFetch(`${API_BASE_URL}/api/pagamenti/servizio`, {
+
+      const res = await authenticatedFetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
