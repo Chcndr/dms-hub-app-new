@@ -1482,26 +1482,41 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     if (!impresaId) { setLoading(false); return; }
     const load = async () => {
       setLoading(true);
+      let hasTesseramento = false;
       try {
         // Verifica tesseramento attivo
         const tessRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`));
         const tessData = await tessRes.json();
-        if (tessData.success && tessData.data) {
+        if (tessData.success && tessData.data && tessData.data.stato === 'ATTIVO') {
           setTesseramento(tessData.data);
+          hasTesseramento = true;
         } else {
           setTesseramento(null);
-          // Carica lista associazioni disponibili
-          const assocRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/pubbliche`));
-          const assocData = await assocRes.json();
-          if (assocData.success && Array.isArray(assocData.data)) {
-            setAssociazioni(assocData.data);
-          }
         }
       } catch {
         setTesseramento(null);
-      } finally {
-        setLoading(false);
       }
+      // Carica lista associazioni disponibili
+      if (!hasTesseramento) {
+        try {
+          // Prova endpoint pubblico, fallback a endpoint generico
+          let assocList: any[] = [];
+          const assocRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/pubbliche`));
+          const assocData = await assocRes.json();
+          if (assocData.success && Array.isArray(assocData.data) && assocData.data.length > 0) {
+            assocList = assocData.data;
+          } else {
+            // Fallback: carica tutte le associazioni (stesso endpoint della dashboard admin)
+            const fallbackRes = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/associazioni`));
+            const fallbackData = await fallbackRes.json();
+            if (fallbackData.success && Array.isArray(fallbackData.data)) {
+              assocList = fallbackData.data.filter((a: any) => a.attiva !== false && a.stato !== 'INATTIVA');
+            }
+          }
+          setAssociazioni(assocList);
+        } catch { /* silenzioso */ }
+      }
+      setLoading(false);
     };
     load();
   }, [impresaId]);
