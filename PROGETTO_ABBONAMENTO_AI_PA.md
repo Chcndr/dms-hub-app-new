@@ -1,6 +1,6 @@
 # PROGETTO DMS HUB - Modello di Abbonamento con AI Locale per PA
 
-> Versione 1.0 | Febbraio 2026
+> Versione 1.1 | Febbraio 2026
 > Documento strategico per il modello commerciale DMS Hub rivolto alle Pubbliche Amministrazioni
 
 ---
@@ -17,17 +17,55 @@ L'AI gira su infrastruttura controllata, i dati della PA non escono mai dal peri
 
 ---
 
-## 2. MODELLO DI ABBONAMENTO — 3 PIANI
+## 2. MODELLO DI ABBONAMENTO — 4 PIANI
 
 ### Panoramica
 
-| | ESSENZIALE | PROFESSIONALE | ENTERPRISE |
-|---|---|---|---|
-| **Target** | Comuni < 15.000 ab. | Comuni 15k–100k ab. | Comuni > 100k / Province / Unioni |
-| **Prezzo/mese** | **€ 99** | **€ 349** | **€ 899** |
-| **Prezzo/anno** | **€ 990** (2 mesi gratis) | **€ 3.490** (2 mesi gratis) | **€ 8.990** (2 mesi gratis) |
-| **Setup una tantum** | € 0 | € 499 | € 0 (incluso) |
-| **Trial gratuito** | 30 giorni | 30 giorni | 15 giorni su richiesta |
+| | STARTER | ESSENZIALE | PROFESSIONALE | ENTERPRISE |
+|---|---|---|---|---|
+| **Target** | Pilota PA, primi test, piccoli comuni | Comuni < 15.000 ab. | Comuni 15k–100k ab. | Comuni > 100k / Province / Unioni |
+| **Prezzo/mese** | **€ 39** | **€ 99** | **€ 349** | **€ 899** |
+| **Prezzo/anno** | **€ 390** (2 mesi gratis) | **€ 990** (2 mesi gratis) | **€ 3.490** (2 mesi gratis) | **€ 8.990** (2 mesi gratis) |
+| **Setup una tantum** | € 0 | € 0 | € 499 | € 0 (incluso) |
+| **Trial gratuito** | 30 giorni | 30 giorni | 30 giorni | 15 giorni su richiesta |
+| **Hardware** | VPS senza GPU (~€ 20-40/mese) | GPU 24GB | 2x GPU 80GB | 4x GPU |
+| **Modello AI** | Qwen3-8B o Phi-4 (CPU) | Qwen3-30B | Qwen3-235B | Llama 4 400B |
+
+### 2.0 STARTER — € 39/mese
+
+**Per chi e':** Comuni che vogliono testare il sistema con investimento minimo.
+Il piano Starter e' pensato per abbattere completamente la barriera d'ingresso:
+costa meno di un abbonamento a un gestionale base e permette di provare l'AI
+su un VPS economico senza GPU, con un modello piccolo ma capace che gira su CPU.
+
+| Categoria | Cosa include |
+|---|---|
+| **Mercati** | Fino a 2 mercati |
+| **Posteggi** | Fino a 50 posteggi |
+| **Operatori** | Fino a 30 operatori |
+| **Utenti PA** | 2 utenti amministrativi |
+| **AI Assistente** | Modello **Qwen3-8B** o **Phi-4** locale — 50 messaggi/mese |
+| **AI Capacita'** | FAQ base, normativa essenziale D.Lgs 114/98, risposte semplici |
+| **Moduli** | Mercati, Posteggi, Presenze (base) |
+| **Wallet/PagoPA** | NO |
+| **Integrazioni API** | NO |
+| **Report** | Minimo (export CSV) |
+| **Support** | Community + documentazione |
+
+**Cosa fa l'AI Starter:**
+- Risponde a domande base sulla normativa del commercio ambulante
+- Fornisce informazioni su procedure standard (FAQ pre-configurate)
+- Aiuta a orientarsi nel sistema DMS Hub
+- Genera risposte brevi e puntuali su quesiti normativi
+
+**Perche' il piano Starter e' strategico:**
+- **Barriera d'ingresso quasi zero:** € 39/mese e' un costo trascurabile per qualsiasi PA
+- **Nessun investimento hardware:** Gira su un VPS da € 20-40/mese senza GPU
+- **Proof of concept:** Il comune prova il sistema senza rischio, poi fa upgrade quando vede i risultati
+- **Break-even immediato:** Basta 1 cliente Starter per coprire il costo del VPS
+- **Funnel naturale:** Il 60% dei comuni Starter fara' upgrade a Essenziale entro 6 mesi
+
+---
 
 ### 2.1 ESSENZIALE — € 99/mese
 
@@ -140,6 +178,7 @@ di mercati complesse e necessitano AI predittiva e integrazioni complete.
 
 | Tier | Modello | Parametri | Perche' questo |
 |---|---|---|---|
+| **Starter** | **Qwen3-8B** o **Phi-4** | 8B / 14B | Gira su CPU senza GPU! Perfetto per pilota a costo zero hardware. Risposte in 3-5 secondi |
 | **Essenziale** | **Qwen3-30B-A3B** | 30B (MoE, 3B attivi) | Velocissimo (20+ tok/s), multilingue, ottimo per FAQ e normativa. Gira su 1 GPU da 24GB |
 | **Professionale** | **Qwen3-235B-A22B** | 235B (MoE, 22B attivi) | Livello GPT-4o, eccellente per analisi dati e ragionamento. Necessita 2x GPU 80GB |
 | **Enterprise** | **Llama 4 Maverick 400B** | 400B (MoE) | Top prestazioni, contesto 1M token, 200 lingue. Multi-GPU cluster |
@@ -147,15 +186,15 @@ di mercati complesse e necessitano AI predittiva e integrazioni complete.
 
 ### 3.3 Paragone qualita' AI: Locale vs Cloud
 
-| Benchmark | Qwen3-30B (Essenziale) | Qwen3-235B (Professionale) | Llama 4 / Mistral L3 (Enterprise) | Claude Sonnet 4.6 (cloud) | GPT-4o (cloud) |
-|---|---|---|---|---|---|
-| **MMLU (conoscenza)** | 82% | 90% | 92% | 91% | 88% |
-| **HumanEval (codice)** | 75% | 85% | 88% | 90% | 87% |
-| **Ragionamento** | Buono | Ottimo | Eccellente | Eccellente | Ottimo |
-| **Italiano** | Ottimo | Eccellente | Eccellente | Eccellente | Buono |
-| **Velocita'** | 20+ tok/s | 15 tok/s | 10-15 tok/s | ~50 tok/s | ~40 tok/s |
-| **Privacy** | 100% locale | 100% locale | 100% locale | Dati su server Anthropic | Dati su server OpenAI |
-| **Costo/messaggio** | ~€ 0.001 | ~€ 0.005 | ~€ 0.01 | ~€ 0.03 | ~€ 0.02 |
+| Benchmark | Qwen3-8B (Starter) | Qwen3-30B (Essenziale) | Qwen3-235B (Professionale) | Llama 4 / Mistral L3 (Enterprise) | Claude Sonnet 4.6 (cloud) | GPT-4o (cloud) |
+|---|---|---|---|---|---|---|
+| **MMLU (conoscenza)** | 72% | 82% | 90% | 92% | 91% | 88% |
+| **HumanEval (codice)** | 62% | 75% | 85% | 88% | 90% | 87% |
+| **Ragionamento** | Sufficiente | Buono | Ottimo | Eccellente | Eccellente | Ottimo |
+| **Italiano** | Buono | Ottimo | Eccellente | Eccellente | Eccellente | Buono |
+| **Velocita'** | 3-5 tok/s (CPU) | 20+ tok/s | 15 tok/s | 10-15 tok/s | ~50 tok/s | ~40 tok/s |
+| **Privacy** | 100% locale | 100% locale | 100% locale | 100% locale | Dati su server Anthropic | Dati su server OpenAI |
+| **Costo/messaggio** | ~€ 0.0002 | ~€ 0.001 | ~€ 0.005 | ~€ 0.01 | ~€ 0.03 | ~€ 0.02 |
 
 **Conclusione:** I modelli locali nel 2026 sono al 90-95% delle prestazioni dei modelli cloud,
 con il vantaggio decisivo della privacy totale e costi marginali vicini a zero dopo l'investimento hardware.
@@ -170,6 +209,7 @@ con il vantaggio decisivo della privacy totale e costi marginali vicini a zero d
 
 | Config | GPU | RAM | Storage | Costo/mese | Serve per |
 |---|---|---|---|---|---|
+| **Starter** | Nessuna (solo CPU) | 16-32GB | 200GB NVMe | ~€ 20-40/mese | Qwen3-8B/Phi-4 (Starter) — primi 10-20 comuni |
 | **Base** | 1x RTX 4090 (24GB) | 64GB | 1TB NVMe | ~€ 200/mese | Qwen3-30B (Essenziale) — fino a 50 comuni |
 | **Pro** | 2x A100 (80GB) | 128GB | 2TB NVMe | ~€ 800/mese | Qwen3-235B (Professionale) — fino a 200 comuni |
 | **Enterprise** | 4x A100 (80GB) o 2x H100 | 256GB | 4TB NVMe | ~€ 2.000/mese | Llama4/Mistral L3 (Enterprise) — illimitato |
@@ -178,6 +218,7 @@ con il vantaggio decisivo della privacy totale e costi marginali vicini a zero d
 
 | Config | Hardware | Costo acquisto | Ammortamento/mese | Serve per |
 |---|---|---|---|---|
+| **Starter** | VPS cloud (no acquisto) | € 0 | € 20-40/mese (noleggio VPS) | Starter |
 | **Base** | Server + 1x RTX 4090 | ~ € 5.000 | € 140/mese | Essenziale |
 | **Pro** | Server + 2x RTX 4090 | ~ € 10.000 | € 280/mese | Professionale |
 | **Enterprise** | Server + 4x A100 80GB | ~ € 60.000 | € 1.670/mese | Enterprise |
@@ -197,6 +238,7 @@ con il vantaggio decisivo della privacy totale e costi marginali vicini a zero d
 
 | Tier | Costo elettricita'/msg | Ammortamento HW/msg | **Totale/messaggio** | vs Claude API |
 |---|---|---|---|---|
+| Starter (8B, CPU) | € 0.0001 | € 0.0001 | **€ 0.0002** | 150x piu' economico |
 | Essenziale (30B) | € 0.0003 | € 0.0007 | **€ 0.001** | 30x piu' economico |
 | Professionale (235B) | € 0.001 | € 0.004 | **€ 0.005** | 6x piu' economico |
 | Enterprise (400B) | € 0.003 | € 0.007 | **€ 0.01** | 3x piu' economico |
@@ -207,55 +249,61 @@ con il vantaggio decisivo della privacy totale e costi marginali vicini a zero d
 
 ### 5.1 Revenue per scenario di adozione
 
-**Scenario Conservativo (Anno 1): 30 comuni**
+**Scenario Conservativo (Anno 1): 40 comuni**
 
 | Piano | Comuni | Prezzo/mese | Revenue/mese | Revenue/anno |
 |---|---|---|---|---|
-| Essenziale | 18 | € 99 | € 1.782 | € 21.384 |
+| Starter | 12 | € 39 | € 468 | € 5.616 |
+| Essenziale | 16 | € 99 | € 1.584 | € 19.008 |
 | Professionale | 10 | € 349 | € 3.490 | € 41.880 |
 | Enterprise | 2 | € 899 | € 1.798 | € 21.576 |
 | **Setup fees** | | | | € 4.990 |
-| **TOTALE** | **30** | | **€ 7.070** | **€ 89.830** |
+| **TOTALE** | **40** | | **€ 7.340** | **€ 93.070** |
 
-**Scenario Medio (Anno 2): 100 comuni**
+*Nota: il piano Starter attira piu' comuni iniziali, molti dei quali faranno upgrade a Essenziale entro 6 mesi.*
+
+**Scenario Medio (Anno 2): 130 comuni**
 
 | Piano | Comuni | Revenue/mese | Revenue/anno |
 |---|---|---|---|
+| Starter | 30 | € 1.170 | € 14.040 |
 | Essenziale | 50 | € 4.950 | € 59.400 |
 | Professionale | 35 | € 12.215 | € 146.580 |
 | Enterprise | 15 | € 13.485 | € 161.820 |
 | **Setup fees** | | | € 17.465 |
-| **TOTALE** | **100** | **€ 30.650** | **€ 385.265** |
+| **TOTALE** | **130** | **€ 31.820** | **€ 399.305** |
 
-**Scenario Ambizioso (Anno 3): 300 comuni**
+**Scenario Ambizioso (Anno 3): 350 comuni**
 
 | Piano | Comuni | Revenue/mese | Revenue/anno |
 |---|---|---|---|
-| Essenziale | 120 | € 11.880 | € 142.560 |
-| Professionale | 130 | € 45.370 | € 544.440 |
+| Starter | 50 | € 1.950 | € 23.400 |
+| Essenziale | 130 | € 12.870 | € 154.440 |
+| Professionale | 120 | € 41.880 | € 502.560 |
 | Enterprise | 50 | € 44.950 | € 539.400 |
-| **Setup fees** | | | € 64.870 |
-| **TOTALE** | **300** | **€ 102.200** | **€ 1.291.270** |
+| **Setup fees** | | | € 59.880 |
+| **TOTALE** | **350** | **€ 101.650** | **€ 1.279.680** |
 
 ### 5.2 Costi operativi
 
-| Voce | Anno 1 (30 comuni) | Anno 2 (100 comuni) | Anno 3 (300 comuni) |
+| Voce | Anno 1 (40 comuni) | Anno 2 (130 comuni) | Anno 3 (350 comuni) |
 |---|---|---|---|
-| Server AI (Hetzner) | € 2.400/anno | € 9.600/anno | € 24.000/anno |
+| VPS Starter (CPU only) | € 480/anno | € 480/anno | € 960/anno |
+| Server AI GPU (Hetzner) | € 2.400/anno | € 9.600/anno | € 24.000/anno |
 | Hetzner backend esistente | € 3.600/anno | € 3.600/anno | € 7.200/anno |
 | Neon DB | € 1.200/anno | € 2.400/anno | € 6.000/anno |
 | Vercel frontend | € 240/anno | € 240/anno | € 480/anno |
 | Dominio + certificati | € 200/anno | € 200/anno | € 200/anno |
-| **TOTALE INFRA** | **€ 7.640** | **€ 16.040** | **€ 37.880** |
+| **TOTALE INFRA** | **€ 8.120** | **€ 16.520** | **€ 38.840** |
 
 ### 5.3 Margini
 
 | | Anno 1 | Anno 2 | Anno 3 |
 |---|---|---|---|
-| Revenue | € 89.830 | € 385.265 | € 1.291.270 |
-| Costi infra | € 7.640 | € 16.040 | € 37.880 |
-| **Margine lordo** | **€ 82.190** | **€ 369.225** | **€ 1.253.390** |
-| **Margine %** | **91.5%** | **95.8%** | **97.1%** |
+| Revenue | € 93.070 | € 399.305 | € 1.279.680 |
+| Costi infra | € 8.120 | € 16.520 | € 38.840 |
+| **Margine lordo** | **€ 84.950** | **€ 382.785** | **€ 1.240.840** |
+| **Margine %** | **91.3%** | **95.9%** | **97.0%** |
 
 I margini sono elevati perche':
 - L'AI locale ha costo marginale quasi zero (hardware ammortizzato)
@@ -271,12 +319,16 @@ I margini sono elevati perche':
 ```
 TRIAL GRATUITO (30 giorni)
     |
-    | Comune prova il piano Essenziale gratis
-    | AI risponde a 200 domande su normativa e procedure
-    | Il PA scopre quanto tempo risparmia
+    | Comune prova il piano Starter gratis
+    | AI risponde a 50 domande base su normativa
+    | Il PA vede il potenziale del sistema
     |
     v
-ESSENZIALE (€ 99/mese) -----> "Vorrei analizzare i dati dei mercati"
+STARTER (€ 39/mese) -------> "L'AI e' utile ma troppo lenta/limitata"
+    |                          "Vorrei piu' messaggi e risposte migliori"
+    |                          "Devo gestire piu' mercati"
+    v
+ESSENZIALE (€ 99/mese) ----> "Vorrei analizzare i dati dei mercati"
     |                          "Vorrei generare report automatici"
     |                          "Vorrei integrare PagoPA"
     v                          "L'AI potrebbe fare di piu'"
@@ -291,7 +343,8 @@ ENTERPRISE (€ 899/mese) ----> Multi-comune, illimitato, AI top
 
 | Da | A | Trigger |
 |---|---|---|
-| Trial | Essenziale | Il PA ha usato l'AI per 30 giorni e non vuole tornare alla carta |
+| Trial | Starter | Il PA ha provato il sistema e vuole continuare con investimento minimo |
+| Starter | Essenziale | L'AI su CPU e' troppo lenta, oppure 50 msg/mese non bastano, oppure servono piu' mercati |
 | Essenziale | Professionale | Raggiunge 200 msg AI/mese e vuole di piu', oppure ha bisogno di PagoPA/wallet |
 | Professionale | Enterprise | Gestisce piu' di 30 mercati, oppure e' provincia/unione, oppure vuole AI predittiva |
 
@@ -307,6 +360,33 @@ Quando il PA prova a usare una funzione del tier superiore:
 ---
 
 ## 7. CAPACITA' AI PER PIANO — DETTAGLIO
+
+### 7.0 Starter — "Il Primo Passo"
+
+L'AI del piano Starter e' un assistente base che gira interamente su CPU,
+senza bisogno di GPU. E' piu' lento ma perfettamente funzionale per FAQ e domande semplici:
+
+| Capacita' | Esempio di domanda |
+|---|---|
+| FAQ normativa base | "Cos'e' una concessione decennale?" |
+| Procedure standard | "Qual e' l'iter base per un subingresso?" |
+| Informazioni sistema | "Come funziona il modulo presenze?" |
+| Risposte brevi | "Quali documenti servono per l'autorizzazione tipo A?" |
+
+**Modello:** Qwen3-8B o Phi-4 (14B)
+- Velocita': 3-5 token/secondo (su CPU)
+- Qualita': Paragonabile a GPT-3.5 Turbo base
+- Hardware: VPS standard senza GPU (16-32GB RAM, CPU multi-core)
+- Contesto: fino a 8K token (circa 6 pagine di testo)
+
+**Limiti del piano Starter:**
+- Risposte piu' lente (3-5 secondi vs <1 secondo dei piani GPU)
+- Contesto ridotto (non analizza documenti lunghi)
+- Solo 50 messaggi/mese
+- Nessuna capacita' di analisi dati o report
+- Risposte meno articolate rispetto ai modelli piu' grandi
+
+---
 
 ### 7.1 Essenziale — "Il Consulente Normativo"
 
@@ -378,7 +458,7 @@ L'AI Enterprise e' un vero partner strategico per la PA:
 | Aspetto | DMS Hub | Sviluppo interno PA | Consulente esterno |
 |---|---|---|---|
 | Tempo di attivazione | 1 giorno | 12-24 mesi | 6-12 mesi |
-| Costo primo anno | € 1.188 - € 10.788 | € 80.000 - € 200.000 | € 40.000 - € 100.000 |
+| Costo primo anno | € 468 - € 10.788 | € 80.000 - € 200.000 | € 40.000 - € 100.000 |
 | AI integrata | SI, locale | Da costruire | Probabilmente cloud |
 | Aggiornamenti | Continui, inclusi | A carico PA | A pagamento |
 | Normativa aggiornata | Automatica | Manuale | Manuale |
@@ -395,7 +475,7 @@ L'AI Enterprise e' un vero partner strategico per la PA:
 | PagoPA nativo | SI | Spesso add-on | Zero |
 | Mobile operatori | SI | Raramente | Zero |
 | TCC/Sostenibilita' | SI | NO | NO |
-| Costo/anno | Da € 990 | € 5.000 - € 30.000 | "Gratis" (ma costa in ore) |
+| Costo/anno | Da € 468 (Starter) | € 5.000 - € 30.000 | "Gratis" (ma costa in ore) |
 
 ### 8.3 Costo AI: Locale vs Cloud
 
@@ -431,22 +511,22 @@ Per un comune che fa 1.000 messaggi AI/mese:
                         +------------+--------------+
                                      |
                            API OpenAI-compatible
-                                     |
-                                     v
-                    +-------------------------------+
-                    |     vLLM Inference Server     |
-                    |   Hetzner GPU Server (EU)     |
-                    |                               |
-                    |  +-------------------------+  |
-                    |  | Qwen3-30B   (Essenziale) |  |
-                    |  | Qwen3-235B  (Profess.)   |  |
-                    |  | Llama4 400B (Enterprise) |  |
-                    |  +-------------------------+  |
-                    |                               |
-                    |  GPU: A100 80GB x2-4          |
-                    |  RAM: 128-256GB               |
-                    |  Storage: 2-4TB NVMe          |
-                    +-------------------------------+
+                            /                  \
+                           v                    v
+          +-------------------------+  +-------------------------------+
+          |  VPS CPU (Starter)      |  |     vLLM Inference Server     |
+          |  Hetzner / Ollama       |  |   Hetzner GPU Server (EU)     |
+          |                         |  |                               |
+          |  +-------------------+  |  |  +-------------------------+  |
+          |  | Qwen3-8B (CPU)   |  |  |  | Qwen3-30B   (Essenziale) |  |
+          |  | Phi-4    (CPU)   |  |  |  | Qwen3-235B  (Profess.)   |  |
+          |  +-------------------+  |  |  | Llama4 400B (Enterprise) |  |
+          |                         |  |  +-------------------------+  |
+          |  RAM: 16-32GB           |  |                               |
+          |  Costo: € 20-40/mese   |  |  GPU: A100 80GB x2-4          |
+          +-------------------------+  |  RAM: 128-256GB               |
+                                       |  Storage: 2-4TB NVMe          |
+                                       +-------------------------------+
 ```
 
 ### 9.2 Come funziona
@@ -476,20 +556,29 @@ Questo rende l'AI ancora piu' specializzata e utile — impossibile con i modell
 
 ## 10. ROADMAP DI IMPLEMENTAZIONE
 
-### Fase 1 — MVP (2 mesi)
+### Fase 0 — Starter MVP (1 mese)
 
-- [ ] Deployment vLLM su server Hetzner con Qwen3-30B
-- [ ] Chat AI funzionante nella dashboard PA
-- [ ] Sistema di quota messaggi per comune
-- [ ] Integrazione con dati del comune (contesto automatico)
+- [ ] Deployment Ollama su VPS Hetzner economico (senza GPU)
+- [ ] Installazione Qwen3-8B o Phi-4 quantizzato (Q4_K_M)
+- [ ] Chat AI con streaming SSE nella dashboard PA (UX moderna tipo ChatGPT)
+- [ ] Sistema di quota messaggi base (50 msg/mese per Starter)
 - [ ] Pagina pricing pubblica sul sito
+- [ ] Primi clienti pilota con piano Starter a € 39/mese
+
+### Fase 1 — Essenziale (2 mesi)
+
+- [ ] Deployment vLLM su server Hetzner GPU con Qwen3-30B
+- [ ] Upgrade chat AI con markdown rendering completo
+- [ ] Sistema di quota messaggi per comune (200 msg/mese Essenziale)
+- [ ] Integrazione con dati del comune (contesto automatico)
+- [ ] Storico conversazioni con sidebar navigabile
 
 ### Fase 2 — Produzione (2 mesi)
 
 - [ ] Aggiunta modello Qwen3-235B per tier Professionale
 - [ ] Sistema di tracking utilizzo e billing
 - [ ] Integrazione con fatturazione ComuniPanel esistente
-- [ ] Conversazioni persistenti e storico
+- [ ] Conversazioni persistenti e storico completo
 - [ ] Sistema di upsell automatico (notifiche quota)
 
 ### Fase 3 — Enterprise (3 mesi)
@@ -530,6 +619,7 @@ Questo rende l'AI ancora piu' specializzata e utile — impossibile con i modell
 ### 11.3 Procurement PA
 
 - Importi sotto € 40.000: affidamento diretto (MePA o extra-MePA)
+- Piano Starter annuale (€ 468): affidamento diretto, importo minimo
 - Piano Essenziale annuale (€ 990): affidamento diretto senza gara
 - Piano Professionale annuale (€ 3.490): affidamento diretto
 - Piano Enterprise annuale (€ 10.788): sotto soglia, procedura semplificata
@@ -541,13 +631,14 @@ Questo rende l'AI ancora piu' specializzata e utile — impossibile con i modell
 
 | KPI | Target Anno 1 | Target Anno 2 | Target Anno 3 |
 |---|---|---|---|
-| Comuni attivi | 30 | 100 | 300 |
+| Comuni attivi | 40 | 130 | 350 |
 | Tasso trial → pagante | 40% | 50% | 60% |
+| Tasso upgrade (Starter → Ess) | 50% | 60% | 65% |
 | Tasso upgrade (Ess → Pro) | 15% | 25% | 30% |
 | Churn mensile | < 5% | < 3% | < 2% |
 | NPS (soddisfazione) | > 40 | > 50 | > 60 |
 | Messaggi AI / comune / mese | 80 | 150 | 250 |
-| Revenue ricorrente annuale (ARR) | € 85K | € 367K | € 1.2M |
+| Revenue ricorrente annuale (ARR) | € 88K | € 382K | € 1.2M |
 | Margine lordo | > 90% | > 95% | > 97% |
 
 ---
@@ -558,14 +649,14 @@ Questo rende l'AI ancora piu' specializzata e utile — impossibile con i modell
 |---|---|
 | **Prodotto** | Piattaforma gestione mercati ambulanti + AI locale intelligente |
 | **Target** | 7.903 comuni italiani con mercati ambulanti |
-| **Modello** | SaaS con 3 tier (€ 99 / € 349 / € 899 al mese) |
+| **Modello** | SaaS con 4 tier (€ 39 / € 99 / € 349 / € 899 al mese) |
 | **Differenziatore** | AI locale, privata, specializzata — non un chatbot generico |
 | **AI** | Modelli open-weight (Qwen3, Llama 4, Mistral) su server EU |
 | **Privacy** | Zero dati condivisi — piena conformita' GDPR |
 | **Margine** | > 90% (costo marginale AI locale quasi zero) |
-| **Break-even** | ~ 15 comuni paganti |
+| **Break-even** | ~ 8-10 comuni paganti (grazie al tier Starter a basso costo infra) |
 | **TAM** | € 30M+/anno (se 3.000 comuni a media € 10K/anno) |
 
 ---
 
-*Documento generato il 27/02/2026 — DMS Hub Team*
+*Documento generato il 27/02/2026 — Aggiornato v1.1 con tier Starter — DMS Hub Team*
