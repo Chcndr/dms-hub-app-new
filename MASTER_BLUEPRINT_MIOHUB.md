@@ -1,7 +1,32 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.0.1 (Tesseramenti & Adempimenti)
-> **Data:** 25 Febbraio 2026
+> **Versione:** 9.1.2 (Business Associazioni + Production Fixes)
+> **Data:** 27 Febbraio 2026
+> 
+> --- 
+> ### CHANGELOG v9.1.0 (25 Feb 2026)
+> **Implementazione completa del sistema "Business Associazioni"**
+> 
+> **Frontend (commit `d8d0287`):**
+> - **Merge del branch di Claude** (`claude/review-production-fixes-3sUvQ`)
+> - **4 nuovi pannelli** nella Dashboard PA per la gestione dell'associazione:
+>   - `SchedaPubblicaPanel.tsx`
+>   - `GestioneServiziAssociazionePanel.tsx`
+>   - `GestioneCorsiAssociazionePanel.tsx`
+>   - `WalletAssociazionePanel.tsx`
+> - **Aggiornamento `AnagraficaPage.tsx`** con il nuovo flusso "Associati e Paga" e le sezioni per servizi e formazione.
+> 
+> **Backend (commit `d4634ad`):**
+> - **16 nuovi endpoint** per il sistema associativo, implementati in `routes/associazioni-v9.js` per non toccare la logica esistente.
+> - **Nuovo endpoint `POST /api/tesseramenti/richiedi-e-paga`** in `routes/tesseramenti.js`.
+> - **Arricchimento `GET /api/associazioni/pubbliche`** con `quota_annuale` e `servizi_count`.
+> - **Fix chirurgici** su 7 query SQL per allineare i nomi delle colonne (`nome_impresa` → `denominazione`) e gestire i tipi di dato.
+> 
+> **Database (Neon):**
+> - **2 nuove tabelle create:** `wallet_associazione` e `transazioni_wallet_associazione`.
+> - **2 `ALTER TABLE`** per aggiungere le colonne `associazioni.quota_annuale` e `formazione_iscrizioni.attestato_rilasciato`.
+> 
+> **Stato:** **22/22 endpoint** del nuovo sistema testati e funzionanti in produzione.
 > **Autore:** Sistema documentato da Manus AI & Claude AI  
 > **Stato:** PRODUZIONE
 
@@ -50,6 +75,34 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 25 Febbraio 2026 — v9.0.2 — Migrazione Completa API URL a Backend Unico
+
+**Contesto:** Merge del fix di Claude che rimuove tutti i riferimenti ai backend dismessi (`orchestratore.mio-hub.me`, `mihub.157-90-29-66.nip.io`, `manusvm.computer`) e punta tutto al backend REST unico `api.mio-hub.me`.
+
+**Stato:** ✅ COMPLETATO
+
+**Frontend (dms-hub-app-new) — commit `357bc0f` (merge di `ed51f7f`):**
+- ✅ **42 file modificati** (+147 -116): tutti i fallback URL nel codice sorgente ora puntano a `api.mio-hub.me`
+- ✅ **`config/api.ts`:** `MIHUB_API_BASE_URL`, `ORCHESTRATORE_API_BASE_URL`, `TCC_API_BASE` tutti aggiornati a `api.mio-hub.me`
+- ✅ **`vercel.json`:** +6 rewrites mancanti aggiunti (collaboratori, dashboard, integrations, routing, stalls, hub)
+- ✅ **`vercel.json`:** 8 rewrites corretti da backend dismessi a `api.mio-hub.me`
+- ✅ **Zero riferimenti** a `orchestratore.mio-hub.me` nel codice eseguibile (restano solo in un README di documentazione)
+- ✅ **Zero riferimenti** a `mihub.157-90-29-66.nip.io` in tutto il codebase
+- ✅ **Zero riferimenti** a `manusvm.computer` in tutto il codebase
+
+**Backend dismessi (in cantina):**
+
+| Backend | Status |
+|---|---|
+| `orchestratore.mio-hub.me` | In cantina, rimosso ovunque |
+| `mihub.157-90-29-66.nip.io` | In cantina, rimosso ovunque |
+| `manusvm.computer` | Morto, rimosso ovunque |
+| **`api.mio-hub.me`** | **Unico backend attivo** |
+
+**Pulizia Branch:** Branch `claude/review-production-fixes-3sUvQ` cancellato dopo il merge.
+
+---
 
 ### Sessione 25 Febbraio 2026 — Progetto v9.0.1 — Tesseramenti & Adempimenti
 
