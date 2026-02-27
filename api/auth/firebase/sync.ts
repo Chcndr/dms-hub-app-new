@@ -29,11 +29,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = req.headers.origin || '';
   if (ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    // Per le preview di Vercel (*.vercel.app)
-    if (origin.endsWith('.vercel.app')) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    }
+  } else if (
+    // Solo preview deploy di QUESTO progetto Vercel (pattern: dms-hub-app-new-*.vercel.app)
+    /^https:\/\/dms-hub-app-new-[a-z0-9]+-[a-z0-9]+\.vercel\.app$/.test(origin)
+  ) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
