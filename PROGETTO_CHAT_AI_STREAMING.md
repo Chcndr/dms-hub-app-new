@@ -1,7 +1,11 @@
 # PROGETTO: Chat AI con Streaming — Frontend DMS Hub
 
-> Versione 1.0 | Febbraio 2026
+> Versione 1.1 | Febbraio 2026
 > Progetto dettagliato per il componente frontend della chat AI con streaming SSE
+> **UPDATE v1.1**: Tutti gli endpoint migrati da tRPC a REST API su mihub-backend-rest (Express.js su Hetzner).
+> Backend tRPC dismesso — ZERO tRPC per la chat AI. Solo REST.
+> Questa chat e' il fondamento dell'AVA (Agente Virtuale Attivo) del progetto A99X.
+> Vedi PROGETTO_A99X_INTEGRAZIONE_MIOHUB.md per il quadro strategico completo.
 
 ---
 
@@ -143,7 +147,9 @@ data: {"code": "QUOTA_EXCEEDED", "message": "Hai esaurito i messaggi AI per ques
 | Componente | Chi lo fa | Dettagli |
 |------------|-----------|----------|
 | **Frontend React** (chat, streaming, UI) | **Claude** | Questo progetto |
-| **Backend endpoint SSE** | **Manus** | Express endpoint che proxa lo stream da vLLM/Ollama |
+| **Backend REST endpoints** | **Manus** | Express.js su mihub-backend-rest (Hetzner) — ZERO tRPC |
+| **Endpoint SSE streaming** | **Manus** | `POST /api/ai/chat/stream` che proxa lo stream da vLLM/Ollama |
+| **CRUD conversazioni REST** | **Manus** | 6 endpoint REST: GET/POST/PATCH/DELETE conversations + messages + quota |
 | **Connessione vLLM/Ollama** | **Manus** | OpenAI-compatible API con `stream: true` |
 | **Gestione quota** | **Manus** | Verifica piano/quota prima di ogni richiesta |
 | **Database conversazioni** | **Manus** | Tabelle `ai_conversations` + `ai_messages` |
@@ -791,20 +797,62 @@ CREATE TABLE ai_messages (
 ```tsx
 // client/src/components/ai-chat/hooks/useConversations.ts
 
-export function useConversations() {
-  // Usa tRPC per CRUD conversazioni
-  const conversations = trpc.ai.listConversations.useQuery();
-  const createMutation = trpc.ai.createConversation.useMutation();
-  const renameMutation = trpc.ai.renameConversation.useMutation();
-  const deleteMutation = trpc.ai.deleteConversation.useMutation();
+// NOTA: Tutti gli endpoint sono REST su mihub-backend-rest (Express.js su Hetzner)
+// ZERO tRPC — il backend tRPC e' dismesso per la chat AI
 
-  return {
-    conversations: conversations.data ?? [],
-    isLoading: conversations.isLoading,
-    createNew: () => createMutation.mutateAsync({}),
-    rename: (id: string, title: string) => renameMutation.mutateAsync({ id, title }),
-    delete: (id: string) => deleteMutation.mutateAsync({ id }),
-  };
+const AI_API_BASE = import.meta.env.VITE_AI_API_URL || '/api/ai';
+
+export function useConversations() {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // GET /api/ai/conversations
+  const fetchConversations = useCallback(async () => {
+    setIsLoading(true);
+    const res = await fetch(`${AI_API_BASE}/conversations`, {
+      credentials: 'include',
+    });
+    const data = await res.json();
+    setConversations(data.conversations ?? []);
+    setIsLoading(false);
+  }, []);
+
+  // POST /api/ai/conversations
+  const createNew = useCallback(async () => {
+    const res = await fetch(`${AI_API_BASE}/conversations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    await fetchConversations();
+    return data;
+  }, [fetchConversations]);
+
+  // PATCH /api/ai/conversations/:id
+  const rename = useCallback(async (id: string, title: string) => {
+    await fetch(`${AI_API_BASE}/conversations/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title }),
+    });
+    await fetchConversations();
+  }, [fetchConversations]);
+
+  // DELETE /api/ai/conversations/:id
+  const remove = useCallback(async (id: string) => {
+    await fetch(`${AI_API_BASE}/conversations/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    await fetchConversations();
+  }, [fetchConversations]);
+
+  useEffect(() => { fetchConversations(); }, [fetchConversations]);
+
+  return { conversations, isLoading, createNew, rename, delete: remove };
 }
 ```
 
@@ -978,72 +1026,112 @@ event: error
 data: {"type": "error", "code": "QUOTA_EXCEEDED", "message": "Quota messaggi esaurita per questo mese"}
 ```
 
-#### Endpoint 2: Lista conversazioni (tRPC)
+#### Endpoint 2: Lista conversazioni (REST)
 
 ```
-tRPC: ai.listConversations
+GET /api/ai/conversations
+Authorization: Cookie session (JWT)
 
-Input: { limit?: number, offset?: number }
-Output: {
-  conversations: Array<{
-    id: string;
-    title: string;
-    messages_count: number;
-    model: string;
-    created_at: string;
-    updated_at: string;
-  }>;
-  total: number;
+Query params: ?limit=20&offset=0
+
+Response 200:
+{
+  "conversations": [
+    {
+      "id": "uuid",
+      "title": "Come gestire subingresso",
+      "messages_count": 4,
+      "model": "qwen3-8b",
+      "created_at": "2026-02-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:05:00Z"
+    }
+  ],
+  "total": 15
 }
 ```
 
-#### Endpoint 3: Messaggi di una conversazione (tRPC)
+#### Endpoint 3: Crea conversazione (REST)
 
 ```
-tRPC: ai.getMessages
+POST /api/ai/conversations
+Authorization: Cookie session (JWT)
+Content-Type: application/json
 
-Input: { conversation_id: string; limit?: number; offset?: number }
-Output: {
-  messages: Array<{
-    id: string;
-    role: 'user' | 'assistant' | 'system';
-    content: string;
-    tokens_used?: number;
-    created_at: string;
-  }>;
+Body: {} (vuoto — il titolo viene auto-generato dopo il primo scambio)
+
+Response 201:
+{
+  "id": "uuid-new",
+  "title": "Nuova conversazione",
+  "created_at": "2026-02-27T10:00:00Z"
 }
 ```
 
-#### Endpoint 4: Rinomina conversazione (tRPC)
+#### Endpoint 4: Messaggi di una conversazione (REST)
 
 ```
-tRPC: ai.renameConversation
+GET /api/ai/conversations/:id/messages
+Authorization: Cookie session (JWT)
 
-Input: { id: string; title: string }
-Output: { success: boolean }
+Query params: ?limit=50&offset=0
+
+Response 200:
+{
+  "messages": [
+    {
+      "id": "uuid",
+      "role": "user",
+      "content": "Come gestire un subingresso?",
+      "tokens_used": null,
+      "created_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "id": "uuid",
+      "role": "assistant",
+      "content": "Il subingresso e' regolato...",
+      "tokens_used": 234,
+      "created_at": "2026-02-27T10:00:05Z"
+    }
+  ]
+}
 ```
 
-#### Endpoint 5: Elimina conversazione (tRPC)
+#### Endpoint 5: Rinomina conversazione (REST)
 
 ```
-tRPC: ai.deleteConversation
+PATCH /api/ai/conversations/:id
+Authorization: Cookie session (JWT)
+Content-Type: application/json
 
-Input: { id: string }
-Output: { success: boolean }
+Body: { "title": "Nuovo titolo conversazione" }
+
+Response 200:
+{ "success": true }
 ```
 
-#### Endpoint 6: Quota utilizzo (tRPC)
+#### Endpoint 6: Elimina conversazione (REST)
 
 ```
-tRPC: ai.getQuota
+DELETE /api/ai/conversations/:id
+Authorization: Cookie session (JWT)
 
-Input: {}
-Output: {
-  plan: 'starter' | 'essenziale' | 'professionale' | 'enterprise';
-  messages_used: number;
-  messages_limit: number;      // 50, 200, 2000, -1 (illimitato)
-  period_start: string;
-  period_end: string;
+Response 200:
+{ "success": true }
+```
+
+#### Endpoint 7: Quota utilizzo (REST)
+
+```
+GET /api/ai/quota
+Authorization: Cookie session (JWT)
+
+Response 200:
+{
+  "plan": "starter",
+  "messages_used": 23,
+  "messages_limit": 50,
+  "period_start": "2026-02-01T00:00:00Z",
+  "period_end": "2026-02-28T23:59:59Z"
 }
 ```
 
@@ -1085,7 +1173,7 @@ Rispondi SOLO con il titolo, senza virgolette."
 ### Fase 3 — Storico e sidebar (2-3 giorni)
 
 15. Implementare `AIChatSidebar.tsx` con lista conversazioni
-16. Implementare `useConversations.ts` con hook tRPC
+16. Implementare `useConversations.ts` con fetch REST (ZERO tRPC)
 17. Raggruppamento per data (Oggi, Ieri, Settimana, etc.)
 18. Rinomina conversazione (inline edit)
 19. Eliminazione conversazione (con conferma)
@@ -1124,12 +1212,13 @@ Rispondi SOLO con il titolo, senza virgolette."
    - Salva il messaggio completo nel DB a fine stream
    - Restituisce `message_id`, `tokens_used`, `quota_remaining` nel evento `done`
 
-2. **Procedure tRPC** per gestione conversazioni:
-   - `ai.listConversations` — lista con paginazione
-   - `ai.getMessages` — messaggi di una conversazione
-   - `ai.renameConversation` — rinomina
-   - `ai.deleteConversation` — elimina
-   - `ai.getQuota` — quota utilizzo corrente
+2. **Endpoint REST** per gestione conversazioni (ZERO tRPC):
+   - `GET    /api/ai/conversations` — lista con paginazione
+   - `POST   /api/ai/conversations` — crea nuova conversazione
+   - `PATCH  /api/ai/conversations/:id` — rinomina
+   - `DELETE /api/ai/conversations/:id` — elimina
+   - `GET    /api/ai/conversations/:id/messages` — messaggi di una conversazione
+   - `GET    /api/ai/quota` — quota utilizzo corrente
 
 3. **Auto-titolazione** delle conversazioni dopo il primo scambio
 
@@ -1196,9 +1285,44 @@ curl http://gpu-server:8000/v1/chat/completions \
 | **Personalizzazione** | Colori/avatar/suggerimenti per PA, Impresa, Cittadino |
 | **Storico** | Sidebar con conversazioni raggruppate per data |
 | **Responsabilita' Claude** | Frontend completo (componenti, hooks, UI, streaming client) |
-| **Responsabilita' Manus** | Backend (endpoint SSE, tRPC CRUD, DB, quota, Ollama/vLLM) |
+| **Responsabilita' Manus** | Backend REST (endpoint SSE, CRUD conversazioni REST, DB, quota, Ollama/vLLM) — ZERO tRPC |
 | **Tempo stimato frontend** | 9-13 giorni lavorativi |
 
 ---
 
-*Documento progetto creato il 27/02/2026 — DMS Hub Team*
+---
+
+## 15. CONTESTO A99X — EVOLUZIONE FUTURA
+
+> **NON IMPLEMENTARE ORA** — Solo per conoscenza architetturale.
+
+Questa chat AI streaming e' il **fondamento dell'AVA** (Agente Virtuale Attivo) del progetto
+A99X — Digital Market System (Assistant 99X). Il Tab "Concilio" attuale verra' sostituito
+dall'interfaccia A99X completa in una fase successiva (post test pilota 6 mesi).
+
+**Come il codice chat evolve verso A99X:**
+
+| Componente Chat AI | Evoluzione A99X |
+|--------------------|-----------------|
+| RAG su dati PA/mercati | AVA accede ai dati specifici della PA/associazione |
+| Streaming SSE | Risposte real-time dell'agente durante riunioni |
+| Profili per ruolo (PA/Impresa/Cittadino) | Profili AVA personalizzati |
+| Gestione conversazioni | Storico riunioni e report |
+| Suggerimenti contestuali | Follow-up automatizzato post-riunione |
+
+**Endpoint REST futuri A99X (NON implementare):**
+```
+POST   /api/a99x/agenda/optimize
+POST   /api/a99x/priorities/analyze
+POST   /api/a99x/meetings
+POST   /api/a99x/meetings/:id/transcribe
+POST   /api/a99x/meetings/:id/followup
+POST   /api/a99x/translate/text
+POST   /api/a99x/translate/speech
+```
+
+Vedi `PROGETTO_A99X_INTEGRAZIONE_MIOHUB.md` per dettagli completi.
+
+---
+
+*Documento progetto creato il 27/02/2026, aggiornato v1.1 il 27/02/2026 — DMS Hub Team*
