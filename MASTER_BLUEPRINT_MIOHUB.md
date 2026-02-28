@@ -10520,3 +10520,61 @@ Il modello `qwen2.5:14b` è troppo esigente per l'infrastruttura attuale senza u
 - Server: Hetzner CPX62 (16 vCPU, 32GB RAM, no GPU)
 - Stato: **PRODUZIONE** — funzionante e stabile
 - Modelli disponibili su Ollama: `qwen2.5:7b-instruct-q4_K_M`, `qwen2.5:14b`, `qwen2.5:3b`
+
+
+---
+
+## CHANGELOG v9.3.2 — AVA System Prompt v2.0: Prompt Tiered (28 Feb 2026, sessione 3)
+
+**Obiettivo:** Ridurre il system prompt da ~6000 token a ~1400 token per velocizzare AVA del 40-50%.
+
+**Strategia implementata (da template Claude `.mio-agents/ava_system_prompt_v2.md`):**
+
+| Livello | Token | Quando | Contenuto |
+|---------|-------|--------|-----------|
+| **CORE** | ~500 | SEMPRE | Identità AVA + regole base + vincoli negativi |
+| **CONTESTO** | ~400 | Per ruolo | PA (normativa+dashboard) / Impresa / Cittadino |
+| **KB ON-DEMAND** | ~150 x frammento | Solo se topic match | 7 frammenti: carbon_credit, bolkestein, suap, statistiche, pagamenti, presenze, concessioni |
+
+**Funzionalità implementate in `routes/ai-chat.js`:**
+- `buildSystemPrompt()` — composizione dinamica del prompt in base a ruolo e domanda
+- `getRelevantKB()` — topic matching con regex, max 2 frammenti per richiesta
+- `getDbStats()` — cache conteggi DB (mercati/posteggi/imprese) con TTL 5 minuti
+- `ROLE_PROMPTS` — prompt contestuali per PA, Impresa, Cittadino
+- `KB_FRAGMENTS` — 7 frammenti di knowledge base on-demand
+
+**Benchmark PRIMA vs DOPO:**
+
+| Test | Domanda | v1 (~6k tok) | v2 (~1.4k tok) | Miglioramento |
+|------|---------|-------------|----------------|---------------|
+| 1 (cold) | "Presentati brevemente" | 64s / 156 tok | **33s** / 260 tok | **-48%** |
+| 2 (warm) | "Presenze e spunta?" | 99s / 594 tok | **28s** / 181 tok | **-72%** |
+| 3 (warm) | "Direttiva Bolkestein?" | 65s / 182 tok | **36s** / 297 tok | **-45%** |
+
+**Risultati chiave:**
+- **Riduzione media latenza: -55%** (da ~76s media a ~32s media)
+- **Qualità risposte invariata** — il topic matching inietta la KB giusta quando serve
+- **Stabilità confermata** — 3/3 test completati con successo
+- **Topic matching funzionante** — domande generiche non caricano KB, domande specifiche caricano i frammenti corretti
+
+**Commit:** `cc21aba` — `perf: AVA system prompt v2.0 — prompt tiered a 3 livelli (-75% token)`
+
+**Cosa NON fare (vincoli negativi aggiornati):**
+1. **NON tornare al prompt monolitico** — causa latenza 2x e spreco di token
+2. **NON caricare più di 2 frammenti KB** — il 7b perde coerenza con troppo contesto
+3. **NON rimuovere la cache DB stats** — evita query ripetute ad ogni richiesta
+4. **NON usare il 14b su CPX62** — causa instabilità e timeout
+5. **NON usare API esterne per dati PA** — vincolo privacy non negoziabile
+
+**Stato attuale AVA (aggiornato):**
+- Modello: `qwen2.5:7b-instruct-q4_K_M` (4.7 GB)
+- System Prompt: **v2.0 Tiered** (~1400 token base, max ~2000 con KB)
+- Tempo risposta medio: **~32 secondi** (con streaming SSE)
+- Server: Hetzner CPX62 (16 vCPU, 32GB RAM, no GPU)
+- Stato: **PRODUZIONE** — funzionante, stabile, ottimizzato
+- Deploy: **autodeploy** via GitHub Actions su push master
+
+**Prossimi passi:**
+1. **RAG** — embedding + vector search per sostituire completamente il topic matching regex
+2. **Ruolo utente dinamico** — leggere il ruolo reale dall'utente autenticato (PA/Impresa/Cittadino)
+3. **Fase 2: GPU** — quando il revenue lo giustifica, passare a server con GPU
