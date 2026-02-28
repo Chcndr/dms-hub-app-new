@@ -9673,3 +9673,110 @@ Anagrafica → Formazione → Corsi disponibili → "Iscriviti e Paga"
 | 3 | **MEDIA** | Sessione JWT con Refresh Token | Valutare se ridurre la scadenza sessione (attualmente 24h) e implementare refresh token. Passaggio intermedio consigliato: 7 giorni + refresh, poi eventualmente ridurre. Decisione di prodotto: impatta l'esperienza utente. | ⏳ DA FARE |
 | 4 | **BASSA** | Revisione Completa Permessi RBAC | Audit di tutti i ruoli e permessi per garantire il principio del minimo privilegio. | ⏳ DA FARE |
 | 5 | **BASSA** | Test di Carico (Load Testing) | Simulare utenti simultanei per identificare colli di bottiglia e verificare stabilità sotto stress. | ⏳ DA FARE |
+
+---
+
+## 📌 PUNTO DI RIPRISTINO STABILE — 28 Febbraio 2026
+
+> **Tag**: `STABLE-20260228-PRE-CHAT-AI-v9.1.2`
+> **Creato su**: Frontend (`dms-hub-app-new`) + Backend (`mihub-backend-rest`)
+> **Motivo**: Snapshot stabile prima dell'inizio sviluppo Chat AI Streaming
+
+### Stato sistema al momento del tag
+
+| Componente | Stato | Dettagli |
+|------------|-------|----------|
+| **Frontend Vercel** | ✅ OK | HTTP 200, deploy automatico su push master |
+| **Backend Hetzner** | ✅ OK | v2.0.0, uptime 159378s, Node v22.22.0, PM2 |
+| **Database Neon** | ✅ OK | Latency 123ms, 152 tabelle |
+| **Guardian** | ✅ OK | 627 logs last 24h |
+| **MIO Agent** | ✅ OK | 130 msgs last 7d, 3 conversazioni attive, 5 agenti |
+| **PDND API** | ⚠️ Non configurato | Warning noto, non bloccante |
+| **Storage S3** | ⚠️ Disabilitato | Warning noto, non bloccante |
+
+### Endpoint verificati (tutti 200)
+
+- `/api/health` — Health check base
+- `/api/health/full` — Health check completo (7 servizi)
+- `/api/guardian/health` — Guardian
+- `/api/wallets` — Wallet
+- `/api/markets` — Mercati
+- `/api/associazioni` — Associazioni
+- `/api/auth/config` — Auth config
+
+### Come ripristinare
+
+```bash
+# Frontend
+cd dms-hub-app-new
+git checkout STABLE-20260228-PRE-CHAT-AI-v9.1.2
+git push origin master --force
+
+# Backend
+cd mihub-backend-rest
+git checkout STABLE-20260228-PRE-CHAT-AI-v9.1.2
+git push origin master --force
+# Il deploy automatico via GitHub Actions riporterà Hetzner allo stato stabile
+```
+
+### Documenti mergiati in master (da branch Claude)
+
+| Documento | Versione | Righe | Contenuto |
+|-----------|----------|-------|-----------|
+| `PROGETTO_A99X_INTEGRAZIONE_MIOHUB.md` | v2.0 | 556 | Visione strategica A99X, servizi self-hosted EU, privacy PA |
+| `PROGETTO_CHAT_AI_STREAMING.md` | v1.1 | 1329 | Progetto frontend chat AI con streaming SSE |
+| `PROGETTO_ABBONAMENTO_AI_PA.md` | v1.1 | 662 | Modello commerciale subscription 4 tier (€39-€899/mese) |
+
+---
+
+## 🤖 SVILUPPO CHAT AI STREAMING — FASE 1 (In corso)
+
+> **Inizio**: 28 Febbraio 2026
+> **Riferimento**: `PROGETTO_CHAT_AI_STREAMING.md` v1.1
+> **Obiettivo**: Chat AI con UX identica a ChatGPT/Claude, streaming token-by-token
+
+### Divisione responsabilità
+
+| Responsabile | Componente | Dettagli |
+|-------------|------------|----------|
+| **Manus** | Backend REST | 7 endpoint su mihub-backend-rest (Express.js, Hetzner) |
+| **Manus** | Endpoint SSE | `POST /api/ai/chat/stream` — proxy streaming da Ollama |
+| **Manus** | Database | Tabelle `ai_conversations` + `ai_messages` su Neon |
+| **Manus** | Ollama | Installazione + configurazione Qwen2.5-8B su Hetzner |
+| **Manus** | Quota | Verifica piano/quota prima di ogni richiesta |
+| **Claude** | Frontend React | 12 componenti + 3 hooks + 2 utility in `client/src/components/ai-chat/` |
+| **Claude** | Streaming client | Client SSE con reconnect e parsing |
+| **Claude** | UI/UX | Markdown rendering, typing indicator, suggerimenti, sidebar storico |
+
+### Endpoint backend da implementare (Manus)
+
+```
+POST   /api/ai/chat/stream          — SSE streaming (cuore del sistema)
+GET    /api/ai/conversations         — Lista conversazioni con paginazione
+POST   /api/ai/conversations         — Crea nuova conversazione
+PATCH  /api/ai/conversations/:id     — Rinomina conversazione
+DELETE /api/ai/conversations/:id     — Elimina conversazione
+GET    /api/ai/conversations/:id/messages — Messaggi di una conversazione
+GET    /api/ai/quota                 — Quota utilizzo corrente
+```
+
+### Vincoli sviluppo Chat AI
+
+| Vincolo | Dettaglio |
+|---------|----------|
+| **ZERO tRPC** | Solo REST API su mihub-backend-rest |
+| **Deploy via GitHub Actions** | Mai SSH manuale su Hetzner |
+| **Non toccare v9.1.2** | Il sistema stabile non va modificato — approccio chirurgico |
+| **Drizzle ORM** | Schema DB in `drizzle/schema.ts` — mai SQL diretto |
+| **MarketMapComponent.tsx** | INTOCCABILE — max 10-20 righe, test sempre, commit frequenti |
+| **Modello AI iniziale** | Qwen2.5-8B su CPU (tier Starter) — upgrade a GPU dopo |
+
+### NON FARE durante lo sviluppo Chat AI
+
+- **NON** modificare endpoint esistenti (mercati, wallet, presenze, ecc.)
+- **NON** toccare l'autenticazione Firebase/ARPA
+- **NON** installare tRPC o dipendenze non necessarie
+- **NON** implementare A99X (Jitsi, Cal.com, Whisper) — è Fase 2+
+- **NON** usare SSH manuale per deploy — solo GitHub Actions
+- **NON** creare proxy Vercel per la chat — tutto su mihub-backend-rest
+
