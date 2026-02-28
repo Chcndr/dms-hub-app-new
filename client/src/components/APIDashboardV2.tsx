@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Code,
   Play,
@@ -11,51 +11,65 @@ import {
   Copy,
   CheckCircle2,
   XCircle,
-  Clock
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { allRealEndpoints, API_BASE_URL, type EndpointConfig } from '@/config/realEndpoints';
+  Clock,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  allRealEndpoints,
+  API_BASE_URL,
+  type EndpointConfig,
+} from "@/config/realEndpoints";
 
 export default function APIDashboardV2() {
-  const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointConfig | null>(null);
+  const [selectedEndpoint, setSelectedEndpoint] =
+    useState<EndpointConfig | null>(null);
   const [testResult, setTestResult] = useState<any>(null);
-  const [requestBody, setRequestBody] = useState<string>('');
-  const [requestParams, setRequestParams] = useState<string>('');
+  const [requestBody, setRequestBody] = useState<string>("");
+  const [requestParams, setRequestParams] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
   // Raggruppa endpoint per categoria
-  const endpointsByCategory = allRealEndpoints.reduce((acc, endpoint) => {
-    if (!acc[endpoint.category]) {
-      acc[endpoint.category] = [];
-    }
-    acc[endpoint.category].push(endpoint);
-    return acc;
-  }, {} as Record<string, EndpointConfig[]>);
+  const endpointsByCategory = allRealEndpoints.reduce(
+    (acc, endpoint) => {
+      if (!acc[endpoint.category]) {
+        acc[endpoint.category] = [];
+      }
+      acc[endpoint.category].push(endpoint);
+      return acc;
+    },
+    {} as Record<string, EndpointConfig[]>
+  );
 
   const getMethodColor = (method: string) => {
     switch (method) {
-      case 'GET': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'POST': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'PUT': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'PATCH': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'DELETE': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      case "GET":
+        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+      case "POST":
+        return "bg-green-500/20 text-green-400 border-green-500/30";
+      case "PUT":
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+      case "PATCH":
+        return "bg-orange-500/20 text-orange-400 border-orange-500/30";
+      case "DELETE":
+        return "bg-red-500/20 text-red-400 border-red-500/30";
+      default:
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
     }
   };
 
   const handleTestEndpoint = async () => {
     if (!selectedEndpoint) return;
-    
+
     setTestResult(null);
     setIsLoading(true);
-    
+
     const startTime = Date.now();
-    let url = '';
+    let url = "";
 
     try {
       // Costruisci URL con parametri
       url = `${API_BASE_URL}${selectedEndpoint.path}`;
-      
+
       // Sostituisci parametri path (es. :id)
       if (requestParams) {
         try {
@@ -69,31 +83,34 @@ export default function APIDashboardV2() {
           return;
         }
       }
-      
+
       // Prepara opzioni fetch
       const options: RequestInit = {
         method: selectedEndpoint.method,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       };
-      
+
       // Aggiungi body se necessario
-      if (['POST', 'PUT', 'PATCH'].includes(selectedEndpoint.method) && requestBody) {
+      if (
+        ["POST", "PUT", "PATCH"].includes(selectedEndpoint.method) &&
+        requestBody
+      ) {
         try {
           JSON.parse(requestBody); // Valida JSON
           options.body = requestBody;
         } catch (e) {
-          toast.error('Request Body non è un JSON valido');
+          toast.error("Request Body non è un JSON valido");
           setIsLoading(false);
           return;
         }
       }
-      
+
       // Esegui richiesta
       const response = await fetch(url, options);
       const endTime = Date.now();
-      
+
       // Leggi body come testo per gestire JSON e non-JSON
       const bodyText = await response.text();
       let bodyData;
@@ -102,7 +119,7 @@ export default function APIDashboardV2() {
       } catch {
         bodyData = bodyText; // Se non è JSON, mostra testo grezzo
       }
-      
+
       // Mostra response REALE dal backend, senza wrapper
       setTestResult({
         status: response.status,
@@ -110,12 +127,14 @@ export default function APIDashboardV2() {
         headers: Object.fromEntries(response.headers.entries()),
         body: bodyData, // JSON grezzo o testo
         responseTime: endTime - startTime,
-        url
+        url,
       });
-      
+
       // Toast con status reale
       if (response.ok) {
-        toast.success(`${response.status} ${response.statusText} (${endTime - startTime}ms)`);
+        toast.success(
+          `${response.status} ${response.statusText} (${endTime - startTime}ms)`
+        );
       } else {
         toast.error(`${response.status} ${response.statusText}`);
       }
@@ -124,33 +143,34 @@ export default function APIDashboardV2() {
       // Errore di rete (non dal backend)
       setTestResult({
         status: 0,
-        statusText: 'Network Error',
+        statusText: "Network Error",
         headers: {},
         body: { error: error.message },
         responseTime: endTime - startTime,
-        url: url || ''
+        url: url || "",
       });
-      toast.error('Network Error: ' + error.message);
+      toast.error("Network Error: " + error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCopyExample = (type: 'params' | 'body') => {
+  const handleCopyExample = (type: "params" | "body") => {
     if (!selectedEndpoint) return;
-    
-    const example = type === 'params' 
-      ? selectedEndpoint.exampleParams 
-      : selectedEndpoint.exampleBody;
-    
+
+    const example =
+      type === "params"
+        ? selectedEndpoint.exampleParams
+        : selectedEndpoint.exampleBody;
+
     if (example) {
       const jsonString = JSON.stringify(example, null, 2);
-      if (type === 'params') {
+      if (type === "params") {
         setRequestParams(jsonString);
       } else {
         setRequestBody(jsonString);
       }
-      toast.success('Esempio copiato!');
+      toast.success("Esempio copiato!");
     }
   };
 
@@ -163,37 +183,43 @@ export default function APIDashboardV2() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[#e8fbff]/60 text-sm">Endpoint Totali</p>
-                <p className="text-2xl font-bold text-[#14b8a6]">{allRealEndpoints.length}</p>
+                <p className="text-2xl font-bold text-[#14b8a6]">
+                  {allRealEndpoints.length}
+                </p>
               </div>
               <Code className="h-8 w-8 text-[#14b8a6]/50" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#1a2332] border-[#14b8a6]/30">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[#e8fbff]/60 text-sm">Categorie</p>
-                <p className="text-2xl font-bold text-[#14b8a6]">{Object.keys(endpointsByCategory).length}</p>
+                <p className="text-2xl font-bold text-[#14b8a6]">
+                  {Object.keys(endpointsByCategory).length}
+                </p>
               </div>
               <FileJson className="h-8 w-8 text-[#14b8a6]/50" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#1a2332] border-[#14b8a6]/30">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[#e8fbff]/60 text-sm">Base URL</p>
-                <p className="text-sm font-mono text-[#14b8a6] truncate">{API_BASE_URL.replace('https://', '')}</p>
+                <p className="text-sm font-mono text-[#14b8a6] truncate">
+                  {API_BASE_URL.replace("https://", "")}
+                </p>
               </div>
               <Activity className="h-8 w-8 text-[#14b8a6]/50" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#1a2332] border-[#14b8a6]/30">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -220,41 +246,55 @@ export default function APIDashboardV2() {
             </CardTitle>
           </CardHeader>
           <CardContent className="max-h-[600px] overflow-y-auto space-y-4">
-            {Object.entries(endpointsByCategory).map(([category, endpoints]) => (
-              <div key={category}>
-                <h3 className="text-sm font-semibold text-[#14b8a6] mb-2 uppercase tracking-wide">
-                  {category}
-                </h3>
-                <div className="space-y-2">
-                  {endpoints.map((endpoint) => (
-                    <button
-                      key={endpoint.id}
-                      onClick={() => {
-                        setSelectedEndpoint(endpoint);
-                        setRequestBody(endpoint.exampleBody ? JSON.stringify(endpoint.exampleBody, null, 2) : '');
-                        setRequestParams(endpoint.exampleParams ? JSON.stringify(endpoint.exampleParams, null, 2) : '');
-                        setTestResult(null);
-                      }}
-                      className={`w-full text-left p-3 rounded-lg border transition-all ${
-                        selectedEndpoint?.id === endpoint.id
-                          ? 'bg-[#14b8a6]/20 border-[#14b8a6]'
-                          : 'bg-[#0a1628] border-[#14b8a6]/20 hover:border-[#14b8a6]/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge className={`text-xs ${getMethodColor(endpoint.method)}`}>
-                          {endpoint.method}
-                        </Badge>
-                        <span className="text-xs font-mono text-[#e8fbff]/70 truncate">
-                          {endpoint.path}
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#e8fbff]">{endpoint.name}</p>
-                    </button>
-                  ))}
+            {Object.entries(endpointsByCategory).map(
+              ([category, endpoints]) => (
+                <div key={category}>
+                  <h3 className="text-sm font-semibold text-[#14b8a6] mb-2 uppercase tracking-wide">
+                    {category}
+                  </h3>
+                  <div className="space-y-2">
+                    {endpoints.map(endpoint => (
+                      <button
+                        key={endpoint.id}
+                        onClick={() => {
+                          setSelectedEndpoint(endpoint);
+                          setRequestBody(
+                            endpoint.exampleBody
+                              ? JSON.stringify(endpoint.exampleBody, null, 2)
+                              : ""
+                          );
+                          setRequestParams(
+                            endpoint.exampleParams
+                              ? JSON.stringify(endpoint.exampleParams, null, 2)
+                              : ""
+                          );
+                          setTestResult(null);
+                        }}
+                        className={`w-full text-left p-3 rounded-lg border transition-all ${
+                          selectedEndpoint?.id === endpoint.id
+                            ? "bg-[#14b8a6]/20 border-[#14b8a6]"
+                            : "bg-[#0a1628] border-[#14b8a6]/20 hover:border-[#14b8a6]/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge
+                            className={`text-xs ${getMethodColor(endpoint.method)}`}
+                          >
+                            {endpoint.method}
+                          </Badge>
+                          <span className="text-xs font-mono text-[#e8fbff]/70 truncate">
+                            {endpoint.path}
+                          </span>
+                        </div>
+                        <p className="text-sm text-[#e8fbff]">
+                          {endpoint.name}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </CardContent>
         </Card>
 
@@ -273,14 +313,22 @@ export default function APIDashboardV2() {
                 <div className="bg-[#0a1628] p-4 rounded-lg border border-[#14b8a6]/20">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <Badge className={getMethodColor(selectedEndpoint.method)}>
+                      <Badge
+                        className={getMethodColor(selectedEndpoint.method)}
+                      >
                         {selectedEndpoint.method}
                       </Badge>
-                      <code className="text-sm text-[#14b8a6]">{selectedEndpoint.path}</code>
+                      <code className="text-sm text-[#14b8a6]">
+                        {selectedEndpoint.path}
+                      </code>
                     </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-[#e8fbff] mb-1">{selectedEndpoint.name}</h3>
-                  <p className="text-sm text-[#e8fbff]/70">{selectedEndpoint.description}</p>
+                  <h3 className="text-lg font-semibold text-[#e8fbff] mb-1">
+                    {selectedEndpoint.name}
+                  </h3>
+                  <p className="text-sm text-[#e8fbff]/70">
+                    {selectedEndpoint.description}
+                  </p>
                   {selectedEndpoint.notes && (
                     <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-300">
                       💡 {selectedEndpoint.notes}
@@ -289,15 +337,17 @@ export default function APIDashboardV2() {
                 </div>
 
                 {/* Request Params */}
-                {selectedEndpoint.path.includes(':') && (
+                {selectedEndpoint.path.includes(":") && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label className="text-[#e8fbff]/70">Path Parameters</Label>
+                      <Label className="text-[#e8fbff]/70">
+                        Path Parameters
+                      </Label>
                       {selectedEndpoint.exampleParams && (
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleCopyExample('params')}
+                          onClick={() => handleCopyExample("params")}
                           className="text-xs text-[#14b8a6] hover:text-[#14b8a6]/80"
                         >
                           <Copy className="h-3 w-3 mr-1" />
@@ -307,7 +357,7 @@ export default function APIDashboardV2() {
                     </div>
                     <textarea
                       value={requestParams}
-                      onChange={(e) => setRequestParams(e.target.value)}
+                      onChange={e => setRequestParams(e.target.value)}
                       placeholder='{"id": 1}'
                       className="w-full h-20 bg-[#0a1628] border border-[#14b8a6]/30 rounded-md p-3 text-[#e8fbff] font-mono text-sm resize-none"
                     />
@@ -315,15 +365,17 @@ export default function APIDashboardV2() {
                 )}
 
                 {/* Request Body */}
-                {['POST', 'PUT', 'PATCH'].includes(selectedEndpoint.method) && (
+                {["POST", "PUT", "PATCH"].includes(selectedEndpoint.method) && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label className="text-[#e8fbff]/70">Request Body (JSON)</Label>
+                      <Label className="text-[#e8fbff]/70">
+                        Request Body (JSON)
+                      </Label>
                       {selectedEndpoint.exampleBody && (
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleCopyExample('body')}
+                          onClick={() => handleCopyExample("body")}
                           className="text-xs text-[#14b8a6] hover:text-[#14b8a6]/80"
                         >
                           <Copy className="h-3 w-3 mr-1" />
@@ -333,7 +385,7 @@ export default function APIDashboardV2() {
                     </div>
                     <textarea
                       value={requestBody}
-                      onChange={(e) => setRequestBody(e.target.value)}
+                      onChange={e => setRequestBody(e.target.value)}
                       placeholder="{}"
                       className="w-full h-32 bg-[#0a1628] border border-[#14b8a6]/30 rounded-md p-3 text-[#e8fbff] font-mono text-sm resize-none"
                     />
@@ -371,13 +423,15 @@ export default function APIDashboardV2() {
                         ) : (
                           <Activity className="h-5 w-5 text-yellow-400" />
                         )}
-                        <Badge className={
-                          testResult.status >= 200 && testResult.status < 300
-                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                            : testResult.status >= 400
-                            ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                            : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                        }>
+                        <Badge
+                          className={
+                            testResult.status >= 200 && testResult.status < 300
+                              ? "bg-green-500/20 text-green-400 border-green-500/30"
+                              : testResult.status >= 400
+                                ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                          }
+                        >
                           {testResult.status} {testResult.statusText}
                         </Badge>
                       </div>
@@ -386,20 +440,24 @@ export default function APIDashboardV2() {
                         {testResult.responseTime}ms
                       </div>
                     </div>
-                    
+
                     {testResult.url && (
                       <div>
-                        <Label className="text-[#e8fbff]/70">URL Chiamato</Label>
+                        <Label className="text-[#e8fbff]/70">
+                          URL Chiamato
+                        </Label>
                         <code className="block bg-[#0a1628] border border-[#14b8a6]/30 rounded-md p-2 text-[#14b8a6] font-mono text-xs break-all">
                           {testResult.url}
                         </code>
                       </div>
                     )}
-                    
+
                     <div>
-                      <Label className="text-[#e8fbff]/70">Response Body (JSON Grezzo)</Label>
+                      <Label className="text-[#e8fbff]/70">
+                        Response Body (JSON Grezzo)
+                      </Label>
                       <pre className="bg-[#0a1628] border border-[#14b8a6]/30 rounded-md p-3 text-[#e8fbff] font-mono text-xs overflow-auto max-h-96">
-                        {typeof testResult.body === 'string'
+                        {typeof testResult.body === "string"
                           ? testResult.body
                           : JSON.stringify(testResult.body, null, 2)}
                       </pre>
@@ -410,9 +468,15 @@ export default function APIDashboardV2() {
                 {/* Example Response */}
                 {selectedEndpoint.exampleResponse && !testResult && (
                   <div>
-                    <Label className="text-[#e8fbff]/70">Example Response</Label>
+                    <Label className="text-[#e8fbff]/70">
+                      Example Response
+                    </Label>
                     <pre className="bg-[#0a1628] border border-[#14b8a6]/30 rounded-md p-3 text-[#e8fbff]/60 font-mono text-xs overflow-auto max-h-64">
-                      {JSON.stringify(selectedEndpoint.exampleResponse, null, 2)}
+                      {JSON.stringify(
+                        selectedEndpoint.exampleResponse,
+                        null,
+                        2
+                      )}
                     </pre>
                   </div>
                 )}
@@ -420,7 +484,9 @@ export default function APIDashboardV2() {
             ) : (
               <div className="text-center py-12">
                 <Code className="h-16 w-16 text-[#14b8a6]/50 mx-auto mb-4" />
-                <p className="text-[#e8fbff]/70">Seleziona un endpoint dalla lista per testarlo</p>
+                <p className="text-[#e8fbff]/70">
+                  Seleziona un endpoint dalla lista per testarlo
+                </p>
               </div>
             )}
           </CardContent>

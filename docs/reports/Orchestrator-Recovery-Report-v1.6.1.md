@@ -10,11 +10,11 @@
 
 Il recovery dell'orchestratore è **FALLITO**. Sebbene il backend su Hetzner sia stato riavviato e l'endpoint `/status` risponda correttamente, il frontend su Vercel non riesce a comunicare con l'orchestratore, restituendo errori **HTTP 404**.
 
-| Test | Esito | Dettagli |
-| :--- | :--- | :--- |
-| **1. Endpoint Hetzner** | ✅ **SUCCESSO** | `GET /api/mihub/orchestrator/status` risponde HTTP 200. |
-| **2. Dashboard Secrets** | ❌ **FALLITO** | Errore: "Failed to load secrets metadata". |
-| **3. Multi-Chat MIO** | ❌ **FALLITO** | Errore: "Errore chiamata orchestrator: orchestrator HTTP 404". |
+| Test                     | Esito           | Dettagli                                                       |
+| :----------------------- | :-------------- | :------------------------------------------------------------- |
+| **1. Endpoint Hetzner**  | ✅ **SUCCESSO** | `GET /api/mihub/orchestrator/status` risponde HTTP 200.        |
+| **2. Dashboard Secrets** | ❌ **FALLITO**  | Errore: "Failed to load secrets metadata".                     |
+| **3. Multi-Chat MIO**    | ❌ **FALLITO**  | Errore: "Errore chiamata orchestrator: orchestrator HTTP 404". |
 
 ---
 
@@ -34,11 +34,13 @@ Il recovery dell'orchestratore è **FALLITO**. Sebbene il backend su Hetzner sia
 Il test diretto sull'endpoint di stato del backend ha avuto **successo**.
 
 **Comando**:
+
 ```bash
 curl -s -X GET https://orchestratore.mio-hub.me/api/mihub/orchestrator/status
 ```
 
 **Output (HTTP 200)**:
+
 ```json
 {
   "status": "ok",
@@ -85,6 +87,7 @@ L'errore sui secrets (Test 2) è una conseguenza diretta del fallimento della ch
 ## 📋 Log e Stato Servizi
 
 **Stato PM2**:
+
 ```
 ┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
 │ id │ name               │ mode     │ pid  │ status    │ restart  │ uptime   │

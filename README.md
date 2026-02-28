@@ -11,23 +11,23 @@
 
 ### ❌ COSA NON FARE MAI
 
-| Azione Vietata | Motivo |
-|----------------|--------|
-| Modificare file sul server via SSH | Rompe l'allineamento con GitHub |
-| Fare `git pull` manuale sul server | C'è l'auto-deploy! |
-| Creare progetti paralleli su Manus WebDev | Duplica il lavoro, crea confusione |
-| Hardcodare endpoint nel frontend | Aggiungi a `MIO-hub/api/index.json` |
-| Ignorare il Blueprint | Contiene architettura e regole |
+| Azione Vietata                            | Motivo                              |
+| ----------------------------------------- | ----------------------------------- |
+| Modificare file sul server via SSH        | Rompe l'allineamento con GitHub     |
+| Fare `git pull` manuale sul server        | C'è l'auto-deploy!                  |
+| Creare progetti paralleli su Manus WebDev | Duplica il lavoro, crea confusione  |
+| Hardcodare endpoint nel frontend          | Aggiungi a `MIO-hub/api/index.json` |
+| Ignorare il Blueprint                     | Contiene architettura e regole      |
 
 ### ✅ COSA FARE SEMPRE
 
-| Azione Corretta | Come |
-|-----------------|------|
-| Modifica codice | In locale o direttamente su GitHub |
-| Deploy | Commit + Push → Auto-deploy |
-| Nuovi endpoint | Aggiungi a `MIO-hub/api/index.json` |
-| Modifiche significative | Aggiorna il Blueprint |
-| Prima di iniziare | Leggi `Blueprint_Evolutivo_SUAP.md` |
+| Azione Corretta         | Come                                |
+| ----------------------- | ----------------------------------- |
+| Modifica codice         | In locale o direttamente su GitHub  |
+| Deploy                  | Commit + Push → Auto-deploy         |
+| Nuovi endpoint          | Aggiungi a `MIO-hub/api/index.json` |
+| Modifiche significative | Aggiorna il Blueprint               |
+| Prima di iniziare       | Leggi `Blueprint_Evolutivo_SUAP.md` |
 
 ### 🔄 FLUSSO AUTO-DEPLOY
 
@@ -92,21 +92,21 @@
 
 ### Repository Collegati
 
-| Repository | Scopo | URL |
-|------------|-------|-----|
-| **dms-hub-app-new** (questo) | Frontend React | [GitHub](https://github.com/Chcndr/dms-hub-app-new) |
-| **mihub-backend-rest** | Backend Express | [GitHub](https://github.com/Chcndr/mihub-backend-rest) |
-| **MIO-hub** | Configurazioni, API index | [GitHub](https://github.com/Chcndr/MIO-hub) |
+| Repository                   | Scopo                     | URL                                                    |
+| ---------------------------- | ------------------------- | ------------------------------------------------------ |
+| **dms-hub-app-new** (questo) | Frontend React            | [GitHub](https://github.com/Chcndr/dms-hub-app-new)    |
+| **mihub-backend-rest**       | Backend Express           | [GitHub](https://github.com/Chcndr/mihub-backend-rest) |
+| **MIO-hub**                  | Configurazioni, API index | [GitHub](https://github.com/Chcndr/MIO-hub)            |
 
 ---
 
 ## 📚 DOCUMENTAZIONE IMPORTANTE
 
-| Documento | Posizione | Descrizione |
-|-----------|-----------|-------------|
+| Documento          | Posizione                     | Descrizione                               |
+| ------------------ | ----------------------------- | ----------------------------------------- |
 | **Blueprint SUAP** | `Blueprint_Evolutivo_SUAP.md` | Architettura SUAP, regole agenti, roadmap |
-| **Credenziali** | `CREDENZIALI_MIOHUB.md` | Accessi server, database, servizi |
-| **API Index** | `MIO-hub/api/index.json` | Catalogo 150+ endpoint |
+| **Credenziali**    | `CREDENZIALI_MIOHUB.md`       | Accessi server, database, servizi         |
+| **API Index**      | `MIO-hub/api/index.json`      | Catalogo 150+ endpoint                    |
 
 > **⚠️ AGENTI AI:** Prima di fare qualsiasi modifica, LEGGI il `Blueprint_Evolutivo_SUAP.md`!
 
@@ -118,39 +118,39 @@ DMS HUB è una piattaforma di gestione per la Rete Mercati Made in Italy, dotata
 
 ### Caratteristiche Principali
 
-| Modulo | Descrizione |
-|--------|-------------|
-| **Dashboard PA** | Interfaccia amministrativa completa |
-| **MIO Agent** | Orchestratore AI con 4 agenti specializzati |
-| **SSO SUAP** | Gestione pratiche SCIA/Concessioni (Ente Sussidiario) |
-| **Gestione Mercati** | CRUD mercati, posteggi, operatori |
-| **Health Monitor** | Monitoraggio real-time di tutti i servizi |
-| **Chat Multi-Agente** | Sistema di chat con routing intelligente |
+| Modulo                | Descrizione                                           |
+| --------------------- | ----------------------------------------------------- |
+| **Dashboard PA**      | Interfaccia amministrativa completa                   |
+| **MIO Agent**         | Orchestratore AI con 4 agenti specializzati           |
+| **SSO SUAP**          | Gestione pratiche SCIA/Concessioni (Ente Sussidiario) |
+| **Gestione Mercati**  | CRUD mercati, posteggi, operatori                     |
+| **Health Monitor**    | Monitoraggio real-time di tutti i servizi             |
+| **Chat Multi-Agente** | Sistema di chat con routing intelligente              |
 
 ---
 
 ## 🛠️ Stack Tecnologico
 
-| Componente | Tecnologia |
-|------------|------------|
-| **Frontend** | Vite + React + TypeScript + TailwindCSS |
-| **Backend** | Node.js + Express |
-| **Database** | PostgreSQL (Neon) |
-| **Deploy Frontend** | Vercel (automatico) |
-| **Deploy Backend** | Hetzner VPS (automatico via webhook) |
-| **AI Models** | OpenAI GPT-4 |
+| Componente          | Tecnologia                              |
+| ------------------- | --------------------------------------- |
+| **Frontend**        | Vite + React + TypeScript + TailwindCSS |
+| **Backend**         | Node.js + Express                       |
+| **Database**        | PostgreSQL (Neon)                       |
+| **Deploy Frontend** | Vercel (automatico)                     |
+| **Deploy Backend**  | Hetzner VPS (automatico via webhook)    |
+| **AI Models**       | OpenAI GPT-4                            |
 
 ---
 
 ## 🤖 Agenti AI
 
-| Agente | Ruolo | Capacità |
-|--------|-------|----------|
-| **MIO** | Orchestratore | Routing, coordinamento, aggregazione |
-| **Manus** | SysAdmin | SSH, file system, PM2, deploy |
-| **Abacus** | Data Analyst | SQL, statistiche, report |
-| **GPT Dev** | Sviluppatore | GitHub, codice, PR |
-| **Zapier** | Automatore | WhatsApp, Calendar, Gmail |
+| Agente      | Ruolo         | Capacità                             |
+| ----------- | ------------- | ------------------------------------ |
+| **MIO**     | Orchestratore | Routing, coordinamento, aggregazione |
+| **Manus**   | SysAdmin      | SSH, file system, PM2, deploy        |
+| **Abacus**  | Data Analyst  | SQL, statistiche, report             |
+| **GPT Dev** | Sviluppatore  | GitHub, codice, PR                   |
+| **Zapier**  | Automatore    | WhatsApp, Calendar, Gmail            |
 
 ---
 
@@ -238,24 +238,24 @@ VITE_BACKEND_URL=https://orchestratore.mio-hub.me
 
 ### Conversation IDs
 
-| Conversation ID | Descrizione | Mode |
-|-----------------|-------------|------|
-| `mio-main` | Chat principale con MIO | `auto` |
+| Conversation ID      | Descrizione                    | Mode     |
+| -------------------- | ------------------------------ | -------- |
+| `mio-main`           | Chat principale con MIO        | `auto`   |
 | `user-gptdev-direct` | Chat diretta con GPT Developer | `direct` |
-| `user-manus-direct` | Chat diretta con Manus | `direct` |
-| `user-abacus-direct` | Chat diretta con Abacus | `direct` |
-| `user-zapier-direct` | Chat diretta con Zapier | `direct` |
+| `user-manus-direct`  | Chat diretta con Manus         | `direct` |
+| `user-abacus-direct` | Chat diretta con Abacus        | `direct` |
+| `user-zapier-direct` | Chat diretta con Zapier        | `direct` |
 
 ---
 
 ## 🆘 Troubleshooting
 
-| Problema | Soluzione |
-|----------|-----------|
-| Modifiche non visibili (frontend) | Aspetta 1-2 min per Vercel |
-| Modifiche non visibili (backend) | Aspetta 1-2 min per webhook Hetzner |
-| Errore 500 | Controlla Health Monitor in Dashboard |
-| Endpoint non trovato | Verifica sia in `index.json` |
+| Problema                          | Soluzione                             |
+| --------------------------------- | ------------------------------------- |
+| Modifiche non visibili (frontend) | Aspetta 1-2 min per Vercel            |
+| Modifiche non visibili (backend)  | Aspetta 1-2 min per webhook Hetzner   |
+| Errore 500                        | Controlla Health Monitor in Dashboard |
+| Endpoint non trovato              | Verifica sia in `index.json`          |
 
 ---
 
@@ -265,5 +265,5 @@ Per problemi critici, contattare l'amministratore del sistema.
 
 ---
 
-*© 2025 MIO Hub. Tutti i diritti riservati.*
-*Ultimo aggiornamento: 29 Dicembre 2025*
+_© 2025 MIO Hub. Tutti i diritti riservati._
+_Ultimo aggiornamento: 29 Dicembre 2025_

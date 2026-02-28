@@ -3,6 +3,7 @@
 ## 🔴 Priorità Alta
 
 ### Backend - HUB Shops e Services
+
 - [ ] **Implementare UPDATE e DELETE per HUB Shops**
   - Aggiungere mutation `update` per modificare negozi esistenti
   - Aggiungere mutation `delete` con soft delete (status='inactive')
@@ -14,6 +15,7 @@
   - File: `server/dmsHubRouter.ts` (sezione services, dopo riga 1246)
 
 ### Frontend - HUB Shops e Services
+
 - [ ] **Attivare pulsanti Edit/Delete per Negozi**
   - Implementare form di modifica precompilato
   - Implementare modal di conferma per delete
@@ -27,6 +29,7 @@
   - File: `client/src/components/GestioneHubNegozi.tsx` (tab Servizi)
 
 ### Centro Mobilità
+
 - [ ] **Implementare architettura scalabile Centro Mobilità**
   - Aggiungere campo `mobilityProvider` alla tabella `markets` (già esiste!)
   - Creare tabella `mobility_providers` con configurazioni
@@ -38,6 +41,7 @@
 ## 🟠 Priorità Media
 
 ### Pagina Integrazioni
+
 - [ ] **Completare Tab 3, 4, 5 con sezioni "Previsti"**
   - Tab 3 (API Keys): Aggiungere sezione chiavi previste
   - Tab 4 (Webhook): Aggiungere webhook configurabili
@@ -45,6 +49,7 @@
   - File: `client/src/components/Integrazioni.tsx`
 
 ### Log & Debug
+
 - [ ] **Implementare backend per Log & Debug**
   - Creare endpoint per API Logs
   - Creare endpoint per Integration Logs
@@ -55,6 +60,7 @@
 ## 🟢 Priorità Bassa
 
 ### Documentazione
+
 - [ ] **Aggiornare README principale**
   - Aggiungere sezione HUB con schema completo
   - Documentare API CRUD complete (CREATE, READ, UPDATE, DELETE)
@@ -68,6 +74,7 @@
   - Codici errore
 
 ### Testing
+
 - [ ] **Creare test per API HUB**
   - Test CRUD locations (CREATE, READ, UPDATE, DELETE soft)
   - Test CRUD shops (quando implementato)
@@ -77,6 +84,7 @@
 ## ✅ Completato
 
 ### Fase 1 - Backend HUB Locations
+
 - [x] **API UPDATE per HUB Locations** (commit 988953c)
   - Partial update (solo campi forniti)
   - Log automatico con valore vecchio/nuovo
@@ -92,6 +100,7 @@
   - Parametro `includeInactive: true` per vedere tutti
 
 ### Fase 2 - Frontend HUB Locations
+
 - [x] **Allineamento schema backend** (commit 12a2e6f)
   - Form con campi esatti: `marketId`, `city`, `lat`, `lng`, `areaGeojson`, `openingHours`, `description`, `photoUrl`
   - Rimossi campi inesistenti
@@ -110,6 +119,7 @@
   - Modal conferma delete con warning esplicito
 
 ### Fasi Precedenti
+
 - [x] Standardizzazione mappe (6 mappe sostituite con MarketMapComponent)
 - [x] Fix problema Vercel (zoom e centro mappa)
 - [x] Creazione tabelle HUB (hub_locations, hub_shops, hub_services)
@@ -125,6 +135,7 @@
 ## 📝 Note Tecniche
 
 ### Schema HUB Locations (backend)
+
 ```typescript
 {
   id: number (auto),
@@ -145,6 +156,7 @@
 ```
 
 ### API HUB Locations Disponibili
+
 ```typescript
 // Query
 dmsHub.hub.locations.list({ includeInactive?: boolean })
@@ -157,6 +169,7 @@ dmsHub.hub.locations.delete({ id }) // Soft delete: active=0
 ```
 
 ### Comportamento Soft Delete
+
 - **NON cancella** fisicamente dal database
 - Imposta `active = 0` (disattivato)
 - Aggiorna `updatedAt` automaticamente

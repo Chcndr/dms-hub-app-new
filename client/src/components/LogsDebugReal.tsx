@@ -2,11 +2,23 @@
 // Componente REALE per Logs e Debug (NO MOCK)
 // Collegato al backend mihub-backend-rest
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Terminal, Shield, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
-import { getLogs, getLogsStats, getGuardianHealth, type Log } from '@/api/logsClient';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  FileText,
+  Terminal,
+  Shield,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import {
+  getLogs,
+  getLogsStats,
+  getGuardianHealth,
+  type Log,
+} from "@/api/logsClient";
 
 // ============================================================================
 // LOGS SECTION (System + Guardian) - REAL
@@ -26,8 +38,8 @@ export function LogsSectionReal() {
         setLoading(false);
         setError(null);
       } catch (err: any) {
-        console.error('Error loading Guardian logs:', err);
-        setError(err.message || 'Failed to load logs');
+        console.error("Error loading Guardian logs:", err);
+        setError(err.message || "Failed to load logs");
         setLoading(false);
       }
     };
@@ -46,26 +58,26 @@ export function LogsSectionReal() {
 
   const getStatusBadge = (log: Log) => {
     if (log.success === true) {
-      return 'bg-green-500/20 text-green-400 border-green-500/30';
+      return "bg-green-500/20 text-green-400 border-green-500/30";
     } else {
-      return 'bg-red-500/20 text-red-400 border-red-500/30';
+      return "bg-red-500/20 text-red-400 border-red-500/30";
     }
   };
 
   const getStatusLabel = (log: Log) => {
-    return log.success === true ? 'SUCCESS' : 'FAILED';
+    return log.success === true ? "SUCCESS" : "FAILED";
   };
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleString('it-IT', {
-      timeZone: 'Europe/Rome',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
+    return date.toLocaleString("it-IT", {
+      timeZone: "Europe/Rome",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
     });
   };
 
@@ -78,7 +90,9 @@ export function LogsSectionReal() {
             <CardTitle className="text-[#e8fbff] text-sm">Totale Log</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-[#14b8a6]">{stats.total}</div>
+            <div className="text-4xl font-bold text-[#14b8a6]">
+              {stats.total}
+            </div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-[#10b981]/20 to-[#10b981]/5 border-[#10b981]/30">
@@ -86,7 +100,9 @@ export function LogsSectionReal() {
             <CardTitle className="text-[#e8fbff] text-sm">Successful</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-[#10b981]">{stats.successful}</div>
+            <div className="text-4xl font-bold text-[#10b981]">
+              {stats.successful}
+            </div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-[#ef4444]/20 to-[#ef4444]/5 border-[#ef4444]/30">
@@ -94,7 +110,9 @@ export function LogsSectionReal() {
             <CardTitle className="text-[#e8fbff] text-sm">Failed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-[#ef4444]">{stats.failed}</div>
+            <div className="text-4xl font-bold text-[#ef4444]">
+              {stats.failed}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -113,13 +131,14 @@ export function LogsSectionReal() {
               Caricamento logs...
             </div>
           )}
-          
+
           {error && (
             <div className="text-center py-8 text-[#ef4444]">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
               <p>Errore: {error}</p>
               <p className="text-xs text-[#e8fbff]/50 mt-2">
-                Verificare che il backend sia online e che la tabella mio_agent_logs sia inizializzata.
+                Verificare che il backend sia online e che la tabella
+                mio_agent_logs sia inizializzata.
               </p>
             </div>
           )}
@@ -129,39 +148,53 @@ export function LogsSectionReal() {
               <FileText className="h-8 w-8 mx-auto mb-2" />
               <p>Nessun log disponibile</p>
               <p className="text-xs text-[#e8fbff]/50 mt-2">
-                I log appariranno qui quando gli agenti inizieranno a fare chiamate API.
+                I log appariranno qui quando gli agenti inizieranno a fare
+                chiamate API.
               </p>
             </div>
           )}
 
           {!loading && !error && guardianLogs.length > 0 && (
             <div className="space-y-2 max-h-[600px] overflow-y-auto">
-              {guardianLogs.map((log) => (
+              {guardianLogs.map(log => (
                 <div
                   key={log.id}
                   className="p-3 rounded-lg border bg-[#0b1220] border-[#14b8a6]/20 hover:border-[#14b8a6]/40 transition-colors"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${getStatusBadge(log)}`}>
+                      <span
+                        className={`text-xs font-semibold px-2 py-0.5 rounded border ${getStatusBadge(log)}`}
+                      >
                         {getStatusLabel(log)}
                       </span>
-                      <span className="text-xs text-[#e8fbff]/70 font-mono">{log.agent}</span>
+                      <span className="text-xs text-[#e8fbff]/70 font-mono">
+                        {log.agent}
+                      </span>
                       <span className="text-xs text-[#e8fbff]/50">•</span>
-                      <span className="text-xs text-[#14b8a6]">{log.method}</span>
+                      <span className="text-xs text-[#14b8a6]">
+                        {log.method}
+                      </span>
                       {log.statusCode && (
                         <>
                           <span className="text-xs text-[#e8fbff]/50">•</span>
-                          <span className={`text-xs font-mono ${
-                            log.statusCode >= 200 && log.statusCode < 300 ? 'text-[#10b981]' :
-                            log.statusCode >= 400 ? 'text-[#ef4444]' : 'text-[#f59e0b]'
-                          }`}>
+                          <span
+                            className={`text-xs font-mono ${
+                              log.statusCode >= 200 && log.statusCode < 300
+                                ? "text-[#10b981]"
+                                : log.statusCode >= 400
+                                  ? "text-[#ef4444]"
+                                  : "text-[#f59e0b]"
+                            }`}
+                          >
                             {log.statusCode}
                           </span>
                         </>
                       )}
                     </div>
-                    <span className="text-xs text-[#e8fbff]/50">{formatTimestamp(log.timestamp)}</span>
+                    <span className="text-xs text-[#e8fbff]/50">
+                      {formatTimestamp(log.timestamp)}
+                    </span>
                   </div>
                   <div className="text-sm text-[#e8fbff]/90 mb-1 font-mono">
                     {log.endpoint}
@@ -213,8 +246,8 @@ export function DebugSectionReal() {
         setLoading(false);
         setError(null);
       } catch (err: any) {
-        console.error('Error loading debug data:', err);
-        setError(err.message || 'Failed to load debug data');
+        console.error("Error loading debug data:", err);
+        setError(err.message || "Failed to load debug data");
         setLoading(false);
       }
     };
@@ -253,8 +286,12 @@ export function DebugSectionReal() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#14b8a6]">{stats?.total || 0}</div>
-            <p className="text-xs text-[#e8fbff]/50 mt-1">Tutti i log registrati</p>
+            <div className="text-3xl font-bold text-[#14b8a6]">
+              {stats?.total || 0}
+            </div>
+            <p className="text-xs text-[#e8fbff]/50 mt-1">
+              Tutti i log registrati
+            </p>
           </CardContent>
         </Card>
 
@@ -266,7 +303,9 @@ export function DebugSectionReal() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#10b981]">{stats?.successful || 0}</div>
+            <div className="text-3xl font-bold text-[#10b981]">
+              {stats?.successful || 0}
+            </div>
             <p className="text-xs text-[#e8fbff]/50 mt-1">Chiamate riuscite</p>
           </CardContent>
         </Card>
@@ -279,7 +318,9 @@ export function DebugSectionReal() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#ef4444]">{stats?.failed || 0}</div>
+            <div className="text-3xl font-bold text-[#ef4444]">
+              {stats?.failed || 0}
+            </div>
             <p className="text-xs text-[#e8fbff]/50 mt-1">Chiamate fallite</p>
           </CardContent>
         </Card>
@@ -292,7 +333,9 @@ export function DebugSectionReal() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#8b5cf6]">{stats?.uniqueAgents || 0}</div>
+            <div className="text-3xl font-bold text-[#8b5cf6]">
+              {stats?.uniqueAgents || 0}
+            </div>
             <p className="text-xs text-[#e8fbff]/50 mt-1">Agenti attivi</p>
           </CardContent>
         </Card>
@@ -309,32 +352,62 @@ export function DebugSectionReal() {
         <CardContent>
           <div className="bg-[#0b1220] rounded-lg p-4 font-mono text-sm">
             <div className="text-[#10b981]">$ System health check...</div>
-            <div className="text-[#14b8a6] mt-2">✓ Status: {health?.status || 'unknown'}</div>
+            <div className="text-[#14b8a6] mt-2">
+              ✓ Status: {health?.status || "unknown"}
+            </div>
             {health?.services && (
               <>
-                <div className="text-[#14b8a6]">✓ Database: {health.services.database}</div>
-                <div className="text-[#14b8a6]">✓ API: {health.services.api}</div>
+                <div className="text-[#14b8a6]">
+                  ✓ Database: {health.services.database}
+                </div>
+                <div className="text-[#14b8a6]">
+                  ✓ API: {health.services.api}
+                </div>
                 {health.services.redis && (
-                  <div className="text-[#14b8a6]">✓ Redis: {health.services.redis}</div>
+                  <div className="text-[#14b8a6]">
+                    ✓ Redis: {health.services.redis}
+                  </div>
                 )}
               </>
             )}
             <div className="text-[#e8fbff]/50 mt-4">$ Monitoring active...</div>
             <div className="text-[#8b5cf6] mt-4">$ Guardian API Status...</div>
-            <div className="text-[#14b8a6]">✓ POST /api/logs/initSchema - Ready</div>
-            <div className="text-[#14b8a6]">✓ POST /api/logs/createLog - Ready</div>
-            <div className="text-[#14b8a6]">✓ GET /api/logs/getLogs - Ready</div>
+            <div className="text-[#14b8a6]">
+              ✓ POST /api/logs/initSchema - Ready
+            </div>
+            <div className="text-[#14b8a6]">
+              ✓ POST /api/logs/createLog - Ready
+            </div>
+            <div className="text-[#14b8a6]">
+              ✓ GET /api/logs/getLogs - Ready
+            </div>
             <div className="text-[#14b8a6]">✓ GET /api/logs/stats - Ready</div>
-            <div className="text-[#14b8a6]">✓ GET /api/guardian/health - Ready</div>
-            <div className="text-[#8b5cf6] mt-4">$ Imprese & Qualificazioni API Status...</div>
+            <div className="text-[#14b8a6]">
+              ✓ GET /api/guardian/health - Ready
+            </div>
+            <div className="text-[#8b5cf6] mt-4">
+              $ Imprese & Qualificazioni API Status...
+            </div>
             <div className="text-[#14b8a6]">✓ GET /api/imprese - Ready</div>
             <div className="text-[#14b8a6]">✓ GET /api/imprese/:id - Ready</div>
-            <div className="text-[#14b8a6]">✓ GET /api/qualificazioni - Ready</div>
-            <div className="text-[#14b8a6]">✓ GET /api/imprese/:id/qualificazioni - Ready</div>
-            <div className="text-[#14b8a6]">✓ GET /api/imprese/:id/rating - Ready</div>
-            <div className="text-[#8b5cf6] mt-4">$ Admin Migration API Status...</div>
-            <div className="text-[#14b8a6]">✓ POST /api/admin/migrate-pdnd - Ready</div>
-            <div className="text-[#e8fbff]/50 mt-2">→ Test via tab Integrazioni</div>
+            <div className="text-[#14b8a6]">
+              ✓ GET /api/qualificazioni - Ready
+            </div>
+            <div className="text-[#14b8a6]">
+              ✓ GET /api/imprese/:id/qualificazioni - Ready
+            </div>
+            <div className="text-[#14b8a6]">
+              ✓ GET /api/imprese/:id/rating - Ready
+            </div>
+            <div className="text-[#8b5cf6] mt-4">
+              $ Admin Migration API Status...
+            </div>
+            <div className="text-[#14b8a6]">
+              ✓ POST /api/admin/migrate-pdnd - Ready
+            </div>
+            <div className="text-[#e8fbff]/50 mt-2">
+              → Test via tab Integrazioni
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -353,18 +426,20 @@ export function DebugSectionReal() {
               <div className="flex justify-between">
                 <span className="text-[#e8fbff]/70">First Log:</span>
                 <span className="font-semibold text-[#14b8a6]">
-                  {new Date(stats.firstLog).toLocaleString('it-IT')}
+                  {new Date(stats.firstLog).toLocaleString("it-IT")}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#e8fbff]/70">Last Log:</span>
                 <span className="font-semibold text-[#14b8a6]">
-                  {new Date(stats.lastLog).toLocaleString('it-IT')}
+                  {new Date(stats.lastLog).toLocaleString("it-IT")}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#e8fbff]/70">Unique Services:</span>
-                <span className="font-semibold text-[#8b5cf6]">{stats.uniqueServices}</span>
+                <span className="font-semibold text-[#8b5cf6]">
+                  {stats.uniqueServices}
+                </span>
               </div>
             </div>
           </CardContent>

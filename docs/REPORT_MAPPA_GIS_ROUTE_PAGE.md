@@ -29,8 +29,16 @@ Integrare la mappa GIS completa (con design identico a Dashboard PA) nella Route
 
 ```typescript
 // Aggiunti in RoutePage.tsx
-import { MarketMapComponent } from '@/components/MarketMapComponent';
-import { Store, CheckCircle, XCircle, AlertCircle, Filter, Search, Send } from 'lucide-react';
+import { MarketMapComponent } from "@/components/MarketMapComponent";
+import {
+  Store,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Filter,
+  Search,
+  Send,
+} from "lucide-react";
 ```
 
 ### 2. Stati GIS
@@ -41,8 +49,8 @@ const [gisStalls, setGisStalls] = useState<any[]>([]);
 const [gisMapData, setGisMapData] = useState<any | null>(null);
 const [gisMapCenter, setGisMapCenter] = useState<[number, number] | null>(null);
 const [gisMapRefreshKey, setGisMapRefreshKey] = useState(0);
-const [gisSearchQuery, setGisSearchQuery] = useState('');
-const [gisStatusFilter, setGisStatusFilter] = useState<string>('all');
+const [gisSearchQuery, setGisSearchQuery] = useState("");
+const [gisStatusFilter, setGisStatusFilter] = useState<string>("all");
 const gisMarketId = 1; // Mercato Grosseto ID=1
 ```
 
@@ -50,13 +58,14 @@ const gisMarketId = 1; // Mercato Grosseto ID=1
 
 ```typescript
 useEffect(() => {
-  const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://mihub.157-90-29-66.nip.io';
-  
+  const API_BASE_URL =
+    import.meta.env.VITE_MIHUB_API_URL || "https://mihub.157-90-29-66.nip.io";
+
   const fetchGisData = async () => {
     try {
       const [stallsRes, mapRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/markets/${gisMarketId}/stalls`),
-        fetch(`${API_BASE_URL}/api/gis/market-map`)
+        fetch(`${API_BASE_URL}/api/gis/market-map`),
       ]);
 
       const stallsData = await stallsRes.json();
@@ -68,14 +77,17 @@ useEffect(() => {
       if (mapDataRes.success) {
         setGisMapData(mapDataRes.data);
         if (mapDataRes.data?.center) {
-          setGisMapCenter([mapDataRes.data.center.lat, mapDataRes.data.center.lng]);
+          setGisMapCenter([
+            mapDataRes.data.center.lat,
+            mapDataRes.data.center.lng,
+          ]);
         }
       }
     } catch (error) {
-      console.error('[GIS Map] Error fetching data:', error);
+      console.error("[GIS Map] Error fetching data:", error);
     }
   };
-  
+
   fetchGisData();
 }, [gisMarketId]);
 ```
@@ -85,10 +97,10 @@ useEffect(() => {
 ```typescript
 const filteredGisStalls = gisStalls.filter(stall => {
   // Filter by status
-  if (gisStatusFilter !== 'all' && stall.status !== gisStatusFilter) {
+  if (gisStatusFilter !== "all" && stall.status !== gisStatusFilter) {
     return false;
   }
-  
+
   // Filter by search query
   if (gisSearchQuery) {
     const query = gisSearchQuery.toLowerCase();
@@ -96,15 +108,15 @@ const filteredGisStalls = gisStalls.filter(stall => {
       stall.number?.toLowerCase().includes(query) ||
       stall.gis_slot_id?.toLowerCase().includes(query) ||
       stall.vendor_business_name?.toLowerCase().includes(query) ||
-      'grosseto'.includes(query) ||
-      'mercato grosseto'.includes(query) ||
-      'toscana'.includes(query) ||
-      'giovedì'.includes(query) ||
-      'giovedi'.includes(query) ||
-      'thursday'.includes(query)
+      "grosseto".includes(query) ||
+      "mercato grosseto".includes(query) ||
+      "toscana".includes(query) ||
+      "giovedì".includes(query) ||
+      "giovedi".includes(query) ||
+      "thursday".includes(query)
     );
   }
-  
+
   return true;
 });
 ```
@@ -137,6 +149,7 @@ const filteredGisStalls = gisStalls.filter(stall => {
 ```
 
 **Logica:**
+
 - `routeConfig` è `undefined` finché `plan` non è calcolato
 - Quando utente clicca "Pianifica Percorso" → `plan` viene popolato
 - `routeConfig.enabled` diventa `true` → RouteLayer si attiva
@@ -159,7 +172,7 @@ const filteredGisStalls = gisStalls.filter(stall => {
             type="text"
             placeholder="Cerca mercato, posteggio, impresa..."
             value={gisSearchQuery}
-            onChange={(e) => setGisSearchQuery(e.target.value)}
+            onChange={e => setGisSearchQuery(e.target.value)}
             className="w-full px-4 py-3 pl-10 pr-12 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/40 focus:outline-none focus:border-[#14b8a6] transition-colors"
           />
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#14b8a6]/60" />
@@ -171,10 +184,12 @@ const filteredGisStalls = gisStalls.filter(stall => {
 
       {/* Filtri Stato */}
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setGisStatusFilter('all')}>Tutti</button>
-        <button onClick={() => setGisStatusFilter('libero')}>Liberi</button>
-        <button onClick={() => setGisStatusFilter('occupato')}>Occupati</button>
-        <button onClick={() => setGisStatusFilter('riservato')}>Riservati</button>
+        <button onClick={() => setGisStatusFilter("all")}>Tutti</button>
+        <button onClick={() => setGisStatusFilter("libero")}>Liberi</button>
+        <button onClick={() => setGisStatusFilter("occupato")}>Occupati</button>
+        <button onClick={() => setGisStatusFilter("riservato")}>
+          Riservati
+        </button>
       </div>
     </div>
   </CardContent>
@@ -191,7 +206,9 @@ const filteredGisStalls = gisStalls.filter(stall => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-[#e8fbff]/60">Posteggi Totali</p>
-          <p className="text-2xl font-bold text-[#e8fbff]">{gisStalls.length}</p>
+          <p className="text-2xl font-bold text-[#e8fbff]">
+            {gisStalls.length}
+          </p>
         </div>
         <div className="w-12 h-12 rounded-full bg-[#14b8a6]/20 flex items-center justify-center">
           <Store className="h-6 w-6 text-[#14b8a6]" />
@@ -199,7 +216,7 @@ const filteredGisStalls = gisStalls.filter(stall => {
       </div>
     </CardContent>
   </Card>
-  
+
   {/* Card Liberi, Occupati, Riservati... */}
 </div>
 ```
@@ -220,7 +237,10 @@ const filteredGisStalls = gisStalls.filter(stall => {
     </CardTitle>
   </CardHeader>
   <CardContent>
-    <div className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden aspect-square max-w-4xl mx-auto" style={{ height: 'auto', minHeight: '800px' }}>
+    <div
+      className="bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 overflow-hidden aspect-square max-w-4xl mx-auto"
+      style={{ height: "auto", minHeight: "800px" }}
+    >
       <MarketMapComponent {...props} />
     </div>
   </CardContent>
@@ -262,6 +282,7 @@ const filteredGisStalls = gisStalls.filter(stall => {
 ```
 
 **Classi chiave:**
+
 - `container` - Padding laterale automatico
 - `max-w-2xl` - Massimo 672px (perfetto per mobile)
 - `space-y-6` - Gap verticale 24px tra sezioni
@@ -280,6 +301,7 @@ pnpm run build
 ```
 
 **Output:**
+
 ```
 ✓ 3181 modules transformed.
 ✓ built in 15.68s
@@ -414,6 +436,7 @@ RoutePage
 **Obiettivo raggiunto al 100%!**
 
 La mappa GIS è ora perfettamente integrata in RoutePage con:
+
 - ✅ Visualizzazione sempre attiva
 - ✅ Routing dinamico con percorso verde
 - ✅ Search & filtri funzionanti

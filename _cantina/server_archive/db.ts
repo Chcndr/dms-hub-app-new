@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { InsertUser, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _client: ReturnType<typeof postgres> | null = null;
@@ -20,9 +20,9 @@ export async function getDb() {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       _client = postgres(process.env.DATABASE_URL, {
-        max: 20,              // Max connections in pool
-        idle_timeout: 30,     // Close idle connections after 30s
-        connect_timeout: 10,  // Fail connection after 10s
+        max: 20, // Max connections in pool
+        idle_timeout: 30, // Close idle connections after 30s
+        connect_timeout: 10, // Fail connection after 10s
         max_lifetime: 60 * 5, // Recycle connections every 5 min (Neon limit)
       });
       _db = drizzle(_client);
@@ -34,7 +34,9 @@ export async function getDb() {
       _connectAttempts++;
       if (attempt < maxRetries - 1) {
         const delay = baseDelay * Math.pow(2, attempt);
-        console.warn(`[Database] Connection attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+        console.warn(
+          `[Database] Connection attempt ${attempt + 1} failed, retrying in ${delay}ms...`
+        );
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
         console.error("[Database] All connection attempts failed:", error);
@@ -47,7 +49,9 @@ export async function getDb() {
 // Force reconnect (call after connection errors to reset stale pool)
 export async function reconnectDb() {
   if (_client) {
-    try { await (_client as any).end(); } catch {}
+    try {
+      await (_client as any).end();
+    } catch {}
   }
   _db = null;
   _client = null;
@@ -57,7 +61,9 @@ export async function reconnectDb() {
 // Graceful shutdown — close pool cleanly
 export async function closeDb() {
   if (_client) {
-    try { await (_client as any).end(); } catch {}
+    try {
+      await (_client as any).end();
+    } catch {}
   }
   _db = null;
   _client = null;
@@ -101,8 +107,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.role = user.role;
       updateSet.role = user.role;
     } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+      values.role = "admin";
+      updateSet.role = "admin";
     }
 
     if (!values.lastSignedIn) {
@@ -130,7 +136,11 @@ export async function getUserByOpenId(openId: string) {
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.openId, openId))
+    .limit(1);
 
   return result.length > 0 ? result[0] : undefined;
 }
@@ -145,9 +155,13 @@ export async function getOverviewStats() {
 
   // Conteggi totali
   const [usersCount] = await db.select({ count: count() }).from(schema.users);
-  const [marketsCount] = await db.select({ count: count() }).from(schema.markets);
+  const [marketsCount] = await db
+    .select({ count: count() })
+    .from(schema.markets);
   const [shopsCount] = await db.select({ count: count() }).from(schema.shops);
-  const [transactionsCount] = await db.select({ count: count() }).from(schema.transactions);
+  const [transactionsCount] = await db
+    .select({ count: count() })
+    .from(schema.transactions);
 
   // Mercati attivi (con geometria configurata)
   const [activeMarketsCount] = await db
@@ -169,15 +183,20 @@ export async function getOverviewStats() {
   const [yesterdayTransactions] = await db
     .select({ count: count() })
     .from(schema.transactions)
-    .where(and(
-      gte(schema.transactions.createdAt, yesterday),
-      lt(schema.transactions.createdAt, today)
-    ));
+    .where(
+      and(
+        gte(schema.transactions.createdAt, yesterday),
+        lt(schema.transactions.createdAt, today)
+      )
+    );
 
   // Calcolo crescita transazioni
-  const transactionGrowth = yesterdayTransactions.count > 0
-    ? ((todayTransactions.count - yesterdayTransactions.count) / yesterdayTransactions.count) * 100
-    : 0;
+  const transactionGrowth =
+    yesterdayTransactions.count > 0
+      ? ((todayTransactions.count - yesterdayTransactions.count) /
+          yesterdayTransactions.count) *
+        100
+      : 0;
 
   // Utenti attivi oggi (con transazioni o check-in)
   const activeUsersToday = await db
@@ -199,14 +218,18 @@ export async function getOverviewStats() {
   const [usersPrevWeek] = await db
     .select({ count: count() })
     .from(schema.users)
-    .where(and(
-      gte(schema.users.createdAt, fourteenDaysAgo),
-      lt(schema.users.createdAt, sevenDaysAgo)
-    ));
+    .where(
+      and(
+        gte(schema.users.createdAt, fourteenDaysAgo),
+        lt(schema.users.createdAt, sevenDaysAgo)
+      )
+    );
 
-  const userGrowth = usersPrevWeek.count > 0
-    ? ((usersLastWeek.count - usersPrevWeek.count) / usersPrevWeek.count) * 100
-    : 0;
+  const userGrowth =
+    usersPrevWeek.count > 0
+      ? ((usersLastWeek.count - usersPrevWeek.count) / usersPrevWeek.count) *
+        100
+      : 0;
 
   // TCC distribuiti (somma ecocredits)
   const [tccSum] = await db
@@ -220,14 +243,15 @@ export async function getOverviewStats() {
   const [bioProducts] = await db
     .select({ count: count() })
     .from(schema.products)
-    .where(or(
-      eq(schema.products.certifications, 'BIO'),
-      eq(schema.products.certifications, 'KM0')
-    ));
+    .where(
+      or(
+        eq(schema.products.certifications, "BIO"),
+        eq(schema.products.certifications, "KM0")
+      )
+    );
 
-  const sustainabilityRating = shopsCount.count > 0
-    ? (bioProducts.count / shopsCount.count) * 10
-    : 0;
+  const sustainabilityRating =
+    shopsCount.count > 0 ? (bioProducts.count / shopsCount.count) * 10 : 0;
 
   return {
     totalUsers: usersCount.count,
@@ -247,7 +271,10 @@ export async function getOverviewStats() {
 export async function getMarkets() {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.markets).where(eq(schema.markets.active, 1));
+  return await db
+    .select()
+    .from(schema.markets)
+    .where(eq(schema.markets.active, 1));
 }
 
 export async function getShops() {
@@ -259,13 +286,21 @@ export async function getShops() {
 export async function getTransactions(limit = 100) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.transactions).orderBy(desc(schema.transactions.createdAt)).limit(limit);
+  return await db
+    .select()
+    .from(schema.transactions)
+    .orderBy(desc(schema.transactions.createdAt))
+    .limit(limit);
 }
 
 export async function getCheckins(limit = 100) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.checkins).orderBy(desc(schema.checkins.createdAt)).limit(limit);
+  return await db
+    .select()
+    .from(schema.checkins)
+    .orderBy(desc(schema.checkins.createdAt))
+    .limit(limit);
 }
 
 export async function getCarbonCreditsConfig() {
@@ -278,7 +313,11 @@ export async function getCarbonCreditsConfig() {
 export async function getFundTransactions(limit = 50) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.fundTransactions).orderBy(desc(schema.fundTransactions.createdAt)).limit(limit);
+  return await db
+    .select()
+    .from(schema.fundTransactions)
+    .orderBy(desc(schema.fundTransactions.createdAt))
+    .limit(limit);
 }
 
 export async function getReimbursements(status?: string, limit = 200) {
@@ -286,15 +325,27 @@ export async function getReimbursements(status?: string, limit = 200) {
   if (!db) return [];
 
   if (status) {
-    return await db.select().from(schema.reimbursements).where(eq(schema.reimbursements.status, status)).limit(limit);
+    return await db
+      .select()
+      .from(schema.reimbursements)
+      .where(eq(schema.reimbursements.status, status))
+      .limit(limit);
   }
-  return await db.select().from(schema.reimbursements).orderBy(desc(schema.reimbursements.createdAt)).limit(limit);
+  return await db
+    .select()
+    .from(schema.reimbursements)
+    .orderBy(desc(schema.reimbursements.createdAt))
+    .limit(limit);
 }
 
 export async function getSystemLogs(limit = 100) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.systemLogs).orderBy(desc(schema.systemLogs.createdAt)).limit(limit);
+  return await db
+    .select()
+    .from(schema.systemLogs)
+    .orderBy(desc(schema.systemLogs.createdAt))
+    .limit(limit);
 }
 
 export async function getProducts(limit = 500) {
@@ -318,39 +369,62 @@ export async function getUserAnalytics(limit = 500) {
 export async function getSustainabilityMetrics(limit = 200) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.sustainabilityMetrics).orderBy(desc(schema.sustainabilityMetrics.date)).limit(limit);
+  return await db
+    .select()
+    .from(schema.sustainabilityMetrics)
+    .orderBy(desc(schema.sustainabilityMetrics.date))
+    .limit(limit);
 }
 
 export async function getBusinessAnalytics(limit = 200) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.businessAnalytics).orderBy(desc(schema.businessAnalytics.totalRevenue)).limit(limit);
+  return await db
+    .select()
+    .from(schema.businessAnalytics)
+    .orderBy(desc(schema.businessAnalytics.totalRevenue))
+    .limit(limit);
 }
 
 export async function getInspections(limit = 200) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.inspections).orderBy(desc(schema.inspections.scheduledDate)).limit(limit);
+  return await db
+    .select()
+    .from(schema.inspections)
+    .orderBy(desc(schema.inspections.scheduledDate))
+    .limit(limit);
 }
 
 export async function getNotifications(limit = 200) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.notifications).orderBy(desc(schema.notifications.createdAt)).limit(limit);
+  return await db
+    .select()
+    .from(schema.notifications)
+    .orderBy(desc(schema.notifications.createdAt))
+    .limit(limit);
 }
 
 export async function getCivicReports(limit = 200) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.civicReports).orderBy(desc(schema.civicReports.createdAt)).limit(limit);
+  return await db
+    .select()
+    .from(schema.civicReports)
+    .orderBy(desc(schema.civicReports.createdAt))
+    .limit(limit);
 }
 
 export async function getMobilityData(limit = 500) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.mobilityData).orderBy(desc(schema.mobilityData.updatedAt)).limit(limit);
+  return await db
+    .select()
+    .from(schema.mobilityData)
+    .orderBy(desc(schema.mobilityData.updatedAt))
+    .limit(limit);
 }
-
 
 // ============================================
 // MIO Agent Logs
@@ -365,19 +439,24 @@ export async function createMioAgentLog(log: {
 }) {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot create MIO Agent log: database not available");
+    console.warn(
+      "[Database] Cannot create MIO Agent log: database not available"
+    );
     return null;
   }
 
   try {
-    const result = await db.insert(schema.mioAgentLogs).values({
-      agent: log.agent,
-      action: log.action,
-      status: log.status,
-      message: log.message || null,
-      details: log.details ? JSON.stringify(log.details) : null,
-      timestamp: new Date(),
-    }).returning();
+    const result = await db
+      .insert(schema.mioAgentLogs)
+      .values({
+        agent: log.agent,
+        action: log.action,
+        status: log.status,
+        message: log.message || null,
+        details: log.details ? JSON.stringify(log.details) : null,
+        timestamp: new Date(),
+      })
+      .returning();
 
     return {
       success: true,
@@ -436,7 +515,6 @@ export async function getMioAgentLogById(id: number) {
   }
 }
 
-
 export async function initMioAgentLogsTable() {
   const db = await getDb();
   if (!db) {
@@ -445,7 +523,9 @@ export async function initMioAgentLogsTable() {
 
   try {
     // Table is managed by Drizzle schema — just verify it exists
-    const testResult = await db.select({ count: count() }).from(schema.mioAgentLogs);
+    const testResult = await db
+      .select({ count: count() })
+      .from(schema.mioAgentLogs);
     return {
       success: true,
       message: "Table mio_agent_logs exists",
@@ -462,7 +542,6 @@ export async function initMioAgentLogsTable() {
   }
 }
 
-
 // ============================================
 // Database Diagnostics
 // ============================================
@@ -475,13 +554,18 @@ export async function testDatabaseConnection() {
     return {
       success: false,
       message: "Database not available",
-      details: { databaseUrlExists: !!databaseUrl, error: "getDb() returned null" },
+      details: {
+        databaseUrlExists: !!databaseUrl,
+        error: "getDb() returned null",
+      },
     };
   }
 
   try {
     // Test with a simple count query via Drizzle ORM
-    const [logCount] = await db.select({ count: count() }).from(schema.mioAgentLogs);
+    const [logCount] = await db
+      .select({ count: count() })
+      .from(schema.mioAgentLogs);
 
     return {
       success: true,
@@ -504,7 +588,6 @@ export async function testDatabaseConnection() {
     };
   }
 }
-
 
 // ============================================
 // TCC Security Query Helpers
@@ -558,10 +641,7 @@ export async function getTccRewardsConfig(comuneId?: number) {
     return config || null;
   }
 
-  const [config] = await db
-    .select()
-    .from(schema.tccRewardsConfig)
-    .limit(1);
+  const [config] = await db.select().from(schema.tccRewardsConfig).limit(1);
   return config || null;
 }
 
@@ -587,7 +667,10 @@ export async function cleanupExpiredTccTokens() {
     };
   } catch (error) {
     console.error("[TCC Cleanup] Errore:", error);
-    return { success: false, message: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 

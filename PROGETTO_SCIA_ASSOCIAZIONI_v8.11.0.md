@@ -15,12 +15,12 @@ Questo documento delinea il progetto per l'integrazione di un nuovo modulo **"SC
 
 Il principio guida è il **massimo riutilizzo dei componenti esistenti** per garantire rapidità di sviluppo, stabilità e coerenza dell'interfaccia. Non verranno creati nuovi componenti, ma si orchestreranno quelli già presenti nel modulo SUAP.
 
-| Componente | Path | Funzione nel Nuovo Modulo |
-|---|---|---|
-| `SciaForm` | `components/suap/SciaForm.tsx` | Form principale per la compilazione delle SCIA. Verrà configurato per permettere la selezione del Comune di destinazione. |
-| `DomandaSpuntaForm` | `components/suap/DomandaSpuntaForm.tsx` | Form per la compilazione delle Domande di Spunta. |
-| `ListaDomandeSpuntaSuap` | `components/suap/ListaDomandeSpuntaSuap.tsx` | Tabella per visualizzare le domande di spunta inviate dall'associazione. |
-| `SuapPanel` (logica) | `components/SuapPanel.tsx` | La logica di gestione stato, liste pratiche e notifiche verrà riutilizzata per popolare le sezioni del nuovo modulo. |
+| Componente               | Path                                         | Funzione nel Nuovo Modulo                                                                                                 |
+| ------------------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `SciaForm`               | `components/suap/SciaForm.tsx`               | Form principale per la compilazione delle SCIA. Verrà configurato per permettere la selezione del Comune di destinazione. |
+| `DomandaSpuntaForm`      | `components/suap/DomandaSpuntaForm.tsx`      | Form per la compilazione delle Domande di Spunta.                                                                         |
+| `ListaDomandeSpuntaSuap` | `components/suap/ListaDomandeSpuntaSuap.tsx` | Tabella per visualizzare le domande di spunta inviate dall'associazione.                                                  |
+| `SuapPanel` (logica)     | `components/SuapPanel.tsx`                   | La logica di gestione stato, liste pratiche e notifiche verrà riutilizzata per popolare le sezioni del nuovo modulo.      |
 
 Le API backend esistenti sono già in grado di supportare il flusso completo. L'unica modifica futura sarà l'aggiunta di un campo `associazione_id` alla tabella `suap_pratiche` per un tracciamento e una reportistica più efficaci.
 
@@ -29,7 +29,9 @@ Le API backend esistenti sono già in grado di supportare il flusso completo. L'
 Il nuovo sotto-tab **"SCIA & Pratiche"** sarà inserito come terza opzione nella sezione "Enti e Associazioni" e sarà organizzato in sezioni verticali per un'esperienza utente chiara e guidata.
 
 ### Sezione 1: Dashboard Pratiche
+
 Una serie di KPI mostrerà una panoramica immediata dell'attività:
+
 - **Pratiche Inviate:** Conteggio totale delle pratiche (SCIA + Spunta) inviate.
 - **In Lavorazione:** Pratiche con stato `RECEIVED`, `PRECHECK`, `EVALUATED`.
 - **Approvate:** Pratiche con stato `APPROVED`.
@@ -38,15 +40,19 @@ Una serie di KPI mostrerà una panoramica immediata dell'attività:
 ### Sezione 2: Azioni Rapide e Gestione Bollo
 
 **Integrazione Bollo (Fase 1 - Dichiarazione Sostitutiva):**
+
 - Il `SciaForm` e il `DomandaSpuntaForm` verranno modificati per includere i campi per l'inserimento dei dati delle **due marche da bollo da 16€** (numero seriale, data) e la casella per la **dichiarazione sostitutiva di atto di notorietà**.
 - Questo permette di essere immediatamente operativi e conformi alla normativa, gestendo il requisito del bollo senza attendere l'integrazione tecnica con PagoPA.
 
 Due bottoni principali per avviare i processi:
+
 - **"Nuova SCIA"**: Apre il componente `SciaForm` in una modal full-page. Il form includerà un selettore per il **Comune di destinazione**, popolato con tutti i comuni attivi nel sistema. La selezione del comune filtrerà dinamicamente i mercati disponibili.
 - **"Nuova Domanda Spunta"**: Apre il `DomandaSpuntaForm`.
 
 ### Sezione 3: Pratiche Inviate
+
 Una tabella dettagliata mostrerà tutte le pratiche inviate dall'associazione, con funzionalità di ricerca e filtro. Le colonne includeranno:
+
 - **Protocollo**
 - **Impresa Associata**
 - **Comune Destinazione**
@@ -57,7 +63,9 @@ Una tabella dettagliata mostrerà tutte le pratiche inviate dall'associazione, c
 - **Azioni** (Dettaglio, Valuta, Genera Concessione - se l'associazione ha i permessi)
 
 ### Sezione 4: Lista Associati Tesserati
+
 Questa sezione, cruciale per la gestione, mostrerà una lista di tutte le imprese associate, con la possibilità di cliccare su ciascuna per visualizzare una **scheda di dettaglio** contenente:
+
 - Dati anagrafici dell'impresa.
 - Storico delle pratiche presentate.
 - Concessioni attive.

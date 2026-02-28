@@ -9,6 +9,7 @@
 ## 📋 Descrizione
 
 Componente React riusabile per visualizzare la mappa GIS del mercato con:
+
 - ✅ **Numeri scalabili** con zoom (formula: `8 * 1.5^(zoom - 18)`)
 - ✅ **Senza sfondo bianco** (numeri trasparenti)
 - ✅ **Colori dinamici** basati su stato database
@@ -21,6 +22,7 @@ Componente React riusabile per visualizzare la mappa GIS del mercato con:
 ## 🎯 Quando Usare Questo Componente
 
 Usa `MarketMapComponent` quando devi:
+
 1. Visualizzare la mappa GIS in una dashboard
 2. Integrare la mappa con tabelle o form
 3. Mostrare posteggi con colori dinamici dal database
@@ -34,22 +36,22 @@ Usa `MarketMapComponent` quando devi:
 ## 📦 Import
 
 ```tsx
-import { MarketMapComponent } from '@/components/MarketMapComponent';
+import { MarketMapComponent } from "@/components/MarketMapComponent";
 ```
 
 ---
 
 ## 🔧 Props
 
-| Prop | Tipo | Default | Descrizione |
-|------|------|---------|-------------|
-| `mapData` | `MapData` | **required** | Dati GeoJSON con geometrie posteggi |
-| `center` | `[number, number]` | `mapData.center` | Centro mappa [lat, lng] |
-| `zoom` | `number` | `17` | Livello zoom iniziale (17-21) |
-| `height` | `string` | `'600px'` | Altezza mappa CSS |
-| `onStallClick` | `(number) => void` | `undefined` | Callback click su posteggio |
-| `selectedStallNumber` | `number` | `undefined` | Numero posteggio evidenziato |
-| `stallsData` | `StallData[]` | `[]` | Dati aggiornati dal database |
+| Prop                  | Tipo               | Default          | Descrizione                         |
+| --------------------- | ------------------ | ---------------- | ----------------------------------- |
+| `mapData`             | `MapData`          | **required**     | Dati GeoJSON con geometrie posteggi |
+| `center`              | `[number, number]` | `mapData.center` | Centro mappa [lat, lng]             |
+| `zoom`                | `number`           | `17`             | Livello zoom iniziale (17-21)       |
+| `height`              | `string`           | `'600px'`        | Altezza mappa CSS                   |
+| `onStallClick`        | `(number) => void` | `undefined`      | Callback click su posteggio         |
+| `selectedStallNumber` | `number`           | `undefined`      | Numero posteggio evidenziato        |
+| `stallsData`          | `StallData[]`      | `[]`             | Dati aggiornati dal database        |
 
 ### Tipo `MapData`
 
@@ -60,7 +62,7 @@ interface MapData {
     lng: number;
   };
   stalls_geojson: {
-    type: 'FeatureCollection';
+    type: "FeatureCollection";
     features: StallFeature[];
   };
 }
@@ -71,8 +73,8 @@ interface MapData {
 ```typescript
 interface StallData {
   number: number;
-  status: 'free' | 'occupied' | 'reserved';
-  kind: 'fixed' | 'spot' | 'free';
+  status: "free" | "occupied" | "reserved";
+  kind: "fixed" | "spot" | "free";
   vendor_name?: string;
   dimensions?: string;
 }
@@ -85,26 +87,20 @@ interface StallData {
 ### Esempio 1: Mappa Base
 
 ```tsx
-import { MarketMapComponent } from '@/components/MarketMapComponent';
+import { MarketMapComponent } from "@/components/MarketMapComponent";
 
 function MyPage() {
   const [mapData, setMapData] = useState(null);
 
   useEffect(() => {
-    fetch('https://orchestratore.mio-hub.me/api/gis/market-map')
+    fetch("https://orchestratore.mio-hub.me/api/gis/market-map")
       .then(res => res.json())
       .then(data => setMapData(data.data));
   }, []);
 
   if (!mapData) return <div>Caricamento...</div>;
 
-  return (
-    <MarketMapComponent
-      mapData={mapData}
-      zoom={18}
-      height="700px"
-    />
-  );
+  return <MarketMapComponent mapData={mapData} zoom={18} height="700px" />;
 }
 ```
 
@@ -120,9 +116,9 @@ function MarketDashboard() {
       <MarketMapComponent
         mapData={mapData}
         selectedStallNumber={selectedStall}
-        onStallClick={(stallNumber) => {
+        onStallClick={stallNumber => {
           setSelectedStall(stallNumber);
-          console.log('Posteggio selezionato:', stallNumber);
+          console.log("Posteggio selezionato:", stallNumber);
         }}
       />
     </div>
@@ -141,20 +137,20 @@ function GestioneMercati() {
 
   // Carica dati GIS
   useEffect(() => {
-    fetch('https://orchestratore.mio-hub.me/api/gis/market-map')
+    fetch("https://orchestratore.mio-hub.me/api/gis/market-map")
       .then(res => res.json())
       .then(data => setMapData(data.data));
   }, []);
 
   // Carica posteggi dal database
   useEffect(() => {
-    fetch('https://orchestratore.mio-hub.me/api/markets/1/stalls')
+    fetch("https://orchestratore.mio-hub.me/api/markets/1/stalls")
       .then(res => res.json())
       .then(data => setStalls(data.data));
   }, []);
 
   // Click su riga tabella → centra mappa
-  const handleRowClick = (stallNumber) => {
+  const handleRowClick = stallNumber => {
     setSelectedStall(stallNumber);
     // Calcola centro posteggio e centra mappa
     const feature = mapData.stalls_geojson.features.find(
@@ -162,8 +158,10 @@ function GestioneMercati() {
     );
     if (feature) {
       const coords = feature.geometry.coordinates[0];
-      const centerLat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
-      const centerLng = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+      const centerLat =
+        coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+      const centerLng =
+        coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
       setMapCenter([centerLat, centerLng]);
     }
   };
@@ -174,10 +172,10 @@ function GestioneMercati() {
       <div>
         <table>
           {stalls.map(stall => (
-            <tr 
+            <tr
               key={stall.id}
               onClick={() => handleRowClick(stall.number)}
-              className={selectedStall === stall.number ? 'bg-teal-500/20' : ''}
+              className={selectedStall === stall.number ? "bg-teal-500/20" : ""}
             >
               <td>{stall.number}</td>
               <td>{stall.status}</td>
@@ -286,6 +284,7 @@ Prima di usare il componente in produzione, verifica:
 **Causa:** Style tag senza ID o `ZoomFontUpdater` mancante
 
 **Soluzione:**
+
 1. Verifica che `<style id="dynamic-tooltip-style">` sia presente
 2. Verifica che `<ZoomFontUpdater>` sia dentro `<MapContainer>`
 3. Verifica che `font-size: 8px !important;` sia nel CSS
@@ -295,6 +294,7 @@ Prima di usare il componente in produzione, verifica:
 **Causa:** CSS tooltip non corretto
 
 **Soluzione:**
+
 ```css
 .stall-number-tooltip.leaflet-tooltip {
   background: transparent !important;
@@ -308,10 +308,11 @@ Prima di usare il componente in produzione, verifica:
 **Causa:** `stallsData` non passato o formato errato
 
 **Soluzione:**
+
 ```tsx
 <MarketMapComponent
   mapData={mapData}
-  stallsData={stallsFromDatabase}  // Array con { number, status, ... }
+  stallsData={stallsFromDatabase} // Array con { number, status, ... }
 />
 ```
 
@@ -319,12 +320,12 @@ Prima di usare il componente in produzione, verifica:
 
 ## 📚 File Correlati
 
-| File | Descrizione |
-|------|-------------|
-| `MarketMapComponent.tsx` | Componente principale (QUESTO FILE) |
-| `ZoomFontUpdater.tsx` | Componente per scaling dinamico font |
-| `MarketGISPage.tsx` | Pagina standalone mappa GIS (versione perfetta) |
-| `GestioneMercati.tsx` | Esempio uso in dashboard |
+| File                     | Descrizione                                     |
+| ------------------------ | ----------------------------------------------- |
+| `MarketMapComponent.tsx` | Componente principale (QUESTO FILE)             |
+| `ZoomFontUpdater.tsx`    | Componente per scaling dinamico font            |
+| `MarketGISPage.tsx`      | Pagina standalone mappa GIS (versione perfetta) |
+| `GestioneMercati.tsx`    | Esempio uso in dashboard                        |
 
 ---
 
@@ -340,6 +341,7 @@ Prima di usare il componente in produzione, verifica:
 ## 📝 Changelog
 
 ### v1.0.0 (22 Novembre 2025)
+
 - ✅ Componente certificato e testato
 - ✅ Numeri scalabili con zoom
 - ✅ Colori dinamici dal database

@@ -3,6 +3,7 @@
 ## 📋 Stato Attuale
 
 ### ✅ Completato
+
 - **Componente MIOAgent.tsx** integrato come 24° tab nella Dashboard PA
 - **API Routes Vercel** create e funzionanti:
   - `POST /api/logs/initSchema` - Inizializza tabella database
@@ -14,6 +15,7 @@
 - **Deploy Vercel** completato e funzionante
 
 ### ⚠️ Da Completare
+
 - **DATABASE_URL Railway** - Le credenziali sono scadute/cambiate
 - **Inizializzazione tabella** `mio_agent_logs` nel database
 
@@ -49,6 +51,7 @@ curl -X POST https://dms-hub-app-new.vercel.app/api/logs/initSchema
 ```
 
 **Risposta attesa:**
+
 ```json
 {
   "success": true,
@@ -60,11 +63,13 @@ curl -X POST https://dms-hub-app-new.vercel.app/api/logs/initSchema
 ### Step 4: Testare gli Endpoint
 
 #### Test Configurazione
+
 ```bash
 curl https://dms-hub-app-new.vercel.app/api/logs/test
 ```
 
 #### Creare un Log di Test
+
 ```bash
 curl -X POST https://dms-hub-app-new.vercel.app/api/logs/createLog \
   -H "Content-Type: application/json" \
@@ -81,6 +86,7 @@ curl -X POST https://dms-hub-app-new.vercel.app/api/logs/createLog \
 ```
 
 #### Recuperare i Log
+
 ```bash
 curl https://dms-hub-app-new.vercel.app/api/logs/getLogs
 ```
@@ -110,16 +116,19 @@ CREATE TABLE mio_agent_logs (
 ## 🎯 Utilizzo nella Dashboard PA
 
 ### Tab MIO Agent
+
 - Visualizza i log degli agenti in tempo reale
 - Mostra statistiche e metriche
 - Interfaccia per gestire task e operazioni
 
 ### Tab Integrazioni
+
 - Sezione **"MIO Agent"** con 3 endpoint testabili
 - Interfaccia per testare API direttamente dalla dashboard
 - Visualizzazione JSON response in tempo reale
 
 ### Tab Debug
+
 - Console Logs Live mostra status API MIO Agent
 - Verifica che tutti gli endpoint siano "Ready"
 - Link diretto al tab Integrazioni per test
@@ -138,6 +147,7 @@ CREATE TABLE mio_agent_logs (
 ## 📝 Note Tecniche
 
 ### Stack Tecnologico
+
 - **Frontend**: Vite + React, wouter routing, shadcn/ui
 - **Backend**: Node.js + Express + tRPC
 - **Database**: MySQL su Railway
@@ -145,13 +155,16 @@ CREATE TABLE mio_agent_logs (
 - **Deploy**: Vercel Serverless Functions
 
 ### Architettura API Routes
+
 Le API routes sono funzioni serverless standalone che:
+
 - Usano `mysql2/promise` per connessione diretta
 - Gestiscono connessione e chiusura in ogni richiesta
 - Supportano CORS e validazione input
 - Restituiscono JSON con `success`, `error`, `stack`
 
 ### File Chiave
+
 - `api/logs/initSchema.ts` - Inizializzazione schema
 - `api/logs/createLog.ts` - Creazione log
 - `api/logs/getLogs.ts` - Recupero log

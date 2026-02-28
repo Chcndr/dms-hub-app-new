@@ -77,9 +77,7 @@
       "compositePrimaryKeys": {
         "audit_logs_id": {
           "name": "audit_logs_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -176,12 +174,8 @@
           "name": "bookings_stall_id_stalls_id_fk",
           "tableFrom": "bookings",
           "tableTo": "stalls",
-          "columnsFrom": [
-            "stall_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["stall_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -189,12 +183,8 @@
           "name": "bookings_user_id_users_id_fk",
           "tableFrom": "bookings",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -202,12 +192,8 @@
           "name": "bookings_vendor_id_vendors_id_fk",
           "tableFrom": "bookings",
           "tableTo": "vendors",
-          "columnsFrom": [
-            "vendor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -215,9 +201,7 @@
       "compositePrimaryKeys": {
         "bookings_id": {
           "name": "bookings_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -315,9 +299,7 @@
       "compositePrimaryKeys": {
         "business_analytics_id": {
           "name": "business_analytics_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -376,9 +358,7 @@
       "compositePrimaryKeys": {
         "carbon_credits_config_id": {
           "name": "carbon_credits_config_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -444,12 +424,8 @@
           "name": "carbon_footprint_product_id_products_id_fk",
           "tableFrom": "carbon_footprint",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -457,9 +433,7 @@
       "compositePrimaryKeys": {
         "carbon_footprint_id": {
           "name": "carbon_footprint_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -532,12 +506,8 @@
           "name": "checkins_user_id_users_id_fk",
           "tableFrom": "checkins",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -545,12 +515,8 @@
           "name": "checkins_market_id_markets_id_fk",
           "tableFrom": "checkins",
           "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -558,9 +524,7 @@
       "compositePrimaryKeys": {
         "checkins_id": {
           "name": "checkins_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -641,12 +605,8 @@
           "name": "civic_reports_user_id_users_id_fk",
           "tableFrom": "civic_reports",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -654,9 +614,7 @@
       "compositePrimaryKeys": {
         "civic_reports_id": {
           "name": "civic_reports_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -744,12 +702,8 @@
           "name": "concession_payments_concession_id_concessions_id_fk",
           "tableFrom": "concession_payments",
           "tableTo": "concessions",
-          "columnsFrom": [
-            "concession_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["concession_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -757,12 +711,8 @@
           "name": "concession_payments_vendor_id_vendors_id_fk",
           "tableFrom": "concession_payments",
           "tableTo": "vendors",
-          "columnsFrom": [
-            "vendor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -770,9 +720,7 @@
       "compositePrimaryKeys": {
         "concession_payments_id": {
           "name": "concession_payments_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -891,12 +839,8 @@
           "name": "concessions_vendor_id_vendors_id_fk",
           "tableFrom": "concessions",
           "tableTo": "vendors",
-          "columnsFrom": [
-            "vendor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -904,12 +848,8 @@
           "name": "concessions_stall_id_stalls_id_fk",
           "tableFrom": "concessions",
           "tableTo": "stalls",
-          "columnsFrom": [
-            "stall_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["stall_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -917,12 +857,8 @@
           "name": "concessions_market_id_markets_id_fk",
           "tableFrom": "concessions",
           "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -930,17 +866,13 @@
       "compositePrimaryKeys": {
         "concessions_id": {
           "name": "concessions_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "concessions_concession_number_unique": {
           "name": "concessions_concession_number_unique",
-          "columns": [
-            "concession_number"
-          ]
+          "columns": ["concession_number"]
         }
       },
       "checkConstraint": {}
@@ -1020,12 +952,8 @@
           "name": "custom_areas_market_id_markets_id_fk",
           "tableFrom": "custom_areas",
           "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1033,9 +961,7 @@
       "compositePrimaryKeys": {
         "custom_areas_id": {
           "name": "custom_areas_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1122,12 +1048,8 @@
           "name": "custom_markers_market_id_markets_id_fk",
           "tableFrom": "custom_markers",
           "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1135,9 +1057,7 @@
       "compositePrimaryKeys": {
         "custom_markers_id": {
           "name": "custom_markers_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1203,12 +1123,8 @@
           "name": "ecocredits_user_id_users_id_fk",
           "tableFrom": "ecocredits",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1216,9 +1132,7 @@
       "compositePrimaryKeys": {
         "ecocredits_id": {
           "name": "ecocredits_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1295,12 +1209,8 @@
           "name": "extended_users_user_id_users_id_fk",
           "tableFrom": "extended_users",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1308,9 +1218,7 @@
       "compositePrimaryKeys": {
         "extended_users_id": {
           "name": "extended_users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1368,9 +1276,7 @@
       "compositePrimaryKeys": {
         "fund_transactions_id": {
           "name": "fund_transactions_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1471,9 +1377,7 @@
       "compositePrimaryKeys": {
         "inspections_id": {
           "name": "inspections_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1588,12 +1492,8 @@
           "name": "inspections_detailed_vendor_id_vendors_id_fk",
           "tableFrom": "inspections_detailed",
           "tableTo": "vendors",
-          "columnsFrom": [
-            "vendor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1601,12 +1501,8 @@
           "name": "inspections_detailed_stall_id_stalls_id_fk",
           "tableFrom": "inspections_detailed",
           "tableTo": "stalls",
-          "columnsFrom": [
-            "stall_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["stall_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1614,9 +1510,7 @@
       "compositePrimaryKeys": {
         "inspections_detailed_id": {
           "name": "inspections_detailed_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1719,12 +1613,8 @@
           "name": "market_geometry_market_id_markets_id_fk",
           "tableFrom": "market_geometry",
           "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1732,9 +1622,7 @@
       "compositePrimaryKeys": {
         "market_geometry_id": {
           "name": "market_geometry_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1814,9 +1702,7 @@
       "compositePrimaryKeys": {
         "markets_id": {
           "name": "markets_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1933,9 +1819,7 @@
       "compositePrimaryKeys": {
         "mobility_data_id": {
           "name": "mobility_data_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2025,9 +1909,7 @@
       "compositePrimaryKeys": {
         "notifications_id": {
           "name": "notifications_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2130,12 +2012,8 @@
           "name": "product_tracking_product_id_products_id_fk",
           "tableFrom": "product_tracking",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2143,17 +2021,13 @@
       "compositePrimaryKeys": {
         "product_tracking_id": {
           "name": "product_tracking_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "product_tracking_tpass_id_unique": {
           "name": "product_tracking_tpass_id_unique",
-          "columns": [
-            "tpass_id"
-          ]
+          "columns": ["tpass_id"]
         }
       },
       "checkConstraint": {}
@@ -2218,12 +2092,8 @@
           "name": "products_shop_id_shops_id_fk",
           "tableFrom": "products",
           "tableTo": "shops",
-          "columnsFrom": [
-            "shop_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shop_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2231,9 +2101,7 @@
       "compositePrimaryKeys": {
         "products_id": {
           "name": "products_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2307,12 +2175,8 @@
           "name": "reimbursements_shop_id_shops_id_fk",
           "tableFrom": "reimbursements",
           "tableTo": "shops",
-          "columnsFrom": [
-            "shop_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shop_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2320,9 +2184,7 @@
       "compositePrimaryKeys": {
         "reimbursements_id": {
           "name": "reimbursements_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2404,12 +2266,8 @@
           "name": "shops_market_id_markets_id_fk",
           "tableFrom": "shops",
           "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2417,9 +2275,7 @@
       "compositePrimaryKeys": {
         "shops_id": {
           "name": "shops_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2516,12 +2372,8 @@
           "name": "stalls_market_id_markets_id_fk",
           "tableFrom": "stalls",
           "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2529,9 +2381,7 @@
       "compositePrimaryKeys": {
         "stalls_id": {
           "name": "stalls_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2602,9 +2452,7 @@
       "compositePrimaryKeys": {
         "sustainability_metrics_id": {
           "name": "sustainability_metrics_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2676,9 +2524,7 @@
       "compositePrimaryKeys": {
         "system_logs_id": {
           "name": "system_logs_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2751,12 +2597,8 @@
           "name": "transactions_user_id_users_id_fk",
           "tableFrom": "transactions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2764,12 +2606,8 @@
           "name": "transactions_shop_id_shops_id_fk",
           "tableFrom": "transactions",
           "tableTo": "shops",
-          "columnsFrom": [
-            "shop_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shop_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2777,9 +2615,7 @@
       "compositePrimaryKeys": {
         "transactions_id": {
           "name": "transactions_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2845,12 +2681,8 @@
           "name": "user_analytics_user_id_users_id_fk",
           "tableFrom": "user_analytics",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2858,9 +2690,7 @@
       "compositePrimaryKeys": {
         "user_analytics_id": {
           "name": "user_analytics_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2943,17 +2773,13 @@
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "users_openId_unique": {
           "name": "users_openId_unique",
-          "columns": [
-            "openId"
-          ]
+          "columns": ["openId"]
         }
       },
       "checkConstraint": {}
@@ -3063,12 +2889,8 @@
           "name": "vendor_documents_vendor_id_vendors_id_fk",
           "tableFrom": "vendor_documents",
           "tableTo": "vendors",
-          "columnsFrom": [
-            "vendor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3076,9 +2898,7 @@
       "compositePrimaryKeys": {
         "vendor_documents_id": {
           "name": "vendor_documents_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -3172,12 +2992,8 @@
           "name": "vendor_presences_vendor_id_vendors_id_fk",
           "tableFrom": "vendor_presences",
           "tableTo": "vendors",
-          "columnsFrom": [
-            "vendor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3185,12 +3001,8 @@
           "name": "vendor_presences_stall_id_stalls_id_fk",
           "tableFrom": "vendor_presences",
           "tableTo": "stalls",
-          "columnsFrom": [
-            "stall_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["stall_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3198,12 +3010,8 @@
           "name": "vendor_presences_booking_id_bookings_id_fk",
           "tableFrom": "vendor_presences",
           "tableTo": "bookings",
-          "columnsFrom": [
-            "booking_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["booking_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3211,9 +3019,7 @@
       "compositePrimaryKeys": {
         "vendor_presences_id": {
           "name": "vendor_presences_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -3368,12 +3174,8 @@
           "name": "vendors_user_id_users_id_fk",
           "tableFrom": "vendors",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3381,23 +3183,17 @@
       "compositePrimaryKeys": {
         "vendors_id": {
           "name": "vendors_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "vendors_fiscal_code_unique": {
           "name": "vendors_fiscal_code_unique",
-          "columns": [
-            "fiscal_code"
-          ]
+          "columns": ["fiscal_code"]
         },
         "vendors_vat_number_unique": {
           "name": "vendors_vat_number_unique",
-          "columns": [
-            "vat_number"
-          ]
+          "columns": ["vat_number"]
         }
       },
       "checkConstraint": {}
@@ -3521,12 +3317,8 @@
           "name": "violations_inspection_id_inspections_detailed_id_fk",
           "tableFrom": "violations",
           "tableTo": "inspections_detailed",
-          "columnsFrom": [
-            "inspection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["inspection_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3534,12 +3326,8 @@
           "name": "violations_vendor_id_vendors_id_fk",
           "tableFrom": "violations",
           "tableTo": "vendors",
-          "columnsFrom": [
-            "vendor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3547,12 +3335,8 @@
           "name": "violations_stall_id_stalls_id_fk",
           "tableFrom": "violations",
           "tableTo": "stalls",
-          "columnsFrom": [
-            "stall_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["stall_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3560,9 +3344,7 @@
       "compositePrimaryKeys": {
         "violations_id": {
           "name": "violations_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},

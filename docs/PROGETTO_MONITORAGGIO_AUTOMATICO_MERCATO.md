@@ -16,11 +16,11 @@ Creare un sistema automatico per monitorare le trasgressioni degli orari nel mer
 
 Il sistema si basa su **3 nuovi componenti** che si integrano con l'infrastruttura esistente:
 
-| Componente | Posizione | Funzione |
-| :--- | :--- | :--- |
-| **Sotto-tab "Impostazioni Mercato"** | Gestione Mercati → Test Mercato | Configurazione orari del mercato |
+| Componente                             | Posizione                            | Funzione                              |
+| :------------------------------------- | :----------------------------------- | :------------------------------------ |
+| **Sotto-tab "Impostazioni Mercato"**   | Gestione Mercati → Test Mercato      | Configurazione orari del mercato      |
 | **Pagina "Trasgressioni Automatiche"** | Controlli/Sanzioni → Nuovo sotto-tab | Visualizzazione notifiche automatiche |
-| **Pagina "Storico Mercati"** | Gestione Mercati → Nuovo sotto-tab | Archivio mercati conclusi |
+| **Pagina "Storico Mercati"**           | Gestione Mercati → Nuovo sotto-tab   | Archivio mercati conclusi             |
 
 ### 2.1. Diagramma Architetturale
 
@@ -109,26 +109,28 @@ Il sistema si basa su **3 nuovi componenti** che si integrano con l'infrastruttu
 
 Memorizza le impostazioni degli orari per ogni mercato.
 
-| Colonna | Tipo | Descrizione | Esempio |
-| :--- | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | ID univoco | 1 |
-| `market_id` | `INTEGER NOT NULL` | ID del mercato (FK a `markets`) | 5 |
-| `presence_start_time` | `TIME NOT NULL` | Orario inizio marcatura presenza | 06:00 |
-| `presence_end_time` | `TIME NOT NULL` | Orario fine marcatura presenza | 08:00 |
-| `spunta_presence_start_time` | `TIME NOT NULL` | Orario inizio marcatura presenza spunta | 07:30 |
-| `waste_disposal_start_time` | `TIME NOT NULL` | Orario inizio deposito spazzatura | 12:00 |
-| `waste_disposal_end_time` | `TIME NOT NULL` | Orario fine deposito spazzatura | 13:00 |
-| `exit_market_start_time` | `TIME NOT NULL` | Orario inizio uscita mercato | 13:00 |
-| `exit_market_end_time` | `TIME NOT NULL` | Orario fine uscita mercato | 14:00 |
-| `is_active` | `BOOLEAN DEFAULT TRUE` | Se le impostazioni sono attive | true |
-| `created_at` | `TIMESTAMP DEFAULT NOW()` | Data creazione | 2026-01-26 10:00:00 |
-| `updated_at` | `TIMESTAMP DEFAULT NOW()` | Data aggiornamento | 2026-01-26 10:00:00 |
+| Colonna                      | Tipo                      | Descrizione                             | Esempio             |
+| :--------------------------- | :------------------------ | :-------------------------------------- | :------------------ |
+| `id`                         | `SERIAL PRIMARY KEY`      | ID univoco                              | 1                   |
+| `market_id`                  | `INTEGER NOT NULL`        | ID del mercato (FK a `markets`)         | 5                   |
+| `presence_start_time`        | `TIME NOT NULL`           | Orario inizio marcatura presenza        | 06:00               |
+| `presence_end_time`          | `TIME NOT NULL`           | Orario fine marcatura presenza          | 08:00               |
+| `spunta_presence_start_time` | `TIME NOT NULL`           | Orario inizio marcatura presenza spunta | 07:30               |
+| `waste_disposal_start_time`  | `TIME NOT NULL`           | Orario inizio deposito spazzatura       | 12:00               |
+| `waste_disposal_end_time`    | `TIME NOT NULL`           | Orario fine deposito spazzatura         | 13:00               |
+| `exit_market_start_time`     | `TIME NOT NULL`           | Orario inizio uscita mercato            | 13:00               |
+| `exit_market_end_time`       | `TIME NOT NULL`           | Orario fine uscita mercato              | 14:00               |
+| `is_active`                  | `BOOLEAN DEFAULT TRUE`    | Se le impostazioni sono attive          | true                |
+| `created_at`                 | `TIMESTAMP DEFAULT NOW()` | Data creazione                          | 2026-01-26 10:00:00 |
+| `updated_at`                 | `TIMESTAMP DEFAULT NOW()` | Data aggiornamento                      | 2026-01-26 10:00:00 |
 
 **Vincoli:**
+
 - `UNIQUE(market_id)` - Un mercato può avere solo una configurazione
 - `FK market_id → markets(id)`
 
 **SQL di creazione:**
+
 ```sql
 CREATE TABLE market_settings (
     id SERIAL PRIMARY KEY,
@@ -152,24 +154,24 @@ CREATE TABLE market_settings (
 
 Memorizza le trasgressioni rilevate automaticamente.
 
-| Colonna | Tipo | Descrizione | Esempio |
-| :--- | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | ID univoco | 1 |
-| `market_id` | `INTEGER NOT NULL` | ID del mercato | 5 |
-| `market_date` | `DATE NOT NULL` | Data del mercato | 2026-01-26 |
-| `business_id` | `INTEGER NOT NULL` | ID dell'impresa | 38 |
-| `stall_id` | `INTEGER` | ID del posteggio (opzionale) | 12 |
-| `transgression_type` | `VARCHAR(100) NOT NULL` | Tipo di trasgressione | USCITA_ANTICIPATA |
-| `expected_time` | `TIME NOT NULL` | Orario previsto | 13:00 |
-| `actual_time` | `TIME NOT NULL` | Orario effettivo | 12:30 |
-| `difference_minutes` | `INTEGER NOT NULL` | Differenza in minuti | -30 |
-| `severity` | `VARCHAR(20) DEFAULT 'MEDIA'` | Gravità (BASSA, MEDIA, ALTA) | MEDIA |
-| `details` | `JSONB` | Dettagli aggiuntivi | {"note": "..."} |
-| `notified_pm` | `BOOLEAN DEFAULT FALSE` | Se la PM è stata notificata | true |
-| `notification_id` | `INTEGER` | ID della notifica inviata | 125 |
-| `sanction_id` | `INTEGER` | ID del verbale emesso (se presente) | NULL |
-| `status` | `VARCHAR(50) DEFAULT 'PENDING'` | Stato (PENDING, SANCTIONED, IGNORED) | PENDING |
-| `created_at` | `TIMESTAMP DEFAULT NOW()` | Data creazione | 2026-01-26 12:30:00 |
+| Colonna              | Tipo                            | Descrizione                          | Esempio             |
+| :------------------- | :------------------------------ | :----------------------------------- | :------------------ |
+| `id`                 | `SERIAL PRIMARY KEY`            | ID univoco                           | 1                   |
+| `market_id`          | `INTEGER NOT NULL`              | ID del mercato                       | 5                   |
+| `market_date`        | `DATE NOT NULL`                 | Data del mercato                     | 2026-01-26          |
+| `business_id`        | `INTEGER NOT NULL`              | ID dell'impresa                      | 38                  |
+| `stall_id`           | `INTEGER`                       | ID del posteggio (opzionale)         | 12                  |
+| `transgression_type` | `VARCHAR(100) NOT NULL`         | Tipo di trasgressione                | USCITA_ANTICIPATA   |
+| `expected_time`      | `TIME NOT NULL`                 | Orario previsto                      | 13:00               |
+| `actual_time`        | `TIME NOT NULL`                 | Orario effettivo                     | 12:30               |
+| `difference_minutes` | `INTEGER NOT NULL`              | Differenza in minuti                 | -30                 |
+| `severity`           | `VARCHAR(20) DEFAULT 'MEDIA'`   | Gravità (BASSA, MEDIA, ALTA)         | MEDIA               |
+| `details`            | `JSONB`                         | Dettagli aggiuntivi                  | {"note": "..."}     |
+| `notified_pm`        | `BOOLEAN DEFAULT FALSE`         | Se la PM è stata notificata          | true                |
+| `notification_id`    | `INTEGER`                       | ID della notifica inviata            | 125                 |
+| `sanction_id`        | `INTEGER`                       | ID del verbale emesso (se presente)  | NULL                |
+| `status`             | `VARCHAR(50) DEFAULT 'PENDING'` | Stato (PENDING, SANCTIONED, IGNORED) | PENDING             |
+| `created_at`         | `TIMESTAMP DEFAULT NOW()`       | Data creazione                       | 2026-01-26 12:30:00 |
 
 **Tipi di trasgressione:**
 | Codice | Descrizione |
@@ -184,6 +186,7 @@ Memorizza le trasgressioni rilevate automaticamente.
 | `SPUNTA_PRESENZA_TARDIVA` | Marcatura presenza spunta dopo l'orario |
 
 **SQL di creazione:**
+
 ```sql
 CREATE TABLE market_transgressions (
     id SERIAL PRIMARY KEY,
@@ -215,50 +218,53 @@ CREATE INDEX idx_transgressions_status ON market_transgressions(status);
 
 Memorizza lo storico completo di ogni giornata di mercato.
 
-| Colonna | Tipo | Descrizione | Esempio |
-| :--- | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | ID univoco | 1 |
-| `market_id` | `INTEGER NOT NULL` | ID del mercato | 5 |
-| `market_date` | `DATE NOT NULL` | Data del mercato | 2026-01-26 |
-| `day_of_week` | `VARCHAR(20)` | Giorno della settimana | Domenica |
-| `total_stalls` | `INTEGER DEFAULT 0` | Totale posteggi disponibili | 50 |
-| `total_presences` | `INTEGER DEFAULT 0` | Totale presenze registrate | 45 |
-| `total_absences` | `INTEGER DEFAULT 0` | Totale assenze | 5 |
-| `total_spunta_assigned` | `INTEGER DEFAULT 0` | Totale spunta assegnate | 3 |
-| `total_transgressions` | `INTEGER DEFAULT 0` | Totale trasgressioni | 2 |
-| `total_sanctions` | `INTEGER DEFAULT 0` | Totale verbali emessi | 1 |
-| `total_revenue` | `DECIMAL(10,2) DEFAULT 0` | Incasso totale giornata | 1250.00 |
-| `weather_conditions` | `VARCHAR(100)` | Condizioni meteo | Soleggiato |
-| `notes` | `TEXT` | Note aggiuntive | Mercato regolare |
-| `details` | `JSONB` | Dettagli completi | {...} |
-| `closed_by` | `INTEGER` | ID utente che ha chiuso il mercato | 1 |
-| `closed_at` | `TIMESTAMP` | Data/ora chiusura mercato | 2026-01-26 14:30:00 |
-| `created_at` | `TIMESTAMP DEFAULT NOW()` | Data creazione | 2026-01-26 14:30:00 |
+| Colonna                 | Tipo                      | Descrizione                        | Esempio             |
+| :---------------------- | :------------------------ | :--------------------------------- | :------------------ |
+| `id`                    | `SERIAL PRIMARY KEY`      | ID univoco                         | 1                   |
+| `market_id`             | `INTEGER NOT NULL`        | ID del mercato                     | 5                   |
+| `market_date`           | `DATE NOT NULL`           | Data del mercato                   | 2026-01-26          |
+| `day_of_week`           | `VARCHAR(20)`             | Giorno della settimana             | Domenica            |
+| `total_stalls`          | `INTEGER DEFAULT 0`       | Totale posteggi disponibili        | 50                  |
+| `total_presences`       | `INTEGER DEFAULT 0`       | Totale presenze registrate         | 45                  |
+| `total_absences`        | `INTEGER DEFAULT 0`       | Totale assenze                     | 5                   |
+| `total_spunta_assigned` | `INTEGER DEFAULT 0`       | Totale spunta assegnate            | 3                   |
+| `total_transgressions`  | `INTEGER DEFAULT 0`       | Totale trasgressioni               | 2                   |
+| `total_sanctions`       | `INTEGER DEFAULT 0`       | Totale verbali emessi              | 1                   |
+| `total_revenue`         | `DECIMAL(10,2) DEFAULT 0` | Incasso totale giornata            | 1250.00             |
+| `weather_conditions`    | `VARCHAR(100)`            | Condizioni meteo                   | Soleggiato          |
+| `notes`                 | `TEXT`                    | Note aggiuntive                    | Mercato regolare    |
+| `details`               | `JSONB`                   | Dettagli completi                  | {...}               |
+| `closed_by`             | `INTEGER`                 | ID utente che ha chiuso il mercato | 1                   |
+| `closed_at`             | `TIMESTAMP`               | Data/ora chiusura mercato          | 2026-01-26 14:30:00 |
+| `created_at`            | `TIMESTAMP DEFAULT NOW()` | Data creazione                     | 2026-01-26 14:30:00 |
 
 **Struttura campo `details` (JSONB):**
+
 ```json
 {
   "presenze": [
-    {"business_id": 38, "stall_id": 12, "arrival_time": "07:15", "exit_time": "13:45"}
+    {
+      "business_id": 38,
+      "stall_id": 12,
+      "arrival_time": "07:15",
+      "exit_time": "13:45"
+    }
   ],
-  "spunta": [
-    {"business_id": 42, "stall_id": 15, "assigned_at": "08:05"}
-  ],
+  "spunta": [{ "business_id": 42, "stall_id": 15, "assigned_at": "08:05" }],
   "transgressions": [
-    {"id": 1, "type": "USCITA_ANTICIPATA", "business_id": 38}
+    { "id": 1, "type": "USCITA_ANTICIPATA", "business_id": 38 }
   ],
-  "sanctions": [
-    {"id": 1, "business_id": 38, "amount": 150.00}
-  ],
+  "sanctions": [{ "id": 1, "business_id": 38, "amount": 150.0 }],
   "incassi": {
-    "cosap": 500.00,
-    "spunta": 150.00,
-    "altri": 600.00
+    "cosap": 500.0,
+    "spunta": 150.0,
+    "altri": 600.0
   }
 }
 ```
 
 **SQL di creazione:**
+
 ```sql
 CREATE TABLE market_history (
     id SERIAL PRIMARY KEY,
@@ -288,16 +294,16 @@ CREATE INDEX idx_history_market_date ON market_history(market_id, market_date);
 
 ## 4. Connessioni con Tabelle Esistenti
 
-| Nuova Tabella | Tabella Esistente | Tipo Relazione | Descrizione |
-| :--- | :--- | :--- | :--- |
-| `market_settings` | `markets` | 1:1 | Ogni mercato ha una configurazione |
-| `market_transgressions` | `markets` | N:1 | Molte trasgressioni per mercato |
-| `market_transgressions` | `imprese` | N:1 | Molte trasgressioni per impresa |
-| `market_transgressions` | `posteggi` | N:1 | Trasgressione legata a posteggio |
-| `market_transgressions` | `notifiche` | 1:1 | Ogni trasgressione genera una notifica |
-| `market_transgressions` | `sanctions` | 1:1 | Trasgressione può generare verbale |
-| `market_history` | `markets` | N:1 | Molti storici per mercato |
-| `market_history` | `users` | N:1 | Utente che chiude il mercato |
+| Nuova Tabella           | Tabella Esistente | Tipo Relazione | Descrizione                            |
+| :---------------------- | :---------------- | :------------- | :------------------------------------- |
+| `market_settings`       | `markets`         | 1:1            | Ogni mercato ha una configurazione     |
+| `market_transgressions` | `markets`         | N:1            | Molte trasgressioni per mercato        |
+| `market_transgressions` | `imprese`         | N:1            | Molte trasgressioni per impresa        |
+| `market_transgressions` | `posteggi`        | N:1            | Trasgressione legata a posteggio       |
+| `market_transgressions` | `notifiche`       | 1:1            | Ogni trasgressione genera una notifica |
+| `market_transgressions` | `sanctions`       | 1:1            | Trasgressione può generare verbale     |
+| `market_history`        | `markets`         | N:1            | Molti storici per mercato              |
+| `market_history`        | `users`           | N:1            | Utente che chiude il mercato           |
 
 ---
 
@@ -305,28 +311,28 @@ CREATE INDEX idx_history_market_date ON market_history(market_id, market_date);
 
 ### 5.1. Impostazioni Mercato
 
-| Metodo | Endpoint | Descrizione |
-| :--- | :--- | :--- |
-| `GET` | `/api/market-settings/:market_id` | Ottieni impostazioni mercato |
-| `POST` | `/api/market-settings` | Crea impostazioni mercato |
-| `PUT` | `/api/market-settings/:market_id` | Aggiorna impostazioni mercato |
+| Metodo | Endpoint                          | Descrizione                   |
+| :----- | :-------------------------------- | :---------------------------- |
+| `GET`  | `/api/market-settings/:market_id` | Ottieni impostazioni mercato  |
+| `POST` | `/api/market-settings`            | Crea impostazioni mercato     |
+| `PUT`  | `/api/market-settings/:market_id` | Aggiorna impostazioni mercato |
 
 ### 5.2. Trasgressioni Automatiche
 
-| Metodo | Endpoint | Descrizione |
-| :--- | :--- | :--- |
-| `GET` | `/api/market-transgressions` | Lista trasgressioni (con filtri) |
-| `GET` | `/api/market-transgressions/stats` | Statistiche trasgressioni |
-| `PUT` | `/api/market-transgressions/:id/status` | Aggiorna stato (SANCTIONED/IGNORED) |
-| `POST` | `/api/market-transgressions/:id/emit-sanction` | Emetti verbale da trasgressione |
+| Metodo | Endpoint                                       | Descrizione                         |
+| :----- | :--------------------------------------------- | :---------------------------------- |
+| `GET`  | `/api/market-transgressions`                   | Lista trasgressioni (con filtri)    |
+| `GET`  | `/api/market-transgressions/stats`             | Statistiche trasgressioni           |
+| `PUT`  | `/api/market-transgressions/:id/status`        | Aggiorna stato (SANCTIONED/IGNORED) |
+| `POST` | `/api/market-transgressions/:id/emit-sanction` | Emetti verbale da trasgressione     |
 
 ### 5.3. Storico Mercati
 
-| Metodo | Endpoint | Descrizione |
-| :--- | :--- | :--- |
-| `GET` | `/api/market-history` | Lista storico mercati (con filtri) |
-| `GET` | `/api/market-history/:market_id/:date` | Dettaglio singola giornata |
-| `POST` | `/api/market-history/close` | Chiudi mercato e salva storico |
+| Metodo | Endpoint                               | Descrizione                        |
+| :----- | :------------------------------------- | :--------------------------------- |
+| `GET`  | `/api/market-history`                  | Lista storico mercati (con filtri) |
+| `GET`  | `/api/market-history/:market_id/:date` | Dettaglio singola giornata         |
+| `POST` | `/api/market-history/close`            | Chiudi mercato e salva storico     |
 
 ---
 
@@ -345,26 +351,32 @@ Il sistema esegue un CRON job ogni **5 minuti** che:
 // Pseudocodice CRON Job
 async function checkMarketTransgressions() {
   const activeMarkets = await getActiveMarketsToday();
-  
+
   for (const market of activeMarkets) {
     const settings = await getMarketSettings(market.id);
     const presences = await getTodayPresences(market.id);
-    
+
     for (const presence of presences) {
       // Verifica presenza
       if (presence.arrival_time < settings.presence_start_time) {
-        await createTransgression('PRESENZA_ANTICIPATA', presence);
+        await createTransgression("PRESENZA_ANTICIPATA", presence);
       }
       if (presence.arrival_time > settings.presence_end_time) {
-        await createTransgression('PRESENZA_TARDIVA', presence);
+        await createTransgression("PRESENZA_TARDIVA", presence);
       }
-      
+
       // Verifica uscita
-      if (presence.exit_time && presence.exit_time < settings.exit_market_start_time) {
-        await createTransgression('USCITA_ANTICIPATA', presence);
+      if (
+        presence.exit_time &&
+        presence.exit_time < settings.exit_market_start_time
+      ) {
+        await createTransgression("USCITA_ANTICIPATA", presence);
       }
-      if (presence.exit_time && presence.exit_time > settings.exit_market_end_time) {
-        await createTransgression('USCITA_TARDIVA', presence);
+      if (
+        presence.exit_time &&
+        presence.exit_time > settings.exit_market_end_time
+      ) {
+        await createTransgression("USCITA_TARDIVA", presence);
       }
     }
   }
@@ -381,21 +393,22 @@ async function checkMarketTransgressions() {
 
 **Campi del form:**
 
-| Campo | Tipo | Label | Descrizione |
-| :--- | :--- | :--- | :--- |
-| `presence_start_time` | Time Picker | Inizio Marcatura Presenza | Prima non si può marcare |
-| `presence_end_time` | Time Picker | Fine Marcatura Presenza | Dopo inizia assegnazione spunta |
-| `spunta_presence_start_time` | Time Picker | Inizio Marcatura Spunta | Per chi arriva alla spunta |
-| `waste_disposal_start_time` | Time Picker | Inizio Deposito Spazzatura | Da quando si può depositare |
-| `waste_disposal_end_time` | Time Picker | Fine Deposito Spazzatura | Entro quando depositare |
-| `exit_market_start_time` | Time Picker | Inizio Uscita Mercato | Prima non si può uscire |
-| `exit_market_end_time` | Time Picker | Fine Uscita Mercato | Dopo non si può per pulizia |
+| Campo                        | Tipo        | Label                      | Descrizione                     |
+| :--------------------------- | :---------- | :------------------------- | :------------------------------ |
+| `presence_start_time`        | Time Picker | Inizio Marcatura Presenza  | Prima non si può marcare        |
+| `presence_end_time`          | Time Picker | Fine Marcatura Presenza    | Dopo inizia assegnazione spunta |
+| `spunta_presence_start_time` | Time Picker | Inizio Marcatura Spunta    | Per chi arriva alla spunta      |
+| `waste_disposal_start_time`  | Time Picker | Inizio Deposito Spazzatura | Da quando si può depositare     |
+| `waste_disposal_end_time`    | Time Picker | Fine Deposito Spazzatura   | Entro quando depositare         |
+| `exit_market_start_time`     | Time Picker | Inizio Uscita Mercato      | Prima non si può uscire         |
+| `exit_market_end_time`       | Time Picker | Fine Uscita Mercato        | Dopo non si può per pulizia     |
 
 ### 7.2. Pagina "Trasgressioni Automatiche"
 
 **Posizione:** Controlli/Sanzioni → Nuovo sotto-tab "Trasgressioni"
 
 **Contenuto:**
+
 - Lista trasgressioni con filtri (data, mercato, tipo, stato)
 - Badge con conteggio nuove trasgressioni
 - Pulsanti azione: "Emetti Verbale", "Ignora"
@@ -406,6 +419,7 @@ async function checkMarketTransgressions() {
 **Posizione:** Gestione Mercati → Nuovo sotto-tab "Storico"
 
 **Contenuto:**
+
 - Lista giornate di mercato concluse
 - Filtri per mercato, data, periodo
 - KPI: presenze, trasgressioni, incassi
@@ -415,12 +429,12 @@ async function checkMarketTransgressions() {
 
 ## 8. Fasi di Sviluppo
 
-| Sprint | Durata | Attività |
-| :--- | :--- | :--- |
-| **Sprint 1** | 3 giorni | Backend: Tabelle DB + Endpoint API |
+| Sprint       | Durata   | Attività                                       |
+| :----------- | :------- | :--------------------------------------------- |
+| **Sprint 1** | 3 giorni | Backend: Tabelle DB + Endpoint API             |
 | **Sprint 2** | 3 giorni | Frontend: Impostazioni Mercato + Trasgressioni |
-| **Sprint 3** | 2 giorni | CRON Job + Storico Mercati |
-| **Sprint 4** | 2 giorni | Test + Deploy + Integrazione |
+| **Sprint 3** | 2 giorni | CRON Job + Storico Mercati                     |
+| **Sprint 4** | 2 giorni | Test + Deploy + Integrazione                   |
 
 ---
 

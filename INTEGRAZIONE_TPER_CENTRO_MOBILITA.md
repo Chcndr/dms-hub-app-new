@@ -12,6 +12,7 @@
 ## 🎯 OBIETTIVO
 
 Ripristinare la **Mappa Centro Mobilità** nella Dashboard PA che non mostrava più dati, connettendola alle API TPER Bologna per dati real-time su:
+
 - Fermate bus
 - Orari arrivo mezzi
 - Linee attive
@@ -24,11 +25,13 @@ Ripristinare la **Mappa Centro Mobilità** nella Dashboard PA che non mostrava p
 ### 1️⃣ **Open Data Comune di Bologna**
 
 **Endpoint:**
+
 ```
 https://opendata.comune.bologna.it/api/explore/v2.1/catalog/datasets/tper-fermate-autobus/records
 ```
 
 **Dati forniti:**
+
 - 21.175 fermate bus Bologna e provincia
 - Coordinate GPS (lat, lng)
 - Nome fermata, indirizzo, zona
@@ -41,19 +44,23 @@ https://opendata.comune.bologna.it/api/explore/v2.1/catalog/datasets/tper-fermat
 ### 2️⃣ **Hello Bus SOAP Web Service**
 
 **Endpoint:**
+
 ```
 https://hellobuswsweb.tper.it/web-services/hello-bus.asmx
 ```
 
 **WSDL:**
+
 ```
 https://hellobuswsweb.tper.it/web-services/hello-bus.asmx?wsdl
 ```
 
 **Metodi:**
+
 - `QueryHellobus(fermata, linea, oraHHMM)` - Orari arrivo bus real-time
 
 **Dati forniti:**
+
 - Prossimi arrivi bus (in minuti)
 - Stato servizio
 - Orari programmati
@@ -85,6 +92,7 @@ GET https://dms-hub-app-new.vercel.app/api/trpc/mobility.tper.stops
 ```
 
 **Risposta:**
+
 ```json
 [
   {
@@ -110,11 +118,13 @@ POST https://dms-hub-app-new.vercel.app/api/trpc/mobility.tper.sync
 ```
 
 **Cosa fa:**
+
 1. Chiama API TPER per ottenere fermate
 2. Chiama Hello Bus per orari real-time
 3. Salva dati nella tabella `mobility_data`
 
 **Risposta:**
+
 ```json
 {
   "success": true,
@@ -130,6 +140,7 @@ POST https://dms-hub-app-new.vercel.app/api/trpc/mobility.tper.sync
 **Tabella:** `mobility_data`
 
 **Schema:**
+
 ```sql
 CREATE TABLE mobility_data (
   id SERIAL PRIMARY KEY,
@@ -153,11 +164,13 @@ CREATE TABLE mobility_data (
 **Componente:** `MobilityMap.tsx`
 
 **Dati visualizzati:**
+
 - Fermate bus su mappa Google Maps
 - Marker colorati per stato (verde=attivo, rosso=ritardo, grigio=sospeso)
 - Popup con orari prossimi arrivi
 
 **Query tRPC:**
+
 ```typescript
 const mobilityQuery = trpc.mobility.list.useQuery();
 ```
@@ -167,16 +180,19 @@ const mobilityQuery = trpc.mobility.list.useQuery();
 ## 🚀 PROSSIMI PASSI
 
 ### **1. Sezione "Integrazioni" Dashboard PA**
+
 - Pulsante "Sincronizza TPER"
 - Visualizzazione stato ultima sincronizzazione
 - Log operazioni
 
 ### **2. Centro Mobilità Nazionale**
+
 - Ricerca API nazionale per mobilità urbana
 - Integrazione con altre città (Milano ATM, Roma ATAC)
 - Architettura scalabile per ogni mercato
 
 ### **3. Automazione**
+
 - Cron job per sincronizzazione automatica ogni 5 minuti
 - Webhook per notifiche ritardi/sospensioni
 - Cache Redis per performance
@@ -186,11 +202,13 @@ const mobilityQuery = trpc.mobility.list.useQuery();
 ## 📊 METRICHE
 
 **Performance:**
+
 - ✅ 100 fermate caricate in ~2 secondi
 - ✅ 10 orari real-time in ~5 secondi (con pausa 500ms tra richieste)
 - ⚠️ Limitazione: 5000 richieste/giorno (Open Data Bologna)
 
 **Copertura:**
+
 - ✅ Bologna città
 - ✅ Provincia Bologna
 - ✅ Ferrara (GTFS disponibile)

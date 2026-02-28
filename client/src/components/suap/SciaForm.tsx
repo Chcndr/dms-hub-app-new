@@ -1,22 +1,38 @@
-import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Search, FileText, Loader2, Building2, X, Stamp } from 'lucide-react';
-import { toast } from 'sonner';
-import { getImpersonationParams, isAssociazioneImpersonation, addComuneIdToUrl } from '@/hooks/useImpersonation';
-import { MIHUB_API_BASE_URL } from '@/config/api';
+import { useState, useEffect, useRef } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, FileText, Loader2, Building2, X, Stamp } from "lucide-react";
+import { toast } from "sonner";
+import {
+  getImpersonationParams,
+  isAssociazioneImpersonation,
+  addComuneIdToUrl,
+} from "@/hooks/useImpersonation";
+import { MIHUB_API_BASE_URL } from "@/config/api";
 
 // API URL
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const API_URL = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
 
 // Funzione per capitalizzare le parole (prima lettera maiuscola)
 const capitalizeWords = (str: string): string => {
-  return str.toLowerCase().replace(/(?:^|\s|')\S/g, (char) => char.toUpperCase());
+  return str.toLowerCase().replace(/(?:^|\s|')\S/g, char => char.toUpperCase());
 };
 
 // Tipi per i dati dal database
@@ -71,7 +87,17 @@ interface Impresa {
   rappresentante_legale_residenza_provincia: string;
 }
 
-export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId }: { onCancel: () => void, onSubmit: (data: any) => void, comuneNome?: string, comuneId?: number }) {
+export default function SciaForm({
+  onCancel,
+  onSubmit,
+  comuneNome = "",
+  comuneId,
+}: {
+  onCancel: () => void;
+  onSubmit: (data: any) => void;
+  comuneNome?: string;
+  comuneId?: number;
+}) {
   // Stati per dati dal database
   const [markets, setMarkets] = useState<Market[]>([]);
   const [stalls, setStalls] = useState<Stall[]>([]);
@@ -80,23 +106,32 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
   const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [loadingStalls, setLoadingStalls] = useState(false);
   const [loadingImpresa, setLoadingImpresa] = useState(false);
-  
+
   // Stati per autocomplete impresa (Subentrante)
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredImprese, setFilteredImprese] = useState<Impresa[]>([]);
   const [selectedImpresa, setSelectedImpresa] = useState<Impresa | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
-  
+
   // Stati per autocomplete Cedente
-  const [cedenteSearchQuery, setCedenteSearchQuery] = useState('');
+  const [cedenteSearchQuery, setCedenteSearchQuery] = useState("");
   const [showCedenteSuggestions, setShowCedenteSuggestions] = useState(false);
-  const [filteredCedenteImprese, setFilteredCedenteImprese] = useState<Impresa[]>([]);
+  const [filteredCedenteImprese, setFilteredCedenteImprese] = useState<
+    Impresa[]
+  >([]);
   const [selectedCedente, setSelectedCedente] = useState<Impresa | null>(null); // Cedente selezionato
   const searchCedenteRef = useRef<HTMLDivElement>(null);
-  
+
   // Stati per filtro mercati/posteggi per impresa
-  const [impresaStalls, setImpresaStalls] = useState<{marketId: number, marketName: string, stallNumber: string, stallId: number}[]>([]);
+  const [impresaStalls, setImpresaStalls] = useState<
+    {
+      marketId: number;
+      marketName: string;
+      stallNumber: string;
+      stallId: number;
+    }[]
+  >([]);
   const [filteredMarkets, setFilteredMarkets] = useState<Market[]>([]);
   const [filteredStalls, setFilteredStalls] = useState<Stall[]>([]);
 
@@ -111,107 +146,113 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
   const [formData, setFormData] = useState({
     // Dati Protocollo SCIA
     numero_protocollo: generateProtocollo(),
-    data_presentazione: new Date().toISOString().split('T')[0],
-    comune_presentazione: comuneNome?.toUpperCase() || '',
-    
+    data_presentazione: new Date().toISOString().split("T")[0],
+    comune_presentazione: comuneNome?.toUpperCase() || "",
+
     // Motivazione SCIA
-    motivazione_scia: 'subingresso',
-    
+    motivazione_scia: "subingresso",
+
     // Motivo Subingresso (visibile solo se motivazione_scia = subingresso)
-    motivo_subingresso: 'acquisto',
-    
+    motivo_subingresso: "acquisto",
+
     // Ruolo dichiarante
-    ruolo_dichiarante: 'titolare',
-    
+    ruolo_dichiarante: "titolare",
+
     // Tipologia attività
-    tipologia_attivita: 'non_alimentare',
-    
+    tipologia_attivita: "non_alimentare",
+
     // Sezione A - Subentrante
-    cf_subentrante: '',
-    partita_iva_sub: '',
-    ragione_sociale_sub: '',
-    nome_sub: '',
-    cognome_sub: '',
-    data_nascita_sub: '',
-    luogo_nascita_sub: '',
-    residenza_via_sub: '',
-    residenza_comune_sub: '',
-    residenza_cap_sub: '',
-    sede_via_sub: '',
-    sede_comune_sub: '',
-    sede_cap_sub: '',
-    sede_provincia_sub: '',
-    pec_sub: '',
-    
+    cf_subentrante: "",
+    partita_iva_sub: "",
+    ragione_sociale_sub: "",
+    nome_sub: "",
+    cognome_sub: "",
+    data_nascita_sub: "",
+    luogo_nascita_sub: "",
+    residenza_via_sub: "",
+    residenza_comune_sub: "",
+    residenza_cap_sub: "",
+    sede_via_sub: "",
+    sede_comune_sub: "",
+    sede_cap_sub: "",
+    sede_provincia_sub: "",
+    pec_sub: "",
+
     // Dati Delegato (se ruolo_dichiarante != titolare)
-    delegato_nome: '',
-    delegato_cognome: '',
-    delegato_cf: '',
-    delegato_data_nascita: '',
-    delegato_luogo_nascita: '',
-    delegato_residenza_via: '',
-    delegato_residenza_comune: '',
-    delegato_residenza_cap: '',
-    delegato_residenza_provincia: '',
-    delegato_qualifica: '', // es: procuratore, curatore, erede, etc.
-    pec_del: '', // PEC del delegato
-    telefono_sub: '',
-    
+    delegato_nome: "",
+    delegato_cognome: "",
+    delegato_cf: "",
+    delegato_data_nascita: "",
+    delegato_luogo_nascita: "",
+    delegato_residenza_via: "",
+    delegato_residenza_comune: "",
+    delegato_residenza_cap: "",
+    delegato_residenza_provincia: "",
+    delegato_qualifica: "", // es: procuratore, curatore, erede, etc.
+    pec_del: "", // PEC del delegato
+    telefono_sub: "",
+
     // Sezione B - Cedente
-    cf_cedente: '',
-    partita_iva_ced: '',
-    ragione_sociale_ced: '',
-    nome_ced: '',
-    cognome_ced: '',
-    data_nascita_ced: '',
-    luogo_nascita_ced: '',
-    residenza_via_ced: '',
-    residenza_comune_ced: '',
-    residenza_cap_ced: '',
-    pec_ced: '',
-    scia_precedente_protocollo: '',
-    scia_precedente_data: '',
-    scia_precedente_comune: 'BOLOGNA',
+    cf_cedente: "",
+    partita_iva_ced: "",
+    ragione_sociale_ced: "",
+    nome_ced: "",
+    cognome_ced: "",
+    data_nascita_ced: "",
+    luogo_nascita_ced: "",
+    residenza_via_ced: "",
+    residenza_comune_ced: "",
+    residenza_cap_ced: "",
+    pec_ced: "",
+    scia_precedente_protocollo: "",
+    scia_precedente_data: "",
+    scia_precedente_comune: "BOLOGNA",
 
     // Sezione C - Posteggio
-    mercato: '',
-    mercato_id: '',
-    ubicazione_mercato: '',
-    giorno_mercato: '',
-    posteggio: '',
-    posteggio_id: '',
-    fila: '',
-    dimensioni_mq: '',
-    dimensioni_lineari: '',
-    settore: '',
-    merceologia: 'non_alimentare',
-    attrezzature: '',
+    mercato: "",
+    mercato_id: "",
+    ubicazione_mercato: "",
+    giorno_mercato: "",
+    posteggio: "",
+    posteggio_id: "",
+    fila: "",
+    dimensioni_mq: "",
+    dimensioni_lineari: "",
+    settore: "",
+    merceologia: "non_alimentare",
+    attrezzature: "",
 
     // Sezione D - Atto Notarile
-    notaio: '',
-    repertorio: '',
-    data_atto: '',
+    notaio: "",
+    repertorio: "",
+    data_atto: "",
 
     // Sezione E - Imposta di Bollo (Fase 1 - Dichiarazione Sostitutiva)
-    bollo_1_numero: '',
-    bollo_1_data: '',
-    bollo_2_numero: '',
-    bollo_2_data: '',
-    bollo_dichiarazione_sostitutiva: false as boolean
+    bollo_1_numero: "",
+    bollo_1_data: "",
+    bollo_2_numero: "",
+    bollo_2_data: "",
+    bollo_dichiarazione_sostitutiva: false as boolean,
   });
 
   // Chiudi suggerimenti quando si clicca fuori (Subentrante e Cedente)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
         setShowSuggestions(false);
       }
-      if (searchCedenteRef.current && !searchCedenteRef.current.contains(event.target as Node)) {
+      if (
+        searchCedenteRef.current &&
+        !searchCedenteRef.current.contains(event.target as Node)
+      ) {
         setShowCedenteSuggestions(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Filtra imprese mentre si digita (autocomplete Subentrante)
@@ -222,27 +263,27 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
       setShowSuggestions(false);
       return;
     }
-    
+
     const query = searchQuery.toUpperCase().trim();
-    const numericQuery = query.replace(/\D/g, '');
-    
+    const numericQuery = query.replace(/\D/g, "");
+
     // Filtra con priorità: prima per denominazione, poi per CF/P.IVA (solo se query >= 3 char)
-    const byName = allImprese.filter(i => 
+    const byName = allImprese.filter(i =>
       i.denominazione?.toUpperCase().includes(query)
     );
-    
+
     let byCfPiva: typeof allImprese = [];
     if (query.length >= 3) {
-      byCfPiva = allImprese.filter(i => 
-        !i.denominazione?.toUpperCase().includes(query) && (
-          i.codice_fiscale?.toUpperCase().includes(query) ||
-          (numericQuery.length >= 3 && i.partita_iva?.includes(numericQuery))
-        )
+      byCfPiva = allImprese.filter(
+        i =>
+          !i.denominazione?.toUpperCase().includes(query) &&
+          (i.codice_fiscale?.toUpperCase().includes(query) ||
+            (numericQuery.length >= 3 && i.partita_iva?.includes(numericQuery)))
       );
     }
-    
+
     const filtered = [...byName, ...byCfPiva].slice(0, 25);
-    
+
     setFilteredImprese(filtered);
     setShowSuggestions(filtered.length > 0);
   }, [searchQuery, allImprese]);
@@ -255,26 +296,26 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
       setShowCedenteSuggestions(false);
       return;
     }
-    
+
     const query = cedenteSearchQuery.toUpperCase().trim();
-    const numericQuery = query.replace(/\D/g, '');
-    
-    const byName = allImprese.filter(i => 
+    const numericQuery = query.replace(/\D/g, "");
+
+    const byName = allImprese.filter(i =>
       i.denominazione?.toUpperCase().includes(query)
     );
-    
+
     let byCfPiva: typeof allImprese = [];
     if (query.length >= 3) {
-      byCfPiva = allImprese.filter(i => 
-        !i.denominazione?.toUpperCase().includes(query) && (
-          i.codice_fiscale?.toUpperCase().includes(query) ||
-          (numericQuery.length >= 3 && i.partita_iva?.includes(numericQuery))
-        )
+      byCfPiva = allImprese.filter(
+        i =>
+          !i.denominazione?.toUpperCase().includes(query) &&
+          (i.codice_fiscale?.toUpperCase().includes(query) ||
+            (numericQuery.length >= 3 && i.partita_iva?.includes(numericQuery)))
       );
     }
-    
+
     const filtered = [...byName, ...byCfPiva].slice(0, 25);
-    
+
     setFilteredCedenteImprese(filtered);
     setShowCedenteSuggestions(filtered.length > 0);
   }, [cedenteSearchQuery, allImprese]);
@@ -287,31 +328,40 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
       setFilteredMarkets(markets);
       return;
     }
-    
+
     const loadCedenteStalls = async () => {
       try {
-        const stallsData: {marketId: number, marketName: string, stallNumber: string, stallId: number}[] = [];
-        
+        const stallsData: {
+          marketId: number;
+          marketName: string;
+          stallNumber: string;
+          stallId: number;
+        }[] = [];
+
         // Per ogni mercato, carica i posteggi e filtra quelli del CEDENTE
         for (const market of markets) {
-          const res = await fetch(addComuneIdToUrl(`${API_URL}/api/markets/${market.id}/stalls`));
+          const res = await fetch(
+            addComuneIdToUrl(`${API_URL}/api/markets/${market.id}/stalls`)
+          );
           const json = await res.json();
 
           if (json.success && json.data) {
-            const cedenteStallsInMarket = json.data.filter((s: Stall) => s.impresa_id === selectedCedente.id);
+            const cedenteStallsInMarket = json.data.filter(
+              (s: Stall) => s.impresa_id === selectedCedente.id
+            );
             cedenteStallsInMarket.forEach((s: Stall) => {
               stallsData.push({
                 marketId: market.id,
                 marketName: market.name,
                 stallNumber: s.number,
-                stallId: s.id
+                stallId: s.id,
               });
             });
           }
         }
-        
+
         setImpresaStalls(stallsData);
-        
+
         // Filtra mercati dove il CEDENTE ha posteggi
         const marketIds = Array.from(new Set(stallsData.map(s => s.marketId)));
         if (marketIds.length > 0) {
@@ -320,11 +370,11 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
           setFilteredMarkets(markets); // Se non ha posteggi, mostra tutti
         }
       } catch (error) {
-        console.error('Errore caricamento posteggi cedente:', error);
+        console.error("Errore caricamento posteggi cedente:", error);
         setFilteredMarkets(markets);
       }
     };
-    
+
     if (markets.length > 0) {
       loadCedenteStalls();
     }
@@ -335,7 +385,7 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
     const fetchData = async () => {
       try {
         setLoadingMarkets(true);
-        
+
         // Carica mercati (filtrati per comune se impersonalizzato)
         const marketsUrl = comuneId
           ? `${API_URL}/api/markets?comune_id=${comuneId}`
@@ -345,23 +395,28 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
         if (marketsJson.success && marketsJson.data) {
           setMarkets(marketsJson.data);
         }
-        
+
         // Carica tutte le imprese per ricerca locale (versione leggera senza immagini/subquery)
-        const lightFields = 'id,denominazione,partita_iva,codice_fiscale,comune,indirizzo_via,indirizzo_civico,indirizzo_cap,indirizzo_provincia,stato_impresa,pec,telefono,email,rappresentante_legale,rappresentante_legale_cognome,rappresentante_legale_nome,rappresentante_legale_cf,rappresentante_legale_data_nascita,rappresentante_legale_luogo_nascita,rappresentante_legale_residenza_via,rappresentante_legale_residenza_civico,rappresentante_legale_residenza_cap,rappresentante_legale_residenza_comune,rappresentante_legale_residenza_provincia';
-        const impreseRes = await fetch(addComuneIdToUrl(`${API_URL}/api/imprese?fields=${lightFields}`));
+        const lightFields =
+          "id,denominazione,partita_iva,codice_fiscale,comune,indirizzo_via,indirizzo_civico,indirizzo_cap,indirizzo_provincia,stato_impresa,pec,telefono,email,rappresentante_legale,rappresentante_legale_cognome,rappresentante_legale_nome,rappresentante_legale_cf,rappresentante_legale_data_nascita,rappresentante_legale_luogo_nascita,rappresentante_legale_residenza_via,rappresentante_legale_residenza_civico,rappresentante_legale_residenza_cap,rappresentante_legale_residenza_comune,rappresentante_legale_residenza_provincia";
+        const impreseRes = await fetch(
+          addComuneIdToUrl(`${API_URL}/api/imprese?fields=${lightFields}`)
+        );
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
-          console.log(`[SciaForm] Caricate ${impreseJson.data.length} imprese (modalità leggera)`);
+          console.log(
+            `[SciaForm] Caricate ${impreseJson.data.length} imprese (modalità leggera)`
+          );
         }
       } catch (error) {
-        console.error('Errore fetch dati:', error);
-        toast.error('Errore caricamento dati');
+        console.error("Errore fetch dati:", error);
+        toast.error("Errore caricamento dati");
       } finally {
         setLoadingMarkets(false);
       }
     };
-    
+
     fetchData();
   }, [comuneId]);
 
@@ -376,63 +431,72 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
     const fetchStalls = async () => {
       try {
         setLoadingStalls(true);
-        const res = await fetch(addComuneIdToUrl(`${API_URL}/api/markets/${selectedMarketId}/stalls`));
+        const res = await fetch(
+          addComuneIdToUrl(`${API_URL}/api/markets/${selectedMarketId}/stalls`)
+        );
         const json = await res.json();
-        
+
         if (json.success && json.data) {
           const sortedStalls = json.data.sort((a: Stall, b: Stall) => {
-            return String(a.number).localeCompare(String(b.number), undefined, { numeric: true, sensitivity: 'base' });
+            return String(a.number).localeCompare(String(b.number), undefined, {
+              numeric: true,
+              sensitivity: "base",
+            });
           });
           setStalls(sortedStalls);
-          
+
           // Se c'è un CEDENTE selezionato, filtra solo i suoi posteggi
           if (selectedCedente) {
-            const cedenteStallsFiltered = sortedStalls.filter((s: Stall) => s.impresa_id === selectedCedente.id);
+            const cedenteStallsFiltered = sortedStalls.filter(
+              (s: Stall) => s.impresa_id === selectedCedente.id
+            );
             setFilteredStalls(cedenteStallsFiltered);
           } else {
             setFilteredStalls(sortedStalls);
           }
         }
       } catch (error) {
-        console.error('Errore fetch posteggi:', error);
-        toast.error('Errore caricamento posteggi');
+        console.error("Errore fetch posteggi:", error);
+        toast.error("Errore caricamento posteggi");
       } finally {
         setLoadingStalls(false);
       }
     };
-    
+
     fetchStalls();
   }, [selectedMarketId, selectedCedente]);
 
   // Funzione per cercare impresa (CF, P.IVA o denominazione)
   const searchImpresa = (searchValue: string): Impresa | undefined => {
     const normalizedSearch = searchValue.toUpperCase().trim();
-    
+
     // Cerca per codice fiscale (esatto)
-    let found = allImprese.find(i => 
-      i.codice_fiscale?.toUpperCase() === normalizedSearch
+    let found = allImprese.find(
+      i => i.codice_fiscale?.toUpperCase() === normalizedSearch
     );
     if (found) return found;
-    
+
     // Cerca per partita IVA (esatto)
-    found = allImprese.find(i => 
-      i.partita_iva === normalizedSearch || 
-      i.partita_iva === searchValue.replace(/\D/g, '')
+    found = allImprese.find(
+      i =>
+        i.partita_iva === normalizedSearch ||
+        i.partita_iva === searchValue.replace(/\D/g, "")
     );
     if (found) return found;
-    
+
     // Cerca per denominazione (contiene)
-    found = allImprese.find(i => 
+    found = allImprese.find(i =>
       i.denominazione?.toUpperCase().includes(normalizedSearch)
     );
     if (found) return found;
-    
+
     // Cerca per nome/cognome rappresentante
     found = allImprese.find(i => {
-      const fullName = `${i.rappresentante_legale_nome || ''} ${i.rappresentante_legale_cognome || ''}`.toUpperCase();
+      const fullName =
+        `${i.rappresentante_legale_nome || ""} ${i.rappresentante_legale_cognome || ""}`.toUpperCase();
       return fullName.includes(normalizedSearch);
     });
-    
+
     return found;
   };
 
@@ -440,22 +504,27 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
   const populateSubentranteData = (impresa: Impresa) => {
     setFormData(prev => ({
       ...prev,
-      cf_subentrante: impresa.codice_fiscale || '',
-      partita_iva_sub: impresa.partita_iva || '',
-      ragione_sociale_sub: impresa.denominazione || '',
-      nome_sub: impresa.rappresentante_legale_nome || '',
-      cognome_sub: impresa.rappresentante_legale_cognome || '',
-      data_nascita_sub: impresa.rappresentante_legale_data_nascita ? impresa.rappresentante_legale_data_nascita.split('T')[0] : '',
-      luogo_nascita_sub: impresa.rappresentante_legale_luogo_nascita || '',
-      residenza_via_sub: `${impresa.rappresentante_legale_residenza_via || ''} ${impresa.rappresentante_legale_residenza_civico || ''}`.trim(),
-      residenza_comune_sub: impresa.rappresentante_legale_residenza_comune || '',
-      residenza_cap_sub: impresa.rappresentante_legale_residenza_cap || '',
-      sede_via_sub: `${impresa.indirizzo_via || ''} ${impresa.indirizzo_civico || ''}`.trim(),
-      sede_comune_sub: impresa.comune || '',
-      sede_cap_sub: impresa.indirizzo_cap || '',
-      sede_provincia_sub: impresa.indirizzo_provincia || '',
-      pec_sub: impresa.pec || '',
-      telefono_sub: impresa.telefono || ''
+      cf_subentrante: impresa.codice_fiscale || "",
+      partita_iva_sub: impresa.partita_iva || "",
+      ragione_sociale_sub: impresa.denominazione || "",
+      nome_sub: impresa.rappresentante_legale_nome || "",
+      cognome_sub: impresa.rappresentante_legale_cognome || "",
+      data_nascita_sub: impresa.rappresentante_legale_data_nascita
+        ? impresa.rappresentante_legale_data_nascita.split("T")[0]
+        : "",
+      luogo_nascita_sub: impresa.rappresentante_legale_luogo_nascita || "",
+      residenza_via_sub:
+        `${impresa.rappresentante_legale_residenza_via || ""} ${impresa.rappresentante_legale_residenza_civico || ""}`.trim(),
+      residenza_comune_sub:
+        impresa.rappresentante_legale_residenza_comune || "",
+      residenza_cap_sub: impresa.rappresentante_legale_residenza_cap || "",
+      sede_via_sub:
+        `${impresa.indirizzo_via || ""} ${impresa.indirizzo_civico || ""}`.trim(),
+      sede_comune_sub: impresa.comune || "",
+      sede_cap_sub: impresa.indirizzo_cap || "",
+      sede_provincia_sub: impresa.indirizzo_provincia || "",
+      pec_sub: impresa.pec || "",
+      telefono_sub: impresa.telefono || "",
     }));
   };
 
@@ -464,17 +533,21 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
     setSelectedCedente(impresa); // Salva il cedente selezionato per filtrare mercati/posteggi
     setFormData(prev => ({
       ...prev,
-      cf_cedente: impresa.codice_fiscale || '',
-      partita_iva_ced: impresa.partita_iva || '',
-      ragione_sociale_ced: impresa.denominazione || '',
-      nome_ced: impresa.rappresentante_legale_nome || '',
-      cognome_ced: impresa.rappresentante_legale_cognome || '',
-      data_nascita_ced: impresa.rappresentante_legale_data_nascita ? impresa.rappresentante_legale_data_nascita.split('T')[0] : '',
-      luogo_nascita_ced: impresa.rappresentante_legale_luogo_nascita || '',
-      residenza_via_ced: `${impresa.rappresentante_legale_residenza_via || ''} ${impresa.rappresentante_legale_residenza_civico || ''}`.trim(),
-      residenza_comune_ced: impresa.rappresentante_legale_residenza_comune || '',
-      residenza_cap_ced: impresa.rappresentante_legale_residenza_cap || '',
-      pec_ced: impresa.pec || ''
+      cf_cedente: impresa.codice_fiscale || "",
+      partita_iva_ced: impresa.partita_iva || "",
+      ragione_sociale_ced: impresa.denominazione || "",
+      nome_ced: impresa.rappresentante_legale_nome || "",
+      cognome_ced: impresa.rappresentante_legale_cognome || "",
+      data_nascita_ced: impresa.rappresentante_legale_data_nascita
+        ? impresa.rappresentante_legale_data_nascita.split("T")[0]
+        : "",
+      luogo_nascita_ced: impresa.rappresentante_legale_luogo_nascita || "",
+      residenza_via_ced:
+        `${impresa.rappresentante_legale_residenza_via || ""} ${impresa.rappresentante_legale_residenza_civico || ""}`.trim(),
+      residenza_comune_ced:
+        impresa.rappresentante_legale_residenza_comune || "",
+      residenza_cap_ced: impresa.rappresentante_legale_residenza_cap || "",
+      pec_ced: impresa.pec || "",
     }));
   };
 
@@ -484,47 +557,51 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
     setSearchQuery(impresa.denominazione);
     setShowSuggestions(false);
     populateSubentranteData(impresa);
-    toast.success('Impresa selezionata!', { description: impresa.denominazione });
+    toast.success("Impresa selezionata!", {
+      description: impresa.denominazione,
+    });
   };
 
   // Reset impresa selezionata
   const handleClearImpresa = () => {
     setSelectedImpresa(null);
-    setSearchQuery('');
+    setSearchQuery("");
     setFormData(prev => ({
       ...prev,
-      cf_subentrante: '',
-      ragione_sociale_sub: '',
-      nome_sub: '',
-      cognome_sub: '',
-      data_nascita_sub: '',
-      luogo_nascita_sub: '',
-      residenza_via_sub: '',
-      residenza_comune_sub: '',
-      residenza_cap_sub: '',
-      sede_via_sub: '',
-      sede_comune_sub: '',
-      sede_cap_sub: '',
-      pec_sub: '',
-      telefono_sub: ''
+      cf_subentrante: "",
+      ragione_sociale_sub: "",
+      nome_sub: "",
+      cognome_sub: "",
+      data_nascita_sub: "",
+      luogo_nascita_sub: "",
+      residenza_via_sub: "",
+      residenza_comune_sub: "",
+      residenza_cap_sub: "",
+      sede_via_sub: "",
+      sede_comune_sub: "",
+      sede_cap_sub: "",
+      pec_sub: "",
+      telefono_sub: "",
     }));
   };
 
   // Lookup Subentrante
   const handleLookupSubentrante = async () => {
     if (!formData.cf_subentrante) {
-      toast.error('Inserire CF, P.IVA o Denominazione');
+      toast.error("Inserire CF, P.IVA o Denominazione");
       return;
     }
 
     setLoadingImpresa(true);
     const impresa = searchImpresa(formData.cf_subentrante);
-    
+
     if (impresa) {
       populateSubentranteData(impresa);
-      toast.success('Impresa trovata!', { description: impresa.denominazione });
+      toast.success("Impresa trovata!", { description: impresa.denominazione });
     } else {
-      toast.error('Impresa non trovata', { description: 'Inserire i dati manualmente' });
+      toast.error("Impresa non trovata", {
+        description: "Inserire i dati manualmente",
+      });
     }
     setLoadingImpresa(false);
   };
@@ -532,18 +609,20 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
   // Lookup Cedente
   const handleLookupCedente = async () => {
     if (!formData.cf_cedente) {
-      toast.error('Inserire CF, P.IVA o Denominazione Cedente');
+      toast.error("Inserire CF, P.IVA o Denominazione Cedente");
       return;
     }
 
     setLoadingImpresa(true);
     const impresa = searchImpresa(formData.cf_cedente);
-    
+
     if (impresa) {
       populateCedenteData(impresa);
-      toast.success('Cedente trovato!', { description: impresa.denominazione });
+      toast.success("Cedente trovato!", { description: impresa.denominazione });
     } else {
-      toast.error('Cedente non trovato', { description: 'Inserire i dati manualmente' });
+      toast.error("Cedente non trovato", {
+        description: "Inserire i dati manualmente",
+      });
     }
     setLoadingImpresa(false);
   };
@@ -554,28 +633,29 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
     setSelectedMarketId(parseInt(marketId));
     setFormData(prev => ({
       ...prev,
-      mercato: market?.name || '',
+      mercato: market?.name || "",
       mercato_id: marketId,
-      ubicazione_mercato: market?.municipality || '',
-      giorno_mercato: market?.days || '',
+      ubicazione_mercato: market?.municipality || "",
+      giorno_mercato: market?.days || "",
       // Auto-compila comune_presentazione dal mercato selezionato
-      comune_presentazione: market?.municipality?.toUpperCase() || prev.comune_presentazione,
+      comune_presentazione:
+        market?.municipality?.toUpperCase() || prev.comune_presentazione,
       // Reset posteggio e cedente quando cambia mercato
-      posteggio: '',
-      posteggio_id: '',
-      dimensioni_mq: '',
-      dimensioni_lineari: '',
+      posteggio: "",
+      posteggio_id: "",
+      dimensioni_mq: "",
+      dimensioni_lineari: "",
       // Reset cedente
-      cf_cedente: '',
-      ragione_sociale_ced: '',
-      nome_ced: '',
-      cognome_ced: '',
-      data_nascita_ced: '',
-      luogo_nascita_ced: '',
-      residenza_via_ced: '',
-      residenza_comune_ced: '',
-      residenza_cap_ced: '',
-      pec_ced: ''
+      cf_cedente: "",
+      ragione_sociale_ced: "",
+      nome_ced: "",
+      cognome_ced: "",
+      data_nascita_ced: "",
+      luogo_nascita_ced: "",
+      residenza_via_ced: "",
+      residenza_comune_ced: "",
+      residenza_cap_ced: "",
+      pec_ced: "",
     }));
   };
 
@@ -589,104 +669,124 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
       ...prev,
       posteggio: stall.number,
       posteggio_id: stallId,
-      dimensioni_mq: stall.area_mq || '',
+      dimensioni_mq: stall.area_mq || "",
       dimensioni_lineari: stall.dimensions || `${stall.width} x ${stall.depth}`,
-      attrezzature: stall.type === 'fisso' ? 'banco' : 'banco_automezzo'
+      attrezzature: stall.type === "fisso" ? "banco" : "banco_automezzo",
     }));
 
     // Se il posteggio ha un'impresa associata, carica i dati del cedente
     if (stall.impresa_id) {
       try {
         setLoadingImpresa(true);
-        const res = await fetch(addComuneIdToUrl(`${API_URL}/api/imprese/${stall.impresa_id}`));
+        const res = await fetch(
+          addComuneIdToUrl(`${API_URL}/api/imprese/${stall.impresa_id}`)
+        );
         const json = await res.json();
-        
+
         if (json.success && json.data) {
           populateCedenteData(json.data);
-          toast.success(`Posteggio ${stall.number} selezionato`, { 
-            description: `Cedente: ${json.data.denominazione}` 
+          toast.success(`Posteggio ${stall.number} selezionato`, {
+            description: `Cedente: ${json.data.denominazione}`,
           });
         }
       } catch (error) {
-        console.error('Errore caricamento impresa cedente:', error);
-        toast.success(`Posteggio ${stall.number} selezionato`, { 
-          description: `${stall.area_mq} mq` 
+        console.error("Errore caricamento impresa cedente:", error);
+        toast.success(`Posteggio ${stall.number} selezionato`, {
+          description: `${stall.area_mq} mq`,
         });
       } finally {
         setLoadingImpresa(false);
       }
     } else {
-      toast.success(`Posteggio ${stall.number} selezionato`, { 
-        description: stall.status === 'libero' ? 'Posteggio libero' : `${stall.area_mq} mq` 
+      toast.success(`Posteggio ${stall.number} selezionato`, {
+        description:
+          stall.status === "libero"
+            ? "Posteggio libero"
+            : `${stall.area_mq} mq`,
       });
     }
 
     // Cerca SCIA precedente per questo posteggio (per pre-compilare i campi SCIA Precedente)
     try {
-      const sciaRes = await fetch(addComuneIdToUrl(`${API_URL}/api/suap/pratiche?posteggio_id=${stallId}`));
+      const sciaRes = await fetch(
+        addComuneIdToUrl(`${API_URL}/api/suap/pratiche?posteggio_id=${stallId}`)
+      );
       const sciaJson = await sciaRes.json();
       if (sciaJson.success && sciaJson.data && sciaJson.data.length > 0) {
         // Cerca la SCIA più recente APPROVED o EVALUATED per questo posteggio
         const sciaPrec = sciaJson.data
-          .filter((p: any) => p.posteggio_id?.toString() === stallId && (p.stato === 'APPROVED' || p.stato === 'EVALUATED'))
-          .sort((a: any, b: any) => new Date(b.data_presentazione).getTime() - new Date(a.data_presentazione).getTime())[0];
-        
+          .filter(
+            (p: any) =>
+              p.posteggio_id?.toString() === stallId &&
+              (p.stato === "APPROVED" || p.stato === "EVALUATED")
+          )
+          .sort(
+            (a: any, b: any) =>
+              new Date(b.data_presentazione).getTime() -
+              new Date(a.data_presentazione).getTime()
+          )[0];
+
         if (sciaPrec) {
-          const dataPrec = sciaPrec.data_presentazione ? sciaPrec.data_presentazione.split('T')[0] : '';
+          const dataPrec = sciaPrec.data_presentazione
+            ? sciaPrec.data_presentazione.split("T")[0]
+            : "";
           setFormData(prev => ({
             ...prev,
-            scia_precedente_protocollo: sciaPrec.numero_protocollo || '',
+            scia_precedente_protocollo: sciaPrec.numero_protocollo || "",
             scia_precedente_data: dataPrec,
-            scia_precedente_comune: sciaPrec.comune_presentazione || prev.scia_precedente_comune
+            scia_precedente_comune:
+              sciaPrec.comune_presentazione || prev.scia_precedente_comune,
           }));
-          console.log(`[SciaForm] SCIA precedente trovata: ${sciaPrec.numero_protocollo}`);
+          console.log(
+            `[SciaForm] SCIA precedente trovata: ${sciaPrec.numero_protocollo}`
+          );
         }
       }
     } catch (error) {
-      console.error('Errore ricerca SCIA precedente:', error);
+      console.error("Errore ricerca SCIA precedente:", error);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validazione campi obbligatori
     const errori: string[] = [];
-    
+
     if (!formData.cf_subentrante?.trim()) {
-      errori.push('CF/P.IVA Subentrante');
+      errori.push("CF/P.IVA Subentrante");
     }
     if (!formData.ragione_sociale_sub?.trim() && !formData.nome_sub?.trim()) {
-      errori.push('Ragione Sociale o Nome Subentrante');
+      errori.push("Ragione Sociale o Nome Subentrante");
     }
     if (!formData.motivazione_scia) {
-      errori.push('Tipo di Segnalazione');
+      errori.push("Tipo di Segnalazione");
     }
     if (!formData.mercato?.trim() && !formData.mercato_id) {
-      errori.push('Mercato');
+      errori.push("Mercato");
     }
     if (!formData.posteggio?.trim() && !formData.posteggio_id) {
-      errori.push('Posteggio');
+      errori.push("Posteggio");
     }
-    
+
     // Per subingresso, il cedente è obbligatorio
-    if (formData.motivazione_scia === 'subingresso') {
+    if (formData.motivazione_scia === "subingresso") {
       if (!formData.cf_cedente?.trim()) {
-        errori.push('CF/P.IVA Cedente');
+        errori.push("CF/P.IVA Cedente");
       }
       if (!formData.ragione_sociale_ced?.trim() && !formData.nome_ced?.trim()) {
-        errori.push('Ragione Sociale o Nome Cedente');
+        errori.push("Ragione Sociale o Nome Cedente");
       }
     }
-    
+
     if (errori.length > 0) {
-      toast.error('Campi obbligatori mancanti', {
-        description: errori.join(', '),
-        duration: 6000
+      toast.error("Campi obbligatori mancanti", {
+        description: errori.join(", "),
+        duration: 6000,
       });
       return;
     }
-    
+
     onSubmit(formData);
   };
 
@@ -703,7 +803,6 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-8">
-          
           {/* DATI PROTOCOLLO SCIA */}
           <div className="space-y-4 p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/30">
             <h3 className="text-lg font-semibold text-[#14b8a6]">
@@ -712,26 +811,41 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Numero Protocollo</Label>
-                <Input 
+                <Input
                   value={formData.numero_protocollo}
-                  onChange={(e) => setFormData({...formData, numero_protocollo: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      numero_protocollo: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#14b8a6]/50 text-[#14b8a6] font-mono font-bold"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Data Presentazione</Label>
-                <Input 
+                <Input
                   type="date"
                   value={formData.data_presentazione}
-                  onChange={(e) => setFormData({...formData, data_presentazione: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      data_presentazione: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Comune Presentazione</Label>
-                <Input 
+                <Input
                   value={formData.comune_presentazione}
-                  onChange={(e) => setFormData({...formData, comune_presentazione: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      comune_presentazione: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
@@ -743,60 +857,86 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <h3 className="text-lg font-semibold text-[#14b8a6]">
               Tipo di Segnalazione
             </h3>
-            <RadioGroup 
-              value={formData.motivazione_scia} 
-              onValueChange={(value) => setFormData({...formData, motivazione_scia: value})}
+            <RadioGroup
+              value={formData.motivazione_scia}
+              onValueChange={value =>
+                setFormData({ ...formData, motivazione_scia: value })
+              }
               className="grid grid-cols-2 md:grid-cols-3 gap-4"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="subingresso" id="subingresso" />
-                <Label htmlFor="subingresso" className="text-[#e8fbff]">Subingresso</Label>
+                <Label htmlFor="subingresso" className="text-[#e8fbff]">
+                  Subingresso
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="cessazione" id="cessazione" />
-                <Label htmlFor="cessazione" className="text-[#e8fbff]">Cessazione</Label>
+                <Label htmlFor="cessazione" className="text-[#e8fbff]">
+                  Cessazione
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="sospensione" id="sospensione" />
-                <Label htmlFor="sospensione" className="text-[#e8fbff]">Sospensione</Label>
+                <Label htmlFor="sospensione" className="text-[#e8fbff]">
+                  Sospensione
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="ripresa" id="ripresa" />
-                <Label htmlFor="ripresa" className="text-[#e8fbff]">Ripresa Attività</Label>
+                <Label htmlFor="ripresa" className="text-[#e8fbff]">
+                  Ripresa Attività
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="modifica_rs" id="modifica_rs" />
-                <Label htmlFor="modifica_rs" className="text-[#e8fbff]">Modifica Ragione Sociale</Label>
+                <Label htmlFor="modifica_rs" className="text-[#e8fbff]">
+                  Modifica Ragione Sociale
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="variazione" id="variazione" />
-                <Label htmlFor="variazione" className="text-[#e8fbff]">Variazione</Label>
+                <Label htmlFor="variazione" className="text-[#e8fbff]">
+                  Variazione
+                </Label>
               </div>
             </RadioGroup>
           </div>
 
           {/* MOTIVO SUBINGRESSO - Visibile solo se motivazione è subingresso */}
-          {formData.motivazione_scia === 'subingresso' && (
+          {formData.motivazione_scia === "subingresso" && (
             <div className="space-y-4 p-4 bg-[#0f172a] rounded-lg border border-[#334155]">
               <h3 className="text-lg font-semibold text-[#14b8a6]">
                 Motivo del Subingresso
               </h3>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Seleziona il motivo *</Label>
-                <Select 
-                  value={formData.motivo_subingresso || 'acquisto'} 
-                  onValueChange={(value) => setFormData({...formData, motivo_subingresso: value})}
+                <Select
+                  value={formData.motivo_subingresso || "acquisto"}
+                  onValueChange={value =>
+                    setFormData({ ...formData, motivo_subingresso: value })
+                  }
                 >
                   <SelectTrigger className="bg-[#0b1220] border-[#334155] text-[#e8fbff]">
                     <SelectValue placeholder="Seleziona motivo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="acquisto">Acquisto azienda / ramo d'azienda</SelectItem>
-                    <SelectItem value="affitto">Affitto ramo d'azienda</SelectItem>
+                    <SelectItem value="acquisto">
+                      Acquisto azienda / ramo d'azienda
+                    </SelectItem>
+                    <SelectItem value="affitto">
+                      Affitto ramo d'azienda
+                    </SelectItem>
                     <SelectItem value="donazione">Donazione</SelectItem>
-                    <SelectItem value="successione">Successione ereditaria</SelectItem>
-                    <SelectItem value="fusione">Fusione / Scissione societaria</SelectItem>
-                    <SelectItem value="conferimento">Conferimento in società</SelectItem>
+                    <SelectItem value="successione">
+                      Successione ereditaria
+                    </SelectItem>
+                    <SelectItem value="fusione">
+                      Fusione / Scissione societaria
+                    </SelectItem>
+                    <SelectItem value="conferimento">
+                      Conferimento in società
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -811,17 +951,27 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Settore Merceologico *</Label>
-                <Select 
-                  value={formData.tipologia_attivita} 
-                  onValueChange={(value) => setFormData({...formData, tipologia_attivita: value, merceologia: value})}
+                <Select
+                  value={formData.tipologia_attivita}
+                  onValueChange={value =>
+                    setFormData({
+                      ...formData,
+                      tipologia_attivita: value,
+                      merceologia: value,
+                    })
+                  }
                 >
                   <SelectTrigger className="bg-[#0b1220] border-[#334155] text-[#e8fbff]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="alimentare">Alimentare</SelectItem>
-                    <SelectItem value="non_alimentare">Non Alimentare</SelectItem>
-                    <SelectItem value="misto">Misto (Alimentare e Non)</SelectItem>
+                    <SelectItem value="non_alimentare">
+                      Non Alimentare
+                    </SelectItem>
+                    <SelectItem value="misto">
+                      Misto (Alimentare e Non)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -829,35 +979,66 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
                 <Label className="text-[#e8fbff]">Ruolo Dichiarante *</Label>
                 <Select
                   value={formData.ruolo_dichiarante}
-                  onValueChange={async (value) => {
-                    setFormData(prev => ({...prev, ruolo_dichiarante: value}));
+                  onValueChange={async value => {
+                    setFormData(prev => ({
+                      ...prev,
+                      ruolo_dichiarante: value,
+                    }));
                     // Auto-compila dati delegato da scheda associazione
-                    if (value === 'associazione' && isAssociazioneImpersonation()) {
+                    if (
+                      value === "associazione" &&
+                      isAssociazioneImpersonation()
+                    ) {
                       const { associazioneId } = getImpersonationParams();
                       if (associazioneId) {
                         try {
-                          const res = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/associazioni/${associazioneId}`));
+                          const res = await fetch(
+                            addComuneIdToUrl(
+                              `${MIHUB_API_BASE_URL}/api/associazioni/${associazioneId}`
+                            )
+                          );
                           const data = await res.json();
                           if (data.success && data.data) {
                             const assoc = data.data;
                             setFormData(prev => ({
                               ...prev,
                               ruolo_dichiarante: value,
-                              delegato_nome: assoc.delegato_nome || assoc.referente_nome || assoc.presidente_nome || '',
-                              delegato_cognome: assoc.delegato_cognome || assoc.referente_cognome || assoc.presidente_cognome || '',
-                              delegato_cf: assoc.delegato_codice_fiscale || '',
-                              delegato_data_nascita: assoc.delegato_data_nascita ? assoc.delegato_data_nascita.split('T')[0] : '',
-                              delegato_luogo_nascita: assoc.delegato_luogo_nascita || '',
-                              delegato_residenza_via: assoc.delegato_residenza_via || '',
-                              delegato_residenza_comune: assoc.delegato_residenza_comune || '',
-                              delegato_residenza_cap: assoc.delegato_residenza_cap || '',
-                              delegato_qualifica: assoc.delegato_qualifica || 'Delegato Associazione',
-                              pec_del: assoc.delegato_pec || assoc.pec || '',
+                              delegato_nome:
+                                assoc.delegato_nome ||
+                                assoc.referente_nome ||
+                                assoc.presidente_nome ||
+                                "",
+                              delegato_cognome:
+                                assoc.delegato_cognome ||
+                                assoc.referente_cognome ||
+                                assoc.presidente_cognome ||
+                                "",
+                              delegato_cf: assoc.delegato_codice_fiscale || "",
+                              delegato_data_nascita: assoc.delegato_data_nascita
+                                ? assoc.delegato_data_nascita.split("T")[0]
+                                : "",
+                              delegato_luogo_nascita:
+                                assoc.delegato_luogo_nascita || "",
+                              delegato_residenza_via:
+                                assoc.delegato_residenza_via || "",
+                              delegato_residenza_comune:
+                                assoc.delegato_residenza_comune || "",
+                              delegato_residenza_cap:
+                                assoc.delegato_residenza_cap || "",
+                              delegato_qualifica:
+                                assoc.delegato_qualifica ||
+                                "Delegato Associazione",
+                              pec_del: assoc.delegato_pec || assoc.pec || "",
                             }));
-                            toast.success('Dati delegato compilati dalla scheda associazione');
+                            toast.success(
+                              "Dati delegato compilati dalla scheda associazione"
+                            );
                           }
                         } catch (error) {
-                          console.error('Errore caricamento dati associazione:', error);
+                          console.error(
+                            "Errore caricamento dati associazione:",
+                            error
+                          );
                         }
                       }
                     }
@@ -868,9 +1049,13 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="titolare">Titolare</SelectItem>
-                    <SelectItem value="legale_rappresentante">Legale Rappresentante</SelectItem>
+                    <SelectItem value="legale_rappresentante">
+                      Legale Rappresentante
+                    </SelectItem>
                     <SelectItem value="associazione">Associazione</SelectItem>
-                    <SelectItem value="curatore_fallimentare">Curatore Fallimentare</SelectItem>
+                    <SelectItem value="curatore_fallimentare">
+                      Curatore Fallimentare
+                    </SelectItem>
                     <SelectItem value="erede">Erede / Avente Causa</SelectItem>
                     <SelectItem value="altro">Altro</SelectItem>
                   </SelectContent>
@@ -880,40 +1065,61 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
           </div>
 
           {/* SEZIONE DELEGATO - Visibile solo se ruolo_dichiarante != titolare */}
-          {formData.ruolo_dichiarante !== 'titolare' && (
+          {formData.ruolo_dichiarante !== "titolare" && (
             <div className="space-y-4 p-4 bg-[#0a1628] rounded-lg border border-[#f59e0b]/30">
               <h3 className="text-lg font-semibold text-[#f59e0b]">
                 Dati del Delegato / Procuratore
               </h3>
               <p className="text-sm text-[#e8fbff]/60">
-                Compilare i dati del soggetto che presenta la SCIA in qualità di: <strong className="text-[#f59e0b]">{formData.ruolo_dichiarante.replace('_', ' ').toUpperCase()}</strong>
+                Compilare i dati del soggetto che presenta la SCIA in qualità
+                di:{" "}
+                <strong className="text-[#f59e0b]">
+                  {formData.ruolo_dichiarante.replace("_", " ").toUpperCase()}
+                </strong>
               </p>
-              
+
               {/* Riga 1: Nome, Cognome, CF */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">Nome Delegato *</Label>
-                  <Input 
+                  <Input
                     value={formData.delegato_nome}
-                    onChange={(e) => setFormData({...formData, delegato_nome: capitalizeWords(e.target.value)})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        delegato_nome: capitalizeWords(e.target.value),
+                      })
+                    }
                     className="bg-[#020817] border-[#f59e0b]/50 text-[#e8fbff] capitalize"
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">Cognome Delegato *</Label>
-                  <Input 
+                  <Input
                     value={formData.delegato_cognome}
-                    onChange={(e) => setFormData({...formData, delegato_cognome: capitalizeWords(e.target.value)})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        delegato_cognome: capitalizeWords(e.target.value),
+                      })
+                    }
                     className="bg-[#020817] border-[#f59e0b]/50 text-[#e8fbff] capitalize"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#e8fbff]">Codice Fiscale Delegato *</Label>
-                  <Input 
+                  <Label className="text-[#e8fbff]">
+                    Codice Fiscale Delegato *
+                  </Label>
+                  <Input
                     value={formData.delegato_cf}
-                    onChange={(e) => setFormData({...formData, delegato_cf: e.target.value.toUpperCase()})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        delegato_cf: e.target.value.toUpperCase(),
+                      })
+                    }
                     className="bg-[#020817] border-[#f59e0b]/50 text-[#e8fbff]"
                     required
                   />
@@ -924,26 +1130,41 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">Data di Nascita</Label>
-                  <Input 
+                  <Input
                     type="date"
                     value={formData.delegato_data_nascita}
-                    onChange={(e) => setFormData({...formData, delegato_data_nascita: e.target.value})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        delegato_data_nascita: e.target.value,
+                      })
+                    }
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">Luogo di Nascita</Label>
-                  <Input 
+                  <Input
                     value={formData.delegato_luogo_nascita}
-                    onChange={(e) => setFormData({...formData, delegato_luogo_nascita: capitalizeWords(e.target.value)})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        delegato_luogo_nascita: capitalizeWords(e.target.value),
+                      })
+                    }
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">Qualifica / Titolo *</Label>
-                  <Input 
+                  <Input
                     value={formData.delegato_qualifica}
-                    onChange={(e) => setFormData({...formData, delegato_qualifica: capitalizeWords(e.target.value)})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        delegato_qualifica: capitalizeWords(e.target.value),
+                      })
+                    }
                     placeholder="Es. Procuratore, Curatore, Erede..."
                     className="bg-[#020817] border-[#f59e0b]/50 text-[#e8fbff] capitalize"
                     required
@@ -954,26 +1175,45 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
               {/* Riga 3: Residenza Delegato */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-2 col-span-2">
-                  <Label className="text-[#e8fbff]">Residenza (Via/Piazza)</Label>
-                  <Input 
+                  <Label className="text-[#e8fbff]">
+                    Residenza (Via/Piazza)
+                  </Label>
+                  <Input
                     value={formData.delegato_residenza_via}
-                    onChange={(e) => setFormData({...formData, delegato_residenza_via: capitalizeWords(e.target.value)})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        delegato_residenza_via: capitalizeWords(e.target.value),
+                      })
+                    }
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">Comune</Label>
-                  <Input 
+                  <Input
                     value={formData.delegato_residenza_comune}
-                    onChange={(e) => setFormData({...formData, delegato_residenza_comune: capitalizeWords(e.target.value)})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        delegato_residenza_comune: capitalizeWords(
+                          e.target.value
+                        ),
+                      })
+                    }
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">CAP</Label>
-                  <Input 
+                  <Input
                     value={formData.delegato_residenza_cap}
-                    onChange={(e) => setFormData({...formData, delegato_residenza_cap: e.target.value})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        delegato_residenza_cap: e.target.value,
+                      })
+                    }
                     maxLength={5}
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                   />
@@ -984,10 +1224,15 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">PEC Delegato *</Label>
-                  <Input 
+                  <Input
                     type="email"
                     value={formData.pec_del}
-                    onChange={(e) => setFormData({...formData, pec_del: e.target.value.toLowerCase()})}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        pec_del: e.target.value.toLowerCase(),
+                      })
+                    }
                     placeholder="delegato@pec.it"
                     className="bg-[#020817] border-[#f59e0b]/50 text-[#e8fbff]"
                     required
@@ -1002,36 +1247,42 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <h3 className="text-lg font-semibold text-[#e8fbff] border-b border-[#1e293b] pb-2">
               A. Dati Subentrante
             </h3>
-            
+
             {/* Riga 1: Cerca Impresa, P.IVA, CF e Ragione Sociale */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2 relative" ref={searchRef}>
                 <Label className="text-[#e8fbff]">Cerca Impresa *</Label>
                 <div className="flex gap-2">
-                  <Input 
+                  <Input
                     value={searchQuery}
-                    onChange={(e) => {
+                    onChange={e => {
                       const val = e.target.value.toUpperCase();
                       setSearchQuery(val);
                     }}
-                    onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
+                    onFocus={() =>
+                      searchQuery.length >= 2 && setShowSuggestions(true)
+                    }
                     placeholder="P.IVA / CF / Nome"
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                   />
-                  <Button 
-                    type="button" 
-                    onClick={handleLookupSubentrante} 
+                  <Button
+                    type="button"
+                    onClick={handleLookupSubentrante}
                     variant="secondary"
                     disabled={loadingImpresa}
                     title="Cerca impresa registrata"
                   >
-                    {loadingImpresa ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    {loadingImpresa ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
                 {/* Dropdown autocomplete Subentrante */}
                 {showSuggestions && filteredImprese.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-96 overflow-y-auto">
-                    {filteredImprese.map((impresa) => (
+                    {filteredImprese.map(impresa => (
                       <button
                         key={impresa.id}
                         type="button"
@@ -1039,13 +1290,18 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
                           populateSubentranteData(impresa);
                           setSelectedImpresa(impresa);
                           setShowSuggestions(false);
-                          toast.success('Impresa selezionata!', { description: impresa.denominazione });
+                          toast.success("Impresa selezionata!", {
+                            description: impresa.denominazione,
+                          });
                         }}
                         className="w-full px-4 py-3 text-left hover:bg-[#1e293b] border-b border-[#334155] last:border-b-0 transition-colors"
                       >
-                        <p className="font-medium text-[#e8fbff]">{impresa.denominazione}</p>
+                        <p className="font-medium text-[#e8fbff]">
+                          {impresa.denominazione}
+                        </p>
                         <p className="text-sm text-[#e8fbff]/60">
-                          P.IVA: {impresa.partita_iva || '-'} | CF: {impresa.codice_fiscale || '-'}
+                          P.IVA: {impresa.partita_iva || "-"} | CF:{" "}
+                          {impresa.codice_fiscale || "-"}
                         </p>
                       </button>
                     ))}
@@ -1054,27 +1310,42 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Partita IVA</Label>
-                <Input 
+                <Input
                   value={formData.partita_iva_sub}
-                  onChange={(e) => setFormData({...formData, partita_iva_sub: e.target.value.toUpperCase()})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      partita_iva_sub: e.target.value.toUpperCase(),
+                    })
+                  }
                   placeholder="01234567890"
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Codice Fiscale</Label>
-                <Input 
+                <Input
                   value={formData.cf_subentrante}
-                  onChange={(e) => setFormData({...formData, cf_subentrante: e.target.value.toUpperCase()})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      cf_subentrante: e.target.value.toUpperCase(),
+                    })
+                  }
                   placeholder="RSSMRA..."
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Ragione Sociale</Label>
-                <Input 
+                <Input
                   value={formData.ragione_sociale_sub}
-                  onChange={(e) => setFormData({...formData, ragione_sociale_sub: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      ragione_sociale_sub: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
@@ -1084,34 +1355,54 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Nome</Label>
-                <Input 
+                <Input
                   value={formData.nome_sub}
-                  onChange={(e) => setFormData({...formData, nome_sub: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      nome_sub: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Cognome</Label>
-                <Input 
+                <Input
                   value={formData.cognome_sub}
-                  onChange={(e) => setFormData({...formData, cognome_sub: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      cognome_sub: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Data di Nascita</Label>
-                <Input 
+                <Input
                   type="date"
                   value={formData.data_nascita_sub}
-                  onChange={(e) => setFormData({...formData, data_nascita_sub: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      data_nascita_sub: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Luogo di Nascita</Label>
-                <Input 
+                <Input
                   value={formData.luogo_nascita_sub}
-                  onChange={(e) => setFormData({...formData, luogo_nascita_sub: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      luogo_nascita_sub: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
@@ -1121,25 +1412,40 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Residenza (Via/Piazza)</Label>
-                <Input 
+                <Input
                   value={formData.residenza_via_sub}
-                  onChange={(e) => setFormData({...formData, residenza_via_sub: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      residenza_via_sub: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Comune Residenza</Label>
-                <Input 
+                <Input
                   value={formData.residenza_comune_sub}
-                  onChange={(e) => setFormData({...formData, residenza_comune_sub: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      residenza_comune_sub: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">CAP</Label>
-                <Input 
+                <Input
                   value={formData.residenza_cap_sub}
-                  onChange={(e) => setFormData({...formData, residenza_cap_sub: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      residenza_cap_sub: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
@@ -1148,26 +1454,43 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             {/* Riga 4: Sede Impresa */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="space-y-2 col-span-2">
-                <Label className="text-[#e8fbff]">Sede Impresa (Via/Piazza)</Label>
-                <Input 
+                <Label className="text-[#e8fbff]">
+                  Sede Impresa (Via/Piazza)
+                </Label>
+                <Input
                   value={formData.sede_via_sub}
-                  onChange={(e) => setFormData({...formData, sede_via_sub: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      sede_via_sub: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Comune Sede</Label>
-                <Input 
+                <Input
                   value={formData.sede_comune_sub}
-                  onChange={(e) => setFormData({...formData, sede_comune_sub: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      sede_comune_sub: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Provincia</Label>
-                <Input 
+                <Input
                   value={formData.sede_provincia_sub}
-                  onChange={(e) => setFormData({...formData, sede_provincia_sub: e.target.value.toUpperCase()})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      sede_provincia_sub: e.target.value.toUpperCase(),
+                    })
+                  }
                   placeholder="Es. MO"
                   maxLength={2}
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
@@ -1175,9 +1498,11 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">CAP Sede</Label>
-                <Input 
+                <Input
                   value={formData.sede_cap_sub}
-                  onChange={(e) => setFormData({...formData, sede_cap_sub: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, sede_cap_sub: e.target.value })
+                  }
                   placeholder="Es. 41058"
                   maxLength={5}
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
@@ -1189,17 +1514,21 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">PEC</Label>
-                <Input 
+                <Input
                   value={formData.pec_sub}
-                  onChange={(e) => setFormData({...formData, pec_sub: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, pec_sub: e.target.value })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Telefono</Label>
-                <Input 
+                <Input
                   value={formData.telefono_sub}
-                  onChange={(e) => setFormData({...formData, telefono_sub: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, telefono_sub: e.target.value })
+                  }
                   placeholder="Es. 059 123456"
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
@@ -1213,80 +1542,111 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
               B. Dati Cedente
             </h3>
             <p className="text-sm text-[#e8fbff]/60">
-              I dati del cedente vengono compilati automaticamente quando selezioni un posteggio occupato
+              I dati del cedente vengono compilati automaticamente quando
+              selezioni un posteggio occupato
             </p>
-            
+
             {/* Riga 1: Cerca Cedente, P.IVA, CF e Ragione Sociale */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2 relative" ref={searchCedenteRef}>
                 <Label className="text-[#e8fbff]">Cerca Cedente *</Label>
                 <div className="flex gap-2">
-                  <Input 
+                  <Input
                     value={cedenteSearchQuery}
-                    onChange={(e) => {
+                    onChange={e => {
                       const val = e.target.value.toUpperCase();
                       setCedenteSearchQuery(val);
                     }}
-                    onFocus={() => cedenteSearchQuery.length >= 2 && setShowCedenteSuggestions(true)}
+                    onFocus={() =>
+                      cedenteSearchQuery.length >= 2 &&
+                      setShowCedenteSuggestions(true)
+                    }
                     placeholder="P.IVA / CF / Nome"
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                   />
-                  <Button 
-                    type="button" 
-                    onClick={handleLookupCedente} 
+                  <Button
+                    type="button"
+                    onClick={handleLookupCedente}
                     variant="secondary"
                     disabled={loadingImpresa}
                     title="Cerca cedente"
                   >
-                    {loadingImpresa ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    {loadingImpresa ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
                 {/* Dropdown autocomplete Cedente */}
-                {showCedenteSuggestions && filteredCedenteImprese.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-96 overflow-y-auto">
-                    {filteredCedenteImprese.map((impresa) => (
-                      <button
-                        key={impresa.id}
-                        type="button"
-                        onClick={() => {
-                          populateCedenteData(impresa);
-                          setShowCedenteSuggestions(false);
-                          toast.success('Cedente selezionato!', { description: impresa.denominazione });
-                        }}
-                        className="w-full px-4 py-3 text-left hover:bg-[#1e293b] border-b border-[#334155] last:border-b-0 transition-colors"
-                      >
-                        <p className="font-medium text-[#e8fbff]">{impresa.denominazione}</p>
-                        <p className="text-sm text-[#e8fbff]/60">
-                          P.IVA: {impresa.partita_iva || '-'} | CF: {impresa.codice_fiscale || '-'}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {showCedenteSuggestions &&
+                  filteredCedenteImprese.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-96 overflow-y-auto">
+                      {filteredCedenteImprese.map(impresa => (
+                        <button
+                          key={impresa.id}
+                          type="button"
+                          onClick={() => {
+                            populateCedenteData(impresa);
+                            setShowCedenteSuggestions(false);
+                            toast.success("Cedente selezionato!", {
+                              description: impresa.denominazione,
+                            });
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-[#1e293b] border-b border-[#334155] last:border-b-0 transition-colors"
+                        >
+                          <p className="font-medium text-[#e8fbff]">
+                            {impresa.denominazione}
+                          </p>
+                          <p className="text-sm text-[#e8fbff]/60">
+                            P.IVA: {impresa.partita_iva || "-"} | CF:{" "}
+                            {impresa.codice_fiscale || "-"}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Partita IVA Cedente</Label>
-                <Input 
+                <Input
                   value={formData.partita_iva_ced}
-                  onChange={(e) => setFormData({...formData, partita_iva_ced: e.target.value.toUpperCase()})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      partita_iva_ced: e.target.value.toUpperCase(),
+                    })
+                  }
                   placeholder="01234567890"
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Codice Fiscale Cedente</Label>
-                <Input 
+                <Input
                   value={formData.cf_cedente}
-                  onChange={(e) => setFormData({...formData, cf_cedente: e.target.value.toUpperCase()})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      cf_cedente: e.target.value.toUpperCase(),
+                    })
+                  }
                   placeholder="VRDLGI..."
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Ragione Sociale Cedente</Label>
-                <Input 
+                <Label className="text-[#e8fbff]">
+                  Ragione Sociale Cedente
+                </Label>
+                <Input
                   value={formData.ragione_sociale_ced}
-                  onChange={(e) => setFormData({...formData, ragione_sociale_ced: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      ragione_sociale_ced: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
@@ -1296,34 +1656,54 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Nome</Label>
-                <Input 
+                <Input
                   value={formData.nome_ced}
-                  onChange={(e) => setFormData({...formData, nome_ced: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      nome_ced: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Cognome</Label>
-                <Input 
+                <Input
                   value={formData.cognome_ced}
-                  onChange={(e) => setFormData({...formData, cognome_ced: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      cognome_ced: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Data di Nascita</Label>
-                <Input 
+                <Input
                   type="date"
                   value={formData.data_nascita_ced}
-                  onChange={(e) => setFormData({...formData, data_nascita_ced: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      data_nascita_ced: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Luogo di Nascita</Label>
-                <Input 
+                <Input
                   value={formData.luogo_nascita_ced}
-                  onChange={(e) => setFormData({...formData, luogo_nascita_ced: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      luogo_nascita_ced: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
@@ -1333,33 +1713,50 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Residenza (Via/Piazza)</Label>
-                <Input 
+                <Input
                   value={formData.residenza_via_ced}
-                  onChange={(e) => setFormData({...formData, residenza_via_ced: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      residenza_via_ced: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Comune</Label>
-                <Input 
+                <Input
                   value={formData.residenza_comune_ced}
-                  onChange={(e) => setFormData({...formData, residenza_comune_ced: capitalizeWords(e.target.value)})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      residenza_comune_ced: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff] capitalize"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">CAP</Label>
-                <Input 
+                <Input
                   value={formData.residenza_cap_ced}
-                  onChange={(e) => setFormData({...formData, residenza_cap_ced: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      residenza_cap_ced: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">PEC</Label>
-                <Input 
+                <Input
                   value={formData.pec_ced}
-                  onChange={(e) => setFormData({...formData, pec_ced: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, pec_ced: e.target.value })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
@@ -1368,27 +1765,44 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             {/* Riga 4: SCIA Precedente */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">SCIA Precedente N. Prot.</Label>
-                <Input 
+                <Label className="text-[#e8fbff]">
+                  SCIA Precedente N. Prot.
+                </Label>
+                <Input
                   value={formData.scia_precedente_protocollo}
-                  onChange={(e) => setFormData({...formData, scia_precedente_protocollo: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      scia_precedente_protocollo: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Data Presentazione</Label>
-                <Input 
+                <Input
                   type="date"
                   value={formData.scia_precedente_data}
-                  onChange={(e) => setFormData({...formData, scia_precedente_data: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      scia_precedente_data: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Comune Presentazione</Label>
-                <Input 
+                <Input
                   value={formData.scia_precedente_comune}
-                  onChange={(e) => setFormData({...formData, scia_precedente_comune: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      scia_precedente_comune: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
@@ -1400,50 +1814,76 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <h3 className="text-lg font-semibold text-[#e8fbff] border-b border-[#1e293b] pb-2">
               C. Dati Posteggio e Mercato
             </h3>
-            
+
             {/* Riga 1: Mercato e Posteggio */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">
-                  Mercato * {selectedCedente && filteredMarkets.length < markets.length && (
-                    <span className="text-[#14b8a6] text-xs ml-2">({filteredMarkets.length} mercati del cedente)</span>
-                  )}
+                  Mercato *{" "}
+                  {selectedCedente &&
+                    filteredMarkets.length < markets.length && (
+                      <span className="text-[#14b8a6] text-xs ml-2">
+                        ({filteredMarkets.length} mercati del cedente)
+                      </span>
+                    )}
                 </Label>
-                <Select 
-                  value={formData.mercato_id} 
+                <Select
+                  value={formData.mercato_id}
                   onValueChange={handleMarketChange}
                   disabled={loadingMarkets}
                 >
                   <SelectTrigger className="bg-[#0b1220] border-[#334155] text-[#e8fbff]">
-                    <SelectValue placeholder={loadingMarkets ? "Caricamento..." : "Seleziona Mercato"} />
+                    <SelectValue
+                      placeholder={
+                        loadingMarkets ? "Caricamento..." : "Seleziona Mercato"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {(selectedCedente ? filteredMarkets : markets).map(market => (
-                      <SelectItem key={market.id} value={market.id.toString()}>
-                        {market.name} ({market.municipality})
-                      </SelectItem>
-                    ))}
+                    {(selectedCedente ? filteredMarkets : markets).map(
+                      market => (
+                        <SelectItem
+                          key={market.id}
+                          value={market.id.toString()}
+                        >
+                          {market.name} ({market.municipality})
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">
-                  Numero Posteggio * {selectedCedente && selectedMarketId && filteredStalls.length > 0 && (
-                    <span className="text-[#14b8a6] text-xs ml-2">({filteredStalls.length} posteggi del cedente)</span>
-                  )}
+                  Numero Posteggio *{" "}
+                  {selectedCedente &&
+                    selectedMarketId &&
+                    filteredStalls.length > 0 && (
+                      <span className="text-[#14b8a6] text-xs ml-2">
+                        ({filteredStalls.length} posteggi del cedente)
+                      </span>
+                    )}
                 </Label>
-                <Select 
-                  value={formData.posteggio_id} 
+                <Select
+                  value={formData.posteggio_id}
                   onValueChange={handleStallChange}
                   disabled={!selectedMarketId || loadingStalls}
                 >
                   <SelectTrigger className="bg-[#0b1220] border-[#334155] text-[#e8fbff]">
-                    <SelectValue placeholder={loadingStalls ? "Caricamento..." : "Seleziona Posteggio"} />
+                    <SelectValue
+                      placeholder={
+                        loadingStalls ? "Caricamento..." : "Seleziona Posteggio"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {(selectedCedente && filteredStalls.length > 0 ? filteredStalls : stalls).map(stall => (
+                    {(selectedCedente && filteredStalls.length > 0
+                      ? filteredStalls
+                      : stalls
+                    ).map(stall => (
                       <SelectItem key={stall.id} value={stall.id.toString()}>
-                        {stall.number} - {stall.area_mq} mq ({stall.vendor_business_name || 'Libero'})
+                        {stall.number} - {stall.area_mq} mq (
+                        {stall.vendor_business_name || "Libero"})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1455,18 +1895,25 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Ubicazione Mercato</Label>
-                <Input 
+                <Input
                   value={formData.ubicazione_mercato}
-                  onChange={(e) => setFormData({...formData, ubicazione_mercato: e.target.value})}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      ubicazione_mercato: e.target.value,
+                    })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                   readOnly
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Giorno Mercato</Label>
-                <Input 
+                <Input
                   value={formData.giorno_mercato}
-                  onChange={(e) => setFormData({...formData, giorno_mercato: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, giorno_mercato: e.target.value })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                   readOnly
                 />
@@ -1477,24 +1924,28 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Fila</Label>
-                <Input 
+                <Input
                   value={formData.fila}
-                  onChange={(e) => setFormData({...formData, fila: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, fila: e.target.value })
+                  }
                   placeholder="Es. A, B, C"
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Dimensioni (MQ)</Label>
-                <Input 
+                <Input
                   value={formData.dimensioni_mq}
                   readOnly
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Dimensioni Lineari (m x m)</Label>
-                <Input 
+                <Label className="text-[#e8fbff]">
+                  Dimensioni Lineari (m x m)
+                </Label>
+                <Input
                   value={formData.dimensioni_lineari}
                   readOnly
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
@@ -1502,9 +1953,11 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Attrezzature</Label>
-                <Input 
+                <Input
                   value={formData.attrezzature}
-                  onChange={(e) => setFormData({...formData, attrezzature: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, attrezzature: e.target.value })
+                  }
                   placeholder="Es. banco, automezzo"
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
@@ -1517,30 +1970,36 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <h3 className="text-lg font-semibold text-[#e8fbff] border-b border-[#1e293b] pb-2">
               D. Estremi Atto Notarile
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Notaio Rogante</Label>
-                <Input 
+                <Input
                   value={formData.notaio}
-                  onChange={(e) => setFormData({...formData, notaio: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, notaio: e.target.value })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">N. Repertorio</Label>
-                <Input 
+                <Input
                   value={formData.repertorio}
-                  onChange={(e) => setFormData({...formData, repertorio: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, repertorio: e.target.value })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Data Atto</Label>
-                <Input 
+                <Input
                   type="date"
                   value={formData.data_atto}
-                  onChange={(e) => setFormData({...formData, data_atto: e.target.value})}
+                  onChange={e =>
+                    setFormData({ ...formData, data_atto: e.target.value })
+                  }
                   className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                 />
               </div>
@@ -1554,20 +2013,28 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
               E. Imposta di Bollo
             </h3>
             <p className="text-sm text-[#e8fbff]/60">
-              Ai sensi del D.M. 10/11/2011, sono necessarie due marche da bollo da 16,00€ ciascuna: una per la domanda di autorizzazione e una per il rilascio della concessione.
+              Ai sensi del D.M. 10/11/2011, sono necessarie due marche da bollo
+              da 16,00€ ciascuna: una per la domanda di autorizzazione e una per
+              il rilascio della concessione.
             </p>
 
             {/* Bollo 1 */}
             <div className="p-4 bg-[#0b1220] rounded-lg border border-[#f59e0b]/20">
-              <h4 className="text-sm font-semibold text-[#f59e0b] mb-3">Marca da Bollo n. 1 (Domanda di autorizzazione - 16,00€)</h4>
+              <h4 className="text-sm font-semibold text-[#f59e0b] mb-3">
+                Marca da Bollo n. 1 (Domanda di autorizzazione - 16,00€)
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[#e8fbff]">Numero Identificativo (14 cifre) *</Label>
+                  <Label className="text-[#e8fbff]">
+                    Numero Identificativo (14 cifre) *
+                  </Label>
                   <Input
                     value={formData.bollo_1_numero}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 14);
-                      setFormData({...formData, bollo_1_numero: val});
+                    onChange={e => {
+                      const val = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 14);
+                      setFormData({ ...formData, bollo_1_numero: val });
                     }}
                     placeholder="01234567890123"
                     maxLength={14}
@@ -1579,7 +2046,9 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
                   <Input
                     type="date"
                     value={formData.bollo_1_data}
-                    onChange={(e) => setFormData({...formData, bollo_1_data: e.target.value})}
+                    onChange={e =>
+                      setFormData({ ...formData, bollo_1_data: e.target.value })
+                    }
                     className="bg-[#020817] border-[#f59e0b]/50 text-[#e8fbff]"
                   />
                 </div>
@@ -1588,15 +2057,21 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
 
             {/* Bollo 2 */}
             <div className="p-4 bg-[#0b1220] rounded-lg border border-[#f59e0b]/20">
-              <h4 className="text-sm font-semibold text-[#f59e0b] mb-3">Marca da Bollo n. 2 (Rilascio concessione - 16,00€)</h4>
+              <h4 className="text-sm font-semibold text-[#f59e0b] mb-3">
+                Marca da Bollo n. 2 (Rilascio concessione - 16,00€)
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[#e8fbff]">Numero Identificativo (14 cifre) *</Label>
+                  <Label className="text-[#e8fbff]">
+                    Numero Identificativo (14 cifre) *
+                  </Label>
                   <Input
                     value={formData.bollo_2_numero}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 14);
-                      setFormData({...formData, bollo_2_numero: val});
+                    onChange={e => {
+                      const val = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 14);
+                      setFormData({ ...formData, bollo_2_numero: val });
                     }}
                     placeholder="01234567890123"
                     maxLength={14}
@@ -1608,7 +2083,9 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
                   <Input
                     type="date"
                     value={formData.bollo_2_data}
-                    onChange={(e) => setFormData({...formData, bollo_2_data: e.target.value})}
+                    onChange={e =>
+                      setFormData({ ...formData, bollo_2_data: e.target.value })
+                    }
                     className="bg-[#020817] border-[#f59e0b]/50 text-[#e8fbff]"
                   />
                 </div>
@@ -1621,11 +2098,30 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
                 <Checkbox
                   id="bollo_dichiarazione"
                   checked={formData.bollo_dichiarazione_sostitutiva}
-                  onCheckedChange={(checked) => setFormData({...formData, bollo_dichiarazione_sostitutiva: checked as boolean})}
+                  onCheckedChange={checked =>
+                    setFormData({
+                      ...formData,
+                      bollo_dichiarazione_sostitutiva: checked as boolean,
+                    })
+                  }
                   className="border-[#f59e0b] data-[state=checked]:bg-[#f59e0b] data-[state=checked]:text-black mt-1"
                 />
-                <Label htmlFor="bollo_dichiarazione" className="text-[#e8fbff] text-sm leading-relaxed cursor-pointer">
-                  <strong>Dichiarazione sostitutiva di atto di notorietà</strong> (ai sensi dell'art. 47 del D.P.R. 28 dicembre 2000, n. 445) — Il/La sottoscritto/a dichiara di aver assolto l'imposta di bollo ai sensi del D.M. 10 novembre 2011, di aver annullato le marche da bollo sopra indicate apponendovi la data e la propria firma, e che le stesse non sono state e non saranno utilizzate per qualsiasi altro adempimento. Il/La sottoscritto/a è consapevole che, ai sensi dell'art. 76 del D.P.R. 445/2000, le dichiarazioni mendaci sono punite ai sensi del codice penale e delle leggi speciali in materia.
+                <Label
+                  htmlFor="bollo_dichiarazione"
+                  className="text-[#e8fbff] text-sm leading-relaxed cursor-pointer"
+                >
+                  <strong>
+                    Dichiarazione sostitutiva di atto di notorietà
+                  </strong>{" "}
+                  (ai sensi dell'art. 47 del D.P.R. 28 dicembre 2000, n. 445) —
+                  Il/La sottoscritto/a dichiara di aver assolto l'imposta di
+                  bollo ai sensi del D.M. 10 novembre 2011, di aver annullato le
+                  marche da bollo sopra indicate apponendovi la data e la
+                  propria firma, e che le stesse non sono state e non saranno
+                  utilizzate per qualsiasi altro adempimento. Il/La
+                  sottoscritto/a è consapevole che, ai sensi dell'art. 76 del
+                  D.P.R. 445/2000, le dichiarazioni mendaci sono punite ai sensi
+                  del codice penale e delle leggi speciali in materia.
                 </Label>
               </div>
             </div>
@@ -1636,7 +2132,10 @@ export default function SciaForm({ onCancel, onSubmit, comuneNome = '', comuneId
             <Button type="button" variant="outline" onClick={onCancel}>
               Annulla
             </Button>
-            <Button type="submit" className="bg-[#00f0ff] text-[#020817] hover:bg-[#00f0ff]/80">
+            <Button
+              type="submit"
+              className="bg-[#00f0ff] text-[#020817] hover:bg-[#00f0ff]/80"
+            >
               Genera SCIA
             </Button>
           </div>

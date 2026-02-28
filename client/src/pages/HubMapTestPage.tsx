@@ -1,18 +1,18 @@
 /**
  * HubMapTestPage.tsx
- * 
+ *
  * Pagina di test per la visualizzazione degli HUB con negozi.
  * Accessibile da /hub-map-test
- * 
+ *
  * @author Manus AI
  * @date 06 Gennaio 2026
  */
 
-import React from 'react';
-import { Link } from 'wouter';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import HubMapTest from '@/components/HubMapTest';
+import React from "react";
+import { Link } from "wouter";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import HubMapTest from "@/components/HubMapTest";
 
 export default function HubMapTestPage() {
   return (
@@ -21,7 +21,11 @@ export default function HubMapTestPage() {
       <header className="bg-[#1a2332] border-b border-[#9C27B0]/30 px-4 py-3">
         <div className="container mx-auto flex items-center gap-4">
           <Link href="/dashboard-pa">
-            <Button variant="ghost" size="sm" className="text-[#e8fbff] hover:bg-[#9C27B0]/20">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[#e8fbff] hover:bg-[#9C27B0]/20"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Dashboard PA
             </Button>

@@ -77,9 +77,7 @@
       "compositePrimaryKeys": {
         "audit_logs_id": {
           "name": "audit_logs_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -138,9 +136,7 @@
       "compositePrimaryKeys": {
         "carbon_credits_config_id": {
           "name": "carbon_credits_config_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -206,12 +202,8 @@
           "name": "carbon_footprint_product_id_products_id_fk",
           "tableFrom": "carbon_footprint",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -219,9 +211,7 @@
       "compositePrimaryKeys": {
         "carbon_footprint_id": {
           "name": "carbon_footprint_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -294,12 +284,8 @@
           "name": "checkins_user_id_users_id_fk",
           "tableFrom": "checkins",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -307,12 +293,8 @@
           "name": "checkins_market_id_markets_id_fk",
           "tableFrom": "checkins",
           "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -320,9 +302,7 @@
       "compositePrimaryKeys": {
         "checkins_id": {
           "name": "checkins_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -403,12 +383,8 @@
           "name": "civic_reports_user_id_users_id_fk",
           "tableFrom": "civic_reports",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -416,9 +392,7 @@
       "compositePrimaryKeys": {
         "civic_reports_id": {
           "name": "civic_reports_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -484,12 +458,8 @@
           "name": "ecocredits_user_id_users_id_fk",
           "tableFrom": "ecocredits",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -497,9 +467,7 @@
       "compositePrimaryKeys": {
         "ecocredits_id": {
           "name": "ecocredits_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -576,12 +544,8 @@
           "name": "extended_users_user_id_users_id_fk",
           "tableFrom": "extended_users",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -589,9 +553,7 @@
       "compositePrimaryKeys": {
         "extended_users_id": {
           "name": "extended_users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -649,9 +611,7 @@
       "compositePrimaryKeys": {
         "fund_transactions_id": {
           "name": "fund_transactions_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -731,9 +691,7 @@
       "compositePrimaryKeys": {
         "markets_id": {
           "name": "markets_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -836,12 +794,8 @@
           "name": "product_tracking_product_id_products_id_fk",
           "tableFrom": "product_tracking",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -849,17 +803,13 @@
       "compositePrimaryKeys": {
         "product_tracking_id": {
           "name": "product_tracking_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "product_tracking_tpass_id_unique": {
           "name": "product_tracking_tpass_id_unique",
-          "columns": [
-            "tpass_id"
-          ]
+          "columns": ["tpass_id"]
         }
       },
       "checkConstraint": {}
@@ -924,12 +874,8 @@
           "name": "products_shop_id_shops_id_fk",
           "tableFrom": "products",
           "tableTo": "shops",
-          "columnsFrom": [
-            "shop_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shop_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -937,9 +883,7 @@
       "compositePrimaryKeys": {
         "products_id": {
           "name": "products_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1013,12 +957,8 @@
           "name": "reimbursements_shop_id_shops_id_fk",
           "tableFrom": "reimbursements",
           "tableTo": "shops",
-          "columnsFrom": [
-            "shop_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shop_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1026,9 +966,7 @@
       "compositePrimaryKeys": {
         "reimbursements_id": {
           "name": "reimbursements_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1110,12 +1048,8 @@
           "name": "shops_market_id_markets_id_fk",
           "tableFrom": "shops",
           "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1123,9 +1057,7 @@
       "compositePrimaryKeys": {
         "shops_id": {
           "name": "shops_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1197,9 +1129,7 @@
       "compositePrimaryKeys": {
         "system_logs_id": {
           "name": "system_logs_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1272,12 +1202,8 @@
           "name": "transactions_user_id_users_id_fk",
           "tableFrom": "transactions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1285,12 +1211,8 @@
           "name": "transactions_shop_id_shops_id_fk",
           "tableFrom": "transactions",
           "tableTo": "shops",
-          "columnsFrom": [
-            "shop_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shop_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1298,9 +1220,7 @@
       "compositePrimaryKeys": {
         "transactions_id": {
           "name": "transactions_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1383,17 +1303,13 @@
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "users_openId_unique": {
           "name": "users_openId_unique",
-          "columns": [
-            "openId"
-          ]
+          "columns": ["openId"]
         }
       },
       "checkConstraint": {}

@@ -24,11 +24,11 @@ La modalità di integrazione scelta è tramite **API asincrone**, che non richie
 
 ### 1.4 Endpoint API (da implementare)
 
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| `POST` | `/api/pagopa/avvisi` | Crea un nuovo avviso di pagamento |
-| `GET` | `/api/pagopa/avvisi/{iuv}` | Verifica lo stato di un avviso |
-| `POST` | `/api/pagopa/rt` | Endpoint di notifica per la Ricevuta Telematica |
+| Metodo | Endpoint                   | Descrizione                                     |
+| ------ | -------------------------- | ----------------------------------------------- |
+| `POST` | `/api/pagopa/avvisi`       | Crea un nuovo avviso di pagamento               |
+| `GET`  | `/api/pagopa/avvisi/{iuv}` | Verifica lo stato di un avviso                  |
+| `POST` | `/api/pagopa/rt`           | Endpoint di notifica per la Ricevuta Telematica |
 
 ### 1.5 Tab "Wallet/PagoPA" nella Dashboard
 
@@ -56,11 +56,11 @@ L'integrazione con la **Soluzione Sussidiaria Enti Terzi (SSET)** del sistema SU
 
 ### 2.3 Endpoint API (da implementare)
 
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| `POST` | `/api/suap/pratiche` | Endpoint di notifica per nuove pratiche da SSET |
-| `GET` | `/api/suap/pratiche` | Ottiene la lista di tutte le pratiche |
-| `GET` | `/api/suap/pratiche/{id}` | Ottiene il dettaglio di una singola pratica |
+| Metodo | Endpoint                         | Descrizione                                        |
+| ------ | -------------------------------- | -------------------------------------------------- |
+| `POST` | `/api/suap/pratiche`             | Endpoint di notifica per nuove pratiche da SSET    |
+| `GET`  | `/api/suap/pratiche`             | Ottiene la lista di tutte le pratiche              |
+| `GET`  | `/api/suap/pratiche/{id}`        | Ottiene il dettaglio di una singola pratica        |
 | `POST` | `/api/suap/pratiche/{id}/parere` | Invia il parere (favorevole/sfavorevole) alla SSET |
 
 ### 2.4 Tab "SSO SUAP" nella Dashboard

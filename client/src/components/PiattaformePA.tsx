@@ -8,18 +8,43 @@
  * I dati sono mock/simulati fino alla futura integrazione con le piattaforme reali.
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  Globe, Server, Shield, Smartphone, FileSearch, UserCheck,
-  CheckCircle, XCircle, AlertCircle, ExternalLink, RefreshCw,
-  Send, Search, Activity, Clock, ChevronRight, Database,
-  Key, Lock, Wifi, WifiOff, Play, Settings,
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useQuery, useMutation } from '@tanstack/react-query';
+  Globe,
+  Server,
+  Shield,
+  Smartphone,
+  FileSearch,
+  UserCheck,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  ExternalLink,
+  RefreshCw,
+  Send,
+  Search,
+  Activity,
+  Clock,
+  ChevronRight,
+  Database,
+  Key,
+  Lock,
+  Wifi,
+  WifiOff,
+  Play,
+  Settings,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 // ============================================
 // Mock Data — Le piattaforme nazionali non sono ancora integrate.
@@ -28,59 +53,210 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 
 const MOCK_PDND_STATUS = {
   connected: true,
-  mode: 'mock' as const,
+  mode: "mock" as const,
   hasPurposeId: true,
   hasPrivateKey: false,
 };
 
 const MOCK_ESERVICES = [
-  { id: 'dms-mercati', name: 'API Mercati', description: 'Dati mercati ambulanti', version: '1.0', technology: 'REST', status: 'published' },
-  { id: 'dms-concessioni', name: 'API Concessioni', description: 'Gestione concessioni posteggi', version: '1.0', technology: 'REST', status: 'draft' },
-  { id: 'dms-operatori', name: 'API Operatori', description: 'Anagrafica operatori commercio', version: '1.0', technology: 'REST', status: 'draft' },
+  {
+    id: "dms-mercati",
+    name: "API Mercati",
+    description: "Dati mercati ambulanti",
+    version: "1.0",
+    technology: "REST",
+    status: "published",
+  },
+  {
+    id: "dms-concessioni",
+    name: "API Concessioni",
+    description: "Gestione concessioni posteggi",
+    version: "1.0",
+    technology: "REST",
+    status: "draft",
+  },
+  {
+    id: "dms-operatori",
+    name: "API Operatori",
+    description: "Anagrafica operatori commercio",
+    version: "1.0",
+    technology: "REST",
+    status: "draft",
+  },
 ];
 
 const MOCK_APPIO_STATUS = {
   connected: true,
-  mode: 'mock' as const,
+  mode: "mock" as const,
   hasApiKey: true,
   templatesCount: 3,
 };
 
 const MOCK_TEMPLATES = [
-  { id: 'scadenza_concessione', name: 'Scadenza Concessione', subject: 'La tua concessione sta per scadere', requiredParams: ['nome', 'data_scadenza', 'mercato'] },
-  { id: 'pagamento_canone', name: 'Avviso Pagamento', subject: 'Nuovo avviso di pagamento', requiredParams: ['importo', 'scadenza'] },
-  { id: 'comunicazione_mercato', name: 'Comunicazione Mercato', subject: 'Comunicazione importante', requiredParams: ['messaggio', 'mercato'] },
+  {
+    id: "scadenza_concessione",
+    name: "Scadenza Concessione",
+    subject: "La tua concessione sta per scadere",
+    requiredParams: ["nome", "data_scadenza", "mercato"],
+  },
+  {
+    id: "pagamento_canone",
+    name: "Avviso Pagamento",
+    subject: "Nuovo avviso di pagamento",
+    requiredParams: ["importo", "scadenza"],
+  },
+  {
+    id: "comunicazione_mercato",
+    name: "Comunicazione Mercato",
+    subject: "Comunicazione importante",
+    requiredParams: ["messaggio", "mercato"],
+  },
 ];
 
 const MOCK_SSO_STATUS = {
   mockMode: true,
   providers: [
-    { provider: 'spid', isActive: true, isConfigured: true },
-    { provider: 'cie', isActive: true, isConfigured: true },
-    { provider: 'cns', isActive: false, isConfigured: false },
-    { provider: 'eidas', isActive: false, isConfigured: false },
+    { provider: "spid", isActive: true, isConfigured: true },
+    { provider: "cie", isActive: true, isConfigured: true },
+    { provider: "cns", isActive: false, isConfigured: false },
+    { provider: "eidas", isActive: false, isConfigured: false },
   ],
 };
 
 const MOCK_SSO_PROVIDERS = [
-  { provider: 'spid', name: 'SPID — Sistema Pubblico Identita\' Digitale', spidLevel: 2, isActive: true, isConfigured: true, environment: 'test', ssoUrl: 'https://idp.spid.gov.it' },
-  { provider: 'cie', name: 'CIE — Carta d\'Identita\' Elettronica', spidLevel: 3, isActive: true, isConfigured: true, environment: 'test', ssoUrl: 'https://idserver.servizicie.interno.gov.it' },
-  { provider: 'cns', name: 'CNS — Carta Nazionale dei Servizi', spidLevel: null, isActive: false, isConfigured: false, environment: 'test', ssoUrl: '' },
-  { provider: 'eidas', name: 'eIDAS — European Identity', spidLevel: null, isActive: false, isConfigured: false, environment: 'test', ssoUrl: '' },
+  {
+    provider: "spid",
+    name: "SPID — Sistema Pubblico Identita' Digitale",
+    spidLevel: 2,
+    isActive: true,
+    isConfigured: true,
+    environment: "test",
+    ssoUrl: "https://idp.spid.gov.it",
+  },
+  {
+    provider: "cie",
+    name: "CIE — Carta d'Identita' Elettronica",
+    spidLevel: 3,
+    isActive: true,
+    isConfigured: true,
+    environment: "test",
+    ssoUrl: "https://idserver.servizicie.interno.gov.it",
+  },
+  {
+    provider: "cns",
+    name: "CNS — Carta Nazionale dei Servizi",
+    spidLevel: null,
+    isActive: false,
+    isConfigured: false,
+    environment: "test",
+    ssoUrl: "",
+  },
+  {
+    provider: "eidas",
+    name: "eIDAS — European Identity",
+    spidLevel: null,
+    isActive: false,
+    isConfigured: false,
+    environment: "test",
+    ssoUrl: "",
+  },
 ];
 
-const MOCK_CF_DB: Record<string, { nome: string; cognome: string; dataNascita: string; comuneNascita: string; indirizzo: string; civico: string; cap: string; comune: string; provincia: string }> = {
-  'RSSMRA85M01H501Z': { nome: 'Mario', cognome: 'Rossi', dataNascita: '01/08/1985', comuneNascita: 'Roma', indirizzo: 'Via Roma', civico: '10', cap: '00100', comune: 'Roma', provincia: 'RM' },
-  'VRDLGI90A41F205X': { nome: 'Luigia', cognome: 'Verdi', dataNascita: '01/01/1990', comuneNascita: 'Milano', indirizzo: 'Via Milano', civico: '5', cap: '20100', comune: 'Milano', provincia: 'MI' },
-  'BNCGPP75D15L219Y': { nome: 'Giuseppe', cognome: 'Bianchi', dataNascita: '15/04/1975', comuneNascita: 'Torino', indirizzo: 'Corso Torino', civico: '22', cap: '10100', comune: 'Torino', provincia: 'TO' },
+const MOCK_CF_DB: Record<
+  string,
+  {
+    nome: string;
+    cognome: string;
+    dataNascita: string;
+    comuneNascita: string;
+    indirizzo: string;
+    civico: string;
+    cap: string;
+    comune: string;
+    provincia: string;
+  }
+> = {
+  RSSMRA85M01H501Z: {
+    nome: "Mario",
+    cognome: "Rossi",
+    dataNascita: "01/08/1985",
+    comuneNascita: "Roma",
+    indirizzo: "Via Roma",
+    civico: "10",
+    cap: "00100",
+    comune: "Roma",
+    provincia: "RM",
+  },
+  VRDLGI90A41F205X: {
+    nome: "Luigia",
+    cognome: "Verdi",
+    dataNascita: "01/01/1990",
+    comuneNascita: "Milano",
+    indirizzo: "Via Milano",
+    civico: "5",
+    cap: "20100",
+    comune: "Milano",
+    provincia: "MI",
+  },
+  BNCGPP75D15L219Y: {
+    nome: "Giuseppe",
+    cognome: "Bianchi",
+    dataNascita: "15/04/1975",
+    comuneNascita: "Torino",
+    indirizzo: "Corso Torino",
+    civico: "22",
+    cap: "10100",
+    comune: "Torino",
+    provincia: "TO",
+  },
 };
 
 const MOCK_AUDIT_ITEMS = [
-  { id: 1, platform: 'pdnd', action: 'getStatus', status: 'success', user_email: 'admin@dmshub.it', created_at: new Date(Date.now() - 3600000).toISOString(), duration_ms: 120 },
-  { id: 2, platform: 'appio', action: 'checkProfile', status: 'success', user_email: 'admin@dmshub.it', created_at: new Date(Date.now() - 7200000).toISOString(), duration_ms: 230 },
-  { id: 3, platform: 'anpr', action: 'verificaCF', status: 'success', user_email: 'operatore@comune.grosseto.it', created_at: new Date(Date.now() - 10800000).toISOString(), duration_ms: 450 },
-  { id: 4, platform: 'sso', action: 'testProvider (SPID)', status: 'success', user_email: 'admin@dmshub.it', created_at: new Date(Date.now() - 86400000).toISOString(), duration_ms: 180 },
-  { id: 5, platform: 'pdnd', action: 'listEServices', status: 'error', user_email: 'admin@dmshub.it', created_at: new Date(Date.now() - 172800000).toISOString(), duration_ms: 5000 },
+  {
+    id: 1,
+    platform: "pdnd",
+    action: "getStatus",
+    status: "success",
+    user_email: "admin@dmshub.it",
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+    duration_ms: 120,
+  },
+  {
+    id: 2,
+    platform: "appio",
+    action: "checkProfile",
+    status: "success",
+    user_email: "admin@dmshub.it",
+    created_at: new Date(Date.now() - 7200000).toISOString(),
+    duration_ms: 230,
+  },
+  {
+    id: 3,
+    platform: "anpr",
+    action: "verificaCF",
+    status: "success",
+    user_email: "operatore@comune.grosseto.it",
+    created_at: new Date(Date.now() - 10800000).toISOString(),
+    duration_ms: 450,
+  },
+  {
+    id: 4,
+    platform: "sso",
+    action: "testProvider (SPID)",
+    status: "success",
+    user_email: "admin@dmshub.it",
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    duration_ms: 180,
+  },
+  {
+    id: 5,
+    platform: "pdnd",
+    action: "listEServices",
+    status: "error",
+    user_email: "admin@dmshub.it",
+    created_at: new Date(Date.now() - 172800000).toISOString(),
+    duration_ms: 5000,
+  },
 ];
 
 // ============================================
@@ -88,22 +264,30 @@ const MOCK_AUDIT_ITEMS = [
 // ============================================
 function PdndPanel() {
   const statusQuery = useQuery({
-    queryKey: ['pdnd-status'],
+    queryKey: ["pdnd-status"],
     queryFn: async () => MOCK_PDND_STATUS,
   });
   const eservicesQuery = useQuery({
-    queryKey: ['pdnd-eservices'],
+    queryKey: ["pdnd-eservices"],
     queryFn: async () => MOCK_ESERVICES,
   });
   const testMutation = useMutation({
     mutationFn: async () => {
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise(r => setTimeout(r, 800));
       return { success: true, responseTimeMs: 120 };
     },
   });
   const publishMutation = useMutation({
-    mutationFn: async (_params: { serviceId: string; metadata: { name: string; description: string; technology: string; version: string } }) => {
-      await new Promise((r) => setTimeout(r, 1000));
+    mutationFn: async (_params: {
+      serviceId: string;
+      metadata: {
+        name: string;
+        description: string;
+        technology: string;
+        version: string;
+      };
+    }) => {
+      await new Promise(r => setTimeout(r, 1000));
       return { success: true };
     },
   });
@@ -133,7 +317,7 @@ function PdndPanel() {
                 <span className="text-xs text-[#e8fbff]/60">Connessione</span>
               </div>
               <p className="text-sm font-semibold text-[#e8fbff]">
-                {status?.connected ? 'Attiva' : 'Non connesso'}
+                {status?.connected ? "Attiva" : "Non connesso"}
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#3b82f6]/20">
@@ -142,10 +326,20 @@ function PdndPanel() {
                 <span className="text-xs text-[#e8fbff]/60">Modalita'</span>
               </div>
               <p className="text-sm font-semibold text-[#e8fbff]">
-                {status?.mode === 'mock' ? (
-                  <Badge variant="outline" className="text-amber-400 border-amber-400/30">Mock</Badge>
+                {status?.mode === "mock" ? (
+                  <Badge
+                    variant="outline"
+                    className="text-amber-400 border-amber-400/30"
+                  >
+                    Mock
+                  </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-emerald-400 border-emerald-400/30">Live</Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-emerald-400 border-emerald-400/30"
+                  >
+                    Live
+                  </Badge>
                 )}
               </p>
             </div>
@@ -184,7 +378,9 @@ function PdndPanel() {
               onClick={() => testMutation.mutate()}
               disabled={testMutation.isPending}
             >
-              <RefreshCw className={`h-4 w-4 mr-1 ${testMutation.isPending ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 mr-1 ${testMutation.isPending ? "animate-spin" : ""}`}
+              />
               Test Connessione
             </Button>
           </div>
@@ -204,31 +400,41 @@ function PdndPanel() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {eservices?.map((service) => (
+            {eservices?.map(service => (
               <div
                 key={service.id}
                 className="p-4 bg-[#0f1729] border border-[#3b82f6]/20 rounded-lg"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-[#e8fbff] font-medium text-sm">{service.name}</h4>
-                    <p className="text-[#e8fbff]/50 text-xs mt-1">{service.description}</p>
+                    <h4 className="text-[#e8fbff] font-medium text-sm">
+                      {service.name}
+                    </h4>
+                    <p className="text-[#e8fbff]/50 text-xs mt-1">
+                      {service.description}
+                    </p>
                     <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs text-[#e8fbff]/60 border-[#e8fbff]/20">
+                      <Badge
+                        variant="outline"
+                        className="text-xs text-[#e8fbff]/60 border-[#e8fbff]/20"
+                      >
                         v{service.version}
                       </Badge>
-                      <Badge variant="outline" className="text-xs text-[#e8fbff]/60 border-[#e8fbff]/20">
+                      <Badge
+                        variant="outline"
+                        className="text-xs text-[#e8fbff]/60 border-[#e8fbff]/20"
+                      >
                         {service.technology}
                       </Badge>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {service.status === 'published' ? (
+                    {service.status === "published" ? (
                       <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-400/30">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Pubblicato
                       </Badge>
-                    ) : service.status === 'draft' ? (
+                    ) : service.status === "draft" ? (
                       <Badge className="bg-amber-500/20 text-amber-400 border-amber-400/30">
                         <Clock className="h-3 w-3 mr-1" />
                         Bozza
@@ -239,7 +445,7 @@ function PdndPanel() {
                         {service.status}
                       </Badge>
                     )}
-                    {service.status === 'draft' && (
+                    {service.status === "draft" && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -282,18 +488,18 @@ function PdndPanel() {
 // ============================================
 function AppIoPanel() {
   const statusQuery = useQuery({
-    queryKey: ['appio-status'],
+    queryKey: ["appio-status"],
     queryFn: async () => MOCK_APPIO_STATUS,
   });
   const templatesQuery = useQuery({
-    queryKey: ['appio-templates'],
+    queryKey: ["appio-templates"],
     queryFn: async () => MOCK_TEMPLATES,
   });
-  const [cfInput, setCfInput] = useState('');
+  const [cfInput, setCfInput] = useState("");
   const checkProfileQuery = useQuery({
-    queryKey: ['appio-check-profile', cfInput],
+    queryKey: ["appio-check-profile", cfInput],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 300));
       return { senderAllowed: !!MOCK_CF_DB[cfInput] };
     },
     enabled: cfInput.length === 16,
@@ -330,10 +536,20 @@ function AppIoPanel() {
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#10b981]/20">
               <span className="text-xs text-[#e8fbff]/60">Modalita'</span>
               <p className="text-sm font-semibold text-[#e8fbff] mt-1">
-                {status?.mode === 'mock' ? (
-                  <Badge variant="outline" className="text-amber-400 border-amber-400/30">Mock</Badge>
+                {status?.mode === "mock" ? (
+                  <Badge
+                    variant="outline"
+                    className="text-amber-400 border-amber-400/30"
+                  >
+                    Mock
+                  </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-emerald-400 border-emerald-400/30">Live</Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-emerald-400 border-emerald-400/30"
+                  >
+                    Live
+                  </Badge>
                 )}
               </p>
             </div>
@@ -370,21 +586,27 @@ function AppIoPanel() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {templatesQuery.data?.map((template) => (
+            {templatesQuery.data?.map(template => (
               <div
                 key={template.id}
                 className="p-3 bg-[#0f1729] border border-[#10b981]/20 rounded-lg"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-[#e8fbff] font-medium text-sm">{template.name}</h4>
+                    <h4 className="text-[#e8fbff] font-medium text-sm">
+                      {template.name}
+                    </h4>
                     <p className="text-[#e8fbff]/50 text-xs mt-1">
                       Oggetto: {template.subject}
                     </p>
                     <div className="flex gap-1 mt-2">
-                      {template.requiredParams.map((param) => (
-                        <Badge key={param} variant="outline" className="text-xs text-[#e8fbff]/40 border-[#e8fbff]/10">
-                          {'{' + param + '}'}
+                      {template.requiredParams.map(param => (
+                        <Badge
+                          key={param}
+                          variant="outline"
+                          className="text-xs text-[#e8fbff]/40 border-[#e8fbff]/10"
+                        >
+                          {"{" + param + "}"}
                         </Badge>
                       ))}
                     </div>
@@ -413,7 +635,7 @@ function AppIoPanel() {
               type="text"
               placeholder="Codice Fiscale (16 caratteri)"
               value={cfInput}
-              onChange={(e) => setCfInput(e.target.value.toUpperCase())}
+              onChange={e => setCfInput(e.target.value.toUpperCase())}
               maxLength={16}
               className="flex-1 px-3 py-2 bg-[#0f1729] border border-[#10b981]/30 rounded-lg text-[#e8fbff] text-sm placeholder:text-[#e8fbff]/30 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
             />
@@ -449,29 +671,42 @@ function AppIoPanel() {
 // Sub-componente: ANPR Panel
 // ============================================
 function AnprPanel() {
-  const [cfInput, setCfInput] = useState('');
-  const [searchType, setSearchType] = useState<'cf' | 'residenza'>('cf');
+  const [cfInput, setCfInput] = useState("");
+  const [searchType, setSearchType] = useState<"cf" | "residenza">("cf");
 
   const cfQuery = useQuery({
-    queryKey: ['anpr-verifica-cf', cfInput],
+    queryKey: ["anpr-verifica-cf", cfInput],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 400));
       const person = MOCK_CF_DB[cfInput];
       if (!person) return { found: false };
-      return { found: true, nome: person.nome, cognome: person.cognome, dataNascita: person.dataNascita, comuneNascita: person.comuneNascita };
+      return {
+        found: true,
+        nome: person.nome,
+        cognome: person.cognome,
+        dataNascita: person.dataNascita,
+        comuneNascita: person.comuneNascita,
+      };
     },
-    enabled: cfInput.length === 16 && searchType === 'cf',
+    enabled: cfInput.length === 16 && searchType === "cf",
   });
 
   const residenzaQuery = useQuery({
-    queryKey: ['anpr-verifica-residenza', cfInput],
+    queryKey: ["anpr-verifica-residenza", cfInput],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 400));
       const person = MOCK_CF_DB[cfInput];
       if (!person) return { found: false };
-      return { found: true, indirizzo: person.indirizzo, civico: person.civico, cap: person.cap, comune: person.comune, provincia: person.provincia };
+      return {
+        found: true,
+        indirizzo: person.indirizzo,
+        civico: person.civico,
+        cap: person.cap,
+        comune: person.comune,
+        provincia: person.provincia,
+      };
     },
-    enabled: cfInput.length === 16 && searchType === 'residenza',
+    enabled: cfInput.length === 16 && searchType === "residenza",
   });
 
   return (
@@ -492,15 +727,15 @@ function AnprPanel() {
               type="text"
               placeholder="Codice Fiscale (16 caratteri)"
               value={cfInput}
-              onChange={(e) => setCfInput(e.target.value.toUpperCase())}
+              onChange={e => setCfInput(e.target.value.toUpperCase())}
               maxLength={16}
               className="flex-1 px-3 py-2 bg-[#0f1729] border border-[#f59e0b]/30 rounded-lg text-[#e8fbff] text-sm placeholder:text-[#e8fbff]/30 focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
             />
             <Button
               size="sm"
               variant="outline"
-              className={`border-[#f59e0b]/30 ${searchType === 'cf' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]/60'} hover:bg-[#f59e0b]/10`}
-              onClick={() => setSearchType('cf')}
+              className={`border-[#f59e0b]/30 ${searchType === "cf" ? "bg-[#f59e0b]/20 text-[#f59e0b]" : "text-[#e8fbff]/60"} hover:bg-[#f59e0b]/10`}
+              onClick={() => setSearchType("cf")}
             >
               <UserCheck className="h-4 w-4 mr-1" />
               Verifica CF
@@ -508,8 +743,8 @@ function AnprPanel() {
             <Button
               size="sm"
               variant="outline"
-              className={`border-[#f59e0b]/30 ${searchType === 'residenza' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'text-[#e8fbff]/60'} hover:bg-[#f59e0b]/10`}
-              onClick={() => setSearchType('residenza')}
+              className={`border-[#f59e0b]/30 ${searchType === "residenza" ? "bg-[#f59e0b]/20 text-[#f59e0b]" : "text-[#e8fbff]/60"} hover:bg-[#f59e0b]/10`}
+              onClick={() => setSearchType("residenza")}
             >
               <Globe className="h-4 w-4 mr-1" />
               Residenza
@@ -517,80 +752,115 @@ function AnprPanel() {
           </div>
 
           {/* Risultato CF */}
-          {cfInput.length === 16 && searchType === 'cf' && cfQuery.data && (
+          {cfInput.length === 16 && searchType === "cf" && cfQuery.data && (
             <div className="p-4 bg-[#0f1729] border border-[#f59e0b]/20 rounded-lg">
               {cfQuery.data.found ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-3">
                     <CheckCircle className="h-5 w-5 text-emerald-400" />
-                    <span className="text-emerald-400 font-medium text-sm">Soggetto trovato su ANPR</span>
+                    <span className="text-emerald-400 font-medium text-sm">
+                      Soggetto trovato su ANPR
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <span className="text-xs text-[#e8fbff]/40">Nome</span>
-                      <p className="text-sm text-[#e8fbff]">{cfQuery.data.nome}</p>
+                      <p className="text-sm text-[#e8fbff]">
+                        {cfQuery.data.nome}
+                      </p>
                     </div>
                     <div>
                       <span className="text-xs text-[#e8fbff]/40">Cognome</span>
-                      <p className="text-sm text-[#e8fbff]">{cfQuery.data.cognome}</p>
+                      <p className="text-sm text-[#e8fbff]">
+                        {cfQuery.data.cognome}
+                      </p>
                     </div>
                     <div>
-                      <span className="text-xs text-[#e8fbff]/40">Data Nascita</span>
-                      <p className="text-sm text-[#e8fbff]">{cfQuery.data.dataNascita}</p>
+                      <span className="text-xs text-[#e8fbff]/40">
+                        Data Nascita
+                      </span>
+                      <p className="text-sm text-[#e8fbff]">
+                        {cfQuery.data.dataNascita}
+                      </p>
                     </div>
                     <div>
-                      <span className="text-xs text-[#e8fbff]/40">Comune Nascita</span>
-                      <p className="text-sm text-[#e8fbff]">{cfQuery.data.comuneNascita}</p>
+                      <span className="text-xs text-[#e8fbff]/40">
+                        Comune Nascita
+                      </span>
+                      <p className="text-sm text-[#e8fbff]">
+                        {cfQuery.data.comuneNascita}
+                      </p>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <XCircle className="h-5 w-5 text-red-400" />
-                  <span className="text-red-400 text-sm">Codice Fiscale non trovato su ANPR</span>
+                  <span className="text-red-400 text-sm">
+                    Codice Fiscale non trovato su ANPR
+                  </span>
                 </div>
               )}
             </div>
           )}
 
           {/* Risultato Residenza */}
-          {cfInput.length === 16 && searchType === 'residenza' && residenzaQuery.data && (
-            <div className="p-4 bg-[#0f1729] border border-[#f59e0b]/20 rounded-lg">
-              {residenzaQuery.data.found ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-400" />
-                    <span className="text-emerald-400 font-medium text-sm">Residenza trovata</span>
+          {cfInput.length === 16 &&
+            searchType === "residenza" &&
+            residenzaQuery.data && (
+              <div className="p-4 bg-[#0f1729] border border-[#f59e0b]/20 rounded-lg">
+                {residenzaQuery.data.found ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CheckCircle className="h-5 w-5 text-emerald-400" />
+                      <span className="text-emerald-400 font-medium text-sm">
+                        Residenza trovata
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/40">
+                          Indirizzo
+                        </span>
+                        <p className="text-sm text-[#e8fbff]">
+                          {residenzaQuery.data.indirizzo}{" "}
+                          {residenzaQuery.data.civico}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/40">CAP</span>
+                        <p className="text-sm text-[#e8fbff]">
+                          {residenzaQuery.data.cap}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/40">
+                          Comune
+                        </span>
+                        <p className="text-sm text-[#e8fbff]">
+                          {residenzaQuery.data.comune}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/40">
+                          Provincia
+                        </span>
+                        <p className="text-sm text-[#e8fbff]">
+                          {residenzaQuery.data.provincia}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <span className="text-xs text-[#e8fbff]/40">Indirizzo</span>
-                      <p className="text-sm text-[#e8fbff]">
-                        {residenzaQuery.data.indirizzo} {residenzaQuery.data.civico}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-[#e8fbff]/40">CAP</span>
-                      <p className="text-sm text-[#e8fbff]">{residenzaQuery.data.cap}</p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-[#e8fbff]/40">Comune</span>
-                      <p className="text-sm text-[#e8fbff]">{residenzaQuery.data.comune}</p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-[#e8fbff]/40">Provincia</span>
-                      <p className="text-sm text-[#e8fbff]">{residenzaQuery.data.provincia}</p>
-                    </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <XCircle className="h-5 w-5 text-red-400" />
+                    <span className="text-red-400 text-sm">
+                      Residenza non trovata per {cfInput}
+                    </span>
                   </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <XCircle className="h-5 w-5 text-red-400" />
-                  <span className="text-red-400 text-sm">Residenza non trovata per {cfInput}</span>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
           {cfInput.length < 16 && (
             <p className="text-[#e8fbff]/30 text-xs text-center py-2">
@@ -611,17 +881,19 @@ function AnprPanel() {
         <CardContent>
           <div className="space-y-2">
             {[
-              { cf: 'RSSMRA85M01H501Z', name: 'Mario Rossi — Roma' },
-              { cf: 'VRDLGI90A41F205X', name: 'Luigia Verdi — Milano' },
-              { cf: 'BNCGPP75D15L219Y', name: 'Giuseppe Bianchi — Torino' },
-            ].map((item) => (
+              { cf: "RSSMRA85M01H501Z", name: "Mario Rossi — Roma" },
+              { cf: "VRDLGI90A41F205X", name: "Luigia Verdi — Milano" },
+              { cf: "BNCGPP75D15L219Y", name: "Giuseppe Bianchi — Torino" },
+            ].map(item => (
               <div
                 key={item.cf}
                 className="flex items-center justify-between p-2 bg-[#0f1729] border border-[#f59e0b]/10 rounded-lg cursor-pointer hover:border-[#f59e0b]/30 transition-colors"
                 onClick={() => setCfInput(item.cf)}
               >
                 <div>
-                  <code className="text-[#f59e0b] text-xs font-mono">{item.cf}</code>
+                  <code className="text-[#f59e0b] text-xs font-mono">
+                    {item.cf}
+                  </code>
                   <p className="text-[#e8fbff]/50 text-xs">{item.name}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-[#e8fbff]/20" />
@@ -639,17 +911,24 @@ function AnprPanel() {
 // ============================================
 function SsoPanel() {
   const statusQuery = useQuery({
-    queryKey: ['sso-status'],
+    queryKey: ["sso-status"],
     queryFn: async () => MOCK_SSO_STATUS,
   });
   const providersQuery = useQuery({
-    queryKey: ['sso-providers'],
+    queryKey: ["sso-providers"],
     queryFn: async () => MOCK_SSO_PROVIDERS,
   });
   const testMutation = useMutation({
     mutationFn: async (params: { provider: string }) => {
-      await new Promise((r) => setTimeout(r, 600));
-      return { success: params.provider === 'spid' || params.provider === 'cie', responseTimeMs: 180, errorMessage: params.provider === 'cns' || params.provider === 'eidas' ? 'Provider non configurato' : undefined };
+      await new Promise(r => setTimeout(r, 600));
+      return {
+        success: params.provider === "spid" || params.provider === "cie",
+        responseTimeMs: 180,
+        errorMessage:
+          params.provider === "cns" || params.provider === "eidas"
+            ? "Provider non configurato"
+            : undefined,
+      };
     },
   });
 
@@ -661,10 +940,10 @@ function SsoPanel() {
   };
 
   const providerColors: Record<string, string> = {
-    spid: '#0066cc',
-    cie: '#003399',
-    cns: '#006633',
-    eidas: '#003399',
+    spid: "#0066cc",
+    cie: "#003399",
+    cns: "#006633",
+    eidas: "#003399",
   };
 
   return (
@@ -686,9 +965,19 @@ function SsoPanel() {
               <span className="text-xs text-[#e8fbff]/60">Modalita'</span>
               <p className="text-sm font-semibold text-[#e8fbff] mt-1">
                 {statusQuery.data?.mockMode ? (
-                  <Badge variant="outline" className="text-amber-400 border-amber-400/30">Mock</Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-amber-400 border-amber-400/30"
+                  >
+                    Mock
+                  </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-emerald-400 border-emerald-400/30">Live</Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-emerald-400 border-emerald-400/30"
+                  >
+                    Live
+                  </Badge>
                 )}
               </p>
             </div>
@@ -701,13 +990,15 @@ function SsoPanel() {
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#8b5cf6]/20">
               <span className="text-xs text-[#e8fbff]/60">Attivi</span>
               <p className="text-lg font-bold text-emerald-400 mt-1">
-                {statusQuery.data?.providers.filter((p: any) => p.isActive).length ?? 0}
+                {statusQuery.data?.providers.filter((p: any) => p.isActive)
+                  .length ?? 0}
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#8b5cf6]/20">
               <span className="text-xs text-[#e8fbff]/60">Configurati</span>
               <p className="text-lg font-bold text-[#8b5cf6] mt-1">
-                {statusQuery.data?.providers.filter((p: any) => p.isConfigured).length ?? 0}
+                {statusQuery.data?.providers.filter((p: any) => p.isConfigured)
+                  .length ?? 0}
               </p>
             </div>
           </div>
@@ -716,23 +1007,34 @@ function SsoPanel() {
 
       {/* Provider Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {providersQuery.data?.map((provider) => {
-          const color = providerColors[provider.provider] || '#8b5cf6';
+        {providersQuery.data?.map(provider => {
+          const color = providerColors[provider.provider] || "#8b5cf6";
           return (
-            <Card key={provider.provider} className="bg-[#1a2332] border-[#8b5cf6]/20">
+            <Card
+              key={provider.provider}
+              className="bg-[#1a2332] border-[#8b5cf6]/20"
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}20` }}>
+                    <div
+                      className="p-2 rounded-lg"
+                      style={{ backgroundColor: `${color}20` }}
+                    >
                       {providerIcons[provider.provider]}
                     </div>
                     <div>
-                      <h4 className="text-[#e8fbff] font-medium text-sm">{provider.name}</h4>
+                      <h4 className="text-[#e8fbff] font-medium text-sm">
+                        {provider.name}
+                      </h4>
                       <p className="text-[#e8fbff]/40 text-xs mt-1">
                         Provider: {provider.provider.toUpperCase()}
                       </p>
                       {provider.spidLevel && (
-                        <Badge variant="outline" className="text-xs mt-1 text-[#e8fbff]/50 border-[#e8fbff]/20">
+                        <Badge
+                          variant="outline"
+                          className="text-xs mt-1 text-[#e8fbff]/50 border-[#e8fbff]/20"
+                        >
                           Livello {provider.spidLevel}
                         </Badge>
                       )}
@@ -748,7 +1050,10 @@ function SsoPanel() {
                         Non attivo
                       </Badge>
                     )}
-                    <Badge variant="outline" className="text-xs text-[#e8fbff]/40 border-[#e8fbff]/10">
+                    <Badge
+                      variant="outline"
+                      className="text-xs text-[#e8fbff]/40 border-[#e8fbff]/10"
+                    >
                       {provider.environment}
                     </Badge>
                   </div>
@@ -771,35 +1076,46 @@ function SsoPanel() {
                     size="sm"
                     variant="outline"
                     className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10 h-7 text-xs"
-                    onClick={() => testMutation.mutate({ provider: provider.provider })}
+                    onClick={() =>
+                      testMutation.mutate({ provider: provider.provider })
+                    }
                     disabled={testMutation.isPending}
                   >
-                    <RefreshCw className={`h-3 w-3 mr-1 ${testMutation.isPending ? 'animate-spin' : ''}`} />
+                    <RefreshCw
+                      className={`h-3 w-3 mr-1 ${testMutation.isPending ? "animate-spin" : ""}`}
+                    />
                     Test
                   </Button>
                 </div>
 
                 {/* Test Result */}
-                {testMutation.data && testMutation.variables?.provider === provider.provider && (
-                  <div className="mt-2 p-2 bg-[#0f1729] rounded-lg border border-[#8b5cf6]/10">
-                    <div className="flex items-center gap-2">
-                      {testMutation.data.success ? (
-                        <CheckCircle className="h-4 w-4 text-emerald-400" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-400" />
+                {testMutation.data &&
+                  testMutation.variables?.provider === provider.provider && (
+                    <div className="mt-2 p-2 bg-[#0f1729] rounded-lg border border-[#8b5cf6]/10">
+                      <div className="flex items-center gap-2">
+                        {testMutation.data.success ? (
+                          <CheckCircle className="h-4 w-4 text-emerald-400" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-400" />
+                        )}
+                        <span
+                          className={`text-xs ${testMutation.data.success ? "text-emerald-400" : "text-red-400"}`}
+                        >
+                          {testMutation.data.success
+                            ? "Connessione OK"
+                            : "Errore connessione"}
+                        </span>
+                        <span className="text-xs text-[#e8fbff]/30 ml-auto">
+                          {testMutation.data.responseTimeMs}ms
+                        </span>
+                      </div>
+                      {testMutation.data.errorMessage && (
+                        <p className="text-xs text-red-400/70 mt-1">
+                          {testMutation.data.errorMessage}
+                        </p>
                       )}
-                      <span className={`text-xs ${testMutation.data.success ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {testMutation.data.success ? 'Connessione OK' : 'Errore connessione'}
-                      </span>
-                      <span className="text-xs text-[#e8fbff]/30 ml-auto">
-                        {testMutation.data.responseTimeMs}ms
-                      </span>
                     </div>
-                    {testMutation.data.errorMessage && (
-                      <p className="text-xs text-red-400/70 mt-1">{testMutation.data.errorMessage}</p>
-                    )}
-                  </div>
-                )}
+                  )}
               </CardContent>
             </Card>
           );
@@ -813,37 +1129,53 @@ function SsoPanel() {
 // Sub-componente: Audit Trail Panel
 // ============================================
 function AuditTrailPanel() {
-  const [platformFilter, setPlatformFilter] = useState<string | undefined>(undefined);
+  const [platformFilter, setPlatformFilter] = useState<string | undefined>(
+    undefined
+  );
 
   const auditQuery = useQuery({
-    queryKey: ['piattaforme-audit', platformFilter],
+    queryKey: ["piattaforme-audit", platformFilter],
     queryFn: async () => {
       const items = platformFilter
-        ? MOCK_AUDIT_ITEMS.filter((i) => i.platform === platformFilter)
+        ? MOCK_AUDIT_ITEMS.filter(i => i.platform === platformFilter)
         : MOCK_AUDIT_ITEMS;
       return { items };
     },
   });
 
   const statsQuery = useQuery({
-    queryKey: ['piattaforme-audit-stats'],
+    queryKey: ["piattaforme-audit-stats"],
     queryFn: async () => ({
-      last24h: MOCK_AUDIT_ITEMS.filter((i) => Date.now() - new Date(i.created_at).getTime() < 86400000).length,
+      last24h: MOCK_AUDIT_ITEMS.filter(
+        i => Date.now() - new Date(i.created_at).getTime() < 86400000
+      ).length,
       last7d: MOCK_AUDIT_ITEMS.length,
       byPlatform: [
-        { platform: 'pdnd', count: MOCK_AUDIT_ITEMS.filter((i) => i.platform === 'pdnd').length },
-        { platform: 'appio', count: MOCK_AUDIT_ITEMS.filter((i) => i.platform === 'appio').length },
-        { platform: 'anpr', count: MOCK_AUDIT_ITEMS.filter((i) => i.platform === 'anpr').length },
-        { platform: 'sso', count: MOCK_AUDIT_ITEMS.filter((i) => i.platform === 'sso').length },
+        {
+          platform: "pdnd",
+          count: MOCK_AUDIT_ITEMS.filter(i => i.platform === "pdnd").length,
+        },
+        {
+          platform: "appio",
+          count: MOCK_AUDIT_ITEMS.filter(i => i.platform === "appio").length,
+        },
+        {
+          platform: "anpr",
+          count: MOCK_AUDIT_ITEMS.filter(i => i.platform === "anpr").length,
+        },
+        {
+          platform: "sso",
+          count: MOCK_AUDIT_ITEMS.filter(i => i.platform === "sso").length,
+        },
       ],
     }),
   });
 
   const platformColors: Record<string, string> = {
-    pdnd: '#3b82f6',
-    appio: '#10b981',
-    anpr: '#f59e0b',
-    sso: '#8b5cf6',
+    pdnd: "#3b82f6",
+    appio: "#10b981",
+    anpr: "#f59e0b",
+    sso: "#8b5cf6",
   };
 
   return (
@@ -866,16 +1198,28 @@ function AuditTrailPanel() {
             </p>
           </CardContent>
         </Card>
-        {(statsQuery.data?.byPlatform as Array<{ platform: string; count: number }>)?.slice(0, 2).map((item) => (
-          <Card key={item.platform} className="bg-[#1a2332] border-[#14b8a6]/20">
-            <CardContent className="p-4">
-              <span className="text-xs text-[#e8fbff]/60">{item.platform?.toUpperCase()}</span>
-              <p className="text-2xl font-bold text-[#e8fbff] mt-1">
-                {item.count ?? 0}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {(
+          statsQuery.data?.byPlatform as Array<{
+            platform: string;
+            count: number;
+          }>
+        )
+          ?.slice(0, 2)
+          .map(item => (
+            <Card
+              key={item.platform}
+              className="bg-[#1a2332] border-[#14b8a6]/20"
+            >
+              <CardContent className="p-4">
+                <span className="text-xs text-[#e8fbff]/60">
+                  {item.platform?.toUpperCase()}
+                </span>
+                <p className="text-2xl font-bold text-[#e8fbff] mt-1">
+                  {item.count ?? 0}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
       </div>
 
       {/* Filter */}
@@ -890,22 +1234,31 @@ function AuditTrailPanel() {
           <div className="flex gap-2 mb-4">
             <Button
               size="sm"
-              variant={!platformFilter ? 'default' : 'outline'}
-              className={!platformFilter ? 'bg-[#14b8a6] text-white' : 'border-[#14b8a6]/30 text-[#e8fbff]/60'}
+              variant={!platformFilter ? "default" : "outline"}
+              className={
+                !platformFilter
+                  ? "bg-[#14b8a6] text-white"
+                  : "border-[#14b8a6]/30 text-[#e8fbff]/60"
+              }
               onClick={() => setPlatformFilter(undefined)}
             >
               Tutte
             </Button>
-            {['pdnd', 'appio', 'anpr', 'sso'].map((p) => (
+            {["pdnd", "appio", "anpr", "sso"].map(p => (
               <Button
                 key={p}
                 size="sm"
-                variant={platformFilter === p ? 'default' : 'outline'}
-                className={platformFilter === p
-                  ? `text-white`
-                  : `border-[#e8fbff]/20 text-[#e8fbff]/60`
+                variant={platformFilter === p ? "default" : "outline"}
+                className={
+                  platformFilter === p
+                    ? `text-white`
+                    : `border-[#e8fbff]/20 text-[#e8fbff]/60`
                 }
-                style={platformFilter === p ? { backgroundColor: platformColors[p] } : {}}
+                style={
+                  platformFilter === p
+                    ? { backgroundColor: platformColors[p] }
+                    : {}
+                }
                 onClick={() => setPlatformFilter(p)}
               >
                 {p.toUpperCase()}
@@ -915,15 +1268,17 @@ function AuditTrailPanel() {
 
           {/* Lista */}
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
-            {(auditQuery.data?.items as Array<{
-              id: number;
-              platform: string;
-              action: string;
-              status: string;
-              user_email: string;
-              created_at: string;
-              duration_ms: number;
-            }>)?.map((item) => (
+            {(
+              auditQuery.data?.items as Array<{
+                id: number;
+                platform: string;
+                action: string;
+                status: string;
+                user_email: string;
+                created_at: string;
+                duration_ms: number;
+              }>
+            )?.map(item => (
               <div
                 key={item.id}
                 className="flex items-center gap-3 p-3 bg-[#0f1729] border border-[#e8fbff]/5 rounded-lg"
@@ -932,35 +1287,46 @@ function AuditTrailPanel() {
                   className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{
                     backgroundColor:
-                      item.status === 'success'
-                        ? '#10b981'
-                        : item.status === 'error'
-                          ? '#ef4444'
-                          : '#f59e0b',
+                      item.status === "success"
+                        ? "#10b981"
+                        : item.status === "error"
+                          ? "#ef4444"
+                          : "#f59e0b",
                   }}
                 />
                 <Badge
                   variant="outline"
                   className="text-xs"
-                  style={{ color: platformColors[item.platform], borderColor: `${platformColors[item.platform]}40` }}
+                  style={{
+                    color: platformColors[item.platform],
+                    borderColor: `${platformColors[item.platform]}40`,
+                  }}
                 >
                   {item.platform}
                 </Badge>
-                <span className="text-[#e8fbff] text-sm flex-1">{item.action}</span>
+                <span className="text-[#e8fbff] text-sm flex-1">
+                  {item.action}
+                </span>
                 <span className="text-[#e8fbff]/30 text-xs">
-                  {item.user_email?.split('@')[0]}
+                  {item.user_email?.split("@")[0]}
                 </span>
                 {item.duration_ms && (
-                  <span className="text-[#e8fbff]/20 text-xs">{item.duration_ms}ms</span>
+                  <span className="text-[#e8fbff]/20 text-xs">
+                    {item.duration_ms}ms
+                  </span>
                 )}
                 <span className="text-[#e8fbff]/20 text-xs">
-                  {new Date(item.created_at).toLocaleString('it-IT', {
-                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                  {new Date(item.created_at).toLocaleString("it-IT", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </span>
               </div>
             ))}
-            {(!auditQuery.data?.items || (auditQuery.data.items as unknown[]).length === 0) && (
+            {(!auditQuery.data?.items ||
+              (auditQuery.data.items as unknown[]).length === 0) && (
               <p className="text-[#e8fbff]/30 text-sm text-center py-8">
                 Nessuna operazione registrata
               </p>

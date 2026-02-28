@@ -1,7 +1,7 @@
 /**
  * Firebase Authentication Router
  * MioHub - Backend per verifica token Firebase e sincronizzazione utenti
- * 
+ *
  * Endpoints:
  * POST /api/auth/firebase/sync    - Sincronizza utente Firebase con DB MioHub
  * POST /api/auth/firebase/verify   - Verifica token ID Firebase
@@ -10,8 +10,8 @@
  * POST /api/auth/login             - Login con email/password (legacy compat)
  * POST /api/auth/register          - Registrazione email/password (legacy compat)
  */
-import { Router, type Request, type Response } from 'express';
-import type { App as FirebaseAdminApp } from 'firebase-admin/app';
+import { Router, type Request, type Response } from "express";
+import type { App as FirebaseAdminApp } from "firebase-admin/app";
 
 const router = Router();
 
@@ -23,10 +23,10 @@ let firebaseAdmin: FirebaseAdminApp | null = null;
 
 async function getFirebaseAdmin() {
   if (firebaseAdmin) return firebaseAdmin;
-  
+
   try {
-    const { initializeApp, cert, getApps } = await import('firebase-admin/app');
-    
+    const { initializeApp, cert, getApps } = await import("firebase-admin/app");
+
     const existingApps = getApps();
     if (existingApps.length > 0) {
       firebaseAdmin = existingApps[0];
@@ -35,31 +35,31 @@ async function getFirebaseAdmin() {
 
     // Usa le credenziali dal service account o dalle variabili d'ambiente
     const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    
+
     if (serviceAccountKey) {
       try {
         const serviceAccount = JSON.parse(serviceAccountKey);
         firebaseAdmin = initializeApp({
           credential: cert(serviceAccount),
-          projectId: 'dmshub-auth-2975e',
+          projectId: "dmshub-auth-2975e",
         });
       } catch {
         // Se il parsing fallisce, prova con Application Default Credentials
         firebaseAdmin = initializeApp({
-          projectId: 'dmshub-auth-2975e',
+          projectId: "dmshub-auth-2975e",
         });
       }
     } else {
       // Fallback: inizializza senza credenziali (per ambienti con ADC)
       firebaseAdmin = initializeApp({
-        projectId: 'dmshub-auth-2975e',
+        projectId: "dmshub-auth-2975e",
       });
     }
-    
-    console.log('[FirebaseAuth] Admin SDK inizializzato');
+
+    console.log("[FirebaseAuth] Admin SDK inizializzato");
     return firebaseAdmin;
   } catch (error) {
-    console.error('[FirebaseAuth] Errore inizializzazione Admin SDK:', error);
+    console.error("[FirebaseAuth] Errore inizializzazione Admin SDK:", error);
     throw error;
   }
 }
@@ -70,11 +70,11 @@ async function getFirebaseAdmin() {
 async function verifyFirebaseToken(idToken: string) {
   try {
     await getFirebaseAdmin();
-    const { getAuth } = await import('firebase-admin/auth');
+    const { getAuth } = await import("firebase-admin/auth");
     const decodedToken = await getAuth().verifyIdToken(idToken);
     return decodedToken;
   } catch (error: any) {
-    console.error('[FirebaseAuth] Token verification failed:', error.message);
+    console.error("[FirebaseAuth] Token verification failed:", error.message);
     return null;
   }
 }
@@ -84,7 +84,7 @@ async function verifyFirebaseToken(idToken: string) {
  */
 function extractBearerToken(req: Request): string | null {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
   }
   return authHeader.substring(7);
@@ -99,22 +99,22 @@ function extractBearerToken(req: Request): string | null {
  * Sincronizza un utente Firebase con il database MioHub
  * Richiede: Authorization: Bearer <firebase-id-token>
  */
-router.post('/firebase/sync', async (req: Request, res: Response) => {
+router.post("/firebase/sync", async (req: Request, res: Response) => {
   try {
     const idToken = extractBearerToken(req);
     if (!idToken) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Token di autenticazione mancante' 
+      return res.status(401).json({
+        success: false,
+        error: "Token di autenticazione mancante",
       });
     }
 
     // Verifica il token Firebase
     const decodedToken = await verifyFirebaseToken(idToken);
     if (!decodedToken) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Token non valido o scaduto' 
+      return res.status(401).json({
+        success: false,
+        error: "Token non valido o scaduto",
       });
     }
 
@@ -122,9 +122,9 @@ router.post('/firebase/sync', async (req: Request, res: Response) => {
 
     // Verifica che l'UID nel body corrisponda al token
     if (uid !== decodedToken.uid) {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'UID non corrispondente al token' 
+      return res.status(403).json({
+        success: false,
+        error: "UID non corrispondente al token",
       });
     }
 
@@ -135,8 +135,8 @@ router.post('/firebase/sync', async (req: Request, res: Response) => {
       email: email || decodedToken.email,
       displayName: displayName || decodedToken.name,
       photoURL: photoURL || decodedToken.picture,
-      provider: provider || decodedToken.firebase?.sign_in_provider || 'email',
-      role: role || 'citizen',
+      provider: provider || decodedToken.firebase?.sign_in_provider || "email",
+      role: role || "citizen",
       fiscalCode: null,
       verified: decodedToken.email_verified || false,
       permissions: [] as string[],
@@ -145,28 +145,48 @@ router.post('/firebase/sync', async (req: Request, res: Response) => {
 
     // Assegna permessi in base al ruolo
     switch (user.role) {
-      case 'citizen':
-        user.permissions = ['view_markets', 'view_wallet', 'make_transactions', 'view_civic'];
+      case "citizen":
+        user.permissions = [
+          "view_markets",
+          "view_wallet",
+          "make_transactions",
+          "view_civic",
+        ];
         break;
-      case 'business':
-        user.permissions = ['view_markets', 'manage_shop', 'view_presenze', 'view_anagrafica', 'manage_products'];
+      case "business":
+        user.permissions = [
+          "view_markets",
+          "manage_shop",
+          "view_presenze",
+          "view_anagrafica",
+          "manage_products",
+        ];
         break;
-      case 'pa':
-        user.permissions = ['view_all', 'manage_markets', 'manage_users', 'view_analytics', 'manage_verbali', 'manage_integrations'];
+      case "pa":
+        user.permissions = [
+          "view_all",
+          "manage_markets",
+          "manage_users",
+          "view_analytics",
+          "manage_verbali",
+          "manage_integrations",
+        ];
         break;
     }
 
-    console.log(`[FirebaseAuth] Utente sincronizzato: ${user.email} (${user.role})`);
+    console.log(
+      `[FirebaseAuth] Utente sincronizzato: ${user.email} (${user.role})`
+    );
 
     res.json({
       success: true,
       user,
     });
   } catch (error: any) {
-    console.error('[FirebaseAuth] Sync error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Errore durante la sincronizzazione dell\'utente' 
+    console.error("[FirebaseAuth] Sync error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Errore durante la sincronizzazione dell'utente",
     });
   }
 });
@@ -175,21 +195,21 @@ router.post('/firebase/sync', async (req: Request, res: Response) => {
  * POST /api/auth/firebase/verify
  * Verifica un token ID Firebase e restituisce i dati dell'utente
  */
-router.post('/firebase/verify', async (req: Request, res: Response) => {
+router.post("/firebase/verify", async (req: Request, res: Response) => {
   try {
     const idToken = extractBearerToken(req);
     if (!idToken) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Token mancante' 
+      return res.status(401).json({
+        success: false,
+        error: "Token mancante",
       });
     }
 
     const decodedToken = await verifyFirebaseToken(idToken);
     if (!decodedToken) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Token non valido' 
+      return res.status(401).json({
+        success: false,
+        error: "Token non valido",
       });
     }
 
@@ -206,10 +226,10 @@ router.post('/firebase/verify', async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error('[FirebaseAuth] Verify error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Errore durante la verifica' 
+    console.error("[FirebaseAuth] Verify error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Errore durante la verifica",
     });
   }
 });
@@ -218,21 +238,21 @@ router.post('/firebase/verify', async (req: Request, res: Response) => {
  * GET /api/auth/firebase/me
  * Ottieni informazioni sull'utente corrente
  */
-router.get('/firebase/me', async (req: Request, res: Response) => {
+router.get("/firebase/me", async (req: Request, res: Response) => {
   try {
     const idToken = extractBearerToken(req);
     if (!idToken) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Non autenticato' 
+      return res.status(401).json({
+        success: false,
+        error: "Non autenticato",
       });
     }
 
     const decodedToken = await verifyFirebaseToken(idToken);
     if (!decodedToken) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Sessione scaduta' 
+      return res.status(401).json({
+        success: false,
+        error: "Sessione scaduta",
       });
     }
 
@@ -247,10 +267,10 @@ router.get('/firebase/me', async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error('[FirebaseAuth] Me error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Errore nel recupero dati utente' 
+    console.error("[FirebaseAuth] Me error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Errore nel recupero dati utente",
     });
   }
 });
@@ -259,32 +279,34 @@ router.get('/firebase/me', async (req: Request, res: Response) => {
  * POST /api/auth/firebase/logout
  * Logout - revoca il refresh token Firebase (opzionale)
  */
-router.post('/firebase/logout', async (req: Request, res: Response) => {
+router.post("/firebase/logout", async (req: Request, res: Response) => {
   try {
     const idToken = extractBearerToken(req);
     if (idToken) {
       const decodedToken = await verifyFirebaseToken(idToken);
       if (decodedToken) {
         try {
-          const { getAuth } = await import('firebase-admin/auth');
+          const { getAuth } = await import("firebase-admin/auth");
           await getAuth().revokeRefreshTokens(decodedToken.uid);
-          console.log(`[FirebaseAuth] Refresh tokens revocati per: ${decodedToken.uid}`);
+          console.log(
+            `[FirebaseAuth] Refresh tokens revocati per: ${decodedToken.uid}`
+          );
         } catch (err) {
           // Non bloccare il logout se la revoca fallisce
-          console.warn('[FirebaseAuth] Revoca token fallita:', err);
+          console.warn("[FirebaseAuth] Revoca token fallita:", err);
         }
       }
     }
 
     res.json({
       success: true,
-      message: 'Logout effettuato',
+      message: "Logout effettuato",
     });
   } catch (error: any) {
-    console.error('[FirebaseAuth] Logout error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Errore durante il logout' 
+    console.error("[FirebaseAuth] Logout error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Errore durante il logout",
     });
   }
 });
@@ -298,13 +320,13 @@ router.post('/firebase/logout', async (req: Request, res: Response) => {
  * Login con email/password - compatibilità con il vecchio sistema
  * Ora usa Firebase Auth internamente
  */
-router.post('/login', async (req: Request, res: Response) => {
+router.post("/login", async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  
+
   if (!email || !password) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Email e password sono obbligatori' 
+    return res.status(400).json({
+      success: false,
+      error: "Email e password sono obbligatori",
     });
   }
 
@@ -313,13 +335,13 @@ router.post('/login', async (req: Request, res: Response) => {
     // Questo endpoint è mantenuto per compatibilità ma restituisce un messaggio informativo
     res.json({
       success: false,
-      error: 'Usa il login Firebase dal client. Questo endpoint è deprecato.',
-      redirect: 'firebase',
+      error: "Usa il login Firebase dal client. Questo endpoint è deprecato.",
+      redirect: "firebase",
     });
   } catch (error: any) {
-    res.status(500).json({ 
-      success: false, 
-      error: 'Errore durante il login' 
+    res.status(500).json({
+      success: false,
+      error: "Errore durante il login",
     });
   }
 });
@@ -328,21 +350,21 @@ router.post('/login', async (req: Request, res: Response) => {
  * POST /api/auth/register
  * Registrazione - compatibilità con il vecchio sistema
  */
-router.post('/register', async (req: Request, res: Response) => {
+router.post("/register", async (req: Request, res: Response) => {
   const { email, password, name } = req.body;
-  
+
   if (!email || !password) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Email e password sono obbligatori' 
+    return res.status(400).json({
+      success: false,
+      error: "Email e password sono obbligatori",
     });
   }
 
   try {
     // Crea l'utente tramite Firebase Admin SDK
     await getFirebaseAdmin();
-    const { getAuth } = await import('firebase-admin/auth');
-    
+    const { getAuth } = await import("firebase-admin/auth");
+
     const userRecord = await getAuth().createUser({
       email,
       password,
@@ -350,7 +372,9 @@ router.post('/register', async (req: Request, res: Response) => {
       emailVerified: false,
     });
 
-    console.log(`[FirebaseAuth] Nuovo utente registrato: ${email} (${userRecord.uid})`);
+    console.log(
+      `[FirebaseAuth] Nuovo utente registrato: ${email} (${userRecord.uid})`
+    );
 
     res.json({
       success: true,
@@ -359,23 +383,23 @@ router.post('/register', async (req: Request, res: Response) => {
         email: userRecord.email,
         name: userRecord.displayName,
       },
-      message: 'Registrazione completata. Effettua il login.',
+      message: "Registrazione completata. Effettua il login.",
     });
   } catch (error: any) {
-    console.error('[FirebaseAuth] Register error:', error);
-    
-    let errorMessage = 'Errore durante la registrazione';
-    if (error.code === 'auth/email-already-exists') {
-      errorMessage = 'Questa email è già registrata';
-    } else if (error.code === 'auth/invalid-email') {
-      errorMessage = 'Email non valida';
-    } else if (error.code === 'auth/weak-password') {
-      errorMessage = 'Password troppo debole (minimo 6 caratteri)';
+    console.error("[FirebaseAuth] Register error:", error);
+
+    let errorMessage = "Errore durante la registrazione";
+    if (error.code === "auth/email-already-exists") {
+      errorMessage = "Questa email è già registrata";
+    } else if (error.code === "auth/invalid-email") {
+      errorMessage = "Email non valida";
+    } else if (error.code === "auth/weak-password") {
+      errorMessage = "Password troppo debole (minimo 6 caratteri)";
     }
-    
-    res.status(400).json({ 
-      success: false, 
-      error: errorMessage 
+
+    res.status(400).json({
+      success: false,
+      error: errorMessage,
     });
   }
 });
@@ -384,17 +408,24 @@ router.post('/register', async (req: Request, res: Response) => {
  * GET /api/auth/config
  * Restituisce la configurazione di autenticazione pubblica
  */
-router.get('/config', (_req: Request, res: Response) => {
+router.get("/config", (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
-      environment: process.env.NODE_ENV || 'development',
+      environment: process.env.NODE_ENV || "development",
       firebase: {
-        projectId: 'dmshub-auth-2975e',
-        authDomain: 'dmshub-auth-2975e.firebaseapp.com',
+        projectId: "dmshub-auth-2975e",
+        authDomain: "dmshub-auth-2975e.firebaseapp.com",
       },
-      supported_auth_methods: ['email', 'google', 'apple', 'spid', 'cie', 'cns'],
-      roles: ['citizen', 'business', 'pa'],
+      supported_auth_methods: [
+        "email",
+        "google",
+        "apple",
+        "spid",
+        "cie",
+        "cns",
+      ],
+      roles: ["citizen", "business", "pa"],
     },
   });
 });

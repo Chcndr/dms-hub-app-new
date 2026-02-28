@@ -1,4 +1,4 @@
-import { UNAUTHED_ERR_MSG } from '@shared/const';
+import { UNAUTHED_ERR_MSG } from "@shared/const";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 import App from "./App";
@@ -42,13 +42,13 @@ createRoot(document.getElementById("root")!).render(
 );
 
 // Global error monitoring — cattura errori non gestiti e li invia al backend REST
-const API_ERROR_URL = `${(import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me')}/api/logs/client-error`;
+const API_ERROR_URL = `${import.meta.env.VITE_MIHUB_API_URL || "https://api.mio-hub.me"}/api/logs/client-error`;
 
-window.addEventListener('error', (event) => {
+window.addEventListener("error", event => {
   if (event.error) {
     fetch(API_ERROR_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: event.error?.message || event.message,
         stack: event.error?.stack?.slice(0, 2000),
@@ -59,11 +59,11 @@ window.addEventListener('error', (event) => {
   }
 });
 
-window.addEventListener('unhandledrejection', (event) => {
+window.addEventListener("unhandledrejection", event => {
   const reason = event.reason;
   fetch(API_ERROR_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       message: reason?.message || String(reason),
       stack: reason?.stack?.slice(0, 2000),
@@ -74,9 +74,9 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 // Registra Service Worker per PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
       // SW registration failed silently
     });
   });

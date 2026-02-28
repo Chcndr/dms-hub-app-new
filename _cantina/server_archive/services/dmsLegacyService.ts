@@ -16,7 +16,12 @@ import postgres from "postgres";
 // ============================================
 
 let _legacyClient: ReturnType<typeof postgres> | null = null;
-let _lastHealthCheck: { ok: boolean; time: Date; latency: number; error?: string } | null = null;
+let _lastHealthCheck: {
+  ok: boolean;
+  time: Date;
+  latency: number;
+  error?: string;
+} | null = null;
 
 function getLegacyDbUrl(): string | null {
   return process.env.DMS_LEGACY_DB_URL || null;
@@ -33,7 +38,7 @@ function getLegacyClient(): ReturnType<typeof postgres> | null {
   if (!url) return null;
 
   _legacyClient = postgres(url, {
-    max: 3,               // Max 3 connessioni (per non sovraccaricare Legacy)
+    max: 3, // Max 3 connessioni (per non sovraccaricare Legacy)
     idle_timeout: 20,
     connect_timeout: 10,
     max_lifetime: 60 * 5, // Ricicla ogni 5 min
@@ -45,7 +50,9 @@ function getLegacyClient(): ReturnType<typeof postgres> | null {
 
 export async function closeLegacyDb(): Promise<void> {
   if (_legacyClient) {
-    try { await _legacyClient.end(); } catch {}
+    try {
+      await _legacyClient.end();
+    } catch {}
     _legacyClient = null;
   }
 }
@@ -62,7 +69,12 @@ export async function legacyHealthCheck(): Promise<{
 }> {
   const client = getLegacyClient();
   if (!client) {
-    return { connected: false, latency: 0, tables: 0, error: "DMS_LEGACY_DB_URL non configurato" };
+    return {
+      connected: false,
+      latency: 0,
+      tables: 0,
+      error: "DMS_LEGACY_DB_URL non configurato",
+    };
   }
 
   const start = Date.now();
@@ -78,7 +90,12 @@ export async function legacyHealthCheck(): Promise<{
     return { connected: true, latency, tables };
   } catch (error: any) {
     const latency = Date.now() - start;
-    _lastHealthCheck = { ok: false, time: new Date(), latency, error: error.message };
+    _lastHealthCheck = {
+      ok: false,
+      time: new Date(),
+      latency,
+      error: error.message,
+    };
     return { connected: false, latency, tables: 0, error: error.message };
   }
 }
@@ -96,24 +113,37 @@ export function getLastHealthCheck() {
  * Pattern: SELECT function_name($1::json)
  * Le funzioni _crup: se ID è NULL → INSERT, se valorizzato → UPDATE.
  */
-async function callStoredFunction(functionName: string, payload: Record<string, any>): Promise<any> {
+async function callStoredFunction(
+  functionName: string,
+  payload: Record<string, any>
+): Promise<any> {
   const client = getLegacyClient();
   if (!client) {
-    throw new Error(`Legacy DB non connesso — impossibile chiamare ${functionName}`);
+    throw new Error(
+      `Legacy DB non connesso — impossibile chiamare ${functionName}`
+    );
   }
 
   const jsonPayload = JSON.stringify(payload);
   try {
-    const result = await client`SELECT ${client(functionName)}(${jsonPayload}::json) as result`;
+    const result =
+      await client`SELECT ${client(functionName)}(${jsonPayload}::json) as result`;
     return result[0]?.result;
   } catch (error: any) {
     // Fallback: prova con query raw per stored functions che non accettano il formato sopra
     try {
-      const result = await client.unsafe(`SELECT ${functionName}('${jsonPayload.replace(/'/g, "''")}') as result`);
+      const result = await client.unsafe(
+        `SELECT ${functionName}('${jsonPayload.replace(/'/g, "''")}') as result`
+      );
       return result[0]?.result;
     } catch (fallbackError: any) {
-      console.error(`[DMS Legacy] Errore chiamata ${functionName}:`, fallbackError.message);
-      throw new Error(`Stored function ${functionName} fallita: ${fallbackError.message}`);
+      console.error(
+        `[DMS Legacy] Errore chiamata ${functionName}:`,
+        fallbackError.message
+      );
+      throw new Error(
+        `Stored function ${functionName} fallita: ${fallbackError.message}`
+      );
     }
   }
 }
@@ -122,11 +152,15 @@ async function callStoredFunction(functionName: string, payload: Record<string, 
 // SYNC OUT: MioHub → Legacy (Scrittura)
 // ============================================
 
-export async function syncOutVendor(ambJson: Record<string, any>): Promise<any> {
+export async function syncOutVendor(
+  ambJson: Record<string, any>
+): Promise<any> {
   return callStoredFunction("amb_crup", ambJson);
 }
 
-export async function syncOutMarket(mktJson: Record<string, any>): Promise<any> {
+export async function syncOutMarket(
+  mktJson: Record<string, any>
+): Promise<any> {
   return callStoredFunction("mercati_crup", mktJson);
 }
 
@@ -134,23 +168,33 @@ export async function syncOutStall(pzJson: Record<string, any>): Promise<any> {
   return callStoredFunction("piazzole_crup", pzJson);
 }
 
-export async function syncOutConcession(concJson: Record<string, any>): Promise<any> {
+export async function syncOutConcession(
+  concJson: Record<string, any>
+): Promise<any> {
   return callStoredFunction("conc_std_crup", concJson);
 }
 
-export async function syncOutSpuntista(spJson: Record<string, any>): Promise<any> {
+export async function syncOutSpuntista(
+  spJson: Record<string, any>
+): Promise<any> {
   return callStoredFunction("spuntisti_crup", spJson);
 }
 
-export async function syncOutUser(suserJson: Record<string, any>): Promise<any> {
+export async function syncOutUser(
+  suserJson: Record<string, any>
+): Promise<any> {
   return callStoredFunction("suser_crup", suserJson);
 }
 
-export async function syncOutStartSession(params: { mkt_id: number }): Promise<any> {
+export async function syncOutStartSession(params: {
+  mkt_id: number;
+}): Promise<any> {
   return callStoredFunction("istanza_start", params);
 }
 
-export async function syncOutCloseSession(params: { ist_id: number }): Promise<any> {
+export async function syncOutCloseSession(params: {
+  ist_id: number;
+}): Promise<any> {
   return callStoredFunction("istanza_cleanup", params);
 }
 

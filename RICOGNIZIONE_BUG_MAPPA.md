@@ -8,12 +8,14 @@
 ## ✅ COSA FUNZIONA
 
 ### Backend Hetzner
+
 - ✅ `GET https://orchestratore.mio-hub.me/api/markets` → HTTP 200
 - ✅ `GET https://orchestratore.mio-hub.me/api/markets/1/stalls` → HTTP 200 (160 posteggi)
 - ✅ `PATCH https://orchestratore.mio-hub.me/api/stalls/:id` → HTTP 200 (aggiorna stato)
 - ✅ `GET https://orchestratore.mio-hub.me/api/gis/market-map` → HTTP 200 (GeoJSON)
 
 ### Frontend
+
 - ✅ `fetch()` diretto funziona (testato in console)
 - ✅ La mappa si renderizza correttamente (160 posteggi visibili)
 - ✅ I dati vengono caricati correttamente
@@ -23,11 +25,13 @@
 ## ❌ COSA NON FUNZIONA
 
 ### Problema Principale
+
 - ❌ Quando cambio lo stato del posteggio nella tabella, la mappa NON si aggiorna
 - ❌ Il popup mostra ancora lo stato vecchio
 - ❌ Il colore del polygon rimane verde (non diventa rosso)
 
 ### Problema Secondario
+
 - ⚠️ Il tab "Posteggi" mostra uno spinner infinito (loading)
 - ⚠️ La tabella non si carica mai
 - ⚠️ Errori tRPC 404 in console (non correlati a GestioneMercati)
@@ -37,6 +41,7 @@
 ## 🔍 ANALISI TECNICA
 
 ### Architettura
+
 ```
 Frontend (Vercel)
   ├─ GestioneMercati.tsx
@@ -54,6 +59,7 @@ Frontend (Vercel)
 ```
 
 ### Flusso Attuale
+
 1. User clicca "Salva" su posteggio → `handleSave()`
 2. `PATCH /api/stalls/:id` → Backend Hetzner ✅
 3. `fetchData()` → Ricarica dati ✅
@@ -62,6 +68,7 @@ Frontend (Vercel)
 6. `<MapContainer key={map-${refreshKey}}>` → Dovrebbe ri-montare ❌
 
 ### Problema Identificato
+
 **Leaflet NON usa il Virtual DOM di React!**
 
 Anche se cambio la `key` del `<MapContainer>`, Leaflet ha già creato i layer DOM e **non li distrugge** quando cambia la key!
@@ -71,6 +78,7 @@ Anche se cambio la `key` del `<MapContainer>`, Leaflet ha già creato i layer DO
 ## 🛠️ SOLUZIONE IMPLEMENTATA
 
 ### Modifica 1: MarketMapComponent.tsx
+
 ```typescript
 // PRIMA
 export function MarketMapComponent({ mapData, stallsData, ... }) {
@@ -92,6 +100,7 @@ export function MarketMapComponent({ mapData, stallsData, refreshKey, ... }) {
 ```
 
 ### Modifica 2: GestioneMercati.tsx
+
 ```typescript
 // PRIMA
 <MarketMapComponent
@@ -109,6 +118,7 @@ export function MarketMapComponent({ mapData, stallsData, refreshKey, ... }) {
 ```
 
 ### Commit
+
 ```
 fd795be - fix: Force MapContainer re-mount on stall status change
 ```
@@ -133,6 +143,7 @@ fd795be - fix: Force MapContainer re-mount on stall status change
 ## ⚠️ PROBLEMI APERTI
 
 ### Errori tRPC 404
+
 ```
 [API Query Error] TRPCClientError: Unable to transform response from server
 Failed to load resource: the server responded with a status of 404 (Not Found)
@@ -145,6 +156,7 @@ Failed to load resource: the server responded with a status of 404 (Not Found)
 **Da investigare:** Trovare quale componente sta facendo la chiamata tRPC.
 
 ### Tab Posteggi - Loading Infinito
+
 **Causa:** Da investigare. Potrebbe essere correlato agli errori tRPC.
 
 **Workaround:** Testare direttamente cambiando stato e verificando la mappa.

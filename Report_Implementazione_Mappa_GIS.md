@@ -23,10 +23,10 @@ L'implementazione ha affrontato due problemi principali:
 
 **Obiettivi Raggiunti:**
 
--   **Centralizzazione Funzionalità:** Tutte le funzionalità GIS sono ora nel tab "Mappa GIS".
--   **Miglioramento UX:** L'accesso alla mappa è più diretto e non più nascosto in un modale.
--   **Arricchimento Funzionale:** Il nuovo tab include statistiche, filtri e una legenda chiara.
--   **Fix Tecnico:** Risolto il problema di rendering dei `TabsContent` di shadcn/ui assicurando che fossero figli diretti del componente `<Tabs>`.
+- **Centralizzazione Funzionalità:** Tutte le funzionalità GIS sono ora nel tab "Mappa GIS".
+- **Miglioramento UX:** L'accesso alla mappa è più diretto e non più nascosto in un modale.
+- **Arricchimento Funzionale:** Il nuovo tab include statistiche, filtri e una legenda chiara.
+- **Fix Tecnico:** Risolto il problema di rendering dei `TabsContent` di shadcn/ui assicurando che fossero figli diretti del componente `<Tabs>`.
 
 ---
 
@@ -38,13 +38,13 @@ La soluzione è stata implementata nel file `DashboardPA.tsx`, modificando la st
 
 Il nuovo tab è stato inserito all'interno del componente `<Tabs>` principale e contiene i seguenti elementi:
 
-| Componente | Descrizione |
-| :--- | :--- |
-| **Barra di Ricerca** | Un campo di input per future implementazioni di ricerca testuale su mercati, posteggi o imprese. |
-| **Filtri Rapidi** | Bottoni per filtrare i posteggi visualizzati sulla mappa (Tutti, Liberi, Occupati, Riservati). |
-| **Card Statistiche** | Quattro card che mostrano dati aggregati in tempo reale: Posteggi Totali (186), Liberi (45), Occupati (128), Riservati (13). |
-| **Mappa GIS Interattiva**| Il componente `MarketMapComponent` è stato integrato per visualizzare la pianta del mercato di Grosseto, utilizzando i dati `gisMapData` e `gisStalls` già disponibili nello stato del componente `DashboardPA`. |
-| **Legenda** | Una card che spiega la codifica a colori dei posteggi sulla mappa. |
+| Componente                | Descrizione                                                                                                                                                                                                      |
+| :------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Barra di Ricerca**      | Un campo di input per future implementazioni di ricerca testuale su mercati, posteggi o imprese.                                                                                                                 |
+| **Filtri Rapidi**         | Bottoni per filtrare i posteggi visualizzati sulla mappa (Tutti, Liberi, Occupati, Riservati).                                                                                                                   |
+| **Card Statistiche**      | Quattro card che mostrano dati aggregati in tempo reale: Posteggi Totali (186), Liberi (45), Occupati (128), Riservati (13).                                                                                     |
+| **Mappa GIS Interattiva** | Il componente `MarketMapComponent` è stato integrato per visualizzare la pianta del mercato di Grosseto, utilizzando i dati `gisMapData` e `gisStalls` già disponibili nello stato del componente `DashboardPA`. |
+| **Legenda**               | Una card che spiega la codifica a colori dei posteggi sulla mappa.                                                                                                                                               |
 
 ### Modifiche al Codice
 
@@ -58,16 +58,16 @@ Le modifiche principali hanno incluso:
 
 ## 4. Commits Rilevanti
 
--   `937ffd0`: fix: Add missing Search and Filter imports from lucide-react
--   `7856b30`: feat: Add complete GIS map with filters, stats and legend to Mappa GIS tab
--   `4d09a08`: feat: Add TabsContent for mappa and workspace tabs inside main Tabs
+- `937ffd0`: fix: Add missing Search and Filter imports from lucide-react
+- `7856b30`: feat: Add complete GIS map with filters, stats and legend to Mappa GIS tab
+- `4d09a08`: feat: Add TabsContent for mappa and workspace tabs inside main Tabs
 
 ---
 
 ## 5. Prossimi Passi
 
--   **Attivare Filtri:** Implementare la logica `onClick` per i bottoni di filtro.
--   **Attivare Ricerca:** Collegare l'input di ricerca a una funzione di filtro sui dati della mappa.
--   **Sviluppare "Gestione HUB":** Popolare il tab "Gestione HUB" con le funzionalità appropriate.
+- **Attivare Filtri:** Implementare la logica `onClick` per i bottoni di filtro.
+- **Attivare Ricerca:** Collegare l'input di ricerca a una funzione di filtro sui dati della mappa.
+- **Sviluppare "Gestione HUB":** Popolare il tab "Gestione HUB" con le funzionalità appropriate.
 
 '

@@ -16,7 +16,7 @@ Creare una **nuova pagina pubblica "Mappa Italia - Gemello Digitale"** che visua
 ✅ Zoom dinamico su mercati cercati  
 ✅ Click su posteggio → popup → vetrina  
 ✅ Componente riutilizzabile per dashboard  
-✅ Design professionale coerente con altre pagine pubbliche  
+✅ Design professionale coerente con altre pagine pubbliche
 
 ---
 
@@ -27,6 +27,7 @@ Creare una **nuova pagina pubblica "Mappa Italia - Gemello Digitale"** che visua
 **Ubicazione:** `/client/src/components/MarketMapComponent.tsx` (935 righe)
 
 **Caratteristiche:**
+
 - ✅ Certificato e testato (v1.0.0 - 22 Novembre 2025)
 - ✅ Visualizza mappa GIS con posteggi (Polygon)
 - ✅ Numeri scalabili con zoom (formula: `8 * 1.5^(zoom - 18)`)
@@ -38,6 +39,7 @@ Creare una **nuova pagina pubblica "Mappa Italia - Gemello Digitale"** che visua
 - ✅ Supporta routing e animazioni mappa
 
 **⚠️ ATTENZIONE CRITICA:**
+
 ```
 🚫 QUESTO COMPONENTE È DELICATISSIMO E CERTIFICATO
 ❌ NON DEVE ESSERE MODIFICATO DIRETTAMENTE
@@ -108,13 +110,13 @@ if (activeTab === 'posteggi') {
 ```typescript
 // Carica 3 API contemporaneamente
 const [stallsRes, mapRes, concessionsRes] = await Promise.all([
-  fetch(`/api/markets/${marketId}/stalls`),           // Posteggi singolo mercato
-  fetch(`/api/gis/market-map/${marketId}`),           // Mappa GIS singolo mercato
-  fetch(`/api/markets/${marketCode}/stalls/concessioni`) // Concessioni
+  fetch(`/api/markets/${marketId}/stalls`), // Posteggi singolo mercato
+  fetch(`/api/gis/market-map/${marketId}`), // Mappa GIS singolo mercato
+  fetch(`/api/markets/${marketCode}/stalls/concessioni`), // Concessioni
 ]);
 
 // Se marketId è undefined, carica dati base Italia:
-fetch(`/api/gis/market-map`)  // Mappa base Italia con TUTTI i mercati
+fetch(`/api/gis/market-map`); // Mappa base Italia con TUTTI i mercati
 ```
 
 #### Funzionalità Implementate:
@@ -128,20 +130,20 @@ fetch(`/api/gis/market-map`)  // Mappa base Italia con TUTTI i mercati
 ✅ **Click su Marker Italia** - Zoom su mercato specifico  
 ✅ **Lista Posteggi** - Tabella con scroll interno  
 ✅ **Scheda Impresa** - Dettagli impresa in sidebar  
-✅ **Statistiche** - Occupati, liberi, riservati  
+✅ **Statistiche** - Occupati, liberi, riservati
 
 ### 3. Differenza Chiave: Dashboard vs Pagina Pubblica
 
-| Aspetto | Dashboard PA (GestioneMercati) | Pagina Pubblica (MappaItalia) |
-|---------|--------------------------------|-------------------------------|
-| **Accesso** | Solo PA loggata | Pubblico (no login) |
-| **Funzionalità** | Gestione completa (edit, delete) | Solo visualizzazione |
-| **Ricerca** | Mercati + Posteggi | Mercati + Imprese |
-| **Click Posteggio** | Modifica posteggio | Apre popup vetrina |
-| **Click Impresa** | Gestione concessioni | Naviga a vetrina |
-| **Tab** | Anagrafica, Posteggi, Concessioni | Nessun tab |
-| **Mappa** | Piena larghezza tab | Full-width pagina |
-| **Design** | Dark dashboard | Design pubblico coerente |
+| Aspetto             | Dashboard PA (GestioneMercati)    | Pagina Pubblica (MappaItalia) |
+| ------------------- | --------------------------------- | ----------------------------- |
+| **Accesso**         | Solo PA loggata                   | Pubblico (no login)           |
+| **Funzionalità**    | Gestione completa (edit, delete)  | Solo visualizzazione          |
+| **Ricerca**         | Mercati + Posteggi                | Mercati + Imprese             |
+| **Click Posteggio** | Modifica posteggio                | Apre popup vetrina            |
+| **Click Impresa**   | Gestione concessioni              | Naviga a vetrina              |
+| **Tab**             | Anagrafica, Posteggi, Concessioni | Nessun tab                    |
+| **Mappa**           | Piena larghezza tab               | Full-width pagina             |
+| **Design**          | Dark dashboard                    | Design pubblico coerente      |
 
 ### 4. API Endpoints Disponibili
 
@@ -206,7 +208,7 @@ function PublicMapContainer({ selectedMarketId, onMarketSelect }: PublicMapConta
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [selectedStallId, setSelectedStallId] = useState<number | null>(null);
   const [selectedStallCenter, setSelectedStallCenter] = useState<[number, number] | null>(null);
-  
+
   // Carica dati mappa
   useEffect(() => {
     if (selectedMarketId) {
@@ -214,7 +216,7 @@ function PublicMapContainer({ selectedMarketId, onMarketSelect }: PublicMapConta
       fetch(`/api/gis/market-map/${selectedMarketId}`)
         .then(r => r.json())
         .then(data => setMapData(data.data));
-      
+
       // Carica posteggi
       fetch(`/api/markets/${selectedMarketId}/stalls`)
         .then(r => r.json())
@@ -226,7 +228,7 @@ function PublicMapContainer({ selectedMarketId, onMarketSelect }: PublicMapConta
         .then(data => setMapData(data.data));
     }
   }, [selectedMarketId]);
-  
+
   return (
     <div>
       <MarketMapComponent
@@ -303,7 +305,7 @@ interface Market {
   longitude: number;
   total_stalls: number;
   active_stalls: number;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   created_at: string;
   updated_at: string;
 }
@@ -316,8 +318,8 @@ interface Stall {
   id: number;
   market_id: number;
   number: number;
-  status: 'free' | 'occupied' | 'reserved' | 'blocked';
-  kind: 'fixed' | 'spot' | 'free';
+  status: "free" | "occupied" | "reserved" | "blocked";
+  kind: "fixed" | "spot" | "free";
   dimensions?: string;
   vendor_id?: number;
   impresa_id?: number;
@@ -352,6 +354,7 @@ interface Impresa {
 ## 🎨 DESIGN SPECIFICHE
 
 ### Header
+
 ```
 Background: Gradient teal-to-emerald (come Route/Wallet/Segnala)
 Height: 120px
@@ -363,6 +366,7 @@ Content:
 ```
 
 ### Barra Ricerca
+
 ```
 Tipo: Card elegante (border-0 shadow-xl)
 Padding: 24px
@@ -376,6 +380,7 @@ Elementi:
 ```
 
 ### Mappa
+
 ```
 Height: calc(100vh - 300px) - responsive
 Full-width: w-full
@@ -386,6 +391,7 @@ Animazione: Smooth fly-to su ricerca
 ```
 
 ### Popup Vetrina
+
 ```
 Tipo: Leaflet Popup (standard)
 Larghezza: 300px
@@ -476,24 +482,28 @@ client/src/
 ## 🚀 PIANO IMPLEMENTAZIONE - VERSIONE 2.0
 
 ### FASE 1: Preparazione (Oggi)
+
 - [x] Analisi completa sistema ✅ COMPLETATA
 - [x] Scoperta logica GestioneMercati ✅ COMPLETATA
 - [ ] Approvazione design e architettura (AWAITING USER)
 - [ ] Creazione branch feature
 
 ### FASE 2: Estrarre Logica PosteggiTab
+
 - [ ] Analizzare funzione PosteggiTab (1268-1800 righe)
 - [ ] Estrarre logica Vista Italia/Mercato
 - [ ] Creare hook `usePublicMapLogic.ts`
 - [ ] Testare logica estratta
 
 ### FASE 3: Creare Componenti Pubblici
+
 - [ ] Creare `PublicMapContainer.tsx`
 - [ ] Creare `MapSearchBar.tsx`
 - [ ] Creare `VetrinaPopup.tsx`
 - [ ] Creare `PublicMapComponent.tsx` (clone leggero)
 
 ### FASE 4: Creare Pagina Pubblica
+
 - [ ] Creare `MappaItaliaPage.tsx`
 - [ ] Implementare header gradient
 - [ ] Integrare barra ricerca
@@ -501,12 +511,14 @@ client/src/
 - [ ] Aggiungere bottom navigation
 
 ### FASE 5: Testing e Ottimizzazione
+
 - [ ] Test su desktop/tablet/mobile
 - [ ] Test performance mappa
 - [ ] Test ricerca e filtri
 - [ ] Ottimizzazione UX
 
 ### FASE 6: Documentazione
+
 - [ ] Aggiornare blueprint
 - [ ] Creare README componenti
 - [ ] Documentare API usage
@@ -516,6 +528,7 @@ client/src/
 ## ⚠️ CONSIDERAZIONI CRITICHE
 
 ### 1. Protezione Componente PEPE GIS
+
 ```
 ✅ CLONARE il componente (copia file)
 ❌ NON modificare l'originale
@@ -524,6 +537,7 @@ client/src/
 ```
 
 ### 2. Logica Vista Italia/Mercato
+
 ```
 ✅ Estratta da PosteggiTab (linee 1268-1800)
 ✅ Usa stesso sistema viewMode + viewTrigger
@@ -532,6 +546,7 @@ client/src/
 ```
 
 ### 3. Performance Mappa
+
 ```
 ⚠️ Potenziale lag con 542 mercati visibili
 ✅ Soluzione: Cluster markers su zoom out
@@ -540,6 +555,7 @@ client/src/
 ```
 
 ### 4. Responsività Mobile
+
 ```
 ✅ Mappa full-width su mobile
 ✅ Barra ricerca stack verticale
@@ -551,25 +567,25 @@ client/src/
 
 ## 📈 METRICHE DI SUCCESSO
 
-| Metrica | Target | Status |
-|---------|--------|--------|
-| **Tempo caricamento mappa** | < 2s | 🔍 Da testare |
-| **Tempo zoom su mercato** | < 500ms | 🔍 Da testare |
-| **Ricerca real-time** | < 100ms | 🔍 Da testare |
-| **Mobile responsiveness** | 100% | 🔍 Da testare |
-| **Accessibility score** | > 95 | 🔍 Da testare |
+| Metrica                     | Target  | Status        |
+| --------------------------- | ------- | ------------- |
+| **Tempo caricamento mappa** | < 2s    | 🔍 Da testare |
+| **Tempo zoom su mercato**   | < 500ms | 🔍 Da testare |
+| **Ricerca real-time**       | < 100ms | 🔍 Da testare |
+| **Mobile responsiveness**   | 100%    | 🔍 Da testare |
+| **Accessibility score**     | > 95    | 🔍 Da testare |
 
 ---
 
 ## 🎓 RIFERIMENTI E DOCUMENTAZIONE
 
-| Risorsa | Link | Note |
-|---------|------|------|
-| **Master Blueprint** | `/MASTER_BLUEPRINT_MIOHUB.md` | Architettura sistema |
-| **GestioneMercati** | `/client/src/components/GestioneMercati.tsx` | Logica da estrarre |
-| **PosteggiTab** | Linee 1268-1800 | Funzione chiave |
-| **MarketMapComponent README** | `/client/src/components/MarketMapComponent.README.md` | Componente PEPE GIS |
-| **API Endpoints** | https://orchestratore.mio-hub.me | Backend API |
+| Risorsa                       | Link                                                  | Note                 |
+| ----------------------------- | ----------------------------------------------------- | -------------------- |
+| **Master Blueprint**          | `/MASTER_BLUEPRINT_MIOHUB.md`                         | Architettura sistema |
+| **GestioneMercati**           | `/client/src/components/GestioneMercati.tsx`          | Logica da estrarre   |
+| **PosteggiTab**               | Linee 1268-1800                                       | Funzione chiave      |
+| **MarketMapComponent README** | `/client/src/components/MarketMapComponent.README.md` | Componente PEPE GIS  |
+| **API Endpoints**             | https://orchestratore.mio-hub.me                      | Backend API          |
 
 ---
 
@@ -602,6 +618,7 @@ client/src/
 5. ⏳ Autorizza inizio sviluppo
 
 **Una volta approvato, procederò con:**
+
 - Estrarre logica PosteggiTab
 - Creare componenti pubblici
 - Creare pagina pubblica

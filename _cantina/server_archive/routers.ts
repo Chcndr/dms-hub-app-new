@@ -3,7 +3,12 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
+import {
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  router,
+} from "./_core/trpc";
 import { dmsHubRouter } from "./dmsHubRouter";
 import { integrationsRouter } from "./integrationsRouter";
 import { mioAgentRouter } from "./mioAgentRouter";
@@ -14,16 +19,18 @@ import { tccSecurityRouter } from "./tccSecurityRouter";
 import { gdprRouter } from "./gdprRouter";
 import { dmsLegacyRouter } from "./dmsLegacyRouter";
 
-
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with 
-// '/api/' so that the gateway can route correctly
+  // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with
+  // '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      (ctx.res as any).clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      (ctx.res as any).clearCookie(COOKIE_NAME, {
+        ...cookieOptions,
+        maxAge: -1,
+      });
       return {
         success: true,
       } as const;
@@ -42,12 +49,15 @@ export const appRouter = router({
         try {
           await db.execute(sql`
             INSERT INTO users ("openId", email, name, role)
-            VALUES (${openId}, ${input.email}, ${input.email.split('@')[0]}, 'user')
+            VALUES (${openId}, ${input.email}, ${input.email.split("@")[0]}, 'user')
             ON CONFLICT ("openId") DO NOTHING
           `);
         } catch (e) {
           // Se fallisce (es. email duplicata con diverso openId), ignora
-          console.warn('[checkRoles] Upsert user fallito (ok se esiste gia):', e);
+          console.warn(
+            "[checkRoles] Upsert user fallito (ok se esiste gia):",
+            e
+          );
         }
 
         const result = await db.execute(sql`
@@ -70,7 +80,11 @@ export const appRouter = router({
           const userRole = await db.execute(sql`
             SELECT role FROM users WHERE email = ${input.email} LIMIT 1
           `);
-          if (Array.isArray(userRole) && userRole[0] && (userRole[0] as any).role === 'admin') {
+          if (
+            Array.isArray(userRole) &&
+            userRole[0] &&
+            (userRole[0] as any).role === "admin"
+          ) {
             return { roles, isAdmin: true };
           }
         }
@@ -84,7 +98,7 @@ export const appRouter = router({
       .input(z.object({ email: z.string().email() }))
       .mutation(async ({ input }) => {
         const db = await (await import("./db")).getDb();
-        if (!db) return { success: false, error: 'DB non disponibile' };
+        if (!db) return { success: false, error: "DB non disponibile" };
         const { sql } = await import("drizzle-orm");
 
         // 1. Upsert utente con role='admin'
@@ -92,7 +106,7 @@ export const appRouter = router({
         try {
           await db.execute(sql`
             INSERT INTO users ("openId", email, name, role)
-            VALUES (${openId}, ${input.email}, ${input.email.split('@')[0]}, 'admin')
+            VALUES (${openId}, ${input.email}, ${input.email.split("@")[0]}, 'admin')
             ON CONFLICT ("openId") DO UPDATE SET role = 'admin'
           `);
         } catch (e) {
@@ -102,7 +116,7 @@ export const appRouter = router({
               UPDATE users SET role = 'admin' WHERE email = ${input.email}
             `);
           } catch (e2) {
-            console.warn('[ensureAdmin] Fallback update fallito:', e2);
+            console.warn("[ensureAdmin] Fallback update fallito:", e2);
           }
         }
 
@@ -114,11 +128,23 @@ export const appRouter = router({
         `);
 
         // 3. Recupera gli ID
-        const userRow = await db.execute(sql`SELECT id FROM users WHERE email = ${input.email} LIMIT 1`);
-        const roleRow = await db.execute(sql`SELECT id FROM user_roles WHERE code = 'super_admin' LIMIT 1`);
+        const userRow = await db.execute(
+          sql`SELECT id FROM users WHERE email = ${input.email} LIMIT 1`
+        );
+        const roleRow = await db.execute(
+          sql`SELECT id FROM user_roles WHERE code = 'super_admin' LIMIT 1`
+        );
 
-        if (!Array.isArray(userRow) || !userRow[0] || !Array.isArray(roleRow) || !roleRow[0]) {
-          return { success: false, error: 'Utente o ruolo non trovato dopo creazione' };
+        if (
+          !Array.isArray(userRow) ||
+          !userRow[0] ||
+          !Array.isArray(roleRow) ||
+          !roleRow[0]
+        ) {
+          return {
+            success: false,
+            error: "Utente o ruolo non trovato dopo creazione",
+          };
         }
 
         const userId = (userRow[0] as any).id;
@@ -140,8 +166,13 @@ export const appRouter = router({
           WHERE user_id = ${userId} AND role_id = ${roleId}
         `);
 
-        console.warn(`[ensureAdmin] Admin assegnato a ${input.email} (user_id=${userId}, role_id=${roleId})`);
-        return { success: true, message: `Super admin assegnato a ${input.email}` };
+        console.warn(
+          `[ensureAdmin] Admin assegnato a ${input.email} (user_id=${userId}, role_id=${roleId})`
+        );
+        return {
+          success: true,
+          message: `Super admin assegnato a ${input.email}`,
+        };
       }),
 
     // Crea sessione JWT dopo login Firebase.
@@ -167,7 +198,8 @@ export const appRouter = router({
         const aud = claims.aud as string | undefined;
         const exp = claims.exp as number | undefined;
         const email = (claims.email as string | undefined) || "";
-        const name = (claims.name as string | undefined) || email.split("@")[0] || "";
+        const name =
+          (claims.name as string | undefined) || email.split("@")[0] || "";
 
         if (!iss?.startsWith("https://securetoken.google.com/")) {
           return { success: false, error: "Issuer non valido" };
@@ -224,7 +256,9 @@ export const appRouter = router({
           maxAge: ONE_YEAR_MS,
         });
 
-        console.warn(`[Auth] Firebase session creata per ${email} (openId=${openId})`);
+        console.warn(
+          `[Auth] Firebase session creata per ${email} (openId=${openId})`
+        );
         return { success: true, email, openId, sessionToken };
       }),
   }),
@@ -284,20 +318,22 @@ export const appRouter = router({
       return await getSystemLogs();
     }),
     reportClientError: publicProcedure
-      .input(z.object({
-        message: z.string(),
-        stack: z.string().optional(),
-        componentStack: z.string().optional(),
-        url: z.string().optional(),
-        userAgent: z.string().optional(),
-      }))
+      .input(
+        z.object({
+          message: z.string(),
+          stack: z.string().optional(),
+          componentStack: z.string().optional(),
+          url: z.string().optional(),
+          userAgent: z.string().optional(),
+        })
+      )
       .mutation(async ({ input }) => {
         const { addLog } = await import("./services/apiLogsService");
         addLog({
-          level: 'error',
-          app: 'DMS_HUB',
-          type: 'ERROR',
-          endpoint: input.url || 'unknown',
+          level: "error",
+          app: "DMS_HUB",
+          type: "ERROR",
+          endpoint: input.url || "unknown",
           message: `[Client Error] ${input.message}`,
           details: {
             stack: input.stack,
@@ -367,39 +403,45 @@ export const appRouter = router({
 
   // DMS HUB - Sistema Gestione Mercati Completo
   dmsHub: dmsHubRouter,
-  
+
   // Integrazioni - API Keys, Webhook, Monitoring
   integrations: integrationsRouter,
-  
+
   // TPER Integration Endpoints
   tper: router({
-      // GET /api/integrations/tper/stops - Lista fermate Bologna
-      stops: publicProcedure.query(async () => {
-        const { getTPERStops } = await import("./services/tperService");
-        return await getTPERStops();
-      }),
-      
-      // GET /api/integrations/tper/sync - Sincronizza dati TPER (solo admin)
-      sync: adminProcedure.mutation(async () => {
-        try {
-          const { syncTPERData, updateTPERRealtimeData } = await import("./services/tperService");
-          const { getDb } = await import("./db");
-          const schema = await import("../drizzle/schema");
+    // GET /api/integrations/tper/stops - Lista fermate Bologna
+    stops: publicProcedure.query(async () => {
+      const { getTPERStops } = await import("./services/tperService");
+      return await getTPERStops();
+    }),
 
-          const data = await syncTPERData();
+    // GET /api/integrations/tper/sync - Sincronizza dati TPER (solo admin)
+    sync: adminProcedure.mutation(async () => {
+      try {
+        const { syncTPERData, updateTPERRealtimeData } = await import(
+          "./services/tperService"
+        );
+        const { getDb } = await import("./db");
+        const schema = await import("../drizzle/schema");
 
-          // Bulk insert parametrizzato via Drizzle ORM (no SQL injection)
-          if (data.length > 0) {
-            const db = await getDb();
+        const data = await syncTPERData();
 
-            if (!db) {
-              throw new Error("Errore durante la sincronizzazione TPER: Connessione al database non disponibile.");
-            }
+        // Bulk insert parametrizzato via Drizzle ORM (no SQL injection)
+        if (data.length > 0) {
+          const db = await getDb();
 
-            const batchSize = 100;
-            for (let i = 0; i < data.length; i += batchSize) {
-              const batch = data.slice(i, i + batchSize);
-              await db.insert(schema.mobilityData).values(
+          if (!db) {
+            throw new Error(
+              "Errore durante la sincronizzazione TPER: Connessione al database non disponibile."
+            );
+          }
+
+          const batchSize = 100;
+          for (let i = 0; i < data.length; i += batchSize) {
+            const batch = data.slice(i, i + batchSize);
+            await db
+              .insert(schema.mobilityData)
+              .values(
                 batch.map(d => ({
                   marketId: d.marketId,
                   type: d.type,
@@ -412,23 +454,26 @@ export const appRouter = router({
                   occupancy: d.occupancy ?? null,
                   nextArrival: d.nextArrival ?? null,
                 }))
-              ).onConflictDoNothing();
-            }
+              )
+              .onConflictDoNothing();
           }
-
-          // Aggiorna i dati real-time
-          await updateTPERRealtimeData();
-
-          return {
-            success: true,
-            count: data.length,
-            message: `Sincronizzati ${data.length} dati mobilità TPER`
-          };
-        } catch (error: any) {
-          console.error("[TPER Router] Errore sincronizzazione:", error.message);
-          throw new Error("Errore durante la sincronizzazione TPER: " + error.message);
         }
-      }),
+
+        // Aggiorna i dati real-time
+        await updateTPERRealtimeData();
+
+        return {
+          success: true,
+          count: data.length,
+          message: `Sincronizzati ${data.length} dati mobilità TPER`,
+        };
+      } catch (error: any) {
+        console.error("[TPER Router] Errore sincronizzazione:", error.message);
+        throw new Error(
+          "Errore durante la sincronizzazione TPER: " + error.message
+        );
+      }
+    }),
   }),
 
   // MIO Agent - Log e Monitoraggio Agenti
@@ -448,8 +493,6 @@ export const appRouter = router({
 
   // GDPR - Export dati, diritto all'oblio, data retention
   gdpr: gdprRouter,
-
-
 
   // PIATTAFORME PA - Dashboard PDND/AppIO/ANPR/SSO + Audit Trail
 

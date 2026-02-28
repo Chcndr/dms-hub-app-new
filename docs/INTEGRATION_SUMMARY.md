@@ -11,16 +11,16 @@ Il sistema DMS (Digital Market System) si propone come un "gemello digitale" per
 
 La tabella seguente riassume le principali fonti dati, gli endpoint da interrogare e i dati da mappare nel sistema DMS.
 
-| Fonte Dati | Piattaforma | Endpoint/Servizio | Dati Chiave | Stato Attuale |
-| :--- | :--- | :--- | :--- | :--- |
-| **Identità Digitale** | OIDC | `/auth/spid`, `/auth/cie` | Dati anagrafici utente (CF, nome, email) | ✅ **Integrato** |
-| **Anagrafica Imprese** | PDND | `verificapartitaiva`, `consultazione-imprese` | P.IVA, CF, denominazione, stato, REA, ATECO, sede | 🟠 **Parzialmente Integrato** |
-| **Domicilio Digitale** | PDND | `consultazione-inad`, `consultazione-inipec` | PEC ufficiale dell'impresa | 🔴 **Da Integrare** |
-| **Regolarità Contributiva** | PDND | `consultazione-durc-online` | Stato regolarità (DURC), data scadenza | 🟠 **Parzialmente Integrato** |
-| **Pratiche SUAP** | SSET | `/pratiche`, `/allegati` | SCIA, subingressi, volture, allegati (HACCP, etc.) | 🔴 **Da Integrare** |
-| **Concessioni Mercato** | MercaWeb | `/concessions`, `/presences` | Concessioni, posteggi, presenze, delegati | 🟠 **Parzialmente Integrato** |
-| **Pagamenti Canone** | Maggioli Tributi | `/positions`, `/notices`, `/payments` | Posizione contribuente, avvisi pagoPA, pagamenti | 🔴 **Da Integrare** |
-| **Casellario Giudiziale** | PDND | (In fase di collaudo) | Requisiti morali degli operatori | ⚪ **Futuro** |
+| Fonte Dati                  | Piattaforma      | Endpoint/Servizio                             | Dati Chiave                                        | Stato Attuale                 |
+| :-------------------------- | :--------------- | :-------------------------------------------- | :------------------------------------------------- | :---------------------------- |
+| **Identità Digitale**       | OIDC             | `/auth/spid`, `/auth/cie`                     | Dati anagrafici utente (CF, nome, email)           | ✅ **Integrato**              |
+| **Anagrafica Imprese**      | PDND             | `verificapartitaiva`, `consultazione-imprese` | P.IVA, CF, denominazione, stato, REA, ATECO, sede  | 🟠 **Parzialmente Integrato** |
+| **Domicilio Digitale**      | PDND             | `consultazione-inad`, `consultazione-inipec`  | PEC ufficiale dell'impresa                         | 🔴 **Da Integrare**           |
+| **Regolarità Contributiva** | PDND             | `consultazione-durc-online`                   | Stato regolarità (DURC), data scadenza             | 🟠 **Parzialmente Integrato** |
+| **Pratiche SUAP**           | SSET             | `/pratiche`, `/allegati`                      | SCIA, subingressi, volture, allegati (HACCP, etc.) | 🔴 **Da Integrare**           |
+| **Concessioni Mercato**     | MercaWeb         | `/concessions`, `/presences`                  | Concessioni, posteggi, presenze, delegati          | 🟠 **Parzialmente Integrato** |
+| **Pagamenti Canone**        | Maggioli Tributi | `/positions`, `/notices`, `/payments`         | Posizione contribuente, avvisi pagoPA, pagamenti   | 🔴 **Da Integrare**           |
+| **Casellario Giudiziale**   | PDND             | (In fase di collaudo)                         | Requisiti morali degli operatori                   | ⚪ **Futuro**                 |
 
 ## 3. Flusso Operativo e Logica di Business
 
@@ -37,13 +37,13 @@ Il flusso operativo per la gestione di un'impresa o di una pratica di subingress
 
 Sulla base dell'analisi, le seguenti integrazioni sono prioritarie per completare il flusso:
 
-| Priorità | Azione | Dettagli | Stato Attuale |
-| :--- | :--- | :--- | :--- |
-| **Alta** | **Integrazione SUAP/SSET** | Implementare le chiamate API verso SSET per ricevere le pratiche (SCIA, subingressi) e i relativi allegati. Questo è fondamentale per automatizzare il flusso di subingresso. | 🔴 **Da Integrare** |
-| **Alta** | **Integrazione Domicilio Digitale (INAD/INI-PEC)** | Aggiungere la chiamata PDND per recuperare la PEC ufficiale dell'impresa, necessaria per le comunicazioni legali. | 🔴 **Da Integrare** |
-| **Media** | **Integrazione Pagamenti (Maggioli)** | Sviluppare l'integrazione con il sistema dei tributi per visualizzare lo stato dei pagamenti del canone e gli avvisi pagoPA. | 🔴 **Da Integrare** |
-| **Media** | **Completamento Anagrafica Imprese** | Arricchire i dati dell'impresa con le informazioni complete da InfoCamere (ATECO, cariche/soci, sede legale). | 🟠 **Parzialmente Integrato** |
-| **Bassa** | **Gestione Allegati Qualificazioni** | Permettere di caricare e visualizzare i documenti relativi alle qualificazioni (es. attestato HACCP, certificato ISO). | 🟠 **Parzialmente Integrato** |
+| Priorità  | Azione                                             | Dettagli                                                                                                                                                                      | Stato Attuale                 |
+| :-------- | :------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------- |
+| **Alta**  | **Integrazione SUAP/SSET**                         | Implementare le chiamate API verso SSET per ricevere le pratiche (SCIA, subingressi) e i relativi allegati. Questo è fondamentale per automatizzare il flusso di subingresso. | 🔴 **Da Integrare**           |
+| **Alta**  | **Integrazione Domicilio Digitale (INAD/INI-PEC)** | Aggiungere la chiamata PDND per recuperare la PEC ufficiale dell'impresa, necessaria per le comunicazioni legali.                                                             | 🔴 **Da Integrare**           |
+| **Media** | **Integrazione Pagamenti (Maggioli)**              | Sviluppare l'integrazione con il sistema dei tributi per visualizzare lo stato dei pagamenti del canone e gli avvisi pagoPA.                                                  | 🔴 **Da Integrare**           |
+| **Media** | **Completamento Anagrafica Imprese**               | Arricchire i dati dell'impresa con le informazioni complete da InfoCamere (ATECO, cariche/soci, sede legale).                                                                 | 🟠 **Parzialmente Integrato** |
+| **Bassa** | **Gestione Allegati Qualificazioni**               | Permettere di caricare e visualizzare i documenti relativi alle qualificazioni (es. attestato HACCP, certificato ISO).                                                        | 🟠 **Parzialmente Integrato** |
 
 ## 5. Riferimenti
 

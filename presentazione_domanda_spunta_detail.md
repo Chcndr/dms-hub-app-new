@@ -1,9 +1,11 @@
 # Presentazione: Modifiche al Componente DomandaSpuntaDetail
+
 ## MioHub DMS - Sistema di Gestione Mercati
 
 ---
 
 ## Slide 1: Copertina
+
 **Titolo:** Aggiornamento Componente DomandaSpuntaDetail
 **Sottotitolo:** MioHub DMS - SSO SUAP Module
 **Data:** 13 Gennaio 2026
@@ -12,6 +14,7 @@
 ---
 
 ## Slide 2: Il Problema Riscontrato
+
 **Titolo:** Errore critico nel caricamento del dettaglio Domanda Spunta
 
 Il componente DomandaSpuntaDetail presentava un errore che impediva la visualizzazione dei dati:
@@ -23,16 +26,27 @@ Il componente DomandaSpuntaDetail presentava un errore che impediva la visualizz
 ---
 
 ## Slide 3: Soluzione Implementata - Fix Import
+
 **Titolo:** Correzione degli import da lucide-react
 
 **Prima (errore):**
+
 ```typescript
 import { Building, FileCheck, ... } from 'lucide-react';
 ```
 
 **Dopo (corretto):**
+
 ```typescript
-import { ClipboardCheck, FileCheck, FileText, User, MapPin, Wallet, Calendar } from 'lucide-react';
+import {
+  ClipboardCheck,
+  FileCheck,
+  FileText,
+  User,
+  MapPin,
+  Wallet,
+  Calendar,
+} from "lucide-react";
 ```
 
 L'icona `Building` è stata sostituita con `ClipboardCheck` per la sezione Autorizzazione di Riferimento.
@@ -40,20 +54,22 @@ L'icona `Building` è stata sostituita con `ClipboardCheck` per la sezione Autor
 ---
 
 ## Slide 4: Soluzione Implementata - Allineamento Campi API
+
 **Titolo:** Correzione della mappatura dei campi dati
 
-| Campo Frontend (prima) | Campo API (corretto) |
-|------------------------|---------------------|
-| rappresentante_nome | rappresentante_legale_nome |
+| Campo Frontend (prima) | Campo API (corretto)          |
+| ---------------------- | ----------------------------- |
+| rappresentante_nome    | rappresentante_legale_nome    |
 | rappresentante_cognome | rappresentante_legale_cognome |
-| presenze | numero_presenze |
-| giorno | giorno_settimana |
+| presenze               | numero_presenze               |
+| giorno                 | giorno_settimana              |
 
 Tutti i campi ora corrispondono esattamente alla struttura dati restituita dall'endpoint `/api/domande-spunta/:id`.
 
 ---
 
 ## Slide 5: Architettura del Componente
+
 **Titolo:** Struttura modulare con 5 sezioni informative
 
 Il componente è organizzato in card separate per una migliore leggibilità:
@@ -67,6 +83,7 @@ Il componente è organizzato in card separate per una migliore leggibilità:
 ---
 
 ## Slide 6: Design System Applicato
+
 **Titolo:** Coerenza visiva con il tema MioHub
 
 Il componente rispetta il design system del progetto:
@@ -80,6 +97,7 @@ Il componente rispetta il design system del progetto:
 ---
 
 ## Slide 7: Funzionalità Esporta
+
 **Titolo:** Export completo dei dati in formato testuale
 
 Il pulsante "Esporta" genera un file `.txt` contenente:
@@ -95,6 +113,7 @@ Nome file: `DomandaSpunta_{ID}_{DATA}.txt`
 ---
 
 ## Slide 8: Flusso Utente Completo
+
 **Titolo:** Workflow operativo per gli utenti SUAP
 
 ```
@@ -110,6 +129,7 @@ Il flusso è identico a quello delle Concessioni, garantendo coerenza nell'esper
 ---
 
 ## Slide 9: Impatto sul Sistema
+
 **Titolo:** Benefici operativi per i 35.000 operatori comunali
 
 - **Accessibilità:** Gli operatori SUAP possono ora consultare il dettaglio completo delle domande spunta
@@ -120,6 +140,7 @@ Il flusso è identico a quello delle Concessioni, garantendo coerenza nell'esper
 ---
 
 ## Slide 10: Prossimi Passi
+
 **Titolo:** Roadmap di sviluppo
 
 1. ✅ **Completato:** Fix DomandaSpuntaDetail
@@ -132,20 +153,22 @@ Il sistema è pronto per gestire fino a 8.000 mercati, 6.000 fiere e 160.000+ at
 ---
 
 ## Slide 11: Riepilogo Tecnico
+
 **Titolo:** Sintesi delle modifiche al codice
 
-| Aspetto | Dettaglio |
-|---------|-----------|
-| **File modificato** | `src/components/suap/DomandaSpuntaDetail.tsx` |
-| **Righe modificate** | 49 inserite, 53 rimosse |
-| **Commit** | `df918a9` |
-| **Branch** | `master` |
-| **Deploy** | Automatico via Vercel |
-| **Tempo fix** | < 5 minuti |
+| Aspetto              | Dettaglio                                     |
+| -------------------- | --------------------------------------------- |
+| **File modificato**  | `src/components/suap/DomandaSpuntaDetail.tsx` |
+| **Righe modificate** | 49 inserite, 53 rimosse                       |
+| **Commit**           | `df918a9`                                     |
+| **Branch**           | `master`                                      |
+| **Deploy**           | Automatico via Vercel                         |
+| **Tempo fix**        | < 5 minuti                                    |
 
 ---
 
 ## Slide 12: Conclusione
+
 **Titolo:** Sistema MioHub DMS - Sempre più completo
 
 Il componente DomandaSpuntaDetail è ora pienamente funzionante e allineato con:

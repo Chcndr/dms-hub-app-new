@@ -1,10 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Html5Qrcode } from "html5-qrcode";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 import {
   BarChart3,
   QrCode,
@@ -25,30 +31,37 @@ import {
   AlertCircle,
   ArrowLeft,
   WifiOff,
-  MapPin
-} from 'lucide-react';
-import { useLocation, Link } from 'wouter';
-import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
-import { addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
+  MapPin,
+} from "lucide-react";
+import { useLocation, Link } from "wouter";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
 
 // API Base URL — passa per il proxy Vercel (/api/tcc/* → api.mio-hub.me)
 // Fallback diretto se in sviluppo locale
 const API_BASE = import.meta.env.DEV
-  ? 'https://api.mio-hub.me/api/tcc/v2'
-  : '/api/tcc/v2';
+  ? "https://api.mio-hub.me/api/tcc/v2"
+  : "/api/tcc/v2";
 
 // API Base URL per il backend principale (Hetzner) — usato per verifica locale qualifiche
-const MAIN_API_BASE = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
+const MAIN_API_BASE =
+  import.meta.env.VITE_MIHUB_API_URL || "https://api.mio-hub.me";
 
 // Helper: verifica locale qualifiche impresa dal backend principale
 // Stessa logica di WalletTCCBadge in MarketCompaniesTab — calcola stato da data_scadenza
-async function checkQualificationsLocally(impresaId: number): Promise<{ walletEnabled: boolean; label: string }> {
+async function checkQualificationsLocally(
+  impresaId: number
+): Promise<{ walletEnabled: boolean; label: string }> {
   try {
-    const response = await fetch(addComuneIdToUrl(`${MAIN_API_BASE}/api/imprese/${impresaId}/qualificazioni`));
-    if (!response.ok) return { walletEnabled: false, label: 'Errore verifica' };
+    const response = await fetch(
+      addComuneIdToUrl(
+        `${MAIN_API_BASE}/api/imprese/${impresaId}/qualificazioni`
+      )
+    );
+    if (!response.ok) return { walletEnabled: false, label: "Errore verifica" };
     const data = await response.json();
     if (!data.success || !Array.isArray(data.data) || data.data.length === 0) {
-      return { walletEnabled: false, label: 'No Qualifiche' };
+      return { walletEnabled: false, label: "No Qualifiche" };
     }
     const oggi = new Date();
     oggi.setHours(0, 0, 0, 0);
@@ -57,20 +70,20 @@ async function checkQualificationsLocally(impresaId: number): Promise<{ walletEn
       // perché il DB potrebbe avere uno stato obsoleto (es. SCADUTA quando in realtà la data è valida)
       const dataScadenza = q.data_scadenza || q.end_date;
       if (dataScadenza) {
-        const scadenza = new Date(String(dataScadenza).split('T')[0]);
+        const scadenza = new Date(String(dataScadenza).split("T")[0]);
         scadenza.setHours(23, 59, 59, 999);
         return scadenza < oggi;
       }
       // Solo se non c'è data_scadenza, usa lo stato del DB come fallback
-      const stato = (q.stato || q.status || '').toUpperCase();
-      return stato === 'SCADUTA';
+      const stato = (q.stato || q.status || "").toUpperCase();
+      return stato === "SCADUTA";
     });
     if (hasExpired) {
-      return { walletEnabled: false, label: 'Qualifiche Scadute' };
+      return { walletEnabled: false, label: "Qualifiche Scadute" };
     }
-    return { walletEnabled: true, label: 'Qualificato' };
+    return { walletEnabled: true, label: "Qualificato" };
   } catch {
-    return { walletEnabled: false, label: 'Errore verifica' };
+    return { walletEnabled: false, label: "Errore verifica" };
   }
 }
 
@@ -83,39 +96,58 @@ interface WalletStatusIndicatorProps {
   operatorId: number;
   impresaId?: number | null;
   authToken: string | null;
-  onStatusChange?: (status: 'loading' | 'active' | 'suspended' | 'none' | 'error', impresaName?: string | null) => void;
+  onStatusChange?: (
+    status: "loading" | "active" | "suspended" | "none" | "error",
+    impresaName?: string | null
+  ) => void;
 }
 
-function WalletStatusIndicator({ operatorId, impresaId, authToken, onStatusChange }: WalletStatusIndicatorProps) {
-  const [status, setStatus] = useState<'loading' | 'active' | 'suspended' | 'none' | 'error'>('loading');
+function WalletStatusIndicator({
+  operatorId,
+  impresaId,
+  authToken,
+  onStatusChange,
+}: WalletStatusIndicatorProps) {
+  const [status, setStatus] = useState<
+    "loading" | "active" | "suspended" | "none" | "error"
+  >("loading");
   const [qualification, setQualification] = useState<any>(null);
   const [impresaName, setImpresaName] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
   // Helper per processare la risposta wallet (restituisce i dati per ulteriori controlli)
-  const processWalletResponse = useCallback((data: any): { found: boolean; resolvedImpresaId?: number; denominazione?: string } => {
-    if (data.success && data.wallet) {
-      if (data.impresa) {
-        return {
-          found: true,
-          resolvedImpresaId: data.impresa.id,
-          denominazione: data.impresa.denominazione,
-        };
+  const processWalletResponse = useCallback(
+    (
+      data: any
+    ): {
+      found: boolean;
+      resolvedImpresaId?: number;
+      denominazione?: string;
+    } => {
+      if (data.success && data.wallet) {
+        if (data.impresa) {
+          return {
+            found: true,
+            resolvedImpresaId: data.impresa.id,
+            denominazione: data.impresa.denominazione,
+          };
+        }
       }
-    }
-    return { found: false };
-  }, []);
+      return { found: false };
+    },
+    []
+  );
 
   const fetchStatus = useCallback(async () => {
     if ((!operatorId || operatorId <= 0) && !impresaId) {
-      setStatus('none');
-      onStatusChange?.('none');
+      setStatus("none");
+      onStatusChange?.("none");
       return;
     }
 
-    setStatus('loading');
+    setStatus("loading");
     try {
-      const token = authToken || localStorage.getItem('token') || '';
+      const token = authToken || localStorage.getItem("token") || "";
       let walletFound = false;
       let resolvedImpresaId: number | undefined;
       let denominazione: string | undefined;
@@ -123,9 +155,12 @@ function WalletStatusIndicator({ operatorId, impresaId, authToken, onStatusChang
       // Tentativo 1: cerca per operatorId (endpoint originale)
       if (operatorId && operatorId > 0) {
         try {
-          const response = await fetch(`${API_BASE}/operator/wallet/${operatorId}`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
+          const response = await fetch(
+            `${API_BASE}/operator/wallet/${operatorId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           if (response.ok) {
             const data = await response.json();
             const result = processWalletResponse(data);
@@ -135,22 +170,28 @@ function WalletStatusIndicator({ operatorId, impresaId, authToken, onStatusChang
               denominazione = result.denominazione;
             }
           } else if (response.status >= 500) {
-            console.error('Server error fetching operator wallet:', response.status);
-            setStatus('error');
-            onStatusChange?.('error');
+            console.error(
+              "Server error fetching operator wallet:",
+              response.status
+            );
+            setStatus("error");
+            onStatusChange?.("error");
             return;
           }
         } catch (err) {
-          console.warn('Operator wallet lookup failed:', err);
+          console.warn("Operator wallet lookup failed:", err);
         }
       }
 
       // Tentativo 2: cerca per impresaId (endpoint diretto impresa)
       if (!walletFound && impresaId && impresaId > 0) {
         try {
-          const response = await fetch(`${API_BASE}/impresa/${impresaId}/wallet`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
+          const response = await fetch(
+            `${API_BASE}/impresa/${impresaId}/wallet`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           if (response.ok) {
             const data = await response.json();
             const result = processWalletResponse(data);
@@ -161,40 +202,44 @@ function WalletStatusIndicator({ operatorId, impresaId, authToken, onStatusChang
             }
           }
         } catch (err) {
-          console.warn('Impresa wallet lookup failed:', err);
+          console.warn("Impresa wallet lookup failed:", err);
         }
       }
 
       if (!walletFound) {
-        setStatus('none');
-        onStatusChange?.('none');
+        setStatus("none");
+        onStatusChange?.("none");
         return;
       }
 
       // Wallet trovato — ora verifica qualifiche LOCALMENTE dal backend principale
       // Questo evita il problema di dati stale/disconnessi sull'orchestratore
       setImpresaName(denominazione || null);
-      const checkId = resolvedImpresaId || (impresaId && impresaId > 0 ? impresaId : null);
+      const checkId =
+        resolvedImpresaId || (impresaId && impresaId > 0 ? impresaId : null);
       if (checkId) {
         const localCheck = await checkQualificationsLocally(checkId);
-        setQualification({ walletEnabled: localCheck.walletEnabled, label: localCheck.label });
+        setQualification({
+          walletEnabled: localCheck.walletEnabled,
+          label: localCheck.label,
+        });
         if (localCheck.walletEnabled) {
-          setStatus('active');
-          onStatusChange?.('active', denominazione || null);
+          setStatus("active");
+          onStatusChange?.("active", denominazione || null);
         } else {
-          setStatus('suspended');
-          onStatusChange?.('suspended', denominazione || null);
+          setStatus("suspended");
+          onStatusChange?.("suspended", denominazione || null);
         }
       } else {
         // Nessun impresaId disponibile — default attivo (wallet esiste ma non possiamo verificare qualifiche)
         setQualification(null);
-        setStatus('active');
-        onStatusChange?.('active', denominazione || null);
+        setStatus("active");
+        onStatusChange?.("active", denominazione || null);
       }
     } catch (error) {
-      console.error('Error fetching wallet status:', error);
-      setStatus('error');
-      onStatusChange?.('error');
+      console.error("Error fetching wallet status:", error);
+      setStatus("error");
+      onStatusChange?.("error");
     }
   }, [operatorId, impresaId, authToken, onStatusChange, processWalletResponse]);
 
@@ -206,16 +251,18 @@ function WalletStatusIndicator({ operatorId, impresaId, authToken, onStatusChang
     setRetryCount(prev => prev + 1);
   };
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-lg">
         <div className="w-3 h-3 rounded-full bg-gray-400 animate-pulse" />
-        <span className="text-sm font-medium text-white/80">Caricamento...</span>
+        <span className="text-sm font-medium text-white/80">
+          Caricamento...
+        </span>
       </div>
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
       <button
         onClick={handleRetry}
@@ -228,7 +275,7 @@ function WalletStatusIndicator({ operatorId, impresaId, authToken, onStatusChang
     );
   }
 
-  if (status === 'none') {
+  if (status === "none") {
     return (
       <button
         onClick={handleRetry}
@@ -242,13 +289,13 @@ function WalletStatusIndicator({ operatorId, impresaId, authToken, onStatusChang
     );
   }
 
-  if (status === 'suspended') {
+  if (status === "suspended") {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-red-600 rounded-lg shadow-lg">
         <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
         <Wallet className="w-4 h-4 text-white" />
         <span className="text-sm font-bold text-white">
-          {impresaName || 'WALLET'} - SOSPESO
+          {impresaName || "WALLET"} - SOSPESO
         </span>
         {qualification && (
           <span className="text-xs text-white/80">({qualification.label})</span>
@@ -262,7 +309,7 @@ function WalletStatusIndicator({ operatorId, impresaId, authToken, onStatusChang
       <div className="w-3 h-3 rounded-full bg-white" />
       <Wallet className="w-4 h-4 text-white" />
       <span className="text-sm font-bold text-white">
-        {impresaName || 'WALLET'} - ATTIVO
+        {impresaName || "WALLET"} - ATTIVO
       </span>
     </div>
   );
@@ -276,12 +323,12 @@ export default function HubOperatore() {
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
 
   // Stati per Scanner e TCC
-  const [scanMode, setScanMode] = useState<'issue' | 'redeem'>('issue');
+  const [scanMode, setScanMode] = useState<"issue" | "redeem">("issue");
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<string | null>(null);
   const [validatedCustomer, setValidatedCustomer] = useState<any>(null);
   const [validatedSpendRequest, setValidatedSpendRequest] = useState<any>(null);
-  const [amount, setAmount] = useState<string>('');
+  const [amount, setAmount] = useState<string>("");
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [calculatedCredits, setCalculatedCredits] = useState(0);
   const [co2Saved, setCo2Saved] = useState(0);
@@ -289,7 +336,7 @@ export default function HubOperatore() {
 
   // Camera Scanner
   const [cameraActive, setCameraActive] = useState(false);
-  const [inputMode, setInputMode] = useState<'camera' | 'manual'>('manual');
+  const [inputMode, setInputMode] = useState<"camera" | "manual">("manual");
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerRef = useRef<HTMLDivElement>(null);
 
@@ -297,7 +344,9 @@ export default function HubOperatore() {
   const [operatorWallet, setOperatorWallet] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [tccConfig, setTccConfig] = useState<any>(null);
-  const [transactionFilter, setTransactionFilter] = useState<'all' | 'issue' | 'redeem' | 'settlement' | 'reimbursement_received'>('all');
+  const [transactionFilter, setTransactionFilter] = useState<
+    "all" | "issue" | "redeem" | "settlement" | "reimbursement_received"
+  >("all");
 
   // Nome impresa collegata al wallet (v5.7.0)
   const [impresaNome, setImpresaNome] = useState<string | null>(null);
@@ -308,7 +357,10 @@ export default function HubOperatore() {
   // Token auth corrente
   const [authToken, setAuthToken] = useState<string | null>(null);
   // Hub-today: verifica se oggi c'e' un mercato-hub attivo per l'operatore
-  const [hubToday, setHubToday] = useState<{ isActive: boolean; markets: { name: string; giorno: string; hubLocationId: number }[] } | null>(null);
+  const [hubToday, setHubToday] = useState<{
+    isActive: boolean;
+    markets: { name: string; giorno: string; hubLocationId: number }[];
+  } | null>(null);
 
   // Operatore da Firebase Auth (con fallback a localStorage per backward compat)
   // Include impresaId per fallback wallet lookup (v5.8.0)
@@ -316,22 +368,22 @@ export default function HubOperatore() {
     if (authUser && authUser.miohubId && authUser.miohubId > 0) {
       return {
         id: authUser.miohubId,
-        nome: authUser.displayName || 'Operatore',
-        negozio: authUser.displayName || 'Negozio',
-        ruolo: 'Operatore',
+        nome: authUser.displayName || "Operatore",
+        negozio: authUser.displayName || "Negozio",
+        ruolo: "Operatore",
         impresaId: authUser.impresaId || null,
       };
     }
     try {
-      const userStr = localStorage.getItem('user');
+      const userStr = localStorage.getItem("user");
       if (userStr) {
         const user = JSON.parse(userStr);
         if (user.id && user.id > 0) {
           return {
             id: user.id,
-            nome: user.name || 'Operatore',
-            negozio: user.shopName || user.name || 'Negozio',
-            ruolo: 'Operatore',
+            nome: user.name || "Operatore",
+            negozio: user.shopName || user.name || "Negozio",
+            ruolo: "Operatore",
             impresaId: user.impresa_id || null,
           };
         }
@@ -339,19 +391,25 @@ export default function HubOperatore() {
     } catch {}
     // Ultimo fallback: prova miohub_firebase_user
     try {
-      const fbStr = localStorage.getItem('miohub_firebase_user');
+      const fbStr = localStorage.getItem("miohub_firebase_user");
       if (fbStr) {
         const fbUser = JSON.parse(fbStr);
         return {
           id: fbUser.miohubId || 0,
-          nome: fbUser.displayName || 'Operatore',
-          negozio: fbUser.displayName || 'Negozio',
-          ruolo: 'Operatore',
+          nome: fbUser.displayName || "Operatore",
+          negozio: fbUser.displayName || "Negozio",
+          ruolo: "Operatore",
           impresaId: fbUser.impresaId || null,
         };
       }
     } catch {}
-    return { id: 0, nome: 'Operatore', negozio: 'Negozio', ruolo: 'Operatore', impresaId: null as number | null };
+    return {
+      id: 0,
+      nome: "Operatore",
+      negozio: "Negozio",
+      ruolo: "Operatore",
+      impresaId: null as number | null,
+    };
   })();
 
   // Recupera il token auth all'avvio e quando cambia l'utente
@@ -361,7 +419,7 @@ export default function HubOperatore() {
         const token = await getToken();
         setAuthToken(token);
       } else {
-        setAuthToken(localStorage.getItem('token'));
+        setAuthToken(localStorage.getItem("token"));
       }
     };
     refreshToken();
@@ -373,7 +431,7 @@ export default function HubOperatore() {
       const token = await getToken();
       if (token) return token;
     }
-    return authToken || localStorage.getItem('token') || '';
+    return authToken || localStorage.getItem("token") || "";
   }, [getToken, authToken]);
 
   // Carica dati iniziali quando abbiamo un operatore valido e il token
@@ -392,7 +450,7 @@ export default function HubOperatore() {
   // Calcolo automatico crediti
   useEffect(() => {
     const val = parseFloat(amount) || 0;
-    const multiplier = 1 + (selectedCerts.length * 0.2);
+    const multiplier = 1 + selectedCerts.length * 0.2;
     const credits = Math.floor(val * multiplier);
     setCalculatedCredits(credits);
     setCo2Saved(parseFloat((credits * 0.05).toFixed(2)));
@@ -407,9 +465,12 @@ export default function HubOperatore() {
       // Tentativo 1: cerca per operatorId
       if (operatore.id > 0) {
         try {
-          const res = await fetch(`${API_BASE}/operator/wallet/${operatore.id}?_t=${Date.now()}`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
+          const res = await fetch(
+            `${API_BASE}/operator/wallet/${operatore.id}?_t=${Date.now()}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           if (res.ok) {
             data = await res.json();
             if (!data.success || !data.wallet) data = null;
@@ -418,22 +479,25 @@ export default function HubOperatore() {
             return;
           }
         } catch (err) {
-          console.warn('Operator wallet fetch failed:', err);
+          console.warn("Operator wallet fetch failed:", err);
         }
       }
 
       // Tentativo 2: cerca per impresaId (fallback v5.8.0)
       if (!data && operatore.impresaId) {
         try {
-          const res = await fetch(`${API_BASE}/impresa/${operatore.impresaId}/wallet?_t=${Date.now()}`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
+          const res = await fetch(
+            `${API_BASE}/impresa/${operatore.impresaId}/wallet?_t=${Date.now()}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           if (res.ok) {
             data = await res.json();
             if (!data.success || !data.wallet) data = null;
           }
         } catch (err) {
-          console.warn('Impresa wallet fetch failed:', err);
+          console.warn("Impresa wallet fetch failed:", err);
         }
       }
 
@@ -447,7 +511,8 @@ export default function HubOperatore() {
         }
         // Verifica qualifiche LOCALMENTE dal backend principale (stessa logica del semaforo card imprese)
         if (resolvedImpresaId) {
-          const localCheck = await checkQualificationsLocally(resolvedImpresaId);
+          const localCheck =
+            await checkQualificationsLocally(resolvedImpresaId);
           setWalletEnabled(localCheck.walletEnabled);
         } else {
           setWalletEnabled(data.qualification?.walletEnabled ?? true);
@@ -462,7 +527,7 @@ export default function HubOperatore() {
         }
       }
     } catch (error) {
-      console.error('Errore caricamento wallet:', error);
+      console.error("Errore caricamento wallet:", error);
       setApiConnected(false);
     }
   };
@@ -479,28 +544,40 @@ export default function HubOperatore() {
       // Tentativo 1: transazioni per operatorId (restituisce TUTTE le transazioni, no JOIN rotto sulle date)
       if (operatore.id > 0) {
         try {
-          const res = await fetch(`${API_BASE}/operator/transactions/${operatore.id}?limit=20`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
+          const res = await fetch(
+            `${API_BASE}/operator/transactions/${operatore.id}?limit=20`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           if (res.ok) {
             data = await res.json();
           }
         } catch (err) {
-          console.warn('Operator transactions fetch failed:', err);
+          console.warn("Operator transactions fetch failed:", err);
         }
       }
 
       // Tentativo 2: transazioni per impresaId (fallback — puo' restituire risultati parziali)
-      if ((!data || !data.success || !Array.isArray(data.transactions) || data.transactions.length === 0) && impresaId) {
+      if (
+        (!data ||
+          !data.success ||
+          !Array.isArray(data.transactions) ||
+          data.transactions.length === 0) &&
+        impresaId
+      ) {
         try {
-          const res = await fetch(`${API_BASE}/impresa/${impresaId}/wallet/transactions?limit=20`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
+          const res = await fetch(
+            `${API_BASE}/impresa/${impresaId}/wallet/transactions?limit=20`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           if (res.ok) {
             data = await res.json();
           }
         } catch (err) {
-          console.warn('Impresa transactions fetch failed:', err);
+          console.warn("Impresa transactions fetch failed:", err);
         }
       }
 
@@ -510,7 +587,7 @@ export default function HubOperatore() {
         setTransactions([]);
       }
     } catch (error) {
-      console.error('Errore caricamento transazioni:', error);
+      console.error("Errore caricamento transazioni:", error);
       setTransactions([]);
     }
   };
@@ -524,16 +601,19 @@ export default function HubOperatore() {
         setTccConfig(data.config);
       }
     } catch (error) {
-      console.error('Errore caricamento config:', error);
+      console.error("Errore caricamento config:", error);
     }
   };
 
   const loadHubToday = async () => {
     try {
       const token = await getCurrentToken();
-      const res = await fetch(`${API_BASE}/operator/${operatore.id}/hub-today`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `${API_BASE}/operator/${operatore.id}/hub-today`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.success !== false) {
@@ -546,19 +626,19 @@ export default function HubOperatore() {
   };
 
   const handleCheckIn = () => {
-    const now = new Date().toLocaleTimeString('it-IT');
+    const now = new Date().toLocaleTimeString("it-IT");
     setCheckInTime(now);
     setIsCheckedIn(true);
-    toast.success('Check-in effettuato con successo');
+    toast.success("Check-in effettuato con successo");
   };
 
   const handleCheckOut = () => {
     setIsCheckedIn(false);
-    toast.info('Check-out effettuato');
+    toast.info("Check-out effettuato");
   };
 
   const toggleCert = (cert: string) => {
-    setSelectedCerts(prev => 
+    setSelectedCerts(prev =>
       prev.includes(cert) ? prev.filter(c => c !== cert) : [...prev, cert]
     );
   };
@@ -568,15 +648,15 @@ export default function HubOperatore() {
     try {
       const token = await getCurrentToken();
       const qrValidateUrl = import.meta.env.DEV
-        ? 'https://api.mio-hub.me/api/tcc/validate-qr'
-        : '/api/tcc/validate-qr';
+        ? "https://api.mio-hub.me/api/tcc/validate-qr"
+        : "/api/tcc/validate-qr";
       const res = await authenticatedFetch(qrValidateUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ qr_data: qrData })
+        body: JSON.stringify({ qr_data: qrData }),
       });
       const data = await res.json();
       if (data.success && data.valid) {
@@ -584,11 +664,11 @@ export default function HubOperatore() {
         toast.success(`Cliente verificato: ${data.citizen.name}`);
         return true;
       } else {
-        toast.error(data.error || 'QR Code non valido');
+        toast.error(data.error || "QR Code non valido");
         return false;
       }
     } catch (error) {
-      toast.error('Errore validazione QR');
+      toast.error("Errore validazione QR");
       return false;
     }
   };
@@ -596,11 +676,11 @@ export default function HubOperatore() {
   // Assegna TCC al cliente
   const handleIssueCredits = async () => {
     if (!scannedData || !validatedCustomer) {
-      toast.error('Scansiona prima il QR del cliente');
+      toast.error("Scansiona prima il QR del cliente");
       return;
     }
     if (!amount || parseFloat(amount) <= 0) {
-      toast.error('Inserisci un importo valido');
+      toast.error("Inserisci un importo valido");
       return;
     }
 
@@ -608,11 +688,11 @@ export default function HubOperatore() {
     try {
       const token = await getCurrentToken();
       const res = await authenticatedFetch(`${API_BASE}/operator/issue`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Idempotency-Key': crypto.randomUUID(),
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "X-Idempotency-Key": crypto.randomUUID(),
         },
         body: JSON.stringify({
           operator_id: operatore.id,
@@ -621,17 +701,17 @@ export default function HubOperatore() {
           euro_amount: parseFloat(amount),
           certifications: selectedCerts,
           timestamp: Date.now(),
-        })
+        }),
       });
       const data = await res.json();
-      
+
       if (data.success) {
-        const txNum = data.transaction?.transaction_number || '';
+        const txNum = data.transaction?.transaction_number || "";
         toast.success(data.message, {
-          description: `${txNum ? `#${txNum} - ` : ''}Nuovo saldo cliente: ${data.citizen.new_balance} TCC`
+          description: `${txNum ? `#${txNum} - ` : ""}Nuovo saldo cliente: ${data.citizen.new_balance} TCC`,
         });
         // Reset form
-        setAmount('');
+        setAmount("");
         setSelectedCerts([]);
         setScannedData(null);
         setValidatedCustomer(null);
@@ -641,10 +721,10 @@ export default function HubOperatore() {
           loadTransactions();
         }, 500);
       } else {
-        toast.error(data.error || 'Errore assegnazione TCC');
+        toast.error(data.error || "Errore assegnazione TCC");
       }
     } catch (error) {
-      toast.error('Errore di connessione');
+      toast.error("Errore di connessione");
     } finally {
       setIsLoading(false);
     }
@@ -653,33 +733,36 @@ export default function HubOperatore() {
   // Incassa TCC dal cliente (riscatto)
   const handleRedeemSpend = async () => {
     if (!scannedData) {
-      toast.error('Scansiona il QR di spesa del cliente');
+      toast.error("Scansiona il QR di spesa del cliente");
       return;
     }
 
     setIsLoading(true);
     try {
       const token = await getCurrentToken();
-      const res = await authenticatedFetch(`${API_BASE}/operator/redeem-spend`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Idempotency-Key': crypto.randomUUID(),
-        },
-        body: JSON.stringify({
-          operator_id: operatore.id,
-          impresa_id: operatore.impresaId,
-          qr_data: scannedData,
-          timestamp: Date.now(),
-        })
-      });
+      const res = await authenticatedFetch(
+        `${API_BASE}/operator/redeem-spend`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "X-Idempotency-Key": crypto.randomUUID(),
+          },
+          body: JSON.stringify({
+            operator_id: operatore.id,
+            impresa_id: operatore.impresaId,
+            qr_data: scannedData,
+            timestamp: Date.now(),
+          }),
+        }
+      );
       const data = await res.json();
-      
+
       if (data.success) {
-        const txNum = data.transaction?.transaction_number || '';
+        const txNum = data.transaction?.transaction_number || "";
         toast.success(data.message, {
-          description: txNum ? `#${txNum}` : undefined
+          description: txNum ? `#${txNum}` : undefined,
         });
         setScannedData(null);
         setValidatedSpendRequest(null);
@@ -689,10 +772,10 @@ export default function HubOperatore() {
           loadTransactions();
         }, 500);
       } else {
-        toast.error(data.error || 'Errore incasso TCC');
+        toast.error(data.error || "Errore incasso TCC");
       }
     } catch (error) {
-      toast.error('Errore di connessione');
+      toast.error("Errore di connessione");
     } finally {
       setIsLoading(false);
     }
@@ -700,7 +783,11 @@ export default function HubOperatore() {
 
   // Chiusura giornaliera
   const handleSettlement = async () => {
-    if (!window.confirm('Confermi la chiusura giornaliera? I TCC riscattati verranno inviati al fondo per il rimborso.')) {
+    if (
+      !window.confirm(
+        "Confermi la chiusura giornaliera? I TCC riscattati verranno inviati al fondo per il rimborso."
+      )
+    ) {
       return;
     }
 
@@ -708,15 +795,15 @@ export default function HubOperatore() {
     try {
       const token = await getCurrentToken();
       const res = await authenticatedFetch(`${API_BASE}/operator/settlement`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ operator_id: operatore.id })
+        body: JSON.stringify({ operator_id: operatore.id }),
       });
       const data = await res.json();
-      
+
       if (data.success) {
         toast.success(data.message);
         // Usa i dati del nuovo wallet dalla risposta se disponibili
@@ -726,11 +813,11 @@ export default function HubOperatore() {
             id: 0, // Sarà aggiornato dal reload
             operator_id: operatore.id,
             difference: 0,
-            difference_eur: '0.00',
-            redeemed_eur: '0.00',
+            difference_eur: "0.00",
+            redeemed_eur: "0.00",
             exchange_rate: operatorWallet?.exchange_rate || 0.089,
             impresa_id: operatorWallet?.impresa_id,
-            wallet_status: 'active'
+            wallet_status: "active",
           });
         }
         // Ricarica anche dal server dopo un breve delay per conferma
@@ -739,10 +826,10 @@ export default function HubOperatore() {
           loadTransactions();
         }, 500);
       } else {
-        toast.error(data.error || 'Errore chiusura giornaliera');
+        toast.error(data.error || "Errore chiusura giornaliera");
       }
     } catch (error) {
-      toast.error('Errore di connessione');
+      toast.error("Errore di connessione");
     } finally {
       setIsLoading(false);
     }
@@ -752,51 +839,51 @@ export default function HubOperatore() {
   const startCameraScanner = async () => {
     try {
       if (!scannerContainerRef.current) {
-        console.error('Scanner container not found');
-        toast.error('Errore: container scanner non trovato');
+        console.error("Scanner container not found");
+        toast.error("Errore: container scanner non trovato");
         return;
       }
-      
-      const html5QrCode = new Html5Qrcode('qr-reader');
+
+      const html5QrCode = new Html5Qrcode("qr-reader");
       html5QrCodeRef.current = html5QrCode;
-      
+
       await html5QrCode.start(
-        { facingMode: 'environment' },
+        { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: function(viewfinderWidth: number, viewfinderHeight: number) {
+          qrbox: function (viewfinderWidth: number, viewfinderHeight: number) {
             // QR box più grande per cattura più facile
             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
             const qrboxSize = Math.floor(minEdge * 0.7);
             return { width: qrboxSize, height: qrboxSize };
           },
           aspectRatio: 1.0,
-          disableFlip: false
+          disableFlip: false,
         },
-        async (decodedText) => {
+        async decodedText => {
           // QR Code scansionato con successo
-          toast.success('QR Code letto!');
+          toast.success("QR Code letto!");
           setScannedData(decodedText);
-          
-          if (scanMode === 'issue') {
+
+          if (scanMode === "issue") {
             await validateCustomerQR(decodedText);
           } else {
             // Valida QR di spesa e recupera info cliente
             await validateSpendQR(decodedText);
           }
-          
+
           await stopCameraScanner();
-          setInputMode('manual');
+          setInputMode("manual");
         },
-        (errorMessage) => {
+        errorMessage => {
           // Ignora errori di scansione continua (normale)
         }
       );
       setCameraActive(true);
     } catch (err) {
-      console.error('Errore avvio camera:', err);
-      toast.error('Errore avvio fotocamera: ' + (err as Error).message);
-      setInputMode('manual');
+      console.error("Errore avvio camera:", err);
+      toast.error("Errore avvio fotocamera: " + (err as Error).message);
+      setInputMode("manual");
     }
   };
 
@@ -807,7 +894,7 @@ export default function HubOperatore() {
         await html5QrCodeRef.current.stop();
         html5QrCodeRef.current = null;
       } catch (err) {
-        console.error('Errore stop camera:', err);
+        console.error("Errore stop camera:", err);
       }
     }
     setCameraActive(false);
@@ -824,7 +911,7 @@ export default function HubOperatore() {
 
   // Start/stop camera based on inputMode
   useEffect(() => {
-    if (inputMode === 'camera' && !validatedCustomer && !scannedData) {
+    if (inputMode === "camera" && !validatedCustomer && !scannedData) {
       startCameraScanner();
     } else {
       stopCameraScanner();
@@ -835,29 +922,32 @@ export default function HubOperatore() {
   const validateSpendQR = async (qrData: string) => {
     try {
       const token = await getCurrentToken();
-      const res = await authenticatedFetch(`${API_BASE}/operator/validate-spend-qr`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ qr_data: qrData })
-      });
+      const res = await authenticatedFetch(
+        `${API_BASE}/operator/validate-spend-qr`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ qr_data: qrData }),
+        }
+      );
       const data = await res.json();
-      
+
       if (data.success) {
         setValidatedSpendRequest({
           customer: data.customer,
-          spend: data.spend_request
+          spend: data.spend_request,
         });
         toast.success(`Cliente verificato: ${data.customer.name}`);
       } else {
-        toast.error(data.error || 'QR non valido');
+        toast.error(data.error || "QR non valido");
         setScannedData(null);
         setValidatedSpendRequest(null);
       }
     } catch (error) {
-      toast.error('Errore validazione QR');
+      toast.error("Errore validazione QR");
       setScannedData(null);
       setValidatedSpendRequest(null);
     }
@@ -867,48 +957,57 @@ export default function HubOperatore() {
   const handleManualQRInput = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const qrInput = formData.get('qrInput') as string;
-    
+    const qrInput = formData.get("qrInput") as string;
+
     if (!qrInput) return;
-    
+
     setScannedData(qrInput);
-    
-    if (scanMode === 'issue') {
+
+    if (scanMode === "issue") {
       await validateCustomerQR(qrInput);
     } else {
       // Valida QR di spesa e recupera info cliente
       await validateSpendQR(qrInput);
     }
-    
+
     setIsScanning(false);
   };
 
   // Verifica se arriviamo dalla HomePage
   const [location] = useLocation();
-  const fromHome = location.includes('/hub-operatore');
+  const fromHome = location.includes("/hub-operatore");
 
   return (
     <div className="min-h-screen bg-[#0b1220] text-[#e8fbff]">
       {/* Torna alla Home */}
       <div className="w-full px-2 pt-4">
-        <Link href="/" className="inline-flex items-center gap-2 text-[#4fd1c5] hover:text-[#81e6d9] transition-colors">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-[#4fd1c5] hover:text-[#81e6d9] transition-colors"
+        >
           <ArrowLeft className="w-4 h-4" />
           <span>Torna alla Home</span>
         </Link>
       </div>
-      
+
       {/* Banner connessione API */}
       {apiConnected === false && (
         <div className="bg-red-600/90 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <WifiOff className="w-4 h-4 text-white" />
-            <span className="text-sm text-white">API TCC non raggiungibile — Verifica la connessione</span>
+            <span className="text-sm text-white">
+              API TCC non raggiungibile — Verifica la connessione
+            </span>
           </div>
           <Button
             size="sm"
             variant="ghost"
             className="text-white hover:bg-white/20"
-            onClick={() => { loadOperatorWallet(); loadTransactions(); loadTccConfig(); }}
+            onClick={() => {
+              loadOperatorWallet();
+              loadTransactions();
+              loadTccConfig();
+            }}
           >
             <RefreshCw className="w-4 h-4 mr-1" />
             Riprova
@@ -917,30 +1016,36 @@ export default function HubOperatore() {
       )}
 
       {/* Banner hub-today: mostra se oggi c'e' un mercato-hub attivo */}
-      {hubToday && (
-        hubToday.isActive ? (
+      {hubToday &&
+        (hubToday.isActive ? (
           <div className="bg-[#10b981]/90 px-4 py-2 flex items-center gap-2">
             <MapPin className="w-4 h-4 text-white" />
             <span className="text-sm text-white font-medium">
-              Oggi operi a: {hubToday.markets.map(m => `${m.name} (${m.giorno})`).join(', ')}
+              Oggi operi a:{" "}
+              {hubToday.markets.map(m => `${m.name} (${m.giorno})`).join(", ")}
             </span>
             <div className="w-2 h-2 rounded-full bg-white animate-pulse ml-auto" />
           </div>
         ) : (
           <div className="bg-gray-600/50 px-4 py-2 flex items-center gap-2">
             <MapPin className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-300">Nessun mercato-hub oggi</span>
+            <span className="text-sm text-gray-300">
+              Nessun mercato-hub oggi
+            </span>
             <div className="w-2 h-2 rounded-full bg-gray-400 ml-auto" />
           </div>
-        )
-      )}
+        ))}
 
       {/* Banner utente non autenticato */}
       {operatore.id <= 0 && (
         <div className="bg-amber-600/90 px-4 py-2 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-white" />
-          <span className="text-sm text-white">Effettua il login per accedere al wallet TCC</span>
-          <Link href="/login" className="text-white underline text-sm ml-2">Accedi</Link>
+          <span className="text-sm text-white">
+            Effettua il login per accedere al wallet TCC
+          </span>
+          <Link href="/login" className="text-white underline text-sm ml-2">
+            Accedi
+          </Link>
         </div>
       )}
 
@@ -949,7 +1054,9 @@ export default function HubOperatore() {
         <div className="w-full px-1 sm:px-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-shrink">
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-2xl font-bold text-white truncate">HUB Operatore</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-white truncate">
+                HUB Operatore
+              </h1>
             </div>
             {/* Semaforo Wallet TCC (v5.7.0 + v5.8.0 fallback impresaId) */}
             <WalletStatusIndicator
@@ -958,12 +1065,14 @@ export default function HubOperatore() {
               authToken={authToken}
               onStatusChange={(status, name) => {
                 if (name) setImpresaNome(name);
-                setApiConnected(status !== 'error');
+                setApiConnected(status !== "error");
               }}
             />
           </div>
           <div className="text-right flex-shrink-0">
-            <p className="font-semibold text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{impresaNome || operatore.nome}</p>
+            <p className="font-semibold text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">
+              {impresaNome || operatore.nome}
+            </p>
           </div>
         </div>
       </header>
@@ -978,7 +1087,11 @@ export default function HubOperatore() {
               <p className="text-sm sm:text-sm text-[#94a3b8]">Vendite Oggi</p>
               <div className="flex items-center justify-between gap-1">
                 <p className="text-xl sm:text-2xl font-bold text-[#e8fbff] truncate">
-                  €{parseFloat(operatorWallet?.euro_sales || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  €
+                  {parseFloat(operatorWallet?.euro_sales || 0).toLocaleString(
+                    "it-IT",
+                    { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                  )}
                 </p>
                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[#10b981] flex-shrink-0" />
               </div>
@@ -987,7 +1100,9 @@ export default function HubOperatore() {
 
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden rounded-md sm:rounded-lg py-0 sm:py-6 gap-0 sm:gap-6">
             <CardContent className="p-3 sm:p-4">
-              <p className="text-sm sm:text-sm text-[#94a3b8]">TCC Rilasciati</p>
+              <p className="text-sm sm:text-sm text-[#94a3b8]">
+                TCC Rilasciati
+              </p>
               <div className="flex items-center justify-between gap-1">
                 <p className="text-xl sm:text-2xl font-bold text-[#14b8a6] truncate">
                   {operatorWallet?.tcc_issued || 0}
@@ -999,7 +1114,9 @@ export default function HubOperatore() {
 
           <Card className="bg-[#1e293b] border-[#334155] overflow-hidden rounded-md sm:rounded-lg py-0 sm:py-6 gap-0 sm:gap-6">
             <CardContent className="p-3 sm:p-4">
-              <p className="text-sm sm:text-sm text-[#94a3b8]">TCC Riscattati</p>
+              <p className="text-sm sm:text-sm text-[#94a3b8]">
+                TCC Riscattati
+              </p>
               <div className="flex items-center justify-between gap-1">
                 <p className="text-xl sm:text-2xl font-bold text-[#f59e0b] truncate">
                   {operatorWallet?.tcc_redeemed || 0}
@@ -1025,15 +1142,24 @@ export default function HubOperatore() {
         {/* Tabs Funzionalita (v4.3.3 - fix mobile text truncation) */}
         <Tabs defaultValue="scanner" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-[#1e293b]">
-            <TabsTrigger value="scanner" className="data-[state=active]:bg-[#f97316] text-xs sm:text-sm px-1 sm:px-3">
+            <TabsTrigger
+              value="scanner"
+              className="data-[state=active]:bg-[#f97316] text-xs sm:text-sm px-1 sm:px-3"
+            >
               <QrCode className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
               <span className="truncate">Scanner</span>
             </TabsTrigger>
-            <TabsTrigger value="transazioni" className="data-[state=active]:bg-[#f97316] text-xs sm:text-sm px-1 sm:px-3">
+            <TabsTrigger
+              value="transazioni"
+              className="data-[state=active]:bg-[#f97316] text-xs sm:text-sm px-1 sm:px-3"
+            >
               <BarChart3 className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
               <span className="truncate">Transazioni</span>
             </TabsTrigger>
-            <TabsTrigger value="wallet" className="data-[state=active]:bg-[#f97316] text-xs sm:text-sm px-1 sm:px-3">
+            <TabsTrigger
+              value="wallet"
+              className="data-[state=active]:bg-[#f97316] text-xs sm:text-sm px-1 sm:px-3"
+            >
               <Wallet className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
               <span className="truncate">Wallet</span>
             </TabsTrigger>
@@ -1044,17 +1170,33 @@ export default function HubOperatore() {
             {/* Toggle Modalita */}
             <div className="flex gap-2">
               <Button
-                variant={scanMode === 'issue' ? 'default' : 'outline'}
-                className={scanMode === 'issue' ? 'bg-[#10b981] hover:bg-[#059669]' : 'border-[#334155]'}
-                onClick={() => { setScanMode('issue'); setScannedData(null); setValidatedCustomer(null); }}
+                variant={scanMode === "issue" ? "default" : "outline"}
+                className={
+                  scanMode === "issue"
+                    ? "bg-[#10b981] hover:bg-[#059669]"
+                    : "border-[#334155]"
+                }
+                onClick={() => {
+                  setScanMode("issue");
+                  setScannedData(null);
+                  setValidatedCustomer(null);
+                }}
               >
                 <ArrowUpCircle className="w-4 h-4 mr-2" />
                 Assegna TCC
               </Button>
               <Button
-                variant={scanMode === 'redeem' ? 'default' : 'outline'}
-                className={scanMode === 'redeem' ? 'bg-[#f59e0b] hover:bg-[#d97706]' : 'border-[#334155]'}
-                onClick={() => { setScanMode('redeem'); setScannedData(null); setValidatedCustomer(null); }}
+                variant={scanMode === "redeem" ? "default" : "outline"}
+                className={
+                  scanMode === "redeem"
+                    ? "bg-[#f59e0b] hover:bg-[#d97706]"
+                    : "border-[#334155]"
+                }
+                onClick={() => {
+                  setScanMode("redeem");
+                  setScannedData(null);
+                  setValidatedCustomer(null);
+                }}
               >
                 <ArrowDownCircle className="w-4 h-4 mr-2" />
                 Incassa TCC
@@ -1064,27 +1206,30 @@ export default function HubOperatore() {
             <Card className="bg-[#1e293b] border-[#334155] py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
               <CardHeader className="px-3 sm:px-6">
                 <CardTitle className="text-[#e8fbff]">
-                  {scanMode === 'issue' ? 'Assegna TCC al Cliente' : 'Incassa TCC dal Cliente'}
+                  {scanMode === "issue"
+                    ? "Assegna TCC al Cliente"
+                    : "Incassa TCC dal Cliente"}
                 </CardTitle>
                 <CardDescription className="text-[#94a3b8]">
-                  {scanMode === 'issue' 
-                    ? 'Inserisci importo, poi scansiona il QR del cliente' 
-                    : 'Scansiona il QR di spesa generato dal cliente'}
+                  {scanMode === "issue"
+                    ? "Inserisci importo, poi scansiona il QR del cliente"
+                    : "Scansiona il QR di spesa generato dal cliente"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 px-2 sm:px-6">
-                
                 {/* Form Importo (solo per issue) */}
-                {scanMode === 'issue' && (
+                {scanMode === "issue" && (
                   <div className="space-y-4 p-4 bg-[#0b1220] rounded-lg">
                     <div>
-                      <label className="text-sm text-[#94a3b8]">Importo Vendita (EUR)</label>
-                      <input 
-                        type="number" 
+                      <label className="text-sm text-[#94a3b8]">
+                        Importo Vendita (EUR)
+                      </label>
+                      <input
+                        type="number"
                         step="0.01"
                         placeholder="0.00"
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChange={e => setAmount(e.target.value)}
                         className="w-full mt-1 px-3 py-3 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff] text-xl font-bold focus:outline-none focus:border-[#14b8a6]"
                         autoComplete="off"
                         data-form-type="other"
@@ -1092,16 +1237,18 @@ export default function HubOperatore() {
                     </div>
 
                     <div>
-                      <label className="text-sm text-[#94a3b8] mb-2 block">Certificazioni (+20% cad.)</label>
+                      <label className="text-sm text-[#94a3b8] mb-2 block">
+                        Certificazioni (+20% cad.)
+                      </label>
                       <div className="flex flex-wrap gap-2">
-                        {['BIO', 'KM0', 'Fair Trade', 'DOP'].map(cert => (
-                          <Badge 
+                        {["BIO", "KM0", "Fair Trade", "DOP"].map(cert => (
+                          <Badge
                             key={cert}
                             onClick={() => toggleCert(cert)}
                             className={`cursor-pointer transition-all ${
-                              selectedCerts.includes(cert) 
-                                ? 'bg-[#14b8a6] hover:bg-[#0d9488] ring-2 ring-white/20' 
-                                : 'bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8]'
+                              selectedCerts.includes(cert)
+                                ? "bg-[#14b8a6] hover:bg-[#0d9488] ring-2 ring-white/20"
+                                : "bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8]"
                             }`}
                           >
                             {cert}
@@ -1112,8 +1259,12 @@ export default function HubOperatore() {
 
                     <div className="p-3 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-md">
                       <p className="text-sm text-[#94a3b8]">TCC da Assegnare</p>
-                      <p className="text-3xl font-bold text-[#14b8a6]">{calculatedCredits} TCC</p>
-                      <p className="text-xs text-[#94a3b8] mt-1">CO2 risparmiata: {co2Saved} kg</p>
+                      <p className="text-3xl font-bold text-[#14b8a6]">
+                        {calculatedCredits} TCC
+                      </p>
+                      <p className="text-xs text-[#94a3b8] mt-1">
+                        CO2 risparmiata: {co2Saved} kg
+                      </p>
                     </div>
                   </div>
                 )}
@@ -1122,18 +1273,21 @@ export default function HubOperatore() {
                 <div className="flex gap-2 mb-4">
                   <Button
                     type="button"
-                    variant={inputMode === 'camera' ? 'default' : 'outline'}
-                    onClick={() => setInputMode('camera')}
-                    className={`flex-1 ${inputMode === 'camera' ? 'bg-[#f97316] hover:bg-[#ea580c]' : 'border-[#334155]'}`}
+                    variant={inputMode === "camera" ? "default" : "outline"}
+                    onClick={() => setInputMode("camera")}
+                    className={`flex-1 ${inputMode === "camera" ? "bg-[#f97316] hover:bg-[#ea580c]" : "border-[#334155]"}`}
                   >
                     <Camera className="w-4 h-4 mr-2" />
                     Fotocamera
                   </Button>
                   <Button
                     type="button"
-                    variant={inputMode === 'manual' ? 'default' : 'outline'}
-                    onClick={() => { stopCameraScanner(); setInputMode('manual'); }}
-                    className={`flex-1 ${inputMode === 'manual' ? 'bg-[#14b8a6] hover:bg-[#0d9488]' : 'border-[#334155]'}`}
+                    variant={inputMode === "manual" ? "default" : "outline"}
+                    onClick={() => {
+                      stopCameraScanner();
+                      setInputMode("manual");
+                    }}
+                    className={`flex-1 ${inputMode === "manual" ? "bg-[#14b8a6] hover:bg-[#0d9488]" : "border-[#334155]"}`}
                   >
                     <QrCode className="w-4 h-4 mr-2" />
                     Manuale
@@ -1141,17 +1295,17 @@ export default function HubOperatore() {
                 </div>
 
                 {/* Scanner Section */}
-                <div 
+                <div
                   ref={scannerContainerRef}
                   className="bg-[#0b1220] rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-[#334155] overflow-hidden relative"
-                  style={{ minHeight: '350px' }}
+                  style={{ minHeight: "350px" }}
                 >
-                  {inputMode === 'camera' ? (
+                  {inputMode === "camera" ? (
                     <div className="w-full h-full">
-                      <div 
-                        id="qr-reader" 
+                      <div
+                        id="qr-reader"
                         className="w-full"
-                        style={{ minHeight: '300px' }}
+                        style={{ minHeight: "300px" }}
                       ></div>
                       {cameraActive ? (
                         <p className="text-center text-sm text-[#10b981] py-2 font-medium">
@@ -1166,54 +1320,96 @@ export default function HubOperatore() {
                   ) : validatedCustomer ? (
                     <div className="text-center p-4">
                       <CheckCircle2 className="w-16 h-16 text-[#10b981] mx-auto mb-4" />
-                      <p className="text-[#e8fbff] font-medium mb-2">Cliente Verificato</p>
-                      <p className="text-lg font-bold text-[#14b8a6]">{validatedCustomer.name}</p>
-                      <p className="text-sm text-[#94a3b8]">{validatedCustomer.email}</p>
-                      <p className="text-sm text-[#94a3b8] mt-2">Saldo: {validatedCustomer.wallet_balance} TCC</p>
-                      <Button 
+                      <p className="text-[#e8fbff] font-medium mb-2">
+                        Cliente Verificato
+                      </p>
+                      <p className="text-lg font-bold text-[#14b8a6]">
+                        {validatedCustomer.name}
+                      </p>
+                      <p className="text-sm text-[#94a3b8]">
+                        {validatedCustomer.email}
+                      </p>
+                      <p className="text-sm text-[#94a3b8] mt-2">
+                        Saldo: {validatedCustomer.wallet_balance} TCC
+                      </p>
+                      <Button
                         className="mt-4 bg-[#f97316] hover:bg-[#ea580c]"
-                        onClick={() => { setScannedData(null); setValidatedCustomer(null); }}
+                        onClick={() => {
+                          setScannedData(null);
+                          setValidatedCustomer(null);
+                        }}
                       >
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Nuovo Cliente
                       </Button>
                     </div>
-                  ) : scannedData && scanMode === 'redeem' && validatedSpendRequest ? (
+                  ) : scannedData &&
+                    scanMode === "redeem" &&
+                    validatedSpendRequest ? (
                     <div className="text-center p-4">
                       <CheckCircle2 className="w-16 h-16 text-[#f59e0b] mx-auto mb-4" />
-                      <p className="text-[#e8fbff] font-medium mb-2">Cliente Verificato</p>
-                      <p className="text-[#14b8a6] text-xl font-bold mb-1">{validatedSpendRequest.customer.name}</p>
-                      <p className="text-[#94a3b8] text-sm mb-4">Saldo: {validatedSpendRequest.customer.wallet_balance} TCC</p>
-                      
+                      <p className="text-[#e8fbff] font-medium mb-2">
+                        Cliente Verificato
+                      </p>
+                      <p className="text-[#14b8a6] text-xl font-bold mb-1">
+                        {validatedSpendRequest.customer.name}
+                      </p>
+                      <p className="text-[#94a3b8] text-sm mb-4">
+                        Saldo: {validatedSpendRequest.customer.wallet_balance}{" "}
+                        TCC
+                      </p>
+
                       <div className="bg-[#1e293b] rounded-lg p-4 mb-4">
-                        <p className="text-[#94a3b8] text-sm">TCC da Incassare</p>
-                        <p className="text-[#f59e0b] text-3xl font-bold">{validatedSpendRequest.spend.tcc_amount} TCC</p>
-                        <p className="text-[#10b981] text-lg font-semibold">€{validatedSpendRequest.spend.euro_amount.toFixed(2)}</p>
+                        <p className="text-[#94a3b8] text-sm">
+                          TCC da Incassare
+                        </p>
+                        <p className="text-[#f59e0b] text-3xl font-bold">
+                          {validatedSpendRequest.spend.tcc_amount} TCC
+                        </p>
+                        <p className="text-[#10b981] text-lg font-semibold">
+                          €{validatedSpendRequest.spend.euro_amount.toFixed(2)}
+                        </p>
                       </div>
-                      
-                      <Button 
+
+                      <Button
                         className="bg-[#f97316] hover:bg-[#ea580c]"
-                        onClick={() => { setScannedData(null); setValidatedSpendRequest(null); }}
+                        onClick={() => {
+                          setScannedData(null);
+                          setValidatedSpendRequest(null);
+                        }}
                       >
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Nuovo QR
                       </Button>
                     </div>
-                  ) : scannedData && scanMode === 'redeem' ? (
+                  ) : scannedData && scanMode === "redeem" ? (
                     <div className="text-center p-4">
                       <AlertCircle className="w-16 h-16 text-[#ef4444] mx-auto mb-4" />
-                      <p className="text-[#e8fbff] font-medium mb-2">QR non valido o scaduto</p>
-                      <p className="text-[#94a3b8] text-sm mb-4">Il codice QR potrebbe essere già stato usato o essere scaduto</p>
-                      <Button 
+                      <p className="text-[#e8fbff] font-medium mb-2">
+                        QR non valido o scaduto
+                      </p>
+                      <p className="text-[#94a3b8] text-sm mb-4">
+                        Il codice QR potrebbe essere già stato usato o essere
+                        scaduto
+                      </p>
+                      <Button
                         className="bg-[#f97316] hover:bg-[#ea580c]"
-                        onClick={() => { setScannedData(null); setValidatedSpendRequest(null); }}
+                        onClick={() => {
+                          setScannedData(null);
+                          setValidatedSpendRequest(null);
+                        }}
                       >
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Riprova
                       </Button>
                     </div>
                   ) : (
-                    <form onSubmit={handleManualQRInput} className="w-full p-4 space-y-4" autoComplete="off" data-form-type="other">
+                    <form
+                      onSubmit={handleManualQRInput}
+                      className="w-full p-4 space-y-4"
+                      autoComplete="off"
+                      data-form-type="other"
+                    >
                       <p className="text-center text-[#94a3b8] mb-4">
                         <QrCode className="w-8 h-8 mx-auto mb-2 text-[#14b8a6]" />
                         Inserisci il codice QR manualmente
@@ -1221,7 +1417,11 @@ export default function HubOperatore() {
                       <input
                         name="qrInput"
                         type="text"
-                        placeholder={scanMode === 'issue' ? 'tcc://userId/token' : 'tcc-spend://userId/token'}
+                        placeholder={
+                          scanMode === "issue"
+                            ? "tcc://userId/token"
+                            : "tcc-spend://userId/token"
+                        }
                         className="w-full px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
                         autoComplete="off"
                         autoCorrect="off"
@@ -1229,7 +1429,11 @@ export default function HubOperatore() {
                         spellCheck="false"
                         data-form-type="other"
                       />
-                      <Button type="submit" className="w-full bg-[#10b981] hover:bg-[#059669] active:bg-[#047857] active:scale-95 transition-all duration-150 disabled:opacity-50" disabled={!walletEnabled}>
+                      <Button
+                        type="submit"
+                        className="w-full bg-[#10b981] hover:bg-[#059669] active:bg-[#047857] active:scale-95 transition-all duration-150 disabled:opacity-50"
+                        disabled={!walletEnabled}
+                      >
                         <CheckCircle2 className="w-4 h-4 mr-2" />
                         Conferma
                       </Button>
@@ -1238,31 +1442,48 @@ export default function HubOperatore() {
                 </div>
 
                 {/* Pulsante Azione */}
-                {scanMode === 'issue' ? (
-                  <Button 
+                {scanMode === "issue" ? (
+                  <Button
                     className="w-full bg-[#10b981] hover:bg-[#059669] active:bg-[#047857] active:scale-95 transition-all duration-150 disabled:opacity-50 text-lg py-6"
                     onClick={handleIssueCredits}
-                    disabled={!validatedCustomer || !amount || parseFloat(amount) <= 0 || isLoading || !walletEnabled}
+                    disabled={
+                      !validatedCustomer ||
+                      !amount ||
+                      parseFloat(amount) <= 0 ||
+                      isLoading ||
+                      !walletEnabled
+                    }
                   >
                     {isLoading ? (
                       <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
                     ) : (
                       <ArrowUpCircle className="w-5 h-5 mr-2" />
                     )}
-                    {isLoading ? 'Invio in corso...' : `Assegna ${calculatedCredits} TCC`}
+                    {isLoading
+                      ? "Invio in corso..."
+                      : `Assegna ${calculatedCredits} TCC`}
                   </Button>
                 ) : (
-                  <Button 
+                  <Button
                     className="w-full bg-[#f59e0b] hover:bg-[#d97706] active:bg-[#b45309] active:scale-95 transition-all duration-150 disabled:opacity-50 text-lg py-6"
                     onClick={handleRedeemSpend}
-                    disabled={!scannedData || !validatedSpendRequest || isLoading || !walletEnabled}
+                    disabled={
+                      !scannedData ||
+                      !validatedSpendRequest ||
+                      isLoading ||
+                      !walletEnabled
+                    }
                   >
                     {isLoading ? (
                       <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
                     ) : (
                       <ArrowDownCircle className="w-5 h-5 mr-2" />
                     )}
-                    {isLoading ? 'Elaborazione...' : validatedSpendRequest ? `Incassa ${validatedSpendRequest.spend.tcc_amount} TCC (€${validatedSpendRequest.spend.euro_amount.toFixed(2)})` : 'Incassa TCC'}
+                    {isLoading
+                      ? "Elaborazione..."
+                      : validatedSpendRequest
+                        ? `Incassa ${validatedSpendRequest.spend.tcc_amount} TCC (€${validatedSpendRequest.spend.euro_amount.toFixed(2)})`
+                        : "Incassa TCC"}
                   </Button>
                 )}
               </CardContent>
@@ -1273,7 +1494,9 @@ export default function HubOperatore() {
           <TabsContent value="transazioni" className="space-y-4">
             <Card className="bg-[#1e293b] border-[#334155] py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
               <CardHeader className="px-3 sm:px-6">
-                <CardTitle className="text-[#e8fbff]">Storico Transazioni</CardTitle>
+                <CardTitle className="text-[#e8fbff]">
+                  Storico Transazioni
+                </CardTitle>
                 <CardDescription className="text-[#94a3b8]">
                   Tutte le operazioni tracciate del negozio
                 </CardDescription>
@@ -1283,41 +1506,75 @@ export default function HubOperatore() {
                 <div className="flex flex-wrap gap-2 mb-4">
                   <Button
                     size="sm"
-                    variant={transactionFilter === 'all' ? 'default' : 'outline'}
-                    onClick={() => setTransactionFilter('all')}
-                    className={transactionFilter === 'all' ? 'bg-[#f97316]' : 'border-[#334155] text-[#94a3b8]'}
+                    variant={
+                      transactionFilter === "all" ? "default" : "outline"
+                    }
+                    onClick={() => setTransactionFilter("all")}
+                    className={
+                      transactionFilter === "all"
+                        ? "bg-[#f97316]"
+                        : "border-[#334155] text-[#94a3b8]"
+                    }
                   >
                     Tutte
                   </Button>
                   <Button
                     size="sm"
-                    variant={transactionFilter === 'issue' ? 'default' : 'outline'}
-                    onClick={() => setTransactionFilter('issue')}
-                    className={transactionFilter === 'issue' ? 'bg-[#14b8a6]' : 'border-[#334155] text-[#94a3b8]'}
+                    variant={
+                      transactionFilter === "issue" ? "default" : "outline"
+                    }
+                    onClick={() => setTransactionFilter("issue")}
+                    className={
+                      transactionFilter === "issue"
+                        ? "bg-[#14b8a6]"
+                        : "border-[#334155] text-[#94a3b8]"
+                    }
                   >
                     Vendite
                   </Button>
                   <Button
                     size="sm"
-                    variant={transactionFilter === 'redeem' ? 'default' : 'outline'}
-                    onClick={() => setTransactionFilter('redeem')}
-                    className={transactionFilter === 'redeem' ? 'bg-[#f59e0b]' : 'border-[#334155] text-[#94a3b8]'}
+                    variant={
+                      transactionFilter === "redeem" ? "default" : "outline"
+                    }
+                    onClick={() => setTransactionFilter("redeem")}
+                    className={
+                      transactionFilter === "redeem"
+                        ? "bg-[#f59e0b]"
+                        : "border-[#334155] text-[#94a3b8]"
+                    }
                   >
                     Pagamenti TCC
                   </Button>
                   <Button
                     size="sm"
-                    variant={transactionFilter === 'settlement' ? 'default' : 'outline'}
-                    onClick={() => setTransactionFilter('settlement')}
-                    className={transactionFilter === 'settlement' ? 'bg-[#8b5cf6]' : 'border-[#334155] text-[#94a3b8]'}
+                    variant={
+                      transactionFilter === "settlement" ? "default" : "outline"
+                    }
+                    onClick={() => setTransactionFilter("settlement")}
+                    className={
+                      transactionFilter === "settlement"
+                        ? "bg-[#8b5cf6]"
+                        : "border-[#334155] text-[#94a3b8]"
+                    }
                   >
                     Chiusure
                   </Button>
                   <Button
                     size="sm"
-                    variant={transactionFilter === 'reimbursement_received' ? 'default' : 'outline'}
-                    onClick={() => setTransactionFilter('reimbursement_received')}
-                    className={transactionFilter === 'reimbursement_received' ? 'bg-[#10b981]' : 'border-[#334155] text-[#94a3b8]'}
+                    variant={
+                      transactionFilter === "reimbursement_received"
+                        ? "default"
+                        : "outline"
+                    }
+                    onClick={() =>
+                      setTransactionFilter("reimbursement_received")
+                    }
+                    className={
+                      transactionFilter === "reimbursement_received"
+                        ? "bg-[#10b981]"
+                        : "border-[#334155] text-[#94a3b8]"
+                    }
                   >
                     Rimborsi
                   </Button>
@@ -1325,78 +1582,135 @@ export default function HubOperatore() {
 
                 {/* Lista Transazioni */}
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {(!transactions || transactions.length === 0) ? (
-                    <p className="text-center text-[#94a3b8] py-8">Nessuna transazione</p>
+                  {!transactions || transactions.length === 0 ? (
+                    <p className="text-center text-[#94a3b8] py-8">
+                      Nessuna transazione
+                    </p>
                   ) : (
-                    (transactions || []).filter(tx => transactionFilter === 'all' || tx.type === transactionFilter).map((tx, i) => (
-                      <div key={tx.id || i} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                        <div className="flex items-center gap-3">
-                          {tx.type === 'issue' ? (
-                            <div className="w-8 h-8 rounded-full bg-[#14b8a6]/20 flex items-center justify-center">
-                              <ArrowUpCircle className="w-4 h-4 text-[#14b8a6]" />
-                            </div>
-                          ) : tx.type === 'redeem' ? (
-                            <div className="w-8 h-8 rounded-full bg-[#f59e0b]/20 flex items-center justify-center">
-                              <ArrowDownCircle className="w-4 h-4 text-[#f59e0b]" />
-                            </div>
-                          ) : tx.type === 'settlement' ? (
-                            <div className="w-8 h-8 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center">
-                              <Send className="w-4 h-4 text-[#8b5cf6]" />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#10b981]/20 flex items-center justify-center">
-                              <CheckCircle2 className="w-4 h-4 text-[#10b981]" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-semibold text-[#e8fbff]">
-                              {tx.type === 'issue' ? tx.customer_name || 'Cliente' :
-                               tx.type === 'redeem' ? tx.customer_name || 'Cliente' :
-                               tx.type === 'settlement' ? `Chiusura Giornata${tx.description?.startsWith('#') ? ' ' + tx.description.split('|')[0] : ''}` :
-                               tx.type === 'reimbursement_received' ? `Rimborso Ricevuto${tx.description?.startsWith('#') ? ' ' + tx.description.split('|')[0] : ''}` :
-                               'Rimborso Ricevuto'}
-                            </p>
-                            {/* Numero progressivo transazione */}
-                            {tx.description && tx.description.includes('#TRX-') && (
-                              <p className="text-xs text-[#14b8a6] font-mono">
-                                #{tx.description.match(/#TRX-(\d{8}-\d{6})/)?.[1]}
-                              </p>
+                    (transactions || [])
+                      .filter(
+                        tx =>
+                          transactionFilter === "all" ||
+                          tx.type === transactionFilter
+                      )
+                      .map((tx, i) => (
+                        <div
+                          key={tx.id || i}
+                          className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            {tx.type === "issue" ? (
+                              <div className="w-8 h-8 rounded-full bg-[#14b8a6]/20 flex items-center justify-center">
+                                <ArrowUpCircle className="w-4 h-4 text-[#14b8a6]" />
+                              </div>
+                            ) : tx.type === "redeem" ? (
+                              <div className="w-8 h-8 rounded-full bg-[#f59e0b]/20 flex items-center justify-center">
+                                <ArrowDownCircle className="w-4 h-4 text-[#f59e0b]" />
+                              </div>
+                            ) : tx.type === "settlement" ? (
+                              <div className="w-8 h-8 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center">
+                                <Send className="w-4 h-4 text-[#8b5cf6]" />
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-[#10b981]/20 flex items-center justify-center">
+                                <CheckCircle2 className="w-4 h-4 text-[#10b981]" />
+                              </div>
                             )}
-                            <p className="text-sm text-[#94a3b8]">
-                              {new Date(tx.created_at).toLocaleDateString('it-IT')} - {new Date(tx.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            <div>
+                              <p className="font-semibold text-[#e8fbff]">
+                                {tx.type === "issue"
+                                  ? tx.customer_name || "Cliente"
+                                  : tx.type === "redeem"
+                                    ? tx.customer_name || "Cliente"
+                                    : tx.type === "settlement"
+                                      ? `Chiusura Giornata${tx.description?.startsWith("#") ? " " + tx.description.split("|")[0] : ""}`
+                                      : tx.type === "reimbursement_received"
+                                        ? `Rimborso Ricevuto${tx.description?.startsWith("#") ? " " + tx.description.split("|")[0] : ""}`
+                                        : "Rimborso Ricevuto"}
+                              </p>
+                              {/* Numero progressivo transazione */}
+                              {tx.description &&
+                                tx.description.includes("#TRX-") && (
+                                  <p className="text-xs text-[#14b8a6] font-mono">
+                                    #
+                                    {
+                                      tx.description.match(
+                                        /#TRX-(\d{8}-\d{6})/
+                                      )?.[1]
+                                    }
+                                  </p>
+                                )}
+                              <p className="text-sm text-[#94a3b8]">
+                                {new Date(tx.created_at).toLocaleDateString(
+                                  "it-IT"
+                                )}{" "}
+                                -{" "}
+                                {new Date(tx.created_at).toLocaleTimeString(
+                                  "it-IT",
+                                  { hour: "2-digit", minute: "2-digit" }
+                                )}
+                              </p>
+                              <Badge
+                                className={`text-xs mt-1 ${
+                                  tx.type === "issue"
+                                    ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                                    : tx.type === "redeem"
+                                      ? "bg-[#f59e0b]/20 text-[#f59e0b]"
+                                      : tx.type === "settlement"
+                                        ? "bg-[#8b5cf6]/20 text-[#8b5cf6]"
+                                        : "bg-[#10b981]/20 text-[#10b981]"
+                                }`}
+                              >
+                                {tx.type === "issue"
+                                  ? "Vendita"
+                                  : tx.type === "redeem"
+                                    ? "Pagamento TCC"
+                                    : tx.type === "settlement"
+                                      ? "Chiusura"
+                                      : "Rimborso"}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p
+                              className={`font-semibold ${
+                                tx.type === "reimbursement_received"
+                                  ? "text-[#10b981]"
+                                  : tx.type === "settlement"
+                                    ? "text-[#8b5cf6]"
+                                    : "text-[#e8fbff]"
+                              }`}
+                            >
+                              {tx.type === "reimbursement_received" ? "+" : ""}€
+                              {parseFloat(tx.euro_amount || 0).toLocaleString(
+                                "it-IT",
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }
+                              )}
                             </p>
-                            <Badge className={`text-xs mt-1 ${
-                              tx.type === 'issue' ? 'bg-[#14b8a6]/20 text-[#14b8a6]' :
-                              tx.type === 'redeem' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
-                              tx.type === 'settlement' ? 'bg-[#8b5cf6]/20 text-[#8b5cf6]' :
-                              'bg-[#10b981]/20 text-[#10b981]'
-                            }`}>
-                              {tx.type === 'issue' ? 'Vendita' :
-                               tx.type === 'redeem' ? 'Pagamento TCC' :
-                               tx.type === 'settlement' ? 'Chiusura' :
-                               'Rimborso'}
-                            </Badge>
+                            <p
+                              className={`text-sm ${
+                                tx.type === "issue"
+                                  ? "text-[#14b8a6]"
+                                  : tx.type === "redeem"
+                                    ? "text-[#f59e0b]"
+                                    : tx.type === "settlement"
+                                      ? "text-[#8b5cf6]"
+                                      : "text-[#10b981]"
+                              }`}
+                            >
+                              {tx.type === "issue"
+                                ? "+"
+                                : tx.type === "redeem"
+                                  ? "-"
+                                  : ""}
+                              {tx.tcc_amount} TCC
+                            </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className={`font-semibold ${
-                            tx.type === 'reimbursement_received' ? 'text-[#10b981]' :
-                            tx.type === 'settlement' ? 'text-[#8b5cf6]' :
-                            'text-[#e8fbff]'
-                          }`}>
-                            {tx.type === 'reimbursement_received' ? '+' : ''}€{parseFloat(tx.euro_amount || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                          </p>
-                          <p className={`text-sm ${
-                            tx.type === 'issue' ? 'text-[#14b8a6]' :
-                            tx.type === 'redeem' ? 'text-[#f59e0b]' :
-                            tx.type === 'settlement' ? 'text-[#8b5cf6]' :
-                            'text-[#10b981]'
-                          }`}>
-                            {tx.type === 'issue' ? '+' : tx.type === 'redeem' ? '-' : ''}{tx.tcc_amount} TCC
-                          </p>
-                        </div>
-                      </div>
-                    ))
+                      ))
                   )}
                 </div>
               </CardContent>
@@ -1407,7 +1721,9 @@ export default function HubOperatore() {
           <TabsContent value="wallet" className="space-y-4">
             <Card className="bg-[#1e293b] border-[#334155] py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
               <CardHeader className="px-3 sm:px-6">
-                <CardTitle className="text-[#e8fbff]">Wallet Operatore</CardTitle>
+                <CardTitle className="text-[#e8fbff]">
+                  Wallet Operatore
+                </CardTitle>
                 <CardDescription className="text-[#94a3b8]">
                   Riepilogo giornaliero TCC e chiusura cassa
                 </CardDescription>
@@ -1417,13 +1733,21 @@ export default function HubOperatore() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-[#0b1220] rounded-lg">
                     <p className="text-sm text-[#94a3b8]">TCC Rilasciati</p>
-                    <p className="text-3xl font-bold text-[#14b8a6]">{operatorWallet?.tcc_issued || 0}</p>
-                    <p className="text-xs text-[#94a3b8]">Assegnati ai clienti</p>
+                    <p className="text-3xl font-bold text-[#14b8a6]">
+                      {operatorWallet?.tcc_issued || 0}
+                    </p>
+                    <p className="text-xs text-[#94a3b8]">
+                      Assegnati ai clienti
+                    </p>
                   </div>
                   <div className="p-4 bg-[#0b1220] rounded-lg">
                     <p className="text-sm text-[#94a3b8]">TCC Riscattati</p>
-                    <p className="text-3xl font-bold text-[#f59e0b]">{operatorWallet?.tcc_redeemed || 0}</p>
-                    <p className="text-xs text-[#94a3b8]">Ricevuti dai clienti</p>
+                    <p className="text-3xl font-bold text-[#f59e0b]">
+                      {operatorWallet?.tcc_redeemed || 0}
+                    </p>
+                    <p className="text-xs text-[#94a3b8]">
+                      Ricevuti dai clienti
+                    </p>
                   </div>
                 </div>
 
@@ -1431,12 +1755,26 @@ export default function HubOperatore() {
                 <div className="p-4 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-lg">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm text-[#94a3b8]">Differenza (Rilasciati - Riscattati)</p>
-                      <p className="text-2xl font-bold text-[#e8fbff]">{operatorWallet?.difference || 0} TCC</p>
+                      <p className="text-sm text-[#94a3b8]">
+                        Differenza (Rilasciati - Riscattati)
+                      </p>
+                      <p className="text-2xl font-bold text-[#e8fbff]">
+                        {operatorWallet?.difference || 0} TCC
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-[#94a3b8]">Valore Riscattati</p>
-                      <p className="text-2xl font-bold text-[#10b981]">€{parseFloat(operatorWallet?.redeemed_eur || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                      <p className="text-sm text-[#94a3b8]">
+                        Valore Riscattati
+                      </p>
+                      <p className="text-2xl font-bold text-[#10b981]">
+                        €
+                        {parseFloat(
+                          operatorWallet?.redeemed_eur || 0
+                        ).toLocaleString("it-IT", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1444,36 +1782,58 @@ export default function HubOperatore() {
                 {/* Tasso di Cambio */}
                 {tccConfig && (
                   <div className="p-3 bg-[#0b1220] rounded-lg flex justify-between items-center">
-                    <span className="text-sm text-[#94a3b8]">Tasso di Cambio Attuale</span>
-                    <span className="font-bold text-[#e8fbff]">1 TCC = €{parseFloat(tccConfig.effective_rate).toLocaleString('it-IT', {minimumFractionDigits: 4, maximumFractionDigits: 4})}</span>
+                    <span className="text-sm text-[#94a3b8]">
+                      Tasso di Cambio Attuale
+                    </span>
+                    <span className="font-bold text-[#e8fbff]">
+                      1 TCC = €
+                      {parseFloat(tccConfig.effective_rate).toLocaleString(
+                        "it-IT",
+                        { minimumFractionDigits: 4, maximumFractionDigits: 4 }
+                      )}
+                    </span>
                   </div>
                 )}
 
                 {/* Stato Chiusura */}
                 <div className="p-3 bg-[#0b1220] rounded-lg flex justify-between items-center">
                   <span className="text-sm text-[#94a3b8]">Stato Giornata</span>
-                  <Badge className={operatorWallet?.settlement_status === 'open' ? 'bg-[#10b981]' : 'bg-[#f59e0b]'}>
-                    {operatorWallet?.settlement_status === 'open' ? 'Aperta' : 
-                     operatorWallet?.settlement_status === 'pending' ? 'In Elaborazione' : 'Chiusa'}
+                  <Badge
+                    className={
+                      operatorWallet?.settlement_status === "open"
+                        ? "bg-[#10b981]"
+                        : "bg-[#f59e0b]"
+                    }
+                  >
+                    {operatorWallet?.settlement_status === "open"
+                      ? "Aperta"
+                      : operatorWallet?.settlement_status === "pending"
+                        ? "In Elaborazione"
+                        : "Chiusa"}
                   </Badge>
                 </div>
 
                 {/* Pulsante Chiusura */}
-                <Button 
+                <Button
                   className="w-full bg-[#ef4444] hover:bg-[#dc2626] active:bg-[#b91c1c] active:scale-95 transition-all duration-150 disabled:opacity-50"
                   onClick={handleSettlement}
-                  disabled={operatorWallet?.settlement_status !== 'open' || isLoading}
+                  disabled={
+                    operatorWallet?.settlement_status !== "open" || isLoading
+                  }
                 >
                   {isLoading ? (
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <Send className="w-4 h-4 mr-2" />
                   )}
-                  {isLoading ? 'Elaborazione...' : 'Chiudi Giornata e Invia al Fondo'}
+                  {isLoading
+                    ? "Elaborazione..."
+                    : "Chiudi Giornata e Invia al Fondo"}
                 </Button>
 
                 <p className="text-xs text-[#94a3b8] text-center">
-                  La chiusura inviera i TCC riscattati al fondo per il rimborso in EUR
+                  La chiusura inviera i TCC riscattati al fondo per il rimborso
+                  in EUR
                 </p>
               </CardContent>
             </Card>

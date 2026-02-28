@@ -3,24 +3,24 @@
  * Converte immagini/PDF in PNG con sfondo trasparente usando filtri HSV
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { 
-  Upload, 
-  Download, 
-  RotateCw, 
-  Save, 
-  ArrowRight, 
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Upload,
+  Download,
+  RotateCw,
+  Save,
+  ArrowRight,
   Image as ImageIcon,
   FileImage,
-  Palette
-} from 'lucide-react';
-import { DMSBUS, PngMeta } from './dmsBus';
+  Palette,
+} from "lucide-react";
+import { DMSBUS, PngMeta } from "./dmsBus";
 
 // PDF.js per conversione PDF
 declare global {
@@ -35,7 +35,11 @@ interface PngTransparentToolProps {
 }
 
 // Funzione per convertire RGB in HSV
-function rgb2hsv(R: number, G: number, B: number): { h: number; s: number; v: number } {
+function rgb2hsv(
+  R: number,
+  G: number,
+  B: number
+): { h: number; s: number; v: number } {
   const r = R / 255;
   const g = G / 255;
   const b = B / 255;
@@ -43,7 +47,7 @@ function rgb2hsv(R: number, G: number, B: number): { h: number; s: number; v: nu
   const m = Math.min(r, g, b);
   const C = M - m;
   let H = 0;
-  
+
   if (C !== 0) {
     if (M === r) H = ((g - b) / C) % 6;
     else if (M === g) H = (b - r) / C + 2;
@@ -51,13 +55,16 @@ function rgb2hsv(R: number, G: number, B: number): { h: number; s: number; v: nu
     H *= 60;
     if (H < 0) H += 360;
   }
-  
+
   const V = M;
   const S = M === 0 ? 0 : C / M;
   return { h: H, s: S, v: V };
 }
 
-export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTransparentToolProps) {
+export function PngTransparentTool({
+  onComplete,
+  onNavigateToSlotEditor,
+}: PngTransparentToolProps) {
   // Refs per canvas
   const srcCanvasRef = useRef<HTMLCanvasElement>(null);
   const dstCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -74,21 +81,25 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
   const [removeWhiteBg, setRemoveWhiteBg] = useState(false); // Per immagini con sfondo bianco
   const [whiteTolerance, setWhiteTolerance] = useState(95); // Soglia bianco (0-100)
   const [isProcessing, setIsProcessing] = useState(false);
-  const [fileName, setFileName] = useState<string>('');
+  const [fileName, setFileName] = useState<string>("");
   const [logs, setLogs] = useState<string[]>([]);
 
   // Logger
-  const log = useCallback((message: string, type: 'info' | 'success' | 'error' = 'info') => {
-    const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : '📝';
-    setLogs(prev => [...prev.slice(-9), `${prefix} ${message}`]);
-    console.log(`[PngTool] ${prefix} ${message}`);
-  }, []);
+  const log = useCallback(
+    (message: string, type: "info" | "success" | "error" = "info") => {
+      const prefix = type === "success" ? "✅" : type === "error" ? "❌" : "📝";
+      setLogs(prev => [...prev.slice(-9), `${prefix} ${message}`]);
+      console.log(`[PngTool] ${prefix} ${message}`);
+    },
+    []
+  );
 
   // Carica PDF.js se non presente
   useEffect(() => {
     if (!window.pdfjsLib) {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js';
+      const script = document.createElement("script");
+      script.src =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js";
       script.async = true;
       document.head.appendChild(script);
     }
@@ -101,17 +112,17 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
     const W = image.naturalWidth;
     const H = image.naturalHeight;
     const isRotated = rotationAngle === 90 || rotationAngle === 270;
-    
+
     const srcCanvas = srcCanvasRef.current;
     const dstCanvas = dstCanvasRef.current;
-    
+
     srcCanvas.width = isRotated ? H : W;
     srcCanvas.height = isRotated ? W : H;
     dstCanvas.width = isRotated ? H : W;
     dstCanvas.height = isRotated ? W : H;
 
     // Disegna originale
-    const sctx = srcCanvas.getContext('2d')!;
+    const sctx = srcCanvas.getContext("2d")!;
     sctx.save();
     sctx.translate(srcCanvas.width / 2, srcCanvas.height / 2);
     sctx.rotate((rotationAngle * Math.PI) / 180);
@@ -119,7 +130,7 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
     sctx.restore();
 
     // Disegna con trasparenza
-    const dctx = dstCanvas.getContext('2d')!;
+    const dctx = dstCanvas.getContext("2d")!;
     dctx.save();
     dctx.translate(dstCanvas.width / 2, dstCanvas.height / 2);
     dctx.rotate((rotationAngle * Math.PI) / 180);
@@ -136,16 +147,19 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
     const WHITE_THRESH = (whiteTolerance / 100) * 255; // Soglia per considerare bianco
 
     for (let i = 0; i < d.length; i += 4) {
-      const R = d[i], G = d[i + 1], B = d[i + 2];
+      const R = d[i],
+        G = d[i + 1],
+        B = d[i + 2];
       const hsv = rgb2hsv(R, G, B);
       let keep = false;
-      
+
       if (removeWhiteBg) {
         // Modalità rimozione sfondo bianco: rimuovi pixel bianchi/chiari
-        const isWhite = R > WHITE_THRESH && G > WHITE_THRESH && B > WHITE_THRESH;
+        const isWhite =
+          R > WHITE_THRESH && G > WHITE_THRESH && B > WHITE_THRESH;
         const isNearWhite = (R + G + B) / 3 > WHITE_THRESH;
         keep = !isWhite && !isNearWhite;
-        
+
         // Mantieni sempre i pixel scuri (linee, numeri, bordi)
         const lum = 0.2126 * R + 0.7152 * G + 0.0722 * B;
         if (lum < 180) keep = true; // Mantieni tutto ciò che non è bianco
@@ -153,18 +167,28 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
         // Modalità standard: mantieni solo i verdi
         keep = hsv.h >= HMIN && hsv.h <= HMAX && hsv.s >= SMIN && hsv.v >= VMIN;
       }
-      
+
       // Mantieni numeri scuri (sempre attivo se selezionato)
       if (keepDigits) {
         const lum = 0.2126 * R + 0.7152 * G + 0.0722 * B;
         if (lum < 90) keep = true;
       }
-      
+
       d[i + 3] = keep ? 255 : 0;
     }
 
     dctx.putImageData(imgData, 0, 0);
-  }, [image, rotationAngle, hueMin, hueMax, satMin, valMin, keepDigits, removeWhiteBg, whiteTolerance]);
+  }, [
+    image,
+    rotationAngle,
+    hueMin,
+    hueMax,
+    satMin,
+    valMin,
+    keepDigits,
+    removeWhiteBg,
+    whiteTolerance,
+  ]);
 
   // Ridisegna quando cambiano i parametri
   useEffect(() => {
@@ -181,71 +205,78 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
     log(`Caricamento file: ${file.name}`);
 
     try {
-      if (file.type === 'application/pdf') {
+      if (file.type === "application/pdf") {
         // Converti PDF in immagine
-        log('Conversione PDF in immagine...');
+        log("Conversione PDF in immagine...");
         const buf = await file.arrayBuffer();
         const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
         const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: 2 });
-        
-        const canvas = document.createElement('canvas');
+
+        const canvas = document.createElement("canvas");
         canvas.width = viewport.width;
         canvas.height = viewport.height;
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-        
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport })
+          .promise;
+
         const img = new Image();
         img.onload = () => {
           setImage(img);
-          log(`PDF caricato e convertito (${viewport.width}x${viewport.height})`, 'success');
+          log(
+            `PDF caricato e convertito (${viewport.width}x${viewport.height})`,
+            "success"
+          );
           setIsProcessing(false);
         };
-        img.src = canvas.toDataURL('image/png');
+        img.src = canvas.toDataURL("image/png");
       } else {
         // Carica immagine direttamente
         const img = new Image();
         img.onload = () => {
           setImage(img);
-          log(`Immagine caricata (${img.naturalWidth}x${img.naturalHeight})`, 'success');
+          log(
+            `Immagine caricata (${img.naturalWidth}x${img.naturalHeight})`,
+            "success"
+          );
           setIsProcessing(false);
         };
         img.src = URL.createObjectURL(file);
       }
     } catch (err) {
-      log(`Errore caricamento: ${err}`, 'error');
+      log(`Errore caricamento: ${err}`, "error");
       setIsProcessing(false);
     }
   };
 
   // Rotazione
   const handleRotate = () => {
-    setRotationAngle((prev) => (prev + 90) % 360);
+    setRotationAngle(prev => (prev + 90) % 360);
     log(`Rotazione: ${(rotationAngle + 90) % 360}°`);
   };
 
   // Download PNG
   const handleDownload = () => {
     if (!dstCanvasRef.current) return;
-    log('Download PNG trasparente...');
-    
-    const a = document.createElement('a');
-    a.href = dstCanvasRef.current.toDataURL('image/png');
-    a.download = 'stalls_transparent.png';
+    log("Download PNG trasparente...");
+
+    const a = document.createElement("a");
+    a.href = dstCanvasRef.current.toDataURL("image/png");
+    a.download = "stalls_transparent.png";
     a.click();
-    log('PNG scaricato: stalls_transparent.png', 'success');
+    log("PNG scaricato: stalls_transparent.png", "success");
   };
 
   // Salva nel Bus
   const handleSaveToBus = async () => {
     if (!dstCanvasRef.current) return;
-    
+
     try {
-      log('Salvataggio nel bus...');
-      
+      log("Salvataggio nel bus...");
+
       const blob = await new Promise<Blob>((resolve, reject) => {
         dstCanvasRef.current!.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error('Blob creation failed'))),
-          'image/png'
+          b => (b ? resolve(b) : reject(new Error("Blob creation failed"))),
+          "image/png"
         );
       });
 
@@ -256,13 +287,16 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
       };
 
       await DMSBUS.savePngTransparent(blob, meta);
-      log(`PNG salvato nel bus (${meta.w}x${meta.h}, rot:${meta.rotation}°)`, 'success');
-      
+      log(
+        `PNG salvato nel bus (${meta.w}x${meta.h}, rot:${meta.rotation}°)`,
+        "success"
+      );
+
       if (onComplete) {
         onComplete(blob, meta);
       }
     } catch (err) {
-      log(`Errore salvataggio: ${err}`, 'error');
+      log(`Errore salvataggio: ${err}`, "error");
     }
   };
 
@@ -271,23 +305,23 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
     if (!dstCanvasRef.current || !srcCanvasRef.current) return;
 
     try {
-      log('Invio a Slot Editor v3...');
+      log("Invio a Slot Editor v3...");
 
       // Salva PNG trasparente
       const blobTransparent = await new Promise<Blob>((resolve, reject) => {
         dstCanvasRef.current!.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error('Blob creation failed'))),
-          'image/png'
+          b => (b ? resolve(b) : reject(new Error("Blob creation failed"))),
+          "image/png"
         );
       });
       log(`Blob trasparente: ${(blobTransparent.size / 1024).toFixed(2)} KB`);
-      await DMSBUS.putBlob('png_transparent', blobTransparent);
+      await DMSBUS.putBlob("png_transparent", blobTransparent);
 
       // Salva PNG originale (con numeri)
       const blobOriginal = await new Promise<Blob>((resolve, reject) => {
         srcCanvasRef.current!.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error('Blob creation failed'))),
-          'image/png'
+          b => (b ? resolve(b) : reject(new Error("Blob creation failed"))),
+          "image/png"
         );
       });
       log(`Blob originale: ${(blobOriginal.size / 1024).toFixed(2)} KB`);
@@ -299,15 +333,15 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
         h: dstCanvasRef.current.height,
         rotation: rotationAngle,
       };
-      await DMSBUS.putJSON('png_meta', meta);
+      await DMSBUS.putJSON("png_meta", meta);
 
-      log('PNG salvato nel bus (trasparente + originale)', 'success');
+      log("PNG salvato nel bus (trasparente + originale)", "success");
 
       if (onNavigateToSlotEditor) {
         onNavigateToSlotEditor();
       }
     } catch (err) {
-      log(`Errore invio: ${err}`, 'error');
+      log(`Errore invio: ${err}`, "error");
     }
   };
 
@@ -327,7 +361,9 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
         <CardContent className="space-y-4">
           {/* Upload File */}
           <div>
-            <Label className="text-[#e8fbff]/80 text-sm">Carica Immagine o PDF</Label>
+            <Label className="text-[#e8fbff]/80 text-sm">
+              Carica Immagine o PDF
+            </Label>
             <div className="mt-2">
               <input
                 ref={fileInputRef}
@@ -343,7 +379,7 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
                 disabled={isProcessing}
               >
                 <Upload className="h-4 w-4 mr-2" />
-                {fileName || 'Seleziona file...'}
+                {fileName || "Seleziona file..."}
               </Button>
             </div>
           </div>
@@ -353,7 +389,9 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <Label className="text-[#e8fbff]/80">Hue Min/Max</Label>
-                <span className="text-[#14b8a6]">{hueMin}–{hueMax}</span>
+                <span className="text-[#14b8a6]">
+                  {hueMin}–{hueMax}
+                </span>
               </div>
               <Slider
                 value={[hueMin]}
@@ -404,9 +442,12 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
               <Checkbox
                 id="keepDigits"
                 checked={keepDigits}
-                onCheckedChange={(checked) => setKeepDigits(checked as boolean)}
+                onCheckedChange={checked => setKeepDigits(checked as boolean)}
               />
-              <Label htmlFor="keepDigits" className="text-[#e8fbff]/80 text-sm cursor-pointer">
+              <Label
+                htmlFor="keepDigits"
+                className="text-[#e8fbff]/80 text-sm cursor-pointer"
+              >
                 Mantieni numeri scuri
               </Label>
             </div>
@@ -417,9 +458,14 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
                 <Checkbox
                   id="removeWhiteBg"
                   checked={removeWhiteBg}
-                  onCheckedChange={(checked) => setRemoveWhiteBg(checked as boolean)}
+                  onCheckedChange={checked =>
+                    setRemoveWhiteBg(checked as boolean)
+                  }
                 />
-                <Label htmlFor="removeWhiteBg" className="text-[#f59e0b]/80 text-sm cursor-pointer">
+                <Label
+                  htmlFor="removeWhiteBg"
+                  className="text-[#f59e0b]/80 text-sm cursor-pointer"
+                >
                   Modalità sfondo bianco
                 </Label>
               </div>
@@ -490,10 +536,14 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
           <div className="mt-4 p-2 bg-[#0b1220] rounded border border-[#14b8a6]/20 max-h-32 overflow-y-auto">
             <p className="text-xs text-[#14b8a6] font-mono mb-1">Console:</p>
             {logs.map((log, i) => (
-              <p key={i} className="text-xs text-[#e8fbff]/60 font-mono">{log}</p>
+              <p key={i} className="text-xs text-[#e8fbff]/60 font-mono">
+                {log}
+              </p>
             ))}
             {logs.length === 0 && (
-              <p className="text-xs text-[#e8fbff]/40 font-mono">Nessun log...</p>
+              <p className="text-xs text-[#e8fbff]/40 font-mono">
+                Nessun log...
+              </p>
             )}
           </div>
         </CardContent>
@@ -514,7 +564,10 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
               <canvas
                 ref={srcCanvasRef}
                 className="max-w-full max-h-full object-contain"
-                style={{ background: 'repeating-conic-gradient(#1a2332 0% 25%, #0b1220 0% 50%) 50% / 20px 20px' }}
+                style={{
+                  background:
+                    "repeating-conic-gradient(#1a2332 0% 25%, #0b1220 0% 50%) 50% / 20px 20px",
+                }}
               />
             </div>
           </CardContent>
@@ -533,7 +586,10 @@ export function PngTransparentTool({ onComplete, onNavigateToSlotEditor }: PngTr
               <canvas
                 ref={dstCanvasRef}
                 className="max-w-full max-h-full object-contain"
-                style={{ background: 'repeating-conic-gradient(#1a2332 0% 25%, #0b1220 0% 50%) 50% / 20px 20px' }}
+                style={{
+                  background:
+                    "repeating-conic-gradient(#1a2332 0% 25%, #0b1220 0% 50%) 50% / 20px 20px",
+                }}
               />
             </div>
           </CardContent>

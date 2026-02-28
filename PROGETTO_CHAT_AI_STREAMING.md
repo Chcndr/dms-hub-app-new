@@ -29,29 +29,29 @@ moderna e fluida, **identica a ChatGPT/Claude**, con:
 
 L'attuale implementazione della chat AI si trova in:
 
-| File | Ruolo |
-|------|-------|
-| `client/src/pages/DashboardPA.tsx` (righe 6081-6656) | UI principale chat MIO + 4 agenti |
-| `client/src/contexts/MioContext.tsx` | State management conversazione MIO |
-| `client/src/lib/mioOrchestratorClient.ts` | Client HTTP per orchestratore |
-| `client/src/lib/agentHelper.ts` | Helper per invio messaggi agenti |
-| `client/src/lib/orchestratorClient.ts` | Client API raw |
-| `client/src/components/AIChatBox.tsx` | Componente chat riusabile (con Streamdown) |
-| `api/mihub/orchestrator-proxy.ts` | Proxy Vercel → Hetzner + salvataggio DB |
-| `api/mihub/get-messages.ts` | Recupero messaggi da DB |
+| File                                                 | Ruolo                                      |
+| ---------------------------------------------------- | ------------------------------------------ |
+| `client/src/pages/DashboardPA.tsx` (righe 6081-6656) | UI principale chat MIO + 4 agenti          |
+| `client/src/contexts/MioContext.tsx`                 | State management conversazione MIO         |
+| `client/src/lib/mioOrchestratorClient.ts`            | Client HTTP per orchestratore              |
+| `client/src/lib/agentHelper.ts`                      | Helper per invio messaggi agenti           |
+| `client/src/lib/orchestratorClient.ts`               | Client API raw                             |
+| `client/src/components/AIChatBox.tsx`                | Componente chat riusabile (con Streamdown) |
+| `api/mihub/orchestrator-proxy.ts`                    | Proxy Vercel → Hetzner + salvataggio DB    |
+| `api/mihub/get-messages.ts`                          | Recupero messaggi da DB                    |
 
 ### 2.2 Problemi attuali
 
-| Problema | Impatto UX |
-|----------|------------|
-| **Nessuno streaming** — la risposta arriva tutta insieme dopo 5-60 secondi | L'utente non sa se l'AI sta elaborando o se e' bloccata |
-| **Timeout 60 secondi** — lunga attesa senza feedback | Sensazione di lentezza, abbandono |
-| **Polling a 5 secondi post-risposta** per messaggi aggiuntivi | Ritardo nella visualizzazione |
-| **Nessun markdown rendering live** — il testo arriva come blocco | Non si vedono tabelle, grassetto, codice formattato |
-| **Chat inlined nella DashboardPA** — 600+ righe di JSX nel file da 6000+ righe | Difficile da manutenere e migliorare |
-| **Nessuno storico conversazioni** — solo la conversazione corrente | L'utente perde il contesto delle sessioni precedenti |
-| **Nessun suggerimento contestuale** — solo input libero | L'utente non sa cosa chiedere all'AI |
-| **Design basico** — bolle semplici senza avatar/animazioni | Non ispira fiducia professionale nella PA |
+| Problema                                                                       | Impatto UX                                              |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| **Nessuno streaming** — la risposta arriva tutta insieme dopo 5-60 secondi     | L'utente non sa se l'AI sta elaborando o se e' bloccata |
+| **Timeout 60 secondi** — lunga attesa senza feedback                           | Sensazione di lentezza, abbandono                       |
+| **Polling a 5 secondi post-risposta** per messaggi aggiuntivi                  | Ritardo nella visualizzazione                           |
+| **Nessun markdown rendering live** — il testo arriva come blocco               | Non si vedono tabelle, grassetto, codice formattato     |
+| **Chat inlined nella DashboardPA** — 600+ righe di JSX nel file da 6000+ righe | Difficile da manutenere e migliorare                    |
+| **Nessuno storico conversazioni** — solo la conversazione corrente             | L'utente perde il contesto delle sessioni precedenti    |
+| **Nessun suggerimento contestuale** — solo input libero                        | L'utente non sa cosa chiedere all'AI                    |
+| **Design basico** — bolle semplici senza avatar/animazioni                     | Non ispira fiducia professionale nella PA               |
 
 ### 2.3 Flusso dati attuale
 
@@ -136,6 +136,7 @@ data: {"code": "QUOTA_EXCEEDED", "message": "Hai esaurito i messaggi AI per ques
 ```
 
 **Perche' SSE e non WebSocket:**
+
 - SSE e' piu' semplice (unidirezionale server → client)
 - Funziona nativamente con HTTP/2 e proxy/CDN
 - vLLM e Ollama supportano nativamente lo streaming SSE
@@ -144,16 +145,16 @@ data: {"code": "QUOTA_EXCEEDED", "message": "Hai esaurito i messaggi AI per ques
 
 ### 3.3 Divisione responsabilita'
 
-| Componente | Chi lo fa | Dettagli |
-|------------|-----------|----------|
-| **Frontend React** (chat, streaming, UI) | **Claude** | Questo progetto |
-| **Backend REST endpoints** | **Manus** | Express.js su mihub-backend-rest (Hetzner) — ZERO tRPC |
-| **Endpoint SSE streaming** | **Manus** | `POST /api/ai/chat/stream` che proxa lo stream da vLLM/Ollama |
-| **CRUD conversazioni REST** | **Manus** | 6 endpoint REST: GET/POST/PATCH/DELETE conversations + messages + quota |
-| **Connessione vLLM/Ollama** | **Manus** | OpenAI-compatible API con `stream: true` |
-| **Gestione quota** | **Manus** | Verifica piano/quota prima di ogni richiesta |
-| **Database conversazioni** | **Manus** | Tabelle `ai_conversations` + `ai_messages` |
-| **Persistenza messaggi** | **Manus** | Salvataggio a fine stream, recupero storico |
+| Componente                               | Chi lo fa  | Dettagli                                                                |
+| ---------------------------------------- | ---------- | ----------------------------------------------------------------------- |
+| **Frontend React** (chat, streaming, UI) | **Claude** | Questo progetto                                                         |
+| **Backend REST endpoints**               | **Manus**  | Express.js su mihub-backend-rest (Hetzner) — ZERO tRPC                  |
+| **Endpoint SSE streaming**               | **Manus**  | `POST /api/ai/chat/stream` che proxa lo stream da vLLM/Ollama           |
+| **CRUD conversazioni REST**              | **Manus**  | 6 endpoint REST: GET/POST/PATCH/DELETE conversations + messages + quota |
+| **Connessione vLLM/Ollama**              | **Manus**  | OpenAI-compatible API con `stream: true`                                |
+| **Gestione quota**                       | **Manus**  | Verifica piano/quota prima di ogni richiesta                            |
+| **Database conversazioni**               | **Manus**  | Tabelle `ai_conversations` + `ai_messages`                              |
+| **Persistenza messaggi**                 | **Manus**  | Salvataggio a fine stream, recupero storico                             |
 
 ---
 
@@ -257,7 +258,7 @@ export function AIChatPanel({ userRole, comuneId }: AIChatPanelProps) {
 
 interface UseStreamingChatReturn {
   messages: ChatMessage[];
-  streamingContent: string;        // Contenuto in arrivo (token per token)
+  streamingContent: string; // Contenuto in arrivo (token per token)
   isStreaming: boolean;
   error: string | null;
   sendMessage: (text: string) => Promise<void>;
@@ -265,106 +266,125 @@ interface UseStreamingChatReturn {
   clearMessages: () => void;
 }
 
-export function useStreamingChat(conversationId: string): UseStreamingChatReturn {
+export function useStreamingChat(
+  conversationId: string
+): UseStreamingChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [streamingContent, setStreamingContent] = useState('');
+  const [streamingContent, setStreamingContent] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  const sendMessage = useCallback(async (text: string) => {
-    // 1. Aggiungi messaggio utente alla lista
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: text,
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, userMessage]);
+  const sendMessage = useCallback(
+    async (text: string) => {
+      // 1. Aggiungi messaggio utente alla lista
+      const userMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: text,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, userMessage]);
 
-    // 2. Inizia streaming
-    setIsStreaming(true);
-    setStreamingContent('');
-    abortRef.current = new AbortController();
+      // 2. Inizia streaming
+      setIsStreaming(true);
+      setStreamingContent("");
+      abortRef.current = new AbortController();
 
-    try {
-      // 3. Apri connessione SSE
-      const response = await fetch('/api/ai/chat/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          message: text,
-        }),
-        signal: abortRef.current.signal,
-      });
+      try {
+        // 3. Apri connessione SSE
+        const response = await fetch("/api/ai/chat/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversation_id: conversationId,
+            message: text,
+          }),
+          signal: abortRef.current.signal,
+        });
 
-      // 4. Leggi lo stream token per token
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = '';
+        // 4. Leggi lo stream token per token
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        let accumulated = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = JSON.parse(line.slice(6));
 
-            if (data.type === 'token') {
-              accumulated += data.content;
-              setStreamingContent(accumulated);
-            } else if (data.type === 'done') {
-              // Stream completato
-              const assistantMessage: ChatMessage = {
-                id: data.message_id,
-                role: 'assistant',
-                content: accumulated,
-                timestamp: new Date(),
-              };
-              setMessages(prev => [...prev, assistantMessage]);
-              setStreamingContent('');
-            } else if (data.type === 'error') {
-              throw new Error(data.message);
+              if (data.type === "token") {
+                accumulated += data.content;
+                setStreamingContent(accumulated);
+              } else if (data.type === "done") {
+                // Stream completato
+                const assistantMessage: ChatMessage = {
+                  id: data.message_id,
+                  role: "assistant",
+                  content: accumulated,
+                  timestamp: new Date(),
+                };
+                setMessages(prev => [...prev, assistantMessage]);
+                setStreamingContent("");
+              } else if (data.type === "error") {
+                throw new Error(data.message);
+              }
             }
           }
         }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          // Gestisci errore
+          setMessages(prev => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: "system",
+              content: `Errore: ${err.message}`,
+              timestamp: new Date(),
+            },
+          ]);
+        }
+      } finally {
+        setIsStreaming(false);
+        setStreamingContent("");
       }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        // Gestisci errore
-        setMessages(prev => [...prev, {
-          id: crypto.randomUUID(),
-          role: 'system',
-          content: `Errore: ${err.message}`,
-          timestamp: new Date(),
-        }]);
-      }
-    } finally {
-      setIsStreaming(false);
-      setStreamingContent('');
-    }
-  }, [conversationId]);
+    },
+    [conversationId]
+  );
 
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
     setIsStreaming(false);
     // Salva il contenuto parziale come messaggio
     if (streamingContent) {
-      setMessages(prev => [...prev, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: streamingContent + '\n\n*[Risposta interrotta]*',
-        timestamp: new Date(),
-      }]);
-      setStreamingContent('');
+      setMessages(prev => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: streamingContent + "\n\n*[Risposta interrotta]*",
+          timestamp: new Date(),
+        },
+      ]);
+      setStreamingContent("");
     }
   }, [streamingContent]);
 
-  return { messages, streamingContent, isStreaming, error, sendMessage, stopStreaming, clearMessages };
+  return {
+    messages,
+    streamingContent,
+    isStreaming,
+    error,
+    sendMessage,
+    stopStreaming,
+    clearMessages,
+  };
 }
 ```
 
@@ -384,10 +404,10 @@ interface SSEClientOptions {
 
 export async function streamChat(options: SSEClientOptions) {
   const response = await fetch(options.url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'text/event-stream',
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
     },
     body: JSON.stringify(options.body),
     signal: options.signal,
@@ -395,36 +415,39 @@ export async function streamChat(options: SSEClientOptions) {
 
   if (!response.ok) {
     const error = await response.json();
-    options.onError({ code: 'HTTP_ERROR', message: error.message || response.statusText });
+    options.onError({
+      code: "HTTP_ERROR",
+      message: error.message || response.statusText,
+    });
     return;
   }
 
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
-  let buffer = '';
+  let buffer = "";
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || ''; // L'ultima riga potrebbe essere incompleta
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || ""; // L'ultima riga potrebbe essere incompleta
 
     for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
+      if (!line.startsWith("data: ")) continue;
 
       try {
         const data = JSON.parse(line.slice(6));
 
         switch (data.type) {
-          case 'token':
+          case "token":
             options.onToken(data.content);
             break;
-          case 'done':
+          case "done":
             options.onDone(data);
             break;
-          case 'error':
+          case "error":
             options.onError(data);
             break;
         }
@@ -442,33 +465,33 @@ export async function streamChat(options: SSEClientOptions) {
 
 ### 5.1 Librerie selezionate
 
-| Libreria | Versione | Ruolo | Perche' questa |
-|----------|---------|-------|----------------|
-| **react-markdown** | ^9.x | Rendering markdown | Standard de facto per markdown in React. Supporta plugin remark/rehype |
-| **remark-gfm** | ^4.x | Plugin per tabelle/checkbox GitHub-flavored | Tabelle, task list, strikethrough |
-| **rehype-highlight** | ^7.x | Syntax highlighting nei blocchi codice | Evidenzia codice Python, SQL, JSON, etc. |
-| **highlight.js** | ^11.x | Motore syntax highlighting | Leggero, 190+ linguaggi |
-| Nessuna libreria SSE esterna | — | Client SSE nativo con `fetch` + `ReadableStream` | L'API `fetch` con streaming e' supportata da tutti i browser moderni. Non serve una libreria esterna |
+| Libreria                     | Versione | Ruolo                                            | Perche' questa                                                                                       |
+| ---------------------------- | -------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| **react-markdown**           | ^9.x     | Rendering markdown                               | Standard de facto per markdown in React. Supporta plugin remark/rehype                               |
+| **remark-gfm**               | ^4.x     | Plugin per tabelle/checkbox GitHub-flavored      | Tabelle, task list, strikethrough                                                                    |
+| **rehype-highlight**         | ^7.x     | Syntax highlighting nei blocchi codice           | Evidenzia codice Python, SQL, JSON, etc.                                                             |
+| **highlight.js**             | ^11.x    | Motore syntax highlighting                       | Leggero, 190+ linguaggi                                                                              |
+| Nessuna libreria SSE esterna | —        | Client SSE nativo con `fetch` + `ReadableStream` | L'API `fetch` con streaming e' supportata da tutti i browser moderni. Non serve una libreria esterna |
 
 ### 5.2 Librerie GIA' presenti nel progetto (da riutilizzare)
 
-| Libreria | Uso attuale | Uso nella chat |
-|----------|-------------|----------------|
-| **Tailwind CSS 4** | Styling globale | Styling bolle, layout, animazioni |
-| **Lucide React** | Icone UI | Icone chat (send, stop, copy, user, bot) |
-| **shadcn/ui** | Componenti UI | Button, Input, ScrollArea, Tooltip, Sheet |
-| **sonner** | Toast notifications | Notifiche errori, quota, copia |
-| **date-fns** | Formattazione date | Timestamp messaggi |
+| Libreria           | Uso attuale         | Uso nella chat                            |
+| ------------------ | ------------------- | ----------------------------------------- |
+| **Tailwind CSS 4** | Styling globale     | Styling bolle, layout, animazioni         |
+| **Lucide React**   | Icone UI            | Icone chat (send, stop, copy, user, bot)  |
+| **shadcn/ui**      | Componenti UI       | Button, Input, ScrollArea, Tooltip, Sheet |
+| **sonner**         | Toast notifications | Notifiche errori, quota, copia            |
+| **date-fns**       | Formattazione date  | Timestamp messaggi                        |
 
 ### 5.3 Cosa NON aggiungere
 
-| Libreria | Perche' NO |
-|----------|-----------|
-| `eventsource-parser` | Il parsing SSE con `fetch` + `ReadableStream` e' sufficiente e nativo |
-| `socket.io` | Overkill — SSE e' unidirezionale, non servono WebSocket bidirezionali |
-| `@microsoft/fetch-event-source` | Deprecata e non necessaria con l'API fetch moderna |
-| `react-virtualized` | Le conversazioni PA non avranno migliaia di messaggi — lo scroll nativo basta |
-| `framer-motion` | Troppe dipendenze — le animazioni CSS/Tailwind sono sufficienti |
+| Libreria                        | Perche' NO                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| `eventsource-parser`            | Il parsing SSE con `fetch` + `ReadableStream` e' sufficiente e nativo         |
+| `socket.io`                     | Overkill — SSE e' unidirezionale, non servono WebSocket bidirezionali         |
+| `@microsoft/fetch-event-source` | Deprecata e non necessaria con l'API fetch moderna                            |
+| `react-virtualized`             | Le conversazioni PA non avranno migliaia di messaggi — lo scroll nativo basta |
+| `framer-motion`                 | Troppe dipendenze — le animazioni CSS/Tailwind sono sufficienti               |
 
 ---
 
@@ -550,12 +573,24 @@ L'animazione e' un fade in/out sequenziale dei 3 puntini, implementata con CSS k
 
 ```css
 @keyframes typing-dot {
-  0%, 60%, 100% { opacity: 0.3; }
-  30% { opacity: 1; }
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+  }
+  30% {
+    opacity: 1;
+  }
 }
-.typing-dot:nth-child(1) { animation-delay: 0ms; }
-.typing-dot:nth-child(2) { animation-delay: 150ms; }
-.typing-dot:nth-child(3) { animation-delay: 300ms; }
+.typing-dot:nth-child(1) {
+  animation-delay: 0ms;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 150ms;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 300ms;
+}
 ```
 
 ### 6.5 Suggerimenti contestuali
@@ -618,7 +653,7 @@ Token 3: "** e' "
 Token 4: "regolato"
 ```
 
-Se renderizzi "Il **sub" come markdown, il grassetto non si chiude e si rompe.
+Se renderizzi "Il \*\*sub" come markdown, il grassetto non si chiude e si rompe.
 
 ### 7.2 La soluzione: buffer + rendering intelligente
 
@@ -637,9 +672,9 @@ Approccio: "Render what's complete, buffer what's not"
 ```tsx
 // client/src/components/ai-chat/AIChatMarkdown.tsx
 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 
 interface AIChatMarkdownProps {
   content: string;
@@ -648,12 +683,14 @@ interface AIChatMarkdownProps {
 
 export function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
   return (
-    <div className="prose prose-invert prose-sm max-w-none
+    <div
+      className="prose prose-invert prose-sm max-w-none
                     prose-p:my-1 prose-li:my-0.5
                     prose-headings:text-teal-400
                     prose-strong:text-white
                     prose-code:text-teal-300
-                    prose-a:text-teal-400">
+                    prose-a:text-teal-400"
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
@@ -676,13 +713,17 @@ export function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
           ),
           // Blocchi codice con copy button
           code: ({ className, children, ...props }) => {
-            const isBlock = className?.includes('language-');
+            const isBlock = className?.includes("language-");
             if (isBlock) {
               return (
                 <div className="relative group">
-                  <code className={className} {...props}>{children}</code>
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
                   <button
-                    onClick={() => navigator.clipboard.writeText(String(children))}
+                    onClick={() =>
+                      navigator.clipboard.writeText(String(children))
+                    }
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100
                                bg-slate-700 text-xs px-2 py-1 rounded transition-opacity"
                   >
@@ -691,7 +732,14 @@ export function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
                 </div>
               );
             }
-            return <code className="bg-slate-700 px-1 py-0.5 rounded text-sm" {...props}>{children}</code>;
+            return (
+              <code
+                className="bg-slate-700 px-1 py-0.5 rounded text-sm"
+                {...props}
+              >
+                {children}
+              </code>
+            );
           },
         }}
       />
@@ -712,13 +760,13 @@ export function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
 
 L'aspetto e i suggerimenti della chat cambiano in base al ruolo dell'utente:
 
-| Ruolo | Colore primario | Avatar AI | Nome AI | Suggerimenti iniziali |
-|-------|----------------|-----------|---------|----------------------|
-| **PA (super_admin)** | Teal (#14b8a6) | Icona building + crown | "Assistente DMS Hub" | Normativa, report, gestione, RBAC |
-| **PA (dirigente)** | Teal (#14b8a6) | Icona building | "Assistente PA" | Normativa, report, concessioni |
-| **PA (operatore)** | Teal (#14b8a6) | Icona building | "Assistente PA" | Procedure, modulistica, FAQ |
-| **Impresa** | Purple (#8b5cf6) | Icona store | "Assistente Operatore" | Presenze, canoni, documenti, wallet |
-| **Cittadino** | Blue (#3b82f6) | Icona info | "Info Mercati" | Orari mercati, dove parcheggiare, cosa comprare |
+| Ruolo                | Colore primario  | Avatar AI              | Nome AI                | Suggerimenti iniziali                           |
+| -------------------- | ---------------- | ---------------------- | ---------------------- | ----------------------------------------------- |
+| **PA (super_admin)** | Teal (#14b8a6)   | Icona building + crown | "Assistente DMS Hub"   | Normativa, report, gestione, RBAC               |
+| **PA (dirigente)**   | Teal (#14b8a6)   | Icona building         | "Assistente PA"        | Normativa, report, concessioni                  |
+| **PA (operatore)**   | Teal (#14b8a6)   | Icona building         | "Assistente PA"        | Procedure, modulistica, FAQ                     |
+| **Impresa**          | Purple (#8b5cf6) | Icona store            | "Assistente Operatore" | Presenze, canoni, documenti, wallet             |
+| **Cittadino**        | Blue (#3b82f6)   | Icona info             | "Info Mercati"         | Orari mercati, dove parcheggiare, cosa comprare |
 
 ### 8.2 System prompt per ruolo (backend)
 
@@ -741,22 +789,71 @@ Cittadino: "Sei l'assistente informativo sui mercati ambulanti della citta'.
 ```tsx
 const SUGGESTIONS_BY_ROLE = {
   pa: [
-    { icon: Scale, label: "Normativa mercati", prompt: "Quali sono le principali norme che regolano i mercati ambulanti?" },
-    { icon: FileText, label: "Report presenze", prompt: "Genera un report delle presenze del mese corrente" },
-    { icon: Calculator, label: "Calcolo canoni", prompt: "Come si calcolano i canoni per i posteggi?" },
-    { icon: Users, label: "Gestione concessioni", prompt: "Qual e' l'iter per un subingresso di concessione?" },
+    {
+      icon: Scale,
+      label: "Normativa mercati",
+      prompt:
+        "Quali sono le principali norme che regolano i mercati ambulanti?",
+    },
+    {
+      icon: FileText,
+      label: "Report presenze",
+      prompt: "Genera un report delle presenze del mese corrente",
+    },
+    {
+      icon: Calculator,
+      label: "Calcolo canoni",
+      prompt: "Come si calcolano i canoni per i posteggi?",
+    },
+    {
+      icon: Users,
+      label: "Gestione concessioni",
+      prompt: "Qual e' l'iter per un subingresso di concessione?",
+    },
   ],
   impresa: [
-    { icon: Calendar, label: "Presenze", prompt: "Come registro la mia presenza al mercato?" },
-    { icon: CreditCard, label: "Pagamenti", prompt: "Come pago il canone del posteggio?" },
-    { icon: FileCheck, label: "Documenti", prompt: "Quali documenti devo tenere aggiornati?" },
-    { icon: HelpCircle, label: "Assistenza", prompt: "Ho un problema con la mia concessione, come faccio?" },
+    {
+      icon: Calendar,
+      label: "Presenze",
+      prompt: "Come registro la mia presenza al mercato?",
+    },
+    {
+      icon: CreditCard,
+      label: "Pagamenti",
+      prompt: "Come pago il canone del posteggio?",
+    },
+    {
+      icon: FileCheck,
+      label: "Documenti",
+      prompt: "Quali documenti devo tenere aggiornati?",
+    },
+    {
+      icon: HelpCircle,
+      label: "Assistenza",
+      prompt: "Ho un problema con la mia concessione, come faccio?",
+    },
   ],
   cittadino: [
-    { icon: MapPin, label: "Mercati vicini", prompt: "Quali mercati ci sono nella mia zona?" },
-    { icon: Clock, label: "Orari", prompt: "Quali sono gli orari dei mercati questa settimana?" },
-    { icon: ShoppingBag, label: "Cosa comprare", prompt: "Che tipo di prodotti trovo al mercato?" },
-    { icon: Car, label: "Come arrivare", prompt: "Dove posso parcheggiare vicino al mercato?" },
+    {
+      icon: MapPin,
+      label: "Mercati vicini",
+      prompt: "Quali mercati ci sono nella mia zona?",
+    },
+    {
+      icon: Clock,
+      label: "Orari",
+      prompt: "Quali sono gli orari dei mercati questa settimana?",
+    },
+    {
+      icon: ShoppingBag,
+      label: "Cosa comprare",
+      prompt: "Che tipo di prodotti trovo al mercato?",
+    },
+    {
+      icon: Car,
+      label: "Come arrivare",
+      prompt: "Dove posso parcheggiare vicino al mercato?",
+    },
   ],
 };
 ```
@@ -800,7 +897,7 @@ CREATE TABLE ai_messages (
 // NOTA: Tutti gli endpoint sono REST su mihub-backend-rest (Express.js su Hetzner)
 // ZERO tRPC — il backend tRPC e' dismesso per la chat AI
 
-const AI_API_BASE = import.meta.env.VITE_AI_API_URL || '/api/ai';
+const AI_API_BASE = import.meta.env.VITE_AI_API_URL || "/api/ai";
 
 export function useConversations() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -810,7 +907,7 @@ export function useConversations() {
   const fetchConversations = useCallback(async () => {
     setIsLoading(true);
     const res = await fetch(`${AI_API_BASE}/conversations`, {
-      credentials: 'include',
+      credentials: "include",
     });
     const data = await res.json();
     setConversations(data.conversations ?? []);
@@ -820,9 +917,9 @@ export function useConversations() {
   // POST /api/ai/conversations
   const createNew = useCallback(async () => {
     const res = await fetch(`${AI_API_BASE}/conversations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({}),
     });
     const data = await res.json();
@@ -831,26 +928,34 @@ export function useConversations() {
   }, [fetchConversations]);
 
   // PATCH /api/ai/conversations/:id
-  const rename = useCallback(async (id: string, title: string) => {
-    await fetch(`${AI_API_BASE}/conversations/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ title }),
-    });
-    await fetchConversations();
-  }, [fetchConversations]);
+  const rename = useCallback(
+    async (id: string, title: string) => {
+      await fetch(`${AI_API_BASE}/conversations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ title }),
+      });
+      await fetchConversations();
+    },
+    [fetchConversations]
+  );
 
   // DELETE /api/ai/conversations/:id
-  const remove = useCallback(async (id: string) => {
-    await fetch(`${AI_API_BASE}/conversations/${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    await fetchConversations();
-  }, [fetchConversations]);
+  const remove = useCallback(
+    async (id: string) => {
+      await fetch(`${AI_API_BASE}/conversations/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      await fetchConversations();
+    },
+    [fetchConversations]
+  );
 
-  useEffect(() => { fetchConversations(); }, [fetchConversations]);
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
 
   return { conversations, isLoading, createNew, rename, delete: remove };
 }
@@ -912,8 +1017,8 @@ Il browser moderno supporta `fetch()` con `ReadableStream` per leggere
 la risposta man mano che arriva, senza aspettare che sia completa:
 
 ```tsx
-const response = await fetch('/api/ai/chat/stream', {
-  method: 'POST',
+const response = await fetch("/api/ai/chat/stream", {
+  method: "POST",
   body: JSON.stringify({ conversation_id, message }),
 });
 
@@ -936,7 +1041,7 @@ Per evitare troppi re-render React (che rallenterebbero il browser):
 
 ```tsx
 // Batch degli aggiornamenti: accumula token per 16ms (~60fps) prima di aggiornare lo stato
-const tokenBuffer = useRef('');
+const tokenBuffer = useRef("");
 const rafId = useRef<number>();
 
 const onToken = useCallback((token: string) => {
@@ -945,7 +1050,7 @@ const onToken = useCallback((token: string) => {
   if (!rafId.current) {
     rafId.current = requestAnimationFrame(() => {
       setStreamingContent(prev => prev + tokenBuffer.current);
-      tokenBuffer.current = '';
+      tokenBuffer.current = "";
       rafId.current = undefined;
     });
   }
@@ -953,6 +1058,7 @@ const onToken = useCallback((token: string) => {
 ```
 
 Questo approccio:
+
 - Accumula i token in un buffer
 - Aggiorna lo stato React al massimo 60 volte al secondo (1 per frame)
 - Evita "jank" e stuttering nell'animazione dello streaming
@@ -967,7 +1073,7 @@ const isUserScrolledUp = useRef(false);
 // Scroll auto solo se l'utente non ha scrollato manualmente verso l'alto
 useEffect(() => {
   if (!isUserScrolledUp.current) {
-    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 }, [streamingContent, messages]);
 
@@ -1275,18 +1381,18 @@ curl http://gpu-server:8000/v1/chat/completions \
 
 ## 14. RIEPILOGO
 
-| Aspetto | Dettaglio |
-|---------|----------|
-| **Obiettivo** | Chat AI con UX identica a ChatGPT/Claude |
-| **Tecnologia streaming** | SSE (Server-Sent Events) via `fetch` + `ReadableStream` |
-| **Framework** | React 19 + Tailwind 4 + shadcn/ui (stack esistente) |
-| **Nuove dipendenze** | `react-markdown`, `remark-gfm`, `rehype-highlight` |
-| **Componenti** | 12 componenti React + 3 hooks + 2 utility |
-| **Personalizzazione** | Colori/avatar/suggerimenti per PA, Impresa, Cittadino |
-| **Storico** | Sidebar con conversazioni raggruppate per data |
-| **Responsabilita' Claude** | Frontend completo (componenti, hooks, UI, streaming client) |
-| **Responsabilita' Manus** | Backend REST (endpoint SSE, CRUD conversazioni REST, DB, quota, Ollama/vLLM) — ZERO tRPC |
-| **Tempo stimato frontend** | 9-13 giorni lavorativi |
+| Aspetto                    | Dettaglio                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| **Obiettivo**              | Chat AI con UX identica a ChatGPT/Claude                                                 |
+| **Tecnologia streaming**   | SSE (Server-Sent Events) via `fetch` + `ReadableStream`                                  |
+| **Framework**              | React 19 + Tailwind 4 + shadcn/ui (stack esistente)                                      |
+| **Nuove dipendenze**       | `react-markdown`, `remark-gfm`, `rehype-highlight`                                       |
+| **Componenti**             | 12 componenti React + 3 hooks + 2 utility                                                |
+| **Personalizzazione**      | Colori/avatar/suggerimenti per PA, Impresa, Cittadino                                    |
+| **Storico**                | Sidebar con conversazioni raggruppate per data                                           |
+| **Responsabilita' Claude** | Frontend completo (componenti, hooks, UI, streaming client)                              |
+| **Responsabilita' Manus**  | Backend REST (endpoint SSE, CRUD conversazioni REST, DB, quota, Ollama/vLLM) — ZERO tRPC |
+| **Tempo stimato frontend** | 9-13 giorni lavorativi                                                                   |
 
 ---
 
@@ -1302,15 +1408,16 @@ dall'interfaccia A99X completa in una fase successiva (post test pilota 6 mesi).
 
 **Come il codice chat evolve verso A99X:**
 
-| Componente Chat AI | Evoluzione A99X |
-|--------------------|-----------------|
-| RAG su dati PA/mercati | AVA accede ai dati specifici della PA/associazione |
-| Streaming SSE | Risposte real-time dell'agente durante riunioni |
-| Profili per ruolo (PA/Impresa/Cittadino) | Profili AVA personalizzati |
-| Gestione conversazioni | Storico riunioni e report |
-| Suggerimenti contestuali | Follow-up automatizzato post-riunione |
+| Componente Chat AI                       | Evoluzione A99X                                    |
+| ---------------------------------------- | -------------------------------------------------- |
+| RAG su dati PA/mercati                   | AVA accede ai dati specifici della PA/associazione |
+| Streaming SSE                            | Risposte real-time dell'agente durante riunioni    |
+| Profili per ruolo (PA/Impresa/Cittadino) | Profili AVA personalizzati                         |
+| Gestione conversazioni                   | Storico riunioni e report                          |
+| Suggerimenti contestuali                 | Follow-up automatizzato post-riunione              |
 
 **Endpoint REST futuri A99X (NON implementare):**
+
 ```
 POST   /api/a99x/agenda/optimize
 POST   /api/a99x/priorities/analyze
@@ -1325,4 +1432,4 @@ Vedi `PROGETTO_A99X_INTEGRAZIONE_MIOHUB.md` per dettagli completi.
 
 ---
 
-*Documento progetto creato il 27/02/2026, aggiornato v1.1 il 27/02/2026 — DMS Hub Team*
+_Documento progetto creato il 27/02/2026, aggiornato v1.1 il 27/02/2026 — DMS Hub Team_

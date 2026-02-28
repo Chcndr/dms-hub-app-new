@@ -50,7 +50,7 @@ CREATE TABLE civic_reports (
   type        VARCHAR(100) NOT NULL,        -- Categoria: buche, illuminazione, rifiuti, etc.
   description TEXT NOT NULL,
   lat         VARCHAR(20),                  -- Latitudine GPS
-  lng         VARCHAR(20),                  -- Longitudine GPS  
+  lng         VARCHAR(20),                  -- Longitudine GPS
   photo_url   TEXT,                         -- URL foto
   status      VARCHAR(50) DEFAULT 'pending', -- pending, in_progress, resolved
   created_at  TIMESTAMP DEFAULT NOW()
@@ -61,18 +61,18 @@ CREATE TABLE civic_reports (
 
 ### 2.2 Campi Disponibili vs Campi Usati nel Codice
 
-| Campo | Presente in DB | Usato nel Codice Precedente | Azione |
-|-------|----------------|----------------------------|--------|
-| `id` | ✅ | ✅ | OK |
-| `type` | ✅ | ✅ | OK |
-| `description` | ✅ | ✅ | OK |
-| `lat` | ✅ | ✅ | OK |
-| `lng` | ✅ | ✅ | OK |
-| `status` | ✅ | ✅ | OK |
-| `created_at` | ✅ | ✅ | OK |
-| `priority` | ❌ | ✅ (ERRORE!) | Rimuovere o rendere opzionale |
-| `address` | ❌ | ✅ | Rendere opzionale |
-| `comune_id` | ❌ | ❌ | Non necessario |
+| Campo         | Presente in DB | Usato nel Codice Precedente | Azione                        |
+| ------------- | -------------- | --------------------------- | ----------------------------- |
+| `id`          | ✅             | ✅                          | OK                            |
+| `type`        | ✅             | ✅                          | OK                            |
+| `description` | ✅             | ✅                          | OK                            |
+| `lat`         | ✅             | ✅                          | OK                            |
+| `lng`         | ✅             | ✅                          | OK                            |
+| `status`      | ✅             | ✅                          | OK                            |
+| `created_at`  | ✅             | ✅                          | OK                            |
+| `priority`    | ❌             | ✅ (ERRORE!)                | Rimuovere o rendere opzionale |
+| `address`     | ❌             | ✅                          | Rendere opzionale             |
+| `comune_id`   | ❌             | ❌                          | Non necessario                |
 
 ### 2.3 API Endpoint Esistente
 
@@ -83,6 +83,7 @@ GET https://orchestratore.mio-hub.me/api/civic-reports
 ```
 
 **Response attuale:**
+
 ```json
 {
   "success": true,
@@ -176,22 +177,22 @@ Lo schema attuale è sufficiente per l'implementazione dei marker. **Non serve m
 
 ### 4.2 Mapping Tipo → Colore
 
-| Tipo (type) | Colore | Hex Code | Descrizione |
-|-------------|--------|----------|-------------|
-| `buche` | 🟠 Arancione | `#f97316` | Buche stradali |
-| `illuminazione` | 🟡 Giallo | `#eab308` | Problemi illuminazione |
-| `rifiuti` | 🟢 Verde | `#22c55e` | Rifiuti abbandonati |
-| `microcriminalita` | 🔴 Rosso | `#ef4444` | Segnalazioni sicurezza |
-| `abusivismo` | 🟣 Viola | `#a855f7` | Commercio abusivo |
-| `altro` | ⚪ Grigio | `#6b7280` | Altre segnalazioni |
+| Tipo (type)        | Colore       | Hex Code  | Descrizione            |
+| ------------------ | ------------ | --------- | ---------------------- |
+| `buche`            | 🟠 Arancione | `#f97316` | Buche stradali         |
+| `illuminazione`    | 🟡 Giallo    | `#eab308` | Problemi illuminazione |
+| `rifiuti`          | 🟢 Verde     | `#22c55e` | Rifiuti abbandonati    |
+| `microcriminalita` | 🔴 Rosso     | `#ef4444` | Segnalazioni sicurezza |
+| `abusivismo`       | 🟣 Viola     | `#a855f7` | Commercio abusivo      |
+| `altro`            | ⚪ Grigio    | `#6b7280` | Altre segnalazioni     |
 
 ### 4.3 Mapping Status → Stile
 
-| Status | Stile Marker | Descrizione |
-|--------|--------------|-------------|
-| `pending` | Cerchio pieno colorato | In attesa di presa in carico |
-| `in_progress` | Cerchio con bordo bianco | In lavorazione |
-| `resolved` | Cerchio grigio semi-trasparente | Risolta |
+| Status        | Stile Marker                    | Descrizione                  |
+| ------------- | ------------------------------- | ---------------------------- |
+| `pending`     | Cerchio pieno colorato          | In attesa di presa in carico |
+| `in_progress` | Cerchio con bordo bianco        | In lavorazione               |
+| `resolved`    | Cerchio grigio semi-trasparente | Risolta                      |
 
 ---
 
@@ -199,21 +200,21 @@ Lo schema attuale è sufficiente per l'implementazione dei marker. **Non serve m
 
 ### 5.1 File da Modificare
 
-| File | Repository | Modifica |
-|------|------------|----------|
+| File                        | Repository      | Modifica                           |
+| --------------------------- | --------------- | ---------------------------------- |
 | `HubMarketMapComponent.tsx` | dms-hub-app-new | Aggiungere rendering marker civici |
-| `GestioneHubMapWrapper.tsx` | dms-hub-app-new | Passare prop `civicReports` |
-| `DashboardPA.tsx` | dms-hub-app-new | Passare dati query alla mappa |
+| `GestioneHubMapWrapper.tsx` | dms-hub-app-new | Passare prop `civicReports`        |
+| `DashboardPA.tsx`           | dms-hub-app-new | Passare dati query alla mappa      |
 
 ### 5.2 File NON da Modificare (Principio Non-Interferenza)
 
-| File | Motivo |
-|------|--------|
-| `MarketMapComponent.tsx` | Usato in Gestione Mercati - NON TOCCARE |
-| `MappaGISPage.tsx` | Usato in Mappa GIS - NON TOCCARE |
-| `MappaItaliaPage.tsx` | Usato in Web App - NON TOCCARE |
-| `drizzle/schema.ts` | Schema DB - NON TOCCARE |
-| `civic-reports.js` (backend) | Endpoint API - NON TOCCARE |
+| File                         | Motivo                                  |
+| ---------------------------- | --------------------------------------- |
+| `MarketMapComponent.tsx`     | Usato in Gestione Mercati - NON TOCCARE |
+| `MappaGISPage.tsx`           | Usato in Mappa GIS - NON TOCCARE        |
+| `MappaItaliaPage.tsx`        | Usato in Web App - NON TOCCARE          |
+| `drizzle/schema.ts`          | Schema DB - NON TOCCARE                 |
+| `civic-reports.js` (backend) | Endpoint API - NON TOCCARE              |
 
 ### 5.3 Gerarchia Componenti
 
@@ -262,12 +263,12 @@ interface CivicReport {
 ```typescript
 // In HubMarketMapComponent.tsx
 const CIVIC_MARKER_COLORS: Record<string, string> = {
-  'buche': '#f97316',        // Arancione
-  'illuminazione': '#eab308', // Giallo
-  'rifiuti': '#22c55e',      // Verde
-  'microcriminalita': '#ef4444', // Rosso
-  'abusivismo': '#a855f7',   // Viola
-  'altro': '#6b7280',        // Grigio default
+  buche: "#f97316", // Arancione
+  illuminazione: "#eab308", // Giallo
+  rifiuti: "#22c55e", // Verde
+  microcriminalita: "#ef4444", // Rosso
+  abusivismo: "#a855f7", // Viola
+  altro: "#6b7280", // Grigio default
 };
 ```
 
@@ -277,7 +278,7 @@ const CIVIC_MARKER_COLORS: Record<string, string> = {
 // In HubMarketMapComponentProps
 interface HubMarketMapComponentProps {
   // ... props esistenti ...
-  
+
   // 🆕 Nuova prop per segnalazioni civiche
   civicReports?: CivicReport[];
 }
@@ -290,18 +291,18 @@ interface HubMarketMapComponentProps {
 {civicReports && civicReports.length > 0 && civicReports.map((report) => {
   // Salta se mancano coordinate
   if (!report.lat || !report.lng) return null;
-  
+
   const lat = parseFloat(report.lat);
   const lng = parseFloat(report.lng);
   if (isNaN(lat) || isNaN(lng)) return null;
-  
+
   // Determina colore in base al tipo
   const color = CIVIC_MARKER_COLORS[report.type] || CIVIC_MARKER_COLORS['altro'];
-  
+
   // Determina stile in base allo status
   const isResolved = report.status === 'resolved';
   const isInProgress = report.status === 'in_progress';
-  
+
   // Crea icona marker
   const markerIcon = L.divIcon({
     className: 'civic-marker',
@@ -317,7 +318,7 @@ interface HubMarketMapComponentProps {
     iconSize: [16, 16],
     iconAnchor: [8, 8],
   });
-  
+
   return (
     <Marker
       key={`civic-${report.id}`}
@@ -488,28 +489,28 @@ interface GestioneHubMapWrapperProps {
 
 ### 9.1 HubMarketMapComponent.tsx
 
-| Linea | Tipo | Descrizione |
-|-------|------|-------------|
-| ~95 | ADD | Interfaccia `CivicReport` con campi opzionali |
-| ~96 | ADD | Costante `CIVIC_MARKER_COLORS` |
-| ~139 | ADD | Prop `civicReports?: CivicReport[]` |
-| ~227 | ADD | Destrutturazione `civicReports = []` |
-| ~600+ | ADD | Rendering marker civici con `.map()` |
+| Linea | Tipo | Descrizione                                   |
+| ----- | ---- | --------------------------------------------- |
+| ~95   | ADD  | Interfaccia `CivicReport` con campi opzionali |
+| ~96   | ADD  | Costante `CIVIC_MARKER_COLORS`                |
+| ~139  | ADD  | Prop `civicReports?: CivicReport[]`           |
+| ~227  | ADD  | Destrutturazione `civicReports = []`          |
+| ~600+ | ADD  | Rendering marker civici con `.map()`          |
 
 ### 9.2 GestioneHubMapWrapper.tsx
 
-| Linea | Tipo | Descrizione |
-|-------|------|-------------|
-| ~10 | ADD | Interfaccia `CivicReport` (copia da HubMarketMapComponent) |
-| ~20 | ADD | Prop `civicReports?: CivicReport[]` in interface |
-| ~50 | ADD | Destrutturazione `civicReports` dalle props |
-| ~100 | ADD | Passaggio `civicReports={civicReports}` a HubMarketMapComponent |
+| Linea | Tipo | Descrizione                                                     |
+| ----- | ---- | --------------------------------------------------------------- |
+| ~10   | ADD  | Interfaccia `CivicReport` (copia da HubMarketMapComponent)      |
+| ~20   | ADD  | Prop `civicReports?: CivicReport[]` in interface                |
+| ~50   | ADD  | Destrutturazione `civicReports` dalle props                     |
+| ~100  | ADD  | Passaggio `civicReports={civicReports}` a HubMarketMapComponent |
 
 ### 9.3 DashboardPA.tsx
 
-| Linea | Tipo | Descrizione |
-|-------|------|-------------|
-| ~1500 | EDIT | Aggiungere `civicReports={civicReportsQuery.data || []}` a GestioneHubMapWrapper |
+| Linea | Tipo | Descrizione                                      |
+| ----- | ---- | ------------------------------------------------ | --- | ---------------------------- |
+| ~1500 | EDIT | Aggiungere `civicReports={civicReportsQuery.data |     | []}` a GestioneHubMapWrapper |
 
 ---
 
@@ -517,12 +518,12 @@ interface GestioneHubMapWrapperProps {
 
 ### 10.1 Rischi Identificati
 
-| Rischio | Probabilità | Impatto | Mitigazione |
-|---------|-------------|---------|-------------|
-| Campo `priority` mancante nel DB | ALTA | CRITICO | Rendere tutti i campi non-standard opzionali |
-| Coordinate null/invalide | MEDIA | BASSO | Validare lat/lng prima del rendering |
-| Troppi marker rallentano mappa | BASSA | MEDIO | Limitare query a 100 record |
-| Interferenza con altre mappe | BASSA | CRITICO | Prop opzionale con default `[]` |
+| Rischio                          | Probabilità | Impatto | Mitigazione                                  |
+| -------------------------------- | ----------- | ------- | -------------------------------------------- |
+| Campo `priority` mancante nel DB | ALTA        | CRITICO | Rendere tutti i campi non-standard opzionali |
+| Coordinate null/invalide         | MEDIA       | BASSO   | Validare lat/lng prima del rendering         |
+| Troppi marker rallentano mappa   | BASSA       | MEDIO   | Limitare query a 100 record                  |
+| Interferenza con altre mappe     | BASSA       | CRITICO | Prop opzionale con default `[]`              |
 
 ### 10.2 Strategia di Rollback
 
@@ -582,8 +583,8 @@ git push origin master
 ---
 
 > **Nota:** Questo documento segue il workflow critico definito nel Master Blueprint:
+>
 > - ✅ Piano dettagliato con schemi
 > - ✅ Analisi sistema esistente
 > - ✅ Identificazione rischi
 > - ⏳ In attesa di autorizzazione utente
-

@@ -9,20 +9,22 @@
 ## 💡 AGGIORNAMENTO 28 DICEMBRE 2025 (SESSIONE WALLET & TARIFFE)
 
 ### ✅ Nuove Funzionalità Implementate
+
 1.  **Sistema Wallet PagoPA Unificato**
-    -   **Backend**: Nuovi endpoint `/api/wallets` e `/api/tariffs`.
-    -   **Database**: Tabelle `wallets`, `wallet_transactions`, `market_tariffs`.
-    -   **Frontend**: Integrazione dati reali in `WalletPanel.tsx` (Dashboard PagoPA).
-    -   **Logica**: Addebito automatico presenze basato su tariffa mercato (€/mq).
+    - **Backend**: Nuovi endpoint `/api/wallets` e `/api/tariffs`.
+    - **Database**: Tabelle `wallets`, `wallet_transactions`, `market_tariffs`.
+    - **Frontend**: Integrazione dati reali in `WalletPanel.tsx` (Dashboard PagoPA).
+    - **Logica**: Addebito automatico presenze basato su tariffa mercato (€/mq).
 
 2.  **Gestione Tariffe**
-    -   Configurazione tariffe annuali per mercato.
-    -   UI integrata nella dashboard.
+    - Configurazione tariffe annuali per mercato.
+    - UI integrata nella dashboard.
 
 ### ⚠️ Note Importanti per lo Sviluppo
--   **Frontend Repo**: `dms-hub-app-new` (Branch `master`).
--   **Frontend Path**: Il codice sorgente è in `client/src/`.
--   **Backend Repo**: `mihub-backend-rest` (Branch `master`).
+
+- **Frontend Repo**: `dms-hub-app-new` (Branch `master`).
+- **Frontend Path**: Il codice sorgente è in `client/src/`.
+- **Backend Repo**: `mihub-backend-rest` (Branch `master`).
 
 ---
 
@@ -31,39 +33,39 @@
 ### ✅ Bug Risolti e Nuove Funzionalità
 
 1.  **Visualizzazione Concessioni e Autorizzazioni in Lista Imprese**
-    -   **Problema:** La lista imprese non mostrava i dettagli delle concessioni e autorizzazioni attive.
-    -   **Soluzione:**
-        -   Aggiornata API `/api/imprese` per includere aggregazioni JSON di concessioni e autorizzazioni.
-        -   Aggiunti badge visivi nella card impresa (es. "Modena: 12", "Autorizzato").
+    - **Problema:** La lista imprese non mostrava i dettagli delle concessioni e autorizzazioni attive.
+    - **Soluzione:**
+      - Aggiornata API `/api/imprese` per includere aggregazioni JSON di concessioni e autorizzazioni.
+      - Aggiunti badge visivi nella card impresa (es. "Modena: 12", "Autorizzato").
 
 2.  **Fix Tabella Concessioni Vuota ("N/A")**
-    -   **Causa:** Disallineamento nomi campi tra backend (inglese) e frontend (italiano).
-    -   **Soluzione:** Implementata mappatura dati in `MarketCompaniesTab.tsx`.
+    - **Causa:** Disallineamento nomi campi tra backend (inglese) e frontend (italiano).
+    - **Soluzione:** Implementata mappatura dati in `MarketCompaniesTab.tsx`.
 
 3.  **Semaforo Qualifiche**
-    -   **Funzionalità:** Aggiunto indicatore visivo (Verde/Giallo/Rosso) nella card impresa che riassume lo stato delle qualifiche.
-    -   **Interazione:** Cliccando sul semaforo si apre la tab Qualificazioni filtrata per l'impresa.
+    - **Funzionalità:** Aggiunto indicatore visivo (Verde/Giallo/Rosso) nella card impresa che riassume lo stato delle qualifiche.
+    - **Interazione:** Cliccando sul semaforo si apre la tab Qualificazioni filtrata per l'impresa.
 
 4.  **Gestione Qualificazioni (CRUD)**
-    -   **Problema:** Impossibile creare nuove qualificazioni (funzionalità mancante/simulata).
-    -   **Soluzione:**
-        -   Creati nuovi endpoint backend: `GET/POST /api/imprese/:id/qualificazioni`.
-        -   Collegato frontend agli endpoint reali.
-        -   Ripristinato pulsante "Nuova Qualificazione" e modale di creazione.
+    - **Problema:** Impossibile creare nuove qualificazioni (funzionalità mancante/simulata).
+    - **Soluzione:**
+      - Creati nuovi endpoint backend: `GET/POST /api/imprese/:id/qualificazioni`.
+      - Collegato frontend agli endpoint reali.
+      - Ripristinato pulsante "Nuova Qualificazione" e modale di creazione.
 
 ### 🐞 Bug Ancora Aperti
 
 1.  **Bug Creazione Concessioni:**
-    -   **Problema:** Quando si crea una concessione, il form invia il **numero** del posteggio invece dell'**ID**.
-    -   **File da correggere:** `client/src/components/markets/MarketCompaniesTab.tsx`.
+    - **Problema:** Quando si crea una concessione, il form invia il **numero** del posteggio invece dell'**ID**.
+    - **File da correggere:** `client/src/components/markets/MarketCompaniesTab.tsx`.
 
 2.  **Miglioramento Interazione Mappa/Lista:**
-    -   **Problema:** Marker mercato copre il posteggio selezionato.
-    -   **Soluzione:** Usare indicatore diverso (freccia) invece di spostare il marker M.
+    - **Problema:** Marker mercato copre il posteggio selezionato.
+    - **Soluzione:** Usare indicatore diverso (freccia) invece di spostare il marker M.
 
 ### 🚀 Prossimi Sviluppi
 
--   **Vista "Gemello Digitale Italia"**: Implementare la vista nazionale.
+- **Vista "Gemello Digitale Italia"**: Implementare la vista nazionale.
 
 ---
 
@@ -72,10 +74,12 @@
 **D'ORA IN POI: SOLO MODIFICHE VIA GIT → PUSH → AUTO-DEPLOY**
 
 ❌ **NON fare più**:
+
 - Modifiche dirette sul server via SCP
 - Modifiche manuali in `/root/mihub-backend-rest/`
 
 ✅ **FARE sempre**:
+
 1. Modificare in locale/repository
 2. Commit e push su GitHub
 3. Lasciare che l'auto-deploy aggiorni il server
@@ -123,11 +127,13 @@ k6e5Mt9wkVNiCDJQDtMuAAAADW1hbnVzQHNhbmRib3g=
 ### Comandi PM2 Utili
 
 **Riavviare backend**:
+
 ```bash
 ssh -i /home/ubuntu/.ssh/manus_hetzner_key root@157.90.29.66 'cd /root/mihub-backend-rest && pm2 restart mihub-backend --update-env'
 ```
 
 **Vedere log PM2**:
+
 ```bash
 ssh -i /home/ubuntu/.ssh/manus_hetzner_key root@157.90.29.66 'pm2 logs mihub-backend --lines 50'
 ```
@@ -136,32 +142,35 @@ ssh -i /home/ubuntu/.ssh/manus_hetzner_key root@157.90.29.66 'pm2 logs mihub-bac
 
 ## 🤖 AGENTI DEL SISTEMA
 
-| Agente   | Stato      | Dettagli                                                                                                                            |
-| :------- | :--------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **MIO**    | ✅ **OK**   | Orchestratore principale, delega task a Manus, Abacus, GPT Dev                                                                      |
-| **Manus**  | ✅ **OK**   | Navigazione web, esecuzione comandi, file system. Usa `taskId` fisso per chat unica.                                              |
-| **Abacus** | ✅ **OK**   | Query SQL, accesso database PostgreSQL/Neon.                                                                                      |
-| **GPT Dev**| ✅ **OK**   | Accesso repository GitHub, lettura file, operazioni Git (clone, commit, PR).                                                      |
-| **Zapier** | ❌ **ERRORE** | Chiave API invalida (formato OpenAI invece di Zapier NLA) - **Da risolvere in futuro**                                          |
+| Agente      | Stato         | Dettagli                                                                               |
+| :---------- | :------------ | :------------------------------------------------------------------------------------- |
+| **MIO**     | ✅ **OK**     | Orchestratore principale, delega task a Manus, Abacus, GPT Dev                         |
+| **Manus**   | ✅ **OK**     | Navigazione web, esecuzione comandi, file system. Usa `taskId` fisso per chat unica.   |
+| **Abacus**  | ✅ **OK**     | Query SQL, accesso database PostgreSQL/Neon.                                           |
+| **GPT Dev** | ✅ **OK**     | Accesso repository GitHub, lettura file, operazioni Git (clone, commit, PR).           |
+| **Zapier**  | ❌ **ERRORE** | Chiave API invalida (formato OpenAI invece di Zapier NLA) - **Da risolvere in futuro** |
 
 ---
 
 ## 🔑 SECRET E VARIABILI D'AMBIENTE
 
 ### GitHub
+
 - `GITHUB_PAT`: Per GPT Dev e proxy GitHub
 - `GITHUB_TOKEN`: Per integrazioni e Guardian sync
 - `GITHUB_PAT_DMS`: Per admin secrets e sync da .env
 
 ### Manus
+
 - `MANUS_API_KEY`: Chiave API per Manus
 - `MANUS_TASK_ID`: `mio-hub-debug-session-001` (fisso in `llm.js`)
 
 ### Altri
+
 - `ABACUS_API_KEY`: Chiave API per Abacus
 - `ZAPIER_API_KEY`: Chiave API per Zapier (attualmente invalida)
 - `NEON_POSTGRES_URL`: Stringa di connessione al database
 
 ---
 
-*Documento aggiornato il 27 Dicembre 2025 - Manus AI*
+_Documento aggiornato il 27 Dicembre 2025 - Manus AI_

@@ -9,6 +9,7 @@
 ## 🎉 SCOPERTA IMPORTANTE
 
 **Il backend Vercel NON è vuoto!** Esiste già un'architettura completa con:
+
 - ✅ **41 tabelle database** definite nello schema
 - ✅ **tRPC router completo** con 15+ categorie API
 - ✅ **MIO Agent router** già implementato
@@ -23,6 +24,7 @@
 ### 1. **Database Schema** (41 tabelle) ✅
 
 #### Core System (6 tabelle)
+
 1. `users` - Utenti base
 2. `extended_users` - Dati estesi utenti (wallet, sustainability)
 3. `audit_logs` - Log audit
@@ -31,6 +33,7 @@
 6. `api_metrics` - Metriche API
 
 #### Markets & Shops (10 tabelle)
+
 7. `markets` - Mercati
 8. `market_geometry` - Geometrie mercati (GIS)
 9. `shops` - Negozi
@@ -43,6 +46,7 @@
 16. `vendor_presences` - Presenze venditori
 
 #### Transactions & Credits (6 tabelle)
+
 17. `transactions` - Transazioni
 18. `carbon_credits_config` - Config crediti carbonio
 19. `fund_transactions` - Transazioni fondo
@@ -51,36 +55,43 @@
 22. `carbon_footprint` - Impronta carbonio
 
 #### Products & Tracking (3 tabelle)
+
 23. `products` - Prodotti
 24. `product_tracking` - Tracciamento prodotti
 25. `checkins` - Check-in utenti
 
 #### Analytics & Metrics (4 tabelle)
+
 26. `user_analytics` - Analytics utenti
 27. `sustainability_metrics` - Metriche sostenibilità
 28. `business_analytics` - Analytics business
 29. `mobility_data` - Dati mobilità (TPER Bologna)
 
 #### Civic & Inspections (4 tabelle)
+
 30. `civic_reports` - Segnalazioni civiche
 31. `inspections` - Ispezioni base
 32. `inspections_detailed` - Ispezioni dettagliate
 33. `violations` - Violazioni
 
 #### Notifications (1 tabella)
+
 34. `notifications` - Notifiche
 
 #### GIS & Maps (2 tabelle)
+
 35. `custom_markers` - Marker personalizzati
 36. `custom_areas` - Aree personalizzate
 
 #### Integrations (4 tabelle)
+
 37. `webhooks` - Webhook registry
 38. `webhook_logs` - Log webhook
 39. `external_connections` - Connessioni esterne
 40. `api_metrics` - Metriche API (già contato sopra)
 
 #### MIO Agent (1 tabella) ✅
+
 41. `mio_agent_logs` - Log agenti AI
 
 ---
@@ -201,6 +212,7 @@
    - Return diagnostics
 
 **Altre Funzioni Database** (20+):
+
 - `getOverviewStats()`
 - `getMarkets()`
 - `getShops()`
@@ -227,6 +239,7 @@
 ### Layer 1: Database ✅ 80% Completo
 
 **Tabelle Esistenti**:
+
 - ✅ `mio_agent_logs` - Log agenti
 - ✅ `system_logs` - Log di sistema
 - ✅ `audit_logs` - Log audit
@@ -237,6 +250,7 @@
 - ✅ `api_metrics` - Metriche API
 
 **Tabelle Mancanti per MIHUB**:
+
 - ❌ `mio_tasks` - Task engine
 - ❌ `mio_projects` - Projects registry
 - ❌ `mio_brain` - Brain/Memory
@@ -250,6 +264,7 @@
 ### Layer 2: API Backend ✅ 60% Completo
 
 **Router Esistenti**:
+
 - ✅ `mioAgentRouter` - 5 endpoint
 - ✅ `analytics` - 7 endpoint
 - ✅ `carbonCredits` - 3 endpoint
@@ -265,6 +280,7 @@
 - ✅ `integrations` - Router separato
 
 **Router Mancanti per MIHUB**:
+
 - ❌ `tasks` - Task engine API
 - ❌ `projects` - Projects API
 - ❌ `brain` - Brain/Memory API
@@ -277,6 +293,7 @@
 ### Layer 3: Logging System ✅ 70% Completo
 
 **Esistente**:
+
 - ✅ Tabella `mio_agent_logs`
 - ✅ Tabella `system_logs`
 - ✅ Tabella `audit_logs`
@@ -285,6 +302,7 @@
 - ✅ API `getLogById`
 
 **Mancante**:
+
 - ❌ Auto-tracking eventi frontend
 - ❌ Middleware logging backend
 - ❌ WebSocket real-time logs
@@ -296,6 +314,7 @@
 ### Layer 4: Integration Layer ✅ 50% Completo
 
 **Esistente**:
+
 - ✅ Tabella `webhooks`
 - ✅ Tabella `webhook_logs`
 - ✅ Tabella `external_connections`
@@ -304,6 +323,7 @@
 - ✅ Router `integrations`
 
 **Mancante**:
+
 - ❌ API Gateway unificato
 - ❌ Webhook receiver attivo
 - ❌ Event validation
@@ -315,17 +335,20 @@
 ## ❌ COSA MANCA
 
 ### 1. **Event Bus** ❌ 0%
+
 - Nessuna tabella `system_events`
 - Nessun Redis Pub/Sub
 - Nessun event emitter/listener
 - Nessun event queue
 
 ### 2. **Data Bag** ❌ 0%
+
 - Nessuna tabella `data_bag`
 - Nessun Redis KV store
 - Nessun shared storage
 
 ### 3. **Multi-Agent System** ❌ 5%
+
 - Solo tabella `mio_agent_logs`
 - Nessuna tabella `agent_messages`
 - Nessuna tabella `agent_context`
@@ -333,24 +356,29 @@
 - Nessun agent orchestration
 
 ### 4. **Task Engine** ❌ 0%
+
 - Nessuna tabella `mio_tasks`
 - Nessuna API tasks
 - Nessun worker automation
 
 ### 5. **Projects Registry** ❌ 0%
+
 - Nessuna tabella `mio_projects`
 - Nessuna API projects
 
 ### 6. **Brain/Memory** ❌ 0%
+
 - Nessuna tabella `mio_brain`
 - Nessuna API brain
 
 ### 7. **Real-time System** ❌ 0%
+
 - Nessun WebSocket
 - Nessun Socket.IO
 - Nessun real-time sync
 
 ### 8. **MIHUB Dashboard** ❌ 0%
+
 - Nessun componente 4-panel
 - Nessuna chat multi-agente
 - Nessun shared context viewer
@@ -362,11 +390,13 @@
 ### FASE 1: **Completare Foundation** (4-6 ore) ⭐⭐⭐⭐⭐
 
 #### Step 1.1: Database PlanetScale (30 min)
+
 - [ ] Creare database
 - [ ] Configurare DATABASE_URL
 - [ ] Testare connessione con `mioAgent.testDatabase`
 
 #### Step 1.2: Aggiungere Tabelle Mancanti (2-3 ore)
+
 - [ ] `mio_tasks` - Task engine
 - [ ] `mio_projects` - Projects registry
 - [ ] `mio_brain` - Brain/Memory
@@ -376,6 +406,7 @@
 - [ ] `agent_context` - Shared context
 
 #### Step 1.3: Event Bus + Redis (2-3 ore)
+
 - [ ] Setup Redis (Upstash)
 - [ ] Event emitter/listener
 - [ ] Event queue
@@ -388,6 +419,7 @@
 ### FASE 2: **Estendere API Esistenti** (6-8 ore) ⭐⭐⭐⭐⭐
 
 #### Step 2.1: Tasks Router (2-3 ore)
+
 - [ ] `tasks.create`
 - [ ] `tasks.list`
 - [ ] `tasks.update`
@@ -395,16 +427,19 @@
 - [ ] `tasks.getById`
 
 #### Step 2.2: Projects Router (1-2 ore)
+
 - [ ] `projects.create`
 - [ ] `projects.list`
 - [ ] `projects.getById`
 
 #### Step 2.3: Brain Router (1-2 ore)
+
 - [ ] `brain.set`
 - [ ] `brain.get`
 - [ ] `brain.delete`
 
 #### Step 2.4: Events Router (2-3 ore)
+
 - [ ] `events.emit`
 - [ ] `events.subscribe`
 - [ ] `events.list`
@@ -416,18 +451,21 @@
 ### FASE 3: **Multi-Agent System** (12-16 ore) ⭐⭐⭐⭐⭐
 
 #### Step 3.1: Estendere mioAgentRouter (4-6 ore)
+
 - [ ] `mioAgent.chat` - Chat con MIO
 - [ ] `mioAgent.delegate` - Delega task
 - [ ] `mioAgent.getContext` - Get shared context
 - [ ] `mioAgent.setContext` - Set shared context
 
 #### Step 3.2: Agents Router (4-6 ore)
+
 - [ ] `agents.manus.chat` - Chat con Manus
 - [ ] `agents.abacus.chat` - Chat con Abacus
 - [ ] `agents.zapier.chat` - Chat con Zapier
 - [ ] `agents.broadcast` - Broadcast a tutti
 
 #### Step 3.3: LLM Integration (4-4 ore)
+
 - [ ] OpenAI GPT-5 (MIO)
 - [ ] OpenAI GPT-4 (Manus, Abacus)
 - [ ] MCP Zapier
@@ -446,11 +484,13 @@
 ### FASE 5: **Real-time & WebSocket** (4-6 ore) ⭐⭐⭐⭐
 
 #### Step 5.1: WebSocket Setup (2-3 ore)
+
 - [ ] Socket.IO server
 - [ ] Client integration
 - [ ] Room management
 
 #### Step 5.2: Real-time Sync (2-3 ore)
+
 - [ ] Chat sync
 - [ ] Event stream
 - [ ] Context sync
@@ -468,15 +508,15 @@
 
 ## ⏱️ STIMA TEMPORALE RIVISTA
 
-| Fase | Tempo Originale | Tempo Rivisto | Risparmio |
-|------|-----------------|---------------|-----------|
-| **Fase 1**: Foundation | 8-12 ore | 4-6 ore | -50% |
-| **Fase 2**: API Backend | 16-24 ore | 6-8 ore | -65% |
-| **Fase 3**: Multi-Agent | 16-24 ore | 12-16 ore | -30% |
-| **Fase 4**: MIHUB UI | 8-12 ore | 8-12 ore | 0% |
-| **Fase 5**: Real-time | 6-8 ore | 4-6 ore | -30% |
-| **Fase 6**: Testing | 4-6 ore | 4-6 ore | 0% |
-| **TOTALE** | **58-86 ore** | **38-54 ore** | **-40%** |
+| Fase                    | Tempo Originale | Tempo Rivisto | Risparmio |
+| ----------------------- | --------------- | ------------- | --------- |
+| **Fase 1**: Foundation  | 8-12 ore        | 4-6 ore       | -50%      |
+| **Fase 2**: API Backend | 16-24 ore       | 6-8 ore       | -65%      |
+| **Fase 3**: Multi-Agent | 16-24 ore       | 12-16 ore     | -30%      |
+| **Fase 4**: MIHUB UI    | 8-12 ore        | 8-12 ore      | 0%        |
+| **Fase 5**: Real-time   | 6-8 ore         | 4-6 ore       | -30%      |
+| **Fase 6**: Testing     | 4-6 ore         | 4-6 ore       | 0%        |
+| **TOTALE**              | **58-86 ore**   | **38-54 ore** | **-40%**  |
 
 **Stima Realistica Rivista**: **45 ore** (invece di 60 ore)
 
@@ -502,6 +542,7 @@
 **NON dobbiamo costruire da zero!**
 
 Possiamo:
+
 1. **Riutilizzare** tutto il backend esistente
 2. **Estendere** con tabelle mancanti (7 nuove tabelle)
 3. **Aggiungere** router mancanti (tasks, projects, brain, events, agents)

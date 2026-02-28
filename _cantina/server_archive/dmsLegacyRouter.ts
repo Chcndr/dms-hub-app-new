@@ -65,7 +65,7 @@ import {
 async function executeSyncJob(
   entity: string,
   direction: "push" | "pull" | "bidirectional",
-  triggeredBy: string,
+  triggeredBy: string
 ): Promise<{
   entity: string;
   jobId: number;
@@ -81,38 +81,63 @@ async function executeSyncJob(
   const startedAt = new Date();
 
   // Crea job record
-  const [job] = await db.insert(schema.syncJobs).values({
-    entity: entity as any,
-    direction,
-    status: "running",
-    recordsProcessed: 0,
-    recordsSuccess: 0,
-    recordsError: 0,
-    startedAt,
-    triggeredBy,
-  }).returning();
+  const [job] = await db
+    .insert(schema.syncJobs)
+    .values({
+      entity: entity as any,
+      direction,
+      status: "running",
+      recordsProcessed: 0,
+      recordsSuccess: 0,
+      recordsError: 0,
+      startedAt,
+      triggeredBy,
+    })
+    .returning();
 
   let processed = 0;
   let success = 0;
   let errors = 0;
   let errorMessage: string | null = null;
-  const logEntries: { recordId: string; localId: number | null; action: string; status: string; error?: string }[] = [];
+  const logEntries: {
+    recordId: string;
+    localId: number | null;
+    action: string;
+    status: string;
+    error?: string;
+  }[] = [];
 
   try {
     if (!isLegacyConfigured()) {
       // Modalita' offline — nessuna connessione Legacy
       errorMessage = "DMS_LEGACY_DB_URL non configurato — sync simulata";
-      await db.update(schema.syncJobs).set({
+      await db
+        .update(schema.syncJobs)
+        .set({
+          status: "partial",
+          errorMessage,
+          completedAt: new Date(),
+        })
+        .where(eq(schema.syncJobs.id, job.id));
+      return {
+        entity,
+        jobId: job.id,
         status: "partial",
-        errorMessage,
-        completedAt: new Date(),
-      }).where(eq(schema.syncJobs.id, job.id));
-      return { entity, jobId: job.id, status: "partial", processed: 0, success: 0, errors: 0, details: errorMessage };
+        processed: 0,
+        success: 0,
+        errors: 0,
+        details: errorMessage,
+      };
     }
 
     // ---- SYNC OUT: MioHub → Legacy ----
     if (direction === "push" || direction === "bidirectional") {
-      if (entity === "operatori" || entity === "mercati" || entity === "posteggi" || entity === "concessioni") {
+      if (
+        entity === "operatori" ||
+        entity === "mercati" ||
+        entity === "posteggi" ||
+        entity === "concessioni"
+      ) {
         const result = await syncOutEntity(db, entity, logEntries);
         processed += result.processed;
         success += result.success;
@@ -122,7 +147,11 @@ async function executeSyncJob(
 
     // ---- SYNC IN: Legacy → MioHub ----
     if (direction === "pull" || direction === "bidirectional") {
-      if (entity === "presenze" || entity === "mercati" || entity === "posteggi") {
+      if (
+        entity === "presenze" ||
+        entity === "mercati" ||
+        entity === "posteggi"
+      ) {
         const result = await syncInEntity(db, entity, logEntries);
         processed += result.processed;
         success += result.success;
@@ -150,30 +179,55 @@ async function executeSyncJob(
     }
 
     // Aggiorna job completato
-    const finalStatus = errors > 0 ? (success > 0 ? "partial" : "error") : "success";
-    await db.update(schema.syncJobs).set({
-      status: finalStatus as any,
-      recordsProcessed: processed,
-      recordsSuccess: success,
-      recordsError: errors,
-      completedAt: new Date(),
-      errorMessage: errors > 0 ? `${errors} errori durante la sincronizzazione` : null,
-      details: JSON.stringify({ logCount: logEntries.length, duration: Date.now() - startedAt.getTime() }),
-    }).where(eq(schema.syncJobs.id, job.id));
+    const finalStatus =
+      errors > 0 ? (success > 0 ? "partial" : "error") : "success";
+    await db
+      .update(schema.syncJobs)
+      .set({
+        status: finalStatus as any,
+        recordsProcessed: processed,
+        recordsSuccess: success,
+        recordsError: errors,
+        completedAt: new Date(),
+        errorMessage:
+          errors > 0 ? `${errors} errori durante la sincronizzazione` : null,
+        details: JSON.stringify({
+          logCount: logEntries.length,
+          duration: Date.now() - startedAt.getTime(),
+        }),
+      })
+      .where(eq(schema.syncJobs.id, job.id));
 
-    return { entity, jobId: job.id, status: finalStatus, processed, success, errors };
-
+    return {
+      entity,
+      jobId: job.id,
+      status: finalStatus,
+      processed,
+      success,
+      errors,
+    };
   } catch (error: any) {
-    await db.update(schema.syncJobs).set({
-      status: "error",
-      recordsProcessed: processed,
-      recordsSuccess: success,
-      recordsError: errors + 1,
-      completedAt: new Date(),
-      errorMessage: error.message,
-    }).where(eq(schema.syncJobs.id, job.id));
+    await db
+      .update(schema.syncJobs)
+      .set({
+        status: "error",
+        recordsProcessed: processed,
+        recordsSuccess: success,
+        recordsError: errors + 1,
+        completedAt: new Date(),
+        errorMessage: error.message,
+      })
+      .where(eq(schema.syncJobs.id, job.id));
 
-    return { entity, jobId: job.id, status: "error", processed, success, errors: errors + 1, details: error.message };
+    return {
+      entity,
+      jobId: job.id,
+      status: "error",
+      processed,
+      success,
+      errors: errors + 1,
+      details: error.message,
+    };
   }
 }
 
@@ -184,9 +238,11 @@ async function executeSyncJob(
 async function syncOutEntity(
   db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
   entity: string,
-  logEntries: any[],
+  logEntries: any[]
 ): Promise<{ processed: number; success: number; errors: number }> {
-  let processed = 0, success = 0, errors = 0;
+  let processed = 0,
+    success = 0,
+    errors = 0;
 
   if (entity === "operatori") {
     const vendors = await db.select().from(schema.vendors);
@@ -198,13 +254,27 @@ async function syncOutEntity(
         // Se il Legacy restituisce un ID, salvalo nella nostra tabella
         const legacyId = result?.amb_id || result?.id;
         if (legacyId && !vendor.legacyAmbId) {
-          await db.update(schema.vendors).set({ legacyAmbId: legacyId }).where(eq(schema.vendors.id, vendor.id));
+          await db
+            .update(schema.vendors)
+            .set({ legacyAmbId: legacyId })
+            .where(eq(schema.vendors.id, vendor.id));
         }
         success++;
-        logEntries.push({ recordId: String(vendor.id), localId: vendor.id, action: vendor.legacyAmbId ? "update" : "create", status: "success" });
+        logEntries.push({
+          recordId: String(vendor.id),
+          localId: vendor.id,
+          action: vendor.legacyAmbId ? "update" : "create",
+          status: "success",
+        });
       } catch (e: any) {
         errors++;
-        logEntries.push({ recordId: String(vendor.id), localId: vendor.id, action: "error", status: "error", error: e.message });
+        logEntries.push({
+          recordId: String(vendor.id),
+          localId: vendor.id,
+          action: "error",
+          status: "error",
+          error: e.message,
+        });
       }
     }
   }
@@ -218,13 +288,27 @@ async function syncOutEntity(
         const result = await syncOutMarket(mktJson);
         const legacyId = result?.mkt_id || result?.id;
         if (legacyId && !market.legacyMktId) {
-          await db.update(schema.markets).set({ legacyMktId: legacyId }).where(eq(schema.markets.id, market.id));
+          await db
+            .update(schema.markets)
+            .set({ legacyMktId: legacyId })
+            .where(eq(schema.markets.id, market.id));
         }
         success++;
-        logEntries.push({ recordId: String(market.id), localId: market.id, action: market.legacyMktId ? "update" : "create", status: "success" });
+        logEntries.push({
+          recordId: String(market.id),
+          localId: market.id,
+          action: market.legacyMktId ? "update" : "create",
+          status: "success",
+        });
       } catch (e: any) {
         errors++;
-        logEntries.push({ recordId: String(market.id), localId: market.id, action: "error", status: "error", error: e.message });
+        logEntries.push({
+          recordId: String(market.id),
+          localId: market.id,
+          action: "error",
+          status: "error",
+          error: e.message,
+        });
       }
     }
   }
@@ -235,19 +319,36 @@ async function syncOutEntity(
       processed++;
       try {
         // Risolvi il legacy_mkt_id dal market
-        const [market] = await db.select({ legacyMktId: schema.markets.legacyMktId })
-          .from(schema.markets).where(eq(schema.markets.id, stall.marketId)).limit(1);
+        const [market] = await db
+          .select({ legacyMktId: schema.markets.legacyMktId })
+          .from(schema.markets)
+          .where(eq(schema.markets.id, stall.marketId))
+          .limit(1);
         const pzJson = transformStallToPz(stall, market?.legacyMktId || null);
         const result = await syncOutStall(pzJson);
         const legacyId = result?.pz_id || result?.id;
         if (legacyId && !stall.legacyPzId) {
-          await db.update(schema.stalls).set({ legacyPzId: legacyId }).where(eq(schema.stalls.id, stall.id));
+          await db
+            .update(schema.stalls)
+            .set({ legacyPzId: legacyId })
+            .where(eq(schema.stalls.id, stall.id));
         }
         success++;
-        logEntries.push({ recordId: String(stall.id), localId: stall.id, action: stall.legacyPzId ? "update" : "create", status: "success" });
+        logEntries.push({
+          recordId: String(stall.id),
+          localId: stall.id,
+          action: stall.legacyPzId ? "update" : "create",
+          status: "success",
+        });
       } catch (e: any) {
         errors++;
-        logEntries.push({ recordId: String(stall.id), localId: stall.id, action: "error", status: "error", error: e.message });
+        logEntries.push({
+          recordId: String(stall.id),
+          localId: stall.id,
+          action: "error",
+          status: "error",
+          error: e.message,
+        });
       }
     }
   }
@@ -258,27 +359,55 @@ async function syncOutEntity(
       processed++;
       try {
         // Risolvi tutti i legacy ID
-        const [vendor] = await db.select({ legacyAmbId: schema.vendors.legacyAmbId })
-          .from(schema.vendors).where(eq(schema.vendors.id, conc.vendorId)).limit(1);
-        const [market] = await db.select({ legacyMktId: schema.markets.legacyMktId })
-          .from(schema.markets).where(eq(schema.markets.id, conc.marketId)).limit(1);
+        const [vendor] = await db
+          .select({ legacyAmbId: schema.vendors.legacyAmbId })
+          .from(schema.vendors)
+          .where(eq(schema.vendors.id, conc.vendorId))
+          .limit(1);
+        const [market] = await db
+          .select({ legacyMktId: schema.markets.legacyMktId })
+          .from(schema.markets)
+          .where(eq(schema.markets.id, conc.marketId))
+          .limit(1);
         let legacyPzId = null;
         if (conc.stallId) {
-          const [stall] = await db.select({ legacyPzId: schema.stalls.legacyPzId })
-            .from(schema.stalls).where(eq(schema.stalls.id, conc.stallId)).limit(1);
+          const [stall] = await db
+            .select({ legacyPzId: schema.stalls.legacyPzId })
+            .from(schema.stalls)
+            .where(eq(schema.stalls.id, conc.stallId))
+            .limit(1);
           legacyPzId = stall?.legacyPzId || null;
         }
-        const concJson = transformConcessionToConc(conc, vendor?.legacyAmbId || null, market?.legacyMktId || null, legacyPzId);
+        const concJson = transformConcessionToConc(
+          conc,
+          vendor?.legacyAmbId || null,
+          market?.legacyMktId || null,
+          legacyPzId
+        );
         const result = await syncOutConcession(concJson);
         const legacyId = result?.conc_id || result?.id;
         if (legacyId && !conc.legacyConcId) {
-          await db.update(schema.concessions).set({ legacyConcId: legacyId }).where(eq(schema.concessions.id, conc.id));
+          await db
+            .update(schema.concessions)
+            .set({ legacyConcId: legacyId })
+            .where(eq(schema.concessions.id, conc.id));
         }
         success++;
-        logEntries.push({ recordId: String(conc.id), localId: conc.id, action: conc.legacyConcId ? "update" : "create", status: "success" });
+        logEntries.push({
+          recordId: String(conc.id),
+          localId: conc.id,
+          action: conc.legacyConcId ? "update" : "create",
+          status: "success",
+        });
       } catch (e: any) {
         errors++;
-        logEntries.push({ recordId: String(conc.id), localId: conc.id, action: "error", status: "error", error: e.message });
+        logEntries.push({
+          recordId: String(conc.id),
+          localId: conc.id,
+          action: "error",
+          status: "error",
+          error: e.message,
+        });
       }
     }
   }
@@ -293,13 +422,17 @@ async function syncOutEntity(
 async function syncInEntity(
   db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
   entity: string,
-  logEntries: any[],
+  logEntries: any[]
 ): Promise<{ processed: number; success: number; errors: number }> {
-  let processed = 0, success = 0, errors = 0;
+  let processed = 0,
+    success = 0,
+    errors = 0;
 
   if (entity === "presenze") {
     // Leggi presenze da tutti i mercati con legacy_mkt_id
-    const marketsWithLegacy = await db.select().from(schema.markets)
+    const marketsWithLegacy = await db
+      .select()
+      .from(schema.markets)
       .where(sql`legacy_mkt_id IS NOT NULL`);
 
     for (const market of marketsWithLegacy) {
@@ -311,69 +444,118 @@ async function syncInEntity(
             const transformed = transformPreToPresence(pre);
 
             // Risolvi IDs MioHub da Legacy IDs
-            const vendorId = transformed.legacyAmbId ? await resolveVendorId(db, transformed.legacyAmbId) : null;
-            const stallId = transformed.legacyPzId ? await resolveStallId(db, transformed.legacyPzId) : null;
-            const sessionId = transformed.legacyIstId ? await resolveSessionId(db, transformed.legacyIstId) : null;
+            const vendorId = transformed.legacyAmbId
+              ? await resolveVendorId(db, transformed.legacyAmbId)
+              : null;
+            const stallId = transformed.legacyPzId
+              ? await resolveStallId(db, transformed.legacyPzId)
+              : null;
+            const sessionId = transformed.legacyIstId
+              ? await resolveSessionId(db, transformed.legacyIstId)
+              : null;
 
             if (!vendorId || !stallId) {
-              logEntries.push({ recordId: String(pre.pre_id), localId: null, action: "skip", status: "skipped", error: `Vendor o stall non trovato (amb_id=${transformed.legacyAmbId}, pz_id=${transformed.legacyPzId})` });
+              logEntries.push({
+                recordId: String(pre.pre_id),
+                localId: null,
+                action: "skip",
+                status: "skipped",
+                error: `Vendor o stall non trovato (amb_id=${transformed.legacyAmbId}, pz_id=${transformed.legacyPzId})`,
+              });
               continue;
             }
 
             if (!transformed.checkinTime) {
-              logEntries.push({ recordId: String(pre.pre_id), localId: null, action: "skip", status: "skipped", error: "Nessun checkin_time" });
+              logEntries.push({
+                recordId: String(pre.pre_id),
+                localId: null,
+                action: "skip",
+                status: "skipped",
+                error: "Nessun checkin_time",
+              });
               continue;
             }
 
             // Upsert: se esiste gia' con lo stesso legacy_pre_id, aggiorna
-            const existing = await db.select({ id: schema.vendorPresences.id })
+            const existing = await db
+              .select({ id: schema.vendorPresences.id })
               .from(schema.vendorPresences)
               .where(eq(schema.vendorPresences.legacyPreId, pre.pre_id))
               .limit(1);
 
             if (existing.length > 0) {
-              await db.update(schema.vendorPresences).set({
-                checkoutTime: transformed.checkoutTime,
-                orarioDepositoRifiuti: transformed.orarioDepositoRifiuti,
-                rifiutata: transformed.rifiutata,
-                importoAddebitato: transformed.importoAddebitato,
-                tipoPresenza: transformed.tipoPresenza,
-                notes: transformed.notes,
-              }).where(eq(schema.vendorPresences.id, existing[0].id));
+              await db
+                .update(schema.vendorPresences)
+                .set({
+                  checkoutTime: transformed.checkoutTime,
+                  orarioDepositoRifiuti: transformed.orarioDepositoRifiuti,
+                  rifiutata: transformed.rifiutata,
+                  importoAddebitato: transformed.importoAddebitato,
+                  tipoPresenza: transformed.tipoPresenza,
+                  notes: transformed.notes,
+                })
+                .where(eq(schema.vendorPresences.id, existing[0].id));
               success++;
-              logEntries.push({ recordId: String(pre.pre_id), localId: existing[0].id, action: "update", status: "success" });
+              logEntries.push({
+                recordId: String(pre.pre_id),
+                localId: existing[0].id,
+                action: "update",
+                status: "success",
+              });
             } else {
-              const [inserted] = await db.insert(schema.vendorPresences).values({
-                vendorId,
-                stallId,
-                sessionId,
-                checkinTime: transformed.checkinTime,
-                checkoutTime: transformed.checkoutTime,
-                legacyPreId: transformed.legacyPreId,
-                rifiutata: transformed.rifiutata,
-                tipoPresenza: transformed.tipoPresenza,
-                orarioDepositoRifiuti: transformed.orarioDepositoRifiuti,
-                importoAddebitato: transformed.importoAddebitato,
-                notes: transformed.notes,
-              }).returning();
+              const [inserted] = await db
+                .insert(schema.vendorPresences)
+                .values({
+                  vendorId,
+                  stallId,
+                  sessionId,
+                  checkinTime: transformed.checkinTime,
+                  checkoutTime: transformed.checkoutTime,
+                  legacyPreId: transformed.legacyPreId,
+                  rifiutata: transformed.rifiutata,
+                  tipoPresenza: transformed.tipoPresenza,
+                  orarioDepositoRifiuti: transformed.orarioDepositoRifiuti,
+                  importoAddebitato: transformed.importoAddebitato,
+                  notes: transformed.notes,
+                })
+                .returning();
               success++;
-              logEntries.push({ recordId: String(pre.pre_id), localId: inserted.id, action: "create", status: "success" });
+              logEntries.push({
+                recordId: String(pre.pre_id),
+                localId: inserted.id,
+                action: "create",
+                status: "success",
+              });
             }
           } catch (e: any) {
             errors++;
-            logEntries.push({ recordId: String(pre.pre_id), localId: null, action: "error", status: "error", error: e.message });
+            logEntries.push({
+              recordId: String(pre.pre_id),
+              localId: null,
+              action: "error",
+              status: "error",
+              error: e.message,
+            });
           }
         }
       } catch (e: any) {
         errors++;
-        logEntries.push({ recordId: `market_${market.id}`, localId: null, action: "error", status: "error", error: e.message });
+        logEntries.push({
+          recordId: `market_${market.id}`,
+          localId: null,
+          action: "error",
+          status: "error",
+          error: e.message,
+        });
       }
     }
   }
 
   if (entity === "mercati") {
     // Importa sessioni (istanze) per tutti i mercati con legacy_mkt_id
-    const marketsWithLegacy = await db.select().from(schema.markets)
+    const marketsWithLegacy = await db
+      .select()
+      .from(schema.markets)
       .where(sql`legacy_mkt_id IS NOT NULL`);
 
     for (const market of marketsWithLegacy) {
@@ -385,46 +567,75 @@ async function syncInEntity(
             const transformed = transformIstToSession(ist);
             if (!transformed.sessionDate) continue;
 
-            const existing = await db.select({ id: schema.marketSessions.id })
+            const existing = await db
+              .select({ id: schema.marketSessions.id })
               .from(schema.marketSessions)
               .where(eq(schema.marketSessions.legacyIstId, ist.ist_id))
               .limit(1);
 
             if (existing.length > 0) {
-              await db.update(schema.marketSessions).set({
-                status: transformed.status,
-                openedAt: transformed.openedAt,
-                closedAt: transformed.closedAt,
-                totalPresences: transformed.totalPresences,
-                totalConcessionari: transformed.totalConcessionari,
-                totalSpuntisti: transformed.totalSpuntisti,
-                updatedAt: new Date(),
-              }).where(eq(schema.marketSessions.id, existing[0].id));
+              await db
+                .update(schema.marketSessions)
+                .set({
+                  status: transformed.status,
+                  openedAt: transformed.openedAt,
+                  closedAt: transformed.closedAt,
+                  totalPresences: transformed.totalPresences,
+                  totalConcessionari: transformed.totalConcessionari,
+                  totalSpuntisti: transformed.totalSpuntisti,
+                  updatedAt: new Date(),
+                })
+                .where(eq(schema.marketSessions.id, existing[0].id));
               success++;
-              logEntries.push({ recordId: String(ist.ist_id), localId: existing[0].id, action: "update", status: "success" });
+              logEntries.push({
+                recordId: String(ist.ist_id),
+                localId: existing[0].id,
+                action: "update",
+                status: "success",
+              });
             } else {
-              const [inserted] = await db.insert(schema.marketSessions).values({
-                marketId: market.id,
-                legacyIstId: transformed.legacyIstId,
-                sessionDate: transformed.sessionDate,
-                status: transformed.status,
-                openedAt: transformed.openedAt,
-                closedAt: transformed.closedAt,
-                totalPresences: transformed.totalPresences,
-                totalConcessionari: transformed.totalConcessionari,
-                totalSpuntisti: transformed.totalSpuntisti,
-              }).returning();
+              const [inserted] = await db
+                .insert(schema.marketSessions)
+                .values({
+                  marketId: market.id,
+                  legacyIstId: transformed.legacyIstId,
+                  sessionDate: transformed.sessionDate,
+                  status: transformed.status,
+                  openedAt: transformed.openedAt,
+                  closedAt: transformed.closedAt,
+                  totalPresences: transformed.totalPresences,
+                  totalConcessionari: transformed.totalConcessionari,
+                  totalSpuntisti: transformed.totalSpuntisti,
+                })
+                .returning();
               success++;
-              logEntries.push({ recordId: String(ist.ist_id), localId: inserted.id, action: "create", status: "success" });
+              logEntries.push({
+                recordId: String(ist.ist_id),
+                localId: inserted.id,
+                action: "create",
+                status: "success",
+              });
             }
           } catch (e: any) {
             errors++;
-            logEntries.push({ recordId: String(ist.ist_id), localId: null, action: "error", status: "error", error: e.message });
+            logEntries.push({
+              recordId: String(ist.ist_id),
+              localId: null,
+              action: "error",
+              status: "error",
+              error: e.message,
+            });
           }
         }
       } catch (e: any) {
         errors++;
-        logEntries.push({ recordId: `market_${market.id}`, localId: null, action: "error", status: "error", error: e.message });
+        logEntries.push({
+          recordId: `market_${market.id}`,
+          localId: null,
+          action: "error",
+          status: "error",
+          error: e.message,
+        });
       }
     }
   }
@@ -437,7 +648,6 @@ async function syncInEntity(
 // ============================================
 
 export const dmsLegacyRouter = router({
-
   // ============================================
   // EXPORT (9 endpoint) — Lettura dal Legacy DB
   // ============================================
@@ -445,69 +655,134 @@ export const dmsLegacyRouter = router({
   export: router({
     // 1. GET /markets — Mercati Legacy trasformati formato MioHub
     markets: protectedProcedure.query(async () => {
-      if (!isLegacyConfigured()) return { data: [], source: "offline", message: "Legacy DB non configurato" };
+      if (!isLegacyConfigured())
+        return {
+          data: [],
+          source: "offline",
+          message: "Legacy DB non configurato",
+        };
       const raw = await readLegacyMarkets();
-      return { data: raw.map(transformMktToMarket), source: "legacy", count: raw.length };
+      return {
+        data: raw.map(transformMktToMarket),
+        source: "legacy",
+        count: raw.length,
+      };
     }),
 
     // 2. GET /vendors — Ambulanti mappati come Imprese
     vendors: protectedProcedure.query(async () => {
-      if (!isLegacyConfigured()) return { data: [], source: "offline", message: "Legacy DB non configurato" };
+      if (!isLegacyConfigured())
+        return {
+          data: [],
+          source: "offline",
+          message: "Legacy DB non configurato",
+        };
       const raw = await readLegacyVendors();
-      return { data: raw.map(transformAmbToVendor), source: "legacy", count: raw.length };
+      return {
+        data: raw.map(transformAmbToVendor),
+        source: "legacy",
+        count: raw.length,
+      };
     }),
 
     // 3. GET /concessions — Concessioni con dati relazionati
     concessions: protectedProcedure.query(async () => {
-      if (!isLegacyConfigured()) return { data: [], source: "offline", message: "Legacy DB non configurato" };
+      if (!isLegacyConfigured())
+        return {
+          data: [],
+          source: "offline",
+          message: "Legacy DB non configurato",
+        };
       const raw = await readLegacyConcessions();
-      return { data: raw.map(transformConcToConcession), source: "legacy", count: raw.length };
+      return {
+        data: raw.map(transformConcToConcession),
+        source: "legacy",
+        count: raw.length,
+      };
     }),
 
     // 4. GET /presences/:marketId — Presenze per mercato
     presences: protectedProcedure
       .input(z.object({ marketId: z.number() }))
       .query(async ({ input }) => {
-        if (!isLegacyConfigured()) return { data: [], source: "offline", message: "Legacy DB non configurato" };
+        if (!isLegacyConfigured())
+          return {
+            data: [],
+            source: "offline",
+            message: "Legacy DB non configurato",
+          };
         const raw = await readLegacyPresences(input.marketId);
-        return { data: raw.map(transformPreToPresence), source: "legacy", count: raw.length };
+        return {
+          data: raw.map(transformPreToPresence),
+          source: "legacy",
+          count: raw.length,
+        };
       }),
 
     // 5. GET /market-sessions/:marketId — Giornate mercato con statistiche
     marketSessions: protectedProcedure
       .input(z.object({ marketId: z.number() }))
       .query(async ({ input }) => {
-        if (!isLegacyConfigured()) return { data: [], source: "offline", message: "Legacy DB non configurato" };
+        if (!isLegacyConfigured())
+          return {
+            data: [],
+            source: "offline",
+            message: "Legacy DB non configurato",
+          };
         const raw = await readLegacySessions(input.marketId);
-        return { data: raw.map(transformIstToSession), source: "legacy", count: raw.length };
+        return {
+          data: raw.map(transformIstToSession),
+          source: "legacy",
+          count: raw.length,
+        };
       }),
 
     // 6. GET /stalls/:marketId — Piazzole con assegnatario
     stalls: protectedProcedure
       .input(z.object({ marketId: z.number() }))
       .query(async ({ input }) => {
-        if (!isLegacyConfigured()) return { data: [], source: "offline", message: "Legacy DB non configurato" };
+        if (!isLegacyConfigured())
+          return {
+            data: [],
+            source: "offline",
+            message: "Legacy DB non configurato",
+          };
         const raw = await readLegacyStalls(input.marketId);
         return { data: raw, source: "legacy", count: raw.length };
       }),
 
     // 7. GET /spuntisti — Operatori di spunta
     spuntisti: protectedProcedure.query(async () => {
-      if (!isLegacyConfigured()) return { data: [], source: "offline", message: "Legacy DB non configurato" };
+      if (!isLegacyConfigured())
+        return {
+          data: [],
+          source: "offline",
+          message: "Legacy DB non configurato",
+        };
       const raw = await readLegacySpuntisti();
       return { data: raw, source: "legacy", count: raw.length };
     }),
 
     // 8. GET /documents — Documenti ambulanti
     documents: protectedProcedure.query(async () => {
-      if (!isLegacyConfigured()) return { data: [], source: "offline", message: "Legacy DB non configurato" };
+      if (!isLegacyConfigured())
+        return {
+          data: [],
+          source: "offline",
+          message: "Legacy DB non configurato",
+        };
       const raw = await readLegacyDocuments();
       return { data: raw, source: "legacy", count: raw.length };
     }),
 
     // 9. GET /stats — Statistiche generali Legacy
     stats: protectedProcedure.query(async () => {
-      if (!isLegacyConfigured()) return { data: null, source: "offline", message: "Legacy DB non configurato" };
+      if (!isLegacyConfigured())
+        return {
+          data: null,
+          source: "offline",
+          message: "Legacy DB non configurato",
+        };
       const stats = await readLegacyStats();
       return { data: stats, source: "legacy" };
     }),
@@ -542,10 +817,12 @@ export const dmsLegacyRouter = router({
     users: adminProcedure.mutation(async () => {
       const db = await getDb();
       if (!db) throw new Error("Database non disponibile");
-      if (!isLegacyConfigured()) return { status: "offline", message: "Legacy DB non configurato" };
+      if (!isLegacyConfigured())
+        return { status: "offline", message: "Legacy DB non configurato" };
 
       const users = await db.select().from(schema.users);
-      let success = 0, errors = 0;
+      let success = 0,
+        errors = 0;
       for (const user of users) {
         try {
           const suserJson = transformUserToSuser(user);
@@ -562,53 +839,88 @@ export const dmsLegacyRouter = router({
     spuntisti: adminProcedure.mutation(async () => {
       const db = await getDb();
       if (!db) throw new Error("Database non disponibile");
-      if (!isLegacyConfigured()) return { status: "offline", message: "Legacy DB non configurato" };
+      if (!isLegacyConfigured())
+        return { status: "offline", message: "Legacy DB non configurato" };
 
       const spuntistaList = await db.select().from(schema.spuntisti);
-      let success = 0, errors = 0;
+      let success = 0,
+        errors = 0;
       for (const sp of spuntistaList) {
         try {
-          const [vendor] = await db.select({ legacyAmbId: schema.vendors.legacyAmbId })
-            .from(schema.vendors).where(eq(schema.vendors.id, sp.vendorId)).limit(1);
-          const [market] = await db.select({ legacyMktId: schema.markets.legacyMktId })
-            .from(schema.markets).where(eq(schema.markets.id, sp.marketId)).limit(1);
-          const spJson = transformSpuntistaToSp(sp, vendor?.legacyAmbId || null, market?.legacyMktId || null);
+          const [vendor] = await db
+            .select({ legacyAmbId: schema.vendors.legacyAmbId })
+            .from(schema.vendors)
+            .where(eq(schema.vendors.id, sp.vendorId))
+            .limit(1);
+          const [market] = await db
+            .select({ legacyMktId: schema.markets.legacyMktId })
+            .from(schema.markets)
+            .where(eq(schema.markets.id, sp.marketId))
+            .limit(1);
+          const spJson = transformSpuntistaToSp(
+            sp,
+            vendor?.legacyAmbId || null,
+            market?.legacyMktId || null
+          );
           await syncOutSpuntista(spJson);
           success++;
         } catch {
           errors++;
         }
       }
-      return { status: "completed", processed: spuntistaList.length, success, errors };
+      return {
+        status: "completed",
+        processed: spuntistaList.length,
+        success,
+        errors,
+      };
     }),
 
     // 16. POST /sync-out/sessions — Gestione sessioni mercato
     sessions: adminProcedure
-      .input(z.object({
-        action: z.enum(["start", "close"]),
-        marketId: z.number().optional(),
-        sessionId: z.number().optional(),
-      }))
+      .input(
+        z.object({
+          action: z.enum(["start", "close"]),
+          marketId: z.number().optional(),
+          sessionId: z.number().optional(),
+        })
+      )
       .mutation(async ({ input }) => {
-        if (!isLegacyConfigured()) return { status: "offline", message: "Legacy DB non configurato" };
+        if (!isLegacyConfigured())
+          return { status: "offline", message: "Legacy DB non configurato" };
 
         if (input.action === "start" && input.marketId) {
           const db = await getDb();
           if (!db) throw new Error("Database non disponibile");
-          const [market] = await db.select({ legacyMktId: schema.markets.legacyMktId })
-            .from(schema.markets).where(eq(schema.markets.id, input.marketId)).limit(1);
-          if (!market?.legacyMktId) return { status: "error", message: "Mercato non ha legacy_mkt_id" };
-          const result = await syncOutStartSession({ mkt_id: market.legacyMktId });
+          const [market] = await db
+            .select({ legacyMktId: schema.markets.legacyMktId })
+            .from(schema.markets)
+            .where(eq(schema.markets.id, input.marketId))
+            .limit(1);
+          if (!market?.legacyMktId)
+            return { status: "error", message: "Mercato non ha legacy_mkt_id" };
+          const result = await syncOutStartSession({
+            mkt_id: market.legacyMktId,
+          });
           return { status: "completed", action: "start", result };
         }
 
         if (input.action === "close" && input.sessionId) {
           const db = await getDb();
           if (!db) throw new Error("Database non disponibile");
-          const [session] = await db.select({ legacyIstId: schema.marketSessions.legacyIstId })
-            .from(schema.marketSessions).where(eq(schema.marketSessions.id, input.sessionId)).limit(1);
-          if (!session?.legacyIstId) return { status: "error", message: "Sessione non ha legacy_ist_id" };
-          const result = await syncOutCloseSession({ ist_id: session.legacyIstId });
+          const [session] = await db
+            .select({ legacyIstId: schema.marketSessions.legacyIstId })
+            .from(schema.marketSessions)
+            .where(eq(schema.marketSessions.id, input.sessionId))
+            .limit(1);
+          if (!session?.legacyIstId)
+            return {
+              status: "error",
+              message: "Sessione non ha legacy_ist_id",
+            };
+          const result = await syncOutCloseSession({
+            ist_id: session.legacyIstId,
+          });
           return { status: "completed", action: "close", result };
         }
 
@@ -617,7 +929,12 @@ export const dmsLegacyRouter = router({
 
     // POST /sync-out/all — Sync completa di tutte le entita'
     all: adminProcedure.mutation(async () => {
-      const entities = ["operatori", "mercati", "posteggi", "concessioni"] as const;
+      const entities = [
+        "operatori",
+        "mercati",
+        "posteggi",
+        "concessioni",
+      ] as const;
       const results = await Promise.all(
         entities.map(entity => executeSyncJob(entity, "push", "manual"))
       );
@@ -661,7 +978,8 @@ export const dmsLegacyRouter = router({
       return {
         status: "offline",
         connected: false,
-        message: "DMS_LEGACY_DB_URL non configurato. Aggiungere la variabile d'ambiente su Hetzner.",
+        message:
+          "DMS_LEGACY_DB_URL non configurato. Aggiungere la variabile d'ambiente su Hetzner.",
         lastCheck: getLastHealthCheck(),
       };
     }
@@ -692,32 +1010,84 @@ export const dmsLegacyRouter = router({
     }
 
     // Contatori MioHub
-    let mioHubCounts = { markets: 0, vendors: 0, concessions: 0, stalls: 0, presences: 0, sessions: 0 };
+    let mioHubCounts = {
+      markets: 0,
+      vendors: 0,
+      concessions: 0,
+      stalls: 0,
+      presences: 0,
+      sessions: 0,
+    };
     if (db) {
-      const [m] = await db.select({ c: sql<number>`count(*)` }).from(schema.markets);
-      const [v] = await db.select({ c: sql<number>`count(*)` }).from(schema.vendors);
-      const [c] = await db.select({ c: sql<number>`count(*)` }).from(schema.concessions);
-      const [s] = await db.select({ c: sql<number>`count(*)` }).from(schema.stalls);
-      const [p] = await db.select({ c: sql<number>`count(*)` }).from(schema.vendorPresences);
-      const [ss] = await db.select({ c: sql<number>`count(*)` }).from(schema.marketSessions);
+      const [m] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.markets);
+      const [v] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.vendors);
+      const [c] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.concessions);
+      const [s] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.stalls);
+      const [p] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.vendorPresences);
+      const [ss] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.marketSessions);
       mioHubCounts = {
-        markets: Number(m.c), vendors: Number(v.c), concessions: Number(c.c),
-        stalls: Number(s.c), presences: Number(p.c), sessions: Number(ss.c),
+        markets: Number(m.c),
+        vendors: Number(v.c),
+        concessions: Number(c.c),
+        stalls: Number(s.c),
+        presences: Number(p.c),
+        sessions: Number(ss.c),
       };
     }
 
     // Contatori con legacy_id
-    let linkedCounts = { markets: 0, vendors: 0, concessions: 0, stalls: 0, presences: 0, sessions: 0 };
+    let linkedCounts = {
+      markets: 0,
+      vendors: 0,
+      concessions: 0,
+      stalls: 0,
+      presences: 0,
+      sessions: 0,
+    };
     if (db) {
-      const [lm] = await db.select({ c: sql<number>`count(*)` }).from(schema.markets).where(sql`legacy_mkt_id IS NOT NULL`);
-      const [lv] = await db.select({ c: sql<number>`count(*)` }).from(schema.vendors).where(sql`legacy_amb_id IS NOT NULL`);
-      const [lc] = await db.select({ c: sql<number>`count(*)` }).from(schema.concessions).where(sql`legacy_conc_id IS NOT NULL`);
-      const [ls] = await db.select({ c: sql<number>`count(*)` }).from(schema.stalls).where(sql`legacy_pz_id IS NOT NULL`);
-      const [lp] = await db.select({ c: sql<number>`count(*)` }).from(schema.vendorPresences).where(sql`legacy_pre_id IS NOT NULL`);
-      const [lss] = await db.select({ c: sql<number>`count(*)` }).from(schema.marketSessions).where(sql`legacy_ist_id IS NOT NULL`);
+      const [lm] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.markets)
+        .where(sql`legacy_mkt_id IS NOT NULL`);
+      const [lv] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.vendors)
+        .where(sql`legacy_amb_id IS NOT NULL`);
+      const [lc] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.concessions)
+        .where(sql`legacy_conc_id IS NOT NULL`);
+      const [ls] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.stalls)
+        .where(sql`legacy_pz_id IS NOT NULL`);
+      const [lp] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.vendorPresences)
+        .where(sql`legacy_pre_id IS NOT NULL`);
+      const [lss] = await db
+        .select({ c: sql<number>`count(*)` })
+        .from(schema.marketSessions)
+        .where(sql`legacy_ist_id IS NOT NULL`);
       linkedCounts = {
-        markets: Number(lm.c), vendors: Number(lv.c), concessions: Number(lc.c),
-        stalls: Number(ls.c), presences: Number(lp.c), sessions: Number(lss.c),
+        markets: Number(lm.c),
+        vendors: Number(lv.c),
+        concessions: Number(lc.c),
+        stalls: Number(ls.c),
+        presences: Number(lp.c),
+        sessions: Number(lss.c),
       };
     }
 
@@ -738,10 +1108,16 @@ export const dmsLegacyRouter = router({
 
   // 22. POST /sync — Sync manuale on-demand (bidirezionale)
   sync: adminProcedure
-    .input(z.object({
-      entity: z.string().optional(),
-      direction: z.enum(["push", "pull", "bidirectional"]).default("bidirectional"),
-    }).optional())
+    .input(
+      z
+        .object({
+          entity: z.string().optional(),
+          direction: z
+            .enum(["push", "pull", "bidirectional"])
+            .default("bidirectional"),
+        })
+        .optional()
+    )
     .mutation(async ({ input }) => {
       const entity = input?.entity;
       const direction = input?.direction || "bidirectional";
@@ -751,7 +1127,13 @@ export const dmsLegacyRouter = router({
       }
 
       // Sync completa di tutte le entita'
-      const entities = ["operatori", "mercati", "posteggi", "concessioni", "presenze"];
+      const entities = [
+        "operatori",
+        "mercati",
+        "posteggi",
+        "concessioni",
+        "presenze",
+      ];
       const results = await Promise.all(
         entities.map(e => executeSyncJob(e, direction, "manual"))
       );
@@ -769,13 +1151,23 @@ export const dmsLegacyRouter = router({
       return { status: "skipped", message: "Sync automatica disabilitata" };
     }
 
-    const enabledEntities: string[] = config.entities ? JSON.parse(config.entities) : ["operatori", "mercati", "posteggi", "concessioni", "presenze"];
-    const direction = (config.mode || "bidirectional") as "push" | "pull" | "bidirectional";
+    const enabledEntities: string[] = config.entities
+      ? JSON.parse(config.entities)
+      : ["operatori", "mercati", "posteggi", "concessioni", "presenze"];
+    const direction = (config.mode || "bidirectional") as
+      | "push"
+      | "pull"
+      | "bidirectional";
 
     const results = await Promise.all(
       enabledEntities.map(e => executeSyncJob(e, direction, "cron"))
     );
 
-    return { status: "completed", results, triggeredBy: "cron", timestamp: new Date().toISOString() };
+    return {
+      status: "completed",
+      results,
+      triggeredBy: "cron",
+      timestamp: new Date().toISOString(),
+    };
   }),
 });

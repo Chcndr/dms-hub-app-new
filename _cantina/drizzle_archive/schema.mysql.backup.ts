@@ -1,4 +1,12 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, tinyint } from "drizzle-orm/mysql-core";
+import {
+  int,
+  mysqlEnum,
+  mysqlTable,
+  text,
+  timestamp,
+  varchar,
+  tinyint,
+} from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -28,7 +36,9 @@ export type InsertUser = typeof users.$inferInsert;
 // Extended users table with wallet and sustainability
 export const extendedUsers = mysqlTable("extended_users", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("user_id").notNull().references(() => users.id),
+  userId: int("user_id")
+    .notNull()
+    .references(() => users.id),
   walletBalance: int("wallet_balance").default(0).notNull(), // TCC disponibili
   sustainabilityRating: int("sustainability_rating").default(0), // 0-100
   transportPreference: varchar("transport_preference", { length: 50 }), // bike, car, bus, walk
@@ -301,7 +311,9 @@ export type MobilityData = typeof mobilityData.$inferSelect;
 // Geometria mercati estesa (da Slot Editor v3)
 export const marketGeometry = mysqlTable("market_geometry", {
   id: int("id").autoincrement().primaryKey(),
-  marketId: int("market_id").references(() => markets.id).notNull(),
+  marketId: int("market_id")
+    .references(() => markets.id)
+    .notNull(),
   containerGeojson: text("container_geojson"), // Container mercato
   centerLat: varchar("center_lat", { length: 20 }).notNull(),
   centerLng: varchar("center_lng", { length: 20 }).notNull(),
@@ -317,7 +329,9 @@ export const marketGeometry = mysqlTable("market_geometry", {
 // Posteggi (stalls)
 export const stalls = mysqlTable("stalls", {
   id: int("id").autoincrement().primaryKey(),
-  marketId: int("market_id").references(() => markets.id).notNull(),
+  marketId: int("market_id")
+    .references(() => markets.id)
+    .notNull(),
   number: varchar("number", { length: 20 }).notNull(), // Numero posteggio
   lat: varchar("lat", { length: 20 }).notNull(),
   lng: varchar("lng", { length: 20 }).notNull(),
@@ -355,10 +369,16 @@ export const vendors = mysqlTable("vendors", {
 // Concessioni
 export const concessions = mysqlTable("concessions", {
   id: int("id").autoincrement().primaryKey(),
-  vendorId: int("vendor_id").references(() => vendors.id).notNull(),
+  vendorId: int("vendor_id")
+    .references(() => vendors.id)
+    .notNull(),
   stallId: int("stall_id").references(() => stalls.id),
-  marketId: int("market_id").references(() => markets.id).notNull(),
-  concessionNumber: varchar("concession_number", { length: 100 }).unique().notNull(),
+  marketId: int("market_id")
+    .references(() => markets.id)
+    .notNull(),
+  concessionNumber: varchar("concession_number", { length: 100 })
+    .unique()
+    .notNull(),
   type: varchar("type", { length: 50 }).notNull(), // daily, monthly, yearly, permanent
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date"),
@@ -373,7 +393,9 @@ export const concessions = mysqlTable("concessions", {
 // Documenti operatori
 export const vendorDocuments = mysqlTable("vendor_documents", {
   id: int("id").autoincrement().primaryKey(),
-  vendorId: int("vendor_id").references(() => vendors.id).notNull(),
+  vendorId: int("vendor_id")
+    .references(() => vendors.id)
+    .notNull(),
   type: varchar("type", { length: 100 }).notNull(), // id_card, business_license, haccp, insurance, health_cert, etc.
   documentNumber: varchar("document_number", { length: 100 }),
   issueDate: timestamp("issue_date"),
@@ -390,7 +412,9 @@ export const vendorDocuments = mysqlTable("vendor_documents", {
 // Prenotazioni posteggi
 export const bookings = mysqlTable("bookings", {
   id: int("id").autoincrement().primaryKey(),
-  stallId: int("stall_id").references(() => stalls.id).notNull(),
+  stallId: int("stall_id")
+    .references(() => stalls.id)
+    .notNull(),
   userId: int("user_id").references(() => users.id), // Cittadino che prenota
   vendorId: int("vendor_id").references(() => vendors.id), // Operatore assegnato
   status: varchar("status", { length: 50 }).default("pending").notNull(), // pending, confirmed, completed, cancelled, expired
@@ -405,8 +429,12 @@ export const bookings = mysqlTable("bookings", {
 // Presenze operatori (check-in/check-out)
 export const vendorPresences = mysqlTable("vendor_presences", {
   id: int("id").autoincrement().primaryKey(),
-  vendorId: int("vendor_id").references(() => vendors.id).notNull(),
-  stallId: int("stall_id").references(() => stalls.id).notNull(),
+  vendorId: int("vendor_id")
+    .references(() => vendors.id)
+    .notNull(),
+  stallId: int("stall_id")
+    .references(() => stalls.id)
+    .notNull(),
   bookingId: int("booking_id").references(() => bookings.id),
   checkinTime: timestamp("checkin_time").notNull(),
   checkoutTime: timestamp("checkout_time"),
@@ -420,7 +448,9 @@ export const vendorPresences = mysqlTable("vendor_presences", {
 // Controlli dettagliati (per Polizia Municipale)
 export const inspectionsDetailed = mysqlTable("inspections_detailed", {
   id: int("id").autoincrement().primaryKey(),
-  vendorId: int("vendor_id").references(() => vendors.id).notNull(),
+  vendorId: int("vendor_id")
+    .references(() => vendors.id)
+    .notNull(),
   stallId: int("stall_id").references(() => stalls.id),
   inspectorName: varchar("inspector_name", { length: 255 }).notNull(),
   inspectorBadge: varchar("inspector_badge", { length: 100 }),
@@ -439,7 +469,9 @@ export const inspectionsDetailed = mysqlTable("inspections_detailed", {
 export const violations = mysqlTable("violations", {
   id: int("id").autoincrement().primaryKey(),
   inspectionId: int("inspection_id").references(() => inspectionsDetailed.id),
-  vendorId: int("vendor_id").references(() => vendors.id).notNull(),
+  vendorId: int("vendor_id")
+    .references(() => vendors.id)
+    .notNull(),
   stallId: int("stall_id").references(() => stalls.id),
   violationType: varchar("violation_type", { length: 100 }).notNull(), // late_checkin, missing_doc, hygiene, unauthorized, etc.
   violationCode: varchar("violation_code", { length: 50 }),
@@ -457,8 +489,12 @@ export const violations = mysqlTable("violations", {
 // Pagamenti concessioni
 export const concessionPayments = mysqlTable("concession_payments", {
   id: int("id").autoincrement().primaryKey(),
-  concessionId: int("concession_id").references(() => concessions.id).notNull(),
-  vendorId: int("vendor_id").references(() => vendors.id).notNull(),
+  concessionId: int("concession_id")
+    .references(() => concessions.id)
+    .notNull(),
+  vendorId: int("vendor_id")
+    .references(() => vendors.id)
+    .notNull(),
   amount: int("amount").notNull(), // Cents
   paymentMethod: varchar("payment_method", { length: 50 }), // bank_transfer, cash, card, etc.
   paymentReference: varchar("payment_reference", { length: 255 }),
@@ -471,7 +507,9 @@ export const concessionPayments = mysqlTable("concession_payments", {
 // Marker personalizzati (da Slot Editor v3)
 export const customMarkers = mysqlTable("custom_markers", {
   id: int("id").autoincrement().primaryKey(),
-  marketId: int("market_id").references(() => markets.id).notNull(),
+  marketId: int("market_id")
+    .references(() => markets.id)
+    .notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   type: varchar("type", { length: 100 }), // entrance, exit, wc, info, parking, etc.
   lat: varchar("lat", { length: 20 }).notNull(),
@@ -485,7 +523,9 @@ export const customMarkers = mysqlTable("custom_markers", {
 // Aree custom (da Slot Editor v3)
 export const customAreas = mysqlTable("custom_areas", {
   id: int("id").autoincrement().primaryKey(),
-  marketId: int("market_id").references(() => markets.id).notNull(),
+  marketId: int("market_id")
+    .references(() => markets.id)
+    .notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   type: varchar("type", { length: 100 }), // food, clothing, handicraft, services, etc.
   geojson: text("geojson").notNull(), // Polygon GeoJSON
@@ -518,7 +558,9 @@ export const apiKeys = mysqlTable("api_keys", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(), // Es: "App Cittadini - Production"
   key: varchar("key", { length: 255 }).notNull().unique(), // dms_live_xxxxx o dms_test_xxxxx
-  environment: varchar("environment", { length: 50 }).default("production").notNull(), // production, development, staging
+  environment: varchar("environment", { length: 50 })
+    .default("production")
+    .notNull(), // production, development, staging
   status: varchar("status", { length: 50 }).default("active").notNull(), // active, inactive, revoked
   permissions: text("permissions"), // JSON array ["markets.read", "stalls.write", etc.]
   rateLimit: int("rate_limit").default(1000).notNull(), // Richieste per minuto
@@ -564,7 +606,9 @@ export const webhooks = mysqlTable("webhooks", {
 // Log esecuzioni webhook per debugging
 export const webhookLogs = mysqlTable("webhook_logs", {
   id: int("id").autoincrement().primaryKey(),
-  webhookId: int("webhook_id").references(() => webhooks.id).notNull(),
+  webhookId: int("webhook_id")
+    .references(() => webhooks.id)
+    .notNull(),
   event: varchar("event", { length: 100 }).notNull(), // booking.created
   payload: text("payload").notNull(), // JSON dati inviati
   statusCode: int("status_code"), // Response HTTP status
@@ -605,7 +649,12 @@ export const mioAgentLogs = mysqlTable("mio_agent_logs", {
   id: int("id").autoincrement().primaryKey(),
   agent: varchar("agent", { length: 100 }).notNull(), // Nome agente (MIO, Manus, etc.)
   action: varchar("action", { length: 255 }).notNull(), // Azione eseguita
-  status: mysqlEnum("status", ["success", "error", "warning", "info"]).notNull(),
+  status: mysqlEnum("status", [
+    "success",
+    "error",
+    "warning",
+    "info",
+  ]).notNull(),
   message: text("message"), // Messaggio descrittivo
   details: text("details"), // JSON con dettagli aggiuntivi
   timestamp: timestamp("timestamp").defaultNow().notNull(),

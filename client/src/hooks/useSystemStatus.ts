@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { ORCHESTRATORE_API_BASE_URL } from '@/config/api';
+import { useState, useEffect, useRef } from "react";
+import { ORCHESTRATORE_API_BASE_URL } from "@/config/api";
 
-export type SystemStatus = 'online' | 'offline' | 'checking';
+export type SystemStatus = "online" | "offline" | "checking";
 
 interface SystemStatusResult {
   apiStatus: SystemStatus;
@@ -9,9 +9,11 @@ interface SystemStatusResult {
   lastCheck: Date | null;
 }
 
-export function useSystemStatus(pollInterval: number = 30000): SystemStatusResult {
-  const [apiStatus, setApiStatus] = useState<SystemStatus>('checking');
-  const [pm2Status, setPm2Status] = useState<SystemStatus>('checking');
+export function useSystemStatus(
+  pollInterval: number = 30000
+): SystemStatusResult {
+  const [apiStatus, setApiStatus] = useState<SystemStatus>("checking");
+  const [pm2Status, setPm2Status] = useState<SystemStatus>("checking");
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
   const intervalRef = useRef<number | undefined>(undefined);
 
@@ -21,15 +23,18 @@ export function useSystemStatus(pollInterval: number = 30000): SystemStatusResul
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-      const response = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/system/health`, {
-        signal: controller.signal,
-        method: 'GET',
-      });
+      const response = await fetch(
+        `${ORCHESTRATORE_API_BASE_URL}/api/system/health`,
+        {
+          signal: controller.signal,
+          method: "GET",
+        }
+      );
 
       clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
-      console.error('[useSystemStatus] Backend API check failed:', error);
+      console.error("[useSystemStatus] Backend API check failed:", error);
       return false;
     }
   };
@@ -40,38 +45,41 @@ export function useSystemStatus(pollInterval: number = 30000): SystemStatusResul
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-      const response = await fetch(`${ORCHESTRATORE_API_BASE_URL}/api/system/pm2-status`, {
-        signal: controller.signal,
-        method: 'GET',
-      });
+      const response = await fetch(
+        `${ORCHESTRATORE_API_BASE_URL}/api/system/pm2-status`,
+        {
+          signal: controller.signal,
+          method: "GET",
+        }
+      );
 
       clearTimeout(timeoutId);
 
       if (response.ok) {
         const data = await response.json();
         // Verifica se il processo è online
-        return data.status === 'online' || data.pm2_env?.status === 'online';
+        return data.status === "online" || data.pm2_env?.status === "online";
       }
 
       return false;
     } catch (error) {
-      console.error('[useSystemStatus] PM2 status check failed:', error);
+      console.error("[useSystemStatus] PM2 status check failed:", error);
       // Se l'endpoint non esiste, assumiamo che PM2 sia online se il backend risponde
       return false;
     }
   };
 
   const performCheck = async () => {
-    setApiStatus('checking');
-    setPm2Status('checking');
+    setApiStatus("checking");
+    setPm2Status("checking");
 
     const [apiOk, pm2Ok] = await Promise.all([
       checkBackendAPI(),
       checkPM2Status(),
     ]);
 
-    setApiStatus(apiOk ? 'online' : 'offline');
-    setPm2Status(pm2Ok ? 'online' : 'offline');
+    setApiStatus(apiOk ? "online" : "offline");
+    setPm2Status(pm2Ok ? "online" : "offline");
     setLastCheck(new Date());
   };
 

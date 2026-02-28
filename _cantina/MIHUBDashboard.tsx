@@ -5,7 +5,7 @@
  * - Manus: Operatore esecutivo
  * - Abacus: Analisi dati e calcoli
  * - Zapier: Automazioni e integrazioni
- * 
+ *
  * Tutti vedono tutte le chat per auto-controllo e coordinamento
  */
 
@@ -17,16 +17,16 @@ import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { 
-  Brain, 
-  Wrench, 
-  Calculator, 
+import {
+  Brain,
+  Wrench,
+  Calculator,
   Zap,
   Send,
   Eye,
   EyeOff,
   Users,
-  Activity
+  Activity,
 } from "lucide-react";
 
 interface Agent {
@@ -43,52 +43,57 @@ const AGENTS: Agent[] = [
     name: "MIO",
     icon: Brain,
     color: "text-purple-500",
-    description: "GPT-5 Coordinatore"
+    description: "GPT-5 Coordinatore",
   },
   {
     id: "manus",
     name: "Manus",
     icon: Wrench,
     color: "text-blue-500",
-    description: "Operatore Esecutivo"
+    description: "Operatore Esecutivo",
   },
   {
     id: "abacus",
     name: "Abacus",
     icon: Calculator,
     color: "text-green-500",
-    description: "Analisi Dati"
+    description: "Analisi Dati",
   },
   {
     id: "zapier",
     name: "Zapier",
     icon: Zap,
     color: "text-orange-500",
-    description: "Automazioni"
-  }
+    description: "Automazioni",
+  },
 ];
 
 // Helper: Valida UUID v4
 const isValidUUID = (uuid: string): boolean => {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    uuid
+  );
 };
 
 export default function MIHUBDashboard() {
   // ♾️ CHAT ETERNA: Un UUID generato UNA VOLTA e salvato PER SEMPRE
-  const [conversationId, setConversationId] = useState<string>('');
+  const [conversationId, setConversationId] = useState<string>("");
 
   // Carica o genera l'ID FISSO al mount
   useEffect(() => {
     // 1. Cerca un ID esistente nel localStorage ("cassetto" del browser)
-    let storedId = localStorage.getItem('mihub_global_conversation_id');
+    let storedId = localStorage.getItem("mihub_global_conversation_id");
 
     // 2. Se non c'è (o è vecchio/invalido), ne crea uno NUOVO e lo salva PER SEMPRE
     if (!storedId || !isValidUUID(storedId)) {
       storedId = crypto.randomUUID(); // Genera UUID valido
-      localStorage.setItem('mihub_global_conversation_id', storedId);
-      console.log('♾️ [Chat Eterna] Nuovo conversation_id generato:', storedId);
+      localStorage.setItem("mihub_global_conversation_id", storedId);
+      console.log("♾️ [Chat Eterna] Nuovo conversation_id generato:", storedId);
     } else {
-      console.log('♾️ [Chat Eterna] Conversation_id esistente caricato:', storedId);
+      console.log(
+        "♾️ [Chat Eterna] Conversation_id esistente caricato:",
+        storedId
+      );
     }
 
     // 3. Usa quell'ID. Punto.
@@ -99,25 +104,28 @@ export default function MIHUBDashboard() {
     mio: "",
     manus: "",
     abacus: "",
-    zapier: ""
+    zapier: "",
   });
   const [sharedView, setSharedView] = useState(true);
-  
+
   const scrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Fetch messages
-  const { data: messages = [], refetch } = trpc.mihub.getMessages.useQuery({
-    conversationId,
-    limit: 100,
-  }, {
-    refetchInterval: 2000, // Poll ogni 2 secondi per simulare real-time
-  });
+  const { data: messages = [], refetch } = trpc.mihub.getMessages.useQuery(
+    {
+      conversationId,
+      limit: 100,
+    },
+    {
+      refetchInterval: 2000, // Poll ogni 2 secondi per simulare real-time
+    }
+  );
 
   // Send message mutation
   const sendMessage = trpc.mihub.sendMessage.useMutation({
     onSuccess: () => {
       refetch();
-    }
+    },
   });
 
   // Mark message as read mutation
@@ -142,48 +150,55 @@ export default function MIHUBDashboard() {
     // Pulisci input immediatamente per UX migliore
     setMessageInputs(prev => ({
       ...prev,
-      [agentId]: ""
+      [agentId]: "",
     }));
 
     try {
       // Chiama direttamente l'orchestrator invece di sendMessage
-      const API_URL = import.meta.env.VITE_TRPC_URL || 'https://api.mio-hub.me';
+      const API_URL = import.meta.env.VITE_TRPC_URL || "https://api.mio-hub.me";
       const response = await fetch(`${API_URL}/api/mihub/orchestrator`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           conversation_id: conversationId,
           agent: agentId,
           message: content,
-          mode: 'multi-agent',
+          mode: "multi-agent",
         }),
       });
 
       const data = await response.json();
-      
+
       // 🔧 AUTO-RESET: Se conversazione non trovata (404), resetta localStorage e ricarica
-      if (!response.ok && (response.status === 404 || data.error?.statusCode === 404 || data.error?.message?.includes('Conversation not found'))) {
-        console.log('[MIHUBDashboard] 404 Conversation not found - Resetting localStorage...');
-        localStorage.removeItem('mio-conversation-id');
-        localStorage.removeItem('mio-thread-id');
+      if (
+        !response.ok &&
+        (response.status === 404 ||
+          data.error?.statusCode === 404 ||
+          data.error?.message?.includes("Conversation not found"))
+      ) {
+        console.log(
+          "[MIHUBDashboard] 404 Conversation not found - Resetting localStorage..."
+        );
+        localStorage.removeItem("mio-conversation-id");
+        localStorage.removeItem("mio-thread-id");
         window.location.reload();
         return;
       }
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      console.log('[MIHUBDashboard] Orchestrator response:', data);
+      console.log("[MIHUBDashboard] Orchestrator response:", data);
 
       // Aggiorna i messaggi dopo la risposta
       refetch();
     } catch (error) {
-      console.error('[MIHUBDashboard] Error calling orchestrator:', error);
+      console.error("[MIHUBDashboard] Error calling orchestrator:", error);
       // Mostra errore all'utente
-      alert('Errore nell\'invio del messaggio. Riprova.');
+      alert("Errore nell'invio del messaggio. Riprova.");
     }
   };
 
@@ -193,10 +208,11 @@ export default function MIHUBDashboard() {
       return messages;
     } else {
       // Solo messaggi inviati/ricevuti da questo agente
-      return messages.filter(m => 
-        m.sender === agentId || 
-        !m.recipients || 
-        m.recipients.includes(agentId)
+      return messages.filter(
+        m =>
+          m.sender === agentId ||
+          !m.recipients ||
+          m.recipients.includes(agentId)
       );
     }
   };
@@ -213,7 +229,9 @@ export default function MIHUBDashboard() {
               <Icon className={`h-5 w-5 ${agent.color}`} />
               <div>
                 <CardTitle className="text-lg">{agent.name}</CardTitle>
-                <p className="text-xs text-muted-foreground">{agent.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  {agent.description}
+                </p>
               </div>
             </div>
             <Badge variant="outline" className="gap-1">
@@ -222,12 +240,12 @@ export default function MIHUBDashboard() {
             </Badge>
           </div>
         </CardHeader>
-        
+
         <CardContent className="flex-1 flex flex-col gap-3 p-4 pt-0">
           {/* Messages Area */}
-          <ScrollArea 
+          <ScrollArea
             className="flex-1 pr-4"
-            ref={(el) => scrollRefs.current[agent.id] = el}
+            ref={el => (scrollRefs.current[agent.id] = el)}
           >
             <div className="space-y-3">
               {agentMessages.length === 0 ? (
@@ -235,7 +253,7 @@ export default function MIHUBDashboard() {
                   Nessun messaggio
                 </div>
               ) : (
-                agentMessages.map((msg) => {
+                agentMessages.map(msg => {
                   const isOwnMessage = msg.sender === agent.id;
                   const senderAgent = AGENTS.find(a => a.id === msg.sender);
                   const SenderIcon = senderAgent?.icon || Brain;
@@ -243,14 +261,14 @@ export default function MIHUBDashboard() {
                   return (
                     <div
                       key={msg.id}
-                      className={`flex gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                      className={`flex gap-2 ${isOwnMessage ? "justify-end" : "justify-start"}`}
                     >
                       {!isOwnMessage && (
                         <div className={`flex-shrink-0 ${senderAgent?.color}`}>
                           <SenderIcon className="h-4 w-4 mt-1" />
                         </div>
                       )}
-                      
+
                       <div className={`flex flex-col gap-1 max-w-[80%]`}>
                         {!isOwnMessage && (
                           <span className="text-xs font-medium text-muted-foreground">
@@ -260,16 +278,16 @@ export default function MIHUBDashboard() {
                         <div
                           className={`rounded-lg px-3 py-2 text-sm ${
                             isOwnMessage
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
                           }`}
                         >
                           {msg.content}
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(msg.createdAt).toLocaleTimeString('it-IT', {
-                            hour: '2-digit',
-                            minute: '2-digit'
+                          {new Date(msg.createdAt).toLocaleTimeString("it-IT", {
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </span>
                       </div>
@@ -291,11 +309,13 @@ export default function MIHUBDashboard() {
             <Input
               placeholder={`Messaggio da ${agent.name}...`}
               value={messageInputs[agent.id] || ""}
-              onChange={(e) => setMessageInputs(prev => ({
-                ...prev,
-                [agent.id]: e.target.value
-              }))}
-              onKeyDown={(e) => {
+              onChange={e =>
+                setMessageInputs(prev => ({
+                  ...prev,
+                  [agent.id]: e.target.value,
+                }))
+              }
+              onKeyDown={e => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage(agent.id);
@@ -306,7 +326,9 @@ export default function MIHUBDashboard() {
             <Button
               size="icon"
               onClick={() => handleSendMessage(agent.id)}
-              disabled={!messageInputs[agent.id]?.trim() || sendMessage.isPending}
+              disabled={
+                !messageInputs[agent.id]?.trim() || sendMessage.isPending
+              }
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -356,7 +378,11 @@ export default function MIHUBDashboard() {
           </TabsList>
 
           {AGENTS.map(agent => (
-            <TabsContent key={agent.id} value={agent.id} className="h-[calc(100vh-200px)]">
+            <TabsContent
+              key={agent.id}
+              value={agent.id}
+              className="h-[calc(100vh-200px)]"
+            >
               {renderAgentChat(agent)}
             </TabsContent>
           ))}

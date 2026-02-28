@@ -38,7 +38,7 @@ Questa sessione ha affrontato 8 punti critici segnalati, che spaziavano da bug v
 ### 📝 DOCUMENTAZIONE
 
 - **[UPDATE]** Aggiornato `MASTER_BLUEPRINT_MIOHUB.md` a **v5.3.0** con:
-    - Questo changelog dettagliato.
-    - Nuova sezione per il sistema di deposito rifiuti.
-    - Aggiornamento della sezione SUAP con il nuovo sottotab Graduatoria.
-    - Aggiornamento della sezione Integrazioni con i nuovi endpoint monitorati.
+  - Questo changelog dettagliato.
+  - Nuova sezione per il sistema di deposito rifiuti.
+  - Aggiornamento della sezione SUAP con il nuovo sottotab Graduatoria.
+  - Aggiornamento della sezione Integrazioni con i nuovi endpoint monitorati.

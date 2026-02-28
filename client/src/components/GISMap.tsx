@@ -1,24 +1,34 @@
-import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, ImageOverlay, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Download, Layers, ZoomIn, ZoomOut } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  ImageOverlay,
+  useMap,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Download, Layers, ZoomIn, ZoomOut } from "lucide-react";
 
 // Fix Leaflet default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 // Custom marker icons per stato
 const createCustomIcon = (color: string, icon?: string) => {
   return L.divIcon({
-    className: 'custom-marker',
+    className: "custom-marker",
     html: `
       <div style="
         background-color: ${color};
@@ -33,7 +43,7 @@ const createCustomIcon = (color: string, icon?: string) => {
         color: white;
         font-size: 16px;
       ">
-        ${icon || ''}
+        ${icon || ""}
       </div>
     `,
     iconSize: [30, 30],
@@ -43,17 +53,17 @@ const createCustomIcon = (color: string, icon?: string) => {
 };
 
 export const MARKER_ICONS = {
-  free: createCustomIcon('#10b981', '✓'), // Verde
-  occupied: createCustomIcon('#ef4444', '✗'), // Rosso
-  reserved: createCustomIcon('#f59e0b', '⏱'), // Giallo
-  blocked: createCustomIcon('#6b7280', '🚫'), // Grigio
-  maintenance: createCustomIcon('#3b82f6', '🔧'), // Blu
-  market: createCustomIcon('#14b8a6', '🏪'),
-  bus: createCustomIcon('#3b82f6', '🚌'),
-  police: createCustomIcon('#ef4444', '🚨'),
-  civic: createCustomIcon('#f59e0b', '🏛️'),
-  eco: createCustomIcon('#10b981', '🌱'),
-  shop: createCustomIcon('#8b5cf6', '🏬'),
+  free: createCustomIcon("#10b981", "✓"), // Verde
+  occupied: createCustomIcon("#ef4444", "✗"), // Rosso
+  reserved: createCustomIcon("#f59e0b", "⏱"), // Giallo
+  blocked: createCustomIcon("#6b7280", "🚫"), // Grigio
+  maintenance: createCustomIcon("#3b82f6", "🔧"), // Blu
+  market: createCustomIcon("#14b8a6", "🏪"),
+  bus: createCustomIcon("#3b82f6", "🚌"),
+  police: createCustomIcon("#ef4444", "🚨"),
+  civic: createCustomIcon("#f59e0b", "🏛️"),
+  eco: createCustomIcon("#10b981", "🌱"),
+  shop: createCustomIcon("#8b5cf6", "🏬"),
 };
 
 export interface GISMarker {
@@ -124,14 +134,14 @@ export function GISMap({
   markers = [],
   layers = [],
   overlay,
-  height = '500px',
+  height = "500px",
   onMarkerClick,
   showControls = true,
-  className = '',
+  className = "",
 }: GISMapProps) {
-  const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>(
-    layers.reduce((acc, layer) => ({ ...acc, [layer.id]: layer.visible }), {})
-  );
+  const [layerVisibility, setLayerVisibility] = useState<
+    Record<string, boolean>
+  >(layers.reduce((acc, layer) => ({ ...acc, [layer.id]: layer.visible }), {}));
   const [showLayerPanel, setShowLayerPanel] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
 
@@ -150,25 +160,29 @@ export function GISMap({
 
     try {
       const rect = container.getBoundingClientRect();
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = rect.width * 2;
       canvas.height = rect.height * 2;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
       ctx.scale(2, 2);
 
       // Sfondo
-      ctx.fillStyle = '#0b1220';
+      ctx.fillStyle = "#0b1220";
       ctx.fillRect(0, 0, rect.width, rect.height);
 
       // Disegna tile della mappa
-      const tilePane = container.querySelector('.leaflet-tile-pane') as HTMLElement;
+      const tilePane = container.querySelector(
+        ".leaflet-tile-pane"
+      ) as HTMLElement;
       if (tilePane) {
-        const tiles = tilePane.querySelectorAll('img.leaflet-tile') as NodeListOf<HTMLImageElement>;
-        const drawPromises = Array.from(tiles).map((tile) => {
-          return new Promise<void>((resolve) => {
+        const tiles = tilePane.querySelectorAll(
+          "img.leaflet-tile"
+        ) as NodeListOf<HTMLImageElement>;
+        const drawPromises = Array.from(tiles).map(tile => {
+          return new Promise<void>(resolve => {
             const img = new Image();
-            img.crossOrigin = 'anonymous';
+            img.crossOrigin = "anonymous";
             img.onload = () => {
               const tileRect = tile.getBoundingClientRect();
               const x = tileRect.left - rect.left;
@@ -184,17 +198,21 @@ export function GISMap({
       }
 
       // Watermark
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.font = '12px sans-serif';
-      ctx.fillText(`DMS Hub - ${new Date().toLocaleDateString('it-IT')}`, 10, rect.height - 10);
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(
+        `DMS Hub - ${new Date().toLocaleDateString("it-IT")}`,
+        10,
+        rect.height - 10
+      );
 
       // Download
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.download = `mappa-dms-hub-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (err) {
-      console.error('Errore export mappa:', err);
+      console.error("Errore export mappa:", err);
     }
   };
 
@@ -214,7 +232,8 @@ export function GISMap({
             className="bg-white hover:bg-gray-100"
           >
             <Layers className="h-4 w-4 mr-2" />
-            Layer ({layers.filter(l => layerVisibility[l.id] !== false).length}/{layers.length})
+            Layer ({layers.filter(l => layerVisibility[l.id] !== false).length}/
+            {layers.length})
           </Button>
 
           {showLayerPanel && (
@@ -260,7 +279,7 @@ export function GISMap({
       <MapContainer
         center={center}
         zoom={zoom}
-        style={{ height, width: '100%' }}
+        style={{ height, width: "100%" }}
         className="rounded-lg"
         ref={mapRef}
       >
@@ -295,7 +314,9 @@ export function GISMap({
               <div className="min-w-[200px]">
                 <h3 className="font-bold text-lg mb-2">{marker.title}</h3>
                 {marker.description && (
-                  <p className="text-sm text-gray-600 mb-2">{marker.description}</p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {marker.description}
+                  </p>
                 )}
                 {marker.data && (
                   <div className="text-sm space-y-1">

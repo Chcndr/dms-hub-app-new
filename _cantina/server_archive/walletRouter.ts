@@ -1,6 +1,6 @@
 /**
  * Wallet Router - API per gestione borsellino elettronico operatori mercatali
- * 
+ *
  * Funzionalità:
  * - Gestione wallet operatori (CRUD, ricariche, decurtazioni)
  * - Integrazione E-FIL PagoPA per ricariche
@@ -10,7 +10,12 @@
  */
 
 import { z } from "zod";
-import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
+import {
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  router,
+} from "./_core/trpc";
 import { getDb } from "./db";
 import { eq, desc, and, gte, lte, sql, sum, count } from "drizzle-orm";
 import * as schema from "../drizzle/schema";
@@ -79,7 +84,7 @@ export const walletRouter = router({
   // ============================================
   // STATISTICHE DASHBOARD
   // ============================================
-  
+
   /**
    * Ottieni statistiche generali wallet
    */
@@ -157,7 +162,7 @@ export const walletRouter = router({
 
     // Per ogni wallet, recupera i dati reali dell'impresa da vendors
     const results = await Promise.all(
-      wallets.map(async (w) => {
+      wallets.map(async w => {
         const [vendor] = await db
           .select()
           .from(schema.vendors)
@@ -168,7 +173,9 @@ export const walletRouter = router({
           impresa: vendor
             ? {
                 id: vendor.id,
-                ragioneSociale: vendor.businessName || `${vendor.firstName} ${vendor.lastName}`,
+                ragioneSociale:
+                  vendor.businessName ||
+                  `${vendor.firstName} ${vendor.lastName}`,
                 partitaIva: vendor.vatNumber || "",
               }
             : {
@@ -227,17 +234,19 @@ export const walletRouter = router({
   /**
    * Ottieni wallet per impresa
    */
-  getByImpresa: protectedProcedure.input(impresaIdSchema).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) return null;
+  getByImpresa: protectedProcedure
+    .input(impresaIdSchema)
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
 
-    const [wallet] = await db
-      .select()
-      .from(schema.operatoreWallet)
-      .where(eq(schema.operatoreWallet.impresaId, input.impresaId));
+      const [wallet] = await db
+        .select()
+        .from(schema.operatoreWallet)
+        .where(eq(schema.operatoreWallet.impresaId, input.impresaId));
 
-    return wallet || null;
-  }),
+      return wallet || null;
+    }),
 
   // ============================================
   // CREAZIONE E GESTIONE WALLET
@@ -246,34 +255,36 @@ export const walletRouter = router({
   /**
    * Crea nuovo wallet per impresa
    */
-  create: adminProcedure.input(createWalletSchema).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database non disponibile");
+  create: adminProcedure
+    .input(createWalletSchema)
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database non disponibile");
 
-    // Verifica se esiste già un wallet per questa impresa
-    const [existing] = await db
-      .select()
-      .from(schema.operatoreWallet)
-      .where(eq(schema.operatoreWallet.impresaId, input.impresaId));
+      // Verifica se esiste già un wallet per questa impresa
+      const [existing] = await db
+        .select()
+        .from(schema.operatoreWallet)
+        .where(eq(schema.operatoreWallet.impresaId, input.impresaId));
 
-    if (existing) {
-      throw new Error("Esiste già un wallet per questa impresa");
-    }
+      if (existing) {
+        throw new Error("Esiste già un wallet per questa impresa");
+      }
 
-    const [newWallet] = await db
-      .insert(schema.operatoreWallet)
-      .values({
-        impresaId: input.impresaId,
-        saldo: 0,
-        saldoMinimo: input.saldoMinimo,
-        status: "ATTIVO",
-        totaleRicaricato: 0,
-        totaleDecurtato: 0,
-      })
-      .returning();
+      const [newWallet] = await db
+        .insert(schema.operatoreWallet)
+        .values({
+          impresaId: input.impresaId,
+          saldo: 0,
+          saldoMinimo: input.saldoMinimo,
+          status: "ATTIVO",
+          totaleRicaricato: 0,
+          totaleDecurtato: 0,
+        })
+        .returning();
 
-    return newWallet;
-  }),
+      return newWallet;
+    }),
 
   /**
    * Aggiorna stato wallet (blocca/sblocca)
@@ -306,7 +317,10 @@ export const walletRouter = router({
         entityType: "operatore_wallet",
         entityId: input.walletId,
         oldValue: JSON.stringify({ status: current?.status }),
-        newValue: JSON.stringify({ status: input.status, motivo: input.motivo }),
+        newValue: JSON.stringify({
+          status: input.status,
+          motivo: input.motivo,
+        }),
       });
 
       return updated;
@@ -319,73 +333,77 @@ export const walletRouter = router({
   /**
    * Lista transazioni wallet
    */
-  transazioni: protectedProcedure.input(walletIdSchema).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) return [];
+  transazioni: protectedProcedure
+    .input(walletIdSchema)
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
 
-    return await db
-      .select()
-      .from(schema.walletTransazioni)
-      .where(eq(schema.walletTransazioni.walletId, input.walletId))
-      .orderBy(desc(schema.walletTransazioni.dataOperazione));
-  }),
+      return await db
+        .select()
+        .from(schema.walletTransazioni)
+        .where(eq(schema.walletTransazioni.walletId, input.walletId))
+        .orderBy(desc(schema.walletTransazioni.dataOperazione));
+    }),
 
   /**
    * Effettua ricarica wallet (manuale o da callback PagoPA)
    */
-  ricarica: protectedProcedure.input(ricaricaWalletSchema).mutation(async ({ input, ctx }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database non disponibile");
+  ricarica: protectedProcedure
+    .input(ricaricaWalletSchema)
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database non disponibile");
 
-    // Ottieni wallet corrente
-    const [wallet] = await db
-      .select()
-      .from(schema.operatoreWallet)
-      .where(eq(schema.operatoreWallet.id, input.walletId));
+      // Ottieni wallet corrente
+      const [wallet] = await db
+        .select()
+        .from(schema.operatoreWallet)
+        .where(eq(schema.operatoreWallet.id, input.walletId));
 
-    if (!wallet) throw new Error("Wallet non trovato");
+      if (!wallet) throw new Error("Wallet non trovato");
 
-    // Verifica che il wallet non sia sospeso
-    if (wallet.status === "SOSPESO") {
-      throw new Error("Wallet sospeso - operazione non consentita");
-    }
+      // Verifica che il wallet non sia sospeso
+      if (wallet.status === "SOSPESO") {
+        throw new Error("Wallet sospeso - operazione non consentita");
+      }
 
-    const saldoPrecedente = wallet.saldo;
-    const saldoSuccessivo = saldoPrecedente + input.importoCents;
+      const saldoPrecedente = wallet.saldo;
+      const saldoSuccessivo = saldoPrecedente + input.importoCents;
 
-    // Inserisci transazione
-    const [transazione] = await db
-      .insert(schema.walletTransazioni)
-      .values({
-        walletId: input.walletId,
-        tipo: "RICARICA",
-        importo: input.importoCents,
-        saldoPrecedente,
-        saldoSuccessivo,
-        riferimento: input.riferimento,
-        descrizione: input.note || `Ricarica ${input.metodo}`,
-        operatoreId: ctx.user?.email || "SYSTEM",
-      })
-      .returning();
+      // Inserisci transazione
+      const [transazione] = await db
+        .insert(schema.walletTransazioni)
+        .values({
+          walletId: input.walletId,
+          tipo: "RICARICA",
+          importo: input.importoCents,
+          saldoPrecedente,
+          saldoSuccessivo,
+          riferimento: input.riferimento,
+          descrizione: input.note || `Ricarica ${input.metodo}`,
+          operatoreId: ctx.user?.email || "SYSTEM",
+        })
+        .returning();
 
-    // Aggiorna saldo wallet
-    await db
-      .update(schema.operatoreWallet)
-      .set({
-        saldo: saldoSuccessivo,
-        totaleRicaricato: wallet.totaleRicaricato + input.importoCents,
-        ultimaRicarica: new Date(),
-        updatedAt: new Date(),
-        // Se era bloccato e ora ha saldo sufficiente, riattiva
-        status:
-          wallet.status === "BLOCCATO" && saldoSuccessivo > wallet.saldoMinimo
-            ? "ATTIVO"
-            : wallet.status,
-      })
-      .where(eq(schema.operatoreWallet.id, input.walletId));
+      // Aggiorna saldo wallet
+      await db
+        .update(schema.operatoreWallet)
+        .set({
+          saldo: saldoSuccessivo,
+          totaleRicaricato: wallet.totaleRicaricato + input.importoCents,
+          ultimaRicarica: new Date(),
+          updatedAt: new Date(),
+          // Se era bloccato e ora ha saldo sufficiente, riattiva
+          status:
+            wallet.status === "BLOCCATO" && saldoSuccessivo > wallet.saldoMinimo
+              ? "ATTIVO"
+              : wallet.status,
+        })
+        .where(eq(schema.operatoreWallet.id, input.walletId));
 
-    return transazione;
-  }),
+      return transazione;
+    }),
 
   /**
    * Effettua decurtazione wallet (per presenza mercato)
@@ -404,7 +422,8 @@ export const walletRouter = router({
 
       if (!wallet) throw new Error("Wallet non trovato");
       if (wallet.status === "BLOCCATO") throw new Error("Wallet bloccato");
-      if (wallet.status === "SOSPESO") throw new Error("Wallet sospeso - operazione non consentita");
+      if (wallet.status === "SOSPESO")
+        throw new Error("Wallet sospeso - operazione non consentita");
 
       const saldoPrecedente = wallet.saldo;
       const saldoSuccessivo = saldoPrecedente - input.importoCents;
@@ -495,7 +514,8 @@ export const walletRouter = router({
       const impresaData = vendor
         ? {
             id: vendor.id,
-            ragioneSociale: vendor.businessName || `${vendor.firstName} ${vendor.lastName}`,
+            ragioneSociale:
+              vendor.businessName || `${vendor.firstName} ${vendor.lastName}`,
             partitaIva: vendor.vatNumber || "",
             email: vendor.email || "",
           }
@@ -736,16 +756,18 @@ export const walletRouter = router({
   /**
    * Lista avvisi PagoPA
    */
-  avvisiPagopa: protectedProcedure.input(walletIdSchema).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) return [];
+  avvisiPagopa: protectedProcedure
+    .input(walletIdSchema)
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
 
-    return await db
-      .select()
-      .from(schema.avvisiPagopa)
-      .where(eq(schema.avvisiPagopa.walletId, input.walletId))
-      .orderBy(desc(schema.avvisiPagopa.dataGenerazione));
-  }),
+      return await db
+        .select()
+        .from(schema.avvisiPagopa)
+        .where(eq(schema.avvisiPagopa.walletId, input.walletId))
+        .orderBy(desc(schema.avvisiPagopa.dataGenerazione));
+    }),
 
   // ============================================
   // TARIFFE E CONFIGURAZIONE
@@ -863,7 +885,7 @@ export const walletRouter = router({
 
       const conditions = [
         gte(schema.walletTransazioni.dataOperazione, dataInizio),
-        lte(schema.walletTransazioni.dataOperazione, dataFine)
+        lte(schema.walletTransazioni.dataOperazione, dataFine),
       ];
 
       if (input.walletId) {
@@ -874,9 +896,7 @@ export const walletRouter = router({
         .select()
         .from(schema.walletTransazioni)
         .where(and(...conditions))
-        .orderBy(
-        desc(schema.walletTransazioni.dataOperazione)
-      );
+        .orderBy(desc(schema.walletTransazioni.dataOperazione));
 
       // Calcola totali
       const totali = transazioni.reduce(

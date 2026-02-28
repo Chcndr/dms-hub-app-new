@@ -20,6 +20,7 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ### **Stack Tecnologico**
 
 #### Frontend
+
 - **React 19** - UI framework con hooks moderni
 - **Tailwind CSS 4** - Utility-first styling con OKLCH colors
 - **shadcn/ui** - Component library accessibile
@@ -31,6 +32,7 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 - **Lucide React** - Icon library
 
 #### Backend
+
 - **Node.js 22.13.0** - Runtime JavaScript
 - **tRPC** - Type-safe API con inferenza automatica
 - **Drizzle ORM** - Database ORM type-safe
@@ -40,6 +42,7 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 - **tsx** - TypeScript execution
 
 #### DevOps & Hosting
+
 - **Manus.space** - Hosting full-stack principale
 - **GitHub Pages** - Hosting static sites
 - **Heroku** - Gestionale legacy
@@ -48,6 +51,7 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ### **Database Schema** (39 Tabelle)
 
 #### Mercati e Geometria (4 tabelle)
+
 - `markets` - Anagrafica mercati
 - `market_geometry` - Geometria GeoJSON da Slot Editor v3
 - `stalls` - Posteggi numerati con coordinate
@@ -55,55 +59,66 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 - `custom_areas` - Zone speciali
 
 #### Operatori e Concessioni (4 tabelle)
+
 - `vendors` - Anagrafica ambulanti/commercianti
 - `concessions` - Concessioni posteggi
 - `concession_payments` - Pagamenti concessioni
 - `vendor_documents` - Documenti operatori
 
 #### Presenze e Operatività (3 tabelle)
+
 - `vendor_presences` - Check-in/out giornalieri
 - `bookings` - Prenotazioni posteggi
 - `checkins` - Presenze utenti
 
 #### Prodotti e Commercio (3 tabelle)
+
 - `products` - Catalogo prodotti
 - `product_tracking` - Tracciabilità filiera
 - `shops` - Negozi fissi
 
 #### Sostenibilità (4 tabelle)
+
 - `carbon_footprint` - Impronta carbonica
 - `ecocredits` - Toscana Carbon Credits (TCC)
 - `sustainability_metrics` - Metriche eco
 - `carbon_credits_config` - Configurazione TCC
 
 #### Controlli e Sanzioni (2 tabelle)
+
 - `inspections` - Ispezioni Polizia
 - `inspections_detailed` - Dettagli ispezioni
 - `violations` - Verbali e sanzioni
 
 #### Utenti e Transazioni (4 tabelle)
+
 - `users` - Utenti sistema
 - `extended_users` - Profili estesi
 - `transactions` - Transazioni TCC
 - `fund_transactions` - Movimenti fondi
 
 #### Segnalazioni e Civic (2 tabelle)
+
 - `civic_reports` - Segnalazioni cittadine
 - `notifications` - Sistema notifiche push
 
 #### Sistema e Logs (3 tabelle)
+
 - `system_logs` - Log sistema
 - `audit_logs` - Audit trail
 - `user_analytics` - Analytics utenti
 - `business_analytics` - Analytics business
 
 #### Mobilità (1 tabella)
+
 - `mobility_data` - Dati mobilità TPER/Centro Mobilità
 
 #### Rimborsi (1 tabella)
+
 - `reimbursements` - Rimborsi operatori
 
 #### **🆕 Integrazioni (5 tabelle - NUOVO!)**
+
 - `api_keys` - Chiavi API con rate limiting
 - `api_metrics` - Metriche performance API
 - `webhooks` - Configurazione webhook
@@ -115,10 +130,12 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ## 📱 APPLICAZIONI WEB ECOSISTEMA
 
 ### 1. 🌍 **SITO PUBBLICO DMS HUB**
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/`  
 **Stato**: ✅ **OPERATIVO**
 
 **Features Implementate**:
+
 - 🎵 Musica ambient generativa (Web Audio API)
 - ✨ Animazioni fluide e particelle background
 - 📊 Counter animati statistiche real-time
@@ -131,10 +148,12 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ---
 
 ### 2. 👥 **APP CITTADINI**
+
 **URL**: `https://dmshubapp-hkvujnro.manus.space/`  
 **Stato**: ✅ **OPERATIVO**
 
 **Features Implementate**:
+
 - 🗺️ **Mappa Mercati** - Visualizza mercati e negozi sostenibili
 - 💰 **Wallet TCC** - Gestione Toscana Carbon Credits
 - 🛣️ **Route Planner** - Percorsi ottimizzati con Centro Mobilità Nazionale
@@ -149,10 +168,12 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ---
 
 ### 3. 🏪 **HUB OPERATORE**
+
 **URL**: `https://dmshubapp-hkvujnro.manus.space/hub-operatore`  
 **Stato**: ✅ **OPERATIVO**
 
 **Features Implementate**:
+
 - ⏰ **Check-in/Check-out** - Presenza giornaliera con GPS
 - 📊 **Dashboard Vendite** - Analytics real-time
 - 💰 **TCC Guadagnati** - Crediti carbonio accumulati
@@ -165,12 +186,14 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ---
 
 ### 4. 📊 **DASHBOARD ADMIN PA** (Centro Controllo)
+
 **URL**: `https://dmshubapp-hkvujnro.manus.space/dashboard-pa`  
 **Stato**: ✅ **OPERATIVO - 22 SEZIONI COMPLETE**
 
 #### **22 Sezioni Dashboard**
 
 ##### Analytics (8 sezioni)
+
 1. ✅ **Overview** - KPI generali e crescita
 2. ✅ **Clienti** - Analytics utenti
 3. ✅ **Mercati** - Statistiche mercati attivi
@@ -181,6 +204,7 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 8. ✅ **Real-time** - Dati live
 
 ##### Gestione (7 sezioni)
+
 9. ✅ **Log Sistema** - Audit logs e system logs
 10. ✅ **Notifiche** - Sistema notifiche push
 11. ✅ **Segnalazioni** - Civic reports
@@ -190,6 +214,7 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 15. ✅ **Centro Mobilità** - Mappa TPER Bologna
 
 ##### Strumenti (7 sezioni)
+
 16. ✅ **Chat AI** - Assistente intelligente
 17. ✅ **Report** - Export dati
 18. ✅ **Integrazioni** - **SISTEMA COMPLETO FUNZIONANTE** ⭐
@@ -199,6 +224,7 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 22. ✅ **Gestione Mercati** - Sistema DMS HUB completo
 
 #### **Quick Access Bar** (12 pulsanti)
+
 - Home, Mappa, Wallet, Route, Segnala, Vetrine, Hub Operatore
 - 🔧 BUS HUB (viola)
 - 🗺️ Core Map (arancione)
@@ -209,10 +235,12 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ---
 
 ### 5. 🚌 **BUS HUB** (Business Unit Setup HUB)
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/tools/bus_hub.html`  
 **Stato**: ✅ **OPERATIVO**
 
 **Features Implementate**:
+
 - 🔄 **Workflow 2 Step**:
   1. **PNG Transparent Tool** - Rimozione sfondo pianta
   2. **Slot Editor v3 Unified** - Editor completo
@@ -226,10 +254,12 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ---
 
 ### 6. 🗺️ **CORE MAP GROSSETO**
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/index-grosseto.html`  
 **Stato**: ✅ **OPERATIVO**
 
 **Features Implementate**:
+
 - 🗺️ Mappa Leaflet con layer mercato
 - 📍 Posteggi numerati interattivi
 - 🎨 Aree mercato colorate
@@ -242,6 +272,7 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ---
 
 ### 7. 📰 **DMS NEWS**
+
 **URL**: `https://chcndr.github.io/dms-gemello-news/landing/home.html`  
 **Stato**: ✅ **OPERATIVO**
 
@@ -250,10 +281,12 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ---
 
 ### 8. 🚀 **GESTIONALE DMS** (Heroku)
+
 **URL**: `https://lapsy-dms.herokuapp.com/index.html`  
 **Stato**: ✅ **OPERATIVO** (Legacy)
 
 **Features**:
+
 - 📜 Gestione concessioni ambulanti
 - 💰 Pagamenti e scadenze
 - 📄 Documenti e permessi
@@ -266,12 +299,14 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ## 🔧 TOOL EDITOR
 
 ### **PNG Transparent Tool**
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/tools/stalls_alpha_tool.html`  
 **Stato**: ✅ **OPERATIVO**
 
 **Funzione**: Rimozione sfondo da pianta mercato
 
 **Workflow**:
+
 1. Upload immagine pianta
 2. Rimozione automatica sfondo
 3. Preview risultato
@@ -281,10 +316,12 @@ Il **DMS HUB** è l'ecosistema nazionale per la digitalizzazione dei mercati e d
 ---
 
 ### **Slot Editor v3 Unified**
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/tools/slot_editor_v3_unified.html`  
 **Stato**: ✅ **OPERATIVO**
 
 **Features Implementate**:
+
 - 📍 **Georeferenziazione** - 4 GCP per allineamento
 - 🏪 **Container Mercato** - Definizione area totale
 - 🅿️ **Posteggi** - Creazione rettangoli numerati
@@ -392,6 +429,7 @@ CREATE TABLE external_connections (
 **File**: `server/integrationsRouter.ts`
 
 #### Endpoint API Keys
+
 - `integrations.apiKeys.list` - Lista tutte le API keys
 - `integrations.apiKeys.create` - Crea nuova API key (genera automaticamente dms_live_xxx o dms_test_xxx)
 - `integrations.apiKeys.delete` - Elimina API key
@@ -399,10 +437,12 @@ CREATE TABLE external_connections (
 - `integrations.apiKeys.updateStatus` - Attiva/disattiva API key
 
 #### Endpoint Statistiche API
+
 - `integrations.apiStats.today` - Statistiche giornaliere (richieste, tempo medio, success rate, errori)
 - `integrations.apiStats.byEndpoint` - Statistiche per endpoint
 
 #### Endpoint Webhook
+
 - `integrations.webhooks.list` - Lista tutti i webhook
 - `integrations.webhooks.create` - Crea nuovo webhook
 - `integrations.webhooks.delete` - Elimina webhook
@@ -410,6 +450,7 @@ CREATE TABLE external_connections (
 - `integrations.webhooks.logs` - Log esecuzioni webhook
 
 #### Endpoint Connessioni Esterne
+
 - `integrations.connections.list` - Lista connessioni esterne
 - `integrations.connections.healthCheck` - Health check singola connessione
 - `integrations.connections.healthCheckAll` - Health check tutte le connessioni
@@ -421,6 +462,7 @@ CREATE TABLE external_connections (
 #### 5 Tab Implementate
 
 ##### 1. **API Dashboard** ✅
+
 - Statistiche real-time da database (richieste oggi, tempo medio, success rate, errori)
 - Lista 25+ endpoint DMS Hub
 - Form JSON editabile per parametri
@@ -431,6 +473,7 @@ CREATE TABLE external_connections (
 - Toast notifications per successo/errore
 
 ##### 2. **Connessioni Esterne** ✅
+
 - Lista 6 connessioni configurate:
   - ✅ **TPER** (connected) - Trasporti locali Bologna
   - ✅ **Centro Mobilità** (connected) - Traffico, parcheggi, ZTL
@@ -444,6 +487,7 @@ CREATE TABLE external_connections (
 - Features list per ogni connessione
 
 ##### 3. **API Keys Manager** ✅
+
 - Lista API keys con:
   - Nome e chiave (con copy-to-clipboard)
   - Ambiente (production/test)
@@ -457,6 +501,7 @@ CREATE TABLE external_connections (
 - Toast notifications per tutte le operazioni
 
 ##### 4. **Webhook Manager** ✅
+
 - Lista webhook configurati
 - Eventi monitorati (JSON array)
 - Ultimo trigger e success rate
@@ -465,6 +510,7 @@ CREATE TABLE external_connections (
 - Success/failure count
 
 ##### 5. **Sync Status** ⚠️
+
 - **DA IMPLEMENTARE** - Monitoraggio sincronizzazioni Gestionale Heroku
 
 ### **Script Seed**
@@ -474,6 +520,7 @@ CREATE TABLE external_connections (
 **Funzione**: Popola database con connessioni esterne predefinite
 
 **Connessioni Create**:
+
 1. ARPAE (disconnected)
 2. TPER (connected) - Già integrata con dati reali
 3. Centro Mobilità (connected)
@@ -523,9 +570,11 @@ CREATE TABLE external_connections (
 ### 🔴 **PRIORITÀ ALTA** (Settimana 1)
 
 #### 1. Import Automatico Slot Editor v3 → Dashboard Admin
+
 **Obiettivo**: Permettere import diretto pianta mercato da Slot Editor v3
 
 **Task**:
+
 - [ ] Implementare endpoint `dmsHub.markets.importFromSlotEditorAuto`
 - [ ] Modificare Slot Editor v3 per inviare JSON via fetch API
 - [ ] Gestire autenticazione e CORS
@@ -534,15 +583,18 @@ CREATE TABLE external_connections (
 - [ ] Error handling completo
 
 **File da modificare**:
+
 - `server/dmsHubRouter.ts` - Aggiungere endpoint import
 - `tools/slot_editor_v3_unified.html` - Aggiungere pulsante "Invia a Dashboard"
 
 ---
 
 #### 2. Middleware Logging Automatico API
+
 **Obiettivo**: Popolare `api_metrics` con dati reali di tutte le chiamate API
 
 **Task**:
+
 - [ ] Creare middleware tRPC per logging automatico
 - [ ] Tracciare endpoint, method, status_code, response_time
 - [ ] Salvare in `api_metrics` ogni chiamata
@@ -550,17 +602,21 @@ CREATE TABLE external_connections (
 - [ ] Implementare cleanup automatico vecchi log (retention 30 giorni)
 
 **File da creare**:
+
 - `server/middleware/apiLogger.ts`
 
 **File da modificare**:
+
 - `server/routers.ts` - Aggiungere middleware globale
 
 ---
 
 #### 3. Trigger Webhook Automatici su Eventi
+
 **Obiettivo**: Notificare applicazioni esterne quando accadono eventi nel sistema
 
 **Task**:
+
 - [ ] Implementare trigger su eventi:
   - `booking.created` - Nuova prenotazione
   - `booking.confirmed` - Prenotazione confermata
@@ -574,6 +630,7 @@ CREATE TABLE external_connections (
 - [ ] Aggiornare success/failure count
 
 **File da creare**:
+
 - `server/webhooks/triggerManager.ts`
 
 ---
@@ -581,9 +638,11 @@ CREATE TABLE external_connections (
 ### 🟡 **PRIORITÀ MEDIA** (Settimana 2-3)
 
 #### 4. Dashboard Analytics Integrazioni
+
 **Obiettivo**: Visualizzare grafici trend API usage
 
 **Task**:
+
 - [ ] Aggiungere tab "Analytics" in Integrazioni
 - [ ] Grafico richieste/ora (ultimi 7 giorni)
 - [ ] Grafico endpoint più usati (top 10)
@@ -596,9 +655,11 @@ CREATE TABLE external_connections (
 ---
 
 #### 5. API Bridge Gestionale Heroku
+
 **Obiettivo**: Sincronizzazione bidirezionale concessioni
 
 **Task**:
+
 - [ ] Analizzare API Gestionale Heroku esistenti
 - [ ] Implementare endpoint bridge:
   - `sync.vendors` - Sincronizza operatori
@@ -612,9 +673,11 @@ CREATE TABLE external_connections (
 ---
 
 #### 6. Sistema Notifiche Push Real-time
+
 **Obiettivo**: Notifiche browser per eventi importanti
 
 **Task**:
+
 - [ ] Implementare Web Push API
 - [ ] Chiedere permesso notifiche utente
 - [ ] Inviare notifiche per:
@@ -630,9 +693,11 @@ CREATE TABLE external_connections (
 ### 🟢 **PRIORITÀ BASSA** (Settimana 4+)
 
 #### 7. Caching Redis per Performance
+
 **Obiettivo**: Ottimizzare performance per 8.000 mercati
 
 **Task**:
+
 - [ ] Setup Redis instance
 - [ ] Implementare cache per:
   - Lista mercati (TTL 1 ora)
@@ -644,9 +709,11 @@ CREATE TABLE external_connections (
 ---
 
 #### 8. Load Balancing e Scalabilità
+
 **Obiettivo**: Supportare 400.000 posteggi e 160.000 imprese
 
 **Task**:
+
 - [ ] Analisi performance query database
 - [ ] Aggiungere indici database ottimizzati
 - [ ] Implementare pagination per liste grandi
@@ -657,9 +724,11 @@ CREATE TABLE external_connections (
 ---
 
 #### 9. Testing Automatizzato
+
 **Obiettivo**: Garantire qualità codice
 
 **Task**:
+
 - [ ] Setup Vitest per unit testing
 - [ ] Test API tRPC endpoints
 - [ ] Test componenti React
@@ -674,9 +743,11 @@ CREATE TABLE external_connections (
 ### ✅ **Attive e Funzionanti**
 
 #### 1. TPER (Trasporto Passeggeri Emilia-Romagna)
+
 **Status**: ✅ Connected  
 **Endpoint**: `https://api.tper.it/v2`  
 **Features**:
+
 - Orari bus real-time
 - Fermate vicine
 - Percorsi ottimali
@@ -687,9 +758,11 @@ CREATE TABLE external_connections (
 ---
 
 #### 2. Centro Mobilità
+
 **Status**: ✅ Connected  
 **Endpoint**: `https://api.centromobilita.it/v1`  
 **Features**:
+
 - Traffico real-time
 - Parcheggi disponibili
 - Zone ZTL
@@ -700,9 +773,11 @@ CREATE TABLE external_connections (
 ---
 
 #### 3. Centro Mobilità Nazionale
+
 **Status**: ✅ Connected  
 **Endpoint**: `https://api.mobilitanazionale.it/v1`  
 **Features**:
+
 - Dati mobilità nazionale
 - Statistiche trasporti
 - Integrazione TPL
@@ -715,9 +790,11 @@ CREATE TABLE external_connections (
 ### ⏸️ **Configurate ma Disconnesse**
 
 #### 4. ARPAE (Agenzia Regionale Prevenzione Ambiente Energia)
+
 **Status**: ⏸️ Disconnected  
 **Endpoint**: `https://api.arpae.it/v1`  
 **Features**:
+
 - Qualità aria
 - Metriche ambientali
 - Alert inquinamento
@@ -727,9 +804,11 @@ CREATE TABLE external_connections (
 ---
 
 #### 5. TPAS (Third Party Application Services)
+
 **Status**: ⏸️ Disconnected  
 **Endpoint**: `https://api.tpas.it/v1`  
 **Features**:
+
 - App terze
 - Widget esterni
 - Analytics integrazione
@@ -741,9 +820,11 @@ CREATE TABLE external_connections (
 ### ⏳ **In Configurazione**
 
 #### 6. Gestionale DMS Heroku
+
 **Status**: ⏳ Pending  
 **Endpoint**: `https://lapsy-dms.herokuapp.com/api`  
 **Features**:
+
 - Concessioni
 - Pagamenti
 - Documenti
@@ -758,6 +839,7 @@ CREATE TABLE external_connections (
 ### **Come Usare il Sistema Integrazioni**
 
 #### Creare una Nuova API Key
+
 1. Vai su Dashboard PA → Integrazioni → API Keys Manager
 2. Clicca "Nuova API Key"
 3. Inserisci nome (es: "App Cittadini - Production")
@@ -766,6 +848,7 @@ CREATE TABLE external_connections (
 6. Usa la chiave nell'header `Authorization: Bearer dms_live_xxxxx`
 
 #### Testare un Endpoint API
+
 1. Vai su Dashboard PA → Integrazioni → API Dashboard
 2. Seleziona endpoint dalla lista (es: `/api/dmsHub/markets/importAuto`)
 3. Clicca "Carica Esempio" per JSON di test
@@ -774,6 +857,7 @@ CREATE TABLE external_connections (
 6. Vedi risposta e tempo esecuzione
 
 #### Configurare un Webhook
+
 1. Vai su Dashboard PA → Integrazioni → Webhook Manager
 2. Clicca "Nuovo Webhook"
 3. Inserisci:
@@ -784,6 +868,7 @@ CREATE TABLE external_connections (
 5. Salva configurazione
 
 #### Verificare Health Check Connessioni
+
 1. Vai su Dashboard PA → Integrazioni → Connessioni Esterne
 2. Vedi status di tutte le connessioni (connected/disconnected/pending)
 3. Clicca "Health Check" su singola connessione per test
@@ -795,6 +880,7 @@ CREATE TABLE external_connections (
 ### **Come Configurare un Nuovo Mercato**
 
 #### Workflow Completo
+
 1. **Prepara Pianta**:
    - Vai su BUS HUB → PNG Transparent Tool
    - Upload immagine pianta mercato
@@ -827,6 +913,7 @@ CREATE TABLE external_connections (
 ## 🎯 METRICHE SUCCESSO
 
 ### **Obiettivi Scala Nazionale**
+
 - ✅ Supporto 8.000 mercati
 - ✅ Gestione 400.000 posteggi
 - ✅ Anagrafica 160.000 imprese
@@ -835,6 +922,7 @@ CREATE TABLE external_connections (
 - ⏳ Uptime sistema >99.9%
 
 ### **KPI Dashboard**
+
 - ✅ 22 sezioni operative
 - ✅ 39 tabelle database
 - ✅ 50+ endpoint tRPC
@@ -855,6 +943,7 @@ CREATE TABLE external_connections (
 ## 📝 CHANGELOG
 
 ### **v1.1 - 10 Novembre 2025** ⭐ NUOVO
+
 - ✅ Sistema Integrazioni completo con dati reali
 - ✅ 5 nuove tabelle database (api_keys, api_metrics, webhooks, webhook_logs, external_connections)
 - ✅ Router TRPC integrationsRouter con 15+ endpoint
@@ -868,6 +957,7 @@ CREATE TABLE external_connections (
 - ✅ Toast notifications per tutte le operazioni
 
 ### **v1.0 - 9 Novembre 2025**
+
 - ✅ Dashboard PA 22 sezioni complete
 - ✅ Database 34 tabelle operative
 - ✅ App Cittadini completa
@@ -882,17 +972,20 @@ CREATE TABLE external_connections (
 ## 🚀 PROSSIMI STEP IMMEDIATI
 
 ### **Questa Settimana**
+
 1. ✅ ~~Sistema Integrazioni completo~~ **FATTO!**
 2. 🔴 Import automatico Slot Editor v3 → Dashboard Admin
 3. 🔴 Middleware logging automatico API metrics
 4. 🔴 Trigger webhook automatici su eventi sistema
 
 ### **Prossime 2 Settimane**
+
 1. 🟡 Dashboard Analytics Integrazioni con grafici
 2. 🟡 API Bridge Gestionale Heroku
 3. 🟡 Sistema notifiche push real-time
 
 ### **Prossimo Mese**
+
 1. 🟢 Caching Redis per performance
 2. 🟢 Load balancing e scalabilità
 3. 🟢 Testing automatizzato completo

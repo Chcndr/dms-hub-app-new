@@ -5,18 +5,28 @@
  *
  * @version 1.0.0
  */
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Briefcase, FileText, Euro, Building2, Mail, Phone, MapPin,
-  Calendar, RefreshCw, Loader2, ClipboardCheck, Hash
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { getImpersonationParams } from '@/hooks/useImpersonation';
-import { MIHUB_API_BASE_URL } from '@/config/api';
+  Briefcase,
+  FileText,
+  Euro,
+  Building2,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  RefreshCw,
+  Loader2,
+  ClipboardCheck,
+  Hash,
+} from "lucide-react";
+import { toast } from "sonner";
+import { getImpersonationParams } from "@/hooks/useImpersonation";
+import { MIHUB_API_BASE_URL } from "@/config/api";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -54,16 +64,18 @@ interface Fattura {
   numero: string;
   data: string;
   importo: number;
-  stato: 'pagata' | 'in_attesa' | 'scaduta';
+  stato: "pagata" | "in_attesa" | "scaduta";
   descrizione?: string;
 }
 
 export default function AnagraficaAssociazionePanel() {
-  const [associazione, setAssociazione] = useState<AssociazioneData | null>(null);
+  const [associazione, setAssociazione] = useState<AssociazioneData | null>(
+    null
+  );
   const [contratti, setContratti] = useState<Contratto[]>([]);
   const [fatture, setFatture] = useState<Fattura[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('dati');
+  const [activeTab, setActiveTab] = useState("dati");
 
   const impState = getImpersonationParams();
   const associazioneId = impState.associazioneId;
@@ -96,7 +108,7 @@ export default function AnagraficaAssociazionePanel() {
         setFatture(fattureData.data);
       }
     } catch (error) {
-      console.error('Errore caricamento anagrafica associazione:', error);
+      console.error("Errore caricamento anagrafica associazione:", error);
       // Fallback: dati vuoti senza toast (endpoints potrebbero non esistere ancora)
     } finally {
       setLoading(false);
@@ -127,14 +139,26 @@ export default function AnagraficaAssociazionePanel() {
     );
   }
 
-  const getStatoFatturaBadge = (stato: Fattura['stato']) => {
+  const getStatoFatturaBadge = (stato: Fattura["stato"]) => {
     switch (stato) {
-      case 'pagata':
-        return <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30">Pagata</Badge>;
-      case 'in_attesa':
-        return <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30">In attesa</Badge>;
-      case 'scaduta':
-        return <Badge className="bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30">Scaduta</Badge>;
+      case "pagata":
+        return (
+          <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30">
+            Pagata
+          </Badge>
+        );
+      case "in_attesa":
+        return (
+          <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30">
+            In attesa
+          </Badge>
+        );
+      case "scaduta":
+        return (
+          <Badge className="bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30">
+            Scaduta
+          </Badge>
+        );
     }
   };
 
@@ -147,7 +171,10 @@ export default function AnagraficaAssociazionePanel() {
             <Briefcase className="h-5 w-5 text-[#3b82f6]" />
             Anagrafica Associazione
             {associazioneNome && (
-              <Badge variant="outline" className="ml-2 text-[#3b82f6] border-[#3b82f6]/50">
+              <Badge
+                variant="outline"
+                className="ml-2 text-[#3b82f6] border-[#3b82f6]/50"
+              >
                 {associazioneNome}
               </Badge>
             )}
@@ -166,13 +193,22 @@ export default function AnagraficaAssociazionePanel() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-[#0b1220] border border-[#3b82f6]/20">
-          <TabsTrigger value="dati" className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]">
+          <TabsTrigger
+            value="dati"
+            className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]"
+          >
             <Building2 className="h-4 w-4 mr-1" /> Dati
           </TabsTrigger>
-          <TabsTrigger value="contratti" className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]">
+          <TabsTrigger
+            value="contratti"
+            className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]"
+          >
             <ClipboardCheck className="h-4 w-4 mr-1" /> Contratti
           </TabsTrigger>
-          <TabsTrigger value="fatture" className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]">
+          <TabsTrigger
+            value="fatture"
+            className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]"
+          >
             <Euro className="h-4 w-4 mr-1" /> Fatture
           </TabsTrigger>
         </TabsList>
@@ -183,19 +219,63 @@ export default function AnagraficaAssociazionePanel() {
             <CardContent className="pt-6">
               {associazione ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InfoRow icon={Building2} label="Nome" value={associazione.nome} />
-                  <InfoRow icon={Hash} label="Codice Fiscale" value={associazione.codice_fiscale} />
-                  <InfoRow icon={Hash} label="Partita IVA" value={associazione.partita_iva} />
-                  <InfoRow icon={Briefcase} label="Tipo" value={associazione.tipo} />
-                  <InfoRow icon={MapPin} label="Indirizzo" value={[associazione.indirizzo, associazione.citta, associazione.provincia].filter(Boolean).join(', ')} />
-                  <InfoRow icon={Mail} label="Email" value={associazione.email} />
-                  <InfoRow icon={Phone} label="Telefono" value={associazione.telefono} />
+                  <InfoRow
+                    icon={Building2}
+                    label="Nome"
+                    value={associazione.nome}
+                  />
+                  <InfoRow
+                    icon={Hash}
+                    label="Codice Fiscale"
+                    value={associazione.codice_fiscale}
+                  />
+                  <InfoRow
+                    icon={Hash}
+                    label="Partita IVA"
+                    value={associazione.partita_iva}
+                  />
+                  <InfoRow
+                    icon={Briefcase}
+                    label="Tipo"
+                    value={associazione.tipo}
+                  />
+                  <InfoRow
+                    icon={MapPin}
+                    label="Indirizzo"
+                    value={[
+                      associazione.indirizzo,
+                      associazione.citta,
+                      associazione.provincia,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  />
+                  <InfoRow
+                    icon={Mail}
+                    label="Email"
+                    value={associazione.email}
+                  />
+                  <InfoRow
+                    icon={Phone}
+                    label="Telefono"
+                    value={associazione.telefono}
+                  />
                   <InfoRow icon={Mail} label="PEC" value={associazione.pec} />
-                  <InfoRow icon={Briefcase} label="Presidente" value={associazione.presidente} />
-                  <InfoRow icon={Calendar} label="Data Costituzione" value={associazione.data_costituzione} />
+                  <InfoRow
+                    icon={Briefcase}
+                    label="Presidente"
+                    value={associazione.presidente}
+                  />
+                  <InfoRow
+                    icon={Calendar}
+                    label="Data Costituzione"
+                    value={associazione.data_costituzione}
+                  />
                 </div>
               ) : (
-                <p className="text-[#e8fbff]/50 text-center py-8">Dati non disponibili</p>
+                <p className="text-[#e8fbff]/50 text-center py-8">
+                  Dati non disponibili
+                </p>
               )}
             </CardContent>
           </Card>
@@ -212,16 +292,36 @@ export default function AnagraficaAssociazionePanel() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {contratti.map((c) => (
-                    <div key={c.id} className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
+                  {contratti.map(c => (
+                    <div
+                      key={c.id}
+                      className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10"
+                    >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-[#e8fbff]">{c.tipo}</span>
-                        <Badge variant="outline" className="text-[#3b82f6] border-[#3b82f6]/50">{c.stato}</Badge>
+                        <span className="font-medium text-[#e8fbff]">
+                          {c.tipo}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="text-[#3b82f6] border-[#3b82f6]/50"
+                        >
+                          {c.stato}
+                        </Badge>
                       </div>
-                      <p className="text-sm text-[#e8fbff]/60">{c.descrizione}</p>
+                      <p className="text-sm text-[#e8fbff]/60">
+                        {c.descrizione}
+                      </p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-[#e8fbff]/40">
-                        <span><Calendar className="h-3 w-3 inline mr-1" />{c.data_inizio} - {c.data_fine}</span>
-                        {c.importo && <span><Euro className="h-3 w-3 inline mr-1" />{c.importo.toLocaleString('it-IT')} EUR</span>}
+                        <span>
+                          <Calendar className="h-3 w-3 inline mr-1" />
+                          {c.data_inizio} - {c.data_fine}
+                        </span>
+                        {c.importo && (
+                          <span>
+                            <Euro className="h-3 w-3 inline mr-1" />
+                            {c.importo.toLocaleString("it-IT")} EUR
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -242,17 +342,30 @@ export default function AnagraficaAssociazionePanel() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {fatture.map((f) => (
-                    <div key={f.id} className="flex items-center justify-between p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
+                  {fatture.map(f => (
+                    <div
+                      key={f.id}
+                      className="flex items-center justify-between p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10"
+                    >
                       <div>
-                        <p className="font-medium text-[#e8fbff]">Fattura #{f.numero}</p>
+                        <p className="font-medium text-[#e8fbff]">
+                          Fattura #{f.numero}
+                        </p>
                         <p className="text-xs text-[#e8fbff]/50">
-                          <Calendar className="h-3 w-3 inline mr-1" />{f.data}
-                          {f.descrizione && <span className="ml-2">· {f.descrizione}</span>}
+                          <Calendar className="h-3 w-3 inline mr-1" />
+                          {f.data}
+                          {f.descrizione && (
+                            <span className="ml-2">· {f.descrizione}</span>
+                          )}
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="font-bold text-[#e8fbff]">{f.importo.toLocaleString('it-IT', { minimumFractionDigits: 2 })} EUR</span>
+                        <span className="font-bold text-[#e8fbff]">
+                          {f.importo.toLocaleString("it-IT", {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          EUR
+                        </span>
                         {getStatoFatturaBadge(f.stato)}
                       </div>
                     </div>
@@ -267,13 +380,21 @@ export default function AnagraficaAssociazionePanel() {
   );
 }
 
-function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null }) {
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value?: string | null;
+}) {
   return (
     <div className="flex items-start gap-3 p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
       <Icon className="h-4 w-4 text-[#3b82f6] mt-0.5 flex-shrink-0" />
       <div>
         <p className="text-xs text-[#e8fbff]/50">{label}</p>
-        <p className="text-sm text-[#e8fbff]">{value || '-'}</p>
+        <p className="text-sm text-[#e8fbff]">{value || "-"}</p>
       </div>
     </div>
   );

@@ -1,12 +1,12 @@
 /**
  * Security API Client
  * Collegamento al backend mihub-backend-rest per il sistema RBAC
- * 
+ *
  * @version 1.0.0
  * @date 9 Gennaio 2026
  */
 
-import { ORCHESTRATORE_API_BASE_URL } from '@/config/api';
+import { ORCHESTRATORE_API_BASE_URL } from "@/config/api";
 
 const API_BASE_URL = ORCHESTRATORE_API_BASE_URL;
 
@@ -177,13 +177,13 @@ export interface SecurityHealthResponse {
  */
 export async function getSecurityHealth(): Promise<SecurityHealthResponse> {
   const url = `${API_BASE_URL}/api/security/health`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch security health: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -191,15 +191,19 @@ export async function getSecurityHealth(): Promise<SecurityHealthResponse> {
  * GET /api/security/stats
  * Statistiche generali per la dashboard
  */
-export async function getSecurityStats(): Promise<{ success: boolean; data: SecurityStats; timestamp: string }> {
+export async function getSecurityStats(): Promise<{
+  success: boolean;
+  data: SecurityStats;
+  timestamp: string;
+}> {
   const url = `${API_BASE_URL}/api/security/stats`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch security stats: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -207,15 +211,19 @@ export async function getSecurityStats(): Promise<{ success: boolean; data: Secu
  * GET /api/security/roles
  * Lista tutti i ruoli con conteggio permessi
  */
-export async function getRoles(): Promise<{ success: boolean; data: UserRole[]; count: number }> {
+export async function getRoles(): Promise<{
+  success: boolean;
+  data: UserRole[];
+  count: number;
+}> {
   const url = `${API_BASE_URL}/api/security/roles`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch roles: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -223,15 +231,20 @@ export async function getRoles(): Promise<{ success: boolean; data: UserRole[]; 
  * GET /api/security/roles/:id
  * Dettaglio singolo ruolo con permessi
  */
-export async function getRoleById(id: number): Promise<{ success: boolean; data: UserRole & { permissions: Permission[] } }> {
+export async function getRoleById(
+  id: number
+): Promise<{
+  success: boolean;
+  data: UserRole & { permissions: Permission[] };
+}> {
   const url = `${API_BASE_URL}/api/security/roles/${id}`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch role: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -239,23 +252,23 @@ export async function getRoleById(id: number): Promise<{ success: boolean; data:
  * GET /api/security/permissions
  * Lista tutti i permessi raggruppati per categoria
  */
-export async function getPermissions(category?: string): Promise<{ 
-  success: boolean; 
-  data: Permission[]; 
+export async function getPermissions(category?: string): Promise<{
+  success: boolean;
+  data: Permission[];
   byCategory: Record<string, Permission[]>;
-  count: number 
+  count: number;
 }> {
   const params = new URLSearchParams();
-  if (category) params.append('category', category);
-  
+  if (category) params.append("category", category);
+
   const url = `${API_BASE_URL}/api/security/permissions?${params.toString()}`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch permissions: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -263,15 +276,19 @@ export async function getPermissions(category?: string): Promise<{
  * GET /api/security/matrix
  * Matrice completa ruoli-permessi
  */
-export async function getRolePermissionsMatrix(): Promise<{ success: boolean; data: RolePermission[]; count: number }> {
+export async function getRolePermissionsMatrix(): Promise<{
+  success: boolean;
+  data: RolePermission[];
+  count: number;
+}> {
   const url = `${API_BASE_URL}/api/security/matrix`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch matrix: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -286,28 +303,28 @@ export async function getAccessLogs(filters?: {
   offset?: number;
   from?: string;
   to?: string;
-}): Promise<{ 
-  success: boolean; 
-  data: AccessLog[]; 
-  pagination: { total: number; limit: number; offset: number } 
+}): Promise<{
+  success: boolean;
+  data: AccessLog[];
+  pagination: { total: number; limit: number; offset: number };
 }> {
   const params = new URLSearchParams();
-  
-  if (filters?.user_id) params.append('user_id', filters.user_id.toString());
-  if (filters?.action) params.append('action', filters.action);
-  if (filters?.limit) params.append('limit', filters.limit.toString());
-  if (filters?.offset) params.append('offset', filters.offset.toString());
-  if (filters?.from) params.append('from', filters.from);
-  if (filters?.to) params.append('to', filters.to);
-  
+
+  if (filters?.user_id) params.append("user_id", filters.user_id.toString());
+  if (filters?.action) params.append("action", filters.action);
+  if (filters?.limit) params.append("limit", filters.limit.toString());
+  if (filters?.offset) params.append("offset", filters.offset.toString());
+  if (filters?.from) params.append("from", filters.from);
+  if (filters?.to) params.append("to", filters.to);
+
   const url = `${API_BASE_URL}/api/security/access-logs?${params.toString()}`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch access logs: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -323,21 +340,22 @@ export async function getSecurityEvents(filters?: {
   offset?: number;
 }): Promise<{ success: boolean; data: SecurityEvent[]; count: number }> {
   const params = new URLSearchParams();
-  
-  if (filters?.event_type) params.append('event_type', filters.event_type);
-  if (filters?.severity) params.append('severity', filters.severity);
-  if (filters?.is_resolved !== undefined) params.append('is_resolved', filters.is_resolved.toString());
-  if (filters?.limit) params.append('limit', filters.limit.toString());
-  if (filters?.offset) params.append('offset', filters.offset.toString());
-  
+
+  if (filters?.event_type) params.append("event_type", filters.event_type);
+  if (filters?.severity) params.append("severity", filters.severity);
+  if (filters?.is_resolved !== undefined)
+    params.append("is_resolved", filters.is_resolved.toString());
+  if (filters?.limit) params.append("limit", filters.limit.toString());
+  if (filters?.offset) params.append("offset", filters.offset.toString());
+
   const url = `${API_BASE_URL}/api/security/events?${params.toString()}`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch security events: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -355,19 +373,19 @@ export async function createSecurityEvent(event: {
   details?: any;
 }): Promise<{ success: boolean; data: SecurityEvent }> {
   const url = `${API_BASE_URL}/api/security/events`;
-  
+
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(event),
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to create security event: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -382,20 +400,21 @@ export async function getLoginAttempts(filters?: {
   offset?: number;
 }): Promise<{ success: boolean; data: LoginAttempt[]; count: number }> {
   const params = new URLSearchParams();
-  
-  if (filters?.ip_address) params.append('ip_address', filters.ip_address);
-  if (filters?.success !== undefined) params.append('success', filters.success.toString());
-  if (filters?.limit) params.append('limit', filters.limit.toString());
-  if (filters?.offset) params.append('offset', filters.offset.toString());
-  
+
+  if (filters?.ip_address) params.append("ip_address", filters.ip_address);
+  if (filters?.success !== undefined)
+    params.append("success", filters.success.toString());
+  if (filters?.limit) params.append("limit", filters.limit.toString());
+  if (filters?.offset) params.append("offset", filters.offset.toString());
+
   const url = `${API_BASE_URL}/api/security/login-attempts?${params.toString()}`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch login attempts: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -403,18 +422,20 @@ export async function getLoginAttempts(filters?: {
  * GET /api/security/ip-blacklist
  * Lista IP bloccati
  */
-export async function getIPBlacklist(activeOnly?: boolean): Promise<{ success: boolean; data: IPBlacklist[]; count: number }> {
+export async function getIPBlacklist(
+  activeOnly?: boolean
+): Promise<{ success: boolean; data: IPBlacklist[]; count: number }> {
   const params = new URLSearchParams();
-  if (activeOnly) params.append('active_only', 'true');
-  
+  if (activeOnly) params.append("active_only", "true");
+
   const url = `${API_BASE_URL}/api/security/ip-blacklist?${params.toString()}`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch IP blacklist: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -430,19 +451,19 @@ export async function blockIP(data: {
   is_permanent?: boolean;
 }): Promise<{ success: boolean; data: IPBlacklist }> {
   const url = `${API_BASE_URL}/api/security/ip-blacklist`;
-  
+
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to block IP: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -450,24 +471,26 @@ export async function blockIP(data: {
  * DELETE /api/security/ip-blacklist/:ip
  * Sblocca un IP
  */
-export async function unblockIP(ip: string, unblocked_by?: number): Promise<{ success: boolean; data: IPBlacklist }> {
+export async function unblockIP(
+  ip: string,
+  unblocked_by?: number
+): Promise<{ success: boolean; data: IPBlacklist }> {
   const url = `${API_BASE_URL}/api/security/ip-blacklist/${encodeURIComponent(ip)}`;
-  
+
   const response = await fetch(url, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({ unblocked_by }),
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to unblock IP: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
-
 
 // ============================================================================
 // USER MANAGEMENT TYPES AND FUNCTIONS
@@ -504,27 +527,27 @@ export async function getUsers(filters?: {
   search?: string;
   limit?: number;
   offset?: number;
-}): Promise<{ 
-  success: boolean; 
-  data: SecurityUser[]; 
-  pagination: { total: number; limit: number; offset: number } 
+}): Promise<{
+  success: boolean;
+  data: SecurityUser[];
+  pagination: { total: number; limit: number; offset: number };
 }> {
   const params = new URLSearchParams();
-  
-  if (filters?.role) params.append('role', filters.role.toString());
-  if (filters?.status) params.append('status', filters.status);
-  if (filters?.search) params.append('search', filters.search);
-  if (filters?.limit) params.append('limit', filters.limit.toString());
-  if (filters?.offset) params.append('offset', filters.offset.toString());
-  
+
+  if (filters?.role) params.append("role", filters.role.toString());
+  if (filters?.status) params.append("status", filters.status);
+  if (filters?.search) params.append("search", filters.search);
+  if (filters?.limit) params.append("limit", filters.limit.toString());
+  if (filters?.offset) params.append("offset", filters.offset.toString());
+
   const url = `${API_BASE_URL}/api/security/users?${params.toString()}`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch users: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -532,15 +555,17 @@ export async function getUsers(filters?: {
  * GET /api/security/users/:id
  * Dettaglio singolo utente
  */
-export async function getUserById(id: number): Promise<{ success: boolean; data: SecurityUser }> {
+export async function getUserById(
+  id: number
+): Promise<{ success: boolean; data: SecurityUser }> {
   const url = `${API_BASE_URL}/api/security/users/${id}`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch user: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -548,21 +573,24 @@ export async function getUserById(id: number): Promise<{ success: boolean; data:
  * POST /api/security/users/:id/lock
  * Blocca un utente
  */
-export async function lockUser(id: number, reason?: string): Promise<{ success: boolean; message: string }> {
+export async function lockUser(
+  id: number,
+  reason?: string
+): Promise<{ success: boolean; message: string }> {
   const url = `${API_BASE_URL}/api/security/users/${id}/lock`;
-  
+
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({ reason }),
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to lock user: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -570,20 +598,22 @@ export async function lockUser(id: number, reason?: string): Promise<{ success: 
  * POST /api/security/users/:id/unlock
  * Sblocca un utente
  */
-export async function unlockUser(id: number): Promise<{ success: boolean; message: string }> {
+export async function unlockUser(
+  id: number
+): Promise<{ success: boolean; message: string }> {
   const url = `${API_BASE_URL}/api/security/users/${id}/unlock`;
-  
+
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to unlock user: ${response.statusText}`);
   }
-  
+
   return response.json();
 }
 
@@ -591,14 +621,16 @@ export async function unlockUser(id: number): Promise<{ success: boolean; messag
  * GET /api/security/users/:id/roles
  * Ruoli assegnati a un utente
  */
-export async function getUserRoles(id: number): Promise<{ success: boolean; data: any[] }> {
+export async function getUserRoles(
+  id: number
+): Promise<{ success: boolean; data: any[] }> {
   const url = `${API_BASE_URL}/api/security/users/${id}/roles`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch user roles: ${response.statusText}`);
   }
-  
+
   return response.json();
 }

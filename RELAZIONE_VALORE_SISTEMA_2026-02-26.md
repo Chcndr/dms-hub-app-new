@@ -1,4 +1,5 @@
 # RELAZIONE SUL VALORE DEL SISTEMA DMS HUB
+
 ## Digital Market System Hub - Gemello Digitale del Commercio su Aree Pubbliche
 
 **Data:** 26 Febbraio 2026
@@ -21,19 +22,19 @@ Il sistema e' progettato per scalare a **8.000 mercati** su tutto il territorio 
 
 ### Numeri che parlano
 
-| Metrica | Valore |
-|---------|--------|
+| Metrica                    | Valore                                          |
+| -------------------------- | ----------------------------------------------- |
 | **Righe di codice totali** | **215.275** (143.000 frontend + 72.000 backend) |
-| **File sorgente** | **591** (341 frontend + 250 backend) |
-| **API Endpoint attivi** | **733** (tutti testabili dall'app) |
-| **Tabelle database** | **168** |
-| **Colonne database** | **2.284** |
-| **Indici database** | **516** |
-| **Record operativi** | **72.256** |
-| **Moduli Dashboard PA** | **33** |
-| **Componenti React** | **156** + 53 componenti UI |
-| **Pagine/Viste** | **37** con 34 rotte |
-| **Righe documentazione** | **15.666** |
+| **File sorgente**          | **591** (341 frontend + 250 backend)            |
+| **API Endpoint attivi**    | **733** (tutti testabili dall'app)              |
+| **Tabelle database**       | **168**                                         |
+| **Colonne database**       | **2.284**                                       |
+| **Indici database**        | **516**                                         |
+| **Record operativi**       | **72.256**                                      |
+| **Moduli Dashboard PA**    | **33**                                          |
+| **Componenti React**       | **156** + 53 componenti UI                      |
+| **Pagine/Viste**           | **37** con 34 rotte                             |
+| **Righe documentazione**   | **15.666**                                      |
 
 Per dare un ordine di grandezza: **215.000 righe di codice** corrispondono a circa **5.375 pagine stampate**. E' l'equivalente software di una piattaforma enterprise sviluppata da un team di 6-8 persone per 18-24 mesi.
 
@@ -57,13 +58,13 @@ Il file piu grande del sistema e' `DashboardPA.tsx` con **7.126 righe** - la das
 
 Il backend Node.js/Express serve **733 endpoint API** reali, tutti documentati e testabili direttamente dall'interfaccia nella sezione Integrazioni:
 
-| Route File | Righe | Funzionalita |
-|-----------|-------|--------------|
-| **security.js** | 3.735 | RBAC completo, ruoli, permessi, audit, IP blacklist |
-| **tcc-v2.js** | 3.030 | Crediti carbonio, wallet green, QR antifrode |
-| **gaming-rewards.js** | 2.541 | Gamification, badge, classifiche, premi |
-| **concessions.js** | 2.046 | Concessioni, rinnovi, posteggi, scadenze |
-| **canone-unico.js** | 1.793 | Canone unico patrimoniale, more, pagamenti |
+| Route File            | Righe | Funzionalita                                        |
+| --------------------- | ----- | --------------------------------------------------- |
+| **security.js**       | 3.735 | RBAC completo, ruoli, permessi, audit, IP blacklist |
+| **tcc-v2.js**         | 3.030 | Crediti carbonio, wallet green, QR antifrode        |
+| **gaming-rewards.js** | 2.541 | Gamification, badge, classifiche, premi             |
+| **concessions.js**    | 2.046 | Concessioni, rinnovi, posteggi, scadenze            |
+| **canone-unico.js**   | 1.793 | Canone unico patrimoniale, more, pagamenti          |
 
 ### Database: 168 Tabelle, 2.284 Colonne
 
@@ -141,6 +142,7 @@ Il solo file `security.js` del backend contiene **3.735 righe** dedicate alla si
 ## 5. INTEGRAZIONI CON SISTEMI PA
 
 ### Piattaforme Nazionali (PDND)
+
 - **ANPR** - Anagrafe Nazionale Popolazione Residente (verifica residenza)
 - **INPS** - Verifica regolarita contributiva (DURC automatico)
 - **Agenzia delle Entrate** - Regolarita fiscale imprese
@@ -148,16 +150,19 @@ Il solo file `security.js` del backend contiene **3.735 righe** dedicate alla si
 - **PagoPA** - Pagamenti PA tramite gateway E-FIL certificato
 
 ### Identita Digitale
+
 - **SPID** - Sistema Pubblico di Identita Digitale
 - **CIE** - Carta d'Identita Elettronica (con lettura NFC in campo)
 - **CNS** - Carta Nazionale dei Servizi
 
 ### Trasporto Pubblico
+
 - **TPER Bologna** - 23.930 fermate bus/tram, dati real-time
 - **Trenitalia** - Stazioni ferroviarie (GTFS)
 - **Tiemme Grosseto** - Trasporto pubblico locale Toscana
 
 ### Sistemi Legacy
+
 - **MercaWeb** - Import/export interoperabilita
 - **DMS Legacy (Heroku)** - Sync bidirezionale per migrazione graduale
 - **ARPAE** - Dati ambientali Emilia-Romagna
@@ -168,16 +173,16 @@ Il solo file `security.js` del backend contiene **3.735 righe** dedicate alla si
 
 DMS Hub utilizza le tecnologie **piu moderne disponibili** nel 2026:
 
-| Componente | Versione | Nota |
-|-----------|---------|------|
-| React | 19.2 | L'ultima versione stabile (rilasciata dicembre 2024) |
-| TypeScript | 5.9 | Strict mode, type safety completa |
-| Vite | 7.1 | Build tool di riferimento 2025-2026 |
-| Tailwind CSS | 4.1 | CSS utility-first di ultima generazione |
-| Node.js | 18+ LTS | Long Term Support |
-| PostgreSQL | 16 | Su Neon serverless (cloud-native) |
-| Firebase | 12.9 | Authentication multi-provider |
-| Zod | 4.1 | Validazione runtime type-safe |
+| Componente   | Versione | Nota                                                 |
+| ------------ | -------- | ---------------------------------------------------- |
+| React        | 19.2     | L'ultima versione stabile (rilasciata dicembre 2024) |
+| TypeScript   | 5.9      | Strict mode, type safety completa                    |
+| Vite         | 7.1      | Build tool di riferimento 2025-2026                  |
+| Tailwind CSS | 4.1      | CSS utility-first di ultima generazione              |
+| Node.js      | 18+ LTS  | Long Term Support                                    |
+| PostgreSQL   | 16       | Su Neon serverless (cloud-native)                    |
+| Firebase     | 12.9     | Authentication multi-provider                        |
+| Zod          | 4.1      | Validazione runtime type-safe                        |
 
 Il frontend compila **3.278 moduli in meno di 35 secondi** con zero errori TypeScript. Il sistema passa il type check completo (`tsc --noEmit`) senza nessun errore.
 
@@ -209,18 +214,18 @@ L'architettura multi-tenant consente di servire migliaia di comuni con una singo
 
 ### Valore di Ricostruzione: 1.800.000 - 2.800.000 euro
 
-| Fattore | Dettaglio | Valore Stimato |
-|---------|-----------|---------------|
-| Codice sorgente | 215.000 righe TS/JS, 591 file | 450.000 - 650.000 euro |
-| Database & Schema | 168 tabelle, 2.284 colonne, 516 indici | 120.000 - 180.000 euro |
-| 733 API Endpoint | Backend REST completo e documentato | 350.000 - 500.000 euro |
-| Integrazioni PA | PagoPA, SPID/CIE/CNS, PDND | 200.000 - 300.000 euro |
-| Sistema sicurezza | 12 livelli, RBAC, 3.735 righe security | 150.000 - 250.000 euro |
-| Know-how dominio | Normativa commercio ambulante, SUAP, canone unico | 200.000 - 350.000 euro |
-| UI/UX Design | 53 componenti, dark mode, responsive, 33 moduli | 100.000 - 150.000 euro |
-| Documentazione | 15.666 righe, blueprint, dossier | 50.000 - 80.000 euro |
-| Dati operativi | 72.256 record, 23.930 fermate GTFS | 80.000 - 120.000 euro |
-| Sistema AI | Multi-agente, chat, 16.912 log | 100.000 - 180.000 euro |
+| Fattore           | Dettaglio                                         | Valore Stimato         |
+| ----------------- | ------------------------------------------------- | ---------------------- |
+| Codice sorgente   | 215.000 righe TS/JS, 591 file                     | 450.000 - 650.000 euro |
+| Database & Schema | 168 tabelle, 2.284 colonne, 516 indici            | 120.000 - 180.000 euro |
+| 733 API Endpoint  | Backend REST completo e documentato               | 350.000 - 500.000 euro |
+| Integrazioni PA   | PagoPA, SPID/CIE/CNS, PDND                        | 200.000 - 300.000 euro |
+| Sistema sicurezza | 12 livelli, RBAC, 3.735 righe security            | 150.000 - 250.000 euro |
+| Know-how dominio  | Normativa commercio ambulante, SUAP, canone unico | 200.000 - 350.000 euro |
+| UI/UX Design      | 53 componenti, dark mode, responsive, 33 moduli   | 100.000 - 150.000 euro |
+| Documentazione    | 15.666 righe, blueprint, dossier                  | 50.000 - 80.000 euro   |
+| Dati operativi    | 72.256 record, 23.930 fermate GTFS                | 80.000 - 120.000 euro  |
+| Sistema AI        | Multi-agente, chat, 16.912 log                    | 100.000 - 180.000 euro |
 
 ### Metodo di Stima
 
@@ -228,11 +233,11 @@ Con il metodo COCOMO-like: **215.000 righe di codice** con complessita alta (PA,
 
 ### Potenziale di Mercato SaaS
 
-| Scenario | Comuni | Canone Annuo/Comune | Ricavo Annuo |
-|----------|--------|-------------------|-------------|
-| MVP Toscana | 50 | 3.000 - 6.000 euro | 150.000 - 300.000 euro |
-| Espansione regionale | 200 | 3.000 - 6.000 euro | 600.000 - 1.200.000 euro |
-| Scala nazionale | 1.000+ | 2.000 - 5.000 euro | 2.000.000 - 5.000.000 euro |
+| Scenario             | Comuni | Canone Annuo/Comune | Ricavo Annuo               |
+| -------------------- | ------ | ------------------- | -------------------------- |
+| MVP Toscana          | 50     | 3.000 - 6.000 euro  | 150.000 - 300.000 euro     |
+| Espansione regionale | 200    | 3.000 - 6.000 euro  | 600.000 - 1.200.000 euro   |
+| Scala nazionale      | 1.000+ | 2.000 - 5.000 euro  | 2.000.000 - 5.000.000 euro |
 
 **In Italia ci sono circa 8.000 mercati ambulanti.** Anche con una penetrazione del 10%, il ricavo annuo ricorrente supererebbe 1.6M euro, con margini elevati data la natura SaaS multi-tenant.
 
@@ -268,6 +273,6 @@ Il sistema e' **operativo in produzione**, con il Comune di Grosseto come primo 
 
 ---
 
-*Documento generato il 26 Febbraio 2026*
-*DMS Hub - Digital Market System Hub*
-*dms-hub-app-new.vercel.app*
+_Documento generato il 26 Febbraio 2026_
+_DMS Hub - Digital Market System Hub_
+_dms-hub-app-new.vercel.app_

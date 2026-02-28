@@ -22,6 +22,7 @@ Tutte le pagine pubbliche del DMS Hub sono state allarghe per utilizzare l'inter
    - Effetto: Mappa con header allargato
 
 #### Pagine già allarghe (verificate):
+
 - RoutePage (Shopping Route Etico) - ✅ Già w-full px-4 md:px-8
 - WalletPage (Wallet Carbon Credit) - ✅ Già w-full px-4 md:px-8
 - CivicPage (Sensore Civico) - ✅ Già w-full px-4 md:px-8

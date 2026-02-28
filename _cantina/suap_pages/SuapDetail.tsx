@@ -1,11 +1,30 @@
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Play, FileText, Clock, User, Building2, MapPin, FileCheck, Users } from 'lucide-react';
-import { getSuapPraticaById, evaluateSuapPratica, SuapPratica, SuapEvento, SuapCheck } from '@/api/suap';
-import { Link, useRoute } from 'wouter';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Play,
+  FileText,
+  Clock,
+  User,
+  Building2,
+  MapPin,
+  FileCheck,
+  Users,
+} from "lucide-react";
+import {
+  getSuapPraticaById,
+  evaluateSuapPratica,
+  SuapPratica,
+  SuapEvento,
+  SuapCheck,
+} from "@/api/suap";
+import { Link, useRoute } from "wouter";
+import { toast } from "sonner";
 
 // Tipo esteso per pratica con tutti i campi SCIA
 interface SuapPraticaFull extends SuapPratica {
@@ -75,7 +94,15 @@ interface SuapPraticaFull extends SuapPratica {
 }
 
 // Componente per visualizzare una sezione di dati
-function DataSection({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
+function DataSection({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
   return (
     <Card className="bg-[#0a1628] border-[#1e293b]">
       <CardHeader className="pb-3">
@@ -85,20 +112,26 @@ function DataSection({ title, icon: Icon, children }: { title: string; icon: Rea
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {children}
-        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">{children}</div>
       </CardContent>
     </Card>
   );
 }
 
 // Componente per visualizzare un campo dati
-function DataField({ label, value }: { label: string; value?: string | number | null }) {
+function DataField({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) {
   if (!value) return null;
   return (
     <div>
-      <p className="text-xs text-[#e8fbff]/50 uppercase tracking-wider">{label}</p>
+      <p className="text-xs text-[#e8fbff]/50 uppercase tracking-wider">
+        {label}
+      </p>
       <p className="text-sm text-[#e8fbff] mt-0.5">{value}</p>
     </div>
   );
@@ -108,14 +141,14 @@ function DataField({ label, value }: { label: string; value?: string | number | 
 function formatDate(dateString?: string | null) {
   if (!dateString) return null;
   try {
-    return new Date(dateString).toLocaleDateString('it-IT');
+    return new Date(dateString).toLocaleDateString("it-IT");
   } catch {
     return dateString;
   }
 }
 
 export default function SuapDetail() {
-  const [match, params] = useRoute('/suap/detail/:id');
+  const [match, params] = useRoute("/suap/detail/:id");
   const [pratica, setPratica] = useState<SuapPraticaFull | null>(null);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
@@ -129,11 +162,14 @@ export default function SuapDetail() {
 
   async function loadPratica() {
     try {
-      const data = await getSuapPraticaById(id!, '00000000-0000-0000-0000-000000000001');
+      const data = await getSuapPraticaById(
+        id!,
+        "00000000-0000-0000-0000-000000000001"
+      );
       setPratica(data as SuapPraticaFull);
     } catch (error) {
-      console.error('Failed to load pratica', error);
-      toast.error('Errore caricamento pratica');
+      console.error("Failed to load pratica", error);
+      toast.error("Errore caricamento pratica");
     } finally {
       setLoading(false);
     }
@@ -143,22 +179,28 @@ export default function SuapDetail() {
     if (!id) return;
     setEvaluating(true);
     try {
-      await evaluateSuapPratica(id, '00000000-0000-0000-0000-000000000001');
-      toast.success('Valutazione completata');
+      await evaluateSuapPratica(id, "00000000-0000-0000-0000-000000000001");
+      toast.success("Valutazione completata");
       await loadPratica(); // Reload to see updates
     } catch (error) {
-      console.error('Evaluation failed', error);
-      toast.error('Errore durante la valutazione');
+      console.error("Evaluation failed", error);
+      toast.error("Errore durante la valutazione");
     } finally {
       setEvaluating(false);
     }
   }
 
-  if (loading) return <div className="p-8 text-[#e8fbff]">Caricamento dettaglio...</div>;
-  if (!pratica) return <div className="p-8 text-[#e8fbff]">Pratica non trovata</div>;
+  if (loading)
+    return <div className="p-8 text-[#e8fbff]">Caricamento dettaglio...</div>;
+  if (!pratica)
+    return <div className="p-8 text-[#e8fbff]">Pratica non trovata</div>;
 
   // Verifica se ci sono dati SCIA completi
-  const hasSciaData = pratica.sub_nome || pratica.sub_cognome || pratica.mercato_nome || pratica.ced_cf;
+  const hasSciaData =
+    pratica.sub_nome ||
+    pratica.sub_cognome ||
+    pratica.mercato_nome ||
+    pratica.ced_cf;
 
   return (
     <div className="space-y-6 p-8 bg-[#020817] min-h-screen">
@@ -166,29 +208,47 @@ export default function SuapDetail() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/suap/list">
-            <Button variant="ghost" size="icon" className="text-[#e8fbff]/60 hover:text-[#e8fbff]">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-[#e8fbff]/60 hover:text-[#e8fbff]"
+            >
               <ArrowLeft className="h-6 w-6" />
             </Button>
           </Link>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-[#e8fbff] tracking-tight">{pratica.cui}</h1>
-              <Badge variant="outline" className="text-[#e8fbff] border-[#e8fbff]/30">
+              <h1 className="text-3xl font-bold text-[#e8fbff] tracking-tight">
+                {pratica.cui}
+              </h1>
+              <Badge
+                variant="outline"
+                className="text-[#e8fbff] border-[#e8fbff]/30"
+              >
                 {pratica.stato}
               </Badge>
             </div>
             <p className="text-[#e8fbff]/60 mt-2">
-              {pratica.tipo_pratica} - {pratica.richiedente_nome} ({pratica.richiedente_cf})
+              {pratica.tipo_pratica} - {pratica.richiedente_nome} (
+              {pratica.richiedente_cf})
             </p>
           </div>
         </div>
         <div className="flex gap-4">
-          <Button 
-            onClick={handleEvaluate} 
-            disabled={evaluating || pratica.stato === 'APPROVED' || pratica.stato === 'REJECTED'}
+          <Button
+            onClick={handleEvaluate}
+            disabled={
+              evaluating ||
+              pratica.stato === "APPROVED" ||
+              pratica.stato === "REJECTED"
+            }
             className="bg-[#00f0ff] text-black hover:bg-[#00f0ff]/90"
           >
-            {evaluating ? <Clock className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            {evaluating ? (
+              <Clock className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="mr-2 h-4 w-4" />
+            )}
             Esegui Valutazione
           </Button>
         </div>
@@ -199,30 +259,74 @@ export default function SuapDetail() {
         <div className="space-y-6">
           {/* Dati Pratica */}
           <DataSection title="Dati Pratica SCIA" icon={FileCheck}>
-            <DataField label="Numero Protocollo" value={pratica.numero_protocollo || pratica.cui} />
-            <DataField label="Data Presentazione" value={formatDate(pratica.data_presentazione)} />
-            <DataField label="Comune Presentazione" value={pratica.comune_presentazione} />
-            <DataField label="Tipo Segnalazione" value={pratica.tipo_segnalazione} />
-            <DataField label="Motivo Subingresso" value={pratica.motivo_subingresso} />
-            <DataField label="Settore Merceologico" value={pratica.settore_merceologico} />
-            <DataField label="Ruolo Dichiarante" value={pratica.ruolo_dichiarante} />
+            <DataField
+              label="Numero Protocollo"
+              value={pratica.numero_protocollo || pratica.cui}
+            />
+            <DataField
+              label="Data Presentazione"
+              value={formatDate(pratica.data_presentazione)}
+            />
+            <DataField
+              label="Comune Presentazione"
+              value={pratica.comune_presentazione}
+            />
+            <DataField
+              label="Tipo Segnalazione"
+              value={pratica.tipo_segnalazione}
+            />
+            <DataField
+              label="Motivo Subingresso"
+              value={pratica.motivo_subingresso}
+            />
+            <DataField
+              label="Settore Merceologico"
+              value={pratica.settore_merceologico}
+            />
+            <DataField
+              label="Ruolo Dichiarante"
+              value={pratica.ruolo_dichiarante}
+            />
           </DataSection>
 
           {/* Dati Subentrante */}
-          {(pratica.sub_nome || pratica.sub_cognome || pratica.sub_ragione_sociale) && (
+          {(pratica.sub_nome ||
+            pratica.sub_cognome ||
+            pratica.sub_ragione_sociale) && (
             <DataSection title="Dati Subentrante (Cessionario)" icon={User}>
-              <DataField label="Ragione Sociale" value={pratica.sub_ragione_sociale} />
+              <DataField
+                label="Ragione Sociale"
+                value={pratica.sub_ragione_sociale}
+              />
               <DataField label="Nome" value={pratica.sub_nome} />
               <DataField label="Cognome" value={pratica.sub_cognome} />
-              <DataField label="Codice Fiscale" value={pratica.richiedente_cf} />
-              <DataField label="Data di Nascita" value={formatDate(pratica.sub_data_nascita)} />
-              <DataField label="Luogo di Nascita" value={pratica.sub_luogo_nascita} />
+              <DataField
+                label="Codice Fiscale"
+                value={pratica.richiedente_cf}
+              />
+              <DataField
+                label="Data di Nascita"
+                value={formatDate(pratica.sub_data_nascita)}
+              />
+              <DataField
+                label="Luogo di Nascita"
+                value={pratica.sub_luogo_nascita}
+              />
               <DataField label="Residenza" value={pratica.sub_residenza_via} />
-              <DataField label="Comune Residenza" value={pratica.sub_residenza_comune} />
-              <DataField label="CAP Residenza" value={pratica.sub_residenza_cap} />
+              <DataField
+                label="Comune Residenza"
+                value={pratica.sub_residenza_comune}
+              />
+              <DataField
+                label="CAP Residenza"
+                value={pratica.sub_residenza_cap}
+              />
               <DataField label="Sede Impresa" value={pratica.sub_sede_via} />
               <DataField label="Comune Sede" value={pratica.sub_sede_comune} />
-              <DataField label="Provincia Sede" value={pratica.sub_sede_provincia} />
+              <DataField
+                label="Provincia Sede"
+                value={pratica.sub_sede_provincia}
+              />
               <DataField label="CAP Sede" value={pratica.sub_sede_cap} />
               <DataField label="PEC" value={pratica.sub_pec} />
               <DataField label="Telefono" value={pratica.sub_telefono} />
@@ -233,18 +337,36 @@ export default function SuapDetail() {
           {(pratica.ced_nome || pratica.ced_cognome || pratica.ced_cf) && (
             <DataSection title="Dati Cedente (Dante Causa)" icon={Users}>
               <DataField label="Codice Fiscale" value={pratica.ced_cf} />
-              <DataField label="Ragione Sociale" value={pratica.ced_ragione_sociale} />
+              <DataField
+                label="Ragione Sociale"
+                value={pratica.ced_ragione_sociale}
+              />
               <DataField label="Nome" value={pratica.ced_nome} />
               <DataField label="Cognome" value={pratica.ced_cognome} />
-              <DataField label="Data di Nascita" value={formatDate(pratica.ced_data_nascita)} />
-              <DataField label="Luogo di Nascita" value={pratica.ced_luogo_nascita} />
+              <DataField
+                label="Data di Nascita"
+                value={formatDate(pratica.ced_data_nascita)}
+              />
+              <DataField
+                label="Luogo di Nascita"
+                value={pratica.ced_luogo_nascita}
+              />
               <DataField label="Residenza" value={pratica.ced_residenza_via} />
               <DataField label="Comune" value={pratica.ced_residenza_comune} />
               <DataField label="CAP" value={pratica.ced_residenza_cap} />
               <DataField label="PEC" value={pratica.ced_pec} />
-              <DataField label="SCIA Precedente N. Prot." value={pratica.ced_scia_precedente} />
-              <DataField label="Data Presentazione SCIA" value={formatDate(pratica.ced_data_presentazione)} />
-              <DataField label="Comune Presentazione" value={pratica.ced_comune_presentazione} />
+              <DataField
+                label="SCIA Precedente N. Prot."
+                value={pratica.ced_scia_precedente}
+              />
+              <DataField
+                label="Data Presentazione SCIA"
+                value={formatDate(pratica.ced_data_presentazione)}
+              />
+              <DataField
+                label="Comune Presentazione"
+                value={pratica.ced_comune_presentazione}
+              />
             </DataSection>
           )}
 
@@ -252,12 +374,27 @@ export default function SuapDetail() {
           {(pratica.mercato_nome || pratica.posteggio_numero) && (
             <DataSection title="Dati Posteggio e Mercato" icon={MapPin}>
               <DataField label="Mercato" value={pratica.mercato_nome} />
-              <DataField label="Numero Posteggio" value={pratica.posteggio_numero} />
-              <DataField label="Ubicazione" value={pratica.ubicazione_mercato} />
-              <DataField label="Giorno Mercato" value={pratica.giorno_mercato} />
+              <DataField
+                label="Numero Posteggio"
+                value={pratica.posteggio_numero}
+              />
+              <DataField
+                label="Ubicazione"
+                value={pratica.ubicazione_mercato}
+              />
+              <DataField
+                label="Giorno Mercato"
+                value={pratica.giorno_mercato}
+              />
               <DataField label="Fila" value={pratica.fila} />
-              <DataField label="Dimensioni (MQ)" value={pratica.dimensioni_mq} />
-              <DataField label="Dimensioni Lineari" value={pratica.dimensioni_lineari} />
+              <DataField
+                label="Dimensioni (MQ)"
+                value={pratica.dimensioni_mq}
+              />
+              <DataField
+                label="Dimensioni Lineari"
+                value={pratica.dimensioni_lineari}
+              />
               <DataField label="Attrezzature" value={pratica.attrezzature} />
             </DataSection>
           )}
@@ -265,9 +402,18 @@ export default function SuapDetail() {
           {/* Dati Atto Notarile */}
           {(pratica.notaio_rogante || pratica.numero_repertorio) && (
             <DataSection title="Estremi Atto Notarile" icon={FileText}>
-              <DataField label="Notaio Rogante" value={pratica.notaio_rogante} />
-              <DataField label="N. Repertorio" value={pratica.numero_repertorio} />
-              <DataField label="Data Atto" value={formatDate(pratica.data_atto)} />
+              <DataField
+                label="Notaio Rogante"
+                value={pratica.notaio_rogante}
+              />
+              <DataField
+                label="N. Repertorio"
+                value={pratica.numero_repertorio}
+              />
+              <DataField
+                label="Data Atto"
+                value={formatDate(pratica.data_atto)}
+              />
             </DataSection>
           )}
 
@@ -277,9 +423,18 @@ export default function SuapDetail() {
               <DataField label="Nome" value={pratica.del_nome} />
               <DataField label="Cognome" value={pratica.del_cognome} />
               <DataField label="Codice Fiscale" value={pratica.del_cf} />
-              <DataField label="Data di Nascita" value={formatDate(pratica.del_data_nascita)} />
-              <DataField label="Luogo di Nascita" value={pratica.del_luogo_nascita} />
-              <DataField label="Qualifica / Titolo" value={pratica.del_qualifica} />
+              <DataField
+                label="Data di Nascita"
+                value={formatDate(pratica.del_data_nascita)}
+              />
+              <DataField
+                label="Luogo di Nascita"
+                value={pratica.del_luogo_nascita}
+              />
+              <DataField
+                label="Qualifica / Titolo"
+                value={pratica.del_qualifica}
+              />
               <DataField label="Residenza" value={pratica.del_residenza_via} />
               <DataField label="Comune" value={pratica.del_residenza_comune} />
               <DataField label="CAP" value={pratica.del_residenza_cap} />
@@ -294,15 +449,22 @@ export default function SuapDetail() {
           {/* Checks Card */}
           <Card className="bg-[#0a1628] border-[#1e293b]">
             <CardHeader>
-              <CardTitle className="text-[#e8fbff]">Controlli Automatici</CardTitle>
+              <CardTitle className="text-[#e8fbff]">
+                Controlli Automatici
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {pratica.checks.length === 0 ? (
-                  <p className="text-[#e8fbff]/40 italic">Nessun controllo eseguito ancora.</p>
+                  <p className="text-[#e8fbff]/40 italic">
+                    Nessun controllo eseguito ancora.
+                  </p>
                 ) : (
-                  pratica.checks.map((check) => (
-                    <div key={check.id} className="flex items-center justify-between p-3 rounded-lg bg-[#1e293b]/30 border border-[#1e293b]">
+                  pratica.checks.map(check => (
+                    <div
+                      key={check.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-[#1e293b]/30 border border-[#1e293b]"
+                    >
                       <div className="flex items-center gap-3">
                         {check.esito ? (
                           <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -310,8 +472,12 @@ export default function SuapDetail() {
                           <XCircle className="h-5 w-5 text-red-500" />
                         )}
                         <div>
-                          <p className="text-sm font-medium text-[#e8fbff]">{check.check_code}</p>
-                          <p className="text-xs text-[#e8fbff]/60">Fonte: {check.fonte}</p>
+                          <p className="text-sm font-medium text-[#e8fbff]">
+                            {check.check_code}
+                          </p>
+                          <p className="text-xs text-[#e8fbff]/60">
+                            Fonte: {check.fonte}
+                          </p>
                         </div>
                       </div>
                       <div className="text-xs text-[#e8fbff]/40">
@@ -342,11 +508,15 @@ export default function SuapDetail() {
           {/* Score Card */}
           <Card className="bg-[#0a1628] border-[#1e293b]">
             <CardHeader>
-              <CardTitle className="text-[#e8fbff]">Punteggio Affidabilità</CardTitle>
+              <CardTitle className="text-[#e8fbff]">
+                Punteggio Affidabilità
+              </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center py-8">
               <div className="relative flex items-center justify-center h-32 w-32 rounded-full border-8 border-[#1e293b]">
-                <span className="text-4xl font-bold text-[#e8fbff]">{pratica.score ?? '-'}</span>
+                <span className="text-4xl font-bold text-[#e8fbff]">
+                  {pratica.score ?? "-"}
+                </span>
               </div>
               <p className="mt-4 text-sm text-[#e8fbff]/60 text-center">
                 Basato su {pratica.checks.length} controlli effettuati
@@ -361,14 +531,18 @@ export default function SuapDetail() {
             </CardHeader>
             <CardContent>
               <div className="relative border-l border-[#1e293b] ml-2 space-y-6">
-                {pratica.timeline.map((event) => (
+                {pratica.timeline.map(event => (
                   <div key={event.id} className="ml-6 relative">
                     <div className="absolute -left-[29px] h-3 w-3 rounded-full bg-[#00f0ff] border-2 border-[#0a1628]" />
                     <p className="text-xs text-[#e8fbff]/40 mb-1">
                       {new Date(event.created_at).toLocaleString()}
                     </p>
-                    <p className="text-sm font-medium text-[#e8fbff]">{event.tipo_evento}</p>
-                    <p className="text-xs text-[#e8fbff]/60 mt-1">{event.descrizione}</p>
+                    <p className="text-sm font-medium text-[#e8fbff]">
+                      {event.tipo_evento}
+                    </p>
+                    <p className="text-xs text-[#e8fbff]/60 mt-1">
+                      {event.descrizione}
+                    </p>
                   </div>
                 ))}
               </div>

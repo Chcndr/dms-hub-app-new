@@ -4,6 +4,7 @@
 **Contesto:** Il frontend DMS Hub (`dms-hub-app-new`) ha appena implementato 4 nuovi pannelli per il business associazioni + il flusso "Associati e Paga" nell'app impresa. Tutti gli endpoint passano per il proxy Vercel (`vercel.json`) che redirige a `https://api.mio-hub.me`. Servono **14 endpoint REST** sul backend Hetzner.
 
 **IMPORTANTE:** Tutti gli endpoint devono rispondere con il formato standard:
+
 ```json
 { "success": true, "data": { ... } }
 // oppure
@@ -17,6 +18,7 @@
 Usato da `SchedaPubblicaPanel.tsx` (dashboard PA impersonata) e da `AnagraficaPage.tsx` (app impresa).
 
 **GET `/api/associazioni/:id/scheda-pubblica`**
+
 ```
 Response.data: {
   descrizione: string,          // testo libero
@@ -29,12 +31,15 @@ Response.data: {
   tesserati_count: number       // COUNT tesseramenti attivi
 }
 ```
+
 Se la scheda non esiste ancora, restituire valori vuoti/zero (NON errore).
 
 **PUT `/api/associazioni/:id/scheda-pubblica`**
+
 ```
 Body: { descrizione, benefici, sedi, contatti, logo_url }
 ```
+
 Crea o aggiorna (upsert). I campi `*_count` sono calcolati, non salvati.
 
 ---
@@ -44,6 +49,7 @@ Crea o aggiorna (upsert). I campi `*_count` sono calcolati, non salvati.
 Usato da `GestioneServiziAssociazionePanel.tsx` (dashboard) e da `ServiziSection` in `AnagraficaPage.tsx` (app impresa).
 
 **GET `/api/associazioni/:id/servizi`**
+
 ```
 Response.data: [{
   id: number,
@@ -58,11 +64,13 @@ Response.data: [{
 ```
 
 **POST `/api/associazioni/:id/servizi`**
+
 ```
 Body: { nome, descrizione, categoria, prezzo_base, prezzo_associati, tempo_medio_gg, attivo }
 ```
 
 **PUT `/api/associazioni/:id/servizi/:sid`**
+
 ```
 Body: stessi campi del POST
 ```
@@ -70,6 +78,7 @@ Body: stessi campi del POST
 **DELETE `/api/associazioni/:id/servizi/:sid`**
 
 **GET `/api/associazioni/:id/richieste-servizi`**
+
 ```
 Response.data: [{
   id: number,
@@ -84,9 +93,11 @@ Response.data: [{
 ```
 
 **PUT `/api/associazioni/:id/richieste-servizi/:rid/stato`**
+
 ```
 Body: { stato: 'in_lavorazione' | 'completata' | 'rifiutata' }
 ```
+
 Quando stato = `completata` o `rifiutata`, inviare notifica all'impresa (tabella `notifications`).
 
 ---
@@ -96,6 +107,7 @@ Quando stato = `completata` o `rifiutata`, inviare notifica all'impresa (tabella
 Usato da `GestioneCorsiAssociazionePanel.tsx` (dashboard) e da `FormazioneSection` in `AnagraficaPage.tsx` (app impresa).
 
 **GET `/api/associazioni/:id/corsi`**
+
 ```
 Response.data: [{
   id: number,
@@ -114,6 +126,7 @@ Response.data: [{
 ```
 
 **POST `/api/associazioni/:id/corsi`**
+
 ```
 Body: { titolo, descrizione, categoria, durata_ore, prezzo, data_inizio, data_fine, posti_totali, sede, attivo }
 ```
@@ -123,6 +136,7 @@ Body: { titolo, descrizione, categoria, durata_ore, prezzo, data_inizio, data_fi
 **DELETE `/api/associazioni/:id/corsi/:cid`**
 
 **GET `/api/associazioni/:id/iscrizioni-corsi`**
+
 ```
 Response.data: [{
   id: number,
@@ -137,6 +151,7 @@ Response.data: [{
 ```
 
 **POST `/api/associazioni/:id/corsi/:cid/rilascia-attestato`**
+
 ```
 Body: { iscrizione_id: number }
 Logica:
@@ -152,6 +167,7 @@ Logica:
 Usato da `WalletAssociazionePanel.tsx` (dashboard).
 
 **GET `/api/associazioni/:id/wallet`**
+
 ```
 Response.data: {
   saldo: number,               // saldo corrente (EUR)
@@ -162,9 +178,11 @@ Response.data: {
   incassi_corsi: number        // totale da corsi
 }
 ```
+
 Se il wallet non esiste, crearlo con saldo 0.
 
 **GET `/api/associazioni/:id/wallet/transazioni`**
+
 ```
 Response.data: [{
   id: number,
@@ -176,6 +194,7 @@ Response.data: [{
   stato: 'completata' | 'in_attesa' | 'annullata'
 }]
 ```
+
 Ordinato per data DESC.
 
 ---
@@ -185,6 +204,7 @@ Ordinato per data DESC.
 Usato da `AnagraficaPage.tsx` (app impresa), flusso "Associati e Paga".
 
 **POST `/api/tesseramenti/richiedi-e-paga`**
+
 ```
 Body: {
   impresa_id: number,

@@ -10,6 +10,7 @@ ambulanti italiani. Gestisce mercati, posteggi, operatori, concessioni, pagament
 mobilita' e monitoraggio. Il sistema e' progettato per scalare a **8.000 mercati**.
 
 **E' un'unica app web** (`dms-hub-app-new.vercel.app`) che serve TUTTI i tipi di utente:
+
 - **PA (Pubblica Amministrazione)** → `/dashboard-pa` con 14+ tab
 - **Imprese/Operatori** → `/dashboard-impresa`, `/app/impresa/*`, `/hub-operatore`
 - **Cittadini** → `/mappa`, `/civic`, `/wallet`, `/route`
@@ -21,6 +22,7 @@ Il sistema di **impersonazione per comune** permette al super admin di vedere
 l'app come un PA di uno specifico comune.
 
 **Stack tecnologico:**
+
 - Frontend: React 19 + Vite 7 + Wouter + Tailwind 4 + shadcn/ui
 - Backend: Express 4 + tRPC 11 + Drizzle ORM 0.44
 - Database: PostgreSQL su Neon (serverless)
@@ -120,6 +122,7 @@ pnpm docs:update            # Sincronizza docs API + blueprint
 - **Context**: `FirebaseAuthContext` sul frontend, `ctx.user` nel backend tRPC
 
 **Sistema RBAC (Role-Based Access Control):**
+
 - 4 tabelle: `user_roles` → `role_permissions` → `permissions` + `user_role_assignments`
 - **Settori ruoli**: sistema, pa, mercato, impresa, esterno, pubblico
 - **Livelli**: 0 = super_admin, 99 = cittadino (nessun accesso admin)
@@ -129,6 +132,7 @@ pnpm docs:update            # Sincronizza docs API + blueprint
 - Permessi formato: `tab.view.{tabId}`, `quick.view.{quickId}`, `modulo.azione` (es. `dmsHub.markets.read`)
 
 **Sistema impersonazione per comune:**
+
 - URL: `/dashboard-pa?impersonate=true&comune_id=96&comune_nome=Grosseto&user_email=...`
 - Persiste in `sessionStorage['miohub_impersonation']`
 - Hook: `useImpersonation()` in `client/src/hooks/useImpersonation.ts`
@@ -157,17 +161,18 @@ pnpm docs:update            # Sincronizza docs API + blueprint
 
 ## Infrastruttura
 
-| Servizio | URL | Dettagli |
-|----------|-----|----------|
-| Frontend | dms-hub-app-new.vercel.app | Vercel auto-deploy |
-| Backend tRPC | mihub.157-90-29-66.nip.io | Hetzner + PM2 |
-| Orchestratore | orchestratore.mio-hub.me | Legacy REST backend |
-| DB Neon | ep-bold-silence-adftsojg | PostgreSQL serverless |
-| Firebase | dmshub-auth-2975e | Auth provider |
+| Servizio      | URL                        | Dettagli              |
+| ------------- | -------------------------- | --------------------- |
+| Frontend      | dms-hub-app-new.vercel.app | Vercel auto-deploy    |
+| Backend tRPC  | mihub.157-90-29-66.nip.io  | Hetzner + PM2         |
+| Orchestratore | orchestratore.mio-hub.me   | Legacy REST backend   |
+| DB Neon       | ep-bold-silence-adftsojg   | PostgreSQL serverless |
+| Firebase      | dmshub-auth-2975e          | Auth provider         |
 
 ## Variabili d'ambiente richieste
 
 ### Backend (server)
+
 ```
 DATABASE_URL          # PostgreSQL connection string (Neon)
 JWT_SECRET            # Chiave per firmare i token di sessione
@@ -178,7 +183,8 @@ BUILT_IN_FORGE_API_URL # Forge API endpoint
 BUILT_IN_FORGE_API_KEY # Forge API key
 ```
 
-### Frontend (VITE_*)
+### Frontend (VITE\_\*)
+
 ```
 VITE_TRPC_URL         # URL del backend tRPC
 VITE_API_URL          # URL base API
@@ -207,91 +213,96 @@ VITE_FIREBASE_PROJECT_ID
 
 ## Router tRPC disponibili
 
-| Router | Prefisso | Responsabilita' |
-|--------|----------|-----------------|
-| system | system.* | Health check |
-| auth | auth.* | Login/logout, sessione corrente |
-| analytics | analytics.* | Dashboard PA (overview, markets, shops, transactions) |
-| dmsHub | dmsHub.* | Mercati, posteggi, operatori, concessioni, presenze |
-| wallet | wallet.* | Borsellino elettronico, ricariche, PagoPA |
-| integrations | integrations.* | API keys, webhooks, connessioni esterne |
-| mihub | mihub.* | Multi-agente: tasks, projects, brain, messages |
-| mioAgent | mioAgent.* | Log agenti AI |
-| guardian | guardian.* | Monitoring API, debug, logs |
-| tper | tper.* | Integrazione trasporto TPER Bologna |
-| logs | logs.* | System logs |
-| carbonCredits | carbonCredits.* | Crediti carbonio TCC |
+| Router        | Prefisso         | Responsabilita'                                       |
+| ------------- | ---------------- | ----------------------------------------------------- |
+| system        | system.\*        | Health check                                          |
+| auth          | auth.\*          | Login/logout, sessione corrente                       |
+| analytics     | analytics.\*     | Dashboard PA (overview, markets, shops, transactions) |
+| dmsHub        | dmsHub.\*        | Mercati, posteggi, operatori, concessioni, presenze   |
+| wallet        | wallet.\*        | Borsellino elettronico, ricariche, PagoPA             |
+| integrations  | integrations.\*  | API keys, webhooks, connessioni esterne               |
+| mihub         | mihub.\*         | Multi-agente: tasks, projects, brain, messages        |
+| mioAgent      | mioAgent.\*      | Log agenti AI                                         |
+| guardian      | guardian.\*      | Monitoring API, debug, logs                           |
+| tper          | tper.\*          | Integrazione trasporto TPER Bologna                   |
+| logs          | logs.\*          | System logs                                           |
+| carbonCredits | carbonCredits.\* | Crediti carbonio TCC                                  |
 
 ## Pagine frontend e accesso per ruolo
 
 Un'unica app web, stesse rotte — il contenuto visibile dipende dal ruolo utente.
 
 ### Pagine PA (Pubblica Amministrazione)
-| Rotta | Componente | Descrizione |
-|-------|-----------|-------------|
-| /dashboard-pa | DashboardPA | Dashboard admin principale (14+ tab protetti da RBAC) |
-| /guardian/* | Guardian* | Monitoring sistema (endpoints, logs, debug) |
-| /council | CouncilPage | Assistente AI legale |
-| /pm/nuovo-verbale | NuovoVerbalePage | Creazione verbali polizia municipale |
+
+| Rotta             | Componente       | Descrizione                                           |
+| ----------------- | ---------------- | ----------------------------------------------------- |
+| /dashboard-pa     | DashboardPA      | Dashboard admin principale (14+ tab protetti da RBAC) |
+| /guardian/\*      | Guardian\*       | Monitoring sistema (endpoints, logs, debug)           |
+| /council          | CouncilPage      | Assistente AI legale                                  |
+| /pm/nuovo-verbale | NuovoVerbalePage | Creazione verbali polizia municipale                  |
 
 ### Pagine Imprese/Operatori
-| Rotta | Componente | Descrizione |
-|-------|-----------|-------------|
-| /dashboard-impresa | DashboardImpresa | Dashboard impresa (anagrafica, concessioni, pratiche) |
-| /app/impresa/wallet | WalletImpresaPage | Wallet operatore |
-| /app/impresa/presenze | PresenzePage | Registrazione presenze |
-| /app/impresa/anagrafica | AnagraficaPage | Dati anagrafici impresa |
-| /app/impresa/notifiche | AppImpresaNotifiche | Notifiche impresa |
-| /hub-operatore | HubOperatore | Dashboard operatore hub |
+
+| Rotta                   | Componente          | Descrizione                                           |
+| ----------------------- | ------------------- | ----------------------------------------------------- |
+| /dashboard-impresa      | DashboardImpresa    | Dashboard impresa (anagrafica, concessioni, pratiche) |
+| /app/impresa/wallet     | WalletImpresaPage   | Wallet operatore                                      |
+| /app/impresa/presenze   | PresenzePage        | Registrazione presenze                                |
+| /app/impresa/anagrafica | AnagraficaPage      | Dati anagrafici impresa                               |
+| /app/impresa/notifiche  | AppImpresaNotifiche | Notifiche impresa                                     |
+| /hub-operatore          | HubOperatore        | Dashboard operatore hub                               |
 
 ### Pagine condivise (PA + Imprese)
-| Rotta | Componente | Descrizione |
-|-------|-----------|-------------|
-| /suap | SuapDashboard | Gestione autorizzazioni SUAP |
-| /wallet | WalletPage | Gestione pagamenti |
+
+| Rotta   | Componente    | Descrizione                  |
+| ------- | ------------- | ---------------------------- |
+| /suap   | SuapDashboard | Gestione autorizzazioni SUAP |
+| /wallet | WalletPage    | Gestione pagamenti           |
 
 ### Pagine pubbliche (tutti)
-| Rotta | Componente | Descrizione |
-|-------|-----------|-------------|
-| / | HomePage | Home con ricerca e accesso rapido |
-| /mappa | MapPage | Mappa interattiva mercati |
-| /mappa-italia | MappaItaliaPage | Mappa nazionale mercati |
-| /civic | CivicPage | Segnalazioni civiche |
-| /route | RoutePage | Percorso ottimale |
-| /vetrine | VetrinePage | Vetrine negozi |
-| /presentazione | PresentazionePage | Presentazione pubblica |
+
+| Rotta          | Componente        | Descrizione                       |
+| -------------- | ----------------- | --------------------------------- |
+| /              | HomePage          | Home con ricerca e accesso rapido |
+| /mappa         | MapPage           | Mappa interattiva mercati         |
+| /mappa-italia  | MappaItaliaPage   | Mappa nazionale mercati           |
+| /civic         | CivicPage         | Segnalazioni civiche              |
+| /route         | RoutePage         | Percorso ottimale                 |
+| /vetrine       | VetrinePage       | Vetrine negozi                    |
+| /presentazione | PresentazionePage | Presentazione pubblica            |
 
 ### Tab della DashboardPA (protetti da RBAC)
+
 Ogni tab e' wrappato in `<ProtectedTab tabId="...">` e visibile solo
 se il ruolo dell'utente ha il permesso `tab.view.{tabId}`.
 
-| Tab ID | Nome | Nascosto in impersonazione? |
-|--------|------|----------------------------|
-| dashboard | Overview | No |
-| mercati | Mercati | No |
-| imprese | Imprese | No |
-| commercio | Commercio | No |
-| wallet | Wallet | No |
-| hub | Hub | No |
-| controlli | Controlli | No |
-| comuni | Comuni | Si |
-| security | Sicurezza (RBAC) | Si |
-| sistema | Sistema | Si |
-| ai | MIO Agent | Si |
-| integrations | Integrazioni | Si |
-| reports | Report | Si |
-| workspace | Workspace | Si |
+| Tab ID       | Nome             | Nascosto in impersonazione? |
+| ------------ | ---------------- | --------------------------- |
+| dashboard    | Overview         | No                          |
+| mercati      | Mercati          | No                          |
+| imprese      | Imprese          | No                          |
+| commercio    | Commercio        | No                          |
+| wallet       | Wallet           | No                          |
+| hub          | Hub              | No                          |
+| controlli    | Controlli        | No                          |
+| comuni       | Comuni           | Si                          |
+| security     | Sicurezza (RBAC) | Si                          |
+| sistema      | Sistema          | Si                          |
+| ai           | MIO Agent        | Si                          |
+| integrations | Integrazioni     | Si                          |
+| reports      | Report           | Si                          |
+| workspace    | Workspace        | Si                          |
 
 ## Documentazione di riferimento
 
-| File | Contenuto |
-|------|-----------|
-| CLAUDE.md | QUESTO FILE - guida operativa per agenti |
-| docs/ARCHITECTURE.md | Architettura sistema dettagliata |
-| docs/DATABASE.md | Schema DB, convenzioni, regole |
-| docs/API.md | Registro endpoint e convenzioni |
-| docs/OPERATIONS.md | Deploy, monitoring, troubleshooting |
-| docs/SCALING.md | Strategia di scaling a 8.000 mercati |
+| File                 | Contenuto                                |
+| -------------------- | ---------------------------------------- |
+| CLAUDE.md            | QUESTO FILE - guida operativa per agenti |
+| docs/ARCHITECTURE.md | Architettura sistema dettagliata         |
+| docs/DATABASE.md     | Schema DB, convenzioni, regole           |
+| docs/API.md          | Registro endpoint e convenzioni          |
+| docs/OPERATIONS.md   | Deploy, monitoring, troubleshooting      |
+| docs/SCALING.md      | Strategia di scaling a 8.000 mercati     |
 
 ## Checklist pre-commit
 
@@ -304,12 +315,12 @@ se il ruolo dell'utente ha il permesso `tab.view.{tabId}`.
 
 ## Errori comuni da evitare
 
-| Errore | Soluzione |
-|--------|----------|
-| "Connection terminated due to connection timeout" | Neon cold start. Ritenta dopo 3 secondi |
-| Tabella non trovata | Controlla `drizzle/schema.ts`, poi `pnpm db:push` |
-| CORS error | Le API devono passare per `/api/trpc` - non usare URL diretti |
-| `any` type error | Importa il tipo corretto da `drizzle/schema.ts` |
-| Import non trovato | Usa `@/` per frontend, import relativo per backend |
-| Firebase auth fallisce | Verifica `VITE_FIREBASE_*` env vars nel `.env` |
-| PM2 restart loop | Controlla i log: `pm2 logs --lines 50` su Hetzner |
+| Errore                                            | Soluzione                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------- |
+| "Connection terminated due to connection timeout" | Neon cold start. Ritenta dopo 3 secondi                       |
+| Tabella non trovata                               | Controlla `drizzle/schema.ts`, poi `pnpm db:push`             |
+| CORS error                                        | Le API devono passare per `/api/trpc` - non usare URL diretti |
+| `any` type error                                  | Importa il tipo corretto da `drizzle/schema.ts`               |
+| Import non trovato                                | Usa `@/` per frontend, import relativo per backend            |
+| Firebase auth fallisce                            | Verifica `VITE_FIREBASE_*` env vars nel `.env`                |
+| PM2 restart loop                                  | Controlla i log: `pm2 logs --lines 50` su Hetzner             |

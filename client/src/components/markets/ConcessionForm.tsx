@@ -1,23 +1,33 @@
-import React, { useState } from 'react';
-import { FileText, X, AlertCircle, Loader2, Trash2, Users, MapPin, Calendar, Building2 } from 'lucide-react';
-import { authenticatedFetch } from '@/hooks/useImpersonation';
+import React, { useState } from "react";
+import {
+  FileText,
+  X,
+  AlertCircle,
+  Loader2,
+  Trash2,
+  Users,
+  MapPin,
+  Calendar,
+  Building2,
+} from "lucide-react";
+import { authenticatedFetch } from "@/hooks/useImpersonation";
 
-const API_BASE_URL = 'https://api.mio-hub.me';
+const API_BASE_URL = "https://api.mio-hub.me";
 
 const TIPO_CONCESSIONE_OPTIONS = [
-  { value: 'subingresso', label: 'Subingresso' },
-  { value: 'nuova', label: 'Nuova Concessione' },
-  { value: 'rinnovo', label: 'Rinnovo' },
-  { value: 'conversione', label: 'Conversione' },
-  { value: 'voltura', label: 'Voltura' },
+  { value: "subingresso", label: "Subingresso" },
+  { value: "nuova", label: "Nuova Concessione" },
+  { value: "rinnovo", label: "Rinnovo" },
+  { value: "conversione", label: "Conversione" },
+  { value: "voltura", label: "Voltura" },
 ];
 
 const STATO_CONCESSIONE_OPTIONS = [
-  { value: 'ATTIVA', label: 'Attiva' },
-  { value: 'SCADUTA', label: 'Scaduta' },
-  { value: 'SOSPESA', label: 'Sospesa' },
-  { value: 'CESSATA', label: 'Cessata' },
-  { value: 'DA_ASSOCIARE', label: 'Da Associare' },
+  { value: "ATTIVA", label: "Attiva" },
+  { value: "SCADUTA", label: "Scaduta" },
+  { value: "SOSPESA", label: "Sospesa" },
+  { value: "CESSATA", label: "Cessata" },
+  { value: "DA_ASSOCIARE", label: "Da Associare" },
 ];
 
 interface Company {
@@ -73,56 +83,58 @@ interface ConcessionFormProps {
   onDeleted?: () => void;
 }
 
-export function ConcessionForm({ 
-  marketId, 
-  marketName, 
-  concession, 
-  companies, 
-  stalls, 
-  onClose, 
-  onSaved, 
-  onDeleted 
+export function ConcessionForm({
+  marketId,
+  marketName,
+  concession,
+  companies,
+  stalls,
+  onClose,
+  onSaved,
+  onDeleted,
 }: ConcessionFormProps) {
   const [formData, setFormData] = useState({
-    company_id: concession?.company_id || '',
-    stall_id: concession?.stall_id || '',
-    tipo_concessione: concession?.tipo_concessione || 'subingresso',
-    type: concession?.type || 'fisso',
-    valida_dal: concession?.valida_dal?.split('T')[0] || '',
-    valida_al: concession?.valida_al?.split('T')[0] || '',
-    stato: concession?.stato || 'ATTIVA',
-    numero_protocollo: concession?.numero_protocollo || '',
-    data_protocollazione: concession?.data_protocollazione?.split('T')[0] || new Date().toISOString().split('T')[0],
-    oggetto: concession?.oggetto || '',
-    durata_anni: concession?.durata_anni?.toString() || '10',
-    data_decorrenza: concession?.data_decorrenza?.split('T')[0] || '',
-    partita_iva: concession?.partita_iva || '',
-    cf_concessionario: concession?.cf_concessionario || '',
-    ragione_sociale: concession?.ragione_sociale || '',
-    nome: concession?.nome || '',
-    cognome: concession?.cognome || '',
-    ubicazione: concession?.ubicazione || '',
-    fila: concession?.fila || '',
-    mq: concession?.mq?.toString() || '',
-    dimensioni_lineari: concession?.dimensioni_lineari || '',
-    giorno: concession?.giorno || '',
-    settore_merceologico: concession?.settore_merceologico || 'Alimentare',
-    comune_rilascio: concession?.comune_rilascio || '',
-    notes: concession?.notes || '',
-    scia_id: concession?.scia_id?.toString() || '',
+    company_id: concession?.company_id || "",
+    stall_id: concession?.stall_id || "",
+    tipo_concessione: concession?.tipo_concessione || "subingresso",
+    type: concession?.type || "fisso",
+    valida_dal: concession?.valida_dal?.split("T")[0] || "",
+    valida_al: concession?.valida_al?.split("T")[0] || "",
+    stato: concession?.stato || "ATTIVA",
+    numero_protocollo: concession?.numero_protocollo || "",
+    data_protocollazione:
+      concession?.data_protocollazione?.split("T")[0] ||
+      new Date().toISOString().split("T")[0],
+    oggetto: concession?.oggetto || "",
+    durata_anni: concession?.durata_anni?.toString() || "10",
+    data_decorrenza: concession?.data_decorrenza?.split("T")[0] || "",
+    partita_iva: concession?.partita_iva || "",
+    cf_concessionario: concession?.cf_concessionario || "",
+    ragione_sociale: concession?.ragione_sociale || "",
+    nome: concession?.nome || "",
+    cognome: concession?.cognome || "",
+    ubicazione: concession?.ubicazione || "",
+    fila: concession?.fila || "",
+    mq: concession?.mq?.toString() || "",
+    dimensioni_lineari: concession?.dimensioni_lineari || "",
+    giorno: concession?.giorno || "",
+    settore_merceologico: concession?.settore_merceologico || "Alimentare",
+    comune_rilascio: concession?.comune_rilascio || "",
+    notes: concession?.notes || "",
+    scia_id: concession?.scia_id?.toString() || "",
     // Dati Cedente (per subingresso)
-    cedente_impresa_id: '',
-    cedente_cf: '',
-    cedente_partita_iva: '',
-    cedente_ragione_sociale: '',
+    cedente_impresa_id: "",
+    cedente_cf: "",
+    cedente_partita_iva: "",
+    cedente_ragione_sociale: "",
     // Autorizzazione precedente (per subingresso/rinnovo/voltura)
-    autorizzazione_precedente_pg: '',
-    autorizzazione_precedente_data: '',
-    autorizzazione_precedente_intestatario: '',
+    autorizzazione_precedente_pg: "",
+    autorizzazione_precedente_data: "",
+    autorizzazione_precedente_intestatario: "",
     // SCIA precedente (per subingresso)
-    scia_precedente_numero: '',
-    scia_precedente_data: '',
-    scia_precedente_comune: '',
+    scia_precedente_numero: "",
+    scia_precedente_data: "",
+    scia_precedente_comune: "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -130,10 +142,10 @@ export function ConcessionForm({
   const [error, setError] = useState<string | null>(null);
 
   const calcolaDataScadenza = (dataDecorrenza: string, durataAnni: string) => {
-    if (!dataDecorrenza || !durataAnni) return '';
+    if (!dataDecorrenza || !durataAnni) return "";
     const data = new Date(dataDecorrenza);
     data.setFullYear(data.getFullYear() + parseInt(durataAnni));
-    return data.toISOString().split('T')[0];
+    return data.toISOString().split("T")[0];
   };
 
   const handleCompanyChange = (companyId: string) => {
@@ -142,9 +154,9 @@ export function ConcessionForm({
       setFormData({
         ...formData,
         company_id: companyId,
-        partita_iva: company.partita_iva || '',
-        cf_concessionario: company.codice_fiscale || '',
-        ragione_sociale: company.denominazione || '',
+        partita_iva: company.partita_iva || "",
+        cf_concessionario: company.codice_fiscale || "",
+        ragione_sociale: company.denominazione || "",
       });
     } else {
       setFormData({ ...formData, company_id: companyId });
@@ -153,25 +165,28 @@ export function ConcessionForm({
 
   const handleDelete = async () => {
     if (!concession?.id) return;
-    if (!confirm('Sei sicuro di voler eliminare questa concessione?')) return;
-    
+    if (!confirm("Sei sicuro di voler eliminare questa concessione?")) return;
+
     setDeleting(true);
     setError(null);
-    
+
     try {
-      const response = await authenticatedFetch(`${API_BASE_URL}/api/concessions/${concession.id}`, {
-        method: 'DELETE',
-      });
-      
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/concessions/${concession.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Errore durante l\'eliminazione');
+        throw new Error(data.error || "Errore durante l'eliminazione");
       }
-      
+
       onDeleted?.();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore sconosciuto');
+      setError(err instanceof Error ? err.message : "Errore sconosciuto");
     } finally {
       setDeleting(false);
     }
@@ -187,7 +202,7 @@ export function ConcessionForm({
         ? `${API_BASE_URL}/api/concessions/${concession.id}`
         : `${API_BASE_URL}/api/concessions`;
 
-      const method = concession ? 'PATCH' : 'POST';
+      const method = concession ? "PATCH" : "POST";
 
       const payload: Record<string, unknown> = {
         impresa_id: formData.company_id,
@@ -218,8 +233,10 @@ export function ConcessionForm({
         notes: formData.notes,
         scia_id: formData.scia_id ? parseInt(formData.scia_id) : null,
         // Dati Cedente (per subingresso)
-        ...(formData.tipo_concessione === 'subingresso' && {
-          cedente_impresa_id: formData.cedente_impresa_id ? parseInt(formData.cedente_impresa_id) : null,
+        ...(formData.tipo_concessione === "subingresso" && {
+          cedente_impresa_id: formData.cedente_impresa_id
+            ? parseInt(formData.cedente_impresa_id)
+            : null,
           cedente_cf: formData.cedente_cf || null,
           cedente_partita_iva: formData.cedente_partita_iva || null,
           cedente_ragione_sociale: formData.cedente_ragione_sociale || null,
@@ -228,35 +245,40 @@ export function ConcessionForm({
           scia_precedente_comune: formData.scia_precedente_comune || null,
         }),
         // Autorizzazione precedente (per subingresso/rinnovo/voltura/conversione)
-        ...(['subingresso', 'rinnovo', 'voltura', 'conversione'].includes(formData.tipo_concessione) && {
-          autorizzazione_precedente_pg: formData.autorizzazione_precedente_pg || null,
-          autorizzazione_precedente_data: formData.autorizzazione_precedente_data || null,
-          autorizzazione_precedente_intestatario: formData.autorizzazione_precedente_intestatario || null,
+        ...(["subingresso", "rinnovo", "voltura", "conversione"].includes(
+          formData.tipo_concessione
+        ) && {
+          autorizzazione_precedente_pg:
+            formData.autorizzazione_precedente_pg || null,
+          autorizzazione_precedente_data:
+            formData.autorizzazione_precedente_data || null,
+          autorizzazione_precedente_intestatario:
+            formData.autorizzazione_precedente_intestatario || null,
         }),
       };
 
       const response = await authenticatedFetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const contentType = response.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
           const data = await response.json();
           throw new Error(data.error || `Errore server (${response.status})`);
         }
         throw new Error(
           response.status === 404
-            ? 'Endpoint non trovato. Verifica che il backend sia attivo.'
+            ? "Endpoint non trovato. Verifica che il backend sia attivo."
             : `Errore server (${response.status})`
         );
       }
 
       onSaved();
     } catch (err: any) {
-      setError(err.message || 'Errore durante il salvataggio');
+      setError(err.message || "Errore durante il salvataggio");
     } finally {
       setSaving(false);
     }
@@ -274,12 +296,19 @@ export function ConcessionForm({
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">
-                {concession ? `Concessione #${concession.id}` : 'Nuova Concessione'}
+                {concession
+                  ? `Concessione #${concession.id}`
+                  : "Nuova Concessione"}
               </h3>
-              <p className="text-sm text-gray-400">{marketName || `Mercato ID: ${marketId}`}</p>
+              <p className="text-sm text-gray-400">
+                {marketName || `Mercato ID: ${marketId}`}
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -300,40 +329,65 @@ export function ConcessionForm({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Numero Protocollo</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Numero Protocollo
+                </label>
                 <input
                   type="text"
                   value={formData.numero_protocollo}
-                  onChange={(e) => setFormData({ ...formData, numero_protocollo: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      numero_protocollo: e.target.value,
+                    })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500"
                   placeholder="Es. 449021/2024"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Data Protocollazione</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Data Protocollazione
+                </label>
                 <input
                   type="date"
                   value={formData.data_protocollazione}
-                  onChange={(e) => setFormData({ ...formData, data_protocollazione: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      data_protocollazione: e.target.value,
+                    })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Comune Rilascio</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Comune Rilascio
+                </label>
                 <input
                   type="text"
                   value={formData.comune_rilascio}
-                  onChange={(e) => setFormData({ ...formData, comune_rilascio: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      comune_rilascio: e.target.value,
+                    })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500"
                   placeholder="Es. Grosseto"
                 />
               </div>
             </div>
             <div className="mt-4">
-              <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Oggetto</label>
+              <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                Oggetto
+              </label>
               <textarea
                 value={formData.oggetto}
-                onChange={(e) => setFormData({ ...formData, oggetto: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, oggetto: e.target.value })
+                }
                 className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 min-h-[80px]"
                 placeholder="Oggetto della concessione..."
               />
@@ -348,23 +402,36 @@ export function ConcessionForm({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Tipo Concessione <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Tipo Concessione <span className="text-red-400">*</span>
+                </label>
                 <select
                   required
                   value={formData.tipo_concessione}
-                  onChange={(e) => setFormData({ ...formData, tipo_concessione: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      tipo_concessione: e.target.value,
+                    })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                 >
-                  {TIPO_CONCESSIONE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  {TIPO_CONCESSIONE_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Tipo Posteggio</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Tipo Posteggio
+                </label>
                 <select
                   value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, type: e.target.value })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                 >
                   <option value="fisso">Fisso</option>
@@ -375,53 +442,84 @@ export function ConcessionForm({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4">
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Durata (Anni)</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Durata (Anni)
+                </label>
                 <select
                   value={formData.durata_anni}
-                  onChange={(e) => {
+                  onChange={e => {
                     const newDurata = e.target.value;
-                    const newScadenza = calcolaDataScadenza(formData.data_decorrenza || formData.valida_dal, newDurata);
-                    setFormData({ ...formData, durata_anni: newDurata, valida_al: newScadenza });
+                    const newScadenza = calcolaDataScadenza(
+                      formData.data_decorrenza || formData.valida_dal,
+                      newDurata
+                    );
+                    setFormData({
+                      ...formData,
+                      durata_anni: newDurata,
+                      valida_al: newScadenza,
+                    });
                   }}
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                 >
-                  {[1,2,3,4,5,6,7,8,9,10,12,15,20].map(n => (
-                    <option key={n} value={n}>{n} Anni</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20].map(n => (
+                    <option key={n} value={n}>
+                      {n} Anni
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Data Decorrenza</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Data Decorrenza
+                </label>
                 <input
                   type="date"
                   value={formData.data_decorrenza || formData.valida_dal}
-                  onChange={(e) => {
+                  onChange={e => {
                     const newDecorrenza = e.target.value;
-                    const newScadenza = calcolaDataScadenza(newDecorrenza, formData.durata_anni);
-                    setFormData({ ...formData, data_decorrenza: newDecorrenza, valida_dal: newDecorrenza, valida_al: newScadenza });
+                    const newScadenza = calcolaDataScadenza(
+                      newDecorrenza,
+                      formData.durata_anni
+                    );
+                    setFormData({
+                      ...formData,
+                      data_decorrenza: newDecorrenza,
+                      valida_dal: newDecorrenza,
+                      valida_al: newScadenza,
+                    });
                   }}
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Data Scadenza</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Data Scadenza
+                </label>
                 <input
                   type="date"
                   value={formData.valida_al}
-                  onChange={(e) => setFormData({ ...formData, valida_al: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, valida_al: e.target.value })
+                  }
                   className="w-full bg-gray-800/30 border border-gray-700 rounded-lg px-4 py-2.5 text-gray-400 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Stato <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Stato <span className="text-red-400">*</span>
+                </label>
                 <select
                   required
                   value={formData.stato}
-                  onChange={(e) => setFormData({ ...formData, stato: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, stato: e.target.value })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                 >
-                  {STATO_CONCESSIONE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  {STATO_CONCESSIONE_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -436,67 +534,96 @@ export function ConcessionForm({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Cerca Impresa <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Cerca Impresa <span className="text-red-400">*</span>
+                </label>
                 <select
                   required
                   value={formData.company_id}
-                  onChange={(e) => handleCompanyChange(e.target.value)}
+                  onChange={e => handleCompanyChange(e.target.value)}
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
                 >
                   <option value="">Seleziona impresa...</option>
-                  {companies.map((company) => (
+                  {companies.map(company => (
                     <option key={company.id} value={company.id}>
-                      {company.denominazione} - P.IVA: {company.partita_iva || 'N/A'}
+                      {company.denominazione} - P.IVA:{" "}
+                      {company.partita_iva || "N/A"}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Partita IVA</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Partita IVA
+                </label>
                 <input
                   type="text"
                   value={formData.partita_iva}
-                  onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, partita_iva: e.target.value })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
                   placeholder="Partita IVA"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Codice Fiscale</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Codice Fiscale
+                </label>
                 <input
                   type="text"
                   value={formData.cf_concessionario}
-                  onChange={(e) => setFormData({ ...formData, cf_concessionario: e.target.value.toUpperCase() })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      cf_concessionario: e.target.value.toUpperCase(),
+                    })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
                   placeholder="Codice Fiscale"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Ragione Sociale</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Ragione Sociale
+                </label>
                 <input
                   type="text"
                   value={formData.ragione_sociale}
-                  onChange={(e) => setFormData({ ...formData, ragione_sociale: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      ragione_sociale: e.target.value,
+                    })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
                   placeholder="Ragione Sociale"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Nome</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Nome
+                </label>
                 <input
                   type="text"
                   value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, nome: e.target.value })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
                   placeholder="Nome"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Cognome</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Cognome
+                </label>
                 <input
                   type="text"
                   value={formData.cognome}
-                  onChange={(e) => setFormData({ ...formData, cognome: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, cognome: e.target.value })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
                   placeholder="Cognome"
                 />
@@ -505,7 +632,7 @@ export function ConcessionForm({
           </div>
 
           {/* SEZIONE 4: Dati Cedente (solo per subingresso) */}
-          {formData.tipo_concessione === 'subingresso' && (
+          {formData.tipo_concessione === "subingresso" && (
             <div className="bg-gray-800/30 rounded-xl p-6 border border-red-700/50">
               <h4 className="text-red-400 font-semibold mb-6 flex items-center gap-2">
                 <Users className="w-5 h-5" />
@@ -513,60 +640,87 @@ export function ConcessionForm({
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Impresa Cedente</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Impresa Cedente
+                  </label>
                   <select
                     value={formData.cedente_impresa_id}
-                    onChange={(e) => {
+                    onChange={e => {
                       const cedenteId = e.target.value;
                       const cedente = companies.find(c => c.id === cedenteId);
                       if (cedente) {
                         setFormData({
                           ...formData,
                           cedente_impresa_id: cedenteId,
-                          cedente_partita_iva: cedente.partita_iva || '',
-                          cedente_cf: cedente.codice_fiscale || '',
-                          cedente_ragione_sociale: cedente.denominazione || '',
+                          cedente_partita_iva: cedente.partita_iva || "",
+                          cedente_cf: cedente.codice_fiscale || "",
+                          cedente_ragione_sociale: cedente.denominazione || "",
                         });
                       } else {
-                        setFormData({ ...formData, cedente_impresa_id: cedenteId });
+                        setFormData({
+                          ...formData,
+                          cedente_impresa_id: cedenteId,
+                        });
                       }
                     }}
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500"
                   >
                     <option value="">Seleziona impresa cedente...</option>
-                    {companies.map((company) => (
+                    {companies.map(company => (
                       <option key={company.id} value={company.id}>
-                        {company.denominazione} - P.IVA: {company.partita_iva || 'N/A'}
+                        {company.denominazione} - P.IVA:{" "}
+                        {company.partita_iva || "N/A"}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">P.IVA Cedente</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    P.IVA Cedente
+                  </label>
                   <input
                     type="text"
                     value={formData.cedente_partita_iva}
-                    onChange={(e) => setFormData({ ...formData, cedente_partita_iva: e.target.value })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        cedente_partita_iva: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500"
                     placeholder="Partita IVA cedente"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">C.F. Cedente</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    C.F. Cedente
+                  </label>
                   <input
                     type="text"
                     value={formData.cedente_cf}
-                    onChange={(e) => setFormData({ ...formData, cedente_cf: e.target.value.toUpperCase() })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        cedente_cf: e.target.value.toUpperCase(),
+                      })
+                    }
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500"
                     placeholder="Codice fiscale cedente"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Ragione Sociale Cedente</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Ragione Sociale Cedente
+                  </label>
                   <input
                     type="text"
                     value={formData.cedente_ragione_sociale}
-                    onChange={(e) => setFormData({ ...formData, cedente_ragione_sociale: e.target.value })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        cedente_ragione_sociale: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500"
                     placeholder="Ragione sociale cedente"
                   />
@@ -574,30 +728,51 @@ export function ConcessionForm({
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">SCIA Precedente N.</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    SCIA Precedente N.
+                  </label>
                   <input
                     type="text"
                     value={formData.scia_precedente_numero}
-                    onChange={(e) => setFormData({ ...formData, scia_precedente_numero: e.target.value })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        scia_precedente_numero: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500"
                     placeholder="Numero SCIA precedente"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Data SCIA Precedente</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Data SCIA Precedente
+                  </label>
                   <input
                     type="date"
                     value={formData.scia_precedente_data}
-                    onChange={(e) => setFormData({ ...formData, scia_precedente_data: e.target.value })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        scia_precedente_data: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Comune SCIA Precedente</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Comune SCIA Precedente
+                  </label>
                   <input
                     type="text"
                     value={formData.scia_precedente_comune}
-                    onChange={(e) => setFormData({ ...formData, scia_precedente_comune: e.target.value })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        scia_precedente_comune: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500"
                     placeholder="Es. Grosseto"
                   />
@@ -607,7 +782,9 @@ export function ConcessionForm({
           )}
 
           {/* SEZIONE 4B: Autorizzazione Precedente (subingresso/rinnovo/voltura/conversione) */}
-          {['subingresso', 'rinnovo', 'voltura', 'conversione'].includes(formData.tipo_concessione) && (
+          {["subingresso", "rinnovo", "voltura", "conversione"].includes(
+            formData.tipo_concessione
+          ) && (
             <div className="bg-gray-800/30 rounded-xl p-6 border border-yellow-700/50">
               <h4 className="text-yellow-400 font-semibold mb-6 flex items-center gap-2">
                 <FileText className="w-5 h-5" />
@@ -615,30 +792,51 @@ export function ConcessionForm({
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">N. Protocollo Precedente</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    N. Protocollo Precedente
+                  </label>
                   <input
                     type="text"
                     value={formData.autorizzazione_precedente_pg}
-                    onChange={(e) => setFormData({ ...formData, autorizzazione_precedente_pg: e.target.value })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        autorizzazione_precedente_pg: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500"
                     placeholder="N. protocollo autorizzazione"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Data Autorizzazione</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Data Autorizzazione
+                  </label>
                   <input
                     type="date"
                     value={formData.autorizzazione_precedente_data}
-                    onChange={(e) => setFormData({ ...formData, autorizzazione_precedente_data: e.target.value })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        autorizzazione_precedente_data: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Intestatario Precedente</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Intestatario Precedente
+                  </label>
                   <input
                     type="text"
                     value={formData.autorizzazione_precedente_intestatario}
-                    onChange={(e) => setFormData({ ...formData, autorizzazione_precedente_intestatario: e.target.value })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        autorizzazione_precedente_intestatario: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500"
                     placeholder="Nome intestatario precedente"
                   />
@@ -655,11 +853,15 @@ export function ConcessionForm({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Posteggio <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Posteggio <span className="text-red-400">*</span>
+                </label>
                 <select
                   required
                   value={formData.stall_id}
-                  onChange={(e) => setFormData({ ...formData, stall_id: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, stall_id: e.target.value })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                 >
                   <option value="">Seleziona posteggio...</option>
@@ -670,57 +872,85 @@ export function ConcessionForm({
                       if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
                       return a.code.localeCompare(b.code);
                     })
-                    .map((stall) => (
-                      <option key={stall.id} value={stall.id}>{stall.code}</option>
+                    .map(stall => (
+                      <option key={stall.id} value={stall.id}>
+                        {stall.code}
+                      </option>
                     ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Fila</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Fila
+                </label>
                 <input
                   type="text"
                   value={formData.fila}
-                  onChange={(e) => setFormData({ ...formData, fila: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, fila: e.target.value })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                   placeholder="Es. A, B, C"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">MQ</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  MQ
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.mq}
-                  onChange={(e) => setFormData({ ...formData, mq: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, mq: e.target.value })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                   placeholder="Es. 25.50"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Dimensioni (m x m)</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Dimensioni (m x m)
+                </label>
                 <input
                   type="text"
                   value={formData.dimensioni_lineari}
-                  onChange={(e) => setFormData({ ...formData, dimensioni_lineari: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      dimensioni_lineari: e.target.value,
+                    })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                   placeholder="Es. 5.00 x 5.00"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Giorno Mercato</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Giorno Mercato
+                </label>
                 <input
                   type="text"
                   value={formData.giorno}
-                  onChange={(e) => setFormData({ ...formData, giorno: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, giorno: e.target.value })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                   placeholder="Es. Giovedì"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Settore Merceologico</label>
+                <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                  Settore Merceologico
+                </label>
                 <select
                   value={formData.settore_merceologico}
-                  onChange={(e) => setFormData({ ...formData, settore_merceologico: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      settore_merceologico: e.target.value,
+                    })
+                  }
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                 >
                   <option value="Alimentare">Alimentare</option>
@@ -730,11 +960,15 @@ export function ConcessionForm({
               </div>
             </div>
             <div className="mt-4">
-              <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Ubicazione</label>
+              <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                Ubicazione
+              </label>
               <input
                 type="text"
                 value={formData.ubicazione}
-                onChange={(e) => setFormData({ ...formData, ubicazione: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, ubicazione: e.target.value })
+                }
                 className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                 placeholder="Ubicazione del posteggio nel mercato"
               />
@@ -748,10 +982,14 @@ export function ConcessionForm({
               Note e Prescrizioni
             </h4>
             <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">Note / Prescrizioni</label>
+              <label className="block text-xs text-gray-500 uppercase tracking-wide mb-2">
+                Note / Prescrizioni
+              </label>
               <textarea
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
                 className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 min-h-[120px]"
                 placeholder="Eventuali prescrizioni o note..."
               />
@@ -776,10 +1014,10 @@ export function ConcessionForm({
               >
                 {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
                 <Trash2 className="w-4 h-4" />
-                {deleting ? 'Eliminazione...' : 'Elimina'}
+                {deleting ? "Eliminazione..." : "Elimina"}
               </button>
             )}
-            
+
             <div className="flex items-center gap-3 ml-auto">
               <button
                 type="button"
@@ -795,7 +1033,7 @@ export function ConcessionForm({
                 className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {saving ? 'Salvataggio...' : 'Salva Concessione'}
+                {saving ? "Salvataggio..." : "Salva Concessione"}
               </button>
             </div>
           </div>

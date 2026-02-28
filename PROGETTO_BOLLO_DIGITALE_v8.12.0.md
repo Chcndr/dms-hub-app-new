@@ -20,6 +20,7 @@ Per integrare il pagamento del bollo nel nostro sistema, propongo un approccio a
 Questa è la soluzione più pragmatica e veloce, già adottata dalla maggior parte dei SUAP in Italia. Non richiede alcuna integrazione tecnica con sistemi esterni.
 
 **Come funziona:**
+
 1. L'utente (associazione) acquista le due marche da bollo fisiche (es. in tabaccheria).
 2. Nel form di compilazione della SCIA/Domanda, vengono aggiunti i seguenti campi:
    - Numero Identificativo marca da bollo 1 (14 cifre)
@@ -30,11 +31,13 @@ Questa è la soluzione più pragmatica e veloce, già adottata dalla maggior par
 4. La pratica viene inviata al SUAP con questa dichiarazione allegata.
 
 **Vantaggi:**
+
 - **Implementazione immediata:** si tratta solo di aggiungere campi al form.
 - **Nessun costo di integrazione** o canone per servizi esterni.
 - **Conformità normativa** garantita (D.M. 10/11/2011).
 
 **Svantaggi:**
+
 - L'esperienza utente non è completamente digitale.
 
 ### Fase 2 (Medio Termine): Integrazione PagoPA con @e.bollo
@@ -42,6 +45,7 @@ Questa è la soluzione più pragmatica e veloce, già adottata dalla maggior par
 Questa soluzione offre un'esperienza utente completamente digitale e integrata, ma richiede un significativo sforzo burocratico e tecnico.
 
 **Come funziona:**
+
 1. **Adesione a PagoPA:** Il nostro sistema (DMS HUB) deve aderire a PagoPA come **Ente Creditore (EC)**, oppure, più realisticamente, tramite un **Partner Tecnologico Intermediario** (es. Abaco, Step, InfoCamere, etc.).
 2. **Flusso di pagamento:**
    - L'utente compila la pratica.
@@ -51,10 +55,12 @@ Questa soluzione offre un'esperienza utente completamente digitale e integrata, 
    - Il nostro sistema allega il file XML della marca da bollo alla pratica e la invia al SUAP.
 
 **Vantaggi:**
+
 - **Esperienza utente fluida e 100% digitale.**
 - **Maggiore professionalità** e valore percepito del servizio.
 
 **Svantaggi:**
+
 - **Complessità burocratica:** l'adesione a PagoPA e la convenzione con l'Agenzia delle Entrate possono richiedere mesi.
 - **Costi:** canoni per il partner tecnologico e commissioni per ogni transazione.
 - **Complessità tecnica:** richiede lo sviluppo dell'integrazione con le API di PagoPA.
@@ -64,11 +70,13 @@ Questa soluzione offre un'esperienza utente completamente digitale e integrata, 
 Questa è l'evoluzione finale, che trasforma il bollo in un servizio a valore aggiunto.
 
 **Come funziona:**
+
 1. **Tab "Acquista @e.bollo":** Una nuova sezione nella dashboard permette alle associazioni di pre-acquistare pacchetti di marche da bollo digitali (es. 10, 50, 100 bolli) che vengono salvate in un "Wallet Bolli".
 2. **Partnership con PSP:** Stringiamo un accordo diretto con un PSP convenzionato con @e.bollo per l'acquisto massivo.
 3. **Compilazione Pratica:** Durante la compilazione della pratica, l'utente sceglie di usare i bolli dal proprio wallet. Il sistema associa l'IUBD del bollo all'hash del documento e lo allega.
 
 **Vantaggi:**
+
 - **Massima efficienza** per le associazioni che gestiscono molte pratiche.
 - **Nuova opportunità di business:** possiamo applicare un piccolo margine sul costo dei pacchetti di bolli.
 - **Fidelizzazione** del cliente.
@@ -78,6 +86,7 @@ Questa è l'evoluzione finale, che trasforma il bollo in un servizio a valore ag
 La ricerca ha portato a una scoperta fondamentale: il **Comune di Grosseto utilizza già Plug&Pay di E-FIL** come portale di pagamento PagoPA. Questo cambia completamente lo scenario della Fase 2, rendendola molto più concreta e veloce.
 
 **Prove:**
+
 - Il portale pagamenti del Comune di Grosseto è `cittadino.plugandpay.it/C_E202`.
 - La piattaforma Plug&Pay di E-FIL **supporta nativamente il "Bollo Virtuale"** come pagamento spontaneo (dimostrato dal Comune di Desenzano del Garda).
 - Il Comune di Grosseto al momento **non ha ancora attivato** questo specifico servizio, ma è solo una questione di configurazione.
@@ -87,10 +96,12 @@ La ricerca ha portato a una scoperta fondamentale: il **Comune di Grosseto utili
 Alla luce di queste scoperte, la proposta operativa diventa:
 
 **FASE 1 (Immediata): Dichiarazione Sostitutiva (Confermata)**
+
 - **Azione:** Implementare subito i campi per l'inserimento dei numeri seriali dei bolli fisici e la dichiarazione sostitutiva nel form SCIA/Domanda.
 - **Obiettivo:** Andare live immediatamente con una soluzione conforme alla normativa.
 
 **FASE 2 (Medio Termine): Integrazione API E-FIL (Nuova)**
+
 - **Azione:** Contattare E-FIL per:
   1. Chiedere l'attivazione del servizio "Bollo Virtuale" come pagamento spontaneo per il Comune di Grosseto (e per gli altri comuni clienti).
   2. Ottenere accesso alle loro **API per la creazione programmatica di posizioni debitorie**.
@@ -104,12 +115,12 @@ Alla luce di queste scoperte, la proposta operativa diventa:
 - **Vantaggi:** Molto più veloce e meno costoso dell'adesione diretta a PagoPA. Sfruttiamo un partner già integrato.
 
 **FASE 3 (Lungo Termine): Wallet Bolli (Confermata)**
+
 - Rimane come obiettivo a lungo termine, da valutare dopo il successo della Fase 2.
 
 Questa nuova roadmap è molto più concreta e sfrutta l'infrastruttura esistente del vostro partner tecnologico E-FIL, riducendo drasticamente tempi e costi per la digitalizzazione del bollo.
 
 ---
-
 
 Propongo di procedere come segue:
 

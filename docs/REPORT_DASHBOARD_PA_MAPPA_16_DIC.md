@@ -1,4 +1,5 @@
 # 📋 Report Implementazione Dashboard PA - Mappa GIS Modal
+
 **Data:** 16 Dicembre 2024  
 **Versione:** v3.6.0  
 **Commit:** `7aff4ed` - "Add MapModal full-screen + empty tabs"
@@ -18,12 +19,14 @@ Implementare accesso alla mappa GIS dalla Dashboard PA tramite modal full-screen
 Componente React modal full-screen con:
 
 #### Header
+
 - Titolo "Mappa Mercati GIS"
 - Sottotitolo "Visualizza e gestisci posteggi mercati"
 - Icona MapPin con sfondo teal
 - Pulsante chiudi (X) con animazione rotazione
 
 #### Barra Ricerca e Filtri
+
 - **Input ricerca** con placeholder "Cerca mercato, posteggio, impresa..."
 - Icona Search integrata
 - **4 Filtri posteggi:**
@@ -34,20 +37,25 @@ Componente React modal full-screen con:
 - State management per filtro attivo
 
 #### Statistiche Real-time
+
 Grid 4 card con:
+
 - **Posteggi Totali:** 186 (icona Store, teal)
 - **Liberi:** 45 (icona CheckCircle, verde)
 - **Occupati:** 128 (icona XCircle, rosso)
 - **Riservati:** 13 (icona AlertCircle, arancione)
 
 #### Mappa GIS Integrata
+
 - Card con header "Pianta Mercato Grosseto - GIS Interattiva"
 - `<MarketMapComponent>` embedded
 - Props: `marketId={1}`, `onStallClick` handler
 - Background dark con border teal
 
 #### Legenda Colori
+
 Grid 4 elementi:
+
 - Posteggio Libero (verde #10b981)
 - Posteggio Occupato (rosso #ef4444)
 - Posteggio Riservato (arancione #f59e0b)
@@ -58,22 +66,27 @@ Grid 4 elementi:
 ### 2. **Modifiche Dashboard PA** (`/client/src/pages/DashboardPA.tsx`)
 
 #### Import
+
 ```typescript
-import { MapModal } from '@/components/MapModal';
+import { MapModal } from "@/components/MapModal";
 ```
 
 #### State Management
+
 ```typescript
 const [mapModalOpen, setMapModalOpen] = useState(false);
 ```
 
 #### Pulsante Mappa (Accesso Rapido Applicativi)
+
 **Prima:**
+
 ```tsx
 <QuickAccessButton href="/mappa" icon={<MapPin />} label="Mappa" />
 ```
 
 **Dopo:**
+
 ```tsx
 <button
   onClick={() => setMapModalOpen(true)}
@@ -85,6 +98,7 @@ const [mapModalOpen, setMapModalOpen] = useState(false);
 ```
 
 #### Modal Render
+
 ```tsx
 <MapModal isOpen={mapModalOpen} onClose={() => setMapModalOpen(false)} />
 ```
@@ -96,12 +110,14 @@ const [mapModalOpen, setMapModalOpen] = useState(false);
 Aggiunti 2 nuovi tab nella griglia "Sezioni Dashboard":
 
 #### Tab "Mappa GIS"
+
 - Icona: `MapPin`
 - Colore: Teal (#14b8a6)
 - State: `activeTab === 'mappa'`
 - Content: Placeholder vuoto con messaggio "Contenuto da collegare"
 
 #### Tab "Workspace"
+
 - Icona: `Globe`
 - Colore: Cyan (#06b6d4)
 - State: `activeTab === 'workspace'`
@@ -114,6 +130,7 @@ Aggiunti 2 nuovi tab nella griglia "Sezioni Dashboard":
 ## 🎨 Design System
 
 ### Colori Utilizzati
+
 - **Background principale:** `#0b1220`
 - **Background card:** `#1a2332`
 - **Teal primario:** `#14b8a6`
@@ -125,6 +142,7 @@ Aggiunti 2 nuovi tab nella griglia "Sezioni Dashboard":
 - **Testo secondario:** `#e8fbff/60`
 
 ### Componenti UI
+
 - `Card`, `CardContent`, `CardHeader`, `CardTitle` (shadcn/ui)
 - Icone Lucide: `MapPin`, `Search`, `Filter`, `Store`, `CheckCircle`, `XCircle`, `AlertCircle`, `Globe`, `X`
 
@@ -133,15 +151,18 @@ Aggiunti 2 nuovi tab nella griglia "Sezioni Dashboard":
 ## 📊 Statistiche Tecniche
 
 ### File Modificati
+
 - `/client/src/components/MapModal.tsx` (nuovo, 256 righe)
 - `/client/src/pages/DashboardPA.tsx` (modificato, +15 righe)
 
 ### Commits
+
 1. `390f553` - Route color fix
 2. `428b091` - Hide market center marker in routing
 3. `7aff4ed` - Add MapModal full-screen + empty tabs
 
 ### Totale Righe Codice
+
 - **MapModal:** 256 righe
 - **Dashboard PA:** +15 righe
 - **Totale:** 271 righe nuove/modificate
@@ -189,25 +210,30 @@ Aggiunti 2 nuovi tab nella griglia "Sezioni Dashboard":
 ## 🚀 Prossimi Passi
 
 ### Fase 1: Integrazione Dati Reali
+
 - [ ] Collegare statistiche a API backend MIHUB
 - [ ] Query `trpc.markets.stats.useQuery()`
 - [ ] Aggiornamento real-time posteggi
 
 ### Fase 2: Funzionalità Ricerca
+
 - [ ] Implementare filtro ricerca su mappa
 - [ ] Highlight posteggi matching query
 - [ ] Autocomplete suggerimenti
 
 ### Fase 3: Funzionalità Filtri
+
 - [ ] Collegare filtri a MarketMapComponent
 - [ ] Mostrare solo posteggi filtrati
 - [ ] Aggiornare statistiche dinamicamente
 
 ### Fase 4: Tab Mappa GIS
+
 - [ ] Decidere contenuto tab "Mappa GIS"
 - [ ] Possibile duplicato modal o vista alternativa
 
 ### Fase 5: Tab Workspace
+
 - [ ] Definire scopo tab Workspace
 - [ ] Implementare contenuto
 
@@ -216,6 +242,7 @@ Aggiunti 2 nuovi tab nella griglia "Sezioni Dashboard":
 ## 📝 Note Tecniche
 
 ### Props MarketMapComponent
+
 ```typescript
 interface MarketMapComponentProps {
   marketId: number;
@@ -224,18 +251,22 @@ interface MarketMapComponentProps {
     enabled: boolean;
     userLocation: { lat: number; lng: number };
     destination: { lat: number; lng: number };
-    mode: 'walking' | 'cycling' | 'driving';
+    mode: "walking" | "cycling" | "driving";
   };
 }
 ```
 
 ### State MapModal
+
 ```typescript
-const [searchQuery, setSearchQuery] = useState('');
-const [activeFilter, setActiveFilter] = useState<'all' | 'free' | 'occupied' | 'reserved'>('all');
+const [searchQuery, setSearchQuery] = useState("");
+const [activeFilter, setActiveFilter] = useState<
+  "all" | "free" | "occupied" | "reserved"
+>("all");
 ```
 
 ### Gestione Modal
+
 ```typescript
 // Dashboard PA
 const [mapModalOpen, setMapModalOpen] = useState(false);

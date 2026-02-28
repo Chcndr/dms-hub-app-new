@@ -17,6 +17,7 @@
 | `operator_transactions` | Storico transazioni operatore | ✅ Creata |
 
 **Colonne aggiunte:**
+
 - `transactions`: `operator_id`, `qr_token`
 - `carbon_credits_config`: `policy_multiplier`, `ets_base_price`, `last_policy_update`, `policy_notes`, `tcc_value`
 
@@ -47,6 +48,7 @@
 #### 3.1 WalletPage.tsx (App Pubblica)
 
 **Modifiche:**
+
 - ❌ **Rimosso** tab "Impresa"
 - ✅ **Solo** tab "Cliente"
 - 🆕 **Aggiunta** sezione "Paga con TCC":
@@ -61,13 +63,14 @@
 
 **Ristrutturazione completa con 3 tab:**
 
-| Tab | Contenuto | Stato |
-|-----|-----------|-------|
-| **Scanner QR** | Due modalità (Assegna/Incassa TCC), campo importo, certificazioni, calcolo TCC | ✅ |
-| **Vendite** | Storico transazioni in tempo reale | ✅ |
-| **Wallet** | Saldo Rilasciati, Riscattati, Differenza, Chiusura giornaliera | ✅ |
+| Tab            | Contenuto                                                                      | Stato |
+| -------------- | ------------------------------------------------------------------------------ | ----- |
+| **Scanner QR** | Due modalità (Assegna/Incassa TCC), campo importo, certificazioni, calcolo TCC | ✅    |
+| **Vendite**    | Storico transazioni in tempo reale                                             | ✅    |
+| **Wallet**     | Saldo Rilasciati, Riscattati, Differenza, Chiusura giornaliera                 | ✅    |
 
 **Funzionalità:**
+
 - Toggle "Assegna TCC" / "Incassa TCC"
 - Campo "Importo Vendita (EUR)" grande e visibile
 - Certificazioni (+20% cad.): BIO, KM0, Fair Trade, DOP
@@ -79,6 +82,7 @@
 #### 3.3 DashboardPA.tsx - Carbon Credits
 
 **Già esistente e funzionante:**
+
 - Simulatore scenari TCC
 - Valore Token Carbon Credit (TCC)
 - Manopola Politica con slider
@@ -126,26 +130,26 @@
 
 ## CONFIGURAZIONE ATTUALE
 
-| Parametro | Valore |
-|-----------|--------|
-| Tasso base TCC | EUR 0.01 |
-| Moltiplicatore politica | 1.0 |
-| Prezzo base ETS | EUR 80.00/ton |
-| Bonus BIO | +20% |
-| Bonus KM0 | +20% |
-| Bonus Fair Trade | +20% |
-| Bonus DOP | +20% |
+| Parametro               | Valore        |
+| ----------------------- | ------------- |
+| Tasso base TCC          | EUR 0.01      |
+| Moltiplicatore politica | 1.0           |
+| Prezzo base ETS         | EUR 80.00/ton |
+| Bonus BIO               | +20%          |
+| Bonus KM0               | +20%          |
+| Bonus Fair Trade        | +20%          |
+| Bonus DOP               | +20%          |
 
 ---
 
 ## URL DI ACCESSO
 
-| Servizio | URL |
-|----------|-----|
-| App Pubblica (Wallet) | https://dms-hub-app-new.vercel.app/wallet |
-| HUB Operatore | https://dms-hub-app-new.vercel.app/hub-operatore |
-| Dashboard PA | https://dms-hub-app-new.vercel.app/dashboard-pa |
-| Backend API | https://orchestratore.mio-hub.me/api/tcc/v2/ |
+| Servizio              | URL                                              |
+| --------------------- | ------------------------------------------------ |
+| App Pubblica (Wallet) | https://dms-hub-app-new.vercel.app/wallet        |
+| HUB Operatore         | https://dms-hub-app-new.vercel.app/hub-operatore |
+| Dashboard PA          | https://dms-hub-app-new.vercel.app/dashboard-pa  |
+| Backend API           | https://orchestratore.mio-hub.me/api/tcc/v2/     |
 
 ---
 
@@ -166,4 +170,4 @@
 
 ---
 
-*Blueprint aggiornato automaticamente - Manus AI*
+_Blueprint aggiornato automaticamente - Manus AI_

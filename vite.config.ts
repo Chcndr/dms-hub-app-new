@@ -5,14 +5,18 @@ import path from "path";
 import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
-
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime()];
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+];
 
 export default defineConfig({
   plugins,
   define: {
-    'import.meta.env.VITE_TRPC_URL': JSON.stringify(
-      (process.env.VITE_TRPC_URL || 'https://mihub.157-90-29-66.nip.io').trim()
+    "import.meta.env.VITE_TRPC_URL": JSON.stringify(
+      (process.env.VITE_TRPC_URL || "https://mihub.157-90-29-66.nip.io").trim()
     ),
   },
   resolve: {
@@ -30,22 +34,22 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash][extname]'
-      }
-    }
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
+      },
+    },
   },
   server: {
     host: true,
     proxy: {
-      '/api/mihub': {
-        target: 'https://orchestratore.mio-hub.me',
+      "/api/mihub": {
+        target: "https://orchestratore.mio-hub.me",
         changeOrigin: true,
         secure: true,
       },
-      '/api/guardian': {
-        target: 'https://orchestratore.mio-hub.me',
+      "/api/guardian": {
+        target: "https://orchestratore.mio-hub.me",
         changeOrigin: true,
         secure: true,
       },

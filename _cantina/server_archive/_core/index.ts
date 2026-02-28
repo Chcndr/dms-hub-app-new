@@ -30,7 +30,7 @@ async function saveRestApiMetric(data: {
   try {
     const db = await getDb();
     if (!db) return;
-    
+
     await db.insert(schema.apiMetrics).values({
       endpoint: data.endpoint,
       method: data.method,
@@ -42,7 +42,7 @@ async function saveRestApiMetric(data: {
     });
   } catch (error) {
     // Non bloccare la richiesta se il logging fallisce
-    console.error('[REST API Metrics] Errore salvataggio metrica:', error);
+    console.error("[REST API Metrics] Errore salvataggio metrica:", error);
   }
 }
 
@@ -54,96 +54,135 @@ async function startServer() {
   app.set("trust proxy", 1);
 
   // Security headers (Helmet)
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "https:", "blob:"],
-        connectSrc: ["'self'", "https://mihub.157-90-29-66.nip.io", "https://*.firebaseio.com", "https://*.googleapis.com", "https://orchestratore.mio-hub.me", "https://unpkg.com"],
-        frameSrc: ["'none'"],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'"],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            "https://fonts.googleapis.com",
+            "https://unpkg.com",
+          ],
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          imgSrc: ["'self'", "data:", "https:", "blob:"],
+          connectSrc: [
+            "'self'",
+            "https://mihub.157-90-29-66.nip.io",
+            "https://*.firebaseio.com",
+            "https://*.googleapis.com",
+            "https://orchestratore.mio-hub.me",
+            "https://unpkg.com",
+          ],
+          frameSrc: ["'none'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'self'"],
+        },
       },
-    },
-    crossOriginEmbedderPolicy: false, // Necessario per Leaflet tiles
-    hsts: { maxAge: 31536000, includeSubDomains: true },
-  }));
+      crossOriginEmbedderPolicy: false, // Necessario per Leaflet tiles
+      hsts: { maxAge: 31536000, includeSubDomains: true },
+    })
+  );
 
   // CORS restrittivo
-  app.use(cors({
-    origin: [
-      "https://dms-hub-app-new.vercel.app",
-      "https://orchestratore.mio-hub.me",
-      "https://mihub.157-90-29-66.nip.io",
-      /^http:\/\/localhost:\d+$/,
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
-  }));
+  app.use(
+    cors({
+      origin: [
+        "https://dms-hub-app-new.vercel.app",
+        "https://orchestratore.mio-hub.me",
+        "https://mihub.157-90-29-66.nip.io",
+        /^http:\/\/localhost:\d+$/,
+      ],
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
+    })
+  );
 
   // Rate limiting globale su API
-  app.use("/api/", rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minuti
-    max: 300, // max 300 richieste per IP per finestra
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: "Troppe richieste. Riprova tra qualche minuto." },
-  }));
+  app.use(
+    "/api/",
+    rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minuti
+      max: 300, // max 300 richieste per IP per finestra
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: "Troppe richieste. Riprova tra qualche minuto." },
+    })
+  );
 
   // Rate limiting strict su auth (anti brute-force)
-  app.use("/api/auth/", rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: "Troppi tentativi di autenticazione. Riprova tra 15 minuti." },
-  }));
+  app.use(
+    "/api/auth/",
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 20,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: {
+        error: "Troppi tentativi di autenticazione. Riprova tra 15 minuti.",
+      },
+    })
+  );
 
-  app.use("/api/oauth/", rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 15,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: "Troppi tentativi di login. Riprova tra 15 minuti." },
-  }));
+  app.use(
+    "/api/oauth/",
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 15,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: "Troppi tentativi di login. Riprova tra 15 minuti." },
+    })
+  );
 
   // Rate limiting su TCC Security (check-in, QR generation)
-  app.use("/api/trpc/tccSecurity.recordCheckin", rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 30,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: "Troppi check-in. Riprova tra qualche minuto." },
-  }));
+  app.use(
+    "/api/trpc/tccSecurity.recordCheckin",
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 30,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: "Troppi check-in. Riprova tra qualche minuto." },
+    })
+  );
 
-  app.use("/api/trpc/tccSecurity.generateSignedQR", rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: "Troppi QR generati. Riprova tra qualche minuto." },
-  }));
+  app.use(
+    "/api/trpc/tccSecurity.generateSignedQR",
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 20,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: "Troppi QR generati. Riprova tra qualche minuto." },
+    })
+  );
 
   // Rate limiting su operazioni wallet finanziarie
-  app.use("/api/trpc/wallet.ricarica", rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 10,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: "Troppe ricariche. Riprova tra qualche minuto." },
-  }));
+  app.use(
+    "/api/trpc/wallet.ricarica",
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: "Troppe ricariche. Riprova tra qualche minuto." },
+    })
+  );
 
-  app.use("/api/trpc/wallet.decurtazione", rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 50,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: "Troppe decurtazioni. Riprova tra qualche minuto." },
-  }));
+  app.use(
+    "/api/trpc/wallet.decurtazione",
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 50,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: "Troppe decurtazioni. Riprova tra qualche minuto." },
+    })
+  );
 
   // Body parser con limite ragionevole (5MB per JSON, file upload separato)
   app.use(express.json({ limit: "5mb" }));
@@ -154,38 +193,39 @@ async function startServer() {
     const start = Date.now();
     const originalSend = res.send;
     const originalJson = res.json;
-    
+
     // Intercept response to get status code
     const logRequest = (statusCode: number) => {
       const duration = Date.now() - start;
-      const userAgent = req.get('user-agent') || 'unknown';
-      const ip = req.ip || req.socket.remoteAddress || 'unknown';
-      
+      const userAgent = req.get("user-agent") || "unknown";
+      const ip = req.ip || req.socket.remoteAddress || "unknown";
+
       // Skip logging Guardian and apiStats endpoints to avoid infinite loops
-      if (!req.path.includes('/guardian/') && 
-          !req.path.includes('/logs/') && 
-          !req.path.includes('apiStats') &&
-          !req.path.includes('integrations.apiStats')) {
-        
+      if (
+        !req.path.includes("/guardian/") &&
+        !req.path.includes("/logs/") &&
+        !req.path.includes("apiStats") &&
+        !req.path.includes("integrations.apiStats")
+      ) {
         // Log in memoria (per Guardian real-time)
         addLog({
-          level: statusCode >= 400 ? 'error' : 'info',
-          app: 'REST',
-          type: statusCode >= 400 ? 'ERROR' : 'API_CALL',
+          level: statusCode >= 400 ? "error" : "info",
+          app: "REST",
+          type: statusCode >= 400 ? "ERROR" : "API_CALL",
           endpoint: req.originalUrl,
           method: req.method,
           statusCode,
           responseTime: duration,
           message: `${req.method} ${req.originalUrl} - ${statusCode}`,
-          userEmail: 'system', // REST endpoints don't have user context here
+          userEmail: "system", // REST endpoints don't have user context here
           details: {
             userAgent,
             ip,
             query: req.query,
-            body: req.method === 'POST' ? '(body hidden)' : undefined,
+            body: req.method === "POST" ? "(body hidden)" : undefined,
           },
         });
-        
+
         // Salva nel database (per statistiche persistenti)
         saveRestApiMetric({
           endpoint: req.originalUrl,
@@ -197,29 +237,29 @@ async function startServer() {
         });
       }
     };
-    
+
     // Override res.send
-    res.send = function(data) {
+    res.send = function (data) {
       logRequest(res.statusCode);
       return originalSend.call(this, data);
     };
-    
+
     // Override res.json
-    res.json = function(data) {
+    res.json = function (data) {
       logRequest(res.statusCode);
       return originalJson.call(this, data);
     };
-    
+
     next();
   });
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  
+
   // Firebase Authentication routes (dev locale)
   // NOTA: In produzione, le route /api/auth/* sono gestite da mihub-backend-rest/routes/auth.js su Hetzner
   // Questo router è solo per sviluppo locale
   app.use("/api/auth", firebaseAuthRouter);
-  
+
   // System status endpoints (usati dal frontend useSystemStatus hook)
   app.get("/api/system/health", (_req, res) => {
     res.json({
@@ -245,20 +285,24 @@ async function startServer() {
     try {
       const { slotEditorData } = req.body;
       if (!slotEditorData) {
-        return res.status(400).json({ success: false, error: "Missing slotEditorData" });
+        return res
+          .status(400)
+          .json({ success: false, error: "Missing slotEditorData" });
       }
-      
+
       // Import via TRPC router
-      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const caller = appRouter.createCaller(
+        await createContext({ req, res, info: {} as any })
+      );
       const result = await caller.dmsHub.markets.importAuto({ slotEditorData });
-      
+
       res.json(result);
     } catch (error: any) {
       console.error("Import error:", error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
-  
+
   // ============================================
   // REST Endpoints: DMS Legacy Interoperabilità
   // Proxy da REST → tRPC per compatibilità con documentazione
@@ -266,11 +310,20 @@ async function startServer() {
   const legacyApiPrefix = "/api/integrations/dms-legacy";
 
   // EXPORT endpoints (GET)
-  const exportEndpoints = ["markets", "vendors", "concessions", "spuntisti", "documents", "stats"] as const;
+  const exportEndpoints = [
+    "markets",
+    "vendors",
+    "concessions",
+    "spuntisti",
+    "documents",
+    "stats",
+  ] as const;
   for (const endpoint of exportEndpoints) {
     app.get(`${legacyApiPrefix}/${endpoint}`, async (req, res) => {
       try {
-        const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+        const caller = appRouter.createCaller(
+          await createContext({ req, res, info: {} as any })
+        );
         const result = await (caller.dmsLegacy.export as any)[endpoint]();
         res.json(result);
       } catch (error: any) {
@@ -282,8 +335,12 @@ async function startServer() {
   // EXPORT endpoints con parametri
   app.get(`${legacyApiPrefix}/presences/:marketId`, async (req, res) => {
     try {
-      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
-      const result = await caller.dmsLegacy.export.presences({ marketId: Number(req.params.marketId) });
+      const caller = appRouter.createCaller(
+        await createContext({ req, res, info: {} as any })
+      );
+      const result = await caller.dmsLegacy.export.presences({
+        marketId: Number(req.params.marketId),
+      });
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -292,8 +349,12 @@ async function startServer() {
 
   app.get(`${legacyApiPrefix}/market-sessions/:marketId`, async (req, res) => {
     try {
-      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
-      const result = await caller.dmsLegacy.export.marketSessions({ marketId: Number(req.params.marketId) });
+      const caller = appRouter.createCaller(
+        await createContext({ req, res, info: {} as any })
+      );
+      const result = await caller.dmsLegacy.export.marketSessions({
+        marketId: Number(req.params.marketId),
+      });
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -302,8 +363,12 @@ async function startServer() {
 
   app.get(`${legacyApiPrefix}/stalls/:marketId`, async (req, res) => {
     try {
-      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
-      const result = await caller.dmsLegacy.export.stalls({ marketId: Number(req.params.marketId) });
+      const caller = appRouter.createCaller(
+        await createContext({ req, res, info: {} as any })
+      );
+      const result = await caller.dmsLegacy.export.stalls({
+        marketId: Number(req.params.marketId),
+      });
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -313,7 +378,9 @@ async function startServer() {
   // UTILITY endpoints
   app.get(`${legacyApiPrefix}/health`, async (req, res) => {
     try {
-      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const caller = appRouter.createCaller(
+        await createContext({ req, res, info: {} as any })
+      );
       const result = await caller.dmsLegacy.health();
       res.json(result);
     } catch (error: any) {
@@ -323,7 +390,9 @@ async function startServer() {
 
   app.get(`${legacyApiPrefix}/status`, async (req, res) => {
     try {
-      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const caller = appRouter.createCaller(
+        await createContext({ req, res, info: {} as any })
+      );
       const result = await caller.dmsLegacy.status();
       res.json(result);
     } catch (error: any) {
@@ -333,7 +402,9 @@ async function startServer() {
 
   app.post(`${legacyApiPrefix}/sync`, async (req, res) => {
     try {
-      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const caller = appRouter.createCaller(
+        await createContext({ req, res, info: {} as any })
+      );
       const result = await caller.dmsLegacy.sync(req.body || undefined);
       res.json(result);
     } catch (error: any) {
@@ -343,7 +414,9 @@ async function startServer() {
 
   app.post(`${legacyApiPrefix}/cron-sync`, async (req, res) => {
     try {
-      const caller = appRouter.createCaller(await createContext({ req, res, info: {} as any }));
+      const caller = appRouter.createCaller(
+        await createContext({ req, res, info: {} as any })
+      );
       const result = await caller.dmsLegacy.cronSync();
       res.json(result);
     } catch (error: any) {
@@ -365,26 +438,34 @@ async function startServer() {
   } else {
     // Serve static files with specific cache control
     // 1. Assets with hash in filename -> Cache forever
-    app.use("/assets", express.static(path.resolve(import.meta.dirname, "../public/assets"), {
-      maxAge: "1y",
-      immutable: true
-    }));
+    app.use(
+      "/assets",
+      express.static(path.resolve(import.meta.dirname, "../public/assets"), {
+        maxAge: "1y",
+        immutable: true,
+      })
+    );
 
     // 2. Everything else (including index.html) -> No Cache
-    app.use(express.static(path.resolve(import.meta.dirname, "../public"), {
-      setHeaders: (res, path) => {
-        if (path.endsWith("index.html")) {
-          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-          res.setHeader("Pragma", "no-cache");
-          res.setHeader("Expires", "0");
-        }
-      }
-    }));
+    app.use(
+      express.static(path.resolve(import.meta.dirname, "../public"), {
+        setHeaders: (res, path) => {
+          if (path.endsWith("index.html")) {
+            res.setHeader(
+              "Cache-Control",
+              "no-cache, no-store, must-revalidate"
+            );
+            res.setHeader("Pragma", "no-cache");
+            res.setHeader("Expires", "0");
+          }
+        },
+      })
+    );
 
     // Fallback for SPA routing: serve index.html for unknown routes
     app.get("*", (req, res, next) => {
       if (req.path.startsWith("/api")) return next();
-      
+
       res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
@@ -405,9 +486,13 @@ async function startServer() {
 
   async function startLegacyCronSync() {
     try {
-      const { isLegacyConfigured } = await import("../services/dmsLegacyService");
+      const { isLegacyConfigured } = await import(
+        "../services/dmsLegacyService"
+      );
       if (!isLegacyConfigured()) {
-        console.log("[DMS Legacy CRON] Legacy DB non configurato — CRON sync disabilitata");
+        console.log(
+          "[DMS Legacy CRON] Legacy DB non configurato — CRON sync disabilitata"
+        );
         return;
       }
 
@@ -419,21 +504,33 @@ async function startServer() {
       const frequency = (config?.frequency || 300) * 1000; // Default 5 min in ms
 
       if (config && config.enabled !== 1) {
-        console.log("[DMS Legacy CRON] Sync automatica disabilitata nella configurazione");
+        console.log(
+          "[DMS Legacy CRON] Sync automatica disabilitata nella configurazione"
+        );
         return;
       }
 
       cronSyncInterval = setInterval(async () => {
         try {
-          const caller = appRouter.createCaller(await createContext({ req: {} as any, res: {} as any, info: {} as any }));
+          const caller = appRouter.createCaller(
+            await createContext({
+              req: {} as any,
+              res: {} as any,
+              info: {} as any,
+            })
+          );
           await caller.dmsLegacy.cronSync();
-          console.log(`[DMS Legacy CRON] Sync completata — prossima in ${frequency / 1000}s`);
+          console.log(
+            `[DMS Legacy CRON] Sync completata — prossima in ${frequency / 1000}s`
+          );
         } catch (error: any) {
           console.error("[DMS Legacy CRON] Errore:", error.message);
         }
       }, frequency);
 
-      console.log(`[DMS Legacy CRON] Sync automatica avviata — ogni ${frequency / 1000}s`);
+      console.log(
+        `[DMS Legacy CRON] Sync automatica avviata — ogni ${frequency / 1000}s`
+      );
     } catch (error: any) {
       console.error("[DMS Legacy CRON] Errore avvio:", error.message);
     }

@@ -2,12 +2,15 @@
 
 > **Versione:** 9.1.2 (Business Associazioni + Production Fixes)
 > **Data:** 27 Febbraio 2026
-> 
-> --- 
+>
+> ---
+>
 > ### CHANGELOG v9.1.0 (25 Feb 2026)
+>
 > **Implementazione completa del sistema "Business Associazioni"**
-> 
+>
 > **Frontend (commit `d8d0287`):**
+>
 > - **Merge del branch di Claude** (`claude/review-production-fixes-3sUvQ`)
 > - **4 nuovi pannelli** nella Dashboard PA per la gestione dell'associazione:
 >   - `SchedaPubblicaPanel.tsx`
@@ -15,17 +18,19 @@
 >   - `GestioneCorsiAssociazionePanel.tsx`
 >   - `WalletAssociazionePanel.tsx`
 > - **Aggiornamento `AnagraficaPage.tsx`** con il nuovo flusso "Associati e Paga" e le sezioni per servizi e formazione.
-> 
+>
 > **Backend (commit `d4634ad`):**
+>
 > - **16 nuovi endpoint** per il sistema associativo, implementati in `routes/associazioni-v9.js` per non toccare la logica esistente.
 > - **Nuovo endpoint `POST /api/tesseramenti/richiedi-e-paga`** in `routes/tesseramenti.js`.
 > - **Arricchimento `GET /api/associazioni/pubbliche`** con `quota_annuale` e `servizi_count`.
 > - **Fix chirurgici** su 7 query SQL per allineare i nomi delle colonne (`nome_impresa` → `denominazione`) e gestire i tipi di dato.
-> 
+>
 > **Database (Neon):**
+>
 > - **2 nuove tabelle create:** `wallet_associazione` e `transazioni_wallet_associazione`.
 > - **2 `ALTER TABLE`** per aggiungere le colonne `associazioni.quota_annuale` e `formazione_iscrizioni.attestato_rilasciato`.
-> 
+>
 > **Stato:** **22/22 endpoint** del nuovo sistema testati e funzionanti in produzione.
 > **Autore:** Sistema documentato da Manus AI & Claude AI  
 > **Stato:** PRODUZIONE
@@ -46,31 +51,25 @@
 
 Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni cambio di titolarità (subingresso, rinnovo, cessazione) come un evento. È fondamentale per la graduatoria Bolkestein e per la documentazione legale.
 
-| Colonna | Tipo | Descrizione |
-|---|---|---|
-| `id` | `SERIAL PRIMARY KEY` | ID univoco dell'evento |
-| `data_evento` | `TIMESTAMP WITH TIME ZONE` | Data e ora dell'evento (subingresso, rinnovo, etc.) |
-| `tipo_evento` | `VARCHAR(255)` | Tipo di evento: `SUBINGRESSO`, `RINNOVO`, `CREAZIONE`, `CESSAZIONE` |
-| `comune_id` | `INTEGER` | ID del comune per filtro di sicurezza |
-| `mercato_id` | `INTEGER` | ID del mercato |
-| `posteggio_id` | `INTEGER` | ID del posteggio |
-| `concessione_cedente_id` | `INTEGER` | ID della concessione del dante causa (cedente) |
-| `concessione_subentrante_id` | `INTEGER` | ID della nuova concessione del subentrante |
-| `impresa_cedente_id` | `INTEGER` | ID dell'impresa del dante causa |
-| `impresa_subentrante_id` | `INTEGER` | ID dell'impresa del subentrante |
-| `riferimento_precedente_tipo` | `VARCHAR(255)` | Tipo di riferimento precedente: `AUTORIZZAZIONE`, `SCIA`, `CONCESSIONE` |
-| `riferimento_precedente_id` | `INTEGER` | ID del riferimento precedente |
-| `riferimento_attuale_tipo` | `VARCHAR(255)` | Tipo di riferimento attuale: `AUTORIZZAZIONE`, `SCIA`, `CONCESSIONE` |
-| `riferimento_attuale_id` | `INTEGER` | ID del riferimento attuale |
-| `dati_archiviati` | `JSONB` | Fotografia completa dei dati del dante causa: presenze, graduatoria, scadenze |
-](#database-e-storage)
-9. [API Endpoints](#api-endpoints)
-10. [SSO SUAP - Modulo SCIA](#sso-suap---modulo-scia)
-11. [Deploy e CI/CD](#deploy-e-cicd)
-12. [Architettura di Autenticazione (v2.0 - Firebase)](#architettura-di-autenticazione-v20---firebase)
-13. [Credenziali e Accessi](#credenziali-e-accessi)
-14. [Troubleshooting](#troubleshooting)
-15. [Regole per Agenti AI](#regole-per-agenti-ai)
+| Colonna                       | Tipo                       | Descrizione                                                                   |
+| ----------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
+| `id`                          | `SERIAL PRIMARY KEY`       | ID univoco dell'evento                                                        |
+| `data_evento`                 | `TIMESTAMP WITH TIME ZONE` | Data e ora dell'evento (subingresso, rinnovo, etc.)                           |
+| `tipo_evento`                 | `VARCHAR(255)`             | Tipo di evento: `SUBINGRESSO`, `RINNOVO`, `CREAZIONE`, `CESSAZIONE`           |
+| `comune_id`                   | `INTEGER`                  | ID del comune per filtro di sicurezza                                         |
+| `mercato_id`                  | `INTEGER`                  | ID del mercato                                                                |
+| `posteggio_id`                | `INTEGER`                  | ID del posteggio                                                              |
+| `concessione_cedente_id`      | `INTEGER`                  | ID della concessione del dante causa (cedente)                                |
+| `concessione_subentrante_id`  | `INTEGER`                  | ID della nuova concessione del subentrante                                    |
+| `impresa_cedente_id`          | `INTEGER`                  | ID dell'impresa del dante causa                                               |
+| `impresa_subentrante_id`      | `INTEGER`                  | ID dell'impresa del subentrante                                               |
+| `riferimento_precedente_tipo` | `VARCHAR(255)`             | Tipo di riferimento precedente: `AUTORIZZAZIONE`, `SCIA`, `CONCESSIONE`       |
+| `riferimento_precedente_id`   | `INTEGER`                  | ID del riferimento precedente                                                 |
+| `riferimento_attuale_tipo`    | `VARCHAR(255)`             | Tipo di riferimento attuale: `AUTORIZZAZIONE`, `SCIA`, `CONCESSIONE`          |
+| `riferimento_attuale_id`      | `INTEGER`                  | ID del riferimento attuale                                                    |
+| `dati_archiviati`             | `JSONB`                    | Fotografia completa dei dati del dante causa: presenze, graduatoria, scadenze |
+
+](#database-e-storage) 9. [API Endpoints](#api-endpoints) 10. [SSO SUAP - Modulo SCIA](#sso-suap---modulo-scia) 11. [Deploy e CI/CD](#deploy-e-cicd) 12. [Architettura di Autenticazione (v2.0 - Firebase)](#architettura-di-autenticazione-v20---firebase) 13. [Credenziali e Accessi](#credenziali-e-accessi) 14. [Troubleshooting](#troubleshooting) 15. [Regole per Agenti AI](#regole-per-agenti-ai)
 
 ---
 
@@ -83,6 +82,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 **Stato:** ✅ COMPLETATO
 
 **Frontend (dms-hub-app-new) — commit `357bc0f` (merge di `ed51f7f`):**
+
 - ✅ **42 file modificati** (+147 -116): tutti i fallback URL nel codice sorgente ora puntano a `api.mio-hub.me`
 - ✅ **`config/api.ts`:** `MIHUB_API_BASE_URL`, `ORCHESTRATORE_API_BASE_URL`, `TCC_API_BASE` tutti aggiornati a `api.mio-hub.me`
 - ✅ **`vercel.json`:** +6 rewrites mancanti aggiunti (collaboratori, dashboard, integrations, routing, stalls, hub)
@@ -93,12 +93,12 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 
 **Backend dismessi (in cantina):**
 
-| Backend | Status |
-|---|---|
-| `orchestratore.mio-hub.me` | In cantina, rimosso ovunque |
+| Backend                     | Status                      |
+| --------------------------- | --------------------------- |
+| `orchestratore.mio-hub.me`  | In cantina, rimosso ovunque |
 | `mihub.157-90-29-66.nip.io` | In cantina, rimosso ovunque |
-| `manusvm.computer` | Morto, rimosso ovunque |
-| **`api.mio-hub.me`** | **Unico backend attivo** |
+| `manusvm.computer`          | Morto, rimosso ovunque      |
+| **`api.mio-hub.me`**        | **Unico backend attivo**    |
 
 **Pulizia Branch:** Branch `claude/review-production-fixes-3sUvQ` cancellato dopo il merge.
 
@@ -111,6 +111,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 **Stato:** ✅ COMPLETATO
 
 **Backend (mihub-backend-rest) — commit `5b9edaf`:**
+
 - ✅ **Nuova route `tesseramenti.js`:** Creato il file `routes/tesseramenti.js` con due endpoint:
   - `GET /api/tesseramenti/impresa/:id`: Restituisce i tesseramenti attivi per un'impresa.
   - `POST /api/tesseramenti/richiedi`: Gestisce la richiesta di un nuovo tesseramento (richiede autenticazione).
@@ -119,6 +120,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **Campo `mancante` in adempimenti:** L'endpoint `adempimenti-obbligatori` è stato modificato per includere il campo booleano `mancante` nella risposta, necessario per la logica del frontend.
 
 **Frontend (dms-hub-app-new) — commit `f089c0a`:**
+
 - ✅ **Correzione `vercel.json`:** Modificati 5 rewrites che puntavano a `orchestratore.mio-hub.me` (un backend non più in uso). Ora tutti i seguenti path sono correttamente indirizzati a `api.mio-hub.me` (il backend REST unico su Hetzner):
   - `/api/tesseramenti/:path*`
   - `/api/associazioni/:path*`
@@ -127,20 +129,22 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
   - `/api/pagamenti/:path*`
 
 **Verifica e Test:**
+
 - Tutti i 14 endpoint principali chiamati dal frontend sono stati testati e risultano funzionanti in produzione.
 - I due endpoint precedentemente mancanti (`/api/tesseramenti/impresa/:id` e `/api/adempimenti/impresa/:id`) ora rispondono correttamente con HTTP 200.
 
 **Pulizia Branch:**
+
 - I branch `claude/review-production-fixes-3sUvQ` su entrambi i repository (backend e frontend) sono stati identificati come obsoleti e già inclusi nel branch `master`. Sono stati cancellati per mantenere pulito il repository.
 
 ---
-
 
 ### Sessione 24 Febbraio 2026 — Progetto v9.0.0 — Modello Business Associativo
 
 **Contesto:** Implementazione del modello di business associativo completo nell'App Impresa. Il sistema ha già il 70% dell'infrastruttura (qualifiche, notifiche, servizi, corsi, wallet). Il lavoro consiste nell'estendere componenti esistenti, collegare sistemi operativi e creare poche nuove funzionalità.
 
 **Divisione lavoro:**
+
 - **Manus:** Backend (8 nuovi endpoint) + Database (2 nuove tabelle + 1 ALTER) + Trigger SCIA/Attestati
 - **Claude:** Frontend (3 nuovi sotto-tab in AnagraficaPage + 2 estensioni componenti esistenti)
 
@@ -153,17 +157,20 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 **Contesto:** Scansione completa frontend post-IDOR fix. Trovate 30+ fetch calls senza `addComuneIdToUrl()` che rompevano l'impersonazione per comune.
 
 **Backend (mihub-backend-rest) — 3 commit di Manus (gia' in produzione):**
+
 - ✅ **d73896a: Fix health-monitor.js** — Rimosso `const pool = pool` (auto-referenza circolare) in 3 funzioni. Guardian Service e MIO Agent ora Online nell'Health Monitor.
 - ✅ **c3b126e: Fix GET endpoints** — `comune_id` ora opzionale su GET (super_admin vede tutto), obbligatorio su POST/PUT/DELETE.
 - ✅ **397bfef: Fix WalletImpresaPage.tsx** — Aggiunto `addComuneIdToUrl` a 6 fetch nella pagina wallet impresa.
 
 **Frontend — Fix Impersonation Hardening (Claude, questo commit):**
+
 - ✅ **WalletPanel.tsx — 16 fetch fixate:** Tutte le chiamate POST/PUT/DELETE/GET ora wrappate con `addComuneIdToUrl()`. Include operazioni critiche: `wallets/deposit`, `wallets/DELETE`, `canone-unico/scadenze/DELETE`, `canone-unico/wallets/azzera-tutti`, `genera-canone-annuo`, `genera-pagamento-straordinario`, `calculate-annual-fee`, `impostazioni-mora` GET/PUT, `aggiorna-mora`, `semaforo-rate`, transazioni batch.
 - ✅ **SuapPanel.tsx — 5 fetch fixate:** `associa-posteggio` POST, visualizza/modifica/elimina concessione, carica impresa cedente.
 - ✅ **MarketCompaniesTab.tsx — 3 fetch fixate:** `associa-posteggio` POST, visualizza concessione + carica impresa cedente.
 - ✅ **GestioneMercati.tsx — 8 fetch fixate:** Aggiunto import `addComuneIdToUrl`. Wrappate: lista mercati (2 chiamate), modifica mercato PATCH, stalls, GIS map, concessioni, presenze, graduatoria, spuntisti (Promise.all), concessions + vendors.
 
 **Frontend — Dead Code Cleanup:**
+
 - ✅ **trpcHttp.ts:** Rimosso mapping morto `system.health → /api/health` (mai chiamato, causava confusione nei log 404).
 - ✅ **vercel.json:** Rimosso proxy morto `/api/trpc/:path*` → mihub.157-90-29-66.nip.io (server tRPC archiviato in FASE 5).
 
@@ -179,6 +186,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 | PDND API | ❌ Down | Da configurare (non bug) |
 
 **Checklist Pre-Lancio (stato aggiornato):**
+
 - ⏳ Attivare Verifica Firma Token Firebase (`GOOGLE_APPLICATION_CREDENTIALS` su Hetzner)
 - ⏳ Validazione Impersonazione Server-Side (middleware `impersonation.js`)
 - ⏳ Sessione JWT con Refresh Token (ridurre scadenza da 24h a 1h)
@@ -186,6 +194,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ⏳ Test di Carico (Load Testing)
 
 **Problemi Residui Identificati (non fixati in questa sessione):**
+
 - ⚠️ `GestioneMercati.tsx` ha ancora ~20 fetch per operazioni su stalli/presenze senza wrapping (operazioni su dati gia' filtrati per mercato, rischio basso)
 - ⚠️ `DashboardPA.tsx` L104-109: parsing URL manuale per impersonazione invece di usare hook `useImpersonation()`
 - ⚠️ `ControlliSanzioniPanel.tsx` L344-369: parsing URL manuale misto con hook — potenziale desync
@@ -197,18 +206,22 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ### Sessione 23 Febbraio 2026 — Notte (v8.17.2 → v8.17.3) — IDOR Fix Completo
 
 **Backend — Fix IDOR Wallet & Canone-Unico (mihub-backend-rest):**
+
 - ✅ **Fix IDOR Completo wallets.js (7 endpoint):** Tutti gli endpoint wallet ora richiedono `comune_id` obbligatorio. Gli endpoint `deposit`, `withdraw`, `delete` e `transactions` verificano anche l'ownership del wallet tramite join `wallets → markets → comune_id`. Senza `comune_id` restituiscono HTTP 400.
 - ✅ **Fix IDOR Completo canone-unico.js (18 endpoint):** Tutti gli endpoint canone-unico ora richiedono `comune_id` obbligatorio. Gli endpoint critici (`azzera-tutti`, `scadenze DELETE`, `genera-canone-annuo`) filtrano per comune tramite subquery. Rimosso default hardcoded `comune_id = 1` da `impostazioni-mora`.
 - ✅ **Endpoint protetti con ownership check:** `semaforo-rate`, `semaforo-impresa`, `imprese-concessioni`, `concessions/:id/status`, `posteggi-mercato`, `scadenza/:id GET`, `ricariche-spunta`.
 
 **Frontend — Fix WalletPanel.tsx (dms-hub-app-new):**
+
 - ✅ **17 chiamate fetch fixate:** Tutte le chiamate API nel WalletPanel ora includono `comune_id` tramite helper `addComuneIdToUrl()` che legge dal contesto di impersonazione.
 
 **Frontend — Fix vercel.json:**
+
 - ✅ **3 regole proxy aggiunte:** `/api/logs/:path*` → api.mio-hub.me, `/api/system/:path*` → api.mio-hub.me, `/api/github/:path*` → orchestratore.mio-hub.me.
 - ✅ **Rimosso self-rewrite:** `/api/mihub/get-messages` puntava a se stesso (loop). Ora correttamente proxied a api.mio-hub.me tramite regola wildcard `/api/mihub/:path*`.
 
 **Test Produzione:**
+
 - ✅ Tutti gli endpoint senza `comune_id` restituiscono HTTP 400
 - ✅ Endpoint con `comune_id` corretto restituiscono dati
 - ✅ Cross-tenant (`comune_id=999`) restituisce 0 risultati o 404
@@ -220,6 +233,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 | `stable-v8.17.3-idor-fixed` | Frontend | `95b2c98` |
 
 **Stato Allineamento Post-Sessione:**
+
 - Frontend master: `95b2c98` = Vercel ✅
 - Backend master: `39cd701` = Hetzner ✅
 - Neon DB: Online, 17 indici ✅
@@ -230,9 +244,11 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ### Sessione 23 Febbraio 2026 — Sera (v8.16.0 → v8.17.2) — Backend Hardened
 
 **Merge Fix Claude (Frontend):**
+
 - ✅ **Merge branch `claude/review-production-fixes-3sUvQ`:** Pulizia codice (39 file, -4332 righe di codice morto/debug), console.log rimossi, formatDate duplicato rimosso.
 
 **Backend — Sicurezza e Performance (mihub-backend-rest) — 12 commit:**
+
 - ✅ **STEP 1: Pool DB Centralizzato:** 55 file creavano ciascuno il proprio pool di connessioni. Creato `config/database.js` unico con pool ottimizzato per Neon (max 15, idle 20s, connection timeout 10s). Rimossi 12 file con password DB hardcoded. Aggiunto helper `query()` per retrocompatibilità con file che importano `{ query }`.
 - ✅ **STEP 2: Fix IDOR Wallet:** L'endpoint `GET /api/wallets` ora richiede `comune_id` obbligatorio. Prima restituiva TUTTI i wallet del sistema senza filtro.
 - ✅ **STEP 3: Rate Limiting Auth:** Aggiunto rate limiter specifico per `/api/auth/login` e `/api/auth/firebase-session`: max 20 tentativi ogni 15 minuti per IP.
@@ -247,6 +263,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **Fix pool mancante in 4 file:** `panic.js` (importava da `../db` inesistente), `verbali_invia_new.js` (nessun import), `orchestrator.js` (import in fondo al file), `apiLogger.js` middleware (pool locale).
 
 **Migrazione Database:**
+
 - ✅ **`migrations/030_add_performance_indexes.sql`:** 24 indici definiti, 17 creati (7 saltati per tabelle non presenti).
 - ✅ **INSERT `user_role_assignments`:** Utente 42 → ruolo super_admin (ID 1).
 
@@ -259,19 +276,23 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 | `stable-v8.17.1-hotfix` | Backend | `3150e00` |
 
 **Stato Allineamento Post-Sessione (v8.17.2):**
+
 - Frontend master: `980f6bd` = Vercel = Branch Claude ✅
 - Backend master: `a62ade9` = Hetzner ✅
 - Neon DB: Online, 17 nuovi indici ✅
 
 **Azione Richiesta (non ancora fatta):**
+
 - Scaricare la service account key da Firebase Console (`dmshub-auth-2975e`) e configurare `GOOGLE_APPLICATION_CREDENTIALS` su Hetzner per attivare la verifica firma dei token Firebase.
 
 ### Sessione 23 Febbraio 2026 (v8.14.0 → v8.15.0)
 
 **Backend (mihub-backend-rest):**
+
 - ✅ **Fix 5: Notifica Impresa con Posteggio:** Aggiunto il numero del posteggio (`Post. N`) nel messaggio di notifica all'impresa quando viene rilasciata/rinnovata una concessione. Il messaggio ora è più chiaro (es. "Il subingresso per il Post. 7 nel Mercato Grosseto è stato completato").
 
 **Frontend (dms-hub-app-new):**
+
 - ✅ **Fix 1: Banner Esito Positivo SCIA:** Aggiunto banner verde "Pratica SCIA Espletata con Esito Positivo" nella vista dettaglio pratica quando lo stato è `APPROVED`, con riepilogo della concessione generata.
 - ✅ **Fix 2: Dashboard Associazione - Pratiche Pendenti:** Il riquadro "Pratiche Pendenti" nella dashboard associazione ora include anche le pratiche con stato `INTEGRATION_NEEDED`, che richiedono un'azione da parte dell'associazione.
 - ✅ **Fix 3: Semaforo Colori Scheda Associato:** I badge stato delle pratiche SCIA nella scheda associato ora usano i colori corretti: verde (APPROVED), rosso (REJECTED), arancione (INTEGRATION_NEEDED), blu (IN_LAVORAZIONE).
@@ -279,21 +300,24 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **Fix 6: Nomi Check Banner Regolarizzazione:** Corretto il bug per cui i controlli da regolarizzare nel banner arancione apparivano senza nome. Ora vengono mostrati correttamente il codice del check e il motivo del fallimento (es. "CHECK_CANONE_UNICO: Wallet in rosso").
 - ✅ **Fix 7: Tab Modifica Scheda Associato:** Aggiunto bottone "Modifica" (icona matita) nella scheda associato. Cliccandolo, i campi (N. Tessera, Scadenza, Importi, etc.) diventano editabili e appare un bottone "Salva" per persistere le modifiche.
 
-
 ### Sessione 22 Febbraio 2026 — Notte (v8.13.0 → v8.14.0)
 
 **Database:**
+
 - ✅ **10 Colonne Delegato SCIA nella tabella `associazioni`:** `delegato_nome`, `delegato_cognome`, `delegato_codice_fiscale`, `delegato_data_nascita`, `delegato_luogo_nascita`, `delegato_qualifica`, `delegato_residenza_via`, `delegato_residenza_comune`, `delegato_residenza_cap`, `delegato_pec`.
 
 **Backend (mihub-backend-rest):**
+
 - ✅ **POST/PUT `/api/associazioni`:** Aggiornati per leggere/scrivere i 10 campi delegato.
 - ✅ **GET `/api/associazioni/:id`:** Restituisce i campi delegato nel JSON di risposta.
 
 **Frontend (dms-hub-app-new):**
+
 - ✅ **Sezione DELEGATO SCIA nel form Modifica Associazione:** Nuova sezione nel dialog `AssociazioniPanel.tsx` con 10 campi: Nome Delegato, Cognome Delegato, Codice Fiscale Delegato, Data di Nascita, Luogo di Nascita, Qualifica/Titolo, Residenza (Via/Piazza), Comune, CAP, PEC Delegato.
 - ✅ **Auto-compilazione SciaForm:** Aggiornato il mapping in `SciaForm.tsx` (riga ~834) per usare i nuovi nomi colonne: `delegato_nome/cognome/codice_fiscale/data_nascita/luogo_nascita/qualifica/residenza_via/residenza_comune/residenza_cap/pec` al posto dei vecchi nomi inesistenti.
 
 **Flusso Auto-compilazione Delegato:**
+
 1. Admin compila i campi DELEGATO SCIA nella scheda associazione (tab Associazioni → modifica)
 2. Quando si impersonifica l'associazione e si compila una SCIA, i dati del delegato vengono auto-compilati dalla scheda associazione
 3. I campi mappati sono: nome, cognome, CF, data nascita, luogo nascita, qualifica, residenza, comune, CAP, PEC
@@ -301,6 +325,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ### Sessione 22 Febbraio 2026 — Sera (v8.12.0 → v8.13.0)
 
 **Backend (mihub-backend-rest) — 9 commit:**
+
 - ✅ **Endpoint Scheda Associato:** Nuovo `GET /api/associazioni/:id/tesseramenti/:tid/scheda` — restituisce dettaglio completo: dati impresa, dati tessera (scadenza, stato pagamento), tipo impresa (ambulante/negozio_fisso basato su `descrizione_ateco`), pratiche SCIA collegate, concessioni collegate.
 - ✅ **Fix Type Mismatch Concessions:** Cast `scia_id::uuid` nella query concessions per filtro `associazione_id` (colonna `scia_id` è `text`, `suap_pratiche.id` è `uuid`).
 - ✅ **Fix Type Mismatch Domande-Spunta:** Rimosso riferimento a colonna inesistente `concession_id`, usato JOIN tramite `impresa_id` via `tesseramenti_associazione`.
@@ -309,16 +334,19 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **Permessi Ruolo ASSOCIATION (ID=10):** Aggiunti e poi RIMOSSI `tab.view.ssosuap` e `tab.view.tpas` — questi tab NON devono essere visibili per le associazioni (il SuapPanel è già dentro Enti & Associazioni).
 
 **Frontend (dms-hub-app-new) — 4 commit:**
+
 - ✅ **Tab Associati (4° sotto-tab):** Aggiunto come sotto-tab esterno in Enti & Associazioni: `Enti Formatori | Associazioni & Bandi | SCIA & Pratiche | Associati`. Visibile solo in impersonazione associazione. Monta `PresenzeAssociatiPanel`.
 - ✅ **Icona Occhio Scheda Associato:** Ogni tesserato nella lista ha icona Eye che apre dialog fullscreen con: badge tipo impresa (Ambulante/Negozio Fisso), badge stato tessera, dati impresa completi, dati tessera (scadenza, stato pagamento, importi), pratiche SCIA collegate, concessioni collegate.
 - ✅ **Fix Domande Spunta Filtro:** Aggiunto `addAssociazioneIdToUrl` in `ListaDomandeSpuntaSuap.tsx` — prima mostrava tutte le domande spunta senza filtro.
 - ✅ **Revert mode SuapPanel:** Il `SuapPanel` nel tab SSO SUAP resta senza `mode` — il SuapPanel `mode='associazione'` è già correttamente in Enti & Associazioni → SCIA & Pratiche.
 
 **Lezione Appresa:**
+
 - Il tab SSO SUAP e il tab Associazioni (TPAS) NON devono essere visibili per le associazioni. La sezione SUAP per le associazioni è già dentro il tab "Enti & Associazioni" → sotto-tab "SCIA & Pratiche".
 - Il tab Associazioni (TPAS) è la sezione admin per gestire TUTTE le associazioni, non per la vista impersonata.
 
 ### Sessione 22 Febbraio 2026 (v8.11.3 → v8.12.0)
+
 - ✅ **Impersonificazione Associazioni COMPLETA:** Quando si impersonifica un'associazione, tutti i tab (Dashboard, Gaming, Civic, Imprese, Gestione HUB, SUAP) mostrano solo i dati pertinenti all'associazione, partendo da zero se non ci sono dati.
 - ✅ **Nuovi Pannelli `TesseratiAssociazionePanel` e `AnagraficaAssociazionePanel`:** Creati per gestire la lista dei tesserati (imprese che pagano la quota associativa) e i dati anagrafici dell'associazione.
 - ✅ **Backend Tesseramenti:** Creata tabella `tesseramenti_associazione` (17 colonne) e 5 endpoint CRUD (`GET/POST/PUT/DELETE /api/associazioni/:id/tesseramenti`).
@@ -331,6 +359,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **Merge Modifiche Claude:** Integrate tutte le implementazioni preparate da Claude (5 commit, 16 file, 2034 righe).
 
 ### Sessione 22 Febbraio 2026 (v8.9.1 → v8.11.3)
+
 - ✅ **Pannello Gestione Associazioni (`AssociazioniPanel.tsx`):** Creato componente completo per CRUD associazioni con lista, form, sotto-tab (Enti Formatori, Associazioni & Bandi, SCIA & Pratiche).
 - ✅ **Backend Associazioni:** Creati 16 endpoint API in `routes/associazioni.js` per la gestione delle associazioni.
 - ✅ **Tab TPAS rinominato "Associazioni":** Il vecchio tab TPAS nella DashboardPA ora monta `<AssociazioniPanel />`.
@@ -338,11 +367,13 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **Bottone Concessione nascosto:** In `SuapPanel.tsx`, il bottone "Concessione" e i tab Autorizzazioni/Storico sono nascosti quando `mode='associazione'`.
 
 ### Sessione 21 Febbraio 2026 (v8.9.0 → v8.9.1)
+
 - ✅ **Nota Score Pesato:** Aggiunta nota esplicativa sotto il cerchio score nel dettaglio pratica: "Score pesato: ogni controllo ha un peso diverso (4-15 pt)". Lo score 55 con 10/14 PASS è corretto perché i 4 check falliti pesano 45 punti (CHECK_CANONE_UNICO=10, CHECK_ANTIMAFIA_CED=10, CHECK_ONORABILITA_CED=10, CHECK_DATI_COMPLETI=15).
 - ✅ **Pre-compilazione SCIA Precedente:** Quando si seleziona un posteggio nel form SCIA, il sistema cerca automaticamente la SCIA più recente (APPROVED/EVALUATED) per quel posteggio e pre-compila i campi `scia_precedente_protocollo`, `scia_precedente_data` e `scia_precedente_comune`.
 - ✅ **Nuovo filtro backend `posteggio_id`:** Aggiunto supporto per `?posteggio_id=X` nell'endpoint `GET /api/suap/pratiche` (route + service). Permette di cercare pratiche SCIA associate a un posteggio specifico.
 
 ### Sessione 21 Febbraio 2026 (v8.8.0 → v8.9.0)
+
 - ✅ **Fix Stato APPROVED dopo Concessione:** Il callback `onSubmit` di ConcessioneForm ora cattura `selectedPratica` in variabile locale PRIMA del reset degli stati React, evitando che `selectedPratica` sia null al momento della chiamata API. Aggiunto fallback: anche senza `savedConcessione.id`, aggiorna lo stato a APPROVED.
 - ✅ **Fix Numero Concessione:** Il `preData` passato da "Genera Concessione" non include più `numero_protocollo` della SCIA. Il ConcessioneForm genera automaticamente il numero progressivo (#N+1) tramite il suo useEffect interno.
 - ✅ **Form SCIA Full-Width:** Il modal SCIA è stato allargato da `max-w-4xl` (896px) con overlay nero a pagina intera (`fixed inset-0 bg-[#0b1220]`), identico al layout del form Concessione.
@@ -352,6 +383,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **Fix Dati Impresa Bio Market Italia:** Corretti `indirizzo_provincia` da "GR" a "RE" e `indirizzo_cap` da "58100" a "42121" nel DB (sede legale era Reggio Emilia con dati Grosseto).
 
 ### Sessione 21 Febbraio 2026 (v8.7.0 → v8.8.0)
+
 - ✅ **Fix Market Dropdown SciaForm:** Aggiunta dipendenza `comuneId` nell'useEffect di SciaForm per ricaricare i mercati quando cambia il comune impersonato. Il filtro `?comune_id=X` era già implementato ma non si riattivava al cambio comune.
 - ✅ **Auto-APPROVED dopo Concessione:** Quando viene generata una concessione da ConcessioneForm, la pratica SCIA collegata viene automaticamente aggiornata a stato `APPROVED` tramite `POST /api/suap/pratiche/:id/stato`. Aggiunta funzione `updateSuapPraticaStato()` nel client API frontend.
 - ✅ **Fix Type Mismatch Backend:** Corretto errore `operator does not exist: character varying = integer` nel JOIN tra `suap_pratiche.mercato_id` (varchar) e `markets.id` (integer) nella funzione `updatePraticaStato`. Fix: cast a `::text` su entrambi i lati.
@@ -359,29 +391,33 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **Stato Pratiche:** 4 pratiche Grosseto (mercato_id=1) + 13 pratiche Modena (mercato_id=5). Stati: 6 APPROVED, 10 EVALUATED, 1 RECEIVED.
 
 ### Sessione 21 Febbraio 2026 (v8.6.0 → v8.7.0)
+
 - ✅ **Inventario Completo Database Neon:** Censimento di tutte le 152 tabelle del database con colonne, records e descrizione. Organizzato per categorie: Core, SUAP/SCIA, Qualificazione, Segnalazioni, Mobilità, Gaming, Utenti, Notifiche, Agente AI, Storico, Geografiche, HUB. Nessuna tabella duplicata trovata.
 - ✅ **Pulizia Pratiche Test:** Eliminate 12 pratiche SCIA vuote/test dal DB (2025/001-003, TESTBROWSERDIR, TESTBODY, TESTCF, TESTDEL, NON_SPECIFICATO, VERDI, ecc.) con relativi 34 checks, 13 eventi e 3 decisioni. Restano 17 pratiche pulite con dati completi.
 - ✅ **Fix Admin Globale SUAP:** Il SuapPanel non caricava dati senza impersonalizzazione (comuneData=null bloccava loadData). Introdotto flag `comuneDataLoaded` per distinguere "non ancora caricato" da "admin globale senza filtro". Ora l'admin vede tutte le pratiche di tutti i comuni.
 - ✅ **Fix Notifiche SUAP:** Rimosso ultimo fallback `comuneData?.id || 1` → `comuneData?.id || 0` per le notifiche.
 
 ### Sessione 21 Febbraio 2026 (v8.5.0 → v8.6.0)
+
 - **SUAP Engine v2.1**: DELETE vecchi check v1.0 prima di ri-valutare (fix ON CONFLICT DO NOTHING)
 - **CHECK_DATI_COMPLETI** promosso da SOFT a HARD (peso 15), campi obbligatori estesi: sub_cf, mercato_id, posteggio_id, ced_cf per subingresso
 - **SciaForm validazione**: blocca submit senza subentrante CF, mercato, posteggio, cedente (per subingresso)
 - **Analisi 29 pratiche SCIA**: 12 con dati vuoti (test), 17 complete. Pratiche vuote non possono più ottenere APPROVED
 
 ### Sessione 21 Febbraio 2026 (v8.4.0 → v8.5.0)
+
 - ✅ **Rimozione Completa Hardcoded Grosseto/comune_id=1:** Censimento e correzione di TUTTI i riferimenti hardcoded a Grosseto e `comune_id = 1` in 7 file backend e 6 file frontend. Il sistema è ora completamente dinamico per comune impersonalizzato.
 - ✅ **Fix Aggiorna-Mora Dinamico:** L'endpoint `POST /api/canone-unico/aggiorna-mora` era hardcoded a `comune_id = 1`. Ora accetta `comune_id` come parametro opzionale: se specificato aggiorna solo quel comune, altrimenti aggiorna TUTTI i comuni. Questo risolveva il problema delle rate di Modena che restavano `NON_PAGATO` nel DB anche se scadute.
 - ✅ **Fix Semaforo-Rate Recupero Comune:** L'endpoint `semaforo-rate` ora recupera il `comune_id` dal wallet tramite il mercato, invece di usare un fallback hardcoded.
 - ✅ **Fix Config Verbali Dinamica:** L'endpoint `GET /api/verbali/config` ora accetta `comune_id` e restituisce nome comune e corpo PM dinamicamente dal DB, invece di dati statici Grosseto.
 - ✅ **Fix TCC Rules/Dashboard/Config:** Rimossi fallback `comune_id = 1` da `GET /api/tcc/v2/rules` (ora richiede `comune_id` obbligatorio), dashboard e config TCC.
 - ✅ **Fix Frontend Notifiche:** `SuapPanel`, `WalletPanel`, `ControlliSanzioniPanel` ora mostrano il nome del comune impersonalizzato nei NotificationManager, non più "Grosseto" hardcoded.
-- ✅ **Verifica Flusso SCIA End-to-End:** Analizzato il percorso completo `SciaForm → SuapPanel.handleSubmitScia → API /api/suap/pratiche → suapService.createPratica → DB`. Il mapping dei campi sub_*/ced_* è corretto e completo.
+- ✅ **Verifica Flusso SCIA End-to-End:** Analizzato il percorso completo `SciaForm → SuapPanel.handleSubmitScia → API /api/suap/pratiche → suapService.createPratica → DB`. Il mapping dei campi sub*\*/ced*\* è corretto e completo.
 - ✅ **File backend modificati:** `canone-unico.js`, `concessions.js`, `autorizzazioni.js`, `domande-spunta.js`, `sanctions.js`, `tcc-v2.js`, `verbali.js`.
 - ✅ **File frontend modificati:** `SuapPanel.tsx`, `GamingRewardsPanel.tsx`, `AnagraficaPage.tsx`, `ControlliSanzioniPanel.tsx`, `WalletPanel.tsx`, `GestioneHubNegozi.tsx`.
 
 ### Sessione 21 Febbraio 2026 (v8.3.0 → v8.4.0)
+
 - ✅ **Semaforo Rate con Badge Colorati:** Riscritto il sistema di visualizzazione rate nelle schede impresa della sezione "Lista Imprese per Mercato" (tab Canone). Ora mostra badge colorati: **rosso** per rate in mora (scadute e non pagate), **giallo** per rate da pagare (non ancora scadute), **verde** per rate già pagate. Prima mostrava solo un conteggio generico "scadenze non pagate" che escludeva le rate IN_MORA.
 - ✅ **Fix Backend Query `imprese-concessioni`:** La query SQL ora conta sia `NON_PAGATO` che `IN_MORA` nel campo `scadenze_non_pagate`. Aggiunti 2 nuovi campi nella response: `scadenze_in_mora` (rate scadute non pagate) e `scadenze_pagate` (rate saldate). Aggiornata anche la sotto-query SPUNTA per coerenza.
 - ✅ **Fix Segnalazioni Civiche Admin Globale:** Il componente `CivicReportsPanel.tsx` aveva un fallback hardcoded `comune_id = 1` (Grosseto) quando l'admin non era in impersonalizzazione. Ora, senza impersonalizzazione, le API vengono chiamate senza `comune_id` → restituiscono tutte le 44 segnalazioni di tutti i comuni. Con impersonalizzazione, filtra per il comune specifico.
@@ -389,24 +425,29 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **File frontend modificati:** `client/src/components/WalletPanel.tsx` (badge colorati + alert info), `client/src/components/CivicReportsPanel.tsx` (rimozione fallback comune_id=1).
 
 ### Sessione 21 Febbraio 2026 (v8.2.3 → v8.3.0)
+
 - ✅ **Rimosso Selettore Mercato da Lista Imprese:** Nella sezione "Lista Imprese per Mercato" del tab Canone, rimosso il dropdown "Seleziona un mercato" che non funzionava. Il mercato viene ora determinato automaticamente dal comune impersonato e le imprese si caricano immediatamente.
 - ✅ **Fix Proxy Vercel `/api/markets`:** Aggiunta regola di rewrite in `vercel.json` per il proxy di `/api/markets` → `https://api.mio-hub.me/api/markets`. Prima mancava e la chiamata veniva catturata dal catch-all, restituendo HTML invece di JSON.
 - ✅ **Rigenerazione Canone per 3 Concessioni Mancanti:** Identificate 3 concessioni (55, 60, 74) create dopo la generazione canone annuo del 10 gennaio. Ri-eseguito "Genera Canone Annuo" che ha creato le scadenze mancanti grazie alla protezione anti-duplicati.
 - ✅ **File frontend modificato:** `client/src/components/WalletPanel.tsx`, `vercel.json`.
 
 ### Sessione 20 Febbraio 2026 - Notte (v8.2.2 → v8.2.3)
+
 - ✅ **Fix Auto-selezione Mercato Canone (definitivo):** Il fix precedente (v8.2.2) non funzionava a causa di un problema di **closure React**: la funzione `fetchMercatiList` catturava il valore di `selectedMercatoId` al momento della definizione, non il valore aggiornato. Soluzione: creato un **`useEffect` dedicato** con dipendenze esplicite `[subTab, mercatiList, selectedMercatoId]` che reagisce correttamente quando `mercatiList` viene caricata. La logica rimane invariata: auto-seleziona il primo mercato **solo quando impersonalizzato** come un comune specifico, evitando il bug Cervia Demo per admin non impersonalizzati.
 - ✅ **File frontend modificato:** `client/src/components/WalletPanel.tsx`.
 
 ### Sessione 20 Febbraio 2026 - Notte (v8.2.1 → v8.2.2)
+
 - ✅ **Visualizzazione Timeline a Catena:** Riscritto il componente `StoricoTitolarita.tsx` per mostrare lo storico raggruppato per posteggio con timeline verticale a catena. Ogni posteggio mostra un header compatto con la mini-catena di titolarità (es. "Bio Market Italia → Alimentari Rossi & C.") e un badge con il numero di passaggi. Cliccando si espande la timeline con pallini numerati, linea verticale, e per ogni nodo: data, tipo evento, cedente → subentrante, saldo trasferito, riferimento SCIA. In fondo alla catena appare il nodo "Titolare attuale" evidenziato in verde.
 - ✅ **Fix Auto-selezione Mercato Canone:** Corretto il bug nella sezione "Lista Imprese per Mercato" del tab Canone (Wallet/PagoPA). Il selettore mercato ora si auto-seleziona **solo quando l'admin è impersonalizzato** come un comune specifico (es. Grosseto), evitando il bug precedente che mostrava le scadenze di Cervia Demo quando non impersonalizzato.
 - ✅ **File frontend modificati:** `client/src/components/suap/StoricoTitolarita.tsx`, `client/src/components/WalletPanel.tsx`.
 
 ### Sessione 20 Febbraio 2026 - Sera (v8.2.0 → v8.2.1)
+
 - ✅ **Back-filling Storico Titolarità**: Creato ed eseguito uno script una tantum (`backfill_storico.js`) per popolare la tabella `storico_titolarita_posteggio` con i dati dei subingressi avvenuti prima dell'implementazione dello storico. Lo script ricostruisce la catena di titolarità basandosi sulle concessioni CESSATE e sui dati SCIA disponibili. Le presenze storiche non sono state recuperate in quanto eliminate permanentemente dal vecchio codice.
 
 ### Sessione 20 Febbraio 2026 - Sera (v8.1.5 → v8.2.0)
+
 - ✅ **Nuova Funzionalità - Storico Titolarità Posteggio:** Implementato sistema completo per l'archiviazione storica dei cambi di titolarità.
   - **Nuova tabella `storico_titolarita_posteggio`:** Traccia ogni evento (SUBINGRESSO, RINNOVO, CREAZIONE, CESSAZIONE) come una timeline per ogni posteggio.
   - **Archiviazione automatica:** Prima dell'eliminazione, il sistema archivia presenze, graduatoria e scadenze del dante causa in un campo JSONB, preservando i dati per bandi Bolkestein e documentazione legale.
@@ -417,6 +458,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **File frontend modificati:** `client/src/components/suap/StoricoTitolarita.tsx` (nuovo), `client/src/components/SuapPanel.tsx`.
 
 ### Sessione 20 Febbraio 2026 - Pomeriggio (v8.1.4 → v8.1.5)
+
 - ✅ **Fix BUG 1 - Conteggio Spuntisti:** Esclusi dalla lista spuntisti (`/api/presenze/spuntisti/mercato/:id`) i concessionari che hanno anche un wallet di tipo `SPUNTA` ma una concessione `ATTIVA` nello stesso mercato.
 - ✅ **Fix BUG 2 - FK Cascade Subingresso/Rinnovo:** Risolto errore `violates foreign key constraint` durante la creazione di concessioni con subingresso o rinnovo. La cascata di eliminazione ora gestisce correttamente `graduatoria_presenze` e `domande_spunta` prima di eliminare il wallet.
 - ✅ **Nuova Funzionalità - Toast Progressivi:** Il frontend ora mostra una sequenza di toast (notifiche) per ogni passaggio del flusso di subingresso e rinnovo, fornendo un feedback in tempo reale all'utente. Il backend restituisce un array `steps` nella response di `POST /api/concessions`.
@@ -434,8 +476,8 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **File backend modificati:** `routes/concessions.js`, `routes/presenze.js`.
 - ✅ **File frontend modificati:** `client/src/components/suap/ConcessioneForm.tsx`, `client/src/components/SuapPanel.tsx`.
 
-
 ### Sessione 13 Febbraio 2026 — Sera (v5.3.0)
+
 - ✅ **Diagnosi e fix 8 issue (Round 2):** Wallet Grosseto, notifiche SUAP, watchlist errata, storico limite 100, posteggi +1, deposito rifiuti, graduatoria spunta.
 - ✅ **Nuovo endpoint `GET /api/suap/notifiche-pm`:** Aggrega notifiche da domande_spunta, concessions e autorizzazioni per il tab Notifiche PM.
 - ✅ **Nuovo endpoint `POST /api/test-mercato/registra-rifiuti`:** Registra orario deposito spazzatura per tutti i presenti.
@@ -444,6 +486,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **3 nuovi endpoint registrati nel Guardian** per monitoraggio e test.
 
 ### Sessione 13 Febbraio 2026 — Pomeriggio (v4.6.0)
+
 - ✅ **Diagnosi e fix 5 bug critici + 1 bonus:** Notifiche PM target_id hardcoded, wallet mittente_id hardcoded, watchlist cross-comune, storico sessioni senza comune_id, punteggio spuntisti.
 - ✅ **ALTER TABLE `pm_watchlist`:** Aggiunta colonna `comune_id` con filtro diretto per isolamento per comune.
 - ✅ **Fix crash loop pre-esistente:** Corretto riferimento a tabella `concessioni` (inesistente) → `concessions` in watchlist.js.
@@ -451,6 +494,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 - ✅ **2 file frontend modificati** per filtri dinamici (WalletPanel.tsx, ControlliSanzioniPanel.tsx).
 
 ### Sessione 12 Febbraio 2026 (v5.2.0)
+
 - ✅ **Analisi Definitiva DMS Legacy:** Aggiunta sezione con stato attuale, problemi bloccanti e piano d'azione chirurgico in 6 step.
 - ✅ **Salvataggio Stabile:** Creato tag `v5.1.0-pre-legacy-fix` e backup DB/file prima dei fix.
 - ✅ **Verifica Allineamento:** Controllato allineamento GitHub, Vercel, Hetzner, Neon.
@@ -470,16 +514,16 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 
 ### Stack Tecnologico
 
-| Layer | Tecnologia |
-|-------|------------|
-| **Frontend** | React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui |
-| **Autenticazione** | Firebase Auth (Google, Apple, Email) + ARPA Toscana (SPID/CIE/CNS) |
-| **Backend** | Node.js + Express + tRPC |
-| **Database** | PostgreSQL (Neon) |
-| **AI/LLM** | Google Gemini API |
-| **Hosting Frontend** | Vercel |
-| **Hosting Backend** | Hetzner VPS (157.90.29.66) |
-| **CI/CD** | GitHub Actions + PM2 |
+| Layer                | Tecnologia                                                         |
+| -------------------- | ------------------------------------------------------------------ |
+| **Frontend**         | React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui                 |
+| **Autenticazione**   | Firebase Auth (Google, Apple, Email) + ARPA Toscana (SPID/CIE/CNS) |
+| **Backend**          | Node.js + Express + tRPC                                           |
+| **Database**         | PostgreSQL (Neon)                                                  |
+| **AI/LLM**           | Google Gemini API                                                  |
+| **Hosting Frontend** | Vercel                                                             |
+| **Hosting Backend**  | Hetzner VPS (157.90.29.66)                                         |
+| **CI/CD**            | GitHub Actions + PM2                                               |
 
 ---
 
@@ -557,24 +601,24 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 
 **Il dialogo:** MioHub riceve il dato grezzo dal campo → lo lavora → restituisce il dato elaborato al Legacy per dirgli cosa deve fare con ogni impresa.
 
-| Ruolo | Sistema | Cosa fa |
-|---|---|---|
-| **CERVELLO** | MioHub | Login SPID/CIE, SUAP, PagoPA, PDND, concessioni, canone, more, mappa GIS, wallet, controlli, verbali |
-| **BRACCIO** | DMS Legacy | App tablet spunta, presenze fisiche, uscite, spazzatura, scelte spunta |
+| Ruolo        | Sistema    | Cosa fa                                                                                              |
+| ------------ | ---------- | ---------------------------------------------------------------------------------------------------- |
+| **CERVELLO** | MioHub     | Login SPID/CIE, SUAP, PagoPA, PDND, concessioni, canone, more, mappa GIS, wallet, controlli, verbali |
+| **BRACCIO**  | DMS Legacy | App tablet spunta, presenze fisiche, uscite, spazzatura, scelte spunta                               |
 
 ### 2. Architettura DMS Legacy
 
-| Componente | Dettagli |
-|---|---|
-| **Piattaforma** | Heroku (app `lapsy-dms`) |
-| **URL Gestionale** | `https://lapsy-dms.herokuapp.com/index.html` |
-| **Credenziali Gestionale** | `checchi@me.com` / `Dms2022!` (accesso frontend) |
-| **Backend** | Node.js + Express — **thin layer** sopra stored functions |
-| **Database** | PostgreSQL su AWS RDS (`eu-west-1`) — **25 tabelle, 117 stored functions** |
-| **URI Database** | `postgres://u4gjr63u7b0f3k:p813...scl.eu-west-1.rds.amazonaws.com:5432/d18d7n7ncg8ao7` |
-| **Real-time** | Socket.IO namespace `/ac.mappe` per aggiornamento mappe tablet |
-| **Pattern** | Ogni API chiama una stored function: `Express → SELECT funzione(json) → PostgreSQL` |
-| **CRUD** | Funzioni `_crup`: se ID è NULL → INSERT, se valorizzato → UPDATE |
+| Componente                 | Dettagli                                                                               |
+| -------------------------- | -------------------------------------------------------------------------------------- |
+| **Piattaforma**            | Heroku (app `lapsy-dms`)                                                               |
+| **URL Gestionale**         | `https://lapsy-dms.herokuapp.com/index.html`                                           |
+| **Credenziali Gestionale** | `checchi@me.com` / `Dms2022!` (accesso frontend)                                       |
+| **Backend**                | Node.js + Express — **thin layer** sopra stored functions                              |
+| **Database**               | PostgreSQL su AWS RDS (`eu-west-1`) — **25 tabelle, 117 stored functions**             |
+| **URI Database**           | `postgres://u4gjr63u7b0f3k:p813...scl.eu-west-1.rds.amazonaws.com:5432/d18d7n7ncg8ao7` |
+| **Real-time**              | Socket.IO namespace `/ac.mappe` per aggiornamento mappe tablet                         |
+| **Pattern**                | Ogni API chiama una stored function: `Express → SELECT funzione(json) → PostgreSQL`    |
+| **CRUD**                   | Funzioni `_crup`: se ID è NULL → INSERT, se valorizzato → UPDATE                       |
 
 ### 3. Diagramma Architettura Bidirezionale
 
@@ -586,44 +630,44 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 
 Noi mandiamo al Legacy tutti i dati elaborati nel **formato esatto delle sue colonne**:
 
-| Dato che mandiamo | Tabella Legacy | Colonne Legacy (formato esatto) | Nostra sorgente |
-|---|---|---|---|
-| **Anagrafica imprese** | `amb` | `amb_ragsoc`, `amb_piva`, `amb_cfisc`, `amb_email`, `amb_phone`, `amb_addr_via`, `amb_addr_civ`, `amb_addr_cap`, `amb_addr_city`, `amb_addr_prov` | `imprese` (dati verificati SUAP/SPID) |
-| **Saldo wallet** | `amb` | `amb_saldo_bors` (numeric 8,2) | `wallets.balance` |
-| **Punteggio graduatoria** | `amb` | `amb_punti_grad_dfl` (integer) | `graduatoria_presenze.punteggio` |
-| **Fido impresa** | `amb` | `amb_fido` (numeric 8,2) | `imprese.fido` (campo da creare) |
-| **Mercati** | `mercati` | `mkt_desc`, `mkt_city`, `mkt_addr`, `mkt_lat`, `mkt_lng`, `mkt_prezzo`, `mkt_dal`, `mkt_al` | `markets` |
-| **Posteggi con mappa** | `piazzole` | `pz_numero`, `pz_mq`, `pz_lat`, `pz_lng`, `pz_height`, `pz_width`, `pz_alimentare`, `pz_enabled` | `stalls` + `geometry_geojson` |
-| **Concessioni** | `conc_std` | `conc_dal`, `conc_al`, `conc_stato`, `conc_importo`, `conc_alimentare`, `amb_id`, `mkt_id`, `pz_id` | `concessions` |
-| **Autorizzazioni spunta** | `spuntisti` | `sp_dal`, `sp_al`, `sp_stato`, `sp_importo`, `amb_id`, `mkt_id` | `wallets` (type=SPUNTA) |
-| **Utenti/operatori** | `suser` | `suser_email`, `suser_nome`, `suser_cognome`, `suser_phone`, `suser_role`, `suser_enabled`, `suser_badge` (CIE) | `users` |
-| **Regolarità impresa** | via `conc_stato` | `ATTIVA` = può operare, `REVOCATA`/`SOSPESA` = bloccata | Calcolata da 23 controlli SCIA |
+| Dato che mandiamo         | Tabella Legacy   | Colonne Legacy (formato esatto)                                                                                                                   | Nostra sorgente                       |
+| ------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| **Anagrafica imprese**    | `amb`            | `amb_ragsoc`, `amb_piva`, `amb_cfisc`, `amb_email`, `amb_phone`, `amb_addr_via`, `amb_addr_civ`, `amb_addr_cap`, `amb_addr_city`, `amb_addr_prov` | `imprese` (dati verificati SUAP/SPID) |
+| **Saldo wallet**          | `amb`            | `amb_saldo_bors` (numeric 8,2)                                                                                                                    | `wallets.balance`                     |
+| **Punteggio graduatoria** | `amb`            | `amb_punti_grad_dfl` (integer)                                                                                                                    | `graduatoria_presenze.punteggio`      |
+| **Fido impresa**          | `amb`            | `amb_fido` (numeric 8,2)                                                                                                                          | `imprese.fido` (campo da creare)      |
+| **Mercati**               | `mercati`        | `mkt_desc`, `mkt_city`, `mkt_addr`, `mkt_lat`, `mkt_lng`, `mkt_prezzo`, `mkt_dal`, `mkt_al`                                                       | `markets`                             |
+| **Posteggi con mappa**    | `piazzole`       | `pz_numero`, `pz_mq`, `pz_lat`, `pz_lng`, `pz_height`, `pz_width`, `pz_alimentare`, `pz_enabled`                                                  | `stalls` + `geometry_geojson`         |
+| **Concessioni**           | `conc_std`       | `conc_dal`, `conc_al`, `conc_stato`, `conc_importo`, `conc_alimentare`, `amb_id`, `mkt_id`, `pz_id`                                               | `concessions`                         |
+| **Autorizzazioni spunta** | `spuntisti`      | `sp_dal`, `sp_al`, `sp_stato`, `sp_importo`, `amb_id`, `mkt_id`                                                                                   | `wallets` (type=SPUNTA)               |
+| **Utenti/operatori**      | `suser`          | `suser_email`, `suser_nome`, `suser_cognome`, `suser_phone`, `suser_role`, `suser_enabled`, `suser_badge` (CIE)                                   | `users`                               |
+| **Regolarità impresa**    | via `conc_stato` | `ATTIVA` = può operare, `REVOCATA`/`SOSPESA` = bloccata                                                                                           | Calcolata da 23 controlli SCIA        |
 
 #### 4.2 Legacy → MioHub (11% dei dati — RICEVIAMO DA LORO)
 
 Il Legacy ci manda i dati grezzi raccolti dall'app tablet sul campo:
 
-| Dato che riceviamo | Tabella Legacy | Colonne Legacy | Nostra destinazione |
-|---|---|---|---|
-| **Presenza ingresso** | `presenze` | `pre_ingresso` (time), `amb_id`, `pz_id`, `ist_id` | `vendor_presences.checkin_time` |
-| **Uscita** | `presenze` | `pre_uscita` (time) | `vendor_presences.checkout_time` |
-| **Deposito spazzatura** | `presenze` | `pre_spazzatura` (boolean) | `vendor_presences.orario_deposito_rifiuti` |
-| **Presenza rifiutata** | `presenze` | `pre_rifiutata` (boolean) | Flag nella nostra presenza |
-| **Note operatore** | `presenze` | `pre_note` (text) | `vendor_presences.note` |
-| **Prezzo calcolato** | `presenze` | `pre_prezzo` (numeric 8,2) | `vendor_presences.importo_addebitato` |
-| **Tipo presenza** | `presenze` | `pre_tipo` (varchar) | `vendor_presences.tipo_presenza` |
-| **Operatore che registra** | `presenze` | `suser_id` (integer) | Tracciabilità |
-| **Giornata mercato** | `istanze` | `ist_id`, `ist_stato` | `market_sessions` |
-| **Posti scelti spunta** | `presenze` | `pz_id` (posteggio scelto dallo spuntista) | `vendor_presences.stall_id` |
+| Dato che riceviamo         | Tabella Legacy | Colonne Legacy                                     | Nostra destinazione                        |
+| -------------------------- | -------------- | -------------------------------------------------- | ------------------------------------------ |
+| **Presenza ingresso**      | `presenze`     | `pre_ingresso` (time), `amb_id`, `pz_id`, `ist_id` | `vendor_presences.checkin_time`            |
+| **Uscita**                 | `presenze`     | `pre_uscita` (time)                                | `vendor_presences.checkout_time`           |
+| **Deposito spazzatura**    | `presenze`     | `pre_spazzatura` (boolean)                         | `vendor_presences.orario_deposito_rifiuti` |
+| **Presenza rifiutata**     | `presenze`     | `pre_rifiutata` (boolean)                          | Flag nella nostra presenza                 |
+| **Note operatore**         | `presenze`     | `pre_note` (text)                                  | `vendor_presences.note`                    |
+| **Prezzo calcolato**       | `presenze`     | `pre_prezzo` (numeric 8,2)                         | `vendor_presences.importo_addebitato`      |
+| **Tipo presenza**          | `presenze`     | `pre_tipo` (varchar)                               | `vendor_presences.tipo_presenza`           |
+| **Operatore che registra** | `presenze`     | `suser_id` (integer)                               | Tracciabilità                              |
+| **Giornata mercato**       | `istanze`      | `ist_id`, `ist_stato`                              | `market_sessions`                          |
+| **Posti scelti spunta**    | `presenze`     | `pz_id` (posteggio scelto dallo spuntista)         | `vendor_presences.stall_id`                |
 
 #### 4.3 Dati Bidirezionali (4%)
 
-| Dato | Direzione | Spiegazione |
-|---|---|---|
-| `pre_prezzo` | ↔ | Noi calcoliamo (mq × costo_mq) e lo diamo, il Legacy lo conferma nella presenza |
-| `pre_tipo` | ↔ | Noi definiamo CONCESSIONARIO/SPUNTISTA, il Legacy lo registra |
-| `ist_id` | ↔ | Noi creiamo la sessione, il Legacy la usa per le presenze |
-| `ist_stato` | ↔ | Noi apriamo/chiudiamo, il Legacy aggiorna durante la giornata |
+| Dato         | Direzione | Spiegazione                                                                     |
+| ------------ | --------- | ------------------------------------------------------------------------------- |
+| `pre_prezzo` | ↔        | Noi calcoliamo (mq × costo_mq) e lo diamo, il Legacy lo conferma nella presenza |
+| `pre_tipo`   | ↔        | Noi definiamo CONCESSIONARIO/SPUNTISTA, il Legacy lo registra                   |
+| `ist_id`     | ↔        | Noi creiamo la sessione, il Legacy la usa per le presenze                       |
+| `ist_stato`  | ↔        | Noi apriamo/chiudiamo, il Legacy aggiorna durante la giornata                   |
 
 ### 5. Diagramma Flusso Giornata Mercato
 
@@ -631,16 +675,16 @@ Il Legacy ci manda i dati grezzi raccolti dall'app tablet sul campo:
 
 **Il flusso completo di una giornata di mercato con interoperabilità:**
 
-| Fase | Cosa succede | Chi lo fa | Dati che passano |
-|---|---|---|---|
-| **0. Sync preventivo** | Prima della giornata, MioHub manda al Legacy tutti i dati aggiornati | MioHub → Legacy | Imprese, concessioni, piazzole, wallet, regolarità |
-| **1. Apertura mercato** | Dashboard PA avvia la giornata, Legacy riceve la sessione | MioHub → Legacy | `istanza_start(mercato_id)` |
-| **2. Arrivo concessionari** | Operatore tablet registra ingresso | Legacy → MioHub | `pre_ingresso`, `amb_id`, `pz_id` |
-| **3. Preparazione spunta** | Dashboard PA conta assenze, prepara posti arancioni | MioHub → Legacy | Posti liberi per spunta |
-| **4. Spunta** | Spuntisti scelgono posti dall'app tablet | Legacy → MioHub | `pz_id` scelto, `pre_ingresso` |
-| **5. Durante mercato** | Operatore registra spazzatura | Legacy → MioHub | `pre_spazzatura` |
-| **6. Chiusura** | Operatore registra uscite, Dashboard chiude giornata | Legacy → MioHub | `pre_uscita` per tutti |
-| **7. Post-mercato** | CRON MioHub controlla orari, genera verbali automatici | Solo MioHub | Controlli e sanzioni |
+| Fase                        | Cosa succede                                                         | Chi lo fa       | Dati che passano                                   |
+| --------------------------- | -------------------------------------------------------------------- | --------------- | -------------------------------------------------- |
+| **0. Sync preventivo**      | Prima della giornata, MioHub manda al Legacy tutti i dati aggiornati | MioHub → Legacy | Imprese, concessioni, piazzole, wallet, regolarità |
+| **1. Apertura mercato**     | Dashboard PA avvia la giornata, Legacy riceve la sessione            | MioHub → Legacy | `istanza_start(mercato_id)`                        |
+| **2. Arrivo concessionari** | Operatore tablet registra ingresso                                   | Legacy → MioHub | `pre_ingresso`, `amb_id`, `pz_id`                  |
+| **3. Preparazione spunta**  | Dashboard PA conta assenze, prepara posti arancioni                  | MioHub → Legacy | Posti liberi per spunta                            |
+| **4. Spunta**               | Spuntisti scelgono posti dall'app tablet                             | Legacy → MioHub | `pz_id` scelto, `pre_ingresso`                     |
+| **5. Durante mercato**      | Operatore registra spazzatura                                        | Legacy → MioHub | `pre_spazzatura`                                   |
+| **6. Chiusura**             | Operatore registra uscite, Dashboard chiude giornata                 | Legacy → MioHub | `pre_uscita` per tutti                             |
+| **7. Post-mercato**         | CRON MioHub controlla orari, genera verbali automatici               | Solo MioHub     | Controlli e sanzioni                               |
 
 ### 6. Diagramma Trasformazione Dati
 
@@ -654,46 +698,46 @@ Il Legacy ci manda i dati grezzi raccolti dall'app tablet sul campo:
 
 Ogni funzione prende i dati dal nostro DB Neon e li trasforma nel formato esatto delle colonne Legacy, poi chiama la stored function `_crup` del Legacy per inserirli/aggiornarli.
 
-| Funzione | Input (MioHub) | Output (Legacy) | Stored Function Legacy |
-|---|---|---|---|
-| `toAmbFormat(impresa)` | `imprese` + `wallets` + `graduatoria` | JSON con `amb_ragsoc`, `amb_piva`, `amb_cfisc`, `amb_email`, `amb_phone`, `amb_addr_via/civ/cap/city/prov`, `amb_saldo_bors`, `amb_punti_grad_dfl`, `amb_fido` | `amb_crup(json)` |
-| `toMercatiFormat(market)` | `markets` | JSON con `mkt_desc`, `mkt_city`, `mkt_addr`, `mkt_lat`, `mkt_lng`, `mkt_prezzo`, `mkt_dal`, `mkt_al` | `mercati_crup(json)` |
-| `toPiazzoleFormat(stall)` | `stalls` + `geometry_geojson` | JSON con `pz_numero`, `pz_mq`, `pz_lat`, `pz_lng`, `pz_height`, `pz_width`, `pz_alimentare`, `pz_enabled`, `mkt_id` | `piazzole_crup(json)` |
-| `toConcStdFormat(concession)` | `concessions` | JSON con `conc_dal`, `conc_al`, `conc_stato`, `conc_importo`, `conc_alimentare`, `amb_id`, `mkt_id`, `pz_id` | `conc_std_crup(json)` |
-| `toSpuntistiFormat(wallet)` | `wallets` (type=SPUNTA) | JSON con `sp_dal`, `sp_al`, `sp_stato`, `sp_importo`, `amb_id`, `mkt_id` | `spuntisti_crup(json)` |
-| `toSuserFormat(user)` | `users` | JSON con `suser_email`, `suser_nome`, `suser_cognome`, `suser_phone`, `suser_role`, `suser_enabled`, `suser_badge` | `suser_crup(json)` |
+| Funzione                      | Input (MioHub)                        | Output (Legacy)                                                                                                                                                | Stored Function Legacy |
+| ----------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `toAmbFormat(impresa)`        | `imprese` + `wallets` + `graduatoria` | JSON con `amb_ragsoc`, `amb_piva`, `amb_cfisc`, `amb_email`, `amb_phone`, `amb_addr_via/civ/cap/city/prov`, `amb_saldo_bors`, `amb_punti_grad_dfl`, `amb_fido` | `amb_crup(json)`       |
+| `toMercatiFormat(market)`     | `markets`                             | JSON con `mkt_desc`, `mkt_city`, `mkt_addr`, `mkt_lat`, `mkt_lng`, `mkt_prezzo`, `mkt_dal`, `mkt_al`                                                           | `mercati_crup(json)`   |
+| `toPiazzoleFormat(stall)`     | `stalls` + `geometry_geojson`         | JSON con `pz_numero`, `pz_mq`, `pz_lat`, `pz_lng`, `pz_height`, `pz_width`, `pz_alimentare`, `pz_enabled`, `mkt_id`                                            | `piazzole_crup(json)`  |
+| `toConcStdFormat(concession)` | `concessions`                         | JSON con `conc_dal`, `conc_al`, `conc_stato`, `conc_importo`, `conc_alimentare`, `amb_id`, `mkt_id`, `pz_id`                                                   | `conc_std_crup(json)`  |
+| `toSpuntistiFormat(wallet)`   | `wallets` (type=SPUNTA)               | JSON con `sp_dal`, `sp_al`, `sp_stato`, `sp_importo`, `amb_id`, `mkt_id`                                                                                       | `spuntisti_crup(json)` |
+| `toSuserFormat(user)`         | `users`                               | JSON con `suser_email`, `suser_nome`, `suser_cognome`, `suser_phone`, `suser_role`, `suser_enabled`, `suser_badge`                                             | `suser_crup(json)`     |
 
 **Trasformazioni specifiche:**
 
-| Campo MioHub | Trasformazione | Campo Legacy |
-|---|---|---|
-| `imprese.indirizzo_sede_legale` | Parsing indirizzo → via, civico, CAP, città, provincia | `amb_addr_via`, `amb_addr_civ`, `amb_addr_cap`, `amb_addr_city`, `amb_addr_prov` |
-| `stalls.geometry_geojson` | Estrazione centroide → lat, lng | `pz_lat`, `pz_lng` |
-| `stalls.geometry_geojson` | Calcolo bounding box → altezza, larghezza | `pz_height`, `pz_width` |
-| `stalls.settore_merceologico` | Se contiene "alimentare" → `true` | `pz_alimentare` (boolean) |
-| `stalls.status` | Se != "disabilitato" → `true` | `pz_enabled` (boolean) |
-| `concessions.settore_merceologico` | Se contiene "alimentare" → `true` | `conc_alimentare` (boolean) |
-| `users.role` | `admin` → `ADMIN`, `pa` → `OP`, `vendor` → `AMB` | `suser_role` |
-| `users.cie_id` (nuovo campo) | Passato direttamente | `suser_badge` (al posto del NFC) |
-| `wallets.balance` | Passato come numeric(8,2) | `amb_saldo_bors` |
-| `graduatoria_presenze.punteggio` | Passato come integer | `amb_punti_grad_dfl` |
+| Campo MioHub                       | Trasformazione                                         | Campo Legacy                                                                     |
+| ---------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `imprese.indirizzo_sede_legale`    | Parsing indirizzo → via, civico, CAP, città, provincia | `amb_addr_via`, `amb_addr_civ`, `amb_addr_cap`, `amb_addr_city`, `amb_addr_prov` |
+| `stalls.geometry_geojson`          | Estrazione centroide → lat, lng                        | `pz_lat`, `pz_lng`                                                               |
+| `stalls.geometry_geojson`          | Calcolo bounding box → altezza, larghezza              | `pz_height`, `pz_width`                                                          |
+| `stalls.settore_merceologico`      | Se contiene "alimentare" → `true`                      | `pz_alimentare` (boolean)                                                        |
+| `stalls.status`                    | Se != "disabilitato" → `true`                          | `pz_enabled` (boolean)                                                           |
+| `concessions.settore_merceologico` | Se contiene "alimentare" → `true`                      | `conc_alimentare` (boolean)                                                      |
+| `users.role`                       | `admin` → `ADMIN`, `pa` → `OP`, `vendor` → `AMB`       | `suser_role`                                                                     |
+| `users.cie_id` (nuovo campo)       | Passato direttamente                                   | `suser_badge` (al posto del NFC)                                                 |
+| `wallets.balance`                  | Passato come numeric(8,2)                              | `amb_saldo_bors`                                                                 |
+| `graduatoria_presenze.punteggio`   | Passato come integer                                   | `amb_punti_grad_dfl`                                                             |
 
 #### 7.2 Funzioni SYNC IN (Legacy → MioHub)
 
 Ogni funzione prende i dati dal DB Legacy e li trasforma nel formato MioHub.
 
-| Funzione | Input (Legacy) | Output (MioHub) | Tabella Destinazione |
-|---|---|---|---|
-| `fromPresenzeFormat(presenza)` | `presenze` con `pre_ingresso`, `pre_uscita`, `pre_spazzatura`, `pre_prezzo`, `pre_tipo` | `vendor_presences` con `checkin_time`, `checkout_time`, `orario_deposito_rifiuti`, `importo_addebitato`, `tipo_presenza` | `vendor_presences` |
-| `fromIstanzeFormat(istanza)` | `istanze` con `ist_data`, `ist_ora_inizio`, `ist_ora_fine`, `ist_stato` | `market_sessions` con `data_sessione`, `ora_apertura`, `ora_chiusura` | `market_sessions` |
+| Funzione                       | Input (Legacy)                                                                          | Output (MioHub)                                                                                                          | Tabella Destinazione |
+| ------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------- |
+| `fromPresenzeFormat(presenza)` | `presenze` con `pre_ingresso`, `pre_uscita`, `pre_spazzatura`, `pre_prezzo`, `pre_tipo` | `vendor_presences` con `checkin_time`, `checkout_time`, `orario_deposito_rifiuti`, `importo_addebitato`, `tipo_presenza` | `vendor_presences`   |
+| `fromIstanzeFormat(istanza)`   | `istanze` con `ist_data`, `ist_ora_inizio`, `ist_ora_fine`, `ist_stato`                 | `market_sessions` con `data_sessione`, `ora_apertura`, `ora_chiusura`                                                    | `market_sessions`    |
 
 **Trasformazioni specifiche in ingresso:**
 
-| Campo Legacy | Trasformazione | Campo MioHub |
-|---|---|---|
-| `pre_spazzatura` (boolean) | Se `true` → salva orario corrente | `vendor_presences.orario_deposito_rifiuti` (timestamp) |
-| `pre_tipo` (varchar) | `CONCESSIONARIO` → `CONCESSION`, `SPUNTISTA` → `SPUNTA` | `vendor_presences.tipo_presenza` |
-| `pre_rifiutata` (boolean) | Salvato come flag | Nuovo campo `vendor_presences.rifiutata` |
+| Campo Legacy               | Trasformazione                                          | Campo MioHub                                           |
+| -------------------------- | ------------------------------------------------------- | ------------------------------------------------------ |
+| `pre_spazzatura` (boolean) | Se `true` → salva orario corrente                       | `vendor_presences.orario_deposito_rifiuti` (timestamp) |
+| `pre_tipo` (varchar)       | `CONCESSIONARIO` → `CONCESSION`, `SPUNTISTA` → `SPUNTA` | `vendor_presences.tipo_presenza`                       |
+| `pre_rifiutata` (boolean)  | Salvato come flag                                       | Nuovo campo `vendor_presences.rifiutata`               |
 
 ### 8. API Legacy — Inventario Completo Stored Functions
 
@@ -701,40 +745,40 @@ Il backend Legacy espone queste API che chiamano stored functions PostgreSQL. **
 
 #### 8.1 Funzioni di Scrittura (MioHub → Legacy)
 
-| Stored Function | Endpoint Legacy | Cosa fa | Noi la chiamiamo per |
-|---|---|---|---|
-| `amb_crup(json)` | `POST ui/amb` | Crea/aggiorna ambulante | Mandare anagrafica impresa |
-| `mercati_crup(json)` | `POST ui/mercati` | Crea/aggiorna mercato | Mandare dati mercato |
-| `piazzole_crup(json)` | `POST ui/piazzole` | Crea/aggiorna posteggio | Mandare piazzole con mappa |
-| `conc_std_crup(json)` | `POST ui/concessioni` | Crea/aggiorna concessione | Mandare concessioni con stato |
-| `spuntisti_crup(json)` | `POST ui/spuntisti` | Crea/aggiorna spuntista | Mandare autorizzazioni spunta |
-| `suser_crup(json)` | `POST /auth/suser` | Crea/aggiorna utente app | Mandare operatori |
-| `mercati_sched_crup(json)` | `POST ui/mercati/sched` | Crea/aggiorna programmazione | Mandare calendario mercato |
-| `istanza_start(json)` | (chiamata interna) | Avvia giornata mercato | Aprire la giornata |
+| Stored Function            | Endpoint Legacy         | Cosa fa                      | Noi la chiamiamo per          |
+| -------------------------- | ----------------------- | ---------------------------- | ----------------------------- |
+| `amb_crup(json)`           | `POST ui/amb`           | Crea/aggiorna ambulante      | Mandare anagrafica impresa    |
+| `mercati_crup(json)`       | `POST ui/mercati`       | Crea/aggiorna mercato        | Mandare dati mercato          |
+| `piazzole_crup(json)`      | `POST ui/piazzole`      | Crea/aggiorna posteggio      | Mandare piazzole con mappa    |
+| `conc_std_crup(json)`      | `POST ui/concessioni`   | Crea/aggiorna concessione    | Mandare concessioni con stato |
+| `spuntisti_crup(json)`     | `POST ui/spuntisti`     | Crea/aggiorna spuntista      | Mandare autorizzazioni spunta |
+| `suser_crup(json)`         | `POST /auth/suser`      | Crea/aggiorna utente app     | Mandare operatori             |
+| `mercati_sched_crup(json)` | `POST ui/mercati/sched` | Crea/aggiorna programmazione | Mandare calendario mercato    |
+| `istanza_start(json)`      | (chiamata interna)      | Avvia giornata mercato       | Aprire la giornata            |
 
 #### 8.2 Funzioni di Lettura (Legacy → MioHub)
 
-| Stored Function | Endpoint Legacy | Cosa fa | Noi la chiamiamo per |
-|---|---|---|---|
-| `presenze_get(json)` | `GET /presense/mercato/:id` | Legge presenze mercato | Ricevere presenze dal campo |
-| `instanze_mercato(json)` | `GET /mercato/:id/istanze/date` | Legge giornate mercato | Ricevere stato giornate |
-| `presenze_in_data_mkt_id(json)` | `GET docs/mercato/presenze` | Presenze per data e mercato | Ricevere presenze specifiche |
-| `piazzole_spunta_get(json)` | (chiamata interna) | Piazzole libere per spunta | Sapere quali posti sono stati scelti |
+| Stored Function                 | Endpoint Legacy                 | Cosa fa                     | Noi la chiamiamo per                 |
+| ------------------------------- | ------------------------------- | --------------------------- | ------------------------------------ |
+| `presenze_get(json)`            | `GET /presense/mercato/:id`     | Legge presenze mercato      | Ricevere presenze dal campo          |
+| `instanze_mercato(json)`        | `GET /mercato/:id/istanze/date` | Legge giornate mercato      | Ricevere stato giornate              |
+| `presenze_in_data_mkt_id(json)` | `GET docs/mercato/presenze`     | Presenze per data e mercato | Ricevere presenze specifiche         |
+| `piazzole_spunta_get(json)`     | (chiamata interna)              | Piazzole libere per spunta  | Sapere quali posti sono stati scelti |
 
 #### 8.3 Funzioni Presenze (chiamate dall'App Tablet)
 
 Queste funzioni vengono chiamate dall'app tablet sul campo. **Noi le monitoriamo per ricevere i dati.**
 
-| Stored Function | Cosa fa | Dato che riceviamo |
-|---|---|---|
-| `presenze_registrazione(json)` | Registra arrivo ambulante | Timestamp registrazione |
-| `presenze_entrata(json)` | Segna ingresso + calcola prezzo (mq × prezzo) | `pre_ingresso`, `pre_prezzo` |
-| `presenze_entrata_spunta(json)` | Segna ingresso spuntista + calcola prezzo | `pre_ingresso` spuntista |
-| `presenze_uscita(json)` | Segna uscita ambulante | `pre_uscita` |
-| `presenze_spazzatura(json)` | Segna deposito spazzatura | `pre_spazzatura` |
-| `presenze_presenza(json)` | Conferma presenza fisica | Conferma |
-| `termina_spunta(json)` | Chiude fase spunta | Fine spunta |
-| `istanza_cleanup(json)` | Pulisce presenze + rimborsa saldi | Reset giornata |
+| Stored Function                 | Cosa fa                                       | Dato che riceviamo           |
+| ------------------------------- | --------------------------------------------- | ---------------------------- |
+| `presenze_registrazione(json)`  | Registra arrivo ambulante                     | Timestamp registrazione      |
+| `presenze_entrata(json)`        | Segna ingresso + calcola prezzo (mq × prezzo) | `pre_ingresso`, `pre_prezzo` |
+| `presenze_entrata_spunta(json)` | Segna ingresso spuntista + calcola prezzo     | `pre_ingresso` spuntista     |
+| `presenze_uscita(json)`         | Segna uscita ambulante                        | `pre_uscita`                 |
+| `presenze_spazzatura(json)`     | Segna deposito spazzatura                     | `pre_spazzatura`             |
+| `presenze_presenza(json)`       | Conferma presenza fisica                      | Conferma                     |
+| `termina_spunta(json)`          | Chiude fase spunta                            | Fine spunta                  |
+| `istanza_cleanup(json)`         | Pulisce presenze + rimborsa saldi             | Reset giornata               |
 
 ### 9. Endpoint MioHub Implementati
 
@@ -742,86 +786,86 @@ Tutti gli endpoint sono prefissati con `/api/integrations/dms-legacy/`.
 
 #### 9.1 EXPORT (Legacy → MioHub) — ✅ ATTIVI
 
-| # | Metodo | Endpoint | Descrizione | Stato |
-|---|---|---|---|---|
-| 1 | `GET` | `/markets` | Mercati Legacy trasformati formato MioHub | ✅ Testato |
-| 2 | `GET` | `/vendors` | Ambulanti mappati come Imprese | ✅ Testato |
-| 3 | `GET` | `/concessions` | Concessioni con dati relazionati | ✅ Testato |
-| 4 | `GET` | `/presences/:marketId` | Presenze per mercato | ✅ Testato |
-| 5 | `GET` | `/market-sessions/:marketId` | Giornate mercato con statistiche | ✅ Testato |
-| 6 | `GET` | `/stalls/:marketId` | Piazzole con assegnatario | ✅ Testato |
-| 7 | `GET` | `/spuntisti` | Operatori di spunta | ✅ Testato |
-| 8 | `GET` | `/documents` | Documenti ambulanti | ✅ Testato |
-| 9 | `GET` | `/stats` | Statistiche generali | ✅ Testato |
+| #   | Metodo | Endpoint                     | Descrizione                               | Stato      |
+| --- | ------ | ---------------------------- | ----------------------------------------- | ---------- |
+| 1   | `GET`  | `/markets`                   | Mercati Legacy trasformati formato MioHub | ✅ Testato |
+| 2   | `GET`  | `/vendors`                   | Ambulanti mappati come Imprese            | ✅ Testato |
+| 3   | `GET`  | `/concessions`               | Concessioni con dati relazionati          | ✅ Testato |
+| 4   | `GET`  | `/presences/:marketId`       | Presenze per mercato                      | ✅ Testato |
+| 5   | `GET`  | `/market-sessions/:marketId` | Giornate mercato con statistiche          | ✅ Testato |
+| 6   | `GET`  | `/stalls/:marketId`          | Piazzole con assegnatario                 | ✅ Testato |
+| 7   | `GET`  | `/spuntisti`                 | Operatori di spunta                       | ✅ Testato |
+| 8   | `GET`  | `/documents`                 | Documenti ambulanti                       | ✅ Testato |
+| 9   | `GET`  | `/stats`                     | Statistiche generali                      | ✅ Testato |
 
 > **Nota:** Questi endpoint servono anche per l'interoperabilità con **MercaWeb** (software Polizia Municipale Grosseto). Vedi sezione 9.5 per i dettagli completi dell'integrazione MercaWeb.
 
 #### 9.2 SYNC OUT (MioHub → Legacy) — DA IMPLEMENTARE
 
-| # | Metodo | Endpoint | Stored Function Legacy | Descrizione |
-|---|---|---|---|---|
-| 10 | `POST` | `/sync-out/vendors` | `amb_crup(json)` | Manda imprese al Legacy |
-| 11 | `POST` | `/sync-out/markets` | `mercati_crup(json)` | Manda mercati al Legacy |
-| 12 | `POST` | `/sync-out/stalls` | `piazzole_crup(json)` | Manda piazzole al Legacy |
-| 13 | `POST` | `/sync-out/concessions` | `conc_std_crup(json)` | Manda concessioni al Legacy |
-| 14 | `POST` | `/sync-out/spuntisti` | `spuntisti_crup(json)` | Manda autorizzazioni spunta |
-| 15 | `POST` | `/sync-out/users` | `suser_crup(json)` | Manda operatori |
-| 16 | `POST` | `/sync-out/all` | Tutte le `_crup` | Sincronizzazione completa |
+| #   | Metodo | Endpoint                | Stored Function Legacy | Descrizione                 |
+| --- | ------ | ----------------------- | ---------------------- | --------------------------- |
+| 10  | `POST` | `/sync-out/vendors`     | `amb_crup(json)`       | Manda imprese al Legacy     |
+| 11  | `POST` | `/sync-out/markets`     | `mercati_crup(json)`   | Manda mercati al Legacy     |
+| 12  | `POST` | `/sync-out/stalls`      | `piazzole_crup(json)`  | Manda piazzole al Legacy    |
+| 13  | `POST` | `/sync-out/concessions` | `conc_std_crup(json)`  | Manda concessioni al Legacy |
+| 14  | `POST` | `/sync-out/spuntisti`   | `spuntisti_crup(json)` | Manda autorizzazioni spunta |
+| 15  | `POST` | `/sync-out/users`       | `suser_crup(json)`     | Manda operatori             |
+| 16  | `POST` | `/sync-out/all`         | Tutte le `_crup`       | Sincronizzazione completa   |
 
 #### 9.3 SYNC IN (Legacy → MioHub) — DA IMPLEMENTARE
 
-| # | Metodo | Endpoint | Stored Function Legacy | Descrizione |
-|---|---|---|---|---|
-| 17 | `POST` | `/sync-in/presences` | `presenze_get(json)` | Riceve presenze dal campo |
-| 18 | `POST` | `/sync-in/market-sessions` | `instanze_mercato(json)` | Riceve stato giornate |
-| 19 | `POST` | `/sync-in/all` | Tutte le `_get` presenze | Sincronizzazione completa in ingresso |
+| #   | Metodo | Endpoint                   | Stored Function Legacy   | Descrizione                           |
+| --- | ------ | -------------------------- | ------------------------ | ------------------------------------- |
+| 17  | `POST` | `/sync-in/presences`       | `presenze_get(json)`     | Riceve presenze dal campo             |
+| 18  | `POST` | `/sync-in/market-sessions` | `instanze_mercato(json)` | Riceve stato giornate                 |
+| 19  | `POST` | `/sync-in/all`             | Tutte le `_get` presenze | Sincronizzazione completa in ingresso |
 
 #### 9.4 UTILITY — ✅ ATTIVI
 
-| # | Metodo | Endpoint | Descrizione | Stato |
-|---|---|---|---|---|
-| 20 | `GET` | `/health` | Health check connessione DB | ✅ Testato |
-| 21 | `GET` | `/status` | Stato integrazione completo | ✅ Testato |
-| 22 | `POST` | `/sync` | Sync manuale on-demand | ✅ Testato |
-| 23 | `POST` | `/cron-sync` | Sync CRON periodica (60 min) | ✅ Attivo |
+| #   | Metodo | Endpoint     | Descrizione                  | Stato      |
+| --- | ------ | ------------ | ---------------------------- | ---------- |
+| 20  | `GET`  | `/health`    | Health check connessione DB  | ✅ Testato |
+| 21  | `GET`  | `/status`    | Stato integrazione completo  | ✅ Testato |
+| 22  | `POST` | `/sync`      | Sync manuale on-demand       | ✅ Testato |
+| 23  | `POST` | `/cron-sync` | Sync CRON periodica (60 min) | ✅ Attivo  |
 
 ### 10. Campi da Creare nel DB MioHub (Neon)
 
 Per completare l'interoperabilità, questi campi vanno aggiunti alle nostre tabelle:
 
-| Tabella | Campo | Tipo | Scopo |
-|---|---|---|---|
-| `imprese` | `fido` | `numeric(8,2) DEFAULT 0` | Fido/credito concesso, compatibilità con `amb_fido` |
-| `imprese` | `legacy_amb_id` | `integer` | ID ambulante nel Legacy per tracciare la corrispondenza |
-| `markets` | `data_creazione` | `date` | Data inizio attività mercato, compatibilità con `mkt_dal` |
-| `markets` | `data_scadenza` | `date NULL` | Data fine attività mercato, compatibilità con `mkt_al` |
-| `markets` | `legacy_mkt_id` | `integer` | ID mercato nel Legacy |
-| `stalls` | `legacy_pz_id` | `integer` | ID piazzola nel Legacy |
-| `concessions` | `legacy_conc_id` | `integer` | ID concessione nel Legacy |
-| `users` | `cie_id` | `varchar(32)` | ID Carta d'Identità Elettronica (sostituisce badge NFC) |
-| `vendor_presences` | `legacy_pre_id` | `integer` | ID presenza nel Legacy |
-| `vendor_presences` | `rifiutata` | `boolean DEFAULT false` | Se la presenza è stata rifiutata dal Legacy |
+| Tabella            | Campo            | Tipo                     | Scopo                                                     |
+| ------------------ | ---------------- | ------------------------ | --------------------------------------------------------- |
+| `imprese`          | `fido`           | `numeric(8,2) DEFAULT 0` | Fido/credito concesso, compatibilità con `amb_fido`       |
+| `imprese`          | `legacy_amb_id`  | `integer`                | ID ambulante nel Legacy per tracciare la corrispondenza   |
+| `markets`          | `data_creazione` | `date`                   | Data inizio attività mercato, compatibilità con `mkt_dal` |
+| `markets`          | `data_scadenza`  | `date NULL`              | Data fine attività mercato, compatibilità con `mkt_al`    |
+| `markets`          | `legacy_mkt_id`  | `integer`                | ID mercato nel Legacy                                     |
+| `stalls`           | `legacy_pz_id`   | `integer`                | ID piazzola nel Legacy                                    |
+| `concessions`      | `legacy_conc_id` | `integer`                | ID concessione nel Legacy                                 |
+| `users`            | `cie_id`         | `varchar(32)`            | ID Carta d'Identità Elettronica (sostituisce badge NFC)   |
+| `vendor_presences` | `legacy_pre_id`  | `integer`                | ID presenza nel Legacy                                    |
+| `vendor_presences` | `rifiutata`      | `boolean DEFAULT false`  | Se la presenza è stata rifiutata dal Legacy               |
 
 ### 11. Sicurezza
 
-| Aspetto | Implementazione |
-|---|---|
-| **Connessione DB Legacy** | URL in variabile d'ambiente `DMS_LEGACY_DB_URL` su Hetzner |
-| **Pool Limitato** | Max 3 connessioni simultanee per non sovraccaricare il DB Legacy |
-| **Dati MAI trasferiti** | Password (`suser_password`), OTP (`suser_otp`, `suser_otp_creation`) |
-| **Scrittura controllata** | Solo tramite stored functions `_crup` (mai INSERT/UPDATE diretti) |
-| **Guard SYNC OUT** | Flag `SYNC_CONFIG.syncOut.enabled` per abilitare/disabilitare |
-| **Guard SYNC IN** | Flag `SYNC_CONFIG.syncIn.enabled` per abilitare/disabilitare |
-| **Logging** | Ogni operazione di sync viene loggata con timestamp e risultato |
+| Aspetto                   | Implementazione                                                      |
+| ------------------------- | -------------------------------------------------------------------- |
+| **Connessione DB Legacy** | URL in variabile d'ambiente `DMS_LEGACY_DB_URL` su Hetzner           |
+| **Pool Limitato**         | Max 3 connessioni simultanee per non sovraccaricare il DB Legacy     |
+| **Dati MAI trasferiti**   | Password (`suser_password`), OTP (`suser_otp`, `suser_otp_creation`) |
+| **Scrittura controllata** | Solo tramite stored functions `_crup` (mai INSERT/UPDATE diretti)    |
+| **Guard SYNC OUT**        | Flag `SYNC_CONFIG.syncOut.enabled` per abilitare/disabilitare        |
+| **Guard SYNC IN**         | Flag `SYNC_CONFIG.syncIn.enabled` per abilitare/disabilitare         |
+| **Logging**               | Ogni operazione di sync viene loggata con timestamp e risultato      |
 
 ### 12. Monitoraggio Guardian
 
-| # | Endpoint | Metodo | Categoria | Stato |
-|---|---|---|---|---|
-| 1-9 | `/api/integrations/dms-legacy/*` (export) | GET | DMS Legacy Integration | ✅ Attivo |
-| 10-16 | `/api/integrations/dms-legacy/sync-out/*` | POST | DMS Legacy Sync Out | Da registrare |
-| 17-19 | `/api/integrations/dms-legacy/sync-in/*` | POST | DMS Legacy Sync In | Da registrare |
-| 20-23 | `/api/integrations/dms-legacy/health,status,sync,cron` | GET/POST | DMS Legacy Utility | ✅ Attivo |
+| #     | Endpoint                                               | Metodo   | Categoria              | Stato         |
+| ----- | ------------------------------------------------------ | -------- | ---------------------- | ------------- |
+| 1-9   | `/api/integrations/dms-legacy/*` (export)              | GET      | DMS Legacy Integration | ✅ Attivo     |
+| 10-16 | `/api/integrations/dms-legacy/sync-out/*`              | POST     | DMS Legacy Sync Out    | Da registrare |
+| 17-19 | `/api/integrations/dms-legacy/sync-in/*`               | POST     | DMS Legacy Sync In     | Da registrare |
+| 20-23 | `/api/integrations/dms-legacy/health,status,sync,cron` | GET/POST | DMS Legacy Utility     | ✅ Attivo     |
 
 **Totale endpoint DMS Legacy:** 23 (di cui 13 attivi, 10 da implementare)
 
@@ -829,30 +873,30 @@ Per completare l'interoperabilità, questi campi vanno aggiunti alle nostre tabe
 
 Nella Dashboard PA → Integrazioni → Tab Connessioni:
 
-| Elemento | Stato | Descrizione |
-|---|---|---|
-| Card "DMS Legacy (Heroku)" | ✅ Attiva | Mostra stato connessione, ultimo sync, contatori |
-| Card "Pepe GIS / Market Map" | ✅ Attiva | Geometrie posteggi, file editor-v3-full.json |
-| Card "Mobility / TPER" | ✅ Attiva | Fermate bus, tram, parcheggi — dati GTFS reali |
-| Card "MercaWeb — Abaco S.p.A." | ✅ Attiva | Import/export bidirezionale, Health Check e Stato Sync |
-| Card "Firebase Authentication" | ✅ Attiva | Auth ibrido Google/Apple/Email, sync profili MioHub |
+| Elemento                                          | Stato              | Descrizione                                                        |
+| ------------------------------------------------- | ------------------ | ------------------------------------------------------------------ |
+| Card "DMS Legacy (Heroku)"                        | ✅ Attiva          | Mostra stato connessione, ultimo sync, contatori                   |
+| Card "Pepe GIS / Market Map"                      | ✅ Attiva          | Geometrie posteggi, file editor-v3-full.json                       |
+| Card "Mobility / TPER"                            | ✅ Attiva          | Fermate bus, tram, parcheggi — dati GTFS reali                     |
+| Card "MercaWeb — Abaco S.p.A."                    | ✅ Attiva          | Import/export bidirezionale, Health Check e Stato Sync             |
+| Card "Firebase Authentication"                    | ✅ Attiva          | Auth ibrido Google/Apple/Email, sync profili MioHub                |
 | Card "PDND — Piattaforma Digitale Nazionale Dati" | 🔶 In Preparazione | Interoperabilità PA: ANPR, Registro Imprese, INPS, Agenzia Entrate |
-| Health Check | ✅ Attivo | Verifica connessione DB Legacy in tempo reale |
-| Pulsante "Sincronizza Ora" | ✅ Attivo | Lancia sync manuale on-demand |
-| CRON automatico | ✅ Attivo | Ogni 60 minuti |
-| Contatori dati | ✅ Attivo | Mercati, ambulanti, concessioni, piazzole sincronizzati |
-| **Integrazioni Totali** | **6** | 5 attive + 1 in preparazione (PDND) |
+| Health Check                                      | ✅ Attivo          | Verifica connessione DB Legacy in tempo reale                      |
+| Pulsante "Sincronizza Ora"                        | ✅ Attivo          | Lancia sync manuale on-demand                                      |
+| CRON automatico                                   | ✅ Attivo          | Ogni 60 minuti                                                     |
+| Contatori dati                                    | ✅ Attivo          | Mercati, ambulanti, concessioni, piazzole sincronizzati            |
+| **Integrazioni Totali**                           | **6**              | 5 attive + 1 in preparazione (PDND)                                |
 
 ### 14. Piano di Implementazione
 
-| Fase | Descrizione | Stato | Completata |
-|---|---|---|---|
-| **Fase 1** | Endpoint EXPORT (lettura Legacy) | ✅ **COMPLETATA** | Pre-esistente |
-| **Fase 2** | Transformer bidirezionale + endpoint SYNC OUT (scrittura verso Legacy) | ✅ **COMPLETATA** | 12 Feb 2026 |
-| **Fase 3** | Endpoint SYNC IN (ricezione presenze dal campo) | ✅ **COMPLETATA** | 12 Feb 2026 |
-| **Fase 4** | Campi nuovi nel DB Neon + migrazione dati (8 colonne legacy_*_id + indici) | ✅ **COMPLETATA** | 12 Feb 2026 |
-| **Fase 5** | Registrazione Guardian + aggiornamento frontend | ✅ **GIÀ FATTO** | Pre-esistente |
-| **Fase 6** | Test integrato con dati reali + connessione a Heroku | ✅ **COMPLETATA** | 12 Feb 2026 |
+| Fase       | Descrizione                                                                   | Stato             | Completata    |
+| ---------- | ----------------------------------------------------------------------------- | ----------------- | ------------- |
+| **Fase 1** | Endpoint EXPORT (lettura Legacy)                                              | ✅ **COMPLETATA** | Pre-esistente |
+| **Fase 2** | Transformer bidirezionale + endpoint SYNC OUT (scrittura verso Legacy)        | ✅ **COMPLETATA** | 12 Feb 2026   |
+| **Fase 3** | Endpoint SYNC IN (ricezione presenze dal campo)                               | ✅ **COMPLETATA** | 12 Feb 2026   |
+| **Fase 4** | Campi nuovi nel DB Neon + migrazione dati (8 colonne legacy\_\*\_id + indici) | ✅ **COMPLETATA** | 12 Feb 2026   |
+| **Fase 5** | Registrazione Guardian + aggiornamento frontend                               | ✅ **GIÀ FATTO**  | Pre-esistente |
+| **Fase 6** | Test integrato con dati reali + connessione a Heroku                          | ✅ **COMPLETATA** | 12 Feb 2026   |
 
 > **Tutte le 6 fasi completate.** Tag stabile: `v5.5.0-full-sync-tested`. Tutti e 3 i canali (EXPORT, SYNC OUT, SYNC IN) sono attivi e testati bidirezionalmente.
 
@@ -866,12 +910,12 @@ Per le specifiche tecniche complete da consegnare ad Abaco S.p.A., fare riferime
 
 ## 📁 REPOSITORY GITHUB
 
-| Repository | Descrizione | URL |
-|------------|-------------|-----|
-| **dms-hub-app-new** | Frontend React + tRPC | https://github.com/Chcndr/dms-hub-app-new |
-| **mihub-backend-rest** | Backend Express + API | https://github.com/Chcndr/mihub-backend-rest |
-| **dms-system-blueprint** | Documentazione sistema | https://github.com/Chcndr/dms-system-blueprint |
-| **mio-hub-implementation-deploy** | Script deploy | https://github.com/Chcndr/mio-hub-implementation-deploy |
+| Repository                        | Descrizione            | URL                                                     |
+| --------------------------------- | ---------------------- | ------------------------------------------------------- |
+| **dms-hub-app-new**               | Frontend React + tRPC  | https://github.com/Chcndr/dms-hub-app-new               |
+| **mihub-backend-rest**            | Backend Express + API  | https://github.com/Chcndr/mihub-backend-rest            |
+| **dms-system-blueprint**          | Documentazione sistema | https://github.com/Chcndr/dms-system-blueprint          |
+| **mio-hub-implementation-deploy** | Script deploy          | https://github.com/Chcndr/mio-hub-implementation-deploy |
 
 ### Struttura Repository Principale
 
@@ -932,15 +976,18 @@ POST https://orchestratore.mio-hub.me/api/mihub/orchestrator
 ### 🔥 Routing Intelligente (v3.3.0)
 
 **Query singole** (es: "Quanti mercati ci sono?"):
+
 - Routing diretto ad **Abacus** senza passare da Gemini
 - Risposta immediata con risultato SQL
 
 **Query multiple** (es: "Quanti mercati, posteggi e imprese ci sono?"):
+
 - Routing diretto ad **Abacus** con logica multi-query
 - Abacus esegue N query e aggrega i risultati
 - Risposta formattata: "📊 Riepilogo Database: Mercati: 2, Posteggi: 564, Imprese: 13"
 
 **Saluti e presentazioni** (es: "Ciao", "Chi sei?"):
+
 - Routing a **MIO** che risponde direttamente senza delegare
 - Nessun loop, risposta immediata
 
@@ -1006,25 +1053,25 @@ MIO Agent include una **Knowledge Base completa** con riassunti di 30 documenti 
 
 #### Documenti Inclusi nella Knowledge Base
 
-| Categoria | Documenti |
-|-----------|----------|
-| **Strategici** | ANALISI E SOLUZIONE DMS, HUB NAZIONALE, DOSSIER NAZIONALE, PROGETTO NAZIONALE, **TPASS** |
-| **Normativi** | BOLKESTEIN, ONCE ONLY SINGLE DIGITAL GATEWAY, PASSAPORTO DIGITALE EUROPEO |
-| **Tecnici** | DMS AL CENTRO DI TUTTO, GEMELLO DMS, PRESENTAZIONE DMS, APP ASSISTENTE |
+| Categoria         | Documenti                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| **Strategici**    | ANALISI E SOLUZIONE DMS, HUB NAZIONALE, DOSSIER NAZIONALE, PROGETTO NAZIONALE, **TPASS**  |
+| **Normativi**     | BOLKESTEIN, ONCE ONLY SINGLE DIGITAL GATEWAY, PASSAPORTO DIGITALE EUROPEO                 |
+| **Tecnici**       | DMS AL CENTRO DI TUTTO, GEMELLO DMS, PRESENTAZIONE DMS, APP ASSISTENTE                    |
 | **Carbon Credit** | CARBON CREDIT DMS, CARBON CREDIT LOGICA, DMS ECC, EQUILIBRIO ECOSOSTENIBILE, RIEQUILIBRIO |
-| **Regionali** | DMS E CLUST-ER (Emilia-Romagna), HUB URBANI E DI PROSSIMITÀ, COSTI PA |
-| **Operativi** | RELAZIONE CONTROLLI, USATO TRAFFICO RIMANENZE, DMS SSET (InfoCamere) |
+| **Regionali**     | DMS E CLUST-ER (Emilia-Romagna), HUB URBANI E DI PROSSIMITÀ, COSTI PA                     |
+| **Operativi**     | RELAZIONE CONTROLLI, USATO TRAFFICO RIMANENZE, DMS SSET (InfoCamere)                      |
 
 #### Dati Chiave nel System Prompt
 
-| Dato | Valore |
-|------|--------|
-| Negozi chiusi (2003-2023) | 190.000+ |
-| Ambulanti persi | 24.000 (-25.6%) |
-| Imprese ambulanti straniere | 53% |
-| E-commerce Italia 2023 | €54.2 miliardi |
-| Costo attuale PA/anno | €1.2 miliardi |
-| Risparmio con DMS | €1.08 miliardi/anno |
+| Dato                        | Valore              |
+| --------------------------- | ------------------- |
+| Negozi chiusi (2003-2023)   | 190.000+            |
+| Ambulanti persi             | 24.000 (-25.6%)     |
+| Imprese ambulanti straniere | 53%                 |
+| E-commerce Italia 2023      | €54.2 miliardi      |
+| Costo attuale PA/anno       | €1.2 miliardi       |
+| Risparmio con DMS           | €1.08 miliardi/anno |
 
 #### Formula TPASS/TCO₂
 
@@ -1039,10 +1086,10 @@ TCO₂ (€) = PCF (kgCO₂e) × (ETS_anchor €/t ÷ 1000) × PM
 #### Gettito Potenziale TPASS
 
 | Scenario | Volume TPASS/anno | Ricavi DMS |
-|----------|-------------------|------------|
-| Italia | 100M | €5,97M |
-| UE Top-5 | 600M | €32,28M |
-| UE-27 | 1 miliardo | €54,60M |
+| -------- | ----------------- | ---------- |
+| Italia   | 100M              | €5,97M     |
+| UE Top-5 | 600M              | €32,28M    |
+| UE-27    | 1 miliardo        | €54,60M    |
 
 ---
 
@@ -1051,6 +1098,7 @@ TCO₂ (€) = PCF (kgCO₂e) × (ETS_anchor €/t ÷ 1000) × PM
 ### Cos'è Guardian?
 
 Guardian è un **modulo interno del backend** che gestisce:
+
 - Logging centralizzato di tutte le chiamate API
 - Test endpoint (API Playground)
 - Permessi degli agenti
@@ -1058,15 +1106,15 @@ Guardian è un **modulo interno del backend** che gestisce:
 
 ### Endpoint Guardian
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/guardian/health` | GET | Health check Guardian |
-| `/api/guardian/debug/testEndpoint` | POST | Testa un endpoint API |
-| `/api/guardian/logs` | GET | Recupera log agenti |
-| `/api/guardian/permissions` | GET | Permessi agenti |
-| `/api/logs/createLog` | POST | Crea nuovo log |
-| `/api/logs/getLogs` | GET | Lista log con filtri |
-| `/api/logs/stats` | GET | Statistiche log |
+| Endpoint                           | Metodo | Descrizione           |
+| ---------------------------------- | ------ | --------------------- |
+| `/api/guardian/health`             | GET    | Health check Guardian |
+| `/api/guardian/debug/testEndpoint` | POST   | Testa un endpoint API |
+| `/api/guardian/logs`               | GET    | Recupera log agenti   |
+| `/api/guardian/permissions`        | GET    | Permessi agenti       |
+| `/api/logs/createLog`              | POST   | Crea nuovo log        |
+| `/api/logs/getLogs`                | GET    | Lista log con filtri  |
+| `/api/logs/stats`                  | GET    | Statistiche log       |
 
 ### Esempio Test Endpoint
 
@@ -1101,132 +1149,132 @@ POST /api/guardian/debug/testEndpoint
 
 #### Tabelle Core (Dati Operativi)
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `markets` | 18 | 6 | Mercati comunali |
-| `stalls` | 28 | 583 | Posteggi nei mercati |
-| `imprese` | 18 | 20 | Anagrafica imprese |
-| `vendors` | 14 | 15 | Operatori ambulanti |
-| `concessions` | 30 | 83 | Concessioni posteggio |
-| `wallets` | 10 | 90 | Wallet PagoPA |
-| `wallet_scadenze` | 21 | 77 | Scadenze canone unico |
-| `wallet_history` | 13 | 135 | Storico eventi wallet |
-| `wallet_transactions` | 8 | 1344 | Transazioni wallet |
-| `transactions` | 10 | 116 | Transazioni generali |
-| `comuni` | 16 | 34 | Anagrafica comuni |
-| `settori_comune` | 24 | 94 | Settori merceologici per comune |
+| Tabella               | Colonne | Records | Descrizione                     |
+| --------------------- | ------- | ------- | ------------------------------- |
+| `markets`             | 18      | 6       | Mercati comunali                |
+| `stalls`              | 28      | 583     | Posteggi nei mercati            |
+| `imprese`             | 18      | 20      | Anagrafica imprese              |
+| `vendors`             | 14      | 15      | Operatori ambulanti             |
+| `concessions`         | 30      | 83      | Concessioni posteggio           |
+| `wallets`             | 10      | 90      | Wallet PagoPA                   |
+| `wallet_scadenze`     | 21      | 77      | Scadenze canone unico           |
+| `wallet_history`      | 13      | 135     | Storico eventi wallet           |
+| `wallet_transactions` | 8       | 1344    | Transazioni wallet              |
+| `transactions`        | 10      | 116     | Transazioni generali            |
+| `comuni`              | 16      | 34      | Anagrafica comuni               |
+| `settori_comune`      | 24      | 94      | Settori merceologici per comune |
 
 #### Tabelle SUAP/SCIA
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `suap_pratiche` | 73 | 17 | Pratiche SCIA (dopo pulizia test) |
-| `suap_checks` | 7 | 226 | Check valutazione automatica |
-| `suap_eventi` | 8 | 38 | Eventi pratica |
-| `suap_decisioni` | 8 | 22 | Decisioni pratica |
-| `suap_documenti` | 7 | 0 | Documenti allegati |
-| `suap_azioni` | 9 | 0 | Azioni pratica |
-| `suap_regole` | 8 | 0 | Regole valutazione |
-| `dms_suap_instances` | 25 | 1 | Istanze SUAP |
+| Tabella              | Colonne | Records | Descrizione                       |
+| -------------------- | ------- | ------- | --------------------------------- |
+| `suap_pratiche`      | 73      | 17      | Pratiche SCIA (dopo pulizia test) |
+| `suap_checks`        | 7       | 226     | Check valutazione automatica      |
+| `suap_eventi`        | 8       | 38      | Eventi pratica                    |
+| `suap_decisioni`     | 8       | 22      | Decisioni pratica                 |
+| `suap_documenti`     | 7       | 0       | Documenti allegati                |
+| `suap_azioni`        | 9       | 0       | Azioni pratica                    |
+| `suap_regole`        | 8       | 0       | Regole valutazione                |
+| `dms_suap_instances` | 25      | 1       | Istanze SUAP                      |
 
 #### Tabelle Qualificazione e Compliance
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `qualification_types` | 12 | 10 | Tipi qualificazione |
-| `qualificazioni` | 12 | 50 | Qualificazioni imprese |
-| `regolarita_imprese` | 12 | 20 | Regolarità DURC/Antimafia |
-| `autorizzazioni` | 22 | 50 | Autorizzazioni PM |
-| `domande_spunta` | 30 | 35 | Domande spunta giornaliere |
-| `sanctions` | 33 | 39 | Sanzioni |
+| Tabella               | Colonne | Records | Descrizione                |
+| --------------------- | ------- | ------- | -------------------------- |
+| `qualification_types` | 12      | 10      | Tipi qualificazione        |
+| `qualificazioni`      | 12      | 50      | Qualificazioni imprese     |
+| `regolarita_imprese`  | 12      | 20      | Regolarità DURC/Antimafia  |
+| `autorizzazioni`      | 22      | 50      | Autorizzazioni PM          |
+| `domande_spunta`      | 30      | 35      | Domande spunta giornaliere |
+| `sanctions`           | 33      | 39      | Sanzioni                   |
 
 #### Tabelle Segnalazioni e IoT
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `civic_reports` | 22 | 44 | Segnalazioni civiche |
-| `civic_report_config` | 10 | 2 | Config segnalazioni per comune |
-| `civic_report_categories` | 8 | 14 | Categorie segnalazioni |
-| `civic_report_comments` | 8 | 0 | Commenti segnalazioni |
-| `civic_report_photos` | 7 | 0 | Foto segnalazioni |
+| Tabella                   | Colonne | Records | Descrizione                    |
+| ------------------------- | ------- | ------- | ------------------------------ |
+| `civic_reports`           | 22      | 44      | Segnalazioni civiche           |
+| `civic_report_config`     | 10      | 2       | Config segnalazioni per comune |
+| `civic_report_categories` | 8       | 14      | Categorie segnalazioni         |
+| `civic_report_comments`   | 8       | 0       | Commenti segnalazioni          |
+| `civic_report_photos`     | 7       | 0       | Foto segnalazioni              |
 
 #### Tabelle Mobilità e Sostenibilità
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `mobility_data` | 14 | 9554 | Dati mobilità |
-| `gtfs_stops` | 14 | 3117 | Fermate GTFS |
-| `cultural_pois` | 24 | 1277 | Punti di interesse culturali |
-| `route_completions` | 20 | 1 | Percorsi completati |
+| Tabella             | Colonne | Records | Descrizione                  |
+| ------------------- | ------- | ------- | ---------------------------- |
+| `mobility_data`     | 14      | 9554    | Dati mobilità                |
+| `gtfs_stops`        | 14      | 3117    | Fermate GTFS                 |
+| `cultural_pois`     | 24      | 1277    | Punti di interesse culturali |
+| `route_completions` | 20      | 1       | Percorsi completati          |
 
 #### Tabelle Gaming & Rewards (TCC)
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `operator_daily_wallet` | 14 | 26 | Wallet giornaliero operatori |
-| `operator_transactions` | 12 | 26 | Transazioni operatori |
-| `spend_qr_tokens` | 10 | 52 | Token QR spesa |
-| `qr_tokens` | 5 | 5 | Token QR |
-| `challenges` | 15 | 3 | Sfide gamification |
-| `challenge_participations` | 10 | 0 | Partecipazioni sfide |
-| `referrals` | 12 | 4 | Referral |
+| Tabella                    | Colonne | Records | Descrizione                  |
+| -------------------------- | ------- | ------- | ---------------------------- |
+| `operator_daily_wallet`    | 14      | 26      | Wallet giornaliero operatori |
+| `operator_transactions`    | 12      | 26      | Transazioni operatori        |
+| `spend_qr_tokens`          | 10      | 52      | Token QR spesa               |
+| `qr_tokens`                | 5       | 5       | Token QR                     |
+| `challenges`               | 15      | 3       | Sfide gamification           |
+| `challenge_participations` | 10      | 0       | Partecipazioni sfide         |
+| `referrals`                | 12      | 4       | Referral                     |
 
 #### Tabelle Utenti e Sicurezza
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `users` | 19 | 9 | Utenti sistema |
-| `user_roles` | 11 | 14 | Ruoli utente |
-| `user_role_assignments` | 10 | 6 | Assegnazioni ruoli |
-| `user_sessions` | 14 | 66 | Sessioni utente |
-| `permissions` | 10 | 102 | Permessi |
-| `role_permissions` | 7 | 285 | Permessi per ruolo |
-| `security_events` | 14 | 859 | Eventi sicurezza |
-| `secure_credentials` | 8 | 9 | Credenziali sicure |
-| `secrets` | 3 | 5 | Segreti |
-| `secrets_meta` | 9 | 10 | Metadati segreti |
+| Tabella                 | Colonne | Records | Descrizione        |
+| ----------------------- | ------- | ------- | ------------------ |
+| `users`                 | 19      | 9       | Utenti sistema     |
+| `user_roles`            | 11      | 14      | Ruoli utente       |
+| `user_role_assignments` | 10      | 6       | Assegnazioni ruoli |
+| `user_sessions`         | 14      | 66      | Sessioni utente    |
+| `permissions`           | 10      | 102     | Permessi           |
+| `role_permissions`      | 7       | 285     | Permessi per ruolo |
+| `security_events`       | 14      | 859     | Eventi sicurezza   |
+| `secure_credentials`    | 8       | 9       | Credenziali sicure |
+| `secrets`               | 3       | 5       | Segreti            |
+| `secrets_meta`          | 9       | 10      | Metadati segreti   |
 
 #### Tabelle Notifiche e Comunicazione
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `notifiche` | 19 | 401 | Notifiche sistema |
-| `notifiche_destinatari` | 6 | 948 | Destinatari notifiche |
-| `wallet_notifications` | 11 | 4 | Notifiche wallet |
-| `chat_messages` | 14 | 23 | Messaggi chat |
+| Tabella                 | Colonne | Records | Descrizione           |
+| ----------------------- | ------- | ------- | --------------------- |
+| `notifiche`             | 19      | 401     | Notifiche sistema     |
+| `notifiche_destinatari` | 6       | 948     | Destinatari notifiche |
+| `wallet_notifications`  | 11      | 4       | Notifiche wallet      |
+| `chat_messages`         | 14      | 23      | Messaggi chat         |
 
 #### Tabelle Agente AI
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `agent_messages` | 9 | 466 | Messaggi agente |
-| `mio_agent_logs` | 12 | 1627 | Log API agente |
-| `agent_conversations` | 10 | 32 | Conversazioni agente |
+| Tabella               | Colonne | Records | Descrizione          |
+| --------------------- | ------- | ------- | -------------------- |
+| `agent_messages`      | 9       | 466     | Messaggi agente      |
+| `mio_agent_logs`      | 12      | 1627    | Log API agente       |
+| `agent_conversations` | 10      | 32      | Conversazioni agente |
 
 #### Tabelle Storico e Audit
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `storico_titolarita_posteggio` | 34 | 4 | Storico titolarità posteggi |
-| `vendor_presences` | 23 | 48 | Presenze operatori |
-| `pm_watchlist` | 12 | 63 | Watchlist PM |
-| `audit_trail` | 12 | 13 | Trail audit |
+| Tabella                        | Colonne | Records | Descrizione                 |
+| ------------------------------ | ------- | ------- | --------------------------- |
+| `storico_titolarita_posteggio` | 34      | 4       | Storico titolarità posteggi |
+| `vendor_presences`             | 23      | 48      | Presenze operatori          |
+| `pm_watchlist`                 | 12      | 63      | Watchlist PM                |
+| `audit_trail`                  | 12      | 13      | Trail audit                 |
 
 #### Tabelle Geografiche
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `regioni` | 8 | 20 | Regioni italiane |
-| `province` | 9 | 107 | Province italiane |
+| Tabella    | Colonne | Records | Descrizione       |
+| ---------- | ------- | ------- | ----------------- |
+| `regioni`  | 8       | 20      | Regioni italiane  |
+| `province` | 9       | 107     | Province italiane |
 
 #### Tabelle HUB/Negozi
 
-| Tabella | Colonne | Records | Descrizione |
-|---------|---------|---------|-------------|
-| `hub_shops` | 14 | 3 | Negozi HUB |
-| `shops` | 9 | 3 | Negozi |
-| `servizi_associazioni` | 14 | 24 | Servizi associazioni |
-| `richieste_servizi` | 17 | 10 | Richieste servizi |
+| Tabella                | Colonne | Records | Descrizione          |
+| ---------------------- | ------- | ------- | -------------------- |
+| `hub_shops`            | 14      | 3       | Negozi HUB           |
+| `shops`                | 9       | 3       | Negozi               |
+| `servizi_associazioni` | 14      | 24      | Servizi associazioni |
+| `richieste_servizi`    | 17      | 10      | Richieste servizi    |
 
 #### Tabelle Vuote/Non Utilizzate (39 tabelle con 0 records)
 
@@ -1249,6 +1297,7 @@ Includono: `agent_brain`, `agent_context`, `agent_projects`, `agent_tasks`, `api
 ### Endpoint Index (799 endpoint totali)
 
 Gli endpoint sono documentati in:
+
 ```
 /home/ubuntu/dms-hub-app-new/client/public/api-index.json
 ```
@@ -1257,30 +1306,30 @@ Gli endpoint sono documentati in:
 
 La sezione `Integrazioni → API Dashboard` del frontend Vercel è stata potenziata per migliorare l'usabilità e l'esperienza di test:
 
-| Funzionalità | Descrizione |
-|---|---|
-| **Container Scrollabile** | La lista degli endpoint è ora contenuta in un box con altezza fissa (`max-h-[600px]`) e scroll verticale, evitando che la pagina diventi eccessivamente lunga. |
-| **Barra di Ricerca** | È stata aggiunta una barra di ricerca che permette di filtrare in tempo reale gli endpoint per categoria, path o descrizione. |
-| **Filtri Rapidi (Pill)** | Sono presenti dei filtri rapidi (pill/chip) per le 9 categorie principali (DmsHub, DMS Legacy, MercaWeb, Wallet, Imprese, Guardian, SUAP, Security, Comuni PA), che permettono di isolare rapidamente un gruppo di endpoint. Un click attiva il filtro, un secondo click lo rimuove. |
-| **Test Endpoint (Playground)** | Sono state aggiunte le categorie **DMS Legacy (Heroku)** e **MercaWeb — Abaco S.p.A.** alla lista degli endpoint testabili. Cliccando sul pulsante ▶, viene eseguita una chiamata reale all'endpoint e la risposta JSON viene mostrata nel pannello API Playground a destra. |
-| **Gestione API Key** | Il Playground gestisce automaticamente l'invio degli header di autenticazione necessari, come `X-MercaWeb-API-Key` per gli endpoint MercaWeb. |
+| Funzionalità                   | Descrizione                                                                                                                                                                                                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Container Scrollabile**      | La lista degli endpoint è ora contenuta in un box con altezza fissa (`max-h-[600px]`) e scroll verticale, evitando che la pagina diventi eccessivamente lunga.                                                                                                                       |
+| **Barra di Ricerca**           | È stata aggiunta una barra di ricerca che permette di filtrare in tempo reale gli endpoint per categoria, path o descrizione.                                                                                                                                                        |
+| **Filtri Rapidi (Pill)**       | Sono presenti dei filtri rapidi (pill/chip) per le 9 categorie principali (DmsHub, DMS Legacy, MercaWeb, Wallet, Imprese, Guardian, SUAP, Security, Comuni PA), che permettono di isolare rapidamente un gruppo di endpoint. Un click attiva il filtro, un secondo click lo rimuove. |
+| **Test Endpoint (Playground)** | Sono state aggiunte le categorie **DMS Legacy (Heroku)** e **MercaWeb — Abaco S.p.A.** alla lista degli endpoint testabili. Cliccando sul pulsante ▶, viene eseguita una chiamata reale all'endpoint e la risposta JSON viene mostrata nel pannello API Playground a destra.        |
+| **Gestione API Key**           | Il Playground gestisce automaticamente l'invio degli header di autenticazione necessari, come `X-MercaWeb-API-Key` per gli endpoint MercaWeb.                                                                                                                                        |
 
 ### Categorie Principali
 
-| Categoria | Prefisso | Esempi |
-|-----------|----------|--------|
-| **DMS Hub** | `/api/trpc/dmsHub.*` | bookings, inspections, locations |
-| **Guardian** | `/api/guardian/*` | health, logs, testEndpoint |
-| **MIO Hub** | `/api/mihub/*` | orchestrator, chats, messages |
-| **Logs** | `/api/logs/*` | createLog, getLogs, stats |
-| **Health** | `/api/health/*` | full, history, alerts |
-| **GIS** | `/api/gis/*` | market-map |
-| **Imprese** | `/api/imprese/*` | qualificazioni, rating |
-| **SUAP** | `/api/suap/*` | pratiche, stats, evaluate, notifiche-pm |
-| **Test Mercato** | `/api/test-mercato/*` | inizia-mercato, avvia-spunta, assegna-posteggio, chiudi-spunta, registra-rifiuti, chiudi-mercato |
-| **TCC v2** | `/api/tcc/v2/*` | wallet-impresa, qualifiche, settlement |
-| **DMS Legacy** | `/api/integrations/dms-legacy/*` | markets, vendors, concessions, presences, sync |
-| **MercaWeb** | `/api/integrations/mercaweb/*` | import/ambulanti, import/mercati, export/presenze, health |
+| Categoria        | Prefisso                         | Esempi                                                                                           |
+| ---------------- | -------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **DMS Hub**      | `/api/trpc/dmsHub.*`             | bookings, inspections, locations                                                                 |
+| **Guardian**     | `/api/guardian/*`                | health, logs, testEndpoint                                                                       |
+| **MIO Hub**      | `/api/mihub/*`                   | orchestrator, chats, messages                                                                    |
+| **Logs**         | `/api/logs/*`                    | createLog, getLogs, stats                                                                        |
+| **Health**       | `/api/health/*`                  | full, history, alerts                                                                            |
+| **GIS**          | `/api/gis/*`                     | market-map                                                                                       |
+| **Imprese**      | `/api/imprese/*`                 | qualificazioni, rating                                                                           |
+| **SUAP**         | `/api/suap/*`                    | pratiche, stats, evaluate, notifiche-pm                                                          |
+| **Test Mercato** | `/api/test-mercato/*`            | inizia-mercato, avvia-spunta, assegna-posteggio, chiudi-spunta, registra-rifiuti, chiudi-mercato |
+| **TCC v2**       | `/api/tcc/v2/*`                  | wallet-impresa, qualifiche, settlement                                                           |
+| **DMS Legacy**   | `/api/integrations/dms-legacy/*` | markets, vendors, concessions, presences, sync                                                   |
+| **MercaWeb**     | `/api/integrations/mercaweb/*`   | import/ambulanti, import/mercati, export/presenze, health                                        |
 
 ---
 
@@ -1292,52 +1341,52 @@ Il sistema **TCC Wallet-Impresa** collega i wallet Token Carbon Credit (TCC) dir
 
 ### Funzionalità Principali
 
-| Funzionalità | Descrizione |
-|--------------|-------------|
+| Funzionalità                    | Descrizione                                                                                                      |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **Creazione Automatica Wallet** | Quando viene creato un nuovo negozio (shop), il sistema crea automaticamente un wallet TCC collegato all'impresa |
-| **Semaforo Qualifiche** | Indicatore visivo (verde/rosso/grigio) che mostra lo stato del wallet basato sulle qualifiche |
-| **Sospensione Automatica** | Il wallet viene sospeso automaticamente se le qualifiche scadono o mancano |
-| **Blocco Transazioni** | I pulsanti "Assegna TCC" e "Riscuoti TCC" sono disabilitati quando il wallet è sospeso |
+| **Semaforo Qualifiche**         | Indicatore visivo (verde/rosso/grigio) che mostra lo stato del wallet basato sulle qualifiche                    |
+| **Sospensione Automatica**      | Il wallet viene sospeso automaticamente se le qualifiche scadono o mancano                                       |
+| **Blocco Transazioni**          | I pulsanti "Assegna TCC" e "Riscuoti TCC" sono disabilitati quando il wallet è sospeso                           |
 
 ### Logica Semaforo Wallet
 
-| Colore | Stato | Condizione |
-|--------|-------|------------|
-| 🟢 **Verde** | Attivo | Impresa ha almeno una qualifica valida (DURC, HACCP, etc.) |
-| 🔴 **Rosso** | Sospeso | Tutte le qualifiche sono scadute o mancanti |
-| ⚪ **Grigio** | Nessuna Qualifica | L'impresa non ha mai avuto qualifiche registrate |
+| Colore        | Stato             | Condizione                                                 |
+| ------------- | ----------------- | ---------------------------------------------------------- |
+| 🟢 **Verde**  | Attivo            | Impresa ha almeno una qualifica valida (DURC, HACCP, etc.) |
+| 🔴 **Rosso**  | Sospeso           | Tutte le qualifiche sono scadute o mancanti                |
+| ⚪ **Grigio** | Nessuna Qualifica | L'impresa non ha mai avuto qualifiche registrate           |
 
 ### Qualifiche Monitorate
 
-| Tipo | Descrizione | Obbligatorietà |
-|------|-------------|----------------|
-| DURC | Documento Unico Regolarità Contributiva | Obbligatorio |
-| HACCP | Sicurezza Alimentare | Alimentare |
-| ONORABILITA | Requisiti Morali Art. 71 | Obbligatorio |
-| ANTIMAFIA | Dichiarazione Art. 67 | Obbligatorio |
-| SAB | Somministrazione Alimenti | Alimentare |
-| ISO 9001/14001 | Certificazioni Qualità | Opzionale |
+| Tipo           | Descrizione                             | Obbligatorietà |
+| -------------- | --------------------------------------- | -------------- |
+| DURC           | Documento Unico Regolarità Contributiva | Obbligatorio   |
+| HACCP          | Sicurezza Alimentare                    | Alimentare     |
+| ONORABILITA    | Requisiti Morali Art. 71                | Obbligatorio   |
+| ANTIMAFIA      | Dichiarazione Art. 67                   | Obbligatorio   |
+| SAB            | Somministrazione Alimenti               | Alimentare     |
+| ISO 9001/14001 | Certificazioni Qualità                  | Opzionale      |
 
 ### API Endpoints TCC Wallet-Impresa
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/tcc/v2/impresa/:impresaId/wallet` | GET | Recupera wallet TCC con stato qualifiche |
-| `/api/tcc/v2/impresa/:impresaId/wallet/create` | POST | Crea nuovo wallet per impresa |
-| `/api/tcc/v2/impresa/:impresaId/qualification-status` | GET | Stato qualifiche per semaforo |
-| `/api/tcc/v2/impresa/:impresaId/wallet/status` | PUT | Aggiorna stato wallet (active/suspended) |
-| `/api/tcc/v2/impresa/:impresaId/wallet/transactions` | GET | Storico transazioni wallet impresa |
-| `/api/tcc/v2/impresa/:impresaId/wallet/sync-qualification` | POST | Sincronizza wallet con qualifiche |
-| `/api/tcc/v2/wallets/all` | GET | Lista tutti i wallet con stato |
+| Endpoint                                                   | Metodo | Descrizione                              |
+| ---------------------------------------------------------- | ------ | ---------------------------------------- |
+| `/api/tcc/v2/impresa/:impresaId/wallet`                    | GET    | Recupera wallet TCC con stato qualifiche |
+| `/api/tcc/v2/impresa/:impresaId/wallet/create`             | POST   | Crea nuovo wallet per impresa            |
+| `/api/tcc/v2/impresa/:impresaId/qualification-status`      | GET    | Stato qualifiche per semaforo            |
+| `/api/tcc/v2/impresa/:impresaId/wallet/status`             | PUT    | Aggiorna stato wallet (active/suspended) |
+| `/api/tcc/v2/impresa/:impresaId/wallet/transactions`       | GET    | Storico transazioni wallet impresa       |
+| `/api/tcc/v2/impresa/:impresaId/wallet/sync-qualification` | POST   | Sincronizza wallet con qualifiche        |
+| `/api/tcc/v2/wallets/all`                                  | GET    | Lista tutti i wallet con stato           |
 
 ### Tabelle Database Coinvolte
 
-| Tabella | Nuove Colonne | Descrizione |
-|---------|---------------|-------------|
-| `operator_daily_wallet` | `impresa_id`, `wallet_status` | Collegamento wallet-impresa e stato |
-| `hub_shops` | `wallet_enabled` | Flag abilitazione wallet per negozio |
-| `qualificazioni` | - | Fonte dati per verifica qualifiche |
-| `imprese` | - | Anagrafica imprese |
+| Tabella                 | Nuove Colonne                 | Descrizione                          |
+| ----------------------- | ----------------------------- | ------------------------------------ |
+| `operator_daily_wallet` | `impresa_id`, `wallet_status` | Collegamento wallet-impresa e stato  |
+| `hub_shops`             | `wallet_enabled`              | Flag abilitazione wallet per negozio |
+| `qualificazioni`        | -                             | Fonte dati per verifica qualifiche   |
+| `imprese`               | -                             | Anagrafica imprese                   |
 
 ### Flusso Operativo
 
@@ -1364,19 +1413,19 @@ Il sistema **TCC Wallet-Impresa** collega i wallet Token Carbon Credit (TCC) dir
 
 ### Componenti Frontend
 
-| File | Descrizione |
-|------|-------------|
+| File                        | Descrizione                                   |
+| --------------------------- | --------------------------------------------- |
 | `WalletStatusIndicator.jsx` | Componente semaforo nell'header Hub Operatore |
-| `HubOperatore.jsx` | Dashboard operatore con pulsanti TCC |
-| `ImpresaCard.jsx` | Card impresa con indicatore stato wallet |
+| `HubOperatore.jsx`          | Dashboard operatore con pulsanti TCC          |
+| `ImpresaCard.jsx`           | Card impresa con indicatore stato wallet      |
 
 ### Impresa di Test
 
-| Campo | Valore |
-|-------|--------|
-| Nome | MIO TEST |
-| P.IVA | 01010101010 |
-| ID | 38 |
+| Campo     | Valore               |
+| --------- | -------------------- |
+| Nome      | MIO TEST             |
+| P.IVA     | 01010101010          |
+| ID        | 38                   |
 | Operatore | Luca Bianchi (ID: 1) |
 
 ---
@@ -1384,25 +1433,30 @@ Il sistema **TCC Wallet-Impresa** collega i wallet Token Carbon Credit (TCC) dir
 ### 🆕 Aggiornamenti Settlement v5.8.0 (12 Gennaio 2026)
 
 #### Numero Progressivo Settlement
+
 Ogni chiusura giornata ora genera un **numero progressivo univoco** per tracciabilità:
 
-| Campo | Formato | Esempio |
-|-------|---------|---------|
+| Campo               | Formato         | Esempio         |
+| ------------------- | --------------- | --------------- |
 | `settlement_number` | `YYYYMMDD-NNNN` | `20260112-0001` |
 
 #### Multiple Chiusure Giornaliere
+
 Il sistema ora supporta **multiple chiusure nello stesso giorno**:
+
 - Non è un sistema fiscale, quindi non c'è limite alle chiusure
 - Ogni chiusura crea un nuovo wallet con contatori azzerati
 - Il numero progressivo distingue le chiusure dello stesso giorno
 
 #### Modifiche Database
-| Tabella | Modifica | Descrizione |
-|---------|----------|-------------|
-| `operator_daily_wallet` | `+settlement_number` | Numero progressivo chiusura |
+
+| Tabella                 | Modifica                     | Descrizione                           |
+| ----------------------- | ---------------------------- | ------------------------------------- |
+| `operator_daily_wallet` | `+settlement_number`         | Numero progressivo chiusura           |
 | `operator_daily_wallet` | `-UNIQUE(operator_id, date)` | Rimosso vincolo per multiple chiusure |
 
 #### Flusso Settlement Aggiornato
+
 ```
 1. Operatore clicca "Chiudi Giornata"
    └─► Sistema genera settlement_number (es. 20260112-0001)
@@ -1417,38 +1471,40 @@ Il sistema ora supporta **multiple chiusure nello stesso giorno**:
 ```
 
 #### Migrazione Applicata
+
 ```sql
 -- migrations/020_add_settlement_number.sql
 ALTER TABLE operator_daily_wallet ADD COLUMN settlement_number VARCHAR(20);
 CREATE INDEX idx_operator_daily_wallet_settlement_number ON operator_daily_wallet(settlement_number);
 ```
 
-
-
 ### 🆕 Aggiornamenti TCC v5.9.0 (13 Gennaio 2026)
 
 #### Numeri Progressivi Transazioni
+
 Tutte le transazioni TCC ora hanno un **numero progressivo univoco** per tracciabilità completa:
 
-| Tipo Transazione | Formato Numero | Esempio |
-|------------------|----------------|---------|
-| **Vendita (issue)** | `#TRX-YYYYMMDD-NNNNNN` | `#TRX-20260113-000001` |
-| **Pagamento TCC (redeem)** | `#TRX-YYYYMMDD-NNNNNN` | `#TRX-20260113-000002` |
-| **Chiusura Giornata** | `#YYYYMMDD-NNNN` | `#20260113-0003` |
-| **Rimborso Ricevuto** | `#YYYYMMDD-NNNN` | `#20260113-0003` |
-| **Batch Rimborsi** | `[#YYYYMMDD-NNNN, ...]` | `[#20260113-0003]` |
+| Tipo Transazione           | Formato Numero          | Esempio                |
+| -------------------------- | ----------------------- | ---------------------- |
+| **Vendita (issue)**        | `#TRX-YYYYMMDD-NNNNNN`  | `#TRX-20260113-000001` |
+| **Pagamento TCC (redeem)** | `#TRX-YYYYMMDD-NNNNNN`  | `#TRX-20260113-000002` |
+| **Chiusura Giornata**      | `#YYYYMMDD-NNNN`        | `#20260113-0003`       |
+| **Rimborso Ricevuto**      | `#YYYYMMDD-NNNN`        | `#20260113-0003`       |
+| **Batch Rimborsi**         | `[#YYYYMMDD-NNNN, ...]` | `[#20260113-0003]`     |
 
 #### Scanner QR "Incassa TCC" Migliorato
+
 L'operatore ora vede i dettagli del cliente prima di incassare:
 
-| Campo | Descrizione |
-|-------|-------------|
-| **Nome Cliente** | Nome completo del cliente |
-| **Saldo Wallet** | TCC disponibili nel wallet cliente |
-| **TCC da Incassare** | Importo TCC della transazione |
-| **Valore Euro** | Controvalore in euro |
+| Campo                | Descrizione                        |
+| -------------------- | ---------------------------------- |
+| **Nome Cliente**     | Nome completo del cliente          |
+| **Saldo Wallet**     | TCC disponibili nel wallet cliente |
+| **TCC da Incassare** | Importo TCC della transazione      |
+| **Valore Euro**      | Controvalore in euro               |
 
 #### Nuovo Endpoint API
+
 ```
 POST /api/tcc/v2/operator/validate-spend-qr
 Body: { "qr_data": "tcc-spend://userId/token" }
@@ -1456,6 +1512,7 @@ Response: { customer_name, wallet_balance, tcc_amount, euro_amount }
 ```
 
 #### Flusso Incasso TCC Aggiornato
+
 ```
 1. Cliente genera QR di spesa (valido 15 minuti)
    └─► App cliente mostra QR con importo TCC
@@ -1468,6 +1525,7 @@ Response: { customer_name, wallet_balance, tcc_amount, euro_amount }
 ```
 
 #### Fix Applicati
+
 - ✅ **Wallet Query:** Restituisce sempre il wallet "open" indipendentemente dalla data
 - ✅ **Date Rimborsi:** Formato DD/MM/YYYY invece di oggetto Date raw
 - ✅ **Autocomplete Off:** Rimosso popup password Safari sui campi input
@@ -1486,27 +1544,27 @@ Il modulo **SSO SUAP** (Sportello Unico Attività Produttive) gestisce le pratic
 
 ### Struttura Tabella `suap_pratiche` (69 colonne)
 
-| Categoria | Campi Principali |
-|-----------|------------------|
-| **Pratica** | id, ente_id, cui, tipo_pratica, stato, data_presentazione, numero_protocollo, comune_presentazione |
-| **Tipologia** | tipo_segnalazione, motivo_subingresso, settore_merceologico, ruolo_dichiarante |
-| **Subentrante** | richiedente_cf, sub_ragione_sociale, sub_nome, sub_cognome, sub_data_nascita, sub_luogo_nascita, sub_residenza_*, sub_sede_*, sub_pec, sub_telefono |
-| **Cedente** | ced_cf, ced_ragione_sociale, ced_nome, ced_cognome, ced_data_nascita, ced_residenza_*, ced_pec, ced_scia_precedente |
-| **Mercato** | mercato_id, mercato_nome, posteggio_id, posteggio_numero, ubicazione_mercato, giorno_mercato, fila, dimensioni_mq, dimensioni_lineari, attrezzature |
-| **Atto Notarile** | notaio_rogante, numero_repertorio, data_atto |
-| **Delegato** | del_nome, del_cognome, del_cf, del_data_nascita, del_luogo_nascita, del_qualifica, del_residenza_* |
-| **Valutazione** | esito_automatico, score, created_at, updated_at |
+| Categoria         | Campi Principali                                                                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pratica**       | id, ente_id, cui, tipo_pratica, stato, data_presentazione, numero_protocollo, comune_presentazione                                                  |
+| **Tipologia**     | tipo_segnalazione, motivo_subingresso, settore_merceologico, ruolo_dichiarante                                                                      |
+| **Subentrante**   | richiedente*cf, sub_ragione_sociale, sub_nome, sub_cognome, sub_data_nascita, sub_luogo_nascita, sub_residenza*_, sub*sede*_, sub_pec, sub_telefono |
+| **Cedente**       | ced*cf, ced_ragione_sociale, ced_nome, ced_cognome, ced_data_nascita, ced_residenza*\*, ced_pec, ced_scia_precedente                                |
+| **Mercato**       | mercato_id, mercato_nome, posteggio_id, posteggio_numero, ubicazione_mercato, giorno_mercato, fila, dimensioni_mq, dimensioni_lineari, attrezzature |
+| **Atto Notarile** | notaio_rogante, numero_repertorio, data_atto                                                                                                        |
+| **Delegato**      | del*nome, del_cognome, del_cf, del_data_nascita, del_luogo_nascita, del_qualifica, del_residenza*\*                                                 |
+| **Valutazione**   | esito_automatico, score, created_at, updated_at                                                                                                     |
 
 ### API Endpoints SUAP
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/suap/pratiche` | GET | Lista pratiche con filtri |
-| `/api/suap/pratiche` | POST | Crea nuova pratica SCIA |
-| `/api/suap/pratiche/:id` | GET | Dettaglio pratica con timeline e checks |
-| `/api/suap/pratiche/:id/evaluate` | POST | Esegui valutazione automatica |
-| `/api/suap/stats` | GET | Statistiche dashboard |
-| `/api/suap/notifiche-pm` | GET | Notifiche SUAP per PM (domande spunta + concessioni + autorizzazioni) — **v5.3.0** |
+| Endpoint                          | Metodo | Descrizione                                                                        |
+| --------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| `/api/suap/pratiche`              | GET    | Lista pratiche con filtri                                                          |
+| `/api/suap/pratiche`              | POST   | Crea nuova pratica SCIA                                                            |
+| `/api/suap/pratiche/:id`          | GET    | Dettaglio pratica con timeline e checks                                            |
+| `/api/suap/pratiche/:id/evaluate` | POST   | Esegui valutazione automatica                                                      |
+| `/api/suap/stats`                 | GET    | Statistiche dashboard                                                              |
+| `/api/suap/notifiche-pm`          | GET    | Notifiche SUAP per PM (domande spunta + concessioni + autorizzazioni) — **v5.3.0** |
 
 ### Sottotab Graduatoria Spunta (v5.3.0)
 
@@ -1527,69 +1585,72 @@ All'interno del tab **Pratiche SUAP** nel pannello Controlli/Sanzioni è stato a
 
 Il motore di verifica esegue **23 controlli automatici** su dati reali del sistema:
 
-| Categoria | Controlli | Fonte Dati |
-|-----------|-----------|------------|
+| Categoria       | Controlli                                                                        | Fonte Dati                           |
+| --------------- | -------------------------------------------------------------------------------- | ------------------------------------ |
 | **Subentrante** | DURC, Onorabilità, Antimafia, Impresa Attiva, Limite Posteggi, Alimentare, HACCP | qualificazioni, imprese, concessions |
-| **Cedente** | DURC, Onorabilità, Antimafia, Canone Unico | qualificazioni, wallets |
-| **Pratica** | Dati Completi, PEC, Atto Notarile | suap_pratiche |
+| **Cedente**     | DURC, Onorabilità, Antimafia, Canone Unico                                       | qualificazioni, wallets              |
+| **Pratica**     | Dati Completi, PEC, Atto Notarile                                                | suap_pratiche                        |
 
 **Logica Limite Posteggi:**
+
 - Mercato ≤ 100 posti: max **2 posteggi** per impresa
 - Mercato > 100 posti: max **3 posteggi** per impresa
 
 **Esiti Valutazione:**
+
 - `AUTO_OK` - Score ≥ 80 (approvazione automatica)
 - `REVIEW_NEEDED` - Score 50-79 (revisione manuale)
 - `REJECTED` - Score < 50 (rigetto)
 
 ### Tipi Qualificazione Supportati
 
-| Tipo | Descrizione | Categoria |
-|------|-------------|----------|
-| DURC | Regolarità Contributiva | Obbligatorio |
-| ONORABILITA | Requisiti Morali Art. 71 D.Lgs. 59/2010 | Obbligatorio |
-| ANTIMAFIA | Dichiarazione Art. 67 D.Lgs. 159/2011 | Obbligatorio |
-| SAB | Somministrazione Alimenti e Bevande | Alimentare |
-| REC | Registro Esercenti Commercio | Alimentare |
-| CORSO_ALIMENTARE | Formazione Regionale | Alimentare |
-| HACCP | Sicurezza Alimentare | Alimentare |
-| ISO 9001/14001/22000 | Certificazioni Qualità | Opzionale |
+| Tipo                 | Descrizione                             | Categoria    |
+| -------------------- | --------------------------------------- | ------------ |
+| DURC                 | Regolarità Contributiva                 | Obbligatorio |
+| ONORABILITA          | Requisiti Morali Art. 71 D.Lgs. 59/2010 | Obbligatorio |
+| ANTIMAFIA            | Dichiarazione Art. 67 D.Lgs. 159/2011   | Obbligatorio |
+| SAB                  | Somministrazione Alimenti e Bevande     | Alimentare   |
+| REC                  | Registro Esercenti Commercio            | Alimentare   |
+| CORSO_ALIMENTARE     | Formazione Regionale                    | Alimentare   |
+| HACCP                | Sicurezza Alimentare                    | Alimentare   |
+| ISO 9001/14001/22000 | Certificazioni Qualità                  | Opzionale    |
 
 ### File Principali
 
-| File | Descrizione |
-|------|-------------|
-| `client/src/pages/suap/SuapDashboard.tsx` | Dashboard principale SUAP |
-| `client/src/pages/suap/SuapDetail.tsx` | Dettaglio pratica con tutti i dati |
-| `client/src/pages/suap/SuapList.tsx` | Lista pratiche con filtri |
-| `client/src/components/suap/SciaForm.tsx` | Form compilazione SCIA guidato |
-| `client/src/components/SuapPanel.tsx` | Pannello SUAP con controlli v2.0 |
-| `client/src/api/suap.ts` | Client API SUAP |
+| File                                             | Descrizione                                 |
+| ------------------------------------------------ | ------------------------------------------- |
+| `client/src/pages/suap/SuapDashboard.tsx`        | Dashboard principale SUAP                   |
+| `client/src/pages/suap/SuapDetail.tsx`           | Dettaglio pratica con tutti i dati          |
+| `client/src/pages/suap/SuapList.tsx`             | Lista pratiche con filtri                   |
+| `client/src/components/suap/SciaForm.tsx`        | Form compilazione SCIA guidato              |
+| `client/src/components/SuapPanel.tsx`            | Pannello SUAP con controlli v2.0            |
+| `client/src/api/suap.ts`                         | Client API SUAP                             |
 | `mihub-backend-rest/src/modules/suap/service.js` | Service backend SUAP + Motore Verifica v2.0 |
-| `mihub-backend-rest/routes/suap.js` | Routes API SUAP |
-
+| `mihub-backend-rest/routes/suap.js`              | Routes API SUAP                             |
 
 ### API Endpoints Concessioni (v2.0 - 3 Gennaio 2026)
 
 Il sistema di gestione concessioni è stato completamente aggiornato per supportare il **subingresso automatico** con trasferimento posteggio e wallet.
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/concessions` | GET | Lista concessioni con filtri (market_id, vendor_id, active_only) |
-| `/api/concessions/:id` | GET | Dettaglio singola concessione |
-| `/api/concessions` | POST | **Crea nuova concessione** - Gestisce automaticamente subingresso |
-| `/api/concessions/:id` | PUT | Aggiorna tutti i campi di una concessione |
-| `/api/concessions/:id` | PATCH | Aggiorna campi specifici |
-| `/api/concessions/:id` | DELETE | Elimina concessione e libera posteggio |
-| `/api/concessions/:id/associa-posteggio` | POST | Associa posteggio per subingresso manuale |
+| Endpoint                                 | Metodo | Descrizione                                                       |
+| ---------------------------------------- | ------ | ----------------------------------------------------------------- |
+| `/api/concessions`                       | GET    | Lista concessioni con filtri (market_id, vendor_id, active_only)  |
+| `/api/concessions/:id`                   | GET    | Dettaglio singola concessione                                     |
+| `/api/concessions`                       | POST   | **Crea nuova concessione** - Gestisce automaticamente subingresso |
+| `/api/concessions/:id`                   | PUT    | Aggiorna tutti i campi di una concessione                         |
+| `/api/concessions/:id`                   | PATCH  | Aggiorna campi specifici                                          |
+| `/api/concessions/:id`                   | DELETE | Elimina concessione e libera posteggio                            |
+| `/api/concessions/:id/associa-posteggio` | POST   | Associa posteggio per subingresso manuale                         |
 
 #### Logica Subingresso Automatico (v2.0)
 
 Il `POST /api/concessions` rileva automaticamente un subingresso quando:
+
 - `tipo_concessione = 'subingresso'` **oppure**
 - È presente `cedente_impresa_id`
 
 **Flusso automatico:**
+
 1. Verifica se esiste concessione attiva per il posteggio
 2. Se subingresso:
    - Chiude la concessione del cedente (stato = CESSATA)
@@ -1616,7 +1677,8 @@ La response del `POST /api/concessions` ora include un array `steps` che il fron
   ]
 }
 ```
-```
+
+````
 
 #### Campi Supportati (60+ campi)
 
@@ -1650,9 +1712,10 @@ POST /api/concessions
   "settore_merceologico": "Alimentare",
   "numero_protocollo": "CONC-2025-001"
 }
-```
+````
 
 **Risposta:**
+
 ```json
 {
   "success": true,
@@ -1673,11 +1736,11 @@ POST /api/concessions
 
 #### File Principali Concessioni
 
-| File | Descrizione |
-|------|-------------|
-| `mihub-backend-rest/routes/concessions.js` | API REST concessioni (1200+ righe) |
-| `client/src/components/suap/ConcessioneForm.tsx` | Form frontespizio concessione |
-| `client/src/pages/MarketCompaniesTab.tsx` | Tab concessioni nel mercato |
+| File                                             | Descrizione                        |
+| ------------------------------------------------ | ---------------------------------- |
+| `mihub-backend-rest/routes/concessions.js`       | API REST concessioni (1200+ righe) |
+| `client/src/components/suap/ConcessioneForm.tsx` | Form frontespizio concessione      |
+| `client/src/pages/MarketCompaniesTab.tsx`        | Tab concessioni nel mercato        |
 
 ---
 
@@ -1734,7 +1797,7 @@ Il sistema ora utilizza un modello di autenticazione ibrido che combina **Fireba
 ### Flusso di Autenticazione
 
 1.  **Selezione Profilo**: L'utente sceglie il proprio ruolo (`Cittadino`, `Impresa`, `PA`).
-2.  **Selezione Metodo**: 
+2.  **Selezione Metodo**:
     - Il **Cittadino** può scegliere tra Google, Apple, Email (gestiti da Firebase) o SPID (gestito da ARPA).
     - **Impresa** e **PA** sono indirizzati al flusso SPID/CIE/CNS di ARPA.
 3.  **Autenticazione Firebase**: Per Google, Apple o Email, il client utilizza il **Firebase SDK** per completare l'autenticazione e ricevere un **ID Token**.
@@ -1745,29 +1808,29 @@ Il sistema ora utilizza un modello di autenticazione ibrido che combina **Fireba
     - Genera un `session_token` (UUID) salvato in `user_sessions` (scadenza 24h).
     - Restituisce sessione + dati utente.
 5.  **Verifica Ruoli**: Il client chiama `GET /api/auth/check-roles?email=...` che cerca nella tabella `user_role_assignments` (JOIN con `user_roles`) per determinare `isAdmin`, `isSuperAdmin` e i ruoli assegnati.
-5.  **Sessione Client**: Il client riceve il profilo utente MioHub e lo salva nel `FirebaseAuthContext`, stabilendo la sessione.
+6.  **Sessione Client**: Il client riceve il profilo utente MioHub e lo salva nel `FirebaseAuthContext`, stabilendo la sessione.
 
 ### Provider di Autenticazione
 
-| Provider | Tipo | Ruolo | Implementazione | Stato |
-| :--- | :--- | :--- | :--- | :--- |
-| **Google** | Social Login | `citizen` | Firebase SDK (Popup/Redirect) | ✅ **Completato** |
-| **Apple** | Social Login | `citizen` | Firebase SDK (Popup/Redirect) | ✅ **Completato** |
-| **Email/Password** | Credenziali | `citizen` | Firebase SDK | ✅ **Completato** |
-| **SPID/CIE/CNS** | Identità Digitale | `citizen`, `business`, `pa` | ARPA Regione Toscana | ✳️ **Esistente** |
+| Provider           | Tipo              | Ruolo                       | Implementazione               | Stato             |
+| :----------------- | :---------------- | :-------------------------- | :---------------------------- | :---------------- |
+| **Google**         | Social Login      | `citizen`                   | Firebase SDK (Popup/Redirect) | ✅ **Completato** |
+| **Apple**          | Social Login      | `citizen`                   | Firebase SDK (Popup/Redirect) | ✅ **Completato** |
+| **Email/Password** | Credenziali       | `citizen`                   | Firebase SDK                  | ✅ **Completato** |
+| **SPID/CIE/CNS**   | Identità Digitale | `citizen`, `business`, `pa` | ARPA Regione Toscana          | ✳️ **Esistente**  |
 
 ### Componenti Core
 
 La nuova architettura si basa sui seguenti componenti:
 
-| File | Scopo |
-| :--- | :--- |
-| **`client/src/lib/firebase.ts`** | Configura e inizializza il client Firebase. Esporta funzioni per login, logout, registrazione e reset password. |
+| File                                              | Scopo                                                                                                                                       |
+| :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`client/src/lib/firebase.ts`**                  | Configura e inizializza il client Firebase. Esporta funzioni per login, logout, registrazione e reset password.                             |
 | **`client/src/contexts/FirebaseAuthContext.tsx`** | Context React globale che gestisce lo stato utente, ascolta i cambiamenti di stato Firebase e orchestra la sincronizzazione con il backend. |
-| **`client/src/components/LoginModal.tsx`** | Componente UI (v2.0) che integra i metodi di login Firebase e mantiene il flusso SPID esistente. |
-| **`routes/auth.js`** | Router Express backend: endpoint `firebase-session`, `check-roles`, `login` SPID, gestione sessioni. |
-| **`config/firebase-admin.js`** | Inizializzazione condizionale Firebase Admin SDK per verifica token (attivabile con service account key). |
-| **`config/database.js`** | Pool DB centralizzato Neon (max 15 connessioni, idle 20s). Esporta `{ pool, query }`. |
+| **`client/src/components/LoginModal.tsx`**        | Componente UI (v2.0) che integra i metodi di login Firebase e mantiene il flusso SPID esistente.                                            |
+| **`routes/auth.js`**                              | Router Express backend: endpoint `firebase-session`, `check-roles`, `login` SPID, gestione sessioni.                                        |
+| **`config/firebase-admin.js`**                    | Inizializzazione condizionale Firebase Admin SDK per verifica token (attivabile con service account key).                                   |
+| **`config/database.js`**                          | Pool DB centralizzato Neon (max 15 connessioni, idle 20s). Esporta `{ pool, query }`.                                                       |
 
 ---
 
@@ -1775,31 +1838,31 @@ La nuova architettura si basa sui seguenti componenti:
 
 ### Variabili d'Ambiente Backend
 
-| Variabile | Descrizione |
-|-----------|-------------|
-| `DATABASE_URL` | Connection string Neon |
-| `GEMINI_API_KEY` | API key Google Gemini |
-| `GITHUB_TOKEN` | Token GitHub per GPT Dev |
-| `SSH_PRIVATE_KEY` | Chiave SSH per Manus |
-| `ZAPIER_WEBHOOK_URL` | Webhook Zapier |
-| `VERCEL_TOKEN` | Token deploy Vercel |
-| `VITE_FIREBASE_API_KEY` | Firebase API Key (client) |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain (client) |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase Project ID (client) |
-| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket (client) |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase Messaging Sender ID (client) |
-| `VITE_FIREBASE_APP_ID` | Firebase App ID (client) |
-| `FIREBASE_SERVICE_ACCOUNT_KEY` | Firebase Service Account Key (backend, JSON) |
-| `GOOGLE_APPLICATION_CREDENTIALS` | **[DA CONFIGURARE]** Path al file service account key su Hetzner per attivare verifica firma token Firebase |
+| Variabile                           | Descrizione                                                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                      | Connection string Neon                                                                                      |
+| `GEMINI_API_KEY`                    | API key Google Gemini                                                                                       |
+| `GITHUB_TOKEN`                      | Token GitHub per GPT Dev                                                                                    |
+| `SSH_PRIVATE_KEY`                   | Chiave SSH per Manus                                                                                        |
+| `ZAPIER_WEBHOOK_URL`                | Webhook Zapier                                                                                              |
+| `VERCEL_TOKEN`                      | Token deploy Vercel                                                                                         |
+| `VITE_FIREBASE_API_KEY`             | Firebase API Key (client)                                                                                   |
+| `VITE_FIREBASE_AUTH_DOMAIN`         | Firebase Auth Domain (client)                                                                               |
+| `VITE_FIREBASE_PROJECT_ID`          | Firebase Project ID (client)                                                                                |
+| `VITE_FIREBASE_STORAGE_BUCKET`      | Firebase Storage Bucket (client)                                                                            |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase Messaging Sender ID (client)                                                                       |
+| `VITE_FIREBASE_APP_ID`              | Firebase App ID (client)                                                                                    |
+| `FIREBASE_SERVICE_ACCOUNT_KEY`      | Firebase Service Account Key (backend, JSON)                                                                |
+| `GOOGLE_APPLICATION_CREDENTIALS`    | **[DA CONFIGURARE]** Path al file service account key su Hetzner per attivare verifica firma token Firebase |
 
 ### Accessi Server
 
-| Risorsa | Accesso |
-|---------|---------|
-| **Hetzner VPS** | SSH con chiave (solo per emergenze) |
-| **Neon Dashboard** | https://console.neon.tech |
-| **Vercel Dashboard** | https://vercel.com/dashboard |
-| **GitHub** | https://github.com/Chcndr |
+| Risorsa              | Accesso                             |
+| -------------------- | ----------------------------------- |
+| **Hetzner VPS**      | SSH con chiave (solo per emergenze) |
+| **Neon Dashboard**   | https://console.neon.tech           |
+| **Vercel Dashboard** | https://vercel.com/dashboard        |
+| **GitHub**           | https://github.com/Chcndr           |
 
 ---
 
@@ -1807,12 +1870,12 @@ La nuova architettura si basa sui seguenti componenti:
 
 ### Health Monitor mostra servizi Offline
 
-| Servizio | Problema | Soluzione |
-|----------|----------|-----------|
-| Guardian | Era configurato su URL esterno inesistente | ✅ Fixato v2.1.0 - ora check interno |
+| Servizio  | Problema                                   | Soluzione                            |
+| --------- | ------------------------------------------ | ------------------------------------ |
+| Guardian  | Era configurato su URL esterno inesistente | ✅ Fixato v2.1.0 - ora check interno |
 | MIO Agent | Era configurato su URL esterno inesistente | ✅ Fixato v2.1.0 - ora check interno |
-| S3 | Non configurato | Configurare quando necessario |
-| PDND | Non configurato | Normale - per uso futuro |
+| S3        | Non configurato                            | Configurare quando necessario        |
+| PDND      | Non configurato                            | Normale - per uso futuro             |
 
 ### Backend non risponde
 
@@ -1881,13 +1944,13 @@ fi
 
 ### Servizi Online ✅
 
-| Servizio | URL | Stato |
-|----------|-----|-------|
-| Frontend | https://dms-hub-app-new.vercel.app | ✅ Online |
-| Backend | https://orchestratore.mio-hub.me | ✅ Online |
-| Database | Neon PostgreSQL | ✅ Online |
-| MIO Agent | /api/mihub/orchestrator | ✅ Funzionante |
-| Guardian | /api/guardian/* | ✅ Funzionante |
+| Servizio  | URL                                | Stato          |
+| --------- | ---------------------------------- | -------------- |
+| Frontend  | https://dms-hub-app-new.vercel.app | ✅ Online      |
+| Backend   | https://orchestratore.mio-hub.me   | ✅ Online      |
+| Database  | Neon PostgreSQL                    | ✅ Online      |
+| MIO Agent | /api/mihub/orchestrator            | ✅ Funzionante |
+| Guardian  | /api/guardian/\*                   | ✅ Funzionante |
 
 ### Statistiche
 
@@ -1907,36 +1970,35 @@ Questo Blueprint unificato si integra con la documentazione esistente nel reposi
 
 Documentazione del sistema funzionante in produzione:
 
-| Cartella | Contenuto |
-|----------|----------|
-| `01_ARCHITECTURE/` | Architettura "8 Isole", flusso dati, deployment |
-| `02_BACKEND_CORE/` | API map, LLM Engine, sistema tools |
-| `03_DATABASE_SCHEMA/` | Schema PostgreSQL, query, migrazioni |
+| Cartella                 | Contenuto                                       |
+| ------------------------ | ----------------------------------------------- |
+| `01_ARCHITECTURE/`       | Architettura "8 Isole", flusso dati, deployment |
+| `02_BACKEND_CORE/`       | API map, LLM Engine, sistema tools              |
+| `03_DATABASE_SCHEMA/`    | Schema PostgreSQL, query, migrazioni            |
 | `04_FRONTEND_DASHBOARD/` | 27 tabs dashboard, componenti, state management |
 
 ### 00_LEGACY_ARCHIVE/
 
 Archivio storico con 87 documenti Markdown:
 
-| Cartella | Contenuto |
-|----------|----------|
-| `01_architettura/` | MASTER_SYSTEM_PLAN, AS-IS/TO-BE, integrazioni |
-| `01_architettura/legacy/` | Documentazione teorica vecchia |
-| `01_architettura/legacy/root_legacy/` | CREDENZIALI, BACKEND_UFFICIALE, GIS_SYSTEM |
-| `07_guide_operative/` | Guide deploy e troubleshooting |
+| Cartella                              | Contenuto                                     |
+| ------------------------------------- | --------------------------------------------- |
+| `01_architettura/`                    | MASTER_SYSTEM_PLAN, AS-IS/TO-BE, integrazioni |
+| `01_architettura/legacy/`             | Documentazione teorica vecchia                |
+| `01_architettura/legacy/root_legacy/` | CREDENZIALI, BACKEND_UFFICIALE, GIS_SYSTEM    |
+| `07_guide_operative/`                 | Guide deploy e troubleshooting                |
 
 ### ROADMAP_2025/
 
 Piano sviluppo organizzato per quarter:
 
-| Quarter | Obiettivi Principali |
-|---------|---------------------|
-| **Q1 2025** | TAB Clienti/Prodotti, PDND, performance <2s |
-| **Q2 2025** | TAB Sostenibilità/TPAS, IoT, 1000+ utenti |
+| Quarter        | Obiettivi Principali                            |
+| -------------- | ----------------------------------------------- |
+| **Q1 2025**    | TAB Clienti/Prodotti, PDND, performance <2s     |
+| **Q2 2025**    | TAB Sostenibilità/TPAS, IoT, 1000+ utenti       |
 | **Q3-Q4 2025** | Carbon Credits blockchain, TPER, 10.000+ utenti |
 
 ---
-
 
 ---
 
@@ -1949,6 +2011,7 @@ Piano sviluppo organizzato per quarter:
 ### Obiettivo
 
 Permettere agli utenti di creare nuovi negozi/vetrine direttamente dalla lista Vetrine Commercianti, con:
+
 1. Creazione automatica di una scheda impresa minima
 2. Creazione del negozio (hub_shop) collegato all'HUB
 3. Generazione automatica del point GIS sulla mappa
@@ -1967,30 +2030,30 @@ Lista Vetrine → Tab "Nuovo Negozio" → Form Dati Essenziali → Salva
 
 ### Tabelle Database Coinvolte
 
-| Tabella | Campi Obbligatori | Descrizione |
-|---------|-------------------|-------------|
-| `imprese` | id, denominazione, partita_iva, codice_fiscale, comune | Anagrafica impresa |
-| `hub_shops` | id, hub_id, name, status | Negozio nell'HUB |
-| `hub_locations` | - | HUB di riferimento (già esistente) |
+| Tabella         | Campi Obbligatori                                      | Descrizione                        |
+| --------------- | ------------------------------------------------------ | ---------------------------------- |
+| `imprese`       | id, denominazione, partita_iva, codice_fiscale, comune | Anagrafica impresa                 |
+| `hub_shops`     | id, hub_id, name, status                               | Negozio nell'HUB                   |
+| `hub_locations` | -                                                      | HUB di riferimento (già esistente) |
 
 ### Campi Form "Nuovo Negozio"
 
-| Campo | Obbligatorio | Mappa a | Note |
-|-------|--------------|---------|------|
-| Ragione Sociale | ✅ | imprese.denominazione, hub_shops.name | Nome negozio |
-| Partita IVA | ✅ | imprese.partita_iva, hub_shops.vat_number | 11 caratteri |
-| Codice Fiscale | ✅ | imprese.codice_fiscale | 16 caratteri |
-| Comune | ✅ | imprese.comune | Città sede legale |
-| Categoria | ❌ | hub_shops.category | Tipo attività |
-| Telefono | ❌ | imprese.telefono, hub_shops.phone | Contatto |
-| Email | ❌ | imprese.email, hub_shops.email | Contatto |
-| HUB di Riferimento | ✅ | hub_shops.hub_id | Dropdown HUB disponibili |
+| Campo              | Obbligatorio | Mappa a                                   | Note                     |
+| ------------------ | ------------ | ----------------------------------------- | ------------------------ |
+| Ragione Sociale    | ✅           | imprese.denominazione, hub_shops.name     | Nome negozio             |
+| Partita IVA        | ✅           | imprese.partita_iva, hub_shops.vat_number | 11 caratteri             |
+| Codice Fiscale     | ✅           | imprese.codice_fiscale                    | 16 caratteri             |
+| Comune             | ✅           | imprese.comune                            | Città sede legale        |
+| Categoria          | ❌           | hub_shops.category                        | Tipo attività            |
+| Telefono           | ❌           | imprese.telefono, hub_shops.phone         | Contatto                 |
+| Email              | ❌           | imprese.email, hub_shops.email            | Contatto                 |
+| HUB di Riferimento | ✅           | hub_shops.hub_id                          | Dropdown HUB disponibili |
 
 ### API Endpoints da Creare/Modificare
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/hub/shops/create-with-impresa` | POST | Crea impresa + shop in transazione |
+| Endpoint                             | Metodo | Descrizione                        |
+| ------------------------------------ | ------ | ---------------------------------- |
+| `/api/hub/shops/create-with-impresa` | POST   | Crea impresa + shop in transazione |
 
 ### Logica Backend (Transazione Atomica)
 
@@ -1999,29 +2062,46 @@ Lista Vetrine → Tab "Nuovo Negozio" → Form Dati Essenziali → Salva
 async function createShopWithImpresa(req, res) {
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    
+    await client.query("BEGIN");
+
     // 1. Crea impresa minima
-    const impresaResult = await client.query(`
+    const impresaResult = await client.query(
+      `
       INSERT INTO imprese (denominazione, partita_iva, codice_fiscale, comune, telefono, email, created_at)
       VALUES ($1, $2, $3, $4, $5, $6, NOW())
       RETURNING id
-    `, [denominazione, partitaIva, codiceFiscale, comune, telefono, email]);
-    
+    `,
+      [denominazione, partitaIva, codiceFiscale, comune, telefono, email]
+    );
+
     const impresaId = impresaResult.rows[0].id;
-    
+
     // 2. Crea hub_shop collegato
-    const shopResult = await client.query(`
+    const shopResult = await client.query(
+      `
       INSERT INTO hub_shops (hub_id, name, category, owner_id, business_name, vat_number, phone, email, lat, lng, status, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', NOW(), NOW())
       RETURNING id
-    `, [hubId, denominazione, categoria, impresaId, denominazione, partitaIva, telefono, email, lat, lng]);
-    
-    await client.query('COMMIT');
-    
+    `,
+      [
+        hubId,
+        denominazione,
+        categoria,
+        impresaId,
+        denominazione,
+        partitaIva,
+        telefono,
+        email,
+        lat,
+        lng,
+      ]
+    );
+
+    await client.query("COMMIT");
+
     res.json({ success: true, impresaId, shopId: shopResult.rows[0].id });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     res.status(500).json({ success: false, error: error.message });
   }
 }
@@ -2029,15 +2109,16 @@ async function createShopWithImpresa(req, res) {
 
 ### Componenti Frontend da Creare/Modificare
 
-| File | Modifica |
-|------|----------|
-| `VetrinePage.tsx` | Aggiungere tab "Nuovo Negozio" nella lista |
-| `NuovoNegozioForm.tsx` | Nuovo componente form creazione |
-| `GestioneHubNegozi.tsx` | Aggiungere pulsante "+" per nuovo negozio |
+| File                    | Modifica                                   |
+| ----------------------- | ------------------------------------------ |
+| `VetrinePage.tsx`       | Aggiungere tab "Nuovo Negozio" nella lista |
+| `NuovoNegozioForm.tsx`  | Nuovo componente form creazione            |
+| `GestioneHubNegozi.tsx` | Aggiungere pulsante "+" per nuovo negozio  |
 
 ### Coordinate GIS per Nuovo Negozio
 
 Per il point GIS del nuovo negozio:
+
 - **Opzione 1:** Usa centro dell'HUB selezionato (hub_locations.center_lat/center_lng)
 - **Opzione 2:** Permetti selezione manuale su mappa (futuro)
 - **Opzione 3:** Calcola posizione automatica basata su negozi esistenti
@@ -2052,7 +2133,6 @@ Per il point GIS del nuovo negozio:
 - [ ] Test: Verifica creazione impresa + shop
 - [ ] Test: Verifica visualizzazione in mappa HUB
 - [ ] Deploy: Push e verifica su produzione
-
 
 ## 🆕 PROGETTO: GESTIONE CANONE UNICO E MORE (v3.35.0)
 
@@ -2069,11 +2149,12 @@ Implementare un sistema completo per la gestione del **Canone Unico Patrimoniale
 **Nuovo Sotto-Tab:** "Canone Unico" nel `WalletPanel.tsx`
 
 **Componenti:**
+
 1.  **`CanoneUnicoPanel`**: Componente principale del nuovo tab.
-    -   **Filtri**: Dropdown "Mercato/Fiera", Dropdown "Tipo Operatore", Search "Impresa/P.IVA".
-    -   **Tabella Scadenze**: Elenco scadenze con stato (Pagato, Scaduto, **Bloccato**), giorni ritardo, importi.
-    -   **Azioni**: "Genera Avviso Mora", "Genera Pagamento Straordinario".
-    -   **Selettore Blocco Manuale**: Toggle "Blocca/Sblocca" per il dirigente (visibile solo in modalità manuale).
+    - **Filtri**: Dropdown "Mercato/Fiera", Dropdown "Tipo Operatore", Search "Impresa/P.IVA".
+    - **Tabella Scadenze**: Elenco scadenze con stato (Pagato, Scaduto, **Bloccato**), giorni ritardo, importi.
+    - **Azioni**: "Genera Avviso Mora", "Genera Pagamento Straordinario".
+    - **Selettore Blocco Manuale**: Toggle "Blocca/Sblocca" per il dirigente (visibile solo in modalità manuale).
 
 2.  **`CalcoloMoraDialog`**: Dialog con dettaglio calcolo mora e interessi.
 
@@ -2083,33 +2164,35 @@ Implementare un sistema completo per la gestione del **Canone Unico Patrimoniale
 
 Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pagamenti` - boolean) per scegliere la modalità di gestione dei mancati pagamenti:
 
--   **Modalità Automatica (Default)**:
-    1.  **Blocco**: Se il canone non viene pagato entro X giorni dalla scadenza (default 30), il sistema **sospende automaticamente la concessione** (`concessions.status = 'SOSPESA'`).
-    2.  **Effetto**: L'operatore non potrà registrare la presenza al mercato.
-    3.  **Sblocco**: Appena il sistema riceve la notifica di pagamento (tramite PagoPA), la concessione viene **riattivata automaticamente** (`concessions.status = 'ATTIVA'`).
+- **Modalità Automatica (Default)**:
+  1.  **Blocco**: Se il canone non viene pagato entro X giorni dalla scadenza (default 30), il sistema **sospende automaticamente la concessione** (`concessions.status = 'SOSPESA'`).
+  2.  **Effetto**: L'operatore non potrà registrare la presenza al mercato.
+  3.  **Sblocco**: Appena il sistema riceve la notifica di pagamento (tramite PagoPA), la concessione viene **riattivata automaticamente** (`concessions.status = 'ATTIVA'`).
 
--   **Modalità Manuale**:
-    1.  **Notifica**: Se il canone non viene pagato, il sistema invia una **notifica al dirigente** nell'area "Notifiche" e mostra un alert nella tabella del "Canone Unico".
-    2.  **Azione**: Il dirigente può usare il **selettore (toggle) "Blocca/Sblocca"** per decidere manualmente se sospendere la concessione.
+- **Modalità Manuale**:
+  1.  **Notifica**: Se il canone non viene pagato, il sistema invia una **notifica al dirigente** nell'area "Notifiche" e mostra un alert nella tabella del "Canone Unico".
+  2.  **Azione**: Il dirigente può usare il **selettore (toggle) "Blocca/Sblocca"** per decidere manualmente se sospendere la concessione.
 
 ### Architettura Backend
 
 **Modifiche al Database:**
--   Aggiungere `status VARCHAR(20) DEFAULT 'ATTIVA'` alla tabella `concessions`.
--   Aggiungere `blocco_automatico_pagamenti BOOLEAN DEFAULT true` alla tabella `comuni`.
+
+- Aggiungere `status VARCHAR(20) DEFAULT 'ATTIVA'` alla tabella `concessions`.
+- Aggiungere `blocco_automatico_pagamenti BOOLEAN DEFAULT true` alla tabella `comuni`.
 
 **Logica Aggiuntiva:**
--   Un **processo giornaliero (cron job)** verificherà le scadenze e applicherà il blocco automatico se attivo.
--   L'endpoint per la **registrazione delle presenze** (`POST /api/gis/presenze`) verificherà lo `status` della concessione.
+
+- Un **processo giornaliero (cron job)** verificherà le scadenze e applicherà il blocco automatico se attivo.
+- L'endpoint per la **registrazione delle presenze** (`POST /api/gis/presenze`) verificherà lo `status` della concessione.
 
 **Nuovi Endpoint API:**
 
-| Endpoint | Metodo | Descrizione |
-|---|---|---|
-| `POST /api/wallet-scadenze/genera-canone-annuo` | POST | Genera le scadenze del canone annuo per tutti i posteggi attivi |
-| `POST /api/wallet-scadenze/genera-pagamento-straordinario` | POST | Genera avvisi di pagamento per un mercato/fiera straordinaria |
-| `GET /api/wallet-scadenze/riepilogo` | GET | Riepilogo scadenze con filtri per mercato, tipo operatore, etc. |
-| `PUT /api/concessions/:id/status` | PUT | Endpoint per il blocco/sblocco manuale del dirigente |
+| Endpoint                                                   | Metodo | Descrizione                                                     |
+| ---------------------------------------------------------- | ------ | --------------------------------------------------------------- |
+| `POST /api/wallet-scadenze/genera-canone-annuo`            | POST   | Genera le scadenze del canone annuo per tutti i posteggi attivi |
+| `POST /api/wallet-scadenze/genera-pagamento-straordinario` | POST   | Genera avvisi di pagamento per un mercato/fiera straordinaria   |
+| `GET /api/wallet-scadenze/riepilogo`                       | GET    | Riepilogo scadenze con filtri per mercato, tipo operatore, etc. |
+| `PUT /api/concessions/:id/status`                          | PUT    | Endpoint per il blocco/sblocco manuale del dirigente            |
 
 ---
 
@@ -2120,15 +2203,15 @@ Sarà aggiunta un'impostazione a livello di Comune (`comuni.blocco_automatico_pa
 
 ### Componenti Coinvolti
 
-| Pagina | File | Stato Adattamento |
-|---|---|---|
-| **Dashboard** | `DashboardImpresa.tsx` | ✅ Adattata (v4.3.2) |
-| **Wallet** | `WalletImpresaPage.tsx` | ✅ Adattata (v4.3.3) |
-| **Notifiche** | `NotifichePage.tsx` | ✅ Adattata (v4.3.2) |
-| **Anagrafica** | `AnagraficaPage.tsx` | ✅ **Completa (v4.4.0)** — 6 tab con API reali |
-| **Presenze** | `PresenzePage.tsx` | ✅ Adattata (v4.3.2) |
-| **Hub Operatore** | `HubOperatore.tsx` | ✅ Adattata (v4.3.3) |
-| **Home Page** | `HomePage.tsx` | ✅ Adattata (v4.3.3) |
+| Pagina            | File                    | Stato Adattamento                              |
+| ----------------- | ----------------------- | ---------------------------------------------- |
+| **Dashboard**     | `DashboardImpresa.tsx`  | ✅ Adattata (v4.3.2)                           |
+| **Wallet**        | `WalletImpresaPage.tsx` | ✅ Adattata (v4.3.3)                           |
+| **Notifiche**     | `NotifichePage.tsx`     | ✅ Adattata (v4.3.2)                           |
+| **Anagrafica**    | `AnagraficaPage.tsx`    | ✅ **Completa (v4.4.0)** — 6 tab con API reali |
+| **Presenze**      | `PresenzePage.tsx`      | ✅ Adattata (v4.3.2)                           |
+| **Hub Operatore** | `HubOperatore.tsx`      | ✅ Adattata (v4.3.3)                           |
+| **Home Page**     | `HomePage.tsx`          | ✅ Adattata (v4.3.3)                           |
 
 ### Approccio Tecnico Generale
 
@@ -2155,32 +2238,32 @@ L'implementazione è stata eseguita con un approccio "chirurgico", modificando *
 
 La nuova pagina è organizzata in 6 tab principali, ognuno corrispondente a una sezione specifica dell'anagrafica aziendale.
 
-| Tab | Icona | Descrizione | Stato |
-|---|---|---|---|
-| **Impresa** | `Building2` | Vista completa dei dati anagrafici dell'impresa, suddivisi in card tematiche (Identità, Sede, Contatti, Rappresentante Legale, etc.). | ✅ **Implementato** |
-| **Concessioni** | `MapPin` | Lista delle concessioni attive. Ogni concessione è cliccabile e apre una vista di dettaglio completa. | ✅ **Implementato** |
-| **Qualifiche** | `Shield` | Elenco delle qualificazioni dell'impresa (DURC, HACCP, etc.) con indicazione dello stato (attiva/scaduta). | ✅ **Implementato** |
-| **Autorizzazioni** | `FileCheck` | Lista delle autorizzazioni commerciali (Tipo A/B). Ogni autorizzazione apre una vista di dettaglio. | ✅ **Implementato** |
-| **Spunta** | `ClipboardList`| Elenco delle domande di spunta presentate, con vista di dettaglio per ogni domanda. | ✅ **Implementato** |
-| **Team** | `Users` | Lista dei collaboratori (vendors) associati all'impresa. | ✅ **Implementato** |
+| Tab                | Icona           | Descrizione                                                                                                                           | Stato               |
+| ------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| **Impresa**        | `Building2`     | Vista completa dei dati anagrafici dell'impresa, suddivisi in card tematiche (Identità, Sede, Contatti, Rappresentante Legale, etc.). | ✅ **Implementato** |
+| **Concessioni**    | `MapPin`        | Lista delle concessioni attive. Ogni concessione è cliccabile e apre una vista di dettaglio completa.                                 | ✅ **Implementato** |
+| **Qualifiche**     | `Shield`        | Elenco delle qualificazioni dell'impresa (DURC, HACCP, etc.) con indicazione dello stato (attiva/scaduta).                            | ✅ **Implementato** |
+| **Autorizzazioni** | `FileCheck`     | Lista delle autorizzazioni commerciali (Tipo A/B). Ogni autorizzazione apre una vista di dettaglio.                                   | ✅ **Implementato** |
+| **Spunta**         | `ClipboardList` | Elenco delle domande di spunta presentate, con vista di dettaglio per ogni domanda.                                                   | ✅ **Implementato** |
+| **Team**           | `Users`         | Lista dei collaboratori (vendors) associati all'impresa.                                                                              | ✅ **Implementato** |
 
 #### Componenti e Logica
 
--   **Navigazione a Tab:** Una barra di navigazione a tab, scrollabile su mobile, permette di passare agilmente tra le 6 sezioni.
--   **Viste di Dettaglio:** Le sezioni Concessioni, Autorizzazioni e Domande Spunta presentano una lista di card. Cliccando su una card, l'utente accede a una vista di dettaglio completa per quell'elemento, con un pulsante "Indietro" per tornare alla lista.
--   **Chiamate API Dinamiche:** La pagina recupera dinamicamente l' `impresa_id` dal `localStorage` e carica tutti i dati necessari in un'unica chiamata `fetchAllData` all'avvio. Un pulsante di refresh permette di ricaricare i dati on-demand.
--   **Design Mobile-First:** Il layout è ottimizzato per smartphone, con card full-width e testo compatto, ma si adatta a schermi più grandi con griglie multi-colonna.
+- **Navigazione a Tab:** Una barra di navigazione a tab, scrollabile su mobile, permette di passare agilmente tra le 6 sezioni.
+- **Viste di Dettaglio:** Le sezioni Concessioni, Autorizzazioni e Domande Spunta presentano una lista di card. Cliccando su una card, l'utente accede a una vista di dettaglio completa per quell'elemento, con un pulsante "Indietro" per tornare alla lista.
+- **Chiamate API Dinamiche:** La pagina recupera dinamicamente l' `impresa_id` dal `localStorage` e carica tutti i dati necessari in un'unica chiamata `fetchAllData` all'avvio. Un pulsante di refresh permette di ricaricare i dati on-demand.
+- **Design Mobile-First:** Il layout è ottimizzato per smartphone, con card full-width e testo compatto, ma si adatta a schermi più grandi con griglie multi-colonna.
 
 #### API Endpoints Utilizzati
 
-| Sezione | Endpoint | Metodo | Descrizione |
-|---|---|---|---|
-| **Impresa** | `/api/imprese/:id` | GET | Recupera i dati anagrafici completi dell'impresa. |
-| **Concessioni** | `/api/concessions?vendor_id=:id` | GET | Lista delle concessioni associate all'impresa (tramite vendor). |
-| **Qualificazioni**| `/api/qualificazioni/impresa/:id` | GET | Lista di tutte le qualifiche dell'impresa. |
-| **Autorizzazioni**| `/api/autorizzazioni?impresa_id=:id`| GET | Lista delle autorizzazioni commerciali. |
-| **Domande Spunta`| `/api/domande-spunta?impresa_id=:id`| GET | Lista delle domande di spunta. |
-| **Collaboratori** | `/api/vendors` | GET | Lista di tutti i vendors (filtrati lato client). |
+| Sezione             | Endpoint                             | Metodo | Descrizione                                                     |
+| ------------------- | ------------------------------------ | ------ | --------------------------------------------------------------- |
+| **Impresa**         | `/api/imprese/:id`                   | GET    | Recupera i dati anagrafici completi dell'impresa.               |
+| **Concessioni**     | `/api/concessions?vendor_id=:id`     | GET    | Lista delle concessioni associate all'impresa (tramite vendor). |
+| **Qualificazioni**  | `/api/qualificazioni/impresa/:id`    | GET    | Lista di tutte le qualifiche dell'impresa.                      |
+| **Autorizzazioni**  | `/api/autorizzazioni?impresa_id=:id` | GET    | Lista delle autorizzazioni commerciali.                         |
+| \*\*Domande Spunta` | `/api/domande-spunta?impresa_id=:id` | GET    | Lista delle domande di spunta.                                  |
+| **Collaboratori**   | `/api/vendors`                       | GET    | Lista di tutti i vendors (filtrati lato client).                |
 
 ---
 
@@ -2190,20 +2273,20 @@ La nuova pagina è organizzata in 6 tab principali, ognuno corrispondente a una 
 
 **Modifiche Frontend (Commit `781ddac`):**
 
-| File | Bug Risolto | Dettagli della Soluzione |
-|---|---|---|
-| **HomePage.tsx** | Il tab "Presenze" era piccolo e non in prima posizione. | **Layout Rivisto:** Il tab "Presenze" è stato spostato in prima posizione nella seconda riga e reso `col-span-2` su mobile, occupando la stessa larghezza del tab "Vetrine" per maggiore importanza visiva. |
-| **HubOperatore.tsx** | Header arancione con dati errati e overflow su mobile. | **Correzione Dati e Stile:** Rimosso il nome mock "Frutta e Verdura Bio" e il prefisso "Operatore". Ora mostra solo il nome reale dell'impresa (`impresaNome`) o "MIO TEST". Applicato padding responsive, `truncate` e font ridotti per evitare l'overflow del testo e del badge su schermi piccoli. |
-| **HubOperatore.tsx** | I numeri nelle card statistiche (TCC, Vendite) venivano tagliati. | **Card Responsive:** Ridotto il padding e la dimensione del font (`text-lg sm:text-2xl`) all'interno delle card solo per la vista mobile. Aggiunto `truncate` per gestire numeri molto grandi. |
-| **HubOperatore.tsx** | Il testo nei tab ("Scanner QR", "Transazioni") veniva troncato. | **Tab Compatti:** Ridotto il font (`text-xs sm:text-sm`), il margine delle icone e applicato `truncate` alle label per garantire che il testo sia sempre visibile anche su schermi stretti. |
-| **WalletImpresaPage.tsx**| Anche qui, il testo nei tab ("Scadenze", "Storico") veniva troncato. | **Soluzione Coerente:** Applicate le stesse classi CSS dei tab dell'Hub Operatore per garantire coerenza e leggibilità (`text-xs sm:text-sm`, `truncate`). |
+| File                      | Bug Risolto                                                          | Dettagli della Soluzione                                                                                                                                                                                                                                                                              |
+| ------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **HomePage.tsx**          | Il tab "Presenze" era piccolo e non in prima posizione.              | **Layout Rivisto:** Il tab "Presenze" è stato spostato in prima posizione nella seconda riga e reso `col-span-2` su mobile, occupando la stessa larghezza del tab "Vetrine" per maggiore importanza visiva.                                                                                           |
+| **HubOperatore.tsx**      | Header arancione con dati errati e overflow su mobile.               | **Correzione Dati e Stile:** Rimosso il nome mock "Frutta e Verdura Bio" e il prefisso "Operatore". Ora mostra solo il nome reale dell'impresa (`impresaNome`) o "MIO TEST". Applicato padding responsive, `truncate` e font ridotti per evitare l'overflow del testo e del badge su schermi piccoli. |
+| **HubOperatore.tsx**      | I numeri nelle card statistiche (TCC, Vendite) venivano tagliati.    | **Card Responsive:** Ridotto il padding e la dimensione del font (`text-lg sm:text-2xl`) all'interno delle card solo per la vista mobile. Aggiunto `truncate` per gestire numeri molto grandi.                                                                                                        |
+| **HubOperatore.tsx**      | Il testo nei tab ("Scanner QR", "Transazioni") veniva troncato.      | **Tab Compatti:** Ridotto il font (`text-xs sm:text-sm`), il margine delle icone e applicato `truncate` alle label per garantire che il testo sia sempre visibile anche su schermi stretti.                                                                                                           |
+| **WalletImpresaPage.tsx** | Anche qui, il testo nei tab ("Scadenze", "Storico") veniva troncato. | **Soluzione Coerente:** Applicate le stesse classi CSS dei tab dell'Hub Operatore per garantire coerenza e leggibilità (`text-xs sm:text-sm`, `truncate`).                                                                                                                                            |
 
 **Approccio Tecnico:**
+
 - **Mobile-First con Breakpoint `sm:`:** Tutte le modifiche sono state applicate usando classi utility di Tailwind CSS con il breakpoint `sm:` (640px). Questo assicura che gli stili personalizzati per il mobile non influenzino le viste per tablet e desktop.
 - **Nessuna Logica Modificata:** I fix sono puramente stilistici e non alterano la logica di business o il flusso dati dei componenti.
 
 ---
-
 
 ### v4.2.0 (07/02/2026) - Redesign Wallet ECO Credit Tab (Dark Theme & Comuni Cards)
 
@@ -2212,34 +2295,34 @@ La nuova pagina è organizzata in 6 tab principali, ognuno corrispondente a una 
 **Modifiche Frontend (Commit `7aafdeb`):**
 
 1.  **Tema Dark Completo:**
-    *   Tutte le card e i container del tab ECO Credit ora usano uno sfondo scuro (`slate-800/900`) con bordi colorati a bassa opacità, in linea con le sezioni "Wallet" e "Storico".
-    *   Rimossi tutti gli sfondi chiari (`bg-white`, `bg-blue-50`, etc.) per un'esperienza visiva coerente.
-    *   Testo e icone sono stati ricolorati per garantire leggibilità su sfondo scuro.
+    - Tutte le card e i container del tab ECO Credit ora usano uno sfondo scuro (`slate-800/900`) con bordi colorati a bassa opacità, in linea con le sezioni "Wallet" e "Storico".
+    - Rimossi tutti gli sfondi chiari (`bg-white`, `bg-blue-50`, etc.) per un'esperienza visiva coerente.
+    - Testo e icone sono stati ricolorati per garantire leggibilità su sfondo scuro.
 
 2.  **Card Comuni con Hub Attivo (con Semaforini):**
-    *   La lista di comuni è stata trasformata da semplici "chip" a **card interattive con scorrimento orizzontale**.
-    *   Ogni card mostra:
-        *   Nome del comune e provincia.
-        *   **4 semaforini colorati** che indicano lo stato di attivazione dei 4 slot gaming:
-            *   🟢 **Civic** (Segnalazioni)
-            *   🔵 **Mobilità** (Sostenibile)
-            *   🟣 **Cultura** (Turismo)
-            *   🟡 **Shopping** (Acquisti Locali)
-    *   I dati sullo stato degli slot sono caricati dal nuovo endpoint backend `config/all`.
+    - La lista di comuni è stata trasformata da semplici "chip" a **card interattive con scorrimento orizzontale**.
+    - Ogni card mostra:
+      - Nome del comune e provincia.
+      - **4 semaforini colorati** che indicano lo stato di attivazione dei 4 slot gaming:
+        - 🟢 **Civic** (Segnalazioni)
+        - 🔵 **Mobilità** (Sostenibile)
+        - 🟣 **Cultura** (Turismo)
+        - 🟡 **Shopping** (Acquisti Locali)
+    - I dati sullo stato degli slot sono caricati dal nuovo endpoint backend `config/all`.
 
 **Modifiche Backend (Commit `2168b4c`):**
 
 1.  **Nuovo Endpoint API:**
-    *   Aggiunto `GET /api/gaming-rewards/config/all`.
-    *   Questo endpoint restituisce un array di tutte le configurazioni gaming per ogni comune, includendo lo stato booleano di `civic_enabled`, `mobility_enabled`, `culture_enabled`, e `shopping_enabled`.
-    *   Questo permette al frontend di costruire dinamicamente le card dei comuni con i semaforini corretti.
+    - Aggiunto `GET /api/gaming-rewards/config/all`.
+    - Questo endpoint restituisce un array di tutte le configurazioni gaming per ogni comune, includendo lo stato booleano di `civic_enabled`, `mobility_enabled`, `culture_enabled`, e `shopping_enabled`.
+    - Questo permette al frontend di costruire dinamicamente le card dei comuni con i semaforini corretti.
 
 **File Modificati:**
--   `dms-hub-app-new/client/src/pages/WalletPage.tsx`
--   `mihub-backend-rest/routes/gaming-rewards.js`
+
+- `dms-hub-app-new/client/src/pages/WalletPage.tsx`
+- `mihub-backend-rest/routes/gaming-rewards.js`
 
 ---
-
 
 ### v3.99.5 (07/02/2026) - Trend TCC connesso ai filtri temporali v1.3.5
 
@@ -2248,6 +2331,7 @@ La nuova pagina è organizzata in 6 tab principali, ognuno corrispondente a una 
 **Causa root:** `loadTrendData` chiamava l'API `/trend` senza il parametro `days`, usando il default backend di 7 giorni.
 
 **Soluzione v1.3.5:**
+
 1. Creato mapping `trendDaysMap`: `all`→`3650`, `today`→1, `week`→7, `month`→30, `year`→365
 2. `trendComuneQueryParam` ora include SEMPRE `days=N` + eventuale `comune_id=X`
 3. Titolo grafico dinamico: "Trend TCC - [periodo selezionato]"
@@ -2265,6 +2349,7 @@ La nuova pagina è organizzata in 6 tab principali, ognuno corrispondente a una 
 **Causa root:** Il trend è un'aggregazione giornaliera (SUM per date), NON una lista di items con lat/lng/comune_id. Quindi NON può essere filtrato client-side con `filterByGeo()`. Serve il filtro server-side via API `?comune_id=X`.
 
 **Soluzione v1.3.4:**
+
 1. Creato `trendComuneQueryParam` che dipende da `geoFilter`:
    - `geoFilter='comune'`: `comune_id=${currentComuneId}` (filtro server-side)
    - `geoFilter='italia'`: `''` (nessun filtro, dati globali)
@@ -2273,17 +2358,18 @@ La nuova pagina è organizzata in 6 tab principali, ognuno corrispondente a una 
 
 **Risultato verificato:**
 
-| Comune | TCC+ | TCC- | Civic | Mobility | Culture | Shop |
-|--------|------|------|-------|----------|---------|------|
-| Globale | 2350 | 2665 | 22 | 14 | 18 | 55 |
-| Vignola (7) | 0 | 0 | 17 | 2 | 2 | 0 |
-| Grosseto (1) | 2350 | 2665 | 5 | 4 | 4 | 55 |
-| Carpi (9) | 0 | 0 | 0 | 0 | 2 | 0 |
+| Comune       | TCC+ | TCC- | Civic | Mobility | Culture | Shop |
+| ------------ | ---- | ---- | ----- | -------- | ------- | ---- |
+| Globale      | 2350 | 2665 | 22    | 14       | 18      | 55   |
+| Vignola (7)  | 0    | 0    | 17    | 2        | 2       | 0    |
+| Grosseto (1) | 2350 | 2665 | 5     | 4        | 4       | 55   |
+| Carpi (9)    | 0    | 0    | 0     | 0        | 2       | 0    |
 
 **Commit Frontend:** `fc4ed17` (v1.3.4), `78f9f7b` (v1.3.4b)
 
 **Fix v1.3.4b — Trend reload silenzioso:**
 `loadTrendData` rimosso dal `useEffect` principale (che usa `setLoading(true)`) e messo in un `useEffect` separato SENZA `setLoading`. Così quando si switcha Italia↔Comune:
+
 - La mappa zooma istantaneamente
 - I dati si filtrano client-side senza reload
 - Il trend si ricarica silenziosamente in background via API `?comune_id=X`
@@ -2331,10 +2417,12 @@ Il sistema di filtraggio della sezione Gaming & Rewards è stato completamente r
 ### v3.93.4 (05/02/2026) - Esclusione Concessioni CESSATE dalla Sezione Canone
 
 **Fix Backend:**
+
 - Aggiunto filtro `AND (c.status IS NULL OR c.status != 'CESSATA')` all'endpoint `/api/canone-unico/imprese-concessioni`
 - Le concessioni CESSATE non appaiono più nella sezione Wallet/Canone
 
 **Comportamento:**
+
 - La sezione Canone mostra solo concessioni attive (per gestire i pagamenti)
 - Le altre sezioni (Imprese, Gestione Mercati) continuano a mostrare tutte le concessioni con badge appropriato
 
@@ -2345,6 +2433,7 @@ Il sistema di filtraggio della sezione Gaming & Rewards è stato completamente r
 ### v3.93.3 (05/02/2026) - Fix Frontend Badge CESSATA
 
 **Fix Frontend:**
+
 - Aggiunto controllo `status === 'CESSATA'` in tutti i componenti che visualizzano lo stato concessioni:
   - `MappaItaliaComponent.tsx`
   - `GestioneMercati.tsx`
@@ -2353,6 +2442,7 @@ Il sistema di filtraggio della sezione Gaming & Rewards è stato completamente r
   - `SuapPanel.tsx`
 
 **Comportamento:**
+
 - Il frontend ora controlla sia `status` che `stato` per determinare se una concessione è CESSATA
 - Badge grigio "Cessata" visualizzato correttamente
 
@@ -2363,12 +2453,14 @@ Il sistema di filtraggio della sezione Gaming & Rewards è stato completamente r
 ### v3.93.2 (05/02/2026) - Fix Badge Concessioni CESSATA
 
 **Fix Backend:**
+
 - Aggiunto campo `c.status` alla query GET /api/concessions
 - Modificato calcolo `stato_calcolato` per controllare prima `status = 'CESSATA'`
 - Aggiunto controllo per badge `CESSATA` in canone-unico.js (badge grigio)
 - Fix query in markets.js per considerare status oltre a stato
 
 **Comportamento:**
+
 - Le concessioni con `status = 'CESSATA'` ora mostrano badge "CESSATA" (grigio) invece di "SCADUTA" (rosso)
 - La sezione Imprese > Concessioni mostra correttamente lo stato CESSATA
 - La sezione Wallet/PagoPA > Canone mostra badge CESSATA per concessioni chiuse
@@ -2380,10 +2472,12 @@ Il sistema di filtraggio della sezione Gaming & Rewards è stato completamente r
 ### v3.93.1 (05/02/2026) - Fix Chiusura Automatica Concessione Cedente
 
 **Fix Backend:**
+
 - Aggiunto `status = 'CESSATA'` alla query UPDATE che chiude la concessione del cedente nel subingresso
 - Fix applicato in 3 punti del codice concessions.js (righe 544, 631, 1450)
 
 **Comportamento:**
+
 - Quando viene approvata una SCIA di subingresso, la concessione del cedente viene automaticamente chiusa con:
   - `stato = 'CESSATA'`
   - `status = 'CESSATA'`
@@ -2396,10 +2490,12 @@ Il sistema di filtraggio della sezione Gaming & Rewards è stato completamente r
 ### v3.92.9 (04/02/2026) - Fix Filtro Notifiche per Impersonificazione Comune
 
 **Fix Backend:**
+
 - Endpoint GET /api/notifiche ora filtra per comune_id tramite JOIN con concessioni e mercati
 - Le notifiche sono filtrate per imprese che hanno concessioni in mercati del comune impersonificato
 
 **Query Aggiornata:**
+
 ```sql
 SELECT DISTINCT n.* FROM notifiche n
 INNER JOIN imprese i ON n.target_id = i.id
@@ -2414,6 +2510,7 @@ WHERE m.comune_id = $comune_id
 ### v3.92.8 (04/02/2026) - Fix Filtro SUAP per Comune
 
 **Fix Backend:**
+
 - Endpoint GET /api/suap/pratiche ora filtra per `markets.comune_id` invece di `comune_presentazione`
 - Corretto il filtro per impersonificazione comune nella sezione SSO SUAP
 
@@ -2422,6 +2519,7 @@ WHERE m.comune_id = $comune_id
 ### v3.92.2 (04/02/2026) - Fix Filtro Inspections/Stats per Comune
 
 **Fix Backend:**
+
 - Aggiunto filtro `comune_id` all'endpoint GET /api/inspections/stats
 - Le statistiche Da Controllare, Verbali, Sanzioni ora filtrano per mercati del comune impersonificato
 
@@ -2430,6 +2528,7 @@ WHERE m.comune_id = $comune_id
 ### v3.35.0 (14/01/2026) - Progettazione Gestione Canone Unico e More
 
 **Nuove Funzionalità Progettate:**
+
 - Sotto-tab "Canone Unico" con filtri e tabella scadenze
 - Logica di blocco/sblocco automatico e manuale delle concessioni
 - Calcolo automatico mora e interessi
@@ -2440,6 +2539,7 @@ WHERE m.comune_id = $comune_id
 ### v3.34.0 (14/01/2026) - Storico Wallet e Gestione Scadenze Canone
 
 **Nuove Funzionalità:**
+
 - **Tab Storico Wallet** nel WalletPanel con cronologia eventi
   - Visualizza creazione/eliminazione/trasferimento wallet
   - Mostra motivo (SUBINGRESSO, CESSAZIONE, MANUALE)
@@ -2447,11 +2547,13 @@ WHERE m.comune_id = $comune_id
   - Design coerente con Storico PagoPA
 
 **Nuove Tabelle Database:**
+
 - `wallet_history` - Storico eventi wallet
 - `wallet_balance_snapshots` - Cronologia saldi annuali
 - `wallet_scadenze` - Scadenze canone con calcolo more
 
 **Nuovi Endpoint API:**
+
 - `GET /api/wallet-history` - Lista eventi storico
 - `GET /api/wallet-history/:wallet_id` - Storico singolo wallet
 - `POST /api/wallet-history` - Registra evento
@@ -2459,20 +2561,21 @@ WHERE m.comune_id = $comune_id
 - `POST /api/wallet-scadenze/calcola-mora` - Calcolo mora/interessi
 
 **Modifiche Backend:**
+
 - DELETE `/api/wallets/:id` ora registra evento in wallet_history
 - Salva saldo_al_momento per tracciabilità rimborsi
 
 **Commit:**
+
 - Frontend: `61bcaa6` - Tab Storico Wallet
 - Backend: `da4b694` - DELETE registra storico
 
 ---
 
-
-
 ### v3.28.0 (09/01/2026) - Indicatore Area mq + Fix Capoluoghi Italia
 
 **Nuove Funzionalità:**
+
 - **Indicatore Area (mq)** aggiunto nella barra controlli dopo "Indietro"
   - Calcolo dinamico: Σ (width × depth) per posteggi mercati
   - Calcolo dinamico: Σ (area_sqm) per HUB
@@ -2480,6 +2583,7 @@ WHERE m.comune_id = $comune_id
 - **Rimosso pulsante RefreshCw** dalla barra di navigazione
 
 **Fix Database:**
+
 - **Napoli e Modena attivati** (active = 1)
 - **regione_id aggiornato** per tutti i 20 capoluoghi di regione
 - **Grosseto confermato come capoluogo** (comune pilota)
@@ -2487,6 +2591,7 @@ WHERE m.comune_id = $comune_id
 - **Totale HUB: 79** (21 capoluoghi + 9 province + 49 comuni)
 
 **Fix Frontend:**
+
 - Indicatori ATTIVI/INATTIVI ora mostrano somma di tutti i negozi in Vista Italia
 - Rimosso limite 12 card per mostrare tutti gli HUB
 - Formato Area mq senza decimali
@@ -2517,11 +2622,13 @@ WHERE m.comune_id = $comune_id
 | **Grosseto** | Toscana (pilota) | 9 |
 
 **File Modificati:**
+
 - `client/src/components/GestioneHubMapWrapper.tsx`
 - `routes/stalls.js` (backend)
 - `routes/integrations.js` (backend)
 
 **Commit:**
+
 - Frontend: `2416a0b` - fix: Formato Area mq + indicatori ATTIVI/INATTIVI
 - Backend: `d2c8866` - fix: Rimosso colonne non esistenti dalla query stalls
 
@@ -2530,11 +2637,13 @@ WHERE m.comune_id = $comune_id
 ### v3.27.0 (08/01/2026) - Coordinate Centro HUB Emilia Romagna
 
 **Aggiornamento Database:**
+
 - **57 HUB aggiornati** con coordinate del centro (center_lat, center_lng)
 - Coordinate calcolate tramite geocoding Nominatim/OpenStreetMap
 - Preparazione per animazione zoom quando si clicca su un HUB
 
 **Province Aggiornate:**
+
 - Bologna (BO): 6 HUB
 - Modena (MO): 11 HUB
 - Reggio Emilia (RE): 10 HUB
@@ -2546,16 +2655,19 @@ WHERE m.comune_id = $comune_id
 - Rimini (RN): 7 HUB
 
 **Prossimi Passi:**
+
 - Disegnare le aree perimetrate con Editor V3
 - Calcolare centroide esatto dei poligoni
 - Abbinare GeoJSON alla tabella hub_locations
 
 **Script Utilizzati:**
+
 - `geocode_hubs.py` - Geocoding automatico località
 - `hub_coordinates_fixed.py` - Coordinate verificate manualmente
 - `update_hub_centers.js` - Aggiornamento database
 
 **Commit:**
+
 - Database: Aggiornamento coordinate tramite script Node.js su Hetzner
 
 ---
@@ -2563,6 +2675,7 @@ WHERE m.comune_id = $comune_id
 ### v3.26.0 (08/01/2026) - Sistema HUB Multi-Livello Emilia Romagna
 
 **Nuova Funzionalità Maestrale:**
+
 - **59 HUB Emilia Romagna** inseriti nel database con coordinate GPS
 - **Sistema 3 Livelli di Colore:**
   - **Capoluogo** (viola pieno #9C27B0): Sempre visibile, marker grande 32px
@@ -2583,20 +2696,24 @@ WHERE m.comune_id = $comune_id
 | Rimini | RN | 7 | Rimini |
 
 **Logica Visibilità:**
+
 - Vista Italia → Solo capoluoghi
 - Vista Regione (Emilia-Romagna) → Capoluoghi + Province
 - Vista Provincia (es. Bologna) → Tutti gli HUB della provincia
 
 **Database:**
+
 - Nuove colonne in `hub_locations`: `provincia_id`, `regione_id`, `livello`, `tipo`, `provincia_sigla`
 - Migration: `extend_hub_locations_emilia_romagna.sql`
 
 **File Modificati:**
+
 - `client/src/components/GestioneHubMapWrapper.tsx` - Filtro HUB per regione/provincia
 - `client/src/components/HubMarketMapComponent.tsx` - Marker con colori dinamici
 - `server/routes/hub.js` - API con nuovi campi
 
 **Commit:**
+
 - Frontend: `8a9d066` - feat: Sistema HUB multi-livello Emilia Romagna
 - Backend: `4549856` - feat: API hub_locations con campi provincia_id, regione_id, livello, tipo
 
@@ -2605,30 +2722,37 @@ WHERE m.comune_id = $comune_id
 ### v3.25.0 (08/01/2026) - Come Arrivare per Negozi HUB
 
 **Nuova Funzionalità:**
+
 - **Come Arrivare per Negozi HUB**: Il pulsante "Come Arrivare" nella vetrina ora funziona anche per i negozi HUB
   - Prima cerca se l'impresa ha un negozio HUB (tramite `owner_id` in `hub_shops`)
   - Se trova un negozio HUB con coordinate, naviga a `/route` con quelle coordinate
   - Altrimenti cerca nei posteggi del mercato (logica esistente)
 
 **Logica Implementata:**
+
 ```javascript
 // 1. Prima cerca negozio HUB
 const hubShop = hubShopsResult.data.find(shop => shop.owner_id === impresa.id);
 if (hubShop && hubShop.lat && hubShop.lng) {
   // Usa coordinate negozio HUB
-  navigate(`/route?destinationLat=${hubShop.lat}&destinationLng=${hubShop.lng}&destinationName=${impresa.denominazione} - Negozio HUB`);
+  navigate(
+    `/route?destinationLat=${hubShop.lat}&destinationLng=${hubShop.lng}&destinationName=${impresa.denominazione} - Negozio HUB`
+  );
 }
 // 2. Altrimenti cerca posteggio mercato
 ```
 
 **Risultato:**
+
 - Farmacia Severi (id=33) → `Farmacia Severi - Negozio HUB (42.7597911, 11.1133894)`
 - Ritual (id=34) → `Ritual - Negozio HUB (42.7588200, 11.1156698)`
 
 **File Modificati:**
+
 - `client/src/pages/VetrinePage.tsx` - handleNavigate supporta negozi HUB
 
 **Commit:**
+
 - `3becd74` - feat: handleNavigate ora supporta negozi HUB con coordinate
 
 ---
@@ -2636,6 +2760,7 @@ if (hubShop && hubShop.lat && hubShop.lng) {
 ### v3.24.0 (08/01/2026) - Fix Zoom Mappa con Quarti di Scatto
 
 **Fix Zoom Precisione:**
+
 - **Quarti di scatto (0.25)**: Implementato zoom frazionario per adattamento perfetto
   - `zoomSnap: 0.25` e `zoomDelta: 0.25` nel MapContainer
   - Permette zoom precisi come 17.25, 17.5, 17.75
@@ -2643,6 +2768,7 @@ if (hubShop && hubShop.lat && hubShop.lng) {
 - **Grosseto e Modena**: Ora entrambi i mercati hanno zoom ottimale
 
 **Logica Zoom:**
+
 ```javascript
 const rawZoom = map.getBoundsZoom(bounds);
 const roundedToQuarter = Math.round(rawZoom * 4) / 4;
@@ -2650,19 +2776,21 @@ const forcedZoom = roundedToQuarter + 0.25;
 ```
 
 **File Modificati:**
+
 - `client/src/hooks/useMapAnimation.ts` - Quarti di scatto + offset
 - `client/src/components/HubMarketMapComponent.tsx` - zoomSnap/zoomDelta 0.25
 
 **Commit:**
+
 - `3d4bf51` - Fix: Add +0.25 offset to zoom
 - `b2b7a39` - Fix: Use quarter-step zoom (0.25)
 
 ---
 
-
 ### v3.23.0 (08/01/2026) - Statistiche Aggregate Italia e Fix Zoom Mappa
 
 **Nuove Funzionalità:**
+
 - **Endpoint Statistiche Aggregate**: `/api/stalls/stats/totals` per statistiche posteggi Italia
   - Restituisce: markets, totali, occupati, assegnazione, liberi
   - Esempio: `{"markets":2,"totali":542,"occupati":126,"assegnazione":24,"liberi":392}`
@@ -2670,6 +2798,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 - **Integrazione Guardian**: Endpoint `stalls.stats.totals` monitorato
 
 **Fix Mappa GIS:**
+
 - **Zoom Mercato**: Corretto calcolo zoom usando `flyTo` invece di `flyToBounds`
   - `flyToBounds` ignorava lo zoom calcolato
   - Ora usa centro bounds + zoom forzato per controllo preciso
@@ -2678,6 +2807,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 - **Shops in Hub**: Endpoint `/api/hub/locations` ora include array `shops` per ogni HUB
 
 **File Modificati:**
+
 - `client/src/hooks/useMapAnimation.ts` - Logica zoom con flyTo
 - `client/src/components/GestioneHubMapWrapper.tsx` - Fetch statistiche Italia
 - `client/src/components/HubMarketMapComponent.tsx` - !isAnimating per area HUB
@@ -2687,6 +2817,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 - `mihub-backend-rest/routes/hub.js` - Include shops in locations
 
 **Commit:**
+
 - Backend Hetzner: `0d580b8` - Include shops in hub/locations
 - Backend Hetzner: `1219083` - Endpoint stalls/stats/totals
 - Frontend Vercel: `805d276` - Fix zoom con flyTo
@@ -2694,13 +2825,12 @@ const forcedZoom = roundedToQuarter + 0.25;
 
 ---
 
-
-
 ### v3.51.0 (26 Gennaio 2026) - Sistema Controlli/Sanzioni e Storico Mercati
 
 **Obiettivo**: Migliorare il pannello Controlli/Sanzioni con funzionalità avanzate per PM e storico mercati.
 
 **Backend (Hetzner):**
+
 - ✅ Nuovo endpoint `POST /api/presenze/mercato/:id/chiudi` - Chiusura sessione mercato con snapshot
 - ✅ Nuovo endpoint `GET /api/presenze/sessioni` - Lista sessioni mercato chiuse (storico)
 - ✅ Nuovo endpoint `GET /api/presenze/sessioni/:id/dettaglio` - Dettaglio presenze sessione
@@ -2711,6 +2841,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 - ✅ Tabella `market_session_details` per dettaglio presenze
 
 **Frontend (Vercel):**
+
 - ✅ Tab Storico: Barra ricerca per data + scroll interno container
 - ✅ Tab Storico: Pulsante "Scarica CSV" per esportare dati sessioni
 - ✅ Tab Verbali: Icona occhio (👁️) per visualizzare PDF + download separato
@@ -2722,6 +2853,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 **Guardian**: 477 endpoint totali (+9)
 
 **Commit:**
+
 - Backend: `2148f33` - fix(verbali): correzione INSERT notifiche con colonne corrette
 - Frontend: `98dc69f` - feat(controlli-sanzioni): miglioramenti UI multipli
 - MIO-hub: `efd9809` - feat(api): add 9 new endpoints (presenze, verbali, pm)
@@ -2733,6 +2865,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 **Obiettivo**: Permettere la gestione granulare dei permessi per ogni tab della dashboard attraverso la sezione Sicurezza.
 
 **Backend (Hetzner):**
+
 - ✅ Nuovo endpoint `PUT /api/security/roles/:id/permissions` per aggiornare i permessi di un ruolo
 - ✅ Nuovo endpoint `GET /api/security/permissions/tabs` per ottenere la lista dei permessi tab
 - ✅ Migration `017_add_tab_permissions.sql` con 39 nuovi permessi:
@@ -2741,6 +2874,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 - ✅ Permessi sensibili assegnati solo a `super_admin`: Sistema, Sicurezza, Comuni, Report, Integrazioni, Impostazioni, Documentazione, Workspace, BUS HUB
 
 **Frontend (Vercel):**
+
 - ✅ Nuovo `PermissionsContext` (`/contexts/PermissionsContext.tsx`) per gestire i permessi utente
 - ✅ Nuovo componente `ProtectedTab` (`/components/ProtectedTab.tsx`) per render condizionale
 - ✅ Matrice checkbox in Sicurezza → Permessi per gestione visuale permessi
@@ -2749,6 +2883,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 **Guardian**: 463 endpoint totali (+4)
 
 **Commit:**
+
 - Backend: `956c122` - feat: register 2 new security endpoints in Guardian integrations
 - Frontend: `706b925` - fix: remove useAuth dependency from PermissionsContext
 
@@ -2759,17 +2894,20 @@ const forcedZoom = roundedToQuarter + 0.25;
 **Obiettivo**: Permettere all'admin MioHub di creare automaticamente credenziali per i comuni e di "entrare" nella loro vista.
 
 **Backend (Hetzner):**
+
 - ✅ Nuovo endpoint `POST /api/comuni/:id/provision-admin` per auto-provisioning admin comune
 - ✅ Nuovo endpoint `GET /api/comuni/:id/admin-credentials` per verificare esistenza admin
 - ✅ Filtro `comune_id` aggiunto a: concessions, imprese, wallets, autorizzazioni, qualificazioni, stats, markets, stalls
 
 **Frontend (Vercel):**
+
 - ✅ Pulsante "Accedi come" nella sezione Comuni
 - ✅ Componente `ImpersonationBanner.tsx` per mostrare lo stato di impersonificazione
 - ✅ Banner giallo con "Stai visualizzando come: [Nome Comune]" e pulsante "Esci"
 - ✅ Filtro automatico dati per comune durante impersonificazione
 
 **Database (Neon):**
+
 - ✅ Nuova colonna `must_change_password` nella tabella `users`
 - ✅ Relazione `comune_utenti` per associare utenti ai comuni
 
@@ -2780,6 +2918,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 ### v3.48.0 (21 Gennaio 2026) - Sistema Notifiche Completo e Fix Gestione Mercati
 
 **Sistema Notifiche:**
+
 - ✅ Filtri messaggi: Tutti/Inviati/Ricevuti
 - ✅ Icone busta aperta/chiusa per stato lettura
 - ✅ Click per segnare come letto
@@ -2787,6 +2926,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 - ✅ Endpoint `/api/notifiche/risposte/:id/letta`
 
 **Fix Gestione Mercati:**
+
 - ✅ Conteggio posteggi corretto: 160 (filtro `geometry_geojson IS NOT NULL`)
 - ✅ Reset lista presenze al cambio mercato
 - ✅ Importo spunta corretto con `toFixed(2)`
@@ -2799,6 +2939,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 ### v3.47.0 (20 Gennaio 2026) - Progetto Enti Formatori e Bandi (Progettazione)
 
 **Progettazione** (documentazione per sviluppo futuro):
+
 - 📋 Nuovo tab "Enti Formatori" in Qualificazione
 - 📋 Nuovo tab "Associazioni e Bandi"
 - 📋 Nuove tabelle previste: `formazione_corsi`, `formazione_partecipanti`, `formazione_enti`, `bandi_attivi`, `bandi_domande`
@@ -2808,6 +2949,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 ### v3.46.0 (19 Gennaio 2026) - Pannello Dettaglio Posteggio con 4 Tab (Progettazione)
 
 **Progettazione** (documentazione per sviluppo futuro):
+
 - 📋 Espansione pannello dettaglio posteggio da 1 a 4 tab:
   1. **Impresa**: Anagrafica impresa (esistente)
   2. **Concessione**: Dati concessione abbinata
@@ -2819,14 +2961,17 @@ const forcedZoom = roundedToQuarter + 0.25;
 ### v3.45.0 (16-18 Gennaio 2026) - Sistema Presenze e Graduatoria v3
 
 **Database (Neon):**
+
 - ✅ Nuova tabella `graduatoria_presenze`
 - ✅ Estensione tabella `vendor_presences` con campi aggiuntivi
 
 **Backend (Hetzner):**
+
 - ✅ Nuovi endpoint per gestione presenze e graduatoria
 - ✅ Logica calcolo graduatoria automatica
 
 **Frontend (Vercel):**
+
 - ✅ 3 tab in Gestione Mercati: Concessionari, Spuntisti, Fiere/Straordinari
 - ✅ Campi editabili per presenze storiche
 - ✅ Sistema semafori qualifiche (verde/giallo/rosso)
@@ -2836,6 +2981,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 ### v3.44.0 (16 Gennaio 2026) - Flusso Mercato Completo
 
 **Nuove Funzionalità:**
+
 - ✅ Pulsante "🏪 Chiudi Mercato" - Libera TUTTI i posteggi e registra uscite
 - ✅ Pulsante "🚀 Inizia Mercato" - Azzera tutte le presenze del giorno
 - ✅ Popup Occupa/Libera per posteggi riservati/in_assegnazione
@@ -2851,6 +2997,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 | 5 | 🏪 Chiudi Mercato | Libera tutti + registra uscite |
 
 **Endpoint:**
+
 - `POST /api/test-mercato/inizia-mercato`
 - `POST /api/test-mercato/chiudi-mercato`
 
@@ -2859,6 +3006,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 ### v3.22.0 (08/01/2026) - Sistema Navigazione Geografica Regioni/Province
 
 **Nuove Funzionalità:**
+
 - **Database Regioni/Province**: Tabelle con tutte le 20 regioni italiane e 107 province con coordinate GPS
 - **Dropdown Regione**: Selezione regione con zoom automatico sulla mappa (zoom 8)
 - **Dropdown Provincia**: Selezione provincia con zoom automatico (zoom 10)
@@ -2868,12 +3016,14 @@ const forcedZoom = roundedToQuarter + 0.25;
 - **Integrazione Guardian**: Endpoint registrati nel tab Integrazioni
 
 **File Modificati:**
+
 - `client/src/components/GestioneHubMapWrapper.tsx` - Nuovi dropdown e logica navigazione
 - `client/src/components/HubMarketMapComponent.tsx` - Supporto customZoom
 - `server/routes/regioni.js` - Nuovi endpoint API
 - `migrations/create_regioni_province.sql` - Schema database
 
 **Database:**
+
 - Tabella `regioni`: 20 record con nome, codice, lat, lng, zoom
 - Tabella `province`: 107 record con nome, sigla, regione_id, lat, lng, zoom
 
@@ -2882,31 +3032,37 @@ const forcedZoom = roundedToQuarter + 0.25;
 ### v3.21.0 (07/01/2026) - Fix Connessione Posteggi-Imprese e Pulizia Dati
 
 **Fix API Stalls - Connessione Posteggi → Imprese:**
+
 - ✅ **JOIN Corretto:** Aggiunto JOIN con tabella `vendors` per ottenere `impresa_id` anche quando `concessions.impresa_id` è NULL
 - ✅ **COALESCE:** Usa `COALESCE(c.impresa_id, v.impresa_id)` per prendere impresa_id da vendors se non presente in concessions
 - ✅ **vendor_name:** Usa `COALESCE(i.denominazione, v.business_name)` per fallback su business_name
 - ✅ **Posteggio #78:** Ora mostra correttamente "Intim8" e impresa_id: 9
 
 **Fix Tasto Visita Vetrina per Negozi HUB:**
+
 - ✅ **owner_id:** Il tasto "Visita Vetrina" ora usa `shop.owner_id` (impresa_id) invece di `shop.id`
 - ✅ **Farmacia Severi:** Link corretto a `/vetrine/33` (impresa Farmacia Severi)
 
 **Pulizia Database:**
+
 - ✅ **Eliminati Negozi Test:** Rimossi 10 negozi di test (ID 1-10) senza owner_id
 - ✅ **Negozi Validi:** Rimasti solo Fruttivendolo Mario (#11) e Farmacia Severi (#12)
 
 **Stato Posteggi Grosseto:**
+
 - 160 posteggi attivi (numeri 1-185 con 22 gap)
 - 14 posteggi con concessione attiva e impresa collegata
 - 89 posteggi "occupati" senza concessione nel DB (da creare)
 
 **Commit:**
+
 - Backend: `373b0ad` - fix: JOIN stalls con vendors per ottenere impresa_id corretto
 - Frontend: `05e9f56` - fix: Tasto Visita Vetrina usa owner_id per negozi HUB
 
 ---
 
 ### v3.20.0 (07/01/2026) - Fix Popup Posteggi e Negozi HUB
+
 - **Fix Popup Posteggi Mercato**: Dimensioni ora corrette usando width/depth dal DB invece del calcolo geometrico
 - **Popup Negozi HUB Migliorato**: Nuovo design con header viola, coordinate, contatti e tasto Vetrina sempre visibile
 - **Distinzione Colori**: Posteggi mercato (verde/rosso/giallo) vs Negozi HUB (viola)
@@ -2914,6 +3070,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 ### v3.19.0 (7 Gennaio 2026) - Sezione Imprese Completa in Gestione HUB
 
 **Nuova Sezione Imprese in Gestione HUB:**
+
 - ✅ Tab "Imprese" aggiunto in Gestione HUB (4 tab totali: Anagrafica, Imprese, Negozi, Servizi)
 - ✅ Riutilizzato componente MarketCompaniesTab con tutti i sub-tab:
   - 🏢 Imprese
@@ -2922,19 +3079,21 @@ const forcedZoom = roundedToQuarter + 0.25;
   - 📋 Autorizzazioni
 
 **Filtro Tipo Impresa:**
+
 - 🟢 **Tutte le Imprese** - Mostra tutte
 - 🟠 **Ambulanti Mercato** - Solo imprese con concessioni mercato
 - 🟣 **Negozi HUB** - Solo imprese negozi fissi HUB (senza concessioni)
 
 **Modifiche Tecniche:**
+
 - `GestioneHubNegozi.tsx`: Aggiunto import MarketCompaniesTab e nuovo TabsContent
 - `MarketCompaniesTab.tsx`: Aggiunto prop filterType e stato impresaFilter
 - Filtro visivo con 3 bottoni colorati sopra la barra ricerca
 
-
 ### v3.18.0 (7 Gennaio 2026) - Funzionalità Nuovo Negozio per HUB
 
 **Nuova Funzionalità Completa:**
+
 - ✅ Tab "Nuovo Negozio" nella pagina Vetrine Commercianti
 - ✅ Form completo con validazione: Ragione Sociale, P.IVA, CF, Comune, HUB, Categoria, Telefono, Email
 - ✅ API REST `/api/hub/shops/create-with-impresa` su Hetzner
@@ -2943,6 +3102,7 @@ const forcedZoom = roundedToQuarter + 0.25;
 - ✅ Test endpoint disponibile in Dashboard PA → Integrazioni → API Dashboard
 
 **Flusso Implementato:**
+
 ```
 Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
                                                       ↓
@@ -2951,24 +3111,27 @@ Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
                                       3. Genera point GIS con coordinate HUB
 ```
 
-
 ### v3.17.3 (7 Gennaio 2026) - Fix Conteggi Posteggi e Zoom fitBounds
 
 **Fix Conteggi Posteggi GestioneHubMapWrapper:**
+
 - ✅ **Conteggi Semplificati:** Rimosso filtro `is_active` problematico, usa stessa logica di GestioneMercati
 - ✅ **4 Colonne Stats:** Totali (rosso), Occupati (verde), In Assegnazione (giallo), Liberi (grigio)
 - ✅ **Status Italiano:** Filtra per `occupato`, `libero`, `riservato` (non inglese)
 
 **Fix Zoom Mappa con fitBounds:**
+
 - ✅ **flyToBounds:** Sostituito `flyTo` con `flyToBounds` per adattare mappa ai bounds della pianta
 - ✅ **Padding 30px:** Aggiunto padding [30, 30] pixel per non tagliare i bordi
 - ✅ **Zoom Range 16-18:** Limita zoom tra 16 (minimo) e 18 (massimo) per vista bilanciata
 - ✅ **Bounds dai Corner:** La mappa si adatta automaticamente ai 4 corner della pianta mercato
 
 **Backend API Stalls:**
+
 - ✅ **is_active in Query:** Aggiunto campo `is_active` alla SELECT per future implementazioni
 
 **File Modificati:**
+
 - `client/src/components/GestioneHubMapWrapper.tsx`
 - `client/src/hooks/useMapAnimation.ts`
 - `mihub-backend-rest/routes/stalls.js`
@@ -2978,27 +3141,32 @@ Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
 ### v3.17.2 (7 Gennaio 2026) - Fix Zoom Mappa e Logica Vista Italia/Mercato
 
 **Fix Critici Mappa HUB/Mercati:**
+
 - ✅ **Coordinate Hub Centro:** Aggiornate a centro calcolato dal poligono (42.7609, 11.1137)
 - ✅ **Mercato HUB Duplicato:** Rimosso dalla tabella markets (era duplicato di Hub Centro)
 - ✅ **Validazione Coordinate:** Aggiunto `parseFloat()` e controllo `!isNaN()` per evitare errori
 - ✅ **Fallback Italia:** Se coordinate invalide, usa centro Italia (42.5, 12.5)
 
 **Fix Zoom Mercato:**
+
 - ✅ **marketCenterFixed:** Ora usato nel calcolo di `mapCenter` per zoom corretto
 - ✅ **effectiveZoom:** Aggiunto zoom 17 specifico per mercati con `marketCenterFixed`
 - ✅ **Conversione Stringhe:** Coordinate mercato convertite da stringa a numero
 
 **Fix Logica Pulsante Vista:**
+
 - ✅ **Invertita Logica:** Quando in Vista Italia → pulsante dice "Vista Mercato/HUB"
 - ✅ **Invertita Logica:** Quando in Vista Mercato → pulsante dice "Vista Italia"
 - ✅ **handleGoToDetail():** Nuova funzione per zoomare al mercato/HUB selezionato
 - ✅ **Disabilitato Corretto:** Pulsante disabilitato solo se Vista Italia E nessuna selezione
 
 **Box Coordinate GPS:**
+
 - ✅ **Scheda Mercato/HUB:** Aggiunto box con Lat/Lng nella scheda selezionato
 - ✅ **Formato:** `Lat: xx.xxxxxx | Lng: xx.xxxxxx`
 
 **File Modificati:**
+
 - `client/src/components/GestioneHubMapWrapper.tsx`
 - `client/src/components/HubMarketMapComponent.tsx`
 - `client/src/hooks/useMapAnimation.ts`
@@ -3010,11 +3178,13 @@ Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
 **Nuovo Sistema HUB Market per Visualizzazione Negozi:**
 
 **Componenti Creati:**
+
 - ✅ **HubMarketMapComponent.tsx:** Clone di MarketMapComponent con supporto dual-mode (Mercati/HUB)
 - ✅ **GestioneHubMapWrapper.tsx:** Wrapper con toggle selector 🏪 Mercati / 🏢 HUB
 - ✅ **GestioneHubNegozi.tsx:** Componente integrato nella Dashboard PA
 
 **Funzionalità Mappa HUB:**
+
 - ✅ **Toggle Mercati/HUB:** Selettore per switchare tra visualizzazione Mercati (poligoni) e HUB (punti)
 - ✅ **Marker HUB:** Icona "H" viola (#9C27B0) per identificare gli HUB sulla mappa Italia
 - ✅ **Marker Negozi:** Lettere A-J come point markers con colori stato (verde=attivo, rosso=chiuso, grigio=inattivo)
@@ -3023,38 +3193,42 @@ Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
 - ✅ **Fine Corsa:** Bounds basati su `area_geojson` per limitare zoom/pan
 
 **Fix Interfacce TypeScript:**
+
 - ✅ **HubLocation:** Aggiornato per usare `lat`/`lng` invece di `latitude`/`longitude` (match API)
 - ✅ **HubShop:** Interfaccia con `lat`, `lng`, `letter`, `name`, `category`, `status`, `vetrina_url`
 - ✅ **Parsing Coordinate:** `parseFloat()` per gestire stringhe da API
 
 **Database HUB (Neon PostgreSQL):**
 
-| Tabella | Descrizione | Campi Chiave |
-|---------|-------------|-------------|
+| Tabella         | Descrizione      | Campi Chiave                               |
+| --------------- | ---------------- | ------------------------------------------ |
 | `hub_locations` | HUB indipendenti | id, name, lat, lng, area_geojson, area_sqm |
-| `hub_shops` | Negozi per HUB | id, hub_id, letter, name, lat, lng, status |
-| `hub_services` | Servizi HUB | id, hub_id, name, type, capacity |
+| `hub_shops`     | Negozi per HUB   | id, hub_id, letter, name, lat, lng, status |
+| `hub_services`  | Servizi HUB      | id, hub_id, name, type, capacity           |
 
 **API Endpoints HUB:**
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/hub/locations` | GET | Lista tutti gli HUB |
-| `/api/hub/locations/:id` | GET | Dettaglio HUB con negozi e servizi |
-| `/api/hub/locations` | POST | Crea nuovo HUB (con negozi opzionali) |
-| `/api/hub/locations/:id` | PUT | Aggiorna HUB |
-| `/api/hub/shops` | POST | Aggiungi negozio a HUB |
+| Endpoint                 | Metodo | Descrizione                           |
+| ------------------------ | ------ | ------------------------------------- |
+| `/api/hub/locations`     | GET    | Lista tutti gli HUB                   |
+| `/api/hub/locations/:id` | GET    | Dettaglio HUB con negozi e servizi    |
+| `/api/hub/locations`     | POST   | Crea nuovo HUB (con negozi opzionali) |
+| `/api/hub/locations/:id` | PUT    | Aggiorna HUB                          |
+| `/api/hub/shops`         | POST   | Aggiungi negozio a HUB                |
 
 **HUB Market Creati (12 città italiane):**
+
 - Roma, Milano, Napoli, Torino, Firenze, Bologna
 - Venezia, Genova, Palermo, Bari, Modena, Grosseto (Hub Centro con 10 negozi test)
 
 **Integrazione Editor V3:**
+
 - ✅ **Pulsante "🗄️ Salva nel Database (Pepe GIS)":** Esporta HUB + Negozi con coordinate
 - ✅ **Formato Export:** `{ name, address, city, lat, lng, areaGeojson, shops: [...] }`
 - ✅ **Negozi Export:** `{ shopNumber, letter, name, lat, lng, category, status }`
 
 **File Modificati:**
+
 - `client/src/components/HubMarketMapComponent.tsx`
 - `client/src/components/GestioneHubMapWrapper.tsx`
 - `mihub-backend-rest/routes/hub.js`
@@ -3062,12 +3236,15 @@ Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
 ---
 
 ### v3.16.1 (5 Gennaio 2026) - PUNTO DI RIPRISTINO STABILE
+
 **Fix Logica Rinnovo per Concessioni Scadute:**
+
 - ✅ **Query Rinnovo Migliorata:** Ora cerca anche concessioni scadute (non solo attive)
 - ✅ **Ordine per Data:** Trova la concessione più recente (`ORDER BY valid_to DESC`)
 - ✅ **Esclusione CESSATE:** Ignora solo concessioni già in stato CESSATA
 
 **Stato Sistema:**
+
 - ✅ Frontend: `dms-hub-app-new` (Vercel) - Commit `58f85fd`
 - ✅ Backend: `mihub-backend-rest` (Hetzner) - Commit `8938bf9`
 - ✅ Database: Neon PostgreSQL - Stabile
@@ -3075,9 +3252,10 @@ Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
 - ✅ Logica Rinnovo: Funzionante (anche per concessioni scadute)
 - ✅ Wallet: Trasferimento automatico attivo
 
-
 ### v3.16.0 (5 Gennaio 2026)
+
 **Logica Rinnovo Concessione Automatico:**
+
 - ✅ **Rilevamento Rinnovo:** Quando `tipo_concessione="rinnovo"`, il sistema gestisce automaticamente la sostituzione
 - ✅ **Chiusura Concessione Precedente:** La vecchia concessione viene messa in stato CESSATA
 - ✅ **Eliminazione Wallet:** Il wallet della vecchia concessione viene eliminato
@@ -3085,6 +3263,7 @@ Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
 - ✅ **Risposta API:** Include dettagli rinnovo (old_concession_id, wallet_transferred, transferred_balance)
 
 **Flusso Rinnovo:**
+
 ```
 1. POST /api/concessions con tipo_concessione="rinnovo"
 2. Sistema trova concessione attiva sullo stesso posteggio
@@ -3094,12 +3273,15 @@ Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
 ```
 
 **File Modificati:**
+
 - `mihub-backend-rest/routes/concessions.js` - Aggiunta logica rinnovo (commit `9579ffa`)
 
-
 ### v3.14.0 (4 Gennaio 2026 - Sera)
+
 ### v3.15.0 (4 Gennaio 2026 - Notte)
+
 **Fix Dettaglio Concessione Multi-Vista:**
+
 - ✅ **Sede Legale Subentrante:** Aggiunta in tutte e 3 le tabelle (SSO SUAP, Gestione Mercati, Tab Imprese)
 - ✅ **Sede Legale Cedente:** Aggiunta nel dettaglio concessione con fetch automatico da impresa cedente
 - ✅ **Nome/Cognome Cedente:** Fetch automatico da `cedente_impresa_id` → `rappresentante_legale_nome/cognome`
@@ -3107,6 +3289,7 @@ Lista Vetrine → Tab "Nuovo Negozio" → Compila Form → Salva
 - ✅ **Colori SSO SUAP:** Cambiato da giallo (#f59e0b) a verde (#14b8a6) in tabella, filtri, pulsanti
 
 **Fetch Impresa Cedente:**
+
 ```javascript
 // Quando si carica dettaglio concessione con cedente_impresa_id:
 const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
@@ -3116,35 +3299,38 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 **Campi Aggiunti:**
 | Campo | Descrizione | Fonte |
 |-------|-------------|-------|
-| `cedente_nome` | Nome rappresentante legale cedente | imprese.rappresentante_legale_nome |
+| `cedente_nome` | Nome rappresentante legale cedente | imprese.rappresentante*legale_nome |
 | `cedente_cognome` | Cognome rappresentante legale cedente | imprese.rappresentante_legale_cognome |
-| `cedente_sede_legale` | Sede legale cedente | imprese.indirizzo_* |
-| `sede_legale_*` | Sede legale subentrante | concessions.sede_legale_* |
-
+| `cedente_sede_legale` | Sede legale cedente | imprese.indirizzo*_ |
+| `sede*legale*_` | Sede legale subentrante | concessions.sede*legale*\* |
 
 **Fix Concessioni Multi-Vista:**
+
 - ✅ **Tab Imprese:** Statistiche dinamiche (Imprese Totali, Concessioni Attive, Comuni Coperti, Media)
 - ✅ **SSO SUAP:** Colore tab Lista Concessioni cambiato da giallo a verde
 - ✅ **Semafori Stato:** ATTIVA (verde), SCADUTA (rosso), CESSATA (grigio)
 - ✅ **Caricamento Dettagli:** Chiamata API aggiuntiva per dati completi (cedente, autorizzazione precedente)
-- ✅ **Mapping Campi:** Aggiunti 20+ campi mancanti (stall_number, cedente_*, autorizzazione_*, canone_unico, etc.)
+- ✅ **Mapping Campi:** Aggiunti 20+ campi mancanti (stall*number, cedente*_, autorizzazione\__, canone_unico, etc.)
 
 **Modifiche Database:**
+
 - ✅ **Colonna `scia_id`:** Modificata da INTEGER a TEXT per supportare UUID
 - ✅ **Nuova colonna `concessione_id`:** Aggiunta a tabella `suap_pratiche` per collegamento bidirezionale
 
 **Nuovi Endpoint API:**
+
 - ✅ **PATCH /api/suap/pratiche/:id:** Aggiornamento campi pratica (concessione_id, stato, note)
 - ✅ **Endpoint Registrati:** Aggiunti 15 nuovi endpoint in api/index.json (concessioni, imprese, qualificazioni)
 
 **Allineamento Repository:**
+
 - ✅ **GitHub ↔ Hetzner:** Backend allineato (commit `57c5e0d`)
 - ✅ **Frontend Vercel:** Deploy automatico attivo
-
 
 ### v3.13.0 (4 Gennaio 2026)
 
 **Subingresso Automatico Completo:**
+
 - Implementata logica completa di subingresso nel `POST /api/concessions`
 - Rilevamento automatico subingresso da `tipo_concessione` o `cedente_impresa_id`
 - Trasferimento automatico wallet dal cedente al subentrante
@@ -3153,22 +3339,26 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Aggiornamento posteggio con nuovo vendor
 
 **Fix Visualizzazione Stati:**
+
 - Priorità stato CESSATA/SOSPESA dal DB rispetto al calcolo dinamico
 - Esclusione concessioni CESSATE dalla lista posteggi GIS
 - Esclusione concessioni CESSATE dalla scheda imprese
 - Fix semaforo qualifiche (supporto campo `end_date`)
 
 **Nuovi Endpoint API:**
+
 - `DELETE /api/wallets/:id` - Eliminazione wallet con transazioni
 - `POST /api/wallets` - Creazione wallet manuale
 - Registrazione endpoint concessioni in tab Integrazioni
 
 **Fix Database:**
+
 - Sanitizzazione campi numerici (stringhe vuote → null)
 - Rimozione ON CONFLICT non supportati
 - Correzione colonne wallets (`last_update` invece di `updated_at`)
 
 **Correzioni Dati:**
+
 - Fix qualifica REC Alimentari Rossi (SCADUTA → ATTIVA)
 - Eliminazione wallet orfani da concessioni cessate
 
@@ -3181,6 +3371,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - ✅ **Auto-creazione Vendor:** Se impresa_id fornito, vendor creato automaticamente con dati impresa
 
 ### v3.11.0 (02/01/2026) - Motore Verifica SCIA v2.0 con Controlli Reali
+
 - ✅ **Motore Verifica SCIA v2.0** - Implementazione completa con controlli reali:
   - 23 controlli totali suddivisi in 3 categorie
   - Verifica su dati reali del sistema (qualificazioni, wallet, concessioni)
@@ -3230,6 +3421,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Tag checkpoint: v3.10.1-stable
 
 ### v3.10.1 (02/01/2026) - SciaForm Autocomplete Integrato nei Campi CF
+
 - ✅ **Autocomplete Integrato nel Campo CF Subentrante** - Non più barra di ricerca separata:
   - Dropdown appare direttamente sotto il campo CF/P.IVA mentre si digita
   - Trigger dopo 2+ caratteri digitati
@@ -3251,6 +3443,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Commit: 8a08220
 
 ### v3.10.0 (02/01/2026) - SciaForm Autocomplete e Filtri Intelligenti
+
 - ✅ **Autocomplete Impresa** - Ricerca intelligente mentre digiti:
   - Dropdown suggerimenti dopo 2+ caratteri
   - Cerca per nome, CF o P.IVA
@@ -3280,6 +3473,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Commit: f43943b
 
 ### v3.9.1 (02/01/2026) - SSO SUAP Fix Critico ENTE_ID
+
 - ✅ **Fix Critico Chiamate API** - Tutte le funzioni API richiedevano `enteId` ma non veniva passato:
   - Aggiunto `const ENTE_ID = 'ente_modena'` a livello componente
   - `getSuapStats(ENTE_ID)` - prima chiamata senza parametri
@@ -3292,6 +3486,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Commit: e4cff89
 
 ### v3.9.0 (02/01/2026) - SSO SUAP Fix Mapping Campi + UI Uniformata
+
 - ✅ **Fix Critico Mapping Campi Form→Backend** - I dati del form SCIA ora vengono salvati correttamente:
   - Form usa: `ragione_sociale_sub`, `nome_sub`, `cf_cedente`, `mercato`, `posteggio`
   - Backend vuole: `sub_ragione_sociale`, `sub_nome`, `ced_cf`, `mercato_nome`, `posteggio_numero`
@@ -3319,6 +3514,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Commit: 6446a1c, ec7f842
 
 ### v3.8.0 (02/01/2026) - SSO SUAP Navigazione Tab + Valutazione Reale
+
 - ✅ **Navigazione Tab** - Ristrutturato SuapPanel.tsx con 3 tab (come Gestione Mercati):
   - Tab Dashboard: statistiche, attività recente, stato integrazioni
   - Tab Lista Pratiche: tabella ricercabile con tutte le pratiche
@@ -3348,6 +3544,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Commit Backend: 15b779c
 
 ### v3.7.0 (02/01/2026) - SSO SUAP Database Completo SCIA
+
 - ✅ **Migrazione Database** - Aggiunte 55+ nuove colonne a `suap_pratiche`:
   - Dati Pratica: numero_protocollo, comune_presentazione, tipo_segnalazione, motivo_subingresso, settore_merceologico, ruolo_dichiarante
   - Dati Subentrante: ragione_sociale, nome, cognome, data_nascita, luogo_nascita, residenza, sede_impresa, PEC, telefono
@@ -3365,6 +3562,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Commit Frontend: 3f6bdce
 
 ### v3.6.0 (02/01/2026) - SSO SUAP Sezione Delegato e Campi Sede Impresa
+
 - ✅ **Sezione Delegato Condizionale** - Nuova sezione "Dati del Delegato / Procuratore"
   - Appare automaticamente quando ruolo_dichiarante ≠ 'titolare'
   - Campi: Nome, Cognome, CF, Data/Luogo Nascita, Qualifica, Residenza completa
@@ -3381,6 +3579,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Commit: bd7756c
 
 ### v3.5.0 (02/01/2026) - SSO SUAP Numero Protocollo e Refinements
+
 - ✅ **Numero Protocollo SCIA** - Nuova sezione "Dati Pratica SCIA" in cima al form
   - Numero Protocollo auto-generato formato SCIA-YYYY-NNNN
   - Data Presentazione (default: data odierna)
@@ -3397,6 +3596,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Commit: 4b1eb2a
 
 ### v3.4.0 (02/01/2026) - SSO SUAP Form SCIA Dinamici
+
 - SciaForm.tsx v2 - Completamente riscritto con dropdown dinamici
 - Motivazione SCIA - 6 opzioni: Subingresso, Cessazione, Sospensione, Ripresa, Modifica RS, Variazione
 - Tipologia Attivita - Alimentare / Non Alimentare / Misto
@@ -3411,6 +3611,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Commit: 4d9558c, ad0e170
 
 ### v3.3.0 (01/01/2026) - "Fix Agenti e Routing Intelligente"
+
 - ✅ **Fix Abacus conteggio mercati:** Era 542 (contava stalls), ora 2 (conta markets)
 - ✅ **Fix MIO Loop:** MIO ora risponde direttamente ai saluti senza entrare in loop infinito
 - ✅ **Query Multiple Aggregate:** Abacus gestisce query su più entità (mercati+posteggi+imprese) con risposta formattata
@@ -3422,6 +3623,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - File modificati: `llm.js` (routing + prompt MIO + pattern Abacus multi-query)
 
 ### v3.2.5 (01/01/2026) - "Fix Chat MIO - Endpoint Vercel TUBO DIRETTO"
+
 - ✅ **Fix get-messages.ts (Vercel)** - Endpoint TUBO DIRETTO database→frontend
 - ✅ Cambiato default order da ASC a DESC per recuperare messaggi recenti
 - ✅ Cambiato default limit da 200 a 100
@@ -3429,12 +3631,14 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - ✅ Commit: `d201d36` - "🐛 Fix get-messages: show latest 100 messages"
 
 ### v3.2.4 (01/01/2026) - "Fix Chat MIO - Messaggi Recenti (Backend Hetzner)"
+
 - ✅ **Fix getMessages (Hetzner)** - Ora mostra gli ultimi 100 messaggi invece dei primi 20
 - ✅ Cambiato ORDER BY da ASC a DESC per recuperare messaggi recenti
 - ✅ Array invertito per mantenere ordine cronologico nel frontend
 - ✅ Commit: `2b20f99` - "🐛 Fix getMessages: show latest 100 messages"
 
 ### v3.2.3 (01/01/2026) - "Fix Abacus + save_memory + zapierToolExecutor"
+
 - ✅ **Fix Abacus prompt** - Aggiunta sezione FORBIDDEN COLUMNS in inglese
 - ✅ Colonna `denominazione` NON `nome_impresa` (che non esiste)
 - ✅ **Fix save_memory** - Implementato in zapierToolExecutor
@@ -3444,6 +3648,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - ✅ Commit: `6e7d4e8` - "🐛 Fix save_memory in zapierToolExecutor"
 
 ### v3.2.2 (01/01/2026) - "Fix MIO Prompt - Tool Obbligatori + English Rules"
+
 - ✅ **Fix prompt MIO** - Rafforzate regole per uso obbligatorio dei tool
 - ✅ **Conversione regole in inglese** per migliori performance Gemini
 - ✅ MIO ora usa `call_agent` invece di rispondere "Posso delegare"
@@ -3454,6 +3659,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - ✅ Commit 2: `6ef1f79` - "🧠 Convert MIO prompt rules to English"
 
 ### v3.2.1 (01/01/2026) - "Fix Autoheal & Stabilità Backend"
+
 - ✅ **Fix script autoheal.sh** - Cambiato endpoint da `/api/mihub/status` (404) a `/health`
 - ✅ Script autoheal ora controlla correttamente lo stato del backend
 - ✅ Risolto problema 341 restart PM2 causati da health check errato
@@ -3462,6 +3668,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - ✅ Zapier Gmail: verificato funzionante, problema era nel prompt MIO
 
 ### v3.2.0 (30/12/2025) - "Knowledge Base DMS Completa"
+
 - ✅ **Creata Knowledge Base DMS** con 30 documenti PDF strategici
 - ✅ Letti e riassunti tutti i PDF dalla pagina SPOT del sito DMS
 - ✅ Integrato documento **TPASS** (155 pagine) - sistema TCO₂/TCC
@@ -3472,6 +3679,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - File creati: `DMS_KNOWLEDGE_BASE.md` (152KB, 2640 righe)
 
 ### v3.1.0 (30/12/2025) - "Collaudo MIO Agent + Fix Dipendenze"
+
 - ✅ Collaudo completo MIO Agent (tutti gli agenti funzionanti)
 - ✅ Fix orchestratorClient.ts - gestione errori non-JSON (rate limiting, timeout)
 - ✅ Fix duplicati frontend - sistema "fingerprint" anti-duplicati
@@ -3482,6 +3690,7 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Sistema operativo all'85%+
 
 ### v3.0.0 (30/12/2025)
+
 - Creato Blueprint unificato
 - Documentata architettura completa
 - Chiarito che Guardian e MIO Agent sono moduli interni
@@ -3489,18 +3698,21 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 - Integrato riferimenti a documentazione legacy
 
 ### v2.2.0 (21/12/2025)
+
 - Fix duplicazione messaggi chat singole
 - Fix visualizzazione risposte agenti
 - Nuovi conversation_id (`user-{agent}-direct`)
 - Sistema Doppio Canale FRONTSTAGE/BACKSTAGE
 
 ### v2.1.0 (12/12/2025)
+
 - Documentazione LIVE_SYSTEM_DEC2025 completa
 - ROADMAP_2025 organizzata per quarter
 - Endpoint `/api/guardian/logs` per dashboard
 - Riorganizzazione completa repository
 
 ### v2.0.0 (11/12/2025) - "Operazione Specchio Reale"
+
 - Separazione documentazione legacy da sistema live
 - Implementato Health Monitor
 - Aggiunto sistema logging Guardian
@@ -3511,16 +3723,19 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 ## 🔗 LINK RAPIDI
 
 ### Produzione
+
 - **Dashboard PA:** https://dms-hub-app-new.vercel.app/dashboard-pa
 - **Backend API:** https://orchestratore.mio-hub.me
 - **Health Check:** https://orchestratore.mio-hub.me/api/health/full
 
 ### Repository GitHub
+
 - **Frontend:** https://github.com/Chcndr/dms-hub-app-new
 - **Backend:** https://github.com/Chcndr/mihub-backend-rest
 - **Blueprint:** https://github.com/Chcndr/dms-system-blueprint
 
 ### Documentazione Esterna
+
 - **PDND:** https://docs.pdnd.italia.it
 - **Neon PostgreSQL:** https://neon.tech/docs
 - **Google Gemini:** https://ai.google.dev/docs
@@ -3530,7 +3745,6 @@ const cedenteResponse = await fetch(`/api/imprese/${cedente_impresa_id}`);
 > **Nota:** Questo documento è la fonte di verità per il sistema MIO HUB.
 > Ogni agente AI deve leggerlo prima di effettuare modifiche.
 > Per documentazione dettagliata, consultare le cartelle LIVE_SYSTEM_DEC2025 e 00_LEGACY_ARCHIVE.
-
 
 ---
 
@@ -3544,17 +3758,17 @@ La versione su GitHub Pages (chcndr.github.io) è **DEPRECATA** e fa redirect au
 
 ### URL Ufficiali dei Tools
 
-| Tool | URL Ufficiale | Descrizione |
-|------|---------------|-------------|
-| **BUS HUB** | https://api.mio-hub.me/tools/bus_hub.html | Centro di controllo workflow digitalizzazione |
-| **Slot Editor V3** | https://api.mio-hub.me/tools/slot_editor_v3_unified.html | Editor principale per piante mercati, posteggi, HUB |
-| **PNG Transparent Tool** | https://api.mio-hub.me/tools/stalls_alpha_tool.html | Rimozione sfondo piante mercato |
+| Tool                     | URL Ufficiale                                            | Descrizione                                         |
+| ------------------------ | -------------------------------------------------------- | --------------------------------------------------- |
+| **BUS HUB**              | https://api.mio-hub.me/tools/bus_hub.html                | Centro di controllo workflow digitalizzazione       |
+| **Slot Editor V3**       | https://api.mio-hub.me/tools/slot_editor_v3_unified.html | Editor principale per piante mercati, posteggi, HUB |
+| **PNG Transparent Tool** | https://api.mio-hub.me/tools/stalls_alpha_tool.html      | Rimozione sfondo piante mercato                     |
 
 ### ❌ URL Deprecati (NON USARE)
 
-| URL Deprecato | Stato |
-|---------------|-------|
-| chcndr.github.io/dms-gemello-core/tools/bus_hub.html | ⚠️ Redirect a Hetzner |
+| URL Deprecato                                                       | Stato                 |
+| ------------------------------------------------------------------- | --------------------- |
+| chcndr.github.io/dms-gemello-core/tools/bus_hub.html                | ⚠️ Redirect a Hetzner |
 | chcndr.github.io/dms-gemello-core/tools/slot_editor_v3_unified.html | ⚠️ Redirect a Hetzner |
 
 ### Workflow Digitalizzazione Mercato
@@ -3580,23 +3794,22 @@ La versione su GitHub Pages (chcndr.github.io) è **DEPRECATA** e fa redirect au
 
 ### Storage Dati
 
-| Tipo | Storage | Chiave |
-|------|---------|--------|
-| Autosave completo | localStorage | `v3_autosave` |
-| Dati HUB | localStorage | `dms_hub_data` |
-| Posizione pianta | localStorage | `plant_marker_position` |
-| Posizioni posteggi | localStorage | `slots_positions` |
+| Tipo               | Storage      | Chiave                  |
+| ------------------ | ------------ | ----------------------- |
+| Autosave completo  | localStorage | `v3_autosave`           |
+| Dati HUB           | localStorage | `dms_hub_data`          |
+| Posizione pianta   | localStorage | `plant_marker_position` |
+| Posizioni posteggi | localStorage | `slots_positions`       |
 
 ### Accesso dalla Dashboard PA
 
 Il pulsante **"BUS HUB"** nella Dashboard PA (dms-hub-app-new.vercel.app/dashboard-pa) apre direttamente:
+
 ```
 https://api.mio-hub.me/tools/bus_hub.html
 ```
 
 ---
-
-
 
 ---
 
@@ -3607,19 +3820,21 @@ https://api.mio-hub.me/tools/bus_hub.html
 ### 🎯 Principio Fondamentale
 
 **Un endpoint deve essere registrato in UN SOLO posto principale:**
+
 - `MIO-hub/api/index.json` → Fonte di verità per il Dashboard Integrazioni
 
 ### 📁 Struttura dei File Endpoint
 
-| File | Repository | Scopo | Endpoint |
-|------|------------|-------|----------|
-| `api/index.json` | MIO-hub | **Dashboard Integrazioni** (visibilità) | 353 |
-| `apiInventoryService.ts` | dms-hub-app-new | Guardian interno (legacy) | 166 |
-| `routes/*.js` | mihub-backend-rest | **Implementazione backend** | 31+ |
+| File                     | Repository         | Scopo                                   | Endpoint |
+| ------------------------ | ------------------ | --------------------------------------- | -------- |
+| `api/index.json`         | MIO-hub            | **Dashboard Integrazioni** (visibilità) | 353      |
+| `apiInventoryService.ts` | dms-hub-app-new    | Guardian interno (legacy)               | 166      |
+| `routes/*.js`            | mihub-backend-rest | **Implementazione backend**             | 31+      |
 
 ### ✅ Procedura per Aggiungere un Nuovo Endpoint
 
 #### 1. Implementare l'endpoint nel backend
+
 ```bash
 # File: mihub-backend-rest/routes/[nome-modulo].js
 router.get('/nuovo-endpoint', async (req, res) => {
@@ -3628,6 +3843,7 @@ router.get('/nuovo-endpoint', async (req, res) => {
 ```
 
 #### 2. Registrare in MIO-hub/api/index.json
+
 ```json
 {
   "id": "modulo.nuovoEndpoint",
@@ -3647,6 +3863,7 @@ router.get('/nuovo-endpoint', async (req, res) => {
 ```
 
 #### 3. Commit e Push
+
 ```bash
 cd MIO-hub
 git add api/index.json
@@ -3656,26 +3873,26 @@ git push origin master
 
 ### 🏷️ Categorie Endpoint Disponibili
 
-| Categoria | Descrizione |
-|-----------|-------------|
-| `DmsHub` | Endpoint tRPC principali |
-| `TCC Fondo` | Token Carbon Credit - Fondo |
-| `TCC Wallet` | Token Carbon Credit - Wallet cittadino |
-| `TCC v2 - Configurazione` | TCC v2 - Config globale |
-| `TCC v2 - Hub Operatore` | TCC v2 - Operatori commerciali |
-| `TCC v2 - Cittadino` | TCC v2 - Wallet cittadino |
-| `TCC v2 - Dashboard PA` | TCC v2 - Rimborsi e statistiche PA |
-| `TCC v2 - Wallet Impresa` | TCC v2 - Wallet aziende |
-| `TCC v2 - Policy` | TCC v2 - Leva politica |
-| `TCC v2 - Regole Boost` | TCC v2 - Regole bonus |
-| `Analytics` | Statistiche e report |
-| `Concessioni` | Gestione concessioni |
-| `Imprese` | Anagrafica imprese |
-| `Qualificazioni` | DURC, SUAP, certificazioni |
-| `SUAP` | Pratiche SUAP |
-| `Wallets REST` | Wallet pagamenti |
-| `Guardian` | Monitoraggio sistema |
-| `System & Auth` | Autenticazione |
+| Categoria                 | Descrizione                            |
+| ------------------------- | -------------------------------------- |
+| `DmsHub`                  | Endpoint tRPC principali               |
+| `TCC Fondo`               | Token Carbon Credit - Fondo            |
+| `TCC Wallet`              | Token Carbon Credit - Wallet cittadino |
+| `TCC v2 - Configurazione` | TCC v2 - Config globale                |
+| `TCC v2 - Hub Operatore`  | TCC v2 - Operatori commerciali         |
+| `TCC v2 - Cittadino`      | TCC v2 - Wallet cittadino              |
+| `TCC v2 - Dashboard PA`   | TCC v2 - Rimborsi e statistiche PA     |
+| `TCC v2 - Wallet Impresa` | TCC v2 - Wallet aziende                |
+| `TCC v2 - Policy`         | TCC v2 - Leva politica                 |
+| `TCC v2 - Regole Boost`   | TCC v2 - Regole bonus                  |
+| `Analytics`               | Statistiche e report                   |
+| `Concessioni`             | Gestione concessioni                   |
+| `Imprese`                 | Anagrafica imprese                     |
+| `Qualificazioni`          | DURC, SUAP, certificazioni             |
+| `SUAP`                    | Pratiche SUAP                          |
+| `Wallets REST`            | Wallet pagamenti                       |
+| `Guardian`                | Monitoraggio sistema                   |
+| `System & Auth`           | Autenticazione                         |
 
 ### 🔄 Sincronizzazione
 
@@ -3684,19 +3901,20 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 
 ### 📊 Punti di Ripristino Stabili
 
-| Repository | Tag | Data | Descrizione |
-|------------|-----|------|-------------|
-| dms-hub-app-new | **v3.35.1-stable** | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
-| dms-hub-app-new | v3.32.0-stable | 13/01/2026 | TCC transaction numbers, QR validation |
-| mihub-backend-rest | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation |
-| **miohub-backups** | **v3.32.0-stable** | 13/01/2026 | Database dump SQL (29 MB) |
-| MIO-hub | v16.0.0-stable | 12/01/2026 | 353 endpoints |
+| Repository         | Tag                | Data       | Descrizione                                                  |
+| ------------------ | ------------------ | ---------- | ------------------------------------------------------------ |
+| dms-hub-app-new    | **v3.35.1-stable** | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
+| dms-hub-app-new    | v3.32.0-stable     | 13/01/2026 | TCC transaction numbers, QR validation                       |
+| mihub-backend-rest | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation                       |
+| **miohub-backups** | **v3.32.0-stable** | 13/01/2026 | Database dump SQL (29 MB)                                    |
+| MIO-hub            | v16.0.0-stable     | 12/01/2026 | 353 endpoints                                                |
 
 #### Storico Punti di Ripristino
-| Repository | Tag | Data | Note |
-|------------|-----|------|------|
-| dms-hub-app-new | v3.29.0-stable | 12/01/2026 | Settlement numbers |
-| mihub-backend-rest | v5.7.0-stable | 12/01/2026 | Wallet-Impresa |
+
+| Repository         | Tag            | Data       | Note               |
+| ------------------ | -------------- | ---------- | ------------------ |
+| dms-hub-app-new    | v3.29.0-stable | 12/01/2026 | Settlement numbers |
+| mihub-backend-rest | v5.7.0-stable  | 12/01/2026 | Wallet-Impresa     |
 
 ### 🔧 Come Ripristinare
 
@@ -3724,7 +3942,6 @@ pm2 restart mihub-backend
 ```
 
 ---
-
 
 ---
 
@@ -3881,28 +4098,27 @@ const [activeTab, setActiveTab] = useState<
 
 **Tempo stimato totale: 6 giorni**
 
-
 ### 7. Riferimenti Normativi
 
 La gestione delle autorizzazioni e della spunta si basa sul **D.Lgs. 114/1998** (Riforma del Commercio), in particolare gli articoli 27, 28 e 29 del Titolo X dedicato al commercio su aree pubbliche.
 
 #### 7.1 Tipi di Autorizzazione (Art. 28)
 
-| Tipo | Denominazione | Cosa Autorizza | Chi Rilascia | Validità |
-|------|---------------|----------------|--------------|----------|
-| **A** | Posteggio Fisso | Commercio su posteggio in concessione | Sindaco del Comune sede del posteggio | 10 anni (rinnovabile) |
-| **B** | Itinerante | Commercio su qualsiasi area pubblica in forma itinerante | Comune dove si avvia l'attività | Illimitata |
+| Tipo  | Denominazione   | Cosa Autorizza                                           | Chi Rilascia                          | Validità              |
+| ----- | --------------- | -------------------------------------------------------- | ------------------------------------- | --------------------- |
+| **A** | Posteggio Fisso | Commercio su posteggio in concessione                    | Sindaco del Comune sede del posteggio | 10 anni (rinnovabile) |
+| **B** | Itinerante      | Commercio su qualsiasi area pubblica in forma itinerante | Comune dove si avvia l'attività       | Illimitata            |
 
 L'autorizzazione di **Tipo A** abilita automaticamente anche all'esercizio in forma itinerante nell'ambito del territorio regionale. L'autorizzazione di **Tipo B** abilita inoltre alla vendita al domicilio del consumatore e alla partecipazione alla spunta nei mercati.
 
 #### 7.2 Requisiti per il Rilascio
 
-| Requisito | Descrizione | Obbligatorietà |
-|-----------|-------------|----------------|
-| **DURC** | Documento Unico Regolarità Contributiva | Obbligatorio per tutti |
-| **Requisiti Morali** | Art. 71 D.Lgs. 59/2010 (no fallimento, no condanne, no misure prevenzione) | Obbligatorio per tutti |
-| **Requisiti Professionali** | Diploma/Corso/Esperienza nel settore alimentare | Solo per settore Alimentare |
-| **Visura Camerale** | Iscrizione al Registro Imprese | Obbligatorio per tutti |
+| Requisito                   | Descrizione                                                                | Obbligatorietà              |
+| --------------------------- | -------------------------------------------------------------------------- | --------------------------- |
+| **DURC**                    | Documento Unico Regolarità Contributiva                                    | Obbligatorio per tutti      |
+| **Requisiti Morali**        | Art. 71 D.Lgs. 59/2010 (no fallimento, no condanne, no misure prevenzione) | Obbligatorio per tutti      |
+| **Requisiti Professionali** | Diploma/Corso/Esperienza nel settore alimentare                            | Solo per settore Alimentare |
+| **Visura Camerale**         | Iscrizione al Registro Imprese                                             | Obbligatorio per tutti      |
 
 #### 7.3 La Spunta (Art. 28, comma 11)
 
@@ -3929,194 +4145,191 @@ Il form è suddiviso in sezioni logiche con auto-popolamento dai dati esistenti:
 
 **Sezione 1: Dati Generali**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Numero Autorizzazione | text | Auto-generato | Formato: AUT-YYYY-NNNN |
-| Data Rilascio | date | Data odierna | |
-| Comune Rilascio | select | Da contesto ente | |
-| Tipo Autorizzazione | select | - | A (Posteggio) / B (Itinerante) |
+| Campo                 | Tipo   | Auto-popolato    | Note                           |
+| --------------------- | ------ | ---------------- | ------------------------------ |
+| Numero Autorizzazione | text   | Auto-generato    | Formato: AUT-YYYY-NNNN         |
+| Data Rilascio         | date   | Data odierna     |                                |
+| Comune Rilascio       | select | Da contesto ente |                                |
+| Tipo Autorizzazione   | select | -                | A (Posteggio) / B (Itinerante) |
 
 **Sezione 2: Dati Impresa (auto-popolati da ricerca)**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Cerca Impresa | autocomplete | - | Ricerca per P.IVA/CF/Denominazione |
-| Partita IVA | text | ✅ Da imprese | |
-| Codice Fiscale | text | ✅ Da imprese | |
-| Ragione Sociale | text | ✅ Da imprese | |
-| Sede Legale | text | ✅ Da imprese | Via, Comune, Provincia, CAP |
-| PEC | text | ✅ Da imprese | |
+| Campo           | Tipo         | Auto-popolato | Note                               |
+| --------------- | ------------ | ------------- | ---------------------------------- |
+| Cerca Impresa   | autocomplete | -             | Ricerca per P.IVA/CF/Denominazione |
+| Partita IVA     | text         | ✅ Da imprese |                                    |
+| Codice Fiscale  | text         | ✅ Da imprese |                                    |
+| Ragione Sociale | text         | ✅ Da imprese |                                    |
+| Sede Legale     | text         | ✅ Da imprese | Via, Comune, Provincia, CAP        |
+| PEC             | text         | ✅ Da imprese |                                    |
 
 **Sezione 3: Dati Titolare/Legale Rappresentante (auto-popolati)**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Qualità | select | - | Titolare / Legale Rappresentante |
-| Nome | text | ✅ Da imprese | |
-| Cognome | text | ✅ Da imprese | |
-| Codice Fiscale | text | ✅ Da imprese | |
-| Data Nascita | date | ✅ Da imprese | |
-| Luogo Nascita | text | ✅ Da imprese | |
-| Residenza | text | ✅ Da imprese | Via, Comune, Provincia, CAP |
+| Campo          | Tipo   | Auto-popolato | Note                             |
+| -------------- | ------ | ------------- | -------------------------------- |
+| Qualità        | select | -             | Titolare / Legale Rappresentante |
+| Nome           | text   | ✅ Da imprese |                                  |
+| Cognome        | text   | ✅ Da imprese |                                  |
+| Codice Fiscale | text   | ✅ Da imprese |                                  |
+| Data Nascita   | date   | ✅ Da imprese |                                  |
+| Luogo Nascita  | text   | ✅ Da imprese |                                  |
+| Residenza      | text   | ✅ Da imprese | Via, Comune, Provincia, CAP      |
 
 **Sezione 4: Dati Posteggio (solo Tipo A, auto-popolati da selezione mercato)**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Mercato | select | - | Lista mercati disponibili |
-| Ubicazione | text | ✅ Da mercato | |
-| Posteggio | select | - | Lista posteggi liberi del mercato |
-| Fila | text | ✅ Da posteggio | |
-| MQ | number | ✅ Da posteggio | |
-| Dimensioni | text | ✅ Da posteggio | Formato: LxP |
-| Giorno | text | ✅ Da mercato | |
-| Tipo Posteggio | text | ✅ Da posteggio | Fisso/Spunta |
+| Campo          | Tipo   | Auto-popolato   | Note                              |
+| -------------- | ------ | --------------- | --------------------------------- |
+| Mercato        | select | -               | Lista mercati disponibili         |
+| Ubicazione     | text   | ✅ Da mercato   |                                   |
+| Posteggio      | select | -               | Lista posteggi liberi del mercato |
+| Fila           | text   | ✅ Da posteggio |                                   |
+| MQ             | number | ✅ Da posteggio |                                   |
+| Dimensioni     | text   | ✅ Da posteggio | Formato: LxP                      |
+| Giorno         | text   | ✅ Da mercato   |                                   |
+| Tipo Posteggio | text   | ✅ Da posteggio | Fisso/Spunta                      |
 
 **Sezione 5: Settore Merceologico**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Settore | select | - | Alimentare / Non Alimentare |
-| Sottosettore | text | - | Es. Frutta e Verdura, Abbigliamento |
-| Limitazioni | text | - | Es. Esclusi prodotti ittici |
+| Campo        | Tipo   | Auto-popolato | Note                                |
+| ------------ | ------ | ------------- | ----------------------------------- |
+| Settore      | select | -             | Alimentare / Non Alimentare         |
+| Sottosettore | text   | -             | Es. Frutta e Verdura, Abbigliamento |
+| Limitazioni  | text   | -             | Es. Esclusi prodotti ittici         |
 
 **Sezione 6: DURC**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Numero DURC | text | - | |
-| Data Rilascio | date | - | |
-| Data Scadenza | date | - | Verifica automatica validità |
+| Campo         | Tipo | Auto-popolato | Note                         |
+| ------------- | ---- | ------------- | ---------------------------- |
+| Numero DURC   | text | -             |                              |
+| Data Rilascio | date | -             |                              |
+| Data Scadenza | date | -             | Verifica automatica validità |
 
 **Sezione 7: Generazione Documento**
 
-| Azione | Descrizione |
-|--------|-------------|
-| Anteprima | Mostra preview del documento autorizzazione |
-| Genera PDF | Genera il documento ufficiale in PDF |
-| Salva | Salva l'autorizzazione nel database |
+| Azione     | Descrizione                                 |
+| ---------- | ------------------------------------------- |
+| Anteprima  | Mostra preview del documento autorizzazione |
+| Genera PDF | Genera il documento ufficiale in PDF        |
+| Salva      | Salva l'autorizzazione nel database         |
 
 #### 8.2 Form Domanda Spunta
 
 **Sezione 1: Dati Richiedente (auto-popolati)**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Cerca Impresa | autocomplete | - | Ricerca per P.IVA/CF/Denominazione |
-| Ragione Sociale | text | ✅ Da imprese | |
-| Partita IVA | text | ✅ Da imprese | |
-| Codice Fiscale | text | ✅ Da imprese | |
+| Campo           | Tipo         | Auto-popolato | Note                               |
+| --------------- | ------------ | ------------- | ---------------------------------- |
+| Cerca Impresa   | autocomplete | -             | Ricerca per P.IVA/CF/Denominazione |
+| Ragione Sociale | text         | ✅ Da imprese |                                    |
+| Partita IVA     | text         | ✅ Da imprese |                                    |
+| Codice Fiscale  | text         | ✅ Da imprese |                                    |
 
 **Sezione 2: Autorizzazione di Riferimento**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Autorizzazione | select | - | Lista autorizzazioni dell'impresa |
-| Numero | text | ✅ Da autorizzazione | |
-| Data Rilascio | date | ✅ Da autorizzazione | |
-| Comune | text | ✅ Da autorizzazione | |
-| Tipo | text | ✅ Da autorizzazione | A o B |
+| Campo          | Tipo   | Auto-popolato        | Note                              |
+| -------------- | ------ | -------------------- | --------------------------------- |
+| Autorizzazione | select | -                    | Lista autorizzazioni dell'impresa |
+| Numero         | text   | ✅ Da autorizzazione |                                   |
+| Data Rilascio  | date   | ✅ Da autorizzazione |                                   |
+| Comune         | text   | ✅ Da autorizzazione |                                   |
+| Tipo           | text   | ✅ Da autorizzazione | A o B                             |
 
 **Sezione 3: Mercato Richiesto**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Mercato | select | - | Lista mercati disponibili |
-| Ubicazione | text | ✅ Da mercato | |
-| Giorno/i | multiselect | ✅ Da mercato | Giorni in cui si svolge |
-| Settore Richiesto | select | - | Deve corrispondere all'autorizzazione |
+| Campo             | Tipo        | Auto-popolato | Note                                  |
+| ----------------- | ----------- | ------------- | ------------------------------------- |
+| Mercato           | select      | -             | Lista mercati disponibili             |
+| Ubicazione        | text        | ✅ Da mercato |                                       |
+| Giorno/i          | multiselect | ✅ Da mercato | Giorni in cui si svolge               |
+| Settore Richiesto | select      | -             | Deve corrispondere all'autorizzazione |
 
 **Sezione 4: Presenze (se già partecipato)**
 
-| Campo | Tipo | Auto-popolato | Note |
-|-------|------|---------------|------|
-| Numero Presenze | number | ✅ Da storico | Calcolato automaticamente |
-| Data Prima Presenza | date | ✅ Da storico | |
+| Campo               | Tipo   | Auto-popolato | Note                      |
+| ------------------- | ------ | ------------- | ------------------------- |
+| Numero Presenze     | number | ✅ Da storico | Calcolato automaticamente |
+| Data Prima Presenza | date   | ✅ Da storico |                           |
 
 **Sezione 5: Dichiarazioni**
 
-| Campo | Tipo | Note |
-|-------|------|------|
-| Requisiti Morali | checkbox | Dichiarazione sostitutiva |
-| DURC Valido | checkbox | Dichiarazione sostitutiva |
+| Campo                | Tipo     | Note                                      |
+| -------------------- | -------- | ----------------------------------------- |
+| Requisiti Morali     | checkbox | Dichiarazione sostitutiva                 |
+| DURC Valido          | checkbox | Dichiarazione sostitutiva                 |
 | Rispetto Regolamento | checkbox | Impegno a rispettare regolamento comunale |
 
 ### 9. API Endpoints
 
 ### Nuovi Endpoint: Storico Titolarità Posteggio
 
-| # | Metodo | Endpoint | Descrizione |
-|---|---|---|---|
-| 1 | `GET` | `/api/concessions/storico-titolarita/mercato/:market_id` | Restituisce la lista degli ultimi eventi di titolarità per un intero mercato. |
-| 2 | `GET` | `/api/concessions/storico-titolarita/:posteggio_id` | Restituisce la timeline completa di un singolo posteggio. |
-
+| #   | Metodo | Endpoint                                                 | Descrizione                                                                   |
+| --- | ------ | -------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 1   | `GET`  | `/api/concessions/storico-titolarita/mercato/:market_id` | Restituisce la lista degli ultimi eventi di titolarità per un intero mercato. |
+| 2   | `GET`  | `/api/concessions/storico-titolarita/:posteggio_id`      | Restituisce la timeline completa di un singolo posteggio.                     |
 
 #### 9.1 Autorizzazioni
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/autorizzazioni` | GET | Lista autorizzazioni con filtri (impresa_id, tipo, stato, mercato_id) |
-| `/api/autorizzazioni/:id` | GET | Dettaglio singola autorizzazione |
-| `/api/autorizzazioni` | POST | Crea nuova autorizzazione |
-| `/api/autorizzazioni/:id` | PUT | Aggiorna autorizzazione |
-| `/api/autorizzazioni/:id` | DELETE | Elimina autorizzazione |
-| `/api/autorizzazioni/:id/genera-pdf` | POST | Genera documento PDF |
+| Endpoint                             | Metodo | Descrizione                                                           |
+| ------------------------------------ | ------ | --------------------------------------------------------------------- |
+| `/api/autorizzazioni`                | GET    | Lista autorizzazioni con filtri (impresa_id, tipo, stato, mercato_id) |
+| `/api/autorizzazioni/:id`            | GET    | Dettaglio singola autorizzazione                                      |
+| `/api/autorizzazioni`                | POST   | Crea nuova autorizzazione                                             |
+| `/api/autorizzazioni/:id`            | PUT    | Aggiorna autorizzazione                                               |
+| `/api/autorizzazioni/:id`            | DELETE | Elimina autorizzazione                                                |
+| `/api/autorizzazioni/:id/genera-pdf` | POST   | Genera documento PDF                                                  |
 
 #### 9.2 Domande Spunta
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/domande-spunta` | GET | Lista domande con filtri (impresa_id, mercato_id, stato) |
-| `/api/domande-spunta/:id` | GET | Dettaglio singola domanda |
-| `/api/domande-spunta` | POST | Crea nuova domanda |
-| `/api/domande-spunta/:id` | PUT | Aggiorna domanda |
-| `/api/domande-spunta/:id` | DELETE | Elimina domanda |
-| `/api/domande-spunta/:id/approva` | POST | Approva domanda |
-| `/api/domande-spunta/:id/rifiuta` | POST | Rifiuta domanda |
-| `/api/domande-spunta/presenze/:impresa_id/:mercato_id` | GET | Calcola presenze impresa nel mercato |
+| Endpoint                                               | Metodo | Descrizione                                              |
+| ------------------------------------------------------ | ------ | -------------------------------------------------------- |
+| `/api/domande-spunta`                                  | GET    | Lista domande con filtri (impresa_id, mercato_id, stato) |
+| `/api/domande-spunta/:id`                              | GET    | Dettaglio singola domanda                                |
+| `/api/domande-spunta`                                  | POST   | Crea nuova domanda                                       |
+| `/api/domande-spunta/:id`                              | PUT    | Aggiorna domanda                                         |
+| `/api/domande-spunta/:id`                              | DELETE | Elimina domanda                                          |
+| `/api/domande-spunta/:id/approva`                      | POST   | Approva domanda                                          |
+| `/api/domande-spunta/:id/rifiuta`                      | POST   | Rifiuta domanda                                          |
+| `/api/domande-spunta/presenze/:impresa_id/:mercato_id` | GET    | Calcola presenze impresa nel mercato                     |
 
 ### 10. File da Creare/Modificare
 
 #### 10.1 Backend (mihub-backend-rest)
 
-| File | Azione | Descrizione |
-|------|--------|-------------|
-| `migrations/021_create_autorizzazioni.sql` | Creare | Migrazione tabella autorizzazioni |
-| `migrations/022_create_domande_spunta.sql` | Creare | Migrazione tabella domande_spunta |
-| `routes/autorizzazioni.js` | Creare | API REST autorizzazioni |
-| `routes/domande-spunta.js` | Creare | API REST domande spunta |
-| `src/modules/suap/autorizzazioniService.js` | Creare | Service autorizzazioni |
-| `src/modules/suap/domandeSpuntaService.js` | Creare | Service domande spunta |
-| `index.js` | Modificare | Registrare nuove routes |
+| File                                        | Azione     | Descrizione                       |
+| ------------------------------------------- | ---------- | --------------------------------- |
+| `migrations/021_create_autorizzazioni.sql`  | Creare     | Migrazione tabella autorizzazioni |
+| `migrations/022_create_domande_spunta.sql`  | Creare     | Migrazione tabella domande_spunta |
+| `routes/autorizzazioni.js`                  | Creare     | API REST autorizzazioni           |
+| `routes/domande-spunta.js`                  | Creare     | API REST domande spunta           |
+| `src/modules/suap/autorizzazioniService.js` | Creare     | Service autorizzazioni            |
+| `src/modules/suap/domandeSpuntaService.js`  | Creare     | Service domande spunta            |
+| `index.js`                                  | Modificare | Registrare nuove routes           |
 
 #### 10.2 Frontend (dms-hub-app-new/client/src)
 
-| File | Azione | Descrizione |
-|------|--------|-------------|
-| `api/autorizzazioni.ts` | Creare | Client API autorizzazioni |
-| `api/domande-spunta.ts` | Creare | Client API domande spunta |
-| `components/suap/AutorizzazioneForm.tsx` | Creare | Form creazione autorizzazione |
-| `components/suap/DomandaSpuntaForm.tsx` | Creare | Form creazione domanda spunta |
-| `components/suap/ListaAutorizzazioni.tsx` | Creare | Tabella lista autorizzazioni |
-| `components/suap/ListaDomandeSpunta.tsx` | Creare | Tabella lista domande spunta |
-| `components/SuapPanel.tsx` | Modificare | Aggiungere nuovi tab e pulsanti |
+| File                                      | Azione     | Descrizione                     |
+| ----------------------------------------- | ---------- | ------------------------------- |
+| `api/autorizzazioni.ts`                   | Creare     | Client API autorizzazioni       |
+| `api/domande-spunta.ts`                   | Creare     | Client API domande spunta       |
+| `components/suap/AutorizzazioneForm.tsx`  | Creare     | Form creazione autorizzazione   |
+| `components/suap/DomandaSpuntaForm.tsx`   | Creare     | Form creazione domanda spunta   |
+| `components/suap/ListaAutorizzazioni.tsx` | Creare     | Tabella lista autorizzazioni    |
+| `components/suap/ListaDomandeSpunta.tsx`  | Creare     | Tabella lista domande spunta    |
+| `components/SuapPanel.tsx`                | Modificare | Aggiungere nuovi tab e pulsanti |
 
 ### 11. Stima Tempi
 
-| Fase | Attività | Giorni |
-|------|----------|--------|
-| 1 | Migrazioni database | 0.5 |
-| 2 | API Backend autorizzazioni | 1 |
-| 3 | API Backend domande spunta | 1 |
-| 4 | Form AutorizzazioneForm.tsx | 1 |
-| 5 | Form DomandaSpuntaForm.tsx | 1 |
-| 6 | Liste e integrazione SuapPanel | 1 |
-| 7 | Test e deploy | 0.5 |
-| **Totale** | | **6 giorni** |
+| Fase       | Attività                       | Giorni       |
+| ---------- | ------------------------------ | ------------ |
+| 1          | Migrazioni database            | 0.5          |
+| 2          | API Backend autorizzazioni     | 1            |
+| 3          | API Backend domande spunta     | 1            |
+| 4          | Form AutorizzazioneForm.tsx    | 1            |
+| 5          | Form DomandaSpuntaForm.tsx     | 1            |
+| 6          | Liste e integrazione SuapPanel | 1            |
+| 7          | Test e deploy                  | 0.5          |
+| **Totale** |                                | **6 giorni** |
 
 ---
-
-
 
 ---
 
@@ -4181,8 +4394,6 @@ graph TD
 
 ---
 
-
-
 ---
 
 ## 🆕 PROGETTO: STORICO WALLET E GESTIONE SCADENZE CANONE (v3.34.0)
@@ -4211,20 +4422,20 @@ graph TD
         C[Tab Riconciliazione]
         D[Tab Storico Wallet - NUOVO]
     end
-    
+
     subgraph Backend API
         E[GET /api/wallets/history]
         F[GET /api/wallets/:id/balance-history]
         G[GET /api/wallets/scadenze]
         H[POST /api/wallets/calcola-mora]
     end
-    
+
     subgraph Database
         I(wallet_history)
         J(wallet_balance_snapshots)
         K(wallet_scadenze)
     end
-    
+
     D --> E
     D --> F
     D --> G
@@ -4312,51 +4523,54 @@ CREATE INDEX idx_wallet_scadenze_scadenza ON wallet_scadenze(data_scadenza);
 
 #### 4.1 Storico Wallet
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/wallets/history` | GET | Lista storico eventi tutti i wallet (filtri: impresa_id, evento, da_data, a_data) |
-| `/api/wallets/:id/history` | GET | Storico eventi singolo wallet |
-| `/api/wallets/:id/balance-history` | GET | Cronologia saldi annuali wallet |
-| `/api/wallets/history` | POST | Registra evento storico (interno) |
+| Endpoint                           | Metodo | Descrizione                                                                       |
+| ---------------------------------- | ------ | --------------------------------------------------------------------------------- |
+| `/api/wallets/history`             | GET    | Lista storico eventi tutti i wallet (filtri: impresa_id, evento, da_data, a_data) |
+| `/api/wallets/:id/history`         | GET    | Storico eventi singolo wallet                                                     |
+| `/api/wallets/:id/balance-history` | GET    | Cronologia saldi annuali wallet                                                   |
+| `/api/wallets/history`             | POST   | Registra evento storico (interno)                                                 |
 
 #### 4.2 Scadenze e More
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/wallets/scadenze` | GET | Lista scadenze (filtri: stato, anno, wallet_id) |
-| `/api/wallets/:id/scadenze` | GET | Scadenze singolo wallet |
-| `/api/wallets/:id/scadenze` | POST | Crea nuova scadenza canone |
-| `/api/wallets/scadenze/:id/calcola-mora` | POST | Calcola mora e interessi per scadenza |
-| `/api/wallets/scadenze/:id/genera-pagamento-mora` | POST | Genera avviso PagoPA per mora |
-| `/api/wallets/scadenze/aggiorna-ritardi` | POST | Job: aggiorna giorni ritardo tutte le scadenze |
+| Endpoint                                          | Metodo | Descrizione                                     |
+| ------------------------------------------------- | ------ | ----------------------------------------------- |
+| `/api/wallets/scadenze`                           | GET    | Lista scadenze (filtri: stato, anno, wallet_id) |
+| `/api/wallets/:id/scadenze`                       | GET    | Scadenze singolo wallet                         |
+| `/api/wallets/:id/scadenze`                       | POST   | Crea nuova scadenza canone                      |
+| `/api/wallets/scadenze/:id/calcola-mora`          | POST   | Calcola mora e interessi per scadenza           |
+| `/api/wallets/scadenze/:id/genera-pagamento-mora` | POST   | Genera avviso PagoPA per mora                   |
+| `/api/wallets/scadenze/aggiorna-ritardi`          | POST   | Job: aggiorna giorni ritardo tutte le scadenze  |
 
 ### 5. Logica Calcolo Mora e Interessi
 
 ```javascript
 // Calcolo mora e interessi
 function calcolaMoraInteressi(scadenza) {
-    const oggi = new Date();
-    const dataScadenza = new Date(scadenza.data_scadenza);
-    
-    if (oggi <= dataScadenza || scadenza.stato === 'PAGATO') {
-        return { mora: 0, interessi: 0, giorni_ritardo: 0 };
-    }
-    
-    const giorniRitardo = Math.floor((oggi - dataScadenza) / (1000 * 60 * 60 * 24));
-    const importoResiduo = scadenza.importo_dovuto - scadenza.importo_pagato;
-    
-    // Mora: percentuale fissa (default 5%)
-    const mora = importoResiduo * scadenza.tasso_mora;
-    
-    // Interessi: tasso giornaliero * giorni ritardo
-    const interessi = importoResiduo * scadenza.tasso_interessi_giornaliero * giorniRitardo;
-    
-    return {
-        giorni_ritardo: giorniRitardo,
-        mora: Math.round(mora * 100) / 100,
-        interessi: Math.round(interessi * 100) / 100,
-        totale_dovuto: importoResiduo + mora + interessi
-    };
+  const oggi = new Date();
+  const dataScadenza = new Date(scadenza.data_scadenza);
+
+  if (oggi <= dataScadenza || scadenza.stato === "PAGATO") {
+    return { mora: 0, interessi: 0, giorni_ritardo: 0 };
+  }
+
+  const giorniRitardo = Math.floor(
+    (oggi - dataScadenza) / (1000 * 60 * 60 * 24)
+  );
+  const importoResiduo = scadenza.importo_dovuto - scadenza.importo_pagato;
+
+  // Mora: percentuale fissa (default 5%)
+  const mora = importoResiduo * scadenza.tasso_mora;
+
+  // Interessi: tasso giornaliero * giorni ritardo
+  const interessi =
+    importoResiduo * scadenza.tasso_interessi_giornaliero * giorniRitardo;
+
+  return {
+    giorni_ritardo: giorniRitardo,
+    mora: Math.round(mora * 100) / 100,
+    interessi: Math.round(interessi * 100) / 100,
+    totale_dovuto: importoResiduo + mora + interessi,
+  };
 }
 ```
 
@@ -4373,19 +4587,21 @@ Il tab "Storico Wallet" si aggiunge ai tab esistenti in WalletPanel.tsx:
 #### 6.2 Contenuto Tab Storico Wallet
 
 **Sezione 1: Filtri**
+
 - Cerca per Impresa (autocomplete)
 - Tipo Evento (select: CREATO, ELIMINATO, TRASFERITO, etc.)
 - Range Date (da/a)
 
 **Sezione 2: Tabella Storico Eventi**
 
-| DATA | WALLET | IMPRESA | EVENTO | MOTIVO | SALDO | DETTAGLI |
-|------|--------|---------|--------|--------|-------|----------|
-| 14/01/2026 | #123 | Rossi S.r.l. | ELIMINATO | SUBINGRESSO | € 150.00 | Trasferito a #124 |
-| 13/01/2026 | #124 | Bianchi S.r.l. | CREATO | SUBINGRESSO | € 150.00 | Da wallet #123 |
-| 10/01/2026 | #120 | Verdi S.r.l. | ELIMINATO | CESSAZIONE | € 45.00 | Saldo residuo per rimborso |
+| DATA       | WALLET | IMPRESA        | EVENTO    | MOTIVO      | SALDO    | DETTAGLI                   |
+| ---------- | ------ | -------------- | --------- | ----------- | -------- | -------------------------- |
+| 14/01/2026 | #123   | Rossi S.r.l.   | ELIMINATO | SUBINGRESSO | € 150.00 | Trasferito a #124          |
+| 13/01/2026 | #124   | Bianchi S.r.l. | CREATO    | SUBINGRESSO | € 150.00 | Da wallet #123             |
+| 10/01/2026 | #120   | Verdi S.r.l.   | ELIMINATO | CESSAZIONE  | € 45.00  | Saldo residuo per rimborso |
 
 **Sezione 3: Dettaglio Wallet Selezionato (Collapsible)**
+
 - Cronologia saldi annuali (grafico o tabella)
 - Lista scadenze canone con stato
 - Calcolo mora in tempo reale
@@ -4433,49 +4649,49 @@ Nella card di ogni wallet (tab Wallet), aggiungere:
 
 ### 9. Job Automatici
 
-| Job | Frequenza | Descrizione |
-|-----|-----------|-------------|
-| `aggiorna-ritardi-scadenze` | Giornaliero 00:01 | Aggiorna giorni_ritardo per scadenze non pagate |
-| `snapshot-saldi-mensile` | 1° del mese | Crea snapshot saldi mensili |
-| `snapshot-saldi-annuale` | 1 Gennaio | Crea snapshot saldi annuali |
-| `notifica-scadenze` | Giornaliero 08:00 | Invia notifiche per scadenze imminenti (7gg, 3gg, 1gg) |
+| Job                         | Frequenza         | Descrizione                                            |
+| --------------------------- | ----------------- | ------------------------------------------------------ |
+| `aggiorna-ritardi-scadenze` | Giornaliero 00:01 | Aggiorna giorni_ritardo per scadenze non pagate        |
+| `snapshot-saldi-mensile`    | 1° del mese       | Crea snapshot saldi mensili                            |
+| `snapshot-saldi-annuale`    | 1 Gennaio         | Crea snapshot saldi annuali                            |
+| `notifica-scadenze`         | Giornaliero 08:00 | Invia notifiche per scadenze imminenti (7gg, 3gg, 1gg) |
 
 ### 10. File da Creare/Modificare
 
 #### 10.1 Backend (mihub-backend-rest)
 
-| File | Azione | Descrizione |
-|------|--------|-------------|
-| `migrations/023_create_wallet_history.sql` | Creare | Tabella storico wallet |
-| `migrations/024_create_wallet_balance_snapshots.sql` | Creare | Tabella snapshot saldi |
-| `migrations/025_create_wallet_scadenze.sql` | Creare | Tabella scadenze canone |
-| `routes/wallet-history.js` | Creare | API storico wallet |
-| `routes/wallet-scadenze.js` | Creare | API scadenze e more |
-| `services/moraService.js` | Creare | Logica calcolo mora/interessi |
-| `jobs/scadenzeJob.js` | Creare | Job aggiornamento ritardi |
+| File                                                 | Azione | Descrizione                   |
+| ---------------------------------------------------- | ------ | ----------------------------- |
+| `migrations/023_create_wallet_history.sql`           | Creare | Tabella storico wallet        |
+| `migrations/024_create_wallet_balance_snapshots.sql` | Creare | Tabella snapshot saldi        |
+| `migrations/025_create_wallet_scadenze.sql`          | Creare | Tabella scadenze canone       |
+| `routes/wallet-history.js`                           | Creare | API storico wallet            |
+| `routes/wallet-scadenze.js`                          | Creare | API scadenze e more           |
+| `services/moraService.js`                            | Creare | Logica calcolo mora/interessi |
+| `jobs/scadenzeJob.js`                                | Creare | Job aggiornamento ritardi     |
 
 #### 10.2 Frontend (dms-hub-app-new/client/src)
 
-| File | Azione | Descrizione |
-|------|--------|-------------|
-| `components/WalletPanel.tsx` | Modificare | Aggiungere tab Storico Wallet |
-| `components/wallet/StoricoWalletTab.tsx` | Creare | Contenuto tab storico |
-| `components/wallet/ScadenzeCanone.tsx` | Creare | Sezione scadenze in card wallet |
-| `components/wallet/WalletBalanceChart.tsx` | Creare | Grafico cronologia saldi |
+| File                                       | Azione     | Descrizione                     |
+| ------------------------------------------ | ---------- | ------------------------------- |
+| `components/WalletPanel.tsx`               | Modificare | Aggiungere tab Storico Wallet   |
+| `components/wallet/StoricoWalletTab.tsx`   | Creare     | Contenuto tab storico           |
+| `components/wallet/ScadenzeCanone.tsx`     | Creare     | Sezione scadenze in card wallet |
+| `components/wallet/WalletBalanceChart.tsx` | Creare     | Grafico cronologia saldi        |
 
 ### 11. Stima Tempi
 
-| Fase | Attività | Ore |
-|------|----------|-----|
-| 1 | Migrazioni database (3 tabelle) | 2 |
-| 2 | API storico wallet | 3 |
-| 3 | API scadenze e more | 4 |
-| 4 | Service calcolo mora | 2 |
-| 5 | Frontend tab Storico Wallet | 4 |
-| 6 | Frontend sezione scadenze | 3 |
-| 7 | Job automatici | 2 |
-| 8 | Test e deploy | 2 |
-| **Totale** | | **22 ore (~3 giorni)** |
+| Fase       | Attività                        | Ore                    |
+| ---------- | ------------------------------- | ---------------------- |
+| 1          | Migrazioni database (3 tabelle) | 2                      |
+| 2          | API storico wallet              | 3                      |
+| 3          | API scadenze e more             | 4                      |
+| 4          | Service calcolo mora            | 2                      |
+| 5          | Frontend tab Storico Wallet     | 4                      |
+| 6          | Frontend sezione scadenze       | 3                      |
+| 7          | Job automatici                  | 2                      |
+| 8          | Test e deploy                   | 2                      |
+| **Totale** |                                 | **22 ore (~3 giorni)** |
 
 ### 12. Integrazione con Flussi Esistenti
 
@@ -4485,28 +4701,42 @@ Prima di eliminare un wallet, registrare l'evento nello storico:
 
 ```javascript
 // In routes/wallets.js - DELETE /:id
-router.delete('/:id', async (req, res) => {
-    const { id } = req.params;
-    const { motivo, note } = req.body; // Opzionali
-    
-    // 1. Recupera wallet corrente
-    const wallet = await db.query('SELECT * FROM wallets WHERE id = $1', [id]);
-    
-    // 2. Registra evento storico
-    await db.query(`
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { motivo, note } = req.body; // Opzionali
+
+  // 1. Recupera wallet corrente
+  const wallet = await db.query("SELECT * FROM wallets WHERE id = $1", [id]);
+
+  // 2. Registra evento storico
+  await db.query(
+    `
         INSERT INTO wallet_history 
         (wallet_id, impresa_id, evento, motivo, saldo_al_momento, mercato_id, posteggio_id, note)
         VALUES ($1, $2, 'ELIMINATO', $3, $4, $5, $6, $7)
-    `, [id, wallet.company_id, motivo || 'MANUALE', wallet.balance, wallet.market_id, wallet.stall_id, note]);
-    
-    // 3. Se saldo > 0, marca per rimborso invece di eliminare
-    if (wallet.balance > 0) {
-        await db.query(`UPDATE wallets SET status = 'CHIUSO', note = 'Saldo residuo per rimborso' WHERE id = $1`, [id]);
-    } else {
-        await db.query('DELETE FROM wallets WHERE id = $1', [id]);
-    }
-    
-    res.json({ success: true });
+    `,
+    [
+      id,
+      wallet.company_id,
+      motivo || "MANUALE",
+      wallet.balance,
+      wallet.market_id,
+      wallet.stall_id,
+      note,
+    ]
+  );
+
+  // 3. Se saldo > 0, marca per rimborso invece di eliminare
+  if (wallet.balance > 0) {
+    await db.query(
+      `UPDATE wallets SET status = 'CHIUSO', note = 'Saldo residuo per rimborso' WHERE id = $1`,
+      [id]
+    );
+  } else {
+    await db.query("DELETE FROM wallets WHERE id = $1", [id]);
+  }
+
+  res.json({ success: true });
 });
 ```
 
@@ -4516,25 +4746,30 @@ Aggiungere registrazione storico durante trasferimento wallet:
 
 ```javascript
 // Durante subingresso
-if (tipo_concessione === 'subingresso') {
-    // Registra eliminazione wallet cedente
-    await db.query(`
+if (tipo_concessione === "subingresso") {
+  // Registra eliminazione wallet cedente
+  await db.query(
+    `
         INSERT INTO wallet_history 
         (wallet_id, impresa_id, evento, motivo, saldo_al_momento, saldo_trasferito_a, note)
         VALUES ($1, $2, 'ELIMINATO', 'SUBINGRESSO', $3, $4, 'Trasferito a subentrante')
-    `, [oldWalletId, cedenteImpresaId, saldoCedente, newWalletId]);
-    
-    // Registra creazione wallet subentrante
-    await db.query(`
+    `,
+    [oldWalletId, cedenteImpresaId, saldoCedente, newWalletId]
+  );
+
+  // Registra creazione wallet subentrante
+  await db.query(
+    `
         INSERT INTO wallet_history 
         (wallet_id, impresa_id, evento, motivo, saldo_al_momento, note)
         VALUES ($1, $2, 'CREATO', 'SUBINGRESSO', $3, 'Saldo trasferito da cedente')
-    `, [newWalletId, subentranteImpresaId, saldoCedente]);
+    `,
+    [newWalletId, subentranteImpresaId, saldoCedente]
+  );
 }
 ```
 
 ---
-
 
 ---
 
@@ -4543,6 +4778,7 @@ if (tipo_concessione === 'subingresso') {
 > **Stato:** IN SVILUPPO
 
 ### Obiettivo
+
 Implementare una lista di imprese per mercato con concessioni abbinate nel tab "Canone Unico", riutilizzando i badge esistenti dalla scheda imprese.
 
 ### Schema Collegamenti Database
@@ -4555,6 +4791,7 @@ wallets ──► concessions ──► stalls ──► markets
 ```
 
 **Relazioni Chiave:**
+
 - `wallets.concession_id` → `concessions.id`
 - `wallets.company_id` → `imprese.id`
 - `concessions.stall_id` → `stalls.id`
@@ -4563,53 +4800,55 @@ wallets ──► concessions ──► stalls ──► markets
 
 ### Componenti Riutilizzati
 
-| Componente | Origine | Uso nel Tab Canone |
-|------------|---------|-------------------|
-| Badge Blu Posteggio | Scheda Imprese | Concessione attiva |
-| Badge Rosso | Scheda Imprese | Concessione scaduta |
-| Badge Giallo Spunta | Scheda Imprese | Wallet spunta |
-| Saldo Wallet € | Scheda Imprese | Saldo corrente |
+| Componente          | Origine        | Uso nel Tab Canone  |
+| ------------------- | -------------- | ------------------- |
+| Badge Blu Posteggio | Scheda Imprese | Concessione attiva  |
+| Badge Rosso         | Scheda Imprese | Concessione scaduta |
+| Badge Giallo Spunta | Scheda Imprese | Wallet spunta       |
+| Saldo Wallet €      | Scheda Imprese | Saldo corrente      |
 
 ### API Endpoint
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `GET /api/canone-unico/imprese-concessioni` | GET | Lista imprese con concessioni per mercato |
+| Endpoint                                    | Metodo | Descrizione                               |
+| ------------------------------------------- | ------ | ----------------------------------------- |
+| `GET /api/canone-unico/imprese-concessioni` | GET    | Lista imprese con concessioni per mercato |
 
 **Parametri:**
+
 - `market_id` (required) - ID mercato
 - `search` (optional) - Cerca denominazione/P.IVA
 
 **Response:**
+
 ```json
 {
   "success": true,
   "mercato": { "id": 1, "name": "Mercato Grosseto" },
-  "data": [{
-    "impresa_id": 4,
-    "denominazione": "Alimentari Rossi",
-    "partita_iva": "04567890123",
-    "concessione_id": 39,
-    "posteggio_numero": "152",
-    "wallet_id": 66,
-    "wallet_balance": 1422.72,
-    "concessione_status": "ATTIVA",
-    "valid_to": "2026-03-31"
-  }]
+  "data": [
+    {
+      "impresa_id": 4,
+      "denominazione": "Alimentari Rossi",
+      "partita_iva": "04567890123",
+      "concessione_id": 39,
+      "posteggio_numero": "152",
+      "wallet_id": 66,
+      "wallet_balance": 1422.72,
+      "concessione_status": "ATTIVA",
+      "valid_to": "2026-03-31"
+    }
+  ]
 }
 ```
 
 ### Fasi Implementazione
 
-| Fase | Stato |
-|------|-------|
-| 1. Scrivi progetto Blueprint | ✅ |
-| 2. Crea endpoint API backend | ⏳ |
-| 3. Registra in Guardian | ⏳ |
-| 4. Implementa frontend | ⏳ |
-| 5. Deploy e test | ⏳ |
-
-
+| Fase                         | Stato |
+| ---------------------------- | ----- |
+| 1. Scrivi progetto Blueprint | ✅    |
+| 2. Crea endpoint API backend | ⏳    |
+| 3. Registra in Guardian      | ⏳    |
+| 4. Implementa frontend       | ⏳    |
+| 5. Deploy e test             | ⏳    |
 
 ---
 
@@ -4630,12 +4869,12 @@ Il **Tab Posteggi** nella Gestione Mercati è il centro operativo per la gestion
 
 ### 2. Componenti Principali
 
-| Componente | File | Descrizione |
-|------------|------|-------------|
-| **GestioneMercati** | `client/src/components/GestioneMercati.tsx` | Container principale con logica di stato |
-| **MarketMapComponent** | `client/src/components/MarketMapComponent.tsx` | Mappa Leaflet con posteggi e popup |
-| **PresenzeGraduatoriaPanel** | `client/src/components/PresenzeGraduatoriaPanel.tsx` | Lista presenze e graduatoria spuntisti |
-| **useMapAnimation** | `client/src/hooks/useMapAnimation.ts` | Hook per animazioni flyTo della mappa |
+| Componente                   | File                                                 | Descrizione                              |
+| ---------------------------- | ---------------------------------------------------- | ---------------------------------------- |
+| **GestioneMercati**          | `client/src/components/GestioneMercati.tsx`          | Container principale con logica di stato |
+| **MarketMapComponent**       | `client/src/components/MarketMapComponent.tsx`       | Mappa Leaflet con posteggi e popup       |
+| **PresenzeGraduatoriaPanel** | `client/src/components/PresenzeGraduatoriaPanel.tsx` | Lista presenze e graduatoria spuntisti   |
+| **useMapAnimation**          | `client/src/hooks/useMapAnimation.ts`                | Hook per animazioni flyTo della mappa    |
 
 ### 3. Vista Italia / Vista Mercato
 
@@ -4657,10 +4896,10 @@ const [viewTrigger, setViewTrigger] = useState(0);
 
 #### 3.2 Coordinate e Zoom
 
-| Vista | Center | Zoom | Descrizione |
-|-------|--------|------|-------------|
-| **Italia** | `[42.5, 12.5]` | 6 | Panoramica nazionale |
-| **Mercato** | `mapData.center` | Auto (bounds) | Pianta dettagliata |
+| Vista       | Center           | Zoom          | Descrizione          |
+| ----------- | ---------------- | ------------- | -------------------- |
+| **Italia**  | `[42.5, 12.5]`   | 6             | Panoramica nazionale |
+| **Mercato** | `mapData.center` | Auto (bounds) | Pianta dettagliata   |
 
 #### 3.3 Hook useMapAnimation
 
@@ -4692,12 +4931,12 @@ if (showItalyView && !isMarketView) {
 
 #### 4.1 Pulsanti Operativi
 
-| Pulsante | Colore | Funzione |
-|----------|--------|----------|
-| **Occupa** | Verde | Attiva modalità occupazione posteggi |
-| **Libera** | Blu | Attiva modalità liberazione posteggi |
+| Pulsante    | Colore    | Funzione                                    |
+| ----------- | --------- | ------------------------------------------- |
+| **Occupa**  | Verde     | Attiva modalità occupazione posteggi        |
+| **Libera**  | Blu       | Attiva modalità liberazione posteggi        |
 | **Prepara** | Arancione | Avvia animazione batch per preparare spunta |
-| **Spunta** | Verde | Conferma assegnazioni spunta |
+| **Spunta**  | Verde     | Conferma assegnazioni spunta                |
 
 #### 4.2 Funzione Prepara Spunta (v3.36.0 - 18/01/2026)
 
@@ -4712,18 +4951,18 @@ La funzione `handlePreparaSpunta` chiama l'endpoint backend `/api/test-mercato/a
 
 ```typescript
 const handlePreparaSpunta = async () => {
-  if (!window.confirm('Preparare la spunta per oggi?')) return;
-  
+  if (!window.confirm("Preparare la spunta per oggi?")) return;
+
   try {
     await fetch(`${API_BASE_URL}/api/test-mercato/avvia-spunta`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ marketId })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ marketId }),
     });
     await fetchData(); // Refresh dati
-    toast.success('Spunta preparata!');
+    toast.success("Spunta preparata!");
   } catch (error) {
-    toast.error('Errore nella preparazione spunta');
+    toast.error("Errore nella preparazione spunta");
   }
 };
 ```
@@ -4731,6 +4970,7 @@ const handlePreparaSpunta = async () => {
 #### 4.3 Funzione Assegna Posteggio Spunta (v3.36.0)
 
 Quando si clicca su un posteggio riservato in modalità spunta, il popup mostra:
+
 - Dimensioni posteggio (larghezza × lunghezza)
 - **Canone calcolato**: superficie × €/mq del mercato
 - Pulsante "Conferma Assegnazione"
@@ -4747,17 +4987,17 @@ Il click su "Conferma Assegnazione" chiama `/api/test-mercato/assegna-posteggio-
 ```typescript
 const handleConfirmAssignment = async (stallId: number) => {
   if (!isSpuntaMode) return;
-  
+
   try {
     await fetch(`${API_BASE_URL}/api/test-mercato/assegna-posteggio-spunta`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ marketId, stallId })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ marketId, stallId }),
     });
     await fetchData(); // Refresh dati
-    toast.success('Posteggio assegnato!');
+    toast.success("Posteggio assegnato!");
   } catch (error) {
-    toast.error('Errore nell\'assegnazione');
+    toast.error("Errore nell'assegnazione");
   }
 };
 ```
@@ -4788,14 +5028,14 @@ sequenceDiagram
     participant F as Frontend
     participant B as Backend
     participant DB as Database
-    
+
     O->>F: Click "Prepara Spunta"
     F->>B: POST /api/test-mercato/avvia-spunta
     B->>DB: UPDATE stalls SET status='riservato'
     B->>DB: INSERT vendor_presences (giorno, orario, stato='qualificato')
     B-->>F: OK
     F->>F: Refresh mappa (posteggi arancioni)
-    
+
     O->>F: Click posteggio riservato
     F->>F: Mostra popup con canone calcolato
     O->>F: Click "Conferma Assegnazione"
@@ -4806,7 +5046,7 @@ sequenceDiagram
     B-->>F: OK
     F->>F: Refresh mappa (posteggio rosso)
     F->>F: Mostra nome spuntista in giallo nella tabella
-    
+
     O->>F: Click "Chiudi Spunta"
     F->>B: POST /api/test-mercato/chiudi-spunta
     B->>DB: UPDATE vendor_presences SET orario_uscita=NOW()
@@ -4814,7 +5054,8 @@ sequenceDiagram
     B-->>F: OK
     F->>F: Refresh mappa (posteggi verdi)
 ```
-```
+
+````
 
 ### 5. Popup Posteggi
 
@@ -4847,7 +5088,7 @@ Il popup scuro mostra:
     Conferma Assegnazione
   </Button>
 )}
-```
+````
 
 ### 6. Sincronizzazione Real-Time
 
@@ -4866,12 +5107,12 @@ const handleStallUpdate = async () => {
 
 #### 6.2 Componenti che Reagiscono
 
-| Componente | Prop | Reazione |
-|------------|------|----------|
-| **MarketMapComponent** | `stalls` | Ricolora posteggi |
-| **Lista Posteggi** | `stalls` | Aggiorna badge stato |
-| **PresenzeGraduatoriaPanel** | `refreshTrigger` | Ricarica dati presenze |
-| **Contatori** | `stalls` | Ricalcola Occupati/Liberi/Riservati |
+| Componente                   | Prop             | Reazione                            |
+| ---------------------------- | ---------------- | ----------------------------------- |
+| **MarketMapComponent**       | `stalls`         | Ricolora posteggi                   |
+| **Lista Posteggi**           | `stalls`         | Aggiorna badge stato                |
+| **PresenzeGraduatoriaPanel** | `refreshTrigger` | Ricarica dati presenze              |
+| **Contatori**                | `stalls`         | Ricalcola Occupati/Liberi/Riservati |
 
 ### 7. Marker e Colori
 
@@ -4883,49 +5124,48 @@ const handleStallUpdate = async () => {
 
 #### 7.2 Colori Posteggi (Vista Mercato)
 
-| Stato | Colore | Hex |
-|-------|--------|-----|
-| `libero` | Verde | `#22c55e` |
-| `occupato` | Rosso | `#ef4444` |
+| Stato             | Colore    | Hex       |
+| ----------------- | --------- | --------- |
+| `libero`          | Verde     | `#22c55e` |
+| `occupato`        | Rosso     | `#ef4444` |
 | `in_assegnazione` | Arancione | `#f97316` |
-| `riservato` | Giallo | `#eab308` |
+| `riservato`       | Giallo    | `#eab308` |
 
 ### 8. File Principali
 
-| File | Righe | Descrizione |
-|------|-------|-------------|
-| `GestioneMercati.tsx` | ~2500 | Container principale, logica di stato, pulsanti |
-| `MarketMapComponent.tsx` | ~800 | Mappa Leaflet, posteggi, popup |
-| `PresenzeGraduatoriaPanel.tsx` | ~400 | Lista presenze, graduatoria |
-| `useMapAnimation.ts` | ~150 | Hook animazioni mappa |
+| File                           | Righe | Descrizione                                     |
+| ------------------------------ | ----- | ----------------------------------------------- |
+| `GestioneMercati.tsx`          | ~2500 | Container principale, logica di stato, pulsanti |
+| `MarketMapComponent.tsx`       | ~800  | Mappa Leaflet, posteggi, popup                  |
+| `PresenzeGraduatoriaPanel.tsx` | ~400  | Lista presenze, graduatoria                     |
+| `useMapAnimation.ts`           | ~150  | Hook animazioni mappa                           |
 
 ### 9. Commit di Riferimento
 
-| Commit | Descrizione |
-|--------|-------------|
+| Commit    | Descrizione                                                             |
+| --------- | ----------------------------------------------------------------------- |
 | `808a1ac` | Fix: rimuovo parseInt da stallsDataForMap - rompeva lookup colori mappa |
 | `c536330` | Fix: getStallColor gestisce sia numeri che stringhe per matching colori |
-| `32c2718` | Integrazione completa flusso spunta con wallet, presenze, nome giallo |
-| `df25584` | Fix: corretto endpoint popup presenze e campo importo speso |
-| `7c3a4a7` | Backend: Fix rimuovo updated_at da vendor_presences |
-| `4e2f4d3` | Backend: Integrazione flusso spunta con stato qualificato |
-| `47f5d09` | Backend: Aggiunto wallet_id nelle presenze spuntisti |
+| `32c2718` | Integrazione completa flusso spunta con wallet, presenze, nome giallo   |
+| `df25584` | Fix: corretto endpoint popup presenze e campo importo speso             |
+| `7c3a4a7` | Backend: Fix rimuovo updated_at da vendor_presences                     |
+| `4e2f4d3` | Backend: Integrazione flusso spunta con stato qualificato               |
+| `47f5d09` | Backend: Aggiunto wallet_id nelle presenze spuntisti                    |
 
 ### 10. Problemi Noti e Soluzioni
 
-| Problema | Causa | Soluzione |
-|----------|-------|-----------|
-| Posteggi tutti verdi sulla mappa | `parseInt` rompeva il lookup tra numeri GeoJSON e database | Usare `s.number` direttamente senza parseInt |
-| Stato "rinunciato" invece di "qualificato" | Query backend usava logica errata | Modificato CASE in query spuntisti/mercato |
-| Wallet non scalato | Endpoint assegna-posteggio non chiamava wallet | Aggiunto UPDATE wallets in assegna-posteggio-spunta |
-| Nome spuntista non in giallo | Campo spuntista_nome non salvato nel posteggio | Aggiunto spuntista_nome in UPDATE stalls |
-| Mappa non si sposta su Italia | `viewTrigger` non incrementato | Incrementare `viewTrigger` nel click |
-| Popup senza pulsanti azione | `activeMode` non passato | Verificare props in MarketMapComponent |
-| Lista presenze non si aggiorna | `refreshTrigger` non collegato | Passare `refreshTrigger` a PresenzeGraduatoriaPanel |
-| Animazione Prepara non parte | Filtro stato errato | Verificare `stalls.filter(s => s.status === 'libero')` |
+| Problema                                   | Causa                                                      | Soluzione                                              |
+| ------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------ |
+| Posteggi tutti verdi sulla mappa           | `parseInt` rompeva il lookup tra numeri GeoJSON e database | Usare `s.number` direttamente senza parseInt           |
+| Stato "rinunciato" invece di "qualificato" | Query backend usava logica errata                          | Modificato CASE in query spuntisti/mercato             |
+| Wallet non scalato                         | Endpoint assegna-posteggio non chiamava wallet             | Aggiunto UPDATE wallets in assegna-posteggio-spunta    |
+| Nome spuntista non in giallo               | Campo spuntista_nome non salvato nel posteggio             | Aggiunto spuntista_nome in UPDATE stalls               |
+| Mappa non si sposta su Italia              | `viewTrigger` non incrementato                             | Incrementare `viewTrigger` nel click                   |
+| Popup senza pulsanti azione                | `activeMode` non passato                                   | Verificare props in MarketMapComponent                 |
+| Lista presenze non si aggiorna             | `refreshTrigger` non collegato                             | Passare `refreshTrigger` a PresenzeGraduatoriaPanel    |
+| Animazione Prepara non parte               | Filtro stato errato                                        | Verificare `stalls.filter(s => s.status === 'libero')` |
 
 ---
-
 
 ## 💡 AGGIORNAMENTO 20 GENNAIO 2026 - INTEGRAZIONE INDICEPA E DASHBOARD COMUNI
 
@@ -4933,15 +5173,16 @@ const handleStallUpdate = async () => {
 
 #### 1.1 Funzionalità Implementate
 
-| Funzionalità | Endpoint | Descrizione |
-|---|---|---|
-| **Import Comuni da IPA** | `POST /api/ipa/import` | Importa comuni da IndicePA con dati arricchiti |
-| **Import Settori/UO da IPA** | `GET /api/ipa/uo/:codice_ipa` | Importa Unità Organizzative di un ente |
-| **Tipologie Enti IPA** | `GET /api/ipa/tipologie` | Lista tipologie enti (Comuni, Province, etc.) |
+| Funzionalità                 | Endpoint                      | Descrizione                                    |
+| ---------------------------- | ----------------------------- | ---------------------------------------------- |
+| **Import Comuni da IPA**     | `POST /api/ipa/import`        | Importa comuni da IndicePA con dati arricchiti |
+| **Import Settori/UO da IPA** | `GET /api/ipa/uo/:codice_ipa` | Importa Unità Organizzative di un ente         |
+| **Tipologie Enti IPA**       | `GET /api/ipa/tipologie`      | Lista tipologie enti (Comuni, Province, etc.)  |
 
 #### 1.2 Dati Importati da IPA
 
 **Per i Comuni:**
+
 - `codice_ipa` - Codice univoco IPA
 - `codice_istat` - Codice ISTAT
 - `codice_catastale` - Codice catastale
@@ -4950,6 +5191,7 @@ const handleStallUpdate = async () => {
 - `latitudine`, `longitudine` (da geocoding)
 
 **Per le Unità Organizzative (Settori):**
+
 - `codice_uni_uo` - Codice univoco UO
 - `tipo_settore` - Tipo mappato automaticamente
 - `nome_settore` - Descrizione UO
@@ -4958,21 +5200,21 @@ const handleStallUpdate = async () => {
 
 #### 1.3 Mapping Automatico Tipi Settore
 
-| Parola chiave in Descrizione_uo | tipo_settore |
-|---|---|
-| SUAP, Attività Produttive | SUAP |
-| Commercio | COMMERCIO |
-| Tributi | TRIBUTI |
-| Polizia, Vigili | POLIZIA_LOCALE |
-| Anagrafe, Demografici | ANAGRAFE |
-| Urbanistica, Edilizia | URBANISTICA |
-| Ambiente | AMBIENTE |
-| Sociale, Servizi Sociali | SERVIZI_SOCIALI |
-| Ragioneria, Bilancio | RAGIONERIA |
-| Personale, Risorse Umane | PERSONALE |
-| Segreteria | SEGRETERIA |
-| Tecnico, Lavori Pubblici | TECNICO |
-| (altro) | ALTRO |
+| Parola chiave in Descrizione_uo | tipo_settore    |
+| ------------------------------- | --------------- |
+| SUAP, Attività Produttive       | SUAP            |
+| Commercio                       | COMMERCIO       |
+| Tributi                         | TRIBUTI         |
+| Polizia, Vigili                 | POLIZIA_LOCALE  |
+| Anagrafe, Demografici           | ANAGRAFE        |
+| Urbanistica, Edilizia           | URBANISTICA     |
+| Ambiente                        | AMBIENTE        |
+| Sociale, Servizi Sociali        | SERVIZI_SOCIALI |
+| Ragioneria, Bilancio            | RAGIONERIA      |
+| Personale, Risorse Umane        | PERSONALE       |
+| Segreteria                      | SEGRETERIA      |
+| Tecnico, Lavori Pubblici        | TECNICO         |
+| (altro)                         | ALTRO           |
 
 ---
 
@@ -4980,13 +5222,13 @@ const handleStallUpdate = async () => {
 
 #### 2.1 Struttura Tab
 
-| Tab | Contenuto | Stato |
-|---|---|---|
-| **Anagrafica** | Dati base + dati IPA (PEC, CAP, ISTAT, Catastale) | ✅ Implementato |
-| **Settori** | Gestione UO + Import da IPA | ✅ Implementato |
-| **Mercati** | Lista mercati del comune | 🔶 Placeholder |
-| **Fatturazione** | Contratti e fatture MIO-HUB | 🔶 Placeholder |
-| **Permessi** | Ruoli e accessi per il comune | 🔶 Placeholder |
+| Tab              | Contenuto                                         | Stato           |
+| ---------------- | ------------------------------------------------- | --------------- |
+| **Anagrafica**   | Dati base + dati IPA (PEC, CAP, ISTAT, Catastale) | ✅ Implementato |
+| **Settori**      | Gestione UO + Import da IPA                       | ✅ Implementato |
+| **Mercati**      | Lista mercati del comune                          | 🔶 Placeholder  |
+| **Fatturazione** | Contratti e fatture MIO-HUB                       | 🔶 Placeholder  |
+| **Permessi**     | Ruoli e accessi per il comune                     | 🔶 Placeholder  |
 
 #### 2.2 Layout Migliorato
 
@@ -5004,45 +5246,45 @@ const handleStallUpdate = async () => {
 
 #### 3.1 Tabella comuni (16 colonne)
 
-| Colonna | Tipo | Descrizione | Fonte IPA |
-|---|---|---|---|
-| id | integer | ID auto-incrementale | - |
-| nome | varchar(100) | Nome del comune | Denominazione_ente |
-| provincia | varchar(2) | Sigla provincia | Provincia |
-| regione | varchar(50) | Nome regione | Regione |
-| cap | varchar(5) | Codice postale | Cap |
-| codice_istat | varchar(10) | Codice ISTAT | Codice_comune_ISTAT |
-| codice_catastale | varchar(4) | Codice catastale | Codice_catastale_comune |
-| codice_ipa | varchar(20) | Codice IPA univoco | Codice_IPA |
-| pec | varchar(255) | PEC istituzionale | Mail1 (tipo PEC) |
-| email | varchar(255) | Email istituzionale | Mail1 |
-| telefono | varchar(20) | Telefono centralino | Telefono |
-| sito_web | varchar(255) | Sito web ufficiale | Sito_istituzionale |
-| indirizzo | varchar(255) | Indirizzo sede | Indirizzo |
-| latitudine | numeric | Latitudine GPS | (da geocoding) |
-| longitudine | numeric | Longitudine GPS | (da geocoding) |
-| created_at | timestamp | Data creazione | - |
-| updated_at | timestamp | Data aggiornamento | - |
+| Colonna          | Tipo         | Descrizione          | Fonte IPA               |
+| ---------------- | ------------ | -------------------- | ----------------------- |
+| id               | integer      | ID auto-incrementale | -                       |
+| nome             | varchar(100) | Nome del comune      | Denominazione_ente      |
+| provincia        | varchar(2)   | Sigla provincia      | Provincia               |
+| regione          | varchar(50)  | Nome regione         | Regione                 |
+| cap              | varchar(5)   | Codice postale       | Cap                     |
+| codice_istat     | varchar(10)  | Codice ISTAT         | Codice_comune_ISTAT     |
+| codice_catastale | varchar(4)   | Codice catastale     | Codice_catastale_comune |
+| codice_ipa       | varchar(20)  | Codice IPA univoco   | Codice_IPA              |
+| pec              | varchar(255) | PEC istituzionale    | Mail1 (tipo PEC)        |
+| email            | varchar(255) | Email istituzionale  | Mail1                   |
+| telefono         | varchar(20)  | Telefono centralino  | Telefono                |
+| sito_web         | varchar(255) | Sito web ufficiale   | Sito_istituzionale      |
+| indirizzo        | varchar(255) | Indirizzo sede       | Indirizzo               |
+| latitudine       | numeric      | Latitudine GPS       | (da geocoding)          |
+| longitudine      | numeric      | Longitudine GPS      | (da geocoding)          |
+| created_at       | timestamp    | Data creazione       | -                       |
+| updated_at       | timestamp    | Data aggiornamento   | -                       |
 
 #### 3.2 Tabella settori_comune (15 colonne)
 
-| Colonna | Tipo | Descrizione | Fonte IPA (UO) |
-|---|---|---|---|
-| id | integer | ID auto-incrementale | - |
-| comune_id | integer | FK a comuni.id | - |
-| tipo_settore | varchar(50) | Tipo settore | Mappato da Descrizione_uo |
-| nome_settore | varchar(100) | Nome completo settore | Descrizione_uo |
-| codice_uni_uo | varchar(20) | Codice univoco UO | Codice_uni_uo |
-| responsabile_nome | varchar(100) | Nome responsabile | Nome_responsabile |
-| responsabile_cognome | varchar(100) | Cognome responsabile | Cognome_responsabile |
-| email | varchar(255) | Email settore | Mail1 |
-| pec | varchar(255) | PEC settore | Mail1 (tipo PEC) |
-| telefono | varchar(20) | Telefono settore | Telefono |
-| indirizzo | varchar(255) | Indirizzo settore | Indirizzo |
-| orari_apertura | text | Orari di apertura | - |
-| note | text | Note aggiuntive | - |
-| created_at | timestamp | Data creazione | - |
-| updated_at | timestamp | Data aggiornamento | - |
+| Colonna              | Tipo         | Descrizione           | Fonte IPA (UO)            |
+| -------------------- | ------------ | --------------------- | ------------------------- |
+| id                   | integer      | ID auto-incrementale  | -                         |
+| comune_id            | integer      | FK a comuni.id        | -                         |
+| tipo_settore         | varchar(50)  | Tipo settore          | Mappato da Descrizione_uo |
+| nome_settore         | varchar(100) | Nome completo settore | Descrizione_uo            |
+| codice_uni_uo        | varchar(20)  | Codice univoco UO     | Codice_uni_uo             |
+| responsabile_nome    | varchar(100) | Nome responsabile     | Nome_responsabile         |
+| responsabile_cognome | varchar(100) | Cognome responsabile  | Cognome_responsabile      |
+| email                | varchar(255) | Email settore         | Mail1                     |
+| pec                  | varchar(255) | PEC settore           | Mail1 (tipo PEC)          |
+| telefono             | varchar(20)  | Telefono settore      | Telefono                  |
+| indirizzo            | varchar(255) | Indirizzo settore     | Indirizzo                 |
+| orari_apertura       | text         | Orari di apertura     | -                         |
+| note                 | text         | Note aggiuntive       | -                         |
+| created_at           | timestamp    | Data creazione        | -                         |
+| updated_at           | timestamp    | Data aggiornamento    | -                         |
 
 ---
 
@@ -5055,6 +5297,7 @@ const handleStallUpdate = async () => {
 **Endpoint**: GET /api/comuni/:id/mercati (con area totale calcolata dai posteggi)
 
 **Funzionalità**:
+
 - Lista mercati del comune con stato (attivo/inattivo)
 - **Area Totale** calcolata dalla somma dei posteggi (width × depth)
 - Numero posteggi reali (stalls_count)
@@ -5068,6 +5311,7 @@ const handleStallUpdate = async () => {
 **Endpoint**: GET /api/comuni/:id/hub (con negozi e area totale)
 
 **Funzionalità**:
+
 - Lista HUB del comune con stato (attivo/inattivo)
 - **Area Totale** dell'HUB in mq
 - Numero negozi con lista dettagliata
@@ -5127,20 +5371,20 @@ const handleStallUpdate = async () => {
 
 **Endpoint implementati** ✅:
 
-| Endpoint | Metodo | Descrizione |
-|---|---|---|
-| `/api/comuni/:id/contratti` | GET | Lista contratti del comune |
-| `/api/comuni/:id/contratti` | POST | Crea nuovo contratto |
-| `/api/comuni/contratti/:id` | PUT | Aggiorna contratto |
-| `/api/comuni/contratti/:id` | DELETE | Elimina contratto |
-| `/api/comuni/:id/fatture` | GET | Lista fatture del comune |
-| `/api/comuni/:id/fatture` | POST | Crea nuova fattura |
-| `/api/comuni/fatture/:id` | PUT | Aggiorna stato fattura |
-| `/api/comuni/:id/utenti` | GET | Lista utenti assegnati al comune |
-| `/api/comuni/:id/utenti` | POST | Assegna utente con ruolo |
-| `/api/comuni/utenti/:id` | PUT | Aggiorna ruolo/permessi utente |
-| `/api/comuni/utenti/:id` | DELETE | Rimuove utente dal comune |
-| `/api/comuni/:id/utenti/stats` | GET | Statistiche utenti per ruolo |
+| Endpoint                       | Metodo | Descrizione                      |
+| ------------------------------ | ------ | -------------------------------- |
+| `/api/comuni/:id/contratti`    | GET    | Lista contratti del comune       |
+| `/api/comuni/:id/contratti`    | POST   | Crea nuovo contratto             |
+| `/api/comuni/contratti/:id`    | PUT    | Aggiorna contratto               |
+| `/api/comuni/contratti/:id`    | DELETE | Elimina contratto                |
+| `/api/comuni/:id/fatture`      | GET    | Lista fatture del comune         |
+| `/api/comuni/:id/fatture`      | POST   | Crea nuova fattura               |
+| `/api/comuni/fatture/:id`      | PUT    | Aggiorna stato fattura           |
+| `/api/comuni/:id/utenti`       | GET    | Lista utenti assegnati al comune |
+| `/api/comuni/:id/utenti`       | POST   | Assegna utente con ruolo         |
+| `/api/comuni/utenti/:id`       | PUT    | Aggiorna ruolo/permessi utente   |
+| `/api/comuni/utenti/:id`       | DELETE | Rimuove utente dal comune        |
+| `/api/comuni/:id/utenti/stats` | GET    | Statistiche utenti per ruolo     |
 
 #### 4.3 Tab Permessi
 
@@ -5155,6 +5399,7 @@ const handleStallUpdate = async () => {
 | operatore | Operatore Generico | Accesso base in sola lettura |
 
 **Funzionalità Frontend**:
+
 - Riepilogo visivo per ruolo con conteggio utenti
 - Lista utenti assegnati con nome/email
 - Dropdown per cambiare ruolo al volo
@@ -5173,17 +5418,16 @@ const handleStallUpdate = async () => {
 
 ### 6. File Modificati
 
-| File | Righe | Modifiche |
-|---|---|---|
-| ComuniPanel.tsx | ~2300 | Dashboard 5 tab complete, import IPA, fatturazione, permessi |
-| routes/comuni.js | ~620 | Endpoint CRUD completi per tutte le entità |
-| routes/integrations.js | ~650 | Guardian con 24 endpoint Comuni PA |
-| routes/ipa.js | ~150 | Endpoint UO e tipologie |
+| File                   | Righe | Modifiche                                                    |
+| ---------------------- | ----- | ------------------------------------------------------------ |
+| ComuniPanel.tsx        | ~2300 | Dashboard 5 tab complete, import IPA, fatturazione, permessi |
+| routes/comuni.js       | ~620  | Endpoint CRUD completi per tutte le entità                   |
+| routes/integrations.js | ~650  | Guardian con 24 endpoint Comuni PA                           |
+| routes/ipa.js          | ~150  | Endpoint UO e tipologie                                      |
 
 ---
 
-*Aggiornamento del 20 Gennaio 2026 - Manus AI*
-
+_Aggiornamento del 20 Gennaio 2026 - Manus AI_
 
 ---
 
@@ -5191,11 +5435,11 @@ const handleStallUpdate = async () => {
 
 ### 1. Riepilogo Fix Implementati
 
-| Fix | File | Repository | Descrizione |
-|-----|------|------------|-------------|
-| P17 | `routes/hub.js` | mihub-backend-rest | Aggiunto `areaSqm` nel PUT per aggiornare area in mq |
-| P18 | `slot_editor_v3_unified.html` | mihub-backend-rest | Dialog selezione ID HUB manuale prima del salvataggio |
-| P20 | `useMapAnimation.ts` | dms-hub-app-new | Corner area a filo schermo - rimosso padding e margine |
+| Fix | File                          | Repository         | Descrizione                                            |
+| --- | ----------------------------- | ------------------ | ------------------------------------------------------ |
+| P17 | `routes/hub.js`               | mihub-backend-rest | Aggiunto `areaSqm` nel PUT per aggiornare area in mq   |
+| P18 | `slot_editor_v3_unified.html` | mihub-backend-rest | Dialog selezione ID HUB manuale prima del salvataggio  |
+| P20 | `useMapAnimation.ts`          | dms-hub-app-new    | Corner area a filo schermo - rimosso padding e margine |
 
 ---
 
@@ -5208,9 +5452,13 @@ const handleStallUpdate = async () => {
 **Posizione:** Riga 340 (dentro il blocco PUT `/api/hub/locations/:id`)
 
 **Modifica:**
+
 ```javascript
 // P17 FIX: Aggiunto areaSqm nel PUT
-if (areaSqm !== undefined) { updates.push(`area_sqm = $${paramCount++}`); values.push(areaSqm); }
+if (areaSqm !== undefined) {
+  updates.push(`area_sqm = $${paramCount++}`);
+  values.push(areaSqm);
+}
 ```
 
 **Commit:** `6b24d70` - "fix: add areaSqm update in PUT /api/hub/locations/:id - P17 FIX"
@@ -5228,26 +5476,31 @@ if (areaSqm !== undefined) { updates.push(`area_sqm = $${paramCount++}`); values
 **Posizione:** Righe 4524-4576 (blocco P7b FIX sostituito)
 
 **Funzionalità Implementate:**
+
 1. Cerca automaticamente HUB con stesso nome nel database
 2. Mostra lista di TUTTI gli HUB della stessa città con i loro ID
 3. Permette di inserire manualmente l'ID dell'HUB esistente
 4. Se lasci vuoto, crea un nuovo HUB
 
 **Codice Chiave:**
+
 ```javascript
 // ========== P18 FIX: Logica UPSERT con selezione ID manuale ==========
 // Cerca HUB della stessa città per suggerire
-const hubsInCity = hubsList.filter(h => h.city && h.city.toLowerCase() === exportData.city.toLowerCase());
-let suggestedIds = hubsInCity.map(h => `ID ${h.id}: ${h.name}`).join('\n');
+const hubsInCity = hubsList.filter(
+  h => h.city && h.city.toLowerCase() === exportData.city.toLowerCase()
+);
+let suggestedIds = hubsInCity.map(h => `ID ${h.id}: ${h.name}`).join("\n");
 
-const idMessage = existingHubId 
+const idMessage = existingHubId
   ? `🔍 HUB trovato con stesso nome!\n\nID: ${existingHubId}\nNome: ${exportData.name}\n\n✏️ Inserisci ID per AGGIORNARE un HUB esistente\n(lascia vuoto per CREARE nuovo)\n\n📋 HUB nella città "${exportData.city}":\n${suggestedIds}`
   : `⚠️ Nessun HUB trovato con nome "${exportData.name}"\n\n✏️ Inserisci ID per AGGIORNARE un HUB esistente\n(lascia vuoto per CREARE nuovo)\n\n📋 HUB nella città "${exportData.city}":\n${suggestedIds}`;
 
-const userInputId = prompt(idMessage, existingHubId || '');
+const userInputId = prompt(idMessage, existingHubId || "");
 ```
 
 **Come Usare:**
+
 1. Apri Slot Editor V3: `https://api.mio-hub.me/tools/slot_editor_v3_unified.html`
 2. Disegna Area HUB (poligono viola)
 3. Aggiungi Negozi se necessario
@@ -5268,6 +5521,7 @@ const userInputId = prompt(idMessage, existingHubId || '');
 **Posizione:** Righe 34-41
 
 **Prima (non funzionante):**
+
 ```javascript
 const rawZoom = map.getBoundsZoom(latLngBounds, false, [50, 50]); // padding 50px
 const roundedToQuarter = Math.round(rawZoom * 4) / 4;
@@ -5275,6 +5529,7 @@ const forcedZoom = Math.min(roundedToQuarter - 0.5, 19); // margine -0.5
 ```
 
 **Dopo (P20 FIX - corner a filo):**
+
 ```javascript
 // P20 FIX: Corner a filo schermo
 // Calcola lo zoom ottimale per i bounds SENZA padding
@@ -5289,6 +5544,7 @@ const forcedZoom = Math.min(roundedToQuarter, 19); // RIMOSSO margine
 **Commit:** `d0c8986` - "fix: P20 corner area a filo schermo - rimosso padding e margine"
 
 **Note Tecniche:**
+
 - La mappa ha `zoomSnap: 0.25`, quindi gli scatti sono a quarti di livello (17.00, 17.25, 17.50, 17.75, 18.00...)
 - `getBoundsZoom` calcola automaticamente lo zoom in base alla dimensione dell'area
 - Rimuovendo padding e margine, i corner arrivano esattamente ai bordi dello schermo
@@ -5350,20 +5606,20 @@ const forcedZoom = Math.min(roundedToQuarter, 19); // RIMOSSO margine
 
 ### 6. Commit 30 Gennaio 2026
 
-| Repository | Commit | Descrizione |
-|------------|--------|-------------|
+| Repository         | Commit    | Descrizione                                 |
+| ------------------ | --------- | ------------------------------------------- |
 | mihub-backend-rest | `6b24d70` | P17: areaSqm nel PUT /api/hub/locations/:id |
-| dms-hub-app-new | `d0c8986` | P20: corner area a filo schermo |
+| dms-hub-app-new    | `d0c8986` | P20: corner area a filo schermo             |
 
 ---
 
 ### 7. File Modificati
 
-| File | Repository | Righe | Modifiche |
-|------|------------|-------|-----------|
-| routes/hub.js | mihub-backend-rest | 340 | +1 riga per areaSqm nel PUT |
+| File                        | Repository         | Righe     | Modifiche                       |
+| --------------------------- | ------------------ | --------- | ------------------------------- |
+| routes/hub.js               | mihub-backend-rest | 340       | +1 riga per areaSqm nel PUT     |
 | slot_editor_v3_unified.html | mihub-backend-rest | 4524-4576 | Dialog selezione ID HUB manuale |
-| useMapAnimation.ts | dms-hub-app-new | 34-41 | Rimosso padding e margine zoom |
+| useMapAnimation.ts          | dms-hub-app-new    | 34-41     | Rimosso padding e margine zoom  |
 
 ---
 
@@ -5380,8 +5636,7 @@ const forcedZoom = Math.min(roundedToQuarter, 19); // RIMOSSO margine
 
 ---
 
-*Aggiornamento del 30 Gennaio 2026 - Manus AI*
-
+_Aggiornamento del 30 Gennaio 2026 - Manus AI_
 
 ---
 
@@ -5396,6 +5651,7 @@ const forcedZoom = Math.min(roundedToQuarter, 19); // RIMOSSO margine
 ### 1. OBIETTIVO
 
 Rendere **Route Etico** e **Centro Mobilità** pienamente funzionali e integrati con:
+
 - Sistema **TCC (Token Carbon Credit)** per accredito automatico crediti
 - Tracking **CO2 risparmiata** per mobilità sostenibile
 - Dati **TPL reali** (fermate, orari tempo reale)
@@ -5407,27 +5663,27 @@ Rendere **Route Etico** e **Centro Mobilità** pienamente funzionali e integrati
 
 #### 2.1 Route Etico ✅ Parzialmente Funzionante
 
-| Funzionalità | Stato | Note |
-|--------------|-------|------|
-| Calcolo percorso (ORS) | ✅ | OpenRouteService integrato |
-| Modalità trasporto | ✅ | walking, cycling, bus, driving |
-| Calcolo CO2 risparmiata | ✅ | Formula implementata |
-| Calcolo crediti | ✅ | Formula implementata |
-| Deep link da negozi | ✅ | Coordinate GPS passate |
-| **Accredito TCC Wallet** | ❌ | **NON IMPLEMENTATO** |
-| **Verifica completamento** | ❌ | **NON IMPLEMENTATO** |
-| **Storico percorsi** | ❌ | **NON IMPLEMENTATO** |
+| Funzionalità               | Stato | Note                           |
+| -------------------------- | ----- | ------------------------------ |
+| Calcolo percorso (ORS)     | ✅    | OpenRouteService integrato     |
+| Modalità trasporto         | ✅    | walking, cycling, bus, driving |
+| Calcolo CO2 risparmiata    | ✅    | Formula implementata           |
+| Calcolo crediti            | ✅    | Formula implementata           |
+| Deep link da negozi        | ✅    | Coordinate GPS passate         |
+| **Accredito TCC Wallet**   | ❌    | **NON IMPLEMENTATO**           |
+| **Verifica completamento** | ❌    | **NON IMPLEMENTATO**           |
+| **Storico percorsi**       | ❌    | **NON IMPLEMENTATO**           |
 
 #### 2.2 Centro Mobilità ⚠️ Dati Mock
 
-| Funzionalità | Stato | Note |
-|--------------|-------|------|
-| Tab Dashboard PA | ✅ | Visibile e navigabile |
-| MobilityMap | ✅ | Componente funzionante |
-| Statistiche | ⚠️ | Dati mock hardcoded |
-| Fermate TPL | ⚠️ | Mock data (2 fermate) |
-| Orari tempo reale | ❌ | Non implementato |
-| Database fermate | ❌ | Tabella non esiste |
+| Funzionalità      | Stato | Note                   |
+| ----------------- | ----- | ---------------------- |
+| Tab Dashboard PA  | ✅    | Visibile e navigabile  |
+| MobilityMap       | ✅    | Componente funzionante |
+| Statistiche       | ⚠️    | Dati mock hardcoded    |
+| Fermate TPL       | ⚠️    | Mock data (2 fermate)  |
+| Orari tempo reale | ❌    | Non implementato       |
+| Database fermate  | ❌    | Tabella non esiste     |
 
 ---
 
@@ -5487,36 +5743,36 @@ Rendere **Route Etico** e **Centro Mobilità** pienamente funzionali e integrati
 
 #### FASE 1 - Collegamento TCC Wallet (Priorità 🔴 ALTA)
 
-| # | Task | Stima | File | Stato |
-|---|------|-------|------|-------|
-| 1.1 | Creare endpoint `POST /api/tcc/route-credit` | 2h | routes/tcc.js | ⬜ |
-| 1.2 | Creare tabella `route_completions` | 1h | schema.sql | ⬜ |
-| 1.3 | Implementare verifica geofence completamento | 3h | services/routingService.js | ⬜ |
-| 1.4 | Collegare RoutePage a TCC wallet | 2h | RoutePage.tsx | ⬜ |
-| 1.5 | Aggiungere notifica accredito | 1h | RoutePage.tsx | ⬜ |
+| #   | Task                                         | Stima | File                       | Stato |
+| --- | -------------------------------------------- | ----- | -------------------------- | ----- |
+| 1.1 | Creare endpoint `POST /api/tcc/route-credit` | 2h    | routes/tcc.js              | ⬜    |
+| 1.2 | Creare tabella `route_completions`           | 1h    | schema.sql                 | ⬜    |
+| 1.3 | Implementare verifica geofence completamento | 3h    | services/routingService.js | ⬜    |
+| 1.4 | Collegare RoutePage a TCC wallet             | 2h    | RoutePage.tsx              | ⬜    |
+| 1.5 | Aggiungere notifica accredito                | 1h    | RoutePage.tsx              | ⬜    |
 
 **Totale Fase 1:** 9 ore
 
 #### FASE 2 - Centro Mobilità Reale (Priorità 🟡 MEDIA)
 
-| # | Task | Stima | File | Stato |
-|---|------|-------|------|-------|
-| 2.1 | Creare tabella `tpl_stops` | 1h | schema.sql | ⬜ |
-| 2.2 | Importare dati GTFS Emilia-Romagna | 4h | scripts/import-gtfs.js | ⬜ |
-| 2.3 | Creare API `/api/mobility/stops` | 2h | routes/mobility.js | ⬜ |
-| 2.4 | Integrare feed GTFS-RT per orari | 4h | services/gtfsService.js | ⬜ |
-| 2.5 | Aggiornare MobilityMap con dati reali | 2h | MobilityMap.tsx | ⬜ |
+| #   | Task                                  | Stima | File                    | Stato |
+| --- | ------------------------------------- | ----- | ----------------------- | ----- |
+| 2.1 | Creare tabella `tpl_stops`            | 1h    | schema.sql              | ⬜    |
+| 2.2 | Importare dati GTFS Emilia-Romagna    | 4h    | scripts/import-gtfs.js  | ⬜    |
+| 2.3 | Creare API `/api/mobility/stops`      | 2h    | routes/mobility.js      | ⬜    |
+| 2.4 | Integrare feed GTFS-RT per orari      | 4h    | services/gtfsService.js | ⬜    |
+| 2.5 | Aggiornare MobilityMap con dati reali | 2h    | MobilityMap.tsx         | ⬜    |
 
 **Totale Fase 2:** 13 ore
 
 #### FASE 3 - Gamification (Priorità 🟢 BASSA)
 
-| # | Task | Stima | File | Stato |
-|---|------|-------|------|-------|
-| 3.1 | Creare tabella `achievements` | 1h | schema.sql | ⬜ |
-| 3.2 | Implementare badge per km percorsi | 2h | services/achievementService.js | ⬜ |
-| 3.3 | Creare leaderboard CO2 risparmiata | 2h | routes/leaderboard.js | ⬜ |
-| 3.4 | UI badge e progressi | 3h | components/Achievements.tsx | ⬜ |
+| #   | Task                               | Stima | File                           | Stato |
+| --- | ---------------------------------- | ----- | ------------------------------ | ----- |
+| 3.1 | Creare tabella `achievements`      | 1h    | schema.sql                     | ⬜    |
+| 3.2 | Implementare badge per km percorsi | 2h    | services/achievementService.js | ⬜    |
+| 3.3 | Creare leaderboard CO2 risparmiata | 2h    | routes/leaderboard.js          | ⬜    |
+| 3.4 | UI badge e progressi               | 3h    | components/Achievements.tsx    | ⬜    |
 
 **Totale Fase 3:** 8 ore
 
@@ -5590,28 +5846,28 @@ CREATE INDEX idx_tpl_stops_city ON tpl_stops(city);
 
 #### Route Etico - Completamento (FASE 1)
 
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| POST | `/api/routing/start-tracking` | Inizia tracking percorso |
-| POST | `/api/routing/complete` | Verifica e completa percorso |
-| GET | `/api/routing/history` | Storico percorsi utente |
+| Metodo | Endpoint                      | Descrizione                  |
+| ------ | ----------------------------- | ---------------------------- |
+| POST   | `/api/routing/start-tracking` | Inizia tracking percorso     |
+| POST   | `/api/routing/complete`       | Verifica e completa percorso |
+| GET    | `/api/routing/history`        | Storico percorsi utente      |
 
 #### Centro Mobilità (FASE 2)
 
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| GET | `/api/mobility/stops` | Lista fermate (con filtri) |
-| GET | `/api/mobility/stops/:id` | Dettaglio fermata |
-| GET | `/api/mobility/stops/nearby` | Fermate vicine a coordinate |
-| GET | `/api/mobility/realtime/:stopId` | Orari tempo reale |
+| Metodo | Endpoint                         | Descrizione                 |
+| ------ | -------------------------------- | --------------------------- |
+| GET    | `/api/mobility/stops`            | Lista fermate (con filtri)  |
+| GET    | `/api/mobility/stops/:id`        | Dettaglio fermata           |
+| GET    | `/api/mobility/stops/nearby`     | Fermate vicine a coordinate |
+| GET    | `/api/mobility/realtime/:stopId` | Orari tempo reale           |
 
 #### Gamification (FASE 3)
 
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| GET | `/api/achievements` | Lista achievement utente |
-| GET | `/api/leaderboard/co2` | Classifica CO2 risparmiata |
-| GET | `/api/leaderboard/credits` | Classifica crediti guadagnati |
+| Metodo | Endpoint                   | Descrizione                   |
+| ------ | -------------------------- | ----------------------------- |
+| GET    | `/api/achievements`        | Lista achievement utente      |
+| GET    | `/api/leaderboard/co2`     | Classifica CO2 risparmiata    |
+| GET    | `/api/leaderboard/credits` | Classifica crediti guadagnati |
 
 ---
 
@@ -5620,18 +5876,18 @@ CREATE INDEX idx_tpl_stops_city ON tpl_stops(city);
 ```javascript
 // Emissioni CO2 per km
 const emissionFactors = {
-  walking: 0,      // 0 g/km
-  cycling: 0,      // 0 g/km
-  bus: 68,         // 68 g/km
-  driving: 192     // 192 g/km (auto benzina)
+  walking: 0, // 0 g/km
+  cycling: 0, // 0 g/km
+  bus: 68, // 68 g/km
+  driving: 192, // 192 g/km (auto benzina)
 };
 
 // Crediti per km
 const creditFactors = {
-  walking: 10,     // 10 crediti/km
-  cycling: 8,      // 8 crediti/km
-  bus: 5,          // 5 crediti/km
-  driving: 0       // 0 crediti
+  walking: 10, // 10 crediti/km
+  cycling: 8, // 8 crediti/km
+  bus: 5, // 5 crediti/km
+  driving: 0, // 0 crediti
 };
 
 // CO2 risparmiata = (emissioni auto - emissioni modalità) * km
@@ -5681,12 +5937,12 @@ const creditFactors = {
 
 ### 9. DIPENDENZE ESTERNE
 
-| Servizio | Utilizzo | Stato |
-|----------|----------|-------|
-| OpenRouteService | Calcolo percorsi | ✅ Integrato |
-| GTFS Emilia-Romagna | Dati fermate TPL | ⬜ Da importare |
-| GTFS-RT TPER | Orari tempo reale | ⬜ Da integrare |
-| Google Maps | Backup navigazione | ✅ Disponibile |
+| Servizio            | Utilizzo           | Stato           |
+| ------------------- | ------------------ | --------------- |
+| OpenRouteService    | Calcolo percorsi   | ✅ Integrato    |
+| GTFS Emilia-Romagna | Dati fermate TPL   | ⬜ Da importare |
+| GTFS-RT TPER        | Orari tempo reale  | ⬜ Da integrare |
+| Google Maps         | Backup navigazione | ✅ Disponibile  |
 
 ---
 
@@ -5694,34 +5950,34 @@ const creditFactors = {
 
 #### Backend (mihub-backend-rest)
 
-| File | Azione | Fase |
-|------|--------|------|
-| routes/routing.js | Aggiungere start-tracking, complete | 1 |
-| routes/tcc.js | Aggiungere route-credit | 1 |
-| routes/mobility.js | NUOVO - API fermate TPL | 2 |
-| routes/leaderboard.js | NUOVO - API classifica | 3 |
-| services/routingService.js | Aggiungere verifica geofence | 1 |
-| services/gtfsService.js | NUOVO - Parser GTFS | 2 |
-| services/achievementService.js | NUOVO - Logica badge | 3 |
+| File                           | Azione                              | Fase |
+| ------------------------------ | ----------------------------------- | ---- |
+| routes/routing.js              | Aggiungere start-tracking, complete | 1    |
+| routes/tcc.js                  | Aggiungere route-credit             | 1    |
+| routes/mobility.js             | NUOVO - API fermate TPL             | 2    |
+| routes/leaderboard.js          | NUOVO - API classifica              | 3    |
+| services/routingService.js     | Aggiungere verifica geofence        | 1    |
+| services/gtfsService.js        | NUOVO - Parser GTFS                 | 2    |
+| services/achievementService.js | NUOVO - Logica badge                | 3    |
 
 #### Frontend (dms-hub-app-new)
 
-| File | Azione | Fase |
-|------|--------|------|
-| pages/RoutePage.tsx | Aggiungere tracking e completamento | 1 |
-| components/MobilityMap.tsx | Collegare a dati reali | 2 |
-| components/Achievements.tsx | NUOVO - UI badge | 3 |
+| File                        | Azione                              | Fase |
+| --------------------------- | ----------------------------------- | ---- |
+| pages/RoutePage.tsx         | Aggiungere tracking e completamento | 1    |
+| components/MobilityMap.tsx  | Collegare a dati reali              | 2    |
+| components/Achievements.tsx | NUOVO - UI badge                    | 3    |
 
 ---
 
 ### 11. STIMA TOTALE
 
-| Fase | Ore | Priorità |
-|------|-----|----------|
-| Fase 1 - TCC | 9h | 🔴 ALTA |
-| Fase 2 - Mobilità | 13h | 🟡 MEDIA |
-| Fase 3 - Gamification | 8h | 🟢 BASSA |
-| **TOTALE** | **30h** | |
+| Fase                  | Ore     | Priorità |
+| --------------------- | ------- | -------- |
+| Fase 1 - TCC          | 9h      | 🔴 ALTA  |
+| Fase 2 - Mobilità     | 13h     | 🟡 MEDIA |
+| Fase 3 - Gamification | 8h      | 🟢 BASSA |
+| **TOTALE**            | **30h** |          |
 
 ---
 
@@ -5734,16 +5990,15 @@ const creditFactors = {
 
 ---
 
-*Progetto creato il 31 Gennaio 2026 - Manus AI*
-*In attesa di autorizzazione per implementazione*
-
-
+_Progetto creato il 31 Gennaio 2026 - Manus AI_
+_In attesa di autorizzazione per implementazione_
 
 ---
 
 ## 🎮 GAMING & REWARDS PANEL - STATO ATTUALE (6 Febbraio 2026)
 
 ### Commit Stabile Attuale
+
 - **Commit:** `668c8a1` (frontend) + `6e96306` (backend)
 - **Branch:** master
 - **Stato:** Funzionante con dati reali + Mobilità + Cultura + Negozio/Mercato separati + Presenta un Amico + Config DB collegata + Referral Backend + Challenges Backend + Frontend Referral+Challenges collegato
@@ -5751,11 +6006,13 @@ const creditFactors = {
 ### 🚀 AGGIORNAMENTO v3.98.0 - 6 FEBBRAIO 2026 - REFACTORING GAMING & REWARDS
 
 #### Obiettivo
+
 Separare le transazioni shopping in due categorie distinte (Negozio e Mercato), trasformare lo slot "Acquisti Locali" in "Presenta un Amico" (Referral), e collegare le slot impostazioni PA al sistema reale di assegnazione TCC.
 
 #### Modifiche Completate
 
 **Step 1 — Card Configurazione "Presenta un Amico"** ✅
+
 - Trasformata card da "Acquisti Locali" a "Presenta un Amico"
 - Colore: fuchsia/pink `#EC4899` (era blue-500)
 - Icona: `Gift` (era `ShoppingCart`)
@@ -5764,6 +6021,7 @@ Separare le transazioni shopping in due categorie distinte (Negozio e Mercato), 
 - Commit: `1369d12`
 
 **Step 2 — Backend Trend API separata Shop/Market** ✅
+
 - Endpoint `/api/gaming-rewards/trend` ora ritorna due campi separati:
   - `shopping_shop`: transazioni da imprese con `hub_shops` (negozi fissi)
   - `shopping_market`: transazioni da imprese con `autorizzazioni` → `stalls` → `markets` (ambulanti)
@@ -5771,6 +6029,7 @@ Separare le transazioni shopping in due categorie distinte (Negozio e Mercato), 
 - Commit backend: deploy manuale su Hetzner
 
 **Step 3 — Frontend Grafico Trend con 7 barre** ✅
+
 - Aggiunta barra "Negozio" (lime `#84cc16`) — dati da `shopping_shop`
 - Aggiunta barra "Mercato" (giallo `#eab308`) — dati da `shopping_market`
 - Rimossa vecchia barra unica "Acquisti"
@@ -5778,6 +6037,7 @@ Separare le transazioni shopping in due categorie distinte (Negozio e Mercato), 
 - Commit: `e6fd700`
 
 **Step 4 — Heatmap Tab separati Negozio/Mercato/Referral** ✅
+
 - Backend `/api/gaming-rewards/heatmap` aggiornato per distinguere `shop` e `market`
 - Tab "🏪 Negozio" (lime `#84cc16`) — filtra `type=shop`
 - Tab "🛒 Mercato" (giallo `#eab308`) — filtra `type=market`
@@ -5786,6 +6046,7 @@ Separare le transazioni shopping in due categorie distinte (Negozio e Mercato), 
 - Commit: `521e61d`
 
 **Step 5 — Liste separate Negozio/Mercato** ✅
+
 - Lista "Acquisti Negozio" (lime `#84cc16`, icona `Store`) — filtra `type=shop`
 - Lista "Acquisti Mercato" (giallo `#eab308`, icona `ShoppingCart`) — filtra `type=market`
 - Lista "Presenta un Amico" (fuchsia `#EC4899`, icona `Gift`) — vuota con messaggio "Nessun referral"
@@ -5793,9 +6054,9 @@ Separare le transazioni shopping in due categorie distinte (Negozio e Mercato), 
 
 #### Logica Distinzione Shop vs Market
 
-| Tipo | Tabelle DB | Logica Query |
-|------|-----------|---------------|
-| **Shop** (Negozio) | `imprese` → `hub_shops` | Impresa ha record in `hub_shops` |
+| Tipo                 | Tabelle DB                                          | Logica Query                                       |
+| -------------------- | --------------------------------------------------- | -------------------------------------------------- |
+| **Shop** (Negozio)   | `imprese` → `hub_shops`                             | Impresa ha record in `hub_shops`                   |
 | **Market** (Mercato) | `imprese` → `autorizzazioni` → `stalls` → `markets` | Impresa ha autorizzazione con stallo in un mercato |
 
 ```sql
@@ -5816,40 +6077,41 @@ WHERE ot.type = 'issue' AND ot.comune_id = $1;
 
 #### Palette Colori Completa (8 serie)
 
-| # | Elemento | Colore | Hex | Icona |
-|---|----------|--------|-----|-------|
-| 1 | TCC+ (Rilasciati) | Verde | `#22c55e` | TrendingUp |
-| 2 | TCC- (Riscattati) | Blu | `#3b82f6` | Coins |
-| 3 | Negozio (Shop) | Verde lime | `#84cc16` | Store |
-| 4 | Mercato (Market) | Giallo | `#eab308` | ShoppingCart |
-| 5 | Segnalazioni Civiche | Arancione | `#f97316` | Radio |
-| 6 | Mobilità Sostenibile | Cyan | `#06b6d4` | Bus |
-| 7 | Cultura & Turismo | Viola | `#a855f7` | Landmark |
-| 8 | Presenta un Amico | Fuchsia | `#EC4899` | Gift |
+| #   | Elemento             | Colore     | Hex       | Icona        |
+| --- | -------------------- | ---------- | --------- | ------------ |
+| 1   | TCC+ (Rilasciati)    | Verde      | `#22c55e` | TrendingUp   |
+| 2   | TCC- (Riscattati)    | Blu        | `#3b82f6` | Coins        |
+| 3   | Negozio (Shop)       | Verde lime | `#84cc16` | Store        |
+| 4   | Mercato (Market)     | Giallo     | `#eab308` | ShoppingCart |
+| 5   | Segnalazioni Civiche | Arancione  | `#f97316` | Radio        |
+| 6   | Mobilità Sostenibile | Cyan       | `#06b6d4` | Bus          |
+| 7   | Cultura & Turismo    | Viola      | `#a855f7` | Landmark     |
+| 8   | Presenta un Amico    | Fuchsia    | `#EC4899` | Gift         |
 
 #### Commit Frontend (GitHub → Vercel auto-deploy)
 
-| Commit | Descrizione |
-|--------|-------------|
+| Commit    | Descrizione                                                                   |
+| --------- | ----------------------------------------------------------------------------- |
 | `1369d12` | Card Acquisti Locali → Presenta un Amico (icona Gift, colore pink, label TCC) |
-| `20d7290` | Fix: ripristino lista Acquisti/Trend/Heatmap originali |
-| `b1b014b` | Fix: grafico Trend barra Acquisti → Referral fucsia |
-| `47fa642` | Barra Acquisti gialla, lista Presenta un Amico, tab Heatmap Referral |
-| `e6fd700` | Trend separa Negozio (lime) e Mercato (giallo) — 7 barre |
-| `521e61d` | Heatmap separa Negozio e Mercato — tab e filtri indipendenti |
-| `cfe42a4` | Liste separate Acquisti Negozio e Acquisti Mercato |
-| `a344594` | Aggiunge Presenta un Amico in legenda mappa + trend (fuchsia) |
-| `171ac36` | Rimuove Hub dalla legenda mappa (non necessario) |
-| `668c8a1` | FASE 4: Collega frontend referral+challenges a backend reale (UI completa) |
+| `20d7290` | Fix: ripristino lista Acquisti/Trend/Heatmap originali                        |
+| `b1b014b` | Fix: grafico Trend barra Acquisti → Referral fucsia                           |
+| `47fa642` | Barra Acquisti gialla, lista Presenta un Amico, tab Heatmap Referral          |
+| `e6fd700` | Trend separa Negozio (lime) e Mercato (giallo) — 7 barre                      |
+| `521e61d` | Heatmap separa Negozio e Mercato — tab e filtri indipendenti                  |
+| `cfe42a4` | Liste separate Acquisti Negozio e Acquisti Mercato                            |
+| `a344594` | Aggiunge Presenta un Amico in legenda mappa + trend (fuchsia)                 |
+| `171ac36` | Rimuove Hub dalla legenda mappa (non necessario)                              |
+| `668c8a1` | FASE 4: Collega frontend referral+challenges a backend reale (UI completa)    |
 
 #### Commit Backend (GitHub → Hetzner git pull + PM2 restart)
 
-| Commit | Descrizione |
-|--------|-------------|
-| `d405e35` | Collega config DB a sistema assegnazione TCC (v2.0.0 gaming-rewards.js) |
+| Commit    | Descrizione                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| `d405e35` | Collega config DB a sistema assegnazione TCC (v2.0.0 gaming-rewards.js)                            |
 | `6e96306` | FASE 2+3: Referral backend (7 endpoint) + Challenges (6 endpoint) + tabelle DB + Guardian (v2.1.0) |
 
 #### Note Importanti
+
 - La lista "Acquisti & Cashback" originale (verde, ShoppingCart) è stata **rimossa** e sostituita dalle due liste separate
 - TCC+ (verde) e TCC- (blu) nel trend rappresentano i **token Carbon Credit regionali** (rilasciati/riscattati)
 - Le barre Negozio e Mercato nel trend contano le **transazioni** (non i TCC), per mostrare l'attività commerciale
@@ -5864,12 +6126,14 @@ WHERE ot.type = 'issue' AND ot.comune_id = $1;
 #### Nuove Funzionalità Implementate
 
 **1. Mobilità Sostenibile (GTFS Integration)** ✅
+
 - Importate **385 fermate TPER** (Bologna) da GTFS
 - Tabella `gtfs_stops` per validare posizione cittadino
 - Tabella `route_completions` per tracciare percorsi completati
 - Endpoint per start-tracking, complete, history, stats, heatmap
 
 **2. Cultura & Turismo (OpenStreetMap Integration)** ✅
+
 - Importati **1.083 POI culturali** Emilia-Romagna da OpenStreetMap
 - Tipi: musei, castelli, monumenti, teatri, siti archeologici
 - Tabella `cultural_pois` per validare posizione cittadino
@@ -5877,6 +6141,7 @@ WHERE ot.type = 'issue' AND ot.comune_id = $1;
 - Endpoint per checkin, history, stats, heatmap
 
 **3. Logica Heatmap Corretta** ✅
+
 - La heatmap mostra **SOLO azioni cittadini** (non POI disponibili)
 - Mobilità: mostra `route_completions` (dove hanno preso bus/bici)
 - Cultura: mostra `cultural_visits` (dove hanno visitato musei)
@@ -5884,35 +6149,35 @@ WHERE ot.type = 'issue' AND ot.comune_id = $1;
 
 #### Nuovi Endpoint API (16 totali)
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/gaming-rewards/config` | GET | Legge configurazione gaming per comune |
-| `/api/gaming-rewards/config` | POST | Crea nuova configurazione |
-| `/api/gaming-rewards/config` | PUT | Aggiorna configurazione esistente |
-| `/api/gaming-rewards/config/all` | GET | Legge la configurazione gaming per TUTTI i comuni con lo stato dei 4 slot |
-| `/api/gaming-rewards/mobility/start-tracking` | POST | Avvia tracciamento percorso |
-| `/api/gaming-rewards/mobility/complete` | POST | Completa percorso e assegna TCC |
-| `/api/gaming-rewards/mobility/history` | GET | Storico percorsi utente |
-| `/api/gaming-rewards/mobility/stats` | GET | Statistiche mobilità (CO2, km) |
-| `/api/gaming-rewards/mobility/heatmap` | GET | Heatmap percorsi completati |
-| `/api/gaming-rewards/culture/checkin` | POST | Check-in luogo culturale |
-| `/api/gaming-rewards/culture/history` | GET | Storico visite culturali |
-| `/api/gaming-rewards/culture/stats` | GET | Statistiche cultura |
-| `/api/gaming-rewards/culture/heatmap` | GET | Heatmap visite effettuate |
-| `/api/gaming-rewards/top-shops` | GET | Top 5 negozi per TCC |
-| `/api/gaming-rewards/trend` | GET | Trend TCC (periodo dinamico via `days` param) |
-| `/api/gaming-rewards/stats` | GET | Statistiche generali gaming |
-| `/api/gaming-rewards/heatmap` | GET | Heatmap transazioni TCC |
+| Endpoint                                      | Metodo | Descrizione                                                               |
+| --------------------------------------------- | ------ | ------------------------------------------------------------------------- |
+| `/api/gaming-rewards/config`                  | GET    | Legge configurazione gaming per comune                                    |
+| `/api/gaming-rewards/config`                  | POST   | Crea nuova configurazione                                                 |
+| `/api/gaming-rewards/config`                  | PUT    | Aggiorna configurazione esistente                                         |
+| `/api/gaming-rewards/config/all`              | GET    | Legge la configurazione gaming per TUTTI i comuni con lo stato dei 4 slot |
+| `/api/gaming-rewards/mobility/start-tracking` | POST   | Avvia tracciamento percorso                                               |
+| `/api/gaming-rewards/mobility/complete`       | POST   | Completa percorso e assegna TCC                                           |
+| `/api/gaming-rewards/mobility/history`        | GET    | Storico percorsi utente                                                   |
+| `/api/gaming-rewards/mobility/stats`          | GET    | Statistiche mobilità (CO2, km)                                            |
+| `/api/gaming-rewards/mobility/heatmap`        | GET    | Heatmap percorsi completati                                               |
+| `/api/gaming-rewards/culture/checkin`         | POST   | Check-in luogo culturale                                                  |
+| `/api/gaming-rewards/culture/history`         | GET    | Storico visite culturali                                                  |
+| `/api/gaming-rewards/culture/stats`           | GET    | Statistiche cultura                                                       |
+| `/api/gaming-rewards/culture/heatmap`         | GET    | Heatmap visite effettuate                                                 |
+| `/api/gaming-rewards/top-shops`               | GET    | Top 5 negozi per TCC                                                      |
+| `/api/gaming-rewards/trend`                   | GET    | Trend TCC (periodo dinamico via `days` param)                             |
+| `/api/gaming-rewards/stats`                   | GET    | Statistiche generali gaming                                               |
+| `/api/gaming-rewards/heatmap`                 | GET    | Heatmap transazioni TCC                                                   |
 
 #### Nuove Tabelle Database
 
-| Tabella | Descrizione | Campi Chiave |
-|---------|-------------|---------------|
-| `gtfs_stops` | Fermate trasporto pubblico GTFS | stop_id, name, lat, lng, type, provider |
-| `route_completions` | Percorsi completati dai cittadini | user_id, mode, start_lat/lng, end_lat/lng, credits_earned, co2_saved_g |
-| `cultural_pois` | POI culturali da OpenStreetMap | osm_id, name, type, lat, lng, region |
-| `cultural_visits` | Visite culturali effettuate | user_id, poi_id, lat, lng, tcc_earned |
-| `gaming_rewards_config` | Configurazione gaming per comune | comune_id, mobility_enabled, culture_enabled, tcc_rates |
+| Tabella                 | Descrizione                       | Campi Chiave                                                           |
+| ----------------------- | --------------------------------- | ---------------------------------------------------------------------- |
+| `gtfs_stops`            | Fermate trasporto pubblico GTFS   | stop_id, name, lat, lng, type, provider                                |
+| `route_completions`     | Percorsi completati dai cittadini | user_id, mode, start_lat/lng, end_lat/lng, credits_earned, co2_saved_g |
+| `cultural_pois`         | POI culturali da OpenStreetMap    | osm_id, name, type, lat, lng, region                                   |
+| `cultural_visits`       | Visite culturali effettuate       | user_id, poi_id, lat, lng, tcc_earned                                  |
+| `gaming_rewards_config` | Configurazione gaming per comune  | comune_id, mobility_enabled, culture_enabled, tcc_rates                |
 
 #### Frontend Aggiornato
 
@@ -5930,74 +6195,81 @@ WHERE ot.type = 'issue' AND ot.comune_id = $1;
 ### ⚠️ IMPORTANTE: Tabelle Dati TCC
 
 #### Tabelle REALI (da usare)
-| Tabella | Descrizione | Campi Chiave |
-|---------|-------------|---------------|
-| `operator_transactions` | Transazioni TCC reali | operator_id, user_id, type (issue/redeem), tcc_amount, euro_amount |
-| `operator_daily_wallet` | Wallet giornaliero operatore | operator_id, impresa_id, tcc_issued, tcc_redeemed |
-| `imprese` | Anagrafica imprese | id, denominazione, partita_iva |
-| `wallets` | Wallet utenti | user_id, balance |
+
+| Tabella                 | Descrizione                  | Campi Chiave                                                       |
+| ----------------------- | ---------------------------- | ------------------------------------------------------------------ |
+| `operator_transactions` | Transazioni TCC reali        | operator_id, user_id, type (issue/redeem), tcc_amount, euro_amount |
+| `operator_daily_wallet` | Wallet giornaliero operatore | operator_id, impresa_id, tcc_issued, tcc_redeemed                  |
+| `imprese`               | Anagrafica imprese           | id, denominazione, partita_iva                                     |
+| `wallets`               | Wallet utenti                | user_id, balance                                                   |
 
 #### Tabelle LEGACY (NON eliminare - usate da API v1/v2)
-| Tabella | Usata da | Note |
-|---------|----------|------|
+
+| Tabella        | Usata da              | Note                                 |
+| -------------- | --------------------- | ------------------------------------ |
 | `transactions` | `tcc.js`, `tcc-v2.js` | API TCC v1/v2 per INSERT transazioni |
-| `shops` | `tcc.js` | API TCC v1 per negozi |
+| `shops`        | `tcc.js`              | API TCC v1 per negozi                |
 
 **⚠️ NON ELIMINARE** queste tabelle finché le API v1/v2 sono in uso.
 
 #### Quale tabella usare?
-| Caso d'uso | Tabella da usare |
-|------------|------------------|
-| Dashboard PA (Gaming & Rewards) | `operator_transactions` |
-| Hub Operatore (rilascio/riscatto TCC) | `operator_transactions` |
-| Top 5 Imprese | `imprese` + `operator_transactions` |
-| Trend TCC | `operator_transactions` |
-| API TCC v1 (legacy) | `transactions`, `shops` |
-| API TCC v2 (legacy) | `transactions` |
+
+| Caso d'uso                            | Tabella da usare                    |
+| ------------------------------------- | ----------------------------------- |
+| Dashboard PA (Gaming & Rewards)       | `operator_transactions`             |
+| Hub Operatore (rilascio/riscatto TCC) | `operator_transactions`             |
+| Top 5 Imprese                         | `imprese` + `operator_transactions` |
+| Trend TCC                             | `operator_transactions`             |
+| API TCC v1 (legacy)                   | `transactions`, `shops`             |
+| API TCC v2 (legacy)                   | `transactions`                      |
 
 ### Formula CO2 Risparmiata
+
 ```
 CO2 (kg) = TCC_spesi × 10g / 1000
 ```
+
 - **1 TCC = 10g CO2 evitata**
 - I TCC spesi (riscattati) rappresentano acquisti locali
 - Acquisto locale vs e-commerce evita spedizioni = risparmio CO2
 
 ### Mapping Endpoint → Tabelle
-| Endpoint | Tabella Precedente | Tabella Corretta |
-|----------|-------------------|------------------|
-| `/api/gaming-rewards/stats` | transactions | operator_transactions |
+
+| Endpoint                        | Tabella Precedente   | Tabella Corretta                |
+| ------------------------------- | -------------------- | ------------------------------- |
+| `/api/gaming-rewards/stats`     | transactions         | operator_transactions           |
 | `/api/gaming-rewards/top-shops` | shops + transactions | imprese + operator_transactions |
-| `/api/gaming-rewards/trend` | transactions | operator_transactions |
+| `/api/gaming-rewards/trend`     | transactions         | operator_transactions           |
 
 ### Funzionalità OPERATIVE ✅
-| Funzionalità | Stato | Note |
-|--------------|-------|------|
-| Dashboard statistiche TCC | ✅ | Legge da operator_transactions (dati reali) |
-| Configurazione parametri TCC | ✅ | Per categoria (Civic, Mobility, Culture, Shopping/Referral) |
-| Card "Presenta un Amico" | ✅ | Fuchsia #EC4899, icona Gift, label TCC Invito/Benvenuto/Bonus |
-| Salvataggio configurazione | ✅ | POST/PUT su gaming_rewards_config |
-| Top 5 Imprese | ✅ | Legge da imprese + operator_transactions |
-| Trend TCC 7 giorni (7 barre) | ✅ | TCC+, TCC-, Negozio, Mercato, Civic, Mobilità, Cultura |
-| Trend Negozio separato | ✅ | Lime #84cc16, dati da shopping_shop (hub_shops) |
-| Trend Mercato separato | ✅ | Giallo #eab308, dati da shopping_market (autorizzazioni+stalls) |
-| Heatmap tab Negozio | ✅ | Filtra type=shop, lime #84cc16 |
-| Heatmap tab Mercato | ✅ | Filtra type=market, giallo #eab308 |
-| Heatmap tab Referral | ✅ | Fuchsia #EC4899, vuoto (predisposto) |
-| Lista Acquisti Negozio | ✅ | Lime #84cc16, icona Store, filtra type=shop |
-| Lista Acquisti Mercato | ✅ | Giallo #eab308, icona ShoppingCart, filtra type=market |
-| Lista Presenta un Amico | ✅ | Fuchsia #EC4899, icona Gift, vuota (predisposta) |
-| Filtri layer mappa | ✅ | Tutti, Segnalazioni, Negozio, Mercato, Mobilità, Cultura, Referral |
-| Filtri temporali | ✅ | Tutto, Oggi, 7gg, 30gg, 1 anno |
-| API civic-reports | ✅ | 19 segnalazioni nel DB |
-| API gaming-rewards/config | ✅ | Configurazione per comune |
-| API trend (shop/market separati) | ✅ | Ritorna shopping_shop e shopping_market |
-| API heatmap (shop/market separati) | ✅ | Ritorna type=shop e type=market |
-| Legenda mappa | ✅ | Segnalazioni, Negozi, Mercati, Mobilità, Cultura, Presenta un Amico |
-| Backend legge TCC da config DB | ✅ | getConfigForComune() con cache 60s, ogni comune ha la sua config |
-| mobility/checkin legge config | ✅ | Legge mobility_tcc_bus da gaming_rewards_config |
-| culture/checkin legge config | ✅ | Legge culture_tcc_museum/monument/route da config |
-| calculateCredits() da config | ✅ | Async, legge mobility_tcc_walk/bike/bus da config per comune |
+
+| Funzionalità                       | Stato | Note                                                                |
+| ---------------------------------- | ----- | ------------------------------------------------------------------- |
+| Dashboard statistiche TCC          | ✅    | Legge da operator_transactions (dati reali)                         |
+| Configurazione parametri TCC       | ✅    | Per categoria (Civic, Mobility, Culture, Shopping/Referral)         |
+| Card "Presenta un Amico"           | ✅    | Fuchsia #EC4899, icona Gift, label TCC Invito/Benvenuto/Bonus       |
+| Salvataggio configurazione         | ✅    | POST/PUT su gaming_rewards_config                                   |
+| Top 5 Imprese                      | ✅    | Legge da imprese + operator_transactions                            |
+| Trend TCC 7 giorni (7 barre)       | ✅    | TCC+, TCC-, Negozio, Mercato, Civic, Mobilità, Cultura              |
+| Trend Negozio separato             | ✅    | Lime #84cc16, dati da shopping_shop (hub_shops)                     |
+| Trend Mercato separato             | ✅    | Giallo #eab308, dati da shopping_market (autorizzazioni+stalls)     |
+| Heatmap tab Negozio                | ✅    | Filtra type=shop, lime #84cc16                                      |
+| Heatmap tab Mercato                | ✅    | Filtra type=market, giallo #eab308                                  |
+| Heatmap tab Referral               | ✅    | Fuchsia #EC4899, vuoto (predisposto)                                |
+| Lista Acquisti Negozio             | ✅    | Lime #84cc16, icona Store, filtra type=shop                         |
+| Lista Acquisti Mercato             | ✅    | Giallo #eab308, icona ShoppingCart, filtra type=market              |
+| Lista Presenta un Amico            | ✅    | Fuchsia #EC4899, icona Gift, vuota (predisposta)                    |
+| Filtri layer mappa                 | ✅    | Tutti, Segnalazioni, Negozio, Mercato, Mobilità, Cultura, Referral  |
+| Filtri temporali                   | ✅    | Tutto, Oggi, 7gg, 30gg, 1 anno                                      |
+| API civic-reports                  | ✅    | 19 segnalazioni nel DB                                              |
+| API gaming-rewards/config          | ✅    | Configurazione per comune                                           |
+| API trend (shop/market separati)   | ✅    | Ritorna shopping_shop e shopping_market                             |
+| API heatmap (shop/market separati) | ✅    | Ritorna type=shop e type=market                                     |
+| Legenda mappa                      | ✅    | Segnalazioni, Negozi, Mercati, Mobilità, Cultura, Presenta un Amico |
+| Backend legge TCC da config DB     | ✅    | getConfigForComune() con cache 60s, ogni comune ha la sua config    |
+| mobility/checkin legge config      | ✅    | Legge mobility_tcc_bus da gaming_rewards_config                     |
+| culture/checkin legge config       | ✅    | Legge culture_tcc_museum/monument/route da config                   |
+| calculateCredits() da config       | ✅    | Async, legge mobility_tcc_walk/bike/bus da config per comune        |
 
 | Sistema Referral backend | ✅ | 7 endpoint, tabella referrals, creditTCC(), notifyWalletCredit() |
 | Challenges backend | ✅ | 6 endpoint CRUD + join + progress, tabella challenge_participations |
@@ -6005,41 +6277,45 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 | Endpoint referral nel Guardian | ✅ | 13 nuovi endpoint visibili nella sezione Integrazioni |
 
 ### Funzionalità PREDISPOSTE (backend pronto, UI da collegare) 🟡
-| Funzionalità | Stato | Note |
-|--------------|-------|------|
-| Heatmap Referral con dati reali | 🟡 | Backend pronto, frontend chiama endpoint ma 0 dati reali |
-| Lista Referral con dati reali | 🟡 | Backend pronto, frontend mostra "Nessun referral" |
-| UI Challenges nel pannello | 🟡 | Backend CRUD pronto, manca UI nel pannello Gaming |
+
+| Funzionalità                    | Stato | Note                                                     |
+| ------------------------------- | ----- | -------------------------------------------------------- |
+| Heatmap Referral con dati reali | 🟡    | Backend pronto, frontend chiama endpoint ma 0 dati reali |
+| Lista Referral con dati reali   | 🟡    | Backend pronto, frontend mostra "Nessun referral"        |
+| UI Challenges nel pannello      | 🟡    | Backend CRUD pronto, manca UI nel pannello Gaming        |
 
 ### Funzionalità NON OPERATIVE ❌
-| Funzionalità | Stato | Causa |
-|--------------|-------|-------|
-| (nessuna — tutto il backend è operativo) | — | — |
 
+| Funzionalità                             | Stato | Causa |
+| ---------------------------------------- | ----- | ----- |
+| (nessuna — tutto il backend è operativo) | —     | —     |
 
 ### Funzionalità FIXATE (3 Feb 2026) ✅
-| Funzionalità | Fix | Commit |
-|--------------|-----|--------|
-| CO2 Risparmiata | Calcolo da TCC spesi (1 TCC = 10g CO2) | Backend `6401500` |
-| Visualizzazione CO2 | Mostra kg + tonnellate (118.8 kg / 0.12t) | Frontend `1f7e1f6` |
-| Top 5 Imprese | Legge da operator_transactions + imprese | Backend `84bdcad` |
-| Trend Segnalazioni | Aggiunto conteggio segnalazioni nel trend | Backend `6401500` |
-| Grafico Trend | Aggiunta barra arancione per segnalazioni | Frontend `7564156` |
-| Heatmap Acquisti | Endpoint /heatmap con coordinate da hub_shops | Backend `196b085` |
+
+| Funzionalità        | Fix                                           | Commit             |
+| ------------------- | --------------------------------------------- | ------------------ |
+| CO2 Risparmiata     | Calcolo da TCC spesi (1 TCC = 10g CO2)        | Backend `6401500`  |
+| Visualizzazione CO2 | Mostra kg + tonnellate (118.8 kg / 0.12t)     | Frontend `1f7e1f6` |
+| Top 5 Imprese       | Legge da operator_transactions + imprese      | Backend `84bdcad`  |
+| Trend Segnalazioni  | Aggiunto conteggio segnalazioni nel trend     | Backend `6401500`  |
+| Grafico Trend       | Aggiunta barra arancione per segnalazioni     | Frontend `7564156` |
+| Heatmap Acquisti    | Endpoint /heatmap con coordinate da hub_shops | Backend `196b085`  |
 
 ### Commit Cancellati con Rollback (da 09b0bac a e7aa61b)
-| Commit | Descrizione | Errore |
-|--------|-------------|--------|
-| `929ed64` | Top 5 Negozi e Grafici Trend | useState non definiti |
-| `60356e2` | Fix sintassi backtick | Backtick corrotti |
-| `e188dc9` | Sezione Challenges CRUD | useState non definiti |
-| `0da69ab` | Fix useState mancanti | Ordine funzioni errato |
-| `ac5db31` | Fix ordine loadChallenges | Import mancanti |
-| `e7aa61b` | Fix import icone | File già corrotto |
+
+| Commit    | Descrizione                  | Errore                 |
+| --------- | ---------------------------- | ---------------------- |
+| `929ed64` | Top 5 Negozi e Grafici Trend | useState non definiti  |
+| `60356e2` | Fix sintassi backtick        | Backtick corrotti      |
+| `e188dc9` | Sezione Challenges CRUD      | useState non definiti  |
+| `0da69ab` | Fix useState mancanti        | Ordine funzioni errato |
+| `ac5db31` | Fix ordine loadChallenges    | Import mancanti        |
+| `e7aa61b` | Fix import icone             | File già corrotto      |
 
 ### TODO Prossima Sessione
 
 #### FASE 1: Backend — Leggere TCC da Config DB (Priorità ALTA) ✅ COMPLETATA
+
 - [x] Creare helper `getConfigForComune(comune_id)` con cache 60s
 - [x] Modificare `mobility/checkin`: leggere `config.mobility_tcc_bus` invece di hardcoded 15
 - [x] Modificare `culture/checkin`: leggere `config.culture_tcc_*` invece di hardcoded
@@ -6048,6 +6324,7 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 - [x] Deploy su Hetzner — Commit `d405e35` — PM2 online
 
 #### FASE 2: Backend — Sistema Referral ✅ COMPLETATA
+
 - [x] Creare tabella `referrals` (referrer_user_id, referred_user_id, referral_code, status, comune_id)
 - [x] Creare tabella `wallet_notifications` (notifiche wallet per accrediti TCC)
 - [x] Helper riusabili: `creditTCC()`, `notifyWalletCredit()`, `generateReferralCode()`
@@ -6063,6 +6340,7 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 - [x] Deploy su Hetzner — Commit `6e96306` — PM2 online
 
 #### FASE 3: Challenges Backend ✅ COMPLETATA
+
 - [x] Tabella `gaming_challenges` già esistente con 4 sfide attive
 - [x] Creata tabella `challenge_participations` (tracking progresso utenti)
 - [x] Endpoint GET `/api/gaming-rewards/challenges` — lista sfide con progresso utente
@@ -6075,6 +6353,7 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 - [x] Deploy su Hetzner — Commit `6e96306` — PM2 online
 
 #### FASE 4: Prossimi Step (Priorità MEDIA)
+
 - [x] Collegare frontend referral agli endpoint backend (lista, heatmap, stats) — Commit `668c8a1`
 - [x] Creare UI Challenges nel pannello Gaming & Rewards — Commit `668c8a1`
 - [x] Collegare frontend challenges agli endpoint CRUD — Commit `668c8a1`
@@ -6086,6 +6365,7 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 - [x] Test completo filtri — Verificato: ogni comune vede SOLO i propri dati (Vignola=22 civic, Grosseto=MIO TEST)
 
 ### Regole da Seguire per Modifiche Future
+
 1. **SEMPRE testare compilazione** prima di ogni commit
 2. **SEMPRE aggiungere useState** prima di usare le variabili nel JSX
 3. **SEMPRE aggiungere import** prima di usare componenti/icone
@@ -6094,7 +6374,6 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 6. **MAI modificare codice funzionante** senza backup
 
 ---
-
 
 ## 🗺️ SISTEMA VISUALIZZAZIONE INTELLIGENTE - GAMING & REWARDS
 
@@ -6107,6 +6386,7 @@ CO2 (kg) = TCC_spesi × 10g / 1000
 Con l'aumento delle segnalazioni civiche, transazioni, percorsi mobilità e visite culturali, la mappa diventerà **ingestibile** con migliaia di punti sovrapposti. Un politico che deve valutare le zone critiche non può analizzare 5.000+ pallini singoli.
 
 **Scenario attuale:**
+
 - 20 segnalazioni civiche (11 pending, 1 in progress, 8 resolved)
 - ~700 transazioni TCC
 - 385 fermate GTFS disponibili
@@ -6114,6 +6394,7 @@ Con l'aumento delle segnalazioni civiche, transazioni, percorsi mobilità e visi
 - Percorsi mobilità e visite culturali in crescita
 
 **Scenario futuro (6-12 mesi):**
+
 - 5.000+ segnalazioni civiche
 - 50.000+ transazioni TCC
 - 10.000+ percorsi mobilità completati
@@ -6176,16 +6457,17 @@ Con l'aumento delle segnalazioni civiche, transazioni, percorsi mobilità e visi
 
 Ogni tipo di dato ha stati diversi che determinano la visualizzazione sulla mappa:
 
-| Layer | Colore | Stati | Default Mappa | Logica |
-|-------|--------|-------|---------------|--------|
-| **Segnalazioni** | Arancione `#f97316` | pending, in_progress, resolved | pending + in_progress | Resolved sparisce dalla mappa (toggle per storico) |
-| **Negozio** (Shop) | Lime `#84cc16` | completed | completed | Transazioni da imprese con hub_shops |
-| **Mercato** (Market) | Giallo `#eab308` | completed | completed | Transazioni da imprese con autorizzazioni+stalls |
-| **Mobilità** | Cyan `#06b6d4` | in_progress, completed | completed | Solo percorsi completati (in_progress = tracking attivo) |
-| **Cultura** | Viola `#a855f7` | visited | visited | Tutte le visite effettuate |
-| **Referral** | Fuchsia `#EC4899` | pending, registered, first_purchase, completed | tutti | Dati referral (futuro) |
+| Layer                | Colore              | Stati                                          | Default Mappa         | Logica                                                   |
+| -------------------- | ------------------- | ---------------------------------------------- | --------------------- | -------------------------------------------------------- |
+| **Segnalazioni**     | Arancione `#f97316` | pending, in_progress, resolved                 | pending + in_progress | Resolved sparisce dalla mappa (toggle per storico)       |
+| **Negozio** (Shop)   | Lime `#84cc16`      | completed                                      | completed             | Transazioni da imprese con hub_shops                     |
+| **Mercato** (Market) | Giallo `#eab308`    | completed                                      | completed             | Transazioni da imprese con autorizzazioni+stalls         |
+| **Mobilità**         | Cyan `#06b6d4`      | in_progress, completed                         | completed             | Solo percorsi completati (in_progress = tracking attivo) |
+| **Cultura**          | Viola `#a855f7`     | visited                                        | visited               | Tutte le visite effettuate                               |
+| **Referral**         | Fuchsia `#EC4899`   | pending, registered, first_purchase, completed | tutti                 | Dati referral (futuro)                                   |
 
 **Comportamento Segnalazioni:**
+
 1. Cittadino invia segnalazione → **pallino arancione** appare sulla mappa
 2. PM prende in carico → pallino diventa **giallo** (in_progress)
 3. PM risolve → pallino **sparisce** dalla mappa (a meno che filtro "Storico" attivo)
@@ -6196,15 +6478,16 @@ Ogni tipo di dato ha stati diversi che determinano la visualizzazione sulla mapp
 
 I filtri temporali si applicano a **tutti i layer** contemporaneamente:
 
-| Filtro | Query SQL | Uso |
-|--------|-----------|-----|
-| **Oggi** | `created_at >= CURRENT_DATE` | Monitoraggio giornaliero |
-| **7gg** | `created_at >= NOW() - INTERVAL '7 days'` | Report settimanale |
-| **30gg** | `created_at >= NOW() - INTERVAL '30 days'` | Report mensile |
-| **1 anno** | `created_at >= NOW() - INTERVAL '1 year'` | Analisi annuale |
-| **Tutto** | Nessun filtro | Storico completo |
+| Filtro     | Query SQL                                  | Uso                      |
+| ---------- | ------------------------------------------ | ------------------------ |
+| **Oggi**   | `created_at >= CURRENT_DATE`               | Monitoraggio giornaliero |
+| **7gg**    | `created_at >= NOW() - INTERVAL '7 days'`  | Report settimanale       |
+| **30gg**   | `created_at >= NOW() - INTERVAL '30 days'` | Report mensile           |
+| **1 anno** | `created_at >= NOW() - INTERVAL '1 year'`  | Analisi annuale          |
+| **Tutto**  | Nessun filtro                              | Storico completo         |
 
 **Impatto su Indicatore Notifiche:**
+
 - L'indicatore badge mostra il conteggio **filtrato** per periodo selezionato
 - Es: Filtro "7gg" → Badge mostra solo segnalazioni ultima settimana
 
@@ -6214,20 +6497,21 @@ I filtri temporali si applicano a **tutti i layer** contemporaneamente:
 
 Per gestire migliaia di punti, il sistema usa **3 modalità di visualizzazione** basate sul livello di zoom:
 
-| Zoom Level | Modalità | Descrizione |
-|------------|----------|-------------|
-| **< 10** (Vista Italia/Regione) | **Heatmap Densità** | Colore intenso = più eventi. Ideale per analisi macro |
-| **10-14** (Vista Provincia) | **Cluster Markers** | Gruppi numerati che si espandono al click |
-| **> 14** (Vista Città/Quartiere) | **Markers Singoli** | Pallini individuali cliccabili |
+| Zoom Level                       | Modalità            | Descrizione                                           |
+| -------------------------------- | ------------------- | ----------------------------------------------------- |
+| **< 10** (Vista Italia/Regione)  | **Heatmap Densità** | Colore intenso = più eventi. Ideale per analisi macro |
+| **10-14** (Vista Provincia)      | **Cluster Markers** | Gruppi numerati che si espandono al click             |
+| **> 14** (Vista Città/Quartiere) | **Markers Singoli** | Pallini individuali cliccabili                        |
 
 **Implementazione Tecnica:**
+
 ```javascript
 // Leaflet.markercluster per clustering
 // Leaflet.heat per heatmap
-const getVisualizationMode = (zoom) => {
-  if (zoom < 10) return 'heatmap';
-  if (zoom < 14) return 'cluster';
-  return 'markers';
+const getVisualizationMode = zoom => {
+  if (zoom < 10) return "heatmap";
+  if (zoom < 14) return "cluster";
+  return "markers";
 };
 ```
 
@@ -6239,12 +6523,12 @@ Dashboard dedicata per analisi territoriale con:
 
 #### 4.1 Mappa di Calore Comparativa
 
-| Report | Descrizione | Query |
-|--------|-------------|-------|
-| **Segnalazioni Settimanali** | Zone con più segnalazioni negli ultimi 7 giorni | GROUP BY zona, COUNT(*) |
-| **Segnalazioni Mensili** | Trend mensile per quartiere | GROUP BY zona, mese |
-| **Criminalità/Degrado** | Segnalazioni tipo "Sicurezza", "Degrado", "Vandalismo" | WHERE type IN (...) |
-| **Efficienza Risoluzione** | Tempo medio risoluzione per zona | AVG(resolved_at - created_at) |
+| Report                       | Descrizione                                            | Query                         |
+| ---------------------------- | ------------------------------------------------------ | ----------------------------- |
+| **Segnalazioni Settimanali** | Zone con più segnalazioni negli ultimi 7 giorni        | GROUP BY zona, COUNT(\*)      |
+| **Segnalazioni Mensili**     | Trend mensile per quartiere                            | GROUP BY zona, mese           |
+| **Criminalità/Degrado**      | Segnalazioni tipo "Sicurezza", "Degrado", "Vandalismo" | WHERE type IN (...)           |
+| **Efficienza Risoluzione**   | Tempo medio risoluzione per zona                       | AVG(resolved_at - created_at) |
 
 #### 4.2 Confronto Zone
 
@@ -6277,13 +6561,13 @@ Dashboard dedicata per analisi territoriale con:
 
 ### 5. Nuovi Endpoint API Necessari
 
-| Endpoint | Metodo | Descrizione | Parametri |
-|----------|--------|-------------|-----------|
-| `/api/gaming-rewards/segnalazioni/heatmap` | GET | Heatmap segnalazioni con filtri | status, period, comune_id |
-| `/api/gaming-rewards/segnalazioni/clusters` | GET | Dati per clustering | bounds, zoom, status, period |
-| `/api/gaming-rewards/analytics/zones` | GET | Statistiche per zona | comune_id, period |
-| `/api/gaming-rewards/analytics/comparison` | GET | Confronto zone | zone_ids[], period |
-| `/api/gaming-rewards/analytics/trends` | GET | Trend temporali | comune_id, period, group_by |
+| Endpoint                                    | Metodo | Descrizione                     | Parametri                    |
+| ------------------------------------------- | ------ | ------------------------------- | ---------------------------- |
+| `/api/gaming-rewards/segnalazioni/heatmap`  | GET    | Heatmap segnalazioni con filtri | status, period, comune_id    |
+| `/api/gaming-rewards/segnalazioni/clusters` | GET    | Dati per clustering             | bounds, zoom, status, period |
+| `/api/gaming-rewards/analytics/zones`       | GET    | Statistiche per zona            | comune_id, period            |
+| `/api/gaming-rewards/analytics/comparison`  | GET    | Confronto zone                  | zone_ids[], period           |
+| `/api/gaming-rewards/analytics/trends`      | GET    | Trend temporali                 | comune_id, period, group_by  |
 
 ---
 
@@ -6291,22 +6575,22 @@ Dashboard dedicata per analisi territoriale con:
 
 #### 6.1 GamingRewardsPanel.tsx
 
-| Modifica | Descrizione | Priorità |
-|----------|-------------|----------|
-| Filtro Stato Segnalazioni | Toggle "Mostra Risolte" (default: OFF) | ALTA |
-| Clustering Markers | Integrare Leaflet.markercluster | ALTA |
-| Heatmap Layer | Integrare Leaflet.heat per zoom < 10 | MEDIA |
-| Indicatore Filtrato | Badge notifiche rispetta filtri temporali | ALTA |
-| Click Marker → Popup | Dettagli segnalazione con azioni | MEDIA |
+| Modifica                  | Descrizione                               | Priorità |
+| ------------------------- | ----------------------------------------- | -------- |
+| Filtro Stato Segnalazioni | Toggle "Mostra Risolte" (default: OFF)    | ALTA     |
+| Clustering Markers        | Integrare Leaflet.markercluster           | ALTA     |
+| Heatmap Layer             | Integrare Leaflet.heat per zoom < 10      | MEDIA    |
+| Indicatore Filtrato       | Badge notifiche rispetta filtri temporali | ALTA     |
+| Click Marker → Popup      | Dettagli segnalazione con azioni          | MEDIA    |
 
 #### 6.2 Nuova Sezione Report (per Politici)
 
-| Componente | Descrizione |
-|------------|-------------|
-| `ZoneComparisonChart.tsx` | Grafico confronto zone |
-| `TrendAnalysisChart.tsx` | Trend temporali |
-| `HeatmapReport.tsx` | Mappa calore esportabile |
-| `ResolutionMetrics.tsx` | Metriche efficienza |
+| Componente                | Descrizione              |
+| ------------------------- | ------------------------ |
+| `ZoneComparisonChart.tsx` | Grafico confronto zone   |
+| `TrendAnalysisChart.tsx`  | Trend temporali          |
+| `HeatmapReport.tsx`       | Mappa calore esportabile |
+| `ResolutionMetrics.tsx`   | Metriche efficienza      |
 
 ---
 
@@ -6314,12 +6598,12 @@ Dashboard dedicata per analisi territoriale con:
 
 #### 7.1 gaming-rewards.js (Hetzner)
 
-| Modifica | Descrizione |
-|----------|-------------|
-| Filtro status su `/heatmap` | Aggiungere `WHERE status IN (...)` |
+| Modifica                        | Descrizione                          |
+| ------------------------------- | ------------------------------------ |
+| Filtro status su `/heatmap`     | Aggiungere `WHERE status IN (...)`   |
 | Filtro period su tutti endpoint | Aggiungere `WHERE created_at >= ...` |
-| Nuovo endpoint `/clusters` | Aggregazione per bounds geografici |
-| Nuovo endpoint `/analytics/*` | Suite analytics per decisori |
+| Nuovo endpoint `/clusters`      | Aggregazione per bounds geografici   |
+| Nuovo endpoint `/analytics/*`   | Suite analytics per decisori         |
 
 #### 7.2 Query Ottimizzate
 
@@ -6333,7 +6617,7 @@ WHERE comune_id = $1
 GROUP BY lat, lng;
 
 -- Clustering per bounds
-SELECT 
+SELECT
   ROUND(lat::numeric, 2) as cluster_lat,
   ROUND(lng::numeric, 2) as cluster_lng,
   COUNT(*) as count,
@@ -6372,24 +6656,28 @@ WHERE comune_id = ${comuneId}
 ### 9. Piano Implementazione
 
 #### FASE 1: Fix Bug Attuali (Priorità CRITICA - 1 giorno)
+
 - [ ] Fix conteggio segnalazioni (mostra 10 invece di 11)
 - [ ] Fix marker segnalazioni non visibili sulla mappa
 - [ ] Fix indicatore notifiche non aggiornato
 - [ ] Aggiungere orario alle segnalazioni nella lista
 
 #### FASE 2: Filtro Stato (Priorità ALTA - 2 giorni)
+
 - [ ] Backend: Aggiungere parametro `status` a endpoint heatmap
 - [ ] Frontend: Toggle "Mostra Risolte" (default OFF)
 - [ ] Frontend: Segnalazioni resolved spariscono dalla mappa
 - [ ] Frontend: Indicatore badge conta solo pending + in_progress
 
 #### FASE 3: Aggregazione Densità (Priorità MEDIA - 3 giorni)
+
 - [ ] Installare Leaflet.markercluster
 - [ ] Installare Leaflet.heat
 - [ ] Implementare logica switch basata su zoom
 - [ ] Testare con dataset simulato (1000+ punti)
 
 #### FASE 4: Report Analytics (Priorità BASSA - 5 giorni)
+
 - [ ] Nuovi endpoint analytics
 - [ ] Componenti grafici React
 - [ ] Sezione Report in Dashboard PA
@@ -6399,18 +6687,17 @@ WHERE comune_id = ${comuneId}
 
 ### 10. Stato Attuale vs Obiettivo
 
-| Funzionalità | Stato Attuale | Obiettivo |
-|--------------|---------------|-----------|
-| Marker Segnalazioni | ❌ Non visibili | ✅ Visibili con popup |
-| Filtro Stato | ❌ Non implementato | ✅ Toggle Risolte |
-| Filtro Temporale | ✅ Funzionante | ✅ Applicato a badge |
-| Clustering | ❌ Non implementato | ✅ Zoom 10-14 |
-| Heatmap Densità | ❌ Non implementato | ✅ Zoom < 10 |
-| Report Analytics | ❌ Non implementato | ✅ Dashboard dedicata |
-| Impersonalizzazione | ✅ Funzionante | ✅ Mantenuto |
+| Funzionalità        | Stato Attuale       | Obiettivo             |
+| ------------------- | ------------------- | --------------------- |
+| Marker Segnalazioni | ❌ Non visibili     | ✅ Visibili con popup |
+| Filtro Stato        | ❌ Non implementato | ✅ Toggle Risolte     |
+| Filtro Temporale    | ✅ Funzionante      | ✅ Applicato a badge  |
+| Clustering          | ❌ Non implementato | ✅ Zoom 10-14         |
+| Heatmap Densità     | ❌ Non implementato | ✅ Zoom < 10          |
+| Report Analytics    | ❌ Non implementato | ✅ Dashboard dedicata |
+| Impersonalizzazione | ✅ Funzionante      | ✅ Mantenuto          |
 
 ---
-
 
 ## 🌿 ECO CREDIT - PROGRAMMA CITTADINO (v3.76.0)
 
@@ -6423,12 +6710,12 @@ WHERE comune_id = ${comuneId}
 
 **ECO CREDIT** è il programma di gamification per i cittadini che premia le azioni sostenibili con Token Carbon Credit (TCC). Il cittadino può attivare il programma dal proprio Wallet e guadagnare TCC attraverso:
 
-| Azione | Descrizione | TCC Reward |
-|--------|-------------|------------|
-| 🚌 **Mobilità Sostenibile** | Usa bus, bici, cammina | 5-50 TCC |
-| 🏛️ **Cultura & Turismo** | Visita musei e monumenti | 10-30 TCC |
-| 🛒 **Acquisti Locali** | Compra nei negozi del territorio | Cashback % |
-| 📢 **Segnalazioni Civiche** | Segnala problemi alla PA | 5-20 TCC |
+| Azione                      | Descrizione                      | TCC Reward |
+| --------------------------- | -------------------------------- | ---------- |
+| 🚌 **Mobilità Sostenibile** | Usa bus, bici, cammina           | 5-50 TCC   |
+| 🏛️ **Cultura & Turismo**    | Visita musei e monumenti         | 10-30 TCC  |
+| 🛒 **Acquisti Locali**      | Compra nei negozi del territorio | Cashback % |
+| 📢 **Segnalazioni Civiche** | Segnala problemi alla PA         | 5-20 TCC   |
 
 ---
 
@@ -6468,29 +6755,29 @@ WHERE comune_id = ${comuneId}
 
 #### 3.1 Vista Mobile (Smartphone)
 
-| Elemento | Descrizione |
-|----------|-------------|
+| Elemento    | Descrizione                         |
+| ----------- | ----------------------------------- |
 | **Tab ECO** | Terzo tab in basso (grid 3 colonne) |
-| **Colore** | Verde emerald con bordo evidenziato |
-| **Icona** | 🌿 Leaf da lucide-react |
+| **Colore**  | Verde emerald con bordo evidenziato |
+| **Icona**   | 🌿 Leaf da lucide-react             |
 
 #### 3.2 Vista Desktop (iPad/PC)
 
-| Elemento | Descrizione |
-|----------|-------------|
+| Elemento            | Descrizione                               |
+| ------------------- | ----------------------------------------- |
 | **Card ECO CREDIT** | Nella sezione wallet, dopo "Paga con TCC" |
-| **Colore** | Bordo verde emerald, sfondo gradient |
-| **Click** | Apre la pagina ECO CREDIT |
+| **Colore**          | Bordo verde emerald, sfondo gradient      |
+| **Click**           | Apre la pagina ECO CREDIT                 |
 
 #### 3.3 Pagina ECO CREDIT
 
-| Sezione | Contenuto |
-|---------|-----------|
-| **Header** | Barra verde con pulsante ← torna, icona foglia, titolo |
-| **Toggle** | Attiva/Disattiva con stato visivo (CheckCircle/XCircle) |
+| Sezione           | Contenuto                                                   |
+| ----------------- | ----------------------------------------------------------- |
+| **Header**        | Barra verde con pulsante ← torna, icona foglia, titolo      |
+| **Toggle**        | Attiva/Disattiva con stato visivo (CheckCircle/XCircle)     |
 | **Come Funziona** | 4 card con icone: Mobilità, Cultura, Acquisti, Segnalazioni |
-| **Privacy GPS** | Informativa su utilizzo GPS (solo quando app aperta) |
-| **Statistiche** | TCC totali e valore in euro (visibile se attivo) |
+| **Privacy GPS**   | Informativa su utilizzo GPS (solo quando app aperta)        |
+| **Statistiche**   | TCC totali e valore in euro (visibile se attivo)            |
 
 ---
 
@@ -6528,8 +6815,8 @@ WHERE comune_id = ${comuneId}
 
 ### 5. Storage Preferenze
 
-| Campo | Storage | Descrizione |
-|-------|---------|-------------|
+| Campo                | Storage      | Descrizione                    |
+| -------------------- | ------------ | ------------------------------ |
 | `eco_credit_enabled` | localStorage | Stato attivazione (true/false) |
 
 **Nota:** Per ora lo stato è salvato in localStorage. In futuro sarà salvato nel profilo utente sul backend.
@@ -6538,34 +6825,32 @@ WHERE comune_id = ${comuneId}
 
 ### 6. File Modificati
 
-| File | Modifiche |
-|------|-----------|
+| File                              | Modifiche                                         |
+| --------------------------------- | ------------------------------------------------- |
 | `client/src/pages/WalletPage.tsx` | Aggiunto tab ECO, card desktop, pagina ECO CREDIT |
 
 ---
 
 ### 7. Versioni
 
-| Versione | Data | Modifiche |
-|----------|------|-----------|
-| v3.76.0 | 04/02/2026 | Implementazione iniziale ECO CREDIT |
-| v3.76.1 | 04/02/2026 | Spostato pulsante torna nella barra verde header |
+| Versione | Data       | Modifiche                                        |
+| -------- | ---------- | ------------------------------------------------ |
+| v3.76.0  | 04/02/2026 | Implementazione iniziale ECO CREDIT              |
+| v3.76.1  | 04/02/2026 | Spostato pulsante torna nella barra verde header |
 
 ---
 
 ### 8. Prossimi Sviluppi
 
-| Funzionalità | Priorità | Stato |
-|--------------|----------|-------|
-| Salvataggio preferenze su backend | MEDIA | ❌ Da fare |
-| Popup onboarding al primo login | MEDIA | ❌ Da fare |
-| Integrazione GPS per check-in automatico | ALTA | ❌ Da fare |
-| Endpoint `/api/eco-credit/checkin` | ALTA | ❌ Da fare |
-| Notifiche push quando vicino a POI | BASSA | ❌ Da fare |
+| Funzionalità                             | Priorità | Stato      |
+| ---------------------------------------- | -------- | ---------- |
+| Salvataggio preferenze su backend        | MEDIA    | ❌ Da fare |
+| Popup onboarding al primo login          | MEDIA    | ❌ Da fare |
+| Integrazione GPS per check-in automatico | ALTA     | ❌ Da fare |
+| Endpoint `/api/eco-credit/checkin`       | ALTA     | ❌ Da fare |
+| Notifiche push quando vicino a POI       | BASSA    | ❌ Da fare |
 
 ---
-
-
 
 ## 🎯 SISTEMA RILEVAMENTO GPS → POI → CHECK-IN (v3.77.0)
 
@@ -6648,6 +6933,7 @@ WHERE comune_id = ${comuneId}
 | `types` | string | ❌ | Tipi POI: "culture", "mobility", "all" (default: "all") |
 
 **Risposta:**
+
 ```json
 {
   "success": true,
@@ -6657,8 +6943,8 @@ WHERE comune_id = ${comuneId}
       "type": "culture",
       "poi_type": "museo",
       "name": "Museo Archeologico e d'Arte della Maremma",
-      "lat": 42.7613170,
-      "lng": 11.1137600,
+      "lat": 42.761317,
+      "lng": 11.11376,
       "distance_m": 12,
       "tcc_reward": 50,
       "already_visited_today": false
@@ -6668,8 +6954,8 @@ WHERE comune_id = ${comuneId}
       "type": "mobility",
       "poi_type": "bus_stop",
       "name": "Fermata Piazza Dante",
-      "lat": 42.7615000,
-      "lng": 11.1140000,
+      "lat": 42.7615,
+      "lng": 11.114,
       "distance_m": 35,
       "tcc_reward": 10,
       "already_visited_today": false
@@ -6680,9 +6966,10 @@ WHERE comune_id = ${comuneId}
 ```
 
 **Query SQL:**
+
 ```sql
 -- POI Culturali vicini
-SELECT 
+SELECT
   id, 'culture' as type, type as poi_type, name, lat, lng,
   tcc_reward,
   (6371000 * acos(
@@ -6697,7 +6984,7 @@ ORDER BY distance_m ASC
 LIMIT 10;
 
 -- Fermate GTFS vicine
-SELECT 
+SELECT
   id, 'mobility' as type, stop_type as poi_type, stop_name as name, lat, lng,
   10 as tcc_reward,
   (6371000 * acos(...)) as distance_m
@@ -6714,54 +7001,56 @@ LIMIT 10;
 
 #### 3.1 `cultural_pois` (esistente, aggiornata)
 
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| `id` | SERIAL | PK |
-| `osm_id` | BIGINT | ID OpenStreetMap |
-| `name` | TEXT | Nome POI |
-| `type` | TEXT | museo, monumento, teatro, sito_archeologico, etc. |
-| `lat` | FLOAT | Latitudine |
-| `lng` | FLOAT | Longitudine |
-| `region` | TEXT | Regione (legacy) |
-| `comune_id` | INT | **NUOVO** - FK a comuni per multi-tenant |
-| `tcc_reward` | INT | TCC guadagnati per visita |
-| `created_at` | TIMESTAMP | Data inserimento |
+| Campo        | Tipo      | Descrizione                                       |
+| ------------ | --------- | ------------------------------------------------- |
+| `id`         | SERIAL    | PK                                                |
+| `osm_id`     | BIGINT    | ID OpenStreetMap                                  |
+| `name`       | TEXT      | Nome POI                                          |
+| `type`       | TEXT      | museo, monumento, teatro, sito_archeologico, etc. |
+| `lat`        | FLOAT     | Latitudine                                        |
+| `lng`        | FLOAT     | Longitudine                                       |
+| `region`     | TEXT      | Regione (legacy)                                  |
+| `comune_id`  | INT       | **NUOVO** - FK a comuni per multi-tenant          |
+| `tcc_reward` | INT       | TCC guadagnati per visita                         |
+| `created_at` | TIMESTAMP | Data inserimento                                  |
 
 **Stato attuale:**
+
 - Totale POI: 1.127
 - POI con `comune_id=1` (Grosseto): **44**
 - POI senza `comune_id` (Emilia-Romagna): 1.083
 
 #### 3.2 `cultural_visits` (esistente)
 
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| `id` | SERIAL | PK |
-| `user_id` | TEXT | ID utente cittadino |
-| `poi_id` | TEXT | ID POI visitato |
-| `poi_type` | TEXT | Tipo POI |
-| `poi_name` | TEXT | Nome POI |
-| `lat` | FLOAT | Latitudine check-in |
-| `lng` | FLOAT | Longitudine check-in |
-| `comune_id` | INT | FK a comuni |
-| `credits_earned` | INT | TCC guadagnati |
-| `visit_date` | DATE | Data visita (per anti-abuse) |
-| `created_at` | TIMESTAMP | Timestamp esatto |
+| Campo            | Tipo      | Descrizione                  |
+| ---------------- | --------- | ---------------------------- |
+| `id`             | SERIAL    | PK                           |
+| `user_id`        | TEXT      | ID utente cittadino          |
+| `poi_id`         | TEXT      | ID POI visitato              |
+| `poi_type`       | TEXT      | Tipo POI                     |
+| `poi_name`       | TEXT      | Nome POI                     |
+| `lat`            | FLOAT     | Latitudine check-in          |
+| `lng`            | FLOAT     | Longitudine check-in         |
+| `comune_id`      | INT       | FK a comuni                  |
+| `credits_earned` | INT       | TCC guadagnati               |
+| `visit_date`     | DATE      | Data visita (per anti-abuse) |
+| `created_at`     | TIMESTAMP | Timestamp esatto             |
 
 #### 3.3 `gtfs_stops` (esistente)
 
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| `id` | SERIAL | PK |
-| `stop_id` | TEXT | ID fermata GTFS |
-| `stop_name` | TEXT | Nome fermata |
-| `lat` | FLOAT | Latitudine |
-| `lng` | FLOAT | Longitudine |
-| `stop_type` | TEXT | bus, tram, metro |
-| `provider` | TEXT | Gestore (TPER, Tiemme, etc.) |
-| `comune_id` | INT | FK a comuni |
+| Campo       | Tipo   | Descrizione                  |
+| ----------- | ------ | ---------------------------- |
+| `id`        | SERIAL | PK                           |
+| `stop_id`   | TEXT   | ID fermata GTFS              |
+| `stop_name` | TEXT   | Nome fermata                 |
+| `lat`       | FLOAT  | Latitudine                   |
+| `lng`       | FLOAT  | Longitudine                  |
+| `stop_type` | TEXT   | bus, tram, metro             |
+| `provider`  | TEXT   | Gestore (TPER, Tiemme, etc.) |
+| `comune_id` | INT    | FK a comuni                  |
 
 **Stato attuale:**
+
 - Fermate TPER Bologna: 385
 - Fermate Grosseto: 0 (da importare GTFS Tiemme)
 
@@ -6774,11 +7063,11 @@ LIMIT 10;
 **File:** `client/src/hooks/useNearbyPOIs.ts`
 
 ```typescript
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface NearbyPOI {
   id: number;
-  type: 'culture' | 'mobility';
+  type: "culture" | "mobility";
   poi_type: string;
   name: string;
   lat: number;
@@ -6792,18 +7081,21 @@ export function useNearbyPOIs(comuneId: number, enabled: boolean) {
   const [nearbyPOIs, setNearbyPOIs] = useState<NearbyPOI[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userPosition, setUserPosition] = useState<{lat: number; lng: number} | null>(null);
+  const [userPosition, setUserPosition] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
 
     // Richiedi posizione GPS
-    if ('geolocation' in navigator) {
+    if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        async (position) => {
+        async position => {
           const { latitude, longitude } = position.coords;
           setUserPosition({ lat: latitude, lng: longitude });
-          
+
           // Chiama API per trovare POI vicini
           try {
             setLoading(true);
@@ -6815,13 +7107,13 @@ export function useNearbyPOIs(comuneId: number, enabled: boolean) {
               setNearbyPOIs(data.nearby_pois);
             }
           } catch (err) {
-            setError('Errore ricerca POI vicini');
+            setError("Errore ricerca POI vicini");
           } finally {
             setLoading(false);
           }
         },
-        (err) => {
-          setError('GPS non disponibile');
+        err => {
+          setError("GPS non disponibile");
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
@@ -6857,13 +7149,13 @@ export function NearbyPOIPopup({ poi, onCheckin, onDismiss }: Props) {
           </p>
         </div>
       </div>
-      
+
       <div className="flex gap-2 mt-4">
         <Button variant="outline" onClick={onDismiss} className="flex-1">
           Non ora
         </Button>
-        <Button 
-          onClick={() => onCheckin(poi)} 
+        <Button
+          onClick={() => onCheckin(poi)}
           className="flex-1 bg-emerald-600 hover:bg-emerald-700"
           disabled={poi.already_visited_today}
         >
@@ -6886,7 +7178,7 @@ import { NearbyPOIPopup } from '@/components/NearbyPOIPopup';
 
 // Nel componente WalletPage
 const { nearbyPOIs, loading: loadingPOIs } = useNearbyPOIs(
-  comuneId, 
+  comuneId,
   ecoCreditsEnabled && isAuthenticated
 );
 
@@ -6919,7 +7211,7 @@ const handleCheckin = async (poi: NearbyPOI) => {
 
 // Nel JSX, dopo il contenuto principale
 {ecoCreditsEnabled && nearestPOI && showPOIPopup && (
-  <NearbyPOIPopup 
+  <NearbyPOIPopup
     poi={nearestPOI}
     onCheckin={handleCheckin}
     onDismiss={() => setShowPOIPopup(false)}
@@ -6940,27 +7232,27 @@ const handleCheckin = async (poi: NearbyPOI) => {
  * GET /api/gaming-rewards/nearby-pois
  * Trova POI vicini alle coordinate GPS dello smartphone
  */
-router.get('/nearby-pois', async (req, res) => {
+router.get("/nearby-pois", async (req, res) => {
   try {
-    logRequest('GET', '/api/gaming-rewards/nearby-pois', req.query);
-    const { lat, lng, comune_id, radius = 50, types = 'all' } = req.query;
-    
+    logRequest("GET", "/api/gaming-rewards/nearby-pois", req.query);
+    const { lat, lng, comune_id, radius = 50, types = "all" } = req.query;
+
     if (!lat || !lng || !comune_id) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Parametri mancanti: lat, lng, comune_id' 
+      return res.status(400).json({
+        success: false,
+        error: "Parametri mancanti: lat, lng, comune_id",
       });
     }
-    
+
     const userLat = parseFloat(lat);
     const userLng = parseFloat(lng);
     const searchRadius = parseInt(radius);
     const comuneIdInt = parseInt(comune_id);
-    
+
     const nearbyPOIs = [];
-    
+
     // 1. Cerca POI Culturali vicini
-    if (types === 'all' || types === 'culture') {
+    if (types === "all" || types === "culture") {
       const culturalQuery = `
         SELECT 
           id, 
@@ -6985,13 +7277,18 @@ router.get('/nearby-pois', async (req, res) => {
         ORDER BY distance_m ASC
         LIMIT 5
       `;
-      
-      const culturalResult = await pool.query(culturalQuery, [userLat, userLng, comuneIdInt, searchRadius]);
+
+      const culturalResult = await pool.query(culturalQuery, [
+        userLat,
+        userLng,
+        comuneIdInt,
+        searchRadius,
+      ]);
       nearbyPOIs.push(...culturalResult.rows);
     }
-    
+
     // 2. Cerca Fermate GTFS vicine
-    if (types === 'all' || types === 'mobility') {
+    if (types === "all" || types === "mobility") {
       const gtfsQuery = `
         SELECT 
           id,
@@ -7016,26 +7313,35 @@ router.get('/nearby-pois', async (req, res) => {
         ORDER BY distance_m ASC
         LIMIT 5
       `;
-      
-      const gtfsResult = await pool.query(gtfsQuery, [userLat, userLng, comuneIdInt, searchRadius]);
+
+      const gtfsResult = await pool.query(gtfsQuery, [
+        userLat,
+        userLng,
+        comuneIdInt,
+        searchRadius,
+      ]);
       nearbyPOIs.push(...gtfsResult.rows);
     }
-    
+
     // Ordina per distanza
     nearbyPOIs.sort((a, b) => a.distance_m - b.distance_m);
-    
+
     // Verifica visite già effettuate oggi (per ogni POI)
     // TODO: Ottimizzare con una singola query
-    
+
     res.json({
       success: true,
       nearby_pois: nearbyPOIs.slice(0, 10),
       count: nearbyPOIs.length,
-      search_params: { lat: userLat, lng: userLng, radius: searchRadius, comune_id: comuneIdInt }
+      search_params: {
+        lat: userLat,
+        lng: userLng,
+        radius: searchRadius,
+        comune_id: comuneIdInt,
+      },
     });
-    
   } catch (error) {
-    console.error('[GAMING-REWARDS] Error GET /nearby-pois:', error);
+    console.error("[GAMING-REWARDS] Error GET /nearby-pois:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -7045,16 +7351,17 @@ router.get('/nearby-pois', async (req, res) => {
 
 ### 6. POI Culturali Grosseto (44 importati)
 
-| Tipo | Quantità | TCC Reward |
-|------|----------|------------|
-| Museo | 3 | 50 TCC |
-| Teatro | 2 | 45 TCC |
-| Sito Archeologico | 2 | 60 TCC |
-| Edificio Storico | 3 | 25 TCC |
-| Monumento | 28 | 30 TCC |
-| Memoriale | 6 | 15 TCC |
+| Tipo              | Quantità | TCC Reward |
+| ----------------- | -------- | ---------- |
+| Museo             | 3        | 50 TCC     |
+| Teatro            | 2        | 45 TCC     |
+| Sito Archeologico | 2        | 60 TCC     |
+| Edificio Storico  | 3        | 25 TCC     |
+| Monumento         | 28       | 30 TCC     |
+| Memoriale         | 6        | 15 TCC     |
 
 **Esempi POI:**
+
 - Museo Archeologico e d'Arte della Maremma (42.7613, 11.1137)
 - Museo di Storia Naturale della Maremma (42.7604, 11.1163)
 - Teatro degli Industri (42.7602, 11.1117)
@@ -7103,15 +7410,15 @@ router.get('/nearby-pois', async (req, res) => {
 
 ### 8. TODO Implementazione
 
-| # | Task | File | Priorità | Stato |
-|---|------|------|----------|-------|
-| 8.1 | Creare endpoint `/nearby-pois` | gaming-rewards.js | CRITICA | ✅ |
-| 8.2 | Creare hook `useNearbyPOIs` | hooks/useNearbyPOIs.ts | CRITICA | ✅ |
-| 8.3 | Creare componente `NearbyPOIPopup` | components/NearbyPOIPopup.tsx | CRITICA | ✅ |
-| 8.4 | Integrare in WalletPage | pages/WalletPage.tsx | CRITICA | ✅ |
-| 8.5 | Testare con coordinate Grosseto | - | ALTA | ✅ |
-| 8.6 | Importare fermate GTFS Tiemme | scripts/import-gtfs-tiemme.js | MEDIA | ⬜ |
-| 8.7 | Aggiungere `comune_id` ai POI Emilia | scripts/update-pois-comune.js | BASSA | ⬜ |
+| #   | Task                                 | File                          | Priorità | Stato |
+| --- | ------------------------------------ | ----------------------------- | -------- | ----- |
+| 8.1 | Creare endpoint `/nearby-pois`       | gaming-rewards.js             | CRITICA  | ✅    |
+| 8.2 | Creare hook `useNearbyPOIs`          | hooks/useNearbyPOIs.ts        | CRITICA  | ✅    |
+| 8.3 | Creare componente `NearbyPOIPopup`   | components/NearbyPOIPopup.tsx | CRITICA  | ✅    |
+| 8.4 | Integrare in WalletPage              | pages/WalletPage.tsx          | CRITICA  | ✅    |
+| 8.5 | Testare con coordinate Grosseto      | -                             | ALTA     | ✅    |
+| 8.6 | Importare fermate GTFS Tiemme        | scripts/import-gtfs-tiemme.js | MEDIA    | ⬜    |
+| 8.7 | Aggiungere `comune_id` ai POI Emilia | scripts/update-pois-comune.js | BASSA    | ⬜    |
 
 ---
 
@@ -7159,16 +7466,16 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/culture/heatmap?comune
 
 ### 10. Versioni
 
-| Versione | Data | Modifiche |
-|----------|------|-----------|
-| v3.99.5 | 07/02/2026 | **TREND FILTRI TEMPORALI v1.3.5**: Grafico Trend TCC connesso ai filtri temporali (Tutto/Oggi/7gg/30gg/1anno). Titolo dinamico. Backend già supportava `days` param. |
-| v3.99.4 | 06/02/2026 | **FIX TREND v1.3.4**: Grafico Trend TCC e contatori sotto filtrati per comune via API `?comune_id=X`. Creato `trendComuneQueryParam` che dipende da `geoFilter`. |
-| v3.99.3 | 06/02/2026 | **FIX DEFINITIVO FILTRI v1.3.3**: `filterByGeo()` usa `comune_id` diretto (match esatto) invece di coordinate+raggio 30km. Backend v2.1.0 aggiunge `comune_id` a tutti i SELECT. Stats TCC in vista comune usano SOLO dati filtrati. Top 5 Negozi filtrati per `comune_id`. |
-| v3.99.2 | 06/02/2026 | **FIX FILTRI v1.3.2**: API caricano TUTTO, filtro solo client-side, stats TCC calcolate da azioni, HeatmapLayer filtrata |
-| v3.99.1 | 06/02/2026 | **FIX FILTRI v1.3.1**: Switch tab Italia/Comune senza reload API |
-| v3.99.0 | 06/02/2026 | **FIX FILTRI v1.3.0**: geoFilter default, COMUNI_COORDS completo, MapCenterUpdater |
-| v3.78.0 | 04/02/2026 | **IMPLEMENTAZIONE COMPLETA**: Endpoint /nearby-pois, hook useNearbyPOIs, heatmap isolata per layer, marker 15px |
-| v3.77.0 | 04/02/2026 | Progettazione sistema GPS → POI → Check-in |
+| Versione | Data       | Modifiche                                                                                                                                                                                                                                                                   |
+| -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v3.99.5  | 07/02/2026 | **TREND FILTRI TEMPORALI v1.3.5**: Grafico Trend TCC connesso ai filtri temporali (Tutto/Oggi/7gg/30gg/1anno). Titolo dinamico. Backend già supportava `days` param.                                                                                                        |
+| v3.99.4  | 06/02/2026 | **FIX TREND v1.3.4**: Grafico Trend TCC e contatori sotto filtrati per comune via API `?comune_id=X`. Creato `trendComuneQueryParam` che dipende da `geoFilter`.                                                                                                            |
+| v3.99.3  | 06/02/2026 | **FIX DEFINITIVO FILTRI v1.3.3**: `filterByGeo()` usa `comune_id` diretto (match esatto) invece di coordinate+raggio 30km. Backend v2.1.0 aggiunge `comune_id` a tutti i SELECT. Stats TCC in vista comune usano SOLO dati filtrati. Top 5 Negozi filtrati per `comune_id`. |
+| v3.99.2  | 06/02/2026 | **FIX FILTRI v1.3.2**: API caricano TUTTO, filtro solo client-side, stats TCC calcolate da azioni, HeatmapLayer filtrata                                                                                                                                                    |
+| v3.99.1  | 06/02/2026 | **FIX FILTRI v1.3.1**: Switch tab Italia/Comune senza reload API                                                                                                                                                                                                            |
+| v3.99.0  | 06/02/2026 | **FIX FILTRI v1.3.0**: geoFilter default, COMUNI_COORDS completo, MapCenterUpdater                                                                                                                                                                                          |
+| v3.78.0  | 04/02/2026 | **IMPLEMENTAZIONE COMPLETA**: Endpoint /nearby-pois, hook useNearbyPOIs, heatmap isolata per layer, marker 15px                                                                                                                                                             |
+| v3.77.0  | 04/02/2026 | Progettazione sistema GPS → POI → Check-in                                                                                                                                                                                                                                  |
 
 ---
 
@@ -7183,15 +7490,16 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/culture/heatmap?comune
 
 **`GET /api/gaming-rewards/nearby-pois`**
 
-| Parametro | Tipo | Descrizione |
-|-----------|------|-------------|
-| `lat` | float | Latitudine GPS smartphone |
-| `lng` | float | Longitudine GPS smartphone |
-| `comune_id` | int | ID comune per filtro multi-tenant |
-| `radius` | int | Raggio ricerca in metri (default 50) |
-| `user_id` | string | ID utente per verifica visite giornaliere |
+| Parametro   | Tipo   | Descrizione                               |
+| ----------- | ------ | ----------------------------------------- |
+| `lat`       | float  | Latitudine GPS smartphone                 |
+| `lng`       | float  | Longitudine GPS smartphone                |
+| `comune_id` | int    | ID comune per filtro multi-tenant         |
+| `radius`    | int    | Raggio ricerca in metri (default 50)      |
+| `user_id`   | string | ID utente per verifica visite giornaliere |
 
 **Risposta:**
+
 ```json
 {
   "success": true,
@@ -7216,12 +7524,13 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/culture/heatmap?comune
 
 ### 2. Database Aggiornato
 
-| Tabella | Modifica | Stato |
-|---------|----------|-------|
-| `cultural_pois` | Aggiunta colonna `comune_id` | ✅ |
-| `gtfs_stops` | Aggiunta colonna `comune_id` | ✅ |
+| Tabella         | Modifica                     | Stato |
+| --------------- | ---------------------------- | ----- |
+| `cultural_pois` | Aggiunta colonna `comune_id` | ✅    |
+| `gtfs_stops`    | Aggiunta colonna `comune_id` | ✅    |
 
 **Dati Grosseto (comune_id=1):**
+
 - 44 POI culturali (musei, monumenti, teatri, ecc.)
 - 349 fermate trasporto pubblico
 
@@ -7229,38 +7538,43 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/culture/heatmap?comune
 
 ### 3. Frontend Creato
 
-| File | Componente | Descrizione |
-|------|------------|-------------|
-| `hooks/useNearbyPOIs.ts` | Hook | Rileva GPS, chiama /nearby-pois, gestisce check-in |
-| `components/NearbyPOIPopup.tsx` | Popup | Mostra POI vicino con pulsante check-in |
-| `components/NearbyPOIPopup.tsx` | Lista | Lista tutti POI vicini |
-| `components/NearbyPOIPopup.tsx` | Banner | Notifica in alto quando vicino a POI |
-| `pages/WalletPage.tsx` | Integrazione | Sezione "POI Vicini" in ECO CREDIT |
+| File                            | Componente   | Descrizione                                        |
+| ------------------------------- | ------------ | -------------------------------------------------- |
+| `hooks/useNearbyPOIs.ts`        | Hook         | Rileva GPS, chiama /nearby-pois, gestisce check-in |
+| `components/NearbyPOIPopup.tsx` | Popup        | Mostra POI vicino con pulsante check-in            |
+| `components/NearbyPOIPopup.tsx` | Lista        | Lista tutti POI vicini                             |
+| `components/NearbyPOIPopup.tsx` | Banner       | Notifica in alto quando vicino a POI               |
+| `pages/WalletPage.tsx`          | Integrazione | Sezione "POI Vicini" in ECO CREDIT                 |
 
 ---
 
 ### 4. Mappa Gaming & Rewards - Modifiche
 
 #### 4.1 Marker Uniformi
+
 Tutti i marker ora hanno dimensione **15px** con emoji **9px**.
 
 #### 4.2 Heatmap Isolata per Layer
+
 Quando si seleziona un layer, la zona di calore mostra SOLO i punti di quel layer:
 
-| Layer | Filtro Heatmap |
-|-------|----------------|
-| Tutti | Tutti i punti |
-| Segnalazioni | Solo `type === 'civic'` |
-| Acquisti | Solo `type === 'shop' \|\| 'market' \|\| 'hub'` |
-| Mobilità | Solo `type === 'mobility'` |
-| Cultura | Solo `type === 'culture'` |
+| Layer        | Filtro Heatmap                                  |
+| ------------ | ----------------------------------------------- |
+| Tutti        | Tutti i punti                                   |
+| Segnalazioni | Solo `type === 'civic'`                         |
+| Acquisti     | Solo `type === 'shop' \|\| 'market' \|\| 'hub'` |
+| Mobilità     | Solo `type === 'mobility'`                      |
+| Cultura      | Solo `type === 'culture'`                       |
 
 #### 4.3 Intensità Calore Ridotta
+
 Intensità base abbassata a **0.25** per tutti i tipi:
+
 - 1 punto = calore verde/giallo chiaro
 - Più punti vicini = calore arancio/rosso (si sommano)
 
 #### 4.4 FlyTo su Click Tab
+
 Cliccando sui tab (Mobilità, Cultura, ecc.) la mappa si centra sui punti con animazione.
 
 ---
@@ -7278,12 +7592,12 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/nearby-pois?lat=42.761
 
 ### 6. File Modificati
 
-| File | Modifiche |
-|------|-----------|
-| `mihub-backend-rest/routes/gaming-rewards.js` | Aggiunto endpoint /nearby-pois |
-| `dms-hub-app-new/client/src/hooks/useNearbyPOIs.ts` | Nuovo hook GPS |
-| `dms-hub-app-new/client/src/components/NearbyPOIPopup.tsx` | Nuovi componenti UI |
-| `dms-hub-app-new/client/src/pages/WalletPage.tsx` | Integrazione ECO CREDIT |
+| File                                                           | Modifiche                                                                                                                                                                                                                                                |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mihub-backend-rest/routes/gaming-rewards.js`                  | Aggiunto endpoint /nearby-pois                                                                                                                                                                                                                           |
+| `dms-hub-app-new/client/src/hooks/useNearbyPOIs.ts`            | Nuovo hook GPS                                                                                                                                                                                                                                           |
+| `dms-hub-app-new/client/src/components/NearbyPOIPopup.tsx`     | Nuovi componenti UI                                                                                                                                                                                                                                      |
+| `dms-hub-app-new/client/src/pages/WalletPage.tsx`              | Integrazione ECO CREDIT                                                                                                                                                                                                                                  |
 | `dms-hub-app-new/client/src/components/GamingRewardsPanel.tsx` | Heatmap isolata, marker 15px, flyTo, filtri geoFilter **v1.3.5** (filtro `comune_id` diretto, stats TCC in vista comune solo da dati filtrati, Top 5 filtrati per `comune_id`, **Trend TCC filtrato per comune via API + connesso ai filtri temporali**) |
 
 ---
@@ -7291,13 +7605,16 @@ curl "https://orchestratore.mio-hub.me/api/gaming-rewards/nearby-pois?lat=42.761
 ## 🔧 FIX FILTRI GAMING & REWARDS v1.3.0 → v1.3.5 (7 Febbraio 2026)
 
 ### Problema Originale (v1.3.0–v1.3.2)
+
 Quando si impersonalizzava un comune (es. Carpi), la sezione Gaming & Rewards mostrava dati di TUTTI i comuni invece di filtrare solo quelli del comune selezionato:
+
 - Heatmap mostrava Mobilità (7) e Cultura (12) globali invece dei valori locali
 - Liste Mobilità mostravano check-in di Modena (MASERATI, STAZIONE FS) sotto Carpi
 - Contatori tab non coerenti con i dati filtrati
 - Mappa non zoomava sul comune selezionato
 
 ### Causa Root (v1.3.0–v1.3.2)
+
 1. Le API `mobility/heatmap` e `culture/heatmap` ricevevano `lat/lng` dal frontend → il backend usava filtro geografico (raggio 50km) IGNORANDO `comune_id`
 2. `comuneQueryParam` passava sempre `comune_id` indipendentemente dal tab selezionato
 3. `geoFilter` partiva come `'italia'` anche durante impersonalizzazione
@@ -7305,17 +7622,17 @@ Quando si impersonalizzava un comune (es. Carpi), la sezione Gaming & Rewards mo
 
 ### Fix Implementati (v1.3.0 → v1.3.2)
 
-| Fix | Descrizione | Commit |
-|-----|-------------|--------|
-| **geoFilter default** | Default `'comune'` quando impersonalizzazione attiva, `'italia'` altrimenti | `0761110` |
-| **COMUNI_COORDS** | Aggiunto Sassuolo (10), Casalecchio (12), Ravenna (13) | `0761110` |
-| **MapCenterUpdater** | Gestisce `geoFilter`: vista Italia (zoom 6) vs zoom comune (14) | `0761110` |
-| **getInitialCenter** | Rispetta `geoFilter` per centro mappa iniziale | `0761110` |
-| **v1.3.1 — Switch senza reload** | Rimosso `geoFilter` dalle dipendenze di tutte le funzioni load* → switch tab istantaneo | `af5c77a` |
-| **v1.3.2 — API senza filtro** | Rimosso `comune_id` da TUTTE le API → caricano SEMPRE tutti i dati | `1d9bcfe` |
-| **v1.3.2 — Filtro solo client** | `filterByGeo()` filtra client-side: `italia`=tutto, `comune`=raggio 30km | `1d9bcfe` |
-| **v1.3.2 — Stats grandi** | TCC Rilasciati/Riscattati calcolati sommando TCC da azioni (mobilità+cultura+segnalazioni+acquisti) | `1d9bcfe` |
-| **v1.3.2 — HeatmapLayer** | HeatmapLayer e tutti i marker usano `filterData()` per rispettare geoFilter | `1d9bcfe` |
+| Fix                              | Descrizione                                                                                         | Commit    |
+| -------------------------------- | --------------------------------------------------------------------------------------------------- | --------- |
+| **geoFilter default**            | Default `'comune'` quando impersonalizzazione attiva, `'italia'` altrimenti                         | `0761110` |
+| **COMUNI_COORDS**                | Aggiunto Sassuolo (10), Casalecchio (12), Ravenna (13)                                              | `0761110` |
+| **MapCenterUpdater**             | Gestisce `geoFilter`: vista Italia (zoom 6) vs zoom comune (14)                                     | `0761110` |
+| **getInitialCenter**             | Rispetta `geoFilter` per centro mappa iniziale                                                      | `0761110` |
+| **v1.3.1 — Switch senza reload** | Rimosso `geoFilter` dalle dipendenze di tutte le funzioni load\* → switch tab istantaneo            | `af5c77a` |
+| **v1.3.2 — API senza filtro**    | Rimosso `comune_id` da TUTTE le API → caricano SEMPRE tutti i dati                                  | `1d9bcfe` |
+| **v1.3.2 — Filtro solo client**  | `filterByGeo()` filtra client-side: `italia`=tutto, `comune`=raggio 30km                            | `1d9bcfe` |
+| **v1.3.2 — Stats grandi**        | TCC Rilasciati/Riscattati calcolati sommando TCC da azioni (mobilità+cultura+segnalazioni+acquisti) | `1d9bcfe` |
+| **v1.3.2 — HeatmapLayer**        | HeatmapLayer e tutti i marker usano `filterData()` per rispettare geoFilter                         | `1d9bcfe` |
 
 ### Logica Filtri Corretta
 
@@ -7344,35 +7661,36 @@ Quando si impersonalizzava un comune (es. Carpi), la sezione Gaming & Rewards mo
 
 ### COMUNI_COORDS Completo (ID = comune_id nel DB)
 
-| ID | Comune | Lat | Lng |
-|----|--------|-----|-----|
-| 1 | Grosseto | 42.7635 | 11.1126 |
-| 6 | Bologna | 44.4949 | 11.3426 |
-| 7 | Vignola | 44.4898 | 11.0123 |
-| 8 | Modena | 44.6471 | 10.9252 |
-| 9 | Carpi | 44.7842 | 10.8847 |
-| 10 | Sassuolo | 44.5343 | 10.7847 |
-| 12 | Casalecchio di Reno | 44.4726 | 11.2755 |
-| 13 | Ravenna | 44.4175 | 12.1996 |
+| ID  | Comune              | Lat     | Lng     |
+| --- | ------------------- | ------- | ------- |
+| 1   | Grosseto            | 42.7635 | 11.1126 |
+| 6   | Bologna             | 44.4949 | 11.3426 |
+| 7   | Vignola             | 44.4898 | 11.0123 |
+| 8   | Modena              | 44.6471 | 10.9252 |
+| 9   | Carpi               | 44.7842 | 10.8847 |
+| 10  | Sassuolo            | 44.5343 | 10.7847 |
+| 12  | Casalecchio di Reno | 44.4726 | 11.2755 |
+| 13  | Ravenna             | 44.4175 | 12.1996 |
 
 ### Architettura Filtri v1.3.3 — Dettaglio Tecnico (VERSIONE DEFINITIVA)
 
 Il sistema di filtraggio è stato completamente riprogettato nella v1.3.2 e **perfezionato nella v1.3.3** per risolvere il problema dei comuni limitrofi. L'architettura si basa su due principi fondamentali:
+
 1. **Le API caricano SEMPRE tutti i dati** (senza filtro `comune_id` lato server)
 2. **Il filtro per comune usa `comune_id` diretto** (match esatto, NON coordinate+raggio)
 
 **Funzioni di caricamento dati (useCallback):**
 
-| Funzione | Endpoint API | Filtro server | Dati restituiti (v2.1.0) |
-|----------|-------------|---------------|-------------------------|
-| `loadStats` | `/api/gaming-rewards/stats` | NO | Stats globali (usate solo in vista Italia) |
-| `loadHeatmapPoints` | `/api/gaming-rewards/heatmap` | NO | Punti commerciali **con `comune_id`** |
-| `loadMobilityActions` | `/api/gaming-rewards/mobility/heatmap` | NO | Route completions **con `comune_id`** |
-| `loadCultureActions` | `/api/gaming-rewards/culture/heatmap` | NO | Cultural visits **con `comune_id`** |
-| `loadCivicReports` | `/api/gaming-rewards/civic/reports` | NO | Segnalazioni **con `comune_id`** |
-| `loadReferralList` | `/api/gaming-rewards/referral/list` | NO | Referral **con `comune_id`** |
-| `loadTopShops` | `/api/gaming-rewards/top-shops` | NO | Top negozi **con `comune_id`** |
-| `loadTrendData` | `/api/gaming-rewards/trend` | **SÌ (v1.3.5)**: `trendComuneQueryParam` con `days` + `comune_id` | Trend **periodo dinamico** (Tutto/Oggi/7gg/30gg/1anno) + **filtrato per comune** |
+| Funzione              | Endpoint API                           | Filtro server                                                     | Dati restituiti (v2.1.0)                                                         |
+| --------------------- | -------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `loadStats`           | `/api/gaming-rewards/stats`            | NO                                                                | Stats globali (usate solo in vista Italia)                                       |
+| `loadHeatmapPoints`   | `/api/gaming-rewards/heatmap`          | NO                                                                | Punti commerciali **con `comune_id`**                                            |
+| `loadMobilityActions` | `/api/gaming-rewards/mobility/heatmap` | NO                                                                | Route completions **con `comune_id`**                                            |
+| `loadCultureActions`  | `/api/gaming-rewards/culture/heatmap`  | NO                                                                | Cultural visits **con `comune_id`**                                              |
+| `loadCivicReports`    | `/api/gaming-rewards/civic/reports`    | NO                                                                | Segnalazioni **con `comune_id`**                                                 |
+| `loadReferralList`    | `/api/gaming-rewards/referral/list`    | NO                                                                | Referral **con `comune_id`**                                                     |
+| `loadTopShops`        | `/api/gaming-rewards/top-shops`        | NO                                                                | Top negozi **con `comune_id`**                                                   |
+| `loadTrendData`       | `/api/gaming-rewards/trend`            | **SÌ (v1.3.5)**: `trendComuneQueryParam` con `days` + `comune_id` | Trend **periodo dinamico** (Tutto/Oggi/7gg/30gg/1anno) + **filtrato per comune** |
 
 **Filtro client-side `filterByGeo()` — v1.3.3 (DEFINITIVO):**
 
@@ -7380,21 +7698,21 @@ Il sistema di filtraggio è stato completamente riprogettato nella v1.3.2 e **pe
 // v1.3.3: Filtro per comune_id DIRETTO (non più coordinate+raggio)
 const filterByGeo = useCallback((items: any[]) => {
   if (geoFilter === 'italia' || !currentComuneId) return items;
-  
+
   const comuneCoords = COMUNI_COORDS[currentComuneId];
-  
+
   return items.filter(item => {
     // Priorità 1: filtro per comune_id diretto (preciso)
     if (item.comune_id !== undefined && item.comune_id !== null) {
       return parseInt(item.comune_id) === currentComuneId;
     }
-    
+
     // Fallback: se non ha comune_id, usa coordinate con raggio 5km (stretto)
     if (!comuneCoords) return false;
     const lat = parseFloat(item.lat) || 0;
     const lng = parseFloat(item.lng) || 0;
     if (!lat || !lng) return false;
-    
+
     const dLat = (lat - comuneCoords.lat) * 111;
     const dLng = (lng - comuneCoords.lng) * 111 * Math.cos(comuneCoords.lat * Math.PI / 180);
     const distance = Math.sqrt(dLat * dLat + dLng * dLng);
@@ -7405,14 +7723,15 @@ const filterByGeo = useCallback((items: any[]) => {
 
 **PERCHÉ `comune_id` diretto è MEGLIO di coordinate+raggio:**
 
-| Aspetto | v1.3.2 (coordinate+30km) | v1.3.3 (comune_id diretto) |
-|---------|--------------------------|----------------------------|
-| Precisione | ❌ Cross-contaminazione tra comuni limitrofi | ✅ Match esatto, zero contaminazione |
-| Emilia-Romagna | ❌ Modena/Carpi/Sassuolo/Vignola tutti entro 30km | ✅ Ogni comune vede SOLO i propri dati |
-| Performance | ❌ Calcolo distanza per ogni item | ✅ Confronto intero (più veloce) |
-| Affidabilità | ❌ Dipende da coordinate accurate | ✅ Dipende da `comune_id` nel DB (sempre presente) |
+| Aspetto        | v1.3.2 (coordinate+30km)                          | v1.3.3 (comune_id diretto)                         |
+| -------------- | ------------------------------------------------- | -------------------------------------------------- |
+| Precisione     | ❌ Cross-contaminazione tra comuni limitrofi      | ✅ Match esatto, zero contaminazione               |
+| Emilia-Romagna | ❌ Modena/Carpi/Sassuolo/Vignola tutti entro 30km | ✅ Ogni comune vede SOLO i propri dati             |
+| Performance    | ❌ Calcolo distanza per ogni item                 | ✅ Confronto intero (più veloce)                   |
+| Affidabilità   | ❌ Dipende da coordinate accurate                 | ✅ Dipende da `comune_id` nel DB (sempre presente) |
 
 **Viene applicata a:**
+
 - Contatori tab heatmap (Segnalazioni, Negozio, Mercato, Mobilità, Cultura, Referral)
 - Marker sulla mappa (tutti i tipi)
 - HeatmapLayer (zona di calore)
@@ -7429,15 +7748,18 @@ Soluzione: `loadTrendData` usa `trendComuneQueryParam` con **DUE parametri** (NO
 
 ```javascript
 // v1.3.5: Il trend risponde sia al filtro GEO che al filtro TEMPORALE
-const trendDaysMap = { 'all': 3650, 'today': 1, 'week': 7, 'month': 30, 'year': 365 };
+const trendDaysMap = { all: 3650, today: 1, week: 7, month: 30, year: 365 };
 const trendDays = trendDaysMap[timeFilter] || 7;
 const trendQueryParams = [];
-if (geoFilter === 'comune' && currentComuneId) trendQueryParams.push(`comune_id=${currentComuneId}`);
+if (geoFilter === "comune" && currentComuneId)
+  trendQueryParams.push(`comune_id=${currentComuneId}`);
 trendQueryParams.push(`days=${trendDays}`);
-const trendComuneQueryParam = trendQueryParams.join('&');
+const trendComuneQueryParam = trendQueryParams.join("&");
 
 // loadTrendData usa trendComuneQueryParam (dipende da geoFilter + timeFilter)
-const response = await fetch(`${API_BASE_URL}/api/gaming-rewards/trend?${trendComuneQueryParam}`);
+const response = await fetch(
+  `${API_BASE_URL}/api/gaming-rewards/trend?${trendComuneQueryParam}`
+);
 ```
 
 **Titolo dinamico:** "Trend TCC - [Tutto il periodo / Oggi / Ultimi 7 giorni / Ultimi 30 giorni / Ultimo anno]"
@@ -7465,19 +7787,20 @@ tccRiscattati = Σ(filteredShops.tcc_spent) // ← solo dati del comune
 ```
 
 Questo garantisce che:
+
 - In vista Italia: i TCC sono la somma globale (stats API + azioni)
 - In vista Comune: i TCC sono SOLO quelli del comune selezionato (nessuna contaminazione)
 
 **Backend v2.1.0 — Campi `comune_id` aggiunti ai SELECT:**
 
-| API | Tabella | Campo `comune_id` aggiunto |
-|-----|---------|---------------------------|
-| `mobility/heatmap` | `route_completions` | `route_completions.comune_id` |
-| `mobility/heatmap` | `mobility_checkins` | `mobility_checkins.comune_id` |
-| `culture/heatmap` | `cultural_visits` | `cultural_visits.comune_id` |
-| `heatmap` (shop) | `hub_shops` | `hub_shops.comune_id` |
-| `heatmap` (market) | `markets` | `markets.comune_id` |
-| `top-shops` | `hub_shops` | `hub_shops.comune_id` (NON `imprese.comune_id` che è null) |
+| API                | Tabella             | Campo `comune_id` aggiunto                                 |
+| ------------------ | ------------------- | ---------------------------------------------------------- |
+| `mobility/heatmap` | `route_completions` | `route_completions.comune_id`                              |
+| `mobility/heatmap` | `mobility_checkins` | `mobility_checkins.comune_id`                              |
+| `culture/heatmap`  | `cultural_visits`   | `cultural_visits.comune_id`                                |
+| `heatmap` (shop)   | `hub_shops`         | `hub_shops.comune_id`                                      |
+| `heatmap` (market) | `markets`           | `markets.comune_id`                                        |
+| `top-shops`        | `hub_shops`         | `hub_shops.comune_id` (NON `imprese.comune_id` che è null) |
 
 **Interfacce TypeScript aggiornate (v1.3.3):**
 
@@ -7510,29 +7833,28 @@ interface TopShop {
 
 ### Distribuzione Check-in per Comune
 
-| Comune | ID | Mobilità (route_completions) | Cultura (cultural_visits) | Notifiche TCC_REWARD |
-|--------|----|-----------------------------|---------------------------|----------------------|
-| Grosseto | 1 | 1 | 4 | 5 |
-| Bologna | 6 | 0 | 2 | 4 |
-| Vignola | 7 | 0 | 2 | 4 |
-| Modena | 8 | 0 | 3 | 2 |
-| Carpi | 9 | 0 | 2 | 2 |
-| Sassuolo | 10 | 0 | 2 | 2 |
-| Casalecchio di Reno | 12 | 0 | 1 | 3 |
-| Ravenna | 13 | 0 | 2 | 4 |
-| **TOTALE** | | **1** | **18** | **26** |
+| Comune              | ID  | Mobilità (route_completions) | Cultura (cultural_visits) | Notifiche TCC_REWARD |
+| ------------------- | --- | ---------------------------- | ------------------------- | -------------------- |
+| Grosseto            | 1   | 1                            | 4                         | 5                    |
+| Bologna             | 6   | 0                            | 2                         | 4                    |
+| Vignola             | 7   | 0                            | 2                         | 4                    |
+| Modena              | 8   | 0                            | 3                         | 2                    |
+| Carpi               | 9   | 0                            | 2                         | 2                    |
+| Sassuolo            | 10  | 0                            | 2                         | 2                    |
+| Casalecchio di Reno | 12  | 0                            | 1                         | 3                    |
+| Ravenna             | 13  | 0                            | 2                         | 4                    |
+| **TOTALE**          |     | **1**                        | **18**                    | **26**               |
 
 ### Commit Frontend Fix Filtri (GitHub → Vercel auto-deploy)
 
-| Commit | Versione | Descrizione |
-|--------|----------|-------------|
-| `0761110` | v1.3.0 | Fix iniziale: geoFilter default, COMUNI_COORDS completo, MapCenterUpdater |
-| `af5c77a` | v1.3.1 | Switch tab Italia/Comune senza reload API |
-| `1d9bcfe` | v1.3.2 | API senza filtro, filtro solo client-side, stats TCC da azioni, HeatmapLayer filtrata |
-| `5f3c0dc` | docs | Aggiornamento blueprint v3.99.2 |
+| Commit    | Versione | Descrizione                                                                           |
+| --------- | -------- | ------------------------------------------------------------------------------------- |
+| `0761110` | v1.3.0   | Fix iniziale: geoFilter default, COMUNI_COORDS completo, MapCenterUpdater             |
+| `af5c77a` | v1.3.1   | Switch tab Italia/Comune senza reload API                                             |
+| `1d9bcfe` | v1.3.2   | API senza filtro, filtro solo client-side, stats TCC da azioni, HeatmapLayer filtrata |
+| `5f3c0dc` | docs     | Aggiornamento blueprint v3.99.2                                                       |
 
 ---
-
 
 ## 🔄 AGGIORNAMENTO SESSIONE 6-7 FEBBRAIO 2026 (v1.3.4b → v1.3.8)
 
@@ -7546,30 +7868,30 @@ interface TopShop {
 
 #### FRONTEND (dms-hub-app-new → GitHub → Vercel auto-deploy)
 
-| Commit | Versione | File Modificato | Descrizione |
-|--------|----------|-----------------|-------------|
-| `78f9f7b` | v1.3.4b | `AnalysisGamingRewards.tsx` | Trend reload silenzioso senza ricaricare pagina |
-| `e185bb8` | v1.3.5 | `AnalysisGamingRewards.tsx` | Grafico Trend TCC connesso ai filtri temporali |
-| `f7d7868` | docs | `MASTER_BLUEPRINT_MIOHUB.md` | Blueprint v3.99.5 |
-| `abf9ffa` | v1.3.6 | `CivicPage.tsx` | Fix segnalazioni civiche: rimuovi comune_id hardcoded |
-| `791d33f` | v1.3.7 | `WalletPage.tsx`, `WalletStorico.tsx` | Fix ECO tab scroll + rimuovi BottomNav da Storico |
-| `e62b5c2` | v1.3.7.1 | `WalletPage.tsx` | Fix ECO: POI Vicini dentro div scrollabile |
-| `adcd969` | v1.3.7.2 | `WalletPage.tsx` | Fix ECO: altezza calcolata esplicita `h-[calc(100vh-380px)]` |
-| `5258bba` | v1.3.7.3 | `GestioneHubMapWrapper.tsx` | Mappa mobile: scroll si ferma sotto Indietro + lista hub |
-| `dc04cc9` | v1.3.7.4 | `GestioneHubMapWrapper.tsx` | Mappa mobile: TUTTI gli scroll con offset 120px |
+| Commit    | Versione | File Modificato                       | Descrizione                                                  |
+| --------- | -------- | ------------------------------------- | ------------------------------------------------------------ |
+| `78f9f7b` | v1.3.4b  | `AnalysisGamingRewards.tsx`           | Trend reload silenzioso senza ricaricare pagina              |
+| `e185bb8` | v1.3.5   | `AnalysisGamingRewards.tsx`           | Grafico Trend TCC connesso ai filtri temporali               |
+| `f7d7868` | docs     | `MASTER_BLUEPRINT_MIOHUB.md`          | Blueprint v3.99.5                                            |
+| `abf9ffa` | v1.3.6   | `CivicPage.tsx`                       | Fix segnalazioni civiche: rimuovi comune_id hardcoded        |
+| `791d33f` | v1.3.7   | `WalletPage.tsx`, `WalletStorico.tsx` | Fix ECO tab scroll + rimuovi BottomNav da Storico            |
+| `e62b5c2` | v1.3.7.1 | `WalletPage.tsx`                      | Fix ECO: POI Vicini dentro div scrollabile                   |
+| `adcd969` | v1.3.7.2 | `WalletPage.tsx`                      | Fix ECO: altezza calcolata esplicita `h-[calc(100vh-380px)]` |
+| `5258bba` | v1.3.7.3 | `GestioneHubMapWrapper.tsx`           | Mappa mobile: scroll si ferma sotto Indietro + lista hub     |
+| `dc04cc9` | v1.3.7.4 | `GestioneHubMapWrapper.tsx`           | Mappa mobile: TUTTI gli scroll con offset 120px              |
 
 #### BACKEND (mihub-backend → GitHub → Hetzner)
 
-| Commit | Versione | File Modificato | Descrizione |
-|--------|----------|-----------------|-------------|
-| `3ceac46` | v1.3.8 | `civic-reports.js`, `gaming-rewards.js` | Azzera tutti i default TCC nei 4 slot gaming configurabili |
+| Commit    | Versione | File Modificato                         | Descrizione                                                |
+| --------- | -------- | --------------------------------------- | ---------------------------------------------------------- |
+| `3ceac46` | v1.3.8   | `civic-reports.js`, `gaming-rewards.js` | Azzera tutti i default TCC nei 4 slot gaming configurabili |
 
 #### DATABASE (Neon PostgreSQL)
 
-| Modifica | Tabella | Dettaglio |
-|----------|---------|-----------|
-| UPDATE 7 righe | `civic_reports` | Segnalazioni id 25-31: `comune_id` da 1 (Grosseto) a 7 (Vignola) |
-| UPDATE tutte le righe | `civic_config` | Tutti i comuni: `tcc_reward_default=5`, `tcc_reward_urgent=5` |
+| Modifica              | Tabella         | Dettaglio                                                        |
+| --------------------- | --------------- | ---------------------------------------------------------------- |
+| UPDATE 7 righe        | `civic_reports` | Segnalazioni id 25-31: `comune_id` da 1 (Grosseto) a 7 (Vignola) |
+| UPDATE tutte le righe | `civic_config`  | Tutti i comuni: `tcc_reward_default=5`, `tcc_reward_urgent=5`    |
 
 ---
 
@@ -7580,30 +7902,33 @@ interface TopShop {
 **Causa root:** In `CivicPage.tsx`, il POST body includeva sempre `comune_id: currentComuneId` dove `currentComuneId` aveva un fallback hardcoded a `1`. Questo impediva al backend di fare l'auto-detect tramite `findComuneByCoords(lat, lng)`.
 
 **Logica backend (civic-reports.js, riga 166-172):**
+
 ```javascript
 // Il backend fa auto-detect SOLO se comune_id NON viene passato
-let comune_id = requestedComuneId;  // dal body della request
+let comune_id = requestedComuneId; // dal body della request
 if (!comune_id && lat && lng) {
-  comune_id = findComuneByCoords(lat, lng);  // auto-detect da GPS
+  comune_id = findComuneByCoords(lat, lng); // auto-detect da GPS
 }
 ```
 
 **Fix applicata (CivicPage.tsx):**
+
 ```javascript
 // PRIMA (ERRATO):
 body: JSON.stringify({
-  comune_id: currentComuneId,  // ← sempre 1 senza impersonificazione
+  comune_id: currentComuneId, // ← sempre 1 senza impersonificazione
   // ...
-})
+});
 
 // DOPO (CORRETTO):
 body: JSON.stringify({
-  ...(currentComuneId ? { comune_id: currentComuneId } : {}),  // ← solo se impersonificazione attiva
+  ...(currentComuneId ? { comune_id: currentComuneId } : {}), // ← solo se impersonificazione attiva
   // ...
-})
+});
 ```
 
 **Flusso corretto ora:**
+
 1. Cittadino invia segnalazione con coordinate GPS
 2. Il frontend NON invia `comune_id` (a meno che non ci sia impersonificazione)
 3. Il backend riceve le coordinate e usa `findComuneByCoords()` per determinare il comune
@@ -7620,6 +7945,7 @@ body: JSON.stringify({
 **Problema:** I valori di default TCC hardcoded nel codice backend erano troppo alti (10-300 TCC). Se la configurazione del comune veniva cancellata dal database, il sistema assegnava token con i default hardcoded invece di non assegnare nulla.
 
 **I 4 slot configurabili dalla dashboard PA (sezione Gaming):**
+
 1. **Civic** (segnalazioni civiche)
 2. **Cultura** (visite culturali)
 3. **Mobilità** (check-in fermate, percorsi)
@@ -7629,25 +7955,26 @@ body: JSON.stringify({
 
 **Fix: tutti i default a 0 nei file backend:**
 
-| File | Funzione/Variabile | Prima | Dopo |
-|------|---------------------|-------|------|
-| `civic-reports.js` | `let tccReward` | 20 | **0** |
-| `civic-reports.js` | `tcc_reward_default \|\|` | 20 | **0** |
-| `civic-reports.js` | `tcc_reward_urgent \|\|` | 30 | **0** |
-| `civic-reports.js` | `tcc_reward_photo_bonus \|\|` | 5 | **0** |
-| `gaming-rewards.js` | `getDefaultConfig()` civic | 10/5/5 | **0/0/0** |
-| `gaming-rewards.js` | `getDefaultConfig()` mobilità | 15/3/5 | **0/0/0** |
-| `gaming-rewards.js` | `getDefaultConfig()` cultura | 100/50/300 | **0/0/0** |
-| `gaming-rewards.js` | `getDefaultConfig()` shopping | 1/20/10 | **0/0/0** |
-| `gaming-rewards.js` | Config fallback (no DB) | 5-300 | **tutti 0** |
-| `gaming-rewards.js` | Referral fallback | 50/30/20 | **0/0/0** |
-| `gaming-rewards.js` | Fallback mobilità `\|\|` | 15/3/5/2 | **0/0/0/0** |
-| `gaming-rewards.js` | Fallback cultura `\|\|` | 100/50/300 | **0/0/0** |
-| `gaming-rewards.js` | `getTCCRewardByType()` | 15-60 | **tutti 0** |
-| `gaming-rewards.js` | `getMobilityTCCReward()` | 5-15 | **tutti 0** |
-| `gaming-rewards.js` | switch default mode | 25 | **0** |
+| File                | Funzione/Variabile            | Prima      | Dopo        |
+| ------------------- | ----------------------------- | ---------- | ----------- |
+| `civic-reports.js`  | `let tccReward`               | 20         | **0**       |
+| `civic-reports.js`  | `tcc_reward_default \|\|`     | 20         | **0**       |
+| `civic-reports.js`  | `tcc_reward_urgent \|\|`      | 30         | **0**       |
+| `civic-reports.js`  | `tcc_reward_photo_bonus \|\|` | 5          | **0**       |
+| `gaming-rewards.js` | `getDefaultConfig()` civic    | 10/5/5     | **0/0/0**   |
+| `gaming-rewards.js` | `getDefaultConfig()` mobilità | 15/3/5     | **0/0/0**   |
+| `gaming-rewards.js` | `getDefaultConfig()` cultura  | 100/50/300 | **0/0/0**   |
+| `gaming-rewards.js` | `getDefaultConfig()` shopping | 1/20/10    | **0/0/0**   |
+| `gaming-rewards.js` | Config fallback (no DB)       | 5-300      | **tutti 0** |
+| `gaming-rewards.js` | Referral fallback             | 50/30/20   | **0/0/0**   |
+| `gaming-rewards.js` | Fallback mobilità `\|\|`      | 15/3/5/2   | **0/0/0/0** |
+| `gaming-rewards.js` | Fallback cultura `\|\|`       | 100/50/300 | **0/0/0**   |
+| `gaming-rewards.js` | `getTCCRewardByType()`        | 15-60      | **tutti 0** |
+| `gaming-rewards.js` | `getMobilityTCCReward()`      | 5-15       | **tutti 0** |
+| `gaming-rewards.js` | switch default mode           | 25         | **0**       |
 
 **NON TOCCATI (funzionano correttamente):**
+
 - Shopping/Acquisti (cashback, km0, market bonus) — legati alla spesa, sistema Carbon Credit regionale separato (`tcc.js`)
 - Carbon credit regionali hardcoded
 
@@ -7660,19 +7987,20 @@ body: JSON.stringify({
 **Problema:** La tabella `civic_config` aveva ancora i valori di default iniziali (20/30 TCC) per tutti i comuni tranne Grosseto, nonostante l'utente li avesse impostati tutti a 5.
 
 **Fix SQL applicata:**
+
 ```sql
 UPDATE civic_config SET tcc_reward_default = 5, tcc_reward_urgent = 5;
 ```
 
 **Stato attuale `civic_config`:**
 
-| comune_id | Comune | tcc_reward_default | tcc_reward_urgent |
-|-----------|--------|-------------------|-------------------|
-| 1 | Grosseto | 5 | 5 |
-| 6 | Bologna | 5 | 5 |
-| 7 | Vignola | 5 | 5 |
-| 8 | Modena | 5 | 5 |
-| 9 | Carpi | 5 | 5 |
+| comune_id | Comune   | tcc_reward_default | tcc_reward_urgent |
+| --------- | -------- | ------------------ | ----------------- |
+| 1         | Grosseto | 5                  | 5                 |
+| 6         | Bologna  | 5                  | 5                 |
+| 7         | Vignola  | 5                  | 5                 |
+| 8         | Modena   | 5                  | 5                 |
+| 9         | Carpi    | 5                  | 5                 |
 
 ---
 
@@ -7683,6 +8011,7 @@ UPDATE civic_config SET tcc_reward_default = 5, tcc_reward_urgent = 5;
 **Fix applicata (WalletPage.tsx):**
 
 **Layout tab ECO su mobile (struttura finale):**
+
 ```
 ┌─────────────────────────────┐
 │ Header ECO CREDIT (verde)   │ ← FISSO
@@ -7696,14 +8025,17 @@ UPDATE civic_config SET tcc_reward_default = 5, tcc_reward_urgent = 5;
 ```
 
 **Codice chiave:**
+
 ```jsx
-{/* Sezione scrollabile sotto - solo mobile */}
+{
+  /* Sezione scrollabile sotto - solo mobile */
+}
 <div className="sm:hidden h-[calc(100vh-380px)] overflow-y-auto sm:h-auto sm:overflow-visible space-y-4">
   {/* Luoghi Vicini POI (quando attivo) */}
   {/* Come Funziona */}
   {/* Privacy */}
   {/* Statistiche */}
-</div>
+</div>;
 ```
 
 **Nota tecnica:** `flex-1 min-h-0` non funziona dentro il `TabsContent` di shadcn/ui su mobile. La soluzione è usare un'altezza calcolata esplicita `h-[calc(100vh-380px)]` (schermo meno header wallet ~70px, header ECO ~170px, toggle ~130px).
@@ -7727,39 +8059,41 @@ UPDATE civic_config SET tcc_reward_default = 5, tcc_reward_urgent = 5;
 **Fix applicata (GestioneHubMapWrapper.tsx):**
 
 Sostituiti **TUTTI** gli `scrollIntoView({ block: 'start' })` con:
+
 ```javascript
-const el = document.getElementById('map-container');
+const el = document.getElementById("map-container");
 if (el) {
   const r = el.getBoundingClientRect();
-  window.scrollTo({ top: window.scrollY + r.top - 120, behavior: 'smooth' });
+  window.scrollTo({ top: window.scrollY + r.top - 120, behavior: "smooth" });
 }
 ```
 
 **Offset di 120px** lascia visibili:
+
 - Pulsante "< Indietro"
 - Lista hub/mercati scrollabile orizzontalmente
 
 **Funzioni modificate (7 punti di scroll):**
 
-| Funzione | Evento | Scroll |
-|----------|--------|--------|
-| `handleRegioneSelect` | Click su regione | offset 120px |
-| `handleProvinciaSelect` | Click su provincia | offset 120px |
+| Funzione                            | Evento                  | Scroll       |
+| ----------------------------------- | ----------------------- | ------------ |
+| `handleRegioneSelect`               | Click su regione        | offset 120px |
+| `handleProvinciaSelect`             | Click su provincia      | offset 120px |
 | `handleGoBack` → "Vista precedente" | Indietro da hub/mercato | offset 120px |
-| `handleGoBack` → "Vista regione" | Indietro da provincia | offset 120px |
-| `handleGoBack` → "Vista Italia" | Indietro da regione | offset 120px |
-| `handleHubClick` | Click su marker hub | offset 120px |
-| `handleMarketClick` | Click su marker mercato | offset 120px |
+| `handleGoBack` → "Vista regione"    | Indietro da provincia   | offset 120px |
+| `handleGoBack` → "Vista Italia"     | Indietro da regione     | offset 120px |
+| `handleHubClick`                    | Click su marker hub     | offset 120px |
+| `handleMarketClick`                 | Click su marker mercato | offset 120px |
 
 ---
 
 ### 📊 STATO VERSIONI CORRENTE (7 Febbraio 2026)
 
-| Componente | Versione | Ultimo Commit | Deploy |
-|------------|----------|---------------|--------|
-| Frontend (dms-hub-app-new) | v1.3.16 | — | Vercel (auto da GitHub) |
-| Backend (mihub-backend) | v1.3.8 | `3ceac46` | Hetzner (push manuale) |
-| Database | aggiornato | — | Neon PostgreSQL |
+| Componente                 | Versione   | Ultimo Commit | Deploy                  |
+| -------------------------- | ---------- | ------------- | ----------------------- |
+| Frontend (dms-hub-app-new) | v1.3.16    | —             | Vercel (auto da GitHub) |
+| Backend (mihub-backend)    | v1.3.8     | `3ceac46`     | Hetzner (push manuale)  |
+| Database                   | aggiornato | —             | Neon PostgreSQL         |
 
 ### 📋 CHECKLIST MODIFICHE COMPLETATE
 
@@ -7790,27 +8124,28 @@ if (el) {
 
 ### 🚀 FRONTEND (dms-hub-app-new → GitHub → Vercel)
 
-| Commit | Versione | File Modificato | Descrizione |
-|---|---|---|---|
-| `c3ec2ed` | v4.4.2 | `client/src/pages/AnagraficaPage.tsx`, `client/src/components/Integrazioni.tsx` | **TAB PRESENZE + FIX CHIRURGICI:** 1) Nuovo tab Presenze con dati reali spunta (ora entrata/uscita/rifiuti, importo, presenze/assenze). 2) Fix concessioni (tipo `impresa_id`). 3) Fix DURC (calcolo da date). 4) API `?fields=light`. 5) Team connesso a DB. 6) Guardian: case test collaboratori. |
+| Commit    | Versione | File Modificato                                                                 | Descrizione                                                                                                                                                                                                                                                                                         |
+| --------- | -------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `c3ec2ed` | v4.4.2   | `client/src/pages/AnagraficaPage.tsx`, `client/src/components/Integrazioni.tsx` | **TAB PRESENZE + FIX CHIRURGICI:** 1) Nuovo tab Presenze con dati reali spunta (ora entrata/uscita/rifiuti, importo, presenze/assenze). 2) Fix concessioni (tipo `impresa_id`). 3) Fix DURC (calcolo da date). 4) API `?fields=light`. 5) Team connesso a DB. 6) Guardian: case test collaboratori. |
 
 ### 🚀 BACKEND (mihub-backend-rest → GitHub → Hetzner)
 
-| Commit | Versione | File Modificati | Descrizione |
-|---|---|---|---|
-| `d492300` | v4.4.2 | `routes/imprese.js`, `routes/collaboratori.js`, `routes/presenze.js`, `migrations/011_collaboratori_impresa.sql` | **PRESENZE/IMPRESA + COLLABORATORI + IMPRESA LIGHT:** 1) Nuovo endpoint `GET /api/presenze/impresa/:id` (storico presenze per impresa con stats). 2) Tabella `collaboratori_impresa` + API CRUD. 3) Supporto `?fields=light`. 4) Fix DURC nel DB. |
+| Commit    | Versione | File Modificati                                                                                                  | Descrizione                                                                                                                                                                                                                                       |
+| --------- | -------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d492300` | v4.4.2   | `routes/imprese.js`, `routes/collaboratori.js`, `routes/presenze.js`, `migrations/011_collaboratori_impresa.sql` | **PRESENZE/IMPRESA + COLLABORATORI + IMPRESA LIGHT:** 1) Nuovo endpoint `GET /api/presenze/impresa/:id` (storico presenze per impresa con stats). 2) Tabella `collaboratori_impresa` + API CRUD. 3) Supporto `?fields=light`. 4) Fix DURC nel DB. |
 
 ### 🚀 GUARDIAN (MIO-hub/api/index.json)
 
-| Commit | Versione | Descrizione |
-|---|---|---|
-| `d7bc4be` | v4.4.2 | **+8 ENDPOINT:** 5 endpoint Collaboratori (`GET lista`, `GET :id`, `POST`, `PUT :id`, `DELETE :id`) + 3 endpoint Presenze (`GET /impresa/:id`, `GET /sessioni`, `GET /sessioni/:id/dettaglio`). |
+| Commit    | Versione | Descrizione                                                                                                                                                                                     |
+| --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d7bc4be` | v4.4.2   | **+8 ENDPOINT:** 5 endpoint Collaboratori (`GET lista`, `GET :id`, `POST`, `PUT :id`, `DELETE :id`) + 3 endpoint Presenze (`GET /impresa/:id`, `GET /sessioni`, `GET /sessioni/:id/dettaglio`). |
 
 ### 📐 TAB PRESENZE — ARCHITETTURA
 
 **Endpoint:** `GET /api/presenze/impresa/:id`
 
 **Dati restituiti per ogni presenza:**
+
 - `giorno` — data giornata di mercato
 - `market_name` / `comune` — mercato e comune
 - `stall_number` / `mq_posteggio` — posteggio e metratura
@@ -7822,6 +8157,7 @@ if (el) {
 - `presenze_totali` / `assenze_non_giustificate` — contatori graduatoria
 
 **Stats aggregate:**
+
 - `totale_presenze` — numero giornate registrate
 - `totale_incassato` — somma importi pagati
 - `mercati_frequentati` — numero mercati distinti
@@ -7829,6 +8165,7 @@ if (el) {
 - `assenze_non_giustificate` — max assenze tra i mercati
 
 **Layout responsive:**
+
 - **Smartphone:** Card impilate, griglia 2 colonne per stats, timeline orari compatta
 - **iPad/PC:** Card più larghe, griglia 4 colonne per stats, più spazio tra elementi
 
@@ -7856,9 +8193,9 @@ if (el) {
 
 #### FRONTEND (dms-hub-app-new → GitHub → Vercel)
 
-| Commit | Versione | File Modificato | Descrizione |
-|---|---|---|---|
-| `ace5cbe` | v4.4.0 | `client/src/pages/AnagraficaPage.tsx` | **SOSTITUZIONE COMPLETA:** La pagina placeholder è stata sostituita con una versione funzionale con 6 tab (Impresa, Concessioni, Qualifiche, Autorizzazioni, Spunta, Team), viste di dettaglio e chiamate API reali. |
+| Commit    | Versione | File Modificato                       | Descrizione                                                                                                                                                                                                          |
+| --------- | -------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ace5cbe` | v4.4.0   | `client/src/pages/AnagraficaPage.tsx` | **SOSTITUZIONE COMPLETA:** La pagina placeholder è stata sostituita con una versione funzionale con 6 tab (Impresa, Concessioni, Qualifiche, Autorizzazioni, Spunta, Team), viste di dettaglio e chiamate API reali. |
 
 ### 📋 CHECKLIST MODIFICHE COMPLETATE
 
@@ -7878,11 +8215,11 @@ if (el) {
 
 #### FRONTEND (dms-hub-app-new → GitHub → Vercel)
 
-| Commit | Versione | File Modificato | Descrizione |
-|---|---|---|---|
-| `781ddac` | v4.3.3 | `client/src/pages/HomePage.tsx` | Tab "Presenze" spostato in prima posizione riga 2, `col-span-2` su mobile |
-| `781ddac` | v4.3.3 | `client/src/pages/HubOperatore.tsx` | Rimosso mock "Frutta e Verdura Bio", rimosso prefisso "Operatore", fix overflow header e card TCC, fix tab troncati |
-| `781ddac` | v4.3.3 | `client/src/pages/WalletImpresaPage.tsx` | Fix tab troncati su mobile (font ridotto, truncate) |
+| Commit    | Versione | File Modificato                          | Descrizione                                                                                                         |
+| --------- | -------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `781ddac` | v4.3.3   | `client/src/pages/HomePage.tsx`          | Tab "Presenze" spostato in prima posizione riga 2, `col-span-2` su mobile                                           |
+| `781ddac` | v4.3.3   | `client/src/pages/HubOperatore.tsx`      | Rimosso mock "Frutta e Verdura Bio", rimosso prefisso "Operatore", fix overflow header e card TCC, fix tab troncati |
+| `781ddac` | v4.3.3   | `client/src/pages/WalletImpresaPage.tsx` | Fix tab troncati su mobile (font ridotto, truncate)                                                                 |
 
 ### 📋 CHECKLIST MODIFICHE COMPLETATE
 
@@ -7912,15 +8249,15 @@ if (el) {
 
 #### BACKEND (mihub-backend-rest → GitHub → Hetzner)
 
-| Commit | Versione | File Modificato | Descrizione |
-|---|---|---|---|
-| `0e3ae65` | v4.3.0 | `routes/gaming-rewards.js` | **FIX TCC HARDCODED:** Azzerati tutti i fallback TCC (config default, referral) a 0 |
+| Commit    | Versione | File Modificato            | Descrizione                                                                         |
+| --------- | -------- | -------------------------- | ----------------------------------------------------------------------------------- |
+| `0e3ae65` | v4.3.0   | `routes/gaming-rewards.js` | **FIX TCC HARDCODED:** Azzerati tutti i fallback TCC (config default, referral) a 0 |
 
 #### FRONTEND (dms-hub-app-new → GitHub → Vercel)
 
-| Commit | Versione | File Modificato | Descrizione |
-|---|---|---|---|
-| `23571c8` | v4.3.0 | `client/src/pages/WalletPage.tsx` | **FIX TCC HARDCODED:** Rimosse tutte le label TCC (+10, +50, ecc.) dalla UI |
+| Commit    | Versione | File Modificato                   | Descrizione                                                                 |
+| --------- | -------- | --------------------------------- | --------------------------------------------------------------------------- |
+| `23571c8` | v4.3.0   | `client/src/pages/WalletPage.tsx` | **FIX TCC HARDCODED:** Rimosse tutte le label TCC (+10, +50, ecc.) dalla UI |
 
 ---
 
@@ -7931,16 +8268,16 @@ if (el) {
 
 #### FRONTEND (dms-hub-app-new → GitHub → Vercel)
 
-| Commit | Versione | File Modificato | Descrizione |
-|--------|----------|-----------------|-------------|
-| `5151af6` | v1.3.11 | `HubMarketMapComponent.tsx` | Fix mappa: InteractionController dinamico con useMap() — preserva animazione zoom |
-| `5fced0b` | v1.3.12 | `WalletPage.tsx` | Fix storico wallet desktop/iPad: +TCC verde, badge colorati, semaforino per tipo |
-| `637ab9a` | v1.3.13 | `GamingRewardsPanel.tsx` | Gaming rewards: data/ora e descrizioni leggibili per tutte le sezioni |
-| — | v1.3.14 | `WalletPage.tsx` | Tasto "Genera Link" referral dentro container Partecipazione al Programma |
-| `c753ca5` | v1.3.15 | `WalletPage.tsx`, `WalletStorico.tsx` | Fix referral storico (+5 verde badge fuchsia), rimuovi container verde, restyling Partecipazione |
-| — | v1.3.16 | `WalletPage.tsx`, `WalletStorico.tsx` | Fix scroll ECO Credit, score TCC da wallet API (total_earned reale) |
-| `03af0dd` | v1.3.17 | `GamingRewardsPanel.tsx`, `WalletPage.tsx` | Marker referral mappa + barra trend + orario notifiche + info link referral |
-| — | v1.3.18 | `WalletPage.tsx` | RIPRISTINO scroll fisso mobile (h-screen, h-[calc], overflow) rotto dal FIX #13 |
+| Commit    | Versione | File Modificato                            | Descrizione                                                                                      |
+| --------- | -------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `5151af6` | v1.3.11  | `HubMarketMapComponent.tsx`                | Fix mappa: InteractionController dinamico con useMap() — preserva animazione zoom                |
+| `5fced0b` | v1.3.12  | `WalletPage.tsx`                           | Fix storico wallet desktop/iPad: +TCC verde, badge colorati, semaforino per tipo                 |
+| `637ab9a` | v1.3.13  | `GamingRewardsPanel.tsx`                   | Gaming rewards: data/ora e descrizioni leggibili per tutte le sezioni                            |
+| —         | v1.3.14  | `WalletPage.tsx`                           | Tasto "Genera Link" referral dentro container Partecipazione al Programma                        |
+| `c753ca5` | v1.3.15  | `WalletPage.tsx`, `WalletStorico.tsx`      | Fix referral storico (+5 verde badge fuchsia), rimuovi container verde, restyling Partecipazione |
+| —         | v1.3.16  | `WalletPage.tsx`, `WalletStorico.tsx`      | Fix scroll ECO Credit, score TCC da wallet API (total_earned reale)                              |
+| `03af0dd` | v1.3.17  | `GamingRewardsPanel.tsx`, `WalletPage.tsx` | Marker referral mappa + barra trend + orario notifiche + info link referral                      |
+| —         | v1.3.18  | `WalletPage.tsx`                           | RIPRISTINO scroll fisso mobile (h-screen, h-[calc], overflow) rotto dal FIX #13                  |
 
 ### 🗺️ FIX #7: MAPPA MOBILE — INTERAZIONE DINAMICA (v1.3.11)
 
@@ -7981,13 +8318,13 @@ Rimosso `interactionDisabled` dalla key del MapContainer. L'animazione zoom è p
 
 **Soluzione:** Allineata la vista desktop alla vista mobile (WalletStorico.tsx):
 
-| Tipo | Semaforino | Badge | Segno/Colore |
-|------|-----------|-------|-------------|
-| `civic` | Arancione | "Segnalazione Civica" | +TCC verde |
-| `mobility` | Blu | "Mobilità Sostenibile" | +TCC verde |
-| `culture` | Viola | "Cultura & Turismo" | +TCC verde |
-| `earn` | Verde | "Acquisto" | +TCC verde |
-| `spend` | Rosso | "Pagamento TCC" | -TCC rosso |
+| Tipo       | Semaforino | Badge                  | Segno/Colore |
+| ---------- | ---------- | ---------------------- | ------------ |
+| `civic`    | Arancione  | "Segnalazione Civica"  | +TCC verde   |
+| `mobility` | Blu        | "Mobilità Sostenibile" | +TCC verde   |
+| `culture`  | Viola      | "Cultura & Turismo"    | +TCC verde   |
+| `earn`     | Verde      | "Acquisto"             | +TCC verde   |
+| `spend`    | Rosso      | "Pagamento TCC"        | -TCC rosso   |
 
 **File:** `WalletPage.tsx`
 **Commit:** `5fced0b`
@@ -7997,6 +8334,7 @@ Rimosso `interactionDisabled` dalla key del MapContainer. L'animazione zoom è p
 ### 🎮 FIX #9: GAMING REWARDS — DESCRIZIONI E DATA/ORA (v1.3.13)
 
 **Problema:** Le sezioni del pannello Gaming & Rewards mostravano dati tecnici poco leggibili:
+
 - Segnalazioni Civiche: coordinate GPS (42.7635, 11.1134) invece di data/ora
 - Mobilità: solo "Train"/"Checkin" in inglese senza data/ora
 - Acquisti Negozio: "Negozio 1 transazioni" senza data/ora
@@ -8004,13 +8342,13 @@ Rimosso `interactionDisabled` dalla key del MapContainer. L'animazione zoom è p
 
 **Soluzione:**
 
-| Sezione | Prima | Dopo |
-|---------|-------|------|
-| Segnalazioni Civiche | Coordinate GPS | Data/ora + stato "Risolta" in verde |
-| Mobilità Sostenibile | "Train"/"Checkin" | Tipo in italiano (Treno, Autobus, Bicicletta, A piedi) + data/ora + CO₂ |
-| Cultura & Turismo | Data senza ora, tipo inglese | Tipo in italiano (Museo, Monumento, Castello, Teatro) + data con ora |
-| Acquisti Negozio | "Negozio 1 transazioni" | 🏠 Negozio + data/ora + operazioni (solo se > 1) |
-| Acquisti Mercato | "Mercato 1 transazioni" | 🛒 Mercato + data/ora + operazioni (solo se > 1) |
+| Sezione              | Prima                        | Dopo                                                                    |
+| -------------------- | ---------------------------- | ----------------------------------------------------------------------- |
+| Segnalazioni Civiche | Coordinate GPS               | Data/ora + stato "Risolta" in verde                                     |
+| Mobilità Sostenibile | "Train"/"Checkin"            | Tipo in italiano (Treno, Autobus, Bicicletta, A piedi) + data/ora + CO₂ |
+| Cultura & Turismo    | Data senza ora, tipo inglese | Tipo in italiano (Museo, Monumento, Castello, Teatro) + data con ora    |
+| Acquisti Negozio     | "Negozio 1 transazioni"      | 🏠 Negozio + data/ora + operazioni (solo se > 1)                        |
+| Acquisti Mercato     | "Mercato 1 transazioni"      | 🛒 Mercato + data/ora + operazioni (solo se > 1)                        |
 
 Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva passato dall'API).
 
@@ -8024,6 +8362,7 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 **Richiesta:** Aggiungere un tasto "Genera Link" per il sistema "Presenta un Amico" nella pagina ECO Credit del wallet mobile, dentro il container "Partecipazione al Programma" senza aumentare l'altezza della pagina.
 
 **Implementazione:**
+
 - Aggiunto dentro il `<Card>` "Partecipazione al Programma" (sotto il toggle Attiva/Disattiva)
 - Separato da un `border-t` sottile per distinguerlo visivamente
 - Icona `Gift` fuchsia `#EC4899` con label "Presenta un Amico"
@@ -8033,23 +8372,25 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 - File: `client/src/pages/WalletPage.tsx`
 - Commit: `v1.3.14`
 
-| Stato | Azione | Risultato |
-|-------|--------|-----------|
-| ECO CREDIT disattivo | Sezione nascosta | Nessun tasto visibile |
-| ECO CREDIT attivo, link non generato | Tasto "Genera Link" fuchsia | Chiama API generate |
-| ECO CREDIT attivo, link generato | Tasti "Copia" + "Invia" | Condivisione link |
+| Stato                                | Azione                      | Risultato             |
+| ------------------------------------ | --------------------------- | --------------------- |
+| ECO CREDIT disattivo                 | Sezione nascosta            | Nessun tasto visibile |
+| ECO CREDIT attivo, link non generato | Tasto "Genera Link" fuchsia | Chiama API generate   |
+| ECO CREDIT attivo, link generato     | Tasti "Copia" + "Invia"     | Condivisione link     |
 
 ---
 
 ### 🎨 FIX #11: REFERRAL STORICO + RESTYLING ECO CREDIT (v1.3.15)
 
 **Problemi:**
+
 1. **Storico mobile (WalletStorico.tsx)**: le transazioni referral mostravano "-5 TCC" in rosso con badge "Pagamento TCC" → dovevano essere "+5 TCC" in verde con badge fuchsia "Presenta un Amico"
 2. **Storico desktop (WalletPage.tsx)**: stesso problema — tipo `referral` non riconosciuto
 3. **Container verde grande ECO Credit**: freccia indietro duplicata (c'era già nella barra sopra), occupava spazio inutile
 4. **Container Partecipazione**: design piatto, senza identità visiva del programma
 
 **Soluzioni:**
+
 1. Aggiunto `'referral'` a `isCredit` array in WalletStorico.tsx e WalletPage.tsx
 2. Aggiunto badge fuchsia `bg-pink-500/20 text-pink-500` + semaforino `bg-pink-500` + label "Presenta un Amico"
 3. Rimosso il Card verde grande con ChevronLeft (righe 1181-1199)
@@ -8062,16 +8403,19 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 ### 📡 FIX #12: SCROLL ECO CREDIT + SCORE TCC REALE (v1.3.16)
 
 **Problemi:**
+
 1. **Scroll ECO Credit mobile**: la sezione non scrollava fino in fondo. Il `TabsContent` aveva `overflow-hidden` che bloccava lo scroll, e la sezione interna aveva `h-[calc(100vh-320px)]` troppo piccola che rimbalzava.
 2. **Score TCC che cala**: il totale mostrava 6.657 (somma delle ultime 50 transazioni) invece di 14.680 (total_earned reale). L'API `/transactions` restituisce max 50 record, ma lo score usava `Math.abs()` su quei 50 come se fossero tutte le transazioni.
 3. **Contatore transazioni**: mostrava "50 transazioni" (limite API) invece di 83 (reali).
 
 **Causa root dello score:**
+
 - `totalTCC = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0)` → somma solo le ultime 50 tx
 - L'API `/wallet/{id}` restituisce `stats.total_earned = 14680` e `stats.total_transactions = 83` (dati reali dal DB)
 - Il frontend non usava questi dati per lo score
 
 **Soluzioni:**
+
 1. **Scroll**: rimosso `overflow-hidden` dal TabsContent, cambiato in `overflow-y-auto`. Rimossa la sezione scrollabile interna con altezza fissa.
 2. **Score**: aggiunto `walletStats` state, caricato da `GET /api/tcc/wallet/{id}`. Lo score ora usa `walletStats.total_earned` (14.680) come dato primario, con fallback alla somma transazioni.
 3. **Contatore**: usa `walletStats.total_transactions` (83) con fallback a `transactions.length`.
@@ -8083,6 +8427,7 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 ### 🔧 FIX #13: MARKER REFERRAL MAPPA + LINEA FUCHSIA TREND + ORARIO NOTIFICHE (v1.3.17)
 
 **Problemi segnalati:**
+
 1. **Mappa Gaming Dashboard**: nella sezione "Presenta un Amico" mancavano i marker individuali fuchsia sulla mappa. C'era solo la voce nella legenda ma nessun punto visibile.
 2. **Trend TCC**: mancava la barra fuchsia per i referral nel grafico trend giornaliero.
 3. **Notifiche referral**: mancava l'orario nelle date (mostrava solo giorno/mese/anno senza ore:minuti).
@@ -8091,6 +8436,7 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 6. **Link referral generato**: non mostrava il link testuale né le info sui TCC guadagnabili.
 
 **Soluzioni:**
+
 1. **Marker mappa**: aggiunto tipo `'referral'` a `getMarkerIcon()` con emoji 🎁 e colore `#EC4899` (fuchsia). Aggiunti `<Marker>` per ogni referral con `lat/lng` validi, con popup che mostra codice, stato tradotto in italiano, TCC guadagnati e data+orario.
 2. **Trend chart**: aggiunto campo `referral?: number` a `TrendDataPoint`, mappato dal backend. Aggiunta barra `bg-[#EC4899]` nel grafico con calcolo altezza proporzionale.
 3. **Orario notifiche**: aggiunto `{ hour: '2-digit', minute: '2-digit' }` a tutte le `toLocaleDateString` nelle sezioni referral, mobilità (popup mappa) e cultura (popup mappa).
@@ -8099,6 +8445,7 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 6. **Info referral**: quando il link viene generato, mostra il link completo in un box rosa con le info: +5 TCC per invito, +5 TCC benvenuto amico, +5 TCC primo acquisto.
 
 **File modificati:**
+
 - `client/src/components/GamingRewardsPanel.tsx` — marker mappa, trend chart, orario popup
 - `client/src/pages/WalletPage.tsx` — overflow-hidden, tasto indietro, info referral link
 
@@ -8109,21 +8456,25 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 ### 🔧 FIX #14: RIPRISTINO SCROLL FISSO WALLET MOBILE (v1.3.18)
 
 **Problema:** Il FIX #13 ha introdotto una regressione critica nel WalletPage.tsx mobile:
+
 - La pagina scrollava all'infinito verso l'alto invece di essere fissa
 - Le istruzioni ECO Credit non scrollavano più dentro il container interno
 - Il tab Cliente non aveva più l'altezza fissa
 
 **Causa root:** Nel FIX #13 sono state rimosse per errore 3 classi CSS critiche:
+
 1. Wrapper principale: `h-screen overflow-hidden` → cambiato in `min-h-screen overflow-auto` (SBAGLIATO)
 2. Tab Cliente: `h-[calc(100vh-60px)] overflow-hidden` → rimosso (SBAGLIATO)
 3. Tab ECO Credit: `h-[calc(100vh-70px)] overflow-y-auto` → rimosso (SBAGLIATO)
 
 **Soluzione:** Ripristinate esattamente le classi CSS della v1.3.16:
+
 1. Wrapper: `h-screen sm:min-h-screen bg-background pb-0 sm:pb-20 overflow-hidden sm:overflow-auto`
 2. Tab Cliente: `flex flex-col h-[calc(100vh-60px)] sm:h-auto sm:space-y-6 mt-0 sm:mt-4 px-0 sm:px-0 overflow-hidden sm:overflow-visible`
 3. Tab ECO Credit: `flex flex-col gap-4 px-2 sm:px-0 h-[calc(100vh-70px)] sm:h-auto overflow-y-auto sm:overflow-visible pb-20 sm:pb-0`
 
 **Struttura mobile corretta (INVARIANTE):**
+
 ```
 ┌─────────────────────────────┐ ← h-screen overflow-hidden
 │ Header Wallet TCC           │ ← fisso
@@ -8162,19 +8513,18 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 10. **Tipo `referral`**: badge fuchsia (pink-500), semaforino fuchsia, label "Presenta un Amico" — vale sia per storico mobile che desktop
 11. **Score TCC**: DEVE usare `walletStats.total_earned + walletStats.total_spent` dal wallet API — ENTRAMBE sono azioni sostenibili (guadagnare E spendere TCC nel territorio)
 12. **NON usare `overflow-hidden` su TabsContent mobile** — impedisce lo scroll. Usare `overflow-y-auto`
-16. **INVARIANTE CRITICO: Le 3 classi CSS del wallet mobile NON devono MAI essere cambiate:**
+13. **INVARIANTE CRITICO: Le 3 classi CSS del wallet mobile NON devono MAI essere cambiate:**
     - Wrapper: `h-screen sm:min-h-screen ... overflow-hidden sm:overflow-auto`
     - Tab Cliente: `h-[calc(100vh-60px)] ... overflow-hidden sm:overflow-visible`
     - Tab ECO Credit: `h-[calc(100vh-70px)] ... overflow-y-auto sm:overflow-visible`
-    Queste garantiscono pagina fissa su mobile con scroll interno nel tab ECO Credit.
-17. **NON rimuovere `h-screen` dal wrapper mobile** — senza di esso la pagina scorre all'infinito
-18. **NON rimuovere `h-[calc(100vh-Xpx)]` dai TabsContent mobile** — sono i container con altezza fissa
-13. **Marker referral sulla mappa**: usano `getMarkerIcon('referral')` con colore `#EC4899` fuchsia — richiedono che `referralList` abbia `lat/lng` non null
-14. **Barra referral nel trend chart**: campo `referral` in `TrendDataPoint` — il backend deve restituire `referral` nel JSON del trend
-15. **Orario nelle notifiche**: TUTTE le date nelle liste e popup devono avere `{ hour: '2-digit', minute: '2-digit' }` — non solo giorno/mese/anno
+      Queste garantiscono pagina fissa su mobile con scroll interno nel tab ECO Credit.
+14. **NON rimuovere `h-screen` dal wrapper mobile** — senza di esso la pagina scorre all'infinito
+15. **NON rimuovere `h-[calc(100vh-Xpx)]` dai TabsContent mobile** — sono i container con altezza fissa
+16. **Marker referral sulla mappa**: usano `getMarkerIcon('referral')` con colore `#EC4899` fuchsia — richiedono che `referralList` abbia `lat/lng` non null
+17. **Barra referral nel trend chart**: campo `referral` in `TrendDataPoint` — il backend deve restituire `referral` nel JSON del trend
+18. **Orario nelle notifiche**: TUTTE le date nelle liste e popup devono avere `{ hour: '2-digit', minute: '2-digit' }` — non solo giorno/mese/anno
 
 ---
-
 
 ## 🔄 AGGIORNAMENTO SESSIONE 9 FEBBRAIO 2026 — POMERIGGIO/SERA (v4.5.6d)
 
@@ -8183,38 +8533,38 @@ Aggiunto `created_at` nel mapping delle segnalazioni civiche (prima non veniva p
 
 ### 🚀 FRONTEND (dms-hub-app-new → GitHub → Vercel)
 
-| Commit | Versione | File Modificati | Descrizione |
-|---|---|---|---|
-| `71deec4` | v4.5.6 | `ControlliSanzioniPanel.tsx`, `WalletImpresaPage.tsx`, `AnagraficaPage.tsx` | **FIX NOTIFICHE + ARCHIVIAZIONE + GIUSTIFICHE + WALLET:** 1) Note archiviazione: stato locale aggiornato con dati backend. 2) Wallet overflow: flex-shrink-0 su card sanzioni. 3) Giustifica: comune_id da concessione + selettore posteggio. 4) Indicatori colorati giustifiche. |
-| `f3d06e2` | v4.5.6b | `ControlliSanzioniPanel.tsx`, `WalletImpresaPage.tsx`, `AnagraficaPage.tsx` | **FIX NOTIFICHE PM + OVERFLOW + PREFILL + KPI:** 1) Overflow card sanzioni con overflow-hidden. 2) Prefill giustifica con useRef robusto. 3) KPI indicatori popolati da API stats. |
-| `e858688` | v4.5.6d | `AnagraficaPage.tsx`, `WalletImpresaPage.tsx` | **FIX PRESENZE STATO + WALLET SCROLL + SCONTO 30%:** 1) Presenze: banner Da giustificare cambia colore (rosso→giallo→verde) in base allo stato giustifica. 2) Wallet: scroll contenuto nei tab con max-h e overflow-y-auto. |
+| Commit    | Versione | File Modificati                                                             | Descrizione                                                                                                                                                                                                                                                                       |
+| --------- | -------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `71deec4` | v4.5.6   | `ControlliSanzioniPanel.tsx`, `WalletImpresaPage.tsx`, `AnagraficaPage.tsx` | **FIX NOTIFICHE + ARCHIVIAZIONE + GIUSTIFICHE + WALLET:** 1) Note archiviazione: stato locale aggiornato con dati backend. 2) Wallet overflow: flex-shrink-0 su card sanzioni. 3) Giustifica: comune_id da concessione + selettore posteggio. 4) Indicatori colorati giustifiche. |
+| `f3d06e2` | v4.5.6b  | `ControlliSanzioniPanel.tsx`, `WalletImpresaPage.tsx`, `AnagraficaPage.tsx` | **FIX NOTIFICHE PM + OVERFLOW + PREFILL + KPI:** 1) Overflow card sanzioni con overflow-hidden. 2) Prefill giustifica con useRef robusto. 3) KPI indicatori popolati da API stats.                                                                                                |
+| `e858688` | v4.5.6d  | `AnagraficaPage.tsx`, `WalletImpresaPage.tsx`                               | **FIX PRESENZE STATO + WALLET SCROLL + SCONTO 30%:** 1) Presenze: banner Da giustificare cambia colore (rosso→giallo→verde) in base allo stato giustifica. 2) Wallet: scroll contenuto nei tab con max-h e overflow-y-auto.                                                       |
 
 ### 🚀 BACKEND (mihub-backend-rest → GitHub → Hetzner)
 
-| Commit | Versione | File Modificati | Descrizione |
-|---|---|---|---|
-| `21e6945` | v4.5.6 | `routes/notifiche.js`, `cron/market-transgressions.js` | **FIX NOTIFICHE PM + CRON:** 1) Endpoint messaggi include notifiche SISTEMA. 2) CRON usa POLIZIA_MUNICIPALE come mittente_tipo e comune_id come mittente_id. |
-| `be81b93` | v4.5.6b | `routes/inspections.js`, `cron/market-transgressions.js` | **FIX KPI STATS:** 1) Corretto nomi tabella (concessioni→concessions, mercato_id→market_id, impresa_id→business_id). 2) Rimosso filtro data inesistente su sanctions. |
-| `1c9c26b` | v4.5.6d | `cron/market-transgressions.js` | **FIX SCONTO 30%:** CRON imposta notified=true e notified_at=NOW() alla creazione della sanzione per abilitare il calcolo dello sconto. |
+| Commit    | Versione | File Modificati                                          | Descrizione                                                                                                                                                           |
+| --------- | -------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `21e6945` | v4.5.6   | `routes/notifiche.js`, `cron/market-transgressions.js`   | **FIX NOTIFICHE PM + CRON:** 1) Endpoint messaggi include notifiche SISTEMA. 2) CRON usa POLIZIA_MUNICIPALE come mittente_tipo e comune_id come mittente_id.          |
+| `be81b93` | v4.5.6b  | `routes/inspections.js`, `cron/market-transgressions.js` | **FIX KPI STATS:** 1) Corretto nomi tabella (concessioni→concessions, mercato_id→market_id, impresa_id→business_id). 2) Rimosso filtro data inesistente su sanctions. |
+| `1c9c26b` | v4.5.6d  | `cron/market-transgressions.js`                          | **FIX SCONTO 30%:** CRON imposta notified=true e notified_at=NOW() alla creazione della sanzione per abilitare il calcolo dello sconto.                               |
 
 ### 🗄️ DATABASE (Neon) — Correzioni Dati
 
-| Operazione | Descrizione |
-|---|---|
-| Giustifiche comune_id | Aggiornato comune_id da 1 (Grosseto) a 8 (Modena) per le giustifiche dell'impresa MIO TEST |
-| Notifiche risposte | Aggiornato target_id da 1 a 8 e target_tipo da SISTEMA a POLIZIA_MUNICIPALE per le risposte impresa |
-| Sanctions notified_at | Impostato notified_at=created_at per tutte le sanzioni con notified_at NULL |
+| Operazione            | Descrizione                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| Giustifiche comune_id | Aggiornato comune_id da 1 (Grosseto) a 8 (Modena) per le giustifiche dell'impresa MIO TEST          |
+| Notifiche risposte    | Aggiornato target_id da 1 a 8 e target_tipo da SISTEMA a POLIZIA_MUNICIPALE per le risposte impresa |
+| Sanctions notified_at | Impostato notified_at=created_at per tutte le sanzioni con notified_at NULL                         |
 
 ### 📊 KPI DASHBOARD — STATO ATTUALE (Modena, comune_id=8)
 
-| Indicatore | Valore | Note |
-|---|---|---|
-| Controlli Totali | 2 | 2 regolari, 0 non regolari |
-| Verbali | 22 | 12 pagati, 10 non pagati |
-| Importo Sanzioni | €6.000,00 | Totale importi |
-| Da Controllare | 13 | Watchlist attiva |
-| Notifiche PM | 32 | 27 inviati + 5 ricevuti |
-| Giustifiche | 3 | 1 in attesa, 2 accettate |
+| Indicatore       | Valore    | Note                       |
+| ---------------- | --------- | -------------------------- |
+| Controlli Totali | 2         | 2 regolari, 0 non regolari |
+| Verbali          | 22        | 12 pagati, 10 non pagati   |
+| Importo Sanzioni | €6.000,00 | Totale importi             |
+| Da Controllare   | 13        | Watchlist attiva           |
+| Notifiche PM     | 32        | 27 inviati + 5 ricevuti    |
+| Giustifiche      | 3         | 1 in attesa, 2 accettate   |
 
 ### 🔧 BUG RISOLTI — DETTAGLIO TECNICO
 
@@ -8265,62 +8615,62 @@ Il CRON non impostava `notified=true` e `notified_at=NOW()` alla creazione della
 
 ### 🚀 FRONTEND (dms-hub-app-new → GitHub → Vercel)
 
-| Commit | Descrizione | File Modificati |
-|---|---|---|
+| Commit    | Descrizione                                                       | File Modificati                              |
+| --------- | ----------------------------------------------------------------- | -------------------------------------------- |
 | `28332d7` | `feat: integrazione Firebase Authentication (Google/Apple/Email)` | 11 file (2836 inserzioni, 160 cancellazioni) |
-| `e7c8d94` | `docs: aggiornamento Blueprint con architettura Firebase Auth` | 1 file (BLUEPRINT.md aggiornato) |
+| `e7c8d94` | `docs: aggiornamento Blueprint con architettura Firebase Auth`    | 1 file (BLUEPRINT.md aggiornato)             |
 
 ### 📁 FILE CREATI
 
-| File | Descrizione |
-|---|---|
-| `client/src/lib/firebase.ts` | Configurazione Firebase SDK, provider Google/Apple, funzioni login/logout/register/reset, traduzione errori in italiano |
+| File                                          | Descrizione                                                                                                             |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `client/src/lib/firebase.ts`                  | Configurazione Firebase SDK, provider Google/Apple, funzioni login/logout/register/reset, traduzione errori in italiano |
 | `client/src/contexts/FirebaseAuthContext.tsx` | Context React globale per stato autenticazione, gestione ruoli (citizen/business/pa), sync con backend, fallback locale |
-| `server/firebaseAuthRouter.ts` | Router Express con endpoint: sync, verify, me, logout, login legacy, register, config |
-| `api/auth/firebase/sync.ts` | Serverless function per Vercel equivalente all'endpoint Express |
+| `server/firebaseAuthRouter.ts`                | Router Express con endpoint: sync, verify, me, logout, login legacy, register, config                                   |
+| `api/auth/firebase/sync.ts`                   | Serverless function per Vercel equivalente all'endpoint Express                                                         |
 
 ### 📝 FILE MODIFICATI
 
-| File | Modifica |
-|---|---|
+| File                                   | Modifica                                                                                                                                 |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `client/src/components/LoginModal.tsx` | Riscritto v2.0: Google/Apple via Firebase (popup+fallback redirect), Email via Firebase, "Password dimenticata?", SPID/CIE/CNS invariati |
-| `client/src/App.tsx` | Aggiunto `FirebaseAuthProvider` wrapper |
-| `server/_core/index.ts` | Registrato `firebaseAuthRouter` su `/api/auth` |
-| `.env.production` | Aggiunte 6 variabili `VITE_FIREBASE_*` |
-| `vercel.json` | Aggiunti rewrite per route Firebase auth |
-| `package.json` / `pnpm-lock.yaml` | Aggiunte dipendenze `firebase` e `firebase-admin` |
+| `client/src/App.tsx`                   | Aggiunto `FirebaseAuthProvider` wrapper                                                                                                  |
+| `server/_core/index.ts`                | Registrato `firebaseAuthRouter` su `/api/auth`                                                                                           |
+| `.env.production`                      | Aggiunte 6 variabili `VITE_FIREBASE_*`                                                                                                   |
+| `vercel.json`                          | Aggiunti rewrite per route Firebase auth                                                                                                 |
+| `package.json` / `pnpm-lock.yaml`      | Aggiunte dipendenze `firebase` e `firebase-admin`                                                                                        |
 
 ### 🔧 CONFIGURAZIONE FIREBASE
 
-| Parametro | Valore |
-|---|---|
-| **Progetto** | dmshub-auth |
-| **Project ID** | dmshub-auth-2975e |
-| **Auth Domain** | dmshub-auth-2975e.firebaseapp.com |
-| **Provider abilitati** | Google, Apple, Email/Password |
-| **Console** | https://console.firebase.google.com/project/dmshub-auth-2975e |
-| **Account** | chcndr@gmail.com |
+| Parametro              | Valore                                                        |
+| ---------------------- | ------------------------------------------------------------- |
+| **Progetto**           | dmshub-auth                                                   |
+| **Project ID**         | dmshub-auth-2975e                                             |
+| **Auth Domain**        | dmshub-auth-2975e.firebaseapp.com                             |
+| **Provider abilitati** | Google, Apple, Email/Password                                 |
+| **Console**            | https://console.firebase.google.com/project/dmshub-auth-2975e |
+| **Account**            | chcndr@gmail.com                                              |
 
 ### ✅ VARIABILI D'AMBIENTE VERCEL — CONFIGURATE
 
 Tutte le variabili sono state aggiunte al progetto Vercel `dms-hub-app-new` per **All Environments**:
 
-| Variabile | Stato |
-|---|---|
-| `VITE_FIREBASE_API_KEY` | ✅ Configurata |
-| `VITE_FIREBASE_AUTH_DOMAIN` | ✅ Configurata |
-| `VITE_FIREBASE_PROJECT_ID` | ✅ Configurata |
-| `VITE_FIREBASE_STORAGE_BUCKET` | ✅ Configurata |
+| Variabile                           | Stato          |
+| ----------------------------------- | -------------- |
+| `VITE_FIREBASE_API_KEY`             | ✅ Configurata |
+| `VITE_FIREBASE_AUTH_DOMAIN`         | ✅ Configurata |
+| `VITE_FIREBASE_PROJECT_ID`          | ✅ Configurata |
+| `VITE_FIREBASE_STORAGE_BUCKET`      | ✅ Configurata |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | ✅ Configurata |
-| `VITE_FIREBASE_APP_ID` | ✅ Configurata |
+| `VITE_FIREBASE_APP_ID`              | ✅ Configurata |
 
 ### 🔐 ARCHITETTURA AUTENTICAZIONE — RUOLI E REDIRECT
 
-| Ruolo | Metodi Disponibili | Redirect Dopo Login |
-|---|---|---|
-| **Cittadino** | Google, Apple, Email, SPID | `/wallet` |
-| **Impresa** | SPID, CIE, CNS | `/dashboard-impresa` |
-| **PA / Admin** | SPID + Ruolo assegnato | `/dashboard-pa` |
+| Ruolo          | Metodi Disponibili         | Redirect Dopo Login  |
+| -------------- | -------------------------- | -------------------- |
+| **Cittadino**  | Google, Apple, Email, SPID | `/wallet`            |
+| **Impresa**    | SPID, CIE, CNS             | `/dashboard-impresa` |
+| **PA / Admin** | SPID + Ruolo assegnato     | `/dashboard-pa`      |
 
 ### ⚠️ NOTE IMPORTANTI PER SESSIONI FUTURE
 
@@ -8332,12 +8682,12 @@ Tutte le variabili sono state aggiunte al progetto Vercel `dms-hub-app-new` per 
 
 ---
 
-
 ## 🔧 FIX: Login Tracking — Sessione 11 Feb 2026
 
 ### Problema
 
 Dopo l'integrazione Firebase Auth, il login funziona correttamente (bridge Firebase → orchestratore legacy DB), ma:
+
 1. I **login riusciti non appaiono** nella tab Sicurezza → Accessi ("Tentativi di Login Recenti")
 2. Il campo **"Ultimo accesso"** nella lista Utenti non si aggiorna
 
@@ -8345,16 +8695,16 @@ Dopo l'integrazione Firebase Auth, il login funziona correttamente (bridge Fireb
 
 #### Tabella `login_attempts` — Schema REALE nel DB Neon (⚠️ VERIFICATO CON QUERY DIRETTA AL DB — 11 Feb 2026 sera)
 
-| Colonna | Tipo | Note |
-|---------|------|------|
-| `id` | serial | PK auto-increment |
-| `username` | varchar | nome utente o email (può essere null) |
-| `user_id` | integer | FK → users.id (può essere null) |
-| `ip_address` | varchar | IP del client (NOT NULL) |
-| `user_agent` | text | browser/client info |
-| `success` | boolean | true = login riuscito, false = fallito (NOT NULL) |
-| `failure_reason` | varchar | motivo fallimento (null se success) |
-| `created_at` | timestamptz | data/ora tentativo (default CURRENT_TIMESTAMP) |
+| Colonna          | Tipo        | Note                                              |
+| ---------------- | ----------- | ------------------------------------------------- |
+| `id`             | serial      | PK auto-increment                                 |
+| `username`       | varchar     | nome utente o email (può essere null)             |
+| `user_id`        | integer     | FK → users.id (può essere null)                   |
+| `ip_address`     | varchar     | IP del client (NOT NULL)                          |
+| `user_agent`     | text        | browser/client info                               |
+| `success`        | boolean     | true = login riuscito, false = fallito (NOT NULL) |
+| `failure_reason` | varchar     | motivo fallimento (null se success)               |
+| `created_at`     | timestamptz | data/ora tentativo (default CURRENT_TIMESTAMP)    |
 
 > **⚠️ CORREZIONE CRITICA (11 Feb 2026 sera)**: Le colonne `user_email` e `user_name` **NON ESISTONO** nel DB.
 > La verifica precedente era stata fatta via API orchestratore che restituiva campi mappati/rinominati.
@@ -8388,6 +8738,7 @@ Il SecurityTab (riga 1709) renderizza `attempt.email_attempted`, ma l'API orches
 #### File 1: `api/auth/firebase/sync.ts` (Vercel serverless function)
 
 Aggiungere dopo la verifica del token Firebase:
+
 - Se il body contiene `trackLogin: true` e `legacyUserId > 0`:
   1. **INSERT** in `login_attempts` con le colonne reali (⚠️ CORRETTO — vedi sotto):
      ```sql
@@ -8407,6 +8758,7 @@ Aggiungere dopo la verifica del token Firebase:
 #### File 2: `client/src/contexts/FirebaseAuthContext.tsx`
 
 Nella funzione `syncUserWithBackend()`:
+
 - **URL cambiato** da `${API_BASE}/api/auth/firebase/sync` (Hetzner→404) a `/api/auth/firebase/sync` (URL relativo→Vercel→200)
 - **Ordine invertito**: STEP 1 = lookup legacy, STEP 2 = sync (prima era il contrario)
 - Passare nel body della chiamata sync: `trackLogin: true`, `legacyUserId`, `userName`, `userEmail`
@@ -8420,9 +8772,9 @@ Nella funzione `syncUserWithBackend()`:
 
 ### Endpoint coinvolti
 
-| Endpoint | Metodo | Dove | Modifica |
-|----------|--------|------|----------|
-| `/api/auth/firebase/sync` | POST | Vercel serverless (`api/auth/firebase/sync.ts`) | Aggiungere INSERT `login_attempts` + UPDATE `"lastSignedIn"` |
+| Endpoint                  | Metodo | Dove                                            | Modifica                                                     |
+| ------------------------- | ------ | ----------------------------------------------- | ------------------------------------------------------------ |
+| `/api/auth/firebase/sync` | POST   | Vercel serverless (`api/auth/firebase/sync.ts`) | Aggiungere INSERT `login_attempts` + UPDATE `"lastSignedIn"` |
 
 ### Test di verifica — ✅ SUPERATI (11 Feb 2026)
 
@@ -8448,6 +8800,7 @@ Nella funzione `syncUserWithBackend()`:
 33. **Ordine operazioni in syncUserWithBackend()**: STEP 1 = lookup legacy (orchestratore), STEP 2 = sync + tracking (Vercel), STEP 3 = security event (orchestratore)
 
 **NOTA ARCHITETTURA CRITICA (aggiunta 11 Feb sera):**
+
 - **Repo `Chcndr/dms-hub-app-new`** = Frontend React + Serverless functions Vercel (`api/` directory)
 - **Repo `Chcndr/mihub-backend-rest`** = Backend REST su Hetzner (`/root/mihub-backend-rest`) — servizio SEPARATO
 - Il `server/` Express in dms-hub-app-new è per **dev locale**, NON è deployato in produzione
@@ -8474,6 +8827,7 @@ Il file `server/arpaAuthRouter.ts` in `dms-hub-app-new` era **ridondante** ed è
 ### Contesto
 
 Il Comune di Grosseto (Ing. Alberto Corsini, Sistemi Informatici) ha fornito il link al portale ARPA per la registrazione:
+
 - **Portale:** https://auth.regione.toscana.it/
 - **Integration Manager:** https://auth.regione.toscana.it/im-fe/
 - **Contatto tecnico:** dott. Tonino Lavorati, Servizi Informatici del Comune di Grosseto per conto di Netspring s.r.l. (tel. 0564/488708)
@@ -8532,99 +8886,104 @@ Il flusso utilizza il protocollo **OAuth 2.0 Authorization Code Grant** con este
 
 ### File Implementati (REALI)
 
-| File | Dove | Descrizione |
-|------|------|-------------|
-| `mihub-backend-rest/routes/auth.js` | **Hetzner** | Router Express con 9 endpoint OAuth2 ARPA (904 righe) — GIÀ DEPLOYATO |
-| `mihub-backend-rest/routes/security.js` | **Hetzner** | API security con JOIN login_attempts ↔ users (108K) |
-| `client/src/api/authClient.ts` | **Vercel** | Client OAuth2 frontend — punta a `orchestratore.mio-hub.me` (Hetzner) |
-| `client/src/components/LoginModal.tsx` | **Vercel** | UI con bottoni SPID/CIE/CNS — già implementata |
-| `client/src/pages/AuthCallback.tsx` | **Vercel** | Pagina callback `/auth/callback` — già implementata |
-| `client/src/pages/Login.tsx` | **Vercel** | Pagina login standalone — già implementata |
+| File                                    | Dove        | Descrizione                                                           |
+| --------------------------------------- | ----------- | --------------------------------------------------------------------- |
+| `mihub-backend-rest/routes/auth.js`     | **Hetzner** | Router Express con 9 endpoint OAuth2 ARPA (904 righe) — GIÀ DEPLOYATO |
+| `mihub-backend-rest/routes/security.js` | **Hetzner** | API security con JOIN login_attempts ↔ users (108K)                  |
+| `client/src/api/authClient.ts`          | **Vercel**  | Client OAuth2 frontend — punta a `orchestratore.mio-hub.me` (Hetzner) |
+| `client/src/components/LoginModal.tsx`  | **Vercel**  | UI con bottoni SPID/CIE/CNS — già implementata                        |
+| `client/src/pages/AuthCallback.tsx`     | **Vercel**  | Pagina callback `/auth/callback` — già implementata                   |
+| `client/src/pages/Login.tsx`            | **Vercel**  | Pagina login standalone — già implementata                            |
 
 > **RIMOSSO nella v4.8.2:** `server/arpaAuthRouter.ts` e relativa registrazione in `server/_core/index.ts` (erano ridondanti)
 
 ### Endpoint Backend Implementati (mihub-backend-rest/routes/auth.js)
 
-| Metodo | Path | Funzione | Stato |
-|--------|------|----------|-------|
-| GET | `/api/auth/config` | Configurazione ARPA pubblica | Implementato |
-| GET | `/api/auth/login` | Genera URL autorizzazione ARPA con state anti-CSRF + PKCE | Implementato |
-| POST | `/api/auth/callback` | Scambia code→token, chiama UserInfo, crea utente DB, traccia login | Implementato |
-| GET | `/api/auth/verify` | Verifica validità session token JWT | Implementato |
-| GET | `/api/auth/me` | Restituisce info utente corrente | Implementato |
-| POST | `/api/auth/logout` | Invalida sessione, genera URL logout ARPA | Implementato |
-| POST | `/api/auth/refresh` | Rinnova sessione e token ARPA | Implementato |
-| POST | `/api/auth/register` | Registrazione cittadini con email/password | Implementato |
-| POST | `/api/auth/login` | Login cittadini con email/password (POST, diverso dal GET ARPA) | Implementato |
+| Metodo | Path                 | Funzione                                                           | Stato        |
+| ------ | -------------------- | ------------------------------------------------------------------ | ------------ |
+| GET    | `/api/auth/config`   | Configurazione ARPA pubblica                                       | Implementato |
+| GET    | `/api/auth/login`    | Genera URL autorizzazione ARPA con state anti-CSRF + PKCE          | Implementato |
+| POST   | `/api/auth/callback` | Scambia code→token, chiama UserInfo, crea utente DB, traccia login | Implementato |
+| GET    | `/api/auth/verify`   | Verifica validità session token JWT                                | Implementato |
+| GET    | `/api/auth/me`       | Restituisce info utente corrente                                   | Implementato |
+| POST   | `/api/auth/logout`   | Invalida sessione, genera URL logout ARPA                          | Implementato |
+| POST   | `/api/auth/refresh`  | Rinnova sessione e token ARPA                                      | Implementato |
+| POST   | `/api/auth/register` | Registrazione cittadini con email/password                         | Implementato |
+| POST   | `/api/auth/login`    | Login cittadini con email/password (POST, diverso dal GET ARPA)    | Implementato |
 
 ### Dove gira cosa (ARCHITETTURA REALE)
 
-| Componente | Dove | Repo | Deploy |
-|------------|------|------|--------|
-| Frontend React | **Vercel** | `dms-hub-app-new` | Automatico da GitHub push |
-| Serverless functions (`api/`) | **Vercel** | `dms-hub-app-new` | Automatico da GitHub push |
-| Backend REST API | **Hetzner** | `mihub-backend-rest` | `cd /root/mihub-backend-rest && git pull && pm2 restart` |
-| `server/` directory | **Solo dev locale** | `dms-hub-app-new` | **MAI deployato in produzione** |
-| Database PostgreSQL | **Neon Cloud** | — | Condiviso tra Vercel e Hetzner |
+| Componente                    | Dove                | Repo                 | Deploy                                                   |
+| ----------------------------- | ------------------- | -------------------- | -------------------------------------------------------- |
+| Frontend React                | **Vercel**          | `dms-hub-app-new`    | Automatico da GitHub push                                |
+| Serverless functions (`api/`) | **Vercel**          | `dms-hub-app-new`    | Automatico da GitHub push                                |
+| Backend REST API              | **Hetzner**         | `mihub-backend-rest` | `cd /root/mihub-backend-rest && git pull && pm2 restart` |
+| `server/` directory           | **Solo dev locale** | `dms-hub-app-new`    | **MAI deployato in produzione**                          |
+| Database PostgreSQL           | **Neon Cloud**      | —                    | Condiviso tra Vercel e Hetzner                           |
 
 > **REGOLA CRITICA:** Qualsiasi endpoint che deve funzionare in produzione va in `mihub-backend-rest/routes/`, NON in `dms-hub-app-new/server/`. La directory `server/` di dms-hub-app-new è SOLO per sviluppo locale.
 
 ### Endpoint ARPA Toscana (Documento Tecnico v1.13)
 
-| Endpoint | Staging | Produzione |
-|----------|---------|------------|
-| Authorization | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/auth` | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/auth` |
-| Token | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/token` | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/token` |
-| UserInfo | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/userinfo` | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/userinfo` |
-| Logout | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/logout` | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/logout` |
-| JWKS | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/certs` | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/certs` |
-| Introspect | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/token/introspect` | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/token/introspect` |
+| Endpoint      | Staging                                                                                         | Produzione                                                                          |
+| ------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Authorization | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/auth`             | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/auth`             |
+| Token         | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/token`            | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/token`            |
+| UserInfo      | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/userinfo`         | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/userinfo`         |
+| Logout        | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/logout`           | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/logout`           |
+| JWKS          | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/certs`            | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/certs`            |
+| Introspect    | `https://trial.auth.toscana.it/auth-trial/realms/enti/protocol/openid-connect/token/introspect` | `https://auth.toscana.it/auth/realms/enti/protocol/openid-connect/token/introspect` |
 
 ### Scope Richiesti
 
-| Scope | Dati forniti | Necessario per |
-|-------|-------------|----------------|
-| `openid` | Obbligatorio per OIDC | Tutti |
-| `default` | spidCode, name, familyName, fiscalNumber | Identificazione base |
-| `profile` | placeOfBirth, dateOfBirth, gender | Anagrafica completa |
-| `email` | email | Comunicazioni |
-| `professional` | companyName, registeredOffice | **CRUCIALE per Imprese** |
+| Scope          | Dati forniti                             | Necessario per           |
+| -------------- | ---------------------------------------- | ------------------------ |
+| `openid`       | Obbligatorio per OIDC                    | Tutti                    |
+| `default`      | spidCode, name, familyName, fiscalNumber | Identificazione base     |
+| `profile`      | placeOfBirth, dateOfBirth, gender        | Anagrafica completa      |
+| `email`        | email                                    | Comunicazioni            |
+| `professional` | companyName, registeredOffice            | **CRUCIALE per Imprese** |
 
 ### Variabili d'Ambiente da Configurare su Hetzner
 
-| Variabile | Descrizione | Dove ottenerla |
-|-----------|-------------|----------------|
-| `ARPA_CLIENT_ID` | Client ID ARPA | Integration Manager dopo registrazione |
-| `ARPA_CLIENT_SECRET` | Client Secret ARPA | Integration Manager dopo registrazione |
-| `ARPA_REDIRECT_URI` | Redirect URI registrata | Da configurare: `https://orchestratore.mio-hub.me/api/auth/callback` |
-| `ARPA_ENVIRONMENT` | `staging` o `production` | Iniziare con `staging` per test |
-| `ARPA_SESSION_SECRET` | Chiave per firmare JWT sessione | Generare: `openssl rand -hex 32` |
+| Variabile             | Descrizione                     | Dove ottenerla                                                       |
+| --------------------- | ------------------------------- | -------------------------------------------------------------------- |
+| `ARPA_CLIENT_ID`      | Client ID ARPA                  | Integration Manager dopo registrazione                               |
+| `ARPA_CLIENT_SECRET`  | Client Secret ARPA              | Integration Manager dopo registrazione                               |
+| `ARPA_REDIRECT_URI`   | Redirect URI registrata         | Da configurare: `https://orchestratore.mio-hub.me/api/auth/callback` |
+| `ARPA_ENVIRONMENT`    | `staging` o `production`        | Iniziare con `staging` per test                                      |
+| `ARPA_SESSION_SECRET` | Chiave per firmare JWT sessione | Generare: `openssl rand -hex 32`                                     |
 
 ### Procedura per Attivare il Sistema
 
 **PASSO 1 — Registrazione su Integration Manager (Andrea)**
+
 1. Accedere a https://auth.regione.toscana.it/im-fe/ con SPID/CIE/CNS
 2. Al primo accesso, completare la registrazione
 3. Contattare Tonino Lavorati (0564/488708) per supporto nella configurazione
 
 **PASSO 2 — Configurazione Client su Integration Manager (Andrea)**
+
 1. Creare una nuova applicazione client per MIO HUB
 2. Impostare `redirect_uri`: `https://orchestratore.mio-hub.me/api/auth/callback`
 3. Selezionare scope: `openid`, `default`, `profile`, `email`, `professional`
 4. Annotare `client_id` e `client_secret` generati
 
 **PASSO 3 — Configurazione Variabili d'Ambiente su Hetzner (Manus)**
+
 1. Impostare `ARPA_CLIENT_ID`, `ARPA_CLIENT_SECRET`, `ARPA_REDIRECT_URI`
 2. Impostare `ARPA_ENVIRONMENT=staging` per test iniziali
 3. Generare e impostare `ARPA_SESSION_SECRET`
 4. Riavviare il server Hetzner
 
 **PASSO 4 — Test End-to-End (Andrea + Manus)**
+
 1. Aprire MIO HUB → Login → Impresa o PA
 2. Click "Entra con SPID" → redirect a ARPA → autenticazione → callback
 3. Verificare utente creato nel DB e login tracciato in `login_attempts`
 
 **PASSO 5 — Passaggio in Produzione**
+
 1. Completare la Tabella dei Requisiti ARPA
 2. Firmare l'Accordo di Servizio con Regione Toscana
 3. Cambiare `ARPA_ENVIRONMENT=production`
@@ -8633,6 +8992,7 @@ Il flusso utilizza il protocollo **OAuth 2.0 Authorization Code Grant** con este
 ### Monitoraggio Obbligatorio (Documento ARPA v1.13, Sezione 9)
 
 ARPA richiede che il Service Provider (MIO HUB) conservi per ogni autenticazione:
+
 - `auth_time` — timestamp dell'autenticazione
 - `fiscal_number` — codice fiscale dell'utente
 - `auth_type` — tipo di autenticazione (SPID, CIE, CNS, eIDAS)
@@ -8662,6 +9022,7 @@ Questi dati sono già loggati nel backend Hetzner (`mihub-backend-rest/routes/au
 50. **Deposito rifiuti è indipendente dalla chiusura** — L'endpoint `POST /api/test-mercato/registra-rifiuti` può essere chiamato in qualsiasi momento durante la giornata di mercato, prima o dopo la chiusura. Aggiorna `orario_deposito_rifiuti` per tutte le presenze del giorno
 51. **Storico sessioni: limite rimosso** (v5.3.0) — Il frontend non passa più `limit=100`. Il backend ha un default di 1000 record. Se servono più di 1000 sessioni, implementare paginazione lato frontend
 52. **Conteggio posteggi occupati: escludere null** — In `ControlliSanzioniPanel.tsx`, il calcolo `new Set(sessionDetails.map(d => d.stall_number)).size` DEVE usare `.filter(Boolean)` per escludere gli spuntisti senza posteggio dal conteggio
+
 ## 9.5 Integrazione MercaWeb (Polizia Municipale Grosseto) — ✅ ATTIVA
 
 > **Versione:** 1.0.0  
@@ -8674,27 +9035,26 @@ L'integrazione con MercaWeb, il software in uso alla Polizia Municipale di Gross
 
 1.  **IMPORT (MercaWeb → MioHub):** MercaWeb invia tramite `POST` le anagrafiche di mercati, ambulanti, piazzole e concessioni. MioHub riceve questi dati, li trasforma nel proprio formato interno e li salva nel database Neon, popolando la colonna `mercaweb_id` per mantenere un riferimento incrociato.
 2.  **EXPORT (MioHub → MercaWeb):**
-    *   Gli endpoint `GET` esistenti dell'integrazione DMS Legacy (sezione 9.1) vengono arricchiti per includere anche il `mercaweb_id` nei dati di risposta. Questo permette a MercaWeb di associare i dati di MioHub ai propri record.
-    *   Un endpoint `GET` specifico (`/export/presenze/:marketId`) fornisce le presenze di una giornata di mercato nel formato esatto richiesto da MercaWeb (14 colonne definite nel file Excel).
+    - Gli endpoint `GET` esistenti dell'integrazione DMS Legacy (sezione 9.1) vengono arricchiti per includere anche il `mercaweb_id` nei dati di risposta. Questo permette a MercaWeb di associare i dati di MioHub ai propri record.
+    - Un endpoint `GET` specifico (`/export/presenze/:marketId`) fornisce le presenze di una giornata di mercato nel formato esatto richiesto da MercaWeb (14 colonne definite nel file Excel).
 
 ### Endpoint MercaWeb Implementati
 
-| # | Metodo | Endpoint | Descrizione | Stato |
-|---|---|---|---|---|
-| 20 | `POST` | `/import/ambulanti` | Riceve e salva anagrafica ambulanti | ✅ Testato |
-| 21 | `POST` | `/import/mercati` | Riceve e salva anagrafica mercati | ✅ Testato |
-| 22 | `POST` | `/import/piazzole` | Riceve e salva anagrafica piazzole | ✅ Testato |
-| 23 | `POST` | `/import/concessioni` | Riceve e salva concessioni | ✅ Testato |
-| 24 | `POST` | `/import/spuntisti` | Riceve dati spuntisti (solo validazione) | ✅ Testato |
-| 25 | `GET` | `/export/presenze/:marketId` | Esporta presenze formato MercaWeb | ✅ Testato |
-| 26 | `GET` | `/export/mapping/:entity` | Fornisce tabella di mapping ID | ✅ Testato |
-| 27 | `GET` | `/health` | Health check del servizio | ✅ Testato |
-| 28 | `GET` | `/status` | Stato dell'integrazione e conteggio record | ✅ Testato |
+| #   | Metodo | Endpoint                     | Descrizione                                | Stato      |
+| --- | ------ | ---------------------------- | ------------------------------------------ | ---------- |
+| 20  | `POST` | `/import/ambulanti`          | Riceve e salva anagrafica ambulanti        | ✅ Testato |
+| 21  | `POST` | `/import/mercati`            | Riceve e salva anagrafica mercati          | ✅ Testato |
+| 22  | `POST` | `/import/piazzole`           | Riceve e salva anagrafica piazzole         | ✅ Testato |
+| 23  | `POST` | `/import/concessioni`        | Riceve e salva concessioni                 | ✅ Testato |
+| 24  | `POST` | `/import/spuntisti`          | Riceve dati spuntisti (solo validazione)   | ✅ Testato |
+| 25  | `GET`  | `/export/presenze/:marketId` | Esporta presenze formato MercaWeb          | ✅ Testato |
+| 26  | `GET`  | `/export/mapping/:entity`    | Fornisce tabella di mapping ID             | ✅ Testato |
+| 27  | `GET`  | `/health`                    | Health check del servizio                  | ✅ Testato |
+| 28  | `GET`  | `/status`                    | Stato dell'integrazione e conteggio record | ✅ Testato |
 
 ### Autenticazione
 
 L'accesso agli endpoint MercaWeb è protetto tramite una API Key che deve essere inviata nell'header `X-MercaWeb-API-Key`. La chiave è configurata nella variabile d'ambiente `MERCAWEB_API_KEY` sul server Hetzner.
-
 
 ---
 
@@ -8703,6 +9063,7 @@ L'accesso agli endpoint MercaWeb è protetto tramite una API Key che deve essere
 ### Riepilogo Modifiche
 
 Questa sessione si è concentrata su due macro-aree:
+
 1.  **Integrazione MercaWeb:** Implementazione completa del backend per la sincronizzazione con il software MercaWeb (Abaco S.p.A.) in uso a Grosseto.
 2.  **Refactoring UI Dashboard:** Miglioramento significativo dell'usabilità della sezione Integrazioni e API nel frontend Vercel.
 
@@ -8733,15 +9094,16 @@ Questa sessione si è concentrata su due macro-aree:
 ### 📝 DOCUMENTAZIONE
 
 - **[UPDATE]** Aggiornato `MASTER_BLUEPRINT_MIOHUB.md` con:
-    - Sezione 9.5 (Integrazione MercaWeb) dettagliata.
-    - Sezione API Endpoints con le nuove funzionalità della API Dashboard.
-    - Sezione Frontend con la nuova card Connessioni.
-    - Questo changelog.
+  - Sezione 9.5 (Integrazione MercaWeb) dettagliata.
+  - Sezione API Endpoints con le nuove funzionalità della API Dashboard.
+  - Sezione Frontend con la nuova card Connessioni.
+  - Questo changelog.
 - **[NEW]** Creato documento `SPECIFICHE_API_MERCAWEB_v1.0.md` completo di esempi cURL e API Key, pronto per essere consegnato ad Abaco S.p.A.
 
 ### Sessione 12 Febbraio 2026 (v5.1.0)
 
 #### 🚀 FRONTEND (dms-hub-app-new → Vercel)
+
 - **[NEW]** Aggiunta card **"PDND — Piattaforma Digitale Nazionale Dati"** nella tab Connessioni con stato "In Preparazione".
 - **[PDND]** Endpoint predefiniti: voucher JWT, ANPR residenza, visura camerale, DURC, regolarità fiscale.
 - **[FIX]** Indicatori **Statistiche Utilizzo** ora collegati alle chiamate reali del Playground.
@@ -8750,9 +9112,9 @@ Questa sessione si è concentrata su due macro-aree:
 - **[COUNT]** Integrazioni Totali aggiornate a **6** (5 attive + 1 in preparazione).
 
 #### 📝 DOCUMENTAZIONE
+
 - **[UPDATE]** Blueprint aggiornato a v5.1.0 con tutte le card Connessioni documentate.
 - **[UPDATE]** Sezione 13 Tab Connessioni ora elenca tutte e 6 le integrazioni.
-
 
 ---
 
@@ -8767,21 +9129,21 @@ Questa sessione ha identificato e risolto 5 bug critici che impedivano il corret
 
 #### 🚀 BACKEND (mihub-backend-rest → Hetzner)
 
-| Commit | File | Bug | Descrizione |
-|---|---|---|---|
-| `fix: 5 bug isolamento comune` | `routes/concessions.js` | Bug 1 | Fix `target_id` hardcoded a `1` nella funzione `inviaNotificaPM` → ora usa `$1` (comune_id) |
-| | `routes/inspections.js` | Bug 3 | Aggiunto `comune_id` alla INSERT in `pm_watchlist` + filtro diretto nella query stats |
-| | `routes/sanctions.js` | Bug 3 | Aggiunto `comune_id` alla INSERT in `pm_watchlist` |
-| | `routes/verbali.js` | Bug 3 | Aggiunto `comune_id` alla INSERT in `pm_watchlist` |
-| | `routes/watchlist.js` | Bug 3+Bonus | Aggiunto `comune_id` alla INSERT + fix crash `concessioni` → `concessions` |
-| | `routes/test-mercato.js` | Bug 5 | Punteggio spuntisti incrementato in `avvia-spunta` (non solo in `assegna-posteggio`) |
+| Commit                         | File                     | Bug         | Descrizione                                                                                 |
+| ------------------------------ | ------------------------ | ----------- | ------------------------------------------------------------------------------------------- |
+| `fix: 5 bug isolamento comune` | `routes/concessions.js`  | Bug 1       | Fix `target_id` hardcoded a `1` nella funzione `inviaNotificaPM` → ora usa `$1` (comune_id) |
+|                                | `routes/inspections.js`  | Bug 3       | Aggiunto `comune_id` alla INSERT in `pm_watchlist` + filtro diretto nella query stats       |
+|                                | `routes/sanctions.js`    | Bug 3       | Aggiunto `comune_id` alla INSERT in `pm_watchlist`                                          |
+|                                | `routes/verbali.js`      | Bug 3       | Aggiunto `comune_id` alla INSERT in `pm_watchlist`                                          |
+|                                | `routes/watchlist.js`    | Bug 3+Bonus | Aggiunto `comune_id` alla INSERT + fix crash `concessioni` → `concessions`                  |
+|                                | `routes/test-mercato.js` | Bug 5       | Punteggio spuntisti incrementato in `avvia-spunta` (non solo in `assegna-posteggio`)        |
 
 #### 🚀 FRONTEND (dms-hub-app-new → Vercel)
 
-| Commit | File | Bug | Descrizione |
-|---|---|---|---|
-| `fix: 5 bug isolamento comune` | `WalletPanel.tsx` | Bug 2 | Fix `mittente_id` hardcoded a `1` → ora usa `comuneId` dinamico da `getImpersonationParams()` |
-| | `ControlliSanzioniPanel.tsx` | Bug 4 | Aggiunto `addComuneIdToUrl()` alla fetch sessioni + rimosso filtro lato client |
+| Commit                         | File                         | Bug   | Descrizione                                                                                   |
+| ------------------------------ | ---------------------------- | ----- | --------------------------------------------------------------------------------------------- |
+| `fix: 5 bug isolamento comune` | `WalletPanel.tsx`            | Bug 2 | Fix `mittente_id` hardcoded a `1` → ora usa `comuneId` dinamico da `getImpersonationParams()` |
+|                                | `ControlliSanzioniPanel.tsx` | Bug 4 | Aggiunto `addComuneIdToUrl()` alla fetch sessioni + rimosso filtro lato client                |
 
 #### 🚀 DATABASE (Neon)
 
@@ -8801,22 +9163,22 @@ Questa sessione ha affrontato 8 punti critici segnalati, che spaziavano da bug v
 
 #### 🚀 BACKEND (mihub-backend-rest → Hetzner)
 
-| File | Tipo | Descrizione |
-|---|---|---|
-| `routes/suap.js` | NEW | Endpoint `GET /api/suap/notifiche-pm` — aggrega notifiche da domande_spunta, concessions e autorizzazioni |
-| `routes/test-mercato.js` | NEW | Endpoint `POST /api/test-mercato/registra-rifiuti` — registra orario deposito spazzatura |
-| `routes/presenze.js` | EDIT | Aumentato limite default da 50 a 1000 per `GET /sessioni` |
-| `routes/suap.js` | FIX | Corretto `ds.market_id` → `ds.mercato_id` |
+| File                     | Tipo | Descrizione                                                                                               |
+| ------------------------ | ---- | --------------------------------------------------------------------------------------------------------- |
+| `routes/suap.js`         | NEW  | Endpoint `GET /api/suap/notifiche-pm` — aggrega notifiche da domande_spunta, concessions e autorizzazioni |
+| `routes/test-mercato.js` | NEW  | Endpoint `POST /api/test-mercato/registra-rifiuti` — registra orario deposito spazzatura                  |
+| `routes/presenze.js`     | EDIT | Aumentato limite default da 50 a 1000 per `GET /sessioni`                                                 |
+| `routes/suap.js`         | FIX  | Corretto `ds.market_id` → `ds.mercato_id`                                                                 |
 
 #### 🚀 FRONTEND (dms-hub-app-new → Vercel)
 
-| File | Tipo | Descrizione |
-|---|---|---|
-| `ControlliSanzioniPanel.tsx` | FIX | Posteggi occupati: aggiunto `.filter(Boolean)` per escludere null |
-| `ControlliSanzioniPanel.tsx` | FIX | Rimosso `limit=100` hardcoded dallo storico sessioni |
-| `ControlliSanzioniPanel.tsx` | NEW | Sottotab "Graduatoria Spunta" nel pannello Pratiche SUAP |
-| `GestioneMercati.tsx` | NEW | Pulsante "♻️ Registra Deposito Rifiuti" |
-| `apiInventoryService.ts` | NEW | 3 nuovi endpoint registrati nel Guardian |
+| File                         | Tipo | Descrizione                                                       |
+| ---------------------------- | ---- | ----------------------------------------------------------------- |
+| `ControlliSanzioniPanel.tsx` | FIX  | Posteggi occupati: aggiunto `.filter(Boolean)` per escludere null |
+| `ControlliSanzioniPanel.tsx` | FIX  | Rimosso `limit=100` hardcoded dallo storico sessioni              |
+| `ControlliSanzioniPanel.tsx` | NEW  | Sottotab "Graduatoria Spunta" nel pannello Pratiche SUAP          |
+| `GestioneMercati.tsx`        | NEW  | Pulsante "♻️ Registra Deposito Rifiuti"                           |
+| `apiInventoryService.ts`     | NEW  | 3 nuovi endpoint registrati nel Guardian                          |
 
 #### 🚀 DATABASE (Neon)
 
@@ -8837,35 +9199,36 @@ Questa sessione ha affrontato 8 punti critici segnalati, che spaziavano da bug v
 
 ### 2. Problemi Bloccanti (TUTTI RISOLTI)
 
-| # | Problema | Stato | Fix Applicato |
-|---|---|---|---|
-| 1 | Colonne `legacy_*_id` mancanti | ✅ RISOLTO | Fix 1: ALTER TABLE su 4 tabelle + 8 indici |
-| 2 | Script matching ID | ✅ RISOLTO | Fix 2: Script one-shot eseguito (3 match trovati) |
-| 3 | Transformer `toLegacyUser` errato | ✅ RISOLTO | Fix 3: Rimosso `suser_enabled` |
-| 4 | Transformer SYNC IN errato | ✅ RISOLTO | Fix 4: Riscritti `presenceToMioHub` e `sessionToMioHub` |
-| 5 | Risoluzione ID Legacy → Neon | ✅ RISOLTO | Fix 5: Implementata `resolveNeonIds()` |
-| 6 | Gestione NOT NULL constraints | ✅ RISOLTO | Fix 6: Implementata `applyNotNullDefaults()` |
-| 7 | Cast JSON/JSONB nelle stored functions | ✅ RISOLTO | Fix 7: Rilevamento automatico tipo parametro |
-| 8 | Mapping indirizzo nel transformer | ✅ RISOLTO | Fix 13: Aggiunto indirizzo_via, indirizzo_cap, comune |
-| 9 | sp_stato spuntista errato (A/S vs ATTIVO/SOSPESO) | ✅ RISOLTO | Fix 14: Mapping corretto |
-| 10 | Timestamp presenze (time vs timestamp) | ✅ RISOLTO | Fix 8-12: Combinazione data+ora in ISO timestamp |
+| #   | Problema                                          | Stato      | Fix Applicato                                           |
+| --- | ------------------------------------------------- | ---------- | ------------------------------------------------------- |
+| 1   | Colonne `legacy_*_id` mancanti                    | ✅ RISOLTO | Fix 1: ALTER TABLE su 4 tabelle + 8 indici              |
+| 2   | Script matching ID                                | ✅ RISOLTO | Fix 2: Script one-shot eseguito (3 match trovati)       |
+| 3   | Transformer `toLegacyUser` errato                 | ✅ RISOLTO | Fix 3: Rimosso `suser_enabled`                          |
+| 4   | Transformer SYNC IN errato                        | ✅ RISOLTO | Fix 4: Riscritti `presenceToMioHub` e `sessionToMioHub` |
+| 5   | Risoluzione ID Legacy → Neon                      | ✅ RISOLTO | Fix 5: Implementata `resolveNeonIds()`                  |
+| 6   | Gestione NOT NULL constraints                     | ✅ RISOLTO | Fix 6: Implementata `applyNotNullDefaults()`            |
+| 7   | Cast JSON/JSONB nelle stored functions            | ✅ RISOLTO | Fix 7: Rilevamento automatico tipo parametro            |
+| 8   | Mapping indirizzo nel transformer                 | ✅ RISOLTO | Fix 13: Aggiunto indirizzo_via, indirizzo_cap, comune   |
+| 9   | sp_stato spuntista errato (A/S vs ATTIVO/SOSPESO) | ✅ RISOLTO | Fix 14: Mapping corretto                                |
+| 10  | Timestamp presenze (time vs timestamp)            | ✅ RISOLTO | Fix 8-12: Combinazione data+ora in ISO timestamp        |
 
 ### 3. Piano d'Azione Chirurgico (COMPLETATO)
 
 Tutti i 14 fix sono stati implementati, deployati e testati. Risultati dei test bidirezionali:
 
-| Tipo Dato | SYNC OUT (Nostro→Loro) | SYNC IN (Loro→Noi) | Round-Trip |
-|---|---|---|---|
-| **Vendor/Impresa** | ✅ Alimentari Rossi → amb_id=48 | ✅ Lapsy srl → impresa id=104 | ✅ Verificato |
-| **Market** | ✅ Grosseto → mkt_id=16 | ✅ Cervia Demo → market id=12 | ✅ Verificato |
-| **User** | ✅ Admin Grosseto → suser_id=112 | ✅ Mauro Casolaro → user id=41 | ✅ |
-| **Stall** | ✅ A1 Grosseto → pz_id=519 | ✅ F001P002 → stall id=619 | ✅ |
-| **Concessione** | ✅ Intim8@Grosseto → conc_id=30 | ✅ conc_id=13 → concession id=66 | ✅ |
-| **Spuntista** | ✅ sp_id=10 (amb_id=48, 600€) | ⚠️ N/A (no tabella equiv. su Neon) | ✅ OUT |
-| **Presenza** | — | ✅ 1 salvata (pre_id=7568) | ✅ |
-| **Sessione** | — | ✅ 106 salvate da Cervia Demo | ✅ |
+| Tipo Dato          | SYNC OUT (Nostro→Loro)           | SYNC IN (Loro→Noi)                 | Round-Trip    |
+| ------------------ | -------------------------------- | ---------------------------------- | ------------- |
+| **Vendor/Impresa** | ✅ Alimentari Rossi → amb_id=48  | ✅ Lapsy srl → impresa id=104      | ✅ Verificato |
+| **Market**         | ✅ Grosseto → mkt_id=16          | ✅ Cervia Demo → market id=12      | ✅ Verificato |
+| **User**           | ✅ Admin Grosseto → suser_id=112 | ✅ Mauro Casolaro → user id=41     | ✅            |
+| **Stall**          | ✅ A1 Grosseto → pz_id=519       | ✅ F001P002 → stall id=619         | ✅            |
+| **Concessione**    | ✅ Intim8@Grosseto → conc_id=30  | ✅ conc_id=13 → concession id=66   | ✅            |
+| **Spuntista**      | ✅ sp_id=10 (amb_id=48, 600€)    | ⚠️ N/A (no tabella equiv. su Neon) | ✅ OUT        |
+| **Presenza**       | —                                | ✅ 1 salvata (pre_id=7568)         | ✅            |
+| **Sessione**       | —                                | ✅ 106 salvate da Cervia Demo      | ✅            |
 
 **Dati di test presenti nei DB:**
+
 - **Nel Legacy (Heroku):** MIO TEST SYNC (amb_id=45), DUGONI calzature (amb_id=46), Alimentari Rossi (amb_id=48), Mercato Grosseto (mkt_id=16), stall A1 (pz_id=519), concessione (conc_id=30), spuntista (sp_id=10), user Admin Grosseto (suser_id=112)
 - **Su Neon:** Lapsy srl (id=104), Cervia Demo (id=12), F001P002 (id=619), concessione (id=66), Mauro Casolaro (id=41), 1 presenza, 106 sessioni
 
@@ -8875,36 +9238,36 @@ Accesso effettuato al gestionale Lapsy DMS (`https://lapsy-dms.herokuapp.com`) c
 
 **Sezione Ambulanti** — Tutti i record creati da MioHub sono presenti nella griglia:
 
-| ID | Ragione Sociale | Origine | Visibile |
-|---|---|---|---|
-| 48 | Alimentari Rossi & C. | SYNC OUT da MioHub (Neon id=2) | ✅ |
-| 46 | DUGONI calzature | SYNC OUT da MioHub (Neon id=49) | ✅ |
-| 45 | MIO TEST SYNC | SYNC OUT primo test | ✅ |
-| 1 | INTIM 8 DI CHECCHI ANDREA | Dato originale Legacy | ✅ |
-| 10 | Lapsy srl | Dato originale Legacy | ✅ |
-| 7-14 | Ambulante 1-7 | Dati demo Legacy | ✅ |
-| 17-19 | M14 F001P001-P003 | Dati demo Legacy | ✅ |
+| ID    | Ragione Sociale           | Origine                         | Visibile |
+| ----- | ------------------------- | ------------------------------- | -------- |
+| 48    | Alimentari Rossi & C.     | SYNC OUT da MioHub (Neon id=2)  | ✅       |
+| 46    | DUGONI calzature          | SYNC OUT da MioHub (Neon id=49) | ✅       |
+| 45    | MIO TEST SYNC             | SYNC OUT primo test             | ✅       |
+| 1     | INTIM 8 DI CHECCHI ANDREA | Dato originale Legacy           | ✅       |
+| 10    | Lapsy srl                 | Dato originale Legacy           | ✅       |
+| 7-14  | Ambulante 1-7             | Dati demo Legacy                | ✅       |
+| 17-19 | M14 F001P001-P003         | Dati demo Legacy                | ✅       |
 
 **Sezione Mercati** — Il mercato Grosseto è visibile con tutti i dati corretti:
 
-| ID | Descrizione | Città | Dal | Al | Origine |
-|---|---|---|---|---|---|
-| 16 | Mercato Grosseto | Grosseto | 01/01/2024 | 31/12/2034 | SYNC OUT da MioHub |
-| 14 | Cervia Demo | Cervia | 09/08/2023 | 07/01/2030 | Originale Legacy |
-| 1 | Test Bologna | BOLOGNA | 09/11/2022 | 31/12/2029 | Originale Legacy |
+| ID  | Descrizione      | Città    | Dal        | Al         | Origine            |
+| --- | ---------------- | -------- | ---------- | ---------- | ------------------ |
+| 16  | Mercato Grosseto | Grosseto | 01/01/2024 | 31/12/2034 | SYNC OUT da MioHub |
+| 14  | Cervia Demo      | Cervia   | 09/08/2023 | 07/01/2030 | Originale Legacy   |
+| 1   | Test Bologna     | BOLOGNA  | 09/11/2022 | 31/12/2029 | Originale Legacy   |
 
 **Sezione Spuntisti** — Lo spuntista creato da MioHub è il primo della lista:
 
-| Ambulante | Valido dal | Valido al | Importo | Stato | Origine |
-|---|---|---|---|---|---|
-| Alimentari Rossi & C. | 01/01/2026 | 31/12/2026 | € 600,00 | ATTIVO | SYNC OUT da MioHub |
-| Spunta 91-95, Ambulante 5-7 | 2023 | 2030 | € 500,00 | ATTIVO | Originali Legacy |
+| Ambulante                   | Valido dal | Valido al  | Importo  | Stato  | Origine            |
+| --------------------------- | ---------- | ---------- | -------- | ------ | ------------------ |
+| Alimentari Rossi & C.       | 01/01/2026 | 31/12/2026 | € 600,00 | ATTIVO | SYNC OUT da MioHub |
+| Spunta 91-95, Ambulante 5-7 | 2023       | 2030       | € 500,00 | ATTIVO | Originali Legacy   |
 
 **Sezione Utenti APP** — L'utente Admin Grosseto è visibile:
 
-| ID | Email | Nome | Cognome | Ruolo | Origine |
-|---|---|---|---|---|---|
-| 112 | admin@c_e202.miohub.it | Admin | Grosseto | AMB | SYNC OUT da MioHub |
+| ID  | Email                  | Nome  | Cognome  | Ruolo | Origine            |
+| --- | ---------------------- | ----- | -------- | ----- | ------------------ |
+| 112 | admin@c_e202.miohub.it | Admin | Grosseto | AMB   | SYNC OUT da MioHub |
 
 > **Conclusione:** Tutti i dati inviati tramite SYNC OUT da MioHub sono correttamente visibili e consultabili nel gestionale Lapsy. Il round-trip è verificato: dato scritto via API → visibile nell'interfaccia utente.
 
@@ -8912,68 +9275,67 @@ Accesso effettuato al gestionale Lapsy DMS (`https://lapsy-dms.herokuapp.com`) c
 
 Verifica completa di tutti i sistemi dopo il completamento dei fix e dei test bidirezionali.
 
-| Sistema | Stato | Dettaglio |
-|---|---|---|
-| **GitHub ↔ Hetzner** (Backend) | ✅ ALLINEATI | Stesso commit `6c28480`, tag `v5.5.0-full-sync-tested`. `git fetch` non mostra differenze. |
-| **GitHub ↔ Vercel** (Frontend) | ✅ ALLINEATI | Auto-deploy da master, commit `75b5858`. Frontend raggiungibile su `dms-hub-app-new.vercel.app`. |
-| **Neon DB** | ✅ OPERATIVO | 8 colonne `legacy_*_id` funzionanti. 3 markets, 34 imprese, 8 users, 544 stalls, 25 concessions, 37 presenze, 126 sessioni. |
-| **Heroku Legacy DB** | ✅ OPERATIVO | 32 ambulanti, 3 mercati, 38 utenti, 452 piazzole, 26 concessioni, 5 presenze, 731 sessioni, 9 spuntisti. |
-| **DMS Legacy Integration** | ✅ 3/3 CANALI ATTIVI | EXPORT + SYNC OUT + SYNC IN tutti funzionanti e testati. |
-| **Backend Hetzner** | ✅ ONLINE | PM2 online, health OK, 181.6MB RAM. |
-| **Gestionale Lapsy** | ✅ ACCESSIBILE | Login OK, tutti i dati SYNC OUT visibili nell'interfaccia. |
+| Sistema                         | Stato                | Dettaglio                                                                                                                   |
+| ------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **GitHub ↔ Hetzner** (Backend) | ✅ ALLINEATI         | Stesso commit `6c28480`, tag `v5.5.0-full-sync-tested`. `git fetch` non mostra differenze.                                  |
+| **GitHub ↔ Vercel** (Frontend) | ✅ ALLINEATI         | Auto-deploy da master, commit `75b5858`. Frontend raggiungibile su `dms-hub-app-new.vercel.app`.                            |
+| **Neon DB**                     | ✅ OPERATIVO         | 8 colonne `legacy_*_id` funzionanti. 3 markets, 34 imprese, 8 users, 544 stalls, 25 concessions, 37 presenze, 126 sessioni. |
+| **Heroku Legacy DB**            | ✅ OPERATIVO         | 32 ambulanti, 3 mercati, 38 utenti, 452 piazzole, 26 concessioni, 5 presenze, 731 sessioni, 9 spuntisti.                    |
+| **DMS Legacy Integration**      | ✅ 3/3 CANALI ATTIVI | EXPORT + SYNC OUT + SYNC IN tutti funzionanti e testati.                                                                    |
+| **Backend Hetzner**             | ✅ ONLINE            | PM2 online, health OK, 181.6MB RAM.                                                                                         |
+| **Gestionale Lapsy**            | ✅ ACCESSIBILE       | Login OK, tutti i dati SYNC OUT visibili nell'interfaccia.                                                                  |
 
 **Stato DB Neon post-test:**
 
-| Tabella | Record | Con legacy_id | Variazione |
-|---|---|---|---|
-| markets | 3 | 2 | +1 (Cervia Demo importata dal Legacy) |
-| imprese | 34 | 4 | +2 (Lapsy srl importata, Alimentari Rossi linkata) |
-| users | 8 | 4 | +1 (Mauro Casolaro importato dal Legacy) |
-| stalls | 544 | 3 | +2 (F001P002 importata, A1 linkata) |
-| concessions | 25 | 1 | +1 (concessione Legacy importata) |
-| vendor_presences | 37 | 1 | +1 (presenza Legacy salvata) |
-| market_sessions | 126 | 106 | +106 (sessioni Cervia Demo salvate) |
+| Tabella          | Record | Con legacy_id | Variazione                                         |
+| ---------------- | ------ | ------------- | -------------------------------------------------- |
+| markets          | 3      | 2             | +1 (Cervia Demo importata dal Legacy)              |
+| imprese          | 34     | 4             | +2 (Lapsy srl importata, Alimentari Rossi linkata) |
+| users            | 8      | 4             | +1 (Mauro Casolaro importato dal Legacy)           |
+| stalls           | 544    | 3             | +2 (F001P002 importata, A1 linkata)                |
+| concessions      | 25     | 1             | +1 (concessione Legacy importata)                  |
+| vendor_presences | 37     | 1             | +1 (presenza Legacy salvata)                       |
+| market_sessions  | 126    | 106           | +106 (sessioni Cervia Demo salvate)                |
 
 **Stato DB Heroku Legacy post-test:**
 
-| Tabella | Record | Variazione |
-|---|---|---|
-| amb | 32 | +3 (MIO TEST SYNC, DUGONI calzature, Alimentari Rossi da MioHub) |
-| mercati | 3 | +1 (Mercato Grosseto da MioHub) |
-| suser | 38 | +1 (Admin Grosseto da MioHub) |
-| piazzole | 452 | +1 (stall A1 da MioHub) |
-| conc_std | 26 | +1 (concessione da MioHub) |
-| spuntisti | 9 | +1 (Alimentari Rossi spuntista da MioHub) |
+| Tabella   | Record | Variazione                                                       |
+| --------- | ------ | ---------------------------------------------------------------- |
+| amb       | 32     | +3 (MIO TEST SYNC, DUGONI calzature, Alimentari Rossi da MioHub) |
+| mercati   | 3      | +1 (Mercato Grosseto da MioHub)                                  |
+| suser     | 38     | +1 (Admin Grosseto da MioHub)                                    |
+| piazzole  | 452    | +1 (stall A1 da MioHub)                                          |
+| conc_std  | 26     | +1 (concessione da MioHub)                                       |
+| spuntisti | 9      | +1 (Alimentari Rossi spuntista da MioHub)                        |
 
 ### 6. Cose da Verificare o Riparare
 
 **Priorità ALTA:**
 
-| # | Problema | Impatto | Azione |
-|---|---|---|---|
-| 1 | **DNS `www.miohub.it` non risolve** | Il frontend è raggiungibile solo su `dms-hub-app-new.vercel.app` | Verificare configurazione DNS del dominio miohub.it e collegarlo a Vercel |
-| 2 | **Testo "(BLOCCATO)" nel health endpoint** | Le descrizioni SYNC OUT/IN mostrano "(BLOCCATO)" anche se i canali sono attivi | Aggiornare le stringhe di descrizione nel codice del service |
+| #   | Problema                                   | Impatto                                                                        | Azione                                                                    |
+| --- | ------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| 1   | **DNS `www.miohub.it` non risolve**        | Il frontend è raggiungibile solo su `dms-hub-app-new.vercel.app`               | Verificare configurazione DNS del dominio miohub.it e collegarlo a Vercel |
+| 2   | **Testo "(BLOCCATO)" nel health endpoint** | Le descrizioni SYNC OUT/IN mostrano "(BLOCCATO)" anche se i canali sono attivi | Aggiornare le stringhe di descrizione nel codice del service              |
 
 **Priorità MEDIA:**
 
-| # | Problema | Impatto | Azione |
-|---|---|---|---|
-| 3 | **77 restart PM2** | Il backend ha avuto molti restart durante i fix, potrebbe indicare instabilità | Monitorare nei prossimi giorni, resettare il contatore con `pm2 reset` |
-| 4 | **Warning SSL Neon nei log** | Cosmetico, non impatta il funzionamento | Aggiungere `uselibpqcompat=true` alla stringa di connessione |
-| 5 | **11 file non tracciati su Hetzner** | Backup e script di check che sporcano la directory | Eliminare o aggiungere a `.gitignore` |
+| #   | Problema                             | Impatto                                                                        | Azione                                                                 |
+| --- | ------------------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| 3   | **77 restart PM2**                   | Il backend ha avuto molti restart durante i fix, potrebbe indicare instabilità | Monitorare nei prossimi giorni, resettare il contatore con `pm2 reset` |
+| 4   | **Warning SSL Neon nei log**         | Cosmetico, non impatta il funzionamento                                        | Aggiungere `uselibpqcompat=true` alla stringa di connessione           |
+| 5   | **11 file non tracciati su Hetzner** | Backup e script di check che sporcano la directory                             | Eliminare o aggiungere a `.gitignore`                                  |
 
 **Priorità BASSA (miglioramenti futuri):**
 
-| # | Problema | Impatto | Azione |
-|---|---|---|---|
-| 6 | **Dati di test nei DB** | Record di test (MIO TEST SYNC, DUGONI, Cervia Demo, ecc.) presenti in entrambi i DB | Decidere se pulirli o tenerli come riferimento |
-| 7 | **CRON automatico SYNC** | Il CRON non salva automaticamente (dry-run) | Attivare `save: true` nel CRON quando si vuole la sincronizzazione automatica |
-| 8 | **Presenze SYNC IN: 1/5 salvate** | Solo 1 presenza su 5 è stata salvata (le altre non avevano vendor_id risolvibile) | Normale: i vendor di test Legacy non hanno corrispettivi su Neon |
-| 9 | **Spuntista SYNC IN** | Non esiste tabella equivalente su Neon per gli spuntisti | Valutare se creare una tabella `spuntisti` su Neon o mappare su struttura esistente |
-| 10 | **lastSync nel health sempre "never"** | Il sistema non traccia l'ultimo sync effettuato | Implementare tracking dell'ultimo sync riuscito |
+| #   | Problema                               | Impatto                                                                             | Azione                                                                              |
+| --- | -------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 6   | **Dati di test nei DB**                | Record di test (MIO TEST SYNC, DUGONI, Cervia Demo, ecc.) presenti in entrambi i DB | Decidere se pulirli o tenerli come riferimento                                      |
+| 7   | **CRON automatico SYNC**               | Il CRON non salva automaticamente (dry-run)                                         | Attivare `save: true` nel CRON quando si vuole la sincronizzazione automatica       |
+| 8   | **Presenze SYNC IN: 1/5 salvate**      | Solo 1 presenza su 5 è stata salvata (le altre non avevano vendor_id risolvibile)   | Normale: i vendor di test Legacy non hanno corrispettivi su Neon                    |
+| 9   | **Spuntista SYNC IN**                  | Non esiste tabella equivalente su Neon per gli spuntisti                            | Valutare se creare una tabella `spuntisti` su Neon o mappare su struttura esistente |
+| 10  | **lastSync nel health sempre "never"** | Il sistema non traccia l'ultimo sync effettuato                                     | Implementare tracking dell'ultimo sync riuscito                                     |
 
 > **Stato complessivo: il sistema è stabile e funzionante.** Tutti i canali di interoperabilità sono attivi e testati bidirezionalmente. I problemi rimanenti sono cosmetici o miglioramenti futuri, nessuno è bloccante.
-
 
 ---
 
@@ -8987,12 +9349,12 @@ Permettere a un admin PA di gestire le **Associazioni di Categoria** e di impers
 
 Il sistema di impersonificazione è stato esteso da "Comune-centrico" a "Entità-centrico", in grado di gestire sia Comuni che Associazioni senza rompere il flusso esistente.
 
-| Componente | File | Modifica |
-|---|---|---|
-| **Hook Impersonificazione** | `useImpersonation.ts` | Aggiunto `entityType` ('comune' o 'associazione'), `associazioneId`, `associazioneNome`. Helper `isAssociazioneImpersonation()` e `addAssociazioneIdToUrl()`. `addComuneIdToUrl()` **NON toccato**. |
-| **Barra Gialla** | `ImpersonationBanner.tsx` | Mostra icona Building2/Briefcase e label COMUNE/ASSOCIAZIONE in base a `entityType`. |
-| **Permessi** | `PermissionsContext.tsx` | `determineUserRoleId`: se `entityType === 'associazione'` → ruolo `ASSOCIATION` (ID=10, 26 permessi, 13 tab). Se `entityType === 'comune'` → ruolo ID=2 come prima. |
-| **Tab Protetti** | `ProtectedTab.tsx` | **NON modificato** — funziona già con qualsiasi ruolo. |
+| Componente                  | File                      | Modifica                                                                                                                                                                                            |
+| --------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hook Impersonificazione** | `useImpersonation.ts`     | Aggiunto `entityType` ('comune' o 'associazione'), `associazioneId`, `associazioneNome`. Helper `isAssociazioneImpersonation()` e `addAssociazioneIdToUrl()`. `addComuneIdToUrl()` **NON toccato**. |
+| **Barra Gialla**            | `ImpersonationBanner.tsx` | Mostra icona Building2/Briefcase e label COMUNE/ASSOCIAZIONE in base a `entityType`.                                                                                                                |
+| **Permessi**                | `PermissionsContext.tsx`  | `determineUserRoleId`: se `entityType === 'associazione'` → ruolo `ASSOCIATION` (ID=10, 26 permessi, 13 tab). Se `entityType === 'comune'` → ruolo ID=2 come prima.                                 |
+| **Tab Protetti**            | `ProtectedTab.tsx`        | **NON modificato** — funziona già con qualsiasi ruolo.                                                                                                                                              |
 
 ### URL Impersonificazione
 
@@ -9002,27 +9364,28 @@ Il sistema di impersonificazione è stato esteso da "Comune-centrico" a "Entità
 
 ### Tab Visibili per Ruolo Associazione (ID=10)
 
-| # | Tab ID | Componente | Stato Dati |
-|---|---|---|---|
-| 1 | dashboard | DashboardPA (overview) | Guard: stats a zero se associazione |
-| 2 | gaming | GamingRewardsPanel | Guard: dati vuoti se associazione |
-| 3 | sustainability | SustainabilityPanel | Nessun guard (dati globali) |
-| 4 | realtime | RealtimePanel | Nessun guard (dati globali) |
-| 5 | ai | AgentPanel | Nessun guard (agente globale) |
-| 6 | civic | CivicReportsPanel | Guard: segnalazioni filtrate per associazione |
-| 7 | businesses | ImpreseQualificazioniPanel | Guard: imprese filtrate per `?associazione_id=X` |
-| 8 | imprese | DashboardPA (imprese) | Guard: imprese filtrate per associazione |
-| 9 | mobility | MobilityPanel | Nessun guard (dati globali) |
-| 10 | tpas | AssociazioniPanel | Pannello gestione associazioni |
-| 11 | workspace | WorkspacePanel | Nessun guard (workspace globale) |
-| 12 | docs | DocsPanel | Nessun guard (documenti globali) |
-| 13 | anagrafica | AnagraficaAssociazionePanel | Dati anagrafici dell'associazione impersonificata |
+| #   | Tab ID         | Componente                  | Stato Dati                                        |
+| --- | -------------- | --------------------------- | ------------------------------------------------- |
+| 1   | dashboard      | DashboardPA (overview)      | Guard: stats a zero se associazione               |
+| 2   | gaming         | GamingRewardsPanel          | Guard: dati vuoti se associazione                 |
+| 3   | sustainability | SustainabilityPanel         | Nessun guard (dati globali)                       |
+| 4   | realtime       | RealtimePanel               | Nessun guard (dati globali)                       |
+| 5   | ai             | AgentPanel                  | Nessun guard (agente globale)                     |
+| 6   | civic          | CivicReportsPanel           | Guard: segnalazioni filtrate per associazione     |
+| 7   | businesses     | ImpreseQualificazioniPanel  | Guard: imprese filtrate per `?associazione_id=X`  |
+| 8   | imprese        | DashboardPA (imprese)       | Guard: imprese filtrate per associazione          |
+| 9   | mobility       | MobilityPanel               | Nessun guard (dati globali)                       |
+| 10  | tpas           | AssociazioniPanel           | Pannello gestione associazioni                    |
+| 11  | workspace      | WorkspacePanel              | Nessun guard (workspace globale)                  |
+| 12  | docs           | DocsPanel                   | Nessun guard (documenti globali)                  |
+| 13  | anagrafica     | AnagraficaAssociazionePanel | Dati anagrafici dell'associazione impersonificata |
 
 ### Pannello Gestione Associazioni (`AssociazioniPanel.tsx`)
 
 Componente completo per la gestione CRUD delle associazioni di categoria, montato nel tab "Associazioni" (ex TPAS).
 
 **Funzionalità:**
+
 - Lista associazioni con ricerca e paginazione
 - Form creazione/modifica associazione con sezioni: Anagrafica, Presidente, Referente Operativo, **DELEGATO SCIA** (10 campi), Altro
 - Bottone "Accedi come" per impersonificare
@@ -9036,6 +9399,7 @@ Gestisce la lista delle imprese tesserate all'associazione (quelle che pagano la
 **Lista:** Nome impresa, città, P.IVA, anno, quota, stato (badge colorato)
 **Filtro:** Per stato (attivo/scaduto/sospeso/revocato)
 **Icona Occhio:** Apre dialog fullscreen "Scheda Associato" con:
+
 - Badge tipo impresa: **Ambulante** (icona Truck, arancione) o **Negozio Fisso** (icona Store, viola) — determinato da `descrizione_ateco` (contiene "ambulante" → ambulante, altrimenti negozio fisso)
 - Badge stato tessera: ATTIVO (verde), SCADUTO (rosso), SOSPESO (giallo), REVOCATO (grigio)
 - **Dati Impresa:** denominazione, CF, P.IVA, settore, indirizzo, codice ATECO, telefono, email, PEC
@@ -9075,28 +9439,29 @@ CREATE TABLE IF NOT EXISTS tesseramenti_associazione (
 
 ### API Endpoints Associazioni
 
-| Endpoint | Metodo | Descrizione |
-|---|---|---|
-| `/api/associazioni` | GET | Lista associazioni (paginata, con ricerca) |
-| `/api/associazioni` | POST | Crea nuova associazione |
-| `/api/associazioni/:id` | GET | Dettaglio associazione |
-| `/api/associazioni/:id` | PUT | Aggiorna associazione |
-| `/api/associazioni/:id` | DELETE | Elimina associazione |
-| `/api/associazioni/:id/tesseramenti` | GET | Lista tesserati (con JOIN imprese) |
-| `/api/associazioni/:id/tesseramenti?stats_only=true` | GET | Stats aggregate tesseramenti |
-| `/api/associazioni/:id/tesseramenti` | POST | Crea tesseramento |
-| `/api/associazioni/:id/tesseramenti/:tid` | PUT | Aggiorna tesseramento |
-| `/api/associazioni/:id/tesseramenti/:tid` | DELETE | Elimina tesseramento |
-| `/api/associazioni/:id/tesseramenti/:tid/scheda` | GET | **Scheda completa associato:** dati impresa, dati tessera (scadenza, stato pagamento), tipo impresa (ambulante/negozio_fisso), pratiche SCIA collegate, concessioni collegate |
-| `/api/associazioni/:id/contratti` | GET | Lista contratti associazione |
-| `/api/associazioni/:id/fatture` | GET | Lista fatture associazione |
-| `/api/associazioni/:id/servizi` | GET | Lista servizi associazione |
-| `/api/associazioni/:id/bandi` | GET | Lista bandi associazione |
-| `/api/imprese?associazione_id=X` | GET | Imprese filtrate per associazione (cerca in `tesseramenti_associazione` UNION `richieste_servizi`) |
+| Endpoint                                             | Metodo | Descrizione                                                                                                                                                                   |
+| ---------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/associazioni`                                  | GET    | Lista associazioni (paginata, con ricerca)                                                                                                                                    |
+| `/api/associazioni`                                  | POST   | Crea nuova associazione                                                                                                                                                       |
+| `/api/associazioni/:id`                              | GET    | Dettaglio associazione                                                                                                                                                        |
+| `/api/associazioni/:id`                              | PUT    | Aggiorna associazione                                                                                                                                                         |
+| `/api/associazioni/:id`                              | DELETE | Elimina associazione                                                                                                                                                          |
+| `/api/associazioni/:id/tesseramenti`                 | GET    | Lista tesserati (con JOIN imprese)                                                                                                                                            |
+| `/api/associazioni/:id/tesseramenti?stats_only=true` | GET    | Stats aggregate tesseramenti                                                                                                                                                  |
+| `/api/associazioni/:id/tesseramenti`                 | POST   | Crea tesseramento                                                                                                                                                             |
+| `/api/associazioni/:id/tesseramenti/:tid`            | PUT    | Aggiorna tesseramento                                                                                                                                                         |
+| `/api/associazioni/:id/tesseramenti/:tid`            | DELETE | Elimina tesseramento                                                                                                                                                          |
+| `/api/associazioni/:id/tesseramenti/:tid/scheda`     | GET    | **Scheda completa associato:** dati impresa, dati tessera (scadenza, stato pagamento), tipo impresa (ambulante/negozio_fisso), pratiche SCIA collegate, concessioni collegate |
+| `/api/associazioni/:id/contratti`                    | GET    | Lista contratti associazione                                                                                                                                                  |
+| `/api/associazioni/:id/fatture`                      | GET    | Lista fatture associazione                                                                                                                                                    |
+| `/api/associazioni/:id/servizi`                      | GET    | Lista servizi associazione                                                                                                                                                    |
+| `/api/associazioni/:id/bandi`                        | GET    | Lista bandi associazione                                                                                                                                                      |
+| `/api/imprese?associazione_id=X`                     | GET    | Imprese filtrate per associazione (cerca in `tesseramenti_associazione` UNION `richieste_servizi`)                                                                            |
 
 ### Rischio Regressione Comuni: NESSUNO
 
 Le modifiche sono state progettate per **adattarsi al sistema esistente senza toccarlo**:
+
 - `addComuneIdToUrl()` **NON modificato** — i 15+ file che lo usano continuano a funzionare
 - Il flusso impersonificazione comuni è invariato: `comune_id` viene valutato PRIMA di `associazione_id`
 - Il `SuapPanel` nel tab SSO SUAP viene montato SENZA la prop `mode`, quindi `mode = 'suap'` (default) → tutto il codice originale funziona identico
@@ -9107,6 +9472,7 @@ Le modifiche sono state progettate per **adattarsi al sistema esistente senza to
 **IMPORTANTE:** I tab SSO SUAP e Associazioni (TPAS) NON sono visibili per le associazioni.
 
 La sezione SUAP per le associazioni è dentro:
+
 ```
 Enti & Associazioni (tab principale)
   ├─ Enti Formatori
@@ -9119,50 +9485,50 @@ Il tab "Associazioni" (TPAS) è la sezione ADMIN per gestire tutte le associazio
 
 ### Filtri SUAP per Associazione (v8.13.0)
 
-| Componente | File | Filtro | Stato |
-|---|---|---|---|
-| Stats Dashboard | `SuapPanel.tsx` → `api/suap.ts` | `addAssociazioneIdToUrl` | ✅ Funzionante |
-| Lista Pratiche | `SuapPanel.tsx` → `api/suap.ts` | `addAssociazioneIdToUrl` | ✅ Funzionante |
-| Lista Concessioni | `SuapPanel.tsx` loadConcessioni | `addAssociazioneIdToUrl` | ✅ Funzionante |
+| Componente                 | File                                       | Filtro                   | Stato          |
+| -------------------------- | ------------------------------------------ | ------------------------ | -------------- |
+| Stats Dashboard            | `SuapPanel.tsx` → `api/suap.ts`            | `addAssociazioneIdToUrl` | ✅ Funzionante |
+| Lista Pratiche             | `SuapPanel.tsx` → `api/suap.ts`            | `addAssociazioneIdToUrl` | ✅ Funzionante |
+| Lista Concessioni          | `SuapPanel.tsx` loadConcessioni            | `addAssociazioneIdToUrl` | ✅ Funzionante |
 | Domande Spunta (dashboard) | `SuapPanel.tsx` loadDomandeSpuntaDashboard | `addAssociazioneIdToUrl` | ✅ Funzionante |
-| Domande Spunta (lista) | `ListaDomandeSpuntaSuap.tsx` fetchDomande | `addAssociazioneIdToUrl` | ✅ Fix v8.13.0 |
-| Notifiche SUAP | `SuapPanel.tsx` | `addAssociazioneIdToUrl` | ✅ Funzionante |
+| Domande Spunta (lista)     | `ListaDomandeSpuntaSuap.tsx` fetchDomande  | `addAssociazioneIdToUrl` | ✅ Fix v8.13.0 |
+| Notifiche SUAP             | `SuapPanel.tsx`                            | `addAssociazioneIdToUrl` | ✅ Funzionante |
 
 **Backend filtri:**
+
 - `suap_pratiche.associazione_id = $N` — filtro diretto sulla colonna
 - `concessions`: JOIN su `suap_pratiche` con cast `scia_id::uuid`
 - `domande-spunta`: JOIN su `tesseramenti_associazione` via `impresa_id`
 
 ### Type Mismatch Noti (v8.13.0)
 
-| Tabella A | Colonna | Tipo | Tabella B | Colonna | Tipo | Fix |
-|---|---|---|---|---|---|---|
-| `concessions` | `scia_id` | text | `suap_pratiche` | `id` | uuid | Cast `scia_id::uuid` |
-| `suap_pratiche` | `impresa_id` | uuid | `tesseramenti_associazione` | `impresa_id` | integer | Cast `::text` su entrambi |
-| `suap_pratiche` | `mercato_id` | varchar | `markets` | `id` | integer | Cast `::text` su entrambi |
+| Tabella A       | Colonna      | Tipo    | Tabella B                   | Colonna      | Tipo    | Fix                       |
+| --------------- | ------------ | ------- | --------------------------- | ------------ | ------- | ------------------------- |
+| `concessions`   | `scia_id`    | text    | `suap_pratiche`             | `id`         | uuid    | Cast `scia_id::uuid`      |
+| `suap_pratiche` | `impresa_id` | uuid    | `tesseramenti_associazione` | `impresa_id` | integer | Cast `::text` su entrambi |
+| `suap_pratiche` | `mercato_id` | varchar | `markets`                   | `id`         | integer | Cast `::text` su entrambi |
 
 ### Fix Sicurezza (v8.12.0)
 
-| Vulnerabilità | File | Fix |
-|---|---|---|
-| `eval()` — esecuzione codice arbitrario | `MessageContent.tsx` | Rimosso `eval()`, sostituito con parser sicuro |
+| Vulnerabilità                                      | File                   | Fix                                                             |
+| -------------------------------------------------- | ---------------------- | --------------------------------------------------------------- |
+| `eval()` — esecuzione codice arbitrario            | `MessageContent.tsx`   | Rimosso `eval()`, sostituito con parser sicuro                  |
 | XSS `innerHTML` — dati utente in HTML non escapato | `DashboardPA.tsx:5040` | Sostituito `dangerouslySetInnerHTML` con rendering React sicuro |
-| Firebase API Key hardcoded | Codice sorgente | Chiave spostata in variabile d'ambiente |
+| Firebase API Key hardcoded                         | Codice sorgente        | Chiave spostata in variabile d'ambiente                         |
 
 ### Metriche Sistema Aggiornate (22 Feb 2026)
 
-| Metrica | Valore |
-|---|---|
-| Componenti React | 147 |
-| Tabelle DB | 68 (riconteggio reale) |
-| Router tRPC | 15 |
-| Endpoint REST | 428+ (328 REST + 100+ tRPC) |
-| Righe codice frontend | 106K (solo frontend attivo) |
-| Righe DashboardPA.tsx | 7.080 |
-| Tab DashboardPA | 32 |
-| Tipi `any` | 553 |
-| `useMemo`/`useCallback` | 122 (27 + 95) |
-
+| Metrica                 | Valore                      |
+| ----------------------- | --------------------------- |
+| Componenti React        | 147                         |
+| Tabelle DB              | 68 (riconteggio reale)      |
+| Router tRPC             | 15                          |
+| Endpoint REST           | 428+ (328 REST + 100+ tRPC) |
+| Righe codice frontend   | 106K (solo frontend attivo) |
+| Righe DashboardPA.tsx   | 7.080                       |
+| Tab DashboardPA         | 32                          |
+| Tipi `any`              | 553                         |
+| `useMemo`/`useCallback` | 122 (27 + 95)               |
 
 ---
 
@@ -9178,53 +9544,53 @@ Il tab "Associazioni" (TPAS) è la sezione ADMIN per gestire tutte le associazio
 
 #### Fix v8.15.0 (Sessione precedente — SUAP)
 
-| # | Fix | File | Dettaglio |
-|---|-----|------|-----------|
-| 1 | Banner APPROVED verde | `SuapPanel.tsx` | Banner "Pratica SCIA Espletata con Esito Positivo" quando stato=APPROVED |
-| 2 | Dashboard associazione pratiche | `SuapPanel.tsx` | INTEGRATION_NEEDED incluso nel riquadro "Pratiche Pendenti" |
-| 3 | Semaforo colori scheda associato | `PresenzeAssociatiPanel.tsx` | Badge colori: verde APPROVED, rosso REJECTED, arancione INTEGRATION_NEEDED, blu IN_LAVORAZIONE |
-| 4 | Click pratica/concessione scheda | `PresenzeAssociatiPanel.tsx` + `SuapPanel.tsx` + `DashboardPA.tsx` | Click apre dettaglio pratica/concessione con navigazione tab automatica |
-| 5 | Notifica impresa con posteggio | `concessions.js` | Aggiunto `Post. ${stallData.number}` nelle notifiche concessione |
-| 6 | Nomi check banner regolarizzazione | `SuapPanel.tsx` | Usa `check_code` e `dettaglio.motivo` invece di campi inesistenti |
-| 7 | Tab modifica scheda associato | `PresenzeAssociatiPanel.tsx` | Bottone matita per editare N. Tessera, Scadenza, Importi, Stato Pagamento |
-| 8 | Nega Pratica + Richiedi Regolarizzazione | `SuapPanel.tsx` + `service.js` | Bottoni rosso/arancione nella vista PA per negare o richiedere integrazione |
-| 9 | associazione_id nel submit SCIA | `SuapPanel.tsx` | Aggiunto associazione_id al praticaData quando si crea SCIA da impersonazione |
+| #   | Fix                                      | File                                                               | Dettaglio                                                                                      |
+| --- | ---------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| 1   | Banner APPROVED verde                    | `SuapPanel.tsx`                                                    | Banner "Pratica SCIA Espletata con Esito Positivo" quando stato=APPROVED                       |
+| 2   | Dashboard associazione pratiche          | `SuapPanel.tsx`                                                    | INTEGRATION_NEEDED incluso nel riquadro "Pratiche Pendenti"                                    |
+| 3   | Semaforo colori scheda associato         | `PresenzeAssociatiPanel.tsx`                                       | Badge colori: verde APPROVED, rosso REJECTED, arancione INTEGRATION_NEEDED, blu IN_LAVORAZIONE |
+| 4   | Click pratica/concessione scheda         | `PresenzeAssociatiPanel.tsx` + `SuapPanel.tsx` + `DashboardPA.tsx` | Click apre dettaglio pratica/concessione con navigazione tab automatica                        |
+| 5   | Notifica impresa con posteggio           | `concessions.js`                                                   | Aggiunto `Post. ${stallData.number}` nelle notifiche concessione                               |
+| 6   | Nomi check banner regolarizzazione       | `SuapPanel.tsx`                                                    | Usa `check_code` e `dettaglio.motivo` invece di campi inesistenti                              |
+| 7   | Tab modifica scheda associato            | `PresenzeAssociatiPanel.tsx`                                       | Bottone matita per editare N. Tessera, Scadenza, Importi, Stato Pagamento                      |
+| 8   | Nega Pratica + Richiedi Regolarizzazione | `SuapPanel.tsx` + `service.js`                                     | Bottoni rosso/arancione nella vista PA per negare o richiedere integrazione                    |
+| 9   | associazione_id nel submit SCIA          | `SuapPanel.tsx`                                                    | Aggiunto associazione_id al praticaData quando si crea SCIA da impersonazione                  |
 
 #### Fix v8.16.0 (Sessione corrente)
 
-| # | Fix | File | Dettaglio |
-|---|-----|------|-----------|
-| 1 | **Domande Spunta filtro case-sensitive** | `domande-spunta.js` (backend) | `stato = 'attivo'` → `UPPER(stato) = 'ATTIVO'` — il DB aveva 'ATTIVO' maiuscolo, il filtro cercava 'attivo' minuscolo. Risultato: da 1 a 6 domande visibili per associazione |
-| 2 | **Navigazione pratica da scheda associato** | `SuapPanel.tsx` + `DashboardPA.tsx` | Aggiunto listener `navigate-to-pratica` e `navigate-to-concessione`. DashboardPA sotto-tab Enti&Associazioni ora controllato (`value={docsSubTab}`) per switch programmatico da "Associati" a "SCIA & Pratiche" |
+| #   | Fix                                         | File                                | Dettaglio                                                                                                                                                                                                       |
+| --- | ------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Domande Spunta filtro case-sensitive**    | `domande-spunta.js` (backend)       | `stato = 'attivo'` → `UPPER(stato) = 'ATTIVO'` — il DB aveva 'ATTIVO' maiuscolo, il filtro cercava 'attivo' minuscolo. Risultato: da 1 a 6 domande visibili per associazione                                    |
+| 2   | **Navigazione pratica da scheda associato** | `SuapPanel.tsx` + `DashboardPA.tsx` | Aggiunto listener `navigate-to-pratica` e `navigate-to-concessione`. DashboardPA sotto-tab Enti&Associazioni ora controllato (`value={docsSubTab}`) per switch programmatico da "Associati" a "SCIA & Pratiche" |
 
 #### COMMIT
 
-| Repo | Commit | Descrizione |
-|------|--------|-------------|
-| `dms-hub-app-new` | `1ef778f` | associazione_id nel submit SCIA |
-| `dms-hub-app-new` | `b0217b0` | Nega Pratica + Regolarizzazione + Banner + Semafori + Check + Modifica Scheda |
-| `dms-hub-app-new` | `dad8150` | Fix 7 issues SUAP completi |
-| `dms-hub-app-new` | `aa8e099` | Fix domande spunta filtro + navigazione pratica da scheda |
-| `mihub-backend-rest` | `afa910d` | Notifiche REJECTED/INTEGRATION_NEEDED |
-| `mihub-backend-rest` | `e131ae3` | Fix notifica posteggio concessione |
-| `mihub-backend-rest` | `5ccb45f` | Fix domande spunta filtro case-sensitive |
+| Repo                 | Commit    | Descrizione                                                                   |
+| -------------------- | --------- | ----------------------------------------------------------------------------- |
+| `dms-hub-app-new`    | `1ef778f` | associazione_id nel submit SCIA                                               |
+| `dms-hub-app-new`    | `b0217b0` | Nega Pratica + Regolarizzazione + Banner + Semafori + Check + Modifica Scheda |
+| `dms-hub-app-new`    | `dad8150` | Fix 7 issues SUAP completi                                                    |
+| `dms-hub-app-new`    | `aa8e099` | Fix domande spunta filtro + navigazione pratica da scheda                     |
+| `mihub-backend-rest` | `afa910d` | Notifiche REJECTED/INTEGRATION_NEEDED                                         |
+| `mihub-backend-rest` | `e131ae3` | Fix notifica posteggio concessione                                            |
+| `mihub-backend-rest` | `5ccb45f` | Fix domande spunta filtro case-sensitive                                      |
 
 #### STATO ALLINEAMENTO
 
-| Componente | Branch | Commit | Deploy |
-|------------|--------|--------|--------|
-| Frontend (Vercel) | `master` | `aa8e099` | Auto-deploy ✅ |
-| Frontend | `claude/review-production-fixes-3sUvQ` | Da allineare | — |
-| Backend (Hetzner) | `master` | `5ccb45f` | Auto-deploy GitHub Actions ✅ |
+| Componente        | Branch                                 | Commit       | Deploy                        |
+| ----------------- | -------------------------------------- | ------------ | ----------------------------- |
+| Frontend (Vercel) | `master`                               | `aa8e099`    | Auto-deploy ✅                |
+| Frontend          | `claude/review-production-fixes-3sUvQ` | Da allineare | —                             |
+| Backend (Hetzner) | `master`                               | `5ccb45f`    | Auto-deploy GitHub Actions ✅ |
 
 ### ⚠️ BUG NOTI DA INVESTIGARE
 
-| Errore | Tipo | Severità | Stato |
-|--------|------|----------|-------|
-| `GET /api/trpc/system.health` 404 | Frontend | MEDIUM | ✅ RISOLTO v8.17.0 — Claude ha riscritto `trpcHttp.ts` per intercettare e convertire le vecchie chiamate tRPC |
-| `POST /api/auth/firebase-session` 500 | Backend | HIGH | ✅ RISOLTO v8.17.0 — Bug ON CONFLICT + colonna `auth_provider` inesistente |
-| `check-roles` restituiva ruoli vuoti | Backend | CRITICAL | ✅ RISOLTO v8.17.1 — Colonna `display_name` inesistente nella query RBAC |
-| Zapier errori continui `pool is not defined` | Backend | HIGH | ✅ RISOLTO v8.17.2 — Pool mancante in webhooks.js, orchestrator.js, tcc.js |
+| Errore                                       | Tipo     | Severità | Stato                                                                                                         |
+| -------------------------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------- |
+| `GET /api/trpc/system.health` 404            | Frontend | MEDIUM   | ✅ RISOLTO v8.17.0 — Claude ha riscritto `trpcHttp.ts` per intercettare e convertire le vecchie chiamate tRPC |
+| `POST /api/auth/firebase-session` 500        | Backend  | HIGH     | ✅ RISOLTO v8.17.0 — Bug ON CONFLICT + colonna `auth_provider` inesistente                                    |
+| `check-roles` restituiva ruoli vuoti         | Backend  | CRITICAL | ✅ RISOLTO v8.17.1 — Colonna `display_name` inesistente nella query RBAC                                      |
+| Zapier errori continui `pool is not defined` | Backend  | HIGH     | ✅ RISOLTO v8.17.2 — Pool mancante in webhooks.js, orchestrator.js, tcc.js                                    |
 
 ---
 
@@ -9238,58 +9604,58 @@ Rendere operativo il modello di business associativo nell'App Impresa: l'impresa
 
 **App Impresa — Anagrafica (`AnagraficaPage.tsx`):**
 
-| Sotto-tab | ID | Stato |
-|---|---|---|
-| Concessioni | `concessioni` | ✅ Funzionante |
-| Qualifiche | `qualificazioni` | ✅ Funzionante — DURC, attestati, stato ATTIVA/SCADUTA, ente rilascio, date |
-| Autorizzazioni | `autorizzazioni` | ✅ Funzionante |
-| Spunta | `domande` | ✅ Funzionante |
-| Team | `collaboratori` | ✅ Funzionante |
+| Sotto-tab      | ID               | Stato                                                                       |
+| -------------- | ---------------- | --------------------------------------------------------------------------- |
+| Concessioni    | `concessioni`    | ✅ Funzionante                                                              |
+| Qualifiche     | `qualificazioni` | ✅ Funzionante — DURC, attestati, stato ATTIVA/SCADUTA, ente rilascio, date |
+| Autorizzazioni | `autorizzazioni` | ✅ Funzionante                                                              |
+| Spunta         | `domande`        | ✅ Funzionante                                                              |
+| Team           | `collaboratori`  | ✅ Funzionante                                                              |
 
 **App Impresa — Notifiche (`AppImpresaNotifiche.tsx`):**
 
-| Funzionalità | Stato |
-|---|---|
-| Messaggi bidirezionali impresa ↔ associazione/ente/PA | ✅ Funzionante |
-| Risposte rapide pre-postate (Appuntamento, Corso) | ✅ Funzionante |
+| Funzionalità                                                    | Stato                        |
+| --------------------------------------------------------------- | ---------------------------- |
+| Messaggi bidirezionali impresa ↔ associazione/ente/PA          | ✅ Funzionante               |
+| Risposte rapide pre-postate (Appuntamento, Corso)               | ✅ Funzionante               |
 | Azioni rapide in fondo (Corsi, Bandi, Appuntamento, Regolarità) | ✅ UI presente, da collegare |
-| Tipi: INFORMATIVA, PROMOZIONALE, URGENTE, SANZIONE | ✅ Funzionante |
+| Tipi: INFORMATIVA, PROMOZIONALE, URGENTE, SANZIONE              | ✅ Funzionante               |
 
 **Backend Endpoint Esistenti:**
 
-| Route | Endpoint chiave | Stato |
-|---|---|---|
-| `associazioni.js` | CRUD associazioni, tesseramenti, notifiche, scheda associato | ✅ |
-| `formazione.js` | CRUD enti, corsi, iscrizioni, attestati | ✅ |
-| `bandi.js` | Servizi associazioni, richieste servizi, regolarità | ✅ |
-| `qualificazioni.js` | Qualificazioni per impresa, DURC | ✅ |
-| `wallets.js` | Wallet SPUNTA/CONCESSIONE/GENERICO, deposit, withdraw | ✅ |
-| `notifiche.js` | Notifiche bidirezionali, risposte, archiviazione | ✅ |
+| Route               | Endpoint chiave                                              | Stato |
+| ------------------- | ------------------------------------------------------------ | ----- |
+| `associazioni.js`   | CRUD associazioni, tesseramenti, notifiche, scheda associato | ✅    |
+| `formazione.js`     | CRUD enti, corsi, iscrizioni, attestati                      | ✅    |
+| `bandi.js`          | Servizi associazioni, richieste servizi, regolarità          | ✅    |
+| `qualificazioni.js` | Qualificazioni per impresa, DURC                             | ✅    |
+| `wallets.js`        | Wallet SPUNTA/CONCESSIONE/GENERICO, deposit, withdraw        | ✅    |
+| `notifiche.js`      | Notifiche bidirezionali, risposte, archiviazione             | ✅    |
 
 **Database Tabelle Esistenti:**
 
-| Tabella | Stato |
-|---|---|
-| `tesseramenti_associazione` | ✅ Operativa |
-| `servizi_associazioni` | ✅ Operativa |
-| `richieste_servizi` | ✅ Operativa |
-| `regolarita_imprese` | ✅ Operativa |
+| Tabella                                                        | Stato        |
+| -------------------------------------------------------------- | ------------ |
+| `tesseramenti_associazione`                                    | ✅ Operativa |
+| `servizi_associazioni`                                         | ✅ Operativa |
+| `richieste_servizi`                                            | ✅ Operativa |
+| `regolarita_imprese`                                           | ✅ Operativa |
 | `formazione_enti`, `formazione_corsi`, `formazione_iscrizioni` | ✅ Operative |
-| `wallets`, `wallet_transactions` | ✅ Operative |
+| `wallets`, `wallet_transactions`                               | ✅ Operative |
 
 ### Gap Analysis
 
-| Funzionalità | Backend | DB | Frontend PA | Frontend App | Lavoro |
-|---|---|---|---|---|---|
-| Qualifiche con allerte intelligenti | ✅ | ✅ | ✅ | ✅ (parziale) | **Estendere** con contatori + schede allerta + "Segnala" |
-| Notifiche con nuovi tipi | ✅ | ✅ | ✅ | ✅ | **Estendere** con ALLERTA_ANOMALIA, CONFERMA_PAGAMENTO |
-| Catalogo servizi (vista impresa) | ✅ | ✅ | ✅ | ❌ | **Creare** sotto-tab Servizi |
-| Pagamento quota via wallet | Parziale | ✅ | ❌ | ❌ | **Creare** flusso pagamento |
-| Pagamento servizi/corsi via wallet | ❌ | ✅ | ❌ | ❌ | **Creare** endpoint + flusso |
-| Pagina informativa associazione | ❌ | ❌ | ❌ | ❌ | **Creare** tutto |
-| Scelta associazione/procuratore | ❌ | ❌ | ❌ | ❌ | **Creare** tutto |
-| Adempimenti per tipo impresa | ❌ | ❌ | ❌ | ❌ | **Creare** configurazione |
-| Iscrizione corsi da app impresa | ✅ | ✅ | ✅ | ❌ | **Creare** sotto-tab Formazione |
+| Funzionalità                        | Backend  | DB  | Frontend PA | Frontend App  | Lavoro                                                   |
+| ----------------------------------- | -------- | --- | ----------- | ------------- | -------------------------------------------------------- |
+| Qualifiche con allerte intelligenti | ✅       | ✅  | ✅          | ✅ (parziale) | **Estendere** con contatori + schede allerta + "Segnala" |
+| Notifiche con nuovi tipi            | ✅       | ✅  | ✅          | ✅            | **Estendere** con ALLERTA_ANOMALIA, CONFERMA_PAGAMENTO   |
+| Catalogo servizi (vista impresa)    | ✅       | ✅  | ✅          | ❌            | **Creare** sotto-tab Servizi                             |
+| Pagamento quota via wallet          | Parziale | ✅  | ❌          | ❌            | **Creare** flusso pagamento                              |
+| Pagamento servizi/corsi via wallet  | ❌       | ✅  | ❌          | ❌            | **Creare** endpoint + flusso                             |
+| Pagina informativa associazione     | ❌       | ❌  | ❌          | ❌            | **Creare** tutto                                         |
+| Scelta associazione/procuratore     | ❌       | ❌  | ❌          | ❌            | **Creare** tutto                                         |
+| Adempimenti per tipo impresa        | ❌       | ❌  | ❌          | ❌            | **Creare** configurazione                                |
+| Iscrizione corsi da app impresa     | ✅       | ✅  | ✅          | ❌            | **Creare** sotto-tab Formazione                          |
 
 ### Architettura Soluzione
 
@@ -9341,6 +9707,7 @@ App Impresa → Tab "Notifiche" (AppImpresaNotifiche.tsx)
 **Endpoint da chiamare:** `GET /api/adempimenti/impresa/:impresa_id` (Manus lo crea)
 
 **Risposta attesa:**
+
 ```json
 {
   "success": true,
@@ -9376,14 +9743,14 @@ App Impresa → Tab "Notifiche" (AppImpresaNotifiche.tsx)
 
 1. **Aggiungere nuovi tipi in `getMittenteIcon()` e `getTipoColor()`:**
 
-| Tipo | Icona | Colore |
-|---|---|---|
-| `ALLERTA_ANOMALIA` | AlertCircle | `bg-red-500/20 text-red-400` |
-| `RICHIESTA_SERVIZIO` | Briefcase | `bg-purple-500/20 text-purple-400` |
-| `CONFERMA_PAGAMENTO` | Wallet | `bg-green-500/20 text-green-400` |
-| `ISCRIZIONE_CORSO` | GraduationCap | `bg-blue-500/20 text-blue-400` |
-| `ATTESTATO_RILASCIATO` | FileCheck | `bg-green-500/20 text-green-400` |
-| `RINNOVO_TESSERA` | CreditCard | `bg-orange-500/20 text-orange-400` |
+| Tipo                   | Icona         | Colore                             |
+| ---------------------- | ------------- | ---------------------------------- |
+| `ALLERTA_ANOMALIA`     | AlertCircle   | `bg-red-500/20 text-red-400`       |
+| `RICHIESTA_SERVIZIO`   | Briefcase     | `bg-purple-500/20 text-purple-400` |
+| `CONFERMA_PAGAMENTO`   | Wallet        | `bg-green-500/20 text-green-400`   |
+| `ISCRIZIONE_CORSO`     | GraduationCap | `bg-blue-500/20 text-blue-400`     |
+| `ATTESTATO_RILASCIATO` | FileCheck     | `bg-green-500/20 text-green-400`   |
+| `RINNOVO_TESSERA`      | CreditCard    | `bg-orange-500/20 text-orange-400` |
 
 2. **Nuove azioni rapide pre-postate** (aggiungere dopo le 2 esistenti):
    - "Richiedi Rinnovo DURC" → pre-compila: "Vorrei richiedere assistenza per il rinnovo del DURC."
@@ -9401,12 +9768,14 @@ App Impresa → Tab "Notifiche" (AppImpresaNotifiche.tsx)
 **File:** `client/src/pages/AnagraficaPage.tsx` — aggiungere tab con id `associazione`
 
 **Se l'impresa è tesserata** (da `GET /api/tesseramenti/impresa/:impresa_id`):
+
 - Card associazione: nome, stato tesseramento (ATTIVO badge verde), numero tessera, scadenza
 - Quota annuale e stato pagamento (Pagata badge verde / Da Pagare badge rosso)
 - Pulsanti: "Contatta" (naviga a notifiche), "Richiedi Servizio" (tab servizi), "Rinnova Quota" (dialog PagaConWallet), "Storico Pagamenti"
 - Sezione "Delega come Procuratore": checkbox + testo esplicativo
 
 **Se NON tesserata** (tesseramenti vuoti):
+
 - Banner informativo vantaggi
 - Lista associazioni da `GET /api/associazioni/pubbliche`
 - Per ogni associazione: card con nome, descrizione, servizi, quota
@@ -9444,6 +9813,7 @@ App Impresa → Tab "Notifiche" (AppImpresaNotifiche.tsx)
 #### F6. Componente Riutilizzabile `PagaConWallet`
 
 Dialog modale per tutti i pagamenti da wallet generico:
+
 - Mostra: importo, descrizione, saldo wallet attuale
 - Se saldo sufficiente → pulsante "Conferma Pagamento"
 - Se saldo insufficiente → messaggio "Saldo insufficiente" + link a WalletImpresaPage per ricaricare
@@ -9454,6 +9824,7 @@ Dialog modale per tutti i pagamenti da wallet generico:
 **File:** `client/src/components/AnagraficaAssociazionePanel.tsx`
 
 Aggiungere tab "Pagina Pubblica" dove l'associazione configura:
+
 - Titolo, sottotitolo, descrizione breve e completa
 - Logo e immagine copertina (upload)
 - Colore primario
@@ -9489,13 +9860,13 @@ CREATE TABLE IF NOT EXISTS adempimenti_tipo_impresa (
 
 Valori tipo_impresa: `AMBULANTE_ALIMENTARE`, `AMBULANTE_NON_ALIMENTARE`, `SEDE_FISSA_ALIMENTARE`, `SEDE_FISSA_NON_ALIMENTARE`.
 
-| Tipo Impresa | Adempimenti Obbligatori |
-|---|---|
-| Ambulante Alimentare | DURC, SCIA, HACCP, Autorizzazione Sanitaria, Iscrizione Albo, Assicurazione RC |
-| Ambulante Non Alimentare | DURC, SCIA, Iscrizione Albo, Assicurazione RC |
-| Sede Fissa Alimentare | DURC, SCIA, HACCP, Autorizzazione Sanitaria, Certificato Prevenzione Incendi |
-| Sede Fissa Non Alimentare | DURC, SCIA, Certificato Prevenzione Incendi |
-| Tutti | Visura Camerale, Partita IVA attiva |
+| Tipo Impresa              | Adempimenti Obbligatori                                                        |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| Ambulante Alimentare      | DURC, SCIA, HACCP, Autorizzazione Sanitaria, Iscrizione Albo, Assicurazione RC |
+| Ambulante Non Alimentare  | DURC, SCIA, Iscrizione Albo, Assicurazione RC                                  |
+| Sede Fissa Alimentare     | DURC, SCIA, HACCP, Autorizzazione Sanitaria, Certificato Prevenzione Incendi   |
+| Sede Fissa Non Alimentare | DURC, SCIA, Certificato Prevenzione Incendi                                    |
+| Tutti                     | Visura Camerale, Partita IVA attiva                                            |
 
 **`pagine_associazione`** — Pagina informativa/pubblicitaria:
 
@@ -9524,23 +9895,23 @@ CREATE TABLE IF NOT EXISTS pagine_associazione (
 **ALTER `wallet_transactions`:**
 
 ```sql
-ALTER TABLE wallet_transactions 
+ALTER TABLE wallet_transactions
 ADD COLUMN IF NOT EXISTS riferimento_tipo VARCHAR(50),
 ADD COLUMN IF NOT EXISTS riferimento_id INTEGER;
 ```
 
 #### B2. Nuovi Endpoint
 
-| Metodo | Endpoint | Descrizione | File |
-|---|---|---|---|
-| `GET` | `/api/adempimenti/impresa/:id` | Adempimenti obbligatori vs stato attuale | `adempimenti.js` (nuovo) |
-| `GET` | `/api/associazioni/pubbliche` | Lista associazioni con pagina attiva | `associazioni.js` |
-| `GET` | `/api/associazioni/:id/pagina` | Pagina informativa associazione | `associazioni.js` |
-| `PUT` | `/api/associazioni/:id/pagina` | Aggiorna pagina (dall'associazione) | `associazioni.js` |
-| `GET` | `/api/tesseramenti/impresa/:id` | I miei tesseramenti | `associazioni.js` |
-| `POST` | `/api/tesseramenti/richiedi` | Richiedi tesseramento + paga da wallet | `associazioni.js` |
-| `POST` | `/api/pagamenti/servizio` | Paga servizio da wallet generico | `pagamenti.js` (nuovo) |
-| `POST` | `/api/pagamenti/corso` | Paga iscrizione corso da wallet generico | `pagamenti.js` (nuovo) |
+| Metodo | Endpoint                        | Descrizione                              | File                     |
+| ------ | ------------------------------- | ---------------------------------------- | ------------------------ |
+| `GET`  | `/api/adempimenti/impresa/:id`  | Adempimenti obbligatori vs stato attuale | `adempimenti.js` (nuovo) |
+| `GET`  | `/api/associazioni/pubbliche`   | Lista associazioni con pagina attiva     | `associazioni.js`        |
+| `GET`  | `/api/associazioni/:id/pagina`  | Pagina informativa associazione          | `associazioni.js`        |
+| `PUT`  | `/api/associazioni/:id/pagina`  | Aggiorna pagina (dall'associazione)      | `associazioni.js`        |
+| `GET`  | `/api/tesseramenti/impresa/:id` | I miei tesseramenti                      | `associazioni.js`        |
+| `POST` | `/api/tesseramenti/richiedi`    | Richiedi tesseramento + paga da wallet   | `associazioni.js`        |
+| `POST` | `/api/pagamenti/servizio`       | Paga servizio da wallet generico         | `pagamenti.js` (nuovo)   |
+| `POST` | `/api/pagamenti/corso`          | Paga iscrizione corso da wallet generico | `pagamenti.js` (nuovo)   |
 
 #### B3. Flusso Pagamento Centralizzato
 
@@ -9566,24 +9937,28 @@ ADD COLUMN IF NOT EXISTS riferimento_id INTEGER;
 ### Flussi Operativi
 
 **Flusso 1: Impresa vede anomalia e chiede aiuto**
+
 ```
 Anagrafica → Qualifiche → Vede contatori allerte → Scheda allerta DURC SCADUTO
 → "Segnala all'Associazione" → Dialog → Invia notifica → Associazione risponde
 ```
 
 **Flusso 2: Impresa si associa e paga quota**
+
 ```
 Anagrafica → La Mia Associazione → Lista associazioni → Vedi Dettagli
 → "Associati" → Dialog conferma → Paga da wallet GENERICO → Tesseramento attivo
 ```
 
 **Flusso 3: Impresa richiede e paga servizio**
+
 ```
 Anagrafica → Servizi → Catalogo → "Richiedi" → Dialog + "Paga ora"
 → Withdraw wallet GENERICO → Richiesta creata → Associazione lavora → Completata
 ```
 
 **Flusso 4: Impresa si iscrive a corso e paga**
+
 ```
 Anagrafica → Formazione → Corsi disponibili → "Iscriviti e Paga"
 → Withdraw wallet GENERICO → Iscrizione → Corso → Attestato → Qualifiche aggiornate
@@ -9591,20 +9966,20 @@ Anagrafica → Formazione → Corsi disponibili → "Iscriviti e Paga"
 
 ### Piano Implementazione
 
-| Fase | Attività | Responsabile | Stima |
-|---|---|---|---|
-| 1 | DB: tabelle + ALTER + dati iniziali | Manus | 2h |
-| 1 | Backend: endpoint adempimenti | Manus | 2h |
-| 1 | Frontend: estensione Qualifiche + allerte | Claude | 4h |
-| 1 | Frontend: estensione Notifiche + nuovi tipi | Claude | 1h |
-| 2 | Backend: endpoint associazioni pubbliche, pagina, tesseramenti | Manus | 4h |
-| 2 | Backend: endpoint pagamenti (servizio, corso) | Manus | 4h |
-| 2 | Frontend: sotto-tab Associazione | Claude | 5h |
-| 2 | Frontend: sotto-tab Servizi + PagaConWallet | Claude | 6h |
-| 3 | Frontend: sotto-tab Formazione | Claude | 4h |
-| 3 | Frontend: config pagina associazione | Claude | 3h |
-| 3 | Backend: trigger SCIA + attestati | Manus | 3h |
-| 3 | Test end-to-end | Entrambi | 3h |
+| Fase | Attività                                                       | Responsabile | Stima |
+| ---- | -------------------------------------------------------------- | ------------ | ----- |
+| 1    | DB: tabelle + ALTER + dati iniziali                            | Manus        | 2h    |
+| 1    | Backend: endpoint adempimenti                                  | Manus        | 2h    |
+| 1    | Frontend: estensione Qualifiche + allerte                      | Claude       | 4h    |
+| 1    | Frontend: estensione Notifiche + nuovi tipi                    | Claude       | 1h    |
+| 2    | Backend: endpoint associazioni pubbliche, pagina, tesseramenti | Manus        | 4h    |
+| 2    | Backend: endpoint pagamenti (servizio, corso)                  | Manus        | 4h    |
+| 2    | Frontend: sotto-tab Associazione                               | Claude       | 5h    |
+| 2    | Frontend: sotto-tab Servizi + PagaConWallet                    | Claude       | 6h    |
+| 3    | Frontend: sotto-tab Formazione                                 | Claude       | 4h    |
+| 3    | Frontend: config pagina associazione                           | Claude       | 3h    |
+| 3    | Backend: trigger SCIA + attestati                              | Manus        | 3h    |
+| 3    | Test end-to-end                                                | Entrambi     | 3h    |
 
 **Totale stimato: ~46h** (Backend ~15h Manus, Frontend ~23h Claude, Test ~3h)
 
@@ -9614,10 +9989,10 @@ Anagrafica → Formazione → Corsi disponibili → "Iscriviti e Paga"
 
 > **Nota:** Queste azioni sono raccomandate prima di aprire il sistema al pubblico. Sono state identificate durante la sessione di hardening backend del 23 Febbraio 2026. Il sistema è attualmente in costruzione e funzionante per uso interno/test.
 
-| # | Priorità | Azione | Descrizione | Stato |
-|---|----------|--------|-------------|-------|
-| 1 | **CRITICA** | Attivare Verifica Firma Token Firebase | Scaricare la service account key da Firebase Console (`dmshub-auth-2975e`), caricarla su Hetzner e configurare la variabile `GOOGLE_APPLICATION_CREDENTIALS`. Il codice è già pronto in `config/firebase-admin.js` — si attiva automaticamente. Senza questo, chiunque può creare un token JWT falso e accedere. | ⏳ DA FARE |
-| 2 | **ALTA** | Validazione Impersonazione Server-Side | Creare middleware `middleware/impersonation.js` che verifichi server-side che l'utente abbia il permesso di impersonare il comune/associazione richiesto. Attualmente l'impersonazione è gestita solo lato client. | ⏳ DA FARE |
-| 3 | **MEDIA** | Sessione JWT con Refresh Token | Valutare se ridurre la scadenza sessione (attualmente 24h) e implementare refresh token. Passaggio intermedio consigliato: 7 giorni + refresh, poi eventualmente ridurre. Decisione di prodotto: impatta l'esperienza utente. | ⏳ DA FARE |
-| 4 | **BASSA** | Revisione Completa Permessi RBAC | Audit di tutti i ruoli e permessi per garantire il principio del minimo privilegio. | ⏳ DA FARE |
-| 5 | **BASSA** | Test di Carico (Load Testing) | Simulare utenti simultanei per identificare colli di bottiglia e verificare stabilità sotto stress. | ⏳ DA FARE |
+| #   | Priorità    | Azione                                 | Descrizione                                                                                                                                                                                                                                                                                                      | Stato      |
+| --- | ----------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 1   | **CRITICA** | Attivare Verifica Firma Token Firebase | Scaricare la service account key da Firebase Console (`dmshub-auth-2975e`), caricarla su Hetzner e configurare la variabile `GOOGLE_APPLICATION_CREDENTIALS`. Il codice è già pronto in `config/firebase-admin.js` — si attiva automaticamente. Senza questo, chiunque può creare un token JWT falso e accedere. | ⏳ DA FARE |
+| 2   | **ALTA**    | Validazione Impersonazione Server-Side | Creare middleware `middleware/impersonation.js` che verifichi server-side che l'utente abbia il permesso di impersonare il comune/associazione richiesto. Attualmente l'impersonazione è gestita solo lato client.                                                                                               | ⏳ DA FARE |
+| 3   | **MEDIA**   | Sessione JWT con Refresh Token         | Valutare se ridurre la scadenza sessione (attualmente 24h) e implementare refresh token. Passaggio intermedio consigliato: 7 giorni + refresh, poi eventualmente ridurre. Decisione di prodotto: impatta l'esperienza utente.                                                                                    | ⏳ DA FARE |
+| 4   | **BASSA**   | Revisione Completa Permessi RBAC       | Audit di tutti i ruoli e permessi per garantire il principio del minimo privilegio.                                                                                                                                                                                                                              | ⏳ DA FARE |
+| 5   | **BASSA**   | Test di Carico (Load Testing)          | Simulare utenti simultanei per identificare colli di bottiglia e verificare stabilità sotto stress.                                                                                                                                                                                                              | ⏳ DA FARE |

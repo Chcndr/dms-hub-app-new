@@ -1,15 +1,15 @@
 /**
  * CivicReportsLayer - Componente per visualizzare segnalazioni civiche sulla mappa
- * 
+ *
  * Versione SEMPLIFICATA: solo marker colorati, senza heatmap
  * La heatmap verrà aggiunta in una versione successiva
- * 
+ *
  * @author Manus AI
  * @version 1.2.0 - Interfaccia allineata a schema Drizzle (camelCase)
  * @date 30 Gennaio 2026
  */
-import React, { useMemo } from 'react';
-import { CircleMarker, Popup } from 'react-leaflet';
+import React, { useMemo } from "react";
+import { CircleMarker, Popup } from "react-leaflet";
 
 // ============================================================
 // INTERFACCE
@@ -64,38 +64,38 @@ export interface CivicReportsLayerProps {
  * Schema colori per i marker in base al tipo di segnalazione
  */
 const CIVIC_MARKER_COLORS: Record<string, string> = {
-  'buche': '#f97316',           // 🟠 Arancione
-  'illuminazione': '#eab308',   // 🟡 Giallo
-  'rifiuti': '#22c55e',         // 🟢 Verde
-  'microcriminalita': '#ef4444', // 🔴 Rosso
-  'abusivismo': '#a855f7',      // 🟣 Viola
-  'degrado': '#f97316',         // 🟠 Arancione (alias)
-  'sicurezza': '#ef4444',       // 🔴 Rosso (alias)
-  'altro': '#6b7280',           // ⚪ Grigio default
+  buche: "#f97316", // 🟠 Arancione
+  illuminazione: "#eab308", // 🟡 Giallo
+  rifiuti: "#22c55e", // 🟢 Verde
+  microcriminalita: "#ef4444", // 🔴 Rosso
+  abusivismo: "#a855f7", // 🟣 Viola
+  degrado: "#f97316", // 🟠 Arancione (alias)
+  sicurezza: "#ef4444", // 🔴 Rosso (alias)
+  altro: "#6b7280", // ⚪ Grigio default
 };
 
 /**
  * Etichette italiane per i tipi di segnalazione
  */
 const CIVIC_TYPE_LABELS: Record<string, string> = {
-  'buche': 'Buche Stradali',
-  'illuminazione': 'Illuminazione',
-  'rifiuti': 'Rifiuti Abbandonati',
-  'microcriminalita': 'Microcriminalità',
-  'abusivismo': 'Commercio Abusivo',
-  'degrado': 'Degrado Urbano',
-  'sicurezza': 'Sicurezza',
-  'altro': 'Altra Segnalazione',
+  buche: "Buche Stradali",
+  illuminazione: "Illuminazione",
+  rifiuti: "Rifiuti Abbandonati",
+  microcriminalita: "Microcriminalità",
+  abusivismo: "Commercio Abusivo",
+  degrado: "Degrado Urbano",
+  sicurezza: "Sicurezza",
+  altro: "Altra Segnalazione",
 };
 
 /**
  * Etichette italiane per gli stati
  */
 const CIVIC_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  'pending': { label: 'In Attesa', color: '#f97316' },
-  'in_progress': { label: 'In Lavorazione', color: '#3b82f6' },
-  'resolved': { label: 'Risolta', color: '#22c55e' },
-  'rejected': { label: 'Rifiutata', color: '#ef4444' },
+  pending: { label: "In Attesa", color: "#f97316" },
+  in_progress: { label: "In Lavorazione", color: "#3b82f6" },
+  resolved: { label: "Risolta", color: "#22c55e" },
+  rejected: { label: "Rifiutata", color: "#ef4444" },
 };
 
 // ============================================================
@@ -106,16 +106,16 @@ const CIVIC_STATUS_LABELS: Record<string, { label: string; color: string }> = {
  * Ottiene il colore del marker in base al tipo di segnalazione
  */
 function getMarkerColor(type: string | null | undefined): string {
-  if (!type) return CIVIC_MARKER_COLORS['altro'];
+  if (!type) return CIVIC_MARKER_COLORS["altro"];
   const normalizedType = type.toLowerCase().trim();
-  return CIVIC_MARKER_COLORS[normalizedType] || CIVIC_MARKER_COLORS['altro'];
+  return CIVIC_MARKER_COLORS[normalizedType] || CIVIC_MARKER_COLORS["altro"];
 }
 
 /**
  * Ottiene l'etichetta del tipo di segnalazione
  */
 function getTypeLabel(type: string | null | undefined): string {
-  if (!type) return 'Segnalazione';
+  if (!type) return "Segnalazione";
   const normalizedType = type.toLowerCase().trim();
   return CIVIC_TYPE_LABELS[normalizedType] || type;
 }
@@ -123,25 +123,31 @@ function getTypeLabel(type: string | null | undefined): string {
 /**
  * Ottiene info sullo stato
  */
-function getStatusInfo(status: string | null | undefined): { label: string; color: string } {
-  if (!status) return { label: 'Sconosciuto', color: '#6b7280' };
+function getStatusInfo(status: string | null | undefined): {
+  label: string;
+  color: string;
+} {
+  if (!status) return { label: "Sconosciuto", color: "#6b7280" };
   const normalizedStatus = status.toLowerCase().trim();
-  return CIVIC_STATUS_LABELS[normalizedStatus] || { label: status, color: '#6b7280' };
+  return (
+    CIVIC_STATUS_LABELS[normalizedStatus] || { label: status, color: "#6b7280" }
+  );
 }
 
 /**
  * Formatta la data in italiano
  */
 function formatDate(dateValue: Date | string | null | undefined): string {
-  if (!dateValue) return 'Data non disponibile';
+  if (!dateValue) return "Data non disponibile";
   try {
-    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
-    return date.toLocaleDateString('it-IT', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    const date =
+      typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+    return date.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   } catch {
     return String(dateValue);
@@ -153,7 +159,7 @@ function formatDate(dateValue: Date | string | null | undefined): string {
  */
 function parseCoord(coord: string | number | null | undefined): number | null {
   if (coord === null || coord === undefined) return null;
-  const num = typeof coord === 'number' ? coord : parseFloat(coord);
+  const num = typeof coord === "number" ? coord : parseFloat(coord);
   if (isNaN(num) || num === 0) return null;
   return num;
 }
@@ -164,15 +170,15 @@ function parseCoord(coord: string | number | null | undefined): number | null {
 
 /**
  * CivicReportsLayer - Layer per segnalazioni civiche sulla mappa
- * 
+ *
  * Versione semplificata: solo marker CircleMarker colorati
- * 
+ *
  * Uso:
  * ```tsx
  * <MapContainer>
  *   <TileLayer ... />
- *   <CivicReportsLayer 
- *     civicReports={reports} 
+ *   <CivicReportsLayer
+ *     civicReports={reports}
  *     showMarkers={true}
  *   />
  * </MapContainer>
@@ -182,13 +188,12 @@ export function CivicReportsLayer({
   civicReports,
   showMarkers = true,
   showHeatmap = false, // Ignorato in questa versione
-  onReportClick
+  onReportClick,
 }: CivicReportsLayerProps) {
-  
   // Filtra solo segnalazioni con coordinate valide
   const validReports = useMemo(() => {
     if (!civicReports || !Array.isArray(civicReports)) return [];
-    
+
     return civicReports.filter(report => {
       if (!report) return false;
       const lat = parseCoord(report.lat);
@@ -196,25 +201,26 @@ export function CivicReportsLayer({
       return lat !== null && lng !== null;
     });
   }, [civicReports]);
-  
+
   // Se non ci sono segnalazioni valide o markers disabilitati, non renderizzare nulla
   if (!showMarkers || validReports.length === 0) {
     return null;
   }
-  
+
   return (
     <>
-      {validReports.map((report) => {
+      {validReports.map(report => {
         const lat = parseCoord(report.lat)!;
         const lng = parseCoord(report.lng)!;
         const color = getMarkerColor(report.type);
         const typeLabel = getTypeLabel(report.type);
         const statusInfo = getStatusInfo(report.status);
-        const isUrgent = report.priority === 'URGENT' || report.priority === 'HIGH';
-        
+        const isUrgent =
+          report.priority === "URGENT" || report.priority === "HIGH";
+
         // Dimensione marker: più grande se urgente
         const radius = isUrgent ? 12 : 8;
-        
+
         return (
           <CircleMarker
             key={`civic-${report.id}`}
@@ -222,8 +228,8 @@ export function CivicReportsLayer({
             radius={radius}
             pathOptions={{
               fillColor: color,
-              fillOpacity: report.status === 'resolved' ? 0.4 : 0.8,
-              color: isUrgent ? '#ffffff' : color,
+              fillOpacity: report.status === "resolved" ? 0.4 : 0.8,
+              color: isUrgent ? "#ffffff" : color,
               weight: isUrgent ? 3 : 2,
               opacity: 1,
             }}
@@ -232,15 +238,15 @@ export function CivicReportsLayer({
                 if (onReportClick) {
                   onReportClick(report);
                 }
-              }
+              },
             }}
           >
             <Popup>
               <div className="min-w-[200px] p-2">
                 {/* Header con tipo e colore */}
                 <div className="flex items-center gap-2 mb-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
+                  <div
+                    className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: color }}
                   />
                   <span className="font-semibold text-sm text-gray-800">
@@ -252,28 +258,28 @@ export function CivicReportsLayer({
                     </span>
                   )}
                 </div>
-                
+
                 {/* Descrizione */}
                 {report.description && (
                   <p className="text-xs text-gray-600 mb-2 line-clamp-3">
                     {report.description}
                   </p>
                 )}
-                
+
                 {/* Indirizzo */}
                 {report.address && (
                   <p className="text-xs text-gray-500 mb-2">
                     📍 {report.address}
                   </p>
                 )}
-                
+
                 {/* Status e Data */}
                 <div className="flex items-center justify-between text-xs">
-                  <span 
+                  <span
                     className="px-2 py-0.5 rounded-full"
-                    style={{ 
+                    style={{
                       backgroundColor: `${statusInfo.color}20`,
-                      color: statusInfo.color 
+                      color: statusInfo.color,
                     }}
                   >
                     {statusInfo.label}
@@ -282,12 +288,12 @@ export function CivicReportsLayer({
                     {formatDate(report.createdAt)}
                   </span>
                 </div>
-                
+
                 {/* Foto se presente */}
                 {report.photoUrl && (
                   <div className="mt-2">
-                    <img 
-                      src={report.photoUrl} 
+                    <img
+                      src={report.photoUrl}
                       alt="Foto segnalazione"
                       className="w-full h-20 object-cover rounded"
                     />

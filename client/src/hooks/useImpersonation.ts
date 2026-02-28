@@ -1,23 +1,23 @@
 /**
  * Hook per gestire la modalità impersonificazione
  * Legge i parametri dall'URL e li salva in sessionStorage per persistenza tra pagine
- * 
+ *
  * SUPPORTA:
  * - Impersonificazione COMUNE: ?comune_id=X&comune_nome=Y&impersonate=true
  * - Impersonificazione ASSOCIAZIONE: ?associazione_id=X&associazione_nome=Y&impersonate=true&role=associazione
- * 
+ *
  * IMPORTANTE: Usa sessionStorage per mantenere l'impersonificazione quando si naviga
  * a nuove pagine (es. da dashboard a nuovo-verbale)
- * 
+ *
  * @version 2.0.0 - Aggiunto supporto associazioni
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { getIdToken } from '@/lib/firebase';
+import { useState, useEffect, useCallback } from "react";
+import { getIdToken } from "@/lib/firebase";
 
-const STORAGE_KEY = 'miohub_impersonation';
+const STORAGE_KEY = "miohub_impersonation";
 
-export type EntityType = 'comune' | 'associazione' | null;
+export type EntityType = "comune" | "associazione" | null;
 
 export interface ImpersonationState {
   isImpersonating: boolean;
@@ -51,7 +51,7 @@ function saveToStorage(state: ImpersonationState): void {
       sessionStorage.removeItem(STORAGE_KEY);
     }
   } catch (e) {
-    console.warn('[Impersonation] Errore salvataggio sessionStorage:', e);
+    console.warn("[Impersonation] Errore salvataggio sessionStorage:", e);
   }
 }
 
@@ -63,7 +63,7 @@ function loadFromStorage(): ImpersonationState | null {
       return JSON.parse(stored);
     }
   } catch (e) {
-    console.warn('[Impersonation] Errore lettura sessionStorage:', e);
+    console.warn("[Impersonation] Errore lettura sessionStorage:", e);
   }
   return null;
 }
@@ -71,20 +71,20 @@ function loadFromStorage(): ImpersonationState | null {
 // Funzione per leggere i parametri dall'URL
 function getParamsFromUrl(): ImpersonationState {
   const params = new URLSearchParams(window.location.search);
-  const isImpersonating = params.get('impersonate') === 'true';
-  const comuneId = params.get('comune_id');
-  const comuneNome = params.get('comune_nome');
-  const associazioneId = params.get('associazione_id');
-  const associazioneNome = params.get('associazione_nome');
-  const role = params.get('role');
+  const isImpersonating = params.get("impersonate") === "true";
+  const comuneId = params.get("comune_id");
+  const comuneNome = params.get("comune_nome");
+  const associazioneId = params.get("associazione_id");
+  const associazioneNome = params.get("associazione_nome");
+  const role = params.get("role");
 
   // Determina il tipo di entità
   let entityType: EntityType = null;
   if (isImpersonating) {
-    if (associazioneId || role === 'associazione') {
-      entityType = 'associazione';
+    if (associazioneId || role === "associazione") {
+      entityType = "associazione";
     } else if (comuneId) {
-      entityType = 'comune';
+      entityType = "comune";
     }
   }
 
@@ -94,27 +94,34 @@ function getParamsFromUrl(): ImpersonationState {
     comuneNome,
     associazioneId,
     associazioneNome,
-    userEmail: params.get('user_email'),
-    entityType
+    userEmail: params.get("user_email"),
+    entityType,
   };
 }
 
 // Funzione per ottenere lo stato combinato (URL ha priorità, poi sessionStorage)
 function getCombinedState(): ImpersonationState {
   const urlState = getParamsFromUrl();
-  
+
   // Se l'URL ha i parametri di impersonificazione, usali e salvali
-  if (urlState.isImpersonating && (urlState.comuneId || urlState.associazioneId)) {
+  if (
+    urlState.isImpersonating &&
+    (urlState.comuneId || urlState.associazioneId)
+  ) {
     saveToStorage(urlState);
     return urlState;
   }
-  
+
   // Altrimenti, prova a leggere da sessionStorage
   const storedState = loadFromStorage();
-  if (storedState && storedState.isImpersonating && (storedState.comuneId || storedState.associazioneId)) {
+  if (
+    storedState &&
+    storedState.isImpersonating &&
+    (storedState.comuneId || storedState.associazioneId)
+  ) {
     return storedState;
   }
-  
+
   // Nessuna impersonificazione attiva
   return {
     isImpersonating: false,
@@ -123,7 +130,7 @@ function getCombinedState(): ImpersonationState {
     associazioneId: null,
     associazioneNome: null,
     userEmail: null,
-    entityType: null
+    entityType: null,
   };
 }
 
@@ -138,17 +145,17 @@ export function useImpersonation(): UseImpersonationReturn {
     };
 
     // Ascolta cambiamenti di popstate (navigazione browser)
-    window.addEventListener('popstate', handleUrlChange);
-    
+    window.addEventListener("popstate", handleUrlChange);
+
     // Ascolta storage events (per sincronizzare tra tab)
-    window.addEventListener('storage', handleUrlChange);
-    
+    window.addEventListener("storage", handleUrlChange);
+
     // Aggiorna immediatamente
     handleUrlChange();
 
     return () => {
-      window.removeEventListener('popstate', handleUrlChange);
-      window.removeEventListener('storage', handleUrlChange);
+      window.removeEventListener("popstate", handleUrlChange);
+      window.removeEventListener("storage", handleUrlChange);
     };
   }, []);
 
@@ -156,29 +163,29 @@ export function useImpersonation(): UseImpersonationReturn {
   const addComuneIdToUrl = useCallback((url: string): string => {
     // Prima controlla URL, poi sessionStorage
     const currentState = getCombinedState();
-    
+
     if (!currentState.isImpersonating || !currentState.comuneId) {
       return url;
     }
 
-    const separator = url.includes('?') ? '&' : '?';
+    const separator = url.includes("?") ? "&" : "?";
     return `${url}${separator}comune_id=${currentState.comuneId}`;
   }, []);
 
   // Helper per opzioni fetch
   const getFetchOptions = useCallback(() => {
     const currentState = getCombinedState();
-    
+
     if (!currentState.isImpersonating) {
       return {};
     }
 
     const headers: Record<string, string> = {};
     if (currentState.comuneId) {
-      headers['X-Comune-Id'] = currentState.comuneId;
+      headers["X-Comune-Id"] = currentState.comuneId;
     }
     if (currentState.associazioneId) {
-      headers['X-Associazione-Id'] = currentState.associazioneId;
+      headers["X-Associazione-Id"] = currentState.associazioneId;
     }
 
     return Object.keys(headers).length > 0 ? { headers } : {};
@@ -194,32 +201,34 @@ export function useImpersonation(): UseImpersonationReturn {
       associazioneId: null,
       associazioneNome: null,
       userEmail: null,
-      entityType: null
+      entityType: null,
     });
     // Rimuovi i parametri dall'URL
     const url = new URL(window.location.href);
-    url.searchParams.delete('impersonate');
-    url.searchParams.delete('comune_id');
-    url.searchParams.delete('comune_nome');
-    url.searchParams.delete('associazione_id');
-    url.searchParams.delete('associazione_nome');
-    url.searchParams.delete('user_email');
-    url.searchParams.delete('role');
-    window.history.replaceState({}, '', url.toString());
+    url.searchParams.delete("impersonate");
+    url.searchParams.delete("comune_id");
+    url.searchParams.delete("comune_nome");
+    url.searchParams.delete("associazione_id");
+    url.searchParams.delete("associazione_nome");
+    url.searchParams.delete("user_email");
+    url.searchParams.delete("role");
+    window.history.replaceState({}, "", url.toString());
   }, []);
 
   // Calcola nome e ID entità
-  const entityName = state.entityType === 'associazione'
-    ? state.associazioneNome
-    : state.entityType === 'comune'
-    ? state.comuneNome
-    : null;
+  const entityName =
+    state.entityType === "associazione"
+      ? state.associazioneNome
+      : state.entityType === "comune"
+        ? state.comuneNome
+        : null;
 
-  const entityId = state.entityType === 'associazione'
-    ? state.associazioneId
-    : state.entityType === 'comune'
-    ? state.comuneId
-    : null;
+  const entityId =
+    state.entityType === "associazione"
+      ? state.associazioneId
+      : state.entityType === "comune"
+        ? state.comuneId
+        : null;
 
   return {
     ...state,
@@ -227,7 +236,7 @@ export function useImpersonation(): UseImpersonationReturn {
     getFetchOptions,
     endImpersonation,
     entityName,
-    entityId
+    entityId,
   };
 }
 
@@ -239,54 +248,54 @@ export function getImpersonationParams(): ImpersonationState {
 // Helper standalone per aggiungere comune_id alle URL
 export function addComuneIdToUrl(url: string): string {
   const { isImpersonating, comuneId } = getCombinedState();
-  
+
   if (!isImpersonating || !comuneId) {
     return url;
   }
 
   // Validate comune_id is numeric to prevent injection
   const sanitizedId = String(parseInt(comuneId, 10));
-  if (sanitizedId === 'NaN') {
+  if (sanitizedId === "NaN") {
     return url;
   }
 
-  const separator = url.includes('?') ? '&' : '?';
+  const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}comune_id=${sanitizedId}`;
 }
 
 // Helper standalone per aggiungere associazione_id alle URL
 export function addAssociazioneIdToUrl(url: string): string {
   const { isImpersonating, entityType, associazioneId } = getCombinedState();
-  if (!isImpersonating || entityType !== 'associazione' || !associazioneId) {
+  if (!isImpersonating || entityType !== "associazione" || !associazioneId) {
     return url;
   }
   // Validate associazione_id is numeric to prevent injection
   const sanitizedId = String(parseInt(associazioneId, 10));
-  if (sanitizedId === 'NaN') {
+  if (sanitizedId === "NaN") {
     return url;
   }
-  const separator = url.includes('?') ? '&' : '?';
+  const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}associazione_id=${sanitizedId}`;
 }
 
 // Helper standalone per verificare se siamo in impersonificazione associazione
 export function isAssociazioneImpersonation(): boolean {
   const state = getCombinedState();
-  return state.isImpersonating && state.entityType === 'associazione';
+  return state.isImpersonating && state.entityType === "associazione";
 }
 
 // Helper per terminare l'impersonificazione (standalone)
 export function endImpersonation(): void {
   sessionStorage.removeItem(STORAGE_KEY);
   const url = new URL(window.location.href);
-  url.searchParams.delete('impersonate');
-  url.searchParams.delete('comune_id');
-  url.searchParams.delete('comune_nome');
-  url.searchParams.delete('associazione_id');
-  url.searchParams.delete('associazione_nome');
-  url.searchParams.delete('user_email');
-  url.searchParams.delete('role');
-  window.history.replaceState({}, '', url.toString());
+  url.searchParams.delete("impersonate");
+  url.searchParams.delete("comune_id");
+  url.searchParams.delete("comune_nome");
+  url.searchParams.delete("associazione_id");
+  url.searchParams.delete("associazione_nome");
+  url.searchParams.delete("user_email");
+  url.searchParams.delete("role");
+  window.history.replaceState({}, "", url.toString());
 }
 
 /**
@@ -295,14 +304,17 @@ export function endImpersonation(): void {
  * e l'header Authorization: Bearer <token> per le operazioni POST/PUT/DELETE/PATCH.
  * Se il token non è disponibile (utente non loggato), la fetch parte comunque senza header.
  */
-export async function authenticatedFetch(url: string, options?: RequestInit): Promise<Response> {
+export async function authenticatedFetch(
+  url: string,
+  options?: RequestInit
+): Promise<Response> {
   const finalUrl = addComuneIdToUrl(url);
 
   const token = await getIdToken();
 
   const headers = new Headers(options?.headers);
   if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   return fetch(finalUrl, { ...options, headers });

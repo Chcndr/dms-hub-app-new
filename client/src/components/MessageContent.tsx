@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, Code, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { Sparkles, Code, AlertCircle } from "lucide-react";
 
 interface MessageContentProps {
   content: string;
@@ -12,7 +12,9 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
   const hasAutoExecuted = useRef<Set<number>>(new Set());
 
   // Rileva blocchi di codice JavaScript che contengono window.sharedWorkspaceAPI
-  const detectWorkspaceCode = (text: string): { hasCode: boolean; blocks: { code: string; index: number }[] } => {
+  const detectWorkspaceCode = (
+    text: string
+  ): { hasCode: boolean; blocks: { code: string; index: number }[] } => {
     const codeBlockRegex = /```javascript\n([\s\S]*?)```/g;
     const blocks: { code: string; index: number }[] = [];
     let match;
@@ -20,7 +22,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
 
     while ((match = codeBlockRegex.exec(text)) !== null) {
       const code = match[1];
-      if (code.includes('window.sharedWorkspaceAPI')) {
+      if (code.includes("window.sharedWorkspaceAPI")) {
         blocks.push({ code, index });
         index++;
       }
@@ -33,8 +35,10 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
     try {
       // Validazione: permetti solo codice che chiama window.sharedWorkspaceAPI
       const trimmed = code.trim();
-      if (!trimmed.includes('window.sharedWorkspaceAPI')) {
-        throw new Error('Codice non autorizzato: deve usare window.sharedWorkspaceAPI');
+      if (!trimmed.includes("window.sharedWorkspaceAPI")) {
+        throw new Error(
+          "Codice non autorizzato: deve usare window.sharedWorkspaceAPI"
+        );
       }
       // Usa Function constructor invece di eval() per isolare dallo scope locale
       new Function(trimmed)();
@@ -47,8 +51,13 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
         return newErrors;
       });
     } catch (error) {
-      console.error('Errore esecuzione codice lavagna:', error);
-      setErrors(prev => new Map(prev).set(blockIndex, error instanceof Error ? error.message : 'Errore sconosciuto'));
+      console.error("Errore esecuzione codice lavagna:", error);
+      setErrors(prev =>
+        new Map(prev).set(
+          blockIndex,
+          error instanceof Error ? error.message : "Errore sconosciuto"
+        )
+      );
     }
   };
 
@@ -90,7 +99,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
 
   while ((match = codeBlockRegex.exec(content)) !== null) {
     const code = match[1];
-    const isWorkspaceCode = code.includes('window.sharedWorkspaceAPI');
+    const isWorkspaceCode = code.includes("window.sharedWorkspaceAPI");
 
     // Aggiungi testo prima del blocco
     if (match.index > lastIndex) {
@@ -117,7 +126,11 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
             </span>
             {/* Pulsante Show Code (opzionale per debug) */}
             <button
-              onClick={() => setShowCode(prev => new Map(prev).set(currentBlockIndex, !codeVisible))}
+              onClick={() =>
+                setShowCode(prev =>
+                  new Map(prev).set(currentBlockIndex, !codeVisible)
+                )
+              }
               className="ml-2 p-1 hover:bg-purple-500/20 rounded transition-colors"
               title={codeVisible ? "Nascondi codice" : "Mostra codice"}
             >
@@ -129,7 +142,9 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
           {codeVisible && (
             <div className="mt-2 bg-[#0a0f1a] rounded-lg border border-[#8b5cf6]/30 overflow-hidden">
               <div className="bg-[#8b5cf6]/10 px-3 py-2">
-                <span className="text-xs text-[#8b5cf6] font-mono">🎨 Codice Lavagna</span>
+                <span className="text-xs text-[#8b5cf6] font-mono">
+                  🎨 Codice Lavagna
+                </span>
               </div>
               <pre className="p-3 text-xs text-[#e8fbff]/80 font-mono overflow-x-auto">
                 <code>{code}</code>
@@ -150,7 +165,10 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
     } else {
       // Blocco di codice normale (non workspace)
       parts.push(
-        <pre key={`code-${match.index}`} className="my-2 bg-[#0a0f1a] rounded p-3 text-xs text-[#e8fbff]/80 font-mono overflow-x-auto">
+        <pre
+          key={`code-${match.index}`}
+          className="my-2 bg-[#0a0f1a] rounded p-3 text-xs text-[#e8fbff]/80 font-mono overflow-x-auto"
+        >
           <code>{code}</code>
         </pre>
       );
@@ -161,11 +179,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
 
   // Aggiungi testo rimanente
   if (lastIndex < content.length) {
-    parts.push(
-      <span key="text-end">
-        {content.substring(lastIndex)}
-      </span>
-    );
+    parts.push(<span key="text-end">{content.substring(lastIndex)}</span>);
   }
 
   return (

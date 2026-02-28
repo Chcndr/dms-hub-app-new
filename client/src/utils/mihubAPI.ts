@@ -1,11 +1,11 @@
 /**
  * MIHUB Backend REST API Client
- * 
+ *
  * Client per comunicare con il backend REST su Hetzner
  * Base URL: MIHUB_API_BASE_URL (api.mio-hub.me)
  */
 
-import { MIHUB_API_BASE_URL } from '@/config/api';
+import { MIHUB_API_BASE_URL } from "@/config/api";
 
 const MIHUB_API_URL = MIHUB_API_BASE_URL;
 
@@ -27,15 +27,17 @@ async function fetchMIHUB<T>(
     const response = await fetch(`${MIHUB_API_URL}${endpoint}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
-        'x-agent-id': 'dashboard-pa',
+        "Content-Type": "application/json",
+        "x-agent-id": "dashboard-pa",
         ...options?.headers,
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`);
+      throw new Error(
+        errorData.message || errorData.error || `HTTP ${response.status}`
+      );
     }
 
     const data = await response.json();
@@ -54,8 +56,8 @@ export const logsAPI = {
    * Inizializza lo schema del database
    */
   initSchema: async () => {
-    return fetchMIHUB<ApiResponse<any>>('/api/logs/initSchema', {
-      method: 'POST',
+    return fetchMIHUB<ApiResponse<any>>("/api/logs/initSchema", {
+      method: "POST",
     });
   },
 
@@ -73,8 +75,8 @@ export const logsAPI = {
     message: string;
     meta?: any;
   }) => {
-    return fetchMIHUB<ApiResponse<{ logId: string }>>('/api/logs/createLog', {
-      method: 'POST',
+    return fetchMIHUB<ApiResponse<{ logId: string }>>("/api/logs/createLog", {
+      method: "POST",
       body: JSON.stringify(log),
     });
   },
@@ -91,15 +93,16 @@ export const logsAPI = {
     success?: boolean;
   }) => {
     const params = new URLSearchParams();
-    if (filters?.agent) params.append('agent', filters.agent);
-    if (filters?.serviceId) params.append('serviceId', filters.serviceId);
-    if (filters?.limit) params.append('limit', filters.limit.toString());
-    if (filters?.from) params.append('from', filters.from);
-    if (filters?.to) params.append('to', filters.to);
-    if (filters?.success !== undefined) params.append('success', filters.success.toString());
+    if (filters?.agent) params.append("agent", filters.agent);
+    if (filters?.serviceId) params.append("serviceId", filters.serviceId);
+    if (filters?.limit) params.append("limit", filters.limit.toString());
+    if (filters?.from) params.append("from", filters.from);
+    if (filters?.to) params.append("to", filters.to);
+    if (filters?.success !== undefined)
+      params.append("success", filters.success.toString());
 
     const queryString = params.toString();
-    const url = `/api/mihub/logs${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/mihub/logs${queryString ? `?${queryString}` : ""}`;
 
     return fetchMIHUB<{
       success: boolean;
@@ -136,15 +139,15 @@ export const logsAPI = {
         firstLog: string;
         lastLog: string;
       };
-    }>('/api/logs/stats');
+    }>("/api/logs/stats");
   },
 
   /**
    * Svuota tutti i log (solo dev)
    */
   clear: async () => {
-    return fetchMIHUB<ApiResponse<any>>('/api/logs/clear', {
-      method: 'DELETE',
+    return fetchMIHUB<ApiResponse<any>>("/api/logs/clear", {
+      method: "DELETE",
     });
   },
 };
@@ -178,8 +181,8 @@ export const guardianAPI = {
         body: any;
       };
       errorMessage?: string;
-    }>('/api/guardian/debug/testEndpoint', {
-      method: 'POST',
+    }>("/api/guardian/debug/testEndpoint", {
+      method: "POST",
       body: JSON.stringify(test),
     });
   },
@@ -197,7 +200,7 @@ export const guardianAPI = {
         logCount: number;
       };
       version: string;
-    }>('/api/guardian/health');
+    }>("/api/guardian/health");
   },
 
   /**
@@ -207,7 +210,7 @@ export const guardianAPI = {
     return fetchMIHUB<{
       success: boolean;
       permissions: any;
-    }>('/api/guardian/permissions');
+    }>("/api/guardian/permissions");
   },
 };
 
@@ -225,13 +228,13 @@ export const mihubAPI = {
     limit?: number;
   }) => {
     const params = new URLSearchParams();
-    if (filters?.project) params.append('project', filters.project);
-    if (filters?.status) params.append('status', filters.status);
-    if (filters?.agent) params.append('agent', filters.agent);
-    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.project) params.append("project", filters.project);
+    if (filters?.status) params.append("status", filters.status);
+    if (filters?.agent) params.append("agent", filters.agent);
+    if (filters?.limit) params.append("limit", filters.limit.toString());
 
     const queryString = params.toString();
-    const url = `/api/mihub/tasks${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/mihub/tasks${queryString ? `?${queryString}` : ""}`;
 
     return fetchMIHUB<{
       success: boolean;
@@ -272,8 +275,8 @@ export const mihubAPI = {
       taskId: number;
       createdAt: string;
       status: string;
-    }>('/api/mihub/tasks', {
-      method: 'POST',
+    }>("/api/mihub/tasks", {
+      method: "POST",
       body: JSON.stringify(task),
     });
   },
@@ -295,10 +298,10 @@ export const mihubAPI = {
         timestamp: string;
       };
       message: string;
-    }>('/api/mihub/deploy/vercel', {
-      method: 'POST',
+    }>("/api/mihub/deploy/vercel", {
+      method: "POST",
       headers: {
-        'x-confirm-action': 'true',
+        "x-confirm-action": "true",
       },
       body: JSON.stringify(deploy),
     });
@@ -312,11 +315,15 @@ export const impreseAPI = {
   /**
    * Lista imprese con paginazione opzionale
    */
-  getImprese: async (params?: { limit?: number; offset?: number; search?: string }) => {
+  getImprese: async (params?: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+  }) => {
     const searchParams = new URLSearchParams();
-    if (params?.limit) searchParams.set('limit', String(params.limit));
-    if (params?.offset) searchParams.set('offset', String(params.offset));
-    if (params?.search) searchParams.set('search', params.search);
+    if (params?.limit) searchParams.set("limit", String(params.limit));
+    if (params?.offset) searchParams.set("offset", String(params.offset));
+    if (params?.search) searchParams.set("search", params.search);
     const qs = searchParams.toString();
     return fetchMIHUB<{
       success: boolean;
@@ -332,7 +339,7 @@ export const impreseAPI = {
       }>;
       count: number;
       pagination?: { total: number; limit: number; offset: number };
-    }>(`/api/imprese${qs ? `?${qs}` : ''}`);
+    }>(`/api/imprese${qs ? `?${qs}` : ""}`);
   },
 
   /**
@@ -374,7 +381,7 @@ export const impreseAPI = {
         updated_at: string;
       }>;
       count: number;
-    }>('/api/qualificazioni');
+    }>("/api/qualificazioni");
   },
 
   /**

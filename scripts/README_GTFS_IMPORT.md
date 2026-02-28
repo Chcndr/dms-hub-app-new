@@ -19,6 +19,7 @@ Un archivio GTFS è un file ZIP contenente file CSV:
 ## 📥 Dataset GTFS Italia Disponibili
 
 ### Regione Toscana (Autolinee Toscane)
+
 - **Grosseto Urbano**: https://dati.toscana.it/.../51-urbanogrosseto.gtfs
 - **Grosseto Extraurbano**: https://dati.toscana.it/.../30-extraurbanogrosseto.gtfs
 - **Firenze**: https://dati.toscana.it/.../26-extraurbanofirenze.gtfs
@@ -26,6 +27,7 @@ Un archivio GTFS è un file ZIP contenente file CSV:
 - **Pisa**: https://dati.toscana.it/.../22-extraurbanopisa.gtfs
 
 ### Altre Regioni
+
 - **Milano AMAT**: https://dati.comune.milano.it/dataset/ds634_tpl_gtfs
 - **Genova AMT**: https://opendata.regione.liguria.it/dataset/amt-genova-gtfs
 - **Roma ATAC**: https://romamobilita.it/it/azienda/open-data/gtfs
@@ -88,15 +90,15 @@ node scripts/import-gtfs.mjs Genova \
 ## 🗺️ Mapping Tipi Trasporto
 
 | GTFS route_type | Nostro type |
-|-----------------|-------------|
-| 0 | tram |
-| 1 | metro |
-| 2 | train |
-| 3 | bus |
-| 4 | ferry |
-| 7 | funicular |
-| 11 | trolleybus |
-| 12 | monorail |
+| --------------- | ----------- |
+| 0               | tram        |
+| 1               | metro       |
+| 2               | train       |
+| 3               | bus         |
+| 4               | ferry       |
+| 7               | funicular   |
+| 11              | trolleybus  |
+| 12              | monorail    |
 
 ## ⚠️ Limitazioni
 
@@ -111,11 +113,13 @@ I file GTFS contengono solo **orari programmati statici**. Per dati real-time (r
 ### Città Senza GTFS
 
 Alcune città non pubblicano GTFS:
+
 - ❌ **Modena** (SETA)
 - ❌ **Reggio Emilia** (SETA)
 - ❌ **Parma** (TEP)
 
 Per queste città serve:
+
 1. **Google Maps Transit API** (Google ha i dati)
 2. **Web scraping** (ultima risorsa)
 3. **Contattare azienda** trasporti

@@ -26,6 +26,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ### **Stack Tecnologico**
 
 #### Frontend
+
 - **React 19** - UI framework
 - **Tailwind CSS 4** - Styling
 - **shadcn/ui** - Component library
@@ -35,6 +36,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 - **Web Audio API** - Musica generativa
 
 #### Backend
+
 - **Node.js 22** - Runtime
 - **tRPC** - Type-safe API
 - **Drizzle ORM** - Database ORM
@@ -43,6 +45,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 - **S3** - Storage file
 
 #### DevOps
+
 - **GitHub Pages** - Hosting static
 - **Manus.space** - Hosting full-stack
 - **Heroku** - Gestionale legacy
@@ -53,11 +56,13 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ## 📱 APPLICAZIONI WEB
 
 ### 1. 🌍 **SITO PUBBLICO DMS HUB**
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/`
 
 **Descrizione**: Homepage nazionale del Gemello Digitale del Commercio
 
 **Features**:
+
 - 🎵 Musica ambient generativa (Web Audio API)
 - ✨ Animazioni fluide e particelle background
 - 📊 Counter animati statistiche real-time
@@ -74,11 +79,13 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ---
 
 ### 2. 👥 **APP CITTADINI**
+
 **URL**: `https://dmshubapp-hkvujnro.manus.space/`
 
 **Descrizione**: Applicazione per cittadini per shopping sostenibile
 
 **Features**:
+
 - 🗺️ **Mappa Mercati** - Visualizza mercati e negozi sostenibili
 - 💰 **Wallet TCC** - Gestione Toscana Carbon Credits
 - 🛣️ **Route Planner** - Percorsi ottimizzati shopping eco-friendly
@@ -93,11 +100,13 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ---
 
 ### 3. 🏪 **HUB OPERATORE**
+
 **URL**: `https://dmshubapp-hkvujnro.manus.space/hub-operatore`
 
 **Descrizione**: Dashboard per commercianti e ambulanti
 
 **Features**:
+
 - ⏰ **Check-in/Check-out** - Presenza giornaliera
 - 📊 **Dashboard Vendite** - Analytics real-time
 - 💰 **TCC Guadagnati** - Crediti carbonio accumulati
@@ -110,6 +119,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ---
 
 ### 4. 📊 **DASHBOARD ADMIN PA** (Centro Controllo)
+
 **URL**: `https://dmshubapp-hkvujnro.manus.space/dashboard-pa`
 
 **Descrizione**: Dashboard completa per amministratori con 22 sezioni
@@ -117,6 +127,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 **22 Sezioni**:
 
 #### Analytics (8 sezioni)
+
 1. **Overview** - KPI generali e crescita
 2. **Clienti** - Analytics utenti
 3. **Mercati** - Statistiche mercati attivi
@@ -127,6 +138,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 8. **Real-time** - Dati live
 
 #### Gestione (7 sezioni)
+
 9. **Log Sistema** - Audit logs e system logs
 10. **Notifiche** - Sistema notifiche push
 11. **Segnalazioni** - Civic reports
@@ -136,6 +148,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 15. **Centro Mobilità** - Mappa TPER Bologna
 
 #### Strumenti (7 sezioni)
+
 16. **Chat AI** - Assistente intelligente
 17. **Report** - Export dati
 18. **Integrazioni** - API esterne
@@ -145,6 +158,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 22. **🆕 Gestione Mercati** - Sistema DMS HUB completo
 
 **Quick Access Bar** (12 pulsanti):
+
 - Home, Mappa, Wallet, Route, Segnala, Vetrine, Hub Operatore
 - 🔧 BUS HUB (viola)
 - 🗺️ Core Map (arancione)
@@ -155,11 +169,13 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ---
 
 ### 5. 🚌 **BUS HUB** (Business Unit Setup HUB)
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/tools/bus_hub.html`
 
 **Descrizione**: Centro controllo workflow per configurazione mercati
 
 **Features**:
+
 - 🔄 **Workflow 2 Step**:
   1. **PNG Transparent Tool** - Rimozione sfondo pianta
   2. **Slot Editor v3 Unified** - Editor completo
@@ -180,11 +196,13 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ---
 
 ### 6. 🗺️ **CORE MAP GROSSETO**
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/index-grosseto.html`
 
 **Descrizione**: Mappa GIS operativa mercato Grosseto
 
 **Features**:
+
 - 🗺️ Mappa Leaflet con layer mercato
 - 📍 Posteggi numerati interattivi
 - 🎨 Aree mercato colorate
@@ -201,6 +219,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ---
 
 ### 7. 📰 **DMS NEWS**
+
 **URL**: `https://chcndr.github.io/dms-gemello-news/landing/home.html`
 
 **Descrizione**: Piattaforma notizie DMS
@@ -210,11 +229,13 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ---
 
 ### 8. 🚀 **GESTIONALE DMS** (Heroku)
+
 **URL**: `https://lapsy-dms.herokuapp.com/index.html`
 
 **Descrizione**: Piattaforma legacy gestione concessioni
 
 **Features**:
+
 - 📜 Gestione concessioni ambulanti
 - 💰 Pagamenti e scadenze
 - 📄 Documenti e permessi
@@ -227,11 +248,13 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ## 🔧 TOOL EDITOR
 
 ### **PNG Transparent Tool**
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/tools/stalls_alpha_tool.html`
 
 **Funzione**: Rimozione sfondo da pianta mercato
 
 **Workflow**:
+
 1. Upload immagine pianta
 2. Rimozione automatica sfondo
 3. Preview risultato
@@ -241,11 +264,13 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ---
 
 ### **Slot Editor v3 Unified**
+
 **URL**: `https://chcndr.github.io/dms-gemello-core/tools/slot_editor_v3_unified.html`
 
 **Funzione**: Editor completo mercati
 
 **Features**:
+
 - 📍 **Georeferenziazione** - 4 GCP per allineamento
 - 🏪 **Container Mercato** - Definizione area totale
 - 🅿️ **Posteggi** - Creazione rettangoli numerati
@@ -255,6 +280,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 - 📤 **Invia a Dashboard Admin** - Import diretto
 
 **Output JSON**:
+
 ```json
 {
   "container": { "type": "Polygon", "coordinates": [...] },
@@ -282,6 +308,7 @@ Il **DMS HUB** è un ecosistema completo per la digitalizzazione e gestione dei 
 ### **Database Schema** (13 Tabelle)
 
 #### **Mercati e Geometria**
+
 ```sql
 -- Geometria mercati da Slot Editor v3
 CREATE TABLE market_geometry (
@@ -336,6 +363,7 @@ CREATE TABLE custom_areas (
 ```
 
 #### **Operatori e Concessioni**
+
 ```sql
 -- Operatori/Ambulanti
 CREATE TABLE vendors (
@@ -391,6 +419,7 @@ CREATE TABLE vendor_documents (
 ```
 
 #### **Prenotazioni e Presenze**
+
 ```sql
 -- Prenotazioni posteggi
 CREATE TABLE bookings (
@@ -423,6 +452,7 @@ CREATE TABLE vendor_presences (
 ```
 
 #### **Controlli e Verbali**
+
 ```sql
 -- Controlli Polizia Municipale
 CREATE TABLE inspections_detailed (
@@ -464,6 +494,7 @@ CREATE TABLE violations (
 ```
 
 #### **Pagamenti**
+
 ```sql
 -- Pagamenti concessioni
 CREATE TABLE concession_payments (
@@ -486,6 +517,7 @@ CREATE TABLE concession_payments (
 ### **API Backend** (25+ Endpoint)
 
 #### **Router: dmsHub.markets**
+
 ```typescript
 // Import JSON da Slot Editor v3
 dmsHub.markets.importFromSlotEditor({
@@ -505,6 +537,7 @@ dmsHub.markets.getById({ marketId })
 ```
 
 #### **Router: dmsHub.stalls**
+
 ```typescript
 // Lista posteggi per mercato
 dmsHub.stalls.listByMarket({ marketId })
@@ -520,6 +553,7 @@ dmsHub.stalls.getStatuses({ marketId })
 ```
 
 #### **Router: dmsHub.vendors**
+
 ```typescript
 // Lista operatori
 dmsHub.vendors.list()
@@ -546,6 +580,7 @@ dmsHub.vendors.getFullDetails({ vendorId })
 ```
 
 #### **Router: dmsHub.bookings**
+
 ```typescript
 // Prenota posteggio
 dmsHub.bookings.create({ stallId, userId, vendorId, notes })
@@ -565,6 +600,7 @@ dmsHub.bookings.cancel({ bookingId })
 ```
 
 #### **Router: dmsHub.presences**
+
 ```typescript
 // Check-out operatore
 dmsHub.presences.checkout({ presenceId, notes })
@@ -576,6 +612,7 @@ dmsHub.presences.getTodayByMarket({ marketId })
 ```
 
 #### **Router: dmsHub.inspections**
+
 ```typescript
 // Crea controllo
 dmsHub.inspections.create({
@@ -598,6 +635,7 @@ dmsHub.inspections.list({ vendorId?, startDate?, endDate? })
 ```
 
 #### **Router: dmsHub.violations**
+
 ```typescript
 // Emetti verbale
 dmsHub.violations.create({
@@ -623,6 +661,7 @@ dmsHub.violations.list({ vendorId?, status? })
 Tutte le operazioni DMS HUB loggano automaticamente in:
 
 #### **audit_logs**
+
 ```sql
 CREATE TABLE audit_logs (
   id SERIAL PRIMARY KEY,
@@ -638,6 +677,7 @@ CREATE TABLE audit_logs (
 ```
 
 #### **system_logs**
+
 ```sql
 CREATE TABLE system_logs (
   id SERIAL PRIMARY KEY,
@@ -653,6 +693,7 @@ CREATE TABLE system_logs (
 ```
 
 **Operazioni Loggiate**:
+
 1. `IMPORT_SLOT_EDITOR` - Import JSON
 2. `UPDATE_STALL_STATUS` - Cambio stato posteggio
 3. `CREATE_VENDOR` - Creazione operatore
@@ -673,6 +714,7 @@ CREATE TABLE system_logs (
 #### **4 Sottosezioni**
 
 ##### **1. Mercati**
+
 - Lista mercati con card
 - Statistiche per mercato:
   - Posteggi totali
@@ -682,6 +724,7 @@ CREATE TABLE system_logs (
 - Click card → Seleziona mercato
 
 ##### **2. Posteggi**
+
 - Visualizza dopo selezione mercato
 - Griglia posteggi con:
   - Numero posteggio
@@ -698,6 +741,7 @@ CREATE TABLE system_logs (
     - "Manutenzione" - Imposta manutenzione
 
 ##### **3. Operatori**
+
 - Lista operatori registrati
 - Card con:
   - Nome completo
@@ -708,6 +752,7 @@ CREATE TABLE system_logs (
 - Pulsante "Nuovo Operatore"
 
 ##### **4. Prenotazioni**
+
 - Lista prenotazioni attive
 - Card con:
   - Numero posteggio
@@ -716,9 +761,10 @@ CREATE TABLE system_logs (
   - Tempo rimanente
 
 #### **Dialog Import JSON**
-- Campo "Nome Mercato" *
-- Campo "Città" *
-- Campo "Indirizzo" *
+
+- Campo "Nome Mercato" \*
+- Campo "Città" \*
+- Campo "Indirizzo" \*
 - Textarea JSON (12 righe, font mono)
 - Validazione JSON automatica
 - Preview statistiche import:
@@ -736,24 +782,30 @@ CREATE TABLE system_logs (
 ### **Tipologie Posteggi**
 
 #### **1. Posteggi Fissi con Concessione**
+
 **Ambulanti Titolari**:
+
 - Hanno concessione permanente su posteggio specifico
 - Esempio: Mario Rossi ha sempre posteggio #5
 - **Se presente**: Check-in → Stato OCCUPATO (🔴 rosso)
 - **Se assente**: Stato RISERVATO (⚫ grigio) ma disponibile per spuntisti
 
 **Tabelle coinvolte**:
+
 - `concessions` - Chi ha diritto permanente
 - `vendor_presences` - Presenza giornaliera
 
 #### **2. Posteggi Spuntisti**
+
 **Quando titolare assente**:
+
 - Posteggio RISERVATO diventa disponibile per "spunta"
 - Primo arrivato fa check-in → Occupa per la giornata
 - Campo `is_substitute = true` in `vendor_presences`
 - Fine giornata → Check-out → Torna RISERVATO per titolare
 
 **Workflow**:
+
 ```
 Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
        ↓
@@ -765,14 +817,18 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 ```
 
 #### **3. Posteggi Liberi**
+
 **Senza concessione**:
+
 - Sempre disponibili per spuntisti
 - Check-in/Check-out giornaliero
 - Prenotazione possibile (30 min timeout)
 - Stato: LIBERO (🟢 verde) quando vuoto
 
 #### **4. Negozi HUB**
+
 **Attività permanenti**:
+
 - Sempre stesso operatore
 - Sempre aperti (orari fissi)
 - No check-in/check-out
@@ -783,13 +839,13 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 
 ### **Stati Posteggi**
 
-| Stato | Colore | Descrizione | Azioni Possibili |
-|-------|--------|-------------|------------------|
-| **free** | 🟢 Verde | Libero, disponibile | Prenota, Check-in |
-| **occupied** | 🔴 Rosso | Occupato, operatore presente | Visualizza info |
-| **booked** | 🟡 Giallo | Prenotato (max 30 min) | Conferma check-in, Cancella |
-| **reserved** | ⚫ Grigio | Riservato per titolare assente | Spuntisti possono occupare |
-| **maintenance** | 🔵 Blu | In manutenzione | Nessuna |
+| Stato           | Colore    | Descrizione                    | Azioni Possibili            |
+| --------------- | --------- | ------------------------------ | --------------------------- |
+| **free**        | 🟢 Verde  | Libero, disponibile            | Prenota, Check-in           |
+| **occupied**    | 🔴 Rosso  | Occupato, operatore presente   | Visualizza info             |
+| **booked**      | 🟡 Giallo | Prenotato (max 30 min)         | Conferma check-in, Cancella |
+| **reserved**    | ⚫ Grigio | Riservato per titolare assente | Spuntisti possono occupare  |
+| **maintenance** | 🔵 Blu    | In manutenzione                | Nessuna                     |
 
 ---
 
@@ -824,6 +880,7 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 ```
 
 **Timeout Automatico**:
+
 - Se dopo 30 minuti non c'è check-in
 - Booking status → "expired"
 - Stall status → "free"
@@ -919,16 +976,16 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 
 ### **Matrice Collegamenti**
 
-|  | Sito Pub | App Citt | Hub Op | Dashboard | BUS HUB | Core Map | News | Gestionale |
-|---|---|---|---|---|---|---|---|---|
-| **Sito Pubblico** | - | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **App Cittadini** | ✅ | - | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Hub Operatore** | ✅ | ❌ | - | ❌ | ❌ | ❌ | ❌ | ⏳ |
-| **Dashboard PA** | ✅ | ✅ | ✅ | - | ✅ | ✅ | ✅ | ✅ |
-| **BUS HUB** | ✅ | ❌ | ❌ | ✅ | - | ✅ | ❌ | ❌ |
-| **Core Map** | ✅ | ❌ | ❌ | ✅ | ✅ | - | ❌ | ❌ |
-| **DMS News** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | - | ❌ |
-| **Gestionale** | ❌ | ❌ | ⏳ | ✅ | ❌ | ❌ | ❌ | - |
+|                   | Sito Pub | App Citt | Hub Op | Dashboard | BUS HUB | Core Map | News | Gestionale |
+| ----------------- | -------- | -------- | ------ | --------- | ------- | -------- | ---- | ---------- |
+| **Sito Pubblico** | -        | ✅       | ✅     | ✅        | ❌      | ❌       | ❌   | ❌         |
+| **App Cittadini** | ✅       | -        | ❌     | ❌        | ❌      | ❌       | ❌   | ❌         |
+| **Hub Operatore** | ✅       | ❌       | -      | ❌        | ❌      | ❌       | ❌   | ⏳         |
+| **Dashboard PA**  | ✅       | ✅       | ✅     | -         | ✅      | ✅       | ✅   | ✅         |
+| **BUS HUB**       | ✅       | ❌       | ❌     | ✅        | -       | ✅       | ❌   | ❌         |
+| **Core Map**      | ✅       | ❌       | ❌     | ✅        | ✅      | -        | ❌   | ❌         |
+| **DMS News**      | ❌       | ❌       | ❌     | ❌        | ❌      | ❌       | -    | ❌         |
+| **Gestionale**    | ❌       | ❌       | ⏳     | ✅        | ❌      | ❌       | ❌   | -          |
 
 ✅ = Collegamento attivo  
 ❌ = Nessun collegamento  
@@ -941,7 +998,9 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 ### **Livelli di Accesso**
 
 #### **👤 SUPER ADMIN (Tu)**
+
 **Accesso Completo a**:
+
 - ✅ Dashboard Admin (tutte le 22 sezioni)
 - ✅ BUS HUB (tool editor)
 - ✅ Core Map (mappa operativa)
@@ -950,6 +1009,7 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 - ✅ Tutte le altre app
 
 **Funzionalità Esclusive**:
+
 - Import JSON da Slot Editor v3
 - Configurazione mercati
 - Gestione concessioni
@@ -961,7 +1021,9 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 ---
 
 #### **🏛️ PA (Amministrazione Pubblica)**
+
 **Accesso Limitato a**:
+
 - ✅ Dashboard PA (versione limitata - FUTURA)
 - ✅ App Cittadini (visualizzazione)
 - ❌ NO BUS HUB
@@ -969,6 +1031,7 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 - ❌ NO Gestionale DMS
 
 **Funzionalità**:
+
 - Visualizzazione analytics
 - Consultazione dati aggregati
 - Report export
@@ -978,7 +1041,9 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 ---
 
 #### **👥 CITTADINI**
+
 **Accesso a**:
+
 - ✅ Sito Pubblico
 - ✅ App Cittadini
 - ❌ NO Dashboard PA
@@ -987,6 +1052,7 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 - ❌ NO Gestionale
 
 **Funzionalità**:
+
 - Visualizzazione mercati
 - Prenotazione posteggi (se abilitata)
 - Wallet TCC
@@ -997,7 +1063,9 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 ---
 
 #### **🏪 OPERATORI (Negozianti + Ambulanti)**
+
 **Accesso a**:
+
 - ✅ Hub Operatore
 - ✅ App DMS (Heroku) - per concessioni
 - ❌ NO Dashboard PA
@@ -1005,6 +1073,7 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 - ❌ NO Core Map
 
 **Funzionalità**:
+
 - Check-in/Check-out giornaliero
 - Gestione prodotti
 - Visualizzazione vendite
@@ -1015,13 +1084,16 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 ---
 
 #### **👮 POLIZIA MUNICIPALE**
+
 **Accesso a** (FUTURO):
+
 - ✅ App Polizia (tablet)
 - ✅ Dashboard PA (sezione Controlli)
 - ❌ NO BUS HUB
 - ❌ NO configurazione mercati
 
 **Funzionalità**:
+
 - Mappa interattiva mercato
 - Click posteggio → Scheda operatore completa
 - Registrazione controlli
@@ -1112,6 +1184,7 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 ```
 
 **Dati Sincronizzati**:
+
 - **Gestionale → DMS HUB**:
   - Anagrafica operatori (master)
   - Concessioni attive
@@ -1127,11 +1200,13 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
   - Verbali emessi
 
 **Frequenza Sync**:
+
 - Real-time: Presenze, stati occupazione (webhook)
 - Ogni 5 minuti: Anagrafica, concessioni (polling)
 - On-demand: Geometria mercati (trigger manuale)
 
 **Gestione Conflitti**:
+
 - **Anagrafica**: Gestionale sempre master
 - **Presenze**: Ultimo aggiornamento vince
 - **Geometria**: DMS HUB sempre master
@@ -1372,6 +1447,7 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 ### **Metriche Disponibili**
 
 #### **Dashboard Admin - Overview**
+
 - Utenti totali: 15.847 (+8.5%)
 - Mercati attivi: 12
 - Negozi totali: 156
@@ -1380,7 +1456,9 @@ Mattina: Posteggio #5 RISERVATO (Mario Rossi assente)
 - CO₂ risparmiata: 4.654 kg
 
 #### **Mercati**
+
 Per ogni mercato:
+
 - Posteggi totali
 - Occupati (%)
 - Liberi (%)
@@ -1391,6 +1469,7 @@ Per ogni mercato:
 - Durata media permanenza
 
 #### **Operatori**
+
 - Totali registrati
 - Attivi oggi
 - Presenze mensili
@@ -1399,12 +1478,14 @@ Per ogni mercato:
 - Documenti in scadenza
 
 #### **Sostenibilità**
+
 - Trasporti: A piedi (41%), Bici (20%), Bus (18%), Auto (16%), Elettrico (5%)
 - Certificazioni: BIO (52%), KM0 (41%), DOP/IGP (19%), Fair Trade (9%)
 - CO₂ risparmiata per modalità trasporto
 - E-commerce vs Fisico: 40% vs 60%
 
 #### **Carbon Credits (TCC)**
+
 - Fondo disponibile: €125.000
 - Burn rate: €8.500/mese
 - Mesi rimanenti: 14.7
@@ -1420,6 +1501,7 @@ Per ogni mercato:
 ## 🔮 ROADMAP FUTURA
 
 ### **FASE 1: Completamento Base** (Q1 2025)
+
 - ✅ Database schema completo
 - ✅ API backend complete
 - ✅ Dashboard Admin con Gestione Mercati
@@ -1429,6 +1511,7 @@ Per ogni mercato:
 - ⏳ Sistema prenotazioni frontend completo
 
 ### **FASE 2: Integrazione Gestionale** (Q2 2025)
+
 - ⏳ API bridge Gestionale Heroku ↔ DMS HUB
 - ⏳ Sincronizzazione bidirezionale
 - ⏳ Webhook real-time presenze
@@ -1436,6 +1519,7 @@ Per ogni mercato:
 - ⏳ Gestione concessioni unificata
 
 ### **FASE 3: App Polizia Municipale** (Q2 2025)
+
 - ⏳ UI tablet ottimizzata
 - ⏳ Scheda operatore completa
 - ⏳ Sistema controlli e verbali
@@ -1444,6 +1528,7 @@ Per ogni mercato:
 - ⏳ Upload foto controlli
 
 ### **FASE 4: Sistema Prenotazioni Pubblico** (Q3 2025)
+
 - ⏳ Prenotazione posteggi da App Cittadini
 - ⏳ Timeout automatico 30 minuti
 - ⏳ Notifiche push
@@ -1451,6 +1536,7 @@ Per ogni mercato:
 - ⏳ QR code check-in
 
 ### **FASE 5: Dashboard PA Limitata** (Q3 2025)
+
 - ⏳ Versione PA con permessi limitati
 - ⏳ Solo visualizzazione analytics
 - ⏳ No configurazione mercati
@@ -1458,6 +1544,7 @@ Per ogni mercato:
 - ⏳ Export report automatici
 
 ### **FASE 6: Ottimizzazioni** (Q4 2025)
+
 - ⏳ PWA (Progressive Web App)
 - ⏳ Offline-first per operatori
 - ⏳ Ottimizzazione performance
@@ -1466,6 +1553,7 @@ Per ogni mercato:
 - ⏳ CDN per assets statici
 
 ### **FASE 7: AI e Analytics Avanzate** (2026)
+
 - ⏳ Predizione affluenza mercati
 - ⏳ Suggerimenti posteggi ottimali
 - ⏳ Analisi sentiment cittadini
@@ -1477,18 +1565,21 @@ Per ogni mercato:
 ## 🔐 SICUREZZA E PRIVACY
 
 ### **Autenticazione**
+
 - JWT token con scadenza 24h
 - Refresh token per sessioni lunghe
 - Password hashing con bcrypt
 - 2FA opzionale per admin
 
 ### **Autorizzazione**
+
 - Role-based access control (RBAC)
 - Permessi granulari per API
 - Audit log completo
 - IP whitelisting per admin
 
 ### **Privacy**
+
 - GDPR compliant
 - Dati personali criptati
 - Anonimizzazione analytics
@@ -1496,6 +1587,7 @@ Per ogni mercato:
 - Right to be forgotten
 
 ### **Backup**
+
 - Backup automatico database (daily)
 - Retention 30 giorni
 - Backup incrementali (hourly)
@@ -1506,18 +1598,21 @@ Per ogni mercato:
 ## 📞 CONTATTI E SUPPORTO
 
 ### **Documentazione**
+
 - Dashboard Admin → Tab "Documentazione"
 - Guide uso per ogni sezione
 - Video tutorial
 - FAQ
 
 ### **Supporto Tecnico**
+
 - Email: support@dmshub.it
 - Ticket system integrato
 - Chat AI assistente
 - Forum community
 
 ### **Sviluppo**
+
 - GitHub: https://github.com/chcndr/dms-gemello-core
 - Issues tracker
 - Pull requests
@@ -1538,6 +1633,7 @@ Il **DMS HUB** rappresenta un ecosistema completo e integrato per la digitalizza
 - **Architettura scalabile** e modulare
 
 Il sistema è pronto per:
+
 1. ✅ Test import JSON da Slot Editor v3
 2. ✅ Configurazione primi mercati
 3. ✅ Onboarding operatori
@@ -1554,4 +1650,4 @@ Il sistema è pronto per:
 
 ---
 
-*Questo documento è un resoconto completo dell'ecosistema DMS HUB al 9 novembre 2025. Per aggiornamenti e modifiche, consultare la documentazione tecnica nella Dashboard Admin.*
+_Questo documento è un resoconto completo dell'ecosistema DMS HUB al 9 novembre 2025. Per aggiornamenti e modifiche, consultare la documentazione tecnica nella Dashboard Admin._

@@ -1,8 +1,8 @@
 /**
  * API Route: Inizializza tabella agent_messages per persistenza messaggi
- * 
+ *
  * Endpoint: POST /api/db/init-agent-messages
- * 
+ *
  * Questa tabella ospiterà TUTTA la chat:
  * - Messaggi Utente → Agenti
  * - Messaggi MIO → Agenti (deleghe)
@@ -10,30 +10,27 @@
  * - Risposte Agenti → MIO
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import postgres from 'postgres';
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import postgres from "postgres";
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Solo POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     // Check DATABASE_URL
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
-      console.error('[init-agent-messages] DATABASE_URL not found');
+      console.error("[init-agent-messages] DATABASE_URL not found");
       return res.status(500).json({
         success: false,
-        error: 'DATABASE_URL not configured'
+        error: "DATABASE_URL not configured",
       });
     }
 
-    console.log('[init-agent-messages] DATABASE_URL found, connecting...');
+    console.log("[init-agent-messages] DATABASE_URL found, connecting...");
 
     // Connessione PostgreSQL
     const sql = postgres(databaseUrl);
@@ -52,7 +49,7 @@ export default async function handler(
       )
     `;
 
-    console.log('[init-agent-messages] Table agent_messages created/verified');
+    console.log("[init-agent-messages] Table agent_messages created/verified");
 
     // Crea indice per performance
     await sql`
@@ -60,7 +57,9 @@ export default async function handler(
       ON agent_messages(conversation_id, created_at DESC)
     `;
 
-    console.log('[init-agent-messages] Index idx_agent_messages_conv created/verified');
+    console.log(
+      "[init-agent-messages] Index idx_agent_messages_conv created/verified"
+    );
 
     // Crea indice per agent_name
     await sql`
@@ -68,36 +67,37 @@ export default async function handler(
       ON agent_messages(agent_name, created_at DESC)
     `;
 
-    console.log('[init-agent-messages] Index idx_agent_messages_agent created/verified');
+    console.log(
+      "[init-agent-messages] Index idx_agent_messages_agent created/verified"
+    );
 
     // Chiudi connessione
     await sql.end();
 
     return res.status(200).json({
       success: true,
-      message: 'Table agent_messages initialized successfully',
+      message: "Table agent_messages initialized successfully",
       details: {
-        table: 'agent_messages',
-        indexes: ['idx_agent_messages_conv', 'idx_agent_messages_agent'],
+        table: "agent_messages",
+        indexes: ["idx_agent_messages_conv", "idx_agent_messages_agent"],
         columns: [
-          'id (UUID)',
-          'conversation_id (VARCHAR)',
-          'agent_name (VARCHAR)',
-          'sender (VARCHAR)',
-          'role (VARCHAR)',
-          'content (TEXT)',
-          'created_at (TIMESTAMP)',
-          'metadata (JSONB)'
-        ]
-      }
+          "id (UUID)",
+          "conversation_id (VARCHAR)",
+          "agent_name (VARCHAR)",
+          "sender (VARCHAR)",
+          "role (VARCHAR)",
+          "content (TEXT)",
+          "created_at (TIMESTAMP)",
+          "metadata (JSONB)",
+        ],
+      },
     });
-
   } catch (err: any) {
-    console.error('[init-agent-messages] Error:', err);
+    console.error("[init-agent-messages] Error:", err);
     return res.status(500).json({
       success: false,
-      error: err.message || 'Unknown error',
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      error: err.message || "Unknown error",
+      stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
     });
   }
 }

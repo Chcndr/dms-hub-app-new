@@ -5,6 +5,7 @@
 ### Fonti Dati e Integrazioni
 
 **1) Identità - SPID/CIE (OIDC)**
+
 - fiscalNumber → user.fiscal_code
 - given_name → user.name
 - family_name → user.family_name
@@ -14,6 +15,7 @@
 - idp (issuer) → user.idp
 
 **2) AE - Verifica P.IVA/CF (PDND)**
+
 - vatNumber → impresa.vat_number
 - taxCode → impresa.tax_code
 - denomination → impresa.denomination
@@ -23,6 +25,7 @@
 - legalNature → impresa.legal_nature
 
 **3) Registro Imprese (InfoCamere)**
+
 - taxId/cf → impresa.tax_code
 - vatNumber → impresa.vat_number
 - rea.number → impresa.rea ("CCIAA-NUM")
@@ -32,20 +35,24 @@
 - pec → impresa.pec (se manca → INAD/INI-PEC)
 
 **3.2 Cariche/Soci**
+
 - roles[].person_cf → impresa.roles[].person_cf
 - roles[].role → impresa.roles[].role (TITOLARE/LEGALE/RAPP...)
 - roles[].from/to → impresa.roles[].from_to
 
 **4) INAD/INI-PEC (PEC ufficiale)**
+
 - pec → impresa.pec (PEC valida RFC5321)
 
 **5) DURC OnLine (via PDND)**
+
 - status → durc.status (REGOLARE/IRREGOLARE/ND)
 - validTo → durc.valid_to
 - issuer → durc.source (INPS/INAIL/SPORTELLO)
 - protocol → durc.protocol (per audit)
 
 **6) SSU - Catalogo (Metadati)**
+
 - lifeEvents[] → ssu.meta.life_events[]
 - procedures[].id → ssu.meta.procedures[].id
 - procedures[].name → ssu.meta.procedures[].name
@@ -56,14 +63,14 @@
 - thirdParties[] → ssu.meta.third_parties[] (enti terzi competenti)
 
 **7) SSU - BO SUAP (storico pratiche per impresa)**
+
 - cui → pratica.cui (ID univoco istanza)
 - kind → pratica.kind (SCIA_CAP/AU/...)
-- subject.vat/cf → pratica.subject_* (impresa collegata)
+- subject.vat/cf → pratica.subject\_\* (impresa collegata)
 - submittedAt → pratica.submitted_at
 - state → pratica.state (ACQUISITA/IN_ISTR./CONCLUSA)
 - boSuap → pratica.bo_suap (ufficio procedente)
 - hasFinalAct → pratica.has_final_act (flag utile per concessione)
-
 
 **8) MercaWeb - Concessioni/Presenze**
 
@@ -74,7 +81,7 @@
 | marketId | string | conc.market_id | |
 | marketName | string | conc.market.name | |
 | posteggio | string | conc.market.posteggio | A-12 ecc. |
-| holder.vat/cf | string | conc.holder.* | |
+| holder.vat/cf | string | conc.holder.\* | |
 | issuedBy | string | conc.issued_by | Comune/ufficio |
 | issuedAt | date | conc.issued_at | |
 | validFrom/To | date | conc.valid_from/to | |
@@ -88,7 +95,7 @@
 | presenceId | string | presenza.id | |
 | date | date | presenza.date | |
 | marketId/posteggio | string | presenza.marketId/posteggio | |
-| operator.vat/cf | string | presenza.operator_* | |
+| operator.vat/cf | string | presenza.operator\_\* | |
 | checkIn/Out | date | presenza.check_in/out | |
 | delegate.cf | string | presenza.delegate_cf | dipendente delegato |
 | notes | string | presenza.notes | |
@@ -96,17 +103,20 @@
 **9) Maggioli Tributi - Canone Mercatale**
 
 9.1 Posizione contribuente:
+
 - positionId → trib.position_id
-- vat/cf → trib.subject_*
+- vat/cf → trib.subject\_\*
 - objects[] → trib.objects[] (oggetti imponibili/posteggi)
 - status → trib.status (ATTIVA/ESTINTA/SOSPESA)
 
-9.2 Oggetto imponibile (posteggio):
+  9.2 Oggetto imponibile (posteggio):
+
 - objectId → trib.objects[].id
 - marketId/posteggio → trib.objects[].ref (allinea a concessione)
 - mq/tariffa → trib.objects[].metrics
 
-9.3 Avvisi/pagamenti:
+  9.3 Avvisi/pagamenti:
+
 - noticeId → trib.notices[].id
 - iuv/pagoPA → trib.notices[].iuv
 - amount → trib.notices[].amount
@@ -119,10 +129,10 @@
 
 Regola: se dalla pratica SUAP (SSU BO) emerge un provvedimento di concessione → costruisci/aggiorna concessione.
 
-| Origine | Condizione | Mapping concessione |
-|---------|-----------|---------------------|
-| SSU BO | kind=SCIA_CAP e finalAct.type = | id=cui, issuedBy=boSuap, issuedAt=finalAct.date, validFrom/To da atto o regime, holder da subject |
-| MercaWeb | record concessionId presente | mappa 8.1 1:1 (preferisci MercaWeb per market/posteggio; arricchisci con atti SSU se presenti) |
+| Origine  | Condizione                      | Mapping concessione                                                                               |
+| -------- | ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| SSU BO   | kind=SCIA_CAP e finalAct.type = | id=cui, issuedBy=boSuap, issuedAt=finalAct.date, validFrom/To da atto o regime, holder da subject |
+| MercaWeb | record concessionId presente    | mappa 8.1 1:1 (preferisci MercaWeb per market/posteggio; arricchisci con atti SSU se presenti)    |
 
 **11) Ordine chiamate consigliato (login dashboard)**
 
@@ -148,4 +158,3 @@ Regola: se dalla pratica SUAP (SSU BO) emerge un provvedimento di concessione �
 
 A) MercaWeb (sandbox/API) - Richiesta sandbox/API per integrazione DMS mercati/fiere
 B) Maggioli Tributi (TRIB Evo/J-TRIB + PDND) - Integrazione DMS con TRIB (Canone Mercatale) + PDND
-

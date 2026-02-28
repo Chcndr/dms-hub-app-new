@@ -1,6 +1,7 @@
 # ✅ Verifica Dashboard Integrazioni - 17 Dicembre 2025
 
 ## Obiettivo
+
 Verificare che dopo l'esecuzione dello script `sync_api_docs.cjs` e l'aggiornamento di `index.json`, la Dashboard PA mostri tutti gli endpoint del sistema.
 
 ## Risultati
@@ -22,6 +23,7 @@ Verificare che dopo l'esecuzione dello script `sync_api_docs.cjs` e l'aggiorname
 I seguenti router, che prima erano completamente invisibili nella Dashboard, ora sono correttamente elencati:
 
 #### 1. **Guardian Router** (6 endpoint)
+
 - `POST /api/trpc/guardian.initDemoLogs` - Not Implemented
 - `GET /api/trpc/guardian.integrations` - Implemented
 - `GET /api/trpc/guardian.logApiCall` - Implemented
@@ -30,22 +32,26 @@ I seguenti router, che prima erano completamente invisibili nella Dashboard, ora
 - `GET /api/trpc/guardian.testEndpoint` - Implemented
 
 #### 2. **Integrations Router** (15 endpoint)
+
 - API Keys management
 - Webhooks management
 - API Stats
 - Connections health check
 
 #### 3. **MI-HUB Router** (11 endpoint)
+
 - Task management
 - Brain memory
 - Bag values
 - Messages
 
 #### 4. **MIO Agent Router** (5 endpoint)
+
 - Logs management
 - Database operations
 
 #### 5. **DMS Hub Router - Nuovi Sub-Router**
+
 - `locations.*` (5 endpoint) - **NUOVO**
 - `services.*` (2 endpoint) - **NUOVO**
 - `shops.*` (2 endpoint) - **NUOVO**

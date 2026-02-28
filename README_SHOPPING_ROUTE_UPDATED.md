@@ -11,6 +11,7 @@
 Shopping Route Etico è il sistema di routing sostenibile di MIO-HUB che guida gli utenti verso i mercati locali utilizzando trasporti eco-friendly, calcolando risparmi di CO₂ e assegnando crediti.
 
 ### Caratteristiche Principali
+
 - ✅ Calcolo percorso ottimizzato (API backend)
 - ✅ Supporto 4 modalità trasporto (piedi, bici, bus, auto)
 - ✅ Calcolo CO₂ risparmiata e crediti guadagnati
@@ -28,6 +29,7 @@ Shopping Route Etico è il sistema di routing sostenibile di MIO-HUB che guida g
 ### Stack Tecnologico
 
 #### Frontend
+
 - **Framework:** React 18 + TypeScript
 - **Routing:** Wouter (client-side)
 - **UI:** shadcn/ui + TailwindCSS
@@ -36,12 +38,14 @@ Shopping Route Etico è il sistema di routing sostenibile di MIO-HUB che guida g
 - **Navigazione:** URL Scheme (Google/Apple Maps)
 
 #### Backend
+
 - **Runtime:** Node.js + Express
 - **Database:** PostgreSQL (Neon)
 - **Routing Engine:** OpenRouteService + Haversine fallback
 - **Deploy:** Hetzner Cloud (PM2)
 
 #### Database Schema
+
 ```sql
 -- Tabella stalls (coordinate posteggi)
 CREATE TABLE stalls (
@@ -66,9 +70,11 @@ CREATE TABLE stalls (
 ## 🔌 API ENDPOINTS
 
 ### 1. POST `/api/routing/calculate`
+
 Calcola percorso ottimizzato con CO₂ e crediti.
 
 **Request:**
+
 ```json
 {
   "start": {
@@ -84,12 +90,14 @@ Calcola percorso ottimizzato con CO₂ e crediti.
 ```
 
 **Modalità supportate:**
+
 - `walking` - A piedi
 - `cycling` - In bicicletta
 - `bus` - Trasporto pubblico
 - `driving` - Auto (0 crediti)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -98,7 +106,10 @@ Calcola percorso ottimizzato con CO₂ e crediti.
     "duration": 137597,
     "geometry": {
       "type": "LineString",
-      "coordinates": [[11.012278, 44.489833], [11.112054, 42.758929]]
+      "coordinates": [
+        [11.012278, 44.489833],
+        [11.112054, 42.758929]
+      ]
     },
     "steps": [],
     "fallback": true,
@@ -119,6 +130,7 @@ Calcola percorso ottimizzato con CO₂ e crediti.
 ```
 
 **Calcolo CO₂ e Crediti:**
+
 ```javascript
 // CO₂ risparmiata (grammi)
 const co2_saved = distance_km * 193; // 193g/km auto media
@@ -128,14 +140,17 @@ const credits = Math.round(distance_km * 10); // 10 crediti per km
 ```
 
 ### 2. GET `/api/routing/tpl-stops`
+
 Trova fermate trasporto pubblico vicine.
 
 **Query Parameters:**
+
 - `lat` - Latitudine (required)
 - `lng` - Longitudine (required)
 - `radius` - Raggio in metri (default: 500)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -143,7 +158,7 @@ Trova fermate trasporto pubblico vicine.
     {
       "id": "stop_123",
       "name": "Fermata Piazza Roma",
-      "lat": 42.760,
+      "lat": 42.76,
       "lng": 11.113,
       "distance": 450,
       "lines": ["1", "3", "7"]
@@ -157,6 +172,7 @@ Trova fermate trasporto pubblico vicine.
 ## 🎨 FRONTEND
 
 ### Componente Principale
+
 **File:** `client/src/pages/RoutePage.tsx`
 
 ### Flusso Utente
@@ -209,6 +225,7 @@ Trova fermate trasporto pubblico vicine.
 ```
 
 ### Parsing Destinazione
+
 Il frontend supporta 3 formati di destinazione:
 
 ```typescript
@@ -226,6 +243,7 @@ Il frontend supporta 3 formati di destinazione:
 ```
 
 **Codice:**
+
 ```typescript
 const coordMatch = destination.match(/\(([-\d.]+),\s*([-\d.]+)\)/);
 const stallMatch = destination.match(/Posteggio #(\d+)/);
@@ -235,7 +253,7 @@ let destinationPayload: any;
 if (coordMatch) {
   destinationPayload = {
     lat: parseFloat(coordMatch[1]),
-    lng: parseFloat(coordMatch[2])
+    lng: parseFloat(coordMatch[2]),
   };
 } else if (stallMatch) {
   destinationPayload = { stallId: parseInt(stallMatch[1]) };
@@ -245,6 +263,7 @@ if (coordMatch) {
 ```
 
 ### Navigazione Nativa
+
 **File:** `client/src/pages/RoutePage.tsx` (righe 228-262)
 
 ```typescript
@@ -253,28 +272,29 @@ const handleStartNavigation = () => {
   const coordMatch = destination.match(/\(([-\d.]+),\s*([-\d.]+)\)/);
   const destLat = parseFloat(coordMatch[1]);
   const destLng = parseFloat(coordMatch[2]);
-  
+
   // Mappa modalità
   const travelModeMap: Record<string, string> = {
-    'walk': 'walking',
-    'bike': 'bicycling',
-    'transit': 'transit',
-    'car': 'driving'
+    walk: "walking",
+    bike: "bicycling",
+    transit: "transit",
+    car: "driving",
   };
-  
-  const travelMode = travelModeMap[mode] || 'walking';
-  
+
+  const travelMode = travelModeMap[mode] || "walking";
+
   // URL Google Maps
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${destLat},${destLng}&travelmode=${travelMode}`;
-  
+
   // Apri app nativa
-  window.open(mapsUrl, '_blank');
-  
-  toast.success('🧭 Navigazione avviata! +' + plan.creditsEarned + ' crediti');
+  window.open(mapsUrl, "_blank");
+
+  toast.success("🧭 Navigazione avviata! +" + plan.creditsEarned + " crediti");
 };
 ```
 
 **URL Schema Google Maps:**
+
 ```
 https://www.google.com/maps/dir/
   ?api=1
@@ -284,11 +304,13 @@ https://www.google.com/maps/dir/
 ```
 
 **Comportamento Multi-Piattaforma:**
+
 - 📱 **Android:** Apre Google Maps app (se installata) o browser
 - 🍎 **iOS:** Apre Apple Maps app (default) o Google Maps se preferita
 - 💻 **Desktop:** Apre Google Maps web in nuova tab
 
 **Vantaggi:**
+
 - ✅ Zero configurazione (nessuna API key)
 - ✅ Navigazione turn-by-turn vocale
 - ✅ Traffico real-time
@@ -300,6 +322,7 @@ https://www.google.com/maps/dir/
 ## 🔧 CONFIGURAZIONE
 
 ### Backend (.env)
+
 ```bash
 # Database
 DATABASE_URL=postgresql://neondb_owner:***@ep-bold-silence-adftsojg-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
@@ -313,6 +336,7 @@ NODE_ENV=production
 ```
 
 ### Frontend (.env.production)
+
 ```bash
 VITE_API_URL=https://api.mio-hub.me
 ```
@@ -322,6 +346,7 @@ VITE_API_URL=https://api.mio-hub.me
 ## 🧪 TESTING
 
 ### Test Backend API
+
 ```bash
 # Test calcolo percorso con coordinate GPS
 curl -X POST https://api.mio-hub.me/api/routing/calculate \
@@ -346,6 +371,7 @@ curl "https://api.mio-hub.me/api/routing/tpl-stops?lat=42.76&lng=11.11&radius=10
 ```
 
 ### Test Frontend (Manuale)
+
 1. Apri https://dms-hub-app-new.vercel.app/vetrine/18
 2. Scroll fino a "Come Arrivare"
 3. Click pulsante → Redirect a `/route` con coordinate
@@ -359,9 +385,11 @@ curl "https://api.mio-hub.me/api/routing/tpl-stops?lat=42.76&lng=11.11&radius=10
 ## 🐛 FIX RECENTI
 
 ### v3.6.0 - Mappa GIS Integrata (16 Dic 2025)
+
 **Commit:** `2f7ea09`
 
 **Nuove Funzionalità:**
+
 - ✅ Mappa GIS sempre visibile in RoutePage
 - ✅ Search bar per cercare posteggi/imprese/mercati
 - ✅ Filtri stato: Tutti, Liberi, Occupati, Riservati
@@ -371,6 +399,7 @@ curl "https://api.mio-hub.me/api/routing/tpl-stops?lat=42.76&lng=11.11&radius=10
 - ✅ Stesso design di Dashboard PA Mappa GIS tab
 
 **Implementazione:**
+
 1. ✅ Import MarketMapComponent in RoutePage
 2. ✅ Stati GIS: gisStalls, gisMapData, gisSearchQuery, gisStatusFilter
 3. ✅ useEffect per fetch dati GIS da API backend
@@ -379,23 +408,28 @@ curl "https://api.mio-hub.me/api/routing/tpl-stops?lat=42.76&lng=11.11&radius=10
 6. ✅ Sezione mappa con search, filtri, statistiche, legenda
 
 **File Modificati:**
+
 - `client/src/pages/RoutePage.tsx` (+279 righe)
 
 ---
 
 ### v3.5.1 - Fix Crash Google Maps (16 Dic 2024)
+
 **Commit:** `3fe4a35`
 
 **Problema:**
+
 - Crash applicazione al click "Pianifica Percorso"
 - Errore Google Maps "Questa pagina non carica correttamente"
 - Secondo tentativo causava crash totale
 
 **Causa:**
+
 - Componente `MobilityMap` usa Google Maps API senza API key
 - `window.google.maps` undefined → TypeError
 
 **Soluzione:**
+
 1. ✅ Rimossa mappa Google Maps embedded
 2. ✅ Aggiunto parsing coordinate GPS
 3. ✅ Implementata navigazione nativa (URL scheme)
@@ -408,11 +442,13 @@ curl "https://api.mio-hub.me/api/routing/tpl-stops?lat=42.76&lng=11.11&radius=10
 ## 📊 METRICHE
 
 ### Performance
+
 - API Response Time: <500ms (media)
 - Database Query Time: <10ms (stalls lookup)
 - Frontend Load Time: <2s (First Contentful Paint)
 
 ### Utilizzo
+
 - Posteggi con GPS: 159/182 (87%)
 - Modalità più usata: Walking (stimato 60%)
 - Distanza media: ~5km (stimato)
@@ -423,12 +459,14 @@ curl "https://api.mio-hub.me/api/routing/tpl-stops?lat=42.76&lng=11.11&radius=10
 ## 🔮 ROADMAP
 
 ### v3.7 - OpenRouteService API Key
+
 - [ ] Configurare API key nel backend
 - [ ] Routing preciso con turn-by-turn
 - [ ] Rimuovere fallback Haversine
 - Tempo: 30 minuti
 
 ### v4.0 - Gamification Completa
+
 - [ ] Tracking completamento navigazione
 - [ ] Assegnazione automatica crediti
 - [ ] Classifiche utenti
@@ -436,6 +474,7 @@ curl "https://api.mio-hub.me/api/routing/tpl-stops?lat=42.76&lng=11.11&radius=10
 - Tempo: 1-2 settimane
 
 ### v4.5 - Analytics Avanzati
+
 - [ ] Tracking percorsi completati
 - [ ] Statistiche CO₂ risparmiata totale
 - [ ] Heatmap percorsi più usati
@@ -447,6 +486,7 @@ curl "https://api.mio-hub.me/api/routing/tpl-stops?lat=42.76&lng=11.11&radius=10
 ## 📚 FILE PRINCIPALI
 
 ### Backend
+
 ```
 mihub-backend-rest/
 ├── routes/routing.js              # Endpoint API routing
@@ -458,6 +498,7 @@ mihub-backend-rest/
 ```
 
 ### Frontend
+
 ```
 dms-hub-app-new/
 ├── client/src/pages/
@@ -468,6 +509,7 @@ dms-hub-app-new/
 ```
 
 ### Documentazione
+
 ```
 dms-hub-app-new/
 ├── README_SHOPPING_ROUTE_UPDATED.md  # Questo file
@@ -481,6 +523,7 @@ dms-hub-app-new/
 ## 🎯 CONCLUSIONI
 
 Shopping Route Etico è **production ready** con:
+
 - ✅ Calcolo percorso funzionante
 - ✅ Navigazione nativa affidabile
 - ✅ **Mappa GIS integrata con 160 posteggi** (v3.6)

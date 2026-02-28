@@ -1,19 +1,24 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 /**
  * Proxy endpoint per agent_logs dal backend Hetzner
  * GET /api/mio/agent-logs?conversation_id=xxx&agent_name=yyy&limit=200
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { conversation_id, agent_name, limit = '200', offset = '0' } = req.query;
+    const {
+      conversation_id,
+      agent_name,
+      limit = "200",
+      offset = "0",
+    } = req.query;
 
     if (!conversation_id) {
-      return res.status(400).json({ error: 'conversation_id is required' });
+      return res.status(400).json({ error: "conversation_id is required" });
     }
 
     // Build query params
@@ -24,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (agent_name) {
-      params.set('agent_name', agent_name as string);
+      params.set("agent_name", agent_name as string);
     }
 
     // Proxy to Hetzner backend
@@ -33,10 +38,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[agent-logs] Backend error:', response.status, errorText);
-      return res.status(response.status).json({ 
+      console.error("[agent-logs] Backend error:", response.status, errorText);
+      return res.status(response.status).json({
         error: `Backend error: ${response.status}`,
-        details: errorText 
+        details: errorText,
       });
     }
 
@@ -48,11 +53,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Frontend si aspetta: { logs: [...] }
     // CRITICAL: Backend ora mappa automaticamente message → content
     const backendLogs = data.logs || data.data || [];
-    
+
     // Backward compatibility: mappa message → content se necessario
     const transformedLogs = backendLogs.map((log: any) => ({
       ...log,
-      content: log.content || log.message,  // Preferisci content, fallback a message
+      content: log.content || log.message, // Preferisci content, fallback a message
     }));
 
     return res.status(200).json({
@@ -60,10 +65,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       pagination: data.pagination,
     });
   } catch (error: any) {
-    console.error('[agent-logs] Error:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error?.message 
+    console.error("[agent-logs] Error:", error);
+    return res.status(500).json({
+      error: "Internal server error",
+      message: error?.message,
     });
   }
 }

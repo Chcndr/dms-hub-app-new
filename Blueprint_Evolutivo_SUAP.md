@@ -19,13 +19,13 @@ Il sistema evolverà per supportare l'intero ciclo di vita della pratica, dalla 
 
 ### 2.1 Stack Tecnologico
 
-| Componente | Tecnologia | Hosting | Repository |
-|------------|------------|---------|------------|
-| **Frontend** | React + Tailwind + shadcn/ui | Vercel | `dms-hub-app-new` |
-| **Backend** | Node.js + Express REST | Hetzner | `mihub-backend-rest` |
-| **Database** | PostgreSQL | Neon | - |
-| **Storage** | S3 | AWS | - |
-| **CI/CD** | GitHub Actions | GitHub | - |
+| Componente   | Tecnologia                   | Hosting | Repository           |
+| ------------ | ---------------------------- | ------- | -------------------- |
+| **Frontend** | React + Tailwind + shadcn/ui | Vercel  | `dms-hub-app-new`    |
+| **Backend**  | Node.js + Express REST       | Hetzner | `mihub-backend-rest` |
+| **Database** | PostgreSQL                   | Neon    | -                    |
+| **Storage**  | S3                           | AWS     | -                    |
+| **CI/CD**    | GitHub Actions               | GitHub  | -                    |
 
 ### 2.2 Flusso Dati Architetturale
 
@@ -130,11 +130,11 @@ Il sistema supporta **tre livelli progressivi** di inserimento pratiche, dal pi�
 
 ### 3.1 Panoramica Livelli
 
-| Livello | Nome | Descrizione | Stato | Quando Usarlo |
-|---------|------|-------------|-------|---------------|
-| **0** | **Inserimento Manuale** | Compili i form SCIA/Concessione copiando i dati dal PDF ricevuto | ✅ **Funzionante** | Subito, per testare e per pratiche singole |
-| **1** | **Smart Import** | Carichi il file ZIP/XML e MioHub importa automaticamente i dati | ✅ Backend pronto, ⏳ UI da fare | Quando hai molte pratiche da inserire |
-| **2** | **Interoperabilità PDND** | MioHub riceve direttamente le pratiche dal SUAP centrale | 🔜 Futuro | Dopo accreditamento PDND |
+| Livello | Nome                      | Descrizione                                                      | Stato                            | Quando Usarlo                              |
+| ------- | ------------------------- | ---------------------------------------------------------------- | -------------------------------- | ------------------------------------------ |
+| **0**   | **Inserimento Manuale**   | Compili i form SCIA/Concessione copiando i dati dal PDF ricevuto | ✅ **Funzionante**               | Subito, per testare e per pratiche singole |
+| **1**   | **Smart Import**          | Carichi il file ZIP/XML e MioHub importa automaticamente i dati  | ✅ Backend pronto, ⏳ UI da fare | Quando hai molte pratiche da inserire      |
+| **2**   | **Interoperabilità PDND** | MioHub riceve direttamente le pratiche dal SUAP centrale         | 🔜 Futuro                        | Dopo accreditamento PDND                   |
 
 ### 3.2 Livello 0: Inserimento Manuale (Attivo ORA)
 
@@ -142,23 +142,25 @@ Questo è il flusso che **stai usando adesso** per testare il sistema.
 
 **Passaggi Dettagliati:**
 
-| Step | Azione | Dove |
-|------|--------|------|
-| 1 | Ricevi il PDF della pratica SCIA dal SUAP Comunale | PEC / Email |
-| 2 | Apri il PDF e identifica i dati (Richiedente, CF, Oggetto, etc.) | PDF Viewer |
-| 3 | Vai su MioHub → SSO SUAP → Nuova Pratica | Dashboard SUAP |
-| 4 | Compila il form SCIA o Concessione con i dati del PDF | Form SCIA / Concessione |
-| 5 | Salva la pratica | Bottone Salva |
-| 6 | Verifica i dati nella scheda Dettaglio | Dettaglio Pratica |
-| 7 | Esegui la valutazione | Bottone Valuta |
-| 8 | Genera l'esito (PDF) e invialo al SUAP | Export PDF |
+| Step | Azione                                                           | Dove                    |
+| ---- | ---------------------------------------------------------------- | ----------------------- |
+| 1    | Ricevi il PDF della pratica SCIA dal SUAP Comunale               | PEC / Email             |
+| 2    | Apri il PDF e identifica i dati (Richiedente, CF, Oggetto, etc.) | PDF Viewer              |
+| 3    | Vai su MioHub → SSO SUAP → Nuova Pratica                         | Dashboard SUAP          |
+| 4    | Compila il form SCIA o Concessione con i dati del PDF            | Form SCIA / Concessione |
+| 5    | Salva la pratica                                                 | Bottone Salva           |
+| 6    | Verifica i dati nella scheda Dettaglio                           | Dettaglio Pratica       |
+| 7    | Esegui la valutazione                                            | Bottone Valuta          |
+| 8    | Genera l'esito (PDF) e invialo al SUAP                           | Export PDF              |
 
 **Vantaggi:**
+
 - Funziona subito, senza configurazioni aggiuntive
 - Controllo totale sui dati inseriti
 - Ideale per poche pratiche o per testare il sistema
 
 **Svantaggi:**
+
 - Richiede tempo per copiare i dati manualmente
 - Rischio di errori di trascrizione
 
@@ -203,20 +205,20 @@ Questo è il flusso che potrai usare **appena completiamo l'UI di upload**, senz
 
 ### 4.2 Passaggi Operativi Dettagliati
 
-| Step | Chi | Azione | Strumento |
-|------|-----|--------|-----------|
-| **1** | Cittadino/Impresa | Presenta SCIA tramite portale SUAP | Impresa in un Giorno |
-| **2** | SUAP Comunale | Riceve pratica e la inoltra a te | PEC / Email |
-| **3** | **TU (Operatore MioHub)** | Scarichi il file ZIP/XML dalla PEC | Client Email |
-| **4** | **TU (Operatore MioHub)** | Carichi il file in MioHub (Drag & Drop) | Dashboard SUAP → Upload |
-| **5** | MioHub (Automatico) | Importa dati, crea pratica, estrae allegati | API `/import` |
-| **6** | **TU (Operatore MioHub)** | Verifichi i dati, esegui controlli | Dettaglio Pratica |
-| **7** | **TU (Operatore MioHub)** | Registri le verifiche (DURC, Pagamenti, etc.) | Sezione Checks |
-| **8** | MioHub (Automatico) | Calcola score e suggerisce esito | Rules Engine |
-| **9** | **TU (Operatore MioHub)** | Approvi/Rigetti la pratica | Azioni Workflow |
-| **10** | MioHub (Automatico) | Genera PDF esito (Autorizzazione/Diniego) | Generatore PDF |
-| **11** | **TU (Operatore MioHub)** | Scarichi il PDF e lo invii al SUAP | PEC / Email |
-| **12** | SUAP Comunale | Riceve esito e lo protocolla | Protocollo Comunale |
+| Step   | Chi                       | Azione                                        | Strumento               |
+| ------ | ------------------------- | --------------------------------------------- | ----------------------- |
+| **1**  | Cittadino/Impresa         | Presenta SCIA tramite portale SUAP            | Impresa in un Giorno    |
+| **2**  | SUAP Comunale             | Riceve pratica e la inoltra a te              | PEC / Email             |
+| **3**  | **TU (Operatore MioHub)** | Scarichi il file ZIP/XML dalla PEC            | Client Email            |
+| **4**  | **TU (Operatore MioHub)** | Carichi il file in MioHub (Drag & Drop)       | Dashboard SUAP → Upload |
+| **5**  | MioHub (Automatico)       | Importa dati, crea pratica, estrae allegati   | API `/import`           |
+| **6**  | **TU (Operatore MioHub)** | Verifichi i dati, esegui controlli            | Dettaglio Pratica       |
+| **7**  | **TU (Operatore MioHub)** | Registri le verifiche (DURC, Pagamenti, etc.) | Sezione Checks          |
+| **8**  | MioHub (Automatico)       | Calcola score e suggerisce esito              | Rules Engine            |
+| **9**  | **TU (Operatore MioHub)** | Approvi/Rigetti la pratica                    | Azioni Workflow         |
+| **10** | MioHub (Automatico)       | Genera PDF esito (Autorizzazione/Diniego)     | Generatore PDF          |
+| **11** | **TU (Operatore MioHub)** | Scarichi il PDF e lo invii al SUAP            | PEC / Email             |
+| **12** | SUAP Comunale             | Riceve esito e lo protocolla                  | Protocollo Comunale     |
 
 ### 4.3 Vantaggi di Questo Approccio
 
@@ -231,48 +233,48 @@ Questo è il flusso che potrai usare **appena completiamo l'UI di upload**, senz
 
 ### 5.1 Backend (mihub-backend-rest)
 
-| Componente | Stato | File |
-|------------|-------|------|
-| Endpoint Import XML/ZIP | ✅ Implementato | `routes/suap.js` |
-| Endpoint Refresh | ✅ Implementato | `routes/suap.js` |
-| Endpoint Cambio Stato | ✅ Implementato | `routes/suap.js` |
-| Endpoint Upload Documenti | ✅ Implementato | `routes/suap.js` |
-| Endpoint Download Documenti | ✅ Implementato | `routes/suap.js` |
-| Endpoint Audit Trail | ✅ Implementato | `routes/suap.js` |
-| Endpoint Checks | ✅ Implementato | `routes/suap.js` |
-| Endpoint Azioni | ✅ Implementato | `routes/suap.js` |
-| Endpoint Regole | ✅ Implementato | `routes/suap.js` |
-| Parser XML/ZIP | ✅ Implementato | `src/modules/suap/service.js` |
-| Document Vault (S3) | ✅ Implementato | `src/modules/suap/service.js` |
-| Audit Logger | ✅ Implementato | `src/modules/suap/service.js` |
-| Rules Engine v1 | ✅ Implementato | `src/modules/suap/service.js` |
+| Componente                  | Stato           | File                          |
+| --------------------------- | --------------- | ----------------------------- |
+| Endpoint Import XML/ZIP     | ✅ Implementato | `routes/suap.js`              |
+| Endpoint Refresh            | ✅ Implementato | `routes/suap.js`              |
+| Endpoint Cambio Stato       | ✅ Implementato | `routes/suap.js`              |
+| Endpoint Upload Documenti   | ✅ Implementato | `routes/suap.js`              |
+| Endpoint Download Documenti | ✅ Implementato | `routes/suap.js`              |
+| Endpoint Audit Trail        | ✅ Implementato | `routes/suap.js`              |
+| Endpoint Checks             | ✅ Implementato | `routes/suap.js`              |
+| Endpoint Azioni             | ✅ Implementato | `routes/suap.js`              |
+| Endpoint Regole             | ✅ Implementato | `routes/suap.js`              |
+| Parser XML/ZIP              | ✅ Implementato | `src/modules/suap/service.js` |
+| Document Vault (S3)         | ✅ Implementato | `src/modules/suap/service.js` |
+| Audit Logger                | ✅ Implementato | `src/modules/suap/service.js` |
+| Rules Engine v1             | ✅ Implementato | `src/modules/suap/service.js` |
 
 ### 5.2 Frontend (dms-hub-app-new)
 
-| Componente | Stato | Note |
-|------------|-------|------|
-| Dashboard SUAP | ✅ Funzionante | KPI, Attività Recente |
-| Lista Pratiche | ✅ Funzionante | Filtri, Ricerca |
-| Dettaglio Pratica | ✅ Funzionante | Timeline, Checks |
-| Form SCIA | ✅ Funzionante | Campi aggiornati |
-| Form Concessione | ✅ Funzionante | Campi aggiornati |
-| **Area Upload Drag & Drop** | ⏳ Da Sviluppare | Priorità ALTA |
-| **Gestione Documenti** | ⏳ Da Sviluppare | Upload/Download |
-| **UI Cambio Stato** | ⏳ Da Sviluppare | Bottoni azione |
-| **UI Registrazione Checks** | ⏳ Da Sviluppare | Form manuale |
-| **Generazione PDF Esito** | ⏳ Da Sviluppare | Export |
+| Componente                  | Stato            | Note                  |
+| --------------------------- | ---------------- | --------------------- |
+| Dashboard SUAP              | ✅ Funzionante   | KPI, Attività Recente |
+| Lista Pratiche              | ✅ Funzionante   | Filtri, Ricerca       |
+| Dettaglio Pratica           | ✅ Funzionante   | Timeline, Checks      |
+| Form SCIA                   | ✅ Funzionante   | Campi aggiornati      |
+| Form Concessione            | ✅ Funzionante   | Campi aggiornati      |
+| **Area Upload Drag & Drop** | ⏳ Da Sviluppare | Priorità ALTA         |
+| **Gestione Documenti**      | ⏳ Da Sviluppare | Upload/Download       |
+| **UI Cambio Stato**         | ⏳ Da Sviluppare | Bottoni azione        |
+| **UI Registrazione Checks** | ⏳ Da Sviluppare | Form manuale          |
+| **Generazione PDF Esito**   | ⏳ Da Sviluppare | Export                |
 
 ### 5.3 Database (Neon)
 
-| Tabella | Stato | Note |
-|---------|-------|------|
-| `suap_pratiche` | ✅ Esistente | Verificare vincolo UNIQUE |
-| `suap_eventi` | ✅ Esistente | - |
-| `suap_checks` | ✅ Esistente | - |
-| `suap_decisioni` | ✅ Esistente | - |
-| `suap_azioni` | ✅ Esistente | - |
-| `suap_documenti` | ✅ Esistente | - |
-| `suap_regole` | ✅ Esistente | - |
+| Tabella          | Stato        | Note                      |
+| ---------------- | ------------ | ------------------------- |
+| `suap_pratiche`  | ✅ Esistente | Verificare vincolo UNIQUE |
+| `suap_eventi`    | ✅ Esistente | -                         |
+| `suap_checks`    | ✅ Esistente | -                         |
+| `suap_decisioni` | ✅ Esistente | -                         |
+| `suap_azioni`    | ✅ Esistente | -                         |
+| `suap_documenti` | ✅ Esistente | -                         |
+| `suap_regole`    | ✅ Esistente | -                         |
 
 ---
 
@@ -280,32 +282,32 @@ Questo è il flusso che potrai usare **appena completiamo l'UI di upload**, senz
 
 ### 5.1 Immediati (Questa Settimana)
 
-| # | Attività | Priorità | Responsabile |
-|---|----------|----------|--------------|
-| 1 | Deploy backend R1 su Hetzner | ALTA | Dev |
-| 2 | Installare dipendenze (`adm-zip`, `xml2js`, `@aws-sdk/client-s3`) | ALTA | Dev |
-| 3 | Configurare variabili ambiente S3 su Hetzner | ALTA | DevOps |
-| 4 | Testare endpoint `/import` con file reale | ALTA | QA |
-| 5 | Aggiungere UI Upload Drag & Drop nel frontend | ALTA | Dev |
+| #   | Attività                                                          | Priorità | Responsabile |
+| --- | ----------------------------------------------------------------- | -------- | ------------ |
+| 1   | Deploy backend R1 su Hetzner                                      | ALTA     | Dev          |
+| 2   | Installare dipendenze (`adm-zip`, `xml2js`, `@aws-sdk/client-s3`) | ALTA     | Dev          |
+| 3   | Configurare variabili ambiente S3 su Hetzner                      | ALTA     | DevOps       |
+| 4   | Testare endpoint `/import` con file reale                         | ALTA     | QA           |
+| 5   | Aggiungere UI Upload Drag & Drop nel frontend                     | ALTA     | Dev          |
 
 ### 5.2 Breve Termine (1-2 Settimane)
 
-| # | Attività | Priorità |
-|---|----------|----------|
-| 1 | UI gestione documenti (lista, upload, download) | ALTA |
-| 2 | UI cambio stato pratica (bottoni azione) | ALTA |
-| 3 | UI registrazione checks manuali | MEDIA |
-| 4 | Generazione PDF esito | MEDIA |
-| 5 | Aggiornare sezione Integrazioni con nuovi endpoint | MEDIA |
+| #   | Attività                                           | Priorità |
+| --- | -------------------------------------------------- | -------- |
+| 1   | UI gestione documenti (lista, upload, download)    | ALTA     |
+| 2   | UI cambio stato pratica (bottoni azione)           | ALTA     |
+| 3   | UI registrazione checks manuali                    | MEDIA    |
+| 4   | Generazione PDF esito                              | MEDIA    |
+| 5   | Aggiornare sezione Integrazioni con nuovi endpoint | MEDIA    |
 
 ### 5.3 Medio Termine (1-2 Mesi)
 
-| # | Attività | Priorità |
-|---|----------|----------|
-| 1 | Integrazione PDND (e-service) | ALTA |
-| 2 | Verifica DURC automatica via INPS | ALTA |
-| 3 | Rules Engine configurabile da UI | MEDIA |
-| 4 | Export pacchetto istruttorio completo | MEDIA |
+| #   | Attività                              | Priorità |
+| --- | ------------------------------------- | -------- |
+| 1   | Integrazione PDND (e-service)         | ALTA     |
+| 2   | Verifica DURC automatica via INPS     | ALTA     |
+| 3   | Rules Engine configurabile da UI      | MEDIA    |
+| 4   | Export pacchetto istruttorio completo | MEDIA    |
 
 ---
 
@@ -436,6 +438,7 @@ Response 201:
 ### 7.1 Multi-Ente Isolation
 
 Ogni query è filtrata per `ente_id`. L'isolamento è garantito a livello di:
+
 - Header `x-ente-id` (in sviluppo)
 - JWT Token claim (in produzione)
 
@@ -443,18 +446,18 @@ Ogni query è filtrata per `ente_id`. L'isolamento è garantito a livello di:
 
 Ogni operazione critica genera un evento in `suap_eventi`:
 
-| Tipo Evento | Descrizione |
-|-------------|-------------|
-| `INGESTION` | Pratica ricevuta/importata |
-| `IMPORT_CREATE` | Pratica creata da import |
-| `IMPORT_UPDATE` | Pratica aggiornata da import |
-| `STATUS_CHANGE` | Cambio stato workflow |
-| `CHECK_ADDED` | Verifica registrata |
-| `DOCUMENT_UPLOAD` | Documento caricato |
-| `DOCUMENT_ACCESS` | Documento scaricato |
+| Tipo Evento           | Descrizione                       |
+| --------------------- | --------------------------------- |
+| `INGESTION`           | Pratica ricevuta/importata        |
+| `IMPORT_CREATE`       | Pratica creata da import          |
+| `IMPORT_UPDATE`       | Pratica aggiornata da import      |
+| `STATUS_CHANGE`       | Cambio stato workflow             |
+| `CHECK_ADDED`         | Verifica registrata               |
+| `DOCUMENT_UPLOAD`     | Documento caricato                |
+| `DOCUMENT_ACCESS`     | Documento scaricato               |
 | `EVALUATION_COMPLETE` | Valutazione automatica completata |
-| `ACTION_CREATED` | Azione workflow creata |
-| `REFRESH` | Refresh dati eseguito |
+| `ACTION_CREATED`      | Azione workflow creata            |
+| `REFRESH`             | Refresh dati eseguito             |
 
 ### 7.3 Document Vault
 
@@ -466,6 +469,7 @@ Ogni operazione critica genera un evento in `suap_eventi`:
 ### 7.4 Idempotenza
 
 L'import è idempotente grazie al vincolo `UNIQUE (ente_id, cui)`:
+
 - Se CUI esiste → UPDATE
 - Se CUI non esiste → INSERT
 
@@ -481,13 +485,13 @@ L'import è idempotente grazie al vincolo `UNIQUE (ente_id, cui)`:
 
 **Procedura per aggiungere nuovi endpoint:**
 
-| Step | Azione | Comando |
-|------|--------|--------|
-| 1 | Clonare il repository MIO-hub | `gh repo clone Chcndr/MIO-hub` |
-| 2 | Modificare `api/index.json` | Aggiungere il nuovo service/endpoint |
-| 3 | Incrementare il campo `version` | Es. da 4 a 5 |
-| 4 | Aggiornare `last_updated` | Data corrente (YYYY-MM-DD) |
-| 5 | Commit e push | `git commit -m "feat(api): Add [nome] endpoints" && git push` |
+| Step | Azione                          | Comando                                                       |
+| ---- | ------------------------------- | ------------------------------------------------------------- |
+| 1    | Clonare il repository MIO-hub   | `gh repo clone Chcndr/MIO-hub`                                |
+| 2    | Modificare `api/index.json`     | Aggiungere il nuovo service/endpoint                          |
+| 3    | Incrementare il campo `version` | Es. da 4 a 5                                                  |
+| 4    | Aggiornare `last_updated`       | Data corrente (YYYY-MM-DD)                                    |
+| 5    | Commit e push                   | `git commit -m "feat(api): Add [nome] endpoints" && git push` |
 
 **Struttura endpoint in index.json:**
 
@@ -522,40 +526,40 @@ Il sistema di monitoraggio centralizzato verifica lo stato di tutti i servizi og
 
 **Endpoint Backend:**
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/health` | GET | Ping semplice (uptime) |
-| `/api/health/full` | GET | Check completo tutti i servizi |
-| `/api/health/history` | GET | Storico ultimi N check |
+| Endpoint              | Metodo | Descrizione                    |
+| --------------------- | ------ | ------------------------------ |
+| `/api/health`         | GET    | Ping semplice (uptime)         |
+| `/api/health/full`    | GET    | Check completo tutti i servizi |
+| `/api/health/history` | GET    | Storico ultimi N check         |
 
 **Servizi Monitorati:**
 
-| Servizio | Cosa Verifica | Soglia Latenza |
-|----------|---------------|----------------|
-| `database` | Connessione PostgreSQL (Neon) | 500ms |
-| `storage` | Configurazione S3 | 1000ms |
-| `backend` | Self-check server | 100ms |
-| `guardian` | Endpoint Guardian API | 500ms |
-| `mio_agent` | Endpoint MIO Agent | 1000ms |
-| `pdnd` | Raggiungibilità PDND | 2000ms |
-| `frontend` | Vercel deployment | 500ms |
+| Servizio    | Cosa Verifica                 | Soglia Latenza |
+| ----------- | ----------------------------- | -------------- |
+| `database`  | Connessione PostgreSQL (Neon) | 500ms          |
+| `storage`   | Configurazione S3             | 1000ms         |
+| `backend`   | Self-check server             | 100ms          |
+| `guardian`  | Endpoint Guardian API         | 500ms          |
+| `mio_agent` | Endpoint MIO Agent            | 1000ms         |
+| `pdnd`      | Raggiungibilità PDND          | 2000ms         |
+| `frontend`  | Vercel deployment             | 500ms          |
 
 **Stati Possibili:**
 
-| Stato | Significato | Colore UI |
-|-------|-------------|----------|
-| `ok` | Servizio operativo, latenza normale | 🟢 Verde |
+| Stato  | Significato                         | Colore UI |
+| ------ | ----------------------------------- | --------- |
+| `ok`   | Servizio operativo, latenza normale | 🟢 Verde  |
 | `slow` | Servizio operativo, latenza elevata | 🟡 Giallo |
-| `down` | Servizio non raggiungibile | 🔴 Rosso |
+| `down` | Servizio non raggiungibile          | 🔴 Rosso  |
 
 ### 9.2 Alert Automatici
 
 Quando un servizio cambia stato, viene generato un alert:
 
-| Livello | Trigger | Azione |
-|---------|---------|--------|
-| `warning` | Servizio passa da `ok` a `slow` | Log + UI badge |
-| `critical` | Servizio passa a `down` | Log + UI badge + (futuro: email) |
+| Livello    | Trigger                         | Azione                           |
+| ---------- | ------------------------------- | -------------------------------- |
+| `warning`  | Servizio passa da `ok` a `slow` | Log + UI badge                   |
+| `critical` | Servizio passa a `down`         | Log + UI badge + (futuro: email) |
 
 ### 9.3 UI Health Dashboard
 
@@ -569,11 +573,11 @@ La dashboard è accessibile da **Sistema → Tab "Health"** e mostra:
 
 **File Coinvolti:**
 
-| File | Repository | Descrizione |
-|------|------------|-------------|
-| `routes/health-monitor.js` | mihub-backend-rest | Endpoint backend |
-| `components/HealthDashboard.tsx` | dms-hub-app-new | UI frontend |
-| `components/GuardianLogsSection.tsx` | dms-hub-app-new | Container con tab |
+| File                                 | Repository         | Descrizione       |
+| ------------------------------------ | ------------------ | ----------------- |
+| `routes/health-monitor.js`           | mihub-backend-rest | Endpoint backend  |
+| `components/HealthDashboard.tsx`     | dms-hub-app-new    | UI frontend       |
+| `components/GuardianLogsSection.tsx` | dms-hub-app-new    | Container con tab |
 
 ---
 
@@ -622,24 +626,24 @@ La dashboard è accessibile da **Sistema → Tab "Health"** e mostra:
 
 ### 10.3 Checklist Prima di Iniziare
 
-| # | Verifica | Comando/Azione |
-|---|----------|----------------|
-| 1 | Clona i repository necessari | `gh repo clone Chcndr/dms-hub-app-new` |
-| 2 | Verifica che il backend sia attivo | `curl https://orchestratore.mio-hub.me/api/health` |
-| 3 | Leggi il Blueprint | Questo file |
-| 4 | Identifica dove va il codice | Frontend → `dms-hub-app-new`, Backend → `mihub-backend-rest` |
-| 5 | Verifica endpoint esistenti | `MIO-hub/api/index.json` |
+| #   | Verifica                           | Comando/Azione                                               |
+| --- | ---------------------------------- | ------------------------------------------------------------ |
+| 1   | Clona i repository necessari       | `gh repo clone Chcndr/dms-hub-app-new`                       |
+| 2   | Verifica che il backend sia attivo | `curl https://orchestratore.mio-hub.me/api/health`           |
+| 3   | Leggi il Blueprint                 | Questo file                                                  |
+| 4   | Identifica dove va il codice       | Frontend → `dms-hub-app-new`, Backend → `mihub-backend-rest` |
+| 5   | Verifica endpoint esistenti        | `MIO-hub/api/index.json`                                     |
 
 ### 10.4 Cosa NON Fare (Errori Comuni)
 
-| ❌ NON FARE | ✅ FARE INVECE |
-|-------------|----------------|
-| Creare un nuovo progetto Manus WebDev | Usare i repository esistenti |
-| Hardcodare endpoint nel frontend | Aggiungerli a `MIO-hub/api/index.json` |
-| Modificare lo schema DB senza documentare | Aggiornare questo Blueprint |
-| Ignorare l'architettura a due backend | Rispettare la separazione Frontend/Backend |
-| Duplicare codice già esistente | Verificare cosa c'è prima |
-| Fare modifiche senza push su GitHub | Sempre commit + push |
+| ❌ NON FARE                               | ✅ FARE INVECE                             |
+| ----------------------------------------- | ------------------------------------------ |
+| Creare un nuovo progetto Manus WebDev     | Usare i repository esistenti               |
+| Hardcodare endpoint nel frontend          | Aggiungerli a `MIO-hub/api/index.json`     |
+| Modificare lo schema DB senza documentare | Aggiornare questo Blueprint                |
+| Ignorare l'architettura a due backend     | Rispettare la separazione Frontend/Backend |
+| Duplicare codice già esistente            | Verificare cosa c'è prima                  |
+| Fare modifiche senza push su GitHub       | Sempre commit + push                       |
 
 ### 10.5 Procedura per Nuove Funzionalità
 
@@ -654,15 +658,15 @@ La dashboard è accessibile da **Sistema → Tab "Health"** e mostra:
 
 ### 10.6 File Critici da NON Eliminare
 
-| File | Repository | Motivo |
-|------|------------|--------|
-| `Blueprint_Evolutivo_SUAP.md` | dms-hub-app-new | Documentazione architettura |
-| `api/index.json` | MIO-hub | Registro endpoint |
-| `routes/suap.js` | mihub-backend-rest | API SUAP |
-| `src/modules/suap/service.js` | mihub-backend-rest | Logica business SUAP |
-| `components/GuardianLogsSection.tsx` | dms-hub-app-new | Sistema logs |
-| `components/HealthDashboard.tsx` | dms-hub-app-new | Monitoraggio |
-| `components/Integrazioni.tsx` | dms-hub-app-new | Catalogo API |
+| File                                 | Repository         | Motivo                      |
+| ------------------------------------ | ------------------ | --------------------------- |
+| `Blueprint_Evolutivo_SUAP.md`        | dms-hub-app-new    | Documentazione architettura |
+| `api/index.json`                     | MIO-hub            | Registro endpoint           |
+| `routes/suap.js`                     | mihub-backend-rest | API SUAP                    |
+| `src/modules/suap/service.js`        | mihub-backend-rest | Logica business SUAP        |
+| `components/GuardianLogsSection.tsx` | dms-hub-app-new    | Sistema logs                |
+| `components/HealthDashboard.tsx`     | dms-hub-app-new    | Monitoraggio                |
+| `components/Integrazioni.tsx`        | dms-hub-app-new    | Catalogo API                |
 
 ### 10.7 Comunicazione con l'Utente
 
@@ -677,21 +681,21 @@ La dashboard è accessibile da **Sistema → Tab "Health"** e mostra:
 
 ### Release 2 (R2) - Integrazione PDND
 
-| Funzionalità | Complessità | Dipendenze |
-|--------------|-------------|------------|
-| Connettore PDND (e-service) | ALTA | Accreditamento |
-| Verifica DURC via INPS | MEDIA | API INPS |
-| Verifica Camera Commercio | MEDIA | API CCIAA |
-| Notifiche automatiche | BASSA | - |
+| Funzionalità                | Complessità | Dipendenze     |
+| --------------------------- | ----------- | -------------- |
+| Connettore PDND (e-service) | ALTA        | Accreditamento |
+| Verifica DURC via INPS      | MEDIA       | API INPS       |
+| Verifica Camera Commercio   | MEDIA       | API CCIAA      |
+| Notifiche automatiche       | BASSA       | -              |
 
 ### Release 3 (R3) - Ente Sussidiario Completo
 
-| Funzionalità | Complessità | Dipendenze |
-|--------------|-------------|------------|
-| Ricezione pratiche via WS | ALTA | Accreditamento SSU |
-| Invio esiti via WS | ALTA | Certificati |
-| Firma digitale automatica | ALTA | HSM |
-| Integrazione PEC | MEDIA | Provider PEC |
+| Funzionalità              | Complessità | Dipendenze         |
+| ------------------------- | ----------- | ------------------ |
+| Ricezione pratiche via WS | ALTA        | Accreditamento SSU |
+| Invio esiti via WS        | ALTA        | Certificati        |
+| Firma digitale automatica | ALTA        | HSM                |
+| Integrazione PEC          | MEDIA       | Provider PEC       |
 
 ---
 
@@ -705,4 +709,4 @@ La dashboard è accessibile da **Sistema → Tab "Health"** e mostra:
 
 ---
 
-*Documento generato da Manus AI. Ultimo aggiornamento: 29 Dicembre 2024*
+_Documento generato da Manus AI. Ultimo aggiornamento: 29 Dicembre 2024_

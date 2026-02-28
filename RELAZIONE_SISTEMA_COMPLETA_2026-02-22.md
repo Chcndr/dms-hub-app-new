@@ -1,4 +1,5 @@
 # RELAZIONE COMPLETA DEL SISTEMA DMS HUB
+
 ## Analisi Totale - 22 Febbraio 2026
 
 **Progetto**: Digital Market System Hub - Gemello Digitale del Commercio Nazionale
@@ -27,6 +28,7 @@
 Il sistema DMS Hub e' **funzionante e stabile in produzione**. La piattaforma serve correttamente tutti i tipi di utente (PA, imprese, cittadini, pubblico) con un sistema RBAC maturo e un'impersonificazione per comune collaudata.
 
 **Punti di Forza:**
+
 - 32 tab operativi nella DashboardPA
 - Sistema RBAC completo con ProtectedTab
 - Impersonificazione comuni stabile (22 file integrati)
@@ -35,6 +37,7 @@ Il sistema DMS Hub e' **funzionante e stabile in produzione**. La piattaforma se
 - 68 tabelle nel database PostgreSQL Neon
 
 **Aree Critiche da Risolvere:**
+
 - 3 vulnerabilita di sicurezza CRITICHE (eval, XSS innerHTML, chiavi Firebase esposte)
 - DashboardPA.tsx ha 7.080 righe (file troppo grande)
 - 122 utilizzi di useMemo/useCallback (27 useMemo + 95 useCallback) — pochi per la dimensione del progetto
@@ -47,57 +50,57 @@ Il sistema DMS Hub e' **funzionante e stabile in produzione**. La piattaforma se
 
 ### Frontend (client/src/)
 
-| Metrica | Valore |
-|---------|--------|
-| Componenti React | 147 |
-| Pagine | 37 |
-| Hooks custom | 11 |
-| Contexts | 7 |
-| Componenti shadcn/ui | 53 |
-| Componenti SUAP | 9 |
-| Componenti Markets | 4 |
-| File TS/TSX totali | 223 |
+| Metrica                  | Valore  |
+| ------------------------ | ------- |
+| Componenti React         | 147     |
+| Pagine                   | 37      |
+| Hooks custom             | 11      |
+| Contexts                 | 7       |
+| Componenti shadcn/ui     | 53      |
+| Componenti SUAP          | 9       |
+| Componenti Markets       | 4       |
+| File TS/TSX totali       | 223     |
 | Righe di codice frontend | 105.659 |
-| Pagine lazy-loaded | 30 |
+| Pagine lazy-loaded       | 30      |
 
 ### File piu' grandi (rischio manutenibilita')
 
-| File | Righe | Priorita' refactoring |
-|------|-------|----------------------|
-| DashboardPA.tsx | 7.080 | ALTA |
-| GestioneMercati.tsx | 4.188 | MEDIA |
-| ControlliSanzioniPanel.tsx | 3.415 | MEDIA |
-| WalletPanel.tsx | 3.006 | BASSA |
-| MarketCompaniesTab.tsx | 2.990 | BASSA |
-| Integrazioni.tsx | 2.857 | BASSA |
-| GamingRewardsPanel.tsx | 2.676 | BASSA |
-| ComuniPanel.tsx | 2.623 | BASSA |
+| File                       | Righe | Priorita' refactoring |
+| -------------------------- | ----- | --------------------- |
+| DashboardPA.tsx            | 7.080 | ALTA                  |
+| GestioneMercati.tsx        | 4.188 | MEDIA                 |
+| ControlliSanzioniPanel.tsx | 3.415 | MEDIA                 |
+| WalletPanel.tsx            | 3.006 | BASSA                 |
+| MarketCompaniesTab.tsx     | 2.990 | BASSA                 |
+| Integrazioni.tsx           | 2.857 | BASSA                 |
+| GamingRewardsPanel.tsx     | 2.676 | BASSA                 |
+| ComuniPanel.tsx            | 2.623 | BASSA                 |
 
-### Backend (server/ - archiviato in _cantina/)
+### Backend (server/ - archiviato in \_cantina/)
 
-| Metrica | Valore |
-|---------|--------|
-| Router tRPC | 15 |
-| Procedure tRPC | 100+ |
-| Query helpers DB | 35+ |
-| Migrazioni SQL | 7 |
-| Script utility | 12 |
+| Metrica          | Valore |
+| ---------------- | ------ |
+| Router tRPC      | 15     |
+| Procedure tRPC   | 100+   |
+| Query helpers DB | 35+    |
+| Migrazioni SQL   | 7      |
+| Script utility   | 12     |
 
 ### Database (PostgreSQL Neon)
 
-| Categoria | Tabelle | Stato |
-|-----------|---------|-------|
-| Core Business (mercati, posteggi, operatori) | 10 | Attive |
-| Financial/Wallet | 8 | Attive |
-| Auth/RBAC | 5 | Attive |
-| Agent/AI | 8 | Attive |
-| Analytics/Monitoring | 12+ | Attive |
-| Sustainability/TCC | 5 | Attive |
-| Civic/Notifications | 4 | Attive |
-| Integrations/API | 5 | Attive |
-| Legacy/Deprecated | 5 | Da archiviare |
-| Backup vecchi | 2 | Da eliminare |
-| **TOTALE** | **~68** | |
+| Categoria                                    | Tabelle | Stato         |
+| -------------------------------------------- | ------- | ------------- |
+| Core Business (mercati, posteggi, operatori) | 10      | Attive        |
+| Financial/Wallet                             | 8       | Attive        |
+| Auth/RBAC                                    | 5       | Attive        |
+| Agent/AI                                     | 8       | Attive        |
+| Analytics/Monitoring                         | 12+     | Attive        |
+| Sustainability/TCC                           | 5       | Attive        |
+| Civic/Notifications                          | 4       | Attive        |
+| Integrations/API                             | 5       | Attive        |
+| Legacy/Deprecated                            | 5       | Da archiviare |
+| Backup vecchi                                | 2       | Da eliminare  |
+| **TOTALE**                                   | **~68** |               |
 
 ---
 
@@ -115,55 +118,55 @@ Deploy:   Vercel (frontend) + Hetzner VPS (backend) + PM2
 
 ### Router tRPC Registrati (15)
 
-| Router | Procedure | Auth |
-|--------|-----------|------|
-| system | health, version | public |
-| auth | me, logout, checkRoles, createFirebaseSession, bootstrapAdmin | mixed |
-| analytics | overview, markets, shops, transactions, checkins, products | protected |
-| dmsHub | markets.*, stalls.*, vendors.*, concessions.*, presences.*, inspections.* | mixed |
-| wallet | stats, list, create, ricarica, ricaricaPagoPA, decurtazione, generaAvviso | protected/admin |
-| integrations | apiKeys.*, webhooks.*, apiStats.*, externalConnections.* | admin |
-| mihub | createTask, getTasks, getProjects, sendMessage, getBrain | protected |
-| mioAgent | getLogs, createLog, searchLogs, exportLogs | protected |
-| tccSecurity | generateSignedQR, validateQR, recordCheckin, fraudEvents | protected/admin |
-| guardian | integrations, logs, testEndpoint | admin |
-| gdpr | exportMyData, deleteMyData, getRetention, clearOldData | protected/admin |
-| carbonCredits | config, fundTransactions, reimbursements | protected |
-| tper | stops, sync | public/admin |
-| dmsLegacy | export.*, sync.*, health | admin |
-| logs | system, reportClientError | admin/public |
+| Router        | Procedure                                                                 | Auth            |
+| ------------- | ------------------------------------------------------------------------- | --------------- |
+| system        | health, version                                                           | public          |
+| auth          | me, logout, checkRoles, createFirebaseSession, bootstrapAdmin             | mixed           |
+| analytics     | overview, markets, shops, transactions, checkins, products                | protected       |
+| dmsHub        | markets._, stalls._, vendors._, concessions._, presences._, inspections._ | mixed           |
+| wallet        | stats, list, create, ricarica, ricaricaPagoPA, decurtazione, generaAvviso | protected/admin |
+| integrations  | apiKeys._, webhooks._, apiStats._, externalConnections._                  | admin           |
+| mihub         | createTask, getTasks, getProjects, sendMessage, getBrain                  | protected       |
+| mioAgent      | getLogs, createLog, searchLogs, exportLogs                                | protected       |
+| tccSecurity   | generateSignedQR, validateQR, recordCheckin, fraudEvents                  | protected/admin |
+| guardian      | integrations, logs, testEndpoint                                          | admin           |
+| gdpr          | exportMyData, deleteMyData, getRetention, clearOldData                    | protected/admin |
+| carbonCredits | config, fundTransactions, reimbursements                                  | protected       |
+| tper          | stops, sync                                                               | public/admin    |
+| dmsLegacy     | export._, sync._, health                                                  | admin           |
+| logs          | system, reportClientError                                                 | admin/public    |
 
 ### Tab DashboardPA (32 tab)
 
-| Tab ID | Componente | Impersonificazione | Filtro Comune |
-|--------|------------|-------------------|---------------|
-| dashboard | Overview KPI + GestioneHubMapWrapper | Visibile | Parziale |
-| mercati | GestioneMercati | Visibile | useImpersonation() |
-| imprese | MarketCompaniesTab | Visibile | addComuneIdToUrl() |
-| businesses | ImpreseQualificazioniPanel | Visibile | addComuneIdToUrl() |
-| ssosuap | SuapPanel | Visibile | getImpersonationParams() |
-| wallet | WalletPanel | Visibile | addComuneIdToUrl() |
-| gaming | GamingRewardsPanel | Visibile | useImpersonation() |
-| sustainability | Card TCC inline | Visibile | Nessuno |
-| carboncredits | Sistema TCC v2.1 | Visibile | Nessuno |
-| realtime | Stats real-time inline | Visibile | Nessuno |
-| civic | CivicReportsPanel + Heatmap | Visibile | useImpersonation() |
-| notifications | NotificationsPanel | Visibile | addComuneIdToUrl() |
-| inspections | ControlliSanzioniPanel | Visibile | Nessuno |
-| mobility | MobilityMap + TransportContext | Visibile | Nessuno |
-| users | ClientiTab | Visibile | Nessuno |
-| tpas | E-commerce vs Fisico | Visibile | Nessuno |
-| docs | Sub-tabs (Formazione, Bandi, SCIA) | Visibile | Nessuno |
-| mappa | MarketMapComponent + GIS | Visibile | Nessuno |
-| workspace | SharedWorkspace | Nascosto | addComuneIdToUrl() |
-| reports | NativeReportComponent + LegacyReportCards | Nascosto | Nessuno |
-| ai | MultiAgentChatView | Nascosto | Nessuno |
-| security | SecurityTab | Nascosto | Nessuno |
-| sistema | LogsSectionReal + DebugSectionReal | Nascosto | Nessuno |
-| integrations | Integrazioni | Nascosto | Nessuno |
-| comuni | ComuniPanel | Nascosto | Nessuno |
-| settings | Impostazioni | Visibile | Nessuno |
-| council | Concilio AI (toggle) | Nascosto | Nessuno |
+| Tab ID         | Componente                                | Impersonificazione | Filtro Comune            |
+| -------------- | ----------------------------------------- | ------------------ | ------------------------ |
+| dashboard      | Overview KPI + GestioneHubMapWrapper      | Visibile           | Parziale                 |
+| mercati        | GestioneMercati                           | Visibile           | useImpersonation()       |
+| imprese        | MarketCompaniesTab                        | Visibile           | addComuneIdToUrl()       |
+| businesses     | ImpreseQualificazioniPanel                | Visibile           | addComuneIdToUrl()       |
+| ssosuap        | SuapPanel                                 | Visibile           | getImpersonationParams() |
+| wallet         | WalletPanel                               | Visibile           | addComuneIdToUrl()       |
+| gaming         | GamingRewardsPanel                        | Visibile           | useImpersonation()       |
+| sustainability | Card TCC inline                           | Visibile           | Nessuno                  |
+| carboncredits  | Sistema TCC v2.1                          | Visibile           | Nessuno                  |
+| realtime       | Stats real-time inline                    | Visibile           | Nessuno                  |
+| civic          | CivicReportsPanel + Heatmap               | Visibile           | useImpersonation()       |
+| notifications  | NotificationsPanel                        | Visibile           | addComuneIdToUrl()       |
+| inspections    | ControlliSanzioniPanel                    | Visibile           | Nessuno                  |
+| mobility       | MobilityMap + TransportContext            | Visibile           | Nessuno                  |
+| users          | ClientiTab                                | Visibile           | Nessuno                  |
+| tpas           | E-commerce vs Fisico                      | Visibile           | Nessuno                  |
+| docs           | Sub-tabs (Formazione, Bandi, SCIA)        | Visibile           | Nessuno                  |
+| mappa          | MarketMapComponent + GIS                  | Visibile           | Nessuno                  |
+| workspace      | SharedWorkspace                           | Nascosto           | addComuneIdToUrl()       |
+| reports        | NativeReportComponent + LegacyReportCards | Nascosto           | Nessuno                  |
+| ai             | MultiAgentChatView                        | Nascosto           | Nessuno                  |
+| security       | SecurityTab                               | Nascosto           | Nessuno                  |
+| sistema        | LogsSectionReal + DebugSectionReal        | Nascosto           | Nessuno                  |
+| integrations   | Integrazioni                              | Nascosto           | Nessuno                  |
+| comuni         | ComuniPanel                               | Nascosto           | Nessuno                  |
+| settings       | Impostazioni                              | Visibile           | Nessuno                  |
+| council        | Concilio AI (toggle)                      | Nascosto           | Nessuno                  |
 
 ---
 
@@ -172,27 +175,36 @@ Deploy:   Vercel (frontend) + Hetzner VPS (backend) + PM2
 ### Vulnerabilita' CRITICHE (da risolvere immediatamente)
 
 #### CRITICA 1: eval() in MessageContent.tsx (riga 35)
+
 ```typescript
 eval(code); // Esegue codice arbitrario dagli agenti AI
 ```
+
 - **Rischio**: Remote Code Execution (RCE) nel browser
 - **Impatto**: Un agente compromesso puo' eseguire qualsiasi JavaScript
 - **Fix**: Sostituire con Web Worker sandboxed o iframe con CSP restrittivo
 - **Priorita'**: IMMEDIATA
 
 #### CRITICA 2: XSS via innerHTML in DashboardPA.tsx (riga 5040-5045)
+
 ```typescript
-list.innerHTML = data.data.map((i: any) => `<div onclick="...">${i.denominazione}</div>`).join('');
+list.innerHTML = data.data
+  .map((i: any) => `<div onclick="...">${i.denominazione}</div>`)
+  .join("");
 ```
+
 - **Rischio**: Stored/Reflected XSS - dati utente iniettati in HTML senza escaping
 - **Impatto**: Furto sessione, account takeover
 - **Fix**: Convertire in rendering React JSX + DOMPurify
 - **Priorita'**: IMMEDIATA
 
 #### CRITICA 3: Chiavi Firebase hardcoded in firebase.ts (riga 31-38)
+
 ```typescript
-apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBQlKp8jQi7Q19tXQtTYpdgivw-WyhocTg"
+apiKey: import.meta.env.VITE_FIREBASE_API_KEY ||
+  "AIzaSyBQlKp8jQi7Q19tXQtTYpdgivw-WyhocTg";
 ```
+
 - **Rischio**: Chiavi gia' esposte nel codice sorgente
 - **Nota**: Le API Key Firebase Web sono pubbliche per design, ma servono restrizioni
 - **Fix**: Rimuovere fallback hardcoded, verificare restrizioni nel Firebase Console
@@ -200,23 +212,23 @@ apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBQlKp8jQi7Q19tXQtTYpdgiv
 
 ### Vulnerabilita' ALTE
 
-| # | Problema | File | Fix |
-|---|----------|------|-----|
-| 4 | Redirect non validati | ComuniPanel.tsx:524 | Validare URL redirect |
-| 5 | Token in localStorage | FirebaseAuthContext.tsx:578 | Spostare in httpOnly cookie |
-| 6 | Missing CSRF | orchestratorClient.ts | Aggiungere middleware CSRF |
-| 7 | Raw SQL in routers.ts | routers.ts:43-65 | Usare Drizzle insert().values() |
-| 8 | Analytics pubbliche | analytics.* routes | Spostare a protectedProcedure |
+| #   | Problema              | File                        | Fix                             |
+| --- | --------------------- | --------------------------- | ------------------------------- |
+| 4   | Redirect non validati | ComuniPanel.tsx:524         | Validare URL redirect           |
+| 5   | Token in localStorage | FirebaseAuthContext.tsx:578 | Spostare in httpOnly cookie     |
+| 6   | Missing CSRF          | orchestratorClient.ts       | Aggiungere middleware CSRF      |
+| 7   | Raw SQL in routers.ts | routers.ts:43-65            | Usare Drizzle insert().values() |
+| 8   | Analytics pubbliche   | analytics.\* routes         | Spostare a protectedProcedure   |
 
 ### Vulnerabilita' MEDIE
 
-| # | Problema | Impatto | Fix |
-|---|----------|---------|-----|
-| 9 | 136 tipi `any` | Type safety debole | Sostituire con tipi corretti |
-| 10 | 122 useMemo/useCallback (pochi per progetto) | Re-render eccessivi | Aggiungere memoization |
-| 11 | No code-splitting tab | Bundle size | Dynamic import per tab |
-| 12 | Error handling inconsistente | UX degradata | Errori strutturati |
-| 13 | Token auth misti | Confusione auth state | Standardizzare pattern |
+| #   | Problema                                     | Impatto               | Fix                          |
+| --- | -------------------------------------------- | --------------------- | ---------------------------- |
+| 9   | 136 tipi `any`                               | Type safety debole    | Sostituire con tipi corretti |
+| 10  | 122 useMemo/useCallback (pochi per progetto) | Re-render eccessivi   | Aggiungere memoization       |
+| 11  | No code-splitting tab                        | Bundle size           | Dynamic import per tab       |
+| 12  | Error handling inconsistente                 | UX degradata          | Errori strutturati           |
+| 13  | Token auth misti                             | Confusione auth state | Standardizzare pattern       |
 
 ### Punti di Forza Sicurezza
 
@@ -230,17 +242,17 @@ apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBQlKp8jQi7Q19tXQtTYpdgiv
 
 ### Score Conformita' Attuale
 
-| Area | Score | Note |
-|------|-------|------|
-| HTTPS & Certificati | 10/10 | OK |
-| Autenticazione | 8/10 | -2 per token in localStorage |
-| Validazione Input (Zod) | 9/10 | -1 per alcune procedure senza validazione |
-| RBAC & Autorizzazione | 10/10 | Completo |
-| Rate Limiting | 9/10 | -1 per analytics pubbliche |
-| Security Headers | 9/10 | -1 per CSP che ammette eval |
-| Audit Trail | 9/10 | -1 per wallet senza audit esplicito |
-| GDPR | 9/10 | -1 per DPIA da formalizzare |
-| **MEDIA** | **9.1/10** | Con riserve su eval/XSS |
+| Area                    | Score      | Note                                      |
+| ----------------------- | ---------- | ----------------------------------------- |
+| HTTPS & Certificati     | 10/10      | OK                                        |
+| Autenticazione          | 8/10       | -2 per token in localStorage              |
+| Validazione Input (Zod) | 9/10       | -1 per alcune procedure senza validazione |
+| RBAC & Autorizzazione   | 10/10      | Completo                                  |
+| Rate Limiting           | 9/10       | -1 per analytics pubbliche                |
+| Security Headers        | 9/10       | -1 per CSP che ammette eval               |
+| Audit Trail             | 9/10       | -1 per wallet senza audit esplicito       |
+| GDPR                    | 9/10       | -1 per DPIA da formalizzare               |
+| **MEDIA**               | **9.1/10** | Con riserve su eval/XSS                   |
 
 ---
 
@@ -248,29 +260,32 @@ apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBQlKp8jQi7Q19tXQtTYpdgiv
 
 ### Stato Attuale
 
-| Metrica | Valore | Target | Stato |
-|---------|--------|--------|-------|
-| Tempo risposta API medio | ~142ms | <200ms | OK |
-| Success rate API | 99.8% | >99.5% | OK |
-| Endpoint operativi | 288/328 (87.8%) | >95% | Da migliorare |
-| Endpoint con errore 500 | 0 | 0 | OK |
-| Pagine lazy-loaded | 30/37 | Tutte | Buono |
+| Metrica                  | Valore          | Target | Stato         |
+| ------------------------ | --------------- | ------ | ------------- |
+| Tempo risposta API medio | ~142ms          | <200ms | OK            |
+| Success rate API         | 99.8%           | >99.5% | OK            |
+| Endpoint operativi       | 288/328 (87.8%) | >95%   | Da migliorare |
+| Endpoint con errore 500  | 0               | 0      | OK            |
+| Pagine lazy-loaded       | 30/37           | Tutte  | Buono         |
 
 ### Problemi Performance Identificati
 
 #### 1. Zero Memoization React
+
 - **0 utilizzi** di `React.memo`, `useMemo`, `useCallback` nell'intero frontend
 - Ogni re-render del parent causa re-render di tutti i figli
 - Liste con map() creano nuove referenze ad ogni render
 - **Impatto**: UI lenta su mobile e dispositivi con risorse limitate
 
 #### 2. DashboardPA Monolitico (7.080 righe)
+
 - Import di 60+ componenti al top level
 - Tutti i 32 tab caricati in memoria anche quando non visibili
 - Nessun dynamic import per i singoli tab
 - **Impatto**: First Contentful Paint lento, alto consumo RAM
 
 #### 3. Polling Interval
+
 - Dashboard overview: 30s polling
 - TCC fund stats: 30s refresh
 - Guardian logs: 30s refresh
@@ -278,6 +293,7 @@ apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBQlKp8jQi7Q19tXQtTYpdgiv
 - **Nota**: Buona ottimizzazione - polling disabilitato su tab nascosti
 
 #### 4. Query N+1 Potenziali
+
 - `GestioneMercati.tsx:258`: `.map()` su risultati query potrebbe generare N+1
 - Nessun `query_timeout` configurato nel pool DB
 - **Impatto**: Query lente su dataset grandi (target 8.000 mercati)
@@ -297,6 +313,7 @@ apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBQlKp8jQi7Q19tXQtTYpdgiv
 ### Stato Attuale del Sistema Associazioni
 
 **Cosa esiste gia':**
+
 - `AssociazioniPanel.tsx`: Pannello con lista, form, sotto-tab (Formatori, Bandi, SCIA)
 - `useImpersonation.ts`: Supporta `associazione_id` e `associazione_nome` nei parametri URL
 - `ImpersonationBanner.tsx`: Mostra barra gialla anche per associazioni (icona Briefcase)
@@ -305,6 +322,7 @@ apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBQlKp8jQi7Q19tXQtTYpdgiv
 - DB: 4 tabelle nuove (associazioni, contratti_associazione, fatture_associazione, utenti_associazione)
 
 **Cosa NON funziona:**
+
 - I dati nei tab NON sono filtrati per associazione (si vedono dati globali)
 - Il bottone "Concessione" nel SuapPanel e' visibile (deve essere nascosto)
 - Le statistiche SUAP mostrano dati globali (devono partire da zero)
@@ -318,6 +336,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 ---
 
 #### TAB 1: dashboard (Overview)
+
 - **Componente**: DashboardPA inline (KPI cards + GestioneHubMapWrapper)
 - **Come carica dati**: `fetch(MIHUB_API + '/api/stats/overview')` con `comuneFilter`
 - **Ora con associazione**: Mostra dati globali (non filtrati)
@@ -327,6 +346,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Tabelle DB**: `associazioni`, `contratti_associazione`
 
 #### TAB 2: gaming (Gaming & Rewards)
+
 - **Componente**: `GamingRewardsPanel.tsx`
 - **Come carica dati**: `useImpersonation()` + filtra per `comuneId`
 - **Ora con associazione**: Mostra dati globali (il filtro agisce solo su comuneId)
@@ -336,6 +356,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Tabelle DB**: Nessuna
 
 #### TAB 3: sustainability (Sostenibilita')
+
 - **Componente**: Card inline in DashboardPA
 - **Come carica dati**: Dati statici / stats overview
 - **Ora con associazione**: Mostra dati globali
@@ -344,6 +365,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Rischio regressione comuni**: NESSUNO
 
 #### TAB 4: realtime (Real-time)
+
 - **Componente**: Inline in DashboardPA (Activity cards)
 - **Come carica dati**: `fetch(MIHUB_API + '/api/stats/realtime')`
 - **Ora con associazione**: Mostra dati globali
@@ -352,6 +374,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Rischio regressione comuni**: NESSUNO
 
 #### TAB 5: ai (MIO Agent)
+
 - **Componente**: `MultiAgentChatView`
 - **Come carica dati**: Chat via API mihub
 - **Ora con associazione**: Funziona normalmente (chat AI)
@@ -360,6 +383,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Rischio regressione comuni**: NESSUNO
 
 #### TAB 6: civic (Segnalazioni)
+
 - **Componente**: `CivicReportsPanel.tsx` + `CivicReportsHeatmap.tsx`
 - **Come carica dati**: `useImpersonation()` → `comune_id` nel fetch
 - **Ora con associazione**: Mostra dati del comune_id=1 di default
@@ -368,6 +392,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Rischio regressione comuni**: BASSO (aggiungere check prima del fetch)
 
 #### TAB 7: businesses (Imprese/Qualificazione)
+
 - **Componente**: `ImpreseQualificazioniPanel.tsx`
 - **Come carica dati**: `addComuneIdToUrl()` per filtrare per comune
 - **Ora con associazione**: Mostra tutte le imprese (nessun filtro associazione)
@@ -377,6 +402,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Tabelle DB**: `bandi_associazioni`, `servizi_associazioni`
 
 #### TAB 8: imprese (MarketCompaniesTab)
+
 - **Componente**: `MarketCompaniesTab.tsx`
 - **Come carica dati**: `addComuneIdToUrl()` per filtrare per comune
 - **Ora con associazione**: Mostra tutte le imprese
@@ -386,6 +412,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Tabelle DB**: `utenti_associazione`
 
 #### TAB 9: mobility (Mobilita')
+
 - **Componente**: MobilityMap + TransportContext
 - **Come carica dati**: GTFS data, fermate bus
 - **Ora con associazione**: Funziona normalmente
@@ -394,6 +421,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Rischio regressione comuni**: NESSUNO
 
 #### TAB 10: presenze
+
 - **Componente**: NON ESISTE nella DashboardPA attuale
 - **Stato**: Tab nel sistema permessi ma non renderizzato
 - **Deve mostrare**: Presenze degli associati ai mercati
@@ -401,6 +429,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Rischio regressione comuni**: NESSUNO (nuovo componente)
 
 #### TAB 11: workspace
+
 - **Componente**: `SharedWorkspace` / `GestioneHubPanel.tsx`
 - **Come carica dati**: `addComuneIdToUrl()` su tutte le fetch
 - **Ora con associazione**: Mostra dati globali
@@ -409,6 +438,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Rischio regressione comuni**: BASSO
 
 #### TAB 12: docs (Documentazione con sotto-tab)
+
 - **Componente**: Sotto-tab inline (Formazione, Bandi, SCIA & Pratiche)
 - **Come carica dati**: `fetch(MIHUB_API + '/bandi/associazioni')` per bandi
 - **Ora con associazione**: Mostra tutti i bandi/associazioni
@@ -417,6 +447,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 - **Rischio regressione comuni**: BASSO
 
 #### TAB 13: anagrafica
+
 - **Componente**: NON ESISTE nella DashboardPA attuale
 - **Stato**: Tab nel sistema permessi ma non renderizzato
 - **Deve mostrare**: Anagrafica dell'associazione (dati, contratti, fatture)
@@ -426,6 +457,7 @@ Per ogni tab visibile dal ruolo Associazione (ID=10), ecco l'analisi completa:
 ### SuapPanel (caso specifico nel sotto-tab SCIA & Pratiche)
 
 Il SuapPanel gia' supporta `mode="associazione"`:
+
 - Bottone "Concessione" nascosto con `{!isAssociazione && ...}`
 - Tab "Autorizzazioni" e "Storico Titolarita'" nascosti
 - Grid ridotta a 5 colonne
@@ -443,22 +475,22 @@ Il SuapPanel gia' supporta `mode="associazione"`:
 
 ### File da Modificare (in ordine di priorita')
 
-| File | Modifica | Rischio |
-|------|----------|---------|
-| `useImpersonation.ts` | Aggiungere `addAssociazioneIdToUrl()` | BASSO |
-| `PermissionsContext.tsx` | Collegare ruolo ID=10 nell'impersonificazione | BASSO |
-| `DashboardPA.tsx` | Check entityType per KPI, realtime, sustainability | BASSO |
-| `GamingRewardsPanel.tsx` | Check entityType → card "Non applicabile" | NESSUNO |
-| `CivicReportsPanel.tsx` | Check entityType → stato vuoto | BASSO |
-| `ImpreseQualificazioniPanel.tsx` | Filtro `associazione_id` | BASSO |
-| `MarketCompaniesTab.tsx` | Filtro `associazione_id` | BASSO |
-| `GestioneHubPanel.tsx` | Check entityType per workspace | BASSO |
+| File                             | Modifica                                           | Rischio |
+| -------------------------------- | -------------------------------------------------- | ------- |
+| `useImpersonation.ts`            | Aggiungere `addAssociazioneIdToUrl()`              | BASSO   |
+| `PermissionsContext.tsx`         | Collegare ruolo ID=10 nell'impersonificazione      | BASSO   |
+| `DashboardPA.tsx`                | Check entityType per KPI, realtime, sustainability | BASSO   |
+| `GamingRewardsPanel.tsx`         | Check entityType → card "Non applicabile"          | NESSUNO |
+| `CivicReportsPanel.tsx`          | Check entityType → stato vuoto                     | BASSO   |
+| `ImpreseQualificazioniPanel.tsx` | Filtro `associazione_id`                           | BASSO   |
+| `MarketCompaniesTab.tsx`         | Filtro `associazione_id`                           | BASSO   |
+| `GestioneHubPanel.tsx`           | Check entityType per workspace                     | BASSO   |
 
 ### File da Creare
 
-| File | Descrizione |
-|------|-------------|
-| `PresenzeAssociatiPanel.tsx` | Presenze associati ai mercati |
+| File                              | Descrizione                                     |
+| --------------------------------- | ----------------------------------------------- |
+| `PresenzeAssociatiPanel.tsx`      | Presenze associati ai mercati                   |
 | `AnagraficaAssociazionePanel.tsx` | Anagrafica associazione con contratti e fatture |
 
 ---
@@ -473,80 +505,80 @@ Il SuapPanel gia' supporta `mode="associazione"`:
 
 ### Fase 1 - COMPLETATA (Nov 2025 - Feb 2026)
 
-| # | Feature | Stato | Versione |
-|---|---------|-------|----------|
-| 1 | Dashboard PA 32 tab | COMPLETATO | v7.9 |
-| 2 | Sistema Integrazioni (API Keys, Webhooks, Connessioni) | COMPLETATO | v7.9 |
-| 3 | App Cittadini (Mappa, Wallet, Route, Civic) | COMPLETATO | v7.9 |
-| 4 | Hub Operatore (Check-in/out, vendite) | COMPLETATO | v7.9 |
-| 5 | BUS HUB + Slot Editor v3 | COMPLETATO | v7.9 |
-| 6 | Core Map Grosseto GIS | COMPLETATO | v7.9 |
-| 7 | Database 68 tabelle | COMPLETATO | v8.x |
-| 8 | tRPC 15 router, 100+ procedure | COMPLETATO | v8.x |
-| 9 | RBAC completo (4 tabelle, ProtectedTab, PermissionsContext) | COMPLETATO | v8.x |
-| 10 | Impersonificazione comuni (22 file integrati) | COMPLETATO | v8.x |
-| 11 | Sistema TCC v2.1 (Carbon Credits, QR, anti-frode) | COMPLETATO | v8.x |
-| 12 | PagoPA E-FIL integrazione | COMPLETATO | v8.x |
-| 13 | SPID/CIE/CNS OAuth | COMPLETATO | v8.x |
-| 14 | Wallet Panel (ricariche, decurtazioni, PagoPA) | COMPLETATO | v8.x |
-| 15 | Security audit fix (22 endpoint 500, 12 auth guard, CORS) | COMPLETATO | v8.10 |
-| 16 | Sistema SUAP completo (SCIA, Spunta, Concessioni) | COMPLETATO | v8.10 |
-| 17 | SecurityTab RBAC UI completa (6 sotto-tab) | COMPLETATO | v8.10 |
-| 18 | Guardian monitoring (endpoints, logs, debug) | COMPLETATO | v8.10 |
-| 19 | Mappa Italia nazionale | COMPLETATO | v8.10 |
-| 20 | Dashboard Impresa + App Impresa | COMPLETATO | v8.10 |
-| 21 | Tab Enti & Associazioni (SCIA, Bandi, Formazione) | COMPLETATO | v8.11 |
-| 22 | Backend associazioni (19 endpoint CRUD) | COMPLETATO | v8.11 |
-| 23 | Impersonificazione associazioni (barra gialla, filtro tab) | COMPLETATO | v8.11.3 |
-| 24 | Campi Marca da Bollo in SciaForm + DomandaSpuntaForm | COMPLETATO | v8.12 |
-| 25 | Report interattivo (NativeReportComponent, 5 tab) | COMPLETATO | v8.x |
+| #   | Feature                                                     | Stato      | Versione |
+| --- | ----------------------------------------------------------- | ---------- | -------- |
+| 1   | Dashboard PA 32 tab                                         | COMPLETATO | v7.9     |
+| 2   | Sistema Integrazioni (API Keys, Webhooks, Connessioni)      | COMPLETATO | v7.9     |
+| 3   | App Cittadini (Mappa, Wallet, Route, Civic)                 | COMPLETATO | v7.9     |
+| 4   | Hub Operatore (Check-in/out, vendite)                       | COMPLETATO | v7.9     |
+| 5   | BUS HUB + Slot Editor v3                                    | COMPLETATO | v7.9     |
+| 6   | Core Map Grosseto GIS                                       | COMPLETATO | v7.9     |
+| 7   | Database 68 tabelle                                         | COMPLETATO | v8.x     |
+| 8   | tRPC 15 router, 100+ procedure                              | COMPLETATO | v8.x     |
+| 9   | RBAC completo (4 tabelle, ProtectedTab, PermissionsContext) | COMPLETATO | v8.x     |
+| 10  | Impersonificazione comuni (22 file integrati)               | COMPLETATO | v8.x     |
+| 11  | Sistema TCC v2.1 (Carbon Credits, QR, anti-frode)           | COMPLETATO | v8.x     |
+| 12  | PagoPA E-FIL integrazione                                   | COMPLETATO | v8.x     |
+| 13  | SPID/CIE/CNS OAuth                                          | COMPLETATO | v8.x     |
+| 14  | Wallet Panel (ricariche, decurtazioni, PagoPA)              | COMPLETATO | v8.x     |
+| 15  | Security audit fix (22 endpoint 500, 12 auth guard, CORS)   | COMPLETATO | v8.10    |
+| 16  | Sistema SUAP completo (SCIA, Spunta, Concessioni)           | COMPLETATO | v8.10    |
+| 17  | SecurityTab RBAC UI completa (6 sotto-tab)                  | COMPLETATO | v8.10    |
+| 18  | Guardian monitoring (endpoints, logs, debug)                | COMPLETATO | v8.10    |
+| 19  | Mappa Italia nazionale                                      | COMPLETATO | v8.10    |
+| 20  | Dashboard Impresa + App Impresa                             | COMPLETATO | v8.10    |
+| 21  | Tab Enti & Associazioni (SCIA, Bandi, Formazione)           | COMPLETATO | v8.11    |
+| 22  | Backend associazioni (19 endpoint CRUD)                     | COMPLETATO | v8.11    |
+| 23  | Impersonificazione associazioni (barra gialla, filtro tab)  | COMPLETATO | v8.11.3  |
+| 24  | Campi Marca da Bollo in SciaForm + DomandaSpuntaForm        | COMPLETATO | v8.12    |
+| 25  | Report interattivo (NativeReportComponent, 5 tab)           | COMPLETATO | v8.x     |
 
 ### Fase 2 - IN CORSO (Feb-Mar 2026)
 
-| # | Feature | Stato | Priorita' |
-|---|---------|-------|-----------|
-| 26 | Collegamento impersonificazione associazioni (filtro dati) | IN CORSO | ALTA |
-| 27 | Fix vulnerabilita' sicurezza critiche (eval, XSS, Firebase keys) | DA FARE | CRITICA |
-| 28 | Aggiornamento metriche report interattivo | IN CORSO | MEDIA |
-| 29 | Tab presenze e anagrafica per associazioni | DA FARE | ALTA |
+| #   | Feature                                                          | Stato    | Priorita' |
+| --- | ---------------------------------------------------------------- | -------- | --------- |
+| 26  | Collegamento impersonificazione associazioni (filtro dati)       | IN CORSO | ALTA      |
+| 27  | Fix vulnerabilita' sicurezza critiche (eval, XSS, Firebase keys) | DA FARE  | CRITICA   |
+| 28  | Aggiornamento metriche report interattivo                        | IN CORSO | MEDIA     |
+| 29  | Tab presenze e anagrafica per associazioni                       | DA FARE  | ALTA      |
 
 ### Fase 3 - PIANIFICATA (Mar-Apr 2026)
 
-| # | Feature | Priorita' |
-|---|---------|-----------|
-| 30 | Refactoring DashboardPA (splitting in componenti) | ALTA |
-| 31 | Memoization React (useMemo, useCallback, React.memo) | ALTA |
-| 32 | Code-splitting tab con dynamic import | MEDIA |
-| 33 | Sostituzione 136 tipi `any` con tipi corretti | MEDIA |
-| 34 | Import automatico Slot Editor v3 → Dashboard Admin | MEDIA |
-| 35 | Middleware logging automatico API metrics | MEDIA |
-| 36 | Trigger webhook automatici su eventi | MEDIA |
+| #   | Feature                                              | Priorita' |
+| --- | ---------------------------------------------------- | --------- |
+| 30  | Refactoring DashboardPA (splitting in componenti)    | ALTA      |
+| 31  | Memoization React (useMemo, useCallback, React.memo) | ALTA      |
+| 32  | Code-splitting tab con dynamic import                | MEDIA     |
+| 33  | Sostituzione 136 tipi `any` con tipi corretti        | MEDIA     |
+| 34  | Import automatico Slot Editor v3 → Dashboard Admin   | MEDIA     |
+| 35  | Middleware logging automatico API metrics            | MEDIA     |
+| 36  | Trigger webhook automatici su eventi                 | MEDIA     |
 
 ### Fase 4 - FUTURA (Apr-Giu 2026)
 
-| # | Feature | Priorita' |
-|---|---------|-----------|
-| 37 | Dashboard Analytics Integrazioni con grafici | MEDIA |
-| 38 | API Bridge Gestionale Heroku (sync bidirezionale) | MEDIA |
-| 39 | Sistema notifiche push real-time (Web Push API) | BASSA |
-| 40 | Caching Redis per performance | BASSA |
-| 41 | Load balancing e scalabilita' 8.000 mercati | BASSA |
-| 42 | Testing automatizzato completo (Vitest, >80% coverage) | BASSA |
-| 43 | Migrazione da Orchestratore REST a tRPC (12 gruppi endpoint) | BASSA |
-| 44 | Accreditamento PDND/ANPR/AppIO | BASSA |
-| 45 | Qualificazione ACN SaaS | BASSA |
-| 46 | Formalizzazione DPIA | BASSA |
+| #   | Feature                                                      | Priorita' |
+| --- | ------------------------------------------------------------ | --------- |
+| 37  | Dashboard Analytics Integrazioni con grafici                 | MEDIA     |
+| 38  | API Bridge Gestionale Heroku (sync bidirezionale)            | MEDIA     |
+| 39  | Sistema notifiche push real-time (Web Push API)              | BASSA     |
+| 40  | Caching Redis per performance                                | BASSA     |
+| 41  | Load balancing e scalabilita' 8.000 mercati                  | BASSA     |
+| 42  | Testing automatizzato completo (Vitest, >80% coverage)       | BASSA     |
+| 43  | Migrazione da Orchestratore REST a tRPC (12 gruppi endpoint) | BASSA     |
+| 44  | Accreditamento PDND/ANPR/AppIO                               | BASSA     |
+| 45  | Qualificazione ACN SaaS                                      | BASSA     |
+| 46  | Formalizzazione DPIA                                         | BASSA     |
 
 ### Fase 5 - VISIONE (H2 2026)
 
-| # | Feature |
-|---|---------|
-| 47 | Scaling a 8.000 mercati, 400.000 posteggi, 160.000 imprese |
-| 48 | Multi-tenancy completo per regioni |
-| 49 | Mobile app nativa (React Native) |
-| 50 | AI Copilot per operatori mercato |
-| 51 | Blockchain per certificazione TCC |
-| 52 | Open Data API per sviluppatori terzi |
+| #   | Feature                                                    |
+| --- | ---------------------------------------------------------- |
+| 47  | Scaling a 8.000 mercati, 400.000 posteggi, 160.000 imprese |
+| 48  | Multi-tenancy completo per regioni                         |
+| 49  | Mobile app nativa (React Native)                           |
+| 50  | AI Copilot per operatori mercato                           |
+| 51  | Blockchain per certificazione TCC                          |
+| 52  | Open Data API per sviluppatori terzi                       |
 
 ---
 
@@ -554,43 +586,43 @@ Il SuapPanel gia' supporta `mode="associazione"`:
 
 ### Settimana 1 (23-28 Feb 2026) - SICUREZZA CRITICA
 
-| # | Azione | File | Effort |
-|---|--------|------|--------|
-| 1 | Rimuovere `eval()` da MessageContent.tsx | MessageContent.tsx | 2h |
-| 2 | Convertire `innerHTML` in JSX in DashboardPA | DashboardPA.tsx:5040 | 1h |
-| 3 | Rimuovere fallback Firebase hardcoded | firebase.ts:31 | 30min |
-| 4 | Verificare restrizioni API Key Firebase Console | Firebase Console | 30min |
-| 5 | Eliminare 2 tabelle backup dal DB | SQL migration | 30min |
+| #   | Azione                                          | File                 | Effort |
+| --- | ----------------------------------------------- | -------------------- | ------ |
+| 1   | Rimuovere `eval()` da MessageContent.tsx        | MessageContent.tsx   | 2h     |
+| 2   | Convertire `innerHTML` in JSX in DashboardPA    | DashboardPA.tsx:5040 | 1h     |
+| 3   | Rimuovere fallback Firebase hardcoded           | firebase.ts:31       | 30min  |
+| 4   | Verificare restrizioni API Key Firebase Console | Firebase Console     | 30min  |
+| 5   | Eliminare 2 tabelle backup dal DB               | SQL migration        | 30min  |
 
 ### Settimana 2 (1-7 Mar 2026) - ASSOCIAZIONI
 
-| # | Azione | File | Effort |
-|---|--------|------|--------|
-| 6 | Implementare `addAssociazioneIdToUrl()` | useImpersonation.ts | 1h |
-| 7 | Collegare ruolo ID=10 in PermissionsContext | PermissionsContext.tsx | 1h |
-| 8 | Aggiungere check entityType in 6 componenti | Vari (vedi sopra) | 4h |
-| 9 | Creare AnagraficaAssociazionePanel | Nuovo file | 4h |
-| 10 | Creare PresenzeAssociatiPanel | Nuovo file | 4h |
+| #   | Azione                                      | File                   | Effort |
+| --- | ------------------------------------------- | ---------------------- | ------ |
+| 6   | Implementare `addAssociazioneIdToUrl()`     | useImpersonation.ts    | 1h     |
+| 7   | Collegare ruolo ID=10 in PermissionsContext | PermissionsContext.tsx | 1h     |
+| 8   | Aggiungere check entityType in 6 componenti | Vari (vedi sopra)      | 4h     |
+| 9   | Creare AnagraficaAssociazionePanel          | Nuovo file             | 4h     |
+| 10  | Creare PresenzeAssociatiPanel               | Nuovo file             | 4h     |
 
 ### Settimana 3-4 (8-21 Mar 2026) - PERFORMANCE
 
-| # | Azione | File | Effort |
-|---|--------|------|--------|
-| 11 | Aggiungere useMemo/useCallback nei top 5 componenti | Vari | 8h |
-| 12 | Code-split tab DashboardPA con React.lazy | DashboardPA.tsx | 4h |
-| 13 | Sostituire 50 tipi `any` piu' critici | Vari | 4h |
-| 14 | Spostare token auth da localStorage a sessionStorage | FirebaseAuthContext.tsx | 2h |
-| 15 | Aggiungere query_timeout al pool DB | db.ts | 30min |
+| #   | Azione                                               | File                    | Effort |
+| --- | ---------------------------------------------------- | ----------------------- | ------ |
+| 11  | Aggiungere useMemo/useCallback nei top 5 componenti  | Vari                    | 8h     |
+| 12  | Code-split tab DashboardPA con React.lazy            | DashboardPA.tsx         | 4h     |
+| 13  | Sostituire 50 tipi `any` piu' critici                | Vari                    | 4h     |
+| 14  | Spostare token auth da localStorage a sessionStorage | FirebaseAuthContext.tsx | 2h     |
+| 15  | Aggiungere query_timeout al pool DB                  | db.ts                   | 30min  |
 
 ### Mese 2 (Apr 2026) - INFRASTRUTTURA
 
-| # | Azione | Effort |
-|---|--------|--------|
-| 16 | Import automatico Slot Editor v3 | 8h |
-| 17 | Middleware logging API metrics | 4h |
-| 18 | Trigger webhook automatici | 8h |
-| 19 | Refactoring DashboardPA (split in 5+ file) | 16h |
-| 20 | Aggiungere CSRF middleware | 2h |
+| #   | Azione                                     | Effort |
+| --- | ------------------------------------------ | ------ |
+| 16  | Import automatico Slot Editor v3           | 8h     |
+| 17  | Middleware logging API metrics             | 4h     |
+| 18  | Trigger webhook automatici                 | 8h     |
+| 19  | Refactoring DashboardPA (split in 5+ file) | 16h    |
+| 20  | Aggiungere CSRF middleware                 | 2h     |
 
 ---
 
@@ -598,15 +630,15 @@ Il SuapPanel gia' supporta `mode="associazione"`:
 
 ### NativeReportComponent.tsx - Dati da aggiornare
 
-| Campo | Valore Attuale | Valore Corretto |
-|-------|---------------|-----------------|
-| Componenti React | 143 | 147 |
-| Pagine | 37 | 37 (invariato) |
-| Tabelle DB | 75 | 68 (riconteggio) |
-| Righe codice | 115K | 105.659 (frontend) |
-| Router tRPC | 21 | 15 (riconteggio corretto) |
-| Endpoint | 796 | ~328 (REST) + 100+ (tRPC) |
-| Test | 36 | Da verificare |
+| Campo            | Valore Attuale | Valore Corretto           |
+| ---------------- | -------------- | ------------------------- |
+| Componenti React | 143            | 147                       |
+| Pagine           | 37             | 37 (invariato)            |
+| Tabelle DB       | 75             | 68 (riconteggio)          |
+| Righe codice     | 115K           | 105.659 (frontend)        |
+| Router tRPC      | 21             | 15 (riconteggio corretto) |
+| Endpoint         | 796            | ~328 (REST) + 100+ (tRPC) |
+| Test             | 36             | Da verificare             |
 
 ### STATO_PROGETTO_AGGIORNATO.md - Sezioni da aggiornare
 
@@ -629,5 +661,5 @@ Il SuapPanel gia' supporta `mode="associazione"`:
 ---
 
 **Fine Relazione**
-*Generata il 22 Febbraio 2026 da analisi parallela con 5 agenti AI*
-*Prossima revisione raccomandata: 22 Marzo 2026*
+_Generata il 22 Febbraio 2026 da analisi parallela con 5 agenti AI_
+_Prossima revisione raccomandata: 22 Marzo 2026_

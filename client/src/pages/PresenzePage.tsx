@@ -5,15 +5,20 @@
  * v4.3.1
  */
 
-import { useState } from 'react';
-import { useLocation } from 'wouter';
-import { 
-  ClipboardList, ExternalLink, ArrowLeft, Loader2, Maximize2, Minimize2
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { useLocation } from "wouter";
+import {
+  ClipboardList,
+  ExternalLink,
+  ArrowLeft,
+  Loader2,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-const DMS_APP_URL = 'https://dms.associates/wp-admin/images/DMSAPP/#/login';
-const HEROKU_FALLBACK_URL = 'https://lapsy-dms.herokuapp.com/index.html';
+const DMS_APP_URL = "https://dms.associates/wp-admin/images/DMSAPP/#/login";
+const HEROKU_FALLBACK_URL = "https://lapsy-dms.herokuapp.com/index.html";
 
 export default function PresenzePage() {
   const [, setLocation] = useLocation();
@@ -31,7 +36,7 @@ export default function PresenzePage() {
   };
 
   const handleOpenExternal = () => {
-    window.open(DMS_APP_URL, '_blank');
+    window.open(DMS_APP_URL, "_blank");
   };
 
   const toggleFullscreen = () => {
@@ -45,10 +50,10 @@ export default function PresenzePage() {
         {/* Header */}
         <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#14b8a6]/20 p-3">
           <div className="container mx-auto flex items-center justify-between">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setLocation('/')}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/")}
               className="text-[#e8fbff]/70 hover:text-[#e8fbff]"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -62,10 +67,14 @@ export default function PresenzePage() {
               <ClipboardList className="w-10 h-10 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-[#e8fbff] mb-2">Gestione Presenze</h1>
-              <p className="text-[#e8fbff]/60">L'app DMS si aprirà in una nuova scheda</p>
+              <h1 className="text-2xl font-bold text-[#e8fbff] mb-2">
+                Gestione Presenze
+              </h1>
+              <p className="text-[#e8fbff]/60">
+                L'app DMS si aprirà in una nuova scheda
+              </p>
             </div>
-            <Button 
+            <Button
               onClick={handleOpenExternal}
               className="w-full bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
             >
@@ -79,15 +88,17 @@ export default function PresenzePage() {
   }
 
   return (
-    <div className={`bg-[#0b1220] text-[#e8fbff] flex flex-col ${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'}`}>
+    <div
+      className={`bg-[#0b1220] text-[#e8fbff] flex flex-col ${isFullscreen ? "fixed inset-0 z-50" : "min-h-screen"}`}
+    >
       {/* Header compatto */}
       <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#14b8a6]/20 px-3 py-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setLocation('/')}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/")}
               className="text-[#e8fbff]/70 hover:text-[#e8fbff] h-8 px-2"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
@@ -98,8 +109,12 @@ export default function PresenzePage() {
                 <ClipboardList className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h1 className="text-sm font-bold text-[#e8fbff] leading-tight">App DMS Presenze</h1>
-                <p className="text-[10px] text-[#14b8a6]/70 leading-tight hidden sm:block">Digital Market System — Heroku</p>
+                <h1 className="text-sm font-bold text-[#e8fbff] leading-tight">
+                  App DMS Presenze
+                </h1>
+                <p className="text-[10px] text-[#14b8a6]/70 leading-tight hidden sm:block">
+                  Digital Market System — Heroku
+                </p>
               </div>
             </div>
           </div>
@@ -109,9 +124,13 @@ export default function PresenzePage() {
               size="sm"
               onClick={toggleFullscreen}
               className="text-[#e8fbff]/70 hover:text-[#e8fbff] h-8 w-8 p-0"
-              title={isFullscreen ? 'Esci da schermo intero' : 'Schermo intero'}
+              title={isFullscreen ? "Esci da schermo intero" : "Schermo intero"}
             >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              {isFullscreen ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
             </Button>
             <Button
               variant="ghost"
@@ -141,8 +160,8 @@ export default function PresenzePage() {
         src={DMS_APP_URL}
         onLoad={handleIframeLoad}
         onError={handleIframeError}
-        className={`flex-1 w-full border-0 ${isLoading ? 'h-0 overflow-hidden' : ''}`}
-        style={{ minHeight: isLoading ? 0 : 'calc(100vh - 48px)' }}
+        className={`flex-1 w-full border-0 ${isLoading ? "h-0 overflow-hidden" : ""}`}
+        style={{ minHeight: isLoading ? 0 : "calc(100vh - 48px)" }}
         title="App DMS - Gestione Presenze"
         allow="geolocation; camera; microphone"
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"

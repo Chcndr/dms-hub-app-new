@@ -10,17 +10,18 @@
 
 ### Risultati Audit
 
-| Metrica | Valore | Note |
-|---------|--------|------|
-| **Endpoint in index.json** | 63 | Endpoint unici documentati |
-| **Endpoint backend trovati** | 51+ | Solo audit parziale |
-| **Endpoint SICURAMENTE mancanti** | 51 | Confermati al 100% |
-| **Endpoint stimati totali** | ~120+ | Stima basata su 6 router |
-| **Copertura index.json** | ~50% | ⚠️ Metà endpoint non documentati |
+| Metrica                           | Valore | Note                             |
+| --------------------------------- | ------ | -------------------------------- |
+| **Endpoint in index.json**        | 63     | Endpoint unici documentati       |
+| **Endpoint backend trovati**      | 51+    | Solo audit parziale              |
+| **Endpoint SICURAMENTE mancanti** | 51     | Confermati al 100%               |
+| **Endpoint stimati totali**       | ~120+  | Stima basata su 6 router         |
+| **Copertura index.json**          | ~50%   | ⚠️ Metà endpoint non documentati |
 
 ### 🚨 Problema Critico
 
 **L'index.json è MOLTO incompleto!** Mancano:
+
 - ✅ **Tutti** i 22 endpoint di `routers.ts` (analytics, auth, carbonCredits, etc.)
 - ✅ **Tutti** i 29 endpoint TRPC dei sub-router
 - ⚠️ Probabilmente altri 40+ endpoint non ancora scansionati
@@ -32,12 +33,14 @@
 ### 1. routers.ts - 22 endpoint MANCANTI
 
 #### auth (2)
+
 ```
 GET  /api/trpc/auth.me
 POST /api/trpc/auth.logout
 ```
 
 #### analytics (7)
+
 ```
 GET /api/trpc/analytics.overview
 GET /api/trpc/analytics.markets
@@ -49,6 +52,7 @@ GET /api/trpc/analytics.productTracking
 ```
 
 #### carbonCredits (3)
+
 ```
 GET /api/trpc/carbonCredits.config
 GET /api/trpc/carbonCredits.fundTransactions
@@ -56,46 +60,55 @@ GET /api/trpc/carbonCredits.reimbursements
 ```
 
 #### logs (1)
+
 ```
 GET /api/trpc/logs.system
 ```
 
 #### users (1)
+
 ```
 GET /api/trpc/users.analytics
 ```
 
 #### sustainability (1)
+
 ```
 GET /api/trpc/sustainability.metrics
 ```
 
 #### businesses (1)
+
 ```
 GET /api/trpc/businesses.list
 ```
 
 #### inspections (1)
+
 ```
 GET /api/trpc/inspections.list
 ```
 
 #### notifications (1)
+
 ```
 GET /api/trpc/notifications.list
 ```
 
 #### civicReports (1)
+
 ```
 GET /api/trpc/civicReports.list
 ```
 
 #### mobility (1)
+
 ```
 GET /api/trpc/mobility.list
 ```
 
 #### tper (2)
+
 ```
 GET  /api/trpc/tper.stops
 POST /api/trpc/tper.sync
@@ -105,7 +118,8 @@ POST /api/trpc/tper.sync
 
 ### 2. Sub-router TRPC - 29 endpoint MANCANTI
 
-#### dmsHub.* (11)
+#### dmsHub.\* (11)
+
 ```
 GET /api/trpc/dmsHub.bookings.list
 GET /api/trpc/dmsHub.bookings.listActive
@@ -120,14 +134,16 @@ GET /api/trpc/dmsHub.vendors.listActive
 GET /api/trpc/dmsHub.violations.list
 ```
 
-#### guardian.* (3)
+#### guardian.\* (3)
+
 ```
 GET  /api/trpc/guardian.integrations
 GET  /api/trpc/guardian.stats
 POST /api/trpc/guardian.initDemoLogs
 ```
 
-#### integrations.* (12)
+#### integrations.\* (12)
+
 ```
 GET  /api/trpc/integrations.apiKeys.list
 GET  /api/trpc/integrations.apiKeys.today
@@ -143,7 +159,8 @@ POST /api/trpc/integrations.connections.healthCheckAll
 POST /api/trpc/integrations.webhooks.healthCheckAll
 ```
 
-#### mioAgent.* (3)
+#### mioAgent.\* (3)
+
 ```
 GET  /api/trpc/mioAgent.testDatabase
 GET  /api/trpc/mioAgent.getLogs
@@ -159,6 +176,7 @@ POST /api/trpc/mioAgent.initSchema
 #### 1. **dmsHubRouter.ts** (stimati ~40+ endpoint)
 
 🔗 **IMPORTANTE:** Questi endpoint sono per **integrazione con gestionale DMS legacy**!
+
 - Import dati da Slot Editor v3
 - Sincronizzazione con gestionale Heroku
 - Gestione mercati, posteggi, operatori
@@ -167,6 +185,7 @@ POST /api/trpc/mioAgent.initSchema
 **Priorità ALTA** per documentazione!
 
 Router nidificati trovati ma NON ancora estratti:
+
 - `dmsHub.markets.*` - Import Slot Editor, gestione mercati
 - `dmsHub.stalls.*` - Gestione posteggi
 - `dmsHub.vendors.*` - Gestione operatori
@@ -193,6 +212,7 @@ Router di sistema.
 #### 4. **Endpoint REST non-TRPC** (stimati ~20 endpoint)
 
 Endpoint trovati in index.json ma NON TRPC:
+
 ```
 GET  /api/gis/health
 GET  /api/gis/market-map
@@ -218,6 +238,7 @@ GET  /api/oauth/callback
 ```
 
 **Questi endpoint sono in file:**
+
 - `server/_core/index.ts` (route Express)
 - `server/_core/gis.ts`
 - `server/_core/mihub.ts`
@@ -288,19 +309,23 @@ server/
 ## 🛠️ Metodologia Audit
 
 ### Fase 1: ✅ Completata
+
 - Scaricato `index.json` da MIO-hub
 - Estratti 63 endpoint unici
 
 ### Fase 2: ⚠️ Parziale
+
 - Analizzato `routers.ts` → 22 endpoint
 - Scansionato con grep altri router → 29 endpoint
 - **Problema:** Grep non cattura router a 3 livelli
 
 ### Fase 3: ✅ Completata
+
 - Confronto routers.ts vs index.json → **22/22 MANCANTI**
 - Confronto sub-router vs index.json → **29/29 MANCANTI**
 
 ### Fase 4: 🔄 In corso
+
 - Generazione report completo
 - Creazione script auto-update
 
@@ -343,6 +368,7 @@ cat /tmp/missing_in_index.txt
 ## 🎯 Prossimi Step
 
 ### Step 1: Completare Estrazione Backend (manuale)
+
 - [ ] Leggere `dmsHubRouter.ts` completo
 - [ ] Estrarre tutti i 31 endpoint
 - [ ] Leggere `mihubRouter.ts`
@@ -352,6 +378,7 @@ cat /tmp/missing_in_index.txt
 **Tempo stimato:** 2-3 ore
 
 ### Step 2: Aggiornare index.json
+
 - [ ] Creare branch su MIO-hub repository
 - [ ] Aggiungere 51+ endpoint mancanti
 - [ ] Testare che UI Integrazioni li carichi
@@ -360,6 +387,7 @@ cat /tmp/missing_in_index.txt
 **Tempo stimato:** 1 ora
 
 ### Step 3: Creare Script Auto-Update
+
 - [ ] Script che scansiona backend automaticamente
 - [ ] Genera `index.json` aggiornato
 - [ ] Integra in CI/CD per aggiornamento automatico

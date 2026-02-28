@@ -35,14 +35,29 @@ export const gdprRouter = router({
       checkinData,
       complianceData,
     ] = await Promise.all([
-      db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1),
-      db.select().from(schema.extendedUsers).where(eq(schema.extendedUsers.userId, userId)),
+      db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, userId))
+        .limit(1),
+      db
+        .select()
+        .from(schema.extendedUsers)
+        .where(eq(schema.extendedUsers.userId, userId)),
       db.select().from(schema.vendors).where(eq(schema.vendors.userId, userId)),
-      db.select().from(schema.transactions).where(eq(schema.transactions.userId, userId))
+      db
+        .select()
+        .from(schema.transactions)
+        .where(eq(schema.transactions.userId, userId))
         .orderBy(desc(schema.transactions.createdAt)),
-      db.select().from(schema.checkins).where(eq(schema.checkins.userId, userId))
+      db
+        .select()
+        .from(schema.checkins)
+        .where(eq(schema.checkins.userId, userId))
         .orderBy(desc(schema.checkins.createdAt)),
-      db.select().from(schema.complianceCertificates)
+      db
+        .select()
+        .from(schema.complianceCertificates)
         .where(eq(schema.complianceCertificates.userId, userId)),
     ]);
 
@@ -53,10 +68,20 @@ export const gdprRouter = router({
     if (vendorData.length > 0) {
       const vendorId = vendorData[0].id;
       [concessionData, documentData, presenceData] = await Promise.all([
-        db.select().from(schema.concessions).where(eq(schema.concessions.vendorId, vendorId)),
-        db.select().from(schema.vendorDocuments).where(eq(schema.vendorDocuments.vendorId, vendorId)),
-        db.select().from(schema.vendorPresences).where(eq(schema.vendorPresences.vendorId, vendorId))
-          .orderBy(desc(schema.vendorPresences.checkinTime)).limit(365),
+        db
+          .select()
+          .from(schema.concessions)
+          .where(eq(schema.concessions.vendorId, vendorId)),
+        db
+          .select()
+          .from(schema.vendorDocuments)
+          .where(eq(schema.vendorDocuments.vendorId, vendorId)),
+        db
+          .select()
+          .from(schema.vendorPresences)
+          .where(eq(schema.vendorPresences.vendorId, vendorId))
+          .orderBy(desc(schema.vendorPresences.checkinTime))
+          .limit(365),
       ]);
     }
 
@@ -64,33 +89,39 @@ export const gdprRouter = router({
       exportDate: new Date().toISOString(),
       format: "GDPR Art. 20 — Portabilita' dei dati",
       user: {
-        profile: userData[0] ? {
-          name: userData[0].name,
-          email: userData[0].email,
-          role: userData[0].role,
-          loginMethod: userData[0].loginMethod,
-          createdAt: userData[0].createdAt,
-          lastSignedIn: userData[0].lastSignedIn,
-        } : null,
-        extended: extendedData[0] ? {
-          walletBalance: extendedData[0].walletBalance,
-          sustainabilityRating: extendedData[0].sustainabilityRating,
-          transportPreference: extendedData[0].transportPreference,
-          phone: extendedData[0].phone,
-        } : null,
+        profile: userData[0]
+          ? {
+              name: userData[0].name,
+              email: userData[0].email,
+              role: userData[0].role,
+              loginMethod: userData[0].loginMethod,
+              createdAt: userData[0].createdAt,
+              lastSignedIn: userData[0].lastSignedIn,
+            }
+          : null,
+        extended: extendedData[0]
+          ? {
+              walletBalance: extendedData[0].walletBalance,
+              sustainabilityRating: extendedData[0].sustainabilityRating,
+              transportPreference: extendedData[0].transportPreference,
+              phone: extendedData[0].phone,
+            }
+          : null,
       },
-      vendor: vendorData[0] ? {
-        businessName: vendorData[0].businessName,
-        firstName: vendorData[0].firstName,
-        lastName: vendorData[0].lastName,
-        fiscalCode: vendorData[0].fiscalCode,
-        vatNumber: vendorData[0].vatNumber,
-        email: vendorData[0].email,
-        phone: vendorData[0].phone,
-        address: vendorData[0].address,
-        status: vendorData[0].status,
-        createdAt: vendorData[0].createdAt,
-      } : null,
+      vendor: vendorData[0]
+        ? {
+            businessName: vendorData[0].businessName,
+            firstName: vendorData[0].firstName,
+            lastName: vendorData[0].lastName,
+            fiscalCode: vendorData[0].fiscalCode,
+            vatNumber: vendorData[0].vatNumber,
+            email: vendorData[0].email,
+            phone: vendorData[0].phone,
+            address: vendorData[0].address,
+            status: vendorData[0].status,
+            createdAt: vendorData[0].createdAt,
+          }
+        : null,
       transactions: transactionData.map(t => ({
         type: t.type,
         amount: t.amount,
@@ -136,10 +167,12 @@ export const gdprRouter = router({
    * Art. 17 GDPR — Diritto all'oblio (Anonimizzazione)
    */
   deleteMyAccount: protectedProcedure
-    .input(z.object({
-      confirmEmail: z.string().email(),
-      reason: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        confirmEmail: z.string().email(),
+        reason: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const user = ctx.user;
       if (!user) throw new Error("Utente non autenticato");
@@ -156,35 +189,46 @@ export const gdprRouter = router({
       const anonymizedLabel = `[GDPR-DELETED-${userId}]`;
       const now = new Date();
 
-      await db.update(schema.users).set({
-        name: anonymizedLabel,
-        email: `deleted-${userId}@anonimizzato.gdpr`,
-        updatedAt: now,
-      }).where(eq(schema.users.id, userId));
+      await db
+        .update(schema.users)
+        .set({
+          name: anonymizedLabel,
+          email: `deleted-${userId}@anonimizzato.gdpr`,
+          updatedAt: now,
+        })
+        .where(eq(schema.users.id, userId));
 
-      await db.update(schema.extendedUsers).set({
-        phone: null,
-        updatedAt: now,
-      }).where(eq(schema.extendedUsers.userId, userId));
+      await db
+        .update(schema.extendedUsers)
+        .set({
+          phone: null,
+          updatedAt: now,
+        })
+        .where(eq(schema.extendedUsers.userId, userId));
 
-      const vendorRows = await db.select({ id: schema.vendors.id })
-        .from(schema.vendors).where(eq(schema.vendors.userId, userId));
+      const vendorRows = await db
+        .select({ id: schema.vendors.id })
+        .from(schema.vendors)
+        .where(eq(schema.vendors.userId, userId));
 
       if (vendorRows.length > 0) {
         const vendorId = vendorRows[0].id;
-        await db.update(schema.vendors).set({
-          firstName: anonymizedLabel,
-          lastName: anonymizedLabel,
-          fiscalCode: null,
-          vatNumber: null,
-          email: null,
-          phone: null,
-          address: null,
-          bankAccount: null,
-          businessName: anonymizedLabel,
-          status: "deleted",
-          updatedAt: now,
-        }).where(eq(schema.vendors.id, vendorId));
+        await db
+          .update(schema.vendors)
+          .set({
+            firstName: anonymizedLabel,
+            lastName: anonymizedLabel,
+            fiscalCode: null,
+            vatNumber: null,
+            email: null,
+            phone: null,
+            address: null,
+            bankAccount: null,
+            businessName: anonymizedLabel,
+            status: "deleted",
+            updatedAt: now,
+          })
+          .where(eq(schema.vendors.id, vendorId));
       }
 
       await db.insert(schema.auditLogs).values({
@@ -211,7 +255,8 @@ export const gdprRouter = router({
 
       return {
         success: true,
-        message: "Account anonimizzato con successo. I dati finanziari sono mantenuti in forma anonima per obblighi di legge.",
+        message:
+          "Account anonimizzato con successo. I dati finanziari sono mantenuti in forma anonima per obblighi di legge.",
         deletedAt: now.toISOString(),
       };
     }),
@@ -230,17 +275,21 @@ export const gdprRouter = router({
     const days90Ago = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     const days365Ago = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
-    const [apiMetricsExpired, systemLogsExpired, loginAttemptsExpired] = await Promise.all([
-      db.select({ count: sql<number>`count(*)::int` })
-        .from(schema.apiMetrics)
-        .where(lt(schema.apiMetrics.createdAt, days90Ago)),
-      db.select({ count: sql<number>`count(*)::int` })
-        .from(schema.systemLogs)
-        .where(lt(schema.systemLogs.createdAt, days365Ago)),
-      db.select({ count: sql<number>`count(*)::int` })
-        .from(schema.loginAttempts)
-        .where(lt(schema.loginAttempts.createdAt, days90Ago)),
-    ]);
+    const [apiMetricsExpired, systemLogsExpired, loginAttemptsExpired] =
+      await Promise.all([
+        db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(schema.apiMetrics)
+          .where(lt(schema.apiMetrics.createdAt, days90Ago)),
+        db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(schema.systemLogs)
+          .where(lt(schema.systemLogs.createdAt, days365Ago)),
+        db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(schema.loginAttempts)
+          .where(lt(schema.loginAttempts.createdAt, days90Ago)),
+      ]);
 
     return {
       policy: {
@@ -273,9 +322,15 @@ export const gdprRouter = router({
     const days365Ago = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
     await Promise.all([
-      db.delete(schema.apiMetrics).where(lt(schema.apiMetrics.createdAt, days90Ago)),
-      db.delete(schema.systemLogs).where(lt(schema.systemLogs.createdAt, days365Ago)),
-      db.delete(schema.loginAttempts).where(lt(schema.loginAttempts.createdAt, days90Ago)),
+      db
+        .delete(schema.apiMetrics)
+        .where(lt(schema.apiMetrics.createdAt, days90Ago)),
+      db
+        .delete(schema.systemLogs)
+        .where(lt(schema.systemLogs.createdAt, days365Ago)),
+      db
+        .delete(schema.loginAttempts)
+        .where(lt(schema.loginAttempts.createdAt, days90Ago)),
     ]);
 
     await db.insert(schema.auditLogs).values({
@@ -305,10 +360,16 @@ export const gdprRouter = router({
    * Registra l'accettazione del consenso GDPR
    */
   acceptConsent: protectedProcedure
-    .input(z.object({
-      certificateType: z.enum(["gdpr_consent", "privacy_policy", "terms_accepted"]),
-      version: z.string().default("1.0"),
-    }))
+    .input(
+      z.object({
+        certificateType: z.enum([
+          "gdpr_consent",
+          "privacy_policy",
+          "terms_accepted",
+        ]),
+        version: z.string().default("1.0"),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const user = ctx.user;
       if (!user) throw new Error("Utente non autenticato");
@@ -343,7 +404,9 @@ export const gdprRouter = router({
     const db = await getDb();
     if (!db) return [];
 
-    return await db.select().from(schema.complianceCertificates)
+    return await db
+      .select()
+      .from(schema.complianceCertificates)
       .where(eq(schema.complianceCertificates.userId, user.id))
       .orderBy(desc(schema.complianceCertificates.createdAt));
   }),

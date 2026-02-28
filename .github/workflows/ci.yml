@@ -1,7 +1,7 @@
 name: CI — DMS Hub Quality Gate
 on:
   push:
-    branches: [master, main, 'claude/**']
+    branches: [master, main, "claude/**"]
   pull_request:
     branches: [master, main]
 jobs:
@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
       - name: Install dependencies
@@ -48,7 +48,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
       - name: Install dependencies

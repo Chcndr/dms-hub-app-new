@@ -1,24 +1,24 @@
 /**
  * MarketCompaniesTab.tsx
- * 
+ *
  * Componente React/TypeScript standalone per la tab "Imprese / Concessioni"
  * nella pagina Gestione Mercati → Dettaglio mercato.
- * 
+ *
  * Usa gli endpoint backend REST per CRUD imprese e concessioni.
- * 
+ *
  * @author Manus AI
  * @date 25 novembre 2025
  */
 
-import React, { useState, useEffect } from 'react';
-import { ConcessionForm } from './ConcessionForm';
-import { 
-  Building2, 
-  Plus, 
-  Edit, 
+import React, { useState, useEffect } from "react";
+import { ConcessionForm } from "./ConcessionForm";
+import {
+  Building2,
+  Plus,
+  Edit,
   Edit2,
-  X, 
-  AlertCircle, 
+  X,
+  AlertCircle,
   Loader2,
   FileText,
   Calendar,
@@ -35,39 +35,62 @@ import {
   Users,
   User,
   Wallet,
-  Store
-} from 'lucide-react';
-import { MarketAutorizzazioniTab } from './MarketAutorizzazioniTab';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
-import { formatDate } from '@/lib/formatUtils';
+  Store,
+} from "lucide-react";
+import { MarketAutorizzazioniTab } from "./MarketAutorizzazioniTab";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
+import { formatDate } from "@/lib/formatUtils";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export interface MarketCompaniesTabProps {
-  marketId: string | number;     // es. "GRO001" o 1
+  marketId: string | number; // es. "GRO001" o 1
   marketName?: string;
   municipality?: string;
   stalls?: { id: string; code: string }[]; // lista posteggi già caricata dalla pagina
-  filterType?: 'all' | 'ambulanti' | 'negozi_hub'; // filtro per tipo impresa
-  onFilterChange?: (filter: 'all' | 'ambulanti' | 'negozi_hub') => void; // callback per aggiornare filtro nel parent
+  filterType?: "all" | "ambulanti" | "negozi_hub"; // filtro per tipo impresa
+  onFilterChange?: (filter: "all" | "ambulanti" | "negozi_hub") => void; // callback per aggiornare filtro nel parent
 }
 
 export type CompanyRow = {
   id: string;
-  code: string;          // es. "12345678901" (CF)
+  code: string; // es. "12345678901" (CF)
   denominazione: string;
   partita_iva?: string;
   referente?: string;
   telefono?: string;
   stato?: "active" | "suspended" | "closed";
-  concessioni?: { id: number; mercato: string; posteggio_code: string; data_scadenza: string; stato: string; wallet_balance?: number }[];
-  autorizzazioni?: { id: number; numero: string; ente: string; stato: string }[];
-  spunta_wallets?: { id: number; market_id: number; market_name: string; balance: number }[];
-  qualificazioni?: { id: number; type: string; status: string; start_date: string; end_date: string }[];
-  hub_shop_id?: number;   // ID del negozio HUB collegato (se presente = è un negozio HUB)
+  concessioni?: {
+    id: number;
+    mercato: string;
+    posteggio_code: string;
+    data_scadenza: string;
+    stato: string;
+    wallet_balance?: number;
+  }[];
+  autorizzazioni?: {
+    id: number;
+    numero: string;
+    ente: string;
+    stato: string;
+  }[];
+  spunta_wallets?: {
+    id: number;
+    market_id: number;
+    market_name: string;
+    balance: number;
+  }[];
+  qualificazioni?: {
+    id: number;
+    type: string;
+    status: string;
+    start_date: string;
+    end_date: string;
+  }[];
+  hub_shop_id?: number; // ID del negozio HUB collegato (se presente = è un negozio HUB)
   // Sede legale
   indirizzo_via?: string;
   indirizzo_civico?: string;
@@ -82,13 +105,13 @@ type ConcessionRow = {
   stall_code: string;
   company_id: string;
   company_name: string;
-  tipo_concessione: string;  // fisso/spunta/temporanea/subingresso
-  valida_dal?: string;       // ISO date
-  valida_al?: string;        // ISO date
-  stato?: string;            // ATTIVA/SCADUTA/SOSPESA/DA_ASSOCIARE/CESSATA
-  stato_calcolato?: string;  // Stato calcolato dinamicamente dal backend
-  settore_merceologico?: string;  // Alimentare/Non Alimentare
-  comune_rilascio?: string;       // Comune che ha rilasciato la concessione
+  tipo_concessione: string; // fisso/spunta/temporanea/subingresso
+  valida_dal?: string; // ISO date
+  valida_al?: string; // ISO date
+  stato?: string; // ATTIVA/SCADUTA/SOSPESA/DA_ASSOCIARE/CESSATA
+  stato_calcolato?: string; // Stato calcolato dinamicamente dal backend
+  settore_merceologico?: string; // Alimentare/Non Alimentare
+  comune_rilascio?: string; // Comune che ha rilasciato la concessione
   // Campi aggiuntivi per sincronizzazione con SSO SUAP
   numero_protocollo?: string;
   data_protocollazione?: string;
@@ -165,85 +188,85 @@ export type CompanyFormData = {
   cciaa_sigla: string;
   forma_giuridica: string;
   stato_impresa: string;
-  
+
   // Sede Legale
   indirizzo_via: string;
   indirizzo_civico: string;
   indirizzo_cap: string;
   indirizzo_provincia: string;
   comune: string;
-  
+
   // Contatti & Attività
   pec: string;
   referente: string;
   telefono: string;
   codice_ateco: string;
   descrizione_ateco: string;
-  
+
   // Rappresentante Legale
   rappresentante_legale_cognome: string;
   rappresentante_legale_nome: string;
   rappresentante_legale_cf: string;
   rappresentante_legale_data_nascita: string;
   rappresentante_legale_luogo_nascita: string;
-  
+
   // Residenza Rappresentante
   rappresentante_legale_residenza_via: string;
   rappresentante_legale_residenza_civico: string;
   rappresentante_legale_residenza_cap: string;
   rappresentante_legale_residenza_comune: string;
   rappresentante_legale_residenza_provincia: string;
-  
+
   // Dati Economici
   capitale_sociale: string;
   numero_addetti: string;
   sito_web: string;
   data_iscrizione_ri: string;
-  
+
   // Legacy (mantenuto per compatibilità)
   stato: "active" | "suspended" | "closed";
 };
 
 type ConcessionFormData = {
   // Dati base (corrispondono a campi DB)
-  company_id: string;           // → impresa_id (via vendor)
-  stall_id: string;             // → stall_id
-  tipo_concessione: string;     // → tipo_concessione
-  type: string;                 // → type (fisso/spunta/temporanea)
-  valida_dal: string;           // → valid_from
-  valida_al: string;            // → valid_to
-  stato: string;                // → stato
-  
+  company_id: string; // → impresa_id (via vendor)
+  stall_id: string; // → stall_id
+  tipo_concessione: string; // → tipo_concessione
+  type: string; // → type (fisso/spunta/temporanea)
+  valida_dal: string; // → valid_from
+  valida_al: string; // → valid_to
+  stato: string; // → stato
+
   // Dati Generali - Frontespizio (campi DB)
-  numero_protocollo: string;    // → numero_protocollo
+  numero_protocollo: string; // → numero_protocollo
   data_protocollazione: string; // → data_protocollazione
-  oggetto: string;              // → oggetto
-  
+  oggetto: string; // → oggetto
+
   // Tipo e Durata (campi DB)
-  durata_anni: string;          // → durata_anni
-  data_decorrenza: string;      // → data_decorrenza
-  
+  durata_anni: string; // → durata_anni
+  data_decorrenza: string; // → data_decorrenza
+
   // Dati Concessionario (campi DB)
-  partita_iva: string;          // → partita_iva
-  cf_concessionario: string;    // → cf_concessionario
-  ragione_sociale: string;      // → ragione_sociale
-  nome: string;                 // → nome
-  cognome: string;              // → cognome
-  
+  partita_iva: string; // → partita_iva
+  cf_concessionario: string; // → cf_concessionario
+  ragione_sociale: string; // → ragione_sociale
+  nome: string; // → nome
+  cognome: string; // → cognome
+
   // Dati Posteggio (campi DB)
-  ubicazione: string;           // → ubicazione
-  fila: string;                 // → fila
-  mq: string;                   // → mq
-  dimensioni_lineari: string;   // → dimensioni_lineari
-  giorno: string;               // → giorno
+  ubicazione: string; // → ubicazione
+  fila: string; // → fila
+  mq: string; // → mq
+  dimensioni_lineari: string; // → dimensioni_lineari
+  giorno: string; // → giorno
   settore_merceologico: string; // → settore_merceologico
-  comune_rilascio: string;      // → comune_rilascio
-  
+  comune_rilascio: string; // → comune_rilascio
+
   // Note (campo DB)
-  notes: string;                // → notes
-  
+  notes: string; // → notes
+
   // Riferimento SCIA (campo DB)
-  scia_id: string;              // → scia_id
+  scia_id: string; // → scia_id
 };
 
 type QualificazioneRow = {
@@ -254,7 +277,7 @@ type QualificazioneRow = {
   ente_rilascio: string;
   data_rilascio: string;
   data_scadenza: string;
-  stato: 'ATTIVA' | 'SCADUTA' | 'IN_VERIFICA';
+  stato: "ATTIVA" | "SCADUTA" | "IN_VERIFICA";
   note?: string;
 };
 
@@ -262,44 +285,44 @@ type QualificazioneRow = {
 // CONSTANTS
 // ============================================================================
 
-import { MIHUB_API_BASE_URL, TCC_API_BASE } from '@/config/api';
+import { MIHUB_API_BASE_URL, TCC_API_BASE } from "@/config/api";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
 const TIPO_CONCESSIONE_OPTIONS = [
-  { value: 'fisso', label: 'Fisso' },
-  { value: 'spunta', label: 'Spunta' },
-  { value: 'temporanea', label: 'Temporanea' },
+  { value: "fisso", label: "Fisso" },
+  { value: "spunta", label: "Spunta" },
+  { value: "temporanea", label: "Temporanea" },
 ];
 
 const STATO_CONCESSIONE_OPTIONS = [
-  { value: 'ATTIVA', label: 'Attiva' },
-  { value: 'SOSPESA', label: 'Sospesa' },
-  { value: 'SCADUTA', label: 'Scaduta' },
+  { value: "ATTIVA", label: "Attiva" },
+  { value: "SOSPESA", label: "Sospesa" },
+  { value: "SCADUTA", label: "Scaduta" },
 ];
 
 const STATO_COMPANY_OPTIONS = [
-  { value: 'active', label: 'Attiva' },
-  { value: 'suspended', label: 'Sospesa' },
-  { value: 'closed', label: 'Chiusa' },
+  { value: "active", label: "Attiva" },
+  { value: "suspended", label: "Sospesa" },
+  { value: "closed", label: "Chiusa" },
 ];
 
 export const FORMA_GIURIDICA_OPTIONS = [
-  { value: '', label: 'Seleziona...' },
-  { value: 'SRL', label: 'S.R.L. - Società a Responsabilità Limitata' },
-  { value: 'SPA', label: 'S.P.A. - Società per Azioni' },
-  { value: 'SNC', label: 'S.N.C. - Società in Nome Collettivo' },
-  { value: 'SAS', label: 'S.A.S. - Società in Accomandita Semplice' },
-  { value: 'DI', label: 'Ditta Individuale' },
-  { value: 'COOP', label: 'Cooperativa' },
-  { value: 'ALTRO', label: 'Altro' },
+  { value: "", label: "Seleziona..." },
+  { value: "SRL", label: "S.R.L. - Società a Responsabilità Limitata" },
+  { value: "SPA", label: "S.P.A. - Società per Azioni" },
+  { value: "SNC", label: "S.N.C. - Società in Nome Collettivo" },
+  { value: "SAS", label: "S.A.S. - Società in Accomandita Semplice" },
+  { value: "DI", label: "Ditta Individuale" },
+  { value: "COOP", label: "Cooperativa" },
+  { value: "ALTRO", label: "Altro" },
 ];
 
 export const STATO_IMPRESA_OPTIONS = [
-  { value: 'ATTIVA', label: 'Attiva' },
-  { value: 'CESSATA', label: 'Cessata' },
-  { value: 'IN_LIQUIDAZIONE', label: 'In Liquidazione' },
-  { value: 'SOSPESA', label: 'Sospesa' },
+  { value: "ATTIVA", label: "Attiva" },
+  { value: "CESSATA", label: "Cessata" },
+  { value: "IN_LIQUIDAZIONE", label: "In Liquidazione" },
+  { value: "SOSPESA", label: "Sospesa" },
 ];
 
 // ============================================================================
@@ -307,8 +330,15 @@ export const STATO_IMPRESA_OPTIONS = [
 // ============================================================================
 
 export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
-  const { marketId, marketName, municipality, stalls, filterType = 'all', onFilterChange } = props;
-  
+  const {
+    marketId,
+    marketName,
+    municipality,
+    stalls,
+    filterType = "all",
+    onFilterChange,
+  } = props;
+
   // State
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [concessions, setConcessions] = useState<ConcessionRow[]>([]);
@@ -319,34 +349,46 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   // Modal state
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showConcessionModal, setShowConcessionModal] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<CompanyRow | null>(null);
-  const [selectedConcession, setSelectedConcession] = useState<ConcessionRow | null>(null);
-  const [selectedCompanyForQualif, setSelectedCompanyForQualif] = useState<CompanyRow | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyRow | null>(
+    null
+  );
+  const [selectedConcession, setSelectedConcession] =
+    useState<ConcessionRow | null>(null);
+  const [selectedCompanyForQualif, setSelectedCompanyForQualif] =
+    useState<CompanyRow | null>(null);
   const [showQualificazioneModal, setShowQualificazioneModal] = useState(false);
-  const [selectedQualificazione, setSelectedQualificazione] = useState<QualificazioneRow | null>(null);
-  
+  const [selectedQualificazione, setSelectedQualificazione] =
+    useState<QualificazioneRow | null>(null);
+
   // Dettaglio concessione (sincronizzato con SSO SUAP)
-  const [selectedConcessionDetail, setSelectedConcessionDetail] = useState<ConcessionRow | null>(null);
-  const [concessionDetailTab, setConcessionDetailTab] = useState<'dati' | 'posteggio' | 'modifica'>('dati');
-  
+  const [selectedConcessionDetail, setSelectedConcessionDetail] =
+    useState<ConcessionRow | null>(null);
+  const [concessionDetailTab, setConcessionDetailTab] = useState<
+    "dati" | "posteggio" | "modifica"
+  >("dati");
+
   // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState<'impresa' | 'concessione' | 'qualificazione' | 'autorizzazione'>('impresa');
-  const [impresaFilter, setImpresaFilter] = useState<'all' | 'ambulanti' | 'negozi_hub'>(filterType);
-  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchType, setSearchType] = useState<
+    "impresa" | "concessione" | "qualificazione" | "autorizzazione"
+  >("impresa");
+  const [impresaFilter, setImpresaFilter] = useState<
+    "all" | "ambulanti" | "negozi_hub"
+  >(filterType);
+
   // Filtered data
   const filteredCompanies = companies.filter(c => {
     // Filtro per tipo impresa:
     // - negozi_hub = imprese con hub_shop_id (hanno un negozio HUB collegato)
     // - ambulanti = imprese SENZA hub_shop_id (sono ambulanti di mercato)
-    if (impresaFilter === 'negozi_hub') {
+    if (impresaFilter === "negozi_hub") {
       // Negozi HUB: imprese che hanno un hub_shop collegato
       if (!c.hub_shop_id) return false;
-    } else if (impresaFilter === 'ambulanti') {
+    } else if (impresaFilter === "ambulanti") {
       // Ambulanti: imprese che NON hanno un hub_shop collegato
       if (c.hub_shop_id) return false;
     }
-    
+
     // Filtro per ricerca testuale
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -356,7 +398,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       c.partita_iva?.toLowerCase().includes(query)
     );
   });
-  
+
   const filteredConcessions = concessions.filter(c => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -366,8 +408,10 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       c.tipo_concessione?.toLowerCase().includes(query)
     );
   });
-  
-  const handleOpenQualificazioneModal = (qualificazione?: QualificazioneRow) => {
+
+  const handleOpenQualificazioneModal = (
+    qualificazione?: QualificazioneRow
+  ) => {
     setSelectedQualificazione(qualificazione || null);
     setShowQualificazioneModal(true);
   };
@@ -399,10 +443,10 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   // Fetch data
   useEffect(() => {
     if (!marketId) {
-      console.warn('[MarketCompaniesTab] no marketId, skip fetch');
+      console.warn("[MarketCompaniesTab] no marketId, skip fetch");
       return;
     }
-    
+
     fetchData();
   }, [marketId]);
 
@@ -411,18 +455,15 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
     setError(null);
     try {
       // Prima carichiamo companies e concessions
-      await Promise.all([
-        fetchCompanies(),
-        fetchConcessions(),
-      ]);
+      await Promise.all([fetchCompanies(), fetchConcessions()]);
       // fetchQualificazioni viene chiamata separatamente dopo che companies è stato aggiornato
     } catch (err: any) {
-      setError(err.message || 'Errore durante il caricamento dei dati');
+      setError(err.message || "Errore durante il caricamento dei dati");
     } finally {
       setLoading(false);
     }
   };
-  
+
   // Effetto per caricare le qualificazioni quando si seleziona un'impresa
   useEffect(() => {
     if (selectedCompanyForQualif) {
@@ -435,32 +476,39 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       const response = await fetch(`${API_BASE_URL}/api/imprese`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
-      
+
       if (!json.success || !Array.isArray(json.data)) {
-        console.error('[MarketCompaniesTab] fetchCompanies: formato risposta non valido', json);
-        throw new Error('Formato risposta non valido');
+        console.error(
+          "[MarketCompaniesTab] fetchCompanies: formato risposta non valido",
+          json
+        );
+        throw new Error("Formato risposta non valido");
       }
-      
-        // Map imprese fields to frontend schema - include ALL fields
+
+      // Map imprese fields to frontend schema - include ALL fields
       const mappedData = json.data.map((v: any) => ({
         // Campi base per la visualizzazione nella lista
         id: v.id,
         code: v.codice_fiscale,
         denominazione: v.denominazione,
         partita_iva: v.partita_iva,
-        referente: (v.rappresentante_legale_nome && v.rappresentante_legale_cognome) 
-          ? `${v.rappresentante_legale_nome} ${v.rappresentante_legale_cognome}` 
-          : (v.email || ''),
+        referente:
+          v.rappresentante_legale_nome && v.rappresentante_legale_cognome
+            ? `${v.rappresentante_legale_nome} ${v.rappresentante_legale_cognome}`
+            : v.email || "",
         telefono: v.telefono,
         stato: v.stato_impresa,
-	        concessioni: (v.concessioni_attive || []).map((c: any) => ({
-	          ...c,
-	          wallet_balance: c.wallet_balance !== undefined ? Number(c.wallet_balance) : undefined
-	        })),
-	        autorizzazioni: v.autorizzazioni_attive || [],
-	        spunta_wallets: v.spunta_wallets || [],
-            // Mappiamo le qualificazioni dal backend (nuovo campo aggiunto in v3.1)
-            qualificazioni: v.qualificazioni || [],
+        concessioni: (v.concessioni_attive || []).map((c: any) => ({
+          ...c,
+          wallet_balance:
+            c.wallet_balance !== undefined
+              ? Number(c.wallet_balance)
+              : undefined,
+        })),
+        autorizzazioni: v.autorizzazioni_attive || [],
+        spunta_wallets: v.spunta_wallets || [],
+        // Mappiamo le qualificazioni dal backend (nuovo campo aggiunto in v3.1)
+        qualificazioni: v.qualificazioni || [],
         // Tutti gli altri campi per il modal di modifica
         numero_rea: v.numero_rea,
         cciaa_sigla: v.cciaa_sigla,
@@ -478,33 +526,42 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         rappresentante_legale_cognome: v.rappresentante_legale_cognome,
         rappresentante_legale_nome: v.rappresentante_legale_nome,
         rappresentante_legale_cf: v.rappresentante_legale_cf,
-        rappresentante_legale_data_nascita: v.rappresentante_legale_data_nascita,
-        rappresentante_legale_luogo_nascita: v.rappresentante_legale_luogo_nascita,
-        rappresentante_legale_residenza_via: v.rappresentante_legale_residenza_via,
-        rappresentante_legale_residenza_civico: v.rappresentante_legale_residenza_civico,
-        rappresentante_legale_residenza_cap: v.rappresentante_legale_residenza_cap,
-        rappresentante_legale_residenza_comune: v.rappresentante_legale_residenza_comune,
-        rappresentante_legale_residenza_provincia: v.rappresentante_legale_residenza_provincia,
+        rappresentante_legale_data_nascita:
+          v.rappresentante_legale_data_nascita,
+        rappresentante_legale_luogo_nascita:
+          v.rappresentante_legale_luogo_nascita,
+        rappresentante_legale_residenza_via:
+          v.rappresentante_legale_residenza_via,
+        rappresentante_legale_residenza_civico:
+          v.rappresentante_legale_residenza_civico,
+        rappresentante_legale_residenza_cap:
+          v.rappresentante_legale_residenza_cap,
+        rappresentante_legale_residenza_comune:
+          v.rappresentante_legale_residenza_comune,
+        rappresentante_legale_residenza_provincia:
+          v.rappresentante_legale_residenza_provincia,
         capitale_sociale: v.capitale_sociale,
         numero_addetti: v.numero_addetti,
         sito_web: v.sito_web,
         data_iscrizione_ri: v.data_iscrizione_ri,
-        hub_shop_id: v.hub_shop_id,  // ID del negozio HUB collegato (se presente)
+        hub_shop_id: v.hub_shop_id, // ID del negozio HUB collegato (se presente)
       }));
-      
+
       setCompanies(mappedData);
     } catch (err) {
-      console.error('[MarketCompaniesTab] fetchCompanies error:', err);
-      setError('Impossibile caricare le imprese');
+      console.error("[MarketCompaniesTab] fetchCompanies error:", err);
+      setError("Impossibile caricare le imprese");
       setCompanies([]);
     }
   };
 
   const fetchConcessions = async () => {
     // Se marketId è "ALL" o "all", carica tutte le concessioni
-    if (marketId === 'ALL' || marketId === 'all') {
+    if (marketId === "ALL" || marketId === "all") {
       try {
-        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/concessions`));
+        const response = await fetch(
+          addComuneIdToUrl(`${API_BASE_URL}/api/concessions`)
+        );
         if (!response.ok) {
           // Se l'endpoint non esiste, non mostrare errore
           setConcessions([]);
@@ -516,20 +573,28 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
             id: c.id,
             market_id: c.market_id,
             stall_id: c.stall_id,
-            stall_code: c.stall_number || c.stall_code || 'N/A',
+            stall_code: c.stall_number || c.stall_code || "N/A",
             stall_number: c.stall_number || c.stall_id,
             company_id: c.vendor_id || c.company_id,
-            company_name: c.vendor_business_name || c.company_name || 'N/A',
+            company_name: c.vendor_business_name || c.company_name || "N/A",
             vendor_business_name: c.vendor_business_name || c.ragione_sociale,
-            tipo_concessione: c.type || c.tipo_concessione || 'N/A',
+            tipo_concessione: c.type || c.tipo_concessione || "N/A",
             valida_dal: c.valid_from || c.valida_dal,
             valida_al: c.valid_to || c.valida_al,
-            stato: (c.status === 'CESSATA' || c.stato === 'CESSATA' || c.stato === 'SOSPESA') ? (c.status || c.stato) : (
-              (c.valid_to && new Date(c.valid_to) < new Date()) ? 'SCADUTA' : (c.stato || 'ATTIVA')
-            ),
-            stato_calcolato: (c.valid_to && new Date(c.valid_to) < new Date()) ? 'SCADUTA' : (c.stato || 'ATTIVA'),
-            settore_merceologico: c.settore_merceologico || 'Alimentare',
-            comune_rilascio: c.comune_rilascio || '',
+            stato:
+              c.status === "CESSATA" ||
+              c.stato === "CESSATA" ||
+              c.stato === "SOSPESA"
+                ? c.status || c.stato
+                : c.valid_to && new Date(c.valid_to) < new Date()
+                  ? "SCADUTA"
+                  : c.stato || "ATTIVA",
+            stato_calcolato:
+              c.valid_to && new Date(c.valid_to) < new Date()
+                ? "SCADUTA"
+                : c.stato || "ATTIVA",
+            settore_merceologico: c.settore_merceologico || "Alimentare",
+            comune_rilascio: c.comune_rilascio || "",
             // Campi aggiuntivi per dettaglio
             numero_protocollo: c.numero_protocollo,
             data_protocollazione: c.data_protocollazione,
@@ -556,7 +621,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
             vendor_code: c.vendor_code,
             impresa_id: c.impresa_id,
             impresa_denominazione: c.impresa_denominazione,
-            impresa_partita_iva: c.impresa_partita_iva
+            impresa_partita_iva: c.impresa_partita_iva,
           }));
           setConcessions(mappedData);
         } else {
@@ -567,34 +632,44 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       }
       return;
     }
-    
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/markets/${marketId}/concessions`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/markets/${marketId}/concessions`
+      );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
-      
+
       if (!json.success || !Array.isArray(json.data)) {
-        console.error('[MarketCompaniesTab] fetchConcessions: formato risposta non valido', json);
-        throw new Error('Formato risposta non valido');
+        console.error(
+          "[MarketCompaniesTab] fetchConcessions: formato risposta non valido",
+          json
+        );
+        throw new Error("Formato risposta non valido");
       }
-      
+
       const mappedData = json.data.map((c: any) => ({
         id: c.id,
         market_id: c.market_id,
         stall_id: c.stall_id,
         stall_number: c.stall_number || c.stall_id,
-        stall_code: c.stall_number || c.stall_code || 'N/A',
+        stall_code: c.stall_number || c.stall_code || "N/A",
         posteggio: c.stall_number || c.stall_id,
         company_id: c.vendor_id || c.company_id,
-        company_name: c.vendor_business_name || c.company_name || 'N/A',
-        tipo_concessione: c.type || c.tipo_concessione || 'N/A',
+        company_name: c.vendor_business_name || c.company_name || "N/A",
+        tipo_concessione: c.type || c.tipo_concessione || "N/A",
         valida_dal: c.valid_from || c.valida_dal,
         valida_al: c.valid_to || c.valida_al,
         // Priorità: CESSATA/SOSPESA dal DB > stato_calcolato > stato generico
-        stato: (c.status === 'CESSATA' || c.stato === 'CESSATA' || c.stato === 'SOSPESA') ? (c.status || c.stato) : (c.stato_calcolato || c.stato || c.status || 'ATTIVA'),
+        stato:
+          c.status === "CESSATA" ||
+          c.stato === "CESSATA" ||
+          c.stato === "SOSPESA"
+            ? c.status || c.stato
+            : c.stato_calcolato || c.stato || c.status || "ATTIVA",
         stato_calcolato: c.stato_calcolato,
-        settore_merceologico: c.settore_merceologico || 'Alimentare',
-        comune_rilascio: c.comune_rilascio || '',
+        settore_merceologico: c.settore_merceologico || "Alimentare",
+        comune_rilascio: c.comune_rilascio || "",
         // Campi aggiuntivi per dettaglio (sincronizzato con SSO SUAP)
         numero_protocollo: c.numero_protocollo,
         data_protocollazione: c.data_protocollazione,
@@ -638,7 +713,8 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         sede_legale_provincia: c.sede_legale_provincia,
         // Autorizzazione precedente
         autorizzazione_precedente_data: c.autorizzazione_precedente_data,
-        autorizzazione_precedente_intestatario: c.autorizzazione_precedente_intestatario,
+        autorizzazione_precedente_intestatario:
+          c.autorizzazione_precedente_intestatario,
         autorizzazione_precedente_pg: c.autorizzazione_precedente_pg,
         // SCIA precedente
         scia_precedente_comune: c.scia_precedente_comune,
@@ -647,12 +723,12 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         // Altri dati
         canone_unico: c.canone_unico,
         attrezzature: c.attrezzature,
-        tipo_posteggio: c.tipo_posteggio
+        tipo_posteggio: c.tipo_posteggio,
       }));
-      
+
       setConcessions(mappedData);
     } catch (err) {
-      console.error('[MarketCompaniesTab] fetchConcessions error:', err);
+      console.error("[MarketCompaniesTab] fetchConcessions error:", err);
       setConcessions([]);
     }
   };
@@ -661,28 +737,32 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   const fetchQualificazioni = async () => {
     try {
       if (selectedCompanyForQualif) {
-        const response = await fetch(`${API_BASE_URL}/api/imprese/${selectedCompanyForQualif.id}/qualificazioni`);
+        const response = await fetch(
+          `${API_BASE_URL}/api/imprese/${selectedCompanyForQualif.id}/qualificazioni`
+        );
         if (response.ok) {
           const json = await response.json();
           if (json.success) {
             setQualificazioni(prev => {
-              const others = prev.filter(q => q.company_id !== selectedCompanyForQualif.id);
+              const others = prev.filter(
+                q => q.company_id !== selectedCompanyForQualif.id
+              );
               const newQualificazioni = json.data.map((q: any) => {
                 // Calcola lo stato DINAMICAMENTE dalla data di scadenza
-                let stato = q.stato || 'ATTIVA';
+                let stato = q.stato || "ATTIVA";
                 if (q.data_scadenza) {
                   const oggi = new Date();
                   oggi.setHours(0, 0, 0, 0); // Confronta solo le date, non le ore
                   // Normalizza la data di scadenza per evitare problemi di fuso orario
-                  const scadenzaStr = q.data_scadenza.split('T')[0]; // Prende solo YYYY-MM-DD
-                  const [year, month, day] = scadenzaStr.split('-').map(Number);
+                  const scadenzaStr = q.data_scadenza.split("T")[0]; // Prende solo YYYY-MM-DD
+                  const [year, month, day] = scadenzaStr.split("-").map(Number);
                   const scadenza = new Date(year, month - 1, day); // Crea data locale
                   scadenza.setHours(23, 59, 59, 999); // Fine giornata della scadenza
                   // Determina lo stato SOLO dalla data
                   if (scadenza < oggi) {
-                    stato = 'SCADUTA';
+                    stato = "SCADUTA";
                   } else {
-                    stato = 'ATTIVA';
+                    stato = "ATTIVA";
                   }
                 }
                 return {
@@ -691,10 +771,14 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                   company_name: selectedCompanyForQualif.denominazione,
                   tipo: q.tipo,
                   ente_rilascio: q.ente_rilascio,
-                  data_rilascio: q.data_rilascio ? q.data_rilascio.split('T')[0] : '',
-                  data_scadenza: q.data_scadenza ? q.data_scadenza.split('T')[0] : '',
+                  data_rilascio: q.data_rilascio
+                    ? q.data_rilascio.split("T")[0]
+                    : "",
+                  data_scadenza: q.data_scadenza
+                    ? q.data_scadenza.split("T")[0]
+                    : "",
                   stato: stato,
-                  note: q.note
+                  note: q.note,
                 };
               });
               return [...others, ...newQualificazioni];
@@ -703,7 +787,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         }
       }
     } catch (err) {
-      console.error('Error fetching qualificazioni:', err);
+      console.error("Error fetching qualificazioni:", err);
     }
   };
 
@@ -772,33 +856,42 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           {/* Filtro Tipo Impresa */}
           <div className="flex gap-2 mb-4">
             <button
-              onClick={() => { setImpresaFilter('all'); onFilterChange?.('all'); }}
+              onClick={() => {
+                setImpresaFilter("all");
+                onFilterChange?.("all");
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                impresaFilter === 'all'
-                  ? 'bg-[#14b8a6] text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                impresaFilter === "all"
+                  ? "bg-[#14b8a6] text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
               }`}
             >
               <Building2 className="w-4 h-4" />
               Tutte le Imprese
             </button>
             <button
-              onClick={() => { setImpresaFilter('ambulanti'); onFilterChange?.('ambulanti'); }}
+              onClick={() => {
+                setImpresaFilter("ambulanti");
+                onFilterChange?.("ambulanti");
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                impresaFilter === 'ambulanti'
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                impresaFilter === "ambulanti"
+                  ? "bg-orange-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
               }`}
             >
               <Store className="w-4 h-4" />
               Ambulanti Mercato
             </button>
             <button
-              onClick={() => { setImpresaFilter('negozi_hub'); onFilterChange?.('negozi_hub'); }}
+              onClick={() => {
+                setImpresaFilter("negozi_hub");
+                onFilterChange?.("negozi_hub");
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                impresaFilter === 'negozi_hub'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                impresaFilter === "negozi_hub"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
               }`}
             >
               <MapPin className="w-4 h-4" />
@@ -813,79 +906,86 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={e => setSearchQuery(e.target.value)}
                   placeholder={
-                    searchType === 'impresa' 
-                      ? 'Cerca impresa per nome, P.IVA o CF...' 
-                      : searchType === 'concessione'
-                        ? 'Cerca concessione per impresa, posteggio o tipo...'
-                        : 'Cerca qualificazione per impresa, tipo o ente...'
+                    searchType === "impresa"
+                      ? "Cerca impresa per nome, P.IVA o CF..."
+                      : searchType === "concessione"
+                        ? "Cerca concessione per impresa, posteggio o tipo..."
+                        : "Cerca qualificazione per impresa, tipo o ente..."
                   }
                   className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setSearchType('impresa'); setSearchQuery(''); setSelectedCompanyForQualif(null); }}
+                  onClick={() => {
+                    setSearchType("impresa");
+                    setSearchQuery("");
+                    setSelectedCompanyForQualif(null);
+                  }}
                   className={`px-4 py-2 rounded-lg transition-colors ${
-                    searchType === 'impresa'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    searchType === "impresa"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                   }`}
                 >
                   <Building2 className="w-4 h-4 inline mr-2" />
                   Imprese
                 </button>
                 <button
-                  onClick={() => { setSearchType('concessione'); setSearchQuery(''); setSelectedCompanyForQualif(null); }}
+                  onClick={() => {
+                    setSearchType("concessione");
+                    setSearchQuery("");
+                    setSelectedCompanyForQualif(null);
+                  }}
                   className={`px-4 py-2 rounded-lg transition-colors ${
-                    searchType === 'concessione'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    searchType === "concessione"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                   }`}
                 >
                   <FileText className="w-4 h-4 inline mr-2" />
                   Concessioni
                 </button>
-          <button
-            onClick={() => setSearchType('qualificazione')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              searchType === 'qualificazione'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
-            }`}
-          >
-            <FileCheck className="w-4 h-4" />
-            Qualificazioni
-          </button>
-          
-          <button
-            onClick={() => setSearchType('autorizzazione')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              searchType === 'autorizzazione'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
-            }`}
-          >
-            <FileBadge className="w-4 h-4" />
-            Autorizzazioni
-          </button>
-        </div>
+                <button
+                  onClick={() => setSearchType("qualificazione")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                    searchType === "qualificazione"
+                      ? "bg-purple-600 text-white"
+                      : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  <FileCheck className="w-4 h-4" />
+                  Qualificazioni
+                </button>
+
+                <button
+                  onClick={() => setSearchType("autorizzazione")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                    searchType === "autorizzazione"
+                      ? "bg-purple-600 text-white"
+                      : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  <FileBadge className="w-4 h-4" />
+                  Autorizzazioni
+                </button>
+              </div>
             </div>
             {searchQuery && (
               <div className="mt-2 text-sm text-gray-400">
-                {searchType === 'impresa'
+                {searchType === "impresa"
                   ? `${filteredCompanies.length} imprese trovate`
-                  : searchType === 'concessione'
+                  : searchType === "concessione"
                     ? `${filteredConcessions.length} concessioni trovate`
-                    : `${filteredQualificazioni.length} qualificazioni trovate`
-                }
+                    : `${filteredQualificazioni.length} qualificazioni trovate`}
               </div>
             )}
           </div>
 
           {/* Sezione Imprese */}
-          <section className={searchType !== 'impresa' ? 'hidden' : ''}>
+          <section className={searchType !== "impresa" ? "hidden" : ""}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 <Building2 className="w-5 h-5" />
@@ -903,7 +1003,9 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
             {companies.length === 0 ? (
               <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-8 text-center">
                 <Building2 className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-400">Nessuna impresa registrata per questo mercato</p>
+                <p className="text-gray-400">
+                  Nessuna impresa registrata per questo mercato
+                </p>
                 <button
                   onClick={() => handleOpenCompanyModal()}
                   className="mt-4 text-blue-400 hover:text-blue-300"
@@ -913,15 +1015,17 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filteredCompanies.map((company) => (
+                {filteredCompanies.map(company => (
                   <CompanyCard
                     key={company.id}
                     company={company}
                     marketId={marketId}
-                    qualificazioni={qualificazioni.filter(q => q.company_id === company.id)}
+                    qualificazioni={qualificazioni.filter(
+                      q => q.company_id === company.id
+                    )}
                     onEdit={() => handleOpenCompanyModal(company)}
                     onViewQualificazioni={() => {
-                      setSearchType('qualificazione');
+                      setSearchType("qualificazione");
                       setSelectedCompanyForQualif(company);
                       // Scroll to qualifications section if needed, or just switch tab
                     }}
@@ -932,7 +1036,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           </section>
 
           {/* Sezione Concessioni */}
-          <section className={searchType !== 'concessione' ? 'hidden' : ''}>
+          <section className={searchType !== "concessione" ? "hidden" : ""}>
             {/* Vista Dettaglio Concessione INLINE - IDENTICA alla SCIA */}
             {selectedConcessionDetail ? (
               <>
@@ -940,24 +1044,57 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-xl font-bold text-[#e8fbff] flex items-center gap-3">
-                      Concessione #{selectedConcessionDetail.numero_protocollo || selectedConcessionDetail.id}
-                      <span className={`px-3 py-1 text-xs font-medium rounded-full border-0 gap-1 inline-flex items-center ${
-                        (selectedConcessionDetail.stato_calcolato || selectedConcessionDetail.stato) === 'ATTIVA' ? 'bg-green-500/20 text-green-400' :
-                        (selectedConcessionDetail.stato_calcolato || selectedConcessionDetail.stato) === 'SCADUTA' ? 'bg-red-500/20 text-red-400' :
-                        (selectedConcessionDetail.stato_calcolato || selectedConcessionDetail.stato) === 'DA_ASSOCIARE' ? 'bg-orange-500/20 text-orange-400' :
-                        'bg-gray-500/20 text-gray-400'
-                      }`}>
-                        <span className={`w-2 h-2 rounded-full ${
-                          (selectedConcessionDetail.stato_calcolato || selectedConcessionDetail.stato) === 'ATTIVA' ? 'bg-green-400' :
-                          (selectedConcessionDetail.stato_calcolato || selectedConcessionDetail.stato) === 'SCADUTA' ? 'bg-red-400' :
-                          (selectedConcessionDetail.stato_calcolato || selectedConcessionDetail.stato) === 'DA_ASSOCIARE' ? 'bg-orange-400' :
-                          'bg-gray-400'
-                        }`}></span>
-                        {selectedConcessionDetail.stato_calcolato || selectedConcessionDetail.stato || 'ATTIVA'}
+                      Concessione #
+                      {selectedConcessionDetail.numero_protocollo ||
+                        selectedConcessionDetail.id}
+                      <span
+                        className={`px-3 py-1 text-xs font-medium rounded-full border-0 gap-1 inline-flex items-center ${
+                          (selectedConcessionDetail.stato_calcolato ||
+                            selectedConcessionDetail.stato) === "ATTIVA"
+                            ? "bg-green-500/20 text-green-400"
+                            : (selectedConcessionDetail.stato_calcolato ||
+                                  selectedConcessionDetail.stato) === "SCADUTA"
+                              ? "bg-red-500/20 text-red-400"
+                              : (selectedConcessionDetail.stato_calcolato ||
+                                    selectedConcessionDetail.stato) ===
+                                  "DA_ASSOCIARE"
+                                ? "bg-orange-500/20 text-orange-400"
+                                : "bg-gray-500/20 text-gray-400"
+                        }`}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            (selectedConcessionDetail.stato_calcolato ||
+                              selectedConcessionDetail.stato) === "ATTIVA"
+                              ? "bg-green-400"
+                              : (selectedConcessionDetail.stato_calcolato ||
+                                    selectedConcessionDetail.stato) ===
+                                  "SCADUTA"
+                                ? "bg-red-400"
+                                : (selectedConcessionDetail.stato_calcolato ||
+                                      selectedConcessionDetail.stato) ===
+                                    "DA_ASSOCIARE"
+                                  ? "bg-orange-400"
+                                  : "bg-gray-400"
+                          }`}
+                        ></span>
+                        {selectedConcessionDetail.stato_calcolato ||
+                          selectedConcessionDetail.stato ||
+                          "ATTIVA"}
                       </span>
                     </h3>
                     <p className="text-gray-400">
-                      {selectedConcessionDetail.tipo_concessione?.toUpperCase() || 'FISSO'} - {selectedConcessionDetail.ragione_sociale || selectedConcessionDetail.impresa_denominazione || 'N/A'} ({selectedConcessionDetail.cf_concessionario || selectedConcessionDetail.partita_iva || 'N/A'})
+                      {selectedConcessionDetail.tipo_concessione?.toUpperCase() ||
+                        "FISSO"}{" "}
+                      -{" "}
+                      {selectedConcessionDetail.ragione_sociale ||
+                        selectedConcessionDetail.impresa_denominazione ||
+                        "N/A"}{" "}
+                      (
+                      {selectedConcessionDetail.cf_concessionario ||
+                        selectedConcessionDetail.partita_iva ||
+                        "N/A"}
+                      )
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -968,7 +1105,9 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                       ← Torna alla lista
                     </button>
                     <button
-                      onClick={() => handleOpenConcessionModal(selectedConcessionDetail)}
+                      onClick={() =>
+                        handleOpenConcessionModal(selectedConcessionDetail)
+                      }
                       className="px-4 py-2 bg-[#f59e0b] text-black hover:bg-[#f59e0b]/90 rounded-lg transition-colors flex items-center gap-2"
                     >
                       <Edit className="w-4 h-4" />
@@ -989,15 +1128,95 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Numero Protocollo</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.numero_protocollo || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Data Protocollazione</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.data_protocollazione ? new Date(selectedConcessionDetail.data_protocollazione).toLocaleDateString('it-IT') : '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Comune Rilascio</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.comune_rilascio || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Tipo Concessione</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.tipo_concessione || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Durata</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.durata_anni ? `${selectedConcessionDetail.durata_anni} anni` : '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Settore Merceologico</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.settore_merceologico || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Data Decorrenza</p><p className="text-[#e8fbff] font-medium">{(selectedConcessionDetail.data_decorrenza || selectedConcessionDetail.valida_dal) ? new Date((selectedConcessionDetail.data_decorrenza || selectedConcessionDetail.valida_dal)!).toLocaleDateString('it-IT') : '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Scadenza</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.valida_al ? new Date(selectedConcessionDetail.valida_al).toLocaleDateString('it-IT') : '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Oggetto</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.oggetto || '-'}</p></div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Numero Protocollo
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.numero_protocollo || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Data Protocollazione
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.data_protocollazione
+                              ? new Date(
+                                  selectedConcessionDetail.data_protocollazione
+                                ).toLocaleDateString("it-IT")
+                              : "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Comune Rilascio
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.comune_rilascio || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Tipo Concessione
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.tipo_concessione || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Durata
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.durata_anni
+                              ? `${selectedConcessionDetail.durata_anni} anni`
+                              : "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Settore Merceologico
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.settore_merceologico ||
+                              "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Data Decorrenza
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.data_decorrenza ||
+                            selectedConcessionDetail.valida_dal
+                              ? new Date(
+                                  (selectedConcessionDetail.data_decorrenza ||
+                                    selectedConcessionDetail.valida_dal)!
+                                ).toLocaleDateString("it-IT")
+                              : "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Scadenza
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.valida_al
+                              ? new Date(
+                                  selectedConcessionDetail.valida_al
+                                ).toLocaleDateString("it-IT")
+                              : "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Oggetto
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.oggetto || "-"}
+                          </p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -1012,13 +1231,75 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Ragione Sociale</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.ragione_sociale || selectedConcessionDetail.impresa_denominazione || selectedConcessionDetail.vendor_business_name || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Partita IVA</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.partita_iva || selectedConcessionDetail.impresa_partita_iva || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Codice Fiscale</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.cf_concessionario || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Nome</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.nome || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Cognome</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.cognome || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Settore Merceologico</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.settore_merceologico || '-'}</p></div>
-                        <div className="col-span-2 md:col-span-3"><p className="text-xs text-gray-500 uppercase tracking-wide">Sede Legale</p><p className="text-[#e8fbff] font-medium">{[selectedConcessionDetail.sede_legale_via, selectedConcessionDetail.sede_legale_cap, selectedConcessionDetail.sede_legale_comune, selectedConcessionDetail.sede_legale_provincia].filter(Boolean).join(', ') || '-'}</p></div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Ragione Sociale
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.ragione_sociale ||
+                              selectedConcessionDetail.impresa_denominazione ||
+                              selectedConcessionDetail.vendor_business_name ||
+                              "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Partita IVA
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.partita_iva ||
+                              selectedConcessionDetail.impresa_partita_iva ||
+                              "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Codice Fiscale
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.cf_concessionario || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Nome
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.nome || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Cognome
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.cognome || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Settore Merceologico
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.settore_merceologico ||
+                              "-"}
+                          </p>
+                        </div>
+                        <div className="col-span-2 md:col-span-3">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Sede Legale
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {[
+                              selectedConcessionDetail.sede_legale_via,
+                              selectedConcessionDetail.sede_legale_cap,
+                              selectedConcessionDetail.sede_legale_comune,
+                              selectedConcessionDetail.sede_legale_provincia,
+                            ]
+                              .filter(Boolean)
+                              .join(", ") || "-"}
+                          </p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -1033,19 +1314,73 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Mercato</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.market_name || selectedConcessionDetail.mercato || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Numero Posteggio</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.stall_number || selectedConcessionDetail.posteggio || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Ubicazione</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.ubicazione || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Giorno Mercato</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.giorno || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Fila</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.fila || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Dimensioni (MQ)</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.mq || '-'}</p></div>
-                        <div><p className="text-xs text-gray-500 uppercase tracking-wide">Dimensioni Lineari</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.dimensioni_lineari || '-'}</p></div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Mercato
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.market_name ||
+                              selectedConcessionDetail.mercato ||
+                              "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Numero Posteggio
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.stall_number ||
+                              selectedConcessionDetail.posteggio ||
+                              "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Ubicazione
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.ubicazione || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Giorno Mercato
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.giorno || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Fila
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.fila || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Dimensioni (MQ)
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.mq || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Dimensioni Lineari
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.dimensioni_lineari || "-"}
+                          </p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* 4. Cedente (per subingresso) */}
-                  {(selectedConcessionDetail.cedente_ragione_sociale || selectedConcessionDetail.cedente_cf) && (
+                  {(selectedConcessionDetail.cedente_ragione_sociale ||
+                    selectedConcessionDetail.cedente_cf) && (
                     <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
@@ -1055,19 +1390,73 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          <div><p className="text-xs text-gray-500 uppercase tracking-wide">Ragione Sociale</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.cedente_ragione_sociale || '-'}</p></div>
-                          <div><p className="text-xs text-gray-500 uppercase tracking-wide">Partita IVA</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.cedente_partita_iva || '-'}</p></div>
-                          <div><p className="text-xs text-gray-500 uppercase tracking-wide">Codice Fiscale</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.cedente_cf || '-'}</p></div>
-                          <div><p className="text-xs text-gray-500 uppercase tracking-wide">Nome</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.cedente_nome || '-'}</p></div>
-                          <div><p className="text-xs text-gray-500 uppercase tracking-wide">Cognome</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.cedente_cognome || '-'}</p></div>
-                          <div className="col-span-2 md:col-span-3"><p className="text-xs text-gray-500 uppercase tracking-wide">Sede Legale Cedente</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.cedente_sede_legale || [selectedConcessionDetail.cedente_indirizzo_via, selectedConcessionDetail.cedente_indirizzo_cap, selectedConcessionDetail.cedente_indirizzo_comune, selectedConcessionDetail.cedente_indirizzo_provincia].filter(Boolean).join(', ') || '-'}</p></div>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">
+                              Ragione Sociale
+                            </p>
+                            <p className="text-[#e8fbff] font-medium">
+                              {selectedConcessionDetail.cedente_ragione_sociale ||
+                                "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">
+                              Partita IVA
+                            </p>
+                            <p className="text-[#e8fbff] font-medium">
+                              {selectedConcessionDetail.cedente_partita_iva ||
+                                "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">
+                              Codice Fiscale
+                            </p>
+                            <p className="text-[#e8fbff] font-medium">
+                              {selectedConcessionDetail.cedente_cf || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">
+                              Nome
+                            </p>
+                            <p className="text-[#e8fbff] font-medium">
+                              {selectedConcessionDetail.cedente_nome || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">
+                              Cognome
+                            </p>
+                            <p className="text-[#e8fbff] font-medium">
+                              {selectedConcessionDetail.cedente_cognome || "-"}
+                            </p>
+                          </div>
+                          <div className="col-span-2 md:col-span-3">
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">
+                              Sede Legale Cedente
+                            </p>
+                            <p className="text-[#e8fbff] font-medium">
+                              {selectedConcessionDetail.cedente_sede_legale ||
+                                [
+                                  selectedConcessionDetail.cedente_indirizzo_via,
+                                  selectedConcessionDetail.cedente_indirizzo_cap,
+                                  selectedConcessionDetail.cedente_indirizzo_comune,
+                                  selectedConcessionDetail.cedente_indirizzo_provincia,
+                                ]
+                                  .filter(Boolean)
+                                  .join(", ") ||
+                                "-"}
+                            </p>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
                   )}
 
                   {/* 5. Autorizzazione Precedente */}
-                  {(selectedConcessionDetail.autorizzazione_precedente_pg || selectedConcessionDetail.scia_precedente_numero) && (
+                  {(selectedConcessionDetail.autorizzazione_precedente_pg ||
+                    selectedConcessionDetail.scia_precedente_numero) && (
                     <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
@@ -1078,22 +1467,76 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                       <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {selectedConcessionDetail.autorizzazione_precedente_pg && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">N. Protocollo Aut.</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.autorizzazione_precedente_pg}</p></div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                N. Protocollo Aut.
+                              </p>
+                              <p className="text-[#e8fbff] font-medium">
+                                {
+                                  selectedConcessionDetail.autorizzazione_precedente_pg
+                                }
+                              </p>
+                            </div>
                           )}
                           {selectedConcessionDetail.autorizzazione_precedente_data && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">Data Aut.</p><p className="text-[#e8fbff] font-medium">{new Date(selectedConcessionDetail.autorizzazione_precedente_data).toLocaleDateString('it-IT')}</p></div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Data Aut.
+                              </p>
+                              <p className="text-[#e8fbff] font-medium">
+                                {new Date(
+                                  selectedConcessionDetail.autorizzazione_precedente_data
+                                ).toLocaleDateString("it-IT")}
+                              </p>
+                            </div>
                           )}
                           {selectedConcessionDetail.autorizzazione_precedente_intestatario && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">Intestatario Aut.</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.autorizzazione_precedente_intestatario}</p></div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Intestatario Aut.
+                              </p>
+                              <p className="text-[#e8fbff] font-medium">
+                                {
+                                  selectedConcessionDetail.autorizzazione_precedente_intestatario
+                                }
+                              </p>
+                            </div>
                           )}
                           {selectedConcessionDetail.scia_precedente_numero && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">N. SCIA Prec.</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.scia_precedente_numero}</p></div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                N. SCIA Prec.
+                              </p>
+                              <p className="text-[#e8fbff] font-medium">
+                                {
+                                  selectedConcessionDetail.scia_precedente_numero
+                                }
+                              </p>
+                            </div>
                           )}
                           {selectedConcessionDetail.scia_precedente_data && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">Data SCIA Prec.</p><p className="text-[#e8fbff] font-medium">{new Date(selectedConcessionDetail.scia_precedente_data).toLocaleDateString('it-IT')}</p></div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Data SCIA Prec.
+                              </p>
+                              <p className="text-[#e8fbff] font-medium">
+                                {new Date(
+                                  selectedConcessionDetail.scia_precedente_data
+                                ).toLocaleDateString("it-IT")}
+                              </p>
+                            </div>
                           )}
                           {selectedConcessionDetail.scia_precedente_comune && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">Comune SCIA Prec.</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.scia_precedente_comune}</p></div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Comune SCIA Prec.
+                              </p>
+                              <p className="text-[#e8fbff] font-medium">
+                                {
+                                  selectedConcessionDetail.scia_precedente_comune
+                                }
+                              </p>
+                            </div>
                           )}
                         </div>
                       </CardContent>
@@ -1101,7 +1544,8 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                   )}
 
                   {/* 6. Dati Economici */}
-                  {(selectedConcessionDetail.canone_unico || selectedConcessionDetail.attrezzature) && (
+                  {(selectedConcessionDetail.canone_unico ||
+                    selectedConcessionDetail.attrezzature) && (
                     <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
@@ -1112,13 +1556,39 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                       <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {selectedConcessionDetail.canone_unico && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">Canone Unico</p><p className="text-[#14b8a6] font-bold text-lg">€ {Number(selectedConcessionDetail.canone_unico).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p></div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Canone Unico
+                              </p>
+                              <p className="text-[#14b8a6] font-bold text-lg">
+                                €{" "}
+                                {Number(
+                                  selectedConcessionDetail.canone_unico
+                                ).toLocaleString("it-IT", {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </p>
+                            </div>
                           )}
                           {selectedConcessionDetail.attrezzature && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">Attrezzature</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.attrezzature}</p></div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Attrezzature
+                              </p>
+                              <p className="text-[#e8fbff] font-medium">
+                                {selectedConcessionDetail.attrezzature}
+                              </p>
+                            </div>
                           )}
                           {selectedConcessionDetail.tipo_posteggio && (
-                            <div><p className="text-xs text-gray-500 uppercase tracking-wide">Tipo Posteggio</p><p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.tipo_posteggio}</p></div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Tipo Posteggio
+                              </p>
+                              <p className="text-[#e8fbff] font-medium">
+                                {selectedConcessionDetail.tipo_posteggio}
+                              </p>
+                            </div>
                           )}
                         </div>
                       </CardContent>
@@ -1136,26 +1606,54 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">ID Wallet</p>
-                          <p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.wallet_id || '-'}</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            ID Wallet
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.wallet_id || "-"}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">Saldo</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Saldo
+                          </p>
                           <p className="text-[#e8fbff] font-medium text-lg">
-                            <span className={Number(selectedConcessionDetail.wallet_balance || 0) >= 0 ? 'text-green-400' : 'text-red-400'}>
-                              € {Number(selectedConcessionDetail.wallet_balance || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                            <span
+                              className={
+                                Number(
+                                  selectedConcessionDetail.wallet_balance || 0
+                                ) >= 0
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }
+                            >
+                              €{" "}
+                              {Number(
+                                selectedConcessionDetail.wallet_balance || 0
+                              ).toLocaleString("it-IT", {
+                                minimumFractionDigits: 2,
+                              })}
                             </span>
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">Stato Wallet</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Stato Wallet
+                          </p>
                           <p className="text-[#e8fbff] font-medium">
-                            {selectedConcessionDetail.wallet_status === 'ACTIVE' ? (
+                            {selectedConcessionDetail.wallet_status ===
+                            "ACTIVE" ? (
                               <span className="text-green-400">✓ Attivo</span>
                             ) : selectedConcessionDetail.wallet_id ? (
-                              <span className="text-orange-400">⚠ {selectedConcessionDetail.wallet_status || 'Sospeso'}</span>
+                              <span className="text-orange-400">
+                                ⚠{" "}
+                                {selectedConcessionDetail.wallet_status ||
+                                  "Sospeso"}
+                              </span>
                             ) : (
-                              <span className="text-gray-400">- Non creato</span>
+                              <span className="text-gray-400">
+                                - Non creato
+                              </span>
                             )}
                           </p>
                         </div>
@@ -1174,36 +1672,61 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">DURC Valido</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            DURC Valido
+                          </p>
                           <p className="text-[#e8fbff] font-medium">
-                            {selectedConcessionDetail.durc_scadenza_qualifica && new Date(selectedConcessionDetail.durc_scadenza_qualifica) > new Date() ? (
+                            {selectedConcessionDetail.durc_scadenza_qualifica &&
+                            new Date(
+                              selectedConcessionDetail.durc_scadenza_qualifica
+                            ) > new Date() ? (
                               <span className="text-green-400">✓ Sì</span>
                             ) : selectedConcessionDetail.durc_scadenza_qualifica ? (
-                              <span className="text-orange-400">⚠ Scaduto</span>
+                              <span className="text-orange-400">
+                                ⚠ Scaduto
+                              </span>
                             ) : (
-                              <span className="text-red-400">✗ Non presente</span>
+                              <span className="text-red-400">
+                                ✗ Non presente
+                              </span>
                             )}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">Scadenza DURC</p>
-                          <p className="text-[#e8fbff] font-medium">{selectedConcessionDetail.durc_scadenza_qualifica ? new Date(selectedConcessionDetail.durc_scadenza_qualifica).toLocaleDateString('it-IT') : '-'}</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Scadenza DURC
+                          </p>
+                          <p className="text-[#e8fbff] font-medium">
+                            {selectedConcessionDetail.durc_scadenza_qualifica
+                              ? new Date(
+                                  selectedConcessionDetail.durc_scadenza_qualifica
+                                ).toLocaleDateString("it-IT")
+                              : "-"}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">Requisiti Morali</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Requisiti Morali
+                          </p>
                           <p className="text-[#e8fbff] font-medium">
                             {selectedConcessionDetail.requisiti_morali ? (
-                              <span className="text-green-400">✓ Verificati</span>
+                              <span className="text-green-400">
+                                ✓ Verificati
+                              </span>
                             ) : (
                               <span className="text-gray-400">-</span>
                             )}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">Requisiti Professionali</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            Requisiti Professionali
+                          </p>
                           <p className="text-[#e8fbff] font-medium">
                             {selectedConcessionDetail.requisiti_professionali ? (
-                              <span className="text-green-400">✓ Verificati</span>
+                              <span className="text-green-400">
+                                ✓ Verificati
+                              </span>
                             ) : (
                               <span className="text-gray-400">-</span>
                             )}
@@ -1214,7 +1737,8 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                   </Card>
 
                   {/* 9. Note e Riferimenti */}
-                  {(selectedConcessionDetail.notes || selectedConcessionDetail.scia_id) && (
+                  {(selectedConcessionDetail.notes ||
+                    selectedConcessionDetail.scia_id) && (
                     <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
@@ -1224,173 +1748,247 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {selectedConcessionDetail.notes && (<div className="col-span-2 md:col-span-3"><p className="text-xs text-gray-500 uppercase tracking-wide">Note / Prescrizioni</p><p className="text-[#e8fbff] font-medium whitespace-pre-wrap">{selectedConcessionDetail.notes}</p></div>)}
-                          {selectedConcessionDetail.scia_id && (<div><p className="text-xs text-gray-500 uppercase tracking-wide">Riferimento SCIA</p><p className="text-[#e8fbff] font-medium">SCIA #{selectedConcessionDetail.scia_id}</p></div>)}
+                          {selectedConcessionDetail.notes && (
+                            <div className="col-span-2 md:col-span-3">
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Note / Prescrizioni
+                              </p>
+                              <p className="text-[#e8fbff] font-medium whitespace-pre-wrap">
+                                {selectedConcessionDetail.notes}
+                              </p>
+                            </div>
+                          )}
+                          {selectedConcessionDetail.scia_id && (
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Riferimento SCIA
+                              </p>
+                              <p className="text-[#e8fbff] font-medium">
+                                SCIA #{selectedConcessionDetail.scia_id}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
                   )}
 
                   {/* 5. Aggiorna Posteggi per Subingresso DA_ASSOCIARE */}
-                  {selectedConcessionDetail.tipo_concessione === 'subingresso' && 
-                   (selectedConcessionDetail.stato === 'DA_ASSOCIARE' || selectedConcessionDetail.stato_calcolato === 'DA_ASSOCIARE') && (
-                    <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-orange-500/30">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
-                          <RefreshCw className="h-5 w-5 text-orange-400" />
-                          Aggiorna Posteggi - Subingresso
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-400 mb-4">Questa concessione è in stato DA_ASSOCIARE. Clicca il pulsante per trasferire il posteggio dal cedente al subentrante.</p>
-                        <button
-                          onClick={async () => {
-                            try {
-                              const response = await authenticatedFetch(`https://api.mio-hub.me/api/concessions/${selectedConcessionDetail.id}/associa-posteggio`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' }
-                              });
-                              const data = await response.json();
-                              if (data.success) {
-                                alert('Posteggio associato con successo!');
-                                fetchConcessions();
-                                setSelectedConcessionDetail(null);
-                              } else {
-                                alert(`Errore: ${data.error}`);
+                  {selectedConcessionDetail.tipo_concessione ===
+                    "subingresso" &&
+                    (selectedConcessionDetail.stato === "DA_ASSOCIARE" ||
+                      selectedConcessionDetail.stato_calcolato ===
+                        "DA_ASSOCIARE") && (
+                      <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-orange-500/30">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
+                            <RefreshCw className="h-5 w-5 text-orange-400" />
+                            Aggiorna Posteggi - Subingresso
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-gray-400 mb-4">
+                            Questa concessione è in stato DA_ASSOCIARE. Clicca
+                            il pulsante per trasferire il posteggio dal cedente
+                            al subentrante.
+                          </p>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const response = await authenticatedFetch(
+                                  `https://api.mio-hub.me/api/concessions/${selectedConcessionDetail.id}/associa-posteggio`,
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                  }
+                                );
+                                const data = await response.json();
+                                if (data.success) {
+                                  alert("Posteggio associato con successo!");
+                                  fetchConcessions();
+                                  setSelectedConcessionDetail(null);
+                                } else {
+                                  alert(`Errore: ${data.error}`);
+                                }
+                              } catch (err) {
+                                alert(
+                                  "Errore durante l'associazione del posteggio"
+                                );
                               }
-                            } catch (err) {
-                              alert('Errore durante l\'associazione del posteggio');
-                            }
-                          }}
-                          className="px-4 py-2 bg-[#f59e0b] text-black hover:bg-[#f59e0b]/90 rounded-lg transition-colors flex items-center gap-2"
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                          Associa Posteggio al Subentrante
-                        </button>
-                      </CardContent>
-                    </Card>
-                  )}
+                            }}
+                            className="px-4 py-2 bg-[#f59e0b] text-black hover:bg-[#f59e0b]/90 rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                            Associa Posteggio al Subentrante
+                          </button>
+                        </CardContent>
+                      </Card>
+                    )}
                 </div>
               </>
             ) : (
               /* Lista Concessioni */
               <>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Concessioni Attive
-              </h3>
-              <button
-                onClick={() => handleOpenConcessionModal()}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                disabled={companies.length === 0}
-              >
-                <Plus className="w-4 h-4" />
-                Nuova Concessione
-              </button>
-            </div>
-
-            {concessions.length === 0 ? (
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-8 text-center">
-                <FileText className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-400">Nessuna concessione attiva per questo mercato</p>
-                {companies.length > 0 && (
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Concessioni Attive
+                  </h3>
                   <button
                     onClick={() => handleOpenConcessionModal()}
-                    className="mt-4 text-green-400 hover:text-green-300"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                    disabled={companies.length === 0}
                   >
-                    Aggiungi la prima concessione
+                    <Plus className="w-4 h-4" />
+                    Nuova Concessione
                   </button>
-                )}
-              </div>
-            ) : (
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-900/50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                          Posteggio
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                          Impresa
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                          Sede Legale
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                          Settore
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                          Comune
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                          Valida Dal
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                          Valida Al
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                          Stato
-                        </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                          Azioni
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-700">
-                      {filteredConcessions.map((concession) => (
-                        <ConcessionRow
-                          key={concession.id}
-                          concession={concession}
-                          onView={async () => {
-                            // Carica i dettagli completi della concessione (inclusi campi cedente)
-                            try {
-                              const response = await fetch(addComuneIdToUrl(`https://api.mio-hub.me/api/concessions/${concession.id}`));
-                              const data = await response.json();
-                              if (data.success && data.data) {
-                                let concessioneData = { ...concession, ...data.data };
-                                // Se c'è cedente_impresa_id, carica anche i dati dell'impresa cedente
-                                if (data.data.cedente_impresa_id) {
-                                  try {
-                                    const cedenteResponse = await fetch(addComuneIdToUrl(`https://api.mio-hub.me/api/imprese/${data.data.cedente_impresa_id}`));
-                                    const cedenteData = await cedenteResponse.json();
-                                    if (cedenteData.success && cedenteData.data) {
-                                      concessioneData = {
-                                        ...concessioneData,
-                                        cedente_nome: cedenteData.data.rappresentante_legale_nome || '',
-                                        cedente_cognome: cedenteData.data.rappresentante_legale_cognome || '',
-                                        cedente_sede_legale: [cedenteData.data.indirizzo_via, cedenteData.data.indirizzo_cap, cedenteData.data.comune, cedenteData.data.indirizzo_provincia].filter(Boolean).join(', ') || ''
-                                      };
-                                    }
-                                  } catch (cedenteError) {
-                                    console.error('Errore caricamento impresa cedente:', cedenteError);
-                                  }
-                                }
-                                setSelectedConcessionDetail(concessioneData);
-                              } else {
-                                setSelectedConcessionDetail(concession);
-                              }
-                            } catch (error) {
-                              console.error('Errore caricamento dettagli concessione:', error);
-                              setSelectedConcessionDetail(concession);
-                            }
-                            setConcessionDetailTab('dati');
-                          }}
-                          onEdit={() => handleOpenConcessionModal(concession)}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
-              </div>
-            )}
+
+                {concessions.length === 0 ? (
+                  <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-8 text-center">
+                    <FileText className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400">
+                      Nessuna concessione attiva per questo mercato
+                    </p>
+                    {companies.length > 0 && (
+                      <button
+                        onClick={() => handleOpenConcessionModal()}
+                        className="mt-4 text-green-400 hover:text-green-300"
+                      >
+                        Aggiungi la prima concessione
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-900/50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Posteggio
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Impresa
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Sede Legale
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Settore
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Comune
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Valida Dal
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Valida Al
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Stato
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Azioni
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-700">
+                          {filteredConcessions.map(concession => (
+                            <ConcessionRow
+                              key={concession.id}
+                              concession={concession}
+                              onView={async () => {
+                                // Carica i dettagli completi della concessione (inclusi campi cedente)
+                                try {
+                                  const response = await fetch(
+                                    addComuneIdToUrl(
+                                      `https://api.mio-hub.me/api/concessions/${concession.id}`
+                                    )
+                                  );
+                                  const data = await response.json();
+                                  if (data.success && data.data) {
+                                    let concessioneData = {
+                                      ...concession,
+                                      ...data.data,
+                                    };
+                                    // Se c'è cedente_impresa_id, carica anche i dati dell'impresa cedente
+                                    if (data.data.cedente_impresa_id) {
+                                      try {
+                                        const cedenteResponse = await fetch(
+                                          addComuneIdToUrl(
+                                            `https://api.mio-hub.me/api/imprese/${data.data.cedente_impresa_id}`
+                                          )
+                                        );
+                                        const cedenteData =
+                                          await cedenteResponse.json();
+                                        if (
+                                          cedenteData.success &&
+                                          cedenteData.data
+                                        ) {
+                                          concessioneData = {
+                                            ...concessioneData,
+                                            cedente_nome:
+                                              cedenteData.data
+                                                .rappresentante_legale_nome ||
+                                              "",
+                                            cedente_cognome:
+                                              cedenteData.data
+                                                .rappresentante_legale_cognome ||
+                                              "",
+                                            cedente_sede_legale:
+                                              [
+                                                cedenteData.data.indirizzo_via,
+                                                cedenteData.data.indirizzo_cap,
+                                                cedenteData.data.comune,
+                                                cedenteData.data
+                                                  .indirizzo_provincia,
+                                              ]
+                                                .filter(Boolean)
+                                                .join(", ") || "",
+                                          };
+                                        }
+                                      } catch (cedenteError) {
+                                        console.error(
+                                          "Errore caricamento impresa cedente:",
+                                          cedenteError
+                                        );
+                                      }
+                                    }
+                                    setSelectedConcessionDetail(
+                                      concessioneData
+                                    );
+                                  } else {
+                                    setSelectedConcessionDetail(concession);
+                                  }
+                                } catch (error) {
+                                  console.error(
+                                    "Errore caricamento dettagli concessione:",
+                                    error
+                                  );
+                                  setSelectedConcessionDetail(concession);
+                                }
+                                setConcessionDetailTab("dati");
+                              }}
+                              onEdit={() =>
+                                handleOpenConcessionModal(concession)
+                              }
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </section>
 
           {/* Sezione Qualificazioni */}
-          <section className={searchType !== 'qualificazione' ? 'hidden' : ''}>
+          <section className={searchType !== "qualificazione" ? "hidden" : ""}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Lista Imprese per selezionare */}
               <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
@@ -1398,20 +1996,26 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                   <Building2 className="w-5 h-5" />
                   Seleziona Impresa
                 </h3>
-                <p className="text-sm text-gray-400 mb-4">Clicca su un'impresa per visualizzare le sue qualificazioni</p>
+                <p className="text-sm text-gray-400 mb-4">
+                  Clicca su un'impresa per visualizzare le sue qualificazioni
+                </p>
                 <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {companies.map((company) => (
+                  {companies.map(company => (
                     <div
                       key={company.id}
                       onClick={() => setSelectedCompanyForQualif(company)}
                       className={`p-3 rounded-lg cursor-pointer transition-colors ${
                         selectedCompanyForQualif?.id === company.id
-                          ? 'bg-purple-600/30 border border-purple-500'
-                          : 'bg-gray-900/50 hover:bg-gray-800 border border-transparent'
+                          ? "bg-purple-600/30 border border-purple-500"
+                          : "bg-gray-900/50 hover:bg-gray-800 border border-transparent"
                       }`}
                     >
-                      <div className="font-medium text-white">{company.denominazione}</div>
-                      <div className="text-sm text-gray-400">P.IVA: {company.partita_iva}</div>
+                      <div className="font-medium text-white">
+                        {company.denominazione}
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        P.IVA: {company.partita_iva}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1437,35 +2041,42 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                 {!selectedCompanyForQualif ? (
                   <div className="text-center py-16 text-gray-400">
                     <FileCheck className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                    <p>Seleziona un'impresa per visualizzare le qualificazioni</p>
+                    <p>
+                      Seleziona un'impresa per visualizzare le qualificazioni
+                    </p>
                   </div>
                 ) : filteredQualificazioni.length === 0 ? (
                   <div className="text-center py-16 text-gray-400">
                     <AlertCircle className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                    <p>Nessuna qualificazione trovata per {selectedCompanyForQualif.denominazione}</p>
+                    <p>
+                      Nessuna qualificazione trovata per{" "}
+                      {selectedCompanyForQualif.denominazione}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                    {filteredQualificazioni.map((qual) => (
-                      <div 
-                        key={qual.id} 
+                    {filteredQualificazioni.map(qual => (
+                      <div
+                        key={qual.id}
                         className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 cursor-pointer hover:border-purple-500/50 hover:bg-gray-800/50 transition-all group"
                         onClick={() => handleOpenQualificazioneModal(qual)}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <div className="font-medium text-white group-hover:text-purple-300 transition-colors">{qual.tipo}</div>
+                          <div className="font-medium text-white group-hover:text-purple-300 transition-colors">
+                            {qual.tipo}
+                          </div>
                           <div className="flex items-center gap-2">
-                            {qual.stato === 'ATTIVA' && (
+                            {qual.stato === "ATTIVA" && (
                               <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400 flex items-center gap-1">
                                 <CheckCircle className="w-3 h-3" /> Attiva
                               </span>
                             )}
-                            {qual.stato === 'SCADUTA' && (
+                            {qual.stato === "SCADUTA" && (
                               <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400 flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3" /> Scaduta
                               </span>
                             )}
-                            {qual.stato === 'IN_VERIFICA' && (
+                            {qual.stato === "IN_VERIFICA" && (
                               <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400 flex items-center gap-1">
                                 <Clock className="w-3 h-3" /> In Verifica
                               </span>
@@ -1476,10 +2087,24 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                         <div className="text-sm text-gray-400 space-y-1">
                           <div>Ente: {qual.ente_rilascio}</div>
                           <div className="flex gap-4">
-                            <span>Rilascio: {new Date(qual.data_rilascio).toLocaleDateString('it-IT')}</span>
-                            <span>Scadenza: {new Date(qual.data_scadenza).toLocaleDateString('it-IT')}</span>
+                            <span>
+                              Rilascio:{" "}
+                              {new Date(qual.data_rilascio).toLocaleDateString(
+                                "it-IT"
+                              )}
+                            </span>
+                            <span>
+                              Scadenza:{" "}
+                              {new Date(qual.data_scadenza).toLocaleDateString(
+                                "it-IT"
+                              )}
+                            </span>
                           </div>
-                          {qual.note && <div className="text-gray-500 italic mt-2">{qual.note}</div>}
+                          {qual.note && (
+                            <div className="text-gray-500 italic mt-2">
+                              {qual.note}
+                            </div>
+                          )}
                         </div>
                         <div className="mt-2 text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
                           Clicca per modificare o eliminare
@@ -1494,11 +2119,13 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
         </>
       )}
 
-      {searchType === 'autorizzazione' && (
+      {searchType === "autorizzazione" && (
         <MarketAutorizzazioniTab
           companies={companies}
           searchQuery={searchQuery}
-          marketId={typeof marketId === 'number' ? marketId : parseInt(String(marketId))}
+          marketId={
+            typeof marketId === "number" ? marketId : parseInt(String(marketId))
+          }
           marketName={marketName}
           municipality={municipality}
         />
@@ -1535,7 +2162,6 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
           onSaved={handleQualificazioneSaved}
         />
       )}
-
     </div>
   );
 }
@@ -1555,99 +2181,107 @@ interface WalletTCCBadgeProps {
 }
 
 function WalletTCCBadge({ impresaId, qualificazioni }: WalletTCCBadgeProps) {
-  const [walletStatus, setWalletStatus] = useState<'loading' | 'active' | 'suspended' | 'none'>('loading');
+  const [walletStatus, setWalletStatus] = useState<
+    "loading" | "active" | "suspended" | "none"
+  >("loading");
   const [walletId, setWalletId] = useState<number | null>(null);
-  
+
   // Calcola stato wallet basato su qualifiche locali
   const qualificationStatus = React.useMemo(() => {
     if (!qualificazioni || qualificazioni.length === 0) {
-      return { color: 'gray', label: 'No Qualifiche', enabled: false };
+      return { color: "gray", label: "No Qualifiche", enabled: false };
     }
-    
+
     const oggi = new Date();
     oggi.setHours(0, 0, 0, 0);
-    
+
     const hasExpired = qualificazioni.some(q => {
       const stato = q.status || q.stato;
-      if (stato === 'SCADUTA') return true;
+      if (stato === "SCADUTA") return true;
       const dataScadenza = q.data_scadenza || q.end_date;
       if (dataScadenza) {
-        const scadenza = new Date(dataScadenza.split('T')[0]);
+        const scadenza = new Date(dataScadenza.split("T")[0]);
         return scadenza < oggi;
       }
       return false;
     });
-    
+
     if (hasExpired) {
-      return { color: 'red', label: 'Qualifiche Scadute', enabled: false };
+      return { color: "red", label: "Qualifiche Scadute", enabled: false };
     }
-    
-    return { color: 'green', label: 'Qualificato', enabled: true };
+
+    return { color: "green", label: "Qualificato", enabled: true };
   }, [qualificazioni]);
-  
+
   // Fetch wallet status from backend
   useEffect(() => {
     const fetchWalletStatus = async () => {
       try {
-        const response = await fetch(`${TCC_API_BASE}/api/tcc/v2/impresa/${impresaId}/wallet`);
+        const response = await fetch(
+          `${TCC_API_BASE}/api/tcc/v2/impresa/${impresaId}/wallet`
+        );
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.wallet) {
             setWalletId(data.wallet.id);
-            setWalletStatus(data.wallet.wallet_status === 'active' ? 'active' : 'suspended');
+            setWalletStatus(
+              data.wallet.wallet_status === "active" ? "active" : "suspended"
+            );
           } else {
-            setWalletStatus('none');
+            setWalletStatus("none");
           }
         } else {
-          setWalletStatus('none');
+          setWalletStatus("none");
         }
       } catch (error) {
-        console.error('Error fetching wallet status:', error);
-        setWalletStatus('none');
+        console.error("Error fetching wallet status:", error);
+        setWalletStatus("none");
       }
     };
-    
+
     if (impresaId) {
       fetchWalletStatus();
     }
   }, [impresaId]);
-  
+
   // Determina colore finale basato su qualifiche E stato wallet
   const finalStatus = React.useMemo(() => {
-    if (walletStatus === 'loading') {
-      return { color: 'gray', label: 'Caricamento...', icon: 'loading' };
+    if (walletStatus === "loading") {
+      return { color: "gray", label: "Caricamento...", icon: "loading" };
     }
-    
-    if (walletStatus === 'none') {
-      return { color: 'gray', label: 'No Wallet', icon: 'none' };
+
+    if (walletStatus === "none") {
+      return { color: "gray", label: "No Wallet", icon: "none" };
     }
-    
+
     // Se wallet esiste, usa lo stato delle qualifiche
     if (!qualificationStatus.enabled) {
-      return { color: 'red', label: 'WALLET SOSPESO', icon: 'suspended' };
+      return { color: "red", label: "WALLET SOSPESO", icon: "suspended" };
     }
-    
-    return { color: 'green', label: 'WALLET TCC', icon: 'active' };
+
+    return { color: "green", label: "WALLET TCC", icon: "active" };
   }, [walletStatus, qualificationStatus]);
-  
+
   const colorClasses = {
-    gray: 'text-gray-400 bg-gray-400/10 border-gray-400/20',
-    red: 'text-red-400 bg-red-400/10 border-red-400/20',
-    green: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
+    gray: "text-gray-400 bg-gray-400/10 border-gray-400/20",
+    red: "text-red-400 bg-red-400/10 border-red-400/20",
+    green: "text-teal-400 bg-teal-400/10 border-teal-400/20",
   };
-  
+
   const dotColors = {
-    gray: 'bg-gray-500',
-    red: 'bg-red-500',
-    green: 'bg-teal-500',
+    gray: "bg-gray-500",
+    red: "bg-red-500",
+    green: "bg-teal-500",
   };
-  
+
   return (
-    <span 
+    <span
       className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium border rounded-md ${colorClasses[finalStatus.color as keyof typeof colorClasses]}`}
-      title={walletId ? `Wallet ID: ${walletId}` : 'Nessun wallet TCC'}
+      title={walletId ? `Wallet ID: ${walletId}` : "Nessun wallet TCC"}
     >
-      <div className={`w-2 h-2 rounded-full ${dotColors[finalStatus.color as keyof typeof dotColors]} ${finalStatus.icon === 'loading' ? 'animate-pulse' : ''}`} />
+      <div
+        className={`w-2 h-2 rounded-full ${dotColors[finalStatus.color as keyof typeof dotColors]} ${finalStatus.icon === "loading" ? "animate-pulse" : ""}`}
+      />
       <Wallet className="w-3 h-3" />
       {finalStatus.label}
     </span>
@@ -1661,27 +2295,32 @@ interface QualificazioneModalProps {
   onSaved: () => void;
 }
 
-function QualificazioneModal({ company, qualificazione, onClose, onSaved }: QualificazioneModalProps) {
+function QualificazioneModal({
+  company,
+  qualificazione,
+  onClose,
+  onSaved,
+}: QualificazioneModalProps) {
   // Helper per formattare date per input type="date"
   const formatDateForInput = (dateValue: string | null | undefined): string => {
-    if (!dateValue) return '';
+    if (!dateValue) return "";
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return dateValue;
     try {
       const date = new Date(dateValue);
-      if (isNaN(date.getTime())) return '';
-      return date.toISOString().split('T')[0];
+      if (isNaN(date.getTime())) return "";
+      return date.toISOString().split("T")[0];
     } catch {
-      return '';
+      return "";
     }
   };
 
   const [formData, setFormData] = useState({
-    tipo: qualificazione?.tipo || '',
-    ente_rilascio: qualificazione?.ente_rilascio || '',
+    tipo: qualificazione?.tipo || "",
+    ente_rilascio: qualificazione?.ente_rilascio || "",
     data_rilascio: formatDateForInput(qualificazione?.data_rilascio),
     data_scadenza: formatDateForInput(qualificazione?.data_scadenza),
-    stato: qualificazione?.stato || 'ATTIVA',
-    note: qualificazione?.note || ''
+    stato: qualificazione?.stato || "ATTIVA",
+    note: qualificazione?.note || "",
   });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -1698,22 +2337,22 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
         ? `${API_BASE_URL}/api/imprese/${company.id}/qualificazioni/${qualificazione.id}`
         : `${API_BASE_URL}/api/imprese/${company.id}/qualificazioni`;
 
-      const method = qualificazione ? 'PUT' : 'POST';
+      const method = qualificazione ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Errore durante il salvataggio');
+        throw new Error(data.message || "Errore durante il salvataggio");
       }
-      
+
       onSaved();
     } catch (err: any) {
-      setError(err.message || 'Errore durante il salvataggio');
+      setError(err.message || "Errore durante il salvataggio");
     } finally {
       setSaving(false);
     }
@@ -1728,19 +2367,16 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
 
     try {
       const deleteUrl = `${API_BASE_URL}/api/imprese/${company.id}/qualificazioni/${qualificazione.id}`;
-      const response = await fetch(
-        deleteUrl,
-        { method: 'DELETE' }
-      );
+      const response = await fetch(deleteUrl, { method: "DELETE" });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Errore durante l\'eliminazione');
+        throw new Error(data.message || "Errore durante l'eliminazione");
       }
-      
+
       onSaved();
     } catch (err: any) {
-      setError(err.message || 'Errore durante l\'eliminazione');
+      setError(err.message || "Errore durante l'eliminazione");
     } finally {
       setDeleting(false);
       setShowDeleteConfirm(false);
@@ -1748,17 +2384,19 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-gray-900 border border-gray-700 rounded-lg max-w-md w-full p-6 space-y-6"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">
-            {qualificazione ? 'Modifica Qualificazione' : 'Nuova Qualificazione'}
+            {qualificazione
+              ? "Modifica Qualificazione"
+              : "Nuova Qualificazione"}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white">
             <X className="w-5 h-5" />
@@ -1773,27 +2411,39 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Tipo</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Tipo
+            </label>
             <select
               required
               value={formData.tipo}
-              onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+              onChange={e => setFormData({ ...formData, tipo: e.target.value })}
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="">Seleziona tipo...</option>
               {/* Requisiti Obbligatori */}
               <option value="DURC">DURC - Regolarità Contributiva</option>
-              <option value="ONORABILITA">ONORABILITA - Requisiti Morali (Art. 71 D.Lgs. 59/2010)</option>
-              <option value="ANTIMAFIA">ANTIMAFIA - Dichiarazione (Art. 67 D.Lgs. 159/2011)</option>
+              <option value="ONORABILITA">
+                ONORABILITA - Requisiti Morali (Art. 71 D.Lgs. 59/2010)
+              </option>
+              <option value="ANTIMAFIA">
+                ANTIMAFIA - Dichiarazione (Art. 67 D.Lgs. 159/2011)
+              </option>
               {/* Certificazioni Alimentari */}
               <option value="HACCP">HACCP - Sicurezza Alimentare</option>
-              <option value="SAB">SAB - Somministrazione Alimenti e Bevande</option>
+              <option value="SAB">
+                SAB - Somministrazione Alimenti e Bevande
+              </option>
               <option value="REC">REC - Registro Esercenti Commercio</option>
-              <option value="CORSO_ALIMENTARE">CORSO ALIMENTARE - Formazione Regionale</option>
+              <option value="CORSO_ALIMENTARE">
+                CORSO ALIMENTARE - Formazione Regionale
+              </option>
               {/* Certificazioni Qualità */}
               <option value="ISO 9001">ISO 9001 - Qualità</option>
               <option value="ISO 14001">ISO 14001 - Ambiente</option>
-              <option value="ISO 22000">ISO 22000 - Sicurezza Alimentare</option>
+              <option value="ISO 22000">
+                ISO 22000 - Sicurezza Alimentare
+              </option>
               {/* Altro */}
               <option value="CONCESSIONE MERCATO">CONCESSIONE MERCATO</option>
               <option value="ALTRO">ALTRO</option>
@@ -1801,43 +2451,62 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Ente Rilascio</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Ente Rilascio
+            </label>
             <input
               type="text"
               required
               value={formData.ente_rilascio}
-              onChange={(e) => setFormData({ ...formData, ente_rilascio: e.target.value })}
+              onChange={e =>
+                setFormData({ ...formData, ente_rilascio: e.target.value })
+              }
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Data Rilascio</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Data Rilascio
+              </label>
               <input
                 type="date"
                 required
                 value={formData.data_rilascio}
-                onChange={(e) => setFormData({ ...formData, data_rilascio: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, data_rilascio: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Data Scadenza</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Data Scadenza
+              </label>
               <input
                 type="date"
                 value={formData.data_scadenza}
-                onChange={(e) => setFormData({ ...formData, data_scadenza: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, data_scadenza: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Stato</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Stato
+            </label>
             <select
               value={formData.stato}
-              onChange={(e) => setFormData({ ...formData, stato: e.target.value as 'ATTIVA' | 'SCADUTA' | 'IN_VERIFICA' })}
+              onChange={e =>
+                setFormData({
+                  ...formData,
+                  stato: e.target.value as "ATTIVA" | "SCADUTA" | "IN_VERIFICA",
+                })
+              }
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="ATTIVA">ATTIVA</option>
@@ -1858,7 +2527,7 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
                 Elimina
               </button>
             )}
-            
+
             {/* Conferma eliminazione */}
             {showDeleteConfirm && (
               <div className="flex items-center gap-2">
@@ -1869,7 +2538,7 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
                   disabled={deleting}
                   className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {deleting ? 'Eliminazione...' : 'Sì, elimina'}
+                  {deleting ? "Eliminazione..." : "Sì, elimina"}
                 </button>
                 <button
                   type="button"
@@ -1880,9 +2549,9 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
                 </button>
               </div>
             )}
-            
+
             {!qualificazione && <div />}
-            
+
             <div className="flex gap-3">
               <button
                 type="button"
@@ -1896,7 +2565,7 @@ function QualificazioneModal({ company, qualificazione, onClose, onSaved }: Qual
                 disabled={saving || showDeleteConfirm}
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
               >
-                {saving ? 'Salvataggio...' : 'Salva'}
+                {saving ? "Salvataggio..." : "Salva"}
               </button>
             </div>
           </div>
@@ -1918,31 +2587,38 @@ interface CompanyCardProps {
   onViewQualificazioni?: () => void;
 }
 
-function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQualificazioni }: CompanyCardProps) {
+function CompanyCard({
+  company,
+  qualificazioni = [],
+  marketId,
+  onEdit,
+  onViewQualificazioni,
+}: CompanyCardProps) {
   // Usiamo le qualificazioni passate come prop (dal fetch dettagliato) se presenti,
   // altrimenti usiamo quelle incorporate nell'oggetto company (dal fetch lista)
   // Calcoliamo dinamicamente lo stato SCADUTA basandoci sulla data di scadenza
   const displayQualificazioni = React.useMemo(() => {
-    const quals = qualificazioni.length > 0 ? qualificazioni : (company.qualificazioni || []);
+    const quals =
+      qualificazioni.length > 0 ? qualificazioni : company.qualificazioni || [];
     const oggi = new Date();
     oggi.setHours(0, 0, 0, 0);
     return quals.map((q: any) => {
       // Calcola lo stato DINAMICAMENTE dalla data di scadenza, ignorando lo stato del DB
       // perché il DB potrebbe avere uno stato obsoleto
-      let stato = q.status || q.stato || 'ATTIVA';
+      let stato = q.status || q.stato || "ATTIVA";
       const dataScadenza = q.data_scadenza || q.end_date;
       if (dataScadenza) {
         // Normalizza la data di scadenza per evitare problemi di fuso orario
-        const scadenzaStr = dataScadenza.split('T')[0]; // Prende solo YYYY-MM-DD
-        const [year, month, day] = scadenzaStr.split('-').map(Number);
+        const scadenzaStr = dataScadenza.split("T")[0]; // Prende solo YYYY-MM-DD
+        const [year, month, day] = scadenzaStr.split("-").map(Number);
         const scadenza = new Date(year, month - 1, day); // Crea data locale senza fuso orario
         scadenza.setHours(23, 59, 59, 999); // Fine giornata della scadenza
         // Determina lo stato SOLO dalla data
         if (scadenza < oggi) {
-          stato = 'SCADUTA';
+          stato = "SCADUTA";
         } else {
           // Se la data NON è scaduta, forza ATTIVA (sovrascrive eventuale stato errato nel DB)
-          stato = 'ATTIVA';
+          stato = "ATTIVA";
         }
       }
       return { ...q, stato };
@@ -1951,9 +2627,10 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
   // Filtra i wallet spunta da visualizzare
   // Se siamo in un mercato specifico, mettiamo quello corrente per primo, poi gli altri
   const sortedSpuntaWallets = React.useMemo(() => {
-    if (!company.spunta_wallets || company.spunta_wallets.length === 0) return [];
-    
-    if (marketId && marketId !== 'ALL') {
+    if (!company.spunta_wallets || company.spunta_wallets.length === 0)
+      return [];
+
+    if (marketId && marketId !== "ALL") {
       const currentId = Number(marketId);
       return [...company.spunta_wallets].sort((a, b) => {
         if (a.market_id === currentId) return -1;
@@ -1965,14 +2642,30 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
   }, [company.spunta_wallets, marketId]);
   const getStatoBadge = (stato?: string) => {
     switch (stato) {
-      case 'active':
-        return <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">Attiva</span>;
-      case 'suspended':
-        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400">Sospesa</span>;
-      case 'closed':
-        return <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">Chiusa</span>;
+      case "active":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">
+            Attiva
+          </span>
+        );
+      case "suspended":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400">
+            Sospesa
+          </span>
+        );
+      case "closed":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">
+            Chiusa
+          </span>
+        );
       default:
-        return <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">N/A</span>;
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">
+            N/A
+          </span>
+        );
     }
   };
 
@@ -2005,39 +2698,60 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
             <span className="text-gray-300">{company.referente}</span>
           </div>
         )}
-        {company.telefono && company.telefono !== 'N/A' && (
+        {company.telefono && company.telefono !== "N/A" && (
           <div className="flex items-center gap-2">
             <span className="text-gray-500">Telefono:</span>
             <span className="text-gray-300">{company.telefono}</span>
           </div>
         )}
-        {(company.indirizzo_via || company.indirizzo_cap || company.indirizzo_provincia) && (
+        {(company.indirizzo_via ||
+          company.indirizzo_cap ||
+          company.indirizzo_provincia) && (
           <div className="flex items-center gap-2">
             <span className="text-gray-500">Sede Legale:</span>
-            <span className="text-gray-300 text-xs">{[company.indirizzo_via, company.indirizzo_civico, company.indirizzo_cap, company.indirizzo_provincia].filter(Boolean).join(', ')}</span>
+            <span className="text-gray-300 text-xs">
+              {[
+                company.indirizzo_via,
+                company.indirizzo_civico,
+                company.indirizzo_cap,
+                company.indirizzo_provincia,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            </span>
           </div>
         )}
-        
+
         {/* Badge Concessioni, Autorizzazioni e Qualificazioni */}
         <div className="flex flex-wrap gap-2 pt-2">
           {/* Wallet Spunta Badges */}
           {sortedSpuntaWallets.length > 0 ? (
-            sortedSpuntaWallets.map((wallet) => (
-              <span 
+            sortedSpuntaWallets.map(wallet => (
+              <span
                 key={wallet.id}
                 className={`inline-flex items-center gap-2 px-2 py-1 text-xs font-medium rounded-md ${
-                  wallet.market_name 
-                    ? 'text-yellow-400 bg-yellow-400/10 border border-yellow-400/20' 
-                    : 'text-white bg-white/10 border border-white/20'
-                } ${marketId && Number(marketId) === wallet.market_id ? 'ring-1 ring-yellow-500/50' : ''}`}
+                  wallet.market_name
+                    ? "text-yellow-400 bg-yellow-400/10 border border-yellow-400/20"
+                    : "text-white bg-white/10 border border-white/20"
+                } ${marketId && Number(marketId) === wallet.market_id ? "ring-1 ring-yellow-500/50" : ""}`}
               >
                 <div className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${wallet.market_name ? 'bg-yellow-500' : 'bg-white'}`} />
-                  {wallet.market_name ? `Spunta ${wallet.market_name}` : 'GENERICO'}
+                  <div
+                    className={`w-2 h-2 rounded-full ${wallet.market_name ? "bg-yellow-500" : "bg-white"}`}
+                  />
+                  {wallet.market_name
+                    ? `Spunta ${wallet.market_name}`
+                    : "GENERICO"}
                 </div>
-                <div className={`flex items-center gap-1 pl-2 border-l ${wallet.market_name ? 'border-yellow-400/20' : 'border-white/20'} ${wallet.balance > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  <div className={`w-2 h-2 rounded-full ${wallet.balance > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <span className="font-bold">€ {Number(wallet.balance).toFixed(2)}</span>
+                <div
+                  className={`flex items-center gap-1 pl-2 border-l ${wallet.market_name ? "border-yellow-400/20" : "border-white/20"} ${wallet.balance > 0 ? "text-green-400" : "text-red-400"}`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${wallet.balance > 0 ? "bg-green-500" : "bg-red-500"}`}
+                  />
+                  <span className="font-bold">
+                    € {Number(wallet.balance).toFixed(2)}
+                  </span>
                 </div>
               </span>
             ))
@@ -2048,34 +2762,46 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
             </span>
           )}
 
-	          {/* Semaforo Qualificazioni */}
-	          {onViewQualificazioni && (
-	            <button
-	              onClick={(e) => {
-	                e.stopPropagation();
-	                onViewQualificazioni();
-	              }}
-	              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-md transition-colors ${
-	                displayQualificazioni.length === 0
-	                  ? 'text-gray-400 bg-gray-400/10 border-gray-400/20 hover:bg-gray-400/20'
-	                  : displayQualificazioni.some(q => (q.status || q.stato) === 'SCADUTA')
-	                    ? 'text-red-400 bg-red-400/10 border-red-400/20 hover:bg-red-400/20'
-	                    : displayQualificazioni.some(q => (q.status || q.stato) === 'IN_VERIFICA')
-	                      ? 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20 hover:bg-yellow-400/20'
-	                      : 'text-green-400 bg-green-400/10 border-green-400/20 hover:bg-green-400/20'
-	              }`}
-	              title="Clicca per gestire le qualificazioni"
-	            >
-	              <FileCheck className="w-3 h-3" />
-	              {displayQualificazioni.length === 0 ? 'No Qualifiche' : 
-	               displayQualificazioni.some(q => (q.status || q.stato) === 'SCADUTA') ? 'Qualifiche Scadute' :
-	               displayQualificazioni.some(q => (q.status || q.stato) === 'IN_VERIFICA') ? 'In Verifica' : 'Qualificato'}
-	            </button>
-	          )}
+          {/* Semaforo Qualificazioni */}
+          {onViewQualificazioni && (
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                onViewQualificazioni();
+              }}
+              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-md transition-colors ${
+                displayQualificazioni.length === 0
+                  ? "text-gray-400 bg-gray-400/10 border-gray-400/20 hover:bg-gray-400/20"
+                  : displayQualificazioni.some(
+                        q => (q.status || q.stato) === "SCADUTA"
+                      )
+                    ? "text-red-400 bg-red-400/10 border-red-400/20 hover:bg-red-400/20"
+                    : displayQualificazioni.some(
+                          q => (q.status || q.stato) === "IN_VERIFICA"
+                        )
+                      ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20 hover:bg-yellow-400/20"
+                      : "text-green-400 bg-green-400/10 border-green-400/20 hover:bg-green-400/20"
+              }`}
+              title="Clicca per gestire le qualificazioni"
+            >
+              <FileCheck className="w-3 h-3" />
+              {displayQualificazioni.length === 0
+                ? "No Qualifiche"
+                : displayQualificazioni.some(
+                      q => (q.status || q.stato) === "SCADUTA"
+                    )
+                  ? "Qualifiche Scadute"
+                  : displayQualificazioni.some(
+                        q => (q.status || q.stato) === "IN_VERIFICA"
+                      )
+                    ? "In Verifica"
+                    : "Qualificato"}
+            </button>
+          )}
 
           {/* Semaforo WALLET TCC (v5.7.0) */}
-          <WalletTCCBadge 
-            impresaId={company.id} 
+          <WalletTCCBadge
+            impresaId={company.id}
             qualificazioni={displayQualificazioni}
           />
 
@@ -2085,32 +2811,46 @@ function CompanyCard({ company, qualificazioni = [], marketId, onEdit, onViewQua
               Autorizzato
             </span>
           )}
-          
-          {company.concessioni && company.concessioni.map((conc, idx) => {
-            const hasBalance = conc.wallet_balance !== undefined;
-            const isPaid = hasBalance && conc.wallet_balance! > 0;
-            const isExpired = conc.stato === 'SCADUTA';
-            
-            return (
-              <span key={idx} className={`inline-flex items-center gap-2 px-2 py-1 text-xs font-medium rounded-md ${
-                isExpired 
-                  ? 'text-red-400 bg-red-400/10 border border-red-400/20' 
-                  : 'text-blue-400 bg-blue-400/10 border border-blue-400/20'
-              }`}>
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {conc.mercato}: {conc.posteggio_code}
-                  {isExpired && <span className="ml-1 text-[10px] uppercase font-bold">(Scaduta)</span>}
-                </div>
-                {hasBalance && (
-                  <div className={`flex items-center gap-1 pl-2 border-l ${isExpired ? 'border-red-400/20' : 'border-blue-400/20'} ${isPaid ? 'text-green-400' : 'text-red-400'}`}>
-                    <div className={`w-2 h-2 rounded-full ${isPaid ? 'bg-green-500' : 'bg-red-500'}`} />
-                    <span className="font-bold">€ {conc.wallet_balance!.toFixed(2)}</span>
+
+          {company.concessioni &&
+            company.concessioni.map((conc, idx) => {
+              const hasBalance = conc.wallet_balance !== undefined;
+              const isPaid = hasBalance && conc.wallet_balance! > 0;
+              const isExpired = conc.stato === "SCADUTA";
+
+              return (
+                <span
+                  key={idx}
+                  className={`inline-flex items-center gap-2 px-2 py-1 text-xs font-medium rounded-md ${
+                    isExpired
+                      ? "text-red-400 bg-red-400/10 border border-red-400/20"
+                      : "text-blue-400 bg-blue-400/10 border border-blue-400/20"
+                  }`}
+                >
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {conc.mercato}: {conc.posteggio_code}
+                    {isExpired && (
+                      <span className="ml-1 text-[10px] uppercase font-bold">
+                        (Scaduta)
+                      </span>
+                    )}
                   </div>
-                )}
-              </span>
-            );
-          })}
+                  {hasBalance && (
+                    <div
+                      className={`flex items-center gap-1 pl-2 border-l ${isExpired ? "border-red-400/20" : "border-blue-400/20"} ${isPaid ? "text-green-400" : "text-red-400"}`}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full ${isPaid ? "bg-green-500" : "bg-red-500"}`}
+                      />
+                      <span className="font-bold">
+                        € {conc.wallet_balance!.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </span>
+              );
+            })}
         </div>
 
         <div className="flex items-center gap-2 pt-2">
@@ -2134,18 +2874,42 @@ interface ConcessionRowProps {
 function ConcessionRow({ concession, onView, onEdit }: ConcessionRowProps) {
   const getStatoBadge = (stato?: string) => {
     switch (stato?.toUpperCase()) {
-      case 'ATTIVA':
-        return <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">Attiva</span>;
-      case 'SOSPESA':
-        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400">Sospesa</span>;
-      case 'SCADUTA':
-        return <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">Scaduta</span>;
-      case 'DA_ASSOCIARE':
-        return <span className="px-2 py-1 text-xs rounded-full bg-orange-500/20 text-orange-400">Da Associare</span>;
-      case 'CESSATA':
-        return <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">Cessata</span>;
+      case "ATTIVA":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">
+            Attiva
+          </span>
+        );
+      case "SOSPESA":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400">
+            Sospesa
+          </span>
+        );
+      case "SCADUTA":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">
+            Scaduta
+          </span>
+        );
+      case "DA_ASSOCIARE":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-orange-500/20 text-orange-400">
+            Da Associare
+          </span>
+        );
+      case "CESSATA":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">
+            Cessata
+          </span>
+        );
       default:
-        return <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">{stato || 'N/A'}</span>;
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">
+            {stato || "N/A"}
+          </span>
+        );
     }
   };
 
@@ -2157,16 +2921,26 @@ function ConcessionRow({ concession, onView, onEdit }: ConcessionRowProps) {
           {concession.stall_code}
         </div>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-300">{concession.company_name}</td>
+      <td className="px-4 py-3 text-sm text-gray-300">
+        {concession.company_name}
+      </td>
       <td className="px-4 py-3 text-sm text-gray-300 text-xs">
-        {[concession.sede_legale_via, concession.sede_legale_comune, concession.sede_legale_provincia].filter(Boolean).join(', ') || '-'}
+        {[
+          concession.sede_legale_via,
+          concession.sede_legale_comune,
+          concession.sede_legale_provincia,
+        ]
+          .filter(Boolean)
+          .join(", ") || "-"}
       </td>
       <td className="px-4 py-3 text-sm text-gray-300">
         <span className="px-2 py-1 text-xs rounded-full bg-purple-500/20 text-purple-400">
-          {concession.settore_merceologico || 'Alimentare'}
+          {concession.settore_merceologico || "Alimentare"}
         </span>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-300">{concession.comune_rilascio || '-'}</td>
+      <td className="px-4 py-3 text-sm text-gray-300">
+        {concession.comune_rilascio || "-"}
+      </td>
       <td className="px-4 py-3 text-sm text-gray-300">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-gray-500" />
@@ -2179,7 +2953,9 @@ function ConcessionRow({ concession, onView, onEdit }: ConcessionRowProps) {
           {formatDate(concession.valida_al)}
         </div>
       </td>
-      <td className="px-4 py-3 text-sm">{getStatoBadge(concession.stato_calcolato || concession.stato)}</td>
+      <td className="px-4 py-3 text-sm">
+        {getStatoBadge(concession.stato_calcolato || concession.stato)}
+      </td>
       <td className="px-4 py-3 text-sm text-right">
         <div className="flex items-center justify-end gap-2">
           <button
@@ -2216,72 +2992,92 @@ export interface CompanyModalProps {
 
 // Helper function per formattare le date ISO in YYYY-MM-DD per input type="date"
 const formatDateForInput = (dateValue: string | null | undefined): string => {
-  if (!dateValue) return '';
+  if (!dateValue) return "";
   // Se è già nel formato YYYY-MM-DD, restituiscilo
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return dateValue;
   // Altrimenti prova a parsare e formattare
   try {
     const date = new Date(dateValue);
-    if (isNaN(date.getTime())) return '';
-    return date.toISOString().split('T')[0];
+    if (isNaN(date.getTime())) return "";
+    return date.toISOString().split("T")[0];
   } catch {
-    return '';
+    return "";
   }
 };
 
 // Helper function per capitalizzare le parole (prima lettera maiuscola)
 const capitalizeWords = (str: string): string => {
-  if (!str) return '';
-  return str.toLowerCase().replace(/(?:^|\s|')\S/g, (match) => match.toUpperCase());
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .replace(/(?:^|\s|')\S/g, match => match.toUpperCase());
 };
 
-export function CompanyModal({ marketId, company, onClose, onSaved, inline = false }: CompanyModalProps) {
+export function CompanyModal({
+  marketId,
+  company,
+  onClose,
+  onSaved,
+  inline = false,
+}: CompanyModalProps) {
   const [formData, setFormData] = useState<CompanyFormData>({
     // Identità
-    denominazione: company?.denominazione || '',
-    codice_fiscale: company?.code || '',
-    partita_iva: company?.partita_iva || '',
-    numero_rea: (company as any)?.numero_rea || '',
-    cciaa_sigla: (company as any)?.cciaa_sigla || '',
-    forma_giuridica: (company as any)?.forma_giuridica || '',
-    stato_impresa: (company as any)?.stato_impresa || 'ATTIVA',
-    
+    denominazione: company?.denominazione || "",
+    codice_fiscale: company?.code || "",
+    partita_iva: company?.partita_iva || "",
+    numero_rea: (company as any)?.numero_rea || "",
+    cciaa_sigla: (company as any)?.cciaa_sigla || "",
+    forma_giuridica: (company as any)?.forma_giuridica || "",
+    stato_impresa: (company as any)?.stato_impresa || "ATTIVA",
+
     // Sede Legale
-    indirizzo_via: (company as any)?.indirizzo_via || '',
-    indirizzo_civico: (company as any)?.indirizzo_civico || '',
-    indirizzo_cap: (company as any)?.indirizzo_cap || '',
-    indirizzo_provincia: (company as any)?.indirizzo_provincia || '',
-    comune: (company as any)?.comune || '',
-    
+    indirizzo_via: (company as any)?.indirizzo_via || "",
+    indirizzo_civico: (company as any)?.indirizzo_civico || "",
+    indirizzo_cap: (company as any)?.indirizzo_cap || "",
+    indirizzo_provincia: (company as any)?.indirizzo_provincia || "",
+    comune: (company as any)?.comune || "",
+
     // Contatti & Attività
-    pec: (company as any)?.pec || '',
-    referente: (company as any)?.email || '',
-    telefono: company?.telefono || '',
-    codice_ateco: (company as any)?.codice_ateco || '',
-    descrizione_ateco: (company as any)?.descrizione_ateco || '',
-    
+    pec: (company as any)?.pec || "",
+    referente: (company as any)?.email || "",
+    telefono: company?.telefono || "",
+    codice_ateco: (company as any)?.codice_ateco || "",
+    descrizione_ateco: (company as any)?.descrizione_ateco || "",
+
     // Rappresentante Legale
-    rappresentante_legale_cognome: (company as any)?.rappresentante_legale_cognome || '',
-    rappresentante_legale_nome: (company as any)?.rappresentante_legale_nome || '',
-    rappresentante_legale_cf: (company as any)?.rappresentante_legale_cf || '',
-    rappresentante_legale_data_nascita: formatDateForInput((company as any)?.rappresentante_legale_data_nascita),
-    rappresentante_legale_luogo_nascita: (company as any)?.rappresentante_legale_luogo_nascita || '',
-    
+    rappresentante_legale_cognome:
+      (company as any)?.rappresentante_legale_cognome || "",
+    rappresentante_legale_nome:
+      (company as any)?.rappresentante_legale_nome || "",
+    rappresentante_legale_cf: (company as any)?.rappresentante_legale_cf || "",
+    rappresentante_legale_data_nascita: formatDateForInput(
+      (company as any)?.rappresentante_legale_data_nascita
+    ),
+    rappresentante_legale_luogo_nascita:
+      (company as any)?.rappresentante_legale_luogo_nascita || "",
+
     // Residenza Rappresentante
-    rappresentante_legale_residenza_via: (company as any)?.rappresentante_legale_residenza_via || '',
-    rappresentante_legale_residenza_civico: (company as any)?.rappresentante_legale_residenza_civico || '',
-    rappresentante_legale_residenza_cap: (company as any)?.rappresentante_legale_residenza_cap || '',
-    rappresentante_legale_residenza_comune: (company as any)?.rappresentante_legale_residenza_comune || '',
-    rappresentante_legale_residenza_provincia: (company as any)?.rappresentante_legale_residenza_provincia || '',
-    
+    rappresentante_legale_residenza_via:
+      (company as any)?.rappresentante_legale_residenza_via || "",
+    rappresentante_legale_residenza_civico:
+      (company as any)?.rappresentante_legale_residenza_civico || "",
+    rappresentante_legale_residenza_cap:
+      (company as any)?.rappresentante_legale_residenza_cap || "",
+    rappresentante_legale_residenza_comune:
+      (company as any)?.rappresentante_legale_residenza_comune || "",
+    rappresentante_legale_residenza_provincia:
+      (company as any)?.rappresentante_legale_residenza_provincia || "",
+
     // Dati Economici
-    capitale_sociale: (company as any)?.capitale_sociale?.toString() || '',
-    numero_addetti: (company as any)?.numero_addetti?.toString() || '',
-    sito_web: (company as any)?.sito_web || '',
-    data_iscrizione_ri: formatDateForInput((company as any)?.data_iscrizione_ri),
-    
+    capitale_sociale: (company as any)?.capitale_sociale?.toString() || "",
+    numero_addetti: (company as any)?.numero_addetti?.toString() || "",
+    sito_web: (company as any)?.sito_web || "",
+    data_iscrizione_ri: formatDateForInput(
+      (company as any)?.data_iscrizione_ri
+    ),
+
     // Legacy
-    stato: company?.stato || 'active',
+    stato: company?.stato || "active",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -2302,41 +3098,52 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
         cciaa_sigla: formData.cciaa_sigla,
         forma_giuridica: formData.forma_giuridica,
         stato_impresa: formData.stato_impresa,
-        
+
         // Sede Legale
         indirizzo_via: formData.indirizzo_via,
         indirizzo_civico: formData.indirizzo_civico,
         indirizzo_cap: formData.indirizzo_cap,
         indirizzo_provincia: formData.indirizzo_provincia,
         comune: formData.comune,
-        
+
         // Contatti & Attività
         pec: formData.pec,
         referente: formData.referente,
         telefono: formData.telefono,
         codice_ateco: formData.codice_ateco,
         descrizione_ateco: formData.descrizione_ateco,
-        
+
         // Rappresentante Legale
         rappresentante_legale_cognome: formData.rappresentante_legale_cognome,
         rappresentante_legale_nome: formData.rappresentante_legale_nome,
         rappresentante_legale_cf: formData.rappresentante_legale_cf,
-        rappresentante_legale_data_nascita: formData.rappresentante_legale_data_nascita,
-        rappresentante_legale_luogo_nascita: formData.rappresentante_legale_luogo_nascita,
-        
+        rappresentante_legale_data_nascita:
+          formData.rappresentante_legale_data_nascita,
+        rappresentante_legale_luogo_nascita:
+          formData.rappresentante_legale_luogo_nascita,
+
         // Residenza Rappresentante
-        rappresentante_legale_residenza_via: formData.rappresentante_legale_residenza_via,
-        rappresentante_legale_residenza_civico: formData.rappresentante_legale_residenza_civico,
-        rappresentante_legale_residenza_cap: formData.rappresentante_legale_residenza_cap,
-        rappresentante_legale_residenza_comune: formData.rappresentante_legale_residenza_comune,
-        rappresentante_legale_residenza_provincia: formData.rappresentante_legale_residenza_provincia,
-        
+        rappresentante_legale_residenza_via:
+          formData.rappresentante_legale_residenza_via,
+        rappresentante_legale_residenza_civico:
+          formData.rappresentante_legale_residenza_civico,
+        rappresentante_legale_residenza_cap:
+          formData.rappresentante_legale_residenza_cap,
+        rappresentante_legale_residenza_comune:
+          formData.rappresentante_legale_residenza_comune,
+        rappresentante_legale_residenza_provincia:
+          formData.rappresentante_legale_residenza_provincia,
+
         // Dati Economici
-        capitale_sociale: formData.capitale_sociale ? parseFloat(formData.capitale_sociale) : null,
-        numero_addetti: formData.numero_addetti ? parseInt(formData.numero_addetti) : null,
+        capitale_sociale: formData.capitale_sociale
+          ? parseFloat(formData.capitale_sociale)
+          : null,
+        numero_addetti: formData.numero_addetti
+          ? parseInt(formData.numero_addetti)
+          : null,
         sito_web: formData.sito_web,
         data_iscrizione_ri: formData.data_iscrizione_ri,
-        
+
         // Legacy (per compatibilità con vendors)
         code: formData.codice_fiscale,
         business_name: formData.denominazione,
@@ -2352,22 +3159,22 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
         ? `${API_BASE_URL}/api/imprese/${company.id}`
         : `${API_BASE_URL}/api/imprese`;
 
-      const method = company ? 'PUT' : 'POST';
+      const method = company ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Errore durante il salvataggio');
+        throw new Error(data.message || "Errore durante il salvataggio");
       }
 
       onSaved();
     } catch (err: any) {
-      setError(err.message || 'Errore durante il salvataggio');
+      setError(err.message || "Errore durante il salvataggio");
     } finally {
       setSaving(false);
     }
@@ -2375,34 +3182,34 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
 
   // Stili condizionali per modalità inline vs modal
   // NOTA: quando inline=true, non usa absolute positioning per permettere ai tab di rimanere visibili
-  const containerClass = inline 
+  const containerClass = inline
     ? "flex-1 flex flex-col bg-[#0b1220] overflow-hidden"
     : "fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4";
-  
+
   const modalClass = inline
     ? "flex-1 flex flex-col overflow-hidden"
     : "bg-gray-900 border border-gray-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto";
-  
+
   const headerClass = inline
     ? "hidden" // Nascondi header in modalità inline (i tab sono già visibili)
     : "sticky top-0 bg-gray-900 border-b border-gray-700 px-6 py-4 flex items-center justify-between";
-  
+
   const formClass = inline
     ? "flex-1 overflow-y-auto p-3 space-y-3"
     : "p-6 space-y-6";
-  
+
   const titleClass = inline
     ? "text-sm font-semibold text-[#e8fbff]"
     : "text-lg font-semibold text-white";
-  
+
   const labelClass = inline
     ? "block text-[10px] font-medium text-[#e8fbff]/70 mb-1"
     : "block text-sm font-medium text-gray-300 mb-2";
-  
+
   const inputClass = inline
     ? "w-full px-2 py-1.5 text-xs bg-[#1a2332] border border-[#14b8a6]/30 rounded text-[#e8fbff] focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
     : "w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500";
-  
+
   const sectionClass = inline
     ? "text-[10px] font-semibold text-[#14b8a6] uppercase tracking-wide border-b border-[#14b8a6]/20 pb-1 mb-2"
     : "text-sm font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-700 pb-2";
@@ -2412,7 +3219,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
       <div className={modalClass}>
         <div className={headerClass}>
           <h3 className={titleClass}>
-            {company ? 'Modifica Impresa' : 'Nuova Impresa'}
+            {company ? "Modifica Impresa" : "Nuova Impresa"}
           </h3>
           <button
             onClick={onClose}
@@ -2435,7 +3242,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
             <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-700 pb-2">
               Identità
             </h4>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Denominazione <span className="text-red-500">*</span>
@@ -2444,7 +3251,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 type="text"
                 required
                 value={formData.denominazione}
-                onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, denominazione: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="es. Azienda Agricola Rossi SRL"
               />
@@ -2459,7 +3268,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                   type="text"
                   required
                   value={formData.codice_fiscale}
-                  onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, codice_fiscale: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. V003"
                 />
@@ -2473,7 +3284,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                   type="text"
                   required
                   value={formData.partita_iva}
-                  onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, partita_iva: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. IT34567890123"
                 />
@@ -2488,7 +3301,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.numero_rea}
-                  onChange={(e) => setFormData({ ...formData, numero_rea: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, numero_rea: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. GR-123456"
                 />
@@ -2501,7 +3316,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.cciaa_sigla}
-                  onChange={(e) => setFormData({ ...formData, cciaa_sigla: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, cciaa_sigla: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. GR"
                   maxLength={5}
@@ -2516,10 +3333,15 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 </label>
                 <select
                   value={formData.forma_giuridica}
-                  onChange={(e) => setFormData({ ...formData, forma_giuridica: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      forma_giuridica: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {FORMA_GIURIDICA_OPTIONS.map((opt) => (
+                  {FORMA_GIURIDICA_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
@@ -2533,10 +3355,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 </label>
                 <select
                   value={formData.stato_impresa}
-                  onChange={(e) => setFormData({ ...formData, stato_impresa: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, stato_impresa: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {STATO_IMPRESA_OPTIONS.map((opt) => (
+                  {STATO_IMPRESA_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
@@ -2560,7 +3384,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.indirizzo_via}
-                  onChange={(e) => setFormData({ ...formData, indirizzo_via: capitalizeWords(e.target.value) })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      indirizzo_via: capitalizeWords(e.target.value),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Via Roma"
                 />
@@ -2573,7 +3402,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.indirizzo_civico}
-                  onChange={(e) => setFormData({ ...formData, indirizzo_civico: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      indirizzo_civico: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. 123"
                 />
@@ -2588,7 +3422,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.indirizzo_cap}
-                  onChange={(e) => setFormData({ ...formData, indirizzo_cap: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, indirizzo_cap: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. 58100"
                   maxLength={5}
@@ -2602,7 +3438,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.indirizzo_provincia}
-                  onChange={(e) => setFormData({ ...formData, indirizzo_provincia: e.target.value.toUpperCase() })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      indirizzo_provincia: e.target.value.toUpperCase(),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. GR"
                   maxLength={2}
@@ -2618,8 +3459,13 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 type="text"
                 required={!company}
                 value={formData.comune}
-                onChange={(e) => setFormData({ ...formData, comune: capitalizeWords(e.target.value) })}
-                className={`w-full px-3 py-2 bg-gray-800 border ${!company ? 'border-orange-500/50' : 'border-gray-700'} rounded-lg text-white focus:outline-none focus:ring-2 ${!company ? 'focus:ring-orange-500' : 'focus:ring-blue-500'}`}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    comune: capitalizeWords(e.target.value),
+                  })
+                }
+                className={`w-full px-3 py-2 bg-gray-800 border ${!company ? "border-orange-500/50" : "border-gray-700"} rounded-lg text-white focus:outline-none focus:ring-2 ${!company ? "focus:ring-orange-500" : "focus:ring-blue-500"}`}
                 placeholder="es. Grosseto"
               />
             </div>
@@ -2633,14 +3479,19 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                PEC {!company && <span className="text-orange-500">*</span>} <span className="text-xs text-gray-500">(Obbligatorio per PA)</span>
+                PEC {!company && <span className="text-orange-500">*</span>}{" "}
+                <span className="text-xs text-gray-500">
+                  (Obbligatorio per PA)
+                </span>
               </label>
               <input
                 type="email"
                 required={!company}
                 value={formData.pec}
-                onChange={(e) => setFormData({ ...formData, pec: e.target.value })}
-                className={`w-full px-3 py-2 bg-gray-800 border ${!company ? 'border-orange-500/50' : 'border-gray-700'} rounded-lg text-white focus:outline-none focus:ring-2 ${!company ? 'focus:ring-orange-500' : 'focus:ring-blue-500'}`}
+                onChange={e =>
+                  setFormData({ ...formData, pec: e.target.value })
+                }
+                className={`w-full px-3 py-2 bg-gray-800 border ${!company ? "border-orange-500/50" : "border-gray-700"} rounded-lg text-white focus:outline-none focus:ring-2 ${!company ? "focus:ring-orange-500" : "focus:ring-blue-500"}`}
                 placeholder="es. impresa@pec.it"
               />
             </div>
@@ -2653,7 +3504,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="email"
                   value={formData.referente}
-                  onChange={(e) => setFormData({ ...formData, referente: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, referente: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. checchi@me.com"
                 />
@@ -2666,7 +3519,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="tel"
                   value={formData.telefono}
-                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, telefono: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. +39 333 1234567"
                 />
@@ -2681,7 +3536,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.codice_ateco}
-                  onChange={(e) => setFormData({ ...formData, codice_ateco: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, codice_ateco: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. 47.11.10"
                 />
@@ -2694,7 +3551,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.descrizione_ateco}
-                  onChange={(e) => setFormData({ ...formData, descrizione_ateco: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      descrizione_ateco: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Commercio al dettaglio alimentare"
                 />
@@ -2707,10 +3569,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
               </label>
               <select
                 value={formData.stato}
-                onChange={(e) => setFormData({ ...formData, stato: e.target.value as any })}
+                onChange={e =>
+                  setFormData({ ...formData, stato: e.target.value as any })
+                }
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {STATO_COMPANY_OPTIONS.map((opt) => (
+                {STATO_COMPANY_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -2733,7 +3597,14 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_cognome}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_cognome: capitalizeWords(e.target.value) })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      rappresentante_legale_cognome: capitalizeWords(
+                        e.target.value
+                      ),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Rossi"
                 />
@@ -2746,7 +3617,14 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_nome}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_nome: capitalizeWords(e.target.value) })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      rappresentante_legale_nome: capitalizeWords(
+                        e.target.value
+                      ),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Mario"
                 />
@@ -2760,7 +3638,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
               <input
                 type="text"
                 value={formData.rappresentante_legale_cf}
-                onChange={(e) => setFormData({ ...formData, rappresentante_legale_cf: e.target.value.toUpperCase() })}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_cf: e.target.value.toUpperCase(),
+                  })
+                }
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="es. RSSMRA80A01D612H"
                 maxLength={16}
@@ -2775,11 +3658,16 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="date"
                   value={formData.rappresentante_legale_data_nascita}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_data_nascita: e.target.value })}
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onFocus={(e) => e.stopPropagation()}
-                  onBlur={(e) => e.stopPropagation()}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      rappresentante_legale_data_nascita: e.target.value,
+                    })
+                  }
+                  onClick={e => e.stopPropagation()}
+                  onMouseDown={e => e.stopPropagation()}
+                  onFocus={e => e.stopPropagation()}
+                  onBlur={e => e.stopPropagation()}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 relative z-[100]"
                 />
               </div>
@@ -2791,7 +3679,14 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_luogo_nascita}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_luogo_nascita: capitalizeWords(e.target.value) })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      rappresentante_legale_luogo_nascita: capitalizeWords(
+                        e.target.value
+                      ),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Grosseto"
                 />
@@ -2813,7 +3708,14 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_residenza_via}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_via: capitalizeWords(e.target.value) })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      rappresentante_legale_residenza_via: capitalizeWords(
+                        e.target.value
+                      ),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Via Verdi"
                 />
@@ -2826,7 +3728,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_residenza_civico}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_civico: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      rappresentante_legale_residenza_civico: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. 5"
                 />
@@ -2841,7 +3748,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_residenza_cap}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_cap: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      rappresentante_legale_residenza_cap: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. 58100"
                   maxLength={5}
@@ -2855,7 +3767,14 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_residenza_comune}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_comune: capitalizeWords(e.target.value) })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      rappresentante_legale_residenza_comune: capitalizeWords(
+                        e.target.value
+                      ),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. Grosseto"
                 />
@@ -2868,7 +3787,13 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="text"
                   value={formData.rappresentante_legale_residenza_provincia}
-                  onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_provincia: e.target.value.toUpperCase() })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      rappresentante_legale_residenza_provincia:
+                        e.target.value.toUpperCase(),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. GR"
                   maxLength={2}
@@ -2892,7 +3817,12 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                   type="number"
                   step="0.01"
                   value={formData.capitale_sociale}
-                  onChange={(e) => setFormData({ ...formData, capitale_sociale: e.target.value })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      capitale_sociale: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. 10000.00"
                 />
@@ -2905,7 +3835,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
                 <input
                   type="number"
                   value={formData.numero_addetti}
-                  onChange={(e) => setFormData({ ...formData, numero_addetti: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, numero_addetti: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="es. 5"
                 />
@@ -2919,7 +3851,9 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
               <input
                 type="url"
                 value={formData.sito_web}
-                onChange={(e) => setFormData({ ...formData, sito_web: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, sito_web: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="es. https://www.example.com"
               />
@@ -2932,11 +3866,16 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
               <input
                 type="date"
                 value={formData.data_iscrizione_ri}
-                onChange={(e) => setFormData({ ...formData, data_iscrizione_ri: e.target.value })}
-                onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                onFocus={(e) => e.stopPropagation()}
-                onBlur={(e) => e.stopPropagation()}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    data_iscrizione_ri: e.target.value,
+                  })
+                }
+                onClick={e => e.stopPropagation()}
+                onMouseDown={e => e.stopPropagation()}
+                onFocus={e => e.stopPropagation()}
+                onBlur={e => e.stopPropagation()}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 relative z-[100]"
               />
             </div>
@@ -2957,7 +3896,7 @@ export function CompanyModal({ marketId, company, onClose, onSaved, inline = fal
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              {saving ? 'Salvataggio...' : 'Salva'}
+              {saving ? "Salvataggio..." : "Salva"}
             </button>
           </div>
         </form>

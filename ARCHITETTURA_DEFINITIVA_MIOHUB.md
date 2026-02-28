@@ -14,7 +14,7 @@
 
                               SCRITTURA (Invio Messaggi)
                               ═══════════════════════════
-                              
+
 ┌──────────────┐     POST /api/mihub/orchestrator     ┌──────────────────────┐
 │   FRONTEND   │ ─────────────────────────────────────▶│  BACKEND HETZNER     │
 │   (Vercel)   │                                       │  (PM2 - Node.js)     │
@@ -39,7 +39,7 @@
 
                               LETTURA (Visualizzazione Messaggi)
                               ══════════════════════════════════
-                              
+
 ┌──────────────┐     GET /api/mihub/get-messages       ┌──────────────────────┐
 │   FRONTEND   │ ─────────────────────────────────────▶│   DATABASE NEON      │
 │   (Vercel)   │◀─────────────────────────────────────│   (PostgreSQL)       │
@@ -58,12 +58,14 @@
 **Endpoint**: `POST https://orchestratore.mio-hub.me/api/mihub/orchestrator`
 
 **Flusso**:
+
 1. Frontend invia messaggio al backend Hetzner
 2. Backend processa con LLM (Gemini)
 3. Orchestratore coordina gli agenti (MIO, Manus, Abacus, GPT Dev, Zapier)
 4. Backend salva messaggi nel database Neon tramite `direct_saver.js`
 
 **File coinvolti** (Backend):
+
 - `routes/orchestrator.js` - Endpoint principale
 - `utils/direct_saver.js` - Salvataggio diretto nel DB
 - `src/modules/orchestrator/llm.js` - Chiamate LLM
@@ -74,12 +76,14 @@
 **Endpoint**: `GET https://dms-hub-app-new.vercel.app/api/mihub/get-messages`
 
 **Flusso**:
+
 1. Frontend chiama l'API Vercel serverless
 2. API Vercel si connette DIRETTAMENTE al database Neon
 3. Restituisce i messaggi al frontend
 4. **BYPASSA COMPLETAMENTE il backend Hetzner**
 
 **File coinvolti** (Frontend):
+
 - `api/mihub/get-messages.ts` - Endpoint Vercel serverless
 - `client/src/contexts/MioContext.tsx` - Context React per Chat MIO
 - `client/src/hooks/useAgentLogs.ts` - Hook per Vista 4 Agenti e Chat Singole
@@ -88,17 +92,17 @@
 
 ## 🏝️ ARCHITETTURA 8 ISOLE (Conversation IDs)
 
-| Isola | Conversation ID | Descrizione | Mode |
-|-------|-----------------|-------------|------|
-| **Chat MIO** | `mio-main` | User ↔ MIO (Orchestratore) | `auto` |
-| **Coord. Manus** | `mio-manus-coordination` | MIO ↔ Manus | `auto` |
-| **Coord. Abacus** | `mio-abacus-coordination` | MIO ↔ Abacus | `auto` |
-| **Coord. GPT Dev** | `mio-gptdev-coordination` | MIO ↔ GPT Dev | `auto` |
-| **Coord. Zapier** | `mio-zapier-coordination` | MIO ↔ Zapier | `auto` |
-| **Chat Singola Manus** | `user-manus-direct` | User ↔ Manus (diretto) | `direct` |
-| **Chat Singola Abacus** | `user-abacus-direct` | User ↔ Abacus (diretto) | `direct` |
-| **Chat Singola GPT Dev** | `user-gptdev-direct` | User ↔ GPT Dev (diretto) | `direct` |
-| **Chat Singola Zapier** | `user-zapier-direct` | User ↔ Zapier (diretto) | `direct` |
+| Isola                    | Conversation ID           | Descrizione                 | Mode     |
+| ------------------------ | ------------------------- | --------------------------- | -------- |
+| **Chat MIO**             | `mio-main`                | User ↔ MIO (Orchestratore) | `auto`   |
+| **Coord. Manus**         | `mio-manus-coordination`  | MIO ↔ Manus                | `auto`   |
+| **Coord. Abacus**        | `mio-abacus-coordination` | MIO ↔ Abacus               | `auto`   |
+| **Coord. GPT Dev**       | `mio-gptdev-coordination` | MIO ↔ GPT Dev              | `auto`   |
+| **Coord. Zapier**        | `mio-zapier-coordination` | MIO ↔ Zapier               | `auto`   |
+| **Chat Singola Manus**   | `user-manus-direct`       | User ↔ Manus (diretto)     | `direct` |
+| **Chat Singola Abacus**  | `user-abacus-direct`      | User ↔ Abacus (diretto)    | `direct` |
+| **Chat Singola GPT Dev** | `user-gptdev-direct`      | User ↔ GPT Dev (diretto)   | `direct` |
+| **Chat Singola Zapier**  | `user-zapier-direct`      | User ↔ Zapier (diretto)    | `direct` |
 
 ---
 
@@ -192,11 +196,13 @@ Il "tubo diretto" (Vercel → Neon) è stato implementato perché:
 3. **Soluzione**: Bypassare Hetzner per la LETTURA, connettendosi direttamente al database
 
 **Vantaggi**:
+
 - Lettura più veloce (meno hop)
 - Nessuna trasformazione intermedia
 - Dati sempre freschi dal database
 
 **Svantaggi**:
+
 - Due punti di connessione al database (Hetzner + Vercel)
 - Necessità di mantenere sincronizzate le credenziali
 
@@ -205,12 +211,14 @@ Il "tubo diretto" (Vercel → Neon) è stato implementato perché:
 ## 🛠️ VARIABILI AMBIENTE
 
 ### Backend Hetzner (.env)
+
 ```
 POSTGRES_URL=postgresql://neondb_owner:npg_lYG6JQ5Krtsi@ep-bold-silence-adftsojg-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
 GEMINI_API_KEY=...
 ```
 
 ### Frontend Vercel (Environment Variables)
+
 ```
 DATABASE_URL=postgresql://neondb_owner:npg_lYG6JQ5Krtsi@ep-bold-silence-adftsojg-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
 ```
@@ -220,21 +228,23 @@ DATABASE_URL=postgresql://neondb_owner:npg_lYG6JQ5Krtsi@ep-bold-silence-adftsojg
 ## 📁 FILE CHIAVE
 
 ### Backend (mihub-backend-rest)
-| File | Funzione |
-|------|----------|
-| `routes/orchestrator.js` | Endpoint POST orchestratore |
-| `utils/direct_saver.js` | Salvataggio diretto messaggi |
-| `src/modules/orchestrator/llm.js` | Chiamate LLM agenti |
-| `config/database.js` | Pool connessione PostgreSQL |
+
+| File                              | Funzione                     |
+| --------------------------------- | ---------------------------- |
+| `routes/orchestrator.js`          | Endpoint POST orchestratore  |
+| `utils/direct_saver.js`           | Salvataggio diretto messaggi |
+| `src/modules/orchestrator/llm.js` | Chiamate LLM agenti          |
+| `config/database.js`              | Pool connessione PostgreSQL  |
 
 ### Frontend (dms-hub-app-new)
-| File | Funzione |
-|------|----------|
-| `api/mihub/get-messages.ts` | Endpoint GET messaggi (TUBO DIRETTO) |
-| `client/src/contexts/MioContext.tsx` | Context Chat MIO |
-| `client/src/hooks/useAgentLogs.ts` | Hook Vista 4 Agenti + Chat Singole |
-| `client/src/pages/DashboardPA.tsx` | Pagina principale dashboard |
+
+| File                                 | Funzione                             |
+| ------------------------------------ | ------------------------------------ |
+| `api/mihub/get-messages.ts`          | Endpoint GET messaggi (TUBO DIRETTO) |
+| `client/src/contexts/MioContext.tsx` | Context Chat MIO                     |
+| `client/src/hooks/useAgentLogs.ts`   | Hook Vista 4 Agenti + Chat Singole   |
+| `client/src/pages/DashboardPA.tsx`   | Pagina principale dashboard          |
 
 ---
 
-*Documento generato il 20 Dicembre 2024 - Manus AI*
+_Documento generato il 20 Dicembre 2024 - Manus AI_

@@ -1,14 +1,14 @@
 /**
  * 👻 GHOSTBUSTER CLIENT - Direct Link to Hetzner Backend
  * Created: 2025-12-03 07:50
- * 
+ *
  * This is a completely NEW client to bypass all possible caching issues.
  * Uses a unique function name and file name to avoid any conflicts.
  */
 
 export interface DirectMioMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   createdAt: string;
 }
@@ -27,50 +27,49 @@ export const sendDirectMessageToHetzner = async (
   conversationId: string | null
 ): Promise<DirectMioResponse> => {
   const URL = "/api/mihub/orchestrator";
-  
+
   const payload: any = {
     message: message,
-    mode: "auto"
+    mode: "auto",
   };
-  
+
   if (conversationId) {
     payload.conversationId = conversationId;
   }
-  
+
   try {
     const response = await fetch(URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
-    
+
     if (!response.ok) {
       const txt = await response.text();
       console.error("👻 GHOSTBUSTER HTTP ERROR:", response.status, txt);
       throw new Error(`HTTP Error ${response.status}`);
     }
-    
+
     const data = await response.json();
 
     // Parse response
     const messages: DirectMioMessage[] = [];
     const returnedConversationId = data.conversationId ?? conversationId ?? "";
-    
+
     if (data.message || data.reply) {
       const assistantMessage = data.message || data.reply;
       messages.push({
         id: crypto.randomUUID(),
-        role: 'assistant',
+        role: "assistant",
         content: assistantMessage,
         createdAt: new Date().toISOString(),
       });
     }
-    
+
     return {
       messages,
-      conversationId: returnedConversationId
+      conversationId: returnedConversationId,
     };
-    
   } catch (e) {
     console.error("👻 GHOSTBUSTER NETWORK ERROR:", e);
     throw e;

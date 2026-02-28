@@ -108,7 +108,10 @@ export const tccSecurityRouter = router({
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.user.id;
       if (!userId) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Utente non identificato" });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Utente non identificato",
+        });
       }
 
       // Rate limit: max 20 QR generati per giorno
@@ -130,10 +133,18 @@ export const tccSecurityRouter = router({
         payload.amount = input.amount;
       }
 
-      const { token, signature, expiresAt, nonce } = generateQRSignature(payload);
+      const { token, signature, expiresAt, nonce } =
+        generateQRSignature(payload);
 
       // Salva token nel DB per validazione successiva (uso singolo)
-      await saveQRToken(userId, input.qrType, signature, payload, input.amount, expiresAt);
+      await saveQRToken(
+        userId,
+        input.qrType,
+        signature,
+        payload,
+        input.amount,
+        expiresAt
+      );
 
       return {
         qrData: JSON.stringify({ token, signature, nonce }),
@@ -156,7 +167,10 @@ export const tccSecurityRouter = router({
           ctx.user.id || null,
           "invalid_qr",
           "medium",
-          { reason: sigCheck.reason, token: input.token.substring(0, 20) + "..." },
+          {
+            reason: sigCheck.reason,
+            token: input.token.substring(0, 20) + "...",
+          },
           undefined,
           undefined
         );
@@ -196,7 +210,10 @@ export const tccSecurityRouter = router({
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.user.id;
       if (!userId) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Utente non identificato" });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Utente non identificato",
+        });
       }
 
       // 1. Idempotency check
@@ -208,7 +225,10 @@ export const tccSecurityRouter = router({
       }
 
       // 2. Rate limit
-      const actionType = input.poiType === "culture" ? "checkin_culture" as const : "checkin_mobility" as const;
+      const actionType =
+        input.poiType === "culture"
+          ? ("checkin_culture" as const)
+          : ("checkin_mobility" as const);
       const rateCheck = await checkRateLimit(userId, actionType);
       if (!rateCheck.allowed) {
         await logFraudEvent(userId, "rate_exceeded", "low", {
@@ -226,12 +246,18 @@ export const tccSecurityRouter = router({
       if (input.accuracy && input.accuracy > 200) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Precisione GPS insufficiente. Spostati in un'area con migliore copertura.",
+          message:
+            "Precisione GPS insufficiente. Spostati in un'area con migliore copertura.",
         });
       }
 
       // 4. GPS plausibility (impossible travel detection)
-      const gpsCheck = await checkGPSPlausibility(userId, input.lat, input.lng, new Date());
+      const gpsCheck = await checkGPSPlausibility(
+        userId,
+        input.lat,
+        input.lng,
+        new Date()
+      );
       if (!gpsCheck.plausible) {
         await logFraudEvent(userId, "impossible_travel", "high", {
           lat: input.lat,
@@ -270,7 +296,10 @@ export const tccSecurityRouter = router({
       // 7. Registra check-in
       const db = await getDb();
       if (!db) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database non disponibile" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database non disponibile",
+        });
       }
 
       const [checkin] = await db
@@ -329,7 +358,10 @@ export const tccSecurityRouter = router({
   getDailyLimits: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.user.id;
     if (!userId) {
-      throw new TRPCError({ code: "UNAUTHORIZED", message: "Utente non identificato" });
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Utente non identificato",
+      });
     }
 
     const db = await getDb();
@@ -385,7 +417,8 @@ export const tccSecurityRouter = router({
         conditions.push(eq(schema.tccFraudEvents.resolved, input.resolved));
       }
 
-      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
 
       const events = await db
         .select()
@@ -401,7 +434,7 @@ export const tccSecurityRouter = router({
         .where(whereClause);
 
       return {
-        events: events.map((e) => ({
+        events: events.map(e => ({
           ...e,
           details: e.details ? JSON.parse(e.details) : null,
         })),
@@ -466,7 +499,11 @@ export const tccSecurityRouter = router({
     .input(resolveFraudSchema)
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database non disponibile" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database non disponibile",
+        });
 
       const [updated] = await db
         .update(schema.tccFraudEvents)
@@ -480,7 +517,10 @@ export const tccSecurityRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Evento non trovato" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Evento non trovato",
+        });
       }
 
       // Log audit
@@ -489,7 +529,10 @@ export const tccSecurityRouter = router({
         action: "TCC_FRAUD_RESOLVED",
         entityType: "tcc_fraud_event",
         entityId: input.eventId,
-        newValue: JSON.stringify({ resolution: input.resolution, notes: input.notes }),
+        newValue: JSON.stringify({
+          resolution: input.resolution,
+          notes: input.notes,
+        }),
       });
 
       return updated;
@@ -512,7 +555,7 @@ export const tccSecurityRouter = router({
 
       if (input.userId) {
         conditions.push(
-          sql`${schema.auditLogs.userEmail} LIKE ${'user_id:' + input.userId + '%'}`
+          sql`${schema.auditLogs.userEmail} LIKE ${"user_id:" + input.userId + "%"}`
         );
       }
       if (input.email) {
@@ -520,9 +563,7 @@ export const tccSecurityRouter = router({
       }
 
       // Filtra solo azioni TCC
-      conditions.push(
-        sql`${schema.auditLogs.action} LIKE 'TCC_%'`
-      );
+      conditions.push(sql`${schema.auditLogs.action} LIKE 'TCC_%'`);
 
       const whereClause = and(...conditions);
 
@@ -540,7 +581,7 @@ export const tccSecurityRouter = router({
         .where(whereClause);
 
       return {
-        logs: logs.map((l) => ({
+        logs: logs.map(l => ({
           ...l,
           oldValue: l.oldValue ? JSON.parse(l.oldValue) : null,
           newValue: l.newValue ? JSON.parse(l.newValue) : null,
@@ -583,7 +624,11 @@ export const tccSecurityRouter = router({
     .input(updateConfigSchema)
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database non disponibile" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database non disponibile",
+        });
 
       const conditions = [];
       if (input.comuneId) {
@@ -599,9 +644,15 @@ export const tccSecurityRouter = router({
 
       const updateData: Record<string, unknown> = { updatedAt: new Date() };
       const fields = [
-        "maxDailyTccPerUser", "maxDailyCheckins", "maxMonthlyTcc",
-        "maxSingleTransaction", "qrExpirySeconds", "gpsRadiusMeters",
-        "cooldownMinutes", "maxDailyReferrals", "highValueThresholdEur",
+        "maxDailyTccPerUser",
+        "maxDailyCheckins",
+        "maxMonthlyTcc",
+        "maxSingleTransaction",
+        "qrExpirySeconds",
+        "gpsRadiusMeters",
+        "cooldownMinutes",
+        "maxDailyReferrals",
+        "highValueThresholdEur",
       ] as const;
 
       for (const field of fields) {

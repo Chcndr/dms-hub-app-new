@@ -12,10 +12,10 @@ La Soluzione Sussidiaria Enti Terzi sarà operativa dal **26 luglio 2025**, data
 
 La Soluzione Sussidiaria può essere utilizzata in modo **temporaneo** o **permanente**:
 
-| Modalità | Descrizione |
-|----------|-------------|
+| Modalità       | Descrizione                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Temporanea** | Per Enti Terzi che non riescono a implementare il proprio sistema gestionale entro il 25 luglio 2025. Successivamente possono passare al proprio BOET. |
-| **Permanente** | L'Ente aderisce alla SSET e la seleziona tra i componenti Back Office Ente Terzo presenti nel Catalogo. |
+| **Permanente** | L'Ente aderisce alla SSET e la seleziona tra i componenti Back Office Ente Terzo presenti nel Catalogo.                                                |
 
 ## Processo di Adesione
 
@@ -36,49 +36,50 @@ Il processo di adesione è digitalizzato e richiede l'identificazione di tre fig
 
 La Soluzione Sussidiaria Enti Terzi permette di:
 
-| Funzionalità | Descrizione |
-|--------------|-------------|
-| **Ricezione pratiche** | Ricevere pratiche dal SUAP |
-| **Richieste integrazioni** | Effettuare richieste di integrazioni o conformazioni |
-| **Trasmissione pareri** | Trasmettere pareri, atti conclusivi, autorizzazioni e documentazione |
-| **Integrazione protocollo** | Integrare il protocollo dell'Ente secondo le linee guida AGID |
-| **Servizio notifiche** | Disporre di un servizio di notifiche integrato |
-| **Conferenza servizi** | Ricevere avvisi di convocazione della Conferenza dei Servizi Sincrona |
+| Funzionalità                | Descrizione                                                           |
+| --------------------------- | --------------------------------------------------------------------- |
+| **Ricezione pratiche**      | Ricevere pratiche dal SUAP                                            |
+| **Richieste integrazioni**  | Effettuare richieste di integrazioni o conformazioni                  |
+| **Trasmissione pareri**     | Trasmettere pareri, atti conclusivi, autorizzazioni e documentazione  |
+| **Integrazione protocollo** | Integrare il protocollo dell'Ente secondo le linee guida AGID         |
+| **Servizio notifiche**      | Disporre di un servizio di notifiche integrato                        |
+| **Conferenza servizi**      | Ricevere avvisi di convocazione della Conferenza dei Servizi Sincrona |
 
 ## Configurazione Uffici
 
 L'Ente deve configurare i propri uffici nella SSET:
+
 - Deve essere registrato nell'IPA (Indice dei Domicili Digitali della PA)
 - Gli uffici sono identificati con il codice univoco presente in IPA
 - Un ufficio può essere un'Area Organizzativa Omogenea (A.O.O.) o un'Unità Organizzativa (U.O.)
 
 ## Tipi di Pratiche SUAP Gestite
 
-| Tipo Pratica | Descrizione |
-|--------------|-------------|
+| Tipo Pratica       | Descrizione                                 |
+| ------------------ | ------------------------------------------- |
 | **SCIA Commercio** | Segnalazione Certificata di Inizio Attività |
-| **Subingresso** | Cambio di titolarità dell'attività |
-| **Voltura** | Trasferimento della concessione |
-| **Nuova Attività** | Apertura di una nuova attività produttiva |
-| **Cessazione** | Chiusura dell'attività |
+| **Subingresso**    | Cambio di titolarità dell'attività          |
+| **Voltura**        | Trasferimento della concessione             |
+| **Nuova Attività** | Apertura di una nuova attività produttiva   |
+| **Cessazione**     | Chiusura dell'attività                      |
 
 ## Stati delle Pratiche
 
-| Stato | Descrizione |
-|-------|-------------|
-| **In Lavorazione** | Pratica in fase di istruttoria |
-| **Integrazione Richiesta** | Richiesta documentazione aggiuntiva |
-| **Approvata** | Pratica approvata con esito positivo |
-| **Rigettata** | Pratica respinta |
+| Stato                      | Descrizione                          |
+| -------------------------- | ------------------------------------ |
+| **In Lavorazione**         | Pratica in fase di istruttoria       |
+| **Integrazione Richiesta** | Richiesta documentazione aggiuntiva  |
+| **Approvata**              | Pratica approvata con esito positivo |
+| **Rigettata**              | Pratica respinta                     |
 
 ## Risorse e Supporto
 
-| Risorsa | Link/Contatto |
-|---------|---------------|
-| **Portale SSET** | https://www.impresainungiorno.gov.it |
-| **Help Desk** | Tel. 0664892892 (Lun-Ven 8:30-18:30) |
+| Risorsa                  | Link/Contatto                                                |
+| ------------------------ | ------------------------------------------------------------ |
+| **Portale SSET**         | https://www.impresainungiorno.gov.it                         |
+| **Help Desk**            | Tel. 0664892892 (Lun-Ven 8:30-18:30)                         |
 | **Info SUAP Enti Terzi** | https://sites.google.com/unioncamere.it/info-suap-enti-terzi |
-| **Catalogo SSU** | https://catalogo.impresainungiorno.gov.it |
+| **Catalogo SSU**         | https://catalogo.impresainungiorno.gov.it                    |
 
 ## Integrazione con PDND
 
@@ -90,4 +91,3 @@ Il Catalogo SSU espone su PDND (Piattaforma Nazionale Dati) mediante il Catalogo
 - **Art. 7 Allegato Tecnico** - Requisiti tecnici per i componenti Back Office
 - **L. 241/90 Art. 14** - Conferenza dei Servizi
 - **Linee Guida AGID Allegato 6** - Comunicazione tra AOO di documenti protocollati
-

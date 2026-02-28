@@ -1,36 +1,36 @@
 /**
  * ListaDomandeSpuntaSuap.tsx
- * 
+ *
  * Lista delle domande di partecipazione alla spunta per SSO SUAP.
  * Design coerente con ListaConcessioni (sfondo grigio, righe verdi).
  */
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Eye, 
-  Trash2, 
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Search,
+  Filter,
+  Plus,
+  Eye,
+  Trash2,
   Edit,
   CheckCircle,
   XCircle,
@@ -38,13 +38,17 @@ import {
   FileText,
   Loader2,
   RefreshCw,
-  Wallet
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { addComuneIdToUrl, addAssociazioneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
-import { formatDate } from '@/lib/formatUtils';
+  Wallet,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  addComuneIdToUrl,
+  addAssociazioneIdToUrl,
+  authenticatedFetch,
+} from "@/hooks/useImpersonation";
+import { formatDate } from "@/lib/formatUtils";
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const API_URL = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
 
 interface DomandaSpunta {
   id: number;
@@ -73,30 +77,34 @@ interface ListaDomandeSpuntaSuapProps {
   isAssociazione?: boolean;
 }
 
-export default function ListaDomandeSpuntaSuap({ 
-  onNuovaDomanda, 
+export default function ListaDomandeSpuntaSuap({
+  onNuovaDomanda,
   onViewDomanda,
   onEditDomanda,
-  isAssociazione = false
+  isAssociazione = false,
 }: ListaDomandeSpuntaSuapProps) {
   const [domande, setDomande] = useState<DomandaSpunta[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStato, setFilterStato] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStato, setFilterStato] = useState<string>("all");
 
   // Carica domande spunta
   const fetchDomande = async () => {
     try {
       setLoading(true);
-      const response = await fetch(addAssociazioneIdToUrl(addComuneIdToUrl(`${API_URL}/api/domande-spunta`)));
+      const response = await fetch(
+        addAssociazioneIdToUrl(
+          addComuneIdToUrl(`${API_URL}/api/domande-spunta`)
+        )
+      );
       const json = await response.json();
-      
+
       if (json.success && json.data) {
         setDomande(json.data);
       }
     } catch (err) {
-      console.error('Errore caricamento domande spunta:', err);
-      toast.error('Errore nel caricamento delle domande');
+      console.error("Errore caricamento domande spunta:", err);
+      toast.error("Errore nel caricamento delle domande");
     } finally {
       setLoading(false);
     }
@@ -108,139 +116,164 @@ export default function ListaDomandeSpuntaSuap({
 
   // Filtra domande
   const filteredDomande = domande.filter(dom => {
-    const matchesSearch = 
+    const matchesSearch =
       dom.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       dom.company_piva?.includes(searchQuery) ||
       dom.market_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStato = filterStato === 'all' || dom.stato === filterStato;
-    
+
+    const matchesStato = filterStato === "all" || dom.stato === filterStato;
+
     return matchesSearch && matchesStato;
   });
 
   // Formatta importo
   const formatCurrency = (amount: number) => {
-    if (amount === null || amount === undefined) return '€ 0.00';
+    if (amount === null || amount === undefined) return "€ 0.00";
     return `€ ${Number(amount).toFixed(2)}`;
   };
 
   // Badge stato con semafori
   const getStatoBadge = (stato: string) => {
     switch (stato?.toUpperCase()) {
-      case 'APPROVATA':
-      case 'ATTIVA':
-        return <Badge className="bg-green-500/20 text-green-400 border border-green-500/50">
-          <span className="w-2 h-2 rounded-full bg-green-400 mr-1.5 animate-pulse"></span>
-          Approvata
-        </Badge>;
-      case 'IN_ATTESA':
-        return <Badge className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/50">
-          <span className="w-2 h-2 rounded-full bg-yellow-400 mr-1.5 animate-pulse"></span>
-          In Attesa
-        </Badge>;
-      case 'DA_REVISIONARE':
-      case 'REVISIONE':
-        return <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/50">
-          <span className="w-2 h-2 rounded-full bg-orange-400 mr-1.5 animate-pulse"></span>
-          Da Revisionare
-        </Badge>;
-      case 'RIFIUTATA':
-        return <Badge className="bg-red-500/20 text-red-400 border border-red-500/50">
-          <span className="w-2 h-2 rounded-full bg-red-400 mr-1.5"></span>
-          Rifiutata
-        </Badge>;
+      case "APPROVATA":
+      case "ATTIVA":
+        return (
+          <Badge className="bg-green-500/20 text-green-400 border border-green-500/50">
+            <span className="w-2 h-2 rounded-full bg-green-400 mr-1.5 animate-pulse"></span>
+            Approvata
+          </Badge>
+        );
+      case "IN_ATTESA":
+        return (
+          <Badge className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/50">
+            <span className="w-2 h-2 rounded-full bg-yellow-400 mr-1.5 animate-pulse"></span>
+            In Attesa
+          </Badge>
+        );
+      case "DA_REVISIONARE":
+      case "REVISIONE":
+        return (
+          <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/50">
+            <span className="w-2 h-2 rounded-full bg-orange-400 mr-1.5 animate-pulse"></span>
+            Da Revisionare
+          </Badge>
+        );
+      case "RIFIUTATA":
+        return (
+          <Badge className="bg-red-500/20 text-red-400 border border-red-500/50">
+            <span className="w-2 h-2 rounded-full bg-red-400 mr-1.5"></span>
+            Rifiutata
+          </Badge>
+        );
       default:
-        return <Badge className="bg-gray-500/20 text-gray-400">{stato || 'N/D'}</Badge>;
+        return (
+          <Badge className="bg-gray-500/20 text-gray-400">
+            {stato || "N/D"}
+          </Badge>
+        );
     }
   };
 
   // Approva domanda
   const handleApprova = async (id: number) => {
     try {
-      const response = await authenticatedFetch(`${API_URL}/api/domande-spunta/${id}/approva`, {
-        method: 'POST'
-      });
+      const response = await authenticatedFetch(
+        `${API_URL}/api/domande-spunta/${id}/approva`,
+        {
+          method: "POST",
+        }
+      );
       const json = await response.json();
-      
+
       if (json.success) {
-        toast.success('Domanda approvata');
+        toast.success("Domanda approvata");
         fetchDomande();
       } else {
         throw new Error(json.error);
       }
     } catch (err: any) {
-      toast.error('Errore approvazione', { description: err.message });
+      toast.error("Errore approvazione", { description: err.message });
     }
   };
 
   // Richiedi revisione/regolarizzazione
   const handleRevisione = async (id: number) => {
-    const motivo = prompt('Motivo della richiesta di regolarizzazione:');
+    const motivo = prompt("Motivo della richiesta di regolarizzazione:");
     if (!motivo) return;
-    
+
     try {
-      const response = await authenticatedFetch(`${API_URL}/api/domande-spunta/${id}/revisione`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motivo })
-      });
+      const response = await authenticatedFetch(
+        `${API_URL}/api/domande-spunta/${id}/revisione`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ motivo }),
+        }
+      );
       const json = await response.json();
-      
+
       if (json.success) {
-        toast.success('Richiesta revisione inviata', { 
-          description: 'L\'impresa riceverà notifica per regolarizzare la domanda' 
+        toast.success("Richiesta revisione inviata", {
+          description:
+            "L'impresa riceverà notifica per regolarizzare la domanda",
         });
         fetchDomande();
       } else {
         throw new Error(json.error);
       }
     } catch (err: any) {
-      toast.error('Errore richiesta revisione', { description: err.message });
+      toast.error("Errore richiesta revisione", { description: err.message });
     }
   };
 
   // Rifiuta domanda
   const handleRifiuta = async (id: number) => {
-    const motivo = prompt('Motivo del rifiuto:');
+    const motivo = prompt("Motivo del rifiuto:");
     if (!motivo) return;
-    
+
     try {
-      const response = await authenticatedFetch(`${API_URL}/api/domande-spunta/${id}/rifiuta`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motivo })
-      });
+      const response = await authenticatedFetch(
+        `${API_URL}/api/domande-spunta/${id}/rifiuta`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ motivo }),
+        }
+      );
       const json = await response.json();
-      
+
       if (json.success) {
-        toast.success('Domanda rifiutata');
+        toast.success("Domanda rifiutata");
         fetchDomande();
       } else {
         throw new Error(json.error);
       }
     } catch (err: any) {
-      toast.error('Errore rifiuto', { description: err.message });
+      toast.error("Errore rifiuto", { description: err.message });
     }
   };
 
   // Elimina domanda
   const handleDelete = async (id: number) => {
-    if (!confirm('Sei sicuro di voler eliminare questa domanda?')) return;
-    
+    if (!confirm("Sei sicuro di voler eliminare questa domanda?")) return;
+
     try {
-      const response = await authenticatedFetch(`${API_URL}/api/domande-spunta/${id}`, {
-        method: 'DELETE'
-      });
+      const response = await authenticatedFetch(
+        `${API_URL}/api/domande-spunta/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
       const json = await response.json();
-      
+
       if (json.success) {
-        toast.success('Domanda eliminata');
+        toast.success("Domanda eliminata");
         fetchDomande();
       } else {
         throw new Error(json.error);
       }
     } catch (err: any) {
-      toast.error('Errore eliminazione', { description: err.message });
+      toast.error("Errore eliminazione", { description: err.message });
     }
   };
 
@@ -249,7 +282,7 @@ export default function ListaDomandeSpuntaSuap({
     if (onViewDomanda) {
       onViewDomanda(id);
     } else {
-      toast.info('Dettaglio domanda', { description: `ID: ${id}` });
+      toast.info("Dettaglio domanda", { description: `ID: ${id}` });
     }
   };
 
@@ -258,7 +291,7 @@ export default function ListaDomandeSpuntaSuap({
     if (onEditDomanda) {
       onEditDomanda(id);
     } else {
-      toast.info('Modifica domanda', { description: `ID: ${id}` });
+      toast.info("Modifica domanda", { description: `ID: ${id}` });
     }
   };
 
@@ -268,12 +301,17 @@ export default function ListaDomandeSpuntaSuap({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-green-400" />
-          <h2 className="text-xl font-semibold text-[#e8fbff]">Domande Spunta</h2>
-          <Badge variant="outline" className="ml-2 text-gray-400 border-gray-600">
+          <h2 className="text-xl font-semibold text-[#e8fbff]">
+            Domande Spunta
+          </h2>
+          <Badge
+            variant="outline"
+            className="ml-2 text-gray-400 border-gray-600"
+          >
             {filteredDomande.length} risultati
           </Badge>
         </div>
-        <Button 
+        <Button
           onClick={onNuovaDomanda}
           className="bg-green-600 hover:bg-green-700 text-white"
         >
@@ -286,14 +324,14 @@ export default function ListaDomandeSpuntaSuap({
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <Input 
+          <Input
             placeholder="Cerca per impresa o mercato..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="pl-10 bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]"
           />
         </div>
-        
+
         <Select value={filterStato} onValueChange={setFilterStato}>
           <SelectTrigger className="w-[150px] bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff]">
             <Filter className="w-4 h-4 mr-2" />
@@ -307,9 +345,9 @@ export default function ListaDomandeSpuntaSuap({
             <SelectItem value="RIFIUTATA">Rifiutata</SelectItem>
           </SelectContent>
         </Select>
-        
-        <Button 
-          variant="outline" 
+
+        <Button
+          variant="outline"
           onClick={fetchDomande}
           className="border-[#14b8a6]/30 text-[#e8fbff]"
         >
@@ -338,8 +376,12 @@ export default function ListaDomandeSpuntaSuap({
                   <TableHead className="text-gray-400">Mercato</TableHead>
                   <TableHead className="text-gray-400">Giorno</TableHead>
                   <TableHead className="text-gray-400">Settore</TableHead>
-                  <TableHead className="text-gray-400">Autorizzazione</TableHead>
-                  <TableHead className="text-gray-400">Data Richiesta</TableHead>
+                  <TableHead className="text-gray-400">
+                    Autorizzazione
+                  </TableHead>
+                  <TableHead className="text-gray-400">
+                    Data Richiesta
+                  </TableHead>
                   <TableHead className="text-gray-400">Presenze</TableHead>
                   <TableHead className="text-gray-400">Wallet</TableHead>
                   <TableHead className="text-gray-400">Stato</TableHead>
@@ -347,33 +389,49 @@ export default function ListaDomandeSpuntaSuap({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDomande.map((dom) => (
-                  <TableRow 
-                    key={dom.id} 
+                {filteredDomande.map(dom => (
+                  <TableRow
+                    key={dom.id}
                     className="border-[#14b8a6]/30 hover:bg-[#0f172a] cursor-pointer"
                   >
                     <TableCell>
                       <div>
                         <p className="text-[#e8fbff]">{dom.company_name}</p>
-                        <p className="text-xs text-gray-500">{dom.company_piva || dom.company_cf}</p>
+                        <p className="text-xs text-gray-500">
+                          {dom.company_piva || dom.company_cf}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
                         <p className="text-[#e8fbff]">{dom.market_name}</p>
-                        <p className="text-xs text-gray-500">{dom.market_municipality}</p>
+                        <p className="text-xs text-gray-500">
+                          {dom.market_municipality}
+                        </p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-[#e8fbff]">{dom.market_days || '-'}</TableCell>
-                    <TableCell className="text-[#e8fbff]">{dom.settore_richiesto || '-'}</TableCell>
-                    <TableCell className="text-[#e8fbff]">{dom.numero_autorizzazione || '-'}</TableCell>
-                    <TableCell className="text-gray-400">{formatDate(dom.data_richiesta)}</TableCell>
-                    <TableCell className="text-[#e8fbff]">{dom.numero_presenze || 0}</TableCell>
+                    <TableCell className="text-[#e8fbff]">
+                      {dom.market_days || "-"}
+                    </TableCell>
+                    <TableCell className="text-[#e8fbff]">
+                      {dom.settore_richiesto || "-"}
+                    </TableCell>
+                    <TableCell className="text-[#e8fbff]">
+                      {dom.numero_autorizzazione || "-"}
+                    </TableCell>
+                    <TableCell className="text-gray-400">
+                      {formatDate(dom.data_richiesta)}
+                    </TableCell>
+                    <TableCell className="text-[#e8fbff]">
+                      {dom.numero_presenze || 0}
+                    </TableCell>
                     <TableCell>
                       {dom.wallet_id ? (
                         <div className="flex items-center gap-1">
                           <Wallet className="w-4 h-4 text-green-400" />
-                          <span className="text-green-400">{formatCurrency(dom.wallet_balance)}</span>
+                          <span className="text-green-400">
+                            {formatCurrency(dom.wallet_balance)}
+                          </span>
                         </div>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -382,16 +440,16 @@ export default function ListaDomandeSpuntaSuap({
                     <TableCell>{getStatoBadge(dom.stato)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="ghost"
                           className="text-[#14b8a6] hover:bg-[#14b8a6]/10"
                           onClick={() => handleView(dom.id)}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="ghost"
                           className="text-yellow-400 hover:bg-yellow-400/10"
                           onClick={() => handleEdit(dom.id)}
@@ -399,46 +457,48 @@ export default function ListaDomandeSpuntaSuap({
                           <Edit className="w-4 h-4" />
                         </Button>
                         {/* Pulsanti per domande IN_ATTESA o DA_REVISIONARE - solo per PA */}
-                        {!isAssociazione && (dom.stato === 'IN_ATTESA' || dom.stato === 'DA_REVISIONARE') && (
-                          <>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              className="text-green-400 hover:bg-green-400/10"
-                              onClick={() => handleApprova(dom.id)}
-                              title="Approva domanda"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              className="text-amber-400 hover:bg-amber-400/10"
-                              onClick={() => handleRevisione(dom.id)}
-                              title="Richiedi regolarizzazione"
-                            >
-                              <AlertCircle className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              className="text-red-400 hover:bg-red-400/10"
-                              onClick={() => handleRifiuta(dom.id)}
-                              title="Rifiuta domanda"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
+                        {!isAssociazione &&
+                          (dom.stato === "IN_ATTESA" ||
+                            dom.stato === "DA_REVISIONARE") && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-green-400 hover:bg-green-400/10"
+                                onClick={() => handleApprova(dom.id)}
+                                title="Approva domanda"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-amber-400 hover:bg-amber-400/10"
+                                onClick={() => handleRevisione(dom.id)}
+                                title="Richiedi regolarizzazione"
+                              >
+                                <AlertCircle className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-400 hover:bg-red-400/10"
+                                onClick={() => handleRifiuta(dom.id)}
+                                title="Rifiuta domanda"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         {!isAssociazione && (
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          className="text-red-400 hover:bg-red-400/10"
-                          onClick={() => handleDelete(dom.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-400 hover:bg-red-400/10"
+                            onClick={() => handleDelete(dom.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
                     </TableCell>

@@ -44,11 +44,13 @@ RoutePage.tsx
 ```
 
 **Il problema:** `GestioneHubMapWrapper` è chiamato senza props in RoutePage (linea 824):
+
 ```tsx
 <GestioneHubMapWrapper />
 ```
 
 Ma `GestioneHubMapWrapper` **non accetta props** - è definito come:
+
 ```tsx
 export default function GestioneHubMapWrapper() {
   // Nessun parametro!
@@ -95,9 +97,12 @@ Il flusso da VetrinePage a RoutePage funziona correttamente:
 **File:** `HomePage.tsx` - linea 159-162
 
 **Codice Attuale:**
+
 ```tsx
 const handleResultClick = (result: SearchResult) => {
-  setLocation(`/mappa?lat=${result.lat}&lng=${result.lng}&zoom=15&id=${result.id}`);
+  setLocation(
+    `/mappa?lat=${result.lat}&lng=${result.lng}&zoom=15&id=${result.id}`
+  );
 };
 ```
 
@@ -112,6 +117,7 @@ const handleResultClick = (result: SearchResult) => {
 **File:** `GestioneHubMapWrapper.tsx` - linea 139
 
 **Codice Attuale:**
+
 ```tsx
 export default function GestioneHubMapWrapper() {
   // Nessun props!
@@ -129,6 +135,7 @@ export default function GestioneHubMapWrapper() {
 **File:** `RoutePage.tsx` - linea 824
 
 **Codice Attuale:**
+
 ```tsx
 <GestioneHubMapWrapper />
 ```
@@ -209,14 +216,14 @@ export default function GestioneHubMapWrapper() {
 
 ### Componenti Coinvolti
 
-| Componente | File | Modifica Necessaria |
-|------------|------|---------------------|
-| HomePage | `pages/HomePage.tsx` | Modificare `handleResultClick` |
-| VetrinePage | `pages/VetrinePage.tsx` | Nessuna (già funzionante) |
-| RoutePage | `pages/RoutePage.tsx` | Auto-GPS + passare routeConfig + deep link |
-| GestioneHubMapWrapper | `components/GestioneHubMapWrapper.tsx` | Accettare props routeConfig |
-| HubMarketMapComponent | `components/HubMarketMapComponent.tsx` | Nessuna (già accetta routeConfig) |
-| RouteLayer | `components/RouteLayer.tsx` | Nessuna (già funzionante) |
+| Componente            | File                                   | Modifica Necessaria                        |
+| --------------------- | -------------------------------------- | ------------------------------------------ |
+| HomePage              | `pages/HomePage.tsx`                   | Modificare `handleResultClick`             |
+| VetrinePage           | `pages/VetrinePage.tsx`                | Nessuna (già funzionante)                  |
+| RoutePage             | `pages/RoutePage.tsx`                  | Auto-GPS + passare routeConfig + deep link |
+| GestioneHubMapWrapper | `components/GestioneHubMapWrapper.tsx` | Accettare props routeConfig                |
+| HubMarketMapComponent | `components/HubMarketMapComponent.tsx` | Nessuna (già accetta routeConfig)          |
+| RouteLayer            | `components/RouteLayer.tsx`            | Nessuna (già funzionante)                  |
 
 ---
 
@@ -227,18 +234,29 @@ export default function GestioneHubMapWrapper() {
 **File:** `client/src/pages/HomePage.tsx`
 
 **Modifica:**
+
 ```tsx
 const handleResultClick = (result: SearchResult) => {
-  if (result.type === 'impresa' || result.type === 'negozio' || result.type === 'vetrina') {
+  if (
+    result.type === "impresa" ||
+    result.type === "negozio" ||
+    result.type === "vetrina"
+  ) {
     // Estrai ID numerico da "impresa_25" → 25
-    const numericId = result.id.replace(/\D/g, '');
-    setLocation(`/vetrine/${numericId}?from=search&q=${encodeURIComponent(searchQuery)}`);
-  } else if (result.type === 'mercato' || result.type === 'hub') {
+    const numericId = result.id.replace(/\D/g, "");
+    setLocation(
+      `/vetrine/${numericId}?from=search&q=${encodeURIComponent(searchQuery)}`
+    );
+  } else if (result.type === "mercato" || result.type === "hub") {
     // Per mercati e hub, vai alla mappa GIS nella dashboard
-    setLocation(`/dashboard-pa?tab=mappa&lat=${result.lat}&lng=${result.lng}&zoom=15`);
+    setLocation(
+      `/dashboard-pa?tab=mappa&lat=${result.lat}&lng=${result.lng}&zoom=15`
+    );
   } else {
     // Fallback per città, merceologia, ecc.
-    setLocation(`/dashboard-pa?tab=mappa&lat=${result.lat}&lng=${result.lng}&zoom=12`);
+    setLocation(
+      `/dashboard-pa?tab=mappa&lat=${result.lat}&lng=${result.lng}&zoom=12`
+    );
   }
 };
 ```
@@ -250,6 +268,7 @@ const handleResultClick = (result: SearchResult) => {
 **File:** `client/src/components/GestioneHubMapWrapper.tsx`
 
 **Modifica 1 - Aggiungere interface props:**
+
 ```tsx
 interface GestioneHubMapWrapperProps {
   routeConfig?: {
@@ -264,10 +283,11 @@ export default function GestioneHubMapWrapper({ routeConfig }: GestioneHubMapWra
 ```
 
 **Modifica 2 - Passare routeConfig a HubMarketMapComponent (linea ~977):**
+
 ```tsx
 <HubMarketMapComponent
   // ... altri props esistenti ...
-  routeConfig={routeConfig}  // AGGIUNGERE QUESTA LINEA
+  routeConfig={routeConfig} // AGGIUNGERE QUESTA LINEA
 />
 ```
 
@@ -278,34 +298,39 @@ export default function GestioneHubMapWrapper({ routeConfig }: GestioneHubMapWra
 **File:** `client/src/pages/RoutePage.tsx`
 
 **Modifica 1 - Stato per routeConfig:**
+
 ```tsx
 // Aggiungere dopo gli altri useState (circa linea 55)
-const [routeConfig, setRouteConfig] = useState<{
-  enabled: boolean;
-  userLocation: { lat: number; lng: number };
-  destination: { lat: number; lng: number };
-  mode: 'walking' | 'cycling' | 'driving';
-} | undefined>(undefined);
+const [routeConfig, setRouteConfig] = useState<
+  | {
+      enabled: boolean;
+      userLocation: { lat: number; lng: number };
+      destination: { lat: number; lng: number };
+      mode: "walking" | "cycling" | "driving";
+    }
+  | undefined
+>(undefined);
 ```
 
 **Modifica 2 - Auto-geolocalizzazione:**
+
 ```tsx
 // Aggiungere useEffect per GPS automatico
 useEffect(() => {
   if (navigator.geolocation && !userLocation) {
     setLoadingLocation(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      position => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
         setOrigin(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
         setLoadingLocation(false);
-        toast.success('📍 Posizione GPS rilevata');
+        toast.success("📍 Posizione GPS rilevata");
       },
-      (error) => {
-        console.warn('Geolocation denied:', error);
+      error => {
+        console.warn("Geolocation denied:", error);
         setLoadingLocation(false);
-        toast.info('Clicca l\'icona GPS per rilevare la posizione');
+        toast.info("Clicca l'icona GPS per rilevare la posizione");
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -314,6 +339,7 @@ useEffect(() => {
 ```
 
 **Modifica 3 - Aggiornare routeConfig quando si calcola il percorso:**
+
 ```tsx
 // Nella funzione handleCalculateRoute, dopo aver ricevuto il piano
 if (plan && userLocation) {
@@ -325,15 +351,17 @@ if (plan && userLocation) {
       userLocation: userLocation,
       destination: {
         lat: parseFloat(coordMatch[1]),
-        lng: parseFloat(coordMatch[2])
+        lng: parseFloat(coordMatch[2]),
       },
-      mode: mode === 'walk' ? 'walking' : mode === 'bike' ? 'cycling' : 'driving'
+      mode:
+        mode === "walk" ? "walking" : mode === "bike" ? "cycling" : "driving",
     });
   }
 }
 ```
 
 **Modifica 4 - Passare routeConfig a GestioneHubMapWrapper (linea 824):**
+
 ```tsx
 <GestioneHubMapWrapper routeConfig={routeConfig} />
 ```
@@ -345,38 +373,40 @@ if (plan && userLocation) {
 **File:** `client/src/pages/RoutePage.tsx`
 
 **Modifica - handleStartNavigation:**
+
 ```tsx
 const handleStartNavigation = () => {
   if (!routeConfig || !userLocation) {
-    toast.error('Calcola prima il percorso');
+    toast.error("Calcola prima il percorso");
     return;
   }
-  
+
   const { destination } = routeConfig;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  
+
   // Mappa modalità
   const modeMap: Record<string, string> = {
-    walk: 'walking',
-    bike: 'bicycling',
-    transit: 'transit',
-    car: 'driving'
+    walk: "walking",
+    bike: "bicycling",
+    transit: "transit",
+    car: "driving",
   };
-  const navMode = modeMap[mode] || 'walking';
-  
+  const navMode = modeMap[mode] || "walking";
+
   let url: string;
-  
+
   if (isIOS) {
     // Apple Maps
-    const dirflg = navMode === 'walking' ? 'w' : navMode === 'driving' ? 'd' : 'r';
+    const dirflg =
+      navMode === "walking" ? "w" : navMode === "driving" ? "d" : "r";
     url = `maps://maps.apple.com/?saddr=${userLocation.lat},${userLocation.lng}&daddr=${destination.lat},${destination.lng}&dirflg=${dirflg}`;
   } else {
     // Google Maps
     url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${destination.lat},${destination.lng}&travelmode=${navMode}`;
   }
-  
-  window.open(url, '_blank');
-  toast.success('🧭 Navigazione avviata');
+
+  window.open(url, "_blank");
+  toast.success("🧭 Navigazione avviata");
 };
 ```
 
@@ -385,16 +415,19 @@ const handleStartNavigation = () => {
 ## Checklist
 
 ### Fase 1: Fix Ricerca → Vetrina
+
 - [ ] Modificare `handleResultClick` in `HomePage.tsx`
 - [ ] Testare ricerca per nome impresa → apre vetrina
 - [ ] Testare ricerca per merceologia → apre vetrina
 
 ### Fase 2: GestioneHubMapWrapper Props
+
 - [ ] Aggiungere interface `GestioneHubMapWrapperProps`
 - [ ] Modificare firma funzione per accettare props
 - [ ] Passare `routeConfig` a `HubMarketMapComponent`
 
 ### Fase 3: RoutePage Routing
+
 - [ ] Aggiungere stato `routeConfig`
 - [ ] Implementare auto-geolocalizzazione
 - [ ] Aggiornare `routeConfig` dopo calcolo percorso
@@ -402,6 +435,7 @@ const handleStartNavigation = () => {
 - [ ] Testare visualizzazione percorso su mappa GIS
 
 ### Fase 4: Avvia Navigazione
+
 - [ ] Implementare deep link Google Maps
 - [ ] Implementare deep link Apple Maps
 - [ ] Testare su mobile (Android e iOS)
@@ -414,16 +448,17 @@ const handleStartNavigation = () => {
 
 Le coordinate sono già disponibili nel sistema:
 
-| Tipo | Tabella | Campi |
-|------|---------|-------|
-| Negozi HUB | `hub_shops` | `lat`, `lng` |
-| Posteggi Mercato | `stalls` | `latitude`, `longitude` |
-| Mercati | `markets` | `latitude`, `longitude` |
-| HUB | `hub_locations` | `lat`, `lng`, `center_lat`, `center_lng` |
+| Tipo             | Tabella         | Campi                                    |
+| ---------------- | --------------- | ---------------------------------------- |
+| Negozi HUB       | `hub_shops`     | `lat`, `lng`                             |
+| Posteggi Mercato | `stalls`        | `latitude`, `longitude`                  |
+| Mercati          | `markets`       | `latitude`, `longitude`                  |
+| HUB              | `hub_locations` | `lat`, `lng`, `center_lat`, `center_lng` |
 
 ### RouteLayer (OSRM)
 
 Il componente `RouteLayer.tsx` usa Leaflet Routing Machine con OSRM:
+
 - Endpoint: `https://router.project-osrm.org/route/v1`
 - Profili: `foot`, `bike`, `car`
 - Stile linea: verde (#10b981), spessore 6px

@@ -59,12 +59,15 @@ Browser → GET/POST /api/trpc/router.procedure
 ## Frontend Architecture
 
 ### Router (Wouter)
+
 Le rotte sono definite in `client/src/App.tsx` con `<Switch>`:
+
 - 34 rotte mappate a componenti pagina
 - Fallback 404 per rotte sconosciute
 - NON e' Next.js: e' una SPA pura
 
 ### Provider Stack (in ordine di nesting)
+
 ```
 ErrorBoundary
   └── ThemeProvider (dark/light)
@@ -80,6 +83,7 @@ ErrorBoundary
 ```
 
 ### State Management
+
 - **React Context**: 7 context providers per stato globale
   - `FirebaseAuthContext` - autenticazione
   - `PermissionsContext` - RBAC con `hasPermission()`, `canViewTab()`
@@ -92,7 +96,9 @@ ErrorBoundary
 - **localStorage**: Persistenza sessione (`token`, `user`, `miohub_session_token`)
 
 ### Componenti grandi (>50KB)
+
 Questi componenti sono molto grossi e complessi. Attenzione quando li modifichi:
+
 - `DashboardPA.tsx` (~383KB) - Dashboard admin con 14 tab
 - `GestioneMercati.tsx` (~202KB) - Gestione mercati completa
 - `ControlliSanzioniPanel.tsx` (~163KB) - Controlli e sanzioni
@@ -103,7 +109,9 @@ Questi componenti sono molto grossi e complessi. Attenzione quando li modifichi:
 ## Backend Architecture
 
 ### Entry Point
+
 `server/_core/index.ts` avvia:
+
 1. Express app con body parser (50MB limit)
 2. Global REST monitoring middleware
 3. OAuth routes (`/api/oauth/callback`)
@@ -113,6 +121,7 @@ Questi componenti sono molto grossi e complessi. Attenzione quando li modifichi:
 7. Static file serving (prod) o Vite dev server (dev)
 
 ### Middleware Stack
+
 1. **JSON body parser** (50MB limit per upload file)
 2. **REST monitoring** - logga tutte le `/api/*` requests
 3. **tRPC logging** - traccia endpoint, durata, status code
@@ -120,6 +129,7 @@ Questi componenti sono molto grossi e complessi. Attenzione quando li modifichi:
 5. **RBAC** - verifica ruolo per procedure protette
 
 ### Database Connection
+
 ```typescript
 // server/db.ts - Pattern lazy singleton
 let _db = null;
@@ -128,7 +138,7 @@ export async function getDb() {
     _client = postgres(process.env.DATABASE_URL);
     _db = drizzle(_client);
   }
-  return _db;  // null se DATABASE_URL non settata
+  return _db; // null se DATABASE_URL non settata
 }
 ```
 
@@ -137,16 +147,17 @@ Tutte le funzioni helper gestiscono il caso `null` con graceful degradation.
 
 ### Servizi Esterni
 
-| Servizio | File | Protocollo | Scopo |
-|----------|------|-----------|-------|
-| TPER Bologna | `server/services/tperService.ts` | REST + SOAP | Fermate bus, orari real-time |
-| E-FIL PagoPA | `server/services/efilPagopaService.ts` | SOAP | Pagamenti PagoPA |
-| AWS S3 | (inline nei router) | REST | Storage file/documenti |
-| Firebase Admin | `server/firebaseAuthRouter.ts` | SDK | Verifica token auth |
+| Servizio       | File                                   | Protocollo  | Scopo                        |
+| -------------- | -------------------------------------- | ----------- | ---------------------------- |
+| TPER Bologna   | `server/services/tperService.ts`       | REST + SOAP | Fermate bus, orari real-time |
+| E-FIL PagoPA   | `server/services/efilPagopaService.ts` | SOAP        | Pagamenti PagoPA             |
+| AWS S3         | (inline nei router)                    | REST        | Storage file/documenti       |
+| Firebase Admin | `server/firebaseAuthRouter.ts`         | SDK         | Verifica token auth          |
 
 ## Autenticazione
 
 ### Flusso principale (Firebase)
+
 ```
 1. User clicca Login → Firebase popup (Google/Apple/Email)
 2. Firebase ritorna ID token
@@ -159,6 +170,7 @@ Tutte le funzioni helper gestiscono il caso `null` con graceful degradation.
 ```
 
 ### Flusso SPID/CIE
+
 ```
 1. User clicca SPID/CIE → redirect a ARPA Toscana OAuth
 2. Callback su /api/oauth/callback
@@ -196,6 +208,7 @@ users → user_role_assignments → user_roles → role_permissions → permissi
 | 13 | cittadino | pubblico | Cittadino (nessun accesso admin) |
 
 **Risoluzione ruolo** (priorita' in `PermissionsContext.tsx`):
+
 1. Impersonazione attiva (`?impersonate=true`) → admin_pa (ID=2)
 2. `assigned_roles[0]` dall'utente salvato in localStorage
 3. `base_role === 'admin'` → admin_pa (ID=2)
@@ -203,6 +216,7 @@ users → user_role_assignments → user_roles → role_permissions → permissi
 5. Default → cittadino (ID=13, nessun permesso)
 
 **Tab Security nel frontend**:
+
 ```tsx
 // Ogni tab e' wrappato cosi':
 <ProtectedTab tabId="security">
@@ -214,6 +228,7 @@ users → user_role_assignments → user_roles → role_permissions → permissi
 ```
 
 **Permessi formato**:
+
 - `tab.view.{tabId}` → visibilita' tab (es. `tab.view.dashboard`, `tab.view.security`)
 - `quick.view.{quickId}` → accesso rapido sidebar
 - `modulo.azione` → operazioni (es. `dmsHub.markets.read`, `wallet.pagopa.manage`)
@@ -240,6 +255,7 @@ Effetti:
 ### Gestione Sicurezza (SecurityTab)
 
 La tab Sicurezza nella DashboardPA offre all'admin:
+
 - **Ruoli** → Matrice RBAC completa (ruoli ↔ permessi)
 - **Utenti** → Blocco/sblocco account
 - **Eventi** → Incidenti sicurezza
@@ -273,6 +289,7 @@ Neon (Database)
 ## Multi-Agent System (MIHUB)
 
 Il sistema supporta agenti AI multipli che comunicano tramite:
+
 - **agent_tasks** - coda di lavoro con priorita' e stato
 - **agent_messages** - messaggi tra agenti (text, task, notification, error)
 - **agent_brain** - memoria persistente (decisioni, context, learning)
@@ -281,6 +298,7 @@ Il sistema supporta agenti AI multipli che comunicano tramite:
 - **system_events** - event bus per notifiche
 
 ### Agenti attivi
+
 - **MIO** - agente principale, interfaccia utente
 - **Manus** - agente backend/infrastruttura
 - **Dev/GPTDev** - agenti sviluppo
@@ -289,7 +307,9 @@ Il sistema supporta agenti AI multipli che comunicano tramite:
 - **Gemini Architect** - architettura
 
 ### Comunicazione
+
 Frontend chiama `orchestratore.mio-hub.me/api/mihub/orchestrator` con:
+
 ```json
 {
   "targetAgent": "mio|dev|gptdev|manus|zapier|abacus|gemini_arch",
@@ -297,4 +317,5 @@ Frontend chiama `orchestratore.mio-hub.me/api/mihub/orchestrator` con:
   "context": {}
 }
 ```
+
 Timeout: 60 secondi per risposta agente.
