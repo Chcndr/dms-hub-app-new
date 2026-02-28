@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.1.2 (Business Associazioni + Production Fixes)
-> **Data:** 27 Febbraio 2026
+> **Versione:** 9.3.1 (AVA Qwen 7B Benchmark + System Prompt Optimization)
+> **Data:** 28 Febbraio 2026
 >
 > ---
 >
@@ -74,6 +74,84 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+
+### Sessione 28 Febbraio 2026 — v9.3.1 — AVA Benchmark Qwen 7B + System Prompt Optimization
+
+**Contesto:** Benchmark del modello Qwen 2.5 7B-instruct-q4_K_M su Ollama (Hetzner) per la chat AVA. Il modello 7B sostituisce il 14B che era instabile (crash dopo il primo test). Progettazione ottimizzazione system prompt per ridurre latenza.
+
+**Stato:** ✅ BENCHMARK COMPLETATO — OTTIMIZZAZIONE PROMPT PRONTA PER DEPLOY
+
+#### Modello in Produzione
+
+| Parametro       | Valore                                |
+| --------------- | ------------------------------------- |
+| Modello         | `qwen2.5:7b-instruct-q4_K_M`         |
+| Runtime         | Ollama su Hetzner VPS (157.90.29.66)  |
+| Quantizzazione  | Q4_K_M (4-bit, qualita' 95%+)        |
+| VRAM richiesta  | ~4.5 GB                               |
+| Context window  | 8192 token (default)                  |
+| Modello prec.   | qwen2.5:14b (dismesso per instab.)   |
+
+#### Risultati Benchmark
+
+| # Test | Tipo  | Domanda                          | Tempo | Token | Stabilita' |
+| ------ | ----- | -------------------------------- | ----- | ----- | ---------- |
+| 1      | Cold  | "Presentati brevemente"          | 64s   | 156   | OK         |
+| 2      | Warm  | "Sistema presenze mercati?"      | 99s   | 594   | OK         |
+| 3      | Warm  | "Quanti mercati a Bologna?"      | 65s   | 182   | OK         |
+
+#### Confronto 7B vs 14B
+
+| Metrica     | 14B                     | 7B                            |
+| ----------- | ----------------------- | ----------------------------- |
+| Stabilita'  | 1/3 (crash dopo test 1) | **3/3 (tutti OK)**            |
+| Qualita'    | Buona (quando funziona) | **Molto buona** (PA, tabelle) |
+| Velocita'   | N/A (instabile)         | 60-100s (SSE maschera)        |
+| VRAM        | ~8 GB                   | **~4.5 GB**                   |
+
+#### Analisi Claude — Collo di Bottiglia
+
+**Problema principale:** Il system prompt attuale in `llm.js` (righe 249-480) e' ~6.000 token.
+Include l'intera Knowledge Base DMS (30 documenti PDF riassunti) ad ogni richiesta.
+Il modello 7B processa tutti i 6k token prima di generare, causando 60-100s di latenza.
+
+**Soluzione progettata: System Prompt Tiered v2.0**
+
+| Livello  | Token | Quando inviato                    |
+| -------- | ----- | --------------------------------- |
+| CORE     | ~500  | SEMPRE (identita' + regole)       |
+| CONTESTO | ~400  | Per ruolo (PA/Impresa/Cittadino)  |
+| KB       | ~500  | Solo se domanda matcha un topic   |
+| TOTALE   | ~1.400 | vs ~6.000 attuali (**-75%**)     |
+
+**Performance attese dopo ottimizzazione:**
+
+| Metrica          | Prima (6k tok) | Dopo (~1.4k tok) | Miglioramento |
+| ---------------- | -------------- | ----------------- | ------------- |
+| Tempo cold start | ~64s           | ~25-35s           | -45%          |
+| Tempo warm       | ~65-99s        | ~30-50s           | -40%          |
+| RAM Ollama       | Alta           | -30%              | Significativo |
+
+**File di riferimento:** `.mio-agents/ava_system_prompt_v2.md` — template completo con:
+- Prompt CORE, CONTESTO per ruolo, KB fragments on-demand
+- Algoritmo topic matching (regex su messaggio utente)
+- Pseudo-codice `buildSystemPrompt()` per `llm.js`
+- Parametri Ollama ottimizzati (`num_ctx: 4096`, `keep_alive: 30m`, `num_predict: 512`)
+- Cache conteggi DB (TTL 5 min)
+- Piano deploy step-by-step
+
+**Vincoli negativi (cosa NON fare):**
+- NON aumentare il context window oltre 4096 (spreco su 7B)
+- NON inviare tutta la KB ad ogni richiesta
+- NON usare temperature > 0.8 (risposte incoerenti su 7B)
+- NON passare al 14B (instabile su questa VPS)
+- NON implementare RAG prima di aver ottimizzato il prompt (overkill per ora)
+
+**Fase 2 futura — RAG:**
+Quando il topic matching non basta, implementare RAG con `nomic-embed-text` + `pgvector` su Neon.
+Elimina completamente la KB dal prompt, sostituita da ricerca semantica per similarita'.
+
+---
 
 ### Sessione 25 Febbraio 2026 — v9.0.2 — Migrazione Completa API URL a Backend Unico
 
