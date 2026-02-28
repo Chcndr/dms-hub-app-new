@@ -10162,3 +10162,280 @@ GET    /api/ai/quota                 — Quota utilizzo corrente
 | 3   | **MEDIA**   | Sessione JWT con Refresh Token         | Valutare se ridurre la scadenza sessione (attualmente 24h) e implementare refresh token. Passaggio intermedio consigliato: 7 giorni + refresh, poi eventualmente ridurre. Decisione di prodotto: impatta l'esperienza utente.                                                                                    | ⏳ DA FARE |
 | 4   | **BASSA**   | Revisione Completa Permessi RBAC       | Audit di tutti i ruoli e permessi per garantire il principio del minimo privilegio.                                                                                                                                                                                                                              | ⏳ DA FARE |
 | 5   | **BASSA**   | Test di Carico (Load Testing)          | Simulare utenti simultanei per identificare colli di bottiglia e verificare stabilità sotto stress.                                                                                                                                                                                                              | ⏳ DA FARE |
+
+
+---
+
+## AGGIORNAMENTO v9.2.0 — 28 Febbraio 2026 (Sessione Manus + Claude)
+
+### Changelog Sessione
+
+| Ora | Autore | Azione | Dettagli |
+|-----|--------|--------|----------|
+| 17:00 | Manus | Merge branch Claude | Merge `claude/review-production-fixes-3sUvQ` in master — fix dipendenza `add` spuria |
+| 17:05 | Manus | Tag stabile | `STABLE-20260228-PRE-CHAT-AI-v9.1.2` su entrambi i repo |
+| 17:15 | Manus | Tabelle DB | Creazione `ai_conversations`, `ai_messages`, `ai_quota_usage` su Neon |
+| 17:30 | Manus | Backend AI Chat | 8 endpoint REST in `routes/ai-chat.js` — CRUD conversazioni + SSE streaming |
+| 17:45 | Manus | Guardian | AVA registrata in Dashboard Integrazioni + health-monitor |
+| 18:00 | Manus | Ollama | Installato su Hetzner con `qwen2.5:3b` (1.9 GB) — servizio systemd persistente |
+| 18:10 | Manus | Test E2E | Streaming SSE funzionante end-to-end in produzione |
+| 18:30 | Claude | Frontend AI Chat | 16 nuovi file in `client/src/components/ai-chat/` — AIChatPanel, sidebar, streaming |
+| 18:35 | Manus | Merge frontend Claude | Merge con risoluzione 3 conflitti (vite.config, CORS, blueprint) |
+| 18:45 | Manus | Fix posizionamento | Spostato AIChatPanel da MIO Agent (TAB 25) a Agente AI (TAB 9) — ripristinata multichat MIO |
+| 18:55 | Manus | Fix autenticazione | Aggiunto token Firebase Bearer a tutte le chiamate frontend (useConversations + sse-client) |
+| 19:03 | Utente | **TEST OK** | AVA risponde in streaming in produzione — confermato funzionante |
+
+### Stato Attuale Sistema — v9.2.0
+
+#### Servizi Attivi
+
+| Servizio | URL / Posizione | Stato |
+|----------|----------------|-------|
+| Frontend | `https://dms-hub-app-new.vercel.app` | ✅ Online |
+| Backend | `https://api.mio-hub.me` | ✅ Online |
+| Database | Neon PostgreSQL (155 tabelle) | ✅ Online |
+| Ollama | `http://localhost:11434` su Hetzner | ✅ Online (systemd) |
+| Guardian | Dashboard Integrazioni | ✅ Tutti i servizi OK |
+| AVA (AI Chat) | TAB "Agente AI" nella Dashboard PA | ✅ Funzionante |
+| MIO Agent | TAB "MIO Agent" — multichat originale | ✅ Funzionante (ripristinato) |
+
+#### Architettura Chat AI AVA — Implementata
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    FRONTEND (Vercel)                         │
+│                                                             │
+│  client/src/components/ai-chat/                             │
+│  ├── AIChatPanel.tsx          (container principale)        │
+│  ├── AIChatSidebar.tsx        (storico conversazioni)       │
+│  ├── AIChatHeader.tsx         (header AVA + modello)        │
+│  ├── AIChatMessageList.tsx    (lista messaggi + scroll)     │
+│  ├── AIChatMessage.tsx        (bolla messaggio)             │
+│  ├── AIChatMarkdown.tsx       (renderer markdown)           │
+│  ├── AIChatInput.tsx          (textarea + send/stop)        │
+│  ├── AIChatTypingIndicator.tsx (animazione "scrive...")     │
+│  ├── AIChatEmptyState.tsx     (welcome + suggerimenti)      │
+│  ├── AIChatSuggestions.tsx    (bottoni suggerimenti)        │
+│  ├── AIChatQuotaBanner.tsx    (banner quota residua)        │
+│  ├── AIChatAvatar.tsx         (avatar per ruolo)            │
+│  ├── hooks/useStreamingChat.ts (hook SSE streaming)         │
+│  ├── hooks/useConversations.ts (hook CRUD REST)             │
+│  ├── lib/sse-client.ts        (client SSE nativo)           │
+│  └── types.ts                 (interfacce TypeScript)       │
+│                                                             │
+│  Integrazione: DashboardPA.tsx TAB 9 "Agente AI"            │
+│  Auth: Bearer token Firebase via getIdToken()               │
+│  Dipendenze: react-markdown, remark-gfm, rehype-highlight  │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ HTTPS (SSE + REST)
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    BACKEND (Hetzner)                         │
+│                                                             │
+│  mihub-backend-rest/routes/ai-chat.js                       │
+│                                                             │
+│  Endpoint:                                                  │
+│  POST   /api/ai/chat/stream           SSE streaming         │
+│  GET    /api/ai/chat/conversations     Lista (paginata)     │
+│  POST   /api/ai/chat/conversations     Crea nuova           │
+│  PATCH  /api/ai/chat/conversations/:id Rinomina             │
+│  DELETE /api/ai/chat/conversations/:id Soft delete           │
+│  GET    /api/ai/chat/conversations/:id/messages  Messaggi   │
+│  GET    /api/ai/chat/quota             Quota utilizzo        │
+│  GET    /api/ai/chat/health            Health check          │
+│                                                             │
+│  Auth: getUserId() da Authorization Bearer o x-session-token│
+│  Quota: 4 piani (free/starter/pro/enterprise)               │
+│  Rate limit: in-memory per minuto                           │
+│  Auto-titolazione: dopo primo scambio via Ollama            │
+│                                                             │
+│  Guardian: registrato in integrations.js + health-monitor.js│
+└──────────────────────┬──────────────────────────────────────┘
+                       │ HTTP localhost:11434
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    OLLAMA (Hetzner)                          │
+│                                                             │
+│  Modello: qwen2.5:3b (1.9 GB, CPU)                         │
+│  Servizio: systemd (auto-start al reboot)                   │
+│  Porta: 11434 (solo localhost)                              │
+│  OLLAMA_HOST: 0.0.0.0 (per accesso da backend)             │
+│                                                             │
+│  Risorse server:                                            │
+│  - CPU: 2 core Intel Xeon (Skylake)                         │
+│  - RAM: 3.7 GB totali                                       │
+│  - Disco: 38 GB (19 GB liberi)                              │
+│  - Backend PM2: ~101 MB RAM                                 │
+│  - Ollama: ~2.5 GB RAM (quando modello caricato)            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Tabelle DB Chat AI
+
+```sql
+-- Conversazioni
+CREATE TABLE ai_conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  title TEXT DEFAULT 'Nuova conversazione',
+  model TEXT DEFAULT 'qwen2.5:3b',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ DEFAULT NULL  -- soft delete
+);
+
+-- Messaggi
+CREATE TABLE ai_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID REFERENCES ai_conversations(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+  content TEXT NOT NULL,
+  tokens_used INTEGER DEFAULT 0,
+  model TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Quota utilizzo
+CREATE TABLE ai_quota_usage (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  period TEXT NOT NULL,  -- formato YYYY-MM
+  messages_count INTEGER DEFAULT 0,
+  tokens_total INTEGER DEFAULT 0,
+  last_message_at TIMESTAMPTZ,
+  UNIQUE(user_id, period)
+);
+```
+
+### Tag e Punti di Ripristino
+
+| Tag | Data | Commit Frontend | Commit Backend | Note |
+|-----|------|----------------|----------------|------|
+| `STABLE-20260228-PRE-CHAT-AI-v9.1.2` | 28/02/2026 17:05 | `6e83c1c` | `446318e` | Snapshot pre-Chat AI — sistema v9.1.2 stabile |
+| `v9.2.0` (da creare) | 28/02/2026 19:05 | `2c17481` | ultimo | Chat AI AVA funzionante end-to-end |
+
+### Problemi Noti e Risolti
+
+| Problema | Causa | Risoluzione | Stato |
+|----------|-------|-------------|-------|
+| Vercel deploy fallito dopo merge Claude | Dipendenza `"add": "^2.0.6"` spuria in package.json | Rimossa da package.json | ✅ Risolto |
+| AIChatPanel nella sezione sbagliata | Claude ha messo AVA in MIO Agent (TAB 25) invece di Agente AI (TAB 9) | Spostato AIChatPanel in TAB 9, ripristinata SEZIONE A MIO originale | ✅ Risolto |
+| "Non autenticato" nella Chat AI | Frontend usava `fetch` con `credentials: "include"` (cookie) ma backend aspetta Bearer token | Aggiunto `getIdToken()` + `Authorization: Bearer` in useConversations.ts e sse-client.ts | ✅ Risolto |
+| CI GitHub Actions fallisce | `vitest` cerca test in `server/**/*.test.ts` ma non ne trova | Pre-esistente, non bloccante per deploy Vercel | ⚠️ Noto, non bloccante |
+| PDND non configurato | Credenziali PDND non ancora ottenute | In attesa | ⚠️ Noto |
+| Storage S3 disabilitato | Non configurato | Non prioritario | ⚠️ Noto |
+
+### Vincoli Appresi — NON FARE
+
+| Vincolo | Motivo |
+|---------|--------|
+| **NON** mergiare branch Claude senza verificare `package.json` | Claude può aggiungere/rimuovere dipendenze che disallineano il lockfile |
+| **NON** mettere AIChatPanel nella sezione MIO Agent | MIO Agent ha la multichat MIO/Manus/Abacus/Zapier che funziona — non toccare |
+| **NON** usare `fetch` nudo per le API AI Chat | Deve sempre passare il token Firebase via `Authorization: Bearer` |
+| **NON** usare `credentials: "include"` per le API backend | Il backend non usa cookie/sessione, usa solo header Authorization |
+| **NON** installare modelli Ollama > 3B su questo server | Solo 3.7 GB RAM — qwen2.5:3b (1.9 GB) è il massimo sicuro |
+| **NON** fare deploy backend via SSH | Solo GitHub Actions — push su master = auto-deploy |
+
+---
+
+## ROADMAP AVA — Da Chat Generica a Assistente PA Intelligente
+
+### Stato Attuale: AVA è "cieca"
+
+AVA funziona ma è un modello generico — **non vede i dati della dashboard**, non sa quanti mercati ci sono, quanti concessionari, quali posteggi sono occupati. Risponde con conoscenza generale, non con dati reali.
+
+### 4 Step per rendere AVA utile al Comune
+
+| Step | Titolo | Descrizione | Effetto | Complessità | Responsabile | Stato |
+|------|--------|-------------|---------|-------------|--------------|-------|
+| **1** | **System Prompt** | Prompt di sistema con contesto MioHub: cos'è, normativa mercati, come funziona il sistema, ruoli utente | AVA risponde in modo coerente e specifico su MioHub, non generico | Bassa (1-2h) | **Manus** (backend) | ⏳ PROSSIMO |
+| **2** | **RAG — Dati DB** | Prima di rispondere, AVA interroga il DB e include dati reali: mercati attivi, presenze oggi, scadenze, canoni | "Oggi al mercato di Grosseto ci sono 47 presenze su 82 posteggi" | Media (1-2gg) | **Manus** (backend) | ⏳ DA FARE |
+| **3** | **Function Calling** | AVA esegue azioni: cerca concessionario, genera report presenze, calcola canoni, verifica scadenze | Il funzionario chiede "Mostrami le presenze di oggi" → AVA genera tabella | Media-Alta (2-3gg) | **Manus** (backend) + **Claude** (frontend) | ⏳ DA FARE |
+| **4** | **Modello Upgrade** | Upgrade a qwen2.5:8b o 14b (serve più RAM o server GPU dedicato) | Risposte più intelligenti, ragionamento migliore, meno allucinazioni | Bassa (tecnica) + costo server | **Manus** | ⏳ DA FARE |
+
+### Step 1 — System Prompt (Dettaglio)
+
+**Cosa**: Scrivere un system prompt dettagliato che viene iniettato in ogni conversazione.
+
+**Contenuto del system prompt**:
+- Chi è AVA (Agente Virtuale Attivo di MioHub)
+- Cos'è MioHub (piattaforma gestione mercati ambulanti)
+- Contesto normativo (D.Lgs. 114/98, Direttiva Bolkestein, regolamenti comunali)
+- Ruoli utente (PA, Impresa, Cittadino, Associazione)
+- Funzionalità disponibili (mercati, posteggi, concessioni, canoni, presenze, spunta, wallet)
+- Come rispondere (italiano, professionale, specifico, mai inventare dati)
+- Cosa NON fare (non inventare numeri, non dare consulenza legale, rimandare a uffici competenti)
+
+**Dove**: Nel backend `routes/ai-chat.js`, iniettato come primo messaggio `role: "system"` in ogni chiamata a Ollama.
+
+**Implementazione**: Manus (backend) — nessuna modifica frontend necessaria.
+
+### Step 2 — RAG con Dati DB (Dettaglio)
+
+**Cosa**: Prima di inviare il messaggio a Ollama, il backend interroga il DB per dati contestuali e li include nel prompt.
+
+**Query contestuali**:
+- Mercati attivi nel comune dell'utente
+- Presenze di oggi
+- Scadenze canoni prossime
+- Concessionari con problemi (mora, blocco)
+- Statistiche generali (totale posteggi, occupazione media)
+
+**Dove**: Nel backend `routes/ai-chat.js`, endpoint `/stream`, prima della chiamata Ollama.
+
+**Implementazione**: Manus (backend) — nessuna modifica frontend necessaria.
+
+### Step 3 — Function Calling (Dettaglio)
+
+**Cosa**: AVA può eseguire azioni concrete interrogando le API esistenti.
+
+**Funzioni disponibili**:
+- `cerca_concessionario(nome)` → cerca nel DB
+- `report_presenze(data, mercato)` → genera tabella presenze
+- `calcola_canone(concessionario, periodo)` → calcolo canone
+- `verifica_scadenze(mercato)` → lista scadenze prossime
+- `statistiche_mercato(mercato)` → occupazione, incassi, trend
+
+**Dove**: Backend + Frontend (Claude deve rendere le tabelle/grafici nel frontend).
+
+**Implementazione**: Manus (backend — function calling con Ollama) + Claude (frontend — rendering risultati strutturati).
+
+### Step 4 — Upgrade Modello (Dettaglio)
+
+**Opzioni**:
+
+| Modello | RAM necessaria | Qualità | Costo |
+|---------|---------------|---------|-------|
+| qwen2.5:3b (attuale) | ~2.5 GB | Buona per chat semplice | €0 (già installato) |
+| qwen2.5:8b | ~5 GB | Molto buona | Upgrade server Hetzner (~€10/mese) |
+| qwen2.5:14b | ~9 GB | Eccellente | Server dedicato GPU (~€50-100/mese) |
+| Gemini 2.5 Flash (API) | 0 (cloud) | Eccellente | Pay-per-use (~€0.01/1K token) |
+
+**Nota**: Per il pilota con Grosseto, qwen2.5:3b con un buon system prompt + RAG è sufficiente. L'upgrade a modelli più grandi è per il scale-up nazionale.
+
+---
+
+## DIVISIONE RESPONSABILITÀ MANUS / CLAUDE
+
+| Area | Responsabile | Dettagli |
+|------|-------------|----------|
+| **Backend REST API** | **Manus** | Tutti gli endpoint in `mihub-backend-rest/routes/` |
+| **Ollama / AI** | **Manus** | Installazione, configurazione, system prompt, RAG, function calling |
+| **Database** | **Manus** | Migrazioni, tabelle, query |
+| **Deploy backend** | **Manus** | Via GitHub Actions (push su master) |
+| **Guardian / Monitoring** | **Manus** | Health checks, integrazioni, alerting |
+| **Frontend componenti AI** | **Claude** | `client/src/components/ai-chat/*` |
+| **Frontend integrazione** | **Claude** | DashboardPA.tsx, routing, UI |
+| **Frontend rendering** | **Claude** | Markdown, tabelle, grafici, code blocks |
+| **Prettier / Formatting** | **Claude** | Formatting codebase |
+| **Blueprint** | **Entrambi** | Manus aggiorna dopo ogni sessione, Claude aggiorna dopo le sue modifiche |
+
+---
+
+### Prossima Sessione — Piano di Lavoro
+
+1. **Manus**: Implementare System Prompt AVA (Step 1) — immediato
+2. **Manus**: Implementare RAG con dati DB (Step 2) — 1-2 giorni
+3. **Claude**: Migliorare UI Chat (rendering tabelle, code blocks, suggerimenti contestuali)
+4. **Manus**: Creare tag `v9.2.0` dopo stabilizzazione
+5. **Entrambi**: Test con utente PA reale (Comune di Grosseto)
