@@ -1,7 +1,7 @@
 /**
  * Firebase Authentication Context
  * MioHub - Gestione stato autenticazione globale
- * 
+ *
  * Fornisce:
  * - Stato utente Firebase (user, loading, error)
  * - Funzioni di login/logout/register
@@ -11,7 +11,14 @@
  * - Registra eventi di login nel sistema di sicurezza
  * - Gestione ruoli (citizen, business, pa)
  */
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
 import {
   onAuthChange,
   loginWithEmail,
@@ -24,13 +31,13 @@ import {
   resetPassword,
   getFirebaseErrorMessage,
   type FirebaseUser,
-} from '@/lib/firebase';
+} from "@/lib/firebase";
 
 // ============================================
 // TYPES
 // ============================================
 
-export type UserRole = 'citizen' | 'business' | 'pa';
+export type UserRole = "citizen" | "business" | "pa";
 
 export interface MioHubUser {
   uid: string;
@@ -68,7 +75,11 @@ interface FirebaseAuthState {
 interface FirebaseAuthContextType extends FirebaseAuthState {
   // Login methods
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string, name: string) => Promise<void>;
+  signUpWithEmail: (
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   // Other methods
@@ -89,8 +100,8 @@ const FirebaseAuthContext = createContext<FirebaseAuthContextType | null>(null);
 // CONSTANTS
 // ============================================
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
-const TRPC_BASE = import.meta.env.VITE_TRPC_URL || 'https://api.mio-hub.me';
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
+const TRPC_BASE = import.meta.env.VITE_TRPC_URL || "https://api.mio-hub.me";
 
 // ============================================
 // HELPER: Lookup user in orchestratore legacy DB
@@ -129,21 +140,34 @@ interface LegacyUserData {
  * 2. user_id nel DB legacy (questa funzione)
  * 3. user_role_assignments nel RBAC (gestito da checkNeonRoles)
  */
-async function lookupImpresaForUser(_email: string, userId?: number): Promise<{ id: number; denominazione: string } | null> {
+async function lookupImpresaForUser(
+  _email: string,
+  userId?: number
+): Promise<{ id: number; denominazione: string } | null> {
   // Cerca impresa per user_id su orchestratore (associazione diretta utente-impresa)
   if (userId && userId > 0) {
     try {
       const res = await fetch(`${API_BASE}/api/imprese?user_id=${userId}`);
       if (res.ok) {
         const data = await res.json();
-        const list = data.success ? data.data : (Array.isArray(data) ? data : null);
+        const list = data.success
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : null;
         if (list && list.length > 0 && list[0].id) {
-          console.warn(`[FirebaseAuth] Impresa trovata per user_id=${userId}: ID=${list[0].id}, nome=${list[0].denominazione}`);
-          return { id: list[0].id, denominazione: list[0].denominazione || list[0].ragione_sociale || '' };
+          console.warn(
+            `[FirebaseAuth] Impresa trovata per user_id=${userId}: ID=${list[0].id}, nome=${list[0].denominazione}`
+          );
+          return {
+            id: list[0].id,
+            denominazione:
+              list[0].denominazione || list[0].ragione_sociale || "",
+          };
         }
       }
     } catch (err) {
-      console.warn('[FirebaseAuth] Lookup impresa per user_id fallito:', err);
+      console.warn("[FirebaseAuth] Lookup impresa per user_id fallito:", err);
     }
   }
 
@@ -157,14 +181,26 @@ async function lookupImpresaForUser(_email: string, userId?: number): Promise<{ 
 async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
   try {
     // Step 1: Cerca utente per email
-    const searchRes = await fetch(`${API_BASE}/api/security/users?search=${encodeURIComponent(email)}&limit=1`);
+    const searchRes = await fetch(
+      `${API_BASE}/api/security/users?search=${encodeURIComponent(email)}&limit=1`
+    );
     if (!searchRes.ok) {
-      console.warn('[FirebaseAuth] Ricerca utente legacy fallita:', searchRes.status);
+      console.warn(
+        "[FirebaseAuth] Ricerca utente legacy fallita:",
+        searchRes.status
+      );
       return null;
     }
     const searchData = await searchRes.json();
-    if (!searchData.success || !searchData.data || searchData.data.length === 0) {
-      console.warn('[FirebaseAuth] Utente legacy non trovato per email:', email);
+    if (
+      !searchData.success ||
+      !searchData.data ||
+      searchData.data.length === 0
+    ) {
+      console.warn(
+        "[FirebaseAuth] Utente legacy non trovato per email:",
+        email
+      );
       return null;
     }
 
@@ -174,13 +210,16 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
     // Step 2: Recupera dettagli completi (include impresa_id, wallet_balance, roles, ecc.)
     const detailRes = await fetch(`${API_BASE}/api/security/users/${userId}`);
     if (!detailRes.ok) {
-      console.warn('[FirebaseAuth] Dettagli utente legacy non disponibili:', detailRes.status);
+      console.warn(
+        "[FirebaseAuth] Dettagli utente legacy non disponibili:",
+        detailRes.status
+      );
       // Usa i dati base dalla ricerca
       return {
         id: basicUser.id,
         name: basicUser.name || email,
         email: basicUser.email,
-        base_role: basicUser.base_role || 'user',
+        base_role: basicUser.base_role || "user",
         is_super_admin: basicUser.is_super_admin === true,
         assigned_roles: basicUser.assigned_roles || [],
       };
@@ -191,14 +230,16 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
         id: basicUser.id,
         name: basicUser.name || email,
         email: basicUser.email,
-        base_role: basicUser.base_role || 'user',
+        base_role: basicUser.base_role || "user",
         is_super_admin: basicUser.is_super_admin === true,
         assigned_roles: basicUser.assigned_roles || [],
       };
     }
 
     const fullUser = detailData.data;
-    console.warn(`[FirebaseAuth] Utente legacy trovato: ID=${fullUser.id}, impresa_id=${fullUser.impresa_id}, wallet=${fullUser.wallet_balance}, is_super_admin=${fullUser.is_super_admin}`);
+    console.warn(
+      `[FirebaseAuth] Utente legacy trovato: ID=${fullUser.id}, impresa_id=${fullUser.impresa_id}, wallet=${fullUser.wallet_balance}, is_super_admin=${fullUser.is_super_admin}`
+    );
 
     return {
       id: fullUser.id,
@@ -207,7 +248,7 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
       openId: fullUser.openId,
       impresa_id: fullUser.impresa_id || undefined,
       wallet_balance: fullUser.wallet_balance || 0,
-      base_role: fullUser.role || 'user',
+      base_role: fullUser.role || "user",
       is_super_admin: fullUser.is_super_admin === true,
       assigned_roles: (fullUser.roles || []).map((r: any) => ({
         role_id: r.role_id,
@@ -218,7 +259,7 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
       })),
     };
   } catch (err) {
-    console.error('[FirebaseAuth] Errore lookup utente legacy:', err);
+    console.error("[FirebaseAuth] Errore lookup utente legacy:", err);
     return null;
   }
 }
@@ -227,24 +268,31 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
  * Controlla i ruoli dell'utente nel backend REST (il vero RBAC system).
  * Chiama l'endpoint REST su Hetzner che ha accesso al Neon DB.
  */
-async function checkNeonRoles(email: string): Promise<{ roles: any[]; isAdmin: boolean }> {
+async function checkNeonRoles(
+  email: string
+): Promise<{ roles: any[]; isAdmin: boolean }> {
   try {
-    const res = await fetch(`${TRPC_BASE}/api/auth/check-roles?email=${encodeURIComponent(email)}`, {
-      credentials: 'include',
-    });
+    const res = await fetch(
+      `${TRPC_BASE}/api/auth/check-roles?email=${encodeURIComponent(email)}`,
+      {
+        credentials: "include",
+      }
+    );
     if (!res.ok) {
-      console.warn('[FirebaseAuth] Neon checkRoles fallito:', res.status);
+      console.warn("[FirebaseAuth] Neon checkRoles fallito:", res.status);
       return { roles: [], isAdmin: false };
     }
     const data = await res.json();
     const result = data?.data || data;
     if (result) {
-      console.warn(`[FirebaseAuth] Neon roles: isAdmin=${result.isAdmin}, roles=${JSON.stringify(result.roles)}`);
+      console.warn(
+        `[FirebaseAuth] Neon roles: isAdmin=${result.isAdmin}, roles=${JSON.stringify(result.roles)}`
+      );
       return result;
     }
     return { roles: [], isAdmin: false };
   } catch (err) {
-    console.warn('[FirebaseAuth] Neon checkRoles errore:', err);
+    console.warn("[FirebaseAuth] Neon checkRoles errore:", err);
     return { roles: [], isAdmin: false };
   }
 }
@@ -255,25 +303,25 @@ async function checkNeonRoles(email: string): Promise<{ roles: any[]; isAdmin: b
 async function tryBootstrapAdmin(email: string): Promise<boolean> {
   try {
     const res = await fetch(`${TRPC_BASE}/api/auth/bootstrap-admin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ email }),
     });
     if (!res.ok) {
-      console.warn('[FirebaseAuth] Bootstrap admin HTTP fallito:', res.status);
+      console.warn("[FirebaseAuth] Bootstrap admin HTTP fallito:", res.status);
       return false;
     }
     const data = await res.json();
     const result = data?.data || data;
     if (result?.success) {
-      console.warn('[FirebaseAuth] Bootstrap admin riuscito:', result.message);
+      console.warn("[FirebaseAuth] Bootstrap admin riuscito:", result.message);
       return true;
     }
-    console.warn('[FirebaseAuth] Bootstrap admin rifiutato:', result?.error);
+    console.warn("[FirebaseAuth] Bootstrap admin rifiutato:", result?.error);
     return false;
   } catch (err) {
-    console.warn('[FirebaseAuth] Bootstrap admin errore:', err);
+    console.warn("[FirebaseAuth] Bootstrap admin errore:", err);
     return false;
   }
 }
@@ -282,18 +330,21 @@ async function tryBootstrapAdmin(email: string): Promise<boolean> {
  * Crea una sessione JWT sul backend REST (Hetzner) dopo login Firebase.
  * Setta il cookie app_session_id sul dominio del backend.
  */
-const SESSION_TOKEN_KEY = 'miohub_session_token';
+const SESSION_TOKEN_KEY = "miohub_session_token";
 
 async function createFirebaseSession(idToken: string): Promise<boolean> {
   try {
     const res = await fetch(`${TRPC_BASE}/api/auth/firebase-session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ token: idToken }),
     });
     if (!res.ok) {
-      console.warn('[FirebaseAuth] createFirebaseSession HTTP fallito:', res.status);
+      console.warn(
+        "[FirebaseAuth] createFirebaseSession HTTP fallito:",
+        res.status
+      );
       return false;
     }
     const data = await res.json();
@@ -302,13 +353,18 @@ async function createFirebaseSession(idToken: string): Promise<boolean> {
       if (result.sessionToken) {
         localStorage.setItem(SESSION_TOKEN_KEY, result.sessionToken);
       }
-      console.warn(`[FirebaseAuth] Sessione JWT creata con successo per ${result.email}`);
+      console.warn(
+        `[FirebaseAuth] Sessione JWT creata con successo per ${result.email}`
+      );
       return true;
     }
-    console.warn('[FirebaseAuth] createFirebaseSession fallito:', result?.error);
+    console.warn(
+      "[FirebaseAuth] createFirebaseSession fallito:",
+      result?.error
+    );
     return false;
   } catch (err) {
-    console.warn('[FirebaseAuth] createFirebaseSession errore:', err);
+    console.warn("[FirebaseAuth] createFirebaseSession errore:", err);
     return false;
   }
 }
@@ -316,22 +372,29 @@ async function createFirebaseSession(idToken: string): Promise<boolean> {
 /**
  * Registra un evento di login nel sistema di sicurezza dell'orchestratore.
  */
-async function trackLoginEvent(userId: number, email: string, provider: string, success: boolean): Promise<void> {
+async function trackLoginEvent(
+  userId: number,
+  email: string,
+  provider: string,
+  success: boolean
+): Promise<void> {
   try {
     await fetch(`${API_BASE}/api/security/events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        event_type: success ? 'login_success' : 'login_failed',
-        severity: success ? 'low' : 'medium',
+        event_type: success ? "login_success" : "login_failed",
+        severity: success ? "low" : "medium",
         user_id: userId,
         description: `Login Firebase via ${provider} - ${email}`,
         details: { provider, email, timestamp: new Date().toISOString() },
       }),
     });
-    console.warn(`[FirebaseAuth] Evento login registrato per user_id=${userId}`);
+    console.warn(
+      `[FirebaseAuth] Evento login registrato per user_id=${userId}`
+    );
   } catch (err) {
-    console.warn('[FirebaseAuth] Registrazione evento login fallita:', err);
+    console.warn("[FirebaseAuth] Registrazione evento login fallita:", err);
   }
 }
 
@@ -339,10 +402,13 @@ async function trackLoginEvent(userId: number, email: string, provider: string, 
 // HELPER: Sync user with MioHub backend
 // ============================================
 
-async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): Promise<MioHubUser> {
+async function syncUserWithBackend(
+  firebaseUser: FirebaseUser,
+  role: UserRole
+): Promise<MioHubUser> {
   const idToken = await firebaseUser.getIdToken();
-  const email = firebaseUser.email || '';
-  const provider = firebaseUser.providerData[0]?.providerId || 'email';
+  const email = firebaseUser.email || "";
+  const provider = firebaseUser.providerData[0]?.providerId || "email";
 
   // ============================================
   // STEP 1: Cerca l'utente nel DB legacy (orchestratore)
@@ -361,7 +427,9 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
     const impresaResult = await lookupImpresaForUser(email, legacyUser.id);
     if (impresaResult) {
       legacyUser.impresa_id = impresaResult.id;
-      console.warn(`[FirebaseAuth] Impresa associata via fallback: impresa_id=${impresaResult.id} (${impresaResult.denominazione})`);
+      console.warn(
+        `[FirebaseAuth] Impresa associata via fallback: impresa_id=${impresaResult.id} (${impresaResult.denominazione})`
+      );
     }
   }
   // NOTA: Rimosso il blocco che creava un legacyUser fittizio basato sulla ricerca
@@ -377,10 +445,10 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
   const vercelSyncPromise = (async (): Promise<any> => {
     try {
       const response = await fetch(`/api/auth/firebase/sync`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           uid: firebaseUser.uid,
@@ -391,7 +459,7 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
           role,
           trackLogin: true,
           legacyUserId: legacyUser?.id || 0,
-          userName: legacyUser?.name || firebaseUser.displayName || '',
+          userName: legacyUser?.name || firebaseUser.displayName || "",
           userEmail: firebaseUser.email || email,
         }),
       });
@@ -400,7 +468,7 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
         if (data.success && data.user) return data.user;
       }
     } catch (err) {
-      console.warn('[FirebaseAuth] Backend sync fallito:', err);
+      console.warn("[FirebaseAuth] Backend sync fallito:", err);
     }
     return null;
   })();
@@ -427,23 +495,25 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
     trackLoginEvent(legacyUser.id, email, provider, true);
   }
 
-  const isLegacyAdmin = legacyUser?.is_super_admin === true ||
-    legacyUser?.base_role === 'admin' ||
+  const isLegacyAdmin =
+    legacyUser?.is_super_admin === true ||
+    legacyUser?.base_role === "admin" ||
     (legacyUser?.assigned_roles || []).some(
       (r: { role_id: number }) => r.role_id === 1
     );
 
   const isAdmin = neonAdmin || isLegacyAdmin;
 
-  const mergedRoles = neonRoles.length > 0
-    ? neonRoles.map((r: any) => ({
-        role_id: r.role_id,
-        role_code: r.role_code,
-        role_name: r.role_name,
-        territory_type: r.territory_type,
-        territory_id: r.territory_id,
-      }))
-    : legacyUser?.assigned_roles || [];
+  const mergedRoles =
+    neonRoles.length > 0
+      ? neonRoles.map((r: any) => ({
+          role_id: r.role_id,
+          role_code: r.role_code,
+          role_name: r.role_name,
+          territory_type: r.territory_type,
+          territory_id: r.territory_id,
+        }))
+      : legacyUser?.assigned_roles || [];
 
   // ============================================
   // STEP 6: Costruisci il MioHubUser con tutti i dati
@@ -457,26 +527,29 @@ async function syncUserWithBackend(firebaseUser: FirebaseUser, role: UserRole): 
   //    impresa_id può essere un'associazione vecchia, errata, o da email di contatto.
   // 4. Ha impresa e ha scelto "Impresa" al login → business
   // 5. Fallback → ruolo dal backend o scelta utente
-  const hasExplicitCitizenRole = neonRoles.length > 0 && neonRoles.some(
-    (r: any) => r.role_code === 'citizen' || r.role_code === 'cittadino'
-  );
+  const hasExplicitCitizenRole =
+    neonRoles.length > 0 &&
+    neonRoles.some(
+      (r: any) => r.role_code === "citizen" || r.role_code === "cittadino"
+    );
   let effectiveRole: UserRole;
   if (isAdmin) {
-    effectiveRole = 'pa';
+    effectiveRole = "pa";
   } else if (hasExplicitCitizenRole) {
-    effectiveRole = 'citizen';
-  } else if (role === 'citizen') {
+    effectiveRole = "citizen";
+  } else if (role === "citizen") {
     // L'utente ha scelto "Cittadino" al login - rispettare la scelta.
     // NON sovrascrivere a 'business' solo per impresa_id nel DB legacy.
-    effectiveRole = 'citizen';
+    effectiveRole = "citizen";
   } else if (hasImpresa) {
-    effectiveRole = 'business';
+    effectiveRole = "business";
   } else {
     effectiveRole = backendSyncData?.role || role;
   }
 
   // impresaId viene settato SOLO se il ruolo effettivo NON è citizen.
-  const shouldSetImpresa = effectiveRole !== 'citizen' && !!legacyUser?.impresa_id;
+  const shouldSetImpresa =
+    effectiveRole !== "citizen" && !!legacyUser?.impresa_id;
 
   const miohubUser: MioHubUser = {
     uid: firebaseUser.uid,
@@ -508,11 +581,17 @@ function buildLegacyUser(miohubUser: MioHubUser): Record<string, any> {
     id: miohubUser.miohubId || 0,
     email: miohubUser.email,
     name: miohubUser.displayName || miohubUser.email,
-    base_role: miohubUser.role === 'pa' ? 'admin' : miohubUser.role,
+    base_role: miohubUser.role === "pa" ? "admin" : miohubUser.role,
     is_super_admin: miohubUser.isSuperAdmin === true,
-    assigned_roles: miohubUser.assignedRoles && miohubUser.assignedRoles.length > 0
-      ? miohubUser.assignedRoles
-      : [{ role_id: miohubUser.role === 'pa' ? 2 : 13, role_code: miohubUser.role }],
+    assigned_roles:
+      miohubUser.assignedRoles && miohubUser.assignedRoles.length > 0
+        ? miohubUser.assignedRoles
+        : [
+            {
+              role_id: miohubUser.role === "pa" ? 2 : 13,
+              role_code: miohubUser.role,
+            },
+          ],
     photoURL: miohubUser.photoURL,
     provider: miohubUser.provider,
     // Campi critici dal DB legacy
@@ -537,16 +616,19 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
   const [selectedRole, setSelectedRole] = useState<UserRole>(() => {
     // Recupera il ruolo salvato dal localStorage
-    const saved = localStorage.getItem('miohub_user_role');
-    return (saved as UserRole) || 'citizen';
+    const saved = localStorage.getItem("miohub_user_role");
+    return (saved as UserRole) || "citizen";
   });
 
   // Ascolta i cambiamenti di stato Firebase
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (firebaseUser) => {
+    const unsubscribe = onAuthChange(async firebaseUser => {
       if (firebaseUser) {
         try {
-          const miohubUser = await syncUserWithBackend(firebaseUser, selectedRole);
+          const miohubUser = await syncUserWithBackend(
+            firebaseUser,
+            selectedRole
+          );
           setState({
             user: miohubUser,
             firebaseUser,
@@ -555,29 +637,34 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
             isAuthenticated: true,
           });
           // Salva info utente nel localStorage per accesso rapido
-          localStorage.setItem('miohub_firebase_user', JSON.stringify(miohubUser));
-          
+          localStorage.setItem(
+            "miohub_firebase_user",
+            JSON.stringify(miohubUser)
+          );
+
           // BRIDGE: Popola anche le chiavi legacy usate da HomePage, PermissionsContext,
           // WalletPage, AnagraficaPage, WalletImpresaPage, SecurityTab, ecc.
           const legacyUser = buildLegacyUser(miohubUser);
-          localStorage.setItem('user', JSON.stringify(legacyUser));
-          
+          localStorage.setItem("user", JSON.stringify(legacyUser));
+
           // Usa il Firebase ID Token come token legacy
           const idToken = await firebaseUser.getIdToken();
-          localStorage.setItem('token', idToken);
-          localStorage.setItem('auth_token', idToken);
-          
+          localStorage.setItem("token", idToken);
+          localStorage.setItem("auth_token", idToken);
+
           // Dispatch storage event per notificare HomePage e altri componenti
-          window.dispatchEvent(new Event('storage'));
-          
-          console.warn(`[FirebaseAuth] Bridge completato: id=${miohubUser.miohubId}, impresa_id=${miohubUser.impresaId}, wallet=${miohubUser.walletBalance}`);
+          window.dispatchEvent(new Event("storage"));
+
+          console.warn(
+            `[FirebaseAuth] Bridge completato: id=${miohubUser.miohubId}, impresa_id=${miohubUser.impresaId}, wallet=${miohubUser.walletBalance}`
+          );
         } catch (err) {
-          console.error('[FirebaseAuth] Errore sync utente:', err);
+          console.error("[FirebaseAuth] Errore sync utente:", err);
           setState({
             user: null,
             firebaseUser: null,
             loading: false,
-            error: 'Errore durante la sincronizzazione dell\'utente',
+            error: "Errore durante la sincronizzazione dell'utente",
             isAuthenticated: false,
           });
         }
@@ -589,15 +676,15 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           error: null,
           isAuthenticated: false,
         });
-        localStorage.removeItem('miohub_firebase_user');
+        localStorage.removeItem("miohub_firebase_user");
         // BRIDGE: Rimuovi anche le chiavi legacy al logout
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('permissions');
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("permissions");
         localStorage.removeItem(SESSION_TOKEN_KEY);
         // Dispatch storage event per notificare HomePage
-        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event("storage"));
       }
     });
 
@@ -606,9 +693,9 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
   // Gestisci redirect result (per quando popup è bloccato)
   useEffect(() => {
-    handleRedirectResult().catch((err) => {
+    handleRedirectResult().catch(err => {
       if (err) {
-        console.error('[FirebaseAuth] Redirect result error:', err);
+        console.error("[FirebaseAuth] Redirect result error:", err);
       }
     });
   }, []);
@@ -617,29 +704,35 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   // AUTH METHODS
   // ============================================
 
-  const signInWithEmail = useCallback(async (email: string, password: string) => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
-    try {
-      await loginWithEmail(email, password);
-      // onAuthStateChanged gestirà il resto
-    } catch (error: any) {
-      const message = getFirebaseErrorMessage(error);
-      setState(prev => ({ ...prev, loading: false, error: message }));
-      throw new Error(message);
-    }
-  }, []);
+  const signInWithEmail = useCallback(
+    async (email: string, password: string) => {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      try {
+        await loginWithEmail(email, password);
+        // onAuthStateChanged gestirà il resto
+      } catch (error: any) {
+        const message = getFirebaseErrorMessage(error);
+        setState(prev => ({ ...prev, loading: false, error: message }));
+        throw new Error(message);
+      }
+    },
+    []
+  );
 
-  const signUpWithEmail = useCallback(async (email: string, password: string, name: string) => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
-    try {
-      await registerWithEmail(email, password, name);
-      // onAuthStateChanged gestirà il resto
-    } catch (error: any) {
-      const message = getFirebaseErrorMessage(error);
-      setState(prev => ({ ...prev, loading: false, error: message }));
-      throw new Error(message);
-    }
-  }, []);
+  const signUpWithEmail = useCallback(
+    async (email: string, password: string, name: string) => {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      try {
+        await registerWithEmail(email, password, name);
+        // onAuthStateChanged gestirà il resto
+      } catch (error: any) {
+        const message = getFirebaseErrorMessage(error);
+        setState(prev => ({ ...prev, loading: false, error: message }));
+        throw new Error(message);
+      }
+    },
+    []
+  );
 
   const signInWithGoogleHandler = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
@@ -647,7 +740,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       await loginWithGoogle();
       // onAuthStateChanged gestirà il resto
     } catch (error: any) {
-      if (error.message === 'REDIRECT_INITIATED') {
+      if (error.message === "REDIRECT_INITIATED") {
         // Redirect in corso, non mostrare errore
         return;
       }
@@ -663,7 +756,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       await loginWithApple();
       // onAuthStateChanged gestirà il resto
     } catch (error: any) {
-      if (error.message === 'REDIRECT_INITIATED') {
+      if (error.message === "REDIRECT_INITIATED") {
         return;
       }
       const message = getFirebaseErrorMessage(error);
@@ -676,16 +769,16 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, loading: true }));
     try {
       await firebaseLogout();
-      localStorage.removeItem('miohub_firebase_user');
-      localStorage.removeItem('miohub_user_role');
+      localStorage.removeItem("miohub_firebase_user");
+      localStorage.removeItem("miohub_user_role");
       // BRIDGE: Rimuovi anche le chiavi legacy
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('permissions');
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("permissions");
       localStorage.removeItem(SESSION_TOKEN_KEY);
       // Dispatch storage event
-      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event("storage"));
       // onAuthStateChanged gestirà il reset dello stato
     } catch (error: any) {
       const message = getFirebaseErrorMessage(error);
@@ -708,7 +801,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
   const setUserRole = useCallback((role: UserRole) => {
     setSelectedRole(role);
-    localStorage.setItem('miohub_user_role', role);
+    localStorage.setItem("miohub_user_role", role);
   }, []);
 
   const clearError = useCallback(() => {
@@ -746,7 +839,9 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 export function useFirebaseAuth(): FirebaseAuthContextType {
   const context = useContext(FirebaseAuthContext);
   if (!context) {
-    throw new Error('useFirebaseAuth deve essere usato dentro FirebaseAuthProvider');
+    throw new Error(
+      "useFirebaseAuth deve essere usato dentro FirebaseAuthProvider"
+    );
   }
   return context;
 }

@@ -9,6 +9,7 @@
 **Personalità:** Proattivo, preciso, orientato ai risultati.
 
 **Capabilities:**
+
 - Task management e orchestrazione
 - Analisi dati e reporting
 - Coordinamento multi-agent
@@ -22,6 +23,7 @@
 **Personalità:** Vigile, affidabile, sempre attivo.
 
 **Capabilities:**
+
 - Full observability (TRPC + REST)
 - Error tracking e alerting
 - System health monitoring
@@ -35,6 +37,7 @@
 **Personalità:** Efficiente, reattivo, orientato all'automazione.
 
 **Capabilities:**
+
 - Webhook handling
 - External API integration
 - Event-driven automation
@@ -48,6 +51,7 @@
 **Personalità:** Preciso, analitico, orientato ai numeri.
 
 **Capabilities:**
+
 - Financial calculations
 - Data analysis
 - Report generation

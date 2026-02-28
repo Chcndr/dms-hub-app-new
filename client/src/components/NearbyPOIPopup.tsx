@@ -1,14 +1,14 @@
 /**
  * Componente Popup per POI vicini
- * 
+ *
  * Mostra un popup quando l'utente è vicino a un POI (museo, fermata, ecc.)
  * e permette di fare check-in per guadagnare TCC
- * 
+ *
  * @version 3.77.0
  * @date 4 Febbraio 2026
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,22 +16,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  MapPin, 
-  Bus, 
-  Train, 
-  Landmark, 
-  Building2, 
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  MapPin,
+  Bus,
+  Train,
+  Landmark,
+  Building2,
   Trophy,
   CheckCircle2,
   Loader2,
   Navigation,
-  Coins
-} from 'lucide-react';
-import type { NearbyPOI, CheckinResponse } from '@/hooks/useNearbyPOIs';
+  Coins,
+} from "lucide-react";
+import type { NearbyPOI, CheckinResponse } from "@/hooks/useNearbyPOIs";
 
 // Icone per tipo POI
 const POI_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -58,29 +58,29 @@ const POI_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 
 // Colori per tipo
 const POI_COLORS: Record<string, string> = {
-  culture: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  mobility: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  culture: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  mobility: "bg-blue-500/20 text-blue-400 border-blue-500/30",
 };
 
 // Labels italiani per tipo
 const POI_TYPE_LABELS: Record<string, string> = {
-  museo: 'Museo',
-  museum: 'Museo',
-  teatro: 'Teatro',
-  theatre: 'Teatro',
-  monumento: 'Monumento',
-  monument: 'Monumento',
-  memoriale: 'Memoriale',
-  memorial: 'Memoriale',
-  sito_archeologico: 'Sito Archeologico',
-  archaeological_site: 'Sito Archeologico',
-  edificio_storico: 'Edificio Storico',
-  historic: 'Edificio Storico',
-  bus: 'Fermata Bus',
-  tram: 'Fermata Tram',
-  train: 'Stazione Treno',
-  metro: 'Stazione Metro',
-  subway: 'Stazione Metro',
+  museo: "Museo",
+  museum: "Museo",
+  teatro: "Teatro",
+  theatre: "Teatro",
+  monumento: "Monumento",
+  monument: "Monumento",
+  memoriale: "Memoriale",
+  memorial: "Memoriale",
+  sito_archeologico: "Sito Archeologico",
+  archaeological_site: "Sito Archeologico",
+  edificio_storico: "Edificio Storico",
+  historic: "Edificio Storico",
+  bus: "Fermata Bus",
+  tram: "Fermata Tram",
+  train: "Stazione Treno",
+  metro: "Stazione Metro",
+  subway: "Stazione Metro",
 };
 
 interface NearbyPOIPopupProps {
@@ -101,8 +101,10 @@ export function NearbyPOIPopup({
   onCheckin,
   isLoading = false,
 }: NearbyPOIPopupProps) {
-  const [checkinStatus, setCheckinStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [checkinMessage, setCheckinMessage] = useState<string>('');
+  const [checkinStatus, setCheckinStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [checkinMessage, setCheckinMessage] = useState<string>("");
 
   if (!poi) return null;
 
@@ -111,30 +113,33 @@ export function NearbyPOIPopup({
   const colorClass = POI_COLORS[poi.type] || POI_COLORS.culture;
 
   const handleCheckin = async () => {
-    setCheckinStatus('loading');
+    setCheckinStatus("loading");
     try {
       const result = await onCheckin(poi);
       if (result.success) {
-        setCheckinStatus('success');
-        setCheckinMessage(result.message || `Hai guadagnato ${result.credits_earned || poi.tcc_reward} TCC!`);
+        setCheckinStatus("success");
+        setCheckinMessage(
+          result.message ||
+            `Hai guadagnato ${result.credits_earned || poi.tcc_reward} TCC!`
+        );
         // Chiudi dopo 2 secondi
         setTimeout(() => {
           onClose();
-          setCheckinStatus('idle');
-          setCheckinMessage('');
+          setCheckinStatus("idle");
+          setCheckinMessage("");
         }, 2000);
       } else {
-        setCheckinStatus('error');
-        setCheckinMessage(result.error || 'Errore durante il check-in');
+        setCheckinStatus("error");
+        setCheckinMessage(result.error || "Errore durante il check-in");
       }
     } catch (err) {
-      setCheckinStatus('error');
-      setCheckinMessage('Errore di connessione');
+      setCheckinStatus("error");
+      setCheckinMessage("Errore di connessione");
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-sm">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
@@ -164,21 +169,25 @@ export function NearbyPOIPopup({
               <span className="text-slate-300">Reward disponibile</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-2xl font-bold text-emerald-400">{poi.tcc_reward}</span>
+              <span className="text-2xl font-bold text-emerald-400">
+                {poi.tcc_reward}
+              </span>
               <span className="text-emerald-400 text-sm">TCC</span>
             </div>
           </div>
         </div>
 
         {/* Status message */}
-        {checkinStatus === 'success' && (
+        {checkinStatus === "success" && (
           <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-lg p-4 flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6 text-emerald-400" />
-            <span className="text-emerald-400 font-medium">{checkinMessage}</span>
+            <span className="text-emerald-400 font-medium">
+              {checkinMessage}
+            </span>
           </div>
         )}
 
-        {checkinStatus === 'error' && (
+        {checkinStatus === "error" && (
           <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
             <span className="text-red-400">{checkinMessage}</span>
           </div>
@@ -192,13 +201,13 @@ export function NearbyPOIPopup({
           >
             Chiudi
           </Button>
-          {!poi.already_visited_today && checkinStatus !== 'success' && (
+          {!poi.already_visited_today && checkinStatus !== "success" && (
             <Button
               onClick={handleCheckin}
-              disabled={checkinStatus === 'loading' || isLoading}
+              disabled={checkinStatus === "loading" || isLoading}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {checkinStatus === 'loading' ? (
+              {checkinStatus === "loading" ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Check-in...
@@ -232,22 +241,29 @@ interface NearbyPOIListProps {
   isLoading?: boolean;
 }
 
-export function NearbyPOIList({ pois, onSelectPOI, isLoading }: NearbyPOIListProps) {
+export function NearbyPOIList({
+  pois,
+  onSelectPOI,
+  isLoading,
+}: NearbyPOIListProps) {
   if (pois.length === 0) {
     return (
       <div className="text-center py-8 text-slate-400">
         <MapPin className="h-12 w-12 mx-auto mb-3 opacity-50" />
         <p>Nessun POI nelle vicinanze</p>
-        <p className="text-sm mt-1">Avvicinati a un museo, monumento o fermata</p>
+        <p className="text-sm mt-1">
+          Avvicinati a un museo, monumento o fermata
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {pois.map((poi) => {
+      {pois.map(poi => {
         const Icon = POI_ICONS[poi.poi_type.toLowerCase()] || MapPin;
-        const typeLabel = POI_TYPE_LABELS[poi.poi_type.toLowerCase()] || poi.poi_type;
+        const typeLabel =
+          POI_TYPE_LABELS[poi.poi_type.toLowerCase()] || poi.poi_type;
         const colorClass = POI_COLORS[poi.type] || POI_COLORS.culture;
 
         return (
@@ -256,9 +272,10 @@ export function NearbyPOIList({ pois, onSelectPOI, isLoading }: NearbyPOIListPro
             onClick={() => onSelectPOI(poi)}
             disabled={isLoading}
             className={`w-full p-4 rounded-xl border transition-all text-left
-              ${poi.already_visited_today 
-                ? 'bg-slate-800/50 border-slate-700 opacity-60' 
-                : 'bg-slate-800 border-slate-700 hover:border-emerald-500/50 hover:bg-slate-800/80'
+              ${
+                poi.already_visited_today
+                  ? "bg-slate-800/50 border-slate-700 opacity-60"
+                  : "bg-slate-800 border-slate-700 hover:border-emerald-500/50 hover:bg-slate-800/80"
               }`}
           >
             <div className="flex items-center justify-between">
@@ -269,7 +286,10 @@ export function NearbyPOIList({ pois, onSelectPOI, isLoading }: NearbyPOIListPro
                 <div>
                   <p className="font-medium text-white">{poi.name}</p>
                   <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <Badge variant="outline" className={`${colorClass} text-xs`}>
+                    <Badge
+                      variant="outline"
+                      className={`${colorClass} text-xs`}
+                    >
                       {typeLabel}
                     </Badge>
                     <span>• {poi.distance_m}m</span>
@@ -307,7 +327,8 @@ interface NearbyPOIBannerProps {
 
 export function NearbyPOIBanner({ poi, onTap }: NearbyPOIBannerProps) {
   const Icon = POI_ICONS[poi.poi_type.toLowerCase()] || MapPin;
-  const colorClass = poi.type === 'culture' ? 'from-purple-600' : 'from-blue-600';
+  const colorClass =
+    poi.type === "culture" ? "from-purple-600" : "from-blue-600";
 
   return (
     <button
@@ -322,7 +343,9 @@ export function NearbyPOIBanner({ poi, onTap }: NearbyPOIBannerProps) {
           </div>
           <div className="text-left">
             <p className="text-white font-medium">Sei vicino a {poi.name}!</p>
-            <p className="text-white/70 text-sm">Tocca per guadagnare {poi.tcc_reward} TCC</p>
+            <p className="text-white/70 text-sm">
+              Tocca per guadagnare {poi.tcc_reward} TCC
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1 bg-emerald-500 px-3 py-1 rounded-full">

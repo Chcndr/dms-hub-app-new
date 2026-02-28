@@ -1,9 +1,9 @@
 /**
  * API & Agent Tokens Page
- * 
+ *
  * Pagina per la gestione sicura di API key e token per gli agenti multi-agent.
  * Solo accessibile agli amministratori.
- * 
+ *
  * SICUREZZA:
  * - I token sono cifrati con AES-256-GCM sul backend
  * - Nessun token è mai salvato in localStorage/sessionStorage
@@ -11,15 +11,36 @@
  * - I form input vengono svuotati immediatamente dopo il salvataggio
  */
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CheckCircle2, XCircle, AlertTriangle, RefreshCw, Key, Database, Github, Cloud, Zap, Building2, Server, Save, Eye, EyeOff } from 'lucide-react';
-import { authenticatedFetch } from '@/hooks/useImpersonation';
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+  Key,
+  Database,
+  Github,
+  Cloud,
+  Zap,
+  Building2,
+  Server,
+  Save,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import { authenticatedFetch } from "@/hooks/useImpersonation";
 
 // API_BASE_URL rimosso - usa path relativi per sfruttare il rewrite Vercel
 
@@ -42,25 +63,25 @@ interface SecretsMetaResponse {
 }
 
 const CATEGORY_ICONS: Record<string, any> = {
-  'LLM': Zap,
-  'GitHub': Github,
-  'Database': Database,
-  'Backend': Server,
-  'Infra': Server,
-  'PA': Building2,
-  'Deploy': Cloud,
-  'Mobility': Cloud,
+  LLM: Zap,
+  GitHub: Github,
+  Database: Database,
+  Backend: Server,
+  Infra: Server,
+  PA: Building2,
+  Deploy: Cloud,
+  Mobility: Cloud,
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'LLM': 'text-purple-500',
-  'GitHub': 'text-gray-700',
-  'Database': 'text-blue-500',
-  'Backend': 'text-green-500',
-  'Infra': 'text-orange-500',
-  'PA': 'text-indigo-500',
-  'Deploy': 'text-cyan-500',
-  'Mobility': 'text-teal-500',
+  LLM: "text-purple-500",
+  GitHub: "text-gray-700",
+  Database: "text-blue-500",
+  Backend: "text-green-500",
+  Infra: "text-orange-500",
+  PA: "text-indigo-500",
+  Deploy: "text-cyan-500",
+  Mobility: "text-teal-500",
 };
 
 export default function APITokensPage() {
@@ -79,52 +100,52 @@ export default function APITokensPage() {
   const loadSecretsMetadata = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch('/api/mihub/secrets-meta');
-      
+      const response = await fetch("/api/mihub/secrets-meta");
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data: SecretsMetaResponse = await response.json();
-      
+
       if (data.success) {
         // Mappa envvar → envVar per compatibilità backend
         const mappedSecrets = data.secrets.map(secret => ({
           ...secret,
-          envVar: (secret as any).envvar || secret.envVar
+          envVar: (secret as any).envvar || secret.envVar,
         }));
         setSecrets(mappedSecrets);
       } else {
-        throw new Error('Failed to load secrets metadata');
+        throw new Error("Failed to load secrets metadata");
       }
     } catch (err) {
-      console.error('Error loading secrets metadata:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error("Error loading secrets metadata:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSaveSecret = async (envVar: string) => {
-    const value = secretValues[envVar] || '';
+    const value = secretValues[envVar] || "";
     if (!value.trim()) {
-      alert('Il valore del secret non può essere vuoto');
+      alert("Il valore del secret non può essere vuoto");
       return;
     }
 
     setSaving(true);
-    
+
     try {
       const response = await authenticatedFetch(`/admin/secrets`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: envVar,
-          scope: 'global',
+          scope: "global",
           value: value,
         }),
       });
@@ -137,20 +158,22 @@ export default function APITokensPage() {
 
       if (data.success) {
         // Svuota immediatamente il campo input
-        setSecretValues(prev => ({ ...prev, [envVar]: '' }));
+        setSecretValues(prev => ({ ...prev, [envVar]: "" }));
         setEditingSecret(null);
         setShowValues(prev => ({ ...prev, [envVar]: false }));
-        
+
         // Ricarica i metadata per aggiornare lo stato
         await loadSecretsMetadata();
-        
+
         alert(`✅ Secret ${envVar} salvato con successo!`);
       } else {
-        throw new Error(data.error || 'Failed to save secret');
+        throw new Error(data.error || "Failed to save secret");
       }
     } catch (err) {
       console.error(`Error saving secret ${envVar}:`, err);
-      alert(`❌ Errore nel salvataggio: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      alert(
+        `❌ Errore nel salvataggio: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     } finally {
       setSaving(false);
     }
@@ -159,19 +182,22 @@ export default function APITokensPage() {
   const handleCancelEdit = () => {
     // Svuota il campo e chiudi il form
     if (editingSecret) {
-      setSecretValues(prev => ({ ...prev, [editingSecret]: '' }));
+      setSecretValues(prev => ({ ...prev, [editingSecret]: "" }));
       setShowValues(prev => ({ ...prev, [editingSecret]: false }));
     }
     setEditingSecret(null);
   };
 
-  const groupedSecrets = secrets.reduce((acc, secret) => {
-    if (!acc[secret.category]) {
-      acc[secret.category] = [];
-    }
-    acc[secret.category].push(secret);
-    return acc;
-  }, {} as Record<string, SecretMeta[]>);
+  const groupedSecrets = secrets.reduce(
+    (acc, secret) => {
+      if (!acc[secret.category]) {
+        acc[secret.category] = [];
+      }
+      acc[secret.category].push(secret);
+      return acc;
+    },
+    {} as Record<string, SecretMeta[]>
+  );
 
   const stats = {
     total: secrets.length,
@@ -196,7 +222,8 @@ export default function APITokensPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">API & Agent Tokens</h1>
         <p className="text-muted-foreground">
-          Gestione sicura delle API key per il sistema multi-agente. I token sono cifrati con AES-256-GCM e non sono mai visibili in chiaro.
+          Gestione sicura delle API key per il sistema multi-agente. I token
+          sono cifrati con AES-256-GCM e non sono mai visibili in chiaro.
         </p>
       </div>
 
@@ -213,37 +240,51 @@ export default function APITokensPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Totale Secrets</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Totale Secrets
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Configurati</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Configurati
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.present}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.present}
+            </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Mancanti</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Mancanti
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.missing}</div>
+            <div className="text-2xl font-bold text-orange-600">
+              {stats.missing}
+            </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Deprecati</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Deprecati
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.deprecated}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {stats.deprecated}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -251,8 +292,8 @@ export default function APITokensPage() {
       {/* Secrets by Category */}
       {Object.entries(groupedSecrets).map(([category, categorySecrets]) => {
         const Icon = CATEGORY_ICONS[category] || Key;
-        const colorClass = CATEGORY_COLORS[category] || 'text-gray-500';
-        
+        const colorClass = CATEGORY_COLORS[category] || "text-gray-500";
+
         return (
           <div key={category} className="mb-6">
             <div className="flex items-center gap-2 mb-4">
@@ -260,22 +301,32 @@ export default function APITokensPage() {
               <h2 className="text-xl font-semibold">{category}</h2>
               <Badge variant="secondary">{categorySecrets.length}</Badge>
             </div>
-            
+
             <div className="grid grid-cols-1 gap-4">
-              {categorySecrets.map((secret) => (
-                <Card key={secret.id} className={secret.deprecated ? 'opacity-60 border-red-200' : ''}>
+              {categorySecrets.map(secret => (
+                <Card
+                  key={secret.id}
+                  className={
+                    secret.deprecated ? "opacity-60 border-red-200" : ""
+                  }
+                >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <CardTitle className="text-lg">{secret.label}</CardTitle>
+                          <CardTitle className="text-lg">
+                            {secret.label}
+                          </CardTitle>
                           {secret.present ? (
                             <Badge variant="default" className="bg-green-600">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
                               Configurato
                             </Badge>
                           ) : (
-                            <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                            <Badge
+                              variant="secondary"
+                              className="bg-orange-100 text-orange-800"
+                            >
                               <XCircle className="h-3 w-3 mr-1" />
                               Non configurato
                             </Badge>
@@ -288,50 +339,80 @@ export default function APITokensPage() {
                           )}
                           <Badge variant="outline">{secret.category}</Badge>
                         </div>
-                        <CardDescription className="mt-2">{secret.notes}</CardDescription>
+                        <CardDescription className="mt-2">
+                          {secret.notes}
+                        </CardDescription>
                       </div>
-                      
+
                       {!secret.deprecated && (
                         <Button
-                          variant={editingSecret === secret.envVar ? "secondary" : "outline"}
+                          variant={
+                            editingSecret === secret.envVar
+                              ? "secondary"
+                              : "outline"
+                          }
                           size="sm"
                           onClick={() => {
                             if (editingSecret === secret.envVar) {
                               handleCancelEdit();
                             } else {
                               setEditingSecret(secret.envVar);
-                              setSecretValues(prev => ({ ...prev, [secret.envVar]: '' }));
-                              setShowValues(prev => ({ ...prev, [secret.envVar]: false }));
+                              setSecretValues(prev => ({
+                                ...prev,
+                                [secret.envVar]: "",
+                              }));
+                              setShowValues(prev => ({
+                                ...prev,
+                                [secret.envVar]: false,
+                              }));
                             }
                           }}
                         >
                           <Key className="h-4 w-4 mr-2" />
-                          {editingSecret === secret.envVar ? 'Annulla' : (secret.present ? 'Aggiorna' : 'Configura')}
+                          {editingSecret === secret.envVar
+                            ? "Annulla"
+                            : secret.present
+                              ? "Aggiorna"
+                              : "Configura"}
                         </Button>
                       )}
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
                       <div>
-                        <div className="font-medium text-muted-foreground mb-1">Variabile d'ambiente</div>
-                        <code className="px-2 py-1 bg-muted rounded text-xs">{secret.envVar}</code>
+                        <div className="font-medium text-muted-foreground mb-1">
+                          Variabile d'ambiente
+                        </div>
+                        <code className="px-2 py-1 bg-muted rounded text-xs">
+                          {secret.envVar}
+                        </code>
                       </div>
-                      
+
                       <div>
-                        <div className="font-medium text-muted-foreground mb-1">Ambiente</div>
-                        <Badge variant={secret.env === 'prod' ? 'default' : 'secondary'}>
+                        <div className="font-medium text-muted-foreground mb-1">
+                          Ambiente
+                        </div>
+                        <Badge
+                          variant={
+                            secret.env === "prod" ? "default" : "secondary"
+                          }
+                        >
                           {secret.env}
                         </Badge>
                       </div>
-                      
+
                       <div>
-                        <div className="font-medium text-muted-foreground mb-1">Ultimo aggiornamento</div>
+                        <div className="font-medium text-muted-foreground mb-1">
+                          Ultimo aggiornamento
+                        </div>
                         <div className="text-muted-foreground">
-                          {secret.lastUpdated 
-                            ? new Date(secret.lastUpdated).toLocaleString('it-IT') 
-                            : 'N/A'}
+                          {secret.lastUpdated
+                            ? new Date(secret.lastUpdated).toLocaleString(
+                                "it-IT"
+                              )
+                            : "N/A"}
                         </div>
                       </div>
                     </div>
@@ -339,18 +420,28 @@ export default function APITokensPage() {
                     {/* Form di inserimento/aggiornamento secret */}
                     {editingSecret === secret.envVar && (
                       <div className="border-t pt-4 mt-4">
-                        <Label htmlFor={`secret-${secret.envVar}`} className="mb-2 block">
+                        <Label
+                          htmlFor={`secret-${secret.envVar}`}
+                          className="mb-2 block"
+                        >
                           Inserisci il valore del secret
                         </Label>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
                             <Input
                               id={`secret-${secret.envVar}`}
-                              value={secretValues[secret.envVar] || ''}
-                              onChange={(e) => setSecretValues(prev => ({ ...prev, [secret.envVar]: e.target.value }))}
+                              value={secretValues[secret.envVar] || ""}
+                              onChange={e =>
+                                setSecretValues(prev => ({
+                                  ...prev,
+                                  [secret.envVar]: e.target.value,
+                                }))
+                              }
                               placeholder={`Incolla qui il valore di ${secret.envVar}`}
                               className="font-mono text-sm"
-                              type={showValues[secret.envVar] ? 'text' : 'password'}
+                              type={
+                                showValues[secret.envVar] ? "text" : "password"
+                              }
                               autoComplete="off"
                               spellCheck={false}
                             />
@@ -358,14 +449,26 @@ export default function APITokensPage() {
                               variant="ghost"
                               size="sm"
                               className="absolute top-2 right-2"
-                              onClick={() => setShowValues(prev => ({ ...prev, [secret.envVar]: !prev[secret.envVar] }))}
+                              onClick={() =>
+                                setShowValues(prev => ({
+                                  ...prev,
+                                  [secret.envVar]: !prev[secret.envVar],
+                                }))
+                              }
                             >
-                              {showValues[secret.envVar] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              {showValues[secret.envVar] ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
                             </Button>
                           </div>
                           <Button
                             onClick={() => handleSaveSecret(secret.envVar)}
-                            disabled={saving || !(secretValues[secret.envVar] || '').trim()}
+                            disabled={
+                              saving ||
+                              !(secretValues[secret.envVar] || "").trim()
+                            }
                             className="bg-green-600 hover:bg-green-700"
                           >
                             {saving ? (
@@ -377,7 +480,8 @@ export default function APITokensPage() {
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                          ⚠️ Il valore verrà cifrato con AES-256-GCM e salvato nel database. Non sarà mai più visibile in chiaro.
+                          ⚠️ Il valore verrà cifrato con AES-256-GCM e salvato
+                          nel database. Non sarà mai più visibile in chiaro.
                         </p>
                       </div>
                     )}
@@ -395,13 +499,23 @@ export default function APITokensPage() {
         <AlertDescription>
           <strong>⚠️ Note di Sicurezza</strong>
           <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-            <li>I token sono cifrati con AES-256-GCM usando una master key sul server</li>
+            <li>
+              I token sono cifrati con AES-256-GCM usando una master key sul
+              server
+            </li>
             <li>Solo le ultime 4 cifre sono visibili in chiaro</li>
             <li>Gli agenti LLM NON possono accedere a questi endpoint</li>
             <li>Ogni modifica viene loggata dal sistema Guardian</li>
-            <li>Non condividere mai i token in chat o in altri canali non sicuri</li>
-            <li>I token non sono mai salvati in localStorage, sessionStorage o cookie</li>
-            <li>I form input vengono svuotati immediatamente dopo il salvataggio</li>
+            <li>
+              Non condividere mai i token in chat o in altri canali non sicuri
+            </li>
+            <li>
+              I token non sono mai salvati in localStorage, sessionStorage o
+              cookie
+            </li>
+            <li>
+              I form input vengono svuotati immediatamente dopo il salvataggio
+            </li>
           </ul>
         </AlertDescription>
       </Alert>

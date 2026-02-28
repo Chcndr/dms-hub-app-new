@@ -20,11 +20,13 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 **Posizione:** Header della pagina vetrina (`/vetrine/:id`)
 
 **Comportamento:**
+
 - Visibile in alto a destra nell'header
 - Click → Apre modal di modifica
 - Per ora visibile a tutti (autenticazione da implementare)
 
 **Screenshot:**
+
 ```
 ┌─────────────────────────────────────────────┐
 │  ← Vetrina Negozio      [✏️ Modifica]      │
@@ -40,22 +42,27 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 **Campi modificabili:**
 
 #### 📝 **Descrizione**
+
 - Textarea multilinea (4 righe)
 - Contatore caratteri in tempo reale
 - Placeholder: "Descrivi la tua attività..."
 
 #### 🌐 **Social Media**
+
 4 campi con icone dedicate:
+
 - **Facebook** 🔵 - URL profilo
 - **Instagram** 🟣 - Handle o URL
 - **Sito Web** 🌍 - URL sito ufficiale
 - **WhatsApp** 💬 - Numero telefono
 
 #### 📸 **Upload Immagini** (Placeholder)
+
 - Sezione preparata per futura implementazione
 - Messaggio: "📸 Upload immagini disponibile a breve"
 
 **Pulsanti:**
+
 - **Annulla** - Chiude modal senza salvare
 - **💾 Salva Modifiche** - Salva e aggiorna vetrina
 
@@ -68,6 +75,7 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 **Descrizione:** Aggiorna descrizione e social media della vetrina
 
 **Body (JSON):**
+
 ```json
 {
   "vetrina_descrizione": "Nuova descrizione...",
@@ -79,6 +87,7 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 ```
 
 **Response (Success):**
+
 ```json
 {
   "success": true,
@@ -97,6 +106,7 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 ```
 
 **Features:**
+
 - ✅ Aggiorna solo i campi forniti (partial update)
 - ✅ Validazione esistenza impresa
 - ✅ Timestamp automatico `updated_at`
@@ -109,6 +119,7 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 **Descrizione:** Upload immagine principale o galleria (preparato, non ancora implementato)
 
 **Body (JSON):**
+
 ```json
 {
   "type": "principale" | "gallery",
@@ -118,6 +129,7 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 ```
 
 **Response (Success):**
+
 ```json
 {
   "success": true,
@@ -131,6 +143,7 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 ```
 
 **Features:**
+
 - ✅ Supporto base64 e data URL
 - ✅ Validazione tipo (principale/gallery)
 - ✅ Generazione URL storage
@@ -143,6 +156,7 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 **Descrizione:** Rimuove immagine dalla galleria per indice
 
 **Response (Success):**
+
 ```json
 {
   "success": true,
@@ -154,6 +168,7 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 ```
 
 **Features:**
+
 - ✅ Validazione indice
 - ✅ Aggiornamento array gallery
 - ✅ Error handling per indice fuori range
@@ -167,6 +182,7 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 **File:** `/home/ubuntu/mihub-backend-rest/routes/imprese.js`
 
 **Modifiche:**
+
 - ➕ Aggiunto endpoint `PUT /:id/vetrina` (linee 547-643)
 - ➕ Aggiunto endpoint `POST /:id/vetrina/upload` (linee 645-754)
 - ➕ Aggiunto endpoint `DELETE /:id/vetrina/gallery/:index` (linee 756-827)
@@ -182,8 +198,9 @@ Permettere ai commercianti di **modificare autonomamente** la propria vetrina di
 **Modifiche:**
 
 #### **Import aggiuntivi:**
+
 ```tsx
-import { Pencil, Upload, X } from 'lucide-react';
+import { Pencil, Upload, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -191,27 +208,30 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 ```
 
 #### **Nuovi state:**
+
 ```tsx
 const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-const [editDescrizione, setEditDescrizione] = useState('');
-const [editSocialFacebook, setEditSocialFacebook] = useState('');
-const [editSocialInstagram, setEditSocialInstagram] = useState('');
-const [editSocialWebsite, setEditSocialWebsite] = useState('');
-const [editSocialWhatsapp, setEditSocialWhatsapp] = useState('');
+const [editDescrizione, setEditDescrizione] = useState("");
+const [editSocialFacebook, setEditSocialFacebook] = useState("");
+const [editSocialInstagram, setEditSocialInstagram] = useState("");
+const [editSocialWebsite, setEditSocialWebsite] = useState("");
+const [editSocialWhatsapp, setEditSocialWhatsapp] = useState("");
 const [isSaving, setIsSaving] = useState(false);
 ```
 
 #### **Nuove funzioni:**
+
 - `handleOpenEditModal()` - Apre modal e popola campi
 - `handleSaveVetrina()` - Salva modifiche via API
 
 #### **Modifiche UI:**
+
 - Header con pulsante "Modifica" (linee 217-243)
 - Dialog modale completo (linee 448-557)
 
@@ -224,6 +244,7 @@ const [isSaving, setIsSaving] = useState(false);
 ### **Test 1: API PUT Vetrina** ✅
 
 **Comando:**
+
 ```bash
 curl -X PUT http://157.90.29.66:3000/api/imprese/18/vetrina \
   -H "Content-Type: application/json" \
@@ -231,6 +252,7 @@ curl -X PUT http://157.90.29.66:3000/api/imprese/18/vetrina \
 ```
 
 **Risultato:**
+
 ```json
 {
   "success": true,
@@ -253,6 +275,7 @@ curl -X PUT http://157.90.29.66:3000/api/imprese/18/vetrina \
 **URL:** https://dms-hub-app-new.vercel.app/vetrine/18
 
 **Verifica:**
+
 - ✅ Pulsante "Modifica" visibile nell'header
 - ✅ Click apre modal
 - ✅ Campi popolati con dati attuali
@@ -264,11 +287,13 @@ curl -X PUT http://157.90.29.66:3000/api/imprese/18/vetrina \
 ### **Test 3: Modal - Modifica Descrizione** ✅
 
 **Azione:**
+
 1. Aperto modal
 2. Modificato descrizione: "🍎 Frutta e verdura fresca di stagione! Prodotti biologici a km0..."
 3. Click "Salva Modifiche"
 
 **Risultato:**
+
 - ✅ Modal chiuso automaticamente
 - ✅ Descrizione aggiornata in tempo reale
 - ✅ Toast notification "Vetrina aggiornata con successo!"
@@ -281,11 +306,13 @@ curl -X PUT http://157.90.29.66:3000/api/imprese/18/vetrina \
 ### **Test 4: Database - Verifica Persistenza** ✅
 
 **Comando:**
+
 ```bash
 curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 ```
 
 **Risultato:**
+
 ```
 "🍎 Frutta e verdura fresca di stagione! Prodotti biologici a km0 direttamente dal produttore. Qualità garantita e prezzi convenienti!"
 ```
@@ -380,6 +407,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 **Commit:** `0c99d27`
 
 **Endpoint attivi:**
+
 - ✅ `PUT /api/imprese/:id/vetrina`
 - ✅ `POST /api/imprese/:id/vetrina/upload`
 - ✅ `DELETE /api/imprese/:id/vetrina/gallery/:index`
@@ -393,6 +421,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 **Commit:** `6a8ae4d`
 
 **Route attiva:**
+
 - ✅ `/vetrine/:id` con pulsante Modifica e modal
 
 ---
@@ -401,29 +430,29 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 
 ### **Codice Aggiunto**
 
-| Componente | File | Righe Aggiunte |
-|------------|------|----------------|
-| Backend API | `routes/imprese.js` | +282 |
-| Frontend Modal | `pages/VetrinePage.tsx` | +212 |
-| **TOTALE** | | **+494** |
+| Componente     | File                    | Righe Aggiunte |
+| -------------- | ----------------------- | -------------- |
+| Backend API    | `routes/imprese.js`     | +282           |
+| Frontend Modal | `pages/VetrinePage.tsx` | +212           |
+| **TOTALE**     |                         | **+494**       |
 
 ### **Endpoint API**
 
-| Endpoint | Metodo | Funzione |
-|----------|--------|----------|
-| `/api/imprese/:id/vetrina` | PUT | Aggiorna vetrina |
-| `/api/imprese/:id/vetrina/upload` | POST | Upload immagine |
+| Endpoint                                  | Metodo | Funzione         |
+| ----------------------------------------- | ------ | ---------------- |
+| `/api/imprese/:id/vetrina`                | PUT    | Aggiorna vetrina |
+| `/api/imprese/:id/vetrina/upload`         | POST   | Upload immagine  |
 | `/api/imprese/:id/vetrina/gallery/:index` | DELETE | Rimuovi immagine |
 
 ### **Campi Modificabili**
 
-| Campo | Tipo | Validazione |
-|-------|------|-------------|
+| Campo                 | Tipo | Validazione      |
+| --------------------- | ---- | ---------------- |
 | `vetrina_descrizione` | TEXT | Nessuna (max DB) |
-| `social_facebook` | TEXT | URL opzionale |
-| `social_instagram` | TEXT | Handle o URL |
-| `social_website` | TEXT | URL opzionale |
-| `social_whatsapp` | TEXT | Telefono |
+| `social_facebook`     | TEXT | URL opzionale    |
+| `social_instagram`    | TEXT | Handle o URL     |
+| `social_website`      | TEXT | URL opzionale    |
+| `social_whatsapp`     | TEXT | Telefono         |
 
 ---
 
@@ -434,6 +463,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 **Obiettivo:** Implementare upload vero con storage
 
 **Componenti necessari:**
+
 - [ ] Integrazione Manus Storage (`storagePut()`)
 - [ ] Componente React Dropzone per drag & drop
 - [ ] Preview immagini prima dell'upload
@@ -449,6 +479,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 **Obiettivo:** Mostrare pulsante "Modifica" solo al proprietario
 
 **Componenti necessari:**
+
 - [ ] Sistema login commerciante
 - [ ] JWT token con `impresa_id`
 - [ ] Middleware autenticazione backend
@@ -463,6 +494,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 **Obiettivo:** Upload multiplo e rimozione immagini
 
 **Componenti necessari:**
+
 - [ ] Multi-upload drag & drop
 - [ ] Grid immagini con pulsante rimuovi
 - [ ] Integrazione DELETE endpoint
@@ -477,6 +509,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 **Obiettivo:** Form per gestire orari settimanali
 
 **Componenti necessari:**
+
 - [ ] Form orari per ogni giorno
 - [ ] Supporto orari speciali/festivi
 - [ ] Visualizzazione "Aperto ora" in vetrina
@@ -489,6 +522,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 ## ✅ CHECKLIST COMPLETAMENTO FASE 5
 
 ### Backend
+
 - [x] Endpoint PUT `/api/imprese/:id/vetrina`
 - [x] Endpoint POST `/api/imprese/:id/vetrina/upload` (preparato)
 - [x] Endpoint DELETE `/api/imprese/:id/vetrina/gallery/:index`
@@ -499,6 +533,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 - [x] PM2 riavviato
 
 ### Frontend
+
 - [x] Pulsante "Modifica" nell'header
 - [x] Modal di modifica completo
 - [x] Form descrizione con contatore
@@ -510,6 +545,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 - [x] Deploy su Vercel
 
 ### Testing
+
 - [x] Test API PUT vetrina
 - [x] Test frontend pulsante modifica
 - [x] Test modal apertura/chiusura
@@ -518,6 +554,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 - [x] Test aggiornamento real-time
 
 ### Documentazione
+
 - [x] README FASE 5 creato
 - [x] API documentation
 - [x] Flusso utente documentato
@@ -531,6 +568,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 **FASE 5 COMPLETATA CON SUCCESSO!** ✅
 
 **Risultati raggiunti:**
+
 - ✅ Commercianti possono modificare la vetrina autonomamente
 - ✅ Interfaccia semplice e intuitiva
 - ✅ Salvataggio real-time senza refresh
@@ -538,6 +576,7 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 - ✅ Sistema pronto per upload immagini futuro
 
 **Benefici per i commercianti:**
+
 - 🎨 Personalizzazione vetrina in autonomia
 - ⚡ Modifiche immediate senza supporto tecnico
 - 📱 Interfaccia mobile-friendly
@@ -548,5 +587,5 @@ curl -s http://157.90.29.66:3000/api/imprese/18 | jq '.data.vetrina_descrizione'
 ---
 
 **Fine Report FASE 5**  
-*Sistema Gestione Vetrine - Ready to Use!* 🎊  
-*16 Dicembre 2025*
+_Sistema Gestione Vetrine - Ready to Use!_ 🎊  
+_16 Dicembre 2025_

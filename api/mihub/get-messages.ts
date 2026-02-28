@@ -1,46 +1,49 @@
 /**
  * API Route: Recupera messaggi dal database
- * 
+ *
  * Endpoint: GET /api/mihub/get-messages?conversation_id=xxx&agent_name=yyy
- * 
+ *
  * Query params:
  * - conversation_id (required): ID conversazione
  * - agent_name (optional): Filtra per agente specifico
  * - limit (optional): Numero massimo messaggi (default 200)
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import postgres from 'postgres';
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import postgres from "postgres";
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Solo GET
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     // 🔥 FIX 01/01/2026: Default DESC per mostrare messaggi recenti, poi inverti nel frontend
-    const { conversation_id, agent_name, mode, limit = '100', order = 'desc' } = req.query;
-    const orderDir = order === 'desc' ? 'DESC' : 'ASC';
+    const {
+      conversation_id,
+      agent_name,
+      mode,
+      limit = "100",
+      order = "desc",
+    } = req.query;
+    const orderDir = order === "desc" ? "DESC" : "ASC";
 
     // Validazione
-    if (!conversation_id || typeof conversation_id !== 'string') {
+    if (!conversation_id || typeof conversation_id !== "string") {
       return res.status(400).json({
         success: false,
-        error: 'Missing required parameter: conversation_id'
+        error: "Missing required parameter: conversation_id",
       });
     }
 
     // Check DATABASE_URL
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
-      console.error('[get-messages] DATABASE_URL not found');
+      console.error("[get-messages] DATABASE_URL not found");
       return res.status(500).json({
         success: false,
-        error: 'DATABASE_URL not configured'
+        error: "DATABASE_URL not configured",
       });
     }
 
@@ -50,7 +53,7 @@ export default async function handler(
       let messages;
 
       // Query con o senza filtro agent_name
-      if (agent_name && typeof agent_name === 'string') {
+      if (agent_name && typeof agent_name === "string") {
         messages = await sql`
           SELECT 
             id,
@@ -66,7 +69,7 @@ export default async function handler(
           WHERE conversation_id = ${conversation_id}
             AND agent = ${agent_name}
             AND (${mode || null}::varchar IS NULL OR mode = ${mode || null})
-          ORDER BY created_at ${order === 'desc' ? sql`DESC` : sql`ASC`}
+          ORDER BY created_at ${order === "desc" ? sql`DESC` : sql`ASC`}
           LIMIT ${parseInt(limit as string)}
         `;
       } else {
@@ -84,36 +87,35 @@ export default async function handler(
           FROM agent_messages
           WHERE conversation_id = ${conversation_id}
             AND (${mode || null}::varchar IS NULL OR mode = ${mode || null})
-          ORDER BY created_at ${order === 'desc' ? sql`DESC` : sql`ASC`}
+          ORDER BY created_at ${order === "desc" ? sql`DESC` : sql`ASC`}
           LIMIT ${parseInt(limit as string)}
         `;
       }
 
-      console.log('[get-messages] Found', messages.length, 'messages');
+      console.log("[get-messages] Found", messages.length, "messages");
 
       // 🔥 FIX: Se order=desc, inverti per avere ordine cronologico nel frontend
-      const orderedMessages = order === 'desc' ? [...messages].reverse() : messages;
+      const orderedMessages =
+        order === "desc" ? [...messages].reverse() : messages;
 
       return res.status(200).json({
         success: true,
-        messages: orderedMessages,  // 🔥 FIX: Messaggi in ordine cronologico
+        messages: orderedMessages, // 🔥 FIX: Messaggi in ordine cronologico
         pagination: {
           total: messages.length,
           limit: parseInt(limit as string),
-          has_more: false
-        }
+          has_more: false,
+        },
       });
-
     } finally {
       await sql.end();
     }
-
   } catch (err: any) {
-    console.error('[get-messages] Error:', err);
+    console.error("[get-messages] Error:", err);
     return res.status(500).json({
       success: false,
-      error: err.message || 'Unknown error',
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      error: err.message || "Unknown error",
+      stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
     });
   }
 }

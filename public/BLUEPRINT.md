@@ -20,65 +20,65 @@
 
 ### Tables (57)
 
-| Variable Name | Table Name |
-|---------------|------------|
-| `users` | `users` |
-| `extendedUsers` | `extended_users` |
-| `markets` | `markets` |
-| `shops` | `shops` |
-| `transactions` | `transactions` |
-| `checkins` | `checkins` |
-| `carbonCreditsConfig` | `carbon_credits_config` |
-| `fundTransactions` | `fund_transactions` |
-| `reimbursements` | `reimbursements` |
-| `civicReports` | `civic_reports` |
-| `products` | `products` |
-| `productTracking` | `product_tracking` |
-| `carbonFootprint` | `carbon_footprint` |
-| `ecocredits` | `ecocredits` |
-| `auditLogs` | `audit_logs` |
-| `systemLogs` | `system_logs` |
-| `userAnalytics` | `user_analytics` |
+| Variable Name           | Table Name               |
+| ----------------------- | ------------------------ |
+| `users`                 | `users`                  |
+| `extendedUsers`         | `extended_users`         |
+| `markets`               | `markets`                |
+| `shops`                 | `shops`                  |
+| `transactions`          | `transactions`           |
+| `checkins`              | `checkins`               |
+| `carbonCreditsConfig`   | `carbon_credits_config`  |
+| `fundTransactions`      | `fund_transactions`      |
+| `reimbursements`        | `reimbursements`         |
+| `civicReports`          | `civic_reports`          |
+| `products`              | `products`               |
+| `productTracking`       | `product_tracking`       |
+| `carbonFootprint`       | `carbon_footprint`       |
+| `ecocredits`            | `ecocredits`             |
+| `auditLogs`             | `audit_logs`             |
+| `systemLogs`            | `system_logs`            |
+| `userAnalytics`         | `user_analytics`         |
 | `sustainabilityMetrics` | `sustainability_metrics` |
-| `notifications` | `notifications` |
-| `inspections` | `inspections` |
-| `businessAnalytics` | `business_analytics` |
-| `mobilityData` | `mobility_data` |
-| `marketGeometry` | `market_geometry` |
-| `stalls` | `stalls` |
-| `vendors` | `vendors` |
-| `concessions` | `concessions` |
-| `vendorDocuments` | `vendor_documents` |
-| `bookings` | `bookings` |
-| `vendorPresences` | `vendor_presences` |
-| `inspectionsDetailed` | `inspections_detailed` |
-| `violations` | `violations` |
-| `concessionPayments` | `concession_payments` |
-| `customMarkers` | `custom_markers` |
-| `customAreas` | `custom_areas` |
-| `apiKeys` | `api_keys` |
-| `apiMetrics` | `api_metrics` |
-| `webhooks` | `webhooks` |
-| `webhookLogs` | `webhook_logs` |
-| `externalConnections` | `external_connections` |
-| `mioAgentLogs` | `mio_agent_logs` |
-| `hubLocations` | `hub_locations` |
-| `hubShops` | `hub_shops` |
-| `hubServices` | `hub_services` |
-| `agentTasks` | `agent_tasks` |
-| `agentProjects` | `agent_projects` |
-| `agentBrain` | `agent_brain` |
-| `systemEvents` | `system_events` |
-| `dataBag` | `data_bag` |
-| `agentMessages` | `agent_messages` |
-| `agentContext` | `agent_context` |
-| `operatoreWallet` | `operatore_wallet` |
-| `walletTransazioni` | `wallet_transazioni` |
-| `tariffePosteggio` | `tariffe_posteggio` |
-| `avvisiPagopa` | `avvisi_pagopa` |
-| `syncConfig` | `sync_config` |
-| `syncJobs` | `sync_jobs` |
-| `syncLogs` | `sync_logs` |
+| `notifications`         | `notifications`          |
+| `inspections`           | `inspections`            |
+| `businessAnalytics`     | `business_analytics`     |
+| `mobilityData`          | `mobility_data`          |
+| `marketGeometry`        | `market_geometry`        |
+| `stalls`                | `stalls`                 |
+| `vendors`               | `vendors`                |
+| `concessions`           | `concessions`            |
+| `vendorDocuments`       | `vendor_documents`       |
+| `bookings`              | `bookings`               |
+| `vendorPresences`       | `vendor_presences`       |
+| `inspectionsDetailed`   | `inspections_detailed`   |
+| `violations`            | `violations`             |
+| `concessionPayments`    | `concession_payments`    |
+| `customMarkers`         | `custom_markers`         |
+| `customAreas`           | `custom_areas`           |
+| `apiKeys`               | `api_keys`               |
+| `apiMetrics`            | `api_metrics`            |
+| `webhooks`              | `webhooks`               |
+| `webhookLogs`           | `webhook_logs`           |
+| `externalConnections`   | `external_connections`   |
+| `mioAgentLogs`          | `mio_agent_logs`         |
+| `hubLocations`          | `hub_locations`          |
+| `hubShops`              | `hub_shops`              |
+| `hubServices`           | `hub_services`           |
+| `agentTasks`            | `agent_tasks`            |
+| `agentProjects`         | `agent_projects`         |
+| `agentBrain`            | `agent_brain`            |
+| `systemEvents`          | `system_events`          |
+| `dataBag`               | `data_bag`               |
+| `agentMessages`         | `agent_messages`         |
+| `agentContext`          | `agent_context`          |
+| `operatoreWallet`       | `operatore_wallet`       |
+| `walletTransazioni`     | `wallet_transazioni`     |
+| `tariffePosteggio`      | `tariffe_posteggio`      |
+| `avvisiPagopa`          | `avvisi_pagopa`          |
+| `syncConfig`            | `sync_config`            |
+| `syncJobs`              | `sync_jobs`              |
+| `syncLogs`              | `sync_logs`              |
 
 ---
 
@@ -267,6 +267,7 @@ npm run docs:update
 ```
 
 Questo comando esegue:
+
 1. `sync_api_docs.cjs` - Aggiorna `index.json` con endpoint reali
 2. `generate_blueprint.cjs` - Rigenera questo file e `.mio-agents/`
 

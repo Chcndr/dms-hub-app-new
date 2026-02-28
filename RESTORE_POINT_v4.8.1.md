@@ -22,15 +22,15 @@ git push --force origin master
 
 ## Cosa funziona a questo punto
 
-| Funzionalità | Stato | Verifica |
-|-------------|-------|----------|
-| Login Firebase (Google, Apple, Email) | ✅ Funzionante | Testato con chcndr@gmail.com e bebaviola@gmail.com |
-| INSERT in login_attempts | ✅ Funzionante | Record #94 nel DB (bebaviola@gmail.com, user_id=33, success=true) |
-| UPDATE lastSignedIn | ✅ Funzionante | Viola Checchi: lastSignedIn=2026-02-11 19:03:18 |
-| SecurityTab → Accessi | ✅ Funzionante | Mostra email, pallino verde, data corretta |
-| SecurityTab → Utenti | ✅ Funzionante | Mostra "Ultimo accesso: 11/02/2026" |
-| SecurityTab → Eventi | ✅ Funzionante | Mostra login_success con email |
-| ARPA SPID/CIE backend | ⏳ In attesa | 6 endpoint implementati, serve registrazione Integration Manager |
+| Funzionalità                          | Stato          | Verifica                                                          |
+| ------------------------------------- | -------------- | ----------------------------------------------------------------- |
+| Login Firebase (Google, Apple, Email) | ✅ Funzionante | Testato con chcndr@gmail.com e bebaviola@gmail.com                |
+| INSERT in login_attempts              | ✅ Funzionante | Record #94 nel DB (bebaviola@gmail.com, user_id=33, success=true) |
+| UPDATE lastSignedIn                   | ✅ Funzionante | Viola Checchi: lastSignedIn=2026-02-11 19:03:18                   |
+| SecurityTab → Accessi                 | ✅ Funzionante | Mostra email, pallino verde, data corretta                        |
+| SecurityTab → Utenti                  | ✅ Funzionante | Mostra "Ultimo accesso: 11/02/2026"                               |
+| SecurityTab → Eventi                  | ✅ Funzionante | Mostra login_success con email                                    |
+| ARPA SPID/CIE backend                 | ⏳ In attesa   | 6 endpoint implementati, serve registrazione Integration Manager  |
 
 ---
 
@@ -68,16 +68,16 @@ git push --force origin master
 
 > ⚠️ Verificato con query diretta a `information_schema.columns` — 11 Feb 2026
 
-| Colonna | Tipo | Nullable | Note |
-|---------|------|----------|------|
-| `id` | serial | NO | PK auto-increment |
-| `username` | varchar | YES | **Usata per l'email dell'utente** |
-| `user_id` | integer | YES | FK → users.id |
-| `ip_address` | varchar | NO | IP del client |
-| `user_agent` | text | YES | Browser/client info |
-| `success` | boolean | NO | true = riuscito |
-| `failure_reason` | varchar | YES | Motivo fallimento |
-| `created_at` | timestamptz | YES | Default CURRENT_TIMESTAMP |
+| Colonna          | Tipo        | Nullable | Note                              |
+| ---------------- | ----------- | -------- | --------------------------------- |
+| `id`             | serial      | NO       | PK auto-increment                 |
+| `username`       | varchar     | YES      | **Usata per l'email dell'utente** |
+| `user_id`        | integer     | YES      | FK → users.id                     |
+| `ip_address`     | varchar     | NO       | IP del client                     |
+| `user_agent`     | text        | YES      | Browser/client info               |
+| `success`        | boolean     | NO       | true = riuscito                   |
+| `failure_reason` | varchar     | YES      | Motivo fallimento                 |
+| `created_at`     | timestamptz | YES      | Default CURRENT_TIMESTAMP         |
 
 **❌ NON ESISTONO:** `user_email`, `user_name`, `email`
 **✅ Per l'email usare:** colonna `username`
@@ -96,33 +96,35 @@ git push --force origin master
 
 ## File Critici Modificati
 
-| File | Cosa fa | Ultima modifica |
-|------|---------|-----------------|
-| `api/auth/firebase/sync.ts` | Serverless Vercel: INSERT login_attempts + UPDATE lastSignedIn | Commit 17a4165 |
-| `client/src/contexts/FirebaseAuthContext.tsx` | Chiama sync con URL relativo + passa trackLogin params | Commit 8968d6c |
-| `client/src/components/SecurityTab.tsx` | Rendering email con fallback: user_email → email_attempted → username | Commit 8968d6c |
-| `MASTER_BLUEPRINT_MIOHUB.md` | Blueprint v4.8.1 con schema corretto e nota architettura | Commit 17a4165 |
+| File                                          | Cosa fa                                                               | Ultima modifica |
+| --------------------------------------------- | --------------------------------------------------------------------- | --------------- |
+| `api/auth/firebase/sync.ts`                   | Serverless Vercel: INSERT login_attempts + UPDATE lastSignedIn        | Commit 17a4165  |
+| `client/src/contexts/FirebaseAuthContext.tsx` | Chiama sync con URL relativo + passa trackLogin params                | Commit 8968d6c  |
+| `client/src/components/SecurityTab.tsx`       | Rendering email con fallback: user_email → email_attempted → username | Commit 8968d6c  |
+| `MASTER_BLUEPRINT_MIOHUB.md`                  | Blueprint v4.8.1 con schema corretto e nota architettura              | Commit 17a4165  |
 
 ---
 
 ## Tag Stabili Precedenti
 
-| Tag | Commit | Data | Descrizione |
-|-----|--------|------|-------------|
-| `v4.8.1-stable` | `17a4165` | 11/02/2026 | **QUESTO** — Login tracking funzionante con colonne corrette |
-| `v4.8.0-stable` | `0ee2780` | 11/02/2026 | ARPA OAuth2 backend (login tracking ROTTO — colonne sbagliate) |
-| `v4.7.0-stable` | `4171340` | 11/02/2026 | Primo tentativo login tracking (colonne sbagliate) |
-| `v4.5.6d-stable` | — | Precedente | Pre-login tracking |
+| Tag              | Commit    | Data       | Descrizione                                                    |
+| ---------------- | --------- | ---------- | -------------------------------------------------------------- |
+| `v4.8.1-stable`  | `17a4165` | 11/02/2026 | **QUESTO** — Login tracking funzionante con colonne corrette   |
+| `v4.8.0-stable`  | `0ee2780` | 11/02/2026 | ARPA OAuth2 backend (login tracking ROTTO — colonne sbagliate) |
+| `v4.7.0-stable`  | `4171340` | 11/02/2026 | Primo tentativo login tracking (colonne sbagliate)             |
+| `v4.5.6d-stable` | —         | Precedente | Pre-login tracking                                             |
 
 ---
 
 ## Variabili d'Ambiente
 
 ### Vercel (Environment Variables)
+
 - `DATABASE_URL` — Connection string Neon PostgreSQL ✅ Configurata
 - `FIREBASE_SERVICE_ACCOUNT_KEY` — JSON service account Firebase ✅ Configurata
 
 ### Hetzner (mihub-backend-rest)
+
 - `DATABASE_URL` — Stessa connection string Neon ✅ Configurata
 - `ARPA_CLIENT_ID` — ⏳ Da ottenere dall'Integration Manager
 - `ARPA_CLIENT_SECRET` — ⏳ Da ottenere dall'Integration Manager

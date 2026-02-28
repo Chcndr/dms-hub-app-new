@@ -3,8 +3,8 @@
  * Mostra la lista dei cittadini registrati con wallet TCC
  */
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
   Wallet,
@@ -17,11 +17,11 @@ import {
   UserX,
   TrendingUp,
   Download,
-  Leaf
-} from 'lucide-react';
-import { addComuneIdToUrl } from '@/hooks/useImpersonation';
-import { MIHUB_API_BASE_URL } from '@/config/api';
-import { formatDateTime as formatDate } from '@/lib/formatUtils';
+  Leaf,
+} from "lucide-react";
+import { addComuneIdToUrl } from "@/hooks/useImpersonation";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { formatDateTime as formatDate } from "@/lib/formatUtils";
 
 const API_BASE = MIHUB_API_BASE_URL;
 
@@ -49,31 +49,66 @@ export default function ClientiTab() {
   const [citizens, setCitizens] = useState<Citizen[]>([]);
   const [stats, setStats] = useState<CitizenStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchCitizens = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const response = await fetch(addComuneIdToUrl(`${API_BASE}/api/citizens`));
-      if (!response.ok) throw new Error('Errore nel caricamento cittadini');
+      const response = await fetch(
+        addComuneIdToUrl(`${API_BASE}/api/citizens`)
+      );
+      if (!response.ok) throw new Error("Errore nel caricamento cittadini");
       const data = await response.json();
       setCitizens(data.citizens || []);
       setStats(data.stats || null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore sconosciuto');
+      setError(err instanceof Error ? err.message : "Errore sconosciuto");
       // Dati mock per testing
       setCitizens([
-        { id: 1, name: 'Mario Rossi', email: 'mario.rossi@email.com', auth_provider: 'email', email_verified: true, created_at: '2026-01-10T10:30:00Z', wallet_balance: 150, total_earned: 200, total_spent: 50, eco_credit_active: true },
-        { id: 2, name: 'Laura Bianchi', email: 'laura.bianchi@email.com', auth_provider: 'google', email_verified: true, created_at: '2026-01-09T14:20:00Z', wallet_balance: 75, total_earned: 100, total_spent: 25, eco_credit_active: false },
-        { id: 3, name: 'Giuseppe Verdi', email: 'giuseppe.verdi@email.com', auth_provider: 'spid', email_verified: true, created_at: '2026-01-08T09:15:00Z', wallet_balance: 320, total_earned: 400, total_spent: 80, eco_credit_active: true },
+        {
+          id: 1,
+          name: "Mario Rossi",
+          email: "mario.rossi@email.com",
+          auth_provider: "email",
+          email_verified: true,
+          created_at: "2026-01-10T10:30:00Z",
+          wallet_balance: 150,
+          total_earned: 200,
+          total_spent: 50,
+          eco_credit_active: true,
+        },
+        {
+          id: 2,
+          name: "Laura Bianchi",
+          email: "laura.bianchi@email.com",
+          auth_provider: "google",
+          email_verified: true,
+          created_at: "2026-01-09T14:20:00Z",
+          wallet_balance: 75,
+          total_earned: 100,
+          total_spent: 25,
+          eco_credit_active: false,
+        },
+        {
+          id: 3,
+          name: "Giuseppe Verdi",
+          email: "giuseppe.verdi@email.com",
+          auth_provider: "spid",
+          email_verified: true,
+          created_at: "2026-01-08T09:15:00Z",
+          wallet_balance: 320,
+          total_earned: 400,
+          total_spent: 80,
+          eco_credit_active: true,
+        },
       ]);
       setStats({
         total_citizens: 3,
         active_today: 2,
         total_tcc_circulation: 545,
-        avg_balance: 181.67
+        avg_balance: 181.67,
       });
     } finally {
       setLoading(false);
@@ -84,18 +119,20 @@ export default function ClientiTab() {
     fetchCitizens();
   }, []);
 
-  const filteredCitizens = citizens.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCitizens = citizens.filter(
+    c =>
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getAuthProviderBadge = (provider: string) => {
-    const badges: Record<string, { bg: string; text: string; label: string }> = {
-      email: { bg: 'bg-teal-500/20', text: 'text-teal-400', label: 'Email' },
-      google: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Google' },
-      apple: { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'Apple' },
-      spid: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'SPID' },
-    };
+    const badges: Record<string, { bg: string; text: string; label: string }> =
+      {
+        email: { bg: "bg-teal-500/20", text: "text-teal-400", label: "Email" },
+        google: { bg: "bg-red-500/20", text: "text-red-400", label: "Google" },
+        apple: { bg: "bg-gray-500/20", text: "text-gray-400", label: "Apple" },
+        spid: { bg: "bg-blue-500/20", text: "text-blue-400", label: "SPID" },
+      };
     const badge = badges[provider] || badges.email;
     return (
       <span className={`px-2 py-1 rounded text-xs ${badge.bg} ${badge.text}`}>
@@ -115,8 +152,12 @@ export default function ClientiTab() {
                 <Users className="h-6 w-6 text-[#14b8a6]" />
               </div>
               <div>
-                <p className="text-sm text-[#e8fbff]/70">Cittadini Registrati</p>
-                <p className="text-2xl font-bold text-[#e8fbff]">{stats?.total_citizens || 0}</p>
+                <p className="text-sm text-[#e8fbff]/70">
+                  Cittadini Registrati
+                </p>
+                <p className="text-2xl font-bold text-[#e8fbff]">
+                  {stats?.total_citizens || 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -130,7 +171,9 @@ export default function ClientiTab() {
               </div>
               <div>
                 <p className="text-sm text-[#e8fbff]/70">Attivi Oggi</p>
-                <p className="text-2xl font-bold text-[#e8fbff]">{stats?.active_today || 0}</p>
+                <p className="text-2xl font-bold text-[#e8fbff]">
+                  {stats?.active_today || 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -144,7 +187,9 @@ export default function ClientiTab() {
               </div>
               <div>
                 <p className="text-sm text-[#e8fbff]/70">TCC in Circolazione</p>
-                <p className="text-2xl font-bold text-[#e8fbff]">{stats?.total_tcc_circulation?.toLocaleString() || 0}</p>
+                <p className="text-2xl font-bold text-[#e8fbff]">
+                  {stats?.total_tcc_circulation?.toLocaleString() || 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -158,7 +203,9 @@ export default function ClientiTab() {
               </div>
               <div>
                 <p className="text-sm text-[#e8fbff]/70">Saldo Medio</p>
-                <p className="text-2xl font-bold text-[#e8fbff]">{stats?.avg_balance?.toFixed(0) || 0} TCC</p>
+                <p className="text-2xl font-bold text-[#e8fbff]">
+                  {stats?.avg_balance?.toFixed(0) || 0} TCC
+                </p>
               </div>
             </div>
           </CardContent>
@@ -180,7 +227,7 @@ export default function ClientiTab() {
                   type="text"
                   placeholder="Cerca cittadino..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/50 focus:outline-none focus:border-[#14b8a6]"
                 />
               </div>
@@ -189,11 +236,11 @@ export default function ClientiTab() {
                 disabled={loading}
                 className="p-2 bg-[#14b8a6]/20 border border-[#14b8a6]/30 rounded-lg hover:bg-[#14b8a6]/30 transition-colors"
               >
-                <RefreshCw className={`h-4 w-4 text-[#14b8a6] ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`h-4 w-4 text-[#14b8a6] ${loading ? "animate-spin" : ""}`}
+                />
               </button>
-              <button
-                className="p-2 bg-[#14b8a6]/20 border border-[#14b8a6]/30 rounded-lg hover:bg-[#14b8a6]/30 transition-colors"
-              >
+              <button className="p-2 bg-[#14b8a6]/20 border border-[#14b8a6]/30 rounded-lg hover:bg-[#14b8a6]/30 transition-colors">
                 <Download className="h-4 w-4 text-[#14b8a6]" />
               </button>
             </div>
@@ -210,23 +257,44 @@ export default function ClientiTab() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#14b8a6]/20">
-                  <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">Nome</th>
-                  <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">Email</th>
-                  <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">Metodo</th>
-                  <th className="text-center py-3 px-4 text-[#e8fbff]/70 font-medium">ECO CREDIT</th>
-                  <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">Registrato</th>
-                  <th className="text-right py-3 px-4 text-[#e8fbff]/70 font-medium">Saldo TCC</th>
-                  <th className="text-right py-3 px-4 text-[#e8fbff]/70 font-medium">Guadagnati</th>
-                  <th className="text-right py-3 px-4 text-[#e8fbff]/70 font-medium">Spesi</th>
+                  <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">
+                    Nome
+                  </th>
+                  <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">
+                    Email
+                  </th>
+                  <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">
+                    Metodo
+                  </th>
+                  <th className="text-center py-3 px-4 text-[#e8fbff]/70 font-medium">
+                    ECO CREDIT
+                  </th>
+                  <th className="text-left py-3 px-4 text-[#e8fbff]/70 font-medium">
+                    Registrato
+                  </th>
+                  <th className="text-right py-3 px-4 text-[#e8fbff]/70 font-medium">
+                    Saldo TCC
+                  </th>
+                  <th className="text-right py-3 px-4 text-[#e8fbff]/70 font-medium">
+                    Guadagnati
+                  </th>
+                  <th className="text-right py-3 px-4 text-[#e8fbff]/70 font-medium">
+                    Spesi
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCitizens.map((citizen) => (
-                  <tr key={citizen.id} className="border-b border-[#14b8a6]/10 hover:bg-[#14b8a6]/5 transition-colors">
+                {filteredCitizens.map(citizen => (
+                  <tr
+                    key={citizen.id}
+                    className="border-b border-[#14b8a6]/10 hover:bg-[#14b8a6]/5 transition-colors"
+                  >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-[#14b8a6]/20 rounded-full flex items-center justify-center">
-                          <span className="text-[#14b8a6] font-medium">{citizen.name.charAt(0)}</span>
+                          <span className="text-[#14b8a6] font-medium">
+                            {citizen.name.charAt(0)}
+                          </span>
                         </div>
                         <span className="text-[#e8fbff]">{citizen.name}</span>
                       </div>
@@ -234,7 +302,9 @@ export default function ClientiTab() {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-[#e8fbff]/50" />
-                        <span className="text-[#e8fbff]/70">{citizen.email}</span>
+                        <span className="text-[#e8fbff]/70">
+                          {citizen.email}
+                        </span>
                         {citizen.email_verified && (
                           <UserCheck className="h-4 w-4 text-[#10b981]" />
                         )}
@@ -245,34 +315,52 @@ export default function ClientiTab() {
                     </td>
                     <td className="py-3 px-4 text-center">
                       {citizen.eco_credit_active ? (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-[#10b981]/20 border border-[#10b981]/30 rounded-full" title="ECO CREDIT Attivo">
+                        <div
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#10b981]/20 border border-[#10b981]/30 rounded-full"
+                          title="ECO CREDIT Attivo"
+                        >
                           <Leaf className="h-3 w-3 text-[#10b981]" />
-                          <span className="text-xs text-[#10b981] font-medium">Attivo</span>
+                          <span className="text-xs text-[#10b981] font-medium">
+                            Attivo
+                          </span>
                         </div>
                       ) : (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-[#ef4444]/20 border border-[#ef4444]/30 rounded-full" title="ECO CREDIT Non Attivo">
+                        <div
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#ef4444]/20 border border-[#ef4444]/30 rounded-full"
+                          title="ECO CREDIT Non Attivo"
+                        >
                           <Leaf className="h-3 w-3 text-[#ef4444]" />
-                          <span className="text-xs text-[#ef4444] font-medium">Inattivo</span>
+                          <span className="text-xs text-[#ef4444] font-medium">
+                            Inattivo
+                          </span>
                         </div>
                       )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-[#e8fbff]/50" />
-                        <span className="text-[#e8fbff]/70 text-sm">{formatDate(citizen.created_at)}</span>
+                        <span className="text-[#e8fbff]/70 text-sm">
+                          {formatDate(citizen.created_at)}
+                        </span>
                       </div>
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Wallet className="h-4 w-4 text-[#f59e0b]" />
-                        <span className="text-[#f59e0b] font-semibold">{citizen.wallet_balance}</span>
+                        <span className="text-[#f59e0b] font-semibold">
+                          {citizen.wallet_balance}
+                        </span>
                       </div>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <span className="text-[#10b981]">+{citizen.total_earned}</span>
+                      <span className="text-[#10b981]">
+                        +{citizen.total_earned}
+                      </span>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <span className="text-[#ef4444]">-{citizen.total_spent}</span>
+                      <span className="text-[#ef4444]">
+                        -{citizen.total_spent}
+                      </span>
                     </td>
                   </tr>
                 ))}

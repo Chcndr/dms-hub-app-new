@@ -5,15 +5,18 @@
 ### ✅ 1. PULSANTE "CONFERMA ASSEGNAZIONE" IN GESTIONE MERCATI
 
 **Problema risolto:**
+
 - Il pulsante nel popup era disabilitato
 - Mancava un pulsante per confermare tutti i posteggi riservati in una volta
 
 **Soluzione:**
+
 - Aggiunto `id` ai dati dei posteggi (`stallsDataForMap`)
 - Aggiunto pulsante globale sotto le statistiche
 - Conferma multipla di tutti i posteggi riservati
 
 **Come usare:**
+
 1. Vai su **Gestione Mercati** → **Posteggi**
 2. Clicca **"✓ Spunta"** per attivare la modalità assegnazione
 3. Appare il pulsante **"✓ Conferma Assegnazione (N posteggi)"**
@@ -24,16 +27,19 @@
 ### ✅ 2. SINCRONIZZAZIONE TPER IN CENTRO MOBILITÀ
 
 **Problema risolto:**
+
 - Errore durante la sincronizzazione TPER
 - Mappa Centro Mobilità vuota
 
 **Soluzione:**
+
 - Fix conversione lat/lng in stringhe (schema database richiede VARCHAR)
 - Rimosso Hello Bus SOAP (troppo lento)
 - Caricamento di tutte le 4,174 fermate TPER in pochi secondi
 - Aggiunto pulsante "🔄 Sincronizza Dati TPER" nell'header
 
 **Come usare:**
+
 1. Vai su **Centro Mobilità**
 2. Clicca **"🔄 Sincronizza Dati TPER"**
 3. Attendi il caricamento (~5 secondi)
@@ -44,16 +50,19 @@
 ### ✅ 3. ENDPOINT TPER IN INTEGRAZIONI
 
 **Novità:**
+
 - Nuova categoria "Mobilità" con 3 endpoint
 - Totale endpoint: 9 → 12
 - Totale categorie: 5 → 6
 
 **Endpoint disponibili:**
+
 1. `GET /api/trpc/mobility.list` - Lista dati mobilità dal database
 2. `GET /api/trpc/mobility.tper.stops` - Fermate TPER da API esterna (4,174 fermate)
 3. `POST /api/trpc/mobility.tper.sync` - Sincronizza TPER e salva nel database
 
 **Come usare:**
+
 1. Vai su **Integrazioni** → **API Dashboard**
 2. Cerca la categoria **"Mobilità"**
 3. Testa gli endpoint cliccando **"Test Endpoint"**
@@ -104,12 +113,12 @@ drizzle/
 export const mobilityData = pgTable("mobility_data", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   marketId: integer("market_id").references(() => markets.id),
-  type: varchar("type", { length: 50 }).notNull(),      // 'bus', 'tram', 'parking'
+  type: varchar("type", { length: 50 }).notNull(), // 'bus', 'tram', 'parking'
   lineNumber: varchar("line_number", { length: 20 }),
   lineName: varchar("line_name", { length: 255 }),
   stopName: varchar("stop_name", { length: 255 }),
-  lat: varchar("lat", { length: 20 }),                  // ⚠️ VARCHAR!
-  lng: varchar("lng", { length: 20 }),                  // ⚠️ VARCHAR!
+  lat: varchar("lat", { length: 20 }), // ⚠️ VARCHAR!
+  lng: varchar("lng", { length: 20 }), // ⚠️ VARCHAR!
   status: varchar("status", { length: 50 }).default("active"),
   occupancy: integer("occupancy"),
   availableSpots: integer("available_spots"),
@@ -131,11 +140,13 @@ export const mobilityData = pgTable("mobility_data", {
 **URL:** `https://opendata.comune.bologna.it/api/explore/v2.1/catalog/datasets/tper-fermate-autobus/records`
 
 **Parametri:**
+
 - `limit`: 5000 (tutte le fermate)
 - `where`: `comune="BOLOGNA"`
 - `select`: `codice,codice_linea,denominazione,ubicazione,comune,geopoint,quartiere`
 
 **Esempio risposta:**
+
 ```json
 {
   "total_count": 4174,
@@ -164,21 +175,21 @@ export const mobilityData = pgTable("mobility_data", {
 export async function syncTPERData() {
   // 1. Recupera tutte le fermate da Open Data Bologna
   const stops = await getTPERStops();
-  
+
   // 2. Converte in formato mobility_data
   const mobilityData = stops.map(stop => ({
-    type: 'bus',
+    type: "bus",
     lineNumber: stop.lineCode,
     lineName: `Linea ${stop.lineCode}`,
     stopName: stop.name,
-    lat: stop.lat.toString(),  // ⚠️ Conversione in stringa!
-    lng: stop.lng.toString(),  // ⚠️ Conversione in stringa!
-    status: 'active',
+    lat: stop.lat.toString(), // ⚠️ Conversione in stringa!
+    lng: stop.lng.toString(), // ⚠️ Conversione in stringa!
+    status: "active",
     nextArrival: null,
     occupancy: null,
-    updatedAt: new Date()
+    updatedAt: new Date(),
   }));
-  
+
   return mobilityData;
 }
 ```
@@ -194,12 +205,12 @@ export async function syncTPERData() {
 
 ### Commit Recenti
 
-| Commit | Descrizione |
-|--------|-------------|
-| `40acb80` | Load all 4174 TPER stops without Hello Bus |
-| `f830233` | Convert lat/lng to string in TPER sync |
-| `aad1683` | Add Sync TPER button in Centro Mobilità |
-| `8f7bbc1` | Add TPER/Mobility endpoints |
+| Commit    | Descrizione                                     |
+| --------- | ----------------------------------------------- |
+| `40acb80` | Load all 4174 TPER stops without Hello Bus      |
+| `f830233` | Convert lat/lng to string in TPER sync          |
+| `aad1683` | Add Sync TPER button in Centro Mobilità         |
+| `8f7bbc1` | Add TPER/Mobility endpoints                     |
 | `40a0cd4` | Add stall ID + global Confirm Assignment button |
 
 ### Vercel

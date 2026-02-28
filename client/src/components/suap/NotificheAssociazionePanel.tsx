@@ -12,17 +12,28 @@
  *   PUT /api/associazioni/:id/notifiche/:notificaId/letta → segna come letta
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
-  Bell, Mail, MailOpen, CheckCircle, XCircle, AlertTriangle,
-  MessageSquare, RefreshCw, Loader2, Eye
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { getImpersonationParams, authenticatedFetch } from '@/hooks/useImpersonation';
-import { MIHUB_API_BASE_URL } from '@/config/api';
-import { formatDateTime as formatDate } from '@/lib/formatUtils';
+  Bell,
+  Mail,
+  MailOpen,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  MessageSquare,
+  RefreshCw,
+  Loader2,
+  Eye,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  getImpersonationParams,
+  authenticatedFetch,
+} from "@/hooks/useImpersonation";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { formatDateTime as formatDate } from "@/lib/formatUtils";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -30,28 +41,55 @@ interface NotificaAssociazione {
   id: number;
   associazione_id: number;
   pratica_id?: number;
-  tipo: 'CONCESSIONE_EMESSA' | 'REGOLARIZZAZIONE_RICHIESTA' | 'PRATICA_RIFIUTATA' | 'MESSAGGIO';
+  tipo:
+    | "CONCESSIONE_EMESSA"
+    | "REGOLARIZZAZIONE_RICHIESTA"
+    | "PRATICA_RIFIUTATA"
+    | "MESSAGGIO";
   oggetto: string;
   messaggio: string;
   letta: boolean;
   created_at: string;
 }
 
-const TIPO_CONFIG: Record<string, { icon: typeof CheckCircle; color: string; label: string }> = {
-  CONCESSIONE_EMESSA: { icon: CheckCircle, color: 'text-green-400', label: 'Concessione Emessa' },
-  REGOLARIZZAZIONE_RICHIESTA: { icon: AlertTriangle, color: 'text-yellow-400', label: 'Regolarizzazione Richiesta' },
-  PRATICA_RIFIUTATA: { icon: XCircle, color: 'text-red-400', label: 'Pratica Rifiutata' },
-  MESSAGGIO: { icon: MessageSquare, color: 'text-blue-400', label: 'Messaggio' },
+const TIPO_CONFIG: Record<
+  string,
+  { icon: typeof CheckCircle; color: string; label: string }
+> = {
+  CONCESSIONE_EMESSA: {
+    icon: CheckCircle,
+    color: "text-green-400",
+    label: "Concessione Emessa",
+  },
+  REGOLARIZZAZIONE_RICHIESTA: {
+    icon: AlertTriangle,
+    color: "text-yellow-400",
+    label: "Regolarizzazione Richiesta",
+  },
+  PRATICA_RIFIUTATA: {
+    icon: XCircle,
+    color: "text-red-400",
+    label: "Pratica Rifiutata",
+  },
+  MESSAGGIO: {
+    icon: MessageSquare,
+    color: "text-blue-400",
+    label: "Messaggio",
+  },
 };
 
 interface NotificheAssociazionePanelProps {
   onNotificheUpdate?: () => void;
 }
 
-export default function NotificheAssociazionePanel({ onNotificheUpdate }: NotificheAssociazionePanelProps) {
+export default function NotificheAssociazionePanel({
+  onNotificheUpdate,
+}: NotificheAssociazionePanelProps) {
   const [notifiche, setNotifiche] = useState<NotificaAssociazione[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'tutte' | 'non_lette' | 'lette'>('tutte');
+  const [filter, setFilter] = useState<"tutte" | "non_lette" | "lette">(
+    "tutte"
+  );
 
   const { associazioneId } = getImpersonationParams();
 
@@ -59,7 +97,9 @@ export default function NotificheAssociazionePanel({ onNotificheUpdate }: Notifi
     if (!associazioneId) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/notifiche`);
+      const res = await fetch(
+        `${API_BASE_URL}/api/associazioni/${associazioneId}/notifiche`
+      );
       const data = await res.json();
       if (data.success && data.data) {
         setNotifiche(data.data);
@@ -67,7 +107,7 @@ export default function NotificheAssociazionePanel({ onNotificheUpdate }: Notifi
         setNotifiche([]);
       }
     } catch (error) {
-      console.error('Errore caricamento notifiche associazione:', error);
+      console.error("Errore caricamento notifiche associazione:", error);
       setNotifiche([]);
     } finally {
       setLoading(false);
@@ -81,36 +121,42 @@ export default function NotificheAssociazionePanel({ onNotificheUpdate }: Notifi
   const markAsRead = async (notificaId: number) => {
     if (!associazioneId) return;
     try {
-      await authenticatedFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/notifiche/${notificaId}/letta`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      setNotifiche(prev => prev.map(n =>
-        n.id === notificaId ? { ...n, letta: true } : n
-      ));
+      await authenticatedFetch(
+        `${API_BASE_URL}/api/associazioni/${associazioneId}/notifiche/${notificaId}/letta`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      setNotifiche(prev =>
+        prev.map(n => (n.id === notificaId ? { ...n, letta: true } : n))
+      );
       onNotificheUpdate?.();
     } catch (error) {
-      console.error('Errore marcatura notifica:', error);
+      console.error("Errore marcatura notifica:", error);
     }
   };
 
   const markAllAsRead = async () => {
     if (!associazioneId) return;
     try {
-      await authenticatedFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/notifiche/lette-tutte`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      await authenticatedFetch(
+        `${API_BASE_URL}/api/associazioni/${associazioneId}/notifiche/lette-tutte`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
       setNotifiche(prev => prev.map(n => ({ ...n, letta: true })));
       onNotificheUpdate?.();
     } catch (error) {
-      console.error('Errore marcatura tutte notifiche:', error);
+      console.error("Errore marcatura tutte notifiche:", error);
     }
   };
 
   const filteredNotifiche = notifiche.filter(n => {
-    if (filter === 'non_lette') return !n.letta;
-    if (filter === 'lette') return n.letta;
+    if (filter === "non_lette") return !n.letta;
+    if (filter === "lette") return n.letta;
     return true;
   });
 
@@ -136,7 +182,9 @@ export default function NotificheAssociazionePanel({ onNotificheUpdate }: Notifi
             Notifiche SUAP
           </h3>
           {nonLetteCount > 0 && (
-            <Badge className="bg-red-500 text-white">{nonLetteCount} non lette</Badge>
+            <Badge className="bg-red-500 text-white">
+              {nonLetteCount} non lette
+            </Badge>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -164,20 +212,27 @@ export default function NotificheAssociazionePanel({ onNotificheUpdate }: Notifi
 
       {/* Filtri */}
       <div className="flex gap-2">
-        {(['tutte', 'non_lette', 'lette'] as const).map(f => (
+        {(["tutte", "non_lette", "lette"] as const).map(f => (
           <Button
             key={f}
-            variant={filter === f ? 'default' : 'outline'}
+            variant={filter === f ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter(f)}
-            className={filter === f
-              ? 'bg-blue-500/20 text-blue-400 border-blue-500/50'
-              : 'border-[#334155] text-[#e8fbff]/60'
+            className={
+              filter === f
+                ? "bg-blue-500/20 text-blue-400 border-blue-500/50"
+                : "border-[#334155] text-[#e8fbff]/60"
             }
           >
-            {f === 'tutte' ? 'Tutte' : f === 'non_lette' ? 'Non lette' : 'Lette'}
-            {f === 'non_lette' && nonLetteCount > 0 && (
-              <Badge className="ml-1 bg-red-500 text-white text-xs px-1">{nonLetteCount}</Badge>
+            {f === "tutte"
+              ? "Tutte"
+              : f === "non_lette"
+                ? "Non lette"
+                : "Lette"}
+            {f === "non_lette" && nonLetteCount > 0 && (
+              <Badge className="ml-1 bg-red-500 text-white text-xs px-1">
+                {nonLetteCount}
+              </Badge>
             )}
           </Button>
         ))}
@@ -192,7 +247,12 @@ export default function NotificheAssociazionePanel({ onNotificheUpdate }: Notifi
         <Card className="bg-[#1a2332] border-[#334155]">
           <CardContent className="flex flex-col items-center justify-center h-32 text-[#e8fbff]/50">
             <Bell className="h-8 w-8 mb-2 opacity-40" />
-            <p>Nessuna notifica {filter !== 'tutte' ? `(${filter === 'non_lette' ? 'non letta' : 'letta'})` : ''}</p>
+            <p>
+              Nessuna notifica{" "}
+              {filter !== "tutte"
+                ? `(${filter === "non_lette" ? "non letta" : "letta"})`
+                : ""}
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -203,25 +263,35 @@ export default function NotificheAssociazionePanel({ onNotificheUpdate }: Notifi
             return (
               <Card
                 key={notifica.id}
-                className={`bg-[#1a2332] border-[#334155] ${!notifica.letta ? 'border-l-4 border-l-blue-500' : ''}`}
+                className={`bg-[#1a2332] border-[#334155] ${!notifica.letta ? "border-l-4 border-l-blue-500" : ""}`}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
                       <div className={`mt-0.5 ${config.color}`}>
-                        {notifica.letta ? <MailOpen className="h-5 w-5" /> : <Mail className="h-5 w-5" />}
+                        {notifica.letta ? (
+                          <MailOpen className="h-5 w-5" />
+                        ) : (
+                          <Mail className="h-5 w-5" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge className={`${config.color} bg-transparent border ${config.color.replace('text-', 'border-')}/30 text-xs`}>
+                          <Badge
+                            className={`${config.color} bg-transparent border ${config.color.replace("text-", "border-")}/30 text-xs`}
+                          >
                             <Icon className="h-3 w-3 mr-1" />
                             {config.label}
                           </Badge>
                           {notifica.pratica_id && (
-                            <span className="text-xs text-[#e8fbff]/40">Pratica #{notifica.pratica_id}</span>
+                            <span className="text-xs text-[#e8fbff]/40">
+                              Pratica #{notifica.pratica_id}
+                            </span>
                           )}
                         </div>
-                        <p className={`text-sm font-medium ${!notifica.letta ? 'text-[#e8fbff]' : 'text-[#e8fbff]/70'}`}>
+                        <p
+                          className={`text-sm font-medium ${!notifica.letta ? "text-[#e8fbff]" : "text-[#e8fbff]/70"}`}
+                        >
                           {notifica.oggetto}
                         </p>
                         <p className="text-xs text-[#e8fbff]/50 mt-1 line-clamp-2">

@@ -1,11 +1,13 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from "react";
 
 interface AnimationContextType {
   isAnimating: boolean;
   setAnimating: (animating: boolean) => void;
 }
 
-const AnimationContext = createContext<AnimationContextType | undefined>(undefined);
+const AnimationContext = createContext<AnimationContextType | undefined>(
+  undefined
+);
 
 export function AnimationProvider({ children }: { children: React.ReactNode }) {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -24,7 +26,7 @@ export function AnimationProvider({ children }: { children: React.ReactNode }) {
 export function useAnimation() {
   const context = useContext(AnimationContext);
   if (context === undefined) {
-    throw new Error('useAnimation must be used within an AnimationProvider');
+    throw new Error("useAnimation must be used within an AnimationProvider");
   }
   return context;
 }

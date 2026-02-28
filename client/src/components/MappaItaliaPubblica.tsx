@@ -1,48 +1,61 @@
 /**
  * MappaItaliaPubblica.tsx
  * Versione PUBBLICA semplificata del componente Mappa Italia
- * 
+ *
  * DIFFERENZE dalla versione admin (MappaItaliaComponent.tsx):
  * - NO tab Anagrafica (dati sensibili del mercato)
  * - NO tab Imprese/Concessioni (dati sensibili delle imprese)
  * - NO editing posteggi (solo visualizzazione)
  * - NO scheda impresa dettagliata
  * - NO pulsante Spunta per assegnazioni
- * 
+ *
  * MANTIENE:
  * - Mappa interattiva con zoom Italia/Mercato
  * - Lista mercati con ricerca
  * - Statistiche posteggi (occupati/liberi/riservati)
  * - Lista posteggi in sola lettura
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  MapPin, 
+import {
+  MapPin,
   Building2,
   Loader2,
   X,
   Maximize2,
   Minimize2,
-  Send
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MarketMapComponent } from './MarketMapComponent';
-import { getStallStatusLabel, getStallStatusClasses } from '@/lib/stallStatus';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { MarketMapComponent } from "./MarketMapComponent";
+import { getStallStatusLabel, getStallStatusClasses } from "@/lib/stallStatus";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-import { MIHUB_API_BASE_URL } from '@/config/api';
-import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
 // Fix per icone marker Leaflet
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
 const DefaultIcon = L.icon({
   iconUrl: icon,
@@ -96,11 +109,13 @@ interface MarketMapData {
  * Componente Mappa Italia Pubblica
  * Versione semplificata per utenti pubblici
  */
-export default function MappaItaliaPubblica({ preselectedMarketId }: { preselectedMarketId?: number } = {}) {
+export default function MappaItaliaPubblica({
+  preselectedMarketId,
+}: { preselectedMarketId?: number } = {}) {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchMarkets();
@@ -118,7 +133,9 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
 
   const fetchMarkets = async () => {
     try {
-     const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets`));
+      const response = await fetch(
+        addComuneIdToUrl(`${API_BASE_URL}/api/markets`)
+      );
       const data = await response.json();
       if (data.success) {
         setMarkets(data.data);
@@ -127,8 +144,8 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
         }
       }
     } catch (error) {
-      console.error('Error fetching markets:', error);
-      toast.error('Errore nel caricamento dei mercati');
+      console.error("Error fetching markets:", error);
+      toast.error("Errore nel caricamento dei mercati");
     } finally {
       setLoading(false);
     }
@@ -156,9 +173,10 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
   }
 
   // Filtra mercati in base alla ricerca
-  const filteredMarkets = markets.filter(market => 
-    market.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    market.municipality.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMarkets = markets.filter(
+    market =>
+      market.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      market.municipality.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -170,7 +188,7 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
             type="text"
             placeholder="Cerca mercato per nome o città..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="w-full px-4 py-2 pl-10 pr-12 bg-[#0b1220]/50 border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder:text-[#e8fbff]/50 focus:outline-none focus:border-[#14b8a6] focus:ring-2 focus:ring-[#14b8a6]/20"
           />
           <svg
@@ -194,7 +212,7 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setSearchQuery('')}
+            onClick={() => setSearchQuery("")}
             className="bg-[#0b1220]/50 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
           >
             <X className="h-4 w-4 mr-1" />
@@ -206,17 +224,20 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
       {/* Risultati Ricerca */}
       {searchQuery && (
         <div className="text-sm text-[#e8fbff]/70">
-          {filteredMarkets.length} {filteredMarkets.length === 1 ? 'mercato trovato' : 'mercati trovati'}
+          {filteredMarkets.length}{" "}
+          {filteredMarkets.length === 1 ? "mercato trovato" : "mercati trovati"}
         </div>
       )}
 
       {/* Lista Mercati */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredMarkets.map((market) => (
-          <Card 
-            key={market.id} 
+        {filteredMarkets.map(market => (
+          <Card
+            key={market.id}
             className={`cursor-pointer transition-all bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 hover:border-[#14b8a6] ${
-              selectedMarket?.id === market.id ? 'border-[#14b8a6] ring-2 ring-[#14b8a6]/50' : ''
+              selectedMarket?.id === market.id
+                ? "border-[#14b8a6] ring-2 ring-[#14b8a6]/50"
+                : ""
             }`}
             onClick={() => setSelectedMarket(market)}
           >
@@ -225,19 +246,27 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
                 <Building2 className="h-5 w-5 text-[#14b8a6]" />
                 {market.name}
               </CardTitle>
-              <CardDescription className="text-[#e8fbff]/70">{market.municipality}</CardDescription>
+              <CardDescription className="text-[#e8fbff]/70">
+                {market.municipality}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#e8fbff]/70">Codice</span>
-                  <Badge variant="secondary" className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30">
+                  <Badge
+                    variant="secondary"
+                    className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30"
+                  >
                     {market.code}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#e8fbff]/70">Posteggi Totali</span>
-                  <Badge variant="secondary" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
+                  <Badge
+                    variant="secondary"
+                    className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30"
+                  >
                     {market.total_stalls}
                   </Badge>
                 </div>
@@ -247,13 +276,15 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#e8fbff]/70">Stato</span>
-                  <Badge 
-                    variant="default" 
-                    className={market.status === 'active' 
-                      ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30" 
-                      : "bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30"}
+                  <Badge
+                    variant="default"
+                    className={
+                      market.status === "active"
+                        ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30"
+                        : "bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30"
+                    }
                   >
-                    {market.status === 'active' ? "Attivo" : "Inattivo"}
+                    {market.status === "active" ? "Attivo" : "Inattivo"}
                   </Badge>
                 </div>
               </div>
@@ -264,10 +295,10 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
 
       {/* Dettaglio Mercato Selezionato */}
       {selectedMarket && (
-        <MarketDetailPubblica 
-          market={selectedMarket} 
-          allMarkets={markets} 
-          onMarketChange={(marketId) => {
+        <MarketDetailPubblica
+          market={selectedMarket}
+          allMarkets={markets}
+          onMarketChange={marketId => {
             const newMarket = markets.find(m => m.id === marketId);
             if (newMarket) {
               setSelectedMarket(newMarket);
@@ -282,37 +313,54 @@ export default function MappaItaliaPubblica({ preselectedMarketId }: { preselect
 /**
  * Dettaglio mercato PUBBLICO - solo mappa e statistiche
  */
-function MarketDetailPubblica({ market, allMarkets, onMarketChange }: { market: Market; allMarkets: Market[]; onMarketChange?: (marketId: number) => void }) {
+function MarketDetailPubblica({
+  market,
+  allMarkets,
+  onMarketChange,
+}: {
+  market: Market;
+  allMarkets: Market[];
+  onMarketChange?: (marketId: number) => void;
+}) {
   const [stalls, setStalls] = useState<Stall[]>([]);
-  const [viewMode, setViewMode] = useState<'italia' | 'mercato'>('italia');
+  const [viewMode, setViewMode] = useState<"italia" | "mercato">("italia");
   const [viewTrigger, setViewTrigger] = useState(0);
 
   // Reset stato e carica i posteggi quando cambia il mercato
   useEffect(() => {
     // NON resettare viewMode qui - lasciamo che sia 'mercato' dopo il click sul marker
     setStalls([]);
-    
+
     const fetchStalls = async () => {
       try {
-        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/stalls`));
+        const response = await fetch(
+          addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/stalls`)
+        );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const json = await response.json();
         if (json.success && Array.isArray(json.data)) {
           setStalls(json.data);
         }
       } catch (error) {
-        console.error('[MarketDetailPubblica] Errore caricamento posteggi:', error);
+        console.error(
+          "[MarketDetailPubblica] Errore caricamento posteggi:",
+          error
+        );
       }
     };
-    
+
     fetchStalls();
   }, [market.id]);
 
   return (
     <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
       <CardHeader>
-        <CardTitle className="text-[#e8fbff]">Dettaglio: {market.name}</CardTitle>
-        <CardDescription className="text-[#e8fbff]/70">Esplora la mappa dei posteggi</CardDescription>
+        <CardTitle className="text-[#e8fbff]">
+          Dettaglio: {market.name}
+        </CardTitle>
+        <CardDescription className="text-[#e8fbff]/70">
+          Esplora la mappa dei posteggi
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {/* Pulsante Toggle Vista */}
@@ -321,26 +369,29 @@ function MarketDetailPubblica({ market, allMarkets, onMarketChange }: { market: 
             variant="outline"
             className="w-full bg-[#0b1220]/50 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
             onClick={() => {
-              setViewMode(prev => prev === 'italia' ? 'mercato' : 'italia');
+              setViewMode(prev => (prev === "italia" ? "mercato" : "italia"));
               setViewTrigger(prev => prev + 1);
             }}
           >
             <MapPin className="mr-2 h-4 w-4" />
-            {viewMode === 'italia' ? 'Vista Mercato' : 'Vista Italia'}
+            {viewMode === "italia" ? "Vista Mercato" : "Vista Italia"}
           </Button>
         </div>
 
         {/* Contenuto Mappa */}
-        <PosteggiTabPubblica 
-          marketId={market.id} 
-          marketCode={market.code} 
-          marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} 
-          stalls={stalls} 
-          setStalls={setStalls} 
-          allMarkets={allMarkets} 
-          viewMode={viewMode} 
-          setViewMode={setViewMode} 
-          viewTrigger={viewTrigger} 
+        <PosteggiTabPubblica
+          marketId={market.id}
+          marketCode={market.code}
+          marketCenter={[
+            parseFloat(market.latitude),
+            parseFloat(market.longitude),
+          ]}
+          stalls={stalls}
+          setStalls={setStalls}
+          allMarkets={allMarkets}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          viewTrigger={viewTrigger}
           setViewTrigger={setViewTrigger}
           onMarketChange={onMarketChange}
         />
@@ -352,28 +403,28 @@ function MarketDetailPubblica({ market, allMarkets, onMarketChange }: { market: 
 /**
  * Tab Posteggi PUBBLICO - solo visualizzazione, NO editing
  */
-function PosteggiTabPubblica({ 
-  marketId, 
-  marketCode, 
-  marketCenter, 
-  stalls, 
-  setStalls, 
-  allMarkets, 
-  viewMode, 
-  setViewMode, 
-  viewTrigger, 
+function PosteggiTabPubblica({
+  marketId,
+  marketCode,
+  marketCenter,
+  stalls,
+  setStalls,
+  allMarkets,
+  viewMode,
+  setViewMode,
+  viewTrigger,
   setViewTrigger,
-  onMarketChange
-}: { 
-  marketId: number; 
-  marketCode: string; 
-  marketCenter: [number, number]; 
-  stalls: Stall[]; 
-  setStalls: React.Dispatch<React.SetStateAction<Stall[]>>; 
-  allMarkets: Market[]; 
-  viewMode: 'italia' | 'mercato'; 
-  setViewMode: React.Dispatch<React.SetStateAction<'italia' | 'mercato'>>; 
-  viewTrigger: number; 
+  onMarketChange,
+}: {
+  marketId: number;
+  marketCode: string;
+  marketCenter: [number, number];
+  stalls: Stall[];
+  setStalls: React.Dispatch<React.SetStateAction<Stall[]>>;
+  allMarkets: Market[];
+  viewMode: "italia" | "mercato";
+  setViewMode: React.Dispatch<React.SetStateAction<"italia" | "mercato">>;
+  viewTrigger: number;
   setViewTrigger: React.Dispatch<React.SetStateAction<number>>;
   onMarketChange?: (marketId: number) => void;
 }) {
@@ -395,8 +446,12 @@ function PosteggiTabPubblica({
   const fetchData = async () => {
     try {
       const [stallsRes, mapRes] = await Promise.all([
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)),
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map/${marketId}`))
+        fetch(
+          addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)
+        ),
+        fetch(
+          addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map/${marketId}`)
+        ),
       ]);
 
       const stallsData = await stallsRes.json();
@@ -410,7 +465,7 @@ function PosteggiTabPubblica({
         // Se c'è un click marker pendente, triggera l'animazione ORA che i dati sono pronti
         if (pendingMarkerClickRef.current) {
           pendingMarkerClickRef.current = false;
-          setViewMode('mercato');
+          setViewMode("mercato");
           // Piccolo delay per assicurarsi che React abbia aggiornato lo stato
           setTimeout(() => {
             setViewTrigger(prev => prev + 1);
@@ -418,8 +473,8 @@ function PosteggiTabPubblica({
         }
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Errore nel caricamento dei dati');
+      console.error("Error fetching data:", error);
+      toast.error("Errore nel caricamento dei dati");
       pendingMarkerClickRef.current = false;
     } finally {
       setLoading(false);
@@ -439,9 +494,9 @@ function PosteggiTabPubblica({
   };
 
   // Calcola statistiche
-  const occupiedCount = stalls.filter(s => s.status === 'occupato').length;
-  const freeCount = stalls.filter(s => s.status === 'libero').length;
-  const reservedCount = stalls.filter(s => s.status === 'riservato').length;
+  const occupiedCount = stalls.filter(s => s.status === "occupato").length;
+  const freeCount = stalls.filter(s => s.status === "libero").length;
+  const reservedCount = stalls.filter(s => s.status === "riservato").length;
 
   // Mappa per lookup veloce
   const stallsByNumber = new Map(stalls.map(s => [s.number, s]));
@@ -464,7 +519,9 @@ function PosteggiTabPubblica({
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 p-4 rounded-lg">
           <div className="text-sm text-[#ef4444] mb-1">Occupati</div>
-          <div className="text-3xl font-bold text-[#ef4444]">{occupiedCount}</div>
+          <div className="text-3xl font-bold text-[#ef4444]">
+            {occupiedCount}
+          </div>
         </div>
         <div className="bg-[#10b981]/10 border border-[#10b981]/30 p-4 rounded-lg">
           <div className="text-sm text-[#10b981] mb-1">Liberi</div>
@@ -472,70 +529,91 @@ function PosteggiTabPubblica({
         </div>
         <div className="bg-[#f59e0b]/10 border border-[#f59e0b]/30 p-4 rounded-lg">
           <div className="text-sm text-[#f59e0b] mb-1">Riservati</div>
-          <div className="text-3xl font-bold text-[#f59e0b]">{reservedCount}</div>
+          <div className="text-3xl font-bold text-[#f59e0b]">
+            {reservedCount}
+          </div>
         </div>
       </div>
 
       {/* Mappa */}
-      <div className={`relative border border-[#14b8a6]/20 rounded-lg overflow-hidden ${isMapExpanded ? 'h-[850px]' : 'h-[600px]'}`}>
+      <div
+        className={`relative border border-[#14b8a6]/20 rounded-lg overflow-hidden ${isMapExpanded ? "h-[850px]" : "h-[600px]"}`}
+      >
         <Button
           size="sm"
           variant="outline"
           className="absolute top-2 right-2 z-[1000] bg-[#0b1220]/90 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
           onClick={() => setIsMapExpanded(!isMapExpanded)}
         >
-          {isMapExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          {isMapExpanded ? (
+            <Minimize2 className="h-4 w-4" />
+          ) : (
+            <Maximize2 className="h-4 w-4" />
+          )}
         </Button>
 
-        {mapData && (() => {
-          const stallsDataForMap = stalls.map(s => ({
-            id: s.id,
-            number: s.number,
-            status: s.status,
-            type: s.type,
-            vendor_name: s.vendor_business_name || undefined,
-            dimensions: s.dimensions
-          }));
-          return (
-            <MarketMapComponent
-              refreshKey={0}
-              mapData={mapData as any}
-              center={viewMode === 'mercato' ? marketCenter : [43.5, 12.5] as [number, number]}
-              zoom={viewMode === 'mercato' ? 17 : 6.3}
-              height="100%"
-              isSpuntaMode={false}
-              onStallClick={(stallNumber) => {
-                const dbStall = stallsByNumber.get(String(stallNumber));
-                if (dbStall) {
-                  setSelectedStallId(dbStall.id);
-                  setTimeout(() => {
-                    const row = document.querySelector(`[data-stall-id="${dbStall.id}"]`) as HTMLElement;
-                    if (row && listContainerRef.current) {
-                      const container = listContainerRef.current;
-                      const rowTop = row.offsetTop;
-                      const containerHeight = container.clientHeight;
-                      const rowHeight = row.clientHeight;
-                      const scrollTo = rowTop - (containerHeight / 2) + (rowHeight / 2);
-                      container.scrollTo({ top: scrollTo, behavior: 'smooth' });
-                    }
-                  }, 100);
+        {mapData &&
+          (() => {
+            const stallsDataForMap = stalls.map(s => ({
+              id: s.id,
+              number: s.number,
+              status: s.status,
+              type: s.type,
+              vendor_name: s.vendor_business_name || undefined,
+              dimensions: s.dimensions,
+            }));
+            return (
+              <MarketMapComponent
+                refreshKey={0}
+                mapData={mapData as any}
+                center={
+                  viewMode === "mercato"
+                    ? marketCenter
+                    : ([43.5, 12.5] as [number, number])
                 }
-              }}
-              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
-              stallsData={stallsDataForMap}
-              allMarkets={allMarkets.map(m => ({
-                id: m.id,
-                name: m.name,
-                latitude: parseFloat(m.latitude),
-                longitude: parseFloat(m.longitude)
-              }))}
-              showItalyView={viewMode === 'italia'}
-              viewTrigger={viewTrigger}
-              marketCenterFixed={marketCenter}
-              onMarketClick={handleMarkerClick}
-            />
-          );
-        })()}
+                zoom={viewMode === "mercato" ? 17 : 6.3}
+                height="100%"
+                isSpuntaMode={false}
+                onStallClick={stallNumber => {
+                  const dbStall = stallsByNumber.get(String(stallNumber));
+                  if (dbStall) {
+                    setSelectedStallId(dbStall.id);
+                    setTimeout(() => {
+                      const row = document.querySelector(
+                        `[data-stall-id="${dbStall.id}"]`
+                      ) as HTMLElement;
+                      if (row && listContainerRef.current) {
+                        const container = listContainerRef.current;
+                        const rowTop = row.offsetTop;
+                        const containerHeight = container.clientHeight;
+                        const rowHeight = row.clientHeight;
+                        const scrollTo =
+                          rowTop - containerHeight / 2 + rowHeight / 2;
+                        container.scrollTo({
+                          top: scrollTo,
+                          behavior: "smooth",
+                        });
+                      }
+                    }, 100);
+                  }
+                }}
+                selectedStallNumber={
+                  stalls.find(s => s.id === selectedStallId)?.number
+                }
+                stallsData={stallsDataForMap}
+                allMarkets={allMarkets.map(m => ({
+                  id: m.id,
+                  name: m.name,
+                  latitude: parseFloat(m.latitude),
+                  longitude: parseFloat(m.longitude),
+                }))}
+                showItalyView={viewMode === "italia"}
+                viewTrigger={viewTrigger}
+                marketCenterFixed={marketCenter}
+                onMarketClick={handleMarkerClick}
+              />
+            );
+          })()}
       </div>
 
       {/* Lista Posteggi rimossa - i posteggi sono cliccabili direttamente sulla mappa */}

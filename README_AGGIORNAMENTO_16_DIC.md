@@ -26,6 +26,7 @@ MIO-HUB è un sistema completo per la gestione digitale dei mercati ambulanti it
 ### Stack Tecnologico
 
 #### Frontend
+
 - **Framework:** React 18 + TypeScript
 - **Build:** Vite 5
 - **Styling:** TailwindCSS 3
@@ -35,6 +36,7 @@ MIO-HUB è un sistema completo per la gestione digitale dei mercati ambulanti it
 - **Deploy:** Vercel
 
 #### Backend
+
 - **Runtime:** Node.js 22
 - **Framework:** Express.js
 - **Database:** PostgreSQL (Neon)
@@ -43,6 +45,7 @@ MIO-HUB è un sistema completo per la gestione digitale dei mercati ambulanti it
 - **Server:** Hetzner Cloud (Ubuntu 22.04)
 
 #### Servizi Esterni
+
 - **Routing:** OpenRouteService
 - **Storage:** Manus Storage Proxy
 - **Maps:** OpenStreetMap / Leaflet
@@ -58,6 +61,7 @@ MIO-HUB è un sistema completo per la gestione digitale dei mercati ambulanti it
 **Status:** ✅ Funzionante (Upload immagini da completare)
 
 #### Database Schema
+
 ```sql
 -- Tabella imprese (già esistente, campi aggiunti)
 ALTER TABLE imprese ADD COLUMN IF NOT EXISTS
@@ -72,17 +76,20 @@ ALTER TABLE imprese ADD COLUMN IF NOT EXISTS
 ```
 
 #### API Endpoints
-| Endpoint | Metodo | Descrizione | Status |
-|----------|--------|-------------|--------|
-| `/api/imprese/:id/vetrina` | PUT | Aggiorna descrizione e social | ✅ |
-| `/api/imprese/:id/vetrina/upload` | POST | Upload immagine | 🚧 |
-| `/api/imprese/:id/vetrina/gallery/:index` | DELETE | Rimuovi immagine | 🚧 |
+
+| Endpoint                                  | Metodo | Descrizione                   | Status |
+| ----------------------------------------- | ------ | ----------------------------- | ------ |
+| `/api/imprese/:id/vetrina`                | PUT    | Aggiorna descrizione e social | ✅     |
+| `/api/imprese/:id/vetrina/upload`         | POST   | Upload immagine               | 🚧     |
+| `/api/imprese/:id/vetrina/gallery/:index` | DELETE | Rimuovi immagine              | 🚧     |
 
 #### Frontend Components
+
 - `VetrinePage.tsx` - Pagina vetrina pubblica + modal modifica
 - `VetrinaEditModal` - Form gestione vetrina (inline in VetrinePage)
 
 #### Flusso Utente
+
 ```
 1. Mappa Mercati → Click Posteggio
 2. Popup → "Visita Vetrina"
@@ -97,6 +104,7 @@ ALTER TABLE imprese ADD COLUMN IF NOT EXISTS
 ```
 
 #### File Principali
+
 - Backend: `/root/mihub-backend-rest/routes/imprese.js`
 - Frontend: `/client/src/pages/VetrinePage.tsx`
 - Migration: `/root/mihub-backend-rest/migrations/012_add_vetrina_fields_to_imprese.sql`
@@ -109,6 +117,7 @@ ALTER TABLE imprese ADD COLUMN IF NOT EXISTS
 **Status:** ✅ Funzionante (API key OpenRouteService da configurare)
 
 #### Database Schema
+
 ```sql
 -- Tabella stalls (coordinate posteggi)
 ALTER TABLE stalls ADD COLUMN IF NOT EXISTS
@@ -123,21 +132,24 @@ ALTER TABLE stalls ADD COLUMN IF NOT EXISTS
 ```
 
 #### API Endpoints
-| Endpoint | Metodo | Descrizione | Status |
-|----------|--------|-------------|--------|
-| `/api/routing/calculate` | POST | Calcola percorso ottimizzato | ✅ |
-| `/api/routing/tpl-stops` | GET | Fermate TPL vicine | ✅ |
+
+| Endpoint                 | Metodo | Descrizione                  | Status |
+| ------------------------ | ------ | ---------------------------- | ------ |
+| `/api/routing/calculate` | POST   | Calcola percorso ottimizzato | ✅     |
+| `/api/routing/tpl-stops` | GET    | Fermate TPL vicine           | ✅     |
 
 **Esempio Request `/api/routing/calculate`:**
+
 ```json
 {
-  "start": {"lat": 42.76, "lng": 11.11},
-  "destination": {"stallId": 1},
+  "start": { "lat": 42.76, "lng": 11.11 },
+  "destination": { "stallId": 1 },
   "mode": "walking"
 }
 ```
 
 **Esempio Response:**
+
 ```json
 {
   "success": true,
@@ -159,11 +171,13 @@ ALTER TABLE stalls ADD COLUMN IF NOT EXISTS
 ```
 
 #### Frontend Components
+
 - `RoutePage.tsx` - Pianificazione percorso
 - `RouteResult` - Visualizzazione risultati (inline)
 - `RouteMap` - Mappa interattiva (inline)
 
 #### Flusso Utente
+
 ```
 1. Vetrina → Click "Come Arrivare"
 2. Shopping Route (coordinate pre-compilate)
@@ -178,21 +192,24 @@ ALTER TABLE stalls ADD COLUMN IF NOT EXISTS
 ```
 
 #### Modalità Trasporto
+
 - 🚶 **Walking** - A piedi (default)
 - 🚴 **Cycling** - In bicicletta
 - 🚌 **Bus** - Trasporto pubblico
 - 🚗 **Driving** - Auto (0 crediti)
 
 #### Calcolo CO₂ e Crediti
+
 ```javascript
 // CO₂ risparmiata (grammi)
-co2_saved = distance_km * 194  // 194g/km auto media
+co2_saved = distance_km * 194; // 194g/km auto media
 
 // Crediti guadagnati
-credits = Math.floor(co2_saved / 20)  // 1 credito ogni 20g CO₂
+credits = Math.floor(co2_saved / 20); // 1 credito ogni 20g CO₂
 ```
 
 #### File Principali
+
 - Backend Service: `/root/mihub-backend-rest/services/routingService.js`
 - Backend Routes: `/root/mihub-backend-rest/routes/routing.js`
 - Frontend: `/client/src/pages/RoutePage.tsx`
@@ -204,17 +221,20 @@ credits = Math.floor(co2_saved / 20)  // 1 credito ogni 20g CO₂
 ## 🌐 DOMINI E DEPLOYMENT
 
 ### Produzione
+
 - **Frontend:** https://dms-hub-app-new.vercel.app
 - **Backend API:** https://api.mio-hub.me
 - **Orchestratore:** https://orchestratore.mio-hub.me
 
 ### Server Hetzner
+
 - **IP:** 157.90.29.66
 - **OS:** Ubuntu 22.04
 - **PM2:** mihub-backend (porta 3000)
 - **Database:** Neon PostgreSQL (cloud)
 
 ### Repository GitHub
+
 - **Frontend:** https://github.com/Chcndr/dms-hub-app-new
 - **Backend:** https://github.com/Chcndr/mihub-backend-rest
 - **API Index:** https://github.com/Chcndr/MIO-hub
@@ -226,6 +246,7 @@ credits = Math.floor(co2_saved / 20)  // 1 credito ogni 20g CO₂
 ### Variabili d'Ambiente
 
 #### Backend (.env)
+
 ```bash
 # Database
 DATABASE_URL=postgresql://neondb_owner:***@ep-bold-silence-adftsojg-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
@@ -242,6 +263,7 @@ NODE_ENV=production
 ```
 
 #### Frontend (.env.production)
+
 ```bash
 VITE_API_URL=https://api.mio-hub.me
 VITE_TRPC_URL=https://api.mio-hub.me
@@ -254,6 +276,7 @@ VITE_TRPC_URL=https://api.mio-hub.me
 ### Tabelle Principali
 
 #### markets
+
 ```sql
 CREATE TABLE markets (
   id SERIAL PRIMARY KEY,
@@ -267,6 +290,7 @@ CREATE TABLE markets (
 ```
 
 #### stalls
+
 ```sql
 CREATE TABLE stalls (
   id SERIAL PRIMARY KEY,
@@ -289,6 +313,7 @@ CREATE TABLE stalls (
 ```
 
 #### imprese
+
 ```sql
 CREATE TABLE imprese (
   id SERIAL PRIMARY KEY,
@@ -314,6 +339,7 @@ CREATE TABLE imprese (
 ## 🧪 TESTING
 
 ### Backend API Tests
+
 ```bash
 # Test routing calculate
 curl -X POST https://api.mio-hub.me/api/routing/calculate \
@@ -337,6 +363,7 @@ curl -X PUT https://api.mio-hub.me/api/imprese/18/vetrina \
 ```
 
 ### Frontend E2E Flow
+
 1. Navigare a https://dms-hub-app-new.vercel.app/dashboard-pa
 2. Click mappa → Posteggio #1
 3. Click "Visita Vetrina"
@@ -352,12 +379,14 @@ curl -X PUT https://api.mio-hub.me/api/imprese/18/vetrina \
 ## 📈 METRICHE E KPI
 
 ### Performance
+
 - API Response Time: <500ms (media)
 - Database Query Time: <10ms (media)
 - Frontend Load Time: <2s (First Contentful Paint)
 - Test Coverage: 100% backend, 80% frontend
 
 ### Utilizzo
+
 - Mercati attivi: 1 (Grosseto)
 - Posteggi mappati: 182
 - Posteggi con GPS: 159
@@ -369,24 +398,28 @@ curl -X PUT https://api.mio-hub.me/api/imprese/18/vetrina \
 ## 🔮 ROADMAP
 
 ### v3.6 (Gennaio 2025)
+
 - [ ] Upload immagini vetrina (Manus Storage)
 - [ ] Autenticazione commercianti
 - [ ] OpenRouteService API key reale
 - [ ] Test utenti reali
 
 ### v4.0 (Febbraio 2025)
+
 - [ ] E-commerce base (carrello + checkout)
 - [ ] Sistema pagamenti (Stripe)
 - [ ] Notifiche push
 - [ ] App mobile (React Native)
 
 ### v4.5 (Marzo 2025)
+
 - [ ] Gamification avanzata
 - [ ] Classifiche utenti
 - [ ] Badge e premi
 - [ ] Integrazione social
 
 ### v5.0 (Aprile 2025)
+
 - [ ] AI chatbot assistente
 - [ ] Raccomandazioni personalizzate
 - [ ] Analytics avanzati
@@ -397,6 +430,7 @@ curl -X PUT https://api.mio-hub.me/api/imprese/18/vetrina \
 ## 📚 DOCUMENTAZIONE AGGIUNTIVA
 
 ### File Disponibili
+
 1. `README_FASE5_VETRINE.md` - Blueprint vetrine digitali
 2. `README_SHOPPING_ROUTE.md` - Blueprint shopping route
 3. `REPORT_FINALE_COMPLETO_16_DIC.md` - Report esecutivo
@@ -404,6 +438,7 @@ curl -X PUT https://api.mio-hub.me/api/imprese/18/vetrina \
 5. `REPORT_FIX_MAPPA_POSTEGGI.md` - Fix mappa (storico)
 
 ### Link Utili
+
 - Dashboard PA: https://dms-hub-app-new.vercel.app/dashboard-pa
 - Vetrina Test: https://dms-hub-app-new.vercel.app/vetrine/18
 - Shopping Route: https://dms-hub-app-new.vercel.app/route

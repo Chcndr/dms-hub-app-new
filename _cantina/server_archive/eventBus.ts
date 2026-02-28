@@ -20,12 +20,14 @@ export interface SystemEvent {
 /**
  * Emette un evento nel sistema
  */
-export async function emitEvent(event: Omit<SystemEvent, "eventId">): Promise<string> {
+export async function emitEvent(
+  event: Omit<SystemEvent, "eventId">
+): Promise<string> {
   const eventId = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   await db.insert(systemEvents).values({
     eventId,
     eventType: event.eventType,
@@ -36,8 +38,10 @@ export async function emitEvent(event: Omit<SystemEvent, "eventId">): Promise<st
     processed: false,
   });
 
-  console.log(`[EventBus] Event emitted: ${event.eventType} from ${event.source}`);
-  
+  console.log(
+    `[EventBus] Event emitted: ${event.eventType} from ${event.source}`
+  );
+
   return eventId;
 }
 
@@ -47,7 +51,7 @@ export async function emitEvent(event: Omit<SystemEvent, "eventId">): Promise<st
 export async function getPendingEvents(limit: number = 100) {
   const db = await getDb();
   if (!db) return [];
-  
+
   const events = await db
     .select()
     .from(systemEvents)
@@ -67,10 +71,10 @@ export async function getPendingEvents(limit: number = 100) {
 export async function markEventAsProcessed(eventId: string) {
   const db = await getDb();
   if (!db) return;
-  
+
   await db
     .update(systemEvents)
-    .set({ 
+    .set({
       processed: true,
       processedAt: new Date(),
     })
@@ -83,7 +87,7 @@ export async function markEventAsProcessed(eventId: string) {
 export async function getEventsByType(eventType: string, limit: number = 50) {
   const db = await getDb();
   if (!db) return [];
-  
+
   const events = await db
     .select()
     .from(systemEvents)
@@ -103,7 +107,7 @@ export async function getEventsByType(eventType: string, limit: number = 50) {
 export async function getEventsBySource(source: string, limit: number = 50) {
   const db = await getDb();
   if (!db) return [];
-  
+
   const events = await db
     .select()
     .from(systemEvents)

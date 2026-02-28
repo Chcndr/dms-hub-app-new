@@ -1,6 +1,7 @@
 # DMS Hub - App Clienti - TODO
 
 ## Fase 1: Setup Progetto e Configurazione Base PWA
+
 - [x] Inizializzazione progetto con webdev_init_project
 - [x] Installazione dipendenze (leaflet, react-leaflet, qrcode.react, axios)
 - [ ] Configurazione PWA (manifest.webmanifest + service worker) - TODO NEXT
@@ -9,6 +10,7 @@
 - [x] Download dati demo da dms-gemello-core
 
 ## Fase 2: Implementazione MapPage con Leaflet e Dati Grosseto
+
 - [x] Installare leaflet e react-leaflet
 - [x] Creare componente MapPage
 - [x] Integrare dati GeoJSON Grosseto (grosseto_complete.json)
@@ -19,6 +21,7 @@
 - [x] Testare geolocalizzazione utente
 
 ## Fase 3: Implementazione WalletPage con QR Code e Storico
+
 - [x] Installare qrcode.react
 - [x] Creare componente WalletPage
 - [x] Implementare visualizzazione saldo eco-crediti
@@ -29,6 +32,7 @@
 - [x] Testare funzionalità wallet
 
 ## Fase 4: Implementazione CivicPage, RoutePage e VetrinePage
+
 - [x] **CivicPage**: Form segnalazione problemi urbani
 - [ ] **CivicPage**: Upload foto (max 3) - Placeholder
 - [x] **CivicPage**: Geolocalizzazione automatica
@@ -43,6 +47,7 @@
 - [x] **VetrinePage**: Funzione prenota prodotto
 
 ## Fase 5: Setup Backend Mock API e Integrazione
+
 - [ ] Creare server Express mock per API
 - [ ] Implementare endpoint /api/geo/shops/near
 - [ ] Implementare endpoint /api/wallet/me
@@ -54,6 +59,7 @@
 - [ ] Testare integrazione frontend-backend
 
 ## Fase 6: Test, Ottimizzazione PWA e Deploy
+
 - [ ] Configurare Service Worker per offline
 - [ ] Testare installabilità PWA
 - [ ] Ottimizzare performance (lazy loading, caching)
@@ -64,16 +70,17 @@
 - [ ] Test completo su dispositivi reali
 
 ## Fase 7: Consegna Finale con Documentazione
+
 - [ ] Creare README.md con istruzioni
 - [ ] Documentare API endpoints
 - [ ] Preparare guida deploy
 - [ ] Creare checkpoint finale
 - [ ] Consegnare codice e documentazione
 
-
 ## NUOVE RICHIESTE - Ottimizzazione Mobile
 
 ### Design e Layout Mobile
+
 - [ ] Ottimizzare header per mobile (dimensioni, spaziatura)
 - [ ] Migliorare info box mappa per schermi piccoli
 - [ ] Ottimizzare bottom navigation per touch (dimensioni minime 44x44px)
@@ -82,6 +89,7 @@
 - [ ] Testare su dimensioni reali iPhone/Android (375x667, 390x844, 414x896)
 
 ### Usabilità Mobile
+
 - [ ] Aumentare dimensioni pulsanti per touch
 - [ ] Migliorare contrasto colori per leggibilità outdoor
 - [ ] Ottimizzare form per input mobile
@@ -89,14 +97,15 @@
 - [ ] Testare scroll e gesture su tutte le pagine
 
 ### Performance Mobile
+
 - [ ] Ottimizzare caricamento mappa su connessioni lente
 - [ ] Ridurre dimensioni immagini e asset
 - [ ] Implementare lazy loading per contenuti
 
-
 ## TASK IMMEDIATI - Applicazione Palette DMS e Ottimizzazione Mobile
 
 ### Palette Colori DMS
+
 - [x] Applicare sfondo scuro `#0b1220` come background principale
 - [x] Usare verde `#14b8a6` per header, pulsanti primari, accenti
 - [x] Usare azzurro chiaro `#e8fbff` per testi su sfondo scuro
@@ -104,42 +113,45 @@
 - [x] Rimuovere tema verde chiaro attuale, passare a dark mode
 
 ### Bottom Navigation Fissa
+
 - [x] Aggiungere bottom navigation fissa su TUTTE le pagine
 - [x] Dimensioni minime 56px altezza per touch
 - [x] Icone + label per ogni sezione
 - [x] Indicatore pagina attiva con colore `#14b8a6`
 
 ### Ottimizzazioni Mobile
+
 - [x] Header più compatto (ridurre padding)
 - [x] Pulsanti touch-friendly (minimo 44x44px)
 - [ ] Aumentare contrasto testi per leggibilità outdoor
 - [ ] Ottimizzare card con più padding/margin
 
-
 ### Simulatore Mobile Interattivo
+
 - [x] Creare pagina HTML con iframe simulatore smartphone
 - [x] Dimensioni reali iPhone 13 Pro (390x844px)
 - [x] Navigazione completa nell'app
 - [x] Deploy su server locale per test
 
-
 ## BUG DA RISOLVERE
 
 ### MapPage - Mappa non visibile
+
 - [x] Fix caricamento mappa Leaflet
 - [x] Verificare CSS Leaflet importato correttamente
 - [x] Controllare altezza container mappa
 - [x] Testare visualizzazione mappa su mobile
 
-
 ## NUOVE RICHIESTE UTENTE
 
 ### Fix MapPage - Popup Filtri
+
 - [x] Spostare popup filtri in basso per non coprire controlli zoom (+/-)
 - [ ] Rendere popup filtri chiudibile/minimizzabile
 - [ ] Ottimizzare posizionamento controlli mappa
 
 ### HomePage - Mappa Italia e Rete Gemello Digitale
+
 - [x] Creare nuova HomePage come landing page
 - [x] Sfondo con immagine mappa Italia
 - [x] Visualizzazione rete gemello digitale (nodi mercati/hub connessi)
@@ -147,6 +159,7 @@
 - [x] Design con tema DMS dark mode
 
 ### Ricerca Intelligente Multi-Criterio
+
 - [x] Barra di ricerca in HomePage
 - [x] Ricerca per: mercato, hub, città, azienda, servizio, categoria
 - [x] Filtro automatico "aperti oggi"
@@ -155,14 +168,15 @@
 - [x] Click su risultato → navigazione a MapPage con parametri URL
 
 ### Flusso Navigazione Completo
+
 - [x] HomePage → MapPage (navigazione con parametri lat/lng/zoom/id)
 - [x] MapPage → Click marker → Popup descrizione
 - [x] Popup → Pulsante "Vedi dettagli" → Modal Vetrina (scheda negozio con immagini)
 - [ ] Modal Vetrina → Pulsante "Shop Route Etico" → RoutePage (percorso ottimizzato) - TODO
 - [ ] Passaggio parametri tra pagine (ID negozio, coordinate, ecc.)
 
-
 ### Immagine Sfondo Italia
+
 - [x] Generare immagine mappa Italia con rete gemello digitale
 - [x] Sfondo blu scuro DMS (#0b1220)
 - [x] Italia in teal chiaro (#14b8a6 / #9bd6de)
@@ -170,8 +184,8 @@
 - [x] Effetto luci illuminate sui nodi
 - [x] Linee illuminate tra nodi con effetto glow
 
-
 ### Modal Vetrina Negozio Full-Screen
+
 - [x] Implementare modal full-screen per dettagli negozio
 - [x] Pulsante "Vedi dettagli" nel popup marker apre modal
 - [x] Modal con header (nome negozio + X per chiudere)
@@ -182,21 +196,23 @@
 - [x] Click X chiude modal e torna alla mappa
 - [x] Animazione apertura/chiusura smooth
 
-
 ## NUOVE RICHIESTE UTENTE - Miglioramenti Modal e Mappa
 
 ### Tab Home nel Modal Vetrina
+
 - [x] Aggiungere tab "Home" come prima scheda del modal
 - [x] Mostrare immagine vetrina/logo negozio grande
 - [x] Ordine tab: Home → Prodotti → Info → Contatti
 - [x] Design responsive per immagine vetrina
 
 ### Auto-caricamento Indirizzo in RoutePage
+
 - [x] Quando si clicca "Shop Route Etico" passare indirizzo negozio
 - [x] RoutePage legge parametri URL e carica indirizzo automaticamente
 - [x] Campo destinazione pre-compilato e pronto per calcolo percorso
 
 ### Barra Filtri/Ricerca Toggle Laterale
+
 - [x] Rimuovere barra filtri/ricerca fissa in basso sulla mappa
 - [x] Aggiungere pulsante toggle laterale (sotto +/- zoom)
 - [ ] Click apre/chiude pannello filtri e ricerca
@@ -204,12 +220,12 @@
 - [ ] Chiusura automatica dopo selezione filtro
 
 ### Negozi Diversificati per Categoria
+
 - [x] Creare 13 negozi con 5 categorie diverse
 - [x] Categorie: Alimentari (3), Abbigliamento (3), Artigianato (3), Libri (2), Elettronica (2), Fiori, Caffè, Farmacia, ecc.
 - [x] Ogni negozio con prodotti specifici per categoria
 - [x] Testare visualizzazione negozi per categoria dalla HomePage
 - [ ] Verificare filtri per categoria sulla MapPage
-
 
 ## INTEGRAZIONE BACKEND DMS-BACKEND
 
@@ -224,16 +240,17 @@
 - [ ] Test integrazione completa con backend
 - [ ] Verificare log real-time nella dashboard backend
 
-
 ## NUOVO - Pagina HUB OPERATORE (6 Nov 2025) 🏪
 
 ### Setup Pagina
+
 - [x] Creare route `/hub-operatore`
 - [x] Creare componente HubOperatore.tsx
 - [x] Layout dashboard con sidebar
 - [x] Header con info operatore
 
 ### Dashboard Statistiche
+
 - [x] Card vendite giornaliere
 - [x] Card carbon credit assegnati
 - [x] Card clienti serviti
@@ -241,6 +258,7 @@
 - [x] Lista ultime transazioni
 
 ### Scanner QR Code
+
 - [x] Componente Scanner con camera (placeholder)
 - [ ] Libreria html5-qrcode - TODO: Implementare scanner reale
 - [x] UI scanner fullscreen
@@ -248,27 +266,30 @@
 - [x] Calcolo automatico crediti da certificazioni (UI pronta)
 
 ### Gestione Presenze
+
 - [x] Pulsante Check-in / Check-out
 - [x] Visualizzazione orario corrente
 - [x] Storico presenze settimana (mock data)
 - [ ] Integrazione API backend - TODO
 
 ### Chat AI Operatori
+
 - [x] ChatWidget disponibile (stesso dell'app clienti)
 - [ ] Intent recognition specifici per operatori - TODO
 - [ ] Suggerimenti contestuali per operatori - TODO
 
 ### Backend API
+
 - [ ] POST /vendor/checkin - TODO
 - [ ] POST /vendor/checkout - TODO
 - [ ] GET /vendor/stats - TODO
 - [ ] POST /vendor/assign-carbon - TODO
 - [ ] GET /vendor/attendance - TODO
 
-
 ## NUOVO - Ottimizzazione ChatWidget Mobile (6 Nov 2025) 📱
 
 ### Problemi da Risolvere
+
 - [x] ChatWidget non ottimizzato per smartphone
 - [x] Dimensioni finestra chat su mobile
 - [x] Layout responsive messaggi
@@ -277,6 +298,7 @@
 - [x] Header chat su mobile
 
 ### Fix da Implementare
+
 - [x] Media query per schermi < 768px (max-md:)
 - [x] Chat fullscreen su mobile (max-md:inset-0 w-full h-full)
 - [x] Pulsante chiudi visibile (min-w-[44px] min-h-[44px])
@@ -284,10 +306,10 @@
 - [x] Suggerimenti scroll orizzontale (overflow-x-auto)
 - [x] Font size ottimizzato mobile (text-base md:text-sm)
 
-
 ## URGENTE - Fix Errore ChatWidget iPhone (6 Nov 2025) 🔴
 
 ### Problemi Rilevati
+
 - [ ] "Console Error - Load failed" su iPhone reale
 - [ ] Badge "1 error" rosso in basso
 - [ ] Suggerimenti non caricano
@@ -295,6 +317,7 @@
 - [ ] Possibile problema CORS
 
 ### Verifiche da Fare
+
 - [ ] Backend status (running/stopped)
 - [ ] Backend logs per errori
 - [ ] CORS headers configurazione
@@ -302,16 +325,17 @@
 - [ ] Network connectivity iPhone → Backend
 
 ### Fix da Implementare
+
 - [ ] Configurare CORS correttamente
 - [ ] Aggiungere error handling migliore
 - [ ] Fallback se backend non disponibile
 - [ ] Retry logic per API calls
 - [ ] Toast notification per errori utente
 
-
 ## URGENTE - ChatWidget Fullscreen Reale iPhone (6 Nov 2025) 📱
 
 ### Problema
+
 - [x] ChatWidget NON è fullscreen su iPhone
 - [x] Appare come finestra quadrata con bordi neri
 - [x] Classi max-md:inset-0 non funzionano correttamente
@@ -321,6 +345,7 @@
 - [ ] Tastiera non si apre correttamente
 
 ### Fix da Implementare
+
 - [x] Rimuovere posizionamento fixed su mobile
 - [x] Usare position fixed con top:0 left:0 right:0 bottom:0
 - [x] Rimuovere border-radius su mobile
@@ -333,6 +358,7 @@
 ## NUOVO - Ottimizzazione Mobile Tutte Pagine (6 Nov 2025) 📱
 
 ### Pagine da Ottimizzare
+
 - [ ] HomePage - Hero fullscreen, card navigazione touch-friendly
 - [ ] MapPage - Mappa fullscreen, modal ottimizzata
 - [ ] WalletPage - Layout carbon credits mobile
@@ -341,6 +367,7 @@
 - [ ] HubOperatore - Dashboard mobile-first
 
 ### Fix Comuni
+
 - [ ] Rimuovere/compattare header su mobile
 - [ ] Usare 100dvh per altezza viewport
 - [ ] Safe-area-inset per iPhone
@@ -348,10 +375,10 @@
 - [ ] Touch targets 44x44px minimo
 - [ ] Padding responsive
 
-
 ## URGENTE - Fix Pulsante Cerca HomePage (7 Nov 2025) 🔍
 
 ### Problema
+
 - [x] Pulsante "Cerca" collegato a API backend
 - [x] Query SQL cerca in nome, categoria, indirizzo
 - [ ] Indirizzi VUOTI nel database!
@@ -359,6 +386,7 @@
 - [ ] Ricerca "Grosseto" non trova nulla
 
 ### Fix da Implementare
+
 - [x] Collegare pulsante Cerca a API /api/v1/geo/search
 - [x] Query SQL multi-campo (nome, categoria, indirizzo)
 - [x] Aggiornare database con indirizzi completi (10/13 shops)
@@ -368,10 +396,10 @@
 - [ ] Ricerca multi-tabella (UNION shops + markets + hubs) - TODO
 - [ ] Testare su iPhone
 
-
 ## Dashboard PA - Sezione Logs (7 Nov 2025) 📋
 
 ### Tab Logs Completa
+
 - [ ] Aggiungere tab "Logs" nella Dashboard PA
 - [ ] Implementare filtri per app (DMS, SUAP, APP Operatori, APP Clienti, WebApp PM)
 - [ ] Filtri per tipo evento (check-in, vendita, segnalazione, route, ecc.)
@@ -383,10 +411,10 @@
 - [ ] Ricerca full-text nei logs
 - [ ] Dettaglio evento espandibile (click su log)
 
-
 ## Dashboard PA - Agente AI (7 Nov 2025) 🤖
 
 ### Tab Agente AI
+
 - [ ] Aggiungere tab "Agente AI" nella Dashboard PA
 - [ ] Chat interface completa con storico conversazioni
 - [ ] Intent recognition specifici per PA (analytics, report, alert)
@@ -398,10 +426,10 @@
 - [ ] Integrazione con backend AI/LLM
 - [ ] Accesso dati real-time per risposte accurate
 
-
 ## Dashboard PA - Sicurezza (7 Nov 2025) 🔐
 
 ### Tab Sicurezza
+
 - [ ] Aggiungere tab "Sicurezza" nella Dashboard PA
 - [ ] Audit log accessi (chi, quando, cosa, da dove)
 - [ ] Gestione utenti e ruoli (PA, Operatori, Admin)
@@ -416,6 +444,7 @@
 ## Dashboard PA - Debug & Sviluppo (7 Nov 2025) 🔧
 
 ### Tab Debug & Dev
+
 - [ ] Aggiungere tab "Debug & Dev" nella Dashboard PA
 - [ ] Ricerca guasti automatica (error detection)
 - [ ] Riparatore codice con auto-fix
@@ -429,10 +458,10 @@
 - [ ] API response time monitor
 - [ ] Code coverage e test results
 
-
 ## Dashboard PA - Gestione Carbon Credits (7 Nov 2025) 💰
 
 ### Tab Carbon Credits - Sistema Economico Completo
+
 - [x] Aggiungere tab "Carbon Credits" nella Dashboard PA
 - [x] **Fondo Liquidità**: Saldo, entrate (Regione/Comuni/TPAS), uscite, previsioni
 - [x] **Impostazioni Valore**: Valore corrente 1 CC = X €, storico variazioni
@@ -446,10 +475,10 @@
 - [ ] **Audit Trail**: Storico modifiche valore, chi/quando/perché (Backend)
 - [ ] **Previsioni AI**: Machine learning per ottimizzare valore e fondo (Futuro)
 
-
 ## Dashboard PA - Qualificazione Imprese (7 Nov 2025) 🏪
 
 ### Sistema Gestione Point Abilitati
+
 - [x] Aggiungere tab "Qualificazione Imprese" nella Dashboard PA
 - [x] **Requisiti Abilitazione**: DURC, tributi, POS/cassa, P.IVA, CCIAA (documentato)
 - [x] **Formazione Obbligatoria**: Primo soccorso, antincendio, sicurezza, HACCP, GDPR (documentato)
@@ -467,30 +496,31 @@
 - [ ] **Sistema Notifiche**: Cron job per alert automatici (Da fare)
 - [ ] **Upload Documenti**: Interfaccia caricamento certificati (Da fare)
 
-
 ## Dashboard PA - Ottimizzazione UI (7 Nov 2025) 🎨
+
 - [x] Ridisegnare TabsList con icone compatte invece di testo lungo
 - [x] Aggiungere indicatore colore per tab attiva (ogni tab ha colore distintivo)
 - [x] Assicurare tutte le 13 tab visibili senza overflow (flex-wrap)
 - [x] Responsive design per mobile (icone sempre visibili, testo nascosto su small)
 
-
 ## Dashboard PA - Redesign Navigazione Tab (7 Nov 2025) 🎨
+
 - [x] Trasformare TabsList in griglia pulsanti card stile "Accesso Rapido"
 - [x] Cambio colore pulsante quando tab attiva (background pieno + shadow)
 - [x] Layout griglia responsive (2/4/7 colonne)
 - [x] Icone grandi (h-6 w-6) + label sotto
 
-
 ## Backend + Database Implementation (7 Nov 2025) ⚙️
 
 ### Setup Database
+
 - [ ] Aggiungere feature web-db-user al progetto
 - [ ] Creare schema database 15 tabelle con relazioni
 - [ ] Aggiungere indici per performance
 - [ ] Configurare Drizzle ORM
 
 ### Seed Data
+
 - [ ] 450 imprese con score qualificazione
 - [ ] 15.000+ utenti con wallet e carbon credits
 - [ ] 12 mercati territorio Grosseto
@@ -499,6 +529,7 @@
 - [ ] Certificati, formazione, bandi
 
 ### API Endpoints (40+)
+
 - [ ] **Analytics** (10): overview, clienti, mercati, prodotti, sostenibilità, TPAS
 - [ ] **Carbon Credits** (8): fondo, valore, regolazione, rimborsi, analytics
 - [ ] **Qualificazione Imprese** (12): score, scadenze, formazione, bandi, demografia
@@ -506,15 +537,16 @@
 - [ ] **TPAS** (5): stub per integrazione futura
 
 ### Integrazione Dashboard PA
+
 - [ ] Sostituire mock data con API calls
 - [ ] Implementare loading states
 - [ ] Error handling e retry logic
 - [ ] Real-time updates con polling/WebSocket
 
-
 ## Dashboard PA - 5 Nuove Sezioni (7 Nov 2025) 🆕
 
 ### Tab Segnalazioni Civiche + IoT 📡 (Emilia-Romagna)
+
 - [x] Aggiungere tab "Segnalazioni & IoT"
 - [ ] **Sezione Segnalazioni Civiche**: Lista civic_reports da database
 - [ ] Filtri per tipo (commercianti, clienti, tipo problema)
@@ -528,6 +560,7 @@
 - [ ] Mappa sensori urbani Bologna e hub regionali
 
 ### Tab Utenti Imprese 🏪
+
 - [x] Aggiungere tab "Utenti Imprese"
 - [ ] Lista imprese registrate con filtri
 - [ ] Statistiche utilizzo per impresa
@@ -537,6 +570,7 @@
 - [ ] Export report imprese
 
 ### Tab Controlli/Sanzioni ⚖️
+
 - [x] Aggiungere tab "Controlli/Sanzioni"
 - [ ] Calendario ispezioni programmate
 - [ ] Lista verifiche conformità (DURC, HACCP, sicurezza)
@@ -546,6 +580,7 @@
 - [ ] Alert scadenze controlli
 
 ### Tab Notifiche 🔔
+
 - [x] Aggiungere tab "Notifiche"
 - [ ] Centro notifiche unificato (push, email, SMS)
 - [ ] Crea nuova notifica con targeting
@@ -555,6 +590,7 @@
 - [ ] Scheduling notifiche future
 
 ### Tab Centro Mobilità 🚗 (Emilia-Romagna)
+
 - [x] Aggiungere tab "Centro Mobilità"
 - [ ] **Trasporti Pubblici**: Integrazione GTFS TPER (Trasporto Passeggeri Emilia-Romagna)
 - [ ] Fermate bus/tram Bologna con prossime corse real-time
@@ -566,21 +602,22 @@
 - [ ] Statistiche flussi mobilità regionale
 - [ ] Integrazione ZTL Bologna e varchi
 
-
 ## Dashboard PA - 3 Tab Finali (7 Nov 2025) 🎯
+
 - [x] Aggiungere tab "Report" (placeholder)
 - [x] Aggiungere tab "Integrazioni" (placeholder)
 - [x] Aggiungere tab "Impostazioni" (placeholder)
 - [x] Completare barra navigazione a 21 tab totali
 
-
 ## Collegamento Database Completo (7 Nov 2025) 🔗
 
 ### Estensione Schema Database
+
 - [ ] Aggiungere tabelle: user_analytics, sustainability_metrics, notifications, inspections, business_analytics
 - [ ] Eseguire db:push per aggiornare schema
 
 ### Seed Data Completi
+
 - [ ] Seed user_analytics (trasporti, provenienza, rating)
 - [ ] Seed sustainability_metrics (CO₂, rating popolazione)
 - [ ] Seed notifications (push, email, SMS)
@@ -588,6 +625,7 @@
 - [ ] Seed business_analytics (vendite, crediti per impresa)
 
 ### API Endpoints (30+)
+
 - [ ] analytics.users - Analytics clienti
 - [ ] analytics.sustainability - Metriche sostenibilità
 - [ ] analytics.tpas - E-commerce vs fisico
@@ -602,6 +640,7 @@
 - [ ] mobility.tper - Dati TPER (stub)
 
 ### Collegamento Dashboard PA
+
 - [ ] Tab Clienti → API reali
 - [ ] Tab Prodotti → API reali
 - [ ] Tab Sostenibilità → API reali
@@ -614,8 +653,8 @@
 - [ ] Tab Notifiche → API reali
 - [ ] Tab Real-time → API reali (già fatto parzialmente)
 
-
 ## Fix Agente AI Dashboard PA (7 Nov 2025) 🤖
+
 - [x] Implementare stato chat (useState per messaggi)
 - [x] Fix pulsante "Invia" con onClick handler
 - [x] Aggiungere logica invio messaggio
@@ -623,8 +662,8 @@
 - [ ] Scroll automatico a nuovo messaggio (Da implementare)
 - [x] Testare funzionamento completo
 
-
 ## Fix Carbon Credits - Manopola Politica (7 Nov 2025) 💰
+
 - [x] Implementare stato slider (useState per valore TCC)
 - [x] Fix pulsante "Applica Modifiche" con onClick handler
 - [x] Slider range da 0€ a 5€ (step 0.10€)
@@ -632,8 +671,8 @@
 - [x] Mostrare preview impatto prima di applicare (simulatore)
 - [x] Testare funzionamento completo
 
-
 ## Simulatore Completo Carbon Credits (7 Nov 2025) 🎮
+
 - [x] Ricalcolo automatico Regolazione Area quando cambia slider
 - [x] Ricalcolo automatico Regolazione Categoria quando cambia slider
 - [x] Campi editabili boost % per ogni area (input number)
@@ -644,8 +683,8 @@
 - [x] Ricalcolo real-time incremento spesa (nel simulatore)
 - [x] Testare simulazioni complete
 
-
 ## Parametri TCC Emessi/Spesi Editabili (7 Nov 2025) 📊
+
 - [x] Aggiungere campo editabile TCC Emessi
 - [x] Aggiungere campo editabile TCC Spesi
 - [x] Calcolo automatico Velocity (% utilizzo)
@@ -654,8 +693,8 @@
 - [ ] Prospetti finanziari con scenari what-if
 - [ ] Testare simulazioni complete
 
-
 ## Calcoli CO₂ e Alberi Dinamici (7 Nov 2025) 🌳
+
 - [x] Calcolo dinamico kg CO₂ risparmiati basato su TCC spesi
 - [x] Calcolo equivalenza alberi piantati (1 albero = ~22 kg CO₂/anno)
 - [x] Collegamento a parametri editabili simulatore
@@ -665,8 +704,8 @@
 - [x] Visualizzazione formule sotto i valori per trasparenza
 - [ ] Testare con valori diversi TCC Spesi
 
-
 ## Espansione Backend API - Dashboard PA (7 Nov 2025) 🔌
+
 - [x] Analizzare tab con mock data (Segnalazioni IoT, Utenti Imprese, Controlli, Notifiche, Mobilità)
 - [x] Verificare tabelle database esistenti e identificare mancanti
 - [x] Analizzare metadati TPER Bologna (formato GTFS)
@@ -678,8 +717,8 @@
 - [ ] Testare tutte le sezioni con dati backend (fase successiva)
 - [x] Checkpoint intermedio con struttura backend pronta
 
-
 ## Potenziamento Centro Mobilità + Route (7 Nov 2025) 🗺️
+
 - [x] Collegare endpoint mobility.list a Dashboard PA Centro Mobilità
 - [x] Creare componente MobilityMap riutilizzabile (Google Maps)
 - [x] Visualizzare fermate bus/tram/parcheggi su mappa
@@ -697,8 +736,8 @@
 - [ ] Testare su mobile e desktop
 - [ ] Checkpoint completo Centro Mobilità + Route
 
-
 ## Script Import GTFS Universale (7 Nov 2025) 🌍
+
 - [x] Creare script Node.js `scripts/import-gtfs.mjs` per download GTFS ZIP
 - [x] Implementare parser CSV per stops.txt (fermate)
 - [x] Implementare parser CSV per routes.txt (linee)
@@ -711,8 +750,8 @@
 - [ ] Fix credenziali DB per script standalone (usa webdev_execute_sql invece)
 - [x] Checkpoint finale con infrastruttura GTFS pronta
 
-
 ## Fix Navigazione Route (7 Nov 2025) 🗺️
+
 - [ ] Visualizzare percorso su mappa con Google Directions Renderer
 - [ ] Polyline percorso con colore basato su sostenibilità
 - [ ] Marker partenza/arrivo personalizzati
@@ -724,8 +763,8 @@
 - [ ] Testare flusso: Mappa → Negozio → Come Arrivare → Pianifica → Naviga
 - [ ] Checkpoint con navigazione completa funzionante
 
-
 ## Fix Route Navigazione da Vetrina Negozio (7 Nov 2025) 🧭
+
 - [ ] Auto-rilevare posizione utente con Geolocation API per campo partenza
 - [ ] Pulsante "Usa Posizione Corrente" per partenza
 - [ ] Gestire showDirections prop in MobilityMap
@@ -739,16 +778,17 @@
 - [ ] Testare flusso: Mappa → Negozio → Come Arrivare → Pianifica → Naviga
 - [ ] Checkpoint con navigazione completa
 
-
 ## FASE 1: Core Features Dashboard Admin (9 Nov 2025) 🔴
 
 ### Collegamento Dati Reali
+
 - [x] Tab Overview - Sostituire mock con query database reali (KPI, grafici, tabelle)
 - [ ] Tab Utenti - Collegare tabella users reale con CRUD completo
 - [ ] Tab Mercati - Collegare tabella marketGeometry reale con statistiche
 - [ ] Tab Log Sistema - Collegare tabelle system_logs e audit_logs reali
 
 ### Sistema Carbon Credits Completo
+
 - [ ] Wallet management avanzato con saldo e transazioni
 - [ ] Trasferimenti TCC tra utenti (peer-to-peer)
 - [ ] Regole automatiche distribuzione TCC (per acquisti, check-in, ecc.)
@@ -756,6 +796,7 @@
 - [ ] Collegamento database reale carbon_credits
 
 ### Tab Controlli Polizia (Nuovo)
+
 - [ ] Implementare UI lista controlli con tabella filtri
 - [ ] Collegare tabella inspections_detailed
 - [ ] Sistema verbali con tabella violations
@@ -764,6 +805,7 @@
 - [ ] Calendario controlli programmati
 
 ### Tab Sicurezza (Nuovo)
+
 - [ ] Gestione ruoli e permessi (Admin, PA, Operatore, Cittadino)
 - [ ] Audit trail accessi con log dettagliati
 - [ ] 2FA management per utenti sensibili
@@ -773,15 +815,16 @@
 - [ ] Compliance GDPR con export dati utente
 
 ### Test e Checkpoint
+
 - [ ] Test import JSON da Slot Editor v3 → Gestione Mercati
 - [ ] Test collegamento dati reali in tutti i tab modificati
 - [ ] Verificare logging automatico funzionante
 - [ ] Checkpoint FASE 1 completata
 
-
 ## Integrazione Mappa GIS e Sistema AI-Friendly (9 Nov 2025) 🗺️🤖
 
 ### Mappa GIS in Tutte le Sezioni
+
 - [x] Analizzare tutti i 22 tab Dashboard PA per identificare dove serve mappa
 - [x] Tab Gestione Mercati - Mappa interattiva posteggi con stati colorati
 - [ ] Tab Mobilità - Mappa fermate bus/tram con layer trasporti
@@ -791,6 +834,7 @@
 - [ ] Tab Real-time - Mappa attività live con heatmap
 
 ### Sistema Logging Universale
+
 - [ ] Verificare che TUTTE le API DMS HUB loggino in system_logs
 - [ ] Aggiungere logging a operazioni mancanti (CRUD utenti, prodotti, ecc.)
 - [ ] Implementare log strutturati con livelli (info, warning, error, critical)
@@ -799,6 +843,7 @@
 - [ ] Export log CSV/JSON per analisi esterna
 
 ### Architettura AI-Friendly
+
 - [ ] Endpoint API `/api/system/health` per status completo sistema
 - [ ] Endpoint API `/api/system/test` per test automatici
 - [ ] Endpoint API `/api/system/repair` per auto-riparazione errori
@@ -807,8 +852,8 @@
 - [ ] Log strutturati machine-readable per AI
 - [ ] Agente AI può vedere, testare, riparare tutto autonomamente
 
-
 ## Bug Fix Slot Editor v3 (9 Nov 2025) 🐛
+
 - [x] Analizzare codice cancellazione posteggi
 - [x] Correggere funzione per salvare nel BUS localStorage
 - [x] Aggiungere pulsante navigazione al BUS HUB
@@ -816,16 +861,17 @@
 - [ ] Testare persistenza dopo reload pagina
 - [ ] Deploy fix su GitHub Pages
 
-
 ## FIX URGENTE - Mappa GIS Dashboard Admin (9 Nov 2025)
 
 ### Gestione Mercati - Tab Posteggi
+
 - [ ] Mostrare mappa GIS direttamente nella tab "Posteggi" senza selezione mercato
 - [ ] Aggiungere dropdown per scegliere mercato da visualizzare
 - [ ] Mostrare tutti i posteggi di tutti i mercati sulla mappa (con colori diversi per mercato)
 - [ ] Fix: attualmente richiede selezione mercato dalla tab "Mercati" prima di vedere mappa
 
 ### Integrazione Mappa GIS nelle 9 Sezioni Dashboard
+
 - [ ] Tab "Mercati" - Mappa Italia con tutti i mercati
 - [ ] Tab "Mobilità" - Fermate trasporti real-time
 - [ ] Tab "Controlli/Sanzioni" - Posizioni controlli Polizia
@@ -835,8 +881,8 @@
 - [ ] Tab "Prodotti" - Posizioni negozi sulla mappa
 - [ ] Tab "Clienti" - Distribuzione geografica utenti
 
-
 ## IMPORT PIANTA DEFINITIVA + API AUTOMATICA (10 Nov 2025)
+
 - [ ] Estrarre JSON dal PDF della pianta con 160 posteggi
 - [ ] Testare import manuale della pianta definitiva
 - [ ] Verificare che i 160 posteggi siano nel database
@@ -846,17 +892,17 @@
 - [ ] Testare invio automatico
 - [ ] Salvare checkpoint finale
 
-
 ## TEST API REALI - INTEGRAZIONI (10 Nov 2025)
+
 - [ ] Modificare handleTestEndpoint per fare chiamate TRPC reali
 - [ ] Aggiungere form per input parametri endpoint
 - [ ] Testare endpoint importAuto con JSON esempio
 - [ ] Mostrare risposta reale nel playground
 
-
 ## ✅ TEST API REALI - INTEGRAZIONI (10 Nov 2025) - COMPLETATO
+
 - [x] Modificare handleTestEndpoint per fare chiamate TRPC reali
-- [x] Aggiungere form per input parametri endpoint  
+- [x] Aggiungere form per input parametri endpoint
 - [x] Pulsante "Carica Esempio" con JSON di test importAuto
 - [x] Testare endpoint importAuto con JSON esempio
 - [x] Mostrare risposta reale nel playground
@@ -865,8 +911,8 @@
 - [x] Misurazione tempo esecuzione
 - [x] Supporto tutti 25+ endpoint DMS Hub
 
-
 ## ✅ IMPLEMENTAZIONE INTEGRAZIONI REALI - DASHBOARD NAZIONALE (10 Nov 2025) - COMPLETATO
+
 ### Scala Target: 8.000 mercati, 400.000 posteggi, 160.000 imprese
 
 - [x] Statistiche API Reali da database (richieste, tempo medio, success rate, errori)
@@ -882,10 +928,10 @@
 - [x] Test webhook con misurazione tempo
 - [x] Health check singolo e multiplo
 
-
 ## DOCUMENTAZIONE DASHBOARD PA (10 Nov 2025)
+
 - [x] Leggere componente Documentazione.tsx attuale
-- [x] Aggiungere sezione "Relazione Progetto" 
+- [x] Aggiungere sezione "Relazione Progetto"
 - [x] Implementare rendering markdown STATO_PROGETTO_AGGIORNATO.md
 - [x] Aggiungere pulsante visualizza documenti
 - [x] Copiare documenti in client/public
@@ -893,8 +939,8 @@
 - [x] Testare visualizzazione completa
 - [x] Salvare checkpoint
 
-
 ## IMPORT AUTOMATICO SLOT EDITOR V3 (10 Nov 2025) - COMPLETATO
+
 - [x] Implementare endpoint dmsHub.markets.importAuto (GIÀ FATTO)
 - [x] Validazione JSON schema completo (GIÀ FATTO)
 - [x] Import database (mercato, geometria, posteggi, marker, aree) (GIÀ FATTO)
@@ -906,8 +952,8 @@
 - [ ] Testare import 160 posteggi Grosseto dopo deploy GitHub Pages
 - [ ] Salvare checkpoint e pubblicare
 
-
 ## RIAGGIUNGERE CONSOLE LOG SLOT EDITOR V3 (10 Nov 2025) - COMPLETATO
+
 - [x] Implementare HTML pannello Console Log in basso a destra
 - [x] Aggiungere CSS per styling pannello
 - [x] Implementare JavaScript DMSConsole object
@@ -917,7 +963,6 @@
 - [ ] Verificare deploy GitHub Pages
 - [ ] Testare import con Console Log visibile
 
-
 ## BUG URGENTE - Mappa GIS Gestione Mercati (11 Nov 2025)
 
 - [ ] Fix: Mappa GIS non più visibile nella tab "Gestione Mercati" → "Posteggi"
@@ -925,7 +970,6 @@
 - [ ] Ripristinare visualizzazione mappa full-height (calc(100vh - 400px))
 - [ ] Testare visualizzazione posteggi sulla mappa con marker colorati
 - [ ] Verificare dropdown selezione mercato funzionante
-
 
 ## BUG URGENTE - Mappa GIS Overview non si carica (11 Nov 2025)
 
@@ -935,14 +979,12 @@
 - [x] Sostituito placeholder con GISMap reale
 - [x] Testare visualizzazione mappa in Overview dopo reload
 
-
 ## 2 Gennaio 2026 - Miglioramenti Modal Concessioni
 
 - [x] Aggiungere campo Mercato nel modal "Nuova Concessione" con preselzione del mercato corrente
 - [ ] Permettere cambio mercato tramite dropdown (non implementato - mercato è in sola visualizzazione)
 - [x] Filtrare posteggi per mostrare solo quelli liberi (non già assegnati a concessioni attive)
 - [ ] Caricare posteggi dinamicamente quando si cambia mercato (non necessario - mercato fisso)
-
 
 ## Bug Fix - Date Picker nei Modal (02/01/2026)
 
@@ -951,13 +993,11 @@
 - [x] Fix date picker in modal Imprese (data nascita, data iscrizione RI)
 - [x] Aggiunto stopPropagation e z-index alto a tutti gli input date
 
-
 ## Bug Fix - Verifica SCIA e Semafori (02/01/2026)
 
 - [x] Aggiungere filtro per mostrare solo ultima verifica o storico completo
 - [x] Toggle per passare da "Ultima Verifica" a "Storico Completo"
 - [x] Semaforo rosso per qualifiche scadute nella scheda qualifiche
-
 
 ## Bug Fix - Batch 02/01/2026 (sera)
 
@@ -966,42 +1006,40 @@
 - [x] Semaforo qualifiche non cambia colore - aggiunto calcolo dinamico basato su data_scadenza
 - [x] Form SCIA: mercato/posteggio ora usa CEDENTE invece del subentrante
 
-
 ## Bug Fix - Batch 02/01/2026 (sera 2)
 
 - [x] Punteggio verifiche deve basarsi SOLO sull'ultima verifica, non sullo storico completo
 - [x] Form SCIA: mercato/posteggio deve mostrare SOLO i posteggi del cedente (non tutti i mercati)
 - [x] Corretto filtro: selectedImpresa -> selectedCedente in tutti i punti
 
-
 ## Bug Fix - Batch 02/01/2026 (sera 3)
 
 - [x] Date picker funziona ora
 - [x] Semaforo qualificazioni mostra Scaduta anche quando data_scadenza è nel futuro - ora calcola stato SOLO dalla data, ignora DB
 
-
 ## BUG URGENTE - Form Concessione Autocompilazione (3 Gen 2026) 🔴
 
 ### Problema
+
 - [ ] Solo la Partita IVA viene autocompilata dalla SCIA
 - [ ] Tutti gli altri campi rimangono vuoti o con placeholder
 
 ### Campi da Autocompilare
+
 - [ ] Concessionario (Subentrante): Nome, Cognome, CF, Qualità, Data/Luogo Nascita, Residenza, Sede Legale
 - [ ] Cedente: P.IVA, CF, Ragione Sociale, Aut. Precedente, Data Aut., Intestatario Prec.
 - [ ] Posteggio: Mercato, Posteggio, MQ, Dimensioni, Giorno, Tipo, Attrezzature
 - [ ] Riferimenti: SCIA Precedente N., Data SCIA, Comune SCIA
 
-
 ## BUG Form Concessione (3 Gen 2026) - URGENTE
 
 ### Problemi Segnalati
+
 - [ ] Mercato non pre-selezionato automaticamente dalla SCIA (Select vuoto)
 - [ ] Popup modal troppo stretto - deve usare tutta la larghezza pagina
 - [ ] Campi sovrapposti nel layout del form
 - [ ] Giorno mercato non si compila automaticamente
 - [ ] Canone unico non si calcola automaticamente
-
 
 ## BUG Form Concessione (3 Gen 2026 - 17:40)
 
@@ -1011,14 +1049,12 @@
 - [ ] Canone Annuo non calcolato/popolato
 - [ ] Errore "Failed to create concession" al salvataggio
 
-
 ## BUG Form Concessione (3 Gen 2026 - 18:20) - URGENTE
 
 - [ ] Canone unico non calcolato automaticamente nel form da SCIA (funziona nel form manuale)
 - [ ] Errore "Overlapping concession exists for this stall" - gestire meglio
 - [ ] Verificare coerenza tra Gestione Mercati e SSO SUAP (stessa tabella concessions)
 - [ ] Dati mancanti nella concessione #31 (Nome, Cognome, P.IVA, CF vuoti)
-
 
 ## FEATURE Subingresso (3 Gen 2026 - 18:40)
 
@@ -1027,15 +1063,15 @@
 - [ ] Mantenere wallet con canone già versato
 - [ ] Aggiornare connessioni impresa automaticamente
 
-
-
 ## UI Improvements - 01/02/2026 📱
 
 ### Home - Filtro Ruoli Header
+
 - [ ] Filtrare "Presentazione" solo per PA
 - [ ] Mostrare "Esci" per Cittadino/Impresa
 
 ### Wallet - Miglioramenti Layout
+
 - [ ] Rimuovere freccia "Esci" dall'header
 - [ ] Barra saldo più alta con scritte più grandi
 - [ ] Aggiungere nome intestatario del wallet
@@ -1043,4 +1079,5 @@
 - [ ] Tasti Paga/Storico stile Home (elegante trasparente, no icone colorate)
 
 ### Paga - Stile Tasto
+
 - [ ] Tasto "Genera QR" stile elegante trasparente (non giallo)

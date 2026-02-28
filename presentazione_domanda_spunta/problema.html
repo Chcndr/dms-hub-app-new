@@ -1,203 +1,227 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet"
+    />
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', sans-serif; }
-        .slide-container {
-            width: 1280px;
-            min-height: 720px;
-            background: linear-gradient(135deg, #0b1220 0%, #1a2332 100%);
-            color: #e8fbff;
-            position: relative;
-            overflow: hidden;
-            padding-top: 60px;
-        }
-        
-        /* Decorative Grid */
-        .grid-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(20, 184, 166, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(20, 184, 166, 0.05) 1px, transparent 1px);
-            background-size: 40px 40px;
-            z-index: 0;
-            pointer-events: none;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: "Inter", sans-serif;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: linear-gradient(135deg, #0b1220 0%, #1a2332 100%);
+        color: #e8fbff;
+        position: relative;
+        overflow: hidden;
+        padding-top: 60px;
+      }
 
-        .header {
-            margin-left: 80px;
-            margin-bottom: 50px;
-            position: relative;
-            z-index: 2;
-            border-left: 4px solid #14b8a6;
-            padding-left: 20px;
-        }
+      /* Decorative Grid */
+      .grid-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image:
+          linear-gradient(rgba(20, 184, 166, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(20, 184, 166, 0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index: 0;
+        pointer-events: none;
+      }
 
-        h1 {
-            font-size: 48px;
-            font-weight: 800;
-            color: #e8fbff;
-            margin-bottom: 10px;
-        }
+      .header {
+        margin-left: 80px;
+        margin-bottom: 50px;
+        position: relative;
+        z-index: 2;
+        border-left: 4px solid #14b8a6;
+        padding-left: 20px;
+      }
 
-        h2 {
-            font-size: 24px;
-            font-weight: 400;
-            color: #14b8a6;
-        }
+      h1 {
+        font-size: 48px;
+        font-weight: 800;
+        color: #e8fbff;
+        margin-bottom: 10px;
+      }
 
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            padding: 0 80px;
-            position: relative;
-            z-index: 2;
-        }
+      h2 {
+        font-size: 24px;
+        font-weight: 400;
+        color: #14b8a6;
+      }
 
-        .text-column {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
+      .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+        padding: 0 80px;
+        position: relative;
+        z-index: 2;
+      }
 
-        .error-card {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 30px;
-            position: relative;
-        }
+      .text-column {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
 
-        .error-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: #ef4444;
-        }
+      .error-card {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        padding: 30px;
+        position: relative;
+      }
 
-        .error-title {
-            color: #ef4444;
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+      .error-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: #ef4444;
+      }
 
-        .error-desc {
-            color: #cbd5e1;
-            font-size: 18px;
-            line-height: 1.6;
-        }
+      .error-title {
+        color: #ef4444;
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-        .detail-list {
-            list-style: none;
-        }
+      .error-desc {
+        color: #cbd5e1;
+        font-size: 18px;
+        line-height: 1.6;
+      }
 
-        .detail-item {
-            margin-bottom: 20px;
-            padding-left: 30px;
-            position: relative;
-            font-size: 18px;
-            color: #cbd5e1;
-            line-height: 1.5;
-        }
+      .detail-list {
+        list-style: none;
+      }
 
-        .detail-item::before {
-            content: '>';
-            position: absolute;
-            left: 0;
-            color: #14b8a6;
-            font-weight: bold;
-        }
+      .detail-item {
+        margin-bottom: 20px;
+        padding-left: 30px;
+        position: relative;
+        font-size: 18px;
+        color: #cbd5e1;
+        line-height: 1.5;
+      }
 
-        .code-block {
-            background: #0f172a;
-            border: 1px solid #334155;
-            padding: 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            color: #e2e8f0;
-            margin-top: 10px;
-        }
+      .detail-item::before {
+        content: ">";
+        position: absolute;
+        left: 0;
+        color: #14b8a6;
+        font-weight: bold;
+      }
 
-        .highlight-red { color: #ef4444; }
-        .highlight-yellow { color: #f59e0b; }
+      .code-block {
+        background: #0f172a;
+        border: 1px solid #334155;
+        padding: 20px;
+        font-family: "Courier New", monospace;
+        font-size: 16px;
+        color: #e2e8f0;
+        margin-top: 10px;
+      }
 
+      .highlight-red {
+        color: #ef4444;
+      }
+      .highlight-yellow {
+        color: #f59e0b;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="slide-container">
-        <div class="grid-overlay"></div>
-        
-        <div class="header">
-            <h1>Il Problema Riscontrato</h1>
-            <h2>Errore critico nel caricamento del dettaglio</h2>
+      <div class="grid-overlay"></div>
+
+      <div class="header">
+        <h1>Il Problema Riscontrato</h1>
+        <h2>Errore critico nel caricamento del dettaglio</h2>
+      </div>
+
+      <div class="content-grid">
+        <div class="text-column">
+          <div class="error-card">
+            <div class="error-title">
+              <i class="fas fa-exclamation-triangle"></i>
+              Blocco Visualizzazione
+            </div>
+            <p class="error-desc">
+              Il componente DomandaSpuntaDetail presentava un errore che
+              impediva completamente il rendering della pagina, lasciando
+              l'utente senza accesso ai dati.
+            </p>
+          </div>
+
+          <ul class="detail-list">
+            <li class="detail-item">
+              <strong class="text-white">Errore di Import:</strong><br />
+              L'icona <span class="highlight-red">Building</span> importata da
+              lucide-react non esiste nella libreria, causando un crash a
+              runtime.
+            </li>
+            <li class="detail-item">
+              <strong class="text-white">Mismatch dei campi API:</strong><br />
+              I nomi dei campi nel frontend non corrispondevano alla struttura
+              JSON restituita dal backend.
+            </li>
+          </ul>
         </div>
 
-        <div class="content-grid">
-            <div class="text-column">
-                <div class="error-card">
-                    <div class="error-title">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Blocco Visualizzazione
-                    </div>
-                    <p class="error-desc">
-                        Il componente DomandaSpuntaDetail presentava un errore che impediva completamente il rendering della pagina, lasciando l'utente senza accesso ai dati.
-                    </p>
-                </div>
-
-                <ul class="detail-list">
-                    <li class="detail-item">
-                        <strong class="text-white">Errore di Import:</strong><br>
-                        L'icona <span class="highlight-red">Building</span> importata da lucide-react non esiste nella libreria, causando un crash a runtime.
-                    </li>
-                    <li class="detail-item">
-                        <strong class="text-white">Mismatch dei campi API:</strong><br>
-                        I nomi dei campi nel frontend non corrispondevano alla struttura JSON restituita dal backend.
-                    </li>
-                </ul>
+        <div class="text-column">
+          <div style="margin-bottom: 30px">
+            <h3 style="color: #cbd5e1; margin-bottom: 10px; font-size: 18px">
+              Codice Errato (Import)
+            </h3>
+            <div class="code-block">
+              import { <span class="highlight-red">Building</span>, FileCheck }
+              from 'lucide-react';
+              <span class="highlight-yellow"
+                >// Module '"lucide-react"' has no exported member
+                'Building'.</span
+              >
             </div>
+          </div>
 
-            <div class="text-column">
-                <div style="margin-bottom: 30px;">
-                    <h3 style="color: #cbd5e1; margin-bottom: 10px; font-size: 18px;">Codice Errato (Import)</h3>
-                    <div class="code-block">
-import { <span class="highlight-red">Building</span>, FileCheck } from 'lucide-react';
-<span class="highlight-yellow">// Module '"lucide-react"' has no exported member 'Building'.</span>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 style="color: #cbd5e1; margin-bottom: 10px; font-size: 18px;">Codice Errato (Mapping)</h3>
-                    <div class="code-block">
-// Frontend expected:
-{
-  rappresentante_nome: "Mario",
-  presenze: 5
-}
-
-// Backend returned:
-{
-  <span class="highlight-red">rappresentante_legale_nome</span>: "Mario",
-  <span class="highlight-red">numero_presenze</span>: 5
-}
-                    </div>
-                </div>
+          <div>
+            <h3 style="color: #cbd5e1; margin-bottom: 10px; font-size: 18px">
+              Codice Errato (Mapping)
+            </h3>
+            <div class="code-block">
+              // Frontend expected: { rappresentante_nome: "Mario", presenze: 5
+              } // Backend returned: {
+              <span class="highlight-red">rappresentante_legale_nome</span>:
+              "Mario", <span class="highlight-red">numero_presenze</span>: 5 }
             </div>
+          </div>
         </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>

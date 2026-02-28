@@ -22,12 +22,12 @@ Ottimizzare la pagina Mappa per visualizzazione smartphone, mantenendo **INVARIA
 
 ## File Coinvolti
 
-| File | Descrizione | Righe |
-|------|-------------|-------|
-| `client/src/pages/MappaItaliaPage.tsx` | Pagina wrapper con header | 45 |
-| `client/src/components/GestioneHubMapWrapper.tsx` | Wrapper principale con tutti i controlli | 1041 |
-| `client/src/components/HubMarketMapComponent.tsx` | Componente mappa Leaflet | ~800 |
-| `client/src/components/MapWithTransportLayer.tsx` | Layer trasporto pubblico | ~300 |
+| File                                              | Descrizione                              | Righe |
+| ------------------------------------------------- | ---------------------------------------- | ----- |
+| `client/src/pages/MappaItaliaPage.tsx`            | Pagina wrapper con header                | 45    |
+| `client/src/components/GestioneHubMapWrapper.tsx` | Wrapper principale con tutti i controlli | 1041  |
+| `client/src/components/HubMarketMapComponent.tsx` | Componente mappa Leaflet                 | ~800  |
+| `client/src/components/MapWithTransportLayer.tsx` | Layer trasporto pubblico                 | ~300  |
 
 ---
 
@@ -64,34 +64,35 @@ Ottimizzare la pagina Mappa per visualizzazione smartphone, mantenendo **INVARIA
 
 ### Schermata 1: Selezione Hub/Mercato
 
-| # | Elemento | Stato Attuale | Modifica Mobile |
-|---|----------|---------------|------------------|
-| 1 | Container "GEMELLO DIGITALE DEL COMMERCIO" | Box con titolo + HUB: Italia | **RIMUOVERE** completamente |
-| 2 | Indicatori (HUB, NEGOZI, ATTIVI, INATTIVI) | 4 box separati + coordinate | **Una riga** - 4 indicatori compatti SENZA coordinate |
-| 3 | Tab "Mercati" / "HUB" | Sfondo colorato quando attivo | **Trasparenti** con bordo, MANTENERE colore quando attivo |
-| 4 | Barra ricerca | Input con placeholder | **MANTENERE** invariata |
-| 5 | Tab "Vista Italia" | Pulsante verde | **RIMUOVERE** (spostare in Schermata 2) |
-| 6 | Tab "Regione" / "Prov." | Dropdown con sfondo | **Trasparenti** con bordo, aprono popup selezione |
-| 7 | Tab "Area: NaN mq" | Indicatore area | **RIMUOVERE** su mobile |
-| 8 | Lista hub/mercati | Card scorrevoli | **MANTENERE** invariata |
-| 9 | Mappa | Visibile sotto lista | **NASCONDERE** (va in Schermata 2) |
+| #   | Elemento                                   | Stato Attuale                 | Modifica Mobile                                           |
+| --- | ------------------------------------------ | ----------------------------- | --------------------------------------------------------- |
+| 1   | Container "GEMELLO DIGITALE DEL COMMERCIO" | Box con titolo + HUB: Italia  | **RIMUOVERE** completamente                               |
+| 2   | Indicatori (HUB, NEGOZI, ATTIVI, INATTIVI) | 4 box separati + coordinate   | **Una riga** - 4 indicatori compatti SENZA coordinate     |
+| 3   | Tab "Mercati" / "HUB"                      | Sfondo colorato quando attivo | **Trasparenti** con bordo, MANTENERE colore quando attivo |
+| 4   | Barra ricerca                              | Input con placeholder         | **MANTENERE** invariata                                   |
+| 5   | Tab "Vista Italia"                         | Pulsante verde                | **RIMUOVERE** (spostare in Schermata 2)                   |
+| 6   | Tab "Regione" / "Prov."                    | Dropdown con sfondo           | **Trasparenti** con bordo, aprono popup selezione         |
+| 7   | Tab "Area: NaN mq"                         | Indicatore area               | **RIMUOVERE** su mobile                                   |
+| 8   | Lista hub/mercati                          | Card scorrevoli               | **MANTENERE** invariata                                   |
+| 9   | Mappa                                      | Visibile sotto lista          | **NASCONDERE** (va in Schermata 2)                        |
 
 ### Schermata 2: Mappa Fullscreen
 
-| # | Elemento | Descrizione |
-|---|----------|-------------|
-| 1 | Layout | **Fullscreen** senza container (tipo YouTube a tutto schermo) |
-| 2 | Mappa | Vista Italia a tutto schermo con markers |
-| 3 | Tab "Apri" / "Chiudi" | **Singolo pulsante toggle** sopra la mappa |
-| 4 | Animazione | Click "Apri" → zoom animato fino a hub/mercato selezionato |
-| 5 | Pulsante "Vista Italia" | Torna a vista Italia (reset zoom) |
-| 6 | Freccia indietro | Torna a Schermata 1 (selezione) |
+| #   | Elemento                | Descrizione                                                   |
+| --- | ----------------------- | ------------------------------------------------------------- |
+| 1   | Layout                  | **Fullscreen** senza container (tipo YouTube a tutto schermo) |
+| 2   | Mappa                   | Vista Italia a tutto schermo con markers                      |
+| 3   | Tab "Apri" / "Chiudi"   | **Singolo pulsante toggle** sopra la mappa                    |
+| 4   | Animazione              | Click "Apri" → zoom animato fino a hub/mercato selezionato    |
+| 5   | Pulsante "Vista Italia" | Torna a vista Italia (reset zoom)                             |
+| 6   | Freccia indietro        | Torna a Schermata 1 (selezione)                               |
 
 ---
 
 ## Piano Implementazione
 
 ### Fase 1: Preparazione
+
 1. Creare backup: `GestioneHubMapWrapper.tsx.backup-v3.75.2`
 2. Aggiungere stato `showFullscreenMap` per toggle schermata
 
@@ -106,20 +107,39 @@ Ottimizzare la pagina Mappa per visualizzazione smartphone, mantenendo **INVARIA
 ### Fase 3: Schermata 1 Mobile
 
 ```tsx
-{/* MOBILE: Header compatto con indicatori su una riga */}
-{isMobile && (
-  <div className="sm:hidden flex items-center gap-2 p-2 overflow-x-auto">
-    <StatIndicator label="HUB" value={stats.mercati} color="purple" compact />
-    <StatIndicator label="Negozi" value={stats.totali} color="white" compact />
-    <StatIndicator label="Attivi" value={stats.occupati} color="green" compact />
-    <StatIndicator label="Inattivi" value={stats.liberi} color="white" compact />
-  </div>
-)}
+{
+  /* MOBILE: Header compatto con indicatori su una riga */
+}
+{
+  isMobile && (
+    <div className="sm:hidden flex items-center gap-2 p-2 overflow-x-auto">
+      <StatIndicator label="HUB" value={stats.mercati} color="purple" compact />
+      <StatIndicator
+        label="Negozi"
+        value={stats.totali}
+        color="white"
+        compact
+      />
+      <StatIndicator
+        label="Attivi"
+        value={stats.occupati}
+        color="green"
+        compact
+      />
+      <StatIndicator
+        label="Inattivi"
+        value={stats.liberi}
+        color="white"
+        compact
+      />
+    </div>
+  );
+}
 
-{/* PC/TABLET: Header originale invariato */}
-<div className="hidden sm:flex ...">
-  {/* Codice esistente INVARIATO */}
-</div>
+{
+  /* PC/TABLET: Header originale invariato */
+}
+<div className="hidden sm:flex ...">{/* Codice esistente INVARIATO */}</div>;
 ```
 
 ### Fase 4: Schermata 2 Mobile (Mappa Fullscreen)
@@ -140,7 +160,7 @@ Ottimizzare la pagina Mappa per visualizzazione smartphone, mantenendo **INVARIA
         Vista Italia
       </button>
     </div>
-    
+
     {/* Mappa fullscreen */}
     <div className="h-full w-full">
       <HubMarketMapComponent ... />
@@ -152,16 +172,20 @@ Ottimizzare la pagina Mappa per visualizzazione smartphone, mantenendo **INVARIA
 ### Fase 5: Pulsante "Apri Mappa" in Schermata 1
 
 ```tsx
-{/* MOBILE: Pulsante per aprire mappa fullscreen */}
-{isMobile && !showFullscreenMap && selectedItem && (
-  <button 
-    onClick={() => setShowFullscreenMap(true)}
-    className="w-full py-3 bg-[#14b8a6] text-white rounded-lg"
-  >
-    <Map className="h-5 w-5 mr-2" />
-    Apri Mappa
-  </button>
-)}
+{
+  /* MOBILE: Pulsante per aprire mappa fullscreen */
+}
+{
+  isMobile && !showFullscreenMap && selectedItem && (
+    <button
+      onClick={() => setShowFullscreenMap(true)}
+      className="w-full py-3 bg-[#14b8a6] text-white rounded-lg"
+    >
+      <Map className="h-5 w-5 mr-2" />
+      Apri Mappa
+    </button>
+  );
+}
 ```
 
 ---
@@ -173,9 +197,10 @@ Ottimizzare la pagina Mappa per visualizzazione smartphone, mantenendo **INVARIA
 const tabBaseStyle = "bg-transparent border border-border/40 backdrop-blur-sm";
 
 // Stile attivo (mantiene colore)
-const tabActiveStyle = mode === 'mercato' 
-  ? 'bg-[#ef4444] text-white border-[#ef4444]' 
-  : 'bg-[#9C27B0] text-white border-[#9C27B0]';
+const tabActiveStyle =
+  mode === "mercato"
+    ? "bg-[#ef4444] text-white border-[#ef4444]"
+    : "bg-[#9C27B0] text-white border-[#9C27B0]";
 ```
 
 ---
@@ -202,16 +227,16 @@ const tabActiveStyle = mode === 'mercato'
 
 ## Stima Tempi
 
-| Fase | Attività | Tempo Stimato |
-|------|----------|---------------|
-| 1 | Backup e preparazione | 5 min |
-| 2 | Modifiche header mobile | 20 min |
-| 3 | Schermata 1 mobile | 30 min |
-| 4 | Schermata 2 fullscreen | 45 min |
-| 5 | Stile tab trasparenti | 15 min |
-| 6 | Test e debug | 30 min |
-| 7 | Deploy e verifica | 10 min |
-| **TOTALE** | | **~2.5 ore** |
+| Fase       | Attività                | Tempo Stimato |
+| ---------- | ----------------------- | ------------- |
+| 1          | Backup e preparazione   | 5 min         |
+| 2          | Modifiche header mobile | 20 min        |
+| 3          | Schermata 1 mobile      | 30 min        |
+| 4          | Schermata 2 fullscreen  | 45 min        |
+| 5          | Stile tab trasparenti   | 15 min        |
+| 6          | Test e debug            | 30 min        |
+| 7          | Deploy e verifica       | 10 min        |
+| **TOTALE** |                         | **~2.5 ore**  |
 
 ---
 
@@ -225,4 +250,4 @@ const tabActiveStyle = mode === 'mercato'
 
 ---
 
-*Progetto documentato da Manus AI - 01 Febbraio 2026*
+_Progetto documentato da Manus AI - 01 Febbraio 2026_

@@ -1,12 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import React from 'react';
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { 
-  MapPin, 
-  Users, 
+import {
+  MapPin,
+  Users,
   Building2,
   Loader2,
   FileText,
@@ -22,25 +28,48 @@ import {
   ExternalLink,
   AlertCircle,
   Wallet,
-  Calendar
+  Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MarketMapComponent } from './MarketMapComponent';
-import { MarketCompaniesTab, CompanyModal, CompanyRow, CompanyFormData } from './markets/MarketCompaniesTab';
-import { getStallStatusLabel, getStallStatusClasses, getStallMapFillColor, STALL_STATUS_OPTIONS } from '@/lib/stallStatus';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MarketMapComponent } from "./MarketMapComponent";
+import {
+  MarketCompaniesTab,
+  CompanyModal,
+  CompanyRow,
+  CompanyFormData,
+} from "./markets/MarketCompaniesTab";
+import {
+  getStallStatusLabel,
+  getStallStatusClasses,
+  getStallMapFillColor,
+  STALL_STATUS_OPTIONS,
+} from "@/lib/stallStatus";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-import { MIHUB_API_BASE_URL } from '@/config/api';
-import { addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
 // Fix per icone marker Leaflet
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
 const DefaultIcon = L.icon({
   iconUrl: icon,
@@ -124,7 +153,7 @@ interface MarketMapData {
     features: Array<{
       type: string;
       geometry: {
-        type: 'Point' | 'Polygon';
+        type: "Point" | "Polygon";
         coordinates: [number, number] | [number, number][][];
       };
       properties: {
@@ -166,11 +195,13 @@ interface CompanyDetails {
  * Componente Gestione Mercati
  * Sistema completo per gestione mercati, posteggi e concessioni
  */
-export default function MappaItaliaComponent({ preselectedMarketId }: { preselectedMarketId?: number } = {}) {
+export default function MappaItaliaComponent({
+  preselectedMarketId,
+}: { preselectedMarketId?: number } = {}) {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchMarkets();
@@ -188,7 +219,9 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
 
   const fetchMarkets = async () => {
     try {
-     const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets`));
+      const response = await fetch(
+        addComuneIdToUrl(`${API_BASE_URL}/api/markets`)
+      );
       const data = await response.json();
       if (data.success) {
         setMarkets(data.data);
@@ -197,8 +230,8 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
         }
       }
     } catch (error) {
-      console.error('Error fetching markets:', error);
-      toast.error('Errore nel caricamento dei mercati');
+      console.error("Error fetching markets:", error);
+      toast.error("Errore nel caricamento dei mercati");
     } finally {
       setLoading(false);
     }
@@ -226,9 +259,10 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
   }
 
   // Filtra mercati in base alla ricerca
-  const filteredMarkets = markets.filter(market => 
-    market.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    market.municipality.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMarkets = markets.filter(
+    market =>
+      market.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      market.municipality.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -240,7 +274,7 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
             type="text"
             placeholder="Cerca mercato per nome o città..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="w-full px-4 py-2 pl-10 pr-12 bg-[#0b1220]/50 border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] placeholder:text-[#e8fbff]/50 focus:outline-none focus:border-[#14b8a6] focus:ring-2 focus:ring-[#14b8a6]/20"
           />
           <svg
@@ -264,7 +298,7 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setSearchQuery('')}
+            onClick={() => setSearchQuery("")}
             className="bg-[#0b1220]/50 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
           >
             <X className="h-4 w-4 mr-1" />
@@ -276,17 +310,20 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
       {/* Risultati Ricerca */}
       {searchQuery && (
         <div className="text-sm text-[#e8fbff]/70">
-          {filteredMarkets.length} {filteredMarkets.length === 1 ? 'mercato trovato' : 'mercati trovati'}
+          {filteredMarkets.length}{" "}
+          {filteredMarkets.length === 1 ? "mercato trovato" : "mercati trovati"}
         </div>
       )}
 
       {/* Lista Mercati */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredMarkets.map((market) => (
-          <Card 
-            key={market.id} 
+        {filteredMarkets.map(market => (
+          <Card
+            key={market.id}
             className={`cursor-pointer transition-all bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30 hover:border-[#14b8a6] ${
-              selectedMarket?.id === market.id ? 'border-[#14b8a6] ring-2 ring-[#14b8a6]/50' : ''
+              selectedMarket?.id === market.id
+                ? "border-[#14b8a6] ring-2 ring-[#14b8a6]/50"
+                : ""
             }`}
             onClick={() => setSelectedMarket(market)}
           >
@@ -295,19 +332,27 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
                 <Building2 className="h-5 w-5 text-[#14b8a6]" />
                 {market.name}
               </CardTitle>
-              <CardDescription className="text-[#e8fbff]/70">{market.municipality}</CardDescription>
+              <CardDescription className="text-[#e8fbff]/70">
+                {market.municipality}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#e8fbff]/70">Codice</span>
-                  <Badge variant="secondary" className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30">
+                  <Badge
+                    variant="secondary"
+                    className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30"
+                  >
                     {market.code}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#e8fbff]/70">Posteggi Totali</span>
-                  <Badge variant="secondary" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
+                  <Badge
+                    variant="secondary"
+                    className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30"
+                  >
                     {market.total_stalls}
                   </Badge>
                 </div>
@@ -317,13 +362,15 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#e8fbff]/70">Stato</span>
-                  <Badge 
-                    variant="default" 
-                    className={market.status === 'active' 
-                      ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30" 
-                      : "bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30"}
+                  <Badge
+                    variant="default"
+                    className={
+                      market.status === "active"
+                        ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30"
+                        : "bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30"
+                    }
                   >
-                    {market.status === 'active' ? "Attivo" : "Inattivo"}
+                    {market.status === "active" ? "Attivo" : "Inattivo"}
                   </Badge>
                 </div>
               </div>
@@ -334,7 +381,11 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
 
       {/* Dettaglio Mercato Selezionato */}
       {selectedMarket && (
-        <MarketDetail market={selectedMarket} allMarkets={markets} onUpdate={fetchMarkets} />
+        <MarketDetail
+          market={selectedMarket}
+          allMarkets={markets}
+          onUpdate={fetchMarkets}
+        />
       )}
     </div>
   );
@@ -343,82 +394,99 @@ export default function MappaItaliaComponent({ preselectedMarketId }: { preselec
 /**
  * Dettaglio mercato con tab
  */
-function MarketDetail({ market, allMarkets, onUpdate }: { market: Market; allMarkets: Market[]; onUpdate: () => void }) {
+function MarketDetail({
+  market,
+  allMarkets,
+  onUpdate,
+}: {
+  market: Market;
+  allMarkets: Market[];
+  onUpdate: () => void;
+}) {
   const [activeTab, setActiveTab] = useState("anagrafica");
   const [stalls, setStalls] = useState<Stall[]>([]);
   // Stato per Vista Italia / Vista Mercato: 'italia' | 'mercato'
-  const [viewMode, setViewMode] = useState<'italia' | 'mercato'>('italia');
+  const [viewMode, setViewMode] = useState<"italia" | "mercato">("italia");
   const [viewTrigger, setViewTrigger] = useState(0); // Trigger per forzare flyTo
 
   // Carica i posteggi al mount del componente
   useEffect(() => {
     const fetchStalls = async () => {
       try {
-        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/stalls`));
+        const response = await fetch(
+          addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/stalls`)
+        );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const json = await response.json();
         if (json.success && Array.isArray(json.data)) {
           setStalls(json.data);
         }
       } catch (error) {
-        console.error('[MarketDetail] Errore caricamento posteggi:', error);
+        console.error("[MarketDetail] Errore caricamento posteggi:", error);
       }
     };
-    
+
     fetchStalls();
   }, [market.id]);
 
   return (
     <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
       <CardHeader>
-        <CardTitle className="text-[#e8fbff]">Dettaglio: {market.name}</CardTitle>
-        <CardDescription className="text-[#e8fbff]/70">Gestisci anagrafica, posteggi e concessioni</CardDescription>
+        <CardTitle className="text-[#e8fbff]">
+          Dettaglio: {market.name}
+        </CardTitle>
+        <CardDescription className="text-[#e8fbff]/70">
+          Gestisci anagrafica, posteggi e concessioni
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs 
-          value={activeTab} 
-          onValueChange={(value) => {
+        <Tabs
+          value={activeTab}
+          onValueChange={value => {
             setActiveTab(value);
-            
+
             // Gestione reset vista quando si cambia tab
-            if (value === 'posteggi') {
+            if (value === "posteggi") {
               // Quando si entra nel tab posteggi, forza sempre Vista Italia
-              setViewMode('italia');
+              setViewMode("italia");
               // Trigger per assicurare che la mappa si posizioni correttamente
               setTimeout(() => setViewTrigger(prev => prev + 1), 100);
             } else {
               // Resetta anche viewMode per sicurezza
-              setViewMode('italia');
+              setViewMode("italia");
             }
           }}
         >
           <TabsList className="grid w-full grid-cols-3 bg-[#0b1220]/50">
-            <TabsTrigger 
+            <TabsTrigger
               value="anagrafica"
               className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
             >
               <FileText className="mr-2 h-4 w-4" />
               Anagrafica
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="posteggi"
               className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
-              onClick={(e) => {
+              onClick={e => {
                 // Se siamo già nel tab posteggi, toggle tra vista Italia e vista Mercato
-                if (activeTab === 'posteggi') {
+                if (activeTab === "posteggi") {
                   e.preventDefault();
-                  setViewMode(prev => prev === 'italia' ? 'mercato' : 'italia');
+                  setViewMode(prev =>
+                    prev === "italia" ? "mercato" : "italia"
+                  );
                   setViewTrigger(prev => prev + 1); // Forza flyTo
                 }
               }}
             >
               <MapPin className="mr-2 h-4 w-4" />
-              {activeTab === 'posteggi' 
-                ? (viewMode === 'italia' ? 'Vista Mercato' : 'Vista Italia')
-                : 'Vista Italia'
-              }
+              {activeTab === "posteggi"
+                ? viewMode === "italia"
+                  ? "Vista Mercato"
+                  : "Vista Italia"
+                : "Vista Italia"}
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="concessioni"
               className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
             >
@@ -432,15 +500,32 @@ function MarketDetail({ market, allMarkets, onUpdate }: { market: Market; allMar
           </TabsContent>
 
           <TabsContent value="posteggi" className="space-y-4">
-            <PosteggiTab marketId={market.id} marketCode={market.code} marketCenter={[parseFloat(market.latitude), parseFloat(market.longitude)]} stalls={stalls} setStalls={setStalls} allMarkets={allMarkets} viewMode={viewMode} setViewMode={setViewMode} viewTrigger={viewTrigger} setViewTrigger={setViewTrigger} />
+            <PosteggiTab
+              marketId={market.id}
+              marketCode={market.code}
+              marketCenter={[
+                parseFloat(market.latitude),
+                parseFloat(market.longitude),
+              ]}
+              stalls={stalls}
+              setStalls={setStalls}
+              allMarkets={allMarkets}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              viewTrigger={viewTrigger}
+              setViewTrigger={setViewTrigger}
+            />
           </TabsContent>
 
           <TabsContent value="concessioni" className="space-y-4">
-            <MarketCompaniesTab 
-              marketId={market.id.toString()} 
+            <MarketCompaniesTab
+              marketId={market.id.toString()}
               marketName={market.name}
               municipality={market.municipality}
-              stalls={stalls.map(s => ({ id: s.id.toString(), code: s.number }))} 
+              stalls={stalls.map(s => ({
+                id: s.id.toString(),
+                code: s.number,
+              }))}
             />
           </TabsContent>
         </Tabs>
@@ -452,43 +537,52 @@ function MarketDetail({ market, allMarkets, onUpdate }: { market: Market; allMar
 /**
  * Tab Anagrafica Mercato
  */
-function AnagraficaTab({ market, onUpdate }: { market: Market; onUpdate: () => void }) {
+function AnagraficaTab({
+  market,
+  onUpdate,
+}: {
+  market: Market;
+  onUpdate: () => void;
+}) {
   const [formData, setFormData] = useState({
-    days: market.days || '',
+    days: market.days || "",
     cost_per_sqm: market.cost_per_sqm || 0,
-    annual_market_days: market.annual_market_days || 52
+    annual_market_days: market.annual_market_days || 52,
   });
   const [saving, setSaving] = useState(false);
 
   // Aggiorna il form quando cambia il mercato selezionato
   useEffect(() => {
     setFormData({
-      days: market.days || '',
+      days: market.days || "",
       cost_per_sqm: market.cost_per_sqm || 0,
-      annual_market_days: market.annual_market_days || 52
+      annual_market_days: market.annual_market_days || 52,
     });
   }, [market]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await authenticatedFetch(`${API_BASE_URL}/api/markets/${market.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/markets/${market.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (response.ok) {
-        toast.success('Dati mercato aggiornati con successo');
+        toast.success("Dati mercato aggiornati con successo");
         onUpdate();
       } else {
-        throw new Error('Errore durante il salvataggio');
+        throw new Error("Errore durante il salvataggio");
       }
     } catch (error) {
-      console.error('Error updating market:', error);
-      toast.error('Errore durante il salvataggio delle modifiche');
+      console.error("Error updating market:", error);
+      toast.error("Errore durante il salvataggio delle modifiche");
     } finally {
       setSaving(false);
     }
@@ -497,9 +591,11 @@ function AnagraficaTab({ market, onUpdate }: { market: Market; onUpdate: () => v
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-[#e8fbff]">Dati Generali e Tariffe</h3>
-        <Button 
-          onClick={handleSave} 
+        <h3 className="text-lg font-medium text-[#e8fbff]">
+          Dati Generali e Tariffe
+        </h3>
+        <Button
+          onClick={handleSave}
           disabled={saving}
           className="bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
         >
@@ -520,75 +616,120 @@ function AnagraficaTab({ market, onUpdate }: { market: Market; onUpdate: () => v
       <div className="grid grid-cols-2 gap-4">
         {/* Campi Sola Lettura */}
         <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
-          <label className="text-sm font-medium text-[#e8fbff]/50">Codice</label>
-          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.code}</p>
+          <label className="text-sm font-medium text-[#e8fbff]/50">
+            Codice
+          </label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">
+            {market.code}
+          </p>
         </div>
         <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
           <label className="text-sm font-medium text-[#e8fbff]/50">Nome</label>
-          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.name}</p>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">
+            {market.name}
+          </p>
         </div>
         <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
-          <label className="text-sm font-medium text-[#e8fbff]/50">Comune</label>
-          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.municipality}</p>
+          <label className="text-sm font-medium text-[#e8fbff]/50">
+            Comune
+          </label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">
+            {market.municipality}
+          </p>
         </div>
         <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
-          <label className="text-sm font-medium text-[#e8fbff]/50">Posteggi Totali</label>
-          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.total_stalls}</p>
+          <label className="text-sm font-medium text-[#e8fbff]/50">
+            Posteggi Totali
+          </label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">
+            {market.total_stalls}
+          </p>
         </div>
 
         {/* Campi Modificabili - Configurazione Mercato */}
         <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/30 ring-1 ring-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#14b8a6]">Giorno Settimanale</label>
+          <label className="text-sm font-medium text-[#14b8a6]">
+            Giorno Settimanale
+          </label>
           <input
             type="text"
             value={formData.days}
-            onChange={(e) => setFormData({ ...formData, days: e.target.value })}
+            onChange={e => setFormData({ ...formData, days: e.target.value })}
             className="w-full mt-2 px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
             placeholder="Es. Lunedì"
           />
         </div>
 
         <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/30 ring-1 ring-[#14b8a6]/20">
-          <label className="text-sm font-medium text-[#14b8a6]">Giorni/Anno (per calcolo canone)</label>
+          <label className="text-sm font-medium text-[#14b8a6]">
+            Giorni/Anno (per calcolo canone)
+          </label>
           <input
             type="number"
             value={formData.annual_market_days}
-            onChange={(e) => setFormData({ ...formData, annual_market_days: parseInt(e.target.value) || 0 })}
+            onChange={e =>
+              setFormData({
+                ...formData,
+                annual_market_days: parseInt(e.target.value) || 0,
+              })
+            }
             className="w-full mt-2 px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
             placeholder="Es. 52"
           />
         </div>
 
         <div className="bg-[#0b1220]/50 p-4 rounded-lg border border-[#14b8a6]/30 ring-1 ring-[#14b8a6]/20 col-span-2">
-          <label className="text-sm font-medium text-[#14b8a6]">Costo al mq (€)</label>
+          <label className="text-sm font-medium text-[#14b8a6]">
+            Costo al mq (€)
+          </label>
           <div className="relative mt-2">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#e8fbff]/50">€</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#e8fbff]/50">
+              €
+            </span>
             <input
               type="number"
               step="0.01"
               value={formData.cost_per_sqm}
-              onChange={(e) => setFormData({ ...formData, cost_per_sqm: parseFloat(e.target.value) || 0 })}
+              onChange={e =>
+                setFormData({
+                  ...formData,
+                  cost_per_sqm: parseFloat(e.target.value) || 0,
+                })
+              }
               className="w-full pl-8 pr-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-md text-[#e8fbff] focus:outline-none focus:border-[#14b8a6]"
               placeholder="0.00"
             />
           </div>
           <p className="text-xs text-[#e8fbff]/50 mt-2">
-            Utilizzato per il calcolo automatico del canone unico (Costo mq × Mq Posteggio × Giorni Anno)
+            Utilizzato per il calcolo automatico del canone unico (Costo mq × Mq
+            Posteggio × Giorni Anno)
           </p>
         </div>
 
         {/* Altri Dati Tecnici */}
         <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
-          <label className="text-sm font-medium text-[#e8fbff]/50">Latitudine</label>
-          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.latitude}</p>
+          <label className="text-sm font-medium text-[#e8fbff]/50">
+            Latitudine
+          </label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">
+            {market.latitude}
+          </p>
         </div>
         <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10">
-          <label className="text-sm font-medium text-[#e8fbff]/50">Longitudine</label>
-          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">{market.longitude}</p>
+          <label className="text-sm font-medium text-[#e8fbff]/50">
+            Longitudine
+          </label>
+          <p className="text-lg font-semibold text-[#e8fbff]/70 mt-1">
+            {market.longitude}
+          </p>
         </div>
         <div className="bg-[#0b1220]/30 p-4 rounded-lg border border-[#14b8a6]/10 col-span-2">
-          <label className="text-sm font-medium text-[#e8fbff]/50">GIS Market ID</label>
-          <p className="text-lg font-semibold text-[#8b5cf6]/70 mt-1">{market.gis_market_id}</p>
+          <label className="text-sm font-medium text-[#e8fbff]/50">
+            GIS Market ID
+          </label>
+          <p className="text-lg font-semibold text-[#8b5cf6]/70 mt-1">
+            {market.gis_market_id}
+          </p>
         </div>
       </div>
     </div>
@@ -597,32 +738,32 @@ function AnagraficaTab({ market, onUpdate }: { market: Market; onUpdate: () => v
 
 // Costanti per i select del form impresa
 const FORMA_GIURIDICA_OPTIONS = [
-  { value: '', label: 'Seleziona...' },
-  { value: 'SRL', label: 'S.R.L.' },
-  { value: 'SPA', label: 'S.P.A.' },
-  { value: 'SNC', label: 'S.N.C.' },
-  { value: 'SAS', label: 'S.A.S.' },
-  { value: 'DI', label: 'Ditta Individuale' },
-  { value: 'COOP', label: 'Cooperativa' },
-  { value: 'ALTRO', label: 'Altro' },
+  { value: "", label: "Seleziona..." },
+  { value: "SRL", label: "S.R.L." },
+  { value: "SPA", label: "S.P.A." },
+  { value: "SNC", label: "S.N.C." },
+  { value: "SAS", label: "S.A.S." },
+  { value: "DI", label: "Ditta Individuale" },
+  { value: "COOP", label: "Cooperativa" },
+  { value: "ALTRO", label: "Altro" },
 ];
 
 const STATO_IMPRESA_OPTIONS = [
-  { value: 'Attiva', label: 'Attiva' },
-  { value: 'Cessata', label: 'Cessata' },
-  { value: 'In Liquidazione', label: 'In Liquidazione' },
-  { value: 'Sospesa', label: 'Sospesa' },
+  { value: "Attiva", label: "Attiva" },
+  { value: "Cessata", label: "Cessata" },
+  { value: "In Liquidazione", label: "In Liquidazione" },
+  { value: "Sospesa", label: "Sospesa" },
 ];
 
 /**
  * Componente Scheda Impresa - mostra il form completo di modifica impresa
  * come nel tab Imprese/Concessioni
  */
-function CompanyDetailCard({ 
-  stall, 
+function CompanyDetailCard({
+  stall,
   concessionData,
-  onClose 
-}: { 
+  onClose,
+}: {
   stall: Stall | null;
   concessionData: any;
   onClose: () => void;
@@ -631,23 +772,23 @@ function CompanyDetailCard({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    denominazione: '',
-    codice_fiscale: '',
-    partita_iva: '',
-    numero_rea: '',
-    cciaa_sigla: '',
-    forma_giuridica: '',
-    stato_impresa: 'Attiva',
-    indirizzo_via: '',
-    indirizzo_civico: '',
-    indirizzo_cap: '',
-    indirizzo_provincia: '',
-    comune: '',
-    pec: '',
-    referente: '',
-    telefono: '',
-    codice_ateco: '',
-    descrizione_ateco: '',
+    denominazione: "",
+    codice_fiscale: "",
+    partita_iva: "",
+    numero_rea: "",
+    cciaa_sigla: "",
+    forma_giuridica: "",
+    stato_impresa: "Attiva",
+    indirizzo_via: "",
+    indirizzo_civico: "",
+    indirizzo_cap: "",
+    indirizzo_provincia: "",
+    comune: "",
+    pec: "",
+    referente: "",
+    telefono: "",
+    codice_ateco: "",
+    descrizione_ateco: "",
   });
 
   // Carica i dati dell'impresa quando cambia il posteggio selezionato
@@ -664,32 +805,34 @@ function CompanyDetailCard({
   const fetchCompanyData = async (companyId: number | string) => {
     setLoading(true);
     try {
-      const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${companyId}`));
+      const response = await fetch(
+        addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${companyId}`)
+      );
       const data = await response.json();
       if (data.success && data.data) {
         setCompanyData(data.data);
         setFormData({
-          denominazione: data.data.denominazione || '',
-          codice_fiscale: data.data.codice_fiscale || '',
-          partita_iva: data.data.partita_iva || '',
-          numero_rea: data.data.numero_rea || '',
-          cciaa_sigla: data.data.cciaa_sigla || '',
-          forma_giuridica: data.data.forma_giuridica || '',
-          stato_impresa: data.data.stato_impresa || 'Attiva',
-          indirizzo_via: data.data.indirizzo_via || '',
-          indirizzo_civico: data.data.indirizzo_civico || '',
-          indirizzo_cap: data.data.indirizzo_cap || '',
-          indirizzo_provincia: data.data.indirizzo_provincia || '',
-          comune: data.data.comune || '',
-          pec: data.data.pec || '',
-          referente: data.data.email || data.data.referente || '',
-          telefono: data.data.telefono || '',
-          codice_ateco: data.data.codice_ateco || '',
-          descrizione_ateco: data.data.descrizione_ateco || '',
+          denominazione: data.data.denominazione || "",
+          codice_fiscale: data.data.codice_fiscale || "",
+          partita_iva: data.data.partita_iva || "",
+          numero_rea: data.data.numero_rea || "",
+          cciaa_sigla: data.data.cciaa_sigla || "",
+          forma_giuridica: data.data.forma_giuridica || "",
+          stato_impresa: data.data.stato_impresa || "Attiva",
+          indirizzo_via: data.data.indirizzo_via || "",
+          indirizzo_civico: data.data.indirizzo_civico || "",
+          indirizzo_cap: data.data.indirizzo_cap || "",
+          indirizzo_provincia: data.data.indirizzo_provincia || "",
+          comune: data.data.comune || "",
+          pec: data.data.pec || "",
+          referente: data.data.email || data.data.referente || "",
+          telefono: data.data.telefono || "",
+          codice_ateco: data.data.codice_ateco || "",
+          descrizione_ateco: data.data.descrizione_ateco || "",
         });
       }
     } catch (error) {
-      console.error('Error fetching company data:', error);
+      console.error("Error fetching company data:", error);
     } finally {
       setLoading(false);
     }
@@ -699,20 +842,23 @@ function CompanyDetailCard({
     if (!companyData?.id) return;
     setSaving(true);
     try {
-      const response = await authenticatedFetch(`${API_BASE_URL}/api/imprese/${companyData.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/imprese/${companyData.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
       const data = await response.json();
       if (data.success) {
-        toast.success('Impresa aggiornata con successo');
+        toast.success("Impresa aggiornata con successo");
       } else {
-        toast.error('Errore durante il salvataggio');
+        toast.error("Errore durante il salvataggio");
       }
     } catch (error) {
-      console.error('Error saving company:', error);
-      toast.error('Errore durante il salvataggio');
+      console.error("Error saving company:", error);
+      toast.error("Errore durante il salvataggio");
     } finally {
       setSaving(false);
     }
@@ -723,7 +869,8 @@ function CompanyDetailCard({
       <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10">
         <MapPin className="h-12 w-12 text-[#14b8a6]/30 mb-4" />
         <p className="text-[#e8fbff]/50 text-sm">
-          Seleziona un posteggio dalla lista per visualizzare i dettagli dell'impresa
+          Seleziona un posteggio dalla lista per visualizzare i dettagli
+          dell'impresa
         </p>
       </div>
     );
@@ -738,7 +885,10 @@ function CompanyDetailCard({
           <h3 className="text-sm font-semibold text-[#e8fbff]">
             Posteggio {stall.number}
           </h3>
-          <button onClick={onClose} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">
+          <button
+            onClick={onClose}
+            className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -759,7 +909,9 @@ function CompanyDetailCard({
     return (
       <div className="h-full flex flex-col items-center justify-center bg-[#0b1220]/30 rounded-lg border border-[#14b8a6]/10">
         <Loader2 className="h-8 w-8 animate-spin text-[#14b8a6]" />
-        <p className="text-[#e8fbff]/50 text-sm mt-2">Caricamento dati impresa...</p>
+        <p className="text-[#e8fbff]/50 text-sm mt-2">
+          Caricamento dati impresa...
+        </p>
       </div>
     );
   }
@@ -773,7 +925,10 @@ function CompanyDetailCard({
             Modifica Impresa
           </h3>
         </div>
-        <button onClick={onClose} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">
+        <button
+          onClick={onClose}
+          className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -785,33 +940,45 @@ function CompanyDetailCard({
           <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wide border-b border-[#14b8a6]/20 pb-1">
             Identità
           </h4>
-          
+
           <div>
-            <label className="block text-xs text-[#e8fbff]/70 mb-1">Denominazione *</label>
+            <label className="block text-xs text-[#e8fbff]/70 mb-1">
+              Denominazione *
+            </label>
             <input
               type="text"
               value={formData.denominazione}
-              onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })}
+              onChange={e =>
+                setFormData({ ...formData, denominazione: e.target.value })
+              }
               className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Codice Fiscale *</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Codice Fiscale *
+              </label>
               <input
                 type="text"
                 value={formData.codice_fiscale}
-                onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, codice_fiscale: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
               />
             </div>
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Partita IVA *</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Partita IVA *
+              </label>
               <input
                 type="text"
                 value={formData.partita_iva}
-                onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, partita_iva: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
               />
             </div>
@@ -819,21 +986,29 @@ function CompanyDetailCard({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Numero REA</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Numero REA
+              </label>
               <input
                 type="text"
                 value={formData.numero_rea}
-                onChange={(e) => setFormData({ ...formData, numero_rea: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, numero_rea: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
                 placeholder="es. GR-123456"
               />
             </div>
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">CCIAA</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                CCIAA
+              </label>
               <input
                 type="text"
                 value={formData.cciaa_sigla}
-                onChange={(e) => setFormData({ ...formData, cciaa_sigla: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, cciaa_sigla: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
                 placeholder="es. GR"
               />
@@ -842,26 +1017,38 @@ function CompanyDetailCard({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Forma Giuridica</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Forma Giuridica
+              </label>
               <select
                 value={formData.forma_giuridica}
-                onChange={(e) => setFormData({ ...formData, forma_giuridica: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, forma_giuridica: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
               >
-                {FORMA_GIURIDICA_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                {FORMA_GIURIDICA_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Stato Impresa</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Stato Impresa
+              </label>
               <select
                 value={formData.stato_impresa}
-                onChange={(e) => setFormData({ ...formData, stato_impresa: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, stato_impresa: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
               >
-                {STATO_IMPRESA_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                {STATO_IMPRESA_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -876,20 +1063,28 @@ function CompanyDetailCard({
 
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Via</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Via
+              </label>
               <input
                 type="text"
                 value={formData.indirizzo_via}
-                onChange={(e) => setFormData({ ...formData, indirizzo_via: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, indirizzo_via: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
               />
             </div>
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Civico</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Civico
+              </label>
               <input
                 type="text"
                 value={formData.indirizzo_civico}
-                onChange={(e) => setFormData({ ...formData, indirizzo_civico: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, indirizzo_civico: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
               />
             </div>
@@ -897,21 +1092,32 @@ function CompanyDetailCard({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">CAP</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                CAP
+              </label>
               <input
                 type="text"
                 value={formData.indirizzo_cap}
-                onChange={(e) => setFormData({ ...formData, indirizzo_cap: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, indirizzo_cap: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
                 maxLength={5}
               />
             </div>
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Provincia</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Provincia
+              </label>
               <input
                 type="text"
                 value={formData.indirizzo_provincia}
-                onChange={(e) => setFormData({ ...formData, indirizzo_provincia: e.target.value.toUpperCase() })}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    indirizzo_provincia: e.target.value.toUpperCase(),
+                  })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
                 maxLength={2}
               />
@@ -919,11 +1125,15 @@ function CompanyDetailCard({
           </div>
 
           <div>
-            <label className="block text-xs text-[#e8fbff]/70 mb-1">Comune</label>
+            <label className="block text-xs text-[#e8fbff]/70 mb-1">
+              Comune
+            </label>
             <input
               type="text"
               value={formData.comune}
-              onChange={(e) => setFormData({ ...formData, comune: e.target.value })}
+              onChange={e =>
+                setFormData({ ...formData, comune: e.target.value })
+              }
               className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
             />
           </div>
@@ -937,20 +1147,28 @@ function CompanyDetailCard({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Email/Referente</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Email/Referente
+              </label>
               <input
                 type="email"
                 value={formData.referente}
-                onChange={(e) => setFormData({ ...formData, referente: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, referente: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
               />
             </div>
             <div>
-              <label className="block text-xs text-[#e8fbff]/70 mb-1">Telefono</label>
+              <label className="block text-xs text-[#e8fbff]/70 mb-1">
+                Telefono
+              </label>
               <input
                 type="tel"
                 value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, telefono: e.target.value })
+                }
                 className="w-full px-3 py-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] text-sm focus:outline-none focus:ring-1 focus:ring-[#14b8a6]"
               />
             </div>
@@ -966,9 +1184,13 @@ function CompanyDetailCard({
           className="w-full bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
         >
           {saving ? (
-            <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Salvataggio...</>
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-2" /> Salvataggio...
+            </>
           ) : (
-            <><Save className="h-4 w-4 mr-2" /> Salva Modifiche</>
+            <>
+              <Save className="h-4 w-4 mr-2" /> Salva Modifiche
+            </>
           )}
         </Button>
       </div>
@@ -979,45 +1201,57 @@ function CompanyDetailCard({
 /**
  * Form inline per modifica impresa (38 campi) - versione compatta per colonna destra
  */
-function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
+function CompanyInlineForm({
+  company,
+  marketId,
+  onClose,
+  onSaved,
+}: {
   company: CompanyRow & Record<string, any>;
   marketId: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [formData, setFormData] = useState<CompanyFormData>({
-    denominazione: company?.denominazione || '',
-    codice_fiscale: company?.code || company?.codice_fiscale || '',
-    partita_iva: company?.partita_iva || '',
-    numero_rea: company?.numero_rea || '',
-    cciaa_sigla: company?.cciaa_sigla || '',
-    forma_giuridica: company?.forma_giuridica || '',
-    stato_impresa: company?.stato_impresa || 'ATTIVA',
-    indirizzo_via: company?.indirizzo_via || '',
-    indirizzo_civico: company?.indirizzo_civico || '',
-    indirizzo_cap: company?.indirizzo_cap || '',
-    indirizzo_provincia: company?.indirizzo_provincia || '',
-    comune: company?.comune || '',
-    pec: company?.pec || '',
-    referente: company?.referente || '',
-    telefono: company?.telefono || '',
-    codice_ateco: company?.codice_ateco || '',
-    descrizione_ateco: company?.descrizione_ateco || '',
-    stato: company?.stato || 'active',
-    rappresentante_legale_cognome: company?.rappresentante_legale_cognome || '',
-    rappresentante_legale_nome: company?.rappresentante_legale_nome || '',
-    rappresentante_legale_cf: company?.rappresentante_legale_cf || '',
-    rappresentante_legale_data_nascita: company?.rappresentante_legale_data_nascita || '',
-    rappresentante_legale_luogo_nascita: company?.rappresentante_legale_luogo_nascita || '',
-    rappresentante_legale_residenza_via: company?.rappresentante_legale_residenza_via || '',
-    rappresentante_legale_residenza_civico: company?.rappresentante_legale_residenza_civico || '',
-    rappresentante_legale_residenza_cap: company?.rappresentante_legale_residenza_cap || '',
-    rappresentante_legale_residenza_comune: company?.rappresentante_legale_residenza_comune || '',
-    rappresentante_legale_residenza_provincia: company?.rappresentante_legale_residenza_provincia || '',
-    capitale_sociale: company?.capitale_sociale?.toString() || '',
-    numero_addetti: company?.numero_addetti?.toString() || '',
-    sito_web: company?.sito_web || '',
-    data_iscrizione_ri: company?.data_iscrizione_ri || '',
+    denominazione: company?.denominazione || "",
+    codice_fiscale: company?.code || company?.codice_fiscale || "",
+    partita_iva: company?.partita_iva || "",
+    numero_rea: company?.numero_rea || "",
+    cciaa_sigla: company?.cciaa_sigla || "",
+    forma_giuridica: company?.forma_giuridica || "",
+    stato_impresa: company?.stato_impresa || "ATTIVA",
+    indirizzo_via: company?.indirizzo_via || "",
+    indirizzo_civico: company?.indirizzo_civico || "",
+    indirizzo_cap: company?.indirizzo_cap || "",
+    indirizzo_provincia: company?.indirizzo_provincia || "",
+    comune: company?.comune || "",
+    pec: company?.pec || "",
+    referente: company?.referente || "",
+    telefono: company?.telefono || "",
+    codice_ateco: company?.codice_ateco || "",
+    descrizione_ateco: company?.descrizione_ateco || "",
+    stato: company?.stato || "active",
+    rappresentante_legale_cognome: company?.rappresentante_legale_cognome || "",
+    rappresentante_legale_nome: company?.rappresentante_legale_nome || "",
+    rappresentante_legale_cf: company?.rappresentante_legale_cf || "",
+    rappresentante_legale_data_nascita:
+      company?.rappresentante_legale_data_nascita || "",
+    rappresentante_legale_luogo_nascita:
+      company?.rappresentante_legale_luogo_nascita || "",
+    rappresentante_legale_residenza_via:
+      company?.rappresentante_legale_residenza_via || "",
+    rappresentante_legale_residenza_civico:
+      company?.rappresentante_legale_residenza_civico || "",
+    rappresentante_legale_residenza_cap:
+      company?.rappresentante_legale_residenza_cap || "",
+    rappresentante_legale_residenza_comune:
+      company?.rappresentante_legale_residenza_comune || "",
+    rappresentante_legale_residenza_provincia:
+      company?.rappresentante_legale_residenza_provincia || "",
+    capitale_sociale: company?.capitale_sociale?.toString() || "",
+    numero_addetti: company?.numero_addetti?.toString() || "",
+    sito_web: company?.sito_web || "",
+    data_iscrizione_ri: company?.data_iscrizione_ri || "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1029,8 +1263,12 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
     try {
       const payload = {
         ...formData,
-        capitale_sociale: formData.capitale_sociale ? parseFloat(formData.capitale_sociale) : null,
-        numero_addetti: formData.numero_addetti ? parseInt(formData.numero_addetti) : null,
+        capitale_sociale: formData.capitale_sociale
+          ? parseFloat(formData.capitale_sociale)
+          : null,
+        numero_addetti: formData.numero_addetti
+          ? parseInt(formData.numero_addetti)
+          : null,
         code: formData.codice_fiscale,
         business_name: formData.denominazione,
         vat_number: formData.partita_iva,
@@ -1038,26 +1276,31 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
         phone: formData.telefono,
         email: formData.referente,
       };
-      const response = await authenticatedFetch(`${API_BASE_URL}/api/imprese/${company.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/imprese/${company.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Errore durante il salvataggio');
+        throw new Error(data.message || "Errore durante il salvataggio");
       }
       onSaved();
     } catch (err: any) {
-      setError(err.message || 'Errore durante il salvataggio');
+      setError(err.message || "Errore durante il salvataggio");
     } finally {
       setSaving(false);
     }
   };
 
-  const inputClass = "w-full px-2 py-1.5 text-xs bg-[#1a2332] border border-[#14b8a6]/30 rounded text-[#e8fbff] focus:outline-none focus:ring-1 focus:ring-[#14b8a6]";
+  const inputClass =
+    "w-full px-2 py-1.5 text-xs bg-[#1a2332] border border-[#14b8a6]/30 rounded text-[#e8fbff] focus:outline-none focus:ring-1 focus:ring-[#14b8a6]";
   const labelClass = "block text-[10px] font-medium text-[#e8fbff]/70 mb-1";
-  const sectionClass = "text-[10px] font-semibold text-[#14b8a6] uppercase tracking-wide border-b border-[#14b8a6]/20 pb-1 mb-2";
+  const sectionClass =
+    "text-[10px] font-semibold text-[#14b8a6] uppercase tracking-wide border-b border-[#14b8a6]/20 pb-1 mb-2";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 text-xs">
@@ -1074,39 +1317,98 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
         <div className="space-y-2">
           <div>
             <label className={labelClass}>Denominazione *</label>
-            <input type="text" required value={formData.denominazione} onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })} className={inputClass} />
+            <input
+              type="text"
+              required
+              value={formData.denominazione}
+              onChange={e =>
+                setFormData({ ...formData, denominazione: e.target.value })
+              }
+              className={inputClass}
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Codice Fiscale *</label>
-              <input type="text" required value={formData.codice_fiscale} onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                required
+                value={formData.codice_fiscale}
+                onChange={e =>
+                  setFormData({ ...formData, codice_fiscale: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>Partita IVA *</label>
-              <input type="text" required value={formData.partita_iva} onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                required
+                value={formData.partita_iva}
+                onChange={e =>
+                  setFormData({ ...formData, partita_iva: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Numero REA</label>
-              <input type="text" value={formData.numero_rea} onChange={(e) => setFormData({ ...formData, numero_rea: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.numero_rea}
+                onChange={e =>
+                  setFormData({ ...formData, numero_rea: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>CCIAA</label>
-              <input type="text" value={formData.cciaa_sigla} onChange={(e) => setFormData({ ...formData, cciaa_sigla: e.target.value })} className={inputClass} maxLength={5} />
+              <input
+                type="text"
+                value={formData.cciaa_sigla}
+                onChange={e =>
+                  setFormData({ ...formData, cciaa_sigla: e.target.value })
+                }
+                className={inputClass}
+                maxLength={5}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Forma Giuridica</label>
-              <select value={formData.forma_giuridica} onChange={(e) => setFormData({ ...formData, forma_giuridica: e.target.value })} className={inputClass}>
-                {FORMA_GIURIDICA_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              <select
+                value={formData.forma_giuridica}
+                onChange={e =>
+                  setFormData({ ...formData, forma_giuridica: e.target.value })
+                }
+                className={inputClass}
+              >
+                {FORMA_GIURIDICA_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <label className={labelClass}>Stato Impresa</label>
-              <select value={formData.stato_impresa} onChange={(e) => setFormData({ ...formData, stato_impresa: e.target.value })} className={inputClass}>
-                {STATO_IMPRESA_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              <select
+                value={formData.stato_impresa}
+                onChange={e =>
+                  setFormData({ ...formData, stato_impresa: e.target.value })
+                }
+                className={inputClass}
+              >
+                {STATO_IMPRESA_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -1120,25 +1422,65 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
               <label className={labelClass}>Via</label>
-              <input type="text" value={formData.indirizzo_via} onChange={(e) => setFormData({ ...formData, indirizzo_via: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.indirizzo_via}
+                onChange={e =>
+                  setFormData({ ...formData, indirizzo_via: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>Civico</label>
-              <input type="text" value={formData.indirizzo_civico} onChange={(e) => setFormData({ ...formData, indirizzo_civico: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.indirizzo_civico}
+                onChange={e =>
+                  setFormData({ ...formData, indirizzo_civico: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div>
               <label className={labelClass}>CAP</label>
-              <input type="text" value={formData.indirizzo_cap} onChange={(e) => setFormData({ ...formData, indirizzo_cap: e.target.value })} className={inputClass} maxLength={5} />
+              <input
+                type="text"
+                value={formData.indirizzo_cap}
+                onChange={e =>
+                  setFormData({ ...formData, indirizzo_cap: e.target.value })
+                }
+                className={inputClass}
+                maxLength={5}
+              />
             </div>
             <div>
               <label className={labelClass}>Comune</label>
-              <input type="text" value={formData.comune} onChange={(e) => setFormData({ ...formData, comune: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.comune}
+                onChange={e =>
+                  setFormData({ ...formData, comune: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>Provincia</label>
-              <input type="text" value={formData.indirizzo_provincia} onChange={(e) => setFormData({ ...formData, indirizzo_provincia: e.target.value.toUpperCase() })} className={inputClass} maxLength={2} />
+              <input
+                type="text"
+                value={formData.indirizzo_provincia}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    indirizzo_provincia: e.target.value.toUpperCase(),
+                  })
+                }
+                className={inputClass}
+                maxLength={2}
+              />
             </div>
           </div>
         </div>
@@ -1150,26 +1492,62 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
         <div className="space-y-2">
           <div>
             <label className={labelClass}>PEC</label>
-            <input type="email" value={formData.pec} onChange={(e) => setFormData({ ...formData, pec: e.target.value })} className={inputClass} />
+            <input
+              type="email"
+              value={formData.pec}
+              onChange={e => setFormData({ ...formData, pec: e.target.value })}
+              className={inputClass}
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Email</label>
-              <input type="email" value={formData.referente} onChange={(e) => setFormData({ ...formData, referente: e.target.value })} className={inputClass} />
+              <input
+                type="email"
+                value={formData.referente}
+                onChange={e =>
+                  setFormData({ ...formData, referente: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>Telefono</label>
-              <input type="tel" value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} className={inputClass} />
+              <input
+                type="tel"
+                value={formData.telefono}
+                onChange={e =>
+                  setFormData({ ...formData, telefono: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Codice ATECO</label>
-              <input type="text" value={formData.codice_ateco} onChange={(e) => setFormData({ ...formData, codice_ateco: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.codice_ateco}
+                onChange={e =>
+                  setFormData({ ...formData, codice_ateco: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>Descrizione ATECO</label>
-              <input type="text" value={formData.descrizione_ateco} onChange={(e) => setFormData({ ...formData, descrizione_ateco: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.descrizione_ateco}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    descrizione_ateco: e.target.value,
+                  })
+                }
+                className={inputClass}
+              />
             </div>
           </div>
         </div>
@@ -1182,25 +1560,79 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Cognome</label>
-              <input type="text" value={formData.rappresentante_legale_cognome} onChange={(e) => setFormData({ ...formData, rappresentante_legale_cognome: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.rappresentante_legale_cognome}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_cognome: e.target.value,
+                  })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>Nome</label>
-              <input type="text" value={formData.rappresentante_legale_nome} onChange={(e) => setFormData({ ...formData, rappresentante_legale_nome: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.rappresentante_legale_nome}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_nome: e.target.value,
+                  })
+                }
+                className={inputClass}
+              />
             </div>
           </div>
           <div>
             <label className={labelClass}>Codice Fiscale</label>
-            <input type="text" value={formData.rappresentante_legale_cf} onChange={(e) => setFormData({ ...formData, rappresentante_legale_cf: e.target.value })} className={inputClass} />
+            <input
+              type="text"
+              value={formData.rappresentante_legale_cf}
+              onChange={e =>
+                setFormData({
+                  ...formData,
+                  rappresentante_legale_cf: e.target.value,
+                })
+              }
+              className={inputClass}
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Data Nascita</label>
-              <input type="date" value={formData.rappresentante_legale_data_nascita} onChange={(e) => setFormData({ ...formData, rappresentante_legale_data_nascita: e.target.value })} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onFocus={(e) => e.stopPropagation()} onBlur={(e) => e.stopPropagation()} className={`${inputClass} relative z-[100]`} />
+              <input
+                type="date"
+                value={formData.rappresentante_legale_data_nascita}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_data_nascita: e.target.value,
+                  })
+                }
+                onClick={e => e.stopPropagation()}
+                onMouseDown={e => e.stopPropagation()}
+                onFocus={e => e.stopPropagation()}
+                onBlur={e => e.stopPropagation()}
+                className={`${inputClass} relative z-[100]`}
+              />
             </div>
             <div>
               <label className={labelClass}>Luogo Nascita</label>
-              <input type="text" value={formData.rappresentante_legale_luogo_nascita} onChange={(e) => setFormData({ ...formData, rappresentante_legale_luogo_nascita: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.rappresentante_legale_luogo_nascita}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_luogo_nascita: e.target.value,
+                  })
+                }
+                className={inputClass}
+              />
             </div>
           </div>
         </div>
@@ -1213,25 +1645,78 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
               <label className={labelClass}>Via</label>
-              <input type="text" value={formData.rappresentante_legale_residenza_via} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_via: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.rappresentante_legale_residenza_via}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_residenza_via: e.target.value,
+                  })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>Civico</label>
-              <input type="text" value={formData.rappresentante_legale_residenza_civico} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_civico: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.rappresentante_legale_residenza_civico}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_residenza_civico: e.target.value,
+                  })
+                }
+                className={inputClass}
+              />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div>
               <label className={labelClass}>CAP</label>
-              <input type="text" value={formData.rappresentante_legale_residenza_cap} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_cap: e.target.value })} className={inputClass} maxLength={5} />
+              <input
+                type="text"
+                value={formData.rappresentante_legale_residenza_cap}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_residenza_cap: e.target.value,
+                  })
+                }
+                className={inputClass}
+                maxLength={5}
+              />
             </div>
             <div>
               <label className={labelClass}>Comune</label>
-              <input type="text" value={formData.rappresentante_legale_residenza_comune} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_comune: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                value={formData.rappresentante_legale_residenza_comune}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_residenza_comune: e.target.value,
+                  })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>Provincia</label>
-              <input type="text" value={formData.rappresentante_legale_residenza_provincia} onChange={(e) => setFormData({ ...formData, rappresentante_legale_residenza_provincia: e.target.value.toUpperCase() })} className={inputClass} maxLength={2} />
+              <input
+                type="text"
+                value={formData.rappresentante_legale_residenza_provincia}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    rappresentante_legale_residenza_provincia:
+                      e.target.value.toUpperCase(),
+                  })
+                }
+                className={inputClass}
+                maxLength={2}
+              />
             </div>
           </div>
         </div>
@@ -1244,31 +1729,79 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Capitale Sociale (€)</label>
-              <input type="number" step="0.01" value={formData.capitale_sociale} onChange={(e) => setFormData({ ...formData, capitale_sociale: e.target.value })} className={inputClass} />
+              <input
+                type="number"
+                step="0.01"
+                value={formData.capitale_sociale}
+                onChange={e =>
+                  setFormData({ ...formData, capitale_sociale: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
             <div>
               <label className={labelClass}>Numero Addetti</label>
-              <input type="number" value={formData.numero_addetti} onChange={(e) => setFormData({ ...formData, numero_addetti: e.target.value })} className={inputClass} />
+              <input
+                type="number"
+                value={formData.numero_addetti}
+                onChange={e =>
+                  setFormData({ ...formData, numero_addetti: e.target.value })
+                }
+                className={inputClass}
+              />
             </div>
           </div>
           <div>
             <label className={labelClass}>Sito Web</label>
-            <input type="url" value={formData.sito_web} onChange={(e) => setFormData({ ...formData, sito_web: e.target.value })} className={inputClass} />
+            <input
+              type="url"
+              value={formData.sito_web}
+              onChange={e =>
+                setFormData({ ...formData, sito_web: e.target.value })
+              }
+              className={inputClass}
+            />
           </div>
           <div>
             <label className={labelClass}>Data Iscrizione RI</label>
-            <input type="date" value={formData.data_iscrizione_ri} onChange={(e) => setFormData({ ...formData, data_iscrizione_ri: e.target.value })} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onFocus={(e) => e.stopPropagation()} onBlur={(e) => e.stopPropagation()} className={`${inputClass} relative z-[100]`} />
+            <input
+              type="date"
+              value={formData.data_iscrizione_ri}
+              onChange={e =>
+                setFormData({ ...formData, data_iscrizione_ri: e.target.value })
+              }
+              onClick={e => e.stopPropagation()}
+              onMouseDown={e => e.stopPropagation()}
+              onFocus={e => e.stopPropagation()}
+              onBlur={e => e.stopPropagation()}
+              className={`${inputClass} relative z-[100]`}
+            />
           </div>
         </div>
       </div>
 
       {/* PULSANTI */}
       <div className="flex gap-2 pt-2 border-t border-[#14b8a6]/20">
-        <Button type="button" variant="outline" size="sm" onClick={onClose} className="flex-1 text-xs border-[#14b8a6]/30 text-[#e8fbff]/70 hover:bg-[#14b8a6]/10">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onClose}
+          className="flex-1 text-xs border-[#14b8a6]/30 text-[#e8fbff]/70 hover:bg-[#14b8a6]/10"
+        >
           Annulla
         </Button>
-        <Button type="submit" size="sm" disabled={saving} className="flex-1 text-xs bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white">
-          {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+        <Button
+          type="submit"
+          size="sm"
+          disabled={saving}
+          className="flex-1 text-xs bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
+        >
+          {saving ? (
+            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+          ) : (
+            <Save className="h-3 w-3 mr-1" />
+          )}
           Salva
         </Button>
       </div>
@@ -1281,22 +1814,53 @@ function CompanyInlineForm({ company, marketId, onClose, onSaved }: {
  * - Mappa rettangolare in alto (full width)
  * - Sotto: Lista posteggi a sinistra (con scroll) + Scheda impresa a destra
  */
-function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, allMarkets, viewMode, setViewMode, viewTrigger, setViewTrigger }: { marketId: number; marketCode: string; marketCenter: [number, number]; stalls: Stall[]; setStalls: React.Dispatch<React.SetStateAction<Stall[]>>; allMarkets: Market[]; viewMode: 'italia' | 'mercato'; setViewMode: React.Dispatch<React.SetStateAction<'italia' | 'mercato'>>; viewTrigger: number; setViewTrigger: React.Dispatch<React.SetStateAction<number>> }) {
+function PosteggiTab({
+  marketId,
+  marketCode,
+  marketCenter,
+  stalls,
+  setStalls,
+  allMarkets,
+  viewMode,
+  setViewMode,
+  viewTrigger,
+  setViewTrigger,
+}: {
+  marketId: number;
+  marketCode: string;
+  marketCenter: [number, number];
+  stalls: Stall[];
+  setStalls: React.Dispatch<React.SetStateAction<Stall[]>>;
+  allMarkets: Market[];
+  viewMode: "italia" | "mercato";
+  setViewMode: React.Dispatch<React.SetStateAction<"italia" | "mercato">>;
+  viewTrigger: number;
+  setViewTrigger: React.Dispatch<React.SetStateAction<number>>;
+}) {
   const [mapData, setMapData] = useState<MarketMapData | null>(null);
-  const [concessionsByStallId, setConcessionsByStallId] = useState<Record<string, any>>({});
+  const [concessionsByStallId, setConcessionsByStallId] = useState<
+    Record<string, any>
+  >({});
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<Stall>>({});
   const [selectedStallId, setSelectedStallId] = useState<number | null>(null);
-  const [selectedStallCenter, setSelectedStallCenter] = useState<[number, number] | null>(null);
+  const [selectedStallCenter, setSelectedStallCenter] = useState<
+    [number, number] | null
+  >(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const [isSpuntaMode, setIsSpuntaMode] = useState(false);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
-  const [selectedCompanyForModal, setSelectedCompanyForModal] = useState<CompanyRow | null>(null);
-  const [showConcessionDetailModal, setShowConcessionDetailModal] = useState(false);
-  const [selectedConcessionForModal, setSelectedConcessionForModal] = useState<any>(null);
-  const [sidebarView, setSidebarView] = useState<'impresa' | 'concessione'>('impresa');
+  const [selectedCompanyForModal, setSelectedCompanyForModal] =
+    useState<CompanyRow | null>(null);
+  const [showConcessionDetailModal, setShowConcessionDetailModal] =
+    useState(false);
+  const [selectedConcessionForModal, setSelectedConcessionForModal] =
+    useState<any>(null);
+  const [sidebarView, setSidebarView] = useState<"impresa" | "concessione">(
+    "impresa"
+  );
   const [sidebarConcessionData, setSidebarConcessionData] = useState<any>(null);
   const listContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -1310,7 +1874,11 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       const stall = stalls.find(s => s.id === selectedStallId);
       if (stall?.concession_id) {
         try {
-          const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/concessions/${stall.concession_id}`));
+          const response = await fetch(
+            addComuneIdToUrl(
+              `${API_BASE_URL}/api/concessions/${stall.concession_id}`
+            )
+          );
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.data) {
@@ -1318,7 +1886,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             }
           }
         } catch (error) {
-          console.error('Error loading concession:', error);
+          console.error("Error loading concession:", error);
         }
       } else {
         setSidebarConcessionData(null);
@@ -1332,9 +1900,17 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
   const fetchData = async () => {
     try {
       const [stallsRes, mapRes, concessionsRes] = await Promise.all([
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)),
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map/${marketId}`)),
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/concessions`))
+        fetch(
+          addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)
+        ),
+        fetch(
+          addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map/${marketId}`)
+        ),
+        fetch(
+          addComuneIdToUrl(
+            `${API_BASE_URL}/api/markets/${marketId}/concessions`
+          )
+        ),
       ]);
 
       const stallsData = await stallsRes.json();
@@ -1343,7 +1919,9 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
 
       if (stallsData.success) {
         // Normalizza number a stringa — l'API può restituire int o string
-        setStalls(stallsData.data.map((s: any) => ({ ...s, number: String(s.number) })));
+        setStalls(
+          stallsData.data.map((s: any) => ({ ...s, number: String(s.number) }))
+        );
       }
       if (mapDataRes.success) {
         setMapData(mapDataRes.data);
@@ -1356,14 +1934,14 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
             tipoConcessione: row.tipoConcessione,
             stato: row.stato,
             validaDal: row.validaDal,
-            validaAl: row.validaAl
+            validaAl: row.validaAl,
           };
         }
         setConcessionsByStallId(map);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Errore nel caricamento dei dati');
+      console.error("Error fetching data:", error);
+      toast.error("Errore nel caricamento dei dati");
     } finally {
       setLoading(false);
     }
@@ -1374,23 +1952,26 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
     setEditData({
       type: stall.type,
       status: stall.status,
-      notes: stall.notes
+      notes: stall.notes,
     });
   };
 
   const handleSave = async (stallId: number) => {
     try {
-      const response = await authenticatedFetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editData),
-      });
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/stalls/${stallId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editData),
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
-        toast.success('Posteggio aggiornato con successo');
+        toast.success("Posteggio aggiornato con successo");
         await fetchData(); // Ricarica dati
         setMapRefreshKey(prev => {
           const newKey = prev + 1;
@@ -1399,48 +1980,51 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         setEditingId(null);
         setEditData({});
       } else {
-        toast.error('Errore nell\'aggiornamento');
+        toast.error("Errore nell'aggiornamento");
       }
     } catch (error) {
-      console.error('Error updating stall:', error);
-      toast.error('Errore nell\'aggiornamento del posteggio');
+      console.error("Error updating stall:", error);
+      toast.error("Errore nell'aggiornamento del posteggio");
     }
   };
 
   // Conferma assegnazione posteggio (da riservato a occupato)
   const handleConfirmAssignment = async (stallId: number) => {
     try {
-      const response = await authenticatedFetch(`${API_BASE_URL}/api/stalls/${stallId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'occupato' }),
-      });
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/stalls/${stallId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "occupato" }),
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
-        toast.success('Posteggio assegnato con successo!');
-        
+        toast.success("Posteggio assegnato con successo!");
+
         // Aggiorna SOLO lo stato locale per evitare reload mappa
-        setStalls(prevStalls => 
-          prevStalls.map(s => 
-            s.id === stallId ? { ...s, status: 'occupato' } : s
+        setStalls(prevStalls =>
+          prevStalls.map(s =>
+            s.id === stallId ? { ...s, status: "occupato" } : s
           )
         );
-        
+
         // Deseleziona il posteggio per fermare il lampeggiamento e chiudere il popup
         setSelectedStallId(null);
         setSelectedStallCenter(null);
-        
+
         // NON disattivare modalità spunta per permettere assegnazioni multiple
         // setIsSpuntaMode(false);
       } else {
-        toast.error('Errore nell\'assegnazione del posteggio');
+        toast.error("Errore nell'assegnazione del posteggio");
       }
     } catch (error) {
-      console.error('[ERROR handleConfirmAssignment]:', error);
-      toast.error('Errore durante l\'assegnazione del posteggio');
+      console.error("[ERROR handleConfirmAssignment]:", error);
+      toast.error("Errore durante l'assegnazione del posteggio");
       throw error; // Rilancia l'errore per gestirlo nel popup
     }
   };
@@ -1459,22 +2043,22 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       setViewTrigger(prev => prev + 1);
       return;
     }
-    
+
     setSelectedStallId(stall.id);
-    
+
     // Trova il posteggio nella mappa tramite gis_slot_id
     const mapFeature = mapData?.stalls_geojson.features.find(
       f => String(f.properties.number) === String(stall.number)
     );
-    
-    if (mapFeature && mapFeature.geometry.type === 'Polygon') {
+
+    if (mapFeature && mapFeature.geometry.type === "Polygon") {
       // Calcola il centro del poligono
       const coords = mapFeature.geometry.coordinates as [number, number][][];
       const lats = coords[0].map(c => c[1]);
       const lngs = coords[0].map(c => c[0]);
       const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
       const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
-      
+
       setSelectedStallCenter([centerLat, centerLng]);
     }
   };
@@ -1483,14 +2067,16 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
         <Loader2 className="h-12 w-12 animate-spin text-[#14b8a6]" />
-        <p className="text-[#e8fbff]/70 animate-pulse">Caricamento mappa e posteggi in corso...</p>
+        <p className="text-[#e8fbff]/70 animate-pulse">
+          Caricamento mappa e posteggi in corso...
+        </p>
       </div>
     );
   }
 
-  const occupiedCount = stalls.filter(s => s.status === 'occupato').length;
-  const freeCount = stalls.filter(s => s.status === 'libero').length;
-  const reservedCount = stalls.filter(s => s.status === 'riservato').length;
+  const occupiedCount = stalls.filter(s => s.status === "occupato").length;
+  const freeCount = stalls.filter(s => s.status === "libero").length;
+  const reservedCount = stalls.filter(s => s.status === "riservato").length;
 
   // Crea una mappa per lookup veloce stall by number
   const stallsByNumber = new Map(stalls.map(s => [s.number, s]));
@@ -1504,7 +2090,9 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 p-4 rounded-lg">
           <div className="text-sm text-[#ef4444] mb-1">Occupati</div>
-          <div className="text-3xl font-bold text-[#ef4444]">{occupiedCount}</div>
+          <div className="text-3xl font-bold text-[#ef4444]">
+            {occupiedCount}
+          </div>
         </div>
         <div className="bg-[#10b981]/10 border border-[#10b981]/30 p-4 rounded-lg">
           <div className="text-sm text-[#10b981] mb-1">Liberi</div>
@@ -1512,14 +2100,16 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         </div>
         <div className="bg-[#f59e0b]/10 border border-[#f59e0b]/30 p-4 rounded-lg relative">
           <div className="text-sm text-[#f59e0b] mb-1">Riservati</div>
-          <div className="text-3xl font-bold text-[#f59e0b]">{reservedCount}</div>
+          <div className="text-3xl font-bold text-[#f59e0b]">
+            {reservedCount}
+          </div>
           <Button
             size="sm"
             variant={isSpuntaMode ? "default" : "outline"}
             className={`absolute top-2 right-2 text-xs ${
-              isSpuntaMode 
-                ? 'bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white border-[#f59e0b]' 
-                : 'bg-transparent hover:bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50'
+              isSpuntaMode
+                ? "bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white border-[#f59e0b]"
+                : "bg-transparent hover:bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50"
             }`}
             onClick={() => setIsSpuntaMode(!isSpuntaMode)}
           >
@@ -1534,47 +2124,54 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
           <Button
             className="w-full bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white font-semibold py-3 border-2 border-[#f59e0b]/50"
             onClick={async () => {
-              const reservedStalls = stalls.filter(s => s.status === 'riservato');
+              const reservedStalls = stalls.filter(
+                s => s.status === "riservato"
+              );
               if (reservedStalls.length === 0) {
-                toast.info('Nessun posteggio riservato da confermare');
+                toast.info("Nessun posteggio riservato da confermare");
                 return;
               }
-              
+
               const confirmed = window.confirm(
                 `Confermare l'assegnazione di ${reservedStalls.length} posteggi riservati?\n\n` +
-                `Tutti i posteggi riservati diventeranno occupati.`
+                  `Tutti i posteggi riservati diventeranno occupati.`
               );
-              
+
               if (!confirmed) return;
-              
+
               try {
                 let successCount = 0;
                 let errorCount = 0;
-                
+
                 for (const stall of reservedStalls) {
                   try {
                     await handleConfirmAssignment(stall.id);
                     successCount++;
                   } catch (error) {
-                    console.error(`Errore conferma posteggio ${stall.number}:`, error);
+                    console.error(
+                      `Errore conferma posteggio ${stall.number}:`,
+                      error
+                    );
                     errorCount++;
                   }
                 }
-                
+
                 if (successCount > 0) {
-                  toast.success(`${successCount} posteggi confermati con successo!`);
+                  toast.success(
+                    `${successCount} posteggi confermati con successo!`
+                  );
                 }
                 if (errorCount > 0) {
                   toast.error(`${errorCount} posteggi non confermati`);
                 }
-                
+
                 // Ricarica dati
                 await fetchData();
                 setMapRefreshKey(prev => prev + 1);
                 setIsSpuntaMode(false);
               } catch (error) {
-                console.error('Errore conferma assegnazioni:', error);
-                toast.error('Errore durante la conferma delle assegnazioni');
+                console.error("Errore conferma assegnazioni:", error);
+                toast.error("Errore durante la conferma delle assegnazioni");
               }
             }}
           >
@@ -1584,74 +2181,93 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
       )}
 
       {/* NUOVO LAYOUT: Mappa in alto (rettangolare) */}
-      <div className={`relative border border-[#14b8a6]/20 rounded-lg overflow-hidden ${isMapExpanded ? 'h-[850px]' : 'h-[600px]'}`}>
+      <div
+        className={`relative border border-[#14b8a6]/20 rounded-lg overflow-hidden ${isMapExpanded ? "h-[850px]" : "h-[600px]"}`}
+      >
         <Button
           size="sm"
           variant="outline"
           className="absolute top-2 right-2 z-[1000] bg-[#0b1220]/90 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20"
           onClick={() => setIsMapExpanded(!isMapExpanded)}
         >
-          {isMapExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          {isMapExpanded ? (
+            <Minimize2 className="h-4 w-4" />
+          ) : (
+            <Maximize2 className="h-4 w-4" />
+          )}
         </Button>
 
-        {mapData && (() => {
-          const stallsDataForMap = stalls.map(s => ({
-            id: s.id,
-            number: s.number,
-            status: s.status,
-            type: s.type,
-            vendor_name: s.vendor_business_name || undefined,
-            dimensions: s.dimensions // Passa le dimensioni dal DB alla mappa
-          }));
-          return (
-            <MarketMapComponent
-              refreshKey={mapRefreshKey}
-              mapData={mapData as any}  // Passa sempre mapData così i posteggi sono visibili durante l'animazione
-              center={viewMode === 'mercato' ? marketCenter : [43.5, 12.5] as [number, number]}
-              zoom={viewMode === 'mercato' ? 17 : 6.3}
-              height="100%"
-              isSpuntaMode={isSpuntaMode}
-              onConfirmAssignment={handleConfirmAssignment}
-              onStallClick={(stallNumber) => {
-                const dbStall = stallsByNumber.get(String(stallNumber));
-                if (dbStall) {
-                  setSelectedStallId(dbStall.id);
-                  // Scroll alla riga nella lista (solo dentro il container, non la pagina)
-                  setTimeout(() => {
-                    const row = document.querySelector(`[data-stall-id="${dbStall.id}"]`) as HTMLElement;
-                    if (row && listContainerRef.current) {
-                      // Calcola la posizione relativa al container
-                      const container = listContainerRef.current;
-                      const rowTop = row.offsetTop;
-                      const containerHeight = container.clientHeight;
-                      const rowHeight = row.clientHeight;
-                      // Centra la riga nel container
-                      const scrollTo = rowTop - (containerHeight / 2) + (rowHeight / 2);
-                      container.scrollTo({ top: scrollTo, behavior: 'smooth' });
-                    }
-                  }, 100);
+        {mapData &&
+          (() => {
+            const stallsDataForMap = stalls.map(s => ({
+              id: s.id,
+              number: s.number,
+              status: s.status,
+              type: s.type,
+              vendor_name: s.vendor_business_name || undefined,
+              dimensions: s.dimensions, // Passa le dimensioni dal DB alla mappa
+            }));
+            return (
+              <MarketMapComponent
+                refreshKey={mapRefreshKey}
+                mapData={mapData as any} // Passa sempre mapData così i posteggi sono visibili durante l'animazione
+                center={
+                  viewMode === "mercato"
+                    ? marketCenter
+                    : ([43.5, 12.5] as [number, number])
                 }
-              }}
-              selectedStallNumber={stalls.find(s => s.id === selectedStallId)?.number}
-              stallsData={stallsDataForMap}
-              allMarkets={allMarkets.map(m => ({
-                id: m.id,
-                name: m.name,
-                latitude: parseFloat(m.latitude),
-                longitude: parseFloat(m.longitude)
-              }))}
-              showItalyView={viewMode === 'italia'}
-              viewTrigger={viewTrigger}
-              marketCenterFixed={marketCenter}
-              selectedStallCenter={selectedStallCenter || undefined}
-              onMarketClick={(clickedMarketId) => {
-                // Quando clicchi su un marker, passa a vista mercato e triggera flyTo
-                setViewMode('mercato');
-                setViewTrigger(prev => prev + 1);
-              }}
-            />
-          );
-        })()}
+                zoom={viewMode === "mercato" ? 17 : 6.3}
+                height="100%"
+                isSpuntaMode={isSpuntaMode}
+                onConfirmAssignment={handleConfirmAssignment}
+                onStallClick={stallNumber => {
+                  const dbStall = stallsByNumber.get(String(stallNumber));
+                  if (dbStall) {
+                    setSelectedStallId(dbStall.id);
+                    // Scroll alla riga nella lista (solo dentro il container, non la pagina)
+                    setTimeout(() => {
+                      const row = document.querySelector(
+                        `[data-stall-id="${dbStall.id}"]`
+                      ) as HTMLElement;
+                      if (row && listContainerRef.current) {
+                        // Calcola la posizione relativa al container
+                        const container = listContainerRef.current;
+                        const rowTop = row.offsetTop;
+                        const containerHeight = container.clientHeight;
+                        const rowHeight = row.clientHeight;
+                        // Centra la riga nel container
+                        const scrollTo =
+                          rowTop - containerHeight / 2 + rowHeight / 2;
+                        container.scrollTo({
+                          top: scrollTo,
+                          behavior: "smooth",
+                        });
+                      }
+                    }, 100);
+                  }
+                }}
+                selectedStallNumber={
+                  stalls.find(s => s.id === selectedStallId)?.number
+                }
+                stallsData={stallsDataForMap}
+                allMarkets={allMarkets.map(m => ({
+                  id: m.id,
+                  name: m.name,
+                  latitude: parseFloat(m.latitude),
+                  longitude: parseFloat(m.longitude),
+                }))}
+                showItalyView={viewMode === "italia"}
+                viewTrigger={viewTrigger}
+                marketCenterFixed={marketCenter}
+                selectedStallCenter={selectedStallCenter || undefined}
+                onMarketClick={clickedMarketId => {
+                  // Quando clicchi su un marker, passa a vista mercato e triggera flyTo
+                  setViewMode("mercato");
+                  setViewTrigger(prev => prev + 1);
+                }}
+              />
+            );
+          })()}
       </div>
 
       {/* NUOVO LAYOUT: Lista posteggi (sinistra) + Scheda impresa (destra) */}
@@ -1659,127 +2275,164 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         {/* Lista Posteggi con scroll interno */}
         <div className="border border-[#14b8a6]/20 rounded-lg overflow-hidden">
           <div className="bg-[#0b1220]/50 px-4 py-2 border-b border-[#14b8a6]/20">
-            <h3 className="text-sm font-semibold text-[#e8fbff]">Lista Posteggi</h3>
+            <h3 className="text-sm font-semibold text-[#e8fbff]">
+              Lista Posteggi
+            </h3>
           </div>
           <div ref={listContainerRef} className="max-h-[400px] overflow-y-auto">
             <Table>
               <TableHeader className="sticky top-0 bg-[#0b1220]/95 z-10">
                 <TableRow className="border-[#14b8a6]/20 hover:bg-[#0b1220]/50">
-                  <TableHead className="text-[#e8fbff]/70 text-xs">N°</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs">Tipo</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs">Stato</TableHead>
-                  <TableHead className="text-[#e8fbff]/70 text-xs">Intestatario</TableHead>
-                  <TableHead className="text-right text-[#e8fbff]/70 text-xs">Azioni</TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs">
+                    N°
+                  </TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs">
+                    Tipo
+                  </TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs">
+                    Stato
+                  </TableHead>
+                  <TableHead className="text-[#e8fbff]/70 text-xs">
+                    Intestatario
+                  </TableHead>
+                  <TableHead className="text-right text-[#e8fbff]/70 text-xs">
+                    Azioni
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...stalls].sort((a, b) => {
-                  // Ordina alfanumerico naturale: 1, 2, 22, 22A, 22B, 23
-                  return String(a.number).localeCompare(String(b.number), undefined, { numeric: true, sensitivity: 'base' });
-                }).map((stall) => (
-                  <TableRow 
-                    key={stall.id}
-                    data-stall-id={stall.id}
-                    className={`cursor-pointer hover:bg-[#14b8a6]/10 border-[#14b8a6]/10 ${
-                      selectedStallId === stall.id ? 'bg-[#14b8a6]/20' : ''
-                    }`}
-                    onClick={() => handleRowClick(stall)}
-                  >
-                    <TableCell className="font-medium text-[#e8fbff] text-sm">{stall.number}</TableCell>
-                    <TableCell>
-                      {editingId === stall.id ? (
-                        <Select
-                          value={editData.type}
-                          onValueChange={(value) => setEditData({ ...editData, type: value })}
-                        >
-                          <SelectTrigger className="w-[80px] bg-[#0b1220] border-[#14b8a6]/30 h-7 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="fisso">Fisso</SelectItem>
-                            <SelectItem value="spunta">Spunta</SelectItem>
-                            <SelectItem value="libero">Libero</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="outline" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs">
-                          {stall.type}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingId === stall.id ? (
-                        <Select
-                          value={editData.status}
-                          onValueChange={(value) => setEditData({ ...editData, status: value })}
-                        >
-                          <SelectTrigger className="w-[100px] bg-[#0b1220] border-[#14b8a6]/30 h-7 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STALL_STATUS_OPTIONS.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="default" className={`${getStallStatusClasses(stall.status)} text-xs`}>
-                          {getStallStatusLabel(stall.status)}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {stall.vendor_business_name ? (
-                        <p className="font-medium text-[#e8fbff] text-xs truncate max-w-[120px]">{stall.vendor_business_name}</p>
-                      ) : concessionsByStallId[stall.number] ? (
-                        <p className="font-medium text-[#e8fbff] text-xs truncate max-w-[120px]">{concessionsByStallId[stall.number].companyName}</p>
-                      ) : (
-                        <span className="text-[#e8fbff]/50 text-xs">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {editingId === stall.id ? (
-                        <div className="flex justify-end gap-1">
-                          <Button 
-                            size="sm" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSave(stall.id);
-                            }}
-                            className="bg-[#10b981]/20 hover:bg-[#10b981]/30 text-[#10b981] border-[#10b981]/30 h-6 w-6 p-0"
+                {[...stalls]
+                  .sort((a, b) => {
+                    // Ordina alfanumerico naturale: 1, 2, 22, 22A, 22B, 23
+                    return String(a.number).localeCompare(
+                      String(b.number),
+                      undefined,
+                      { numeric: true, sensitivity: "base" }
+                    );
+                  })
+                  .map(stall => (
+                    <TableRow
+                      key={stall.id}
+                      data-stall-id={stall.id}
+                      className={`cursor-pointer hover:bg-[#14b8a6]/10 border-[#14b8a6]/10 ${
+                        selectedStallId === stall.id ? "bg-[#14b8a6]/20" : ""
+                      }`}
+                      onClick={() => handleRowClick(stall)}
+                    >
+                      <TableCell className="font-medium text-[#e8fbff] text-sm">
+                        {stall.number}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === stall.id ? (
+                          <Select
+                            value={editData.type}
+                            onValueChange={value =>
+                              setEditData({ ...editData, type: value })
+                            }
                           >
-                            <Save className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCancel();
-                            }}
-                            className="bg-[#ef4444]/20 hover:bg-[#ef4444]/30 text-[#ef4444] border-[#ef4444]/30 h-6 w-6 p-0"
+                            <SelectTrigger className="w-[80px] bg-[#0b1220] border-[#14b8a6]/30 h-7 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="fisso">Fisso</SelectItem>
+                              <SelectItem value="spunta">Spunta</SelectItem>
+                              <SelectItem value="libero">Libero</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-xs"
                           >
-                            <X className="h-3 w-3" />
+                            {stall.type}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === stall.id ? (
+                          <Select
+                            value={editData.status}
+                            onValueChange={value =>
+                              setEditData({ ...editData, status: value })
+                            }
+                          >
+                            <SelectTrigger className="w-[100px] bg-[#0b1220] border-[#14b8a6]/30 h-7 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STALL_STATUS_OPTIONS.map(option => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge
+                            variant="default"
+                            className={`${getStallStatusClasses(stall.status)} text-xs`}
+                          >
+                            {getStallStatusLabel(stall.status)}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {stall.vendor_business_name ? (
+                          <p className="font-medium text-[#e8fbff] text-xs truncate max-w-[120px]">
+                            {stall.vendor_business_name}
+                          </p>
+                        ) : concessionsByStallId[stall.number] ? (
+                          <p className="font-medium text-[#e8fbff] text-xs truncate max-w-[120px]">
+                            {concessionsByStallId[stall.number].companyName}
+                          </p>
+                        ) : (
+                          <span className="text-[#e8fbff]/50 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {editingId === stall.id ? (
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="sm"
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleSave(stall.id);
+                              }}
+                              className="bg-[#10b981]/20 hover:bg-[#10b981]/30 text-[#10b981] border-[#10b981]/30 h-6 w-6 p-0"
+                            >
+                              <Save className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleCancel();
+                              }}
+                              className="bg-[#ef4444]/20 hover:bg-[#ef4444]/30 text-[#ef4444] border-[#ef4444]/30 h-6 w-6 p-0"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleEdit(stall);
+                            }}
+                            className="hover:bg-[#14b8a6]/20 text-[#14b8a6] h-6 w-6 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
                           </Button>
-                        </div>
-                      ) : (
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(stall);
-                          }}
-                          className="hover:bg-[#14b8a6]/20 text-[#14b8a6] h-6 w-6 p-0"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </div>
@@ -1801,25 +2454,30 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 setShowCompanyModal(false);
                 setSelectedCompanyForModal(null);
                 fetchData();
-                toast.success('Impresa aggiornata con successo');
+                toast.success("Impresa aggiornata con successo");
               }}
             />
           )}
-          
+
           {!selectedStall ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6">
               <MapPin className="h-12 w-12 text-[#14b8a6]/30 mb-4" />
               <p className="text-[#e8fbff]/50 text-sm">
-                Seleziona un posteggio dalla lista o dalla mappa per visualizzare i dettagli dell'impresa
+                Seleziona un posteggio dalla lista o dalla mappa per
+                visualizzare i dettagli dell'impresa
               </p>
             </div>
-          ) : !selectedStall.vendor_business_name && !concessionsByStallId[selectedStall.number] ? (
+          ) : !selectedStall.vendor_business_name &&
+            !concessionsByStallId[selectedStall.number] ? (
             <div className="h-full flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-[#14b8a6]/20">
                 <h3 className="text-sm font-semibold text-[#e8fbff]">
                   Posteggio {selectedStall.number}
                 </h3>
-                <button onClick={() => setSelectedStallId(null)} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">
+                <button
+                  onClick={() => setSelectedStallId(null)}
+                  className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+                >
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -1840,57 +2498,79 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   <h3 className="text-sm font-semibold text-[#e8fbff]">
                     Posteggio {selectedStall.number}
                   </h3>
-                  <Badge className={`${getStallStatusClasses(selectedStall.status)} text-xs mt-1`}>
+                  <Badge
+                    className={`${getStallStatusClasses(selectedStall.status)} text-xs mt-1`}
+                  >
                     {getStallStatusLabel(selectedStall.status)}
                   </Badge>
                 </div>
-                <button onClick={() => { setSelectedStallId(null); setSidebarView('impresa'); setSidebarConcessionData(null); }} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">
+                <button
+                  onClick={() => {
+                    setSelectedStallId(null);
+                    setSidebarView("impresa");
+                    setSidebarConcessionData(null);
+                  }}
+                  className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+                >
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              
+
               {/* Tab switcher Vista Impresa / Vista Concessione */}
               {selectedStall.concession_id && (
                 <div className="flex border-b border-[#14b8a6]/20">
                   <button
-                    onClick={() => setSidebarView('impresa')}
-                    className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${sidebarView === 'impresa' ? 'text-[#14b8a6] border-b-2 border-[#14b8a6] bg-[#14b8a6]/10' : 'text-[#e8fbff]/50 hover:text-[#e8fbff]'}`}
+                    onClick={() => setSidebarView("impresa")}
+                    className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${sidebarView === "impresa" ? "text-[#14b8a6] border-b-2 border-[#14b8a6] bg-[#14b8a6]/10" : "text-[#e8fbff]/50 hover:text-[#e8fbff]"}`}
                   >
-                    <Building2 className="h-4 w-4 inline mr-2" />Vista Impresa
+                    <Building2 className="h-4 w-4 inline mr-2" />
+                    Vista Impresa
                   </button>
                   <button
-                    onClick={() => setSidebarView('concessione')}
-                    className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${sidebarView === 'concessione' ? 'text-[#8b5cf6] border-b-2 border-[#8b5cf6] bg-[#8b5cf6]/10' : 'text-[#e8fbff]/50 hover:text-[#e8fbff]'}`}
+                    onClick={() => setSidebarView("concessione")}
+                    className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${sidebarView === "concessione" ? "text-[#8b5cf6] border-b-2 border-[#8b5cf6] bg-[#8b5cf6]/10" : "text-[#e8fbff]/50 hover:text-[#e8fbff]"}`}
                   >
-                    <FileText className="h-4 w-4 inline mr-2" />Vista Concessione
+                    <FileText className="h-4 w-4 inline mr-2" />
+                    Vista Concessione
                   </button>
                 </div>
               )}
-              
+
               {/* Contenuto Vista Impresa */}
-              {sidebarView === 'impresa' && (
+              {sidebarView === "impresa" && (
                 <>
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {/* Nome Impresa */}
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <Building2 className="h-4 w-4 text-[#14b8a6]" />
-                        <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Impresa</span>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">
+                          Impresa
+                        </span>
                       </div>
                       <p className="text-[#e8fbff] font-semibold">
-                        {concessionsByStallId[selectedStall.number]?.companyName || selectedStall.vendor_business_name || 'N/A'}
+                        {concessionsByStallId[selectedStall.number]
+                          ?.companyName ||
+                          selectedStall.vendor_business_name ||
+                          "N/A"}
                       </p>
                     </div>
 
                     {/* Tipo Concessione */}
-                    {concessionsByStallId[selectedStall.number]?.tipoConcessione && (
+                    {concessionsByStallId[selectedStall.number]
+                      ?.tipoConcessione && (
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <FileText className="h-4 w-4 text-[#8b5cf6]" />
-                          <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Concessione</span>
+                          <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">
+                            Concessione
+                          </span>
                         </div>
                         <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
-                          {concessionsByStallId[selectedStall.number].tipoConcessione}
+                          {
+                            concessionsByStallId[selectedStall.number]
+                              .tipoConcessione
+                          }
                         </Badge>
                       </div>
                     )}
@@ -1900,9 +2580,13 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <User className="h-4 w-4 text-[#f59e0b]" />
-                          <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Referente</span>
+                          <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">
+                            Referente
+                          </span>
                         </div>
-                        <p className="text-[#e8fbff] text-sm">{selectedStall.vendor_contact_name}</p>
+                        <p className="text-[#e8fbff] text-sm">
+                          {selectedStall.vendor_contact_name}
+                        </p>
                       </div>
                     )}
 
@@ -1910,20 +2594,20 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <MapPin className="h-4 w-4 text-[#8b5cf6]" />
-                        <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Tipo Posteggio</span>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">
+                          Tipo Posteggio
+                        </span>
                       </div>
                       <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
                         {selectedStall.type}
                       </Badge>
                     </div>
                   </div>
-
-
                 </>
               )}
 
               {/* Contenuto Vista Concessione */}
-              {sidebarView === 'concessione' && sidebarConcessionData && (
+              {sidebarView === "concessione" && sidebarConcessionData && (
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {/* Dati Concessione */}
                   <div className="bg-[#0d1829] rounded-lg p-3 border border-[#14b8a6]/20">
@@ -1932,22 +2616,50 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Tipo</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.tipo_concessione || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Tipo
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.tipo_concessione || "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Stato</span>
-                        <Badge className={sidebarConcessionData.stato === 'ATTIVA' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}>
-                          {sidebarConcessionData.stato || 'N/A'}
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Stato
+                        </span>
+                        <Badge
+                          className={
+                            sidebarConcessionData.stato === "ATTIVA"
+                              ? "bg-green-500/20 text-green-400"
+                              : "bg-yellow-500/20 text-yellow-400"
+                          }
+                        >
+                          {sidebarConcessionData.stato || "N/A"}
                         </Badge>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Valida Dal</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.valid_from ? new Date(sidebarConcessionData.valid_from).toLocaleDateString('it-IT') : '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Valida Dal
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.valid_from
+                            ? new Date(
+                                sidebarConcessionData.valid_from
+                              ).toLocaleDateString("it-IT")
+                            : "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Valida Al</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.valid_to ? new Date(sidebarConcessionData.valid_to).toLocaleDateString('it-IT') : '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Valida Al
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.valid_to
+                            ? new Date(
+                                sidebarConcessionData.valid_to
+                              ).toLocaleDateString("it-IT")
+                            : "-"}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1959,29 +2671,58 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="col-span-2">
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Ragione Sociale</span>
-                        <p className="text-[#e8fbff] font-semibold text-sm">{sidebarConcessionData.ragione_sociale || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Ragione Sociale
+                        </span>
+                        <p className="text-[#e8fbff] font-semibold text-sm">
+                          {sidebarConcessionData.ragione_sociale || "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Nome</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.nome || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Nome
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.nome || "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Cognome</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.cognome || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Cognome
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.cognome || "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Partita IVA</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.partita_iva || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Partita IVA
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.partita_iva || "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Codice Fiscale</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.cf_concessionario || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Codice Fiscale
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.cf_concessionario || "-"}
+                        </p>
                       </div>
                       <div className="col-span-2">
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Sede Legale</span>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Sede Legale
+                        </span>
                         <p className="text-[#e8fbff] text-sm">
-                          {[sidebarConcessionData.sede_legale_via, sidebarConcessionData.sede_legale_cap, sidebarConcessionData.sede_legale_comune, sidebarConcessionData.sede_legale_provincia].filter(Boolean).join(', ') || '-'}
+                          {[
+                            sidebarConcessionData.sede_legale_via,
+                            sidebarConcessionData.sede_legale_cap,
+                            sidebarConcessionData.sede_legale_comune,
+                            sidebarConcessionData.sede_legale_provincia,
+                          ]
+                            .filter(Boolean)
+                            .join(", ") || "-"}
                         </p>
                       </div>
                     </div>
@@ -1994,28 +2735,54 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Mercato</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.market_name || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Mercato
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.market_name || "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Posteggio</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.stall_code || sidebarConcessionData.stall_number || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Posteggio
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.stall_code ||
+                            sidebarConcessionData.stall_number ||
+                            "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Ubicazione</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.ubicazione || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Ubicazione
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.ubicazione || "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Giorno</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.giorno || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Giorno
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.giorno || "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">MQ</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.mq || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          MQ
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.mq || "-"}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Dimensioni</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.dimensioni_lineari || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Dimensioni
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.dimensioni_lineari || "-"}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -2027,14 +2794,27 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Canone Unico</span>
-                        <p className={`font-semibold text-sm ${parseFloat(sidebarConcessionData.canone_unico || '0') > 0 ? 'text-red-400' : 'text-[#e8fbff]'}`}>
-                          € {parseFloat(sidebarConcessionData.canone_unico || '0').toLocaleString('it-IT', {minimumFractionDigits: 2})}
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Canone Unico
+                        </span>
+                        <p
+                          className={`font-semibold text-sm ${parseFloat(sidebarConcessionData.canone_unico || "0") > 0 ? "text-red-400" : "text-[#e8fbff]"}`}
+                        >
+                          €{" "}
+                          {parseFloat(
+                            sidebarConcessionData.canone_unico || "0"
+                          ).toLocaleString("it-IT", {
+                            minimumFractionDigits: 2,
+                          })}
                         </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Tipo Posteggio</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.tipo_posteggio || '-'}</p>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Tipo Posteggio
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.tipo_posteggio || "-"}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -2046,19 +2826,38 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                     </h4>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">ID Wallet</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.wallet_id || '-'}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Saldo</span>
-                        <p className={`font-semibold text-sm ${parseFloat(sidebarConcessionData.wallet_balance || '0') >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          € {parseFloat(sidebarConcessionData.wallet_balance || '0').toLocaleString('it-IT', {minimumFractionDigits: 2})}
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          ID Wallet
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.wallet_id || "-"}
                         </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Stato</span>
-                        <p className={`text-sm ${sidebarConcessionData.wallet_status === 'ACTIVE' ? 'text-green-400' : 'text-yellow-400'}`}>
-                          {sidebarConcessionData.wallet_status === 'ACTIVE' ? '✓ Attivo' : sidebarConcessionData.wallet_status || '-'}
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Saldo
+                        </span>
+                        <p
+                          className={`font-semibold text-sm ${parseFloat(sidebarConcessionData.wallet_balance || "0") >= 0 ? "text-green-400" : "text-red-400"}`}
+                        >
+                          €{" "}
+                          {parseFloat(
+                            sidebarConcessionData.wallet_balance || "0"
+                          ).toLocaleString("it-IT", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Stato
+                        </span>
+                        <p
+                          className={`text-sm ${sidebarConcessionData.wallet_status === "ACTIVE" ? "text-green-400" : "text-yellow-400"}`}
+                        >
+                          {sidebarConcessionData.wallet_status === "ACTIVE"
+                            ? "✓ Attivo"
+                            : sidebarConcessionData.wallet_status || "-"}
                         </p>
                       </div>
                     </div>
@@ -2067,29 +2866,59 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                   {/* Requisiti e Documentazione */}
                   <div className="bg-[#0d1829] rounded-lg p-3 border border-[#14b8a6]/20">
                     <h4 className="text-[#14b8a6] font-semibold mb-3 flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4" /> Requisiti e Documentazione
+                      <Calendar className="h-4 w-4" /> Requisiti e
+                      Documentazione
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">DURC Valido</span>
-                        <p className={`text-sm ${sidebarConcessionData.durc_scadenza ? (new Date(sidebarConcessionData.durc_scadenza) > new Date() ? 'text-green-400' : 'text-yellow-400') : 'text-red-400'}`}>
-                          {sidebarConcessionData.durc_scadenza ? (new Date(sidebarConcessionData.durc_scadenza) > new Date() ? '✓ Sì' : '⚠ Scaduto') : '✗ Non presente'}
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          DURC Valido
+                        </span>
+                        <p
+                          className={`text-sm ${sidebarConcessionData.durc_scadenza ? (new Date(sidebarConcessionData.durc_scadenza) > new Date() ? "text-green-400" : "text-yellow-400") : "text-red-400"}`}
+                        >
+                          {sidebarConcessionData.durc_scadenza
+                            ? new Date(sidebarConcessionData.durc_scadenza) >
+                              new Date()
+                              ? "✓ Sì"
+                              : "⚠ Scaduto"
+                            : "✗ Non presente"}
                         </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Scadenza DURC</span>
-                        <p className="text-[#e8fbff] text-sm">{sidebarConcessionData.durc_scadenza ? new Date(sidebarConcessionData.durc_scadenza).toLocaleDateString('it-IT') : '-'}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Requisiti Morali</span>
-                        <p className={`text-sm ${sidebarConcessionData.requisiti_morali ? 'text-green-400' : 'text-[#e8fbff]/50'}`}>
-                          {sidebarConcessionData.requisiti_morali ? '✓ Verificati' : '-'}
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Scadenza DURC
+                        </span>
+                        <p className="text-[#e8fbff] text-sm">
+                          {sidebarConcessionData.durc_scadenza
+                            ? new Date(
+                                sidebarConcessionData.durc_scadenza
+                              ).toLocaleDateString("it-IT")
+                            : "-"}
                         </p>
                       </div>
                       <div>
-                        <span className="text-xs text-[#e8fbff]/50 uppercase">Requisiti Professionali</span>
-                        <p className={`text-sm ${sidebarConcessionData.requisiti_professionali ? 'text-green-400' : 'text-[#e8fbff]/50'}`}>
-                          {sidebarConcessionData.requisiti_professionali ? '✓ Verificati' : '-'}
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Requisiti Morali
+                        </span>
+                        <p
+                          className={`text-sm ${sidebarConcessionData.requisiti_morali ? "text-green-400" : "text-[#e8fbff]/50"}`}
+                        >
+                          {sidebarConcessionData.requisiti_morali
+                            ? "✓ Verificati"
+                            : "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-[#e8fbff]/50 uppercase">
+                          Requisiti Professionali
+                        </span>
+                        <p
+                          className={`text-sm ${sidebarConcessionData.requisiti_professionali ? "text-green-400" : "text-[#e8fbff]/50"}`}
+                        >
+                          {sidebarConcessionData.requisiti_professionali
+                            ? "✓ Verificati"
+                            : "-"}
                         </p>
                       </div>
                     </div>
@@ -2098,7 +2927,7 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
               )}
 
               {/* Loading per Vista Concessione */}
-              {sidebarView === 'concessione' && !sidebarConcessionData && (
+              {sidebarView === "concessione" && !sidebarConcessionData && (
                 <div className="flex-1 flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8b5cf6]"></div>
                 </div>
@@ -2109,10 +2938,16 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 <div className="p-4 border-t border-[#14b8a6]/20 bg-[#0b1220]/50">
                   <Button
                     onClick={async () => {
-                      const companyId = selectedStall.impresa_id || concessionsByStallId[selectedStall.number]?.companyId;
+                      const companyId =
+                        selectedStall.impresa_id ||
+                        concessionsByStallId[selectedStall.number]?.companyId;
                       if (companyId) {
                         try {
-                          const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${companyId}`));
+                          const response = await fetch(
+                            addComuneIdToUrl(
+                              `${API_BASE_URL}/api/imprese/${companyId}`
+                            )
+                          );
                           const data = await response.json();
                           if (data.success && data.data) {
                             setSelectedCompanyForModal({
@@ -2122,20 +2957,21 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                               partita_iva: data.data.partita_iva,
                               referente: data.data.referente || data.data.email,
                               telefono: data.data.telefono,
-                              stato: data.data.stato || 'active',
-                              ...data.data
+                              stato: data.data.stato || "active",
+                              ...data.data,
                             });
                             setShowCompanyModal(true);
                           }
                         } catch (error) {
-                          console.error('Error loading company:', error);
-                          toast.error('Errore nel caricamento dell\'impresa');
+                          console.error("Error loading company:", error);
+                          toast.error("Errore nel caricamento dell'impresa");
                         }
                       }
                     }}
                     className="w-full bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
                   >
-                    <Edit className="h-4 w-4 mr-2" /> Modifica Impresa (38 campi)
+                    <Edit className="h-4 w-4 mr-2" /> Modifica Impresa (38
+                    campi)
                   </Button>
                 </div>
               )}
@@ -2144,16 +2980,20 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
         </div>
       </div>
 
-
       {/* Modal Dettaglio Concessione */}
       {showConcessionDetailModal && selectedConcessionForModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-[#0b1220] border-b border-[#14b8a6]/20 p-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-[#14b8a6]">
-                Concessione #{selectedConcessionForModal.numero_protocollo || selectedConcessionForModal.id}
+                Concessione #
+                {selectedConcessionForModal.numero_protocollo ||
+                  selectedConcessionForModal.id}
               </h2>
-              <button onClick={() => setShowConcessionDetailModal(false)} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">
+              <button
+                onClick={() => setShowConcessionDetailModal(false)}
+                className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2165,22 +3005,50 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Tipo</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.tipo_concessione || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Tipo
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.tipo_concessione || "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Stato</span>
-                    <Badge className={selectedConcessionForModal.stato === 'ATTIVA' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}>
-                      {selectedConcessionForModal.stato || 'N/A'}
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Stato
+                    </span>
+                    <Badge
+                      className={
+                        selectedConcessionForModal.stato === "ATTIVA"
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-yellow-500/20 text-yellow-400"
+                      }
+                    >
+                      {selectedConcessionForModal.stato || "N/A"}
                     </Badge>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Valida Dal</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.valid_from ? new Date(selectedConcessionForModal.valid_from).toLocaleDateString('it-IT') : '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Valida Dal
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.valid_from
+                        ? new Date(
+                            selectedConcessionForModal.valid_from
+                          ).toLocaleDateString("it-IT")
+                        : "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Valida Al</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.valid_to ? new Date(selectedConcessionForModal.valid_to).toLocaleDateString('it-IT') : '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Valida Al
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.valid_to
+                        ? new Date(
+                            selectedConcessionForModal.valid_to
+                          ).toLocaleDateString("it-IT")
+                        : "-"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2192,29 +3060,58 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="col-span-2">
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Ragione Sociale</span>
-                    <p className="text-[#e8fbff] font-semibold">{selectedConcessionForModal.ragione_sociale || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Ragione Sociale
+                    </span>
+                    <p className="text-[#e8fbff] font-semibold">
+                      {selectedConcessionForModal.ragione_sociale || "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Nome</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.nome || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Nome
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.nome || "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Cognome</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.cognome || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Cognome
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.cognome || "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Partita IVA</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.partita_iva || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Partita IVA
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.partita_iva || "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Codice Fiscale</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.cf_concessionario || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Codice Fiscale
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.cf_concessionario || "-"}
+                    </p>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Sede Legale</span>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Sede Legale
+                    </span>
                     <p className="text-[#e8fbff]">
-                      {[selectedConcessionForModal.sede_legale_via, selectedConcessionForModal.sede_legale_cap, selectedConcessionForModal.sede_legale_comune, selectedConcessionForModal.sede_legale_provincia].filter(Boolean).join(', ') || '-'}
+                      {[
+                        selectedConcessionForModal.sede_legale_via,
+                        selectedConcessionForModal.sede_legale_cap,
+                        selectedConcessionForModal.sede_legale_comune,
+                        selectedConcessionForModal.sede_legale_provincia,
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "-"}
                     </p>
                   </div>
                 </div>
@@ -2227,28 +3124,54 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Mercato</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.market_name || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Mercato
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.market_name || "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Posteggio</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.stall_code || selectedConcessionForModal.stall_number || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Posteggio
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.stall_code ||
+                        selectedConcessionForModal.stall_number ||
+                        "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Ubicazione</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.ubicazione || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Ubicazione
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.ubicazione || "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Giorno</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.giorno || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Giorno
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.giorno || "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">MQ</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.mq || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      MQ
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.mq || "-"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Dimensioni</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.dimensioni_lineari || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Dimensioni
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.dimensioni_lineari || "-"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2260,14 +3183,25 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Canone Unico</span>
-                    <p className={`font-semibold ${parseFloat(selectedConcessionForModal.canone_unico || '0') > 0 ? 'text-red-400' : 'text-[#e8fbff]'}`}>
-                      € {parseFloat(selectedConcessionForModal.canone_unico || '0').toLocaleString('it-IT', {minimumFractionDigits: 2})}
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Canone Unico
+                    </span>
+                    <p
+                      className={`font-semibold ${parseFloat(selectedConcessionForModal.canone_unico || "0") > 0 ? "text-red-400" : "text-[#e8fbff]"}`}
+                    >
+                      €{" "}
+                      {parseFloat(
+                        selectedConcessionForModal.canone_unico || "0"
+                      ).toLocaleString("it-IT", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Tipo Posteggio</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.tipo_posteggio || '-'}</p>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Tipo Posteggio
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.tipo_posteggio || "-"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2279,19 +3213,36 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 </h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">ID Wallet</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.wallet_id || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Saldo</span>
-                    <p className={`font-semibold ${parseFloat(selectedConcessionForModal.wallet_balance || '0') >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      € {parseFloat(selectedConcessionForModal.wallet_balance || '0').toLocaleString('it-IT', {minimumFractionDigits: 2})}
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      ID Wallet
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.wallet_id || "-"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Stato Wallet</span>
-                    <p className={`${selectedConcessionForModal.wallet_status === 'ACTIVE' ? 'text-green-400' : 'text-yellow-400'}`}>
-                      {selectedConcessionForModal.wallet_status === 'ACTIVE' ? '✓ Attivo' : selectedConcessionForModal.wallet_status || '-'}
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Saldo
+                    </span>
+                    <p
+                      className={`font-semibold ${parseFloat(selectedConcessionForModal.wallet_balance || "0") >= 0 ? "text-green-400" : "text-red-400"}`}
+                    >
+                      €{" "}
+                      {parseFloat(
+                        selectedConcessionForModal.wallet_balance || "0"
+                      ).toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Stato Wallet
+                    </span>
+                    <p
+                      className={`${selectedConcessionForModal.wallet_status === "ACTIVE" ? "text-green-400" : "text-yellow-400"}`}
+                    >
+                      {selectedConcessionForModal.wallet_status === "ACTIVE"
+                        ? "✓ Attivo"
+                        : selectedConcessionForModal.wallet_status || "-"}
                     </p>
                   </div>
                 </div>
@@ -2304,25 +3255,69 @@ function PosteggiTab({ marketId, marketCode, marketCenter, stalls, setStalls, al
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">DURC Valido</span>
-                    <p className={selectedConcessionForModal.durc_scadenza ? (new Date(selectedConcessionForModal.durc_scadenza) > new Date() ? 'text-green-400' : 'text-yellow-400') : 'text-red-400'}>
-                      {selectedConcessionForModal.durc_scadenza ? (new Date(selectedConcessionForModal.durc_scadenza) > new Date() ? '✓ Sì' : '⚠ Scaduto') : '✗ Non presente'}
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      DURC Valido
+                    </span>
+                    <p
+                      className={
+                        selectedConcessionForModal.durc_scadenza
+                          ? new Date(selectedConcessionForModal.durc_scadenza) >
+                            new Date()
+                            ? "text-green-400"
+                            : "text-yellow-400"
+                          : "text-red-400"
+                      }
+                    >
+                      {selectedConcessionForModal.durc_scadenza
+                        ? new Date(selectedConcessionForModal.durc_scadenza) >
+                          new Date()
+                          ? "✓ Sì"
+                          : "⚠ Scaduto"
+                        : "✗ Non presente"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Scadenza DURC</span>
-                    <p className="text-[#e8fbff]">{selectedConcessionForModal.durc_scadenza ? new Date(selectedConcessionForModal.durc_scadenza).toLocaleDateString('it-IT') : '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Requisiti Morali</span>
-                    <p className={selectedConcessionForModal.requisiti_morali ? 'text-green-400' : 'text-[#e8fbff]/50'}>
-                      {selectedConcessionForModal.requisiti_morali ? '✓ Verificati' : '-'}
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Scadenza DURC
+                    </span>
+                    <p className="text-[#e8fbff]">
+                      {selectedConcessionForModal.durc_scadenza
+                        ? new Date(
+                            selectedConcessionForModal.durc_scadenza
+                          ).toLocaleDateString("it-IT")
+                        : "-"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-[#e8fbff]/50 uppercase">Requisiti Professionali</span>
-                    <p className={selectedConcessionForModal.requisiti_professionali ? 'text-green-400' : 'text-[#e8fbff]/50'}>
-                      {selectedConcessionForModal.requisiti_professionali ? '✓ Verificati' : '-'}
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Requisiti Morali
+                    </span>
+                    <p
+                      className={
+                        selectedConcessionForModal.requisiti_morali
+                          ? "text-green-400"
+                          : "text-[#e8fbff]/50"
+                      }
+                    >
+                      {selectedConcessionForModal.requisiti_morali
+                        ? "✓ Verificati"
+                        : "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-[#e8fbff]/50 uppercase">
+                      Requisiti Professionali
+                    </span>
+                    <p
+                      className={
+                        selectedConcessionForModal.requisiti_professionali
+                          ? "text-green-400"
+                          : "text-[#e8fbff]/50"
+                      }
+                    >
+                      {selectedConcessionForModal.requisiti_professionali
+                        ? "✓ Verificati"
+                        : "-"}
                     </p>
                   </div>
                 </div>
@@ -2350,8 +3345,12 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
   const fetchData = async () => {
     try {
       const [concessionsRes, vendorsRes] = await Promise.all([
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/concessions?market_id=${marketId}`)),
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/vendors`))
+        fetch(
+          addComuneIdToUrl(
+            `${API_BASE_URL}/api/concessions?market_id=${marketId}`
+          )
+        ),
+        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/vendors`)),
       ]);
 
       const concessionsData = await concessionsRes.json();
@@ -2364,8 +3363,8 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
         setVendors(vendorsData.data);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Errore nel caricamento dei dati');
+      console.error("Error fetching data:", error);
+      toast.error("Errore nel caricamento dei dati");
     } finally {
       setLoading(false);
     }
@@ -2375,7 +3374,9 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
         <Loader2 className="h-12 w-12 animate-spin text-[#14b8a6]" />
-        <p className="text-[#e8fbff]/70 animate-pulse">Caricamento mappa e posteggi in corso...</p>
+        <p className="text-[#e8fbff]/70 animate-pulse">
+          Caricamento mappa e posteggi in corso...
+        </p>
       </div>
     );
   }
@@ -2384,35 +3385,52 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
     <div className="space-y-6">
       {/* Sezione Imprese */}
       <div>
-        <h3 className="text-lg font-semibold mb-4 text-[#e8fbff]">Imprese Registrate</h3>
+        <h3 className="text-lg font-semibold mb-4 text-[#e8fbff]">
+          Imprese Registrate
+        </h3>
         <div className="grid gap-4 md:grid-cols-2">
-          {vendors.map((vendor) => (
-            <Card key={vendor.id} className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+          {vendors.map(vendor => (
+            <Card
+              key={vendor.id}
+              className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30"
+            >
               <CardHeader>
-                <CardTitle className="text-base text-[#e8fbff]">{vendor.business_name}</CardTitle>
-                <CardDescription className="text-[#e8fbff]/70">{vendor.code}</CardDescription>
+                <CardTitle className="text-base text-[#e8fbff]">
+                  {vendor.business_name}
+                </CardTitle>
+                <CardDescription className="text-[#e8fbff]/70">
+                  {vendor.code}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-[#e8fbff]/70">P.IVA</span>
-                    <span className="font-medium text-[#e8fbff]">{vendor.vat_number}</span>
+                    <span className="font-medium text-[#e8fbff]">
+                      {vendor.vat_number}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#e8fbff]/70">Referente</span>
-                    <span className="font-medium text-[#e8fbff]">{vendor.contact_name}</span>
+                    <span className="font-medium text-[#e8fbff]">
+                      {vendor.contact_name}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#e8fbff]/70">Telefono</span>
-                    <span className="font-medium text-[#e8fbff]">{vendor.phone}</span>
+                    <span className="font-medium text-[#e8fbff]">
+                      {vendor.phone}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#e8fbff]/70">Stato</span>
-                    <Badge 
-                      variant="default" 
-                      className={vendor.status === 'active' 
-                        ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30' 
-                        : 'bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30'}
+                    <Badge
+                      variant="default"
+                      className={
+                        vendor.status === "active"
+                          ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30"
+                          : "bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30"
+                      }
                     >
                       {vendor.status}
                     </Badge>
@@ -2426,7 +3444,9 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
 
       {/* Sezione Concessioni */}
       <div>
-        <h3 className="text-lg font-semibold mb-4 text-[#e8fbff]">Concessioni</h3>
+        <h3 className="text-lg font-semibold mb-4 text-[#e8fbff]">
+          Concessioni
+        </h3>
         <div className="border border-[#14b8a6]/20 rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
@@ -2441,48 +3461,83 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {concessions.map((concession) => {
+              {concessions.map(concession => {
                 // Priorità: stato dal DB (CESSATA, SOSPESA) > calcolo dinamico (SCADUTA) > ATTIVA
-                const isCessata = concession.status === 'CESSATA' || concession.stato === 'CESSATA' || concession.stato_calcolato === 'CESSATA';
-                const isSospesa = concession.stato === 'SOSPESA' || concession.stato_calcolato === 'SOSPESA';
-                const isExpired = !isCessata && !isSospesa && concession.valid_to && new Date(concession.valid_to) < new Date();
-                const displayStato = isCessata ? 'Cessata' : isSospesa ? 'Sospesa' : isExpired ? 'Scaduta' : 'Attiva';
-                const badgeClass = isCessata ? 'bg-gray-500/20 text-gray-400 border-gray-500/30' 
-                  : isSospesa ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                  : isExpired ? 'bg-red-500/20 text-red-400 border-red-500/30' 
-                  : 'bg-green-500/20 text-green-400 border-green-500/30';
+                const isCessata =
+                  concession.status === "CESSATA" ||
+                  concession.stato === "CESSATA" ||
+                  concession.stato_calcolato === "CESSATA";
+                const isSospesa =
+                  concession.stato === "SOSPESA" ||
+                  concession.stato_calcolato === "SOSPESA";
+                const isExpired =
+                  !isCessata &&
+                  !isSospesa &&
+                  concession.valid_to &&
+                  new Date(concession.valid_to) < new Date();
+                const displayStato = isCessata
+                  ? "Cessata"
+                  : isSospesa
+                    ? "Sospesa"
+                    : isExpired
+                      ? "Scaduta"
+                      : "Attiva";
+                const badgeClass = isCessata
+                  ? "bg-gray-500/20 text-gray-400 border-gray-500/30"
+                  : isSospesa
+                    ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                    : isExpired
+                      ? "bg-red-500/20 text-red-400 border-red-500/30"
+                      : "bg-green-500/20 text-green-400 border-green-500/30";
                 return (
-                <TableRow key={concession.id} className={`border-[#14b8a6]/10 hover:bg-[#14b8a6]/5 ${isCessata || isExpired ? 'opacity-70' : ''}`}>
-                  <TableCell className="font-medium text-[#e8fbff]">{concession.stall_number}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium text-[#e8fbff]">{concession.vendor_business_name}</p>
-                      <p className="text-xs text-[#e8fbff]/70">{concession.vendor_code}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">
-                      {concession.settore_merceologico || 'Alimentare'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-[#e8fbff]">
-                    {concession.comune_rilascio || '-'}
-                  </TableCell>
-                  <TableCell className="text-[#e8fbff]">
-                    {new Date(concession.valid_from).toLocaleDateString('it-IT')}
-                  </TableCell>
-                  <TableCell className="text-[#e8fbff]">
-                    {concession.valid_to 
-                      ? new Date(concession.valid_to).toLocaleDateString('it-IT')
-                      : 'Indeterminato'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={badgeClass}>
-                      {displayStato}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              )})}
+                  <TableRow
+                    key={concession.id}
+                    className={`border-[#14b8a6]/10 hover:bg-[#14b8a6]/5 ${isCessata || isExpired ? "opacity-70" : ""}`}
+                  >
+                    <TableCell className="font-medium text-[#e8fbff]">
+                      {concession.stall_number}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-[#e8fbff]">
+                          {concession.vendor_business_name}
+                        </p>
+                        <p className="text-xs text-[#e8fbff]/70">
+                          {concession.vendor_code}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30"
+                      >
+                        {concession.settore_merceologico || "Alimentare"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-[#e8fbff]">
+                      {concession.comune_rilascio || "-"}
+                    </TableCell>
+                    <TableCell className="text-[#e8fbff]">
+                      {new Date(concession.valid_from).toLocaleDateString(
+                        "it-IT"
+                      )}
+                    </TableCell>
+                    <TableCell className="text-[#e8fbff]">
+                      {concession.valid_to
+                        ? new Date(concession.valid_to).toLocaleDateString(
+                            "it-IT"
+                          )
+                        : "Indeterminato"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={badgeClass}>
+                        {displayStato}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

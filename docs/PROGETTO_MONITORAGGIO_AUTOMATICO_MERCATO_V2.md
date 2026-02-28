@@ -16,12 +16,12 @@ Creare un sistema automatico per monitorare le trasgressioni degli orari nel mer
 
 Il sistema si basa su **4 nuovi componenti**:
 
-| Componente | Posizione | Funzione |
-| :--- | :--- | :--- |
-| **Sotto-tab "Impostazioni Mercato"** | Gestione Mercati → Test Mercato | Configurazione orari e regole |
-| **Pagina "Trasgressioni Automatiche"** | Controlli/Sanzioni → Nuovo sotto-tab | Visualizzazione notifiche automatiche |
-| **Pagina "Giustifiche"** | Controlli/Sanzioni → Nuovo sotto-tab | Gestione giustifiche per uscite anticipate |
-| **Pagina "Storico Mercati"** | Gestione Mercati → Nuovo sotto-tab | Archivio mercati conclusi |
+| Componente                             | Posizione                            | Funzione                                   |
+| :------------------------------------- | :----------------------------------- | :----------------------------------------- |
+| **Sotto-tab "Impostazioni Mercato"**   | Gestione Mercati → Test Mercato      | Configurazione orari e regole              |
+| **Pagina "Trasgressioni Automatiche"** | Controlli/Sanzioni → Nuovo sotto-tab | Visualizzazione notifiche automatiche      |
+| **Pagina "Giustifiche"**               | Controlli/Sanzioni → Nuovo sotto-tab | Gestione giustifiche per uscite anticipate |
+| **Pagina "Storico Mercati"**           | Gestione Mercati → Nuovo sotto-tab   | Archivio mercati conclusi                  |
 
 ### 2.1. Diagramma Architetturale
 
@@ -97,39 +97,39 @@ Il sistema si basa su **4 nuovi componenti**:
 
 ### 3.1. Tabella `market_settings` (Aggiornata)
 
-| Colonna | Tipo | Descrizione | Esempio |
-| :--- | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | ID univoco | 1 |
-| `market_id` | `INTEGER NOT NULL` | ID del mercato (FK a `markets`) | 5 |
-| `presence_start_time` | `TIME NOT NULL` | Orario inizio marcatura presenza | 06:00 |
-| `presence_end_time` | `TIME NOT NULL` | Orario fine marcatura presenza | 08:00 |
-| `spunta_presence_start_time` | `TIME NOT NULL` | Orario inizio marcatura presenza spunta | 07:30 |
-| `waste_disposal_start_time` | `TIME NOT NULL` | Orario inizio deposito spazzatura | 12:00 |
-| `waste_disposal_end_time` | `TIME NOT NULL` | Orario fine deposito spazzatura | 13:00 |
-| `exit_market_start_time` | `TIME NOT NULL` | Orario inizio uscita mercato | 13:00 |
-| `exit_market_end_time` | `TIME NOT NULL` | Orario fine uscita mercato | 14:00 |
-| `is_active` | `BOOLEAN DEFAULT TRUE` | Se le impostazioni sono attive | true |
-| `justification_days` | `INTEGER DEFAULT 3` | Giorni per inviare giustifica | 3 |
-| `auto_sanction_rules` | `JSONB` | Regole per verbali automatici | `{"USCITA_ANTICIPATA": true, "SPAZZATURA_TARDIVA": false}` |
-| `created_at` | `TIMESTAMP DEFAULT NOW()` | Data creazione | 2026-01-26 10:00:00 |
-| `updated_at` | `TIMESTAMP DEFAULT NOW()` | Data aggiornamento | 2026-01-26 10:00:00 |
+| Colonna                      | Tipo                      | Descrizione                             | Esempio                                                    |
+| :--------------------------- | :------------------------ | :-------------------------------------- | :--------------------------------------------------------- |
+| `id`                         | `SERIAL PRIMARY KEY`      | ID univoco                              | 1                                                          |
+| `market_id`                  | `INTEGER NOT NULL`        | ID del mercato (FK a `markets`)         | 5                                                          |
+| `presence_start_time`        | `TIME NOT NULL`           | Orario inizio marcatura presenza        | 06:00                                                      |
+| `presence_end_time`          | `TIME NOT NULL`           | Orario fine marcatura presenza          | 08:00                                                      |
+| `spunta_presence_start_time` | `TIME NOT NULL`           | Orario inizio marcatura presenza spunta | 07:30                                                      |
+| `waste_disposal_start_time`  | `TIME NOT NULL`           | Orario inizio deposito spazzatura       | 12:00                                                      |
+| `waste_disposal_end_time`    | `TIME NOT NULL`           | Orario fine deposito spazzatura         | 13:00                                                      |
+| `exit_market_start_time`     | `TIME NOT NULL`           | Orario inizio uscita mercato            | 13:00                                                      |
+| `exit_market_end_time`       | `TIME NOT NULL`           | Orario fine uscita mercato              | 14:00                                                      |
+| `is_active`                  | `BOOLEAN DEFAULT TRUE`    | Se le impostazioni sono attive          | true                                                       |
+| `justification_days`         | `INTEGER DEFAULT 3`       | Giorni per inviare giustifica           | 3                                                          |
+| `auto_sanction_rules`        | `JSONB`                   | Regole per verbali automatici           | `{"USCITA_ANTICIPATA": true, "SPAZZATURA_TARDIVA": false}` |
+| `created_at`                 | `TIMESTAMP DEFAULT NOW()` | Data creazione                          | 2026-01-26 10:00:00                                        |
+| `updated_at`                 | `TIMESTAMP DEFAULT NOW()` | Data aggiornamento                      | 2026-01-26 10:00:00                                        |
 
 ### 3.2. Tabella `market_transgressions` (Aggiornata)
 
-| Colonna | Tipo | Descrizione | Esempio |
-| :--- | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | ID univoco | 1 |
-| `market_id` | `INTEGER NOT NULL` | ID del mercato | 5 |
-| `market_date` | `DATE NOT NULL` | Data del mercato | 2026-01-26 |
-| `business_id` | `INTEGER NOT NULL` | ID dell'impresa | 38 |
-| `transgression_type` | `VARCHAR(100) NOT NULL` | Tipo di trasgressione | USCITA_ANTICIPATA |
-| `status` | `VARCHAR(50) DEFAULT 'PENDING'` | Stato (PENDING, JUSTIFIED, SANCTION_PREPARED, SANCTIONED, IGNORED) | PENDING |
-| `justification_deadline` | `TIMESTAMP` | Scadenza per inviare giustifica | 2026-01-29 12:30:00 |
-| `justification_file_path` | `VARCHAR(255)` | Path del file di giustifica | `/uploads/certificato.pdf` |
-| `justification_status` | `VARCHAR(50)` | Stato giustifica (APPROVED, REJECTED) | NULL |
-| `justification_notes` | `TEXT` | Note della PM sulla giustifica | Certificato valido |
-| `sanction_id` | `INTEGER` | ID del verbale emesso | NULL |
-| `created_at` | `TIMESTAMP DEFAULT NOW()` | Data creazione | 2026-01-26 12:30:00 |
+| Colonna                   | Tipo                            | Descrizione                                                        | Esempio                    |
+| :------------------------ | :------------------------------ | :----------------------------------------------------------------- | :------------------------- |
+| `id`                      | `SERIAL PRIMARY KEY`            | ID univoco                                                         | 1                          |
+| `market_id`               | `INTEGER NOT NULL`              | ID del mercato                                                     | 5                          |
+| `market_date`             | `DATE NOT NULL`                 | Data del mercato                                                   | 2026-01-26                 |
+| `business_id`             | `INTEGER NOT NULL`              | ID dell'impresa                                                    | 38                         |
+| `transgression_type`      | `VARCHAR(100) NOT NULL`         | Tipo di trasgressione                                              | USCITA_ANTICIPATA          |
+| `status`                  | `VARCHAR(50) DEFAULT 'PENDING'` | Stato (PENDING, JUSTIFIED, SANCTION_PREPARED, SANCTIONED, IGNORED) | PENDING                    |
+| `justification_deadline`  | `TIMESTAMP`                     | Scadenza per inviare giustifica                                    | 2026-01-29 12:30:00        |
+| `justification_file_path` | `VARCHAR(255)`                  | Path del file di giustifica                                        | `/uploads/certificato.pdf` |
+| `justification_status`    | `VARCHAR(50)`                   | Stato giustifica (APPROVED, REJECTED)                              | NULL                       |
+| `justification_notes`     | `TEXT`                          | Note della PM sulla giustifica                                     | Certificato valido         |
+| `sanction_id`             | `INTEGER`                       | ID del verbale emesso                                              | NULL                       |
+| `created_at`              | `TIMESTAMP DEFAULT NOW()`       | Data creazione                                                     | 2026-01-26 12:30:00        |
 
 ---
 
@@ -138,6 +138,7 @@ Il sistema si basa su **4 nuovi componenti**:
 Il CRON job esegue 2 task:
 
 **Task 1: Rilevamento Trasgressioni (ogni 5 minuti)**
+
 1. Rileva le trasgressioni come prima
 2. Se la trasgressione richiede giustifica (es. USCITA_ANTICIPATA):
    - Imposta `status = 'PENDING'`
@@ -148,6 +149,7 @@ Il CRON job esegue 2 task:
    - Invia notifica alla PM: "Verbale pronto per invio"
 
 **Task 2: Scadenza Giustifiche (ogni ora)**
+
 1. Cerca le trasgressioni con `status = 'PENDING'` e `justification_deadline` scaduto
 2. Per ogni trasgressione scaduta:
    - Prepara il verbale e imposta `status = 'SANCTION_PREPARED'`
@@ -160,6 +162,7 @@ Il CRON job esegue 2 task:
 ### 5.1. Sotto-tab "Impostazioni Mercato"
 
 **Campi aggiuntivi:**
+
 - **Selettori Attivazione Verbale Automatico**: ON/OFF per ogni tipo di trasgressione
 - **Campo "Giorni per Giustifica"**: Numero di giorni per inviare il certificato
 
@@ -168,6 +171,7 @@ Il CRON job esegue 2 task:
 **Posizione:** Controlli/Sanzioni → Nuovo sotto-tab "Giustifiche"
 
 **Contenuto:**
+
 - Lista trasgressioni in attesa di giustifica
 - Stato: In attesa, Scaduta, Certificato inviato, Approvata, Rifiutata
 - Pulsanti azione: "Visualizza Certificato", "Approva", "Rifiuta", "Prepara Verbale"
@@ -176,9 +180,9 @@ Il CRON job esegue 2 task:
 
 ## 6. Fasi di Sviluppo
 
-| Sprint | Durata | Attività |
-| :--- | :--- | :--- |
+| Sprint       | Durata   | Attività                                      |
+| :----------- | :------- | :-------------------------------------------- |
 | **Sprint 1** | 3 giorni | Backend: Tabelle DB aggiornate + Endpoint API |
-| **Sprint 2** | 3 giorni | Frontend: Impostazioni Mercato + Giustifiche |
-| **Sprint 3** | 2 giorni | CRON Job aggiornato + Storico Mercati |
-| **Sprint 4** | 2 giorni | Test + Deploy + Integrazione |
+| **Sprint 2** | 3 giorni | Frontend: Impostazioni Mercato + Giustifiche  |
+| **Sprint 3** | 2 giorni | CRON Job aggiornato + Storico Mercati         |
+| **Sprint 4** | 2 giorni | Test + Deploy + Integrazione                  |

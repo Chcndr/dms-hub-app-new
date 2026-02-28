@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
+import {
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  router,
+} from "./_core/trpc";
 import { getDb } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import * as schema from "../drizzle/schema";
@@ -84,20 +89,21 @@ function convertSlotEditorV3Format(data: any) {
     result.stalls = data.stalls_geojson.features.map((f: any) => {
       const props = f.properties || {};
       const geom = f.geometry;
-      
+
       // Calcola centro del poligono per lat/lng
-      let lat = 0, lng = 0;
-      if (geom.type === 'Polygon' && geom.coordinates?.[0]) {
+      let lat = 0,
+        lng = 0;
+      if (geom.type === "Polygon" && geom.coordinates?.[0]) {
         const coords = geom.coordinates[0];
         const lats = coords.map((c: any) => c[1]);
         const lngs = coords.map((c: any) => c[0]);
         lat = lats.reduce((a: number, b: number) => a + b, 0) / lats.length;
         lng = lngs.reduce((a: number, b: number) => a + b, 0) / lngs.length;
-      } else if (geom.type === 'Point') {
+      } else if (geom.type === "Point") {
         lng = geom.coordinates[0];
         lat = geom.coordinates[1];
       }
-      
+
       // Estrai area da dimensions (es. "4m × 8m")
       let areaMq = null;
       if (props.dimensions) {
@@ -162,7 +168,7 @@ function convertSlotEditorV3Format(data: any) {
 
 /**
  * DMS HUB Router
- * 
+ *
  * API centralizzate per gestione completa mercati, posteggi, operatori
  * Integrazione con Slot Editor v3, Gestionale Heroku, Piattaforma DMS, App Polizia
  */
@@ -171,92 +177,115 @@ export const dmsHubRouter = router({
   // ============================================
   // MERCATI - Import da Slot Editor v3
   // ============================================
-  
+
   markets: router({
     // Import JSON completo da Slot Editor v3
     importFromSlotEditor: adminProcedure
-      .input(z.object({
-        marketName: z.string(),
-        city: z.string(),
-        address: z.string(),
-        slotEditorData: z.object({
-          container: z.any(),
-          center: z.object({ lat: z.number(), lng: z.number() }),
-          hubArea: z.any().optional(),
-          marketArea: z.any().optional(),
-          gcp: z.array(z.any()),
-          png: z.object({
-            url: z.string(),
-            metadata: z.any(),
+      .input(
+        z.object({
+          marketName: z.string(),
+          city: z.string(),
+          address: z.string(),
+          slotEditorData: z.object({
+            container: z.any(),
+            center: z.object({ lat: z.number(), lng: z.number() }),
+            hubArea: z.any().optional(),
+            marketArea: z.any().optional(),
+            gcp: z.array(z.any()),
+            png: z.object({
+              url: z.string(),
+              metadata: z.any(),
+            }),
+            stalls: z.array(
+              z.object({
+                number: z.string(),
+                lat: z.number(),
+                lng: z.number(),
+                areaMq: z.number().optional(),
+                category: z.string().optional(),
+              })
+            ),
+            customMarkers: z
+              .array(
+                z.object({
+                  name: z.string(),
+                  type: z.string(),
+                  lat: z.number(),
+                  lng: z.number(),
+                  icon: z.string().optional(),
+                  color: z.string().optional(),
+                  description: z.string().optional(),
+                })
+              )
+              .optional(),
+            customAreas: z
+              .array(
+                z.object({
+                  name: z.string(),
+                  type: z.string(),
+                  geojson: z.any(),
+                  color: z.string().optional(),
+                  opacity: z.number().optional(),
+                  description: z.string().optional(),
+                })
+              )
+              .optional(),
           }),
-          stalls: z.array(z.object({
-            number: z.string(),
-            lat: z.number(),
-            lng: z.number(),
-            areaMq: z.number().optional(),
-            category: z.string().optional(),
-          })),
-          customMarkers: z.array(z.object({
-            name: z.string(),
-            type: z.string(),
-            lat: z.number(),
-            lng: z.number(),
-            icon: z.string().optional(),
-            color: z.string().optional(),
-            description: z.string().optional(),
-          })).optional(),
-          customAreas: z.array(z.object({
-            name: z.string(),
-            type: z.string(),
-            geojson: z.any(),
-            color: z.string().optional(),
-            opacity: z.number().optional(),
-            description: z.string().optional(),
-          })).optional(),
-        }),
-      }))
+        })
+      )
       .mutation(async ({ input, ctx }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
 
         // 1. Crea o aggiorna mercato
-        const [market] = await db.insert(schema.markets).values({
-          name: input.marketName,
-          address: input.address,
-          city: input.city,
-          lat: input.slotEditorData.center.lat.toString(),
-          lng: input.slotEditorData.center.lng.toString(),
-          active: 1,
-        }).onConflictDoUpdate({
-          target: schema.markets.id,
-          set: {
+        const [market] = await db
+          .insert(schema.markets)
+          .values({
             name: input.marketName,
             address: input.address,
+            city: input.city,
             lat: input.slotEditorData.center.lat.toString(),
             lng: input.slotEditorData.center.lng.toString(),
-          },
-        }).returning();
+            active: 1,
+          })
+          .onConflictDoUpdate({
+            target: schema.markets.id,
+            set: {
+              name: input.marketName,
+              address: input.address,
+              lat: input.slotEditorData.center.lat.toString(),
+              lng: input.slotEditorData.center.lng.toString(),
+            },
+          })
+          .returning();
 
         const marketId = market.id;
 
         // 2. Salva geometria mercato
-        await db.insert(schema.marketGeometry).values({
-          marketId: Number(marketId),
-          containerGeojson: JSON.stringify(input.slotEditorData.container),
-          centerLat: input.slotEditorData.center.lat.toString(),
-          centerLng: input.slotEditorData.center.lng.toString(),
-          hubAreaGeojson: input.slotEditorData.hubArea ? JSON.stringify(input.slotEditorData.hubArea) : null,
-          marketAreaGeojson: input.slotEditorData.marketArea ? JSON.stringify(input.slotEditorData.marketArea) : null,
-          gcpData: JSON.stringify(input.slotEditorData.gcp),
-          pngUrl: input.slotEditorData.png.url,
-          pngMetadata: JSON.stringify(input.slotEditorData.png.metadata),
-        }).onConflictDoUpdate({
-          target: schema.marketGeometry.id,
-          set: {
+        await db
+          .insert(schema.marketGeometry)
+          .values({
+            marketId: Number(marketId),
             containerGeojson: JSON.stringify(input.slotEditorData.container),
+            centerLat: input.slotEditorData.center.lat.toString(),
+            centerLng: input.slotEditorData.center.lng.toString(),
+            hubAreaGeojson: input.slotEditorData.hubArea
+              ? JSON.stringify(input.slotEditorData.hubArea)
+              : null,
+            marketAreaGeojson: input.slotEditorData.marketArea
+              ? JSON.stringify(input.slotEditorData.marketArea)
+              : null,
+            gcpData: JSON.stringify(input.slotEditorData.gcp),
             pngUrl: input.slotEditorData.png.url,
-          },
-        });
+            pngMetadata: JSON.stringify(input.slotEditorData.png.metadata),
+          })
+          .onConflictDoUpdate({
+            target: schema.marketGeometry.id,
+            set: {
+              containerGeojson: JSON.stringify(input.slotEditorData.container),
+              pngUrl: input.slotEditorData.png.url,
+            },
+          });
 
         // 3. Crea posteggi
         for (const stall of input.slotEditorData.stalls) {
@@ -328,11 +357,13 @@ export const dmsHubRouter = router({
 
     // Import automatico da Slot Editor v3 / BusHubEditor
     importAuto: adminProcedure
-      .input(z.object({
-        slotEditorData: z.any(), // JSON grezzo da Slot Editor v3
-        name: z.string().optional(), // Nome mercato (opzionale, da BusHubEditor)
-        location: z.string().optional(), // Località (opzionale, da BusHubEditor)
-      }))
+      .input(
+        z.object({
+          slotEditorData: z.any(), // JSON grezzo da Slot Editor v3
+          name: z.string().optional(), // Nome mercato (opzionale, da BusHubEditor)
+          location: z.string().optional(), // Località (opzionale, da BusHubEditor)
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
@@ -341,20 +372,26 @@ export const dmsHubRouter = router({
         const convertedData = convertSlotEditorV3Format(input.slotEditorData);
 
         // Usa nome fornito o genera automatico dal timestamp
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const timestamp = new Date()
+          .toISOString()
+          .replace(/[:.]/g, "-")
+          .slice(0, 19);
         const marketName = input.name || `Mercato_${timestamp}`;
         const city = input.location || "Da specificare";
         const address = input.location || "Da specificare";
 
         // 1. Crea mercato
-        const [market] = await db.insert(schema.markets).values({
-          name: marketName,
-          address,
-          city,
-          lat: convertedData.center.lat.toString(),
-          lng: convertedData.center.lng.toString(),
-          active: 1,
-        }).returning();
+        const [market] = await db
+          .insert(schema.markets)
+          .values({
+            name: marketName,
+            address,
+            city,
+            lat: convertedData.center.lat.toString(),
+            lng: convertedData.center.lng.toString(),
+            active: 1,
+          })
+          .returning();
 
         const marketId = market.id;
 
@@ -441,29 +478,40 @@ export const dmsHubRouter = router({
     list: publicProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-      
-      const markets = await db.select().from(schema.markets).where(eq(schema.markets.active, 1));
-      
-      // Per ogni mercato, conta i posteggi
-      const marketsWithStats = await Promise.all(markets.map(async (market) => {
-        const [stallsCount] = await db.select({ count: sql<number>`count(*)` })
-          .from(schema.stalls)
-          .where(eq(schema.stalls.marketId, market.id));
-        
-        const [occupiedCount] = await db.select({ count: sql<number>`count(*)` })
-          .from(schema.stalls)
-          .where(and(
-            eq(schema.stalls.marketId, market.id),
-            eq(schema.stalls.status, "occupied")
-          ));
 
-        return {
-          ...market,
-          totalStalls: Number(stallsCount.count) || 0,
-          occupiedStalls: Number(occupiedCount.count) || 0,
-          freeStalls: (Number(stallsCount.count) || 0) - (Number(occupiedCount.count) || 0),
-        };
-      }));
+      const markets = await db
+        .select()
+        .from(schema.markets)
+        .where(eq(schema.markets.active, 1));
+
+      // Per ogni mercato, conta i posteggi
+      const marketsWithStats = await Promise.all(
+        markets.map(async market => {
+          const [stallsCount] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.stalls)
+            .where(eq(schema.stalls.marketId, market.id));
+
+          const [occupiedCount] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.stalls)
+            .where(
+              and(
+                eq(schema.stalls.marketId, market.id),
+                eq(schema.stalls.status, "occupied")
+              )
+            );
+
+          return {
+            ...market,
+            totalStalls: Number(stallsCount.count) || 0,
+            occupiedStalls: Number(occupiedCount.count) || 0,
+            freeStalls:
+              (Number(stallsCount.count) || 0) -
+              (Number(occupiedCount.count) || 0),
+          };
+        })
+      );
 
       return marketsWithStats;
     }),
@@ -475,33 +523,53 @@ export const dmsHubRouter = router({
         const db = await getDb();
         if (!db) return null;
 
-        const [market] = await db.select().from(schema.markets)
+        const [market] = await db
+          .select()
+          .from(schema.markets)
           .where(eq(schema.markets.id, input.marketId));
-        
+
         if (!market) return null;
 
-        const [geometry] = await db.select().from(schema.marketGeometry)
+        const [geometry] = await db
+          .select()
+          .from(schema.marketGeometry)
           .where(eq(schema.marketGeometry.marketId, input.marketId));
 
-        const stalls = await db.select().from(schema.stalls)
+        const stalls = await db
+          .select()
+          .from(schema.stalls)
           .where(eq(schema.stalls.marketId, input.marketId));
 
-        const markers = await db.select().from(schema.customMarkers)
+        const markers = await db
+          .select()
+          .from(schema.customMarkers)
           .where(eq(schema.customMarkers.marketId, input.marketId));
 
-        const areas = await db.select().from(schema.customAreas)
+        const areas = await db
+          .select()
+          .from(schema.customAreas)
           .where(eq(schema.customAreas.marketId, input.marketId));
 
         return {
           market,
-          geometry: geometry ? {
-            ...geometry,
-            containerGeojson: geometry.containerGeojson ? JSON.parse(geometry.containerGeojson) : null,
-            hubAreaGeojson: geometry.hubAreaGeojson ? JSON.parse(geometry.hubAreaGeojson) : null,
-            marketAreaGeojson: geometry.marketAreaGeojson ? JSON.parse(geometry.marketAreaGeojson) : null,
-            gcpData: geometry.gcpData ? JSON.parse(geometry.gcpData) : null,
-            pngMetadata: geometry.pngMetadata ? JSON.parse(geometry.pngMetadata) : null,
-          } : null,
+          geometry: geometry
+            ? {
+                ...geometry,
+                containerGeojson: geometry.containerGeojson
+                  ? JSON.parse(geometry.containerGeojson)
+                  : null,
+                hubAreaGeojson: geometry.hubAreaGeojson
+                  ? JSON.parse(geometry.hubAreaGeojson)
+                  : null,
+                marketAreaGeojson: geometry.marketAreaGeojson
+                  ? JSON.parse(geometry.marketAreaGeojson)
+                  : null,
+                gcpData: geometry.gcpData ? JSON.parse(geometry.gcpData) : null,
+                pngMetadata: geometry.pngMetadata
+                  ? JSON.parse(geometry.pngMetadata)
+                  : null,
+              }
+            : null,
           stalls,
           markers,
           areas: areas.map(a => ({
@@ -515,7 +583,7 @@ export const dmsHubRouter = router({
   // ============================================
   // POSTEGGI - Gestione e stati
   // ============================================
-  
+
   stalls: router({
     // Lista posteggi per mercato
     listByMarket: publicProcedure
@@ -524,25 +592,38 @@ export const dmsHubRouter = router({
         const db = await getDb();
         if (!db) return [];
 
-        return await db.select().from(schema.stalls)
+        return await db
+          .select()
+          .from(schema.stalls)
           .where(eq(schema.stalls.marketId, input.marketId));
       }),
 
     // Aggiorna stato posteggio
     updateStatus: protectedProcedure
-      .input(z.object({
-        stallId: z.number(),
-        status: z.enum(["free", "reserved", "occupied", "booked", "maintenance"]),
-      }))
+      .input(
+        z.object({
+          stallId: z.number(),
+          status: z.enum([
+            "free",
+            "reserved",
+            "occupied",
+            "booked",
+            "maintenance",
+          ]),
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
 
         // Ottieni valore vecchio per log
-        const [oldStall] = await db.select().from(schema.stalls)
+        const [oldStall] = await db
+          .select()
+          .from(schema.stalls)
           .where(eq(schema.stalls.id, input.stallId));
 
-        await db.update(schema.stalls)
+        await db
+          .update(schema.stalls)
           .set({ status: input.status })
           .where(eq(schema.stalls.id, input.stallId));
 
@@ -566,13 +647,15 @@ export const dmsHubRouter = router({
         const db = await getDb();
         if (!db) return [];
 
-        const stalls = await db.select({
-          id: schema.stalls.id,
-          number: schema.stalls.number,
-          status: schema.stalls.status,
-          lat: schema.stalls.lat,
-          lng: schema.stalls.lng,
-        }).from(schema.stalls)
+        const stalls = await db
+          .select({
+            id: schema.stalls.id,
+            number: schema.stalls.number,
+            status: schema.stalls.status,
+            lat: schema.stalls.lat,
+            lng: schema.stalls.lng,
+          })
+          .from(schema.stalls)
           .where(eq(schema.stalls.marketId, input.marketId));
 
         return stalls;
@@ -582,63 +665,25 @@ export const dmsHubRouter = router({
   // ============================================
   // OPERATORI - Anagrafica e gestione
   // ============================================
-  
+
   vendors: router({
     // Lista tutti gli operatori (richiede autenticazione - dati personali)
     list: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
 
-      return await db.select().from(schema.vendors)
+      return await db
+        .select()
+        .from(schema.vendors)
         .orderBy(desc(schema.vendors.createdAt));
     }),
 
     // Crea nuovo operatore
     create: protectedProcedure
-      .input(z.object({
-        firstName: z.string(),
-        lastName: z.string(),
-        fiscalCode: z.string().optional(),
-        vatNumber: z.string().optional(),
-        businessName: z.string().optional(),
-        businessType: z.string().optional(),
-        atecoCode: z.string().optional(),
-        phone: z.string().optional(),
-        email: z.string().email().optional(),
-        address: z.string().optional(),
-        bankAccount: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const db = await getDb();
-        if (!db) throw new Error("Database not available");
-
-        const [result] = await db.insert(schema.vendors).values({
-          ...input,
-          status: "active",
-        }).returning();
-
-        const vendorId = Number(result.id);
-
-        // Log operazione
-        await logAction(
-          "CREATE_VENDOR",
-          "vendor",
-          vendorId,
-          null,
-          null,
-          { ...input, status: "active" }
-        );
-
-        return { success: true, vendorId };
-      }),
-
-    // Aggiorna operatore
-    update: protectedProcedure
-      .input(z.object({
-        vendorId: z.number(),
-        data: z.object({
-          firstName: z.string().optional(),
-          lastName: z.string().optional(),
+      .input(
+        z.object({
+          firstName: z.string(),
+          lastName: z.string(),
           fiscalCode: z.string().optional(),
           vatNumber: z.string().optional(),
           businessName: z.string().optional(),
@@ -648,18 +693,64 @@ export const dmsHubRouter = router({
           email: z.string().email().optional(),
           address: z.string().optional(),
           bankAccount: z.string().optional(),
-          status: z.enum(["active", "suspended", "inactive"]).optional(),
-        }),
-      }))
+        })
+      )
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+
+        const [result] = await db
+          .insert(schema.vendors)
+          .values({
+            ...input,
+            status: "active",
+          })
+          .returning();
+
+        const vendorId = Number(result.id);
+
+        // Log operazione
+        await logAction("CREATE_VENDOR", "vendor", vendorId, null, null, {
+          ...input,
+          status: "active",
+        });
+
+        return { success: true, vendorId };
+      }),
+
+    // Aggiorna operatore
+    update: protectedProcedure
+      .input(
+        z.object({
+          vendorId: z.number(),
+          data: z.object({
+            firstName: z.string().optional(),
+            lastName: z.string().optional(),
+            fiscalCode: z.string().optional(),
+            vatNumber: z.string().optional(),
+            businessName: z.string().optional(),
+            businessType: z.string().optional(),
+            atecoCode: z.string().optional(),
+            phone: z.string().optional(),
+            email: z.string().email().optional(),
+            address: z.string().optional(),
+            bankAccount: z.string().optional(),
+            status: z.enum(["active", "suspended", "inactive"]).optional(),
+          }),
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
 
         // Ottieni valore vecchio per log
-        const [oldVendor] = await db.select().from(schema.vendors)
+        const [oldVendor] = await db
+          .select()
+          .from(schema.vendors)
           .where(eq(schema.vendors.id, input.vendorId));
 
-        await db.update(schema.vendors)
+        await db
+          .update(schema.vendors)
           .set(input.data)
           .where(eq(schema.vendors.id, input.vendorId));
 
@@ -683,33 +774,45 @@ export const dmsHubRouter = router({
         const db = await getDb();
         if (!db) return null;
 
-        const [vendor] = await db.select().from(schema.vendors)
+        const [vendor] = await db
+          .select()
+          .from(schema.vendors)
           .where(eq(schema.vendors.id, input.vendorId));
 
         if (!vendor) return null;
 
         // Documenti
-        const documents = await db.select().from(schema.vendorDocuments)
+        const documents = await db
+          .select()
+          .from(schema.vendorDocuments)
           .where(eq(schema.vendorDocuments.vendorId, input.vendorId));
 
         // Concessioni
-        const concessions = await db.select().from(schema.concessions)
+        const concessions = await db
+          .select()
+          .from(schema.concessions)
           .where(eq(schema.concessions.vendorId, input.vendorId))
           .orderBy(desc(schema.concessions.createdAt));
 
         // Presenze ultimo mese
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
-        const presences = await db.select().from(schema.vendorPresences)
-          .where(and(
-            eq(schema.vendorPresences.vendorId, input.vendorId),
-            sql`${schema.vendorPresences.checkinTime} >= ${thirtyDaysAgo}`
-          ))
+
+        const presences = await db
+          .select()
+          .from(schema.vendorPresences)
+          .where(
+            and(
+              eq(schema.vendorPresences.vendorId, input.vendorId),
+              sql`${schema.vendorPresences.checkinTime} >= ${thirtyDaysAgo}`
+            )
+          )
           .orderBy(desc(schema.vendorPresences.checkinTime));
 
         // Verbali
-        const violations = await db.select().from(schema.violations)
+        const violations = await db
+          .select()
+          .from(schema.violations)
           .where(eq(schema.violations.vendorId, input.vendorId))
           .orderBy(desc(schema.violations.createdAt));
 
@@ -722,7 +825,8 @@ export const dmsHubRouter = router({
           stats: {
             totalPresences: presences.length,
             totalViolations: violations.length,
-            activeConcessions: concessions.filter(c => c.status === "active").length,
+            activeConcessions: concessions.filter(c => c.status === "active")
+              .length,
           },
         };
       }),
@@ -731,22 +835,26 @@ export const dmsHubRouter = router({
   // ============================================
   // PRENOTAZIONI - Sistema booking posteggi
   // ============================================
-  
+
   bookings: router({
     // Crea prenotazione
     create: protectedProcedure
-      .input(z.object({
-        stallId: z.number(),
-        userId: z.number().optional(),
-        vendorId: z.number().optional(),
-        notes: z.string().optional(),
-      }))
+      .input(
+        z.object({
+          stallId: z.number(),
+          userId: z.number().optional(),
+          vendorId: z.number().optional(),
+          notes: z.string().optional(),
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
 
         // Verifica che posteggio sia libero
-        const [stall] = await db.select().from(schema.stalls)
+        const [stall] = await db
+          .select()
+          .from(schema.stalls)
           .where(eq(schema.stalls.id, input.stallId));
 
         if (!stall || stall.status !== "free") {
@@ -757,32 +865,34 @@ export const dmsHubRouter = router({
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 30 * 60 * 1000);
 
-        const [result] = await db.insert(schema.bookings).values({
-          stallId: input.stallId,
-          userId: input.userId || null,
-          vendorId: input.vendorId || null,
-          status: "pending",
-          bookingDate: now,
-          expiresAt,
-          notes: input.notes || null,
-        }).returning();
+        const [result] = await db
+          .insert(schema.bookings)
+          .values({
+            stallId: input.stallId,
+            userId: input.userId || null,
+            vendorId: input.vendorId || null,
+            status: "pending",
+            bookingDate: now,
+            expiresAt,
+            notes: input.notes || null,
+          })
+          .returning();
 
         // Aggiorna stato posteggio
-        await db.update(schema.stalls)
+        await db
+          .update(schema.stalls)
           .set({ status: "booked" })
           .where(eq(schema.stalls.id, input.stallId));
 
         const bookingId = Number(result.id);
 
         // Log operazione
-        await logAction(
-          "CREATE_BOOKING",
-          "booking",
-          bookingId,
-          null,
-          null,
-          { stallId: input.stallId, userId: input.userId, vendorId: input.vendorId, expiresAt }
-        );
+        await logAction("CREATE_BOOKING", "booking", bookingId, null, null, {
+          stallId: input.stallId,
+          userId: input.userId,
+          vendorId: input.vendorId,
+          expiresAt,
+        });
 
         return {
           success: true,
@@ -796,20 +906,24 @@ export const dmsHubRouter = router({
       const db = await getDb();
       if (!db) return [];
 
-      return await db.select().from(schema.bookings)
+      return await db
+        .select()
+        .from(schema.bookings)
         .where(eq(schema.bookings.status, "pending"))
         .orderBy(desc(schema.bookings.createdAt));
     }),
 
     // Conferma check-in con verifica saldo wallet
     confirmCheckin: protectedProcedure
-      .input(z.object({
-        bookingId: z.number(),
-        vendorId: z.number(),
-        lat: z.string().optional(),
-        lng: z.string().optional(),
-        skipWalletCheck: z.boolean().optional(), // Per casi speciali (es. prima presenza gratuita)
-      }))
+      .input(
+        z.object({
+          bookingId: z.number(),
+          vendorId: z.number(),
+          lat: z.string().optional(),
+          lng: z.string().optional(),
+          skipWalletCheck: z.boolean().optional(), // Per casi speciali (es. prima presenza gratuita)
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
@@ -817,19 +931,25 @@ export const dmsHubRouter = router({
         const now = new Date();
 
         // Ottieni info booking
-        const [booking] = await db.select().from(schema.bookings)
+        const [booking] = await db
+          .select()
+          .from(schema.bookings)
           .where(eq(schema.bookings.id, input.bookingId));
 
         if (!booking) throw new Error("Booking not found");
 
         // Ottieni info posteggio per il mercato e tipo
-        const [stall] = await db.select().from(schema.stalls)
+        const [stall] = await db
+          .select()
+          .from(schema.stalls)
           .where(eq(schema.stalls.id, booking.stallId));
 
         if (!stall) throw new Error("Stall not found");
 
         // Ottieni info vendor per l'impresa
-        const [vendor] = await db.select().from(schema.vendors)
+        const [vendor] = await db
+          .select()
+          .from(schema.vendors)
           .where(eq(schema.vendors.id, input.vendorId));
 
         // ============================================
@@ -837,26 +957,36 @@ export const dmsHubRouter = router({
         // ============================================
         if (!input.skipWalletCheck && vendor) {
           // Cerca wallet dell'impresa
-          const [wallet] = await db.select().from(schema.operatoreWallet)
+          const [wallet] = await db
+            .select()
+            .from(schema.operatoreWallet)
             .where(eq(schema.operatoreWallet.impresaId, vendor.id));
 
           if (wallet) {
             // Verifica stato wallet
             if (wallet.status === "BLOCCATO") {
-              throw new Error("WALLET_BLOCCATO: Impossibile effettuare il check-in. Il wallet è bloccato per saldo insufficiente. Effettuare una ricarica.");
+              throw new Error(
+                "WALLET_BLOCCATO: Impossibile effettuare il check-in. Il wallet è bloccato per saldo insufficiente. Effettuare una ricarica."
+              );
             }
 
             if (wallet.status === "SOSPESO") {
-              throw new Error("WALLET_SOSPESO: Impossibile effettuare il check-in. Il wallet è sospeso. Contattare l'ufficio mercati.");
+              throw new Error(
+                "WALLET_SOSPESO: Impossibile effettuare il check-in. Il wallet è sospeso. Contattare l'ufficio mercati."
+              );
             }
 
             // Ottieni tariffa posteggio
             const tipoPosteggio = (stall as any).type || "STANDARD";
-            const [tariffa] = await db.select().from(schema.tariffePosteggio)
-              .where(and(
-                eq(schema.tariffePosteggio.mercatoId, stall.marketId),
-                eq(schema.tariffePosteggio.tipoPosteggio, tipoPosteggio)
-              ));
+            const [tariffa] = await db
+              .select()
+              .from(schema.tariffePosteggio)
+              .where(
+                and(
+                  eq(schema.tariffePosteggio.mercatoId, stall.marketId),
+                  eq(schema.tariffePosteggio.tipoPosteggio, tipoPosteggio)
+                )
+              );
 
             const importoRichiesto = tariffa?.tariffaGiornaliera || 0;
 
@@ -864,9 +994,9 @@ export const dmsHubRouter = router({
             if (importoRichiesto > 0 && wallet.saldo < importoRichiesto) {
               throw new Error(
                 `SALDO_INSUFFICIENTE: Saldo wallet insufficiente. ` +
-                `Richiesto: €${(importoRichiesto / 100).toFixed(2)}, ` +
-                `Disponibile: €${(wallet.saldo / 100).toFixed(2)}. ` +
-                `Effettuare una ricarica per procedere.`
+                  `Richiesto: €${(importoRichiesto / 100).toFixed(2)}, ` +
+                  `Disponibile: €${(wallet.saldo / 100).toFixed(2)}. ` +
+                  `Effettuare una ricarica per procedere.`
               );
             }
 
@@ -889,8 +1019,12 @@ export const dmsHubRouter = router({
               });
 
               // Aggiorna saldo wallet
-              const nuovoStatus = saldoSuccessivo <= wallet.saldoMinimo ? "BLOCCATO" : wallet.status;
-              await db.update(schema.operatoreWallet)
+              const nuovoStatus =
+                saldoSuccessivo <= wallet.saldoMinimo
+                  ? "BLOCCATO"
+                  : wallet.status;
+              await db
+                .update(schema.operatoreWallet)
                 .set({
                   saldo: saldoSuccessivo,
                   totaleDecurtato: wallet.totaleDecurtato + importoRichiesto,
@@ -902,15 +1036,15 @@ export const dmsHubRouter = router({
 
               console.log(
                 `[Wallet] Decurtazione automatica: Wallet ${wallet.id}, ` +
-                `Importo €${(importoRichiesto / 100).toFixed(2)}, ` +
-                `Nuovo saldo €${(saldoSuccessivo / 100).toFixed(2)}`
+                  `Importo €${(importoRichiesto / 100).toFixed(2)}, ` +
+                  `Nuovo saldo €${(saldoSuccessivo / 100).toFixed(2)}`
               );
 
               // Se wallet bloccato dopo decurtazione, notifica
               if (nuovoStatus === "BLOCCATO") {
                 console.log(
                   `[Wallet] ATTENZIONE: Wallet ${wallet.id} bloccato dopo decurtazione. ` +
-                  `Prossima presenza richiederà ricarica.`
+                    `Prossima presenza richiederà ricarica.`
                 );
               }
             }
@@ -922,7 +1056,8 @@ export const dmsHubRouter = router({
         // ============================================
 
         // Aggiorna booking
-        await db.update(schema.bookings)
+        await db
+          .update(schema.bookings)
           .set({
             status: "confirmed",
             checkedInAt: now,
@@ -930,17 +1065,21 @@ export const dmsHubRouter = router({
           .where(eq(schema.bookings.id, input.bookingId));
 
         // Crea presenza
-        const [presence] = await db.insert(schema.vendorPresences).values({
-          vendorId: input.vendorId,
-          stallId: booking.stallId,
-          bookingId: input.bookingId,
-          checkinTime: now,
-          lat: input.lat || null,
-          lng: input.lng || null,
-        }).returning();
+        const [presence] = await db
+          .insert(schema.vendorPresences)
+          .values({
+            vendorId: input.vendorId,
+            stallId: booking.stallId,
+            bookingId: input.bookingId,
+            checkinTime: now,
+            lat: input.lat || null,
+            lng: input.lng || null,
+          })
+          .returning();
 
         // Aggiorna stato posteggio
-        await db.update(schema.stalls)
+        await db
+          .update(schema.stalls)
           .set({ status: "occupied" })
           .where(eq(schema.stalls.id, booking.stallId));
 
@@ -951,7 +1090,11 @@ export const dmsHubRouter = router({
           input.bookingId,
           null,
           { status: "pending" },
-          { status: "confirmed", vendorId: input.vendorId, presenceId: presence?.id }
+          {
+            status: "confirmed",
+            vendorId: input.vendorId,
+            presenceId: presence?.id,
+          }
         );
 
         return { success: true, presenceId: presence?.id };
@@ -964,18 +1107,22 @@ export const dmsHubRouter = router({
         const db = await getDb();
         if (!db) throw new Error("Database not available");
 
-        const [booking] = await db.select().from(schema.bookings)
+        const [booking] = await db
+          .select()
+          .from(schema.bookings)
           .where(eq(schema.bookings.id, input.bookingId));
 
         if (!booking) throw new Error("Booking not found");
 
         // Aggiorna booking
-        await db.update(schema.bookings)
+        await db
+          .update(schema.bookings)
           .set({ status: "cancelled" })
           .where(eq(schema.bookings.id, input.bookingId));
 
         // Libera posteggio
-        await db.update(schema.stalls)
+        await db
+          .update(schema.stalls)
           .set({ status: "free" })
           .where(eq(schema.stalls.id, booking.stallId));
 
@@ -996,14 +1143,16 @@ export const dmsHubRouter = router({
   // ============================================
   // PRESENZE - Check-in/Check-out
   // ============================================
-  
+
   presences: router({
     // Check-out operatore
     checkout: protectedProcedure
-      .input(z.object({
-        presenceId: z.number(),
-        notes: z.string().optional(),
-      }))
+      .input(
+        z.object({
+          presenceId: z.number(),
+          notes: z.string().optional(),
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
@@ -1011,16 +1160,21 @@ export const dmsHubRouter = router({
         const now = new Date();
 
         // Ottieni presenza
-        const [presence] = await db.select().from(schema.vendorPresences)
+        const [presence] = await db
+          .select()
+          .from(schema.vendorPresences)
           .where(eq(schema.vendorPresences.id, input.presenceId));
 
         if (!presence) throw new Error("Presence not found");
 
         // Calcola durata in minuti
-        const duration = Math.floor((now.getTime() - new Date(presence.checkinTime).getTime()) / 60000);
+        const duration = Math.floor(
+          (now.getTime() - new Date(presence.checkinTime).getTime()) / 60000
+        );
 
         // Aggiorna presenza
-        await db.update(schema.vendorPresences)
+        await db
+          .update(schema.vendorPresences)
           .set({
             checkoutTime: now,
             duration,
@@ -1029,7 +1183,8 @@ export const dmsHubRouter = router({
           .where(eq(schema.vendorPresences.id, input.presenceId));
 
         // Libera posteggio
-        await db.update(schema.stalls)
+        await db
+          .update(schema.stalls)
           .set({ status: "free" })
           .where(eq(schema.stalls.id, presence.stallId));
 
@@ -1056,18 +1211,27 @@ export const dmsHubRouter = router({
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const presences = await db.select({
-          presence: schema.vendorPresences,
-          vendor: schema.vendors,
-          stall: schema.stalls,
-        })
+        const presences = await db
+          .select({
+            presence: schema.vendorPresences,
+            vendor: schema.vendors,
+            stall: schema.stalls,
+          })
           .from(schema.vendorPresences)
-          .innerJoin(schema.vendors, eq(schema.vendorPresences.vendorId, schema.vendors.id))
-          .innerJoin(schema.stalls, eq(schema.vendorPresences.stallId, schema.stalls.id))
-          .where(and(
-            eq(schema.stalls.marketId, input.marketId),
-            sql`${schema.vendorPresences.checkinTime} >= ${today}`
-          ))
+          .innerJoin(
+            schema.vendors,
+            eq(schema.vendorPresences.vendorId, schema.vendors.id)
+          )
+          .innerJoin(
+            schema.stalls,
+            eq(schema.vendorPresences.stallId, schema.stalls.id)
+          )
+          .where(
+            and(
+              eq(schema.stalls.marketId, input.marketId),
+              sql`${schema.vendorPresences.checkinTime} >= ${today}`
+            )
+          )
           .orderBy(desc(schema.vendorPresences.checkinTime));
 
         return presences;
@@ -1077,40 +1241,47 @@ export const dmsHubRouter = router({
   // ============================================
   // CONTROLLI E VERBALI - Per App Polizia
   // ============================================
-  
+
   inspections: router({
     // Crea controllo
     create: adminProcedure
-      .input(z.object({
-        vendorId: z.number(),
-        stallId: z.number().optional(),
-        inspectorName: z.string(),
-        inspectorBadge: z.string().optional(),
-        type: z.enum(["routine", "complaint", "random", "targeted"]),
-        checklist: z.any().optional(),
-        photosUrls: z.array(z.string()).optional(),
-        gpsLat: z.string().optional(),
-        gpsLng: z.string().optional(),
-        result: z.enum(["compliant", "violation", "warning"]),
-        notes: z.string().optional(),
-      }))
+      .input(
+        z.object({
+          vendorId: z.number(),
+          stallId: z.number().optional(),
+          inspectorName: z.string(),
+          inspectorBadge: z.string().optional(),
+          type: z.enum(["routine", "complaint", "random", "targeted"]),
+          checklist: z.any().optional(),
+          photosUrls: z.array(z.string()).optional(),
+          gpsLat: z.string().optional(),
+          gpsLng: z.string().optional(),
+          result: z.enum(["compliant", "violation", "warning"]),
+          notes: z.string().optional(),
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
 
-        const [result] = await db.insert(schema.inspectionsDetailed).values({
-          vendorId: input.vendorId,
-          stallId: input.stallId || null,
-          inspectorName: input.inspectorName,
-          inspectorBadge: input.inspectorBadge || null,
-          type: input.type,
-          checklist: input.checklist ? JSON.stringify(input.checklist) : null,
-          photosUrls: input.photosUrls ? JSON.stringify(input.photosUrls) : null,
-          gpsLat: input.gpsLat || null,
-          gpsLng: input.gpsLng || null,
-          result: input.result,
-          notes: input.notes || null,
-        }).returning();
+        const [result] = await db
+          .insert(schema.inspectionsDetailed)
+          .values({
+            vendorId: input.vendorId,
+            stallId: input.stallId || null,
+            inspectorName: input.inspectorName,
+            inspectorBadge: input.inspectorBadge || null,
+            type: input.type,
+            checklist: input.checklist ? JSON.stringify(input.checklist) : null,
+            photosUrls: input.photosUrls
+              ? JSON.stringify(input.photosUrls)
+              : null,
+            gpsLat: input.gpsLat || null,
+            gpsLng: input.gpsLng || null,
+            result: input.result,
+            notes: input.notes || null,
+          })
+          .returning();
 
         const inspectionId = Number(result.id);
 
@@ -1132,7 +1303,9 @@ export const dmsHubRouter = router({
       const db = await getDb();
       if (!db) return [];
 
-      return await db.select().from(schema.inspectionsDetailed)
+      return await db
+        .select()
+        .from(schema.inspectionsDetailed)
         .orderBy(desc(schema.inspectionsDetailed.createdAt));
     }),
   }),
@@ -1140,31 +1313,36 @@ export const dmsHubRouter = router({
   violations: router({
     // Crea verbale
     create: adminProcedure
-      .input(z.object({
-        inspectionId: z.number().optional(),
-        vendorId: z.number(),
-        stallId: z.number().optional(),
-        violationType: z.string(),
-        violationCode: z.string().optional(),
-        description: z.string(),
-        fineAmount: z.number().optional(),
-        dueDate: z.date().optional(),
-      }))
+      .input(
+        z.object({
+          inspectionId: z.number().optional(),
+          vendorId: z.number(),
+          stallId: z.number().optional(),
+          violationType: z.string(),
+          violationCode: z.string().optional(),
+          description: z.string(),
+          fineAmount: z.number().optional(),
+          dueDate: z.date().optional(),
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
 
-        const [result] = await db.insert(schema.violations).values({
-          inspectionId: input.inspectionId || null,
-          vendorId: input.vendorId,
-          stallId: input.stallId || null,
-          violationType: input.violationType,
-          violationCode: input.violationCode || null,
-          description: input.description,
-          fineAmount: input.fineAmount || null,
-          status: "issued",
-          dueDate: input.dueDate || null,
-        }).returning();
+        const [result] = await db
+          .insert(schema.violations)
+          .values({
+            inspectionId: input.inspectionId || null,
+            vendorId: input.vendorId,
+            stallId: input.stallId || null,
+            violationType: input.violationType,
+            violationCode: input.violationCode || null,
+            description: input.description,
+            fineAmount: input.fineAmount || null,
+            status: "issued",
+            dueDate: input.dueDate || null,
+          })
+          .returning();
 
         const violationId = Number(result.id);
 
@@ -1175,7 +1353,11 @@ export const dmsHubRouter = router({
           violationId,
           null,
           null,
-          { vendorId: input.vendorId, violationType: input.violationType, fineAmount: input.fineAmount }
+          {
+            vendorId: input.vendorId,
+            violationType: input.violationType,
+            fineAmount: input.fineAmount,
+          }
         );
 
         return { success: true, violationId };
@@ -1186,7 +1368,9 @@ export const dmsHubRouter = router({
       const db = await getDb();
       if (!db) return [];
 
-      return await db.select().from(schema.violations)
+      return await db
+        .select()
+        .from(schema.violations)
         .orderBy(desc(schema.violations.createdAt));
     }),
   }),
@@ -1194,7 +1378,7 @@ export const dmsHubRouter = router({
   // ============================================
   // HUB - Gestione HUB, Negozi e Servizi
   // ============================================
-  
+
   hub: router({
     // Lista HUB locations
     locations: router({
@@ -1203,109 +1387,144 @@ export const dmsHubRouter = router({
         .query(async ({ input }) => {
           const db = await getDb();
           if (!db) return [];
-          
+
           // Filtra solo attivi di default, a meno che non sia richiesto esplicitamente
           if (input?.includeInactive) {
-            return await db.select().from(schema.hubLocations)
+            return await db
+              .select()
+              .from(schema.hubLocations)
               .orderBy(desc(schema.hubLocations.createdAt));
           }
-          
-          return await db.select().from(schema.hubLocations)
+
+          return await db
+            .select()
+            .from(schema.hubLocations)
             .where(eq(schema.hubLocations.active, 1))
             .orderBy(desc(schema.hubLocations.createdAt));
         }),
-      
+
       getById: publicProcedure
         .input(z.object({ id: z.number() }))
         .query(async ({ input }) => {
           const db = await getDb();
           if (!db) return null;
-          const [hub] = await db.select().from(schema.hubLocations)
+          const [hub] = await db
+            .select()
+            .from(schema.hubLocations)
             .where(eq(schema.hubLocations.id, input.id));
           return hub || null;
         }),
-      
+
       create: adminProcedure
-        .input(z.object({
-          marketId: z.number(),
-          name: z.string(),
-          address: z.string(),
-          city: z.string(),
-          lat: z.string(),
-          lng: z.string(),
-          areaGeojson: z.string().optional(),
-          openingHours: z.string().optional(),
-          description: z.string().optional(),
-          photoUrl: z.string().optional(),
-        }))
+        .input(
+          z.object({
+            marketId: z.number(),
+            name: z.string(),
+            address: z.string(),
+            city: z.string(),
+            lat: z.string(),
+            lng: z.string(),
+            areaGeojson: z.string().optional(),
+            openingHours: z.string().optional(),
+            description: z.string().optional(),
+            photoUrl: z.string().optional(),
+          })
+        )
         .mutation(async ({ input }) => {
           const db = await getDb();
           if (!db) throw new Error("Database not available");
-          
-          const [hub] = await db.insert(schema.hubLocations).values({
-            marketId: input.marketId,
-            name: input.name,
-            address: input.address,
-            city: input.city,
-            lat: input.lat,
-            lng: input.lng,
-            areaGeojson: input.areaGeojson || null,
-            openingHours: input.openingHours || null,
-            description: input.description || null,
-            photoUrl: input.photoUrl || null,
-          }).returning();
-          
-          await logAction("CREATE_HUB", "hub_location", hub.id, null, null, hub);
+
+          const [hub] = await db
+            .insert(schema.hubLocations)
+            .values({
+              marketId: input.marketId,
+              name: input.name,
+              address: input.address,
+              city: input.city,
+              lat: input.lat,
+              lng: input.lng,
+              areaGeojson: input.areaGeojson || null,
+              openingHours: input.openingHours || null,
+              description: input.description || null,
+              photoUrl: input.photoUrl || null,
+            })
+            .returning();
+
+          await logAction(
+            "CREATE_HUB",
+            "hub_location",
+            hub.id,
+            null,
+            null,
+            hub
+          );
           return { success: true, hubId: hub.id };
         }),
-      
+
       update: adminProcedure
-        .input(z.object({
-          id: z.number(),
-          marketId: z.number().optional(),
-          name: z.string().optional(),
-          address: z.string().optional(),
-          city: z.string().optional(),
-          lat: z.string().optional(),
-          lng: z.string().optional(),
-          areaGeojson: z.string().optional(),
-          openingHours: z.string().optional(),
-          description: z.string().optional(),
-          photoUrl: z.string().optional(),
-        }))
+        .input(
+          z.object({
+            id: z.number(),
+            marketId: z.number().optional(),
+            name: z.string().optional(),
+            address: z.string().optional(),
+            city: z.string().optional(),
+            lat: z.string().optional(),
+            lng: z.string().optional(),
+            areaGeojson: z.string().optional(),
+            openingHours: z.string().optional(),
+            description: z.string().optional(),
+            photoUrl: z.string().optional(),
+          })
+        )
         .mutation(async ({ input }) => {
           const db = await getDb();
           if (!db) throw new Error("Database not available");
-          
+
           // Ottieni valore vecchio per log
-          const [oldHub] = await db.select().from(schema.hubLocations)
+          const [oldHub] = await db
+            .select()
+            .from(schema.hubLocations)
             .where(eq(schema.hubLocations.id, input.id));
-          
+
           if (!oldHub) throw new Error("HUB location not found");
-          
+
           // Prepara dati per update (solo campi forniti)
           const updateData: any = { updatedAt: new Date() };
-          if (input.marketId !== undefined) updateData.marketId = input.marketId;
+          if (input.marketId !== undefined)
+            updateData.marketId = input.marketId;
           if (input.name !== undefined) updateData.name = input.name;
           if (input.address !== undefined) updateData.address = input.address;
           if (input.city !== undefined) updateData.city = input.city;
           if (input.lat !== undefined) updateData.lat = input.lat;
           if (input.lng !== undefined) updateData.lng = input.lng;
-          if (input.areaGeojson !== undefined) updateData.areaGeojson = input.areaGeojson;
-          if (input.openingHours !== undefined) updateData.openingHours = input.openingHours;
-          if (input.description !== undefined) updateData.description = input.description;
-          if (input.photoUrl !== undefined) updateData.photoUrl = input.photoUrl;
-          
-          await db.update(schema.hubLocations)
+          if (input.areaGeojson !== undefined)
+            updateData.areaGeojson = input.areaGeojson;
+          if (input.openingHours !== undefined)
+            updateData.openingHours = input.openingHours;
+          if (input.description !== undefined)
+            updateData.description = input.description;
+          if (input.photoUrl !== undefined)
+            updateData.photoUrl = input.photoUrl;
+
+          await db
+            .update(schema.hubLocations)
             .set(updateData)
             .where(eq(schema.hubLocations.id, input.id));
-          
+
           // Log operazione
-          await logAction("UPDATE_HUB", "hub_location", input.id, null, oldHub, updateData);
-          
+          await logAction(
+            "UPDATE_HUB",
+            "hub_location",
+            input.id,
+            null,
+            oldHub,
+            updateData
+          );
+
           return { success: true };
         }),
-      
+
       delete: adminProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ input }) => {
@@ -1313,23 +1532,33 @@ export const dmsHubRouter = router({
           if (!db) throw new Error("Database not available");
 
           // Ottieni valore vecchio per log
-          const [oldHub] = await db.select().from(schema.hubLocations)
+          const [oldHub] = await db
+            .select()
+            .from(schema.hubLocations)
             .where(eq(schema.hubLocations.id, input.id));
-          
+
           if (!oldHub) throw new Error("HUB location not found");
-          
+
           // Soft delete: imposta active = 0
-          await db.update(schema.hubLocations)
+          await db
+            .update(schema.hubLocations)
             .set({ active: 0, updatedAt: new Date() })
             .where(eq(schema.hubLocations.id, input.id));
-          
+
           // Log operazione
-          await logAction("DELETE_HUB", "hub_location", input.id, null, oldHub, { active: 0 });
-          
+          await logAction(
+            "DELETE_HUB",
+            "hub_location",
+            input.id,
+            null,
+            oldHub,
+            { active: 0 }
+          );
+
           return { success: true };
         }),
     }),
-    
+
     // Gestione negozi HUB
     shops: router({
       list: publicProcedure
@@ -1337,106 +1566,140 @@ export const dmsHubRouter = router({
         .query(async ({ input }) => {
           const db = await getDb();
           if (!db) return [];
-          
+
           if (input.hubId) {
-            return await db.select().from(schema.hubShops)
+            return await db
+              .select()
+              .from(schema.hubShops)
               .where(eq(schema.hubShops.hubId, input.hubId))
               .orderBy(desc(schema.hubShops.createdAt));
           }
-          
-          return await db.select().from(schema.hubShops)
+
+          return await db
+            .select()
+            .from(schema.hubShops)
             .orderBy(desc(schema.hubShops.createdAt));
         }),
-      
+
       create: adminProcedure
-        .input(z.object({
-          hubId: z.number(),
-          name: z.string(),
-          category: z.string().optional(),
-          certifications: z.string().optional(),
-          ownerId: z.number().optional(),
-          businessName: z.string().optional(),
-          vatNumber: z.string().optional(),
-          phone: z.string().optional(),
-          email: z.string().optional(),
-          lat: z.string().optional(),
-          lng: z.string().optional(),
-          areaMq: z.number().optional(),
-          description: z.string().optional(),
-          photoUrl: z.string().optional(),
-        }))
+        .input(
+          z.object({
+            hubId: z.number(),
+            name: z.string(),
+            category: z.string().optional(),
+            certifications: z.string().optional(),
+            ownerId: z.number().optional(),
+            businessName: z.string().optional(),
+            vatNumber: z.string().optional(),
+            phone: z.string().optional(),
+            email: z.string().optional(),
+            lat: z.string().optional(),
+            lng: z.string().optional(),
+            areaMq: z.number().optional(),
+            description: z.string().optional(),
+            photoUrl: z.string().optional(),
+          })
+        )
         .mutation(async ({ input }) => {
           const db = await getDb();
           if (!db) throw new Error("Database not available");
-          
-          const [shop] = await db.insert(schema.hubShops).values({
-            hubId: input.hubId,
-            name: input.name,
-            category: input.category || null,
-            certifications: input.certifications || null,
-            ownerId: input.ownerId || null,
-            businessName: input.businessName || null,
-            vatNumber: input.vatNumber || null,
-            phone: input.phone || null,
-            email: input.email || null,
-            lat: input.lat || null,
-            lng: input.lng || null,
-            areaMq: input.areaMq || null,
-            description: input.description || null,
-            photoUrl: input.photoUrl || null,
-          }).returning();
-          
-          await logAction("CREATE_HUB_SHOP", "hub_shop", shop.id, null, null, shop);
+
+          const [shop] = await db
+            .insert(schema.hubShops)
+            .values({
+              hubId: input.hubId,
+              name: input.name,
+              category: input.category || null,
+              certifications: input.certifications || null,
+              ownerId: input.ownerId || null,
+              businessName: input.businessName || null,
+              vatNumber: input.vatNumber || null,
+              phone: input.phone || null,
+              email: input.email || null,
+              lat: input.lat || null,
+              lng: input.lng || null,
+              areaMq: input.areaMq || null,
+              description: input.description || null,
+              photoUrl: input.photoUrl || null,
+            })
+            .returning();
+
+          await logAction(
+            "CREATE_HUB_SHOP",
+            "hub_shop",
+            shop.id,
+            null,
+            null,
+            shop
+          );
           return { success: true, shopId: shop.id };
         }),
 
       update: adminProcedure
-        .input(z.object({
-          id: z.number(),
-          name: z.string().optional(),
-          category: z.string().optional(),
-          certifications: z.string().optional(),
-          ownerId: z.number().optional(),
-          businessName: z.string().optional(),
-          vatNumber: z.string().optional(),
-          phone: z.string().optional(),
-          email: z.string().optional(),
-          lat: z.string().optional(),
-          lng: z.string().optional(),
-          areaMq: z.number().optional(),
-          description: z.string().optional(),
-          photoUrl: z.string().optional(),
-          status: z.string().optional(),
-        }))
+        .input(
+          z.object({
+            id: z.number(),
+            name: z.string().optional(),
+            category: z.string().optional(),
+            certifications: z.string().optional(),
+            ownerId: z.number().optional(),
+            businessName: z.string().optional(),
+            vatNumber: z.string().optional(),
+            phone: z.string().optional(),
+            email: z.string().optional(),
+            lat: z.string().optional(),
+            lng: z.string().optional(),
+            areaMq: z.number().optional(),
+            description: z.string().optional(),
+            photoUrl: z.string().optional(),
+            status: z.string().optional(),
+          })
+        )
         .mutation(async ({ input }) => {
           const db = await getDb();
           if (!db) throw new Error("Database not available");
 
-          const [oldShop] = await db.select().from(schema.hubShops)
+          const [oldShop] = await db
+            .select()
+            .from(schema.hubShops)
             .where(eq(schema.hubShops.id, input.id));
           if (!oldShop) throw new Error("Negozio HUB non trovato");
 
           const updateData: any = { updatedAt: new Date() };
           if (input.name !== undefined) updateData.name = input.name;
-          if (input.category !== undefined) updateData.category = input.category;
-          if (input.certifications !== undefined) updateData.certifications = input.certifications;
+          if (input.category !== undefined)
+            updateData.category = input.category;
+          if (input.certifications !== undefined)
+            updateData.certifications = input.certifications;
           if (input.ownerId !== undefined) updateData.ownerId = input.ownerId;
-          if (input.businessName !== undefined) updateData.businessName = input.businessName;
-          if (input.vatNumber !== undefined) updateData.vatNumber = input.vatNumber;
+          if (input.businessName !== undefined)
+            updateData.businessName = input.businessName;
+          if (input.vatNumber !== undefined)
+            updateData.vatNumber = input.vatNumber;
           if (input.phone !== undefined) updateData.phone = input.phone;
           if (input.email !== undefined) updateData.email = input.email;
           if (input.lat !== undefined) updateData.lat = input.lat;
           if (input.lng !== undefined) updateData.lng = input.lng;
           if (input.areaMq !== undefined) updateData.areaMq = input.areaMq;
-          if (input.description !== undefined) updateData.description = input.description;
-          if (input.photoUrl !== undefined) updateData.photoUrl = input.photoUrl;
+          if (input.description !== undefined)
+            updateData.description = input.description;
+          if (input.photoUrl !== undefined)
+            updateData.photoUrl = input.photoUrl;
           if (input.status !== undefined) updateData.status = input.status;
 
-          await db.update(schema.hubShops)
+          await db
+            .update(schema.hubShops)
             .set(updateData)
             .where(eq(schema.hubShops.id, input.id));
 
-          await logAction("UPDATE_HUB_SHOP", "hub_shop", input.id, null, oldShop, updateData);
+          await logAction(
+            "UPDATE_HUB_SHOP",
+            "hub_shop",
+            input.id,
+            null,
+            oldShop,
+            updateData
+          );
           return { success: true };
         }),
 
@@ -1446,19 +1709,29 @@ export const dmsHubRouter = router({
           const db = await getDb();
           if (!db) throw new Error("Database not available");
 
-          const [oldShop] = await db.select().from(schema.hubShops)
+          const [oldShop] = await db
+            .select()
+            .from(schema.hubShops)
             .where(eq(schema.hubShops.id, input.id));
           if (!oldShop) throw new Error("Negozio HUB non trovato");
 
-          await db.update(schema.hubShops)
+          await db
+            .update(schema.hubShops)
             .set({ status: "inactive", updatedAt: new Date() })
             .where(eq(schema.hubShops.id, input.id));
 
-          await logAction("DELETE_HUB_SHOP", "hub_shop", input.id, null, oldShop, { status: "inactive" });
+          await logAction(
+            "DELETE_HUB_SHOP",
+            "hub_shop",
+            input.id,
+            null,
+            oldShop,
+            { status: "inactive" }
+          );
           return { success: true };
         }),
     }),
-    
+
     // Gestione servizi HUB
     services: router({
       list: publicProcedure
@@ -1466,90 +1739,122 @@ export const dmsHubRouter = router({
         .query(async ({ input }) => {
           const db = await getDb();
           if (!db) return [];
-          
+
           if (input.hubId) {
-            return await db.select().from(schema.hubServices)
+            return await db
+              .select()
+              .from(schema.hubServices)
               .where(eq(schema.hubServices.hubId, input.hubId))
               .orderBy(desc(schema.hubServices.createdAt));
           }
-          
-          return await db.select().from(schema.hubServices)
+
+          return await db
+            .select()
+            .from(schema.hubServices)
             .orderBy(desc(schema.hubServices.createdAt));
         }),
-      
+
       create: adminProcedure
-        .input(z.object({
-          hubId: z.number(),
-          name: z.string(),
-          type: z.string(),
-          description: z.string().optional(),
-          capacity: z.number().optional(),
-          available: z.number().optional(),
-          price: z.number().optional(),
-          lat: z.string().optional(),
-          lng: z.string().optional(),
-          metadata: z.string().optional(),
-        }))
+        .input(
+          z.object({
+            hubId: z.number(),
+            name: z.string(),
+            type: z.string(),
+            description: z.string().optional(),
+            capacity: z.number().optional(),
+            available: z.number().optional(),
+            price: z.number().optional(),
+            lat: z.string().optional(),
+            lng: z.string().optional(),
+            metadata: z.string().optional(),
+          })
+        )
         .mutation(async ({ input }) => {
           const db = await getDb();
           if (!db) throw new Error("Database not available");
-          
-          const [service] = await db.insert(schema.hubServices).values({
-            hubId: input.hubId,
-            name: input.name,
-            type: input.type,
-            description: input.description || null,
-            capacity: input.capacity || null,
-            available: input.available || null,
-            price: input.price || null,
-            lat: input.lat || null,
-            lng: input.lng || null,
-            metadata: input.metadata || null,
-          }).returning();
-          
-          await logAction("CREATE_HUB_SERVICE", "hub_service", service.id, null, null, service);
+
+          const [service] = await db
+            .insert(schema.hubServices)
+            .values({
+              hubId: input.hubId,
+              name: input.name,
+              type: input.type,
+              description: input.description || null,
+              capacity: input.capacity || null,
+              available: input.available || null,
+              price: input.price || null,
+              lat: input.lat || null,
+              lng: input.lng || null,
+              metadata: input.metadata || null,
+            })
+            .returning();
+
+          await logAction(
+            "CREATE_HUB_SERVICE",
+            "hub_service",
+            service.id,
+            null,
+            null,
+            service
+          );
           return { success: true, serviceId: service.id };
         }),
 
       update: adminProcedure
-        .input(z.object({
-          id: z.number(),
-          name: z.string().optional(),
-          type: z.string().optional(),
-          description: z.string().optional(),
-          capacity: z.number().optional(),
-          available: z.number().optional(),
-          price: z.number().optional(),
-          lat: z.string().optional(),
-          lng: z.string().optional(),
-          metadata: z.string().optional(),
-          status: z.string().optional(),
-        }))
+        .input(
+          z.object({
+            id: z.number(),
+            name: z.string().optional(),
+            type: z.string().optional(),
+            description: z.string().optional(),
+            capacity: z.number().optional(),
+            available: z.number().optional(),
+            price: z.number().optional(),
+            lat: z.string().optional(),
+            lng: z.string().optional(),
+            metadata: z.string().optional(),
+            status: z.string().optional(),
+          })
+        )
         .mutation(async ({ input }) => {
           const db = await getDb();
           if (!db) throw new Error("Database not available");
 
-          const [oldService] = await db.select().from(schema.hubServices)
+          const [oldService] = await db
+            .select()
+            .from(schema.hubServices)
             .where(eq(schema.hubServices.id, input.id));
           if (!oldService) throw new Error("Servizio HUB non trovato");
 
           const updateData: any = { updatedAt: new Date() };
           if (input.name !== undefined) updateData.name = input.name;
           if (input.type !== undefined) updateData.type = input.type;
-          if (input.description !== undefined) updateData.description = input.description;
-          if (input.capacity !== undefined) updateData.capacity = input.capacity;
-          if (input.available !== undefined) updateData.available = input.available;
+          if (input.description !== undefined)
+            updateData.description = input.description;
+          if (input.capacity !== undefined)
+            updateData.capacity = input.capacity;
+          if (input.available !== undefined)
+            updateData.available = input.available;
           if (input.price !== undefined) updateData.price = input.price;
           if (input.lat !== undefined) updateData.lat = input.lat;
           if (input.lng !== undefined) updateData.lng = input.lng;
-          if (input.metadata !== undefined) updateData.metadata = input.metadata;
+          if (input.metadata !== undefined)
+            updateData.metadata = input.metadata;
           if (input.status !== undefined) updateData.status = input.status;
 
-          await db.update(schema.hubServices)
+          await db
+            .update(schema.hubServices)
             .set(updateData)
             .where(eq(schema.hubServices.id, input.id));
 
-          await logAction("UPDATE_HUB_SERVICE", "hub_service", input.id, null, oldService, updateData);
+          await logAction(
+            "UPDATE_HUB_SERVICE",
+            "hub_service",
+            input.id,
+            null,
+            oldService,
+            updateData
+          );
           return { success: true };
         }),
 
@@ -1559,15 +1864,25 @@ export const dmsHubRouter = router({
           const db = await getDb();
           if (!db) throw new Error("Database not available");
 
-          const [oldService] = await db.select().from(schema.hubServices)
+          const [oldService] = await db
+            .select()
+            .from(schema.hubServices)
             .where(eq(schema.hubServices.id, input.id));
           if (!oldService) throw new Error("Servizio HUB non trovato");
 
-          await db.update(schema.hubServices)
+          await db
+            .update(schema.hubServices)
             .set({ status: "inactive", updatedAt: new Date() })
             .where(eq(schema.hubServices.id, input.id));
 
-          await logAction("DELETE_HUB_SERVICE", "hub_service", input.id, null, oldService, { status: "inactive" });
+          await logAction(
+            "DELETE_HUB_SERVICE",
+            "hub_service",
+            input.id,
+            null,
+            oldService,
+            { status: "inactive" }
+          );
           return { success: true };
         }),
     }),
@@ -1576,137 +1891,177 @@ export const dmsHubRouter = router({
   // ============================================
   // CONCESSIONI - Gestione concessioni posteggi
   // ============================================
-  
+
   concessions: router({
     // Lista concessioni (richiede autenticazione)
     list: protectedProcedure
-      .input(z.object({
-        marketId: z.number().optional(),
-        vendorId: z.number().optional(),
-        status: z.string().optional(),
-      }).optional())
+      .input(
+        z
+          .object({
+            marketId: z.number().optional(),
+            vendorId: z.number().optional(),
+            status: z.string().optional(),
+          })
+          .optional()
+      )
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
-        
+
         let query = db.select().from(schema.concessions);
-        
+
         if (input?.marketId) {
-          query = query.where(eq(schema.concessions.marketId, input.marketId)) as any;
+          query = query.where(
+            eq(schema.concessions.marketId, input.marketId)
+          ) as any;
         }
         if (input?.vendorId) {
-          query = query.where(eq(schema.concessions.vendorId, input.vendorId)) as any;
+          query = query.where(
+            eq(schema.concessions.vendorId, input.vendorId)
+          ) as any;
         }
         if (input?.status) {
-          query = query.where(eq(schema.concessions.status, input.status)) as any;
+          query = query.where(
+            eq(schema.concessions.status, input.status)
+          ) as any;
         }
-        
+
         return await query.orderBy(desc(schema.concessions.createdAt));
       }),
-    
+
     // Dettaglio concessione (richiede autenticazione)
-    getById: protectedProcedure
-      .input(z.number())
-      .query(async ({ input }) => {
-        const db = await getDb();
-        if (!db) throw new Error("Database not available");
-        
-        const [concession] = await db.select().from(schema.concessions)
-          .where(eq(schema.concessions.id, input));
-        
-        return concession || null;
-      }),
-    
+    getById: protectedProcedure.input(z.number()).query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const [concession] = await db
+        .select()
+        .from(schema.concessions)
+        .where(eq(schema.concessions.id, input));
+
+      return concession || null;
+    }),
+
     // Crea concessione (chiamato dal form SUAP)
     create: protectedProcedure
-      .input(z.object({
-        vendorId: z.number(),
-        stallId: z.number().optional(),
-        marketId: z.number(),
-        concessionNumber: z.string(),
-        type: z.string(), // subingresso, nuova, conversione
-        startDate: z.string(),
-        endDate: z.string().optional(),
-        status: z.string().optional(),
-        fee: z.number().optional(),
-        paymentStatus: z.string().optional(),
-        notes: z.string().optional(),
-        // Dati aggiuntivi dal form
-        sciaId: z.number().optional(),
-        impresaId: z.number().optional(),
-      }))
+      .input(
+        z.object({
+          vendorId: z.number(),
+          stallId: z.number().optional(),
+          marketId: z.number(),
+          concessionNumber: z.string(),
+          type: z.string(), // subingresso, nuova, conversione
+          startDate: z.string(),
+          endDate: z.string().optional(),
+          status: z.string().optional(),
+          fee: z.number().optional(),
+          paymentStatus: z.string().optional(),
+          notes: z.string().optional(),
+          // Dati aggiuntivi dal form
+          sciaId: z.number().optional(),
+          impresaId: z.number().optional(),
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
-        
-        const [concession] = await db.insert(schema.concessions).values({
-          vendorId: input.vendorId,
-          stallId: input.stallId || null,
-          marketId: input.marketId,
-          concessionNumber: input.concessionNumber,
-          type: input.type,
-          startDate: new Date(input.startDate),
-          endDate: input.endDate ? new Date(input.endDate) : null,
-          status: input.status || "active",
-          fee: input.fee || null,
-          paymentStatus: input.paymentStatus || "pending",
-          notes: input.notes || null,
-        }).returning();
-        
-        await logAction("CREATE_CONCESSION", "concession", concession.id, null, null, concession);
-        
+
+        const [concession] = await db
+          .insert(schema.concessions)
+          .values({
+            vendorId: input.vendorId,
+            stallId: input.stallId || null,
+            marketId: input.marketId,
+            concessionNumber: input.concessionNumber,
+            type: input.type,
+            startDate: new Date(input.startDate),
+            endDate: input.endDate ? new Date(input.endDate) : null,
+            status: input.status || "active",
+            fee: input.fee || null,
+            paymentStatus: input.paymentStatus || "pending",
+            notes: input.notes || null,
+          })
+          .returning();
+
+        await logAction(
+          "CREATE_CONCESSION",
+          "concession",
+          concession.id,
+          null,
+          null,
+          concession
+        );
+
         // Se c'è una SCIA collegata, aggiorna lo stato della pratica via API REST
         if (input.sciaId) {
           try {
-            await fetch(`https://orchestratore.mio-hub.me/api/suap/pratiche/${input.sciaId}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                stato: 'approvata',
-                concessione_id: concession.id
-              })
-            });
+            await fetch(
+              `https://orchestratore.mio-hub.me/api/suap/pratiche/${input.sciaId}`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  stato: "approvata",
+                  concessione_id: concession.id,
+                }),
+              }
+            );
           } catch (err) {
-            console.error('Errore aggiornamento SCIA:', err);
+            console.error("Errore aggiornamento SCIA:", err);
           }
         }
-        
+
         return { success: true, concessionId: concession.id, concession };
       }),
-    
+
     // Aggiorna concessione
     update: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-        status: z.string().optional(),
-        endDate: z.string().optional(),
-        fee: z.number().optional(),
-        paymentStatus: z.string().optional(),
-        notes: z.string().optional(),
-      }))
+      .input(
+        z.object({
+          id: z.number(),
+          status: z.string().optional(),
+          endDate: z.string().optional(),
+          fee: z.number().optional(),
+          paymentStatus: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
-        
+
         const { id, ...updateData } = input;
-        
-        const [oldConcession] = await db.select().from(schema.concessions)
+
+        const [oldConcession] = await db
+          .select()
+          .from(schema.concessions)
           .where(eq(schema.concessions.id, id));
-        
+
         const updateValues: any = { updatedAt: new Date() };
         if (updateData.status) updateValues.status = updateData.status;
-        if (updateData.endDate) updateValues.endDate = new Date(updateData.endDate);
+        if (updateData.endDate)
+          updateValues.endDate = new Date(updateData.endDate);
         if (updateData.fee !== undefined) updateValues.fee = updateData.fee;
-        if (updateData.paymentStatus) updateValues.paymentStatus = updateData.paymentStatus;
-        if (updateData.notes !== undefined) updateValues.notes = updateData.notes;
-        
-        const [updated] = await db.update(schema.concessions)
+        if (updateData.paymentStatus)
+          updateValues.paymentStatus = updateData.paymentStatus;
+        if (updateData.notes !== undefined)
+          updateValues.notes = updateData.notes;
+
+        const [updated] = await db
+          .update(schema.concessions)
           .set(updateValues)
           .where(eq(schema.concessions.id, id))
           .returning();
-        
-        await logAction("UPDATE_CONCESSION", "concession", id, null, oldConcession, updated);
-        
+
+        await logAction(
+          "UPDATE_CONCESSION",
+          "concession",
+          id,
+          null,
+          oldConcession,
+          updated
+        );
+
         return { success: true, concession: updated };
       }),
   }),
@@ -1717,17 +2072,19 @@ export const dmsHubRouter = router({
   gamingRewards: router({
     // GET config per comune
     getConfig: publicProcedure
-      .input(z.object({
-        comuneId: z.number(),
-      }))
+      .input(
+        z.object({
+          comuneId: z.number(),
+        })
+      )
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
-        
+
         const [config] = await db.execute(sql`
           SELECT * FROM gaming_rewards_config WHERE comune_id = ${input.comuneId}
         `);
-        
+
         if (!config || (Array.isArray(config) && config.length === 0)) {
           // Ritorna configurazione di default se non esiste
           return {
@@ -1749,7 +2106,7 @@ export const dmsHubRouter = router({
             cultureTccEvent: 50,
             cultureWeekendBonus: 0,
             shoppingEnabled: false,
-            shoppingCashbackPercent: 1.00,
+            shoppingCashbackPercent: 1.0,
             shoppingKm0Bonus: 20,
             shoppingArtisanBonus: 15,
             shoppingMarketBonus: 10,
@@ -1758,7 +2115,7 @@ export const dmsHubRouter = router({
             challengeDefaultBonus: 50,
           };
         }
-        
+
         const row = Array.isArray(config) ? config[0] : config;
         return {
           id: row.id,
@@ -1780,7 +2137,8 @@ export const dmsHubRouter = router({
           cultureTccEvent: row.culture_tcc_event,
           cultureWeekendBonus: row.culture_weekend_bonus,
           shoppingEnabled: row.shopping_enabled,
-          shoppingCashbackPercent: parseFloat(row.shopping_cashback_percent) || 1.00,
+          shoppingCashbackPercent:
+            parseFloat(row.shopping_cashback_percent) || 1.0,
           shoppingKm0Bonus: row.shopping_km0_bonus,
           shoppingArtisanBonus: row.shopping_artisan_bonus,
           shoppingMarketBonus: row.shopping_market_bonus,
@@ -1794,46 +2152,48 @@ export const dmsHubRouter = router({
 
     // SAVE config per comune
     saveConfig: adminProcedure
-      .input(z.object({
-        comuneId: z.number(),
-        civicEnabled: z.boolean().optional(),
-        civicTccDefault: z.number().optional(),
-        civicTccUrgent: z.number().optional(),
-        civicTccPhotoBonus: z.number().optional(),
-        mobilityEnabled: z.boolean().optional(),
-        mobilityTccBus: z.number().optional(),
-        mobilityTccBikeKm: z.number().optional(),
-        mobilityTccWalkKm: z.number().optional(),
-        mobilityTccTrain: z.number().optional(),
-        mobilityRushHourBonus: z.number().optional(),
-        cultureEnabled: z.boolean().optional(),
-        cultureTccMuseum: z.number().optional(),
-        cultureTccMonument: z.number().optional(),
-        cultureTccRoute: z.number().optional(),
-        cultureTccEvent: z.number().optional(),
-        cultureWeekendBonus: z.number().optional(),
-        shoppingEnabled: z.boolean().optional(),
-        shoppingCashbackPercent: z.number().optional(),
-        shoppingKm0Bonus: z.number().optional(),
-        shoppingArtisanBonus: z.number().optional(),
-        shoppingMarketBonus: z.number().optional(),
-        challengeEnabled: z.boolean().optional(),
-        challengeMaxActive: z.number().optional(),
-        challengeDefaultBonus: z.number().optional(),
-      }))
+      .input(
+        z.object({
+          comuneId: z.number(),
+          civicEnabled: z.boolean().optional(),
+          civicTccDefault: z.number().optional(),
+          civicTccUrgent: z.number().optional(),
+          civicTccPhotoBonus: z.number().optional(),
+          mobilityEnabled: z.boolean().optional(),
+          mobilityTccBus: z.number().optional(),
+          mobilityTccBikeKm: z.number().optional(),
+          mobilityTccWalkKm: z.number().optional(),
+          mobilityTccTrain: z.number().optional(),
+          mobilityRushHourBonus: z.number().optional(),
+          cultureEnabled: z.boolean().optional(),
+          cultureTccMuseum: z.number().optional(),
+          cultureTccMonument: z.number().optional(),
+          cultureTccRoute: z.number().optional(),
+          cultureTccEvent: z.number().optional(),
+          cultureWeekendBonus: z.number().optional(),
+          shoppingEnabled: z.boolean().optional(),
+          shoppingCashbackPercent: z.number().optional(),
+          shoppingKm0Bonus: z.number().optional(),
+          shoppingArtisanBonus: z.number().optional(),
+          shoppingMarketBonus: z.number().optional(),
+          challengeEnabled: z.boolean().optional(),
+          challengeMaxActive: z.number().optional(),
+          challengeDefaultBonus: z.number().optional(),
+        })
+      )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
-        
+
         const { comuneId } = input;
-        
+
         // Prima verifica se esiste già una configurazione per questo comune
         const [existing] = await db.execute(sql`
           SELECT id FROM gaming_rewards_config WHERE comune_id = ${comuneId}
         `);
-        
+
         const hasExisting = Array.isArray(existing) && existing.length > 0;
-        
+
         if (hasExisting) {
           // UPDATE esistente
           await db.execute(sql`
@@ -1851,7 +2211,7 @@ export const dmsHubRouter = router({
               culture_tcc_monument = ${input.cultureTccMonument ?? 50},
               culture_tcc_route = ${input.cultureTccRoute ?? 300},
               shopping_enabled = ${input.shoppingEnabled ?? false},
-              shopping_cashback_percent = ${input.shoppingCashbackPercent ?? 1.00},
+              shopping_cashback_percent = ${input.shoppingCashbackPercent ?? 1.0},
               shopping_km0_bonus = ${input.shoppingKm0Bonus ?? 20},
               shopping_market_bonus = ${input.shoppingMarketBonus ?? 10},
               updated_at = NOW()
@@ -1872,26 +2232,38 @@ export const dmsHubRouter = router({
               ${input.civicEnabled ?? true}, ${input.civicTccDefault ?? 10}, ${input.civicTccUrgent ?? 5}, ${input.civicTccPhotoBonus ?? 5},
               ${input.mobilityEnabled ?? false}, ${input.mobilityTccBus ?? 10}, ${input.mobilityTccBikeKm ?? 3}, ${input.mobilityTccWalkKm ?? 5},
               ${input.cultureEnabled ?? false}, ${input.cultureTccMuseum ?? 100}, ${input.cultureTccMonument ?? 50}, ${input.cultureTccRoute ?? 300},
-              ${input.shoppingEnabled ?? false}, ${input.shoppingCashbackPercent ?? 1.00}, ${input.shoppingKm0Bonus ?? 20}, ${input.shoppingMarketBonus ?? 10},
+              ${input.shoppingEnabled ?? false}, ${input.shoppingCashbackPercent ?? 1.0}, ${input.shoppingKm0Bonus ?? 20}, ${input.shoppingMarketBonus ?? 10},
               NOW(), NOW()
             )
           `);
         }
-        
-        await logAction("UPDATE_GAMING_REWARDS_CONFIG", "gaming_rewards_config", comuneId, null, null, input);
-        
-        return { success: true, message: "Configurazione Gaming & Rewards salvata" };
+
+        await logAction(
+          "UPDATE_GAMING_REWARDS_CONFIG",
+          "gaming_rewards_config",
+          comuneId,
+          null,
+          null,
+          input
+        );
+
+        return {
+          success: true,
+          message: "Configurazione Gaming & Rewards salvata",
+        };
       }),
 
     // GET statistiche TCC per comune (per heatmap)
     getStats: publicProcedure
-      .input(z.object({
-        comuneId: z.number(),
-      }))
+      .input(
+        z.object({
+          comuneId: z.number(),
+        })
+      )
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
-        
+
         // Statistiche aggregate per comune
         const [stats] = await db.execute(sql`
           SELECT 
@@ -1901,27 +2273,32 @@ export const dmsHubRouter = router({
             COALESCE(SUM(CASE WHEN type = 'spend' THEN amount ELSE 0 END), 0) as total_tcc_spent
           FROM transactions
         `);
-        
+
         const row = Array.isArray(stats) ? stats[0] : stats;
-        
+
         return {
-          totalEarnTransactions: parseInt(row?.total_earn_transactions || '0'),
-          totalSpendTransactions: parseInt(row?.total_spend_transactions || '0'),
-          totalTccEarned: parseInt(row?.total_tcc_earned || '0'),
-          totalTccSpent: parseInt(row?.total_tcc_spent || '0'),
-          co2Saved: Math.round((parseInt(row?.total_tcc_earned || '0') * 0.1) * 10) / 10, // Stima CO2
+          totalEarnTransactions: parseInt(row?.total_earn_transactions || "0"),
+          totalSpendTransactions: parseInt(
+            row?.total_spend_transactions || "0"
+          ),
+          totalTccEarned: parseInt(row?.total_tcc_earned || "0"),
+          totalTccSpent: parseInt(row?.total_tcc_spent || "0"),
+          co2Saved:
+            Math.round(parseInt(row?.total_tcc_earned || "0") * 0.1 * 10) / 10, // Stima CO2
         };
       }),
 
     // GET punti heatmap (negozi con TCC)
     getHeatmapPoints: publicProcedure
-      .input(z.object({
-        comuneId: z.number().optional(),
-      }))
+      .input(
+        z.object({
+          comuneId: z.number().optional(),
+        })
+      )
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
-        
+
         // Recupera hub_shops con coordinate e aggregazione TCC
         let query = sql`
           SELECT 
@@ -1941,16 +2318,16 @@ export const dmsHubRouter = router({
           LEFT JOIN transactions t ON t.shop_id = hs.id
           WHERE hs.latitude IS NOT NULL AND hs.longitude IS NOT NULL
         `;
-        
+
         if (input.comuneId) {
           query = sql`${query} AND hl.comune_id = ${input.comuneId}`;
         }
-        
+
         query = sql`${query} GROUP BY hs.id, hs.name, hs.category, hs.latitude, hs.longitude, hs.address, hs.city, hl.comune_id`;
-        
+
         const results = await db.execute(query);
         const rows = Array.isArray(results) ? results : [results];
-        
+
         return rows.map((row: any) => ({
           id: row.id,
           name: row.name,
@@ -1960,10 +2337,10 @@ export const dmsHubRouter = router({
           address: row.address,
           city: row.city,
           comuneId: row.comune_id,
-          tccEarned: parseInt(row.tcc_earned || '0'),
-          tccSpent: parseInt(row.tcc_spent || '0'),
-          transactionCount: parseInt(row.transaction_count || '0'),
-          intensity: Math.min(100, parseInt(row.tcc_earned || '0') / 10), // Intensità per heatmap
+          tccEarned: parseInt(row.tcc_earned || "0"),
+          tccSpent: parseInt(row.tcc_spent || "0"),
+          transactionCount: parseInt(row.transaction_count || "0"),
+          intensity: Math.min(100, parseInt(row.tcc_earned || "0") / 10), // Intensità per heatmap
         }));
       }),
   }),

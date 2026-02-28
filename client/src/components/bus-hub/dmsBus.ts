@@ -3,8 +3,8 @@
  * Convertito da vanilla JS a TypeScript per integrazione React
  */
 
-const DBNAME = 'dms-bus';
-const STORE = 'kv';
+const DBNAME = "dms-bus";
+const STORE = "kv";
 let db: IDBDatabase | null = null;
 
 function openDB(): Promise<IDBDatabase> {
@@ -24,13 +24,16 @@ async function put(key: string, val: any): Promise<void> {
   try {
     const d = await openDB();
     return new Promise((resolve, reject) => {
-      const tx = d.transaction(STORE, 'readwrite');
+      const tx = d.transaction(STORE, "readwrite");
       tx.objectStore(STORE).put(val, key);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
   } catch {
-    localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+    localStorage.setItem(
+      key,
+      typeof val === "string" ? val : JSON.stringify(val)
+    );
   }
 }
 
@@ -38,7 +41,7 @@ async function get<T = any>(key: string): Promise<T | null> {
   try {
     const d = await openDB();
     return new Promise((resolve, reject) => {
-      const tx = d.transaction(STORE, 'readonly');
+      const tx = d.transaction(STORE, "readonly");
       const req = tx.objectStore(STORE).get(key);
       req.onsuccess = () => resolve(req.result || null);
       req.onerror = () => reject(req.error);
@@ -131,7 +134,7 @@ export const DMSBUS = {
     try {
       const d = await openDB();
       return new Promise((resolve, reject) => {
-        const tx = d.transaction(STORE, 'readwrite');
+        const tx = d.transaction(STORE, "readwrite");
         tx.objectStore(STORE).delete(key);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
@@ -158,75 +161,78 @@ export const DMSBUS = {
 
   // Specific getters/setters for market workflow
   async savePngTransparent(blob: Blob, meta: PngMeta): Promise<void> {
-    await this.putBlob('png_transparent', blob);
-    await this.putJSON('png_meta', meta);
+    await this.putBlob("png_transparent", blob);
+    await this.putJSON("png_meta", meta);
   },
 
-  async getPngTransparent(): Promise<{ blob: Blob | null; meta: PngMeta | null }> {
-    const blob = await this.getBlob('png_transparent');
-    const meta = await this.getJSON<PngMeta>('png_meta');
+  async getPngTransparent(): Promise<{
+    blob: Blob | null;
+    meta: PngMeta | null;
+  }> {
+    const blob = await this.getBlob("png_transparent");
+    const meta = await this.getJSON<PngMeta>("png_meta");
     return { blob, meta };
   },
 
   async savePngOriginal(blob: Blob): Promise<void> {
-    await this.putBlob('png_original', blob);
+    await this.putBlob("png_original", blob);
   },
 
   async getPngOriginal(): Promise<Blob | null> {
-    return this.getBlob('png_original');
+    return this.getBlob("png_original");
   },
 
   async savePlantPosition(position: PlantPosition): Promise<void> {
-    await this.putJSON('plant_position', position);
+    await this.putJSON("plant_position", position);
   },
 
   async getPlantPosition(): Promise<PlantPosition | null> {
-    return this.getJSON<PlantPosition>('plant_position');
+    return this.getJSON<PlantPosition>("plant_position");
   },
 
   async saveMarketProject(project: MarketProject): Promise<void> {
-    await this.putJSON('market_project', project);
+    await this.putJSON("market_project", project);
   },
 
   async getMarketProject(): Promise<MarketProject | null> {
-    return this.getJSON<MarketProject>('market_project');
+    return this.getJSON<MarketProject>("market_project");
   },
 
   async saveStalls(stalls: StallData[]): Promise<void> {
-    await this.putJSON('stalls', stalls);
+    await this.putJSON("stalls", stalls);
   },
 
   async getStalls(): Promise<StallData[] | null> {
-    return this.getJSON<StallData[]>('stalls');
+    return this.getJSON<StallData[]>("stalls");
   },
 
   async saveMarkers(markers: MarkerData[]): Promise<void> {
-    await this.putJSON('markers', markers);
+    await this.putJSON("markers", markers);
   },
 
   async getMarkers(): Promise<MarkerData[] | null> {
-    return this.getJSON<MarkerData[]>('markers');
+    return this.getJSON<MarkerData[]>("markers");
   },
 
   async saveAreas(areas: AreaData[]): Promise<void> {
-    await this.putJSON('areas', areas);
+    await this.putJSON("areas", areas);
   },
 
   async getAreas(): Promise<AreaData[] | null> {
-    return this.getJSON<AreaData[]>('areas');
+    return this.getJSON<AreaData[]>("areas");
   },
 
   // Export all data as JSON
   async exportProject(): Promise<MarketProject | null> {
-    const pngMeta = await this.getJSON<PngMeta>('png_meta');
+    const pngMeta = await this.getJSON<PngMeta>("png_meta");
     const plantPosition = await this.getPlantPosition();
-    const stalls = await this.getStalls() || [];
-    const markers = await this.getMarkers() || [];
-    const areas = await this.getAreas() || [];
+    const stalls = (await this.getStalls()) || [];
+    const markers = (await this.getMarkers()) || [];
+    const areas = (await this.getAreas()) || [];
     const existingProject = await this.getMarketProject();
 
     return {
-      name: existingProject?.name || 'Nuovo Mercato',
+      name: existingProject?.name || "Nuovo Mercato",
       createdAt: existingProject?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       pngMeta: pngMeta || undefined,
@@ -242,7 +248,7 @@ export const DMSBUS = {
   async importProject(project: MarketProject): Promise<void> {
     await this.saveMarketProject(project);
     if (project.pngMeta) {
-      await this.putJSON('png_meta', project.pngMeta);
+      await this.putJSON("png_meta", project.pngMeta);
     }
     if (project.plantPosition) {
       await this.savePlantPosition(project.plantPosition);
@@ -263,7 +269,7 @@ export const DMSBUS = {
     try {
       const d = await openDB();
       return new Promise((resolve, reject) => {
-        const tx = d.transaction(STORE, 'readonly');
+        const tx = d.transaction(STORE, "readonly");
         const req = tx.objectStore(STORE).getAllKeys();
         req.onsuccess = () => resolve(req.result as string[]);
         req.onerror = () => reject(req.error);

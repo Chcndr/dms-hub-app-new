@@ -1,49 +1,57 @@
 #!/usr/bin/env node
 /**
  * 📘 AUTO-BLUEPRINT GENERATOR
- * 
+ *
  * Questo script genera automaticamente la documentazione completa del sistema:
  * - BLUEPRINT.md (root): Panoramica architettura, DB schema, endpoint, struttura
  * - .mio-agents/: Libreria di conoscenza per gli agenti AI
- * 
+ *
  * Esegui: node scripts/generate_blueprint.cjs
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 // Paths
-const ROOT_DIR = path.resolve(__dirname, '..');
-const SCHEMA_PATH = path.join(ROOT_DIR, 'drizzle', 'schema.ts');
-const INDEX_JSON_PATH = path.join(ROOT_DIR, '..', 'MIO-hub', 'api', 'index.json');
-const BLUEPRINT_PATH = path.join(ROOT_DIR, 'BLUEPRINT.md');
-const AGENTS_DIR = path.join(ROOT_DIR, '.mio-agents');
+const ROOT_DIR = path.resolve(__dirname, "..");
+const SCHEMA_PATH = path.join(ROOT_DIR, "drizzle", "schema.ts");
+const INDEX_JSON_PATH = path.join(
+  ROOT_DIR,
+  "..",
+  "MIO-hub",
+  "api",
+  "index.json"
+);
+const BLUEPRINT_PATH = path.join(ROOT_DIR, "BLUEPRINT.md");
+const AGENTS_DIR = path.join(ROOT_DIR, ".mio-agents");
 
-console.log('🚀 Starting Auto-Blueprint Generation...\n');
+console.log("🚀 Starting Auto-Blueprint Generation...\n");
 
 // ============================================================================
 // 1. SCAN DATABASE SCHEMA
 // ============================================================================
 
 function scanDatabaseSchema() {
-  console.log('📊 Scanning database schema...');
-  
+  console.log("📊 Scanning database schema...");
+
   if (!fs.existsSync(SCHEMA_PATH)) {
-    console.warn('⚠️  Schema file not found:', SCHEMA_PATH);
+    console.warn("⚠️  Schema file not found:", SCHEMA_PATH);
     return { tables: [], relationships: [] };
   }
-  
-  const schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf-8');
+
+  const schemaContent = fs.readFileSync(SCHEMA_PATH, "utf-8");
   const tables = [];
-  
+
   // Extract table definitions (basic regex parsing)
-  const tableMatches = schemaContent.matchAll(/export const (\w+) = (?:mysql|pg)Table\(['"](\w+)['"]/g);
-  
+  const tableMatches = schemaContent.matchAll(
+    /export const (\w+) = (?:mysql|pg)Table\(['"](\w+)['"]/g
+  );
+
   for (const match of tableMatches) {
     const [, varName, tableName] = match;
     tables.push({ varName, tableName });
   }
-  
+
   console.log(`   Found ${tables.length} tables`);
   return { tables, relationships: [] };
 }
@@ -53,17 +61,22 @@ function scanDatabaseSchema() {
 // ============================================================================
 
 function loadEndpoints() {
-  console.log('🔌 Loading endpoints from index.json...');
-  
+  console.log("🔌 Loading endpoints from index.json...");
+
   if (!fs.existsSync(INDEX_JSON_PATH)) {
-    console.warn('⚠️  index.json not found:', INDEX_JSON_PATH);
+    console.warn("⚠️  index.json not found:", INDEX_JSON_PATH);
     return { services: [], totalEndpoints: 0 };
   }
-  
-  const indexData = JSON.parse(fs.readFileSync(INDEX_JSON_PATH, 'utf-8'));
-  const totalEndpoints = indexData.services.reduce((sum, service) => sum + service.endpoints.length, 0);
-  
-  console.log(`   Found ${totalEndpoints} endpoints across ${indexData.services.length} services`);
+
+  const indexData = JSON.parse(fs.readFileSync(INDEX_JSON_PATH, "utf-8"));
+  const totalEndpoints = indexData.services.reduce(
+    (sum, service) => sum + service.endpoints.length,
+    0
+  );
+
+  console.log(
+    `   Found ${totalEndpoints} endpoints across ${indexData.services.length} services`
+  );
   return { services: indexData.services, totalEndpoints };
 }
 
@@ -72,38 +85,44 @@ function loadEndpoints() {
 // ============================================================================
 
 function scanProjectStructure() {
-  console.log('📁 Scanning project structure...');
-  
+  console.log("📁 Scanning project structure...");
+
   const structure = {
-    server: scanDirectory(path.join(ROOT_DIR, 'server'), 2),
-    client: scanDirectory(path.join(ROOT_DIR, 'client/src'), 2),
-    scripts: fs.readdirSync(path.join(ROOT_DIR, 'scripts')).filter(f => f.endsWith('.js') || f.endsWith('.cjs')),
+    server: scanDirectory(path.join(ROOT_DIR, "server"), 2),
+    client: scanDirectory(path.join(ROOT_DIR, "client/src"), 2),
+    scripts: fs
+      .readdirSync(path.join(ROOT_DIR, "scripts"))
+      .filter(f => f.endsWith(".js") || f.endsWith(".cjs")),
   };
-  
+
   console.log(`   Scanned server/ and client/ directories`);
   return structure;
 }
 
 function scanDirectory(dir, maxDepth, currentDepth = 0) {
   if (!fs.existsSync(dir) || currentDepth >= maxDepth) return [];
-  
+
   const items = fs.readdirSync(dir, { withFileTypes: true });
   const result = [];
-  
+
   for (const item of items) {
-    if (item.name.startsWith('.') || item.name === 'node_modules') continue;
-    
+    if (item.name.startsWith(".") || item.name === "node_modules") continue;
+
     if (item.isDirectory()) {
       result.push({
         name: item.name,
-        type: 'dir',
-        children: scanDirectory(path.join(dir, item.name), maxDepth, currentDepth + 1),
+        type: "dir",
+        children: scanDirectory(
+          path.join(dir, item.name),
+          maxDepth,
+          currentDepth + 1
+        ),
       });
-    } else if (item.name.endsWith('.ts') || item.name.endsWith('.tsx')) {
-      result.push({ name: item.name, type: 'file' });
+    } else if (item.name.endsWith(".ts") || item.name.endsWith(".tsx")) {
+      result.push({ name: item.name, type: "file" });
     }
   }
-  
+
   return result;
 }
 
@@ -112,10 +131,13 @@ function scanDirectory(dir, maxDepth, currentDepth = 0) {
 // ============================================================================
 
 function generateBlueprint(dbSchema, endpoints, structure) {
-  console.log('\n📘 Generating BLUEPRINT.md...');
-  
-  const now = new Date().toLocaleString('it-IT', { dateStyle: 'long', timeStyle: 'short' });
-  
+  console.log("\n📘 Generating BLUEPRINT.md...");
+
+  const now = new Date().toLocaleString("it-IT", {
+    dateStyle: "long",
+    timeStyle: "short",
+  });
+
   let content = `# 📘 DMS Hub System Blueprint
 
 > **Auto-generated:** ${now}  
@@ -158,15 +180,17 @@ function generateBlueprint(dbSchema, endpoints, structure) {
     content += `### ${service.name}\n\n`;
     content += `**Base URL:** \`${service.baseUrl}\`  \n`;
     content += `**Endpoints:** ${service.endpoints.length}\n\n`;
-    
+
     // Group by method
     const byMethod = service.endpoints.reduce((acc, ep) => {
       acc[ep.method] = (acc[ep.method] || 0) + 1;
       return acc;
     }, {});
-    
+
     content += `**Breakdown:** `;
-    content += Object.entries(byMethod).map(([method, count]) => `${method}: ${count}`).join(', ');
+    content += Object.entries(byMethod)
+      .map(([method, count]) => `${method}: ${count}`)
+      .join(", ");
     content += `\n\n`;
   }
 
@@ -181,7 +205,7 @@ server/
 `;
 
   content += renderStructure(structure.server, 1);
-  
+
   content += `\`\`\`
 
 ### Client
@@ -191,7 +215,7 @@ client/src/
 `;
 
   content += renderStructure(structure.client, 1);
-  
+
   content += `\`\`\`
 
 ### Scripts
@@ -231,14 +255,18 @@ Questo comando esegue:
 **Generated by Manus AI** 🤖
 `;
 
-  fs.writeFileSync(BLUEPRINT_PATH, content, 'utf-8');
+  fs.writeFileSync(BLUEPRINT_PATH, content, "utf-8");
   console.log(`   ✅ BLUEPRINT.md saved to ${BLUEPRINT_PATH}`);
 }
 
 function renderStructure(items, indent) {
-  let result = '';
+  let result = "";
   for (const item of items) {
-    result += '  '.repeat(indent) + (item.type === 'dir' ? '📁 ' : '📄 ') + item.name + '\n';
+    result +=
+      "  ".repeat(indent) +
+      (item.type === "dir" ? "📁 " : "📄 ") +
+      item.name +
+      "\n";
     if (item.children && item.children.length > 0) {
       result += renderStructure(item.children, indent + 1);
     }
@@ -251,16 +279,16 @@ function renderStructure(items, indent) {
 // ============================================================================
 
 function generateAgentLibrary(endpoints) {
-  console.log('\n🤖 Generating .mio-agents/ library...');
-  
+  console.log("\n🤖 Generating .mio-agents/ library...");
+
   if (!fs.existsSync(AGENTS_DIR)) {
     fs.mkdirSync(AGENTS_DIR, { recursive: true });
   }
-  
+
   // 5.1 system_prompts.md
   const promptsContent = `# System Prompts - DMS Hub Agents
 
-> Auto-generated: ${new Date().toLocaleString('it-IT')}
+> Auto-generated: ${new Date().toLocaleString("it-IT")}
 
 ## MIO Agent
 
@@ -313,57 +341,65 @@ function generateAgentLibrary(endpoints) {
 - Report generation
 `;
 
-  fs.writeFileSync(path.join(AGENTS_DIR, 'system_prompts.md'), promptsContent, 'utf-8');
-  console.log('   ✅ system_prompts.md created');
-  
+  fs.writeFileSync(
+    path.join(AGENTS_DIR, "system_prompts.md"),
+    promptsContent,
+    "utf-8"
+  );
+  console.log("   ✅ system_prompts.md created");
+
   // 5.2 tools_definition.json
   const toolsContent = {
-    version: '1.0.0',
+    version: "1.0.0",
     lastUpdated: new Date().toISOString(),
     tools: [
       {
-        name: 'guardian.logs',
-        description: 'Recupera log centralizzati del sistema',
-        endpoint: '/api/trpc/guardian.logs',
-        method: 'GET',
-        params: { limit: 'number', level: 'string (info|error|warn)' },
+        name: "guardian.logs",
+        description: "Recupera log centralizzati del sistema",
+        endpoint: "/api/trpc/guardian.logs",
+        method: "GET",
+        params: { limit: "number", level: "string (info|error|warn)" },
       },
       {
-        name: 'guardian.stats',
-        description: 'Statistiche complete del sistema',
-        endpoint: '/api/trpc/guardian.stats',
-        method: 'GET',
+        name: "guardian.stats",
+        description: "Statistiche complete del sistema",
+        endpoint: "/api/trpc/guardian.stats",
+        method: "GET",
       },
       {
-        name: 'dmsHub.markets.list',
-        description: 'Lista tutti i mercati',
-        endpoint: '/api/trpc/dmsHub.markets.list',
-        method: 'GET',
+        name: "dmsHub.markets.list",
+        description: "Lista tutti i mercati",
+        endpoint: "/api/trpc/dmsHub.markets.list",
+        method: "GET",
       },
       {
-        name: 'dmsHub.markets.create',
-        description: 'Crea nuovo mercato',
-        endpoint: '/api/trpc/dmsHub.markets.create',
-        method: 'POST',
-        params: { name: 'string', location: 'string', category: 'string' },
+        name: "dmsHub.markets.create",
+        description: "Crea nuovo mercato",
+        endpoint: "/api/trpc/dmsHub.markets.create",
+        method: "POST",
+        params: { name: "string", location: "string", category: "string" },
       },
       {
-        name: 'mihub.orchestrator.run',
-        description: 'Esegue orchestrazione multi-agent',
-        endpoint: '/api/mihub/orchestrator',
-        method: 'POST',
-        params: { agent: 'string', mode: 'auto|manual', task: 'string' },
+        name: "mihub.orchestrator.run",
+        description: "Esegue orchestrazione multi-agent",
+        endpoint: "/api/mihub/orchestrator",
+        method: "POST",
+        params: { agent: "string", mode: "auto|manual", task: "string" },
       },
     ],
   };
-  
-  fs.writeFileSync(path.join(AGENTS_DIR, 'tools_definition.json'), JSON.stringify(toolsContent, null, 2), 'utf-8');
-  console.log('   ✅ tools_definition.json created');
-  
+
+  fs.writeFileSync(
+    path.join(AGENTS_DIR, "tools_definition.json"),
+    JSON.stringify(toolsContent, null, 2),
+    "utf-8"
+  );
+  console.log("   ✅ tools_definition.json created");
+
   // 5.3 api_reference_for_agents.md
   const apiRefContent = `# API Reference for AI Agents
 
-> Auto-generated: ${new Date().toLocaleString('it-IT')}  
+> Auto-generated: ${new Date().toLocaleString("it-IT")}  
 > Total Endpoints: ${endpoints.totalEndpoints}
 
 ## Quick Reference
@@ -438,8 +474,12 @@ Codici di errore comuni:
 **Tip:** Per la lista completa e aggiornata degli endpoint, consulta \`MIO-hub/api/index.json\`.
 `;
 
-  fs.writeFileSync(path.join(AGENTS_DIR, 'api_reference_for_agents.md'), apiRefContent, 'utf-8');
-  console.log('   ✅ api_reference_for_agents.md created');
+  fs.writeFileSync(
+    path.join(AGENTS_DIR, "api_reference_for_agents.md"),
+    apiRefContent,
+    "utf-8"
+  );
+  console.log("   ✅ api_reference_for_agents.md created");
 }
 
 // ============================================================================
@@ -451,16 +491,18 @@ async function main() {
     const dbSchema = scanDatabaseSchema();
     const endpoints = loadEndpoints();
     const structure = scanProjectStructure();
-    
+
     generateBlueprint(dbSchema, endpoints, structure);
     generateAgentLibrary(endpoints);
-    
-    console.log('\n✅ Auto-Blueprint Generation Complete!\n');
-    console.log('📘 BLUEPRINT.md updated');
-    console.log('🤖 .mio-agents/ library updated');
-    console.log('\nNext: Run `npm run docs:update` to update everything at once.\n');
+
+    console.log("\n✅ Auto-Blueprint Generation Complete!\n");
+    console.log("📘 BLUEPRINT.md updated");
+    console.log("🤖 .mio-agents/ library updated");
+    console.log(
+      "\nNext: Run `npm run docs:update` to update everything at once.\n"
+    );
   } catch (error) {
-    console.error('\n❌ Error generating blueprint:', error.message);
+    console.error("\n❌ Error generating blueprint:", error.message);
     process.exit(1);
   }
 }
@@ -468,9 +510,9 @@ async function main() {
 main();
 
 // Copy BLUEPRINT.md to public/ for serving
-const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
+const PUBLIC_DIR = path.join(ROOT_DIR, "public");
 if (!fs.existsSync(PUBLIC_DIR)) {
   fs.mkdirSync(PUBLIC_DIR, { recursive: true });
 }
-fs.copyFileSync(BLUEPRINT_PATH, path.join(PUBLIC_DIR, 'BLUEPRINT.md'));
-console.log('   ✅ BLUEPRINT.md copied to public/');
+fs.copyFileSync(BLUEPRINT_PATH, path.join(PUBLIC_DIR, "BLUEPRINT.md"));
+console.log("   ✅ BLUEPRINT.md copied to public/");

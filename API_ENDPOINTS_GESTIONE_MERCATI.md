@@ -3,9 +3,11 @@
 ## Endpoint Principali Usati
 
 ### 1. Caricamento Mercati
+
 ```
 GET /api/markets
 ```
+
 **Descrizione:** Carica lista di tutti i mercati
 **Usato in:** `fetchMarkets()` linea 172
 **Risposta:** Array di mercati con id, name, latitude, longitude, etc.
@@ -13,95 +15,118 @@ GET /api/markets
 ---
 
 ### 2. Caricamento Posteggi Singolo Mercato
+
 ```
 GET /api/markets/{marketId}/stalls
 ```
+
 **Descrizione:** Carica tutti i posteggi di un mercato specifico
 **Usato in:** `fetchData()` linea 1290
-**Parametri:** 
+**Parametri:**
+
 - `marketId`: ID del mercato (es: 1 per Grosseto)
-**Risposta:** Array di stalls con id, number, status, vendor_name, dimensions, etc.
+  **Risposta:** Array di stalls con id, number, status, vendor_name, dimensions, etc.
 
 ---
 
 ### 3. Caricamento Mappa GIS
+
 ```
 GET /api/gis/market-map/{marketId}
 ```
+
 **Descrizione:** Carica i dati GIS della mappa (poligoni posteggi)
 **Usato in:** `fetchData()` linea 1291
 **Parametri:**
+
 - `marketId`: ID del mercato
-**Risposta:** Dati mappa con poligoni, coordinate, colori, etc.
+  **Risposta:** Dati mappa con poligoni, coordinate, colori, etc.
 
 ---
 
 ### 4. Caricamento Concessioni
+
 ```
 GET /api/markets/{marketCode}/stalls/concessions
 ```
+
 **Descrizione:** Carica le concessioni (imprese assegnate ai posteggi)
 **Usato in:** `fetchData()` linea 1292
 **Parametri:**
+
 - `marketCode`: Codice del mercato (es: "GR001")
-**Risposta:** Dati concessioni
+  **Risposta:** Dati concessioni
 
 ---
 
 ### 5. Caricamento Dati Impresa
+
 ```
 GET /api/imprese/{companyId}
 ```
+
 **Descrizione:** Carica dettagli di una singola impresa
 **Usato in:** `fetchCompanyData()` linea 651
 **Parametri:**
+
 - `companyId`: ID dell'impresa
-**Risposta:** Dettagli impresa (nome, settore, contatti, social, etc.)
+  **Risposta:** Dettagli impresa (nome, settore, contatti, social, etc.)
 
 ---
 
 ### 6. Aggiornamento Posteggio
+
 ```
 PATCH /api/stalls/{stallId}
 ```
+
 **Descrizione:** Aggiorna lo stato di un posteggio
 **Usato in:** `handleConfirmAssignment()` linea 1347
 **Parametri:**
+
 - `stallId`: ID del posteggio
 - Body: Dati aggiornamento (status, vendor_id, etc.)
-**Metodo:** PATCH
+  **Metodo:** PATCH
 
 ---
 
 ### 7. Aggiornamento Impresa
+
 ```
 PATCH /api/imprese/{companyId}
 ```
+
 **Descrizione:** Aggiorna dati impresa
 **Usato in:** Varie funzioni di modifica
 **Parametri:**
+
 - `companyId`: ID dell'impresa
 - Body: Dati aggiornamento
-**Metodo:** PATCH
+  **Metodo:** PATCH
 
 ---
 
 ### 8. Caricamento Concessioni (Alternativo)
+
 ```
 GET /api/concessions?market_id={marketId}
 ```
+
 **Descrizione:** Carica concessioni per mercato
 **Usato in:** `fetchData()` linea 1932 (nella sezione Concessioni)
 **Parametri:**
+
 - `market_id`: ID del mercato
-**Risposta:** Array di concessioni
+  **Risposta:** Array di concessioni
 
 ---
 
 ### 9. Caricamento Vendor
+
 ```
 GET /api/vendors
 ```
+
 **Descrizione:** Carica lista di tutti i vendor/imprese
 **Usato in:** `fetchData()` linea 1933
 **Risposta:** Array di vendor
@@ -145,6 +170,7 @@ GET /api/vendors
 4. ✅ `GET /api/imprese/{companyId}` - Dettagli impresa
 
 **Endpoint NON necessari (solo per admin):**
+
 - ❌ PATCH /api/stalls/{stallId} - Modifica posteggio
 - ❌ PATCH /api/imprese/{companyId} - Modifica impresa
 - ❌ GET /api/concessions - Concessioni
@@ -154,11 +180,14 @@ GET /api/vendors
 ## 🔐 Configurazione API
 
 **Base URL:** Definito in `/client/src/config/api.ts`
+
 ```typescript
-export const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://orchestratore.mio-hub.me';
+export const API_BASE_URL =
+  process.env.VITE_API_BASE_URL || "https://orchestratore.mio-hub.me";
 ```
 
 **Usato come:**
+
 ```typescript
 const response = await fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`);
 ```
@@ -191,14 +220,22 @@ const response = await fetch(`${API_BASE_URL}/api/markets/${marketId}/stalls`);
 const markets = await fetch(`${API_BASE_URL}/api/markets`).then(r => r.json());
 
 // 2. Carica mappa base Italia
-const mapData = await fetch(`${API_BASE_URL}/api/gis/market-map`).then(r => r.json());
+const mapData = await fetch(`${API_BASE_URL}/api/gis/market-map`).then(r =>
+  r.json()
+);
 
 // 3. Quando utente seleziona mercato (es: Grosseto con ID=1)
-const stalls = await fetch(`${API_BASE_URL}/api/markets/1/stalls`).then(r => r.json());
-const marketMap = await fetch(`${API_BASE_URL}/api/gis/market-map/1`).then(r => r.json());
+const stalls = await fetch(`${API_BASE_URL}/api/markets/1/stalls`).then(r =>
+  r.json()
+);
+const marketMap = await fetch(`${API_BASE_URL}/api/gis/market-map/1`).then(r =>
+  r.json()
+);
 
 // 4. Quando clicca su posteggio
-const company = await fetch(`${API_BASE_URL}/api/imprese/{companyId}`).then(r => r.json());
+const company = await fetch(`${API_BASE_URL}/api/imprese/{companyId}`).then(r =>
+  r.json()
+);
 
 // 5. Click "Vetrina" → naviga a /vetrine/{companyId}
 ```

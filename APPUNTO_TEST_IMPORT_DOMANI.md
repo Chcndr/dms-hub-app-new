@@ -8,6 +8,7 @@
 ## ✅ COMPLETATO OGGI (10 Nov 2025)
 
 ### 1. Sistema Integrazioni Dashboard PA
+
 - ✅ 5 tabelle database (api_keys, api_metrics, webhooks, webhook_logs, external_connections)
 - ✅ Router TRPC `integrationsRouter` con 15+ endpoint
 - ✅ API Keys Manager CRUD completo
@@ -17,16 +18,19 @@
 - ✅ **Checkpoint:** e7832b70
 
 ### 2. TAB 23 Documentazione
+
 - ✅ Pannello Documentazione nella Dashboard PA
 - ✅ 2 documenti markdown accessibili
 - ✅ **Checkpoint:** 5e7cfd45 (PUBBLICATO)
 
 ### 3. Endpoint REST Import
+
 - ✅ Endpoint `/api/import-from-slot-editor` creato
 - ✅ Testato con curl - FUNZIONA!
 - ✅ **Checkpoint:** 26882f2b (PUBBLICATO)
 
 ### 4. Console Log Slot Editor v3
+
 - ✅ Pannello Console Log draggable riaggiunto
 - ✅ 33 DMSConsole.log() riattivati
 - ✅ Log per import Dashboard Admin
@@ -40,12 +44,14 @@
 ### Test Import Completo
 
 **File disponibili:**
+
 - `/home/ubuntu/upload/Safari(5).pdf` - PDF con JSON 141+ posteggi Grosseto
 - `/home/ubuntu/upload/grosseto_160_clean.json` - JSON estratto (da validare)
 
 **Procedura Test:**
 
 1. **Pulire JSON dal PDF**
+
    ```bash
    # Fix JSON estratto rimuovendo header/footer PDF
    # File: /home/ubuntu/clean_pdf_json_v2.py (già creato)
@@ -81,17 +87,20 @@
 ## 📊 STATO ATTUALE
 
 ### Checkpoint Salvati
+
 1. **e7832b70** - Sistema Integrazioni completo
 2. **5e7cfd45** - TAB 23 Documentazione (PUBBLICATO)
 3. **26882f2b** - Endpoint REST import (PUBBLICATO - ATTIVO)
 
 ### GitHub Commits
+
 - **4c762b4** - Console Log riaggiunto (DEPLOYED su GitHub Pages)
 - **6ab6549** - Endpoint REST per import
 - **7bf0e57** - Fix formato TRPC
 - **7ee6167** - URL API produzione
 
 ### URL Importanti
+
 - **App pubblicata:** https://dmshubapp-hkvujnro.manus.space
 - **Slot Editor v3:** https://chcndr.github.io/dms-gemello-core/tools/slot_editor_v3_unified.html
 - **Endpoint REST:** https://dmshubapp-hkvujnro.manus.space/api/import-from-slot-editor
@@ -117,6 +126,7 @@
 ## 🎯 OBIETTIVO FINALE
 
 **Import automatico funzionante:**
+
 - Slot Editor v3 → Click "Esporta per Dashboard Admin"
 - Endpoint REST riceve JSON
 - Database popolato con mercato + posteggi

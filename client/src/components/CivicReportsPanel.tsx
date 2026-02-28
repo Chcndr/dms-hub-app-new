@@ -2,24 +2,37 @@
  * CivicReportsPanel - Pannello Segnalazioni Civiche per Dashboard PA
  * Versione: 1.0.0
  * Data: 29 Gennaio 2026
- * 
+ *
  * Mostra segnalazioni civiche con dati reali dall'API e configurazione TCC.
  */
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Radio, MapPin, Settings, Save, RefreshCw, AlertCircle, 
-  CheckCircle, Clock, TrendingUp, Coins, Loader2 
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { useImpersonation, addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
-import { useCivicReports } from '@/contexts/CivicReportsContext';
-import { MIHUB_API_BASE_URL } from '@/config/api';
-import { formatDate } from '@/lib/formatUtils';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Radio,
+  MapPin,
+  Settings,
+  Save,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  Coins,
+  Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  useImpersonation,
+  addComuneIdToUrl,
+  authenticatedFetch,
+} from "@/hooks/useImpersonation";
+import { useCivicReports } from "@/contexts/CivicReportsContext";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { formatDate } from "@/lib/formatUtils";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -54,11 +67,15 @@ export default function CivicReportsPanel() {
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { comuneId: impersonatedComuneId, isImpersonating: isImp, entityType } = useImpersonation();
+  const {
+    comuneId: impersonatedComuneId,
+    isImpersonating: isImp,
+    entityType,
+  } = useImpersonation();
   const { setSelectedReport } = useCivicReports();
   // Se impersonato: filtra per comune. Se admin globale: mostra tutte le segnalazioni
   const comuneId = impersonatedComuneId ? parseInt(impersonatedComuneId) : null;
-  const comuneParam = comuneId ? `comune_id=${comuneId}` : '';
+  const comuneParam = comuneId ? `comune_id=${comuneId}` : "";
 
   // Carica statistiche + lista completa segnalazioni
   const loadStats = async () => {
@@ -73,7 +90,7 @@ export default function CivicReportsPanel() {
         : `${API_BASE_URL}/api/civic-reports?limit=200`;
       const [statsRes, reportsRes] = await Promise.all([
         fetch(statsUrl),
-        fetch(reportsUrl)
+        fetch(reportsUrl),
       ]);
       const data = await statsRes.json();
       if (data.success) {
@@ -86,7 +103,7 @@ export default function CivicReportsPanel() {
         setAllReports(data.data.recent);
       }
     } catch (error) {
-      console.error('Errore caricamento stats:', error);
+      console.error("Errore caricamento stats:", error);
     }
   };
 
@@ -103,31 +120,34 @@ export default function CivicReportsPanel() {
         setConfig(data.data);
       }
     } catch (error) {
-      console.error('Errore caricamento config:', error);
+      console.error("Errore caricamento config:", error);
     }
   };
 
   // Salva configurazione TCC
   const saveConfig = async () => {
     if (!config) return;
-    
+
     setSavingConfig(true);
     try {
-      const response = await authenticatedFetch(`${API_BASE_URL}/api/civic-reports/config`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      });
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/civic-reports/config`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(config),
+        }
+      );
       const data = await response.json();
       if (data.success) {
-        toast.success('Configurazione TCC salvata!');
+        toast.success("Configurazione TCC salvata!");
         setShowConfigPanel(false);
       } else {
         throw new Error(data.error);
       }
     } catch (error) {
-      console.error('Errore salvataggio config:', error);
-      toast.error('Errore nel salvataggio della configurazione');
+      console.error("Errore salvataggio config:", error);
+      toast.error("Errore nel salvataggio della configurazione");
     } finally {
       setSavingConfig(false);
     }
@@ -163,17 +183,23 @@ export default function CivicReportsPanel() {
             Segnalazioni Civiche
           </CardTitle>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={async () => { setRefreshing(true); await Promise.all([loadStats(), loadConfig()]); setRefreshing(false); }}
+              onClick={async () => {
+                setRefreshing(true);
+                await Promise.all([loadStats(), loadConfig()]);
+                setRefreshing(false);
+              }}
               className="border-[#06b6d4]/30 text-[#06b6d4] hover:bg-[#06b6d4]/10"
             >
-              <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`}
+              />
               Aggiorna
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => setShowConfigPanel(!showConfigPanel)}
               className="border-[#f59e0b]/30 text-[#f59e0b] hover:bg-[#f59e0b]/10"
@@ -188,19 +214,27 @@ export default function CivicReportsPanel() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="p-4 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
               <div className="text-sm text-[#e8fbff]/70 mb-1">Pending</div>
-              <div className="text-3xl font-bold text-[#f59e0b]">{stats?.pending || 0}</div>
+              <div className="text-3xl font-bold text-[#f59e0b]">
+                {stats?.pending || 0}
+              </div>
             </div>
             <div className="p-4 bg-[#06b6d4]/10 border border-[#06b6d4]/30 rounded-lg">
               <div className="text-sm text-[#e8fbff]/70 mb-1">In Progress</div>
-              <div className="text-3xl font-bold text-[#06b6d4]">{stats?.inProgress || 0}</div>
+              <div className="text-3xl font-bold text-[#06b6d4]">
+                {stats?.inProgress || 0}
+              </div>
             </div>
             <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
               <div className="text-sm text-[#e8fbff]/70 mb-1">Resolved</div>
-              <div className="text-3xl font-bold text-[#10b981]">{stats?.resolved || 0}</div>
+              <div className="text-3xl font-bold text-[#10b981]">
+                {stats?.resolved || 0}
+              </div>
             </div>
             <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
               <div className="text-sm text-[#e8fbff]/70 mb-1">Totali</div>
-              <div className="text-3xl font-bold text-[#e8fbff]">{stats?.total || 0}</div>
+              <div className="text-3xl font-bold text-[#e8fbff]">
+                {stats?.total || 0}
+              </div>
             </div>
           </div>
 
@@ -209,42 +243,69 @@ export default function CivicReportsPanel() {
             <div className="mb-6 p-4 bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg">
               <div className="flex items-center gap-2 mb-4">
                 <Coins className="h-5 w-5 text-[#f59e0b]" />
-                <h3 className="text-lg font-semibold text-[#e8fbff]">Configurazione Reward TCC</h3>
+                <h3 className="text-lg font-semibold text-[#e8fbff]">
+                  Configurazione Reward TCC
+                </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label className="text-[#e8fbff]/70">TCC Reward Default</Label>
+                  <Label className="text-[#e8fbff]/70">
+                    TCC Reward Default
+                  </Label>
                   <Input
                     type="number"
                     value={config.tcc_reward_default}
-                    onChange={(e) => setConfig({ ...config, tcc_reward_default: parseInt(e.target.value) || 0 })}
+                    onChange={e =>
+                      setConfig({
+                        ...config,
+                        tcc_reward_default: parseInt(e.target.value) || 0,
+                      })
+                    }
                     className="bg-[#1a2332] border-[#06b6d4]/30 text-[#e8fbff]"
                   />
-                  <p className="text-xs text-[#e8fbff]/50 mt-1">Crediti per segnalazione risolta</p>
+                  <p className="text-xs text-[#e8fbff]/50 mt-1">
+                    Crediti per segnalazione risolta
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-[#e8fbff]/70">TCC Reward Urgenti</Label>
+                  <Label className="text-[#e8fbff]/70">
+                    TCC Reward Urgenti
+                  </Label>
                   <Input
                     type="number"
                     value={config.tcc_reward_urgent}
-                    onChange={(e) => setConfig({ ...config, tcc_reward_urgent: parseInt(e.target.value) || 0 })}
+                    onChange={e =>
+                      setConfig({
+                        ...config,
+                        tcc_reward_urgent: parseInt(e.target.value) || 0,
+                      })
+                    }
                     className="bg-[#1a2332] border-[#06b6d4]/30 text-[#e8fbff]"
                   />
-                  <p className="text-xs text-[#e8fbff]/50 mt-1">Crediti per segnalazioni urgenti</p>
+                  <p className="text-xs text-[#e8fbff]/50 mt-1">
+                    Crediti per segnalazioni urgenti
+                  </p>
                 </div>
                 <div>
                   <Label className="text-[#e8fbff]/70">TCC Bonus Foto</Label>
                   <Input
                     type="number"
                     value={config.tcc_reward_photo_bonus}
-                    onChange={(e) => setConfig({ ...config, tcc_reward_photo_bonus: parseInt(e.target.value) || 0 })}
+                    onChange={e =>
+                      setConfig({
+                        ...config,
+                        tcc_reward_photo_bonus: parseInt(e.target.value) || 0,
+                      })
+                    }
                     className="bg-[#1a2332] border-[#06b6d4]/30 text-[#e8fbff]"
                   />
-                  <p className="text-xs text-[#e8fbff]/50 mt-1">Bonus se include foto</p>
+                  <p className="text-xs text-[#e8fbff]/50 mt-1">
+                    Bonus se include foto
+                  </p>
                 </div>
               </div>
               <div className="flex justify-end mt-4">
-                <Button 
+                <Button
                   onClick={saveConfig}
                   disabled={savingConfig}
                   className="bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-black"
@@ -264,25 +325,52 @@ export default function CivicReportsPanel() {
           <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
             {allReports.length > 0 ? (
               allReports.map((report: any) => (
-                <div key={report.id} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between cursor-pointer hover:bg-[#0b1220]/80 transition-colors" onClick={() => { if (report.lat && report.lng) { setSelectedReport({ id: report.id, lat: parseFloat(report.lat), lng: parseFloat(report.lng), type: report.type }); toast.info(`Centrato su: ${report.type}`); } }}>
+                <div
+                  key={report.id}
+                  className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between cursor-pointer hover:bg-[#0b1220]/80 transition-colors"
+                  onClick={() => {
+                    if (report.lat && report.lng) {
+                      setSelectedReport({
+                        id: report.id,
+                        lat: parseFloat(report.lat),
+                        lng: parseFloat(report.lng),
+                        type: report.type,
+                      });
+                      toast.info(`Centrato su: ${report.type}`);
+                    }
+                  }}
+                >
                   <div className="flex-1">
-                    <div className="text-[#e8fbff] font-semibold">{report.type}</div>
+                    <div className="text-[#e8fbff] font-semibold">
+                      {report.type}
+                    </div>
                     <div className="text-sm text-[#e8fbff]/70">
-                      {report.description?.substring(0, 100)}{report.description?.length > 100 ? '...' : ''}
+                      {report.description?.substring(0, 100)}
+                      {report.description?.length > 100 ? "..." : ""}
                     </div>
                     <div className="text-xs text-[#e8fbff]/50 mt-1">
-                      {report.user_name || 'Anonimo'} • {formatDate(report.created_at)}
+                      {report.user_name || "Anonimo"} •{" "}
+                      {formatDate(report.created_at)}
                     </div>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    report.status === 'pending' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
-                    report.status === 'in_progress' ? 'bg-[#06b6d4]/20 text-[#06b6d4]' :
-                    report.status === 'resolved' ? 'bg-[#10b981]/20 text-[#10b981]' :
-                    'bg-[#ef4444]/20 text-[#ef4444]'
-                  }`}>
-                    {report.status === 'pending' ? 'Da assegnare' : 
-                     report.status === 'in_progress' ? 'In corso' : 
-                     report.status === 'resolved' ? 'Risolto' : 'Rifiutato'}
+                  <div
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      report.status === "pending"
+                        ? "bg-[#f59e0b]/20 text-[#f59e0b]"
+                        : report.status === "in_progress"
+                          ? "bg-[#06b6d4]/20 text-[#06b6d4]"
+                          : report.status === "resolved"
+                            ? "bg-[#10b981]/20 text-[#10b981]"
+                            : "bg-[#ef4444]/20 text-[#ef4444]"
+                    }`}
+                  >
+                    {report.status === "pending"
+                      ? "Da assegnare"
+                      : report.status === "in_progress"
+                        ? "In corso"
+                        : report.status === "resolved"
+                          ? "Risolto"
+                          : "Rifiutato"}
                   </div>
                 </div>
               ))
@@ -290,7 +378,9 @@ export default function CivicReportsPanel() {
               <div className="p-8 text-center text-[#e8fbff]/50">
                 <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>Nessuna segnalazione presente</p>
-                <p className="text-sm mt-1">Le segnalazioni inviate dai cittadini appariranno qui</p>
+                <p className="text-sm mt-1">
+                  Le segnalazioni inviate dai cittadini appariranno qui
+                </p>
               </div>
             )}
           </div>
@@ -309,8 +399,13 @@ export default function CivicReportsPanel() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {stats.byType.map((item: any, index: number) => (
-                <div key={index} className="p-3 bg-[#0b1220] rounded-lg text-center">
-                  <div className="text-2xl font-bold text-[#06b6d4]">{item.count}</div>
+                <div
+                  key={index}
+                  className="p-3 bg-[#0b1220] rounded-lg text-center"
+                >
+                  <div className="text-2xl font-bold text-[#06b6d4]">
+                    {item.count}
+                  </div>
                   <div className="text-sm text-[#e8fbff]/70">{item.type}</div>
                 </div>
               ))}

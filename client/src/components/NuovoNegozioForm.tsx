@@ -1,19 +1,34 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
-import { Store, Building2, MapPin, Phone, Mail, Tag, Loader2, CheckCircle2 } from 'lucide-react';
-import { MIHUB_API_BASE_URL } from '@/config/api';
-import { authenticatedFetch } from '@/hooks/useImpersonation';
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import {
+  Store,
+  Building2,
+  MapPin,
+  Phone,
+  Mail,
+  Tag,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { authenticatedFetch } from "@/hooks/useImpersonation";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -33,17 +48,20 @@ interface NuovoNegozioFormProps {
   onCancel?: () => void;
 }
 
-export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFormProps) {
+export default function NuovoNegozioForm({
+  onSuccess,
+  onCancel,
+}: NuovoNegozioFormProps) {
   // Stati form
-  const [ragioneSociale, setRagioneSociale] = useState('');
-  const [partitaIva, setPartitaIva] = useState('');
-  const [codiceFiscale, setCodiceFiscale] = useState('');
-  const [comune, setComune] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [email, setEmail] = useState('');
-  const [hubId, setHubId] = useState<string>('');
-  
+  const [ragioneSociale, setRagioneSociale] = useState("");
+  const [partitaIva, setPartitaIva] = useState("");
+  const [codiceFiscale, setCodiceFiscale] = useState("");
+  const [comune, setComune] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [email, setEmail] = useState("");
+  const [hubId, setHubId] = useState<string>("");
+
   // Stati UI
   const [hubs, setHubs] = useState<HubLocation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,8 +78,8 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
           setHubs(result.data);
         }
       } catch (error) {
-        console.error('Errore caricamento HUB:', error);
-        toast.error('Errore nel caricamento degli HUB disponibili');
+        console.error("Errore caricamento HUB:", error);
+        toast.error("Errore nel caricamento degli HUB disponibili");
       } finally {
         setIsLoadingHubs(false);
       }
@@ -74,31 +92,32 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
     const newErrors: Record<string, string> = {};
 
     if (!ragioneSociale.trim()) {
-      newErrors.ragioneSociale = 'Ragione sociale obbligatoria';
+      newErrors.ragioneSociale = "Ragione sociale obbligatoria";
     }
 
     if (!partitaIva.trim()) {
-      newErrors.partitaIva = 'Partita IVA obbligatoria';
+      newErrors.partitaIva = "Partita IVA obbligatoria";
     } else if (partitaIva.length !== 11 || !/^\d+$/.test(partitaIva)) {
-      newErrors.partitaIva = 'Partita IVA deve essere di 11 cifre';
+      newErrors.partitaIva = "Partita IVA deve essere di 11 cifre";
     }
 
     if (!codiceFiscale.trim()) {
-      newErrors.codiceFiscale = 'Codice fiscale obbligatorio';
+      newErrors.codiceFiscale = "Codice fiscale obbligatorio";
     } else if (codiceFiscale.length !== 16 && codiceFiscale.length !== 11) {
-      newErrors.codiceFiscale = 'Codice fiscale deve essere di 16 caratteri (o 11 per società)';
+      newErrors.codiceFiscale =
+        "Codice fiscale deve essere di 16 caratteri (o 11 per società)";
     }
 
     if (!comune.trim()) {
-      newErrors.comune = 'Comune obbligatorio';
+      newErrors.comune = "Comune obbligatorio";
     }
 
     if (!hubId) {
-      newErrors.hubId = 'Seleziona un HUB di riferimento';
+      newErrors.hubId = "Seleziona un HUB di riferimento";
     }
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Email non valida';
+      newErrors.email = "Email non valida";
     }
 
     setErrors(newErrors);
@@ -110,7 +129,7 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Correggi gli errori nel form');
+      toast.error("Correggi gli errori nel form");
       return;
     }
 
@@ -122,53 +141,56 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
       const hubLat = selectedHub?.center_lat || selectedHub?.lat || null;
       const hubLng = selectedHub?.center_lng || selectedHub?.lng || null;
 
-      const response = await authenticatedFetch(`${API_BASE_URL}/api/hub/shops/create-with-impresa`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          denominazione: ragioneSociale.trim(),
-          partitaIva: partitaIva.trim(),
-          codiceFiscale: codiceFiscale.trim().toUpperCase(),
-          comune: comune.trim(),
-          categoria: categoria.trim() || null,
-          telefono: telefono.trim() || null,
-          email: email.trim() || null,
-          hubId: parseInt(hubId),
-          lat: hubLat,
-          lng: hubLng,
-        }),
-      });
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/hub/shops/create-with-impresa`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            denominazione: ragioneSociale.trim(),
+            partitaIva: partitaIva.trim(),
+            codiceFiscale: codiceFiscale.trim().toUpperCase(),
+            comune: comune.trim(),
+            categoria: categoria.trim() || null,
+            telefono: telefono.trim() || null,
+            email: email.trim() || null,
+            hubId: parseInt(hubId),
+            lat: hubLat,
+            lng: hubLng,
+          }),
+        }
+      );
 
       const result = await response.json();
 
       if (result.success) {
-        toast.success('Negozio creato con successo!', {
+        toast.success("Negozio creato con successo!", {
           description: `${ragioneSociale} è stato aggiunto all'HUB`,
           icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
         });
-        
+
         // Reset form
-        setRagioneSociale('');
-        setPartitaIva('');
-        setCodiceFiscale('');
-        setComune('');
-        setCategoria('');
-        setTelefono('');
-        setEmail('');
-        setHubId('');
-        
+        setRagioneSociale("");
+        setPartitaIva("");
+        setCodiceFiscale("");
+        setComune("");
+        setCategoria("");
+        setTelefono("");
+        setEmail("");
+        setHubId("");
+
         // Callback successo
         if (onSuccess) {
           onSuccess({ impresaId: result.impresaId, shopId: result.shopId });
         }
       } else {
-        toast.error(result.error || 'Errore nella creazione del negozio');
+        toast.error(result.error || "Errore nella creazione del negozio");
       }
     } catch (error) {
-      console.error('Errore creazione negozio:', error);
-      toast.error('Errore di connessione al server');
+      console.error("Errore creazione negozio:", error);
+      toast.error("Errore di connessione al server");
     } finally {
       setIsLoading(false);
     }
@@ -178,30 +200,30 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
   // N = Negozio (Commercio), S = Servizio
   const categorie = [
     // Negozi (N)
-    'Alimentari',
-    'Abbigliamento',
-    'Calzature',
-    'Casalinghi',
-    'Fiori e Piante',
-    'Frutta e Verdura',
-    'Pesce',
-    'Carne',
-    'Formaggi e Salumi',
-    'Prodotti Biologici',
-    'Artigianato',
-    'Farmacia',
-    'Edicola',
-    'Tabacchi',
+    "Alimentari",
+    "Abbigliamento",
+    "Calzature",
+    "Casalinghi",
+    "Fiori e Piante",
+    "Frutta e Verdura",
+    "Pesce",
+    "Carne",
+    "Formaggi e Salumi",
+    "Prodotti Biologici",
+    "Artigianato",
+    "Farmacia",
+    "Edicola",
+    "Tabacchi",
     // Servizi (S)
-    'Bar',
-    'Ristorante',
-    'Pizzeria',
-    'Caffetteria',
-    'Gelateria',
-    'Parrucchiere',
-    'Estetista',
-    'Servizi',
-    'Altro',
+    "Bar",
+    "Ristorante",
+    "Pizzeria",
+    "Caffetteria",
+    "Gelateria",
+    "Parrucchiere",
+    "Estetista",
+    "Servizi",
+    "Altro",
   ];
 
   return (
@@ -238,8 +260,8 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
                 id="ragioneSociale"
                 placeholder="Es: Alimentari Rossi S.r.l."
                 value={ragioneSociale}
-                onChange={(e) => setRagioneSociale(e.target.value)}
-                className={errors.ragioneSociale ? 'border-red-500' : ''}
+                onChange={e => setRagioneSociale(e.target.value)}
+                className={errors.ragioneSociale ? "border-red-500" : ""}
               />
               {errors.ragioneSociale && (
                 <p className="text-xs text-red-500">{errors.ragioneSociale}</p>
@@ -256,14 +278,20 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
                   id="partitaIva"
                   placeholder="12345678901"
                   value={partitaIva}
-                  onChange={(e) => setPartitaIva(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                  onChange={e =>
+                    setPartitaIva(
+                      e.target.value.replace(/\D/g, "").slice(0, 11)
+                    )
+                  }
                   maxLength={11}
-                  className={errors.partitaIva ? 'border-red-500' : ''}
+                  className={errors.partitaIva ? "border-red-500" : ""}
                 />
                 {errors.partitaIva && (
                   <p className="text-xs text-red-500">{errors.partitaIva}</p>
                 )}
-                <p className="text-xs text-muted-foreground">{partitaIva.length}/11 cifre</p>
+                <p className="text-xs text-muted-foreground">
+                  {partitaIva.length}/11 cifre
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -274,14 +302,18 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
                   id="codiceFiscale"
                   placeholder="RSSMRA80A01H501Z"
                   value={codiceFiscale}
-                  onChange={(e) => setCodiceFiscale(e.target.value.toUpperCase().slice(0, 16))}
+                  onChange={e =>
+                    setCodiceFiscale(e.target.value.toUpperCase().slice(0, 16))
+                  }
                   maxLength={16}
-                  className={errors.codiceFiscale ? 'border-red-500' : ''}
+                  className={errors.codiceFiscale ? "border-red-500" : ""}
                 />
                 {errors.codiceFiscale && (
                   <p className="text-xs text-red-500">{errors.codiceFiscale}</p>
                 )}
-                <p className="text-xs text-muted-foreground">{codiceFiscale.length}/16 caratteri</p>
+                <p className="text-xs text-muted-foreground">
+                  {codiceFiscale.length}/16 caratteri
+                </p>
               </div>
             </div>
 
@@ -295,8 +327,8 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
                 id="comune"
                 placeholder="Es: Grosseto"
                 value={comune}
-                onChange={(e) => setComune(e.target.value)}
-                className={errors.comune ? 'border-red-500' : ''}
+                onChange={e => setComune(e.target.value)}
+                className={errors.comune ? "border-red-500" : ""}
               />
               {errors.comune && (
                 <p className="text-xs text-red-500">{errors.comune}</p>
@@ -322,11 +354,13 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
                 </div>
               ) : (
                 <Select value={hubId} onValueChange={setHubId}>
-                  <SelectTrigger className={errors.hubId ? 'border-red-500' : ''}>
+                  <SelectTrigger
+                    className={errors.hubId ? "border-red-500" : ""}
+                  >
                     <SelectValue placeholder="Seleziona un HUB" />
                   </SelectTrigger>
                   <SelectContent>
-                    {hubs.map((hub) => (
+                    {hubs.map(hub => (
                       <SelectItem key={hub.id} value={hub.id.toString()}>
                         {hub.name} - {hub.city}
                       </SelectItem>
@@ -350,7 +384,7 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
                   <SelectValue placeholder="Seleziona categoria (opzionale)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categorie.map((cat) => (
+                  {categorie.map(cat => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>
@@ -378,7 +412,7 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
                   type="tel"
                   placeholder="+39 333 1234567"
                   value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
+                  onChange={e => setTelefono(e.target.value)}
                 />
               </div>
 
@@ -392,8 +426,8 @@ export default function NuovoNegozioForm({ onSuccess, onCancel }: NuovoNegozioFo
                   type="email"
                   placeholder="info@negozio.it"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={errors.email ? 'border-red-500' : ''}
+                  onChange={e => setEmail(e.target.value)}
+                  className={errors.email ? "border-red-500" : ""}
                 />
                 {errors.email && (
                   <p className="text-xs text-red-500">{errors.email}</p>

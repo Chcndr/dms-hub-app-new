@@ -18,39 +18,44 @@
 ## 🤖 MIO - ORCHESTRATORE
 
 ### Model
+
 `gemini-2.5-flash`
 
 ### Tools
+
 ```javascript
 const MIO_TOOLS = [
   {
     functionDeclarations: [
       {
-        name: 'call_agent',
-        description: 'Delega un task specifico a uno degli agenti specializzati. QUANDO USARE OGNI AGENTE: manus=comandi server/PM2/logs/file system, gptdev=GitHub/repository/commit/PR, abacus=query SQL/analisi database, zapier=email/WhatsApp/Calendar/automazioni.',
+        name: "call_agent",
+        description:
+          "Delega un task specifico a uno degli agenti specializzati. QUANDO USARE OGNI AGENTE: manus=comandi server/PM2/logs/file system, gptdev=GitHub/repository/commit/PR, abacus=query SQL/analisi database, zapier=email/WhatsApp/Calendar/automazioni.",
         parameters: {
-          type: 'OBJECT',
+          type: "OBJECT",
           properties: {
             agent: {
-              type: 'STRING',
-              description: 'Nome dell\'agente: manus (server/PM2/logs), gptdev (GitHub/code), abacus (SQL/data), zapier (email/automations)',
-              enum: ['manus', 'abacus', 'gptdev', 'zapier']
+              type: "STRING",
+              description:
+                "Nome dell'agente: manus (server/PM2/logs), gptdev (GitHub/code), abacus (SQL/data), zapier (email/automations)",
+              enum: ["manus", "abacus", "gptdev", "zapier"],
             },
             task: {
-              type: 'STRING',
-              description: 'Descrizione dettagliata del task da eseguire'
-            }
+              type: "STRING",
+              description: "Descrizione dettagliata del task da eseguire",
+            },
           },
-          required: ['agent', 'task']
-        }
-      }
-    ]
+          required: ["agent", "task"],
+        },
+      },
+    ],
   },
-  SHARED_WORKSPACE_TOOL
+  SHARED_WORKSPACE_TOOL,
 ];
 ```
 
 ### System Prompt
+
 ```
 Sei MIO, l'Orchestratore Esecutivo del sistema DMS Hub.
 
@@ -126,84 +131,90 @@ Rispondi in italiano con tono naturale e collaborativo.
 ## 🔧 MANUS - SYSADMIN
 
 ### Model
+
 `gemini-2.5-flash`
 
 ### Tools
+
 ```javascript
 const MANUS_TOOLS = [
   {
     functionDeclarations: [
       {
-        name: 'execute_ssh_command',
-        description: 'Esegue un comando shell sul server Hetzner (es. ls, pm2 status, cat). Usa con cautela.',
+        name: "execute_ssh_command",
+        description:
+          "Esegue un comando shell sul server Hetzner (es. ls, pm2 status, cat). Usa con cautela.",
         parameters: {
-          type: 'OBJECT',
+          type: "OBJECT",
           properties: {
             command: {
-              type: 'STRING',
-              description: 'Il comando bash da eseguire sul server'
+              type: "STRING",
+              description: "Il comando bash da eseguire sul server",
             },
             timeout: {
-              type: 'NUMBER',
-              description: 'Timeout in secondi (default 30)'
-            }
+              type: "NUMBER",
+              description: "Timeout in secondi (default 30)",
+            },
           },
-          required: ['command']
-        }
+          required: ["command"],
+        },
       },
       {
-        name: 'read_file_server',
-        description: 'Legge il contenuto di un file dal server dato il percorso assoluto.',
+        name: "read_file_server",
+        description:
+          "Legge il contenuto di un file dal server dato il percorso assoluto.",
         parameters: {
-          type: 'OBJECT',
+          type: "OBJECT",
           properties: {
             path: {
-              type: 'STRING',
-              description: 'Il percorso assoluto del file da leggere'
-            }
+              type: "STRING",
+              description: "Il percorso assoluto del file da leggere",
+            },
           },
-          required: ['path']
-        }
+          required: ["path"],
+        },
       },
       {
-        name: 'write_file_server',
-        description: 'Scrive o sovrascrive un file sul server con il contenuto fornito.',
+        name: "write_file_server",
+        description:
+          "Scrive o sovrascrive un file sul server con il contenuto fornito.",
         parameters: {
-          type: 'OBJECT',
+          type: "OBJECT",
           properties: {
             path: {
-              type: 'STRING',
-              description: 'Il percorso assoluto del file'
+              type: "STRING",
+              description: "Il percorso assoluto del file",
             },
             content: {
-              type: 'STRING',
-              description: 'Il contenuto testuale da scrivere nel file'
-            }
+              type: "STRING",
+              description: "Il contenuto testuale da scrivere nel file",
+            },
           },
-          required: ['path', 'content']
-        }
+          required: ["path", "content"],
+        },
       },
       {
-        name: 'list_files',
-        description: 'Elenca i file in una directory specifica.',
+        name: "list_files",
+        description: "Elenca i file in una directory specifica.",
         parameters: {
-          type: 'OBJECT',
+          type: "OBJECT",
           properties: {
             path: {
-              type: 'STRING',
-              description: 'Il percorso della directory'
-            }
+              type: "STRING",
+              description: "Il percorso della directory",
+            },
           },
-          required: ['path']
-        }
-      }
-    ]
+          required: ["path"],
+        },
+      },
+    ],
   },
-  SHARED_WORKSPACE_TOOL
+  SHARED_WORKSPACE_TOOL,
 ];
 ```
 
 ### System Prompt
+
 ```
 Sei Manus, il SysAdmin del sistema DMS Hub.
 
@@ -259,48 +270,55 @@ Rispondi in italiano con tono tecnico e diretto.
 ## 📊 ABACUS - DATA ANALYST
 
 ### Model
+
 `gemini-2.5-flash`
 
 ### Tools
+
 ```javascript
 {
   functionDeclarations: [
     {
-      name: 'execute_sql_query',
-      description: 'Esegue una query SQL sul database Neon PostgreSQL e restituisce i risultati.',
+      name: "execute_sql_query",
+      description:
+        "Esegue una query SQL sul database Neon PostgreSQL e restituisce i risultati.",
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           query: {
-            type: 'STRING',
-            description: 'La query SQL da eseguire (SELECT, COUNT, etc.). NON usare query che modificano dati (INSERT, UPDATE, DELETE) senza conferma.'
+            type: "STRING",
+            description:
+              "La query SQL da eseguire (SELECT, COUNT, etc.). NON usare query che modificano dati (INSERT, UPDATE, DELETE) senza conferma.",
           },
           limit: {
-            type: 'NUMBER',
-            description: 'Numero massimo di righe da restituire (default: 100)'
-          }
+            type: "NUMBER",
+            description: "Numero massimo di righe da restituire (default: 100)",
+          },
         },
-        required: ['query']
-      }
+        required: ["query"],
+      },
     },
     {
-      name: 'get_database_schema',
-      description: 'Restituisce lo schema del database (tabelle, colonne, tipi) per aiutare nella creazione di query.',
+      name: "get_database_schema",
+      description:
+        "Restituisce lo schema del database (tabelle, colonne, tipi) per aiutare nella creazione di query.",
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           table_name: {
-            type: 'STRING',
-            description: 'Nome della tabella di cui ottenere lo schema (opzionale, se omesso restituisce tutte le tabelle)'
-          }
-        }
-      }
-    }
-  ]
+            type: "STRING",
+            description:
+              "Nome della tabella di cui ottenere lo schema (opzionale, se omesso restituisce tutte le tabelle)",
+          },
+        },
+      },
+    },
+  ];
 }
 ```
 
 ### System Prompt
+
 ```
 Sei Abacus, il Data Analyst del sistema DMS Hub.
 
@@ -347,97 +365,103 @@ Rispondi in italiano con tono analitico e preciso.
 ## 💻 GPT-DEV - SVILUPPATORE
 
 ### Model
+
 `gemini-2.5-flash`
 
 ### Tools
+
 ```javascript
 {
   functionDeclarations: [
     {
-      name: 'github_clone',
-      description: 'Clona un repository GitHub in una directory temporanea per lavorarci.',
+      name: "github_clone",
+      description:
+        "Clona un repository GitHub in una directory temporanea per lavorarci.",
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           repo_url: {
-            type: 'STRING',
-            description: 'URL del repository GitHub (es: https://github.com/user/repo.git)'
+            type: "STRING",
+            description:
+              "URL del repository GitHub (es: https://github.com/user/repo.git)",
           },
           branch: {
-            type: 'STRING',
-            description: 'Branch da clonare (default: main)'
-          }
+            type: "STRING",
+            description: "Branch da clonare (default: main)",
+          },
         },
-        required: ['repo_url']
-      }
+        required: ["repo_url"],
+      },
     },
     {
-      name: 'github_read_file',
-      description: 'Legge il contenuto di un file da un repository clonato.',
+      name: "github_read_file",
+      description: "Legge il contenuto di un file da un repository clonato.",
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           file_path: {
-            type: 'STRING',
-            description: 'Path del file da leggere (relativo o assoluto)'
-          }
+            type: "STRING",
+            description: "Path del file da leggere (relativo o assoluto)",
+          },
         },
-        required: ['file_path']
-      }
+        required: ["file_path"],
+      },
     },
     {
-      name: 'github_write_file',
-      description: 'Scrive o modifica un file in un repository e crea un commit.',
+      name: "github_write_file",
+      description:
+        "Scrive o modifica un file in un repository e crea un commit.",
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           file_path: {
-            type: 'STRING',
-            description: 'Path del file da scrivere'
+            type: "STRING",
+            description: "Path del file da scrivere",
           },
           content: {
-            type: 'STRING',
-            description: 'Contenuto del file'
+            type: "STRING",
+            description: "Contenuto del file",
           },
           commit_message: {
-            type: 'STRING',
-            description: 'Messaggio del commit'
-          }
+            type: "STRING",
+            description: "Messaggio del commit",
+          },
         },
-        required: ['file_path', 'content', 'commit_message']
-      }
+        required: ["file_path", "content", "commit_message"],
+      },
     },
     {
-      name: 'github_create_pr',
-      description: 'Crea una Pull Request su GitHub usando GitHub CLI.',
+      name: "github_create_pr",
+      description: "Crea una Pull Request su GitHub usando GitHub CLI.",
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           repo_path: {
-            type: 'STRING',
-            description: 'Path del repository locale'
+            type: "STRING",
+            description: "Path del repository locale",
           },
           title: {
-            type: 'STRING',
-            description: 'Titolo della Pull Request'
+            type: "STRING",
+            description: "Titolo della Pull Request",
           },
           description: {
-            type: 'STRING',
-            description: 'Descrizione della Pull Request'
+            type: "STRING",
+            description: "Descrizione della Pull Request",
           },
           target_branch: {
-            type: 'STRING',
-            description: 'Branch target (default: main)'
-          }
+            type: "STRING",
+            description: "Branch target (default: main)",
+          },
         },
-        required: ['repo_path', 'title', 'description']
-      }
-    }
-  ]
+        required: ["repo_path", "title", "description"],
+      },
+    },
+  ];
 }
 ```
 
 ### System Prompt
+
 ```
 Sei GPT-Dev, lo Sviluppatore AI del sistema DMS Hub.
 
@@ -487,61 +511,67 @@ Rispondi in italiano con tono tecnico e professionale.
 ## ⚡ ZAPIER - AUTOMATOR
 
 ### Model
+
 `gemini-2.5-flash`
 
 ### Tools
+
 ```javascript
 {
   functionDeclarations: [
     {
-      name: 'list_available_actions',
-      description: 'Elenca tutte le azioni Zapier disponibili per l\'utente (Gmail, Slack, Google Sheets, etc.).',
+      name: "list_available_actions",
+      description:
+        "Elenca tutte le azioni Zapier disponibili per l'utente (Gmail, Slack, Google Sheets, etc.).",
       parameters: {
-        type: 'OBJECT',
-        properties: {}
-      }
+        type: "OBJECT",
+        properties: {},
+      },
     },
     {
-      name: 'run_action',
-      description: 'Esegue un\'azione Zapier specifica con i parametri forniti.',
+      name: "run_action",
+      description: "Esegue un'azione Zapier specifica con i parametri forniti.",
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           action_id: {
-            type: 'STRING',
-            description: 'ID dell\'azione da eseguire (ottenuto da list_available_actions)'
+            type: "STRING",
+            description:
+              "ID dell'azione da eseguire (ottenuto da list_available_actions)",
           },
           instructions: {
-            type: 'STRING',
-            description: 'Istruzioni in linguaggio naturale per l\'azione'
+            type: "STRING",
+            description: "Istruzioni in linguaggio naturale per l'azione",
           },
           params: {
-            type: 'OBJECT',
-            description: 'Parametri aggiuntivi specifici dell\'azione'
-          }
+            type: "OBJECT",
+            description: "Parametri aggiuntivi specifici dell'azione",
+          },
         },
-        required: ['action_id']
-      }
+        required: ["action_id"],
+      },
     },
     {
-      name: 'find_action',
-      description: 'Cerca un\'azione Zapier per parola chiave o descrizione.',
+      name: "find_action",
+      description: "Cerca un'azione Zapier per parola chiave o descrizione.",
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           search_query: {
-            type: 'STRING',
-            description: 'Parola chiave o descrizione da cercare (es: "gmail", "slack", "sheets")'
-          }
+            type: "STRING",
+            description:
+              'Parola chiave o descrizione da cercare (es: "gmail", "slack", "sheets")',
+          },
         },
-        required: ['search_query']
-      }
-    }
-  ]
+        required: ["search_query"],
+      },
+    },
+  ];
 }
 ```
 
 ### System Prompt
+
 ```
 Sei Zapier, l'Automator del sistema DMS Hub.
 
@@ -603,88 +633,97 @@ Rispondi in italiano con tono pratico e orientato all'azione.
 ## 🎨 SHARED WORKSPACE TOOL
 
 ### Definizione Tool
+
 ```javascript
 const SHARED_WORKSPACE_TOOL = {
   functionDeclarations: [
     {
-      name: 'shared_workspace_draw',
-      description: 'Disegna forme sulla lavagna collaborativa condivisa. Usa per diagrammi, schemi, visualizzazioni.',
+      name: "shared_workspace_draw",
+      description:
+        "Disegna forme sulla lavagna collaborativa condivisa. Usa per diagrammi, schemi, visualizzazioni.",
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           shapes: {
-            type: 'ARRAY',
-            description: 'Array di forme da disegnare',
+            type: "ARRAY",
+            description: "Array di forme da disegnare",
             items: {
-              type: 'OBJECT',
+              type: "OBJECT",
               properties: {
                 type: {
-                  type: 'STRING',
-                  enum: ['geo', 'arrow', 'note', 'text'],
-                  description: 'Tipo di forma'
+                  type: "STRING",
+                  enum: ["geo", "arrow", "note", "text"],
+                  description: "Tipo di forma",
                 },
-                x: { type: 'NUMBER', description: 'Posizione X' },
-                y: { type: 'NUMBER', description: 'Posizione Y' },
+                x: { type: "NUMBER", description: "Posizione X" },
+                y: { type: "NUMBER", description: "Posizione Y" },
                 props: {
-                  type: 'OBJECT',
-                  description: 'Proprietà della forma (geo, text, color, w, h, start, end)'
-                }
+                  type: "OBJECT",
+                  description:
+                    "Proprietà della forma (geo, text, color, w, h, start, end)",
+                },
               },
-              required: ['type', 'x', 'y', 'props']
-            }
-          }
+              required: ["type", "x", "y", "props"],
+            },
+          },
         },
-        required: ['shapes']
-      }
-    }
-  ]
+        required: ["shapes"],
+      },
+    },
+  ],
 };
 ```
 
 ### Sintassi API JavaScript
+
 ```javascript
 // Rettangolo
 window.sharedWorkspaceAPI.addShape({
-  type: 'geo',
-  x: 100, y: 100,
-  props: { 
-    geo: 'rectangle', 
-    text: 'Testo', 
-    w: 150, 
-    h: 80, 
-    color: 'blue' 
-  }
+  type: "geo",
+  x: 100,
+  y: 100,
+  props: {
+    geo: "rectangle",
+    text: "Testo",
+    w: 150,
+    h: 80,
+    color: "blue",
+  },
 });
 
 // Freccia (NON usare w e h!)
 window.sharedWorkspaceAPI.addShape({
-  type: 'arrow',
-  x: 100, y: 100,
-  props: { 
-    start: { x: 0, y: 0 }, 
-    end: { x: 200, y: 0 }, 
-    color: 'black' 
-  }
+  type: "arrow",
+  x: 100,
+  y: 100,
+  props: {
+    start: { x: 0, y: 0 },
+    end: { x: 200, y: 0 },
+    color: "black",
+  },
 });
 
 // Nota
 window.sharedWorkspaceAPI.addShape({
-  type: 'note',
-  x: 100, y: 100,
-  props: { text: 'Nota importante' }
+  type: "note",
+  x: 100,
+  y: 100,
+  props: { text: "Nota importante" },
 });
 
 // Testo
 window.sharedWorkspaceAPI.addShape({
-  type: 'text',
-  x: 100, y: 100,
-  props: { text: 'Titolo' }
+  type: "text",
+  x: 100,
+  y: 100,
+  props: { text: "Titolo" },
 });
 ```
 
 ### Colori Disponibili
+
 `black`, `grey`, `violet`, `blue`, `light-blue`, `yellow`, `orange`, `green`, `light-green`, `red`, `light-red`
 
 ---
 
-*Documento estratto il 20 Dicembre 2024 - Manus AI*
+_Documento estratto il 20 Dicembre 2024 - Manus AI_

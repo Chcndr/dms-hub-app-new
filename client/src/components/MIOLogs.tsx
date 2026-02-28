@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, FileText, Clock, HardDrive } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { MIHUB_API_BASE_URL } from '@/config/api';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, FileText, Clock, HardDrive } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { MIHUB_API_BASE_URL } from "@/config/api";
 
 type LogFile = {
   filename: string;
@@ -17,8 +22,12 @@ export default function MIOLogs() {
   const [selectedLog, setSelectedLog] = useState<LogFile | null>(null);
 
   // Query REST per recuperare i log agente
-  const { data: logs = [], isLoading, error } = useQuery<LogFile[]>({
-    queryKey: ['mio-agent-logs'],
+  const {
+    data: logs = [],
+    isLoading,
+    error,
+  } = useQuery<LogFile[]>({
+    queryKey: ["mio-agent-logs"],
     queryFn: async () => {
       const res = await fetch(`${MIHUB_API_BASE_URL}/api/mihub/logs`);
       if (!res.ok) throw new Error(`Errore ${res.status}: ${res.statusText}`);
@@ -42,19 +51,21 @@ export default function MIOLogs() {
     return (
       <Card>
         <CardContent className="p-6">
-          <p className="text-destructive">Errore nel caricamento dei log: {error.message}</p>
+          <p className="text-destructive">
+            Errore nel caricamento dei log: {error.message}
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(timestamp).toLocaleString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -106,11 +117,11 @@ export default function MIOLogs() {
                     {log.content.status && (
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
-                          log.content.status === 'success'
-                            ? 'bg-green-500/10 text-green-500'
-                            : log.content.status === 'error'
-                            ? 'bg-red-500/10 text-red-500'
-                            : 'bg-yellow-500/10 text-yellow-500'
+                          log.content.status === "success"
+                            ? "bg-green-500/10 text-green-500"
+                            : log.content.status === "error"
+                              ? "bg-red-500/10 text-red-500"
+                              : "bg-yellow-500/10 text-yellow-500"
                         }`}
                       >
                         {log.content.status}
@@ -137,17 +148,20 @@ export default function MIOLogs() {
               <>
                 {selectedLog.content.agent && (
                   <div>
-                    <span className="font-semibold">Agente:</span> {selectedLog.content.agent}
+                    <span className="font-semibold">Agente:</span>{" "}
+                    {selectedLog.content.agent}
                   </div>
                 )}
                 {selectedLog.content.action && (
                   <div>
-                    <span className="font-semibold">Azione:</span> {selectedLog.content.action}
+                    <span className="font-semibold">Azione:</span>{" "}
+                    {selectedLog.content.action}
                   </div>
                 )}
                 {selectedLog.content.message && (
                   <div>
-                    <span className="font-semibold">Messaggio:</span> {selectedLog.content.message}
+                    <span className="font-semibold">Messaggio:</span>{" "}
+                    {selectedLog.content.message}
                   </div>
                 )}
                 {selectedLog.content.details && (

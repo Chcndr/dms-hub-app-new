@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Cookie, Shield, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { Cookie, Shield, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-const COOKIE_CONSENT_KEY = 'dms_cookie_consent';
-const COOKIE_CONSENT_VERSION = '1.0';
+const COOKIE_CONSENT_KEY = "dms_cookie_consent";
+const COOKIE_CONSENT_VERSION = "1.0";
 
 interface ConsentState {
   accepted: boolean;
@@ -57,9 +57,10 @@ export default function CookieConsentBanner() {
               Questo sito utilizza cookie tecnici
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Utilizziamo esclusivamente cookie tecnici necessari al funzionamento del servizio
-              (sessione di autenticazione). Non utilizziamo cookie di profilazione o marketing.
-              Per maggiori informazioni consulta la{' '}
+              Utilizziamo esclusivamente cookie tecnici necessari al
+              funzionamento del servizio (sessione di autenticazione). Non
+              utilizziamo cookie di profilazione o marketing. Per maggiori
+              informazioni consulta la{" "}
               <a
                 href="/privacy"
                 className="text-teal-400 hover:text-teal-300 underline inline-flex items-center gap-1"

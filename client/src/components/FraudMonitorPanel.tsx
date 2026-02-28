@@ -5,19 +5,38 @@
  * Usa tRPC tccSecurity.* per i dati.
  */
 
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { TCC_API_BASE } from '@/config/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { TCC_API_BASE } from "@/config/api";
 import {
-  Shield, AlertTriangle, CheckCircle2, XCircle,
-  Eye, Clock, TrendingUp, RefreshCw, Search,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { authenticatedFetch } from '@/hooks/useImpersonation';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Shield,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  Clock,
+  TrendingUp,
+  RefreshCw,
+  Search,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { authenticatedFetch } from "@/hooks/useImpersonation";
 
 // ============================================================================
 // FRAUD STATS CARD
@@ -25,7 +44,7 @@ import { authenticatedFetch } from '@/hooks/useImpersonation';
 
 function FraudStatsCards() {
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['tcc-fraud-stats'],
+    queryKey: ["tcc-fraud-stats"],
     queryFn: async () => {
       const res = await fetch(`${TCC_API_BASE}/api/tcc/v2/fraud/stats`);
       if (!res.ok) throw new Error(`Errore ${res.status}: ${res.statusText}`);
@@ -36,7 +55,7 @@ function FraudStatsCards() {
   if (isLoading || !stats) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
+        {[1, 2, 3, 4].map(i => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-4">
               <div className="h-8 bg-muted rounded w-12 mb-2" />
@@ -50,10 +69,14 @@ function FraudStatsCards() {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <Card className={stats.critical > 0 ? 'border-red-500/50 bg-red-950/20' : ''}>
+      <Card
+        className={stats.critical > 0 ? "border-red-500/50 bg-red-950/20" : ""}
+      >
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className={`w-4 h-4 ${stats.critical > 0 ? 'text-red-400' : 'text-muted-foreground'}`} />
+            <AlertTriangle
+              className={`w-4 h-4 ${stats.critical > 0 ? "text-red-400" : "text-muted-foreground"}`}
+            />
             <span className="text-2xl font-bold">{stats.critical}</span>
           </div>
           <p className="text-xs text-muted-foreground">Critici aperti</p>
@@ -99,10 +122,10 @@ function FraudStatsCards() {
 
 function SeverityBadge({ severity }: { severity: string }) {
   const colors: Record<string, string> = {
-    low: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-    medium: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    high: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
-    critical: 'bg-red-500/20 text-red-300 border-red-500/30',
+    low: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    medium: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    high: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+    critical: "bg-red-500/20 text-red-300 border-red-500/30",
   };
 
   return (
@@ -118,13 +141,13 @@ function SeverityBadge({ severity }: { severity: string }) {
 
 function EventTypeLabel({ type }: { type: string }) {
   const labels: Record<string, string> = {
-    gps_spoofing: 'GPS Spoofing',
-    rate_exceeded: 'Rate Limit',
-    duplicate_checkin: 'Checkin Duplicato',
-    invalid_qr: 'QR Non Valido',
-    amount_anomaly: 'Importo Anomalo',
-    impossible_travel: 'Viaggio Impossibile',
-    suspicious_pattern: 'Pattern Sospetto',
+    gps_spoofing: "GPS Spoofing",
+    rate_exceeded: "Rate Limit",
+    duplicate_checkin: "Checkin Duplicato",
+    invalid_qr: "QR Non Valido",
+    amount_anomaly: "Importo Anomalo",
+    impossible_travel: "Viaggio Impossibile",
+    suspicious_pattern: "Pattern Sospetto",
   };
 
   return <span className="text-sm">{labels[type] || type}</span>;
@@ -135,28 +158,37 @@ function EventTypeLabel({ type }: { type: string }) {
 // ============================================================================
 
 function FraudEventsList() {
-  const [severity, setSeverity] = useState<string>('all');
+  const [severity, setSeverity] = useState<string>("all");
   const [showResolved, setShowResolved] = useState(false);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['tcc-fraud-events', severity, showResolved],
+    queryKey: ["tcc-fraud-events", severity, showResolved],
     queryFn: async () => {
-      const params = new URLSearchParams({ limit: '50', offset: '0' });
-      if (severity !== 'all') params.append('severity', severity);
-      if (!showResolved) params.append('resolved', 'false');
-      const res = await fetch(`${TCC_API_BASE}/api/tcc/v2/fraud/events?${params}`);
+      const params = new URLSearchParams({ limit: "50", offset: "0" });
+      if (severity !== "all") params.append("severity", severity);
+      if (!showResolved) params.append("resolved", "false");
+      const res = await fetch(
+        `${TCC_API_BASE}/api/tcc/v2/fraud/events?${params}`
+      );
       if (!res.ok) throw new Error(`Errore ${res.status}: ${res.statusText}`);
       return res.json();
     },
   });
 
   const resolveMutation = useMutation({
-    mutationFn: async (params: { eventId: number; resolution: string; notes: string }) => {
-      const res = await authenticatedFetch(`${TCC_API_BASE}/api/tcc/v2/fraud/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
-      });
+    mutationFn: async (params: {
+      eventId: number;
+      resolution: string;
+      notes: string;
+    }) => {
+      const res = await authenticatedFetch(
+        `${TCC_API_BASE}/api/tcc/v2/fraud/resolve`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(params),
+        }
+      );
       if (!res.ok) throw new Error(`Errore ${res.status}: ${res.statusText}`);
       return res.json();
     },
@@ -172,7 +204,8 @@ function FraudEventsList() {
           <div>
             <CardTitle className="text-base">Eventi Sospetti</CardTitle>
             <CardDescription>
-              {data?.total || 0} eventi {!showResolved ? 'non risolti' : 'totali'}
+              {data?.total || 0} eventi{" "}
+              {!showResolved ? "non risolti" : "totali"}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -189,13 +222,18 @@ function FraudEventsList() {
               </SelectContent>
             </Select>
             <Button
-              variant={showResolved ? 'default' : 'outline'}
+              variant={showResolved ? "default" : "outline"}
               size="sm"
               onClick={() => setShowResolved(!showResolved)}
             >
-              {showResolved ? 'Tutti' : 'Aperti'}
+              {showResolved ? "Tutti" : "Aperti"}
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => refetch()} className="h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => refetch()}
+              className="h-8 w-8"
+            >
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -204,7 +242,7 @@ function FraudEventsList() {
       <CardContent>
         {isLoading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map(i => (
               <div key={i} className="h-16 bg-muted rounded animate-pulse" />
             ))}
           </div>
@@ -232,17 +270,22 @@ function FraudEventsList() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate max-w-[300px]">
-                      {event.details?.reason || event.details?.message || JSON.stringify(event.details).substring(0, 80)}
+                      {event.details?.reason ||
+                        event.details?.message ||
+                        JSON.stringify(event.details).substring(0, 80)}
                     </p>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(event.createdAt).toLocaleString('it-IT')}
+                      {new Date(event.createdAt).toLocaleString("it-IT")}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {event.resolved ? (
-                    <Badge variant="outline" className="bg-teal-500/20 text-teal-300 border-teal-500/30">
+                    <Badge
+                      variant="outline"
+                      className="bg-teal-500/20 text-teal-300 border-teal-500/30"
+                    >
                       Risolto
                     </Badge>
                   ) : (
@@ -254,8 +297,8 @@ function FraudEventsList() {
                         onClick={() =>
                           resolveMutation.mutate({
                             eventId: event.id,
-                            resolution: 'resolved',
-                            notes: 'Risolto da dashboard PA',
+                            resolution: "resolved",
+                            notes: "Risolto da dashboard PA",
                           })
                         }
                         disabled={resolveMutation.isPending}
@@ -270,8 +313,8 @@ function FraudEventsList() {
                         onClick={() =>
                           resolveMutation.mutate({
                             eventId: event.id,
-                            resolution: 'ignored',
-                            notes: 'Ignorato da dashboard PA',
+                            resolution: "ignored",
+                            notes: "Ignorato da dashboard PA",
                           })
                         }
                         disabled={resolveMutation.isPending}
@@ -296,15 +339,15 @@ function FraudEventsList() {
 // ============================================================================
 
 function AuditTrailSearch() {
-  const [searchEmail, setSearchEmail] = useState('');
-  const [searchUserId, setSearchUserId] = useState('');
+  const [searchEmail, setSearchEmail] = useState("");
+  const [searchUserId, setSearchUserId] = useState("");
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['tcc-audit-trail', searchEmail, searchUserId],
+    queryKey: ["tcc-audit-trail", searchEmail, searchUserId],
     queryFn: async () => {
-      const params = new URLSearchParams({ limit: '30' });
-      if (searchEmail) params.append('email', searchEmail);
-      if (searchUserId) params.append('userId', searchUserId);
+      const params = new URLSearchParams({ limit: "30" });
+      if (searchEmail) params.append("email", searchEmail);
+      if (searchUserId) params.append("userId", searchUserId);
       const res = await fetch(`${TCC_API_BASE}/api/tcc/v2/audit?${params}`);
       if (!res.ok) throw new Error(`Errore ${res.status}: ${res.statusText}`);
       return res.json();
@@ -332,17 +375,22 @@ function AuditTrailSearch() {
           <Input
             placeholder="Email utente..."
             value={searchEmail}
-            onChange={(e) => setSearchEmail(e.target.value)}
+            onChange={e => setSearchEmail(e.target.value)}
             className="h-8"
           />
           <Input
             placeholder="User ID..."
             value={searchUserId}
-            onChange={(e) => setSearchUserId(e.target.value)}
+            onChange={e => setSearchUserId(e.target.value)}
             className="h-8 w-24"
             type="number"
           />
-          <Button size="sm" onClick={handleSearch} disabled={isLoading} className="h-8">
+          <Button
+            size="sm"
+            onClick={handleSearch}
+            disabled={isLoading}
+            className="h-8"
+          >
             <Search className="w-4 h-4 mr-1" />
             Cerca
           </Button>
@@ -350,7 +398,7 @@ function AuditTrailSearch() {
 
         {isLoading ? (
           <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map(i => (
               <div key={i} className="h-10 bg-muted rounded animate-pulse" />
             ))}
           </div>
@@ -362,7 +410,7 @@ function AuditTrailSearch() {
                 className="flex items-center gap-3 p-2 rounded border text-sm"
               >
                 <span className="text-xs text-muted-foreground w-32 flex-shrink-0">
-                  {new Date(log.createdAt).toLocaleString('it-IT')}
+                  {new Date(log.createdAt).toLocaleString("it-IT")}
                 </span>
                 <Badge variant="outline" className="text-xs flex-shrink-0">
                   {log.action}

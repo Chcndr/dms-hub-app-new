@@ -74,18 +74,23 @@ export function transformMarketToMkt(market: {
  * Trasforma posteggio MioHub → formato piazzola Legacy (tabella `piazzole`)
  * Stored function target: piazzole_crup(json)
  */
-export function transformStallToPz(stall: {
-  id: number;
-  legacyPzId?: number | null;
-  marketId: number;
-  number: string;
-  lat: string;
-  lng: string;
-  areaMq?: number | null;
-  status?: string | null;
-  category?: string | null;
-}, legacyMktId: number | null): Record<string, any> {
-  const isAlimentare = (stall.category || "").toLowerCase().includes("alimentar");
+export function transformStallToPz(
+  stall: {
+    id: number;
+    legacyPzId?: number | null;
+    marketId: number;
+    number: string;
+    lat: string;
+    lng: string;
+    areaMq?: number | null;
+    status?: string | null;
+    category?: string | null;
+  },
+  legacyMktId: number | null
+): Record<string, any> {
+  const isAlimentare = (stall.category || "")
+    .toLowerCase()
+    .includes("alimentar");
 
   return {
     pz_id: stall.legacyPzId || null,
@@ -103,18 +108,23 @@ export function transformStallToPz(stall: {
  * Trasforma concessione MioHub → formato concessione Legacy (tabella `conc_std`)
  * Stored function target: conc_std_crup(json)
  */
-export function transformConcessionToConc(concession: {
-  id: number;
-  legacyConcId?: number | null;
-  vendorId: number;
-  marketId: number;
-  stallId?: number | null;
-  startDate: Date;
-  endDate?: Date | null;
-  status?: string | null;
-  fee?: number | null;
-  type?: string | null;
-}, legacyAmbId: number | null, legacyMktId: number | null, legacyPzId: number | null): Record<string, any> {
+export function transformConcessionToConc(
+  concession: {
+    id: number;
+    legacyConcId?: number | null;
+    vendorId: number;
+    marketId: number;
+    stallId?: number | null;
+    startDate: Date;
+    endDate?: Date | null;
+    status?: string | null;
+    fee?: number | null;
+    type?: string | null;
+  },
+  legacyAmbId: number | null,
+  legacyMktId: number | null,
+  legacyPzId: number | null
+): Record<string, any> {
   const statusMap: Record<string, string> = {
     active: "ATTIVA",
     expired: "SCADUTA",
@@ -171,15 +181,19 @@ export function transformUserToSuser(user: {
  * Trasforma spuntista MioHub → formato spuntista Legacy (tabella `spuntisti`)
  * Stored function target: spuntisti_crup(json)
  */
-export function transformSpuntistaToSp(spuntista: {
-  id: number;
-  legacySpId?: number | null;
-  vendorId: number;
-  marketId: number;
-  autorizzato: boolean;
-  dataAutorizzazione?: Date | null;
-  dataScadenza?: Date | null;
-}, legacyAmbId: number | null, legacyMktId: number | null): Record<string, any> {
+export function transformSpuntistaToSp(
+  spuntista: {
+    id: number;
+    legacySpId?: number | null;
+    vendorId: number;
+    marketId: number;
+    autorizzato: boolean;
+    dataAutorizzazione?: Date | null;
+    dataScadenza?: Date | null;
+  },
+  legacyAmbId: number | null,
+  legacyMktId: number | null
+): Record<string, any> {
   return {
     sp_id: spuntista.legacySpId || null,
     sp_dal: spuntista.dataAutorizzazione?.toISOString().split("T")[0] || null,
@@ -327,7 +341,9 @@ export function transformAmbToVendor(amb: {
     amb.amb_addr_cap,
     amb.amb_addr_city,
     amb.amb_addr_prov ? `(${amb.amb_addr_prov})` : null,
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return {
     legacyAmbId: amb.amb_id,
@@ -382,11 +398,15 @@ export function transformConcToConcession(conc: {
  */
 export async function resolveVendorId(
   db: any,
-  legacyAmbId: number,
+  legacyAmbId: number
 ): Promise<number | null> {
   const { vendors } = await import("../../drizzle/schema");
   const { eq } = await import("drizzle-orm");
-  const result = await db.select({ id: vendors.id }).from(vendors).where(eq(vendors.legacyAmbId, legacyAmbId)).limit(1);
+  const result = await db
+    .select({ id: vendors.id })
+    .from(vendors)
+    .where(eq(vendors.legacyAmbId, legacyAmbId))
+    .limit(1);
   return result[0]?.id || null;
 }
 
@@ -395,11 +415,15 @@ export async function resolveVendorId(
  */
 export async function resolveStallId(
   db: any,
-  legacyPzId: number,
+  legacyPzId: number
 ): Promise<number | null> {
   const { stalls } = await import("../../drizzle/schema");
   const { eq } = await import("drizzle-orm");
-  const result = await db.select({ id: stalls.id }).from(stalls).where(eq(stalls.legacyPzId, legacyPzId)).limit(1);
+  const result = await db
+    .select({ id: stalls.id })
+    .from(stalls)
+    .where(eq(stalls.legacyPzId, legacyPzId))
+    .limit(1);
   return result[0]?.id || null;
 }
 
@@ -408,11 +432,15 @@ export async function resolveStallId(
  */
 export async function resolveMarketId(
   db: any,
-  legacyMktId: number,
+  legacyMktId: number
 ): Promise<number | null> {
   const { markets } = await import("../../drizzle/schema");
   const { eq } = await import("drizzle-orm");
-  const result = await db.select({ id: markets.id }).from(markets).where(eq(markets.legacyMktId, legacyMktId)).limit(1);
+  const result = await db
+    .select({ id: markets.id })
+    .from(markets)
+    .where(eq(markets.legacyMktId, legacyMktId))
+    .limit(1);
   return result[0]?.id || null;
 }
 
@@ -421,11 +449,15 @@ export async function resolveMarketId(
  */
 export async function resolveSessionId(
   db: any,
-  legacyIstId: number,
+  legacyIstId: number
 ): Promise<number | null> {
   const { marketSessions } = await import("../../drizzle/schema");
   const { eq } = await import("drizzle-orm");
-  const result = await db.select({ id: marketSessions.id }).from(marketSessions).where(eq(marketSessions.legacyIstId, legacyIstId)).limit(1);
+  const result = await db
+    .select({ id: marketSessions.id })
+    .from(marketSessions)
+    .where(eq(marketSessions.legacyIstId, legacyIstId))
+    .limit(1);
   return result[0]?.id || null;
 }
 
@@ -440,7 +472,8 @@ function parseAddress(address: string): {
   citta: string | null;
   provincia: string | null;
 } {
-  if (!address) return { via: null, civico: null, cap: null, citta: null, provincia: null };
+  if (!address)
+    return { via: null, civico: null, cap: null, citta: null, provincia: null };
 
   // Prova a parsare "Via Roma 15, 50100 Firenze (FI)"
   const match = address.match(
@@ -458,5 +491,11 @@ function parseAddress(address: string): {
   }
 
   // Fallback: metti tutto in "via"
-  return { via: address, civico: null, cap: null, citta: null, provincia: null };
+  return {
+    via: address,
+    civico: null,
+    cap: null,
+    citta: null,
+    provincia: null,
+  };
 }

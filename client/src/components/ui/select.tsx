@@ -33,10 +33,10 @@ function SelectTrigger({
   // Handler per supporto tastiera iPad
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Apri dropdown con Enter, Space, ArrowDown o ArrowUp
-    if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+    if (["Enter", " ", "ArrowDown", "ArrowUp"].includes(e.key)) {
       // Lascia che Radix gestisca l'evento, ma assicurati che funzioni
       const target = e.currentTarget as HTMLElement;
-      if (target && !target.getAttribute('data-state')?.includes('open')) {
+      if (target && !target.getAttribute("data-state")?.includes("open")) {
         // Forza il click se il dropdown non si apre
         setTimeout(() => target.click(), 0);
       }
@@ -119,7 +119,7 @@ function SelectItem({
 }: React.ComponentProps<typeof SelectPrimitive.Item>) {
   // Handler per supporto tastiera iPad - seleziona con Enter
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === "Enter" || e.key === " ") {
       // Forza la selezione
       const target = e.currentTarget as HTMLElement;
       target.click();

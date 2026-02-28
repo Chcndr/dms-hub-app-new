@@ -13,17 +13,18 @@ Questo documento analizza lo stato attuale dell'implementazione del Security Tab
 
 ### 🚨 Situazione Critica Identificata
 
-| Aspetto | Stato | Problema |
-|---------|-------|----------|
-| **Tabelle nel Database** | ✅ Esistono | 11 tabelle security create nel DB Neon |
-| **Schema Drizzle** | ❌ Non allineato | Le tabelle NON sono definite nello schema.ts |
-| **Repository GitHub** | ❌ Non aggiornato | Modifiche fatte localmente, non committate |
-| **Servizi Backend** | ⚠️ Parziali | Creati ma non testabili per mancanza schema |
-| **Test** | ❌ Falliscono | Import schema restituisce `undefined` |
+| Aspetto                  | Stato             | Problema                                     |
+| ------------------------ | ----------------- | -------------------------------------------- |
+| **Tabelle nel Database** | ✅ Esistono       | 11 tabelle security create nel DB Neon       |
+| **Schema Drizzle**       | ❌ Non allineato  | Le tabelle NON sono definite nello schema.ts |
+| **Repository GitHub**    | ❌ Non aggiornato | Modifiche fatte localmente, non committate   |
+| **Servizi Backend**      | ⚠️ Parziali       | Creati ma non testabili per mancanza schema  |
+| **Test**                 | ❌ Falliscono     | Import schema restituisce `undefined`        |
 
 ### Causa Radice
 
 Le tabelle security sono state create **direttamente nel database via SQL** invece di seguire il workflow corretto:
+
 1. Definire tabelle in `drizzle/schema.ts`
 2. Eseguire `pnpm db:push` (drizzle-kit generate && drizzle-kit migrate)
 3. Commit e push su GitHub
@@ -37,23 +38,24 @@ Le tabelle security sono state create **direttamente nel database via SQL** inve
 
 Le seguenti 11 tabelle sono state create nel database ma **non sono nello schema Drizzle**:
 
-| # | Tabella | Record | Note |
-|---|---------|--------|------|
-| 1 | `user_roles` | 14 | I 14 ruoli utente predefiniti |
-| 2 | `permissions` | 59 | Tutti i permessi granulari |
-| 3 | `role_permissions` | 155 | Matrice ruoli-permessi |
-| 4 | `user_role_assignments` | 0 | Pronta per assegnazioni |
-| 5 | `user_sessions` | 0 | Gestione sessioni |
-| 6 | `access_logs` | ? | Log accessi |
-| 7 | `security_events` | 0 | Eventi sicurezza |
-| 8 | `login_attempts` | 0 | Tentativi login |
-| 9 | `ip_blacklist` | 0 | IP bloccati |
-| 10 | `compliance_certificates` | 0 | Certificati GDPR |
-| 11 | `delegations` | 0 | Deleghe utenti |
+| #   | Tabella                   | Record | Note                          |
+| --- | ------------------------- | ------ | ----------------------------- |
+| 1   | `user_roles`              | 14     | I 14 ruoli utente predefiniti |
+| 2   | `permissions`             | 59     | Tutti i permessi granulari    |
+| 3   | `role_permissions`        | 155    | Matrice ruoli-permessi        |
+| 4   | `user_role_assignments`   | 0      | Pronta per assegnazioni       |
+| 5   | `user_sessions`           | 0      | Gestione sessioni             |
+| 6   | `access_logs`             | ?      | Log accessi                   |
+| 7   | `security_events`         | 0      | Eventi sicurezza              |
+| 8   | `login_attempts`          | 0      | Tentativi login               |
+| 9   | `ip_blacklist`            | 0      | IP bloccati                   |
+| 10  | `compliance_certificates` | 0      | Certificati GDPR              |
+| 11  | `delegations`             | 0      | Deleghe utenti                |
 
 ### 2.2 Enum PostgreSQL Creati
 
 Sono stati creati 8 enum PostgreSQL nel database:
+
 - `user_role_type` (14 valori)
 - `sector` (7 valori)
 - `severity` (4 valori)
@@ -70,6 +72,7 @@ Sono stati creati 8 enum PostgreSQL nel database:
 ### 3.1 Schema Drizzle Originale
 
 Il file `/drizzle/schema.ts` nel repository GitHub ha:
+
 - **1016 righe** totali
 - **~58 tabelle** definite
 - **NESSUNA** delle tabelle security
@@ -120,22 +123,26 @@ Security-related: []      (dovrebbero essere ~15)
 ### Opzione A: Aggiungere Tabelle allo Schema (CONSIGLIATA)
 
 **Procedura:**
+
 1. Aggiungere le definizioni delle tabelle a `drizzle/schema.ts`
 2. **NON** eseguire `pnpm db:push` (le tabelle esistono già)
 3. Commit e push su GitHub
 4. I servizi backend potranno usare le tabelle
 
 **Pro:**
+
 - Mantiene le tabelle e i dati esistenti
 - Allinea schema e database
 - Approccio pulito
 
 **Contro:**
+
 - Richiede attenzione per non sovrascrivere dati
 
 ### Opzione B: Cancellare e Rifare da Zero
 
 **Procedura:**
+
 1. Eliminare le tabelle dal database
 2. Eliminare gli enum dal database
 3. Aggiungere le definizioni a `drizzle/schema.ts`
@@ -143,22 +150,27 @@ Security-related: []      (dovrebbero essere ~15)
 5. Commit e push su GitHub
 
 **Pro:**
+
 - Workflow pulito e corretto
 - Nessun rischio di disallineamento
 
 **Contro:**
+
 - Perdita dei dati inseriti (14 ruoli, 59 permessi, 155 mappature)
 - Più tempo per reimplementare
 
 ### Opzione C: Usare SQL Raw (SCONSIGLIATA)
 
 **Procedura:**
+
 - Usare query SQL dirette invece di Drizzle ORM
 
 **Pro:**
+
 - Funziona subito
 
 **Contro:**
+
 - Non elegante
 - Non type-safe
 - Difficile da mantenere
@@ -171,6 +183,7 @@ Security-related: []      (dovrebbero essere ~15)
 ### Fase 1: Preparazione (30 min)
 
 1. **Backup dei dati esistenti**
+
    ```sql
    -- Esportare i dati delle tabelle security
    COPY user_roles TO '/tmp/user_roles.csv' CSV HEADER;
@@ -212,25 +225,50 @@ Security-related: []      (dovrebbero essere ~15)
 ```typescript
 // Enum per i 14 ruoli utente
 export const userRoleTypeEnum = pgEnum("user_role_type", [
-  "super_admin", "admin_pa", "suap_operator", "municipal_police",
-  "asl_inspector", "market_manager", "business_owner", "delegate",
-  "accountant", "association", "supplier", "auditor", "citizen", "api_bot"
+  "super_admin",
+  "admin_pa",
+  "suap_operator",
+  "municipal_police",
+  "asl_inspector",
+  "market_manager",
+  "business_owner",
+  "delegate",
+  "accountant",
+  "association",
+  "supplier",
+  "auditor",
+  "citizen",
+  "api_bot",
 ]);
 
 // Enum per settori
 export const sectorEnum = pgEnum("sector", [
-  "all", "suap", "market", "municipal_police", "asl", "tributi", "anagrafe"
+  "all",
+  "suap",
+  "market",
+  "municipal_police",
+  "asl",
+  "tributi",
+  "anagrafe",
 ]);
 
 // Enum per severity
 export const severityEnum = pgEnum("severity", [
-  "low", "medium", "high", "critical"
+  "low",
+  "medium",
+  "high",
+  "critical",
 ]);
 
 // Enum per tipi eventi sicurezza
 export const securityEventTypeEnum = pgEnum("security_event_type", [
-  "login_failed", "login_success", "permission_denied", "suspicious_activity",
-  "brute_force_attempt", "session_hijack", "api_abuse"
+  "login_failed",
+  "login_success",
+  "permission_denied",
+  "suspicious_activity",
+  "brute_force_attempt",
+  "session_hijack",
+  "api_abuse",
 ]);
 ```
 

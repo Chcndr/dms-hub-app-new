@@ -1,12 +1,12 @@
-import React from 'react';
-import { useLocation } from 'wouter';
-import { ArrowLeft } from 'lucide-react';
-import GestioneHubMapWrapper from '@/components/GestioneHubMapWrapper';
+import React from "react";
+import { useLocation } from "wouter";
+import { ArrowLeft } from "lucide-react";
+import GestioneHubMapWrapper from "@/components/GestioneHubMapWrapper";
 
 /**
  * MappaItaliaPage - Pagina Pubblica Mappa Italia
  * Gemello Digitale del Commercio Nazionale
- * 
+ *
  * v3.56.0 - Usa GestioneHubMapWrapper con vista HUB + Mercati integrata
  * Include toggle Mercati/HUB, filtri Regione/Provincia, Vista Italia
  */
@@ -14,7 +14,7 @@ export default function MappaItaliaPage() {
   const [, navigate] = useLocation();
 
   const handleBack = () => {
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -30,7 +30,9 @@ export default function MappaItaliaPage() {
           </button>
           <div className="flex-1">
             <h1 className="text-lg md:text-xl font-bold">Mappa Italia</h1>
-            <p className="text-xs text-white/70">Gemello Digitale del Commercio</p>
+            <p className="text-xs text-white/70">
+              Gemello Digitale del Commercio
+            </p>
           </div>
         </div>
       </header>

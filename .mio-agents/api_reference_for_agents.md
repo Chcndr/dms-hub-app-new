@@ -46,7 +46,9 @@ Tutti gli endpoint TRPC rispondono con:
 ```json
 {
   "result": {
-    "data": { /* payload */ }
+    "data": {
+      /* payload */
+    }
   }
 }
 ```
@@ -56,7 +58,9 @@ Gli endpoint REST rispondono con:
 ```json
 {
   "success": true,
-  "data": { /* payload */ }
+  "data": {
+    /* payload */
+  }
 }
 ```
 

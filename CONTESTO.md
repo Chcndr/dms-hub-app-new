@@ -19,12 +19,12 @@ e monitoraggio. Progettato per scalare a **8.000 mercati**.
 
 Stessa app, stesse rotte — ma ogni utente vede solo cio' che il suo ruolo permette:
 
-| Tipo utente | Cosa vede | Rotte principali |
-|-------------|-----------|------------------|
-| **PA** (Pubblica Amministrazione) | Dashboard completa con 14+ tab, gestione mercati, operatori, concessioni, wallet, SUAP, controlli, sicurezza RBAC, monitoring | `/dashboard-pa`, `/guardian/*`, `/council`, `/pm/*` |
-| **Impresa/Operatore** | Dashboard impresa, anagrafica, concessioni, presenze, wallet operatore, notifiche | `/dashboard-impresa`, `/app/impresa/*`, `/hub-operatore` |
-| **Cittadino** | Mappa mercati, segnalazioni civiche, wallet, percorsi, vetrine | `/mappa`, `/civic`, `/wallet`, `/route`, `/vetrine` |
-| **Pubblico** (non autenticato) | Home page, mappa pubblica, presentazione | `/`, `/mappa`, `/mappa-italia`, `/presentazione` |
+| Tipo utente                       | Cosa vede                                                                                                                     | Rotte principali                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| **PA** (Pubblica Amministrazione) | Dashboard completa con 14+ tab, gestione mercati, operatori, concessioni, wallet, SUAP, controlli, sicurezza RBAC, monitoring | `/dashboard-pa`, `/guardian/*`, `/council`, `/pm/*`      |
+| **Impresa/Operatore**             | Dashboard impresa, anagrafica, concessioni, presenze, wallet operatore, notifiche                                             | `/dashboard-impresa`, `/app/impresa/*`, `/hub-operatore` |
+| **Cittadino**                     | Mappa mercati, segnalazioni civiche, wallet, percorsi, vetrine                                                                | `/mappa`, `/civic`, `/wallet`, `/route`, `/vetrine`      |
+| **Pubblico** (non autenticato)    | Home page, mappa pubblica, presentazione                                                                                      | `/`, `/mappa`, `/mappa-italia`, `/presentazione`         |
 
 La differenziazione avviene tramite il **sistema RBAC** (sezione 5).
 
@@ -32,21 +32,22 @@ La differenziazione avviene tramite il **sistema RBAC** (sezione 5).
 
 ## 2. STACK TECNOLOGICO
 
-| Layer | Tecnologia | Versione |
-|-------|-----------|----------|
-| **Frontend** | React + Vite + Wouter | React 19, Vite 7 |
-| **UI** | shadcn/ui + Tailwind CSS + Lucide React | Tailwind 4 |
-| **State** | React Context + React Query (via tRPC) | |
-| **Backend** | Express + tRPC | Express 4, tRPC 11 |
-| **ORM** | Drizzle ORM | 0.44 |
-| **Database** | PostgreSQL su Neon | Serverless, EU |
-| **Auth** | Firebase + OAuth (SPID/CIE/CNS) | Firebase 12 |
-| **Runtime** | Node.js + pnpm | Node 18+, pnpm 10.4+ |
-| **Deploy FE** | Vercel | Auto-deploy su master |
-| **Deploy BE** | Hetzner VPS + PM2 | 157.90.29.66 |
-| **Moduli** | ESM (`"type": "module"`) | |
+| Layer         | Tecnologia                              | Versione              |
+| ------------- | --------------------------------------- | --------------------- |
+| **Frontend**  | React + Vite + Wouter                   | React 19, Vite 7      |
+| **UI**        | shadcn/ui + Tailwind CSS + Lucide React | Tailwind 4            |
+| **State**     | React Context + React Query (via tRPC)  |                       |
+| **Backend**   | Express + tRPC                          | Express 4, tRPC 11    |
+| **ORM**       | Drizzle ORM                             | 0.44                  |
+| **Database**  | PostgreSQL su Neon                      | Serverless, EU        |
+| **Auth**      | Firebase + OAuth (SPID/CIE/CNS)         | Firebase 12           |
+| **Runtime**   | Node.js + pnpm                          | Node 18+, pnpm 10.4+  |
+| **Deploy FE** | Vercel                                  | Auto-deploy su master |
+| **Deploy BE** | Hetzner VPS + PM2                       | 157.90.29.66          |
+| **Moduli**    | ESM (`"type": "module"`)                |                       |
 
 ### Cosa NON usare (MAI)
+
 - NON React Router, NON Next.js → usa **Wouter**
 - NON Redux, NON Zustand → usa **React Context + React Query**
 - NON Material UI, NON Chakra → usa **shadcn/ui**
@@ -127,6 +128,7 @@ La differenziazione avviene tramite il **sistema RBAC** (sezione 5).
 ## 4. COME FUNZIONA L'APP (Flusso completo)
 
 ### Provider Stack (ordine di nesting in App.tsx)
+
 ```
 ErrorBoundary
   └── ThemeProvider (dark mode default, teal #14b8a6)
@@ -142,6 +144,7 @@ ErrorBoundary
 ```
 
 ### Flusso di una richiesta API
+
 ```
 Browser → tRPC client (httpBatchLink + superjson)
   → GET/POST /api/trpc/router.procedure
@@ -155,6 +158,7 @@ Browser → tRPC client (httpBatchLink + superjson)
 ```
 
 ### Flusso di autenticazione
+
 ```
 1. Login Firebase (Google/Apple/Email) o SPID/CIE (OAuth ARPA Toscana)
 2. Firebase ritorna ID token
@@ -167,10 +171,11 @@ Browser → tRPC client (httpBatchLink + superjson)
 ```
 
 ### Connessione Database
+
 ```typescript
 // server/db.ts - Pattern OBBLIGATORIO
-const db = await getDb();  // Lazy singleton, ritorna null se DB non disponibile
-if (!db) return [];        // SEMPRE gestire il caso null
+const db = await getDb(); // Lazy singleton, ritorna null se DB non disponibile
+if (!db) return []; // SEMPRE gestire il caso null
 
 // Neon serverless: si spegne dopo 5 min inattivita'
 // Cold start: 2-3 secondi. Il sistema ritenta automaticamente.
@@ -198,17 +203,20 @@ permissions (module, action)
 ```
 
 ### Settori e livelli
-| Settore | Ruoli | Livello |
-|---------|-------|---------|
-| sistema | super_admin, admin | 0-10 |
-| pa | admin_pa, operatore, viewer | 20-40 |
-| mercato | manager, operatore | 50-60 |
-| impresa | owner, dipendente | 70-80 |
-| esterno | fornitore, partner | 85-90 |
-| pubblico | cittadino, ospite | 99 |
+
+| Settore  | Ruoli                       | Livello |
+| -------- | --------------------------- | ------- |
+| sistema  | super_admin, admin          | 0-10    |
+| pa       | admin_pa, operatore, viewer | 20-40   |
+| mercato  | manager, operatore          | 50-60   |
+| impresa  | owner, dipendente           | 70-80   |
+| esterno  | fornitore, partner          | 85-90   |
+| pubblico | cittadino, ospite           | 99      |
 
 ### Risoluzione del ruolo (priorita')
+
 Il `PermissionsContext` determina il ruolo cosi':
+
 1. **Impersonazione attiva** (`?impersonate=true`) → admin_pa (ID=2)
 2. **assigned_roles[0]** dall'utente in localStorage → usa quel role_id
 3. **Email super admin** (chcndr@gmail.com) o flag is_super_admin → super_admin (ID=1)
@@ -216,6 +224,7 @@ Il `PermissionsContext` determina il ruolo cosi':
 5. **Default** → cittadino (ID=13, nessun permesso admin)
 
 ### Formato permessi
+
 ```
 tab.view.{tabId}        → visibilita' tab nella DashboardPA
 quick.view.{quickId}    → accesso rapido nella sidebar
@@ -223,6 +232,7 @@ modulo.azione           → operazioni (es. dmsHub.markets.read)
 ```
 
 ### Tab DashboardPA (14+ tab protetti)
+
 ```tsx
 // Ogni tab e' wrappato cosi':
 <ProtectedTab tabId="security">
@@ -233,25 +243,27 @@ modulo.azione           → operazioni (es. dmsHub.markets.read)
 // canViewTab("security") → cerca "tab.view.security" nei permessi caricati
 ```
 
-| Tab ID | Nome | Visibile durante impersonazione? |
-|--------|------|----------------------------------|
-| dashboard | Overview | Si |
-| mercati | Mercati | Si |
-| imprese | Imprese | Si |
-| commercio | Commercio | Si |
-| wallet | Wallet | Si |
-| hub | Hub | Si |
-| controlli | Controlli | Si |
-| comuni | Comuni | **No** |
-| security | Sicurezza (RBAC) | **No** |
-| sistema | Sistema | **No** |
-| ai | MIO Agent | **No** |
-| integrations | Integrazioni | **No** |
-| reports | Report | **No** |
-| workspace | Workspace | **No** |
+| Tab ID       | Nome             | Visibile durante impersonazione? |
+| ------------ | ---------------- | -------------------------------- |
+| dashboard    | Overview         | Si                               |
+| mercati      | Mercati          | Si                               |
+| imprese      | Imprese          | Si                               |
+| commercio    | Commercio        | Si                               |
+| wallet       | Wallet           | Si                               |
+| hub          | Hub              | Si                               |
+| controlli    | Controlli        | Si                               |
+| comuni       | Comuni           | **No**                           |
+| security     | Sicurezza (RBAC) | **No**                           |
+| sistema      | Sistema          | **No**                           |
+| ai           | MIO Agent        | **No**                           |
+| integrations | Integrazioni     | **No**                           |
+| reports      | Report           | **No**                           |
+| workspace    | Workspace        | **No**                           |
 
 ### Scope dei permessi
+
 I permessi possono avere uno scope che limita l'accesso:
+
 - `all` → accesso globale
 - `territory` → solo il territorio assegnato (regione/provincia/comune)
 - `market` → solo il mercato assegnato
@@ -266,11 +278,13 @@ I permessi possono avere uno scope che limita l'accesso:
 Il super admin puo' "vedere l'app come" un PA di un comune specifico.
 
 ### Come si attiva
+
 ```
 URL: /dashboard-pa?impersonate=true&comune_id=96&comune_nome=Grosseto&user_email=mario@grosseto.it
 ```
 
 ### Cosa succede
+
 1. `useImpersonation()` legge i params URL → salva in `sessionStorage['miohub_impersonation']`
 2. `PermissionsContext` rileva l'impersonazione → carica permessi di admin_pa (ID=2)
 3. `DashboardPA` nasconde i tab sensibili (security, sistema, ai, integrations, comuni, reports, workspace)
@@ -279,11 +293,13 @@ URL: /dashboard-pa?impersonate=true&comune_id=96&comune_nome=Grosseto&user_email
 6. Tutte le azioni sono registrate nell'audit log
 
 ### Persistenza
+
 - `sessionStorage` → sopravvive alla navigazione tra pagine
 - Muore quando il tab del browser viene chiuso
 - `endImpersonation()` → pulisce sessionStorage e URL params
 
 ### File coinvolti
+
 - `client/src/hooks/useImpersonation.ts` → hook e funzioni standalone
 - `client/src/components/ImpersonationBanner.tsx` → banner visuale
 - `client/src/contexts/PermissionsContext.tsx` → rilevazione impersonazione
@@ -295,33 +311,34 @@ URL: /dashboard-pa?impersonate=true&comune_id=96&comune_nome=Grosseto&user_email
 
 Tutti gli endpoint passano per tRPC. Registry in `server/routers.ts`.
 
-| Router | Prefisso | Cosa fa |
-|--------|----------|---------|
-| system | system.* | Health check |
-| auth | auth.* | Login/logout, sessione corrente (`auth.me`) |
-| analytics | analytics.* | Overview, markets, shops, transactions, checkins |
-| dmsHub | dmsHub.* | Mercati, posteggi, operatori, concessioni, presenze, ispezioni |
-| wallet | wallet.* | Borsellino operatori, ricariche, PagoPA, avvisi |
-| integrations | integrations.* | API keys, webhooks, connessioni, stats |
-| mihub | mihub.* | Multi-agente: tasks, projects, brain, messages |
-| mioAgent | mioAgent.* | Log agenti AI (326K+ righe) |
-| guardian | guardian.* | Monitoring: endpoints, logs, debug |
-| tper | tper.* | Integrazione trasporto TPER Bologna |
-| logs | logs.* | System logs |
-| carbonCredits | carbonCredits.* | Crediti carbonio TCC |
-| users | users.* | Analytics utenti |
-| sustainability | sustainability.* | Metriche sostenibilita' |
-| businesses | businesses.* | Analytics business |
-| inspections | inspections.* | Lista ispezioni |
-| notifications | notifications.* | Lista notifiche |
-| civicReports | civicReports.* | Segnalazioni civiche |
-| mobility | mobility.* | Dati mobilita' |
+| Router         | Prefisso          | Cosa fa                                                        |
+| -------------- | ----------------- | -------------------------------------------------------------- |
+| system         | system.\*         | Health check                                                   |
+| auth           | auth.\*           | Login/logout, sessione corrente (`auth.me`)                    |
+| analytics      | analytics.\*      | Overview, markets, shops, transactions, checkins               |
+| dmsHub         | dmsHub.\*         | Mercati, posteggi, operatori, concessioni, presenze, ispezioni |
+| wallet         | wallet.\*         | Borsellino operatori, ricariche, PagoPA, avvisi                |
+| integrations   | integrations.\*   | API keys, webhooks, connessioni, stats                         |
+| mihub          | mihub.\*          | Multi-agente: tasks, projects, brain, messages                 |
+| mioAgent       | mioAgent.\*       | Log agenti AI (326K+ righe)                                    |
+| guardian       | guardian.\*       | Monitoring: endpoints, logs, debug                             |
+| tper           | tper.\*           | Integrazione trasporto TPER Bologna                            |
+| logs           | logs.\*           | System logs                                                    |
+| carbonCredits  | carbonCredits.\*  | Crediti carbonio TCC                                           |
+| users          | users.\*          | Analytics utenti                                               |
+| sustainability | sustainability.\* | Metriche sostenibilita'                                        |
+| businesses     | businesses.\*     | Analytics business                                             |
+| inspections    | inspections.\*    | Lista ispezioni                                                |
+| notifications  | notifications.\*  | Lista notifiche                                                |
+| civicReports   | civicReports.\*   | Segnalazioni civiche                                           |
+| mobility       | mobility.\*       | Dati mobilita'                                                 |
 
 ### 3 livelli di accesso
+
 ```typescript
-publicProcedure     // Chiunque (con logging automatico)
-protectedProcedure  // Solo utenti autenticati (ctx.user required)
-adminProcedure      // Solo admin (ctx.user.role === 'admin')
+publicProcedure; // Chiunque (con logging automatico)
+protectedProcedure; // Solo utenti autenticati (ctx.user required)
+adminProcedure; // Solo admin (ctx.user.role === 'admin')
 ```
 
 ---
@@ -329,6 +346,7 @@ adminProcedure      // Solo admin (ctx.user.role === 'admin')
 ## 8. DATABASE
 
 ### Connessione
+
 - **Provider**: Neon PostgreSQL serverless (EU Frankfurt)
 - **Driver**: `postgres` (postgres-js) — **NON** `pg`
 - **ORM**: Drizzle 0.44
@@ -338,6 +356,7 @@ adminProcedure      // Solo admin (ctx.user.role === 'admin')
 ### Tabelle principali per dominio
 
 **Mercati & Operazioni (core business)**
+
 - `markets` (~60 righe) — Mercati con coordinate e orari
 - `market_geometry` (~12) — GeoJSON per mappa
 - `stalls` (~900) — Posteggi (numero, area, stato, categoria)
@@ -349,12 +368,14 @@ adminProcedure      // Solo admin (ctx.user.role === 'admin')
 - `comuni` (~50) — Anagrafica comuni
 
 **Wallet & Pagamenti**
+
 - `operatore_wallet` (~80) — Borsellini (saldo, stato, totali)
 - `wallet_transazioni` (~500) — Transazioni (ricarica, decurtazione, rimborso)
 - `avvisi_pagopa` (~30) — Avvisi di pagamento PagoPA con IUV
 - `tariffe_posteggio` (~20) — Tariffe per tipo posteggio
 
 **Autenticazione & RBAC (11 tabelle)**
+
 - `users` (~50) — Utenti core
 - `user_roles` — Definizioni ruoli (settore, livello)
 - `permissions` — Permessi granulari (modulo.azione)
@@ -363,6 +384,7 @@ adminProcedure      // Solo admin (ctx.user.role === 'admin')
 - `user_sessions`, `access_logs`, `security_events`, `login_attempts`, `ip_blacklist`, `compliance_certificates`, `security_delegations`
 
 **Multi-Agent System**
+
 - `agent_tasks` — Coda task per agenti AI
 - `agent_messages` — Chat tra agenti
 - `agent_brain` — Memoria agenti (key-value con TTL)
@@ -370,10 +392,12 @@ adminProcedure      // Solo admin (ctx.user.role === 'admin')
 - `mio_agent_logs` (~326K righe, 88% del DB!) — Log azioni agenti
 
 **Monitoring**
+
 - `api_metrics` (~5K) — Performance API (endpoint, tempo, status)
 - `system_logs` (~2K) — Log di sistema
 
 ### Convenzioni DB
+
 - Tabelle: `snake_case` → Codice TS: `camelCase` (Drizzle mappa automaticamente)
 - ID: `integer().generatedAlwaysAsIdentity().primaryKey()`
 - Timestamp: `timestamp().defaultNow().notNull()`
@@ -394,27 +418,28 @@ Gestisce login imprese (SPID/CIE), concessioni, canone, more, mappa GIS, wallet 
 **DMS Legacy e' il BRACCIO** — opera sul campo, raccoglie dati grezzi.
 L'app tablet registra presenze fisiche, uscite, deposito spazzatura, scelte alla spunta.
 
-| Ruolo | Sistema | Cosa fa |
-|-------|---------|---------|
-| **CERVELLO** | MioHub | Login SPID/CIE, SUAP, PagoPA, PDND, concessioni, canone, mappa GIS, wallet, controlli, verbali |
-| **BRACCIO** | DMS Legacy | App tablet spunta, presenze fisiche, uscite, spazzatura, scelte spunta |
+| Ruolo        | Sistema    | Cosa fa                                                                                        |
+| ------------ | ---------- | ---------------------------------------------------------------------------------------------- |
+| **CERVELLO** | MioHub     | Login SPID/CIE, SUAP, PagoPA, PDND, concessioni, canone, mappa GIS, wallet, controlli, verbali |
+| **BRACCIO**  | DMS Legacy | App tablet spunta, presenze fisiche, uscite, spazzatura, scelte spunta                         |
 
 ### Architettura DMS Legacy
 
-| Componente | Dettagli |
-|------------|---------|
-| **Piattaforma** | Heroku (app `lapsy-dms`) |
-| **URL Gestionale** | `https://lapsy-dms.herokuapp.com/index.html` |
-| **Credenziali Gestionale** | Vedi variabili d'ambiente `DMS_LEGACY_USER` / `DMS_LEGACY_PASS` |
-| **Backend** | Node.js + Express — thin layer sopra stored functions |
-| **Database** | PostgreSQL su AWS RDS (eu-west-1) — 25 tabelle, 117 stored functions |
-| **Real-time** | Socket.IO namespace `/ac.mappe` per aggiornamento mappe tablet |
-| **Pattern** | Ogni API chiama una stored function: `Express → SELECT funzione(json) → PostgreSQL` |
-| **CRUD** | Funzioni `_crup`: se ID e' NULL → INSERT, se valorizzato → UPDATE |
+| Componente                 | Dettagli                                                                            |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| **Piattaforma**            | Heroku (app `lapsy-dms`)                                                            |
+| **URL Gestionale**         | `https://lapsy-dms.herokuapp.com/index.html`                                        |
+| **Credenziali Gestionale** | Vedi variabili d'ambiente `DMS_LEGACY_USER` / `DMS_LEGACY_PASS`                     |
+| **Backend**                | Node.js + Express — thin layer sopra stored functions                               |
+| **Database**               | PostgreSQL su AWS RDS (eu-west-1) — 25 tabelle, 117 stored functions                |
+| **Real-time**              | Socket.IO namespace `/ac.mappe` per aggiornamento mappe tablet                      |
+| **Pattern**                | Ogni API chiama una stored function: `Express → SELECT funzione(json) → PostgreSQL` |
+| **CRUD**                   | Funzioni `_crup`: se ID e' NULL → INSERT, se valorizzato → UPDATE                   |
 
 ### Flusso Dati Bidirezionale
 
 **MioHub → Legacy (76% dei dati — NOI DIAMO A LORO):**
+
 - Anagrafica imprese (`amb_ragsoc`, `amb_piva`, `amb_cfisc`...)
 - Saldo wallet (`amb_saldo_bors`)
 - Punteggio graduatoria (`amb_punti_grad_dfl`)
@@ -423,6 +448,7 @@ L'app tablet registra presenze fisiche, uscite, deposito spazzatura, scelte alla
 - Regolarita' impresa (calcolata da 23 controlli SCIA)
 
 **Legacy → MioHub (11% — RICEVIAMO DA LORO):**
+
 - Presenza ingresso/uscita (time)
 - Deposito spazzatura (boolean)
 - Presenza rifiutata (boolean)
@@ -432,54 +458,55 @@ L'app tablet registra presenze fisiche, uscite, deposito spazzatura, scelte alla
 
 ### Flusso Giornata Mercato
 
-| Fase | Cosa succede | Chi lo fa |
-|------|-------------|-----------|
-| **0** | Sync preventivo: MioHub manda dati aggiornati | MioHub → Legacy |
-| **1** | Apertura mercato dalla Dashboard PA | MioHub → Legacy |
+| Fase  | Cosa succede                                             | Chi lo fa       |
+| ----- | -------------------------------------------------------- | --------------- |
+| **0** | Sync preventivo: MioHub manda dati aggiornati            | MioHub → Legacy |
+| **1** | Apertura mercato dalla Dashboard PA                      | MioHub → Legacy |
 | **2** | Arrivo concessionari: operatore tablet registra ingresso | Legacy → MioHub |
-| **3** | Preparazione spunta: conta assenze, posti liberi | MioHub → Legacy |
-| **4** | Spunta: spuntisti scelgono posti dall'app tablet | Legacy → MioHub |
-| **5** | Durante mercato: operatore registra spazzatura | Legacy → MioHub |
-| **6** | Chiusura: uscite + Dashboard chiude giornata | Legacy → MioHub |
-| **7** | Post-mercato: CRON controlla orari, genera verbali | Solo MioHub |
+| **3** | Preparazione spunta: conta assenze, posti liberi         | MioHub → Legacy |
+| **4** | Spunta: spuntisti scelgono posti dall'app tablet         | Legacy → MioHub |
+| **5** | Durante mercato: operatore registra spazzatura           | Legacy → MioHub |
+| **6** | Chiusura: uscite + Dashboard chiude giornata             | Legacy → MioHub |
+| **7** | Post-mercato: CRON controlla orari, genera verbali       | Solo MioHub     |
 
 ### Campi di Interoperabilita' nel DB Neon
 
-| Tabella | Colonna | Scopo |
-|---------|---------|-------|
-| `imprese` | `legacy_amb_id` | Map a ambulante Legacy |
-| `imprese` | `fido` | Fido impresa (credito) |
-| `markets` | `legacy_mkt_id` | Map a mercato Legacy |
-| `stalls` | `legacy_pz_id` | Map a piazzola Legacy |
-| `concessions` | `legacy_conc_id` | Map a concessione Legacy |
-| `vendor_presences` | `legacy_pre_id` | Map a presenza Legacy |
-| `vendor_presences` | `rifiutata` | Flag rifiuto |
+| Tabella            | Colonna          | Scopo                    |
+| ------------------ | ---------------- | ------------------------ |
+| `imprese`          | `legacy_amb_id`  | Map a ambulante Legacy   |
+| `imprese`          | `fido`           | Fido impresa (credito)   |
+| `markets`          | `legacy_mkt_id`  | Map a mercato Legacy     |
+| `stalls`           | `legacy_pz_id`   | Map a piazzola Legacy    |
+| `concessions`      | `legacy_conc_id` | Map a concessione Legacy |
+| `vendor_presences` | `legacy_pre_id`  | Map a presenza Legacy    |
+| `vendor_presences` | `rifiutata`      | Flag rifiuto             |
 
 ### Endpoint Legacy Implementati
 
 Prefisso: `/api/integrations/dms-legacy/`
 
-| Metodo | Endpoint | Stato |
-|--------|----------|-------|
-| GET | `/markets` | Attivo |
-| GET | `/vendors` | Attivo |
-| GET | `/concessions` | Attivo |
-| GET | `/presences/:marketId` | Attivo |
-| GET | `/market-sessions/:marketId` | Attivo |
-| GET | `/stalls/:marketId` | Attivo |
-| GET | `/spuntisti` | Attivo |
-| GET | `/documents` | Attivo |
-| GET | `/stats` | Attivo |
-| GET | `/health` | Attivo |
-| GET | `/status` | Attivo |
-| POST | `/sync` | Attivo |
-| POST | `/cron-sync` | Attivo (ogni 60 min) |
-| POST | `/sync-out/*` | Da implementare |
-| POST | `/sync-in/*` | Da implementare |
+| Metodo | Endpoint                     | Stato                |
+| ------ | ---------------------------- | -------------------- |
+| GET    | `/markets`                   | Attivo               |
+| GET    | `/vendors`                   | Attivo               |
+| GET    | `/concessions`               | Attivo               |
+| GET    | `/presences/:marketId`       | Attivo               |
+| GET    | `/market-sessions/:marketId` | Attivo               |
+| GET    | `/stalls/:marketId`          | Attivo               |
+| GET    | `/spuntisti`                 | Attivo               |
+| GET    | `/documents`                 | Attivo               |
+| GET    | `/stats`                     | Attivo               |
+| GET    | `/health`                    | Attivo               |
+| GET    | `/status`                    | Attivo               |
+| POST   | `/sync`                      | Attivo               |
+| POST   | `/cron-sync`                 | Attivo (ogni 60 min) |
+| POST   | `/sync-out/*`                | Da implementare      |
+| POST   | `/sync-in/*`                 | Da implementare      |
 
 ### Presenze (delegata al Legacy)
 
 La pagina `/app/impresa/presenze` carica il DMS Legacy in un iframe:
+
 - URL primario: `https://dms.associates/wp-admin/images/DMSAPP/#/login`
 - Fallback: `https://lapsy-dms.herokuapp.com/index.html`
 
@@ -492,11 +519,13 @@ La pagina `/app/impresa/presenze` carica il DMS Legacy in un iframe:
 Il BusHubEditor e' il workflow per digitalizzare un mercato in 2 step:
 
 **Step 1 — PngTransparentTool**: Rimuove lo sfondo dalla planimetria del mercato
+
 - Upload immagine/PDF della planimetria
 - Filtro colore HSV per rimuovere sfondo
 - Esporta PNG con trasparenza
 
 **Step 2 — SlotEditorV3**: Posiziona posteggi sulla mappa georeferenziata
+
 - OpenStreetMap + Leaflet
 - Drag-and-drop dei posteggi con rotazione e dimensioni
 - Marker per servizi (ingressi, bagni, cassonetti)
@@ -512,12 +541,14 @@ Il BusHubEditor e' il workflow per digitalizzare un mercato in 2 step:
 Il sistema integra i dati del trasporto pubblico per mostrare fermate vicino ai mercati.
 
 **Fonti dati:**
+
 - TPER Bologna (fermate bus) — OpenData Bologna
 - Trenitalia (stazioni treni)
 - Tiemme (bus regionali)
 - **23.930 fermate GTFS** nel database
 
 **API esterna**: `https://api.mio-hub.me/api/gtfs/*`
+
 - `GET /stops?type=bus&limit=5000` — Lista fermate
 - `GET /stops/nearby?lat=X&lon=Y&radius=2` — Fermate vicine
 - `GET /stats` — Statistiche GTFS
@@ -525,6 +556,7 @@ Il sistema integra i dati del trasporto pubblico per mostrare fermate vicino ai 
 **TPER real-time**: SOAP API `hellobuswsweb.tper.it` per arrivi in tempo reale
 
 **Componenti frontend:**
+
 - `TransportContext.tsx` — Context provider con stato GTFS
 - `TransportStopsLayer.tsx` — Layer Leaflet con fermate sulla mappa
 - `TransportLayerToggle.tsx` — Toggle mostra/nascondi fermate
@@ -611,51 +643,51 @@ pnpm docs:update      # Sincronizza docs API + blueprint
 
 ## 15. REGOLE INVIOLABILI (riassunto)
 
-| Area | Regola |
-|------|--------|
-| DB | Source of truth: `drizzle/schema.ts`. MAI raw SQL. MAI DROP TABLE |
-| DB | Driver: `postgres` (postgres-js). MAI `pg` |
-| API | Tutto passa per tRPC. MAI endpoint Express separati |
-| API | Validazione input con Zod. Logging automatico |
-| Frontend | Router: Wouter. State: React Context. UI: shadcn/ui. CSS: Tailwind |
-| Auth | Firebase primario. Cookie JWT. RBAC con 4 tabelle |
-| Codice | TypeScript strict. ESM modules. Path aliases: `@/` e `@shared/` |
-| Deploy | FE: Vercel auto-deploy. BE: Hetzner PM2 |
-| Sicurezza | MAI salvare segreti nel codice. MAI push su master senza review |
-| RBAC | MAI modificare impersonazione senza test su tutti i ruoli |
+| Area      | Regola                                                             |
+| --------- | ------------------------------------------------------------------ |
+| DB        | Source of truth: `drizzle/schema.ts`. MAI raw SQL. MAI DROP TABLE  |
+| DB        | Driver: `postgres` (postgres-js). MAI `pg`                         |
+| API       | Tutto passa per tRPC. MAI endpoint Express separati                |
+| API       | Validazione input con Zod. Logging automatico                      |
+| Frontend  | Router: Wouter. State: React Context. UI: shadcn/ui. CSS: Tailwind |
+| Auth      | Firebase primario. Cookie JWT. RBAC con 4 tabelle                  |
+| Codice    | TypeScript strict. ESM modules. Path aliases: `@/` e `@shared/`    |
+| Deploy    | FE: Vercel auto-deploy. BE: Hetzner PM2                            |
+| Sicurezza | MAI salvare segreti nel codice. MAI push su master senza review    |
+| RBAC      | MAI modificare impersonazione senza test su tutti i ruoli          |
 
 ---
 
 ## 16. ERRORI COMUNI E SOLUZIONI
 
-| Errore | Causa | Soluzione |
-|--------|-------|----------|
+| Errore                                            | Causa                               | Soluzione                                             |
+| ------------------------------------------------- | ----------------------------------- | ----------------------------------------------------- |
 | "Connection terminated due to connection timeout" | Neon cold start (5 min inattivita') | Ritenta dopo 3 sec. Il lazy getDb() gestisce il retry |
-| Tabella non trovata | Non in schema.ts o non migrata | Aggiungi in `drizzle/schema.ts`, poi `pnpm db:push` |
-| CORS error | URL diretto invece di tRPC | Usa `/api/trpc/` — mai URL diretti |
-| `any` type error | Tipo non importato | Importa da `drizzle/schema.ts` |
-| Import non trovato | Path sbagliato | `@/` per frontend, import relativo per backend |
-| Firebase auth fallisce | Env vars mancanti | Verifica `VITE_FIREBASE_*` in `.env` |
-| PM2 restart loop | Errore fatale backend | `pm2 logs --lines 100` su Hetzner |
-| Tab non visibile | Permesso mancante | Verifica `tab.view.{tabId}` nel ruolo |
-| Impersonazione non funziona | URL params incompleti | Servono tutti: impersonate, comune_id, comune_nome |
+| Tabella non trovata                               | Non in schema.ts o non migrata      | Aggiungi in `drizzle/schema.ts`, poi `pnpm db:push`   |
+| CORS error                                        | URL diretto invece di tRPC          | Usa `/api/trpc/` — mai URL diretti                    |
+| `any` type error                                  | Tipo non importato                  | Importa da `drizzle/schema.ts`                        |
+| Import non trovato                                | Path sbagliato                      | `@/` per frontend, import relativo per backend        |
+| Firebase auth fallisce                            | Env vars mancanti                   | Verifica `VITE_FIREBASE_*` in `.env`                  |
+| PM2 restart loop                                  | Errore fatale backend               | `pm2 logs --lines 100` su Hetzner                     |
+| Tab non visibile                                  | Permesso mancante                   | Verifica `tab.view.{tabId}` nel ruolo                 |
+| Impersonazione non funziona                       | URL params incompleti               | Servono tutti: impersonate, comune_id, comune_nome    |
 
 ---
 
 ## 17. FILE DI DOCUMENTAZIONE
 
-| File | Cosa contiene |
-|------|--------------|
-| `CLAUDE.md` | Guida operativa rapida per agenti (LEGGI PRIMA) |
-| `CONTESTO.md` | QUESTO FILE — contesto completo per chi non sa niente |
-| `docs/ARCHITECTURE.md` | Architettura dettagliata (layer, flussi, RBAC, deploy) |
-| `docs/DATABASE.md` | Schema DB, convenzioni, regole, tabella per tabella |
-| `docs/API.md` | Registro endpoint tRPC con auth level e convenzioni |
-| `docs/OPERATIONS.md` | Deploy, monitoring, troubleshooting, PM2, backup |
-| `docs/SCALING.md` | Piano 4 fasi per scalare a 8.000 mercati |
-| `.env.example` | Template variabili ambiente documentato |
-| `scripts/health-check.sh` | Health check automatico di tutti i servizi |
-| `scripts/db-maintenance.sh` | Pulizia DB, retention log, diagnostica |
+| File                        | Cosa contiene                                          |
+| --------------------------- | ------------------------------------------------------ |
+| `CLAUDE.md`                 | Guida operativa rapida per agenti (LEGGI PRIMA)        |
+| `CONTESTO.md`               | QUESTO FILE — contesto completo per chi non sa niente  |
+| `docs/ARCHITECTURE.md`      | Architettura dettagliata (layer, flussi, RBAC, deploy) |
+| `docs/DATABASE.md`          | Schema DB, convenzioni, regole, tabella per tabella    |
+| `docs/API.md`               | Registro endpoint tRPC con auth level e convenzioni    |
+| `docs/OPERATIONS.md`        | Deploy, monitoring, troubleshooting, PM2, backup       |
+| `docs/SCALING.md`           | Piano 4 fasi per scalare a 8.000 mercati               |
+| `.env.example`              | Template variabili ambiente documentato                |
+| `scripts/health-check.sh`   | Health check automatico di tutti i servizi             |
+| `scripts/db-maintenance.sh` | Pulizia DB, retention log, diagnostica                 |
 
 ---
 
@@ -663,21 +695,22 @@ pnpm docs:update      # Sincronizza docs API + blueprint
 
 ### Accessi Principali
 
-| Risorsa | URL | Note |
-|---------|-----|------|
-| **Frontend** | dms-hub-app-new.vercel.app | Vercel auto-deploy |
-| **Backend Hetzner** | mihub.157-90-29-66.nip.io | PM2 + Express |
-| **Orchestratore** | orchestratore.mio-hub.me | REST legacy backend |
-| **DMS Legacy** | lapsy-dms.herokuapp.com | Credenziali: vedi env `DMS_LEGACY_USER` / `DMS_LEGACY_PASS` |
-| **Neon DB** | console.neon.tech | PostgreSQL serverless |
-| **Firebase** | console.firebase.google.com | Progetto: dmshub-auth-2975e |
-| **Hetzner VPS** | SSH 157.90.29.66 | Solo emergenze, con chiave |
-| **Vercel** | vercel.com/dashboard | Deploy frontend |
-| **GitHub** | github.com/Chcndr | Repository |
+| Risorsa             | URL                         | Note                                                        |
+| ------------------- | --------------------------- | ----------------------------------------------------------- |
+| **Frontend**        | dms-hub-app-new.vercel.app  | Vercel auto-deploy                                          |
+| **Backend Hetzner** | mihub.157-90-29-66.nip.io   | PM2 + Express                                               |
+| **Orchestratore**   | orchestratore.mio-hub.me    | REST legacy backend                                         |
+| **DMS Legacy**      | lapsy-dms.herokuapp.com     | Credenziali: vedi env `DMS_LEGACY_USER` / `DMS_LEGACY_PASS` |
+| **Neon DB**         | console.neon.tech           | PostgreSQL serverless                                       |
+| **Firebase**        | console.firebase.google.com | Progetto: dmshub-auth-2975e                                 |
+| **Hetzner VPS**     | SSH 157.90.29.66            | Solo emergenze, con chiave                                  |
+| **Vercel**          | vercel.com/dashboard        | Deploy frontend                                             |
+| **GitHub**          | github.com/Chcndr           | Repository                                                  |
 
 ### Variabili d'Ambiente Backend Hetzner (31)
 
 **DATABASE (9)**
+
 ```
 DATABASE_URL              # Connection string principale Neon
 NEON_POSTGRES_URL         # URL Neon alternativa
@@ -686,12 +719,14 @@ DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_SSL, DB_USER
 ```
 
 **AUTH/SECURITY (2)**
+
 ```
 JWT_SECRET                # Secret per token JWT
 MIOHUB_SECRETS_KEY        # Chiave crittografia secrets
 ```
 
 **API KEYS (5)**
+
 ```
 GEMINI_API_KEY            # Google Gemini AI
 MANUS_API_KEY             # Manus AI
@@ -701,6 +736,7 @@ ZAPIER_NLA_API_KEY        # Zapier NLA (deprecato)
 ```
 
 **GITHUB (3)**
+
 ```
 GITHUB_PAT_DMS            # PAT per repo DMS
 GITHUB_PERSONAL_ACCESS_TOKEN
@@ -708,6 +744,7 @@ GITHUB_TOKEN              # Token per GPT Dev
 ```
 
 **SERVER (6)**
+
 ```
 BASE_URL                  # URL base backend
 CORS_ORIGINS              # Origini CORS
@@ -718,6 +755,7 @@ PORT                      # Porta server
 ```
 
 **FEATURES (5)**
+
 ```
 ENABLE_AGENT_LOGS         # Abilita log agenti AI
 ENABLE_GUARDIAN_LOOP       # Abilita loop Guardian
@@ -727,11 +765,13 @@ ORCHESTRATOR_ENABLED      # Abilita orchestratore
 ```
 
 **BLUEPRINT (1)**
+
 ```
 BLUEPRINT_REPO            # Repo GitHub per blueprint sync
 ```
 
 ### Variabili d'Ambiente Frontend (Vercel, 7)
+
 ```
 VITE_FIREBASE_API_KEY
 VITE_FIREBASE_AUTH_DOMAIN
@@ -745,9 +785,11 @@ FIREBASE_SERVICE_ACCOUNT_KEY   # Backend Vercel serverless (JSON)
 ### Autoheal Script (Cron ogni 15 min)
 
 Il server Hetzner ha un cron job che controlla e riavvia il backend se down:
+
 ```
 */15 * * * * /root/mihub-backend-rest/scripts/autoheal.sh
 ```
+
 Log: `/var/log/mio-autoheal.log`
 
 ---

@@ -10,6 +10,7 @@
 ## 1. OBIETTIVO
 
 Visualizzare le segnalazioni civiche come **marker colorati** sulla mappa nel tab "Segnalazioni & IoT" della Dashboard PA, con:
+
 - Colori diversi per tipo di segnalazione
 - Dimensione maggiore per segnalazioni urgenti
 - Popup informativo al click
@@ -67,46 +68,49 @@ Visualizzare le segnalazioni civiche come **marker colorati** sulla mappa nel ta
 
 ### 3.1 Tabella Completa (22 colonne)
 
-| # | Colonna | Tipo | Nullable | Default | Descrizione |
-|---|---------|------|----------|---------|-------------|
-| 1 | `id` | INTEGER | NO | auto | PK |
-| 2 | `user_id` | INTEGER | YES | - | FK → users.id |
-| 3 | `type` | VARCHAR(100) | NO | - | Categoria segnalazione |
-| 4 | `description` | TEXT | NO | - | Descrizione problema |
-| 5 | `lat` | VARCHAR(20) | YES | - | Latitudine GPS |
-| 6 | `lng` | VARCHAR(20) | YES | - | Longitudine GPS |
-| 7 | `photo_url` | TEXT | YES | - | URL foto allegata |
-| 8 | `status` | VARCHAR(50) | NO | 'pending' | Stato lavorazione |
-| 9 | `created_at` | TIMESTAMP | NO | now() | Data creazione |
-| 10 | `comune_id` | INTEGER | YES | - | **FK per filtro impersonificazione** |
-| 11 | `impresa_id` | INTEGER | YES | - | FK → imprese (se collegata) |
-| 12 | `address` | TEXT | YES | - | Indirizzo testuale |
-| 13 | `priority` | VARCHAR(20) | YES | 'NORMAL' | LOW/NORMAL/HIGH/URGENT |
-| 14 | `assigned_to` | INTEGER | YES | - | PM assegnato |
-| 15 | `assigned_at` | TIMESTAMP | YES | - | Data assegnazione |
-| 16 | `resolved_at` | TIMESTAMP | YES | - | Data risoluzione |
-| 17 | `resolved_by` | INTEGER | YES | - | Chi ha risolto |
-| 18 | `resolution_notes` | TEXT | YES | - | Note risoluzione |
-| 19 | `tcc_reward` | INTEGER | YES | 20 | TCC premio cittadino |
-| 20 | `tcc_rewarded` | BOOLEAN | YES | false | Premio erogato? |
-| 21 | `linked_sanction_id` | INTEGER | YES | - | Verbale collegato |
-| 22 | `updated_at` | TIMESTAMP | YES | - | Ultimo aggiornamento |
+| #   | Colonna              | Tipo         | Nullable | Default   | Descrizione                          |
+| --- | -------------------- | ------------ | -------- | --------- | ------------------------------------ |
+| 1   | `id`                 | INTEGER      | NO       | auto      | PK                                   |
+| 2   | `user_id`            | INTEGER      | YES      | -         | FK → users.id                        |
+| 3   | `type`               | VARCHAR(100) | NO       | -         | Categoria segnalazione               |
+| 4   | `description`        | TEXT         | NO       | -         | Descrizione problema                 |
+| 5   | `lat`                | VARCHAR(20)  | YES      | -         | Latitudine GPS                       |
+| 6   | `lng`                | VARCHAR(20)  | YES      | -         | Longitudine GPS                      |
+| 7   | `photo_url`          | TEXT         | YES      | -         | URL foto allegata                    |
+| 8   | `status`             | VARCHAR(50)  | NO       | 'pending' | Stato lavorazione                    |
+| 9   | `created_at`         | TIMESTAMP    | NO       | now()     | Data creazione                       |
+| 10  | `comune_id`          | INTEGER      | YES      | -         | **FK per filtro impersonificazione** |
+| 11  | `impresa_id`         | INTEGER      | YES      | -         | FK → imprese (se collegata)          |
+| 12  | `address`            | TEXT         | YES      | -         | Indirizzo testuale                   |
+| 13  | `priority`           | VARCHAR(20)  | YES      | 'NORMAL'  | LOW/NORMAL/HIGH/URGENT               |
+| 14  | `assigned_to`        | INTEGER      | YES      | -         | PM assegnato                         |
+| 15  | `assigned_at`        | TIMESTAMP    | YES      | -         | Data assegnazione                    |
+| 16  | `resolved_at`        | TIMESTAMP    | YES      | -         | Data risoluzione                     |
+| 17  | `resolved_by`        | INTEGER      | YES      | -         | Chi ha risolto                       |
+| 18  | `resolution_notes`   | TEXT         | YES      | -         | Note risoluzione                     |
+| 19  | `tcc_reward`         | INTEGER      | YES      | 20        | TCC premio cittadino                 |
+| 20  | `tcc_rewarded`       | BOOLEAN      | YES      | false     | Premio erogato?                      |
+| 21  | `linked_sanction_id` | INTEGER      | YES      | -         | Verbale collegato                    |
+| 22  | `updated_at`         | TIMESTAMP    | YES      | -         | Ultimo aggiornamento                 |
 
 ### 3.2 Valori Enum
 
 **Status:**
+
 - `pending` - In attesa
 - `in_progress` - In lavorazione
 - `resolved` - Risolta
 - `rejected` - Rifiutata
 
 **Priority:**
+
 - `LOW` - Bassa
 - `NORMAL` - Normale
 - `HIGH` - Alta
 - `URGENT` - Urgente
 
 **Type (categorie):**
+
 - `Buche` - Buche stradali
 - `Illuminazione` - Problemi illuminazione
 - `Rifiuti` - Rifiuti abbandonati
@@ -139,11 +143,15 @@ civicReports: router({
 export async function getCivicReports() {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(schema.civicReports).orderBy(desc(schema.civicReports.createdAt));
+  return await db
+    .select()
+    .from(schema.civicReports)
+    .orderBy(desc(schema.civicReports.createdAt));
 }
 ```
 
 **Chiamata Frontend:**
+
 ```typescript
 const civicReportsQuery = trpc.civicReports.list.useQuery();
 ```
@@ -156,31 +164,31 @@ Lo schema Drizzle aveva solo 9 colonne, quindi l'endpoint restituiva dati incomp
 
 ## 5. SCHEMA COLORI MARKER
 
-| Tipo | Colore | Hex | Esempio |
-|------|--------|-----|---------|
-| Buche | 🟠 Arancione | `#f97316` | Buche stradali |
-| Illuminazione | 🟡 Giallo | `#eab308` | Lampioni spenti |
-| Rifiuti | 🟢 Verde | `#22c55e` | Rifiuti abbandonati |
-| Microcriminalità | 🔴 Rosso | `#ef4444` | Sicurezza |
-| Abusivismo | 🟣 Viola | `#a855f7` | Commercio abusivo |
-| Degrado | 🟠 Arancione | `#f97316` | Degrado urbano |
-| Altro | ⚪ Grigio | `#6b7280` | Default |
+| Tipo             | Colore       | Hex       | Esempio             |
+| ---------------- | ------------ | --------- | ------------------- |
+| Buche            | 🟠 Arancione | `#f97316` | Buche stradali      |
+| Illuminazione    | 🟡 Giallo    | `#eab308` | Lampioni spenti     |
+| Rifiuti          | 🟢 Verde     | `#22c55e` | Rifiuti abbandonati |
+| Microcriminalità | 🔴 Rosso     | `#ef4444` | Sicurezza           |
+| Abusivismo       | 🟣 Viola     | `#a855f7` | Commercio abusivo   |
+| Degrado          | 🟠 Arancione | `#f97316` | Degrado urbano      |
+| Altro            | ⚪ Grigio    | `#6b7280` | Default             |
 
 ### 5.1 Dimensione Marker
 
-| Priorità | Raggio | Note |
-|----------|--------|------|
-| LOW/NORMAL | 8px | Standard |
-| HIGH/URGENT | 12px | Più grande, visibile |
+| Priorità    | Raggio | Note                 |
+| ----------- | ------ | -------------------- |
+| LOW/NORMAL  | 8px    | Standard             |
+| HIGH/URGENT | 12px   | Più grande, visibile |
 
 ### 5.2 Opacità per Stato
 
-| Stato | Opacità | Note |
-|-------|---------|------|
-| pending | 0.8 | Pieno |
-| in_progress | 0.7 | Leggermente trasparente |
-| resolved | 0.4 | Molto trasparente |
-| rejected | 0.3 | Quasi invisibile |
+| Stato       | Opacità | Note                    |
+| ----------- | ------- | ----------------------- |
+| pending     | 0.8     | Pieno                   |
+| in_progress | 0.7     | Leggermente trasparente |
+| resolved    | 0.4     | Molto trasparente       |
+| rejected    | 0.3     | Quasi invisibile        |
 
 ---
 
@@ -251,18 +259,18 @@ Lo schema Drizzle aveva solo 9 colonne, quindi l'endpoint restituiva dati incomp
 
 ### 7.1 Già Modificati ✅
 
-| File | Modifica | Stato |
-|------|----------|-------|
+| File                | Modifica                           | Stato    |
+| ------------------- | ---------------------------------- | -------- |
 | `drizzle/schema.ts` | Aggiunto 13 colonne a civicReports | ✅ FATTO |
 
 ### 7.2 Da Modificare
 
-| # | File | Modifica | Linee |
-|---|------|----------|-------|
-| 1 | `CivicReportsLayer.tsx` | Allineare interfaccia CivicReport con schema Drizzle (camelCase) | ~50 |
-| 2 | `HubMarketMapComponent.tsx` | Aggiungere import + props + rendering | ~10 |
-| 3 | `GestioneHubMapWrapper.tsx` | Aggiungere props civicReports | ~5 |
-| 4 | `DashboardPA.tsx` | Passare civicReportsQuery.data alla mappa | ~3 |
+| #   | File                        | Modifica                                                         | Linee |
+| --- | --------------------------- | ---------------------------------------------------------------- | ----- |
+| 1   | `CivicReportsLayer.tsx`     | Allineare interfaccia CivicReport con schema Drizzle (camelCase) | ~50   |
+| 2   | `HubMarketMapComponent.tsx` | Aggiungere import + props + rendering                            | ~10   |
+| 3   | `GestioneHubMapWrapper.tsx` | Aggiungere props civicReports                                    | ~5    |
+| 4   | `DashboardPA.tsx`           | Passare civicReportsQuery.data alla mappa                        | ~3    |
 
 **TOTALE: ~68 linee di codice**
 
@@ -272,20 +280,20 @@ Lo schema Drizzle aveva solo 9 colonne, quindi l'endpoint restituiva dati incomp
 
 ### 8.1 Cosa NON viene toccato
 
-| Componente | Descrizione | Stato |
-|------------|-------------|-------|
-| Marker Mercati | Icona "M" rossa | ❌ NON TOCCO |
-| Marker HUB | Icona "H" blu | ❌ NON TOCCO |
-| Marker Negozi | Pallini verdi | ❌ NON TOCCO |
-| Area HUB | Poligono GeoJSON | ❌ NON TOCCO |
-| Pianta Mercato | Posteggi dinamici colorati | ❌ NON TOCCO |
-| Popup esistenti | Tutti i popup attuali | ❌ NON TOCCO |
-| Altre mappe | Gestione HUB, Mappa GIS, Web App | ❌ NON TOCCO |
+| Componente      | Descrizione                      | Stato        |
+| --------------- | -------------------------------- | ------------ |
+| Marker Mercati  | Icona "M" rossa                  | ❌ NON TOCCO |
+| Marker HUB      | Icona "H" blu                    | ❌ NON TOCCO |
+| Marker Negozi   | Pallini verdi                    | ❌ NON TOCCO |
+| Area HUB        | Poligono GeoJSON                 | ❌ NON TOCCO |
+| Pianta Mercato  | Posteggi dinamici colorati       | ❌ NON TOCCO |
+| Popup esistenti | Tutti i popup attuali            | ❌ NON TOCCO |
+| Altre mappe     | Gestione HUB, Mappa GIS, Web App | ❌ NON TOCCO |
 
 ### 8.2 Cosa viene aggiunto
 
-| Componente | Descrizione | Dove |
-|------------|-------------|------|
+| Componente        | Descrizione         | Dove                          |
+| ----------------- | ------------------- | ----------------------------- |
 | CivicReportsLayer | Layer marker civici | Solo tab "Segnalazioni & IoT" |
 
 ### 8.3 Garanzia
@@ -343,6 +351,7 @@ civicReports: router({
 ## 11. HEATMAP (FASE FUTURA)
 
 La heatmap (zone di calore) verrà implementata in una fase successiva dopo che i marker funzionano correttamente. Richiede:
+
 - Libreria `leaflet.heat`
 - Import dinamico per evitare problemi SSR
 - Gestione corretta del cleanup
@@ -375,4 +384,4 @@ La heatmap (zone di calore) verrà implementata in una fase successiva dopo che 
 
 ---
 
-*Documento creato il 30 Gennaio 2026 - Manus AI*
+_Documento creato il 30 Gennaio 2026 - Manus AI_

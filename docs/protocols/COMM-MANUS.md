@@ -20,6 +20,7 @@ Ogni messaggio MIO → Manus deve seguire questa struttura per garantire chiarez
 > Chi manda il messaggio e cosa serve fare.
 
 **Esempio:**
+
 > Messaggio da **MIO** – Configurazione backend Hetzner: riattivazione orchestratore.
 
 ---
@@ -28,11 +29,12 @@ Ogni messaggio MIO → Manus deve seguire questa struttura per garantire chiarez
 
 Blocchi chiari e numerati con i comandi **da copiare/incollare**.
 
-- 🔧 = modifica file  
-- 🖥️ = comando da terminale  
+- 🔧 = modifica file
+- 🖥️ = comando da terminale
 - 🔍 = verifica / controllo
 
 **Esempio:**
+
 ```bash
 # 🧩 Modifica .env
 ENABLE_ORCHESTRATOR=true
@@ -69,6 +71,7 @@ Cosa Manus deve incollare nella chat MIO per confermare:
 Cosa fare se qualcosa non funziona.
 
 **Esempio:**
+
 ```
 Se ricevi errore 404 → esegui pm2 logs mio-hub-backend --lines 20
 e incolla l'output nella chat MIO.
@@ -81,6 +84,7 @@ e incolla l'output nella chat MIO.
 Chi deve agire dopo (MIO, Andrea, Zapier, ecc.).
 
 **Esempio:**
+
 ```
 Dopo conferma, MIO eseguirà test automatico e aggiornerà blueprint.
 ```
@@ -89,22 +93,24 @@ Dopo conferma, MIO eseguirà test automatico e aggiornerà blueprint.
 
 ## 🔹 REPOSITORY PRINCIPALI
 
-| Repository | Descrizione | Branch Default | Accesso |
-|------------|-------------|----------------|---------|
-| `Chcndr/dms-hub-app-new` | Frontend React / Dashboard PA | `master` | GitHub |
-| `mihub-backend-rest` | Backend orchestratore su Hetzner | `main` | SSH Hetzner |
-| `dms-system-blueprint` | Documentazione architettura | `main` | GitHub |
+| Repository               | Descrizione                      | Branch Default | Accesso     |
+| ------------------------ | -------------------------------- | -------------- | ----------- |
+| `Chcndr/dms-hub-app-new` | Frontend React / Dashboard PA    | `master`       | GitHub      |
+| `mihub-backend-rest`     | Backend orchestratore su Hetzner | `main`         | SSH Hetzner |
+| `dms-system-blueprint`   | Documentazione architettura      | `main`         | GitHub      |
 
 ---
 
 ## 🔹 SERVER HETZNER
 
 **Percorso backend:**
+
 ```
 /var/www/mio-hub-backend
 ```
 
 **Comandi principali:**
+
 ```bash
 pm2 restart mio-hub-backend
 pm2 stop mio-hub-backend
@@ -118,6 +124,7 @@ pm2 list
 ## 🔹 DEPLOY
 
 ### Backend Hetzner
+
 ```bash
 cd /var/www/mio-hub-backend
 git pull origin main
@@ -126,6 +133,7 @@ pm2 restart mio-hub-backend
 ```
 
 ### Frontend Vercel
+
 Deploy automatico al push su `master` (`Chcndr/dms-hub-app-new`)
 
 ---
@@ -139,6 +147,7 @@ curl -X POST https://orchestratore.mio-hub.me/api/mihub/orchestrator \
 ```
 
 **Risultato atteso:**
+
 ```json
 { "success": true, "reply": "Orchestrator attivo ✅" }
 ```
@@ -166,9 +175,11 @@ curl -X POST https://orchestratore.mio-hub.me/api/mihub/orchestrator \
 # Messaggio da MIO – Riavvio backend orchestratore
 
 ## 1️⃣ Contesto
+
 Il backend Hetzner ha `ENABLE_ORCHESTRATOR=false`. Serve riattivarlo.
 
 ## 2️⃣ Istruzioni operative
+
 🔧 Modifica file `.env` e aggiungi:
 ENABLE_ORCHESTRATOR=true
 
@@ -180,15 +191,19 @@ pm2 restart mio-hub-backend
 pm2 logs mio-hub-backend | grep ENABLE_ORCHESTRATOR
 
 ## 3️⃣ Risultato atteso
+
 `ENABLE_ORCHESTRATOR = true` visibile nei log
 
 ## 4️⃣ Messaggio di ritorno
+
 ✅ Task completato | Orchestrator riattivato
 
 ## 5️⃣ Failsafe
+
 Se ricevi errore → incolla output `pm2 logs` in chat MIO.
 
 ## 6️⃣ Trigger successivo
+
 MIO eseguirà test automatico e aggiornerà blueprint.
 ```
 

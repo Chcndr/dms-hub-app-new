@@ -10,6 +10,7 @@
 **DMS Hub** (Digital Market System Hub) — piattaforma digitale per la gestione dei **mercati ambulanti italiani**. Gestisce: mercati, posteggi, operatori, concessioni, presenze, pagamenti PagoPA, mobilita', segnalazioni civiche, monitoraggio. Progettato per **8.000 mercati**.
 
 **E' UN'UNICA APP WEB** (`dms-hub-app-new.vercel.app`) che serve TUTTI gli utenti:
+
 - **PA** (Pubblica Amministrazione) → `/dashboard-pa` con 14+ tab
 - **Imprese/Operatori** → `/dashboard-impresa`, `/app/impresa/*`, `/hub-operatore`
 - **Cittadini** → `/mappa`, `/civic`, `/wallet`, `/route`
@@ -21,17 +22,17 @@ La differenziazione avviene tramite il **sistema RBAC**: ogni utente vede solo l
 
 ## STACK
 
-| Layer | Tecnologia |
-|-------|-----------|
-| Frontend | React 19 + Vite 7 + Wouter (router) + Tailwind 4 + shadcn/ui + Lucide React |
-| State | React Context (7 providers) + React Query (via tRPC) |
-| Backend | Express 4 + tRPC 11 + SuperJSON |
-| ORM | Drizzle 0.44 con driver `postgres` (postgres-js, NON `pg`) |
-| Database | PostgreSQL su Neon (serverless, EU, 149 tabelle) |
-| Auth | Firebase (`dmshub-auth-2975e`) + OAuth SPID/CIE/CNS |
-| Runtime | Node.js 18+ / pnpm 10.4+ / ESM modules |
-| Deploy FE | Vercel (auto-deploy su master) |
-| Deploy BE | Hetzner VPS 157.90.29.66 + PM2 |
+| Layer     | Tecnologia                                                                  |
+| --------- | --------------------------------------------------------------------------- |
+| Frontend  | React 19 + Vite 7 + Wouter (router) + Tailwind 4 + shadcn/ui + Lucide React |
+| State     | React Context (7 providers) + React Query (via tRPC)                        |
+| Backend   | Express 4 + tRPC 11 + SuperJSON                                             |
+| ORM       | Drizzle 0.44 con driver `postgres` (postgres-js, NON `pg`)                  |
+| Database  | PostgreSQL su Neon (serverless, EU, 149 tabelle)                            |
+| Auth      | Firebase (`dmshub-auth-2975e`) + OAuth SPID/CIE/CNS                         |
+| Runtime   | Node.js 18+ / pnpm 10.4+ / ESM modules                                      |
+| Deploy FE | Vercel (auto-deploy su master)                                              |
+| Deploy BE | Hetzner VPS 157.90.29.66 + PM2                                              |
 
 **NON usare MAI**: React Router, Next.js, Redux, Zustand, Material UI, Chakra, `pg` (node-postgres), CSS Modules, styled-components, endpoint Express separati, raw SQL.
 
@@ -68,18 +69,22 @@ La differenziazione avviene tramite il **sistema RBAC**: ogni utente vede solo l
 ## ARCHITETTURA CERVELLO/BRACCIO
 
 **MioHub (CERVELLO)** — elabora, decide, autorizza:
+
 - Login SPID/CIE, SUAP, PagoPA, PDND, concessioni, canone, mappa GIS, wallet, controlli, verbali
 
 **DMS Legacy (BRACCIO)** — opera sul campo, raccoglie dati grezzi:
+
 - App tablet per presenze fisiche, uscite, spazzatura, scelte spunta
 - Heroku app `lapsy-dms`, PostgreSQL su AWS RDS, 25 tabelle, 117 stored functions
 - URL: `lapsy-dms.herokuapp.com/index.html` (cred: vedi env `DMS_LEGACY_USER` / `DMS_LEGACY_PASS`)
 
 **Flusso dati bidirezionale:**
+
 - MioHub → Legacy (76%): anagrafica imprese, saldo wallet, graduatoria, mercati, posteggi, concessioni, autorizzazioni, regolarita'
 - Legacy → MioHub (11%): presenze ingresso/uscita, spazzatura, rifiuti, note, prezzi, giornata mercato, posti scelti
 
 **Flusso giornata mercato:**
+
 1. Sync preventivo MioHub→Legacy
 2. Apertura mercato dalla DashboardPA
 3. Operatore tablet registra arrivo concessionari
@@ -97,6 +102,7 @@ La differenziazione avviene tramite il **sistema RBAC**: ogni utente vede solo l
 **Settori**: sistema (livello 0-10), pa (20-40), mercato (50-60), impresa (70-80), esterno (85-90), pubblico (99)
 
 **Risoluzione ruolo** (priorita' in PermissionsContext):
+
 1. Impersonazione attiva → admin_pa (ID=2)
 2. assigned_roles[0] dall'utente → usa quel role_id
 3. Email super admin (chcndr@gmail.com) → super_admin (ID=1)
@@ -108,6 +114,7 @@ La differenziazione avviene tramite il **sistema RBAC**: ogni utente vede solo l
 **Tab DashboardPA (14+)**: dashboard, mercati, imprese, commercio, wallet, hub, controlli, comuni*, security*, sistema*, ai*, integrations*, reports*, workspace* (*nascosti in impersonazione)
 
 **Impersonazione per comune:**
+
 - URL: `/dashboard-pa?impersonate=true&comune_id=96&comune_nome=Grosseto&user_email=...`
 - Persiste in `sessionStorage['miohub_impersonation']`
 - Hook: `useImpersonation()` — aggiunge header `X-Comune-Id` a tutte le API
@@ -119,20 +126,20 @@ La differenziazione avviene tramite il **sistema RBAC**: ogni utente vede solo l
 
 Registry: `server/routers.ts`. Endpoint base: `/api/trpc/{router.procedure}`
 
-| Router | Cosa fa |
-|--------|---------|
-| system | Health check |
-| auth | Login/logout, sessione (`auth.me`) |
-| analytics | Overview, markets, shops, transactions |
-| dmsHub | Mercati, posteggi, operatori, concessioni, presenze |
-| wallet | Borsellino, ricariche, PagoPA, avvisi |
-| integrations | API keys, webhooks, DMS Legacy endpoints |
-| mihub | Multi-agente: tasks, projects, brain, messages |
-| mioAgent | Log agenti AI |
-| guardian | Monitoring: endpoints, logs, debug |
-| tper | Trasporto TPER Bologna |
-| logs | System logs |
-| carbonCredits | Crediti carbonio TCC |
+| Router        | Cosa fa                                             |
+| ------------- | --------------------------------------------------- |
+| system        | Health check                                        |
+| auth          | Login/logout, sessione (`auth.me`)                  |
+| analytics     | Overview, markets, shops, transactions              |
+| dmsHub        | Mercati, posteggi, operatori, concessioni, presenze |
+| wallet        | Borsellino, ricariche, PagoPA, avvisi               |
+| integrations  | API keys, webhooks, DMS Legacy endpoints            |
+| mihub         | Multi-agente: tasks, projects, brain, messages      |
+| mioAgent      | Log agenti AI                                       |
+| guardian      | Monitoring: endpoints, logs, debug                  |
+| tper          | Trasporto TPER Bologna                              |
+| logs          | System logs                                         |
+| carbonCredits | Crediti carbonio TCC                                |
 
 3 livelli: `publicProcedure` (aperta), `protectedProcedure` (auth), `adminProcedure` (admin)
 
@@ -151,10 +158,12 @@ Registry: `server/routers.ts`. Endpoint base: `/api/trpc/{router.procedure}`
 ## BUS HUB E TRASPORTO
 
 **Bus Hub Editor** — digitalizzazione mercati in 2 step:
+
 1. **PngTransparentTool**: rimuove sfondo planimetria
 2. **SlotEditorV3**: posiziona posteggi su mappa georeferenziata, esporta GeoJSON
 
 **Trasporto pubblico**: 23.930 fermate GTFS (TPER Bologna, Trenitalia, Tiemme)
+
 - API: `api.mio-hub.me/api/gtfs/*`
 - TPER real-time: SOAP API per arrivi in tempo reale
 - Componenti: TransportContext, TransportStopsLayer, NearbyStopsPanel
@@ -215,59 +224,59 @@ pnpm db:push      # Migrazioni Drizzle
 
 ## REGOLE INVIOLABILI
 
-| Area | Regola |
-|------|--------|
-| DB | Source of truth: `drizzle/schema.ts`. MAI raw SQL. MAI DROP TABLE. Driver: `postgres` (NOT `pg`) |
-| API | Tutto via tRPC. MAI endpoint Express separati. Validazione Zod. Logging automatico |
-| Frontend | Router: Wouter. State: Context+Query. UI: shadcn/ui. CSS: Tailwind. Icons: Lucide |
-| Auth | Firebase primario. Cookie JWT. RBAC 4 tabelle. MAI toccare impersonazione senza test completi |
-| Codice | TypeScript strict. ESM. Path: `@/` = client/src, `@shared/` = shared. Prettier |
-| Deploy | FE: Vercel. BE: Hetzner PM2. MAI push su master senza review. MAI toccare .env prod |
-| Sicurezza | MAI segreti nel codice. MAI `any`. MAI duplicare logica esistente |
+| Area      | Regola                                                                                           |
+| --------- | ------------------------------------------------------------------------------------------------ |
+| DB        | Source of truth: `drizzle/schema.ts`. MAI raw SQL. MAI DROP TABLE. Driver: `postgres` (NOT `pg`) |
+| API       | Tutto via tRPC. MAI endpoint Express separati. Validazione Zod. Logging automatico               |
+| Frontend  | Router: Wouter. State: Context+Query. UI: shadcn/ui. CSS: Tailwind. Icons: Lucide                |
+| Auth      | Firebase primario. Cookie JWT. RBAC 4 tabelle. MAI toccare impersonazione senza test completi    |
+| Codice    | TypeScript strict. ESM. Path: `@/` = client/src, `@shared/` = shared. Prettier                   |
+| Deploy    | FE: Vercel. BE: Hetzner PM2. MAI push su master senza review. MAI toccare .env prod              |
+| Sicurezza | MAI segreti nel codice. MAI `any`. MAI duplicare logica esistente                                |
 
 ---
 
 ## CREDENZIALI E ACCESSI
 
-| Risorsa | URL |
-|---------|-----|
-| Frontend | dms-hub-app-new.vercel.app |
-| Backend | mihub.157-90-29-66.nip.io |
-| Orchestratore | orchestratore.mio-hub.me |
-| DMS Legacy | lapsy-dms.herokuapp.com (cred: vedi env) |
-| Neon DB | console.neon.tech (ep-bold-silence-adftsojg) |
-| Firebase | console.firebase.google.com (dmshub-auth-2975e) |
-| Hetzner | SSH 157.90.29.66 |
-| GitHub | github.com/Chcndr |
+| Risorsa       | URL                                             |
+| ------------- | ----------------------------------------------- |
+| Frontend      | dms-hub-app-new.vercel.app                      |
+| Backend       | mihub.157-90-29-66.nip.io                       |
+| Orchestratore | orchestratore.mio-hub.me                        |
+| DMS Legacy    | lapsy-dms.herokuapp.com (cred: vedi env)        |
+| Neon DB       | console.neon.tech (ep-bold-silence-adftsojg)    |
+| Firebase      | console.firebase.google.com (dmshub-auth-2975e) |
+| Hetzner       | SSH 157.90.29.66                                |
+| GitHub        | github.com/Chcndr                               |
 
-**Env vars backend (31)**: DATABASE_URL, JWT_SECRET, GEMINI_API_KEY, MANUS_API_KEY, MERCAWEB_API_KEY, ZAPIER_API_KEY, GITHUB_PAT_DMS, CORS_ORIGINS, ENABLE_AGENT_LOGS, ENABLE_GUARDIAN_LOOP, ENABLE_MIO_CHAT, etc.
-**Env vars frontend (7)**: VITE_FIREBASE_* (6) + FIREBASE_SERVICE_ACCOUNT_KEY
+**Env vars backend (31)**: DATABASE*URL, JWT_SECRET, GEMINI_API_KEY, MANUS_API_KEY, MERCAWEB_API_KEY, ZAPIER_API_KEY, GITHUB_PAT_DMS, CORS_ORIGINS, ENABLE_AGENT_LOGS, ENABLE_GUARDIAN_LOOP, ENABLE_MIO_CHAT, etc.
+**Env vars frontend (7)**: VITE_FIREBASE*\* (6) + FIREBASE_SERVICE_ACCOUNT_KEY
 
 ---
 
 ## ERRORI COMUNI
 
-| Errore | Soluzione |
-|--------|----------|
-| Connection timeout | Neon cold start. Ritenta dopo 3s |
+| Errore              | Soluzione                              |
+| ------------------- | -------------------------------------- |
+| Connection timeout  | Neon cold start. Ritenta dopo 3s       |
 | Tabella non trovata | Aggiungi in schema.ts + `pnpm db:push` |
-| CORS | Usa `/api/trpc/`, mai URL diretti |
-| Tab non visibile | Manca `tab.view.{tabId}` nel ruolo |
-| PM2 loop | `pm2 logs --lines 100` su Hetzner |
+| CORS                | Usa `/api/trpc/`, mai URL diretti      |
+| Tab non visibile    | Manca `tab.view.{tabId}` nel ruolo     |
+| PM2 loop            | `pm2 logs --lines 100` su Hetzner      |
 
 ---
 
 ## DOCUMENTAZIONE NEL REPO
 
-| File | Contenuto |
-|------|-----------|
-| `CLAUDE.md` | Guida operativa rapida per agenti |
-| `CONTESTO.md` | Contesto completo per chi non sa niente |
-| `docs/ARCHITECTURE.md` | Architettura dettagliata |
-| `docs/DATABASE.md` | Schema DB per tabella |
-| `docs/API.md` | Registro endpoint tRPC |
-| `docs/OPERATIONS.md` | Deploy, monitoring, troubleshooting |
-| `docs/SCALING.md` | Piano scaling a 8.000 mercati |
+| File                   | Contenuto                               |
+| ---------------------- | --------------------------------------- |
+| `CLAUDE.md`            | Guida operativa rapida per agenti       |
+| `CONTESTO.md`          | Contesto completo per chi non sa niente |
+| `docs/ARCHITECTURE.md` | Architettura dettagliata                |
+| `docs/DATABASE.md`     | Schema DB per tabella                   |
+| `docs/API.md`          | Registro endpoint tRPC                  |
+| `docs/OPERATIONS.md`   | Deploy, monitoring, troubleshooting     |
+| `docs/SCALING.md`      | Piano scaling a 8.000 mercati           |
 
 ---
 

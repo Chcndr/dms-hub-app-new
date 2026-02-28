@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
 export interface InternalTrace {
   id: string;
@@ -22,7 +22,7 @@ export interface AgentLog {
 
 /**
  * Hook per fetching automatico dei log agenti da Neon PostgreSQL
- * 
+ *
  * @param conversationId - ID conversazione MIO
  * @param pollingInterval - Intervallo polling in ms (default 3000)
  * @returns { traces, loading, error }
@@ -49,7 +49,8 @@ export function useInternalTraces(
         setLoading(true);
         setError(null);
 
-        const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+        const apiBaseUrl =
+          import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
         const response = await fetch(
           `${apiBaseUrl}/api/mio/agent-logs?conversation_id=${conversationId}&limit=100`
         );
@@ -62,35 +63,37 @@ export function useInternalTraces(
 
         if (data.success && data.data) {
           // Trasforma i log dal formato database al formato UI
-          const transformedTraces: AgentLog[] = data.data.map((log: InternalTrace) => {
-            // Determina "from" e "to" in base al role
-            let from = log.agent_name;
-            let to = 'mio';
+          const transformedTraces: AgentLog[] = data.data.map(
+            (log: InternalTrace) => {
+              // Determina "from" e "to" in base al role
+              let from = log.agent_name;
+              let to = "mio";
 
-            if (log.role === 'user') {
-              // MIO chiede ad un agente
-              from = 'mio';
-              to = log.agent_name;
-            } else if (log.role === 'assistant') {
-              // Agente risponde a MIO
-              from = log.agent_name;
-              to = 'mio';
+              if (log.role === "user") {
+                // MIO chiede ad un agente
+                from = "mio";
+                to = log.agent_name;
+              } else if (log.role === "assistant") {
+                // Agente risponde a MIO
+                from = log.agent_name;
+                to = "mio";
+              }
+
+              return {
+                from,
+                to,
+                message: log.message,
+                timestamp: log.created_at,
+                meta: log.meta,
+              };
             }
-
-            return {
-              from,
-              to,
-              message: log.message,
-              timestamp: log.created_at,
-              meta: log.meta
-            };
-          });
+          );
 
           setTraces(transformedTraces);
         }
       } catch (err) {
-        console.error('[useInternalTraces] Error fetching logs:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.error("[useInternalTraces] Error fetching logs:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);
       }

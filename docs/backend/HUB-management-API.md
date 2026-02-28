@@ -11,6 +11,7 @@
 This document provides a detailed overview of the tRPC API endpoints for managing HUB locations, shops, and services within the DMS HUB system. All endpoints are located under the `dmsHub.hub` router.
 
 ### Key Features
+
 - **CRUD Operations**: Full support for Create, Read, Update, and Delete operations.
 - **Soft Delete**: All delete operations are "soft" (setting `active=0` or `status='inactive'`), preserving data integrity and history.
 - **Logging**: All write operations (create, update, delete) are automatically logged in the `audit_logs` table.
@@ -27,6 +28,7 @@ This document provides a detailed overview of the tRPC API endpoints for managin
 Retrieves a list of HUB locations. By default, only active locations are returned.
 
 **Input:**
+
 ```typescript
 {
   includeInactive?: boolean; // Optional, default: false
@@ -34,6 +36,7 @@ Retrieves a list of HUB locations. By default, only active locations are returne
 ```
 
 **Output:**
+
 ```typescript
 Array<{
   id: number;
@@ -50,16 +53,19 @@ Array<{
   photoUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
-}>
+}>;
 ```
 
 **Example:**
+
 ```typescript
 // Get only active HUBs
 const activeHubs = await trpc.dmsHub.hub.locations.list.useQuery();
 
 // Get all HUBs, including inactive
-const allHubs = await trpc.dmsHub.hub.locations.list.useQuery({ includeInactive: true });
+const allHubs = await trpc.dmsHub.hub.locations.list.useQuery({
+  includeInactive: true,
+});
 ```
 
 ### 1.2. `getById` (Query)
@@ -67,6 +73,7 @@ const allHubs = await trpc.dmsHub.hub.locations.list.useQuery({ includeInactive:
 Retrieves a single HUB location by its ID.
 
 **Input:**
+
 ```typescript
 {
   id: number;
@@ -74,6 +81,7 @@ Retrieves a single HUB location by its ID.
 ```
 
 **Output:**
+
 - A single HUB location object (see `list` output) or `null` if not found.
 
 ### 1.3. `create` (Mutation)
@@ -81,6 +89,7 @@ Retrieves a single HUB location by its ID.
 Creates a new HUB location.
 
 **Input:**
+
 ```typescript
 {
   marketId: number;
@@ -97,6 +106,7 @@ Creates a new HUB location.
 ```
 
 **Output:**
+
 ```typescript
 {
   success: true;
@@ -109,6 +119,7 @@ Creates a new HUB location.
 Updates an existing HUB location. Only the provided fields are updated.
 
 **Input:**
+
 ```typescript
 {
   id: number; // Required
@@ -126,6 +137,7 @@ Updates an existing HUB location. Only the provided fields are updated.
 ```
 
 **Output:**
+
 ```typescript
 {
   success: true;
@@ -137,6 +149,7 @@ Updates an existing HUB location. Only the provided fields are updated.
 Deactivates a HUB location by setting its `active` field to `0`.
 
 **Input:**
+
 ```typescript
 {
   id: number;
@@ -144,6 +157,7 @@ Deactivates a HUB location by setting its `active` field to `0`.
 ```
 
 **Output:**
+
 ```typescript
 {
   success: true;
@@ -151,6 +165,7 @@ Deactivates a HUB location by setting its `active` field to `0`.
 ```
 
 **Behavior:**
+
 - **Does NOT delete** the record from the database.
 - Sets `active = 0`.
 - Updates the `updatedAt` timestamp.
@@ -167,6 +182,7 @@ Deactivates a HUB location by setting its `active` field to `0`.
 Retrieves a list of shops for a specific HUB.
 
 **Input:**
+
 ```typescript
 {
   hubId: number;
@@ -174,6 +190,7 @@ Retrieves a list of shops for a specific HUB.
 ```
 
 **Output:**
+
 ```typescript
 Array<{
   id: number;
@@ -182,7 +199,7 @@ Array<{
   category: string | null;
   // ... other fields
   status: string; // active, suspended, inactive
-}>
+}>;
 ```
 
 ### 2.2. `create` (Mutation)
@@ -190,6 +207,7 @@ Array<{
 Creates a new shop within a HUB.
 
 **Input:**
+
 ```typescript
 {
   hubId: number;
@@ -200,6 +218,7 @@ Creates a new shop within a HUB.
 ```
 
 **Output:**
+
 ```typescript
 {
   success: true;
@@ -226,6 +245,7 @@ Creates a new shop within a HUB.
 Retrieves a list of services for a specific HUB.
 
 **Input:**
+
 ```typescript
 {
   hubId: number;
@@ -233,6 +253,7 @@ Retrieves a list of services for a specific HUB.
 ```
 
 **Output:**
+
 ```typescript
 Array<{
   id: number;
@@ -241,7 +262,7 @@ Array<{
   type: string;
   // ... other fields
   status: string; // active, maintenance, inactive
-}>
+}>;
 ```
 
 ### 3.2. `create` (Mutation)
@@ -249,6 +270,7 @@ Array<{
 Creates a new service within a HUB.
 
 **Input:**
+
 ```typescript
 {
   hubId: number;
@@ -259,6 +281,7 @@ Creates a new service within a HUB.
 ```
 
 **Output:**
+
 ```typescript
 {
   success: true;
@@ -279,11 +302,13 @@ Creates a new service within a HUB.
 ## ⚠️ Testing Status
 
 **HUB Locations:**
+
 - ✅ **Code Verified**: All CRUD operations have been implemented and the code compiles without errors.
 - ✅ **Logic Verified**: The implementation logic aligns with the database schema and project requirements (e.g., soft delete).
 - ❌ **End-to-End Testing**: **NOT PERFORMED**. These APIs have not been tested against a live database. End-to-end testing must be performed in a staging/production environment with a real `DATABASE_URL`.
 
 **HUB Shops & Services:**
+
 - ⏳ **Partially Implemented**: Only `list` and `create` are implemented. `update` and `delete` are pending.
 
 ---
@@ -318,6 +343,7 @@ CREATE TABLE hub_locations (
 All write operations (`create`, `update`, `delete`) on HUB Locations are automatically logged in the `audit_logs` table. The log entry includes the action performed, the entity ID, the old value (for updates/deletes), and the new value.
 
 **Example Log Entry:**
+
 ```json
 {
   "userEmail": "system",

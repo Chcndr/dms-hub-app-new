@@ -11,10 +11,10 @@ Questo documento certifica lo stato completo e verificato del sistema DMS HUB al
 
 ## 1. Identificazione dei Commit
 
-| Componente | Repository | Commit | Data |
-|------------|-----------|--------|------|
-| **Frontend** | `Chcndr/dms-hub-app-new` | `e69059a` | 21 Feb 2026 10:06 |
-| **Backend** | `Chcndr/mihub-backend-rest` | `187816e` | 21 Feb 2026 10:07 |
+| Componente   | Repository                  | Commit    | Data              |
+| ------------ | --------------------------- | --------- | ----------------- |
+| **Frontend** | `Chcndr/dms-hub-app-new`    | `e69059a` | 21 Feb 2026 10:06 |
+| **Backend**  | `Chcndr/mihub-backend-rest` | `187816e` | 21 Feb 2026 10:07 |
 
 Per ripristinare questo punto stabile in qualsiasi momento:
 
@@ -34,14 +34,14 @@ git checkout v8.10.3-stable
 
 ## 2. Stato Allineamento
 
-| Livello | Frontend | Backend |
-|---------|----------|---------|
-| Sandbox locale | `e69059a` | `187816e` |
-| GitHub origin/master | `e69059a` | `187816e` |
-| Deploy live | Vercel HTTP 200 | Hetzner "online" |
-| Dirty files | 0 | 0 |
-| Branch Claude residui | 0 | 0 |
-| Branch divergenti | 0 | 0 |
+| Livello               | Frontend        | Backend          |
+| --------------------- | --------------- | ---------------- |
+| Sandbox locale        | `e69059a`       | `187816e`        |
+| GitHub origin/master  | `e69059a`       | `187816e`        |
+| Deploy live           | Vercel HTTP 200 | Hetzner "online" |
+| Dirty files           | 0               | 0                |
+| Branch Claude residui | 0               | 0                |
+| Branch divergenti     | 0               | 0                |
 
 ---
 
@@ -49,30 +49,30 @@ git checkout v8.10.3-stable
 
 ### Frontend (dms-hub-app-new)
 
-| Metrica | Valore |
-|---------|--------|
-| Commit totali | 2.096 |
-| File totali | 570 |
-| File TSX (componenti React) | 206 |
-| File TS (logica/tipi) | 108 |
-| Componenti (`components/`) | 146 |
-| Pagine (`pages/`) | 37 |
-| Context (`contexts/`) | 7 |
-| API client (`api/`) | 5 |
-| Tag Git totali | 65 |
-| Dipendenze | 60 |
-| DevDipendenze | 19 |
+| Metrica                     | Valore |
+| --------------------------- | ------ |
+| Commit totali               | 2.096  |
+| File totali                 | 570    |
+| File TSX (componenti React) | 206    |
+| File TS (logica/tipi)       | 108    |
+| Componenti (`components/`)  | 146    |
+| Pagine (`pages/`)           | 37     |
+| Context (`contexts/`)       | 7      |
+| API client (`api/`)         | 5      |
+| Tag Git totali              | 65     |
+| Dipendenze                  | 60     |
+| DevDipendenze               | 19     |
 
 ### Backend (mihub-backend-rest)
 
-| Metrica | Valore |
-|---------|--------|
-| Commit totali | 912 |
-| File totali | 408 |
-| File JS | 217 |
-| Route files | 82 |
-| Tag Git totali | 36 |
-| Dipendenze | 19 |
+| Metrica        | Valore |
+| -------------- | ------ |
+| Commit totali  | 912    |
+| File totali    | 408    |
+| File JS        | 217    |
+| Route files    | 82     |
+| Tag Git totali | 36     |
+| Dipendenze     | 19     |
 
 ---
 
@@ -80,43 +80,43 @@ git checkout v8.10.3-stable
 
 ### Frontend
 
-| Tecnologia | Versione |
-|------------|----------|
-| React | ^19.2.0 |
-| React DOM | ^19.2.0 |
-| TypeScript | 5.9.3 |
-| Vite | ^7.1.7 |
-| TailwindCSS | ^4.1.14 |
-| Firebase | ^12.9.0 |
-| TanStack React Query | ^5.90.2 |
-| Leaflet | ^1.9.4 |
-| Lucide React | ^0.453.0 |
-| Deploy | Vercel (auto-deploy da GitHub master) |
+| Tecnologia           | Versione                              |
+| -------------------- | ------------------------------------- |
+| React                | ^19.2.0                               |
+| React DOM            | ^19.2.0                               |
+| TypeScript           | 5.9.3                                 |
+| Vite                 | ^7.1.7                                |
+| TailwindCSS          | ^4.1.14                               |
+| Firebase             | ^12.9.0                               |
+| TanStack React Query | ^5.90.2                               |
+| Leaflet              | ^1.9.4                                |
+| Lucide React         | ^0.453.0                              |
+| Deploy               | Vercel (auto-deploy da GitHub master) |
 
 ### Backend
 
-| Tecnologia | Versione |
-|------------|----------|
-| Express | ^4.18.2 |
-| PostgreSQL (pg) | ^8.18.0 |
-| CORS | ^2.8.5 |
-| Multer | ^1.4.5-lts.1 |
-| Database | Neon PostgreSQL |
-| Deploy | Hetzner VPS (PM2 + GitHub Actions auto-deploy) |
-| IP Server | 157.90.29.66 |
+| Tecnologia      | Versione                                       |
+| --------------- | ---------------------------------------------- |
+| Express         | ^4.18.2                                        |
+| PostgreSQL (pg) | ^8.18.0                                        |
+| CORS            | ^2.8.5                                         |
+| Multer          | ^1.4.5-lts.1                                   |
+| Database        | Neon PostgreSQL                                |
+| Deploy          | Hetzner VPS (PM2 + GitHub Actions auto-deploy) |
+| IP Server       | 157.90.29.66                                   |
 
 ---
 
 ## 5. Infrastruttura e URL
 
-| Servizio | URL |
-|----------|-----|
-| Frontend (Vercel) | `https://dms-hub-app-new.vercel.app` |
-| Backend API (Hetzner) | `https://orchestratore.mio-hub.me` |
-| API alternativa | `https://api.mio-hub.me` |
-| Database | Neon PostgreSQL (152+ tabelle) |
-| GitHub Frontend | `https://github.com/Chcndr/dms-hub-app-new` |
-| GitHub Backend | `https://github.com/Chcndr/mihub-backend-rest` |
+| Servizio              | URL                                            |
+| --------------------- | ---------------------------------------------- |
+| Frontend (Vercel)     | `https://dms-hub-app-new.vercel.app`           |
+| Backend API (Hetzner) | `https://orchestratore.mio-hub.me`             |
+| API alternativa       | `https://api.mio-hub.me`                       |
+| Database              | Neon PostgreSQL (152+ tabelle)                 |
+| GitHub Frontend       | `https://github.com/Chcndr/dms-hub-app-new`    |
+| GitHub Backend        | `https://github.com/Chcndr/mihub-backend-rest` |
 
 ---
 

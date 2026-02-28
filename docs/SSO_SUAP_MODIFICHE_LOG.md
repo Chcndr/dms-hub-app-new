@@ -23,10 +23,10 @@ Implementare dropdown dinamici nella sezione SSO SUAP connessi al database esist
 
 ## 📂 FILE MODIFICATI
 
-| File | Descrizione | Stato |
-|------|-------------|-------|
-| `client/src/components/suap/SciaForm.tsx` | Form SCIA Subingresso | ✅ Completato |
-| `client/src/components/suap/ConcessioneForm.tsx` | Form Concessione | ✅ Completato |
+| File                                             | Descrizione           | Stato         |
+| ------------------------------------------------ | --------------------- | ------------- |
+| `client/src/components/suap/SciaForm.tsx`        | Form SCIA Subingresso | ✅ Completato |
+| `client/src/components/suap/ConcessioneForm.tsx` | Form Concessione      | ✅ Completato |
 
 ---
 
@@ -35,6 +35,7 @@ Implementare dropdown dinamici nella sezione SSO SUAP connessi al database esist
 ### 1. Campi Motivazione SCIA (Nuovi)
 
 Aggiunta sezione "Tipo di Segnalazione" con RadioGroup:
+
 - Subingresso
 - Cessazione
 - Sospensione
@@ -50,6 +51,7 @@ Aggiunta sezione "Tipo di Segnalazione" con RadioGroup:
 ### 3. Ricerca Subentrante Migliorata
 
 La ricerca ora funziona per:
+
 - **Codice Fiscale** (16 caratteri)
 - **Partita IVA** (11 cifre)
 - **Denominazione/Nome** (ricerca parziale)
@@ -57,6 +59,7 @@ La ricerca ora funziona per:
 ### 4. Auto-compilazione Cedente da Posteggio
 
 Quando si seleziona un posteggio occupato:
+
 1. Carica automaticamente i dati dell'impresa associata (`impresa_id`)
 2. Popola TUTTI i campi del Cedente:
    - CF/P.IVA
@@ -69,6 +72,7 @@ Quando si seleziona un posteggio occupato:
 ### 5. Dati Cedente Completi (Nuovi campi)
 
 Aggiunti campi mancanti per il Cedente:
+
 - Nome, Cognome
 - Data di Nascita, Luogo di Nascita
 - Residenza Via, Comune, CAP
@@ -77,6 +81,7 @@ Aggiunti campi mancanti per il Cedente:
 ### 6. Ubicazione e Giorno Mercato
 
 Auto-popolati quando si seleziona il mercato:
+
 - `ubicazione_mercato` → dal campo `municipality`
 - `giorno_mercato` → dal campo `days`
 
@@ -84,12 +89,12 @@ Auto-popolati quando si seleziona il mercato:
 
 ## 📊 API UTILIZZATE
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/api/markets` | GET | Lista mercati |
-| `/api/markets/:id/stalls` | GET | Posteggi di un mercato (con impresa_id) |
-| `/api/imprese` | GET | Lista tutte le imprese (per ricerca locale) |
-| `/api/imprese/:id` | GET | Dettaglio impresa (per auto-compilazione cedente) |
+| Endpoint                  | Metodo | Descrizione                                       |
+| ------------------------- | ------ | ------------------------------------------------- |
+| `/api/markets`            | GET    | Lista mercati                                     |
+| `/api/markets/:id/stalls` | GET    | Posteggi di un mercato (con impresa_id)           |
+| `/api/imprese`            | GET    | Lista tutte le imprese (per ricerca locale)       |
+| `/api/imprese/:id`        | GET    | Dettaglio impresa (per auto-compilazione cedente) |
 
 ---
 

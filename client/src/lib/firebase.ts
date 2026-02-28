@@ -1,11 +1,11 @@
 /**
  * Firebase Configuration & Authentication
  * MioHub - DMS Hub Authentication System
- * 
+ *
  * Supporta: Email/Password, Google Sign-In, Apple Sign-In
  * Progetto Firebase: dmshub-auth (dmshub-auth-2975e)
  */
-import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
   getAuth,
   signInWithEmailAndPassword,
@@ -22,7 +22,7 @@ import {
   type Auth,
   type User as FirebaseUser,
   type UserCredential,
-} from 'firebase/auth';
+} from "firebase/auth";
 
 // ============================================
 // FIREBASE CONFIGURATION
@@ -48,9 +48,9 @@ try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   // Imposta la lingua italiana per i messaggi Firebase
-  auth.languageCode = 'it';
+  auth.languageCode = "it";
 } catch (error) {
-  console.error('[Firebase] Errore inizializzazione:', error);
+  console.error("[Firebase] Errore inizializzazione:", error);
   throw error;
 }
 
@@ -59,16 +59,16 @@ try {
 // ============================================
 
 const googleProvider = new GoogleAuthProvider();
-googleProvider.addScope('email');
-googleProvider.addScope('profile');
+googleProvider.addScope("email");
+googleProvider.addScope("profile");
 // Forza la selezione dell'account Google
 googleProvider.setCustomParameters({
-  prompt: 'select_account',
+  prompt: "select_account",
 });
 
-const appleProvider = new OAuthProvider('apple.com');
-appleProvider.addScope('email');
-appleProvider.addScope('name');
+const appleProvider = new OAuthProvider("apple.com");
+appleProvider.addScope("email");
+appleProvider.addScope("name");
 
 // ============================================
 // AUTH FUNCTIONS
@@ -77,7 +77,10 @@ appleProvider.addScope('name');
 /**
  * Login con Email e Password
  */
-export async function loginWithEmail(email: string, password: string): Promise<UserCredential> {
+export async function loginWithEmail(
+  email: string,
+  password: string
+): Promise<UserCredential> {
   return signInWithEmailAndPassword(auth, email, password);
 }
 
@@ -89,13 +92,17 @@ export async function registerWithEmail(
   password: string,
   displayName?: string
 ): Promise<UserCredential> {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
-  
+  const credential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
+
   // Aggiorna il profilo con il nome
   if (displayName && credential.user) {
     await updateProfile(credential.user, { displayName });
   }
-  
+
   return credential;
 }
 
@@ -107,10 +114,10 @@ export async function loginWithGoogle(): Promise<UserCredential> {
     return await signInWithPopup(auth, googleProvider);
   } catch (error: any) {
     // Se il popup è bloccato, prova con redirect
-    if (error.code === 'auth/popup-blocked') {
+    if (error.code === "auth/popup-blocked") {
       await signInWithRedirect(auth, googleProvider);
       // Il risultato verrà gestito da getRedirectResult
-      throw new Error('REDIRECT_INITIATED');
+      throw new Error("REDIRECT_INITIATED");
     }
     throw error;
   }
@@ -124,9 +131,9 @@ export async function loginWithApple(): Promise<UserCredential> {
     return await signInWithPopup(auth, appleProvider);
   } catch (error: any) {
     // Se il popup è bloccato, prova con redirect
-    if (error.code === 'auth/popup-blocked') {
+    if (error.code === "auth/popup-blocked") {
       await signInWithRedirect(auth, appleProvider);
-      throw new Error('REDIRECT_INITIATED');
+      throw new Error("REDIRECT_INITIATED");
     }
     throw error;
   }
@@ -165,7 +172,9 @@ export async function getIdToken(forceRefresh = false): Promise<string | null> {
 /**
  * Osserva i cambiamenti dello stato di autenticazione
  */
-export function onAuthChange(callback: (user: FirebaseUser | null) => void): () => void {
+export function onAuthChange(
+  callback: (user: FirebaseUser | null) => void
+): () => void {
   return onAuthStateChanged(auth, callback);
 }
 
@@ -180,27 +189,35 @@ export function getCurrentFirebaseUser(): FirebaseUser | null {
  * Traduce i codici di errore Firebase in messaggi italiani user-friendly
  */
 export function getFirebaseErrorMessage(error: any): string {
-  const code = error?.code || '';
-  
+  const code = error?.code || "";
+
   const messages: Record<string, string> = {
-    'auth/invalid-email': 'Indirizzo email non valido',
-    'auth/user-disabled': 'Account disabilitato. Contatta il supporto.',
-    'auth/user-not-found': 'Nessun account trovato con questa email',
-    'auth/wrong-password': 'Password non corretta',
-    'auth/email-already-in-use': 'Questa email è già registrata. Prova ad accedere.',
-    'auth/weak-password': 'La password deve essere di almeno 6 caratteri',
-    'auth/operation-not-allowed': 'Metodo di accesso non abilitato',
-    'auth/popup-closed-by-user': 'Finestra di accesso chiusa. Riprova.',
-    'auth/popup-blocked': 'Popup bloccato dal browser. Abilita i popup per questo sito.',
-    'auth/cancelled-popup-request': 'Operazione annullata',
-    'auth/account-exists-with-different-credential': 'Esiste già un account con questa email ma con un metodo di accesso diverso.',
-    'auth/network-request-failed': 'Errore di rete. Verifica la connessione internet.',
-    'auth/too-many-requests': 'Troppi tentativi. Riprova tra qualche minuto.',
-    'auth/invalid-credential': 'Credenziali non valide. Riprova.',
-    'auth/requires-recent-login': 'Per questa operazione è necessario un accesso recente.',
+    "auth/invalid-email": "Indirizzo email non valido",
+    "auth/user-disabled": "Account disabilitato. Contatta il supporto.",
+    "auth/user-not-found": "Nessun account trovato con questa email",
+    "auth/wrong-password": "Password non corretta",
+    "auth/email-already-in-use":
+      "Questa email è già registrata. Prova ad accedere.",
+    "auth/weak-password": "La password deve essere di almeno 6 caratteri",
+    "auth/operation-not-allowed": "Metodo di accesso non abilitato",
+    "auth/popup-closed-by-user": "Finestra di accesso chiusa. Riprova.",
+    "auth/popup-blocked":
+      "Popup bloccato dal browser. Abilita i popup per questo sito.",
+    "auth/cancelled-popup-request": "Operazione annullata",
+    "auth/account-exists-with-different-credential":
+      "Esiste già un account con questa email ma con un metodo di accesso diverso.",
+    "auth/network-request-failed":
+      "Errore di rete. Verifica la connessione internet.",
+    "auth/too-many-requests": "Troppi tentativi. Riprova tra qualche minuto.",
+    "auth/invalid-credential": "Credenziali non valide. Riprova.",
+    "auth/requires-recent-login":
+      "Per questa operazione è necessario un accesso recente.",
   };
-  
-  return messages[code] || `Errore di autenticazione: ${error?.message || 'Errore sconosciuto'}`;
+
+  return (
+    messages[code] ||
+    `Errore di autenticazione: ${error?.message || "Errore sconosciuto"}`
+  );
 }
 
 // ============================================

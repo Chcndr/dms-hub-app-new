@@ -12,13 +12,13 @@ Questo documento fornisce un report di contesto completo per il progetto **dms-h
 
 Il progetto segue un'architettura monorepo, con una netta separazione tra frontend e backend.
 
-| Directory | Descrizione |
-| :--- | :--- |
-| `/client` | Applicazione frontend basata su **Vite + React**. |
-| `/server` | Applicazione backend basata su **Node.js + Express** con **tRPC**. |
-| `/drizzle` | Schema e migrazioni del database gestiti con **Drizzle ORM**. |
-| `/scripts` | Script di utility per il seeding del database e altre operazioni. |
-| `/shared` | Codice e tipi condivisi tra client e server. |
+| Directory  | Descrizione                                                        |
+| :--------- | :----------------------------------------------------------------- |
+| `/client`  | Applicazione frontend basata su **Vite + React**.                  |
+| `/server`  | Applicazione backend basata su **Node.js + Express** con **tRPC**. |
+| `/drizzle` | Schema e migrazioni del database gestiti con **Drizzle ORM**.      |
+| `/scripts` | Script di utility per il seeding del database e altre operazioni.  |
+| `/shared`  | Codice e tipi condivisi tra client e server.                       |
 
 ### 2.1. Frontend (Client)
 
@@ -32,14 +32,14 @@ Il frontend è un'applicazione Single Page Application (SPA) costruita con le se
 
 #### File Chiave del Frontend
 
-| Percorso File | Descrizione |
-| :--- | :--- |
-| `client/src/App.tsx` | Componente radice dell'applicazione che definisce il router principale. |
-| `client/src/pages/DashboardPA.tsx` | Componente principale della Dashboard PA, contenente la logica dei 24 tab. |
+| Percorso File                               | Descrizione                                                                                 |
+| :------------------------------------------ | :------------------------------------------------------------------------------------------ |
+| `client/src/App.tsx`                        | Componente radice dell'applicazione che definisce il router principale.                     |
+| `client/src/pages/DashboardPA.tsx`          | Componente principale della Dashboard PA, contenente la logica dei 24 tab.                  |
 | `client/src/components/DashboardLayout.tsx` | Layout principale della dashboard che include la sidebar e la gestione dell'autenticazione. |
-| `client/src/components/MIOAgent.tsx` | Nuovo componente per il tab "MIO Agent", attualmente in fase di sviluppo. |
-| `client/src/lib/trpc.ts` | Configurazione del client tRPC per la comunicazione con il backend. |
-| `client/src/const.ts` | Costanti dell'applicazione, inclusa la generazione dell'URL di login OAuth. |
+| `client/src/components/MIOAgent.tsx`        | Nuovo componente per il tab "MIO Agent", attualmente in fase di sviluppo.                   |
+| `client/src/lib/trpc.ts`                    | Configurazione del client tRPC per la comunicazione con il backend.                         |
+| `client/src/const.ts`                       | Costanti dell'applicazione, inclusa la generazione dell'URL di login OAuth.                 |
 
 ### 2.2. Backend (Server)
 
@@ -52,13 +52,13 @@ Il backend espone le API utilizzando tRPC.
 
 #### File Chiave del Backend
 
-| Percorso File | Descrizione |
-| :--- | :--- |
-| `server/index.ts` | Punto di ingresso del server Express. |
-| `server/routers.ts` | Router principale di tRPC (`appRouter`) che aggrega tutti i sotto-router. |
-| `server/integrationsRouter.ts` | Router per la gestione delle integrazioni, API keys e webhooks. |
-| `server/db.ts` | Funzioni di accesso al database (es. `getOverviewStats`, `getUsers`, etc.). |
-| `drizzle/schema.ts` | Definizione dello schema del database con tutte le tabelle e le relazioni. |
+| Percorso File                  | Descrizione                                                                 |
+| :----------------------------- | :-------------------------------------------------------------------------- |
+| `server/index.ts`              | Punto di ingresso del server Express.                                       |
+| `server/routers.ts`            | Router principale di tRPC (`appRouter`) che aggrega tutti i sotto-router.   |
+| `server/integrationsRouter.ts` | Router per la gestione delle integrazioni, API keys e webhooks.             |
+| `server/db.ts`                 | Funzioni di accesso al database (es. `getOverviewStats`, `getUsers`, etc.). |
+| `drizzle/schema.ts`            | Definizione dello schema del database con tutte le tabelle e le relazioni.  |
 
 ## 3. Autenticazione e Ruoli Utente
 
@@ -95,8 +95,8 @@ L'integrazione del MIO Agent è in fase iniziale. Il componente `MIOAgent.tsx` a
 
 1.  **Creare un Endpoint API per i Log:** È necessario creare un nuovo router tRPC (es. `mioRouter`) o estendere `integrationsRouter` per esporre i log provenienti da GitHub o da altre fonti.
 2.  **Comunicazione con Agenti MIO:** La comunicazione tra la dashboard e gli agenti MIO può avvenire tramite:
-    *   **Webhook:** La dashboard può inviare comandi a un webhook di Zapier, che a sua volta triggera un'azione su GitHub (es. un workflow dispatch).
-    *   **API GitHub:** La dashboard può interagire direttamente con l'API di GitHub per leggere file di log o triggerare workflow.
+    - **Webhook:** La dashboard può inviare comandi a un webhook di Zapier, che a sua volta triggera un'azione su GitHub (es. un workflow dispatch).
+    - **API GitHub:** La dashboard può interagire direttamente con l'API di GitHub per leggere file di log o triggerare workflow.
 3.  **Formato Dati:** È necessario definire un formato JSON standard per i job, i comandi e i log scambiati tra la dashboard e gli agenti MIO.
 
 ## 5. Sistema di Logging
@@ -115,13 +115,13 @@ L'integrazione del MIO Agent è in fase iniziale. Il componente `MIOAgent.tsx` a
 
 ### 6.2. Feature da Sviluppare
 
-| Feature | Descrizione | Priorità |
-| :--- | :--- | :--- |
-| **Endpoint Log MIO** | Creare l'API per recuperare e visualizzare i log degli agenti MIO. | Alta |
-| **Comunicazione Real-time** | Implementare un sistema di polling o WebSocket per aggiornare i log in tempo reale. | Media |
-| **Invio Comandi a MIO** | Creare un form o una chat per inviare comandi (job) agli agenti MIO tramite webhook (Zapier) o API GitHub. | Alta |
-| **Visualizzazione Task** | Mostrare lo stato dei task in esecuzione, i loro output e la cronologia. | Media |
-| **Gestione Permessi** | Limitare l'accesso al tab MIO Agent solo agli utenti con ruolo "admin". | Bassa |
+| Feature                     | Descrizione                                                                                                | Priorità |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------------- | :------- |
+| **Endpoint Log MIO**        | Creare l'API per recuperare e visualizzare i log degli agenti MIO.                                         | Alta     |
+| **Comunicazione Real-time** | Implementare un sistema di polling o WebSocket per aggiornare i log in tempo reale.                        | Media    |
+| **Invio Comandi a MIO**     | Creare un form o una chat per inviare comandi (job) agli agenti MIO tramite webhook (Zapier) o API GitHub. | Alta     |
+| **Visualizzazione Task**    | Mostrare lo stato dei task in esecuzione, i loro output e la cronologia.                                   | Media    |
+| **Gestione Permessi**       | Limitare l'accesso al tab MIO Agent solo agli utenti con ruolo "admin".                                    | Bassa    |
 
 ## 7. Conclusioni
 

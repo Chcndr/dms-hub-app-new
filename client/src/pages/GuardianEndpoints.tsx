@@ -1,5 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Search, Shield, AlertTriangle, CheckCircle, XCircle, Play } from 'lucide-react';
+import { useState, useEffect } from "react";
+import {
+  Search,
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Play,
+} from "lucide-react";
 
 // Types from MIO-hub JSON
 interface Endpoint {
@@ -7,7 +14,7 @@ interface Endpoint {
   method: string;
   path: string;
   description: string;
-  risk_level: 'low' | 'medium' | 'high';
+  risk_level: "low" | "medium" | "high";
   require_auth: boolean;
   category: string;
   test?: {
@@ -31,14 +38,14 @@ interface EndpointsData {
 
 interface AgentPermission {
   endpoint_id: string;
-  mode: 'read' | 'write';
+  mode: "read" | "write";
   require_confirmation?: boolean;
 }
 
 interface Agent {
   id: string;
   display_name: string;
-  max_risk: 'low' | 'medium' | 'high';
+  max_risk: "low" | "medium" | "high";
   permissions: AgentPermission[];
 }
 
@@ -48,19 +55,26 @@ interface PermissionsData {
 }
 
 export default function GuardianEndpoints() {
-  const [endpointsData, setEndpointsData] = useState<EndpointsData | null>(null);
-  const [permissionsData, setPermissionsData] = useState<PermissionsData | null>(null);
+  const [endpointsData, setEndpointsData] = useState<EndpointsData | null>(
+    null
+  );
+  const [permissionsData, setPermissionsData] =
+    useState<PermissionsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedService, setSelectedService] = useState<string>('all');
-  const [selectedRisk, setSelectedRisk] = useState<string>('all');
-  const [selectedAgent, setSelectedAgent] = useState<string>('mio');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedService, setSelectedService] = useState<string>("all");
+  const [selectedRisk, setSelectedRisk] = useState<string>("all");
+  const [selectedAgent, setSelectedAgent] = useState<string>("mio");
 
   useEffect(() => {
     // Load data from MIO-hub GitHub repository
     Promise.all([
-      fetch('https://raw.githubusercontent.com/Chcndr/MIO-hub/master/api/index.json').then(r => r.json()),
-      fetch('https://raw.githubusercontent.com/Chcndr/MIO-hub/master/agents/permissions.json').then(r => r.json())
+      fetch(
+        "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/api/index.json"
+      ).then(r => r.json()),
+      fetch(
+        "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/agents/permissions.json"
+      ).then(r => r.json()),
     ])
       .then(([endpoints, permissions]) => {
         setEndpointsData(endpoints);
@@ -68,34 +82,49 @@ export default function GuardianEndpoints() {
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error loading Guardian data:', err);
+        console.error("Error loading Guardian data:", err);
         setLoading(false);
       });
   }, []);
 
   const getRiskBadgeColor = (risk: string) => {
     switch (risk) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "low":
+        return "bg-green-100 text-green-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "high":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getRiskIcon = (risk: string) => {
     switch (risk) {
-      case 'low': return <CheckCircle className="w-4 h-4" />;
-      case 'medium': return <AlertTriangle className="w-4 h-4" />;
-      case 'high': return <XCircle className="w-4 h-4" />;
-      default: return null;
+      case "low":
+        return <CheckCircle className="w-4 h-4" />;
+      case "medium":
+        return <AlertTriangle className="w-4 h-4" />;
+      case "high":
+        return <XCircle className="w-4 h-4" />;
+      default:
+        return null;
     }
   };
 
-  const getAgentPermission = (endpointId: string, agentId: string): AgentPermission | null => {
+  const getAgentPermission = (
+    endpointId: string,
+    agentId: string
+  ): AgentPermission | null => {
     if (!permissionsData || !permissionsData.agents) return null;
     const agent = permissionsData.agents.find(a => a.id === agentId);
     if (!agent || !agent.permissions) return null;
-    return agent.permissions.find((p: AgentPermission) => p.endpoint_id === endpointId) || null;
+    return (
+      agent.permissions.find(
+        (p: AgentPermission) => p.endpoint_id === endpointId
+      ) || null
+    );
   };
 
   const canAgentAccess = (endpoint: Endpoint, agentId: string): boolean => {
@@ -104,7 +133,9 @@ export default function GuardianEndpoints() {
   };
 
   const handleTestEndpoint = (endpoint: Endpoint) => {
-    alert(`Test simulato per endpoint:\n\n${endpoint.method} ${endpoint.path}\n\nParametri default: ${JSON.stringify(endpoint.test?.default_params || {}, null, 2)}\n\n(Quando il backend Guardian sarà deployato, questo farà una chiamata reale)`);
+    alert(
+      `Test simulato per endpoint:\n\n${endpoint.method} ${endpoint.path}\n\nParametri default: ${JSON.stringify(endpoint.test?.default_params || {}, null, 2)}\n\n(Quando il backend Guardian sarà deployato, questo farà una chiamata reale)`
+    );
   };
 
   if (loading) {
@@ -112,7 +143,9 @@ export default function GuardianEndpoints() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Caricamento catalogo endpoint da MIO-hub...</p>
+          <p className="text-gray-600">
+            Caricamento catalogo endpoint da MIO-hub...
+          </p>
         </div>
       </div>
     );
@@ -121,7 +154,9 @@ export default function GuardianEndpoints() {
   if (!endpointsData || !permissionsData) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Errore nel caricamento dei dati Guardian da MIO-hub</p>
+        <p className="text-red-800">
+          Errore nel caricamento dei dati Guardian da MIO-hub
+        </p>
       </div>
     );
   }
@@ -130,14 +165,17 @@ export default function GuardianEndpoints() {
     service.endpoints.map(endpoint => ({ ...endpoint, service }))
   );
 
-  const filteredEndpoints = allEndpoints.filter((item) => {
-    const matchesSearch = searchTerm === '' ||
+  const filteredEndpoints = allEndpoints.filter(item => {
+    const matchesSearch =
+      searchTerm === "" ||
       item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.path.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesService = selectedService === 'all' || item.service.id === selectedService;
-    const matchesRisk = selectedRisk === 'all' || item.risk_level === selectedRisk;
+    const matchesService =
+      selectedService === "all" || item.service.id === selectedService;
+    const matchesRisk =
+      selectedRisk === "all" || item.risk_level === selectedRisk;
 
     return matchesSearch && matchesService && matchesRisk;
   });
@@ -149,8 +187,12 @@ export default function GuardianEndpoints() {
         <div className="flex items-center gap-3 mb-4">
           <Shield className="w-8 h-8 text-blue-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">API Guardian - Endpoint & Test</h1>
-            <p className="text-gray-600">Catalogo endpoint MIHUB + GitHub con controllo permessi</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              API Guardian - Endpoint & Test
+            </h1>
+            <p className="text-gray-600">
+              Catalogo endpoint MIHUB + GitHub con controllo permessi
+            </p>
           </div>
         </div>
 
@@ -162,25 +204,27 @@ export default function GuardianEndpoints() {
               type="text"
               placeholder="Cerca endpoint..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <select
             value={selectedService}
-            onChange={(e) => setSelectedService(e.target.value)}
+            onChange={e => setSelectedService(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">Tutti i servizi</option>
             {endpointsData.services.map(service => (
-              <option key={service.id} value={service.id}>{service.display_name}</option>
+              <option key={service.id} value={service.id}>
+                {service.display_name}
+              </option>
             ))}
           </select>
 
           <select
             value={selectedRisk}
-            onChange={(e) => setSelectedRisk(e.target.value)}
+            onChange={e => setSelectedRisk(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">Tutti i rischi</option>
@@ -191,11 +235,13 @@ export default function GuardianEndpoints() {
 
           <select
             value={selectedAgent}
-            onChange={(e) => setSelectedAgent(e.target.value)}
+            onChange={e => setSelectedAgent(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             {permissionsData.agents.map(agent => (
-              <option key={agent.id} value={agent.id}>{agent.display_name}</option>
+              <option key={agent.id} value={agent.id}>
+                {agent.display_name}
+              </option>
             ))}
           </select>
         </div>
@@ -205,24 +251,26 @@ export default function GuardianEndpoints() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="text-sm text-gray-600">Totale Endpoint</div>
-          <div className="text-2xl font-bold text-gray-900">{allEndpoints.length}</div>
+          <div className="text-2xl font-bold text-gray-900">
+            {allEndpoints.length}
+          </div>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="text-sm text-gray-600">Low Risk</div>
           <div className="text-2xl font-bold text-green-600">
-            {allEndpoints.filter(item => item.risk_level === 'low').length}
+            {allEndpoints.filter(item => item.risk_level === "low").length}
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="text-sm text-gray-600">Medium Risk</div>
           <div className="text-2xl font-bold text-yellow-600">
-            {allEndpoints.filter(item => item.risk_level === 'medium').length}
+            {allEndpoints.filter(item => item.risk_level === "medium").length}
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="text-sm text-gray-600">High Risk</div>
           <div className="text-2xl font-bold text-red-600">
-            {allEndpoints.filter(item => item.risk_level === 'high').length}
+            {allEndpoints.filter(item => item.risk_level === "high").length}
           </div>
         </div>
       </div>
@@ -254,20 +302,28 @@ export default function GuardianEndpoints() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredEndpoints.map((item) => {
+              {filteredEndpoints.map(item => {
                 const permission = getAgentPermission(item.id, selectedAgent);
                 const canAccess = permission !== null;
 
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{item.id}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {item.id}
+                      </div>
                       <div className="text-sm text-gray-500">{item.path}</div>
-                      <div className="text-xs text-gray-400 mt-1">{item.description}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {item.description}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{item.service.display_name}</div>
-                      <div className="text-xs text-gray-500">{item.service.env}</div>
+                      <div className="text-sm text-gray-900">
+                        {item.service.display_name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {item.service.env}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -275,7 +331,9 @@ export default function GuardianEndpoints() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full flex items-center gap-1 w-fit ${getRiskBadgeColor(item.risk_level)}`}>
+                      <span
+                        className={`px-2 py-1 text-xs font-semibold rounded-full flex items-center gap-1 w-fit ${getRiskBadgeColor(item.risk_level)}`}
+                      >
                         {getRiskIcon(item.risk_level)}
                         {item.risk_level}
                       </span>
@@ -318,7 +376,9 @@ export default function GuardianEndpoints() {
 
         {filteredEndpoints.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">Nessun endpoint trovato con i filtri selezionati</p>
+            <p className="text-gray-500">
+              Nessun endpoint trovato con i filtri selezionati
+            </p>
           </div>
         )}
       </div>
@@ -330,7 +390,8 @@ export default function GuardianEndpoints() {
           <br />
           <strong>File:</strong> api/index.json, agents/permissions.json
           <br />
-          <strong>Nota:</strong> Quando il backend Guardian sarà deployato, i dati verranno caricati da MIHUB tramite tRPC
+          <strong>Nota:</strong> Quando il backend Guardian sarà deployato, i
+          dati verranno caricati da MIHUB tramite tRPC
         </p>
       </div>
     </div>

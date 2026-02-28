@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Calendar, 
-  Clock, 
-  Trash2, 
-  LogOut, 
-  Users, 
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Calendar,
+  Clock,
+  Trash2,
+  LogOut,
+  Users,
   Award,
   AlertTriangle,
   Edit2,
@@ -20,13 +20,13 @@ import {
   Play,
   Flag,
   RotateCcw,
-  CheckCircle
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { formatDate } from '@/lib/formatUtils';
-import { addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
+  CheckCircle,
+} from "lucide-react";
+import { toast } from "sonner";
+import { formatDate } from "@/lib/formatUtils";
+import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
 
 interface GraduatoriaRecord {
   id: number;
@@ -101,7 +101,7 @@ interface SpuntistaRecord {
   orario_uscita?: string;
   importo_pagato?: number;
   stall_scelto?: string;
-  stato_presenza?: 'presente' | 'rinunciato' | 'rinuncia_forzata' | null;
+  stato_presenza?: "presente" | "rinunciato" | "rinuncia_forzata" | null;
 }
 
 interface StallData {
@@ -121,17 +121,23 @@ interface PresenzeGraduatoriaPanelProps {
   refreshTrigger?: number;
 }
 
-export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], onRefreshStalls, refreshTrigger }: PresenzeGraduatoriaPanelProps) {
-  const [activeTab, setActiveTab] = useState('concessionari');
+export function PresenzeGraduatoriaPanel({
+  marketId,
+  marketName,
+  stalls = [],
+  onRefreshStalls,
+  refreshTrigger,
+}: PresenzeGraduatoriaPanelProps) {
+  const [activeTab, setActiveTab] = useState("concessionari");
   const [graduatoria, setGraduatoria] = useState<GraduatoriaRecord[]>([]);
   const [presenze, setPresenze] = useState<PresenzaRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<Partial<GraduatoriaRecord>>({});
   const [showStoricoPopup, setShowStoricoPopup] = useState<{
-    stallId?: number; 
-    stallNumber?: string; 
-    presenze: number; 
+    stallId?: number;
+    stallNumber?: string;
+    presenze: number;
     primaPresenza: string | null;
     walletId?: number;
     impresaId?: number;
@@ -139,7 +145,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
   } | null>(null);
   const [spuntisti, setSpuntisti] = useState<SpuntistaRecord[]>([]);
   const [loadingSpuntisti, setLoadingSpuntisti] = useState(false);
-  
+
   // Stati per Test Mercato
   const [testMercatoActive, setTestMercatoActive] = useState(false);
   const [spuntaActive, setSpuntaActive] = useState(false);
@@ -156,7 +162,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
       fetchGraduatoria();
       fetchPresenze();
       fetchTestMercatoStato();
-      if (activeTab === 'spuntisti') {
+      if (activeTab === "spuntisti") {
         fetchSpuntisti();
       }
     }
@@ -168,7 +174,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
       fetchGraduatoria();
       fetchPresenze();
       fetchTestMercatoStato();
-      if (activeTab === 'spuntisti') {
+      if (activeTab === "spuntisti") {
         fetchSpuntisti();
       }
     }
@@ -179,22 +185,26 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
     setLoading(true);
     try {
       const tipoMap: Record<string, string> = {
-        'concessionari': 'CONCESSION',
-        'spuntisti': 'SPUNTA',
-        'straordinari': 'STRAORDINARIO'
+        concessionari: "CONCESSION",
+        spuntisti: "SPUNTA",
+        straordinari: "STRAORDINARIO",
       };
-      const tipo = tipoMap[activeTab] || 'all';
+      const tipo = tipoMap[activeTab] || "all";
       const isTest = forceTestMode || testMercatoActive;
-      const testParam = isTest ? '&include_test=true' : '';
+      const testParam = isTest ? "&include_test=true" : "";
 
-      const response = await fetch(addComuneIdToUrl(`${API_BASE}/api/graduatoria/mercato/${marketId}?tipo=${tipo}${testParam}`));
+      const response = await fetch(
+        addComuneIdToUrl(
+          `${API_BASE}/api/graduatoria/mercato/${marketId}?tipo=${tipo}${testParam}`
+        )
+      );
       const data = await response.json();
 
       if (data.success) {
         setGraduatoria(data.data);
       }
     } catch (error) {
-      console.error('Errore fetch graduatoria:', error);
+      console.error("Errore fetch graduatoria:", error);
     } finally {
       setLoading(false);
     }
@@ -204,22 +214,26 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
     if (!marketId) return;
     try {
       const tipoMap: Record<string, string> = {
-        'concessionari': 'CONCESSION',
-        'spuntisti': 'SPUNTA',
-        'straordinari': 'STRAORDINARIO'
+        concessionari: "CONCESSION",
+        spuntisti: "SPUNTA",
+        straordinari: "STRAORDINARIO",
       };
-      const tipo = tipoMap[activeTab] || 'all';
+      const tipo = tipoMap[activeTab] || "all";
       const isTest = forceTestMode || testMercatoActive;
-      const testParam = isTest ? '&include_test=true' : '';
+      const testParam = isTest ? "&include_test=true" : "";
 
-      const response = await fetch(addComuneIdToUrl(`${API_BASE}/api/presenze/mercato/${marketId}?tipo=${tipo}${testParam}`));
+      const response = await fetch(
+        addComuneIdToUrl(
+          `${API_BASE}/api/presenze/mercato/${marketId}?tipo=${tipo}${testParam}`
+        )
+      );
       const data = await response.json();
 
       if (data.success) {
         setPresenze(data.data);
       }
     } catch (error) {
-      console.error('Errore fetch presenze:', error);
+      console.error("Errore fetch presenze:", error);
     }
   };
 
@@ -229,19 +243,23 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
     setLoadingSpuntisti(true);
     try {
       const isTest = forceTestMode || testMercatoActive;
-      const testParam = isTest ? '?include_test=true' : '';
+      const testParam = isTest ? "?include_test=true" : "";
 
-      const response = await fetch(addComuneIdToUrl(`${API_BASE}/api/spuntisti/mercato/${marketId}${testParam}`));
+      const response = await fetch(
+        addComuneIdToUrl(
+          `${API_BASE}/api/spuntisti/mercato/${marketId}${testParam}`
+        )
+      );
       const data = await response.json();
 
       if (data.success) {
         setSpuntisti(data.data);
       } else {
-        console.error('Errore fetch spuntisti:', data.error);
+        console.error("Errore fetch spuntisti:", data.error);
         setSpuntisti([]);
       }
     } catch (error) {
-      console.error('Errore fetch spuntisti:', error);
+      console.error("Errore fetch spuntisti:", error);
       setSpuntisti([]);
     } finally {
       setLoadingSpuntisti(false);
@@ -252,13 +270,15 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
   const fetchTestMercatoStato = async () => {
     if (!marketId) return;
     try {
-      const response = await fetch(`${API_BASE}/api/test-mercato/stato/${marketId}`);
+      const response = await fetch(
+        `${API_BASE}/api/test-mercato/stato/${marketId}`
+      );
       const data = await response.json();
       if (data.success) {
         setTestMercatoStato(data.data);
       }
     } catch (error) {
-      console.error('Errore fetch stato test mercato:', error);
+      console.error("Errore fetch stato test mercato:", error);
     }
   };
 
@@ -266,9 +286,9 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
     if (!marketId) return;
     try {
       const response = await fetch(`${API_BASE}/api/test-mercato/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ market_id: marketId })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ market_id: marketId }),
       });
       const data = await response.json();
       if (data.success) {
@@ -283,23 +303,28 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
         toast.error(data.error);
       }
     } catch (error) {
-      toast.error('Errore avvio test mercato');
+      toast.error("Errore avvio test mercato");
     }
   };
 
   const handleRegistraPresenzaConcessionario = async (stallId: number) => {
     if (!marketId) return;
     try {
-      const response = await fetch(`${API_BASE}/api/test-mercato/registra-presenza-concessionario`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stall_id: stallId, market_id: marketId })
-      });
+      const response = await fetch(
+        `${API_BASE}/api/test-mercato/registra-presenza-concessionario`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stall_id: stallId, market_id: marketId }),
+        }
+      );
       const data = await response.json();
       if (data.success) {
         toast.success(`✅ ${data.message}`);
         if (data.data.addebito_effettuato) {
-          toast.info(`💰 Addebitato €${data.data.costo_posteggio.toFixed(2)} - Nuovo saldo: €${data.data.nuovo_saldo_wallet?.toFixed(2)}`);
+          toast.info(
+            `💰 Addebitato €${data.data.costo_posteggio.toFixed(2)} - Nuovo saldo: €${data.data.nuovo_saldo_wallet?.toFixed(2)}`
+          );
         }
         fetchTestMercatoStato();
         fetchGraduatoria(true);
@@ -309,18 +334,21 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
         toast.error(data.error);
       }
     } catch (error) {
-      toast.error('Errore registrazione presenza');
+      toast.error("Errore registrazione presenza");
     }
   };
 
   const handleAvviaSpunta = async () => {
     if (!marketId) return;
     try {
-      const response = await fetch(`${API_BASE}/api/test-mercato/avvia-spunta`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ market_id: marketId })
-      });
+      const response = await fetch(
+        `${API_BASE}/api/test-mercato/avvia-spunta`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ market_id: marketId }),
+        }
+      );
       const data = await response.json();
       if (data.success) {
         toast.success(`🏁 ${data.message}`);
@@ -334,23 +362,28 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
         toast.error(data.error);
       }
     } catch (error) {
-      toast.error('Errore avvio spunta');
+      toast.error("Errore avvio spunta");
     }
   };
 
   const handleAssegnaPosteggioSpunta = async (stallId: number) => {
     if (!marketId) return;
     try {
-      const response = await fetch(`${API_BASE}/api/test-mercato/assegna-posteggio-spunta`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stall_id: stallId, market_id: marketId })
-      });
+      const response = await fetch(
+        `${API_BASE}/api/test-mercato/assegna-posteggio-spunta`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stall_id: stallId, market_id: marketId }),
+        }
+      );
       const data = await response.json();
       if (data.success) {
         toast.success(`✅ ${data.message}`);
         if (data.data.addebito_effettuato) {
-          toast.info(`💰 Addebitato €${data.data.costo_posteggio.toFixed(2)} - Nuovo saldo: €${data.data.nuovo_saldo_wallet?.toFixed(2)}`);
+          toast.info(
+            `💰 Addebitato €${data.data.costo_posteggio.toFixed(2)} - Nuovo saldo: €${data.data.nuovo_saldo_wallet?.toFixed(2)}`
+          );
         }
         fetchTestMercatoStato();
         fetchSpuntisti(true);
@@ -360,18 +393,23 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
         toast.error(data.error);
       }
     } catch (error) {
-      toast.error('Errore assegnazione posteggio');
+      toast.error("Errore assegnazione posteggio");
     }
   };
 
   const handleResetTestMercato = async () => {
     if (!marketId) return;
-    if (!confirm('Sei sicuro di voler resettare il test mercato? Tutte le presenze del giorno verranno eliminate.')) return;
+    if (
+      !confirm(
+        "Sei sicuro di voler resettare il test mercato? Tutte le presenze del giorno verranno eliminate."
+      )
+    )
+      return;
     try {
       const response = await fetch(`${API_BASE}/api/test-mercato/reset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ market_id: marketId })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ market_id: marketId }),
       });
       const data = await response.json();
       if (data.success) {
@@ -387,7 +425,7 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
         toast.error(data.error);
       }
     } catch (error) {
-      toast.error('Errore reset test mercato');
+      toast.error("Errore reset test mercato");
     }
   };
 
@@ -404,20 +442,23 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
       presenze_totali: record.presenze_totali,
       punteggio: record.punteggio,
       data_prima_presenza: record.data_prima_presenza,
-      assenze_non_giustificate: record.assenze_non_giustificate
+      assenze_non_giustificate: record.assenze_non_giustificate,
     });
   };
 
   const handleSave = async (id: number) => {
     try {
-      const response = await authenticatedFetch(`${API_BASE}/api/graduatoria/aggiorna`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...editValues })
-      });
-      
+      const response = await authenticatedFetch(
+        `${API_BASE}/api/graduatoria/aggiorna`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, ...editValues }),
+        }
+      );
+
       const data = await response.json();
-      
+
       if (data.success) {
         toast.success(data.message || "Dati aggiornati con successo");
         setEditingId(null);
@@ -436,15 +477,21 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
   };
 
   const handleChiamaTurno = (record: GraduatoriaRecord) => {
-    toast.info(`📢 Chiamata Turno #${record.posizione} - ${record.impresa_nome}`);
+    toast.info(
+      `📢 Chiamata Turno #${record.posizione} - ${record.impresa_nome}`
+    );
     // TODO: Attivare modalità selezione posteggio sulla mappa
   };
 
   const getStatoRevocaBadge = (stato: string) => {
     switch (stato) {
-      case 'REVOCA':
-        return <Badge variant="destructive" className="animate-pulse">⚠️ REVOCA</Badge>;
-      case 'WARNING':
+      case "REVOCA":
+        return (
+          <Badge variant="destructive" className="animate-pulse">
+            ⚠️ REVOCA
+          </Badge>
+        );
+      case "WARNING":
         return <Badge className="bg-yellow-500">⚠️ WARNING</Badge>;
       default:
         return <Badge className="bg-green-500">✓ OK</Badge>;
@@ -452,31 +499,37 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
   };
 
   const formatTime = (timeStr: string) => {
-    if (!timeStr) return '-';
-    return new Date(timeStr).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    if (!timeStr) return "-";
+    return new Date(timeStr).toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(amount || 0);
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(amount || 0);
   };
 
   // Funzione per ottenere il badge stato spuntista
   const getStatoSpuntistaBadge = (record: SpuntistaRecord) => {
-    if (record.stato_presenza === 'presente' && record.stall_scelto) {
+    if (record.stato_presenza === "presente" && record.stall_scelto) {
       // Verde con numero posteggio
       return (
         <Badge className="bg-green-500 text-white font-bold min-w-[60px] justify-center">
           {record.stall_scelto}
         </Badge>
       );
-    } else if (record.stato_presenza === 'rinunciato') {
+    } else if (record.stato_presenza === "rinunciato") {
       // Arancione - ha fatto presenza ma non ha scelto posteggio
       return (
         <Badge className="bg-orange-500 text-white text-[10px] min-w-[60px] justify-center">
           RINUNCIATO
         </Badge>
       );
-    } else if (record.stato_presenza === 'rinuncia_forzata') {
+    } else if (record.stato_presenza === "rinuncia_forzata") {
       // Rosso - non ci sono più posteggi disponibili
       return (
         <Badge className="bg-red-500 text-white text-[10px] min-w-[60px] justify-center">
@@ -496,29 +549,32 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
   // Salva storico spuntista
   const handleSaveStoricoSpuntista = async () => {
     if (!showStoricoPopup) return;
-    
+
     try {
-      const response = await authenticatedFetch(`${API_BASE}/api/graduatoria/aggiorna-storico`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wallet_id: showStoricoPopup.walletId,
-          impresa_id: showStoricoPopup.impresaId,
-          market_id: marketId,
-          presenze_totali: showStoricoPopup.presenze,
-          data_prima_presenza: showStoricoPopup.primaPresenza
-        })
-      });
+      const response = await authenticatedFetch(
+        `${API_BASE}/api/graduatoria/aggiorna-storico`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            wallet_id: showStoricoPopup.walletId,
+            impresa_id: showStoricoPopup.impresaId,
+            market_id: marketId,
+            presenze_totali: showStoricoPopup.presenze,
+            data_prima_presenza: showStoricoPopup.primaPresenza,
+          }),
+        }
+      );
       const data = await response.json();
       if (data.success) {
-        toast.success('Storico aggiornato!');
+        toast.success("Storico aggiornato!");
         fetchSpuntisti();
         setShowStoricoPopup(null);
       } else {
-        toast.error(data.error || 'Errore salvataggio');
+        toast.error(data.error || "Errore salvataggio");
       }
     } catch (error) {
-      toast.error('Errore di connessione');
+      toast.error("Errore di connessione");
     }
   };
 
@@ -539,7 +595,11 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
         <CardTitle className="flex items-center gap-2 text-white">
           <Award className="w-5 h-5 text-yellow-400" />
           Presenze e Graduatoria
-          {marketName && <span className="text-slate-400 text-sm font-normal">- {marketName}</span>}
+          {marketName && (
+            <span className="text-slate-400 text-sm font-normal">
+              - {marketName}
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -550,23 +610,34 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
             <div className="flex-1 flex items-center justify-end gap-4 text-xs">
               <div className="flex items-center gap-1">
                 <span className="text-green-400">●</span>
-                <span className="text-slate-400">Liberi: {testMercatoStato.posteggi?.libero || 0}</span>
+                <span className="text-slate-400">
+                  Liberi: {testMercatoStato.posteggi?.libero || 0}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-orange-400">●</span>
-                <span className="text-slate-400">Assegn: {testMercatoStato.posteggi?.riservato || 0}</span>
+                <span className="text-slate-400">
+                  Assegn: {testMercatoStato.posteggi?.riservato || 0}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-red-400">●</span>
-                <span className="text-slate-400">Occupati: {testMercatoStato.posteggi?.occupato || 0}</span>
+                <span className="text-slate-400">
+                  Occupati: {testMercatoStato.posteggi?.occupato || 0}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-yellow-400">●</span>
-                <span className="text-slate-400">Spuntisti in attesa: {testMercatoStato.spuntisti_in_attesa}</span>
+                <span className="text-slate-400">
+                  Spuntisti in attesa: {testMercatoStato.spuntisti_in_attesa}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-cyan-400 font-bold">💰</span>
-                <span className="text-cyan-400 font-bold">Incassato: €{testMercatoStato.totale_incassato?.toFixed(2) || '0.00'}</span>
+                <span className="text-cyan-400 font-bold">
+                  Incassato: €
+                  {testMercatoStato.totale_incassato?.toFixed(2) || "0.00"}
+                </span>
               </div>
             </div>
           )}
@@ -574,13 +645,22 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 bg-slate-700/50">
-            <TabsTrigger value="concessionari" className="data-[state=active]:bg-cyan-600">
+            <TabsTrigger
+              value="concessionari"
+              className="data-[state=active]:bg-cyan-600"
+            >
               Presenze Concessionari
             </TabsTrigger>
-            <TabsTrigger value="spuntisti" className="data-[state=active]:bg-yellow-600">
+            <TabsTrigger
+              value="spuntisti"
+              className="data-[state=active]:bg-yellow-600"
+            >
               Presenze Spuntisti
             </TabsTrigger>
-            <TabsTrigger value="straordinari" className="data-[state=active]:bg-purple-600">
+            <TabsTrigger
+              value="straordinari"
+              className="data-[state=active]:bg-purple-600"
+            >
               Fiere/Straordinari
             </TabsTrigger>
           </TabsList>
@@ -598,161 +678,275 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
                     <th className="text-center p-1">Accesso</th>
                     <th className="text-center p-1">Rifiuti</th>
                     <th className="text-center p-1">Uscita</th>
-                    <th className="text-center p-1 cursor-pointer hover:text-cyan-400" title="Click per storico">Presenze</th>
+                    <th
+                      className="text-center p-1 cursor-pointer hover:text-cyan-400"
+                      title="Click per storico"
+                    >
+                      Presenze
+                    </th>
                     <th className="text-center p-1">Assenze</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={9} className="text-center p-4 text-slate-400">Caricamento...</td>
+                      <td
+                        colSpan={9}
+                        className="text-center p-4 text-slate-400"
+                      >
+                        Caricamento...
+                      </td>
                     </tr>
                   ) : stalls.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="text-center p-4 text-slate-400">
+                      <td
+                        colSpan={9}
+                        className="text-center p-4 text-slate-400"
+                      >
                         Nessun posteggio trovato per questo mercato.
                       </td>
                     </tr>
-                  ) : stalls
-                    .sort((a, b) => String(a.number).localeCompare(String(b.number), undefined, { numeric: true, sensitivity: 'base' }))
-                    .map((stall) => {
-                    const record = graduatoria.find(g => g.stall_id === stall.id);
-                    const presenza = presenze.find(p => p.stall_id === stall.id);
-                    const isSpuntista = stall.type === 'spunta';
-                    const isRevoca = record?.stato_revoca === 'REVOCA';
-                    const getStatoBadge = (status: string, stallId: number) => {
-                      switch(status) {
-                        case 'occupato': return <Badge className="bg-red-500 text-[10px] px-1">OCCUP.</Badge>;
-                        case 'riservato': return (
-                          <Badge 
-                            className="bg-orange-500 text-[10px] px-1 cursor-pointer hover:bg-orange-600" 
-                            onClick={() => handleAssegnaPosteggioSpunta(stallId)}
-                            title="Click per assegnare a spuntista"
-                          >
-                            ASSEGN.
-                          </Badge>
+                  ) : (
+                    stalls
+                      .sort((a, b) =>
+                        String(a.number).localeCompare(
+                          String(b.number),
+                          undefined,
+                          { numeric: true, sensitivity: "base" }
+                        )
+                      )
+                      .map(stall => {
+                        const record = graduatoria.find(
+                          g => g.stall_id === stall.id
                         );
-                        case 'libero': default: return (
-                          <Badge 
-                            className="bg-green-500 text-[10px] px-1 cursor-pointer hover:bg-green-600" 
-                            onClick={() => handleRegistraPresenzaConcessionario(stallId)}
-                            title="Click per registrare presenza"
-                          >
-                            LIBERO
-                          </Badge>
+                        const presenza = presenze.find(
+                          p => p.stall_id === stall.id
                         );
-                      }
-                    };
-                    return (
-                    <tr key={stall.id} className={`border-b border-slate-700/50 hover:bg-slate-700/30 ${stall.status === 'occupato' ? 'bg-red-900/10' : ''}`}>
-                      <td className="p-1 text-center">
-                        <span className="text-cyan-400 font-mono font-bold">{stall.number}</span>
-                      </td>
-                      <td className="p-1 text-center">
-                        {getStatoBadge(stall.status, stall.id)}
-                      </td>
-                      <td className="p-1">
-                        {stall.vendor_business_name ? (
-                          <span className={`font-medium ${isSpuntista ? 'text-yellow-400' : 'text-white'}`}>
-                            {stall.vendor_business_name}
-                          </span>
-                        ) : (
-                          <span className="text-slate-500">-</span>
-                        )}
-                      </td>
-                      <td className="p-1 text-center text-slate-300">
-                        {presenza?.giorno_mercato ? new Date(presenza.giorno_mercato).toLocaleDateString('it-IT', {weekday: 'short', day: '2-digit', month: '2-digit'}) : '-'}
-                      </td>
-                      <td className="p-1 text-center text-green-400">
-                        {presenza?.checkin_time ? new Date(presenza.checkin_time).toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'}) : '-'}
-                      </td>
-                      <td className="p-1 text-center text-orange-400">
-                        {presenza?.orario_deposito_rifiuti ? new Date(presenza.orario_deposito_rifiuti).toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'}) : '-'}
-                      </td>
-                      <td className="p-1 text-center text-blue-400">
-                        {presenza?.checkout_time ? new Date(presenza.checkout_time).toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'}) : '-'}
-                      </td>
-                      <td className="p-1 text-center">
-                        <button 
-                          onClick={() => setShowStoricoPopup({
-                            stallId: stall.id,
-                            stallNumber: stall.number,
-                            presenze: record?.presenze_totali || 0,
-                            primaPresenza: record?.data_prima_presenza || null
-                          })}
-                          className="text-white font-bold hover:text-cyan-400 cursor-pointer"
-                        >
-                          {record?.presenze_totali || 0}
-                        </button>
-                      </td>
-                      <td className="p-1 text-center">
-                        <span className={isRevoca ? 'text-red-500 font-bold animate-pulse' : 'text-slate-300'}>
-                          {record ? record.assenze_non_giustificate : '-'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                  })}
+                        const isSpuntista = stall.type === "spunta";
+                        const isRevoca = record?.stato_revoca === "REVOCA";
+                        const getStatoBadge = (
+                          status: string,
+                          stallId: number
+                        ) => {
+                          switch (status) {
+                            case "occupato":
+                              return (
+                                <Badge className="bg-red-500 text-[10px] px-1">
+                                  OCCUP.
+                                </Badge>
+                              );
+                            case "riservato":
+                              return (
+                                <Badge
+                                  className="bg-orange-500 text-[10px] px-1 cursor-pointer hover:bg-orange-600"
+                                  onClick={() =>
+                                    handleAssegnaPosteggioSpunta(stallId)
+                                  }
+                                  title="Click per assegnare a spuntista"
+                                >
+                                  ASSEGN.
+                                </Badge>
+                              );
+                            case "libero":
+                            default:
+                              return (
+                                <Badge
+                                  className="bg-green-500 text-[10px] px-1 cursor-pointer hover:bg-green-600"
+                                  onClick={() =>
+                                    handleRegistraPresenzaConcessionario(
+                                      stallId
+                                    )
+                                  }
+                                  title="Click per registrare presenza"
+                                >
+                                  LIBERO
+                                </Badge>
+                              );
+                          }
+                        };
+                        return (
+                          <tr
+                            key={stall.id}
+                            className={`border-b border-slate-700/50 hover:bg-slate-700/30 ${stall.status === "occupato" ? "bg-red-900/10" : ""}`}
+                          >
+                            <td className="p-1 text-center">
+                              <span className="text-cyan-400 font-mono font-bold">
+                                {stall.number}
+                              </span>
+                            </td>
+                            <td className="p-1 text-center">
+                              {getStatoBadge(stall.status, stall.id)}
+                            </td>
+                            <td className="p-1">
+                              {stall.vendor_business_name ? (
+                                <span
+                                  className={`font-medium ${isSpuntista ? "text-yellow-400" : "text-white"}`}
+                                >
+                                  {stall.vendor_business_name}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500">-</span>
+                              )}
+                            </td>
+                            <td className="p-1 text-center text-slate-300">
+                              {presenza?.giorno_mercato
+                                ? new Date(
+                                    presenza.giorno_mercato
+                                  ).toLocaleDateString("it-IT", {
+                                    weekday: "short",
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                  })
+                                : "-"}
+                            </td>
+                            <td className="p-1 text-center text-green-400">
+                              {presenza?.checkin_time
+                                ? new Date(
+                                    presenza.checkin_time
+                                  ).toLocaleTimeString("it-IT", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "-"}
+                            </td>
+                            <td className="p-1 text-center text-orange-400">
+                              {presenza?.orario_deposito_rifiuti
+                                ? new Date(
+                                    presenza.orario_deposito_rifiuti
+                                  ).toLocaleTimeString("it-IT", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "-"}
+                            </td>
+                            <td className="p-1 text-center text-blue-400">
+                              {presenza?.checkout_time
+                                ? new Date(
+                                    presenza.checkout_time
+                                  ).toLocaleTimeString("it-IT", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "-"}
+                            </td>
+                            <td className="p-1 text-center">
+                              <button
+                                onClick={() =>
+                                  setShowStoricoPopup({
+                                    stallId: stall.id,
+                                    stallNumber: stall.number,
+                                    presenze: record?.presenze_totali || 0,
+                                    primaPresenza:
+                                      record?.data_prima_presenza || null,
+                                  })
+                                }
+                                className="text-white font-bold hover:text-cyan-400 cursor-pointer"
+                              >
+                                {record?.presenze_totali || 0}
+                              </button>
+                            </td>
+                            <td className="p-1 text-center">
+                              <span
+                                className={
+                                  isRevoca
+                                    ? "text-red-500 font-bold animate-pulse"
+                                    : "text-slate-300"
+                                }
+                              >
+                                {record ? record.assenze_non_giustificate : "-"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                  )}
                 </tbody>
               </table>
             </div>
 
             {/* Popup Storico Presenze - Editabile */}
             {showStoricoPopup && showStoricoPopup.stallId && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowStoricoPopup(null)}>
-                <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 border border-cyan-500/30" onClick={e => e.stopPropagation()}>
-                  <h3 className="text-lg font-bold text-white mb-4">📊 Storico Presenze - Posteggio {showStoricoPopup.stallNumber}</h3>
+              <div
+                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                onClick={() => setShowStoricoPopup(null)}
+              >
+                <div
+                  className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 border border-cyan-500/30"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <h3 className="text-lg font-bold text-white mb-4">
+                    📊 Storico Presenze - Posteggio{" "}
+                    {showStoricoPopup.stallNumber}
+                  </h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-slate-400 text-sm block mb-1">Presenze Totali (storico):</label>
-                      <input 
+                      <label className="text-slate-400 text-sm block mb-1">
+                        Presenze Totali (storico):
+                      </label>
+                      <input
                         type="number"
                         className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white text-lg font-bold"
                         value={showStoricoPopup.presenze}
-                        onChange={(e) => setShowStoricoPopup({...showStoricoPopup, presenze: parseInt(e.target.value) || 0})}
+                        onChange={e =>
+                          setShowStoricoPopup({
+                            ...showStoricoPopup,
+                            presenze: parseInt(e.target.value) || 0,
+                          })
+                        }
                       />
                     </div>
                     <div>
-                      <label className="text-slate-400 text-sm block mb-1">Data Prima Presenza:</label>
-                      <input 
+                      <label className="text-slate-400 text-sm block mb-1">
+                        Data Prima Presenza:
+                      </label>
+                      <input
                         type="date"
                         className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
-                        value={showStoricoPopup.primaPresenza || ''}
-                        onChange={(e) => setShowStoricoPopup({...showStoricoPopup, primaPresenza: e.target.value})}
+                        value={showStoricoPopup.primaPresenza || ""}
+                        onChange={e =>
+                          setShowStoricoPopup({
+                            ...showStoricoPopup,
+                            primaPresenza: e.target.value,
+                          })
+                        }
                       />
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <Button 
+                    <Button
                       className="flex-1 bg-green-600 hover:bg-green-700"
                       onClick={async () => {
                         try {
-                          const response = await authenticatedFetch(`${API_BASE}/api/graduatoria/aggiorna-storico`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              stall_id: showStoricoPopup.stallId,
-                              market_id: marketId,
-                              presenze_totali: showStoricoPopup.presenze,
-                              data_prima_presenza: showStoricoPopup.primaPresenza
-                            })
-                          });
+                          const response = await authenticatedFetch(
+                            `${API_BASE}/api/graduatoria/aggiorna-storico`,
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                stall_id: showStoricoPopup.stallId,
+                                market_id: marketId,
+                                presenze_totali: showStoricoPopup.presenze,
+                                data_prima_presenza:
+                                  showStoricoPopup.primaPresenza,
+                              }),
+                            }
+                          );
                           const data = await response.json();
                           if (data.success) {
-                            toast.success('Storico aggiornato!');
+                            toast.success("Storico aggiornato!");
                             fetchGraduatoria();
                             setShowStoricoPopup(null);
                           } else {
-                            toast.error(data.error || 'Errore salvataggio');
+                            toast.error(data.error || "Errore salvataggio");
                           }
                         } catch (error) {
-                          toast.error('Errore di connessione');
+                          toast.error("Errore di connessione");
                         }
                       }}
                     >
                       💾 Salva
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
                       className="flex-1 border-slate-600"
                       onClick={() => setShowStoricoPopup(null)}
@@ -780,82 +974,130 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
                     <th className="text-center p-1">Rifiuti</th>
                     <th className="text-center p-1">Uscita</th>
                     <th className="text-center p-1">Pagato</th>
-                    <th className="text-center p-1 cursor-pointer hover:text-yellow-400" title="Click per storico">Presenze</th>
+                    <th
+                      className="text-center p-1 cursor-pointer hover:text-yellow-400"
+                      title="Click per storico"
+                    >
+                      Presenze
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {loadingSpuntisti ? (
                     <tr>
-                      <td colSpan={10} className="text-center p-4 text-slate-400">Caricamento spuntisti...</td>
+                      <td
+                        colSpan={10}
+                        className="text-center p-4 text-slate-400"
+                      >
+                        Caricamento spuntisti...
+                      </td>
                     </tr>
                   ) : spuntisti.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="text-center p-4 text-slate-400">
+                      <td
+                        colSpan={10}
+                        className="text-center p-4 text-slate-400"
+                      >
                         Nessuno spuntista con wallet SPUNTA per questo mercato.
                       </td>
                     </tr>
-                  ) : spuntisti.map((record) => {
-                    // Usa posizione_graduatoria calcolata dal backend (basata su presenze DESC, data ASC)
-                    const pos = record.posizione_graduatoria || 999;
-                    return (
-                    <tr key={record.wallet_id} className="border-b border-slate-700/50 hover:bg-yellow-900/20 bg-yellow-900/10">
-                      <td className="p-1 text-center">
-                        <Badge className={`${pos === 1 ? 'bg-yellow-500' : pos === 2 ? 'bg-slate-400' : pos === 3 ? 'bg-amber-600' : 'bg-slate-600'} text-[10px]`}>
-                          #{pos}
-                        </Badge>
-                      </td>
-                      <td className="p-1 text-center">
-                        {getStatoSpuntistaBadge(record)}
-                      </td>
-                      <td className="p-1">
-                        <div className="text-yellow-400 font-medium text-xs">{record.impresa_nome}</div>
-                        <div className="text-slate-500 text-[10px]">{record.impresa_piva || record.codice_fiscale}</div>
-                      </td>
-                      <td className="p-1 text-center">
-                        <span className={`font-bold text-xs ${parseFloat(String(record.wallet_balance || 0)) > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {formatCurrency(parseFloat(String(record.wallet_balance || 0)))}
-                        </span>
-                      </td>
-                      <td className="p-1 text-center text-slate-300 text-xs">
-                        {record.giorno_presenza ? new Date(record.giorno_presenza).toLocaleDateString('it-IT', {weekday: 'short', day: '2-digit', month: '2-digit'}) : '-'}
-                      </td>
-                      <td className="p-1 text-center text-green-400 text-xs">
-                        {record.orario_arrivo || '-'}
-                      </td>
-                      <td className="p-1 text-center text-orange-400 text-xs">
-                        {record.orario_deposito_rifiuti || '-'}
-                      </td>
-                      <td className="p-1 text-center text-blue-400 text-xs">
-                        {record.orario_uscita || '-'}
-                      </td>
-                      <td className="p-1 text-center text-xs">
-                        <span className={record.importo_pagato ? 'text-green-400 font-bold' : 'text-slate-500'}>
-                          {record.importo_pagato ? formatCurrency(record.importo_pagato) : '-'}
-                        </span>
-                      </td>
-                      <td className="p-1 text-center">
-                        <button 
-                          onClick={() => setShowStoricoPopup({
-                            walletId: record.wallet_id,
-                            impresaId: record.impresa_id,
-                            impresaNome: record.impresa_nome,
-                            presenze: record.presenze_totali || 0,
-                            primaPresenza: record.data_prima_presenza || null
-                          })}
-                          className="text-white font-bold hover:text-yellow-400 cursor-pointer text-xs"
+                  ) : (
+                    spuntisti.map(record => {
+                      // Usa posizione_graduatoria calcolata dal backend (basata su presenze DESC, data ASC)
+                      const pos = record.posizione_graduatoria || 999;
+                      return (
+                        <tr
+                          key={record.wallet_id}
+                          className="border-b border-slate-700/50 hover:bg-yellow-900/20 bg-yellow-900/10"
                         >
-                          {record.presenze_totali || 0}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                  })}
+                          <td className="p-1 text-center">
+                            <Badge
+                              className={`${pos === 1 ? "bg-yellow-500" : pos === 2 ? "bg-slate-400" : pos === 3 ? "bg-amber-600" : "bg-slate-600"} text-[10px]`}
+                            >
+                              #{pos}
+                            </Badge>
+                          </td>
+                          <td className="p-1 text-center">
+                            {getStatoSpuntistaBadge(record)}
+                          </td>
+                          <td className="p-1">
+                            <div className="text-yellow-400 font-medium text-xs">
+                              {record.impresa_nome}
+                            </div>
+                            <div className="text-slate-500 text-[10px]">
+                              {record.impresa_piva || record.codice_fiscale}
+                            </div>
+                          </td>
+                          <td className="p-1 text-center">
+                            <span
+                              className={`font-bold text-xs ${parseFloat(String(record.wallet_balance || 0)) > 0 ? "text-green-400" : "text-red-400"}`}
+                            >
+                              {formatCurrency(
+                                parseFloat(String(record.wallet_balance || 0))
+                              )}
+                            </span>
+                          </td>
+                          <td className="p-1 text-center text-slate-300 text-xs">
+                            {record.giorno_presenza
+                              ? new Date(
+                                  record.giorno_presenza
+                                ).toLocaleDateString("it-IT", {
+                                  weekday: "short",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                })
+                              : "-"}
+                          </td>
+                          <td className="p-1 text-center text-green-400 text-xs">
+                            {record.orario_arrivo || "-"}
+                          </td>
+                          <td className="p-1 text-center text-orange-400 text-xs">
+                            {record.orario_deposito_rifiuti || "-"}
+                          </td>
+                          <td className="p-1 text-center text-blue-400 text-xs">
+                            {record.orario_uscita || "-"}
+                          </td>
+                          <td className="p-1 text-center text-xs">
+                            <span
+                              className={
+                                record.importo_pagato
+                                  ? "text-green-400 font-bold"
+                                  : "text-slate-500"
+                              }
+                            >
+                              {record.importo_pagato
+                                ? formatCurrency(record.importo_pagato)
+                                : "-"}
+                            </span>
+                          </td>
+                          <td className="p-1 text-center">
+                            <button
+                              onClick={() =>
+                                setShowStoricoPopup({
+                                  walletId: record.wallet_id,
+                                  impresaId: record.impresa_id,
+                                  impresaNome: record.impresa_nome,
+                                  presenze: record.presenze_totali || 0,
+                                  primaPresenza:
+                                    record.data_prima_presenza || null,
+                                })
+                              }
+                              className="text-white font-bold hover:text-yellow-400 cursor-pointer text-xs"
+                            >
+                              {record.presenze_totali || 0}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
               {spuntisti.length > 0 && (
                 <div className="mt-4 p-3 bg-yellow-900/20 rounded-lg border border-yellow-600/30">
                   <p className="text-yellow-400 text-sm">
-                    📋 <strong>{spuntisti.length}</strong> spuntisti con wallet SPUNTA attivo per questo mercato
+                    📋 <strong>{spuntisti.length}</strong> spuntisti con wallet
+                    SPUNTA attivo per questo mercato
                   </p>
                 </div>
               )}
@@ -863,37 +1105,59 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
 
             {/* Popup Storico Presenze Spuntista - Editabile */}
             {showStoricoPopup && showStoricoPopup.walletId && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowStoricoPopup(null)}>
-                <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 border border-yellow-500/30" onClick={e => e.stopPropagation()}>
-                  <h3 className="text-lg font-bold text-yellow-400 mb-4">📊 Storico Presenze - {showStoricoPopup.impresaNome}</h3>
+              <div
+                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                onClick={() => setShowStoricoPopup(null)}
+              >
+                <div
+                  className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 border border-yellow-500/30"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <h3 className="text-lg font-bold text-yellow-400 mb-4">
+                    📊 Storico Presenze - {showStoricoPopup.impresaNome}
+                  </h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-slate-400 text-sm block mb-1">Presenze Totali (storico):</label>
-                      <input 
+                      <label className="text-slate-400 text-sm block mb-1">
+                        Presenze Totali (storico):
+                      </label>
+                      <input
                         type="number"
                         className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white text-lg font-bold"
                         value={showStoricoPopup.presenze}
-                        onChange={(e) => setShowStoricoPopup({...showStoricoPopup, presenze: parseInt(e.target.value) || 0})}
+                        onChange={e =>
+                          setShowStoricoPopup({
+                            ...showStoricoPopup,
+                            presenze: parseInt(e.target.value) || 0,
+                          })
+                        }
                       />
                     </div>
                     <div>
-                      <label className="text-slate-400 text-sm block mb-1">Data Prima Presenza:</label>
-                      <input 
+                      <label className="text-slate-400 text-sm block mb-1">
+                        Data Prima Presenza:
+                      </label>
+                      <input
                         type="date"
                         className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
-                        value={showStoricoPopup.primaPresenza || ''}
-                        onChange={(e) => setShowStoricoPopup({...showStoricoPopup, primaPresenza: e.target.value})}
+                        value={showStoricoPopup.primaPresenza || ""}
+                        onChange={e =>
+                          setShowStoricoPopup({
+                            ...showStoricoPopup,
+                            primaPresenza: e.target.value,
+                          })
+                        }
                       />
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <Button 
+                    <Button
                       className="flex-1 bg-yellow-600 hover:bg-yellow-700"
                       onClick={handleSaveStoricoSpuntista}
                     >
                       💾 Salva
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
                       className="flex-1 border-slate-600"
                       onClick={() => setShowStoricoPopup(null)}
@@ -925,76 +1189,125 @@ export function PresenzeGraduatoriaPanel({ marketId, marketName, stalls = [], on
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={8} className="text-center p-4 text-slate-400">Caricamento...</td>
+                      <td
+                        colSpan={8}
+                        className="text-center p-4 text-slate-400"
+                      >
+                        Caricamento...
+                      </td>
                     </tr>
                   ) : graduatoria.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center p-4 text-slate-400">
+                      <td
+                        colSpan={8}
+                        className="text-center p-4 text-slate-400"
+                      >
                         Nessun evento straordinario registrato.
                       </td>
                     </tr>
-                  ) : graduatoria.map((record) => (
-                    <tr key={record.id} className="border-b border-slate-700 hover:bg-slate-700/30">
-                      <td className="p-2">
-                        <Badge variant="outline" className="bg-purple-500/20 text-purple-400">
-                          {record.stall_number || 'N/A'}
-                        </Badge>
-                      </td>
-                      <td className="p-2">
-                        <div className="text-white font-medium">{record.impresa_nome}</div>
-                        <div className="text-slate-400 text-xs">{record.impresa_piva}</div>
-                      </td>
-                      <td className="p-2 text-center">
-                        <Badge className="bg-purple-600">STRAORDINARIO</Badge>
-                      </td>
-                      <td className="p-2 text-center text-slate-300">
-                        {formatDate(record.ultima_presenza)}
-                      </td>
-                      <td className="p-2 text-center">
-                        <span className="text-green-400 font-bold">-</span>
-                      </td>
-                      <td className="p-2 text-center">
-                        {editingId === record.id ? (
-                          <Input
-                            type="number"
-                            value={editValues.presenze_totali || 0}
-                            onChange={(e) => setEditValues({...editValues, presenze_totali: parseInt(e.target.value)})}
-                            className="w-20 h-8 text-center bg-slate-700"
-                          />
-                        ) : (
-                          <span className="text-white">{record.presenze_totali}</span>
-                        )}
-                      </td>
-                      <td className="p-2 text-center">
-                        {editingId === record.id ? (
-                          <Input
-                            type="date"
-                            value={editValues.data_prima_presenza || ''}
-                            onChange={(e) => setEditValues({...editValues, data_prima_presenza: e.target.value})}
-                            className="w-32 h-8 bg-slate-700"
-                          />
-                        ) : (
-                          <span className="text-slate-300">{formatDate(record.data_prima_presenza)}</span>
-                        )}
-                      </td>
-                      <td className="p-2 text-center">
-                        {editingId === record.id ? (
-                          <div className="flex gap-1 justify-center">
-                            <Button size="sm" variant="ghost" onClick={() => handleSave(record.id)} className="text-green-400 hover:text-green-300">
-                              <Save className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={handleCancel} className="text-red-400 hover:text-red-300">
-                              <X className="w-4 h-4" />
-                            </Button>
+                  ) : (
+                    graduatoria.map(record => (
+                      <tr
+                        key={record.id}
+                        className="border-b border-slate-700 hover:bg-slate-700/30"
+                      >
+                        <td className="p-2">
+                          <Badge
+                            variant="outline"
+                            className="bg-purple-500/20 text-purple-400"
+                          >
+                            {record.stall_number || "N/A"}
+                          </Badge>
+                        </td>
+                        <td className="p-2">
+                          <div className="text-white font-medium">
+                            {record.impresa_nome}
                           </div>
-                        ) : (
-                          <Button size="sm" variant="ghost" onClick={() => handleEdit(record)} className="text-slate-400 hover:text-white">
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          <div className="text-slate-400 text-xs">
+                            {record.impresa_piva}
+                          </div>
+                        </td>
+                        <td className="p-2 text-center">
+                          <Badge className="bg-purple-600">STRAORDINARIO</Badge>
+                        </td>
+                        <td className="p-2 text-center text-slate-300">
+                          {formatDate(record.ultima_presenza)}
+                        </td>
+                        <td className="p-2 text-center">
+                          <span className="text-green-400 font-bold">-</span>
+                        </td>
+                        <td className="p-2 text-center">
+                          {editingId === record.id ? (
+                            <Input
+                              type="number"
+                              value={editValues.presenze_totali || 0}
+                              onChange={e =>
+                                setEditValues({
+                                  ...editValues,
+                                  presenze_totali: parseInt(e.target.value),
+                                })
+                              }
+                              className="w-20 h-8 text-center bg-slate-700"
+                            />
+                          ) : (
+                            <span className="text-white">
+                              {record.presenze_totali}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-2 text-center">
+                          {editingId === record.id ? (
+                            <Input
+                              type="date"
+                              value={editValues.data_prima_presenza || ""}
+                              onChange={e =>
+                                setEditValues({
+                                  ...editValues,
+                                  data_prima_presenza: e.target.value,
+                                })
+                              }
+                              className="w-32 h-8 bg-slate-700"
+                            />
+                          ) : (
+                            <span className="text-slate-300">
+                              {formatDate(record.data_prima_presenza)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-2 text-center">
+                          {editingId === record.id ? (
+                            <div className="flex gap-1 justify-center">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleSave(record.id)}
+                                className="text-green-400 hover:text-green-300"
+                              >
+                                <Save className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleCancel}
+                                className="text-red-400 hover:text-red-300"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEdit(record)}
+                              className="text-slate-400 hover:text-white"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

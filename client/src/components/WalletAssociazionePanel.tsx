@@ -8,19 +8,28 @@
  *
  * @version 1.0.0
  */
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Wallet, Euro, TrendingUp, RefreshCw, Loader2,
-  ArrowDownLeft, Users, BookOpen, Briefcase, Search, Filter
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { getImpersonationParams } from '@/hooks/useImpersonation';
-import { MIHUB_API_BASE_URL } from '@/config/api';
+  Wallet,
+  Euro,
+  TrendingUp,
+  RefreshCw,
+  Loader2,
+  ArrowDownLeft,
+  Users,
+  BookOpen,
+  Briefcase,
+  Search,
+  Filter,
+} from "lucide-react";
+import { toast } from "sonner";
+import { getImpersonationParams } from "@/hooks/useImpersonation";
+import { MIHUB_API_BASE_URL } from "@/config/api";
 
 const API_BASE = MIHUB_API_BASE_URL;
 
@@ -35,40 +44,47 @@ interface WalletData {
 
 interface Transazione {
   id: number;
-  tipo: 'QUOTA_ASSOCIATIVA' | 'SERVIZIO' | 'CORSO' | 'RIMBORSO' | 'ALTRO';
+  tipo: "QUOTA_ASSOCIATIVA" | "SERVIZIO" | "CORSO" | "RIMBORSO" | "ALTRO";
   importo: number;
   descrizione: string;
   impresa_nome?: string;
   data: string;
-  stato: 'completata' | 'in_attesa' | 'annullata';
+  stato: "completata" | "in_attesa" | "annullata";
 }
 
 const EMPTY_WALLET: WalletData = {
-  saldo: 0, totale_incassato: 0, incassi_mese: 0,
-  incassi_quote: 0, incassi_servizi: 0, incassi_corsi: 0,
+  saldo: 0,
+  totale_incassato: 0,
+  incassi_mese: 0,
+  incassi_quote: 0,
+  incassi_servizi: 0,
+  incassi_corsi: 0,
 };
 
-const TIPO_LABELS: Record<Transazione['tipo'], { label: string; color: string }> = {
-  QUOTA_ASSOCIATIVA: { label: 'Quota', color: '#3b82f6' },
-  SERVIZIO: { label: 'Servizio', color: '#10b981' },
-  CORSO: { label: 'Corso', color: '#f59e0b' },
-  RIMBORSO: { label: 'Rimborso', color: '#ef4444' },
-  ALTRO: { label: 'Altro', color: '#8b5cf6' },
+const TIPO_LABELS: Record<
+  Transazione["tipo"],
+  { label: string; color: string }
+> = {
+  QUOTA_ASSOCIATIVA: { label: "Quota", color: "#3b82f6" },
+  SERVIZIO: { label: "Servizio", color: "#10b981" },
+  CORSO: { label: "Corso", color: "#f59e0b" },
+  RIMBORSO: { label: "Rimborso", color: "#ef4444" },
+  ALTRO: { label: "Altro", color: "#8b5cf6" },
 };
 
 export default function WalletAssociazionePanel() {
   const [wallet, setWallet] = useState<WalletData>(EMPTY_WALLET);
   const [transazioni, setTransazioni] = useState<Transazione[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('riepilogo');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterTipo, setFilterTipo] = useState<string>('');
+  const [activeTab, setActiveTab] = useState("riepilogo");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterTipo, setFilterTipo] = useState<string>("");
 
   const impState = getImpersonationParams();
   const associazioneId = impState.associazioneId;
   const associazioneNome = impState.associazioneNome
     ? decodeURIComponent(impState.associazioneNome)
-    : 'Associazione';
+    : "Associazione";
 
   const loadData = useCallback(async () => {
     if (!associazioneId) return;
@@ -80,28 +96,42 @@ export default function WalletAssociazionePanel() {
 
       // Endpoint v9
       try {
-        const walletRes = await fetch(`${API_BASE}/api/associazioni-v9/wallet/${associazioneId}`);
+        const walletRes = await fetch(
+          `${API_BASE}/api/associazioni-v9/wallet/${associazioneId}`
+        );
         const walletData = await walletRes.json();
         if (walletData.success && walletData.data) {
           setWallet({ ...EMPTY_WALLET, ...walletData.data });
           walletLoaded = true;
         }
-      } catch { /* fallback sotto */ }
+      } catch {
+        /* fallback sotto */
+      }
 
       try {
-        const transRes = await fetch(`${API_BASE}/api/associazioni-v9/wallet/${associazioneId}/transazioni`);
+        const transRes = await fetch(
+          `${API_BASE}/api/associazioni-v9/wallet/${associazioneId}/transazioni`
+        );
         const transData = await transRes.json();
         if (transData.success && transData.data) {
           setTransazioni(transData.data);
           transLoaded = true;
         }
-      } catch { /* fallback sotto */ }
+      } catch {
+        /* fallback sotto */
+      }
 
       // Fallback: endpoint legacy
       if (!walletLoaded || !transLoaded) {
         const [walletRes, transRes] = await Promise.all([
-          !walletLoaded ? fetch(`${API_BASE}/api/associazioni/${associazioneId}/wallet`) : Promise.resolve(null),
-          !transLoaded ? fetch(`${API_BASE}/api/associazioni/${associazioneId}/wallet/transazioni`) : Promise.resolve(null),
+          !walletLoaded
+            ? fetch(`${API_BASE}/api/associazioni/${associazioneId}/wallet`)
+            : Promise.resolve(null),
+          !transLoaded
+            ? fetch(
+                `${API_BASE}/api/associazioni/${associazioneId}/wallet/transazioni`
+              )
+            : Promise.resolve(null),
         ]);
         if (walletRes) {
           const walletData = await walletRes.json();
@@ -117,16 +147,21 @@ export default function WalletAssociazionePanel() {
         }
       }
     } catch (error) {
-      console.error('Errore caricamento wallet associazione:', error);
+      console.error("Errore caricamento wallet associazione:", error);
     } finally {
       setLoading(false);
     }
   }, [associazioneId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const filteredTransazioni = transazioni.filter(t => {
-    const matchSearch = !searchTerm || (t.descrizione?.toLowerCase().includes(searchTerm.toLowerCase()) || t.impresa_nome?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchSearch =
+      !searchTerm ||
+      t.descrizione?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.impresa_nome?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchTipo = !filterTipo || t.tipo === filterTipo;
     return matchSearch && matchTipo;
   });
@@ -159,11 +194,19 @@ export default function WalletAssociazionePanel() {
           <CardTitle className="text-[#e8fbff] flex items-center gap-2">
             <Wallet className="h-5 w-5 text-[#10b981]" />
             Wallet Associazione
-            <Badge variant="outline" className="ml-2 text-[#3b82f6] border-[#3b82f6]/50">
+            <Badge
+              variant="outline"
+              className="ml-2 text-[#3b82f6] border-[#3b82f6]/50"
+            >
               {associazioneNome}
             </Badge>
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={loadData} className="border-[#3b82f6]/30 text-[#3b82f6]">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadData}
+            className="border-[#3b82f6]/30 text-[#3b82f6]"
+          >
             <RefreshCw className="h-4 w-4" />
           </Button>
         </CardHeader>
@@ -174,28 +217,44 @@ export default function WalletAssociazionePanel() {
         <Card className="bg-[#1a2332] border-[#10b981]/30">
           <CardContent className="pt-4 pb-4 text-center">
             <Euro className="h-5 w-5 mx-auto text-[#10b981] mb-1" />
-            <p className="text-2xl font-bold text-[#10b981]">{wallet.saldo.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-bold text-[#10b981]">
+              {wallet.saldo.toLocaleString("it-IT", {
+                minimumFractionDigits: 2,
+              })}
+            </p>
             <p className="text-xs text-[#e8fbff]/50">Saldo Attuale</p>
           </CardContent>
         </Card>
         <Card className="bg-[#1a2332] border-[#3b82f6]/30">
           <CardContent className="pt-4 pb-4 text-center">
             <Users className="h-5 w-5 mx-auto text-[#3b82f6] mb-1" />
-            <p className="text-2xl font-bold text-[#3b82f6]">{wallet.incassi_quote.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-bold text-[#3b82f6]">
+              {wallet.incassi_quote.toLocaleString("it-IT", {
+                minimumFractionDigits: 2,
+              })}
+            </p>
             <p className="text-xs text-[#e8fbff]/50">Quote Incassate</p>
           </CardContent>
         </Card>
         <Card className="bg-[#1a2332] border-[#f59e0b]/30">
           <CardContent className="pt-4 pb-4 text-center">
             <Briefcase className="h-5 w-5 mx-auto text-[#f59e0b] mb-1" />
-            <p className="text-2xl font-bold text-[#f59e0b]">{wallet.incassi_servizi.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-bold text-[#f59e0b]">
+              {wallet.incassi_servizi.toLocaleString("it-IT", {
+                minimumFractionDigits: 2,
+              })}
+            </p>
             <p className="text-xs text-[#e8fbff]/50">Servizi Incassati</p>
           </CardContent>
         </Card>
         <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
           <CardContent className="pt-4 pb-4 text-center">
             <BookOpen className="h-5 w-5 mx-auto text-[#8b5cf6] mb-1" />
-            <p className="text-2xl font-bold text-[#8b5cf6]">{wallet.incassi_corsi.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-bold text-[#8b5cf6]">
+              {wallet.incassi_corsi.toLocaleString("it-IT", {
+                minimumFractionDigits: 2,
+              })}
+            </p>
             <p className="text-xs text-[#e8fbff]/50">Corsi Incassati</p>
           </CardContent>
         </Card>
@@ -207,16 +266,24 @@ export default function WalletAssociazionePanel() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-[#10b981]" />
-              <span className="text-sm text-[#e8fbff]/70">Incassi questo mese</span>
+              <span className="text-sm text-[#e8fbff]/70">
+                Incassi questo mese
+              </span>
             </div>
             <span className="text-lg font-bold text-[#10b981]">
-              EUR {wallet.incassi_mese.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+              EUR{" "}
+              {wallet.incassi_mese.toLocaleString("it-IT", {
+                minimumFractionDigits: 2,
+              })}
             </span>
           </div>
           <div className="flex items-center justify-between mt-2">
             <span className="text-sm text-[#e8fbff]/70">Totale storico</span>
             <span className="text-sm text-[#e8fbff]">
-              EUR {wallet.totale_incassato.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+              EUR{" "}
+              {wallet.totale_incassato.toLocaleString("it-IT", {
+                minimumFractionDigits: 2,
+              })}
             </span>
           </div>
         </CardContent>
@@ -225,10 +292,16 @@ export default function WalletAssociazionePanel() {
       {/* Transazioni */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-[#0b1220] border border-[#3b82f6]/20">
-          <TabsTrigger value="riepilogo" className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]">
+          <TabsTrigger
+            value="riepilogo"
+            className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]"
+          >
             Riepilogo
           </TabsTrigger>
-          <TabsTrigger value="movimenti" className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]">
+          <TabsTrigger
+            value="movimenti"
+            className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]"
+          >
             Movimenti ({transazioni.length})
           </TabsTrigger>
         </TabsList>
@@ -239,13 +312,22 @@ export default function WalletAssociazionePanel() {
               {transazioni.length === 0 ? (
                 <>
                   <Wallet className="h-12 w-12 mx-auto text-[#3b82f6]/40 mb-3" />
-                  <p className="text-[#e8fbff]/50">Nessuna transazione registrata</p>
+                  <p className="text-[#e8fbff]/50">
+                    Nessuna transazione registrata
+                  </p>
                 </>
               ) : (
                 <>
                   <TrendingUp className="h-12 w-12 mx-auto text-[#10b981]/60 mb-3" />
-                  <p className="text-lg font-bold text-[#10b981]">{transazioni.length} transazioni</p>
-                  <p className="text-sm text-[#e8fbff]/50 mt-1">Totale incassato: EUR {wallet.totale_incassato.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-lg font-bold text-[#10b981]">
+                    {transazioni.length} transazioni
+                  </p>
+                  <p className="text-sm text-[#e8fbff]/50 mt-1">
+                    Totale incassato: EUR{" "}
+                    {wallet.totale_incassato.toLocaleString("it-IT", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </p>
                 </>
               )}
             </CardContent>
@@ -290,22 +372,40 @@ export default function WalletAssociazionePanel() {
                   {filteredTransazioni.map(t => {
                     const tipoInfo = TIPO_LABELS[t.tipo] || TIPO_LABELS.ALTRO;
                     return (
-                      <div key={t.id} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
+                      <div
+                        key={t.id}
+                        className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10"
+                      >
                         <div className="flex items-center gap-3">
-                          <ArrowDownLeft className="h-4 w-4" style={{ color: tipoInfo.color }} />
+                          <ArrowDownLeft
+                            className="h-4 w-4"
+                            style={{ color: tipoInfo.color }}
+                          />
                           <div>
-                            <p className="text-sm text-[#e8fbff]">{t.descrizione}</p>
+                            <p className="text-sm text-[#e8fbff]">
+                              {t.descrizione}
+                            </p>
                             <p className="text-xs text-[#e8fbff]/40">
                               {t.impresa_nome && <>{t.impresa_nome} · </>}
-                              {new Date(t.data).toLocaleDateString('it-IT')}
+                              {new Date(t.data).toLocaleDateString("it-IT")}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-[#10b981]">
-                            +{t.importo.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                            +
+                            {t.importo.toLocaleString("it-IT", {
+                              minimumFractionDigits: 2,
+                            })}
                           </span>
-                          <Badge className="text-[10px]" style={{ backgroundColor: `${tipoInfo.color}20`, color: tipoInfo.color, borderColor: `${tipoInfo.color}30` }}>
+                          <Badge
+                            className="text-[10px]"
+                            style={{
+                              backgroundColor: `${tipoInfo.color}20`,
+                              color: tipoInfo.color,
+                              borderColor: `${tipoInfo.color}30`,
+                            }}
+                          >
                             {tipoInfo.label}
                           </Badge>
                         </div>

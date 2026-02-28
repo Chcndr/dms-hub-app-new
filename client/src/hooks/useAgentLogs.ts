@@ -1,15 +1,15 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { MIHUB_API_BASE_URL } from '@/config/api';
+import { useEffect, useState, useRef, useCallback } from "react";
+import { MIHUB_API_BASE_URL } from "@/config/api";
 
 export interface AgentLogMessage {
   id: string;
   conversation_id: string;
   agent_name: string;
-  role: 'user' | 'assistant' | string;
+  role: "user" | "assistant" | string;
   content: string;
-  sender?: string;  // 🔥 FIX: Campo sender per distinguere MIO da Utente
+  sender?: string; // 🔥 FIX: Campo sender per distinguere MIO da Utente
   created_at: string;
-  pending?: boolean;  // Flag per messaggi locali non ancora confermati dal server
+  pending?: boolean; // Flag per messaggi locali non ancora confermati dal server
 }
 
 interface UseAgentLogsOptions {
@@ -21,13 +21,13 @@ interface UseAgentLogsOptions {
   excludeUserMessages?: boolean; // 🔥 VISTA 4 AGENTI: Esclude messaggi diretti dell'utente
 }
 
-export function useAgentLogs({ 
-  conversationId, 
-  agentName, 
+export function useAgentLogs({
+  conversationId,
+  agentName,
   pollMs = 30000, // Aumentato a 30s come fallback
   useWebSocket = true,
   enablePolling = false, // 🔥 DISABILITATO di default per stabilità
-  excludeUserMessages = false // 🔥 VISTA 4 AGENTI: Esclude messaggi utente
+  excludeUserMessages = false, // 🔥 VISTA 4 AGENTI: Esclude messaggi utente
 }: UseAgentLogsOptions) {
   const [messages, setMessages] = useState<AgentLogMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,7 +35,7 @@ export function useAgentLogs({
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | undefined>(undefined);
   const wsConnectedRef = useRef<boolean>(false);
-  
+
   // 🔥 FIX: Ref per la funzione load per poterla chiamare da refetch
   const loadRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -62,15 +62,15 @@ export function useAgentLogs({
         if (isFirstLoad) {
           setLoading(true);
         }
-        
+
         const params = new URLSearchParams({
           conversation_id: conversationId,
-          limit: '500',  // Massimo consentito dal backend
+          limit: "500", // Massimo consentito dal backend
         });
-        if (agentName) params.set('agent_name', agentName);
+        if (agentName) params.set("agent_name", agentName);
         if (excludeUserMessages) {
-          params.set('exclude_user_messages', 'true'); // 🔥 VISTA 4 AGENTI
-          params.set('mode', 'auto'); // Vista 4 Agenti mostra solo coordinamento MIO
+          params.set("exclude_user_messages", "true"); // 🔥 VISTA 4 AGENTI
+          params.set("mode", "auto"); // Vista 4 Agenti mostra solo coordinamento MIO
         }
         // 🔥 Chat singole NON usano filtro mode, caricano TUTTI i messaggi del conversation_id
 
@@ -86,7 +86,7 @@ export function useAgentLogs({
           // 🔥 FIX: Sostituisci completamente i messaggi invece di fare merge
           // Questo evita problemi di sincronizzazione dopo refetch
           const rawMessages = data.messages || data.data || data.logs || [];
-          
+
           const serverMessages = rawMessages.map((msg: any) => ({
             id: msg.id,
             conversation_id: msg.conversation_id,
@@ -95,20 +95,22 @@ export function useAgentLogs({
             content: msg.content || msg.message,
             sender: msg.sender, // 🔥 FIX: Include sender per mostrare "Tu" invece di "da MIO"
             created_at: msg.created_at,
-            pending: false
+            pending: false,
           }));
-          
+
           // Ordina per timestamp
-          const sorted = serverMessages.sort((a: AgentLogMessage, b: AgentLogMessage) => 
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          const sorted = serverMessages.sort(
+            (a: AgentLogMessage, b: AgentLogMessage) =>
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime()
           );
-          
+
           setMessages(sorted);
           setError(null);
         }
       } catch (err: any) {
         if (!cancelled) {
-          setError(err?.message ?? 'Errore caricamento log');
+          setError(err?.message ?? "Errore caricamento log");
         }
       } finally {
         if (!cancelled && isFirstLoad) {
@@ -127,33 +129,37 @@ export function useAgentLogs({
 
       try {
         // Determina URL WebSocket in base all'ambiente
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = window.location.hostname === 'localhost' 
-          ? 'localhost:8080' 
-          : new URL(MIHUB_API_BASE_URL).host;
-        const wsPath = window.location.hostname === 'localhost' ? '' : '/ws';
+        const wsProtocol =
+          window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsHost =
+          window.location.hostname === "localhost"
+            ? "localhost:8080"
+            : new URL(MIHUB_API_BASE_URL).host;
+        const wsPath = window.location.hostname === "localhost" ? "" : "/ws";
         const wsUrl = `${wsProtocol}//${wsHost}${wsPath}`;
 
-        console.warn('[useAgentLogs] Connecting to WebSocket:', wsUrl);
+        console.warn("[useAgentLogs] Connecting to WebSocket:", wsUrl);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.warn('[useAgentLogs] WebSocket connected');
+          console.warn("[useAgentLogs] WebSocket connected");
           wsConnectedRef.current = true;
           // Subscribe to conversation
-          ws.send(JSON.stringify({
-            action: 'subscribe',
-            conversation_id: conversationId
-          }));
+          ws.send(
+            JSON.stringify({
+              action: "subscribe",
+              conversation_id: conversationId,
+            })
+          );
         };
 
-        ws.onmessage = (event) => {
+        ws.onmessage = event => {
           try {
             const data = JSON.parse(event.data);
 
             // Gestisci nuovo messaggio
-            if (data.action === 'new_message' && data.message) {
+            if (data.action === "new_message" && data.message) {
               const newMessage: AgentLogMessage = {
                 id: `ws-${Date.now()}`,
                 conversation_id: data.conversation_id,
@@ -165,26 +171,33 @@ export function useAgentLogs({
 
               setMessages(prev => {
                 // Evita duplicati
-                const exists = prev.some(msg => 
-                  msg.agent_name === newMessage.agent_name &&
-                  msg.content === newMessage.content &&
-                  Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 1000
+                const exists = prev.some(
+                  msg =>
+                    msg.agent_name === newMessage.agent_name &&
+                    msg.content === newMessage.content &&
+                    Math.abs(
+                      new Date(msg.created_at).getTime() -
+                        new Date(newMessage.created_at).getTime()
+                    ) < 1000
                 );
                 if (exists) return prev;
                 return [...prev, newMessage];
               });
             }
           } catch (err) {
-            console.error('[useAgentLogs] Error parsing WebSocket message:', err);
+            console.error(
+              "[useAgentLogs] Error parsing WebSocket message:",
+              err
+            );
           }
         };
 
-        ws.onerror = (error) => {
-          console.error('[useAgentLogs] WebSocket error:', error);
+        ws.onerror = error => {
+          console.error("[useAgentLogs] WebSocket error:", error);
         };
 
         ws.onclose = () => {
-          console.warn('[useAgentLogs] WebSocket disconnected');
+          console.warn("[useAgentLogs] WebSocket disconnected");
           wsRef.current = null;
           wsConnectedRef.current = false;
 
@@ -196,7 +209,7 @@ export function useAgentLogs({
           }
         };
       } catch (error) {
-        console.error('[useAgentLogs] Error creating WebSocket:', error);
+        console.error("[useAgentLogs] Error creating WebSocket:", error);
       }
     };
 
@@ -205,7 +218,7 @@ export function useAgentLogs({
 
     // 🔥 POLLING CONDIZIONALE: Abilitato solo per vista 4 agenti
     let fallbackTimeout: number | undefined;
-    
+
     if (enablePolling) {
       intervalId = window.setInterval(load, pollMs);
     }
@@ -215,7 +228,8 @@ export function useAgentLogs({
       loadRef.current = null;
       if (fallbackTimeout) window.clearTimeout(fallbackTimeout);
       if (intervalId) window.clearInterval(intervalId);
-      if (reconnectTimeoutRef.current) window.clearTimeout(reconnectTimeoutRef.current);
+      if (reconnectTimeoutRef.current)
+        window.clearTimeout(reconnectTimeoutRef.current);
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;

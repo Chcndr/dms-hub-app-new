@@ -13,14 +13,14 @@ async function seed() {
   await db.insert(schema.carbonCreditsConfig).values({
     baseValue: 150, // €1.50
     areaBoosts: JSON.stringify({
-      "Grosseto": 0,
-      "Follonica": -10,
-      "Orbetello": 5
+      Grosseto: 0,
+      Follonica: -10,
+      Orbetello: 5,
     }),
     categoryBoosts: JSON.stringify({
-      "BIO": 20,
-      "KM0": 15,
-      "DOP": 10
+      BIO: 20,
+      KM0: 15,
+      DOP: 10,
     }),
     updatedBy: "system",
   });
@@ -28,18 +28,43 @@ async function seed() {
   // 2. Seed markets (5 mercati)
   console.log("Creating 5 markets...");
   const marketData = [
-    { name: "Mercato Coperto Grosseto", city: "Grosseto", lat: "42.7606", lng: "11.1133" },
-    { name: "Mercato Follonica", city: "Follonica", lat: "42.9258", lng: "10.7594" },
-    { name: "Mercato Orbetello", city: "Orbetello", lat: "42.4419", lng: "11.2169" },
-    { name: "Mercato Castiglione", city: "Castiglione", lat: "42.7667", lng: "10.8833" },
-    { name: "Mercato Marina", city: "Grosseto", lat: "42.7333", lng: "10.9833" },
+    {
+      name: "Mercato Coperto Grosseto",
+      city: "Grosseto",
+      lat: "42.7606",
+      lng: "11.1133",
+    },
+    {
+      name: "Mercato Follonica",
+      city: "Follonica",
+      lat: "42.9258",
+      lng: "10.7594",
+    },
+    {
+      name: "Mercato Orbetello",
+      city: "Orbetello",
+      lat: "42.4419",
+      lng: "11.2169",
+    },
+    {
+      name: "Mercato Castiglione",
+      city: "Castiglione",
+      lat: "42.7667",
+      lng: "10.8833",
+    },
+    {
+      name: "Mercato Marina",
+      city: "Grosseto",
+      lat: "42.7333",
+      lng: "10.9833",
+    },
   ];
 
   for (const market of marketData) {
     await db.insert(schema.markets).values({
       ...market,
       address: `Via del Mercato, ${market.city}`,
-      openingHours: JSON.stringify({"tue": "8-13", "thu": "8-13", "sat": "8-14"}),
+      openingHours: JSON.stringify({ tue: "8-13", thu: "8-13", sat: "8-14" }),
       active: 1,
     });
   }
@@ -47,13 +72,24 @@ async function seed() {
   // 3. Seed shops (10 negozi)
   console.log("Creating 10 shops...");
   const categories = ["BIO", "KM0", "DOP", "standard"];
-  const shopTypes = ["Frutta", "Verdura", "Salumeria", "Formaggi", "Pane", "Pesce", "Carne", "Olio", "Vino", "Miele"];
+  const shopTypes = [
+    "Frutta",
+    "Verdura",
+    "Salumeria",
+    "Formaggi",
+    "Pane",
+    "Pesce",
+    "Carne",
+    "Olio",
+    "Vino",
+    "Miele",
+  ];
 
   for (let i = 1; i <= 10; i++) {
     const marketId = ((i - 1) % 5) + 1;
     const category = categories[i % categories.length];
     const shopType = shopTypes[i - 1];
-    
+
     const certs = [];
     if (category === "BIO") certs.push("BIO");
     if (category === "KM0") certs.push("KM0");
@@ -66,7 +102,7 @@ async function seed() {
       certifications: JSON.stringify(certs),
       pendingReimbursement: Math.floor(Math.random() * 200),
       totalReimbursed: Math.floor(Math.random() * 1000),
-      bankAccount: `IT${String(i).padStart(2, '0')}X1234567890`,
+      bankAccount: `IT${String(i).padStart(2, "0")}X1234567890`,
     });
   }
 
@@ -107,14 +143,21 @@ async function seed() {
   console.log("Creating 30 checkins...");
   for (let i = 1; i <= 30; i++) {
     const transport = ["bike", "walk", "bus", "car"][i % 4];
-    const carbonSaved = transport === "bike" ? 2500 : transport === "walk" ? 3000 : transport === "bus" ? 1500 : 500;
+    const carbonSaved =
+      transport === "bike"
+        ? 2500
+        : transport === "walk"
+          ? 3000
+          : transport === "bus"
+            ? 1500
+            : 500;
 
     await db.insert(schema.checkins).values({
       userId: (i % 20) + 1,
       marketId: (i % 5) + 1,
       transport,
-      lat: `42.${7000 + (i * 10)}`,
-      lng: `11.${1000 + (i * 10)}`,
+      lat: `42.${7000 + i * 10}`,
+      lng: `11.${1000 + i * 10}`,
       carbonSaved,
     });
   }
@@ -153,8 +196,8 @@ async function seed() {
       userId: (i % 20) + 1,
       type: reportTypes[i % reportTypes.length],
       description: `Segnalazione ${i}`,
-      lat: `42.${7000 + (i * 20)}`,
-      lng: `11.${1000 + (i * 20)}`,
+      lat: `42.${7000 + i * 20}`,
+      lng: `11.${1000 + i * 20}`,
       photoUrl: i % 2 === 0 ? `https://example.com/photo${i}.jpg` : null,
       status: i % 3 === 0 ? "resolved" : "pending",
     });
@@ -162,7 +205,18 @@ async function seed() {
 
   // 10. Seed products (20)
   console.log("Creating 20 products...");
-  const productNames = ["Pomodori", "Mele", "Pecorino", "Pane", "Olio", "Vino", "Miele", "Salame", "Prosciutto", "Pasta"];
+  const productNames = [
+    "Pomodori",
+    "Mele",
+    "Pecorino",
+    "Pane",
+    "Olio",
+    "Vino",
+    "Miele",
+    "Salame",
+    "Prosciutto",
+    "Pasta",
+  ];
   for (let i = 1; i <= 20; i++) {
     await db.insert(schema.products).values({
       shopId: ((i - 1) % 10) + 1,
@@ -179,11 +233,12 @@ async function seed() {
   const modes = ["local", "truck", "sea"];
   for (let i = 1; i <= 10; i++) {
     const transportMode = modes[i % modes.length];
-    const distanceKm = transportMode === "local" ? 50 : transportMode === "truck" ? 500 : 2000;
+    const distanceKm =
+      transportMode === "local" ? 50 : transportMode === "truck" ? 500 : 2000;
 
     await db.insert(schema.productTracking).values({
       productId: i,
-      tpassId: `TPAS_${String(i).padStart(6, '0')}`,
+      tpassId: `TPAS_${String(i).padStart(6, "0")}`,
       originCountry: countries[i % countries.length],
       originCity: `City ${i}`,
       transportMode,
@@ -264,7 +319,7 @@ async function seed() {
     "Promozione BIO questa settimana",
     "Carbon credits accreditati",
     "Scadenza certificazione HACCP",
-    "Nuovo bando regionale disponibile"
+    "Nuovo bando regionale disponibile",
   ];
   for (let i = 1; i <= 10; i++) {
     const sent = 100 + Math.floor(Math.random() * 400);
@@ -285,13 +340,26 @@ async function seed() {
 
   // 14. Seed inspections (15 records)
   console.log("Creating 15 inspections...");
-  const inspectionTypes = ["DURC", "HACCP", "Sicurezza Lavoro", "Antincendio", "Privacy GDPR"];
-  const inspectors = ["Dott. Rossi", "Ing. Bianchi", "Dott.ssa Verdi", "Geom. Neri"];
+  const inspectionTypes = [
+    "DURC",
+    "HACCP",
+    "Sicurezza Lavoro",
+    "Antincendio",
+    "Privacy GDPR",
+  ];
+  const inspectors = [
+    "Dott. Rossi",
+    "Ing. Bianchi",
+    "Dott.ssa Verdi",
+    "Geom. Neri",
+  ];
   const statuses = ["scheduled", "completed", "violation"];
   for (let i = 1; i <= 15; i++) {
     const status = statuses[Math.floor(Math.random() * statuses.length)];
     const scheduledDate = new Date();
-    scheduledDate.setDate(scheduledDate.getDate() + Math.floor(Math.random() * 30));
+    scheduledDate.setDate(
+      scheduledDate.getDate() + Math.floor(Math.random() * 30)
+    );
     await db.insert(schema.inspections).values({
       businessId: (i % 10) + 1,
       businessName: `Negozio ${(i % 10) + 1}`,
@@ -301,14 +369,23 @@ async function seed() {
       scheduledDate,
       completedDate: status === "completed" ? new Date() : null,
       violationFound: status === "violation" ? 1 : 0,
-      fineAmount: status === "violation" ? 50000 + Math.floor(Math.random() * 200000) : null,
+      fineAmount:
+        status === "violation"
+          ? 50000 + Math.floor(Math.random() * 200000)
+          : null,
       notes: status === "violation" ? "Violazione riscontrata" : null,
     });
   }
 
   // 15. Seed business_analytics (10 records)
   console.log("Creating 10 business analytics...");
-  const businessCategories = ["Frutta", "Verdura", "Salumeria", "Formaggi", "Pane"];
+  const businessCategories = [
+    "Frutta",
+    "Verdura",
+    "Salumeria",
+    "Formaggi",
+    "Pane",
+  ];
   for (let i = 1; i <= 10; i++) {
     await db.insert(schema.businessAnalytics).values({
       businessId: i,
@@ -323,32 +400,111 @@ async function seed() {
     });
   }
 
-   // 16. Seed mobility_data (20 records: 12 bus stops + 5 lines + 3 parking)
+  // 16. Seed mobility_data (20 records: 12 bus stops + 5 lines + 3 parking)
   console.log("Creating 20 mobility data records...");
-  
+
   // Bus stops (12 fermate principali Grosseto - struttura GTFS-like)
   const busStops = [
-    { stopName: "Stazione FS Grosseto", lineNumber: "1, 3, 5", lat: "42.7606", lng: "11.1133", nextArrival: 3 },
-    { stopName: "Piazza Dante", lineNumber: "2, 4", lat: "42.7650", lng: "11.1150", nextArrival: 8 },
-    { stopName: "Mercato Coperto", lineNumber: "1, 2, 6", lat: "42.7620", lng: "11.1140", nextArrival: 12 },
-    { stopName: "Ospedale Misericordia", lineNumber: "7, 8", lat: "42.7580", lng: "11.1200", nextArrival: 5 },
-    { stopName: "Cittadella dello Studente", lineNumber: "3, 9", lat: "42.7700", lng: "11.1100", nextArrival: 15 },
-    { stopName: "Centro Commerciale Aurelia", lineNumber: "5, 10", lat: "42.7550", lng: "11.1080", nextArrival: 7 },
-    { stopName: "Marina di Grosseto", lineNumber: "6", lat: "42.7333", lng: "10.9833", nextArrival: 20 },
-    { stopName: "Follonica Stazione", lineNumber: "11", lat: "42.9258", lng: "10.7594", nextArrival: 25 },
-    { stopName: "Orbetello Centro", lineNumber: "12", lat: "42.4419", lng: "11.2169", nextArrival: 30 },
-    { stopName: "Castiglione Pesca", lineNumber: "13", lat: "42.7667", lng: "10.8833", nextArrival: 18 },
-    { stopName: "Porta Nuova", lineNumber: "1, 4", lat: "42.7640", lng: "11.1160", nextArrival: 6 },
-    { stopName: "Viale Matteotti", lineNumber: "2, 3", lat: "42.7630", lng: "11.1145", nextArrival: 10 },
+    {
+      stopName: "Stazione FS Grosseto",
+      lineNumber: "1, 3, 5",
+      lat: "42.7606",
+      lng: "11.1133",
+      nextArrival: 3,
+    },
+    {
+      stopName: "Piazza Dante",
+      lineNumber: "2, 4",
+      lat: "42.7650",
+      lng: "11.1150",
+      nextArrival: 8,
+    },
+    {
+      stopName: "Mercato Coperto",
+      lineNumber: "1, 2, 6",
+      lat: "42.7620",
+      lng: "11.1140",
+      nextArrival: 12,
+    },
+    {
+      stopName: "Ospedale Misericordia",
+      lineNumber: "7, 8",
+      lat: "42.7580",
+      lng: "11.1200",
+      nextArrival: 5,
+    },
+    {
+      stopName: "Cittadella dello Studente",
+      lineNumber: "3, 9",
+      lat: "42.7700",
+      lng: "11.1100",
+      nextArrival: 15,
+    },
+    {
+      stopName: "Centro Commerciale Aurelia",
+      lineNumber: "5, 10",
+      lat: "42.7550",
+      lng: "11.1080",
+      nextArrival: 7,
+    },
+    {
+      stopName: "Marina di Grosseto",
+      lineNumber: "6",
+      lat: "42.7333",
+      lng: "10.9833",
+      nextArrival: 20,
+    },
+    {
+      stopName: "Follonica Stazione",
+      lineNumber: "11",
+      lat: "42.9258",
+      lng: "10.7594",
+      nextArrival: 25,
+    },
+    {
+      stopName: "Orbetello Centro",
+      lineNumber: "12",
+      lat: "42.4419",
+      lng: "11.2169",
+      nextArrival: 30,
+    },
+    {
+      stopName: "Castiglione Pesca",
+      lineNumber: "13",
+      lat: "42.7667",
+      lng: "10.8833",
+      nextArrival: 18,
+    },
+    {
+      stopName: "Porta Nuova",
+      lineNumber: "1, 4",
+      lat: "42.7640",
+      lng: "11.1160",
+      nextArrival: 6,
+    },
+    {
+      stopName: "Viale Matteotti",
+      lineNumber: "2, 3",
+      lat: "42.7630",
+      lng: "11.1145",
+      nextArrival: 10,
+    },
   ];
 
-  const statuses = ["active", "active", "active", "active", "delayed", "suspended"];
-  
+  const statuses = [
+    "active",
+    "active",
+    "active",
+    "active",
+    "delayed",
+    "suspended",
+  ];
+
   for (const stop of busStops) {
     await db.insert(schema.mobilityData).values({
       type: "bus",
       lineNumber: stop.lineNumber,
-      lineName: `Linea ${stop.lineNumber.split(',')[0].trim()}`,
+      lineName: `Linea ${stop.lineNumber.split(",")[0].trim()}`,
       stopName: stop.stopName,
       lat: stop.lat,
       lng: stop.lng,
@@ -360,11 +516,41 @@ async function seed() {
 
   // Tram lines (5 linee principali)
   const tramLines = [
-    { line: "T1", name: "Linea Rossa", stop: "Capolinea Nord", lat: "42.7750", lng: "11.1050" },
-    { line: "T2", name: "Linea Verde", stop: "Capolinea Est", lat: "42.7600", lng: "11.1250" },
-    { line: "T3", name: "Linea Blu", stop: "Capolinea Sud", lat: "42.7450", lng: "11.1100" },
-    { line: "T4", name: "Linea Gialla", stop: "Capolinea Ovest", lat: "42.7600", lng: "11.0950" },
-    { line: "T5", name: "Linea Arancio", stop: "Capolinea Centro", lat: "42.7606", lng: "11.1133" },
+    {
+      line: "T1",
+      name: "Linea Rossa",
+      stop: "Capolinea Nord",
+      lat: "42.7750",
+      lng: "11.1050",
+    },
+    {
+      line: "T2",
+      name: "Linea Verde",
+      stop: "Capolinea Est",
+      lat: "42.7600",
+      lng: "11.1250",
+    },
+    {
+      line: "T3",
+      name: "Linea Blu",
+      stop: "Capolinea Sud",
+      lat: "42.7450",
+      lng: "11.1100",
+    },
+    {
+      line: "T4",
+      name: "Linea Gialla",
+      stop: "Capolinea Ovest",
+      lat: "42.7600",
+      lng: "11.0950",
+    },
+    {
+      line: "T5",
+      name: "Linea Arancio",
+      stop: "Capolinea Centro",
+      lat: "42.7606",
+      lng: "11.1133",
+    },
   ];
 
   for (const tram of tramLines) {
@@ -383,9 +569,27 @@ async function seed() {
 
   // Parking (3 parcheggi principali)
   const parkings = [
-    { name: "Parcheggio Stazione", lat: "42.7600", lng: "11.1130", total: 200, available: 45 },
-    { name: "Parcheggio Centro", lat: "42.7640", lng: "11.1150", total: 350, available: 120 },
-    { name: "Parcheggio Ospedale", lat: "42.7580", lng: "11.1200", total: 150, available: 30 },
+    {
+      name: "Parcheggio Stazione",
+      lat: "42.7600",
+      lng: "11.1130",
+      total: 200,
+      available: 45,
+    },
+    {
+      name: "Parcheggio Centro",
+      lat: "42.7640",
+      lng: "11.1150",
+      total: 350,
+      available: 120,
+    },
+    {
+      name: "Parcheggio Ospedale",
+      lat: "42.7580",
+      lng: "11.1200",
+      total: 150,
+      available: 30,
+    },
   ];
 
   for (const parking of parkings) {
@@ -425,7 +629,7 @@ async function seed() {
 }
 
 seed()
-  .catch((e) => {
+  .catch(e => {
     console.error("❌ Seed failed:", e);
     process.exit(1);
   })

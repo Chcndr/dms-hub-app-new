@@ -1,6 +1,7 @@
 # ISTRUZIONI PER CLAUDE CODE (sessione mihub-backend-rest)
 
 ## OBIETTIVO
+
 Configura auto-deploy da GitHub a Hetzner per il repo `mihub-backend-rest`.
 Ogni push su `master` deve aggiornare automaticamente il server Hetzner.
 
@@ -74,9 +75,11 @@ git push origin master
 ```
 
 ### STEP 3: Verifica
+
 Dopo il push, verifica che il workflow appaia nella tab Actions del repo su GitHub.
 
 ## NOTE IMPORTANTI
+
 - Il workflow usa il secret `HETZNER_SSH_KEY` che l'utente deve configurare su GitHub (Settings > Secrets > Actions)
 - Il server Hetzner è `157.90.29.66`, user `root`, path `/root/mihub-backend-rest`
 - PM2 process name: `mihub-backend`

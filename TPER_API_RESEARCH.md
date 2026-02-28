@@ -11,19 +11,23 @@
 ### 1️⃣ **Open Data Comune di Bologna**
 
 **Base URL:**
+
 ```
 https://opendata.comune.bologna.it/api/explore/v2.1/catalog/datasets/
 ```
 
 **Dataset:**
+
 - `tper-fermate-autobus` - Fermate autobus (21.175 records)
 
 **Endpoint Esempio:**
+
 ```
 https://opendata.comune.bologna.it/api/explore/v2.1/catalog/datasets/tper-fermate-autobus/records
 ```
 
 **Dati disponibili:**
+
 - `codice`: ID fermata
 - `codice_linea`: Numero linea (es. "61", "T2", "36")
 - `denominazione`: Nome fermata
@@ -37,6 +41,7 @@ https://opendata.comune.bologna.it/api/explore/v2.1/catalog/datasets/tper-fermat
 ### 2️⃣ **GTFS Statico (TPER)**
 
 **URL Download:**
+
 ```
 https://solweb.tper.it/web/tools/open-data/open-data-download.aspx?source=solweb.tper.it&filename=gommagtfsbo&version=20251103&format=zip
 ```
@@ -46,6 +51,7 @@ https://solweb.tper.it/web/tools/open-data/open-data-download.aspx?source=solweb
 **Licenza:** Creative Commons Attribuzione 3.0 Italia
 
 **Contenuto:**
+
 - Orari bus
 - Percorsi
 - Fermate
@@ -59,6 +65,7 @@ https://solweb.tper.it/web/tools/open-data/open-data-download.aspx?source=solweb
 **Documentazione:** https://www.tper.it/hello-bus
 
 **Funzionalità:**
+
 - Orari arrivo bus in tempo reale
 - Localizzazione satellitare mezzi
 - Disponibile via SMS e web services

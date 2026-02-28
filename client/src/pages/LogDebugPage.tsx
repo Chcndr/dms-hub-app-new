@@ -1,4 +1,4 @@
-import LogDebug from '@/components/LogDebug';
+import LogDebug from "@/components/LogDebug";
 
 export default function LogDebugPage() {
   return (

@@ -35,12 +35,12 @@ di cittadini, decisioni amministrative non ancora pubbliche, strategie interne.
 
 ### Regola fondamentale per la scelta dei servizi
 
-| Tipo servizio | Requisito privacy | Accettabile? |
-|---------------|-------------------|--------------|
-| **Self-hosted su nostri server EU** (Hetzner) | Pieno controllo, zero dati a terzi | **SI' — preferito** |
-| **SaaS EU con DPA e server EU** (es. DeepL Colonia) | Dati restano in EU, contratto DPA | **SI' — se necessario** |
-| **SaaS con server US/non-EU** (es. Zoom, Google Meet) | Dati fuori EU, possibile accesso estero | **NO — vietato** |
-| **SaaS qualsiasi per video PA** | Audio/video funzionari su server altrui | **NO — vietato** |
+| Tipo servizio                                         | Requisito privacy                       | Accettabile?            |
+| ----------------------------------------------------- | --------------------------------------- | ----------------------- |
+| **Self-hosted su nostri server EU** (Hetzner)         | Pieno controllo, zero dati a terzi      | **SI' — preferito**     |
+| **SaaS EU con DPA e server EU** (es. DeepL Colonia)   | Dati restano in EU, contratto DPA       | **SI' — se necessario** |
+| **SaaS con server US/non-EU** (es. Zoom, Google Meet) | Dati fuori EU, possibile accesso estero | **NO — vietato**        |
+| **SaaS qualsiasi per video PA**                       | Audio/video funzionari su server altrui | **NO — vietato**        |
 
 ### Conseguenze sulla scelta servizi
 
@@ -93,14 +93,14 @@ e' la nostra logica di orchestrazione.
 
 **UNICA SCELTA: Jitsi Meet self-hosted su Hetzner EU.**
 
-| Aspetto | Dettaglio |
-|---------|----------|
-| **Servizio** | Jitsi Meet (open source, Apache 2.0) |
-| **Hosting** | Self-hosted su Hetzner EU — NOSTRI server |
-| **Costo** | Zero (open source) |
-| **Privacy** | Audio/video restano sui nostri server, zero dati a terzi |
-| **Embed** | iframe / Jitsi IFrame API (JavaScript SDK) |
-| **Recording** | Jibri (componente Jitsi) — recording locale sul server |
+| Aspetto       | Dettaglio                                                |
+| ------------- | -------------------------------------------------------- |
+| **Servizio**  | Jitsi Meet (open source, Apache 2.0)                     |
+| **Hosting**   | Self-hosted su Hetzner EU — NOSTRI server                |
+| **Costo**     | Zero (open source)                                       |
+| **Privacy**   | Audio/video restano sui nostri server, zero dati a terzi |
+| **Embed**     | iframe / Jitsi IFrame API (JavaScript SDK)               |
+| **Recording** | Jibri (componente Jitsi) — recording locale sul server   |
 
 **Perche' SOLO Jitsi self-hosted e niente SaaS (Daily.co, Whereby, Zoom, ecc.)**:
 I funzionari PA discutono di delibere, dati cittadini, decisioni riservate.
@@ -108,12 +108,14 @@ L'audio e il video di queste riunioni NON possono transitare su server di terzi.
 Con Jitsi self-hosted, tutto resta sui nostri server Hetzner in Germania/Finlandia.
 
 **Integrazione in MioHub**:
+
 - Embed Jitsi in un iframe nel Tab A99X (Jitsi IFrame API)
 - API interna per creare/gestire stanze programmaticamente
 - Webhook per eventi (utente entra/esce, recording pronto)
 - AVA si collega alla stanza come "bot partecipante"
 
 **Funzionalita' gia' incluse in Jitsi** (non dobbiamo fare nulla):
+
 - Whiteboard (lavagna) integrato
 - Recording e archiviazione (Jibri)
 - Screen sharing
@@ -128,16 +130,17 @@ Con Jitsi self-hosted, tutto resta sui nostri server Hetzner in Germania/Finland
 
 **SCELTA: Cal.com self-hosted su Hetzner EU.**
 
-| Aspetto | Dettaglio |
-|---------|----------|
-| **Servizio** | Cal.com (open source, AGPL-3.0) |
-| **Hosting** | Self-hosted su Hetzner EU — NOSTRI server |
-| **Costo** | Zero (open source) |
-| **Privacy** | Dati agende PA restano sui nostri server |
-| **API** | REST API completa per creare eventi, gestire disponibilita' |
-| **Sync** | Bidirezionale con Google Calendar/Outlook (opzionale per l'utente) |
+| Aspetto      | Dettaglio                                                          |
+| ------------ | ------------------------------------------------------------------ |
+| **Servizio** | Cal.com (open source, AGPL-3.0)                                    |
+| **Hosting**  | Self-hosted su Hetzner EU — NOSTRI server                          |
+| **Costo**    | Zero (open source)                                                 |
+| **Privacy**  | Dati agende PA restano sui nostri server                           |
+| **API**      | REST API completa per creare eventi, gestire disponibilita'        |
+| **Sync**     | Bidirezionale con Google Calendar/Outlook (opzionale per l'utente) |
 
 **Integrazione in MioHub**:
+
 - Cal.com gestisce calendario, disponibilita', conflitti
 - AVA aggiunge la logica priorita' `P = U x I` (nostra formula)
 - AVA suggerisce slot ottimali basandosi sui dati Cal.com
@@ -157,34 +160,37 @@ Questa e' **logica nostra** che gira sopra i dati. Non serve un servizio esterno
 
 **Servizi di supporto**:
 
-| Servizio | Uso |
-|----------|-----|
-| **Neon DB** (gia' in uso) | Storage task e priorita' |
-| **Sistema notifiche MioHub** (gia' in uso) | Alert, reminder, escalation |
-| **AVA/Qwen3** (gia' previsto) | Analisi NLP per estrarre priorita' dai verbali |
+| Servizio                                   | Uso                                            |
+| ------------------------------------------ | ---------------------------------------------- |
+| **Neon DB** (gia' in uso)                  | Storage task e priorita'                       |
+| **Sistema notifiche MioHub** (gia' in uso) | Alert, reminder, escalation                    |
+| **AVA/Qwen3** (gia' previsto)              | Analisi NLP per estrarre priorita' dai verbali |
 
 ### 2.5 Traduzione Simultanea
 
 **NON costruiamo una pipeline di traduzione.** Usiamo chi lo fa per mestiere.
 
-| Servizio | Tipo | Hosting | Privacy |
-|----------|------|---------|---------|
-| **Whisper** (Large-v3) | STT open source | Self-hosted Hetzner GPU | Audio MAI esce dai nostri server |
-| **DeepL API** Pro | Traduzione SaaS EU | Server a Colonia (DE) | DPA disponibile, dati restano in EU |
-| **LibreTranslate** | Traduzione open source | Self-hosted Hetzner | Alternativa a DeepL per privacy totale |
-| **Piper TTS** | TTS open source | Self-hosted Hetzner | Nessun dato a terzi |
+| Servizio               | Tipo                   | Hosting                 | Privacy                                |
+| ---------------------- | ---------------------- | ----------------------- | -------------------------------------- |
+| **Whisper** (Large-v3) | STT open source        | Self-hosted Hetzner GPU | Audio MAI esce dai nostri server       |
+| **DeepL API** Pro      | Traduzione SaaS EU     | Server a Colonia (DE)   | DPA disponibile, dati restano in EU    |
+| **LibreTranslate**     | Traduzione open source | Self-hosted Hetzner     | Alternativa a DeepL per privacy totale |
+| **Piper TTS**          | TTS open source        | Self-hosted Hetzner     | Nessun dato a terzi                    |
 
 **Scelte fatte (privacy PA)**:
+
 - **Speech-to-Text**: SOLO **Whisper self-hosted** — l'audio delle riunioni PA non esce mai dai nostri server
 - **Traduzione testo**: **DeepL API** (EU, Colonia) oppure **LibreTranslate self-hosted** per privacy totale
 - **Text-to-Speech**: SOLO **Piper TTS self-hosted** — niente ElevenLabs o servizi cloud US
 
 **Pipeline completa** (tutto gia' esistente, noi li colleghiamo):
+
 ```
 Audio parlato → Whisper (STT) → DeepL (traduzione) → Piper (TTS) → Audio tradotto
 ```
 
 **Integrazione in MioHub**:
+
 - Il frontend cattura l'audio dal microfono (Web Audio API standard)
 - Streaming audio → nostro backend → Whisper → DeepL → risposta
 - Ogni partecipante sceglie la sua lingua, riceve la traduzione
@@ -193,14 +199,15 @@ Audio parlato → Whisper (STT) → DeepL (traduzione) → Piper (TTS) → Audio
 
 **NON costruiamo un sistema NLP da zero.** AVA (Qwen3) fa l'analisi, servizi esterni il resto.
 
-| Servizio | Tipo | Perche' |
-|----------|------|---------|
-| **AVA/Qwen3** (gia' previsto) | Self-hosted | Analisi verbale, estrazione decisioni e task |
-| **Whisper** (come sopra) | Self-hosted | Trascrizione riunione → testo per AVA |
-| **Sistema notifiche MioHub** (gia' in uso) | Interno | Invio notifiche follow-up |
-| **Cal.com** (come sopra) | Self-hosted | Creazione automatica eventi follow-up |
+| Servizio                                   | Tipo        | Perche'                                      |
+| ------------------------------------------ | ----------- | -------------------------------------------- |
+| **AVA/Qwen3** (gia' previsto)              | Self-hosted | Analisi verbale, estrazione decisioni e task |
+| **Whisper** (come sopra)                   | Self-hosted | Trascrizione riunione → testo per AVA        |
+| **Sistema notifiche MioHub** (gia' in uso) | Interno     | Invio notifiche follow-up                    |
+| **Cal.com** (come sopra)                   | Self-hosted | Creazione automatica eventi follow-up        |
 
 **Pipeline follow-up** (tutto servizi esistenti):
+
 ```
 Recording riunione → Whisper (trascrizione) → AVA/Qwen3 (analisi NLP)
 → Task generati → Notifiche MioHub → Eventi Cal.com
@@ -215,40 +222,40 @@ Recording riunione → Whisper (trascrizione) → AVA/Qwen3 (analisi NLP)
 
 ### 3.1 Servizi da integrare (tutti self-hosted o SaaS EU)
 
-| Funzionalita' | Servizio | Hosting | Licenza | Privacy |
-|---------------|----------|---------|---------|---------|
-| Videoconferenza | **Jitsi Meet** | Self-hosted Hetzner | Apache 2.0 | Audio/video sui NOSTRI server |
-| Calendario/Agenda | **Cal.com** | Self-hosted Hetzner | AGPL-3.0 | Dati agende sui NOSTRI server |
-| Speech-to-Text | **Whisper** (Large-v3) | Self-hosted Hetzner GPU | MIT | Audio MAI esce dai nostri server |
-| Traduzione testo | **DeepL API** | SaaS EU (Colonia DE) | Pay-per-use | DPA, server EU |
-| Traduzione testo (alt.) | **LibreTranslate** | Self-hosted Hetzner | AGPL-3.0 | Privacy totale |
-| Text-to-Speech | **Piper TTS** | Self-hosted Hetzner | MIT | Nessun dato a terzi |
-| Lavagna | **Excalidraw** | Self-hosted / embed | MIT | Locale |
-| Sondaggi | **Jitsi Polls** | Incluso in Jitsi | Apache 2.0 | Incluso nel self-hosted |
-| AI/LLM | **Qwen3** su Ollama/vLLM | Self-hosted Hetzner | Apache 2.0 | Dati MAI a servizi cloud AI |
+| Funzionalita'           | Servizio                 | Hosting                 | Licenza     | Privacy                          |
+| ----------------------- | ------------------------ | ----------------------- | ----------- | -------------------------------- |
+| Videoconferenza         | **Jitsi Meet**           | Self-hosted Hetzner     | Apache 2.0  | Audio/video sui NOSTRI server    |
+| Calendario/Agenda       | **Cal.com**              | Self-hosted Hetzner     | AGPL-3.0    | Dati agende sui NOSTRI server    |
+| Speech-to-Text          | **Whisper** (Large-v3)   | Self-hosted Hetzner GPU | MIT         | Audio MAI esce dai nostri server |
+| Traduzione testo        | **DeepL API**            | SaaS EU (Colonia DE)    | Pay-per-use | DPA, server EU                   |
+| Traduzione testo (alt.) | **LibreTranslate**       | Self-hosted Hetzner     | AGPL-3.0    | Privacy totale                   |
+| Text-to-Speech          | **Piper TTS**            | Self-hosted Hetzner     | MIT         | Nessun dato a terzi              |
+| Lavagna                 | **Excalidraw**           | Self-hosted / embed     | MIT         | Locale                           |
+| Sondaggi                | **Jitsi Polls**          | Incluso in Jitsi        | Apache 2.0  | Incluso nel self-hosted          |
+| AI/LLM                  | **Qwen3** su Ollama/vLLM | Self-hosted Hetzner     | Apache 2.0  | Dati MAI a servizi cloud AI      |
 
 ### 3.2 Componenti gia' presenti in MioHub (riutilizzabili)
 
-| Componente MioHub | Uso in A99X |
-|--------------------|-------------|
-| Sistema RBAC | Controllo accesso alle funzionalita' A99X per ruolo |
-| Firebase Auth + OAuth | Autenticazione utenti nelle riunioni |
-| Sistema notifiche | Notifiche follow-up e reminder task |
-| Dashboard PA (Tab) | Container per l'interfaccia A99X |
-| Impersonazione per comune | AVA personalizzato per comune specifico |
-| Chat AI streaming (Tab 9) | Base diretta dell'AVA |
-| API metrics/logging | Monitoraggio utilizzo A99X |
-| Neon PostgreSQL | Storage dati A99X (task, riunioni, agenda) |
+| Componente MioHub         | Uso in A99X                                         |
+| ------------------------- | --------------------------------------------------- |
+| Sistema RBAC              | Controllo accesso alle funzionalita' A99X per ruolo |
+| Firebase Auth + OAuth     | Autenticazione utenti nelle riunioni                |
+| Sistema notifiche         | Notifiche follow-up e reminder task                 |
+| Dashboard PA (Tab)        | Container per l'interfaccia A99X                    |
+| Impersonazione per comune | AVA personalizzato per comune specifico             |
+| Chat AI streaming (Tab 9) | Base diretta dell'AVA                               |
+| API metrics/logging       | Monitoraggio utilizzo A99X                          |
+| Neon PostgreSQL           | Storage dati A99X (task, riunioni, agenda)          |
 
 ### 3.3 Cosa sviluppiamo NOI (solo orchestrazione)
 
-| Componente | Descrizione | Effort |
-|------------|-------------|--------|
-| **AVA Logic** | Logica AI che collega tutti i servizi | Medio |
-| **A99X Tab UI** | Interfaccia React che embed i servizi | Medio |
-| **Glue API** | Endpoint REST che orchestrano i servizi esterni | Basso |
-| **Priority Engine** | Formula P = U x I + dashboard | Basso |
-| **Follow-up Pipeline** | Collegamento Whisper → AVA → Task → Notifiche | Basso |
+| Componente             | Descrizione                                     | Effort |
+| ---------------------- | ----------------------------------------------- | ------ |
+| **AVA Logic**          | Logica AI che collega tutti i servizi           | Medio  |
+| **A99X Tab UI**        | Interfaccia React che embed i servizi           | Medio  |
+| **Glue API**           | Endpoint REST che orchestrano i servizi esterni | Basso  |
+| **Priority Engine**    | Formula P = U x I + dashboard                   | Basso  |
+| **Follow-up Pipeline** | Collegamento Whisper → AVA → Task → Notifiche   | Basso  |
 
 **Totale sviluppo nostro**: Interfaccia + logica di collegamento.
 **Tutto il resto**: Lo fanno i servizi.
@@ -284,15 +291,15 @@ con l'interfaccia A99X completa.
 
 ### 4.3 Sezioni e servizio utilizzato
 
-| Sezione | Cosa vede l'utente | Servizio dietro |
-|---------|--------------------|--------------------|
-| **Agenda** | Calendario riunioni con suggerimenti AI | Cal.com + AVA |
-| **AVA Chat** | Chat AI con contesto riunioni | Qwen3/Ollama (nostro) |
-| **Video Call** | Videoconferenza con AVA | Jitsi Meet self-hosted |
-| **Report & Tasks** | Verbali + task auto-generati | Whisper + AVA + MioHub notifiche |
-| **Priorita'** | Matrice urgenza/impatto | Logica nostra (P = U x I) |
-| **Traduzione** | Traduzione live in riunione | Whisper + DeepL + Piper |
-| **Lavagna** | Lavagna collaborativa | Excalidraw embed |
+| Sezione            | Cosa vede l'utente                      | Servizio dietro                  |
+| ------------------ | --------------------------------------- | -------------------------------- |
+| **Agenda**         | Calendario riunioni con suggerimenti AI | Cal.com + AVA                    |
+| **AVA Chat**       | Chat AI con contesto riunioni           | Qwen3/Ollama (nostro)            |
+| **Video Call**     | Videoconferenza con AVA                 | Jitsi Meet self-hosted           |
+| **Report & Tasks** | Verbali + task auto-generati            | Whisper + AVA + MioHub notifiche |
+| **Priorita'**      | Matrice urgenza/impatto                 | Logica nostra (P = U x I)        |
+| **Traduzione**     | Traduzione live in riunione             | Whisper + DeepL + Piper          |
+| **Lavagna**        | Lavagna collaborativa                   | Excalidraw embed                 |
 
 ---
 
@@ -435,6 +442,7 @@ POST   /api/a99x/agenda/optimize
 > Non stiamo piu' costruendo da zero — stiamo collegando pezzi.
 
 ### Fase 1: Chat AI Streaming + AVA Base (IN CORSO)
+
 **Timeline**: Febbraio-Marzo 2026
 **Stato**: In sviluppo
 
@@ -446,6 +454,7 @@ POST   /api/a99x/agenda/optimize
 **Output**: AVA base funzionante — il cuore che orchestra tutto.
 
 ### Fase 2: Test Pilota + Videoconferenza + Agenda
+
 **Timeline**: Aprile-Settembre 2026
 
 - Deploy AVA a comuni pilota (Grosseto + 2-3 altri)
@@ -460,6 +469,7 @@ POST   /api/a99x/agenda/optimize
 **Tempo effettivo di integrazione**: Jitsi embed ~1 settimana, Cal.com embed ~1 settimana.
 
 ### Fase 3: Traduzione + Follow-Up Automatico
+
 **Timeline**: Ottobre 2026-Gennaio 2027
 
 - **Deploy Whisper** su Hetzner (GPU per STT)
@@ -472,6 +482,7 @@ POST   /api/a99x/agenda/optimize
 **Output**: Suite completa A99X — tutto funzionante con servizi integrati.
 
 ### Fase 4: Scale-Up Nazionale
+
 **Timeline**: Febbraio 2027+
 
 - Roll-out a tutti i comuni DMS Hub (target 8.000)
@@ -487,26 +498,26 @@ POST   /api/a99x/agenda/optimize
 
 ### 8.1 Vincoli assoluti
 
-| Vincolo | Dettaglio |
-|---------|----------|
+| Vincolo                   | Dettaglio                                                       |
+| ------------------------- | --------------------------------------------------------------- |
 | **ZERO sviluppo da zero** | Ogni funzionalita' usa un servizio esistente — noi orchestriamo |
-| **ZERO tRPC** | Backend solo REST API su mihub-backend-rest |
-| **Hosting EU** | Tutti i servizi self-hosted su Hetzner (Falkenstein/Helsinki) |
-| **GDPR/AgID** | Solo servizi con data processing EU o self-hosted |
-| **Non toccare v9.1.2** | Il sistema stabile non va modificato — approccio chirurgico |
-| **Drizzle ORM** | Schema DB SEMPRE in `drizzle/schema.ts` — mai SQL diretto |
+| **ZERO tRPC**             | Backend solo REST API su mihub-backend-rest                     |
+| **Hosting EU**            | Tutti i servizi self-hosted su Hetzner (Falkenstein/Helsinki)   |
+| **GDPR/AgID**             | Solo servizi con data processing EU o self-hosted               |
+| **Non toccare v9.1.2**    | Il sistema stabile non va modificato — approccio chirurgico     |
+| **Drizzle ORM**           | Schema DB SEMPRE in `drizzle/schema.ts` — mai SQL diretto       |
 
 ### 8.2 Stack servizi A99X
 
-| Servizio | Versione/Tipo | Hosting | Licenza |
-|----------|---------------|---------|---------|
-| Jitsi Meet | Latest stable | Hetzner VPS | Apache 2.0 (open source) |
-| Cal.com | Latest stable | Hetzner VPS | AGPL-3.0 (open source) |
-| Whisper | Large-v3 | Hetzner GPU | MIT (open source) |
-| DeepL API | Pro | SaaS EU (Colonia, DE) | Pay-per-use |
-| Piper TTS | Latest | Hetzner VPS | MIT (open source) |
-| Excalidraw | Latest | Embed/self-hosted | MIT (open source) |
-| Qwen3 | 8B/30B | Hetzner via Ollama/vLLM | Apache 2.0 (open source) |
+| Servizio   | Versione/Tipo | Hosting                 | Licenza                  |
+| ---------- | ------------- | ----------------------- | ------------------------ |
+| Jitsi Meet | Latest stable | Hetzner VPS             | Apache 2.0 (open source) |
+| Cal.com    | Latest stable | Hetzner VPS             | AGPL-3.0 (open source)   |
+| Whisper    | Large-v3      | Hetzner GPU             | MIT (open source)        |
+| DeepL API  | Pro           | SaaS EU (Colonia, DE)   | Pay-per-use              |
+| Piper TTS  | Latest        | Hetzner VPS             | MIT (open source)        |
+| Excalidraw | Latest        | Embed/self-hosted       | MIT (open source)        |
+| Qwen3      | 8B/30B        | Hetzner via Ollama/vLLM | Apache 2.0 (open source) |
 
 ### 8.3 Compliance
 
@@ -520,36 +531,36 @@ POST   /api/a99x/agenda/optimize
 
 ## 9. CONFRONTO: PRIMA vs DOPO
 
-| Aspetto | PRIMA (v1.0 — da zero) | DOPO (v2.0 — servizi esistenti) |
-|---------|------------------------|----------------------------------|
-| Videoconferenza | Costruire WebRTC da zero (6+ mesi) | Embed Jitsi Meet (1 settimana) |
-| Calendario | Engine proprietario (3+ mesi) | Embed Cal.com (1 settimana) |
-| Traduzione | Pipeline custom STT+MT+TTS (4+ mesi) | Whisper + DeepL + Piper (2 settimane) |
-| Lavagna | Canvas custom (2+ mesi) | Embed Excalidraw (2 giorni) |
-| Sondaggi | Sistema custom (1+ mese) | Jitsi ha polls integrati (0 giorni) |
-| Fasi roadmap | 6 fasi fino a set. 2027 | 4 fasi fino a feb. 2027 |
-| Rischio | Altissimo (tutto custom) | Basso (servizi collaudati) |
-| Manutenzione | Tutto su di noi | Community open source + vendor |
+| Aspetto         | PRIMA (v1.0 — da zero)               | DOPO (v2.0 — servizi esistenti)       |
+| --------------- | ------------------------------------ | ------------------------------------- |
+| Videoconferenza | Costruire WebRTC da zero (6+ mesi)   | Embed Jitsi Meet (1 settimana)        |
+| Calendario      | Engine proprietario (3+ mesi)        | Embed Cal.com (1 settimana)           |
+| Traduzione      | Pipeline custom STT+MT+TTS (4+ mesi) | Whisper + DeepL + Piper (2 settimane) |
+| Lavagna         | Canvas custom (2+ mesi)              | Embed Excalidraw (2 giorni)           |
+| Sondaggi        | Sistema custom (1+ mese)             | Jitsi ha polls integrati (0 giorni)   |
+| Fasi roadmap    | 6 fasi fino a set. 2027              | 4 fasi fino a feb. 2027               |
+| Rischio         | Altissimo (tutto custom)             | Basso (servizi collaudati)            |
+| Manutenzione    | Tutto su di noi                      | Community open source + vendor        |
 
 ---
 
 ## 10. RIEPILOGO STRATEGICO
 
-| Aspetto | Dettaglio |
-|---------|----------|
-| **Progetto** | A99X — Digital Market System (Assistant 99X) |
-| **Filosofia** | NOI METTIAMO IL METODO — i servizi li fanno i professionisti |
-| **Ruolo MioHub** | Orchestratore — il metodo, la logica PA, l'interfaccia unificata |
-| **Privacy PA** | VINCOLO ASSOLUTO — tutto self-hosted EU, zero dati a server terzi |
-| **6 Funzionalita'** | AVA, Video (Jitsi self-hosted), Agenda (Cal.com self-hosted), Priorita' (nostra), Traduzione (Whisper+DeepL), Follow-Up (AVA+Whisper) |
-| **Sviluppo nostro** | Il METODO: AVA logic, UI Tab A99X, Glue API, Priority engine |
-| **Servizi esterni** | Jitsi, Cal.com, Whisper, DeepL, Piper, Excalidraw — tutti self-hosted o EU |
-| **Hosting** | Tutto self-hosted su Hetzner EU, unica eccezione DeepL (SaaS EU, Colonia) |
-| **Roadmap** | 4 fasi — completamento previsto feb. 2027 (risparmiati 7+ mesi) |
-| **Priorita' attuale** | Completare Chat AI Streaming (AVA base), poi integrare Jitsi + Cal.com |
+| Aspetto               | Dettaglio                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Progetto**          | A99X — Digital Market System (Assistant 99X)                                                                                          |
+| **Filosofia**         | NOI METTIAMO IL METODO — i servizi li fanno i professionisti                                                                          |
+| **Ruolo MioHub**      | Orchestratore — il metodo, la logica PA, l'interfaccia unificata                                                                      |
+| **Privacy PA**        | VINCOLO ASSOLUTO — tutto self-hosted EU, zero dati a server terzi                                                                     |
+| **6 Funzionalita'**   | AVA, Video (Jitsi self-hosted), Agenda (Cal.com self-hosted), Priorita' (nostra), Traduzione (Whisper+DeepL), Follow-Up (AVA+Whisper) |
+| **Sviluppo nostro**   | Il METODO: AVA logic, UI Tab A99X, Glue API, Priority engine                                                                          |
+| **Servizi esterni**   | Jitsi, Cal.com, Whisper, DeepL, Piper, Excalidraw — tutti self-hosted o EU                                                            |
+| **Hosting**           | Tutto self-hosted su Hetzner EU, unica eccezione DeepL (SaaS EU, Colonia)                                                             |
+| **Roadmap**           | 4 fasi — completamento previsto feb. 2027 (risparmiati 7+ mesi)                                                                       |
+| **Priorita' attuale** | Completare Chat AI Streaming (AVA base), poi integrare Jitsi + Cal.com                                                                |
 
 ---
 
-*Documento A99X v2.0 — Approccio "Noi mettiamo il metodo"*
-*Aggiornato il 27/02/2026 — DMS Hub Team*
-*MioHub orchestra. Non reinventa. Privacy PA garantita.*
+_Documento A99X v2.0 — Approccio "Noi mettiamo il metodo"_
+_Aggiornato il 27/02/2026 — DMS Hub Team_
+_MioHub orchestra. Non reinventa. Privacy PA garantita._

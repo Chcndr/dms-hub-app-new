@@ -1,92 +1,205 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
-import { PanicButton } from '@/components/PanicButton';
-import { useLocation } from 'wouter';
-import { useAnimation } from '@/contexts/AnimationContext';
-import { 
-  Users, TrendingUp, Store, ShoppingCart, Leaf, MapPin, 
-  Activity, BarChart3, PieChart, ArrowUpRight, ArrowDownRight, ArrowDown, ArrowUpCircle, ArrowDownCircle,
-  Bike, Car, Bus, Footprints, Zap, Package, Globe, Award,
-  Calendar, Clock, AlertCircle, AlertTriangle, CheckCircle, Download, FileText, Bot, Send,
-  Shield, Lock, UserCheck, Terminal, Bug, Code, Wrench, RefreshCw,
-  Coins, DollarSign, Wallet, Settings, Sliders, TrendingDown,
-  Building2, GraduationCap, Target, TrendingUpDown, Briefcase,
-  Radio, CloudRain, Wind, UserCog, ClipboardCheck, Scale, Bell, BellRing,
-  Navigation, Train, ParkingCircle, TrafficCone, FileBarChart, Plug, SettingsIcon, Euro, Newspaper, Rocket,
-  XCircle, Lightbulb, MessageSquare, Brain, Calculator, ExternalLink, StopCircle,
-  Search, Filter, Plus, Landmark, BookOpen, Star, FileCheck, HandCoins, Mail, MailOpen, Home, Gamepad2,
-  Heart, CreditCard, ClipboardList
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import MobilityMap from '@/components/MobilityMap';
-import GestioneMercati from '@/components/GestioneMercati';
-import Integrazioni from '@/components/Integrazioni';
-import { GISMap } from '@/components/GISMap';
-import { MarketMapComponent } from '@/components/MarketMapComponent';
-import CivicReportsHeatmap from '@/components/CivicReportsHeatmap';
-import { CivicReportsProvider } from '@/contexts/CivicReportsContext';
-import SuapPanel from '@/components/SuapPanel';
-import SciaForm from '@/components/suap/SciaForm';
-import DomandaSpuntaForm from '@/components/suap/DomandaSpuntaForm';
-import PiattaformePA from '@/components/PiattaformePA';
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useMemo,
+} from "react";
+import { PanicButton } from "@/components/PanicButton";
+import { useLocation } from "wouter";
+import { useAnimation } from "@/contexts/AnimationContext";
+import {
+  Users,
+  TrendingUp,
+  Store,
+  ShoppingCart,
+  Leaf,
+  MapPin,
+  Activity,
+  BarChart3,
+  PieChart,
+  ArrowUpRight,
+  ArrowDownRight,
+  ArrowDown,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Bike,
+  Car,
+  Bus,
+  Footprints,
+  Zap,
+  Package,
+  Globe,
+  Award,
+  Calendar,
+  Clock,
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  Download,
+  FileText,
+  Bot,
+  Send,
+  Shield,
+  Lock,
+  UserCheck,
+  Terminal,
+  Bug,
+  Code,
+  Wrench,
+  RefreshCw,
+  Coins,
+  DollarSign,
+  Wallet,
+  Settings,
+  Sliders,
+  TrendingDown,
+  Building2,
+  GraduationCap,
+  Target,
+  TrendingUpDown,
+  Briefcase,
+  Radio,
+  CloudRain,
+  Wind,
+  UserCog,
+  ClipboardCheck,
+  Scale,
+  Bell,
+  BellRing,
+  Navigation,
+  Train,
+  ParkingCircle,
+  TrafficCone,
+  FileBarChart,
+  Plug,
+  SettingsIcon,
+  Euro,
+  Newspaper,
+  Rocket,
+  XCircle,
+  Lightbulb,
+  MessageSquare,
+  Brain,
+  Calculator,
+  ExternalLink,
+  StopCircle,
+  Search,
+  Filter,
+  Plus,
+  Landmark,
+  BookOpen,
+  Star,
+  FileCheck,
+  HandCoins,
+  Mail,
+  MailOpen,
+  Home,
+  Gamepad2,
+  Heart,
+  CreditCard,
+  ClipboardList,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import MobilityMap from "@/components/MobilityMap";
+import GestioneMercati from "@/components/GestioneMercati";
+import Integrazioni from "@/components/Integrazioni";
+import { GISMap } from "@/components/GISMap";
+import { MarketMapComponent } from "@/components/MarketMapComponent";
+import CivicReportsHeatmap from "@/components/CivicReportsHeatmap";
+import { CivicReportsProvider } from "@/contexts/CivicReportsContext";
+import SuapPanel from "@/components/SuapPanel";
+import SciaForm from "@/components/suap/SciaForm";
+import DomandaSpuntaForm from "@/components/suap/DomandaSpuntaForm";
+import PiattaformePA from "@/components/PiattaformePA";
 
-import MIOAgent from '@/components/MIOAgent';
-import { LogsSectionReal, DebugSectionReal } from '@/components/LogsDebugReal';
-import GuardianLogsSection from '@/components/GuardianLogsSection';
-import ImpreseQualificazioniPanel from '@/components/ImpreseQualificazioniPanel';
-import { MarketCompaniesTab } from '@/components/markets/MarketCompaniesTab';
-import { NativeReportComponent } from '@/components/NativeReportComponent';
-import { LegacyReportCards } from '@/components/LegacyReportCards';
-import { MultiAgentChatView, type AgentMessage } from '@/components/multi-agent/MultiAgentChatView';
-import { SharedWorkspace } from '@/components/SharedWorkspace';
-import NotificationsPanel from '@/components/NotificationsPanel';
-import ComuniPanel from '@/components/ComuniPanel';
-import AssociazioniPanel from '@/components/AssociazioniPanel';
-import PresenzeAssociatiPanel from '@/components/PresenzeAssociatiPanel';
-import AnagraficaAssociazionePanel from '@/components/AnagraficaAssociazionePanel';
-import SchedaPubblicaPanel from '@/components/SchedaPubblicaPanel';
-import WalletAssociazionePanel from '@/components/WalletAssociazionePanel';
-import GestioneServiziAssociazionePanel from '@/components/GestioneServiziAssociazionePanel';
-import GestioneCorsiAssociazionePanel from '@/components/GestioneCorsiAssociazionePanel';
-import WalletPanel from '@/components/WalletPanel';
-import SecurityTab from '@/components/SecurityTab';
-import FraudMonitorPanel from '@/components/FraudMonitorPanel';
-import ClientiTab from '@/components/ClientiTab';
-import GestioneHubPanel from '@/components/GestioneHubPanel';
-import GestioneHubMapWrapper from '@/components/GestioneHubMapWrapper';
-import { useTransport } from '@/contexts/TransportContext';
-import ControlliSanzioniPanel from '@/components/ControlliSanzioniPanel';
-import CivicReportsPanel from '@/components/CivicReportsPanel';
-import GamingRewardsPanel from '@/components/GamingRewardsPanel';
-import { BusHubEditor } from '@/components/bus-hub';
-import { ProtectedTab, ProtectedQuickAccess } from '@/components/ProtectedTab';
-import { usePermissions } from '@/contexts/PermissionsContext';
-import { MessageContent } from '@/components/MessageContent';
-import { callOrchestrator } from '@/api/orchestratorClient';
-import { sendAgentMessage, AgentChatMessage } from '@/lib/mioOrchestratorClient';
-import { sendDirectMessageToHetzner, DirectMioMessage } from '@/lib/DirectMioClient';
-import { sendToAgent } from '@/lib/agentHelper';
-import { toast } from 'sonner';
-import { isAssociazioneImpersonation, addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
+import MIOAgent from "@/components/MIOAgent";
+import { LogsSectionReal, DebugSectionReal } from "@/components/LogsDebugReal";
+import GuardianLogsSection from "@/components/GuardianLogsSection";
+import ImpreseQualificazioniPanel from "@/components/ImpreseQualificazioniPanel";
+import { MarketCompaniesTab } from "@/components/markets/MarketCompaniesTab";
+import { NativeReportComponent } from "@/components/NativeReportComponent";
+import { LegacyReportCards } from "@/components/LegacyReportCards";
+import {
+  MultiAgentChatView,
+  type AgentMessage,
+} from "@/components/multi-agent/MultiAgentChatView";
+import { SharedWorkspace } from "@/components/SharedWorkspace";
+import { AIChatPanel } from "@/components/ai-chat/AIChatPanel";
+import NotificationsPanel from "@/components/NotificationsPanel";
+import ComuniPanel from "@/components/ComuniPanel";
+import AssociazioniPanel from "@/components/AssociazioniPanel";
+import PresenzeAssociatiPanel from "@/components/PresenzeAssociatiPanel";
+import AnagraficaAssociazionePanel from "@/components/AnagraficaAssociazionePanel";
+import SchedaPubblicaPanel from "@/components/SchedaPubblicaPanel";
+import WalletAssociazionePanel from "@/components/WalletAssociazionePanel";
+import GestioneServiziAssociazionePanel from "@/components/GestioneServiziAssociazionePanel";
+import GestioneCorsiAssociazionePanel from "@/components/GestioneCorsiAssociazionePanel";
+import WalletPanel from "@/components/WalletPanel";
+import SecurityTab from "@/components/SecurityTab";
+import FraudMonitorPanel from "@/components/FraudMonitorPanel";
+import ClientiTab from "@/components/ClientiTab";
+import GestioneHubPanel from "@/components/GestioneHubPanel";
+import GestioneHubMapWrapper from "@/components/GestioneHubMapWrapper";
+import { useTransport } from "@/contexts/TransportContext";
+import ControlliSanzioniPanel from "@/components/ControlliSanzioniPanel";
+import CivicReportsPanel from "@/components/CivicReportsPanel";
+import GamingRewardsPanel from "@/components/GamingRewardsPanel";
+import { BusHubEditor } from "@/components/bus-hub";
+import { ProtectedTab, ProtectedQuickAccess } from "@/components/ProtectedTab";
+import { usePermissions } from "@/contexts/PermissionsContext";
+import { MessageContent } from "@/components/MessageContent";
+import { callOrchestrator } from "@/api/orchestratorClient";
+import {
+  sendAgentMessage,
+  AgentChatMessage,
+} from "@/lib/mioOrchestratorClient";
+import {
+  sendDirectMessageToHetzner,
+  DirectMioMessage,
+} from "@/lib/DirectMioClient";
+import { sendToAgent } from "@/lib/agentHelper";
+import { toast } from "sonner";
+import {
+  isAssociazioneImpersonation,
+  addComuneIdToUrl,
+  authenticatedFetch,
+} from "@/hooks/useImpersonation";
 
 // 👻 GHOSTBUSTER: MioChatMessage sostituito con DirectMioMessage
 // 🔥 FORCE REBUILD: 2024-12-20 12:46 - Fix agentName filter removed from single chats
 type MioChatMessage = DirectMioMessage;
-import { getLogs, getLogsStats, getGuardianHealth } from '@/api/logsClient';
+import { getLogs, getLogsStats, getGuardianHealth } from "@/api/logsClient";
 // import { useInternalTraces } from '@/hooks/useInternalTraces'; // TODO: implementare hook
-import { useConversationPersistence } from '@/hooks/useConversationPersistence';
-import { useAgentLogs } from '@/hooks/useAgentLogs';
-import { useMio } from '@/contexts/MioContext';
-import { useSystemStatus } from '@/hooks/useSystemStatus';
-import { MIHUB_API_BASE_URL } from '@/config/api';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useConversationPersistence } from "@/hooks/useConversationPersistence";
+import { useAgentLogs } from "@/hooks/useAgentLogs";
+import { useMio } from "@/contexts/MioContext";
+import { useSystemStatus } from "@/hooks/useSystemStatus";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 // API TCC Carbon Credit — in produzione usa proxy Vercel (/api/tcc/* → api.mio-hub.me)
-const TCC_API = import.meta.env.DEV
-  ? 'https://api.mio-hub.me'
-  : '';
+const TCC_API = import.meta.env.DEV ? "https://api.mio-hub.me" : "";
 
 // Hook per dati reali da backend (REST — tRPC rimosso in FASE 1 stacco backend)
 function useDashboardData() {
@@ -97,21 +210,25 @@ function useDashboardData() {
   const [statsQualificazione, setStatsQualificazione] = useState<any>(null);
   const [formazioneStats, setFormazioneStats] = useState<any>(null);
   const [bandiStats, setBandiStats] = useState<any>(null);
-  
+
   useEffect(() => {
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
-    
+    const MIHUB_API =
+      import.meta.env.VITE_MIHUB_API_BASE_URL || "https://api.mio-hub.me/api";
+
     // Se impersonificazione associazione, carica stats globali (senza filtro comune)
     // ma non caricare stats specifiche (qualificazione, formazione, bandi)
     const isAssocImpersonation = isAssociazioneImpersonation();
 
     // Leggi comune_id dall'URL se in modalità impersonificazione comune
     const urlParams = new URLSearchParams(window.location.search);
-    const comuneId = urlParams.get('comune_id');
-    const isImpersonating = urlParams.get('impersonate') === 'true';
+    const comuneId = urlParams.get("comune_id");
+    const isImpersonating = urlParams.get("impersonate") === "true";
 
     // Costruisci query string per filtro comune (solo per comuni, non per associazioni)
-    const comuneFilter = (comuneId && isImpersonating && !isAssocImpersonation) ? `?comune_id=${comuneId}` : '';
+    const comuneFilter =
+      comuneId && isImpersonating && !isAssocImpersonation
+        ? `?comune_id=${comuneId}`
+        : "";
 
     // Fetch overview globali (sempre, anche per associazioni)
     fetch(`${MIHUB_API}/stats/overview${comuneFilter}`)
@@ -121,8 +238,8 @@ function useDashboardData() {
           setStatsOverview(data.data);
         }
       })
-      .catch(err => console.error('Stats overview fetch error:', err));
-    
+      .catch(err => console.error("Stats overview fetch error:", err));
+
     // Fetch realtime
     fetch(`${MIHUB_API}/stats/realtime`)
       .then(res => res.json())
@@ -131,8 +248,8 @@ function useDashboardData() {
           setStatsRealtime(data.data);
         }
       })
-      .catch(err => console.error('Stats realtime fetch error:', err));
-    
+      .catch(err => console.error("Stats realtime fetch error:", err));
+
     // Fetch growth
     fetch(`${MIHUB_API}/stats/growth`)
       .then(res => res.json())
@@ -141,39 +258,52 @@ function useDashboardData() {
           setStatsGrowth(data.data);
         }
       })
-      .catch(err => console.error('Stats growth fetch error:', err));
-    
+      .catch(err => console.error("Stats growth fetch error:", err));
+
     // Per associazioni: qualificazione non pertinente, formazione e bandi sì
     // Costruisci filtro associazione_id per le fetch dei tab Enti
-    const assocIdParam = isAssocImpersonation ? urlParams.get('associazione_id') : null;
-    const assocFilter = assocIdParam ? `?associazione_id=${assocIdParam}` : '';
-    const assocFilterAnd = assocIdParam ? `&associazione_id=${assocIdParam}` : '';
+    const assocIdParam = isAssocImpersonation
+      ? urlParams.get("associazione_id")
+      : null;
+    const assocFilter = assocIdParam ? `?associazione_id=${assocIdParam}` : "";
+    const assocFilterAnd = assocIdParam
+      ? `&associazione_id=${assocIdParam}`
+      : "";
 
     // Fetch qualificazione (Tab Imprese) - solo se NON impersonificazione associazione
     if (!isAssocImpersonation)
-    fetch(`${MIHUB_API}/stats/qualificazione/overview`)
-      .then(res => res.json())
-      .then(async data => {
-        if (data.success) {
-          // Fetch anche scadenze, demografia, top-imprese, indici
-          const [scadenzeRes, demografiaRes, topImpreseRes, indiciRes] = await Promise.all([
-            fetch(`${MIHUB_API}/stats/qualificazione/scadenze`).then(r => r.json()),
-            fetch(`${MIHUB_API}/stats/qualificazione/demografia`).then(r => r.json()),
-            fetch(`${MIHUB_API}/stats/qualificazione/top-imprese`).then(r => r.json()),
-            fetch(`${MIHUB_API}/stats/qualificazione/indici`).then(r => r.json())
-          ]);
-          
-          setStatsQualificazione({
-            overview: data.data,
-            scadenze: scadenzeRes.success ? scadenzeRes.data : [],
-            demografia: demografiaRes.success ? demografiaRes.data : null,
-            topImprese: topImpreseRes.success ? topImpreseRes.data : [],
-            indici: indiciRes.success ? indiciRes.data : null
-          });
-        }
-      })
-      .catch(err => console.error('Stats qualificazione fetch error:', err));
-    
+      fetch(`${MIHUB_API}/stats/qualificazione/overview`)
+        .then(res => res.json())
+        .then(async data => {
+          if (data.success) {
+            // Fetch anche scadenze, demografia, top-imprese, indici
+            const [scadenzeRes, demografiaRes, topImpreseRes, indiciRes] =
+              await Promise.all([
+                fetch(`${MIHUB_API}/stats/qualificazione/scadenze`).then(r =>
+                  r.json()
+                ),
+                fetch(`${MIHUB_API}/stats/qualificazione/demografia`).then(r =>
+                  r.json()
+                ),
+                fetch(`${MIHUB_API}/stats/qualificazione/top-imprese`).then(r =>
+                  r.json()
+                ),
+                fetch(`${MIHUB_API}/stats/qualificazione/indici`).then(r =>
+                  r.json()
+                ),
+              ]);
+
+            setStatsQualificazione({
+              overview: data.data,
+              scadenze: scadenzeRes.success ? scadenzeRes.data : [],
+              demografia: demografiaRes.success ? demografiaRes.data : null,
+              topImprese: topImpreseRes.success ? topImpreseRes.data : [],
+              indici: indiciRes.success ? indiciRes.data : null,
+            });
+          }
+        })
+        .catch(err => console.error("Stats qualificazione fetch error:", err));
+
     // Fetch formazione stats (enti formatori e corsi)
     fetch(`${MIHUB_API}/formazione/stats`)
       .then(res => res.json())
@@ -183,44 +313,54 @@ function useDashboardData() {
           const [entiRes, corsiRes, iscrizioniRes] = await Promise.all([
             fetch(`${MIHUB_API}/formazione/enti`).then(r => r.json()),
             fetch(`${MIHUB_API}/formazione/corsi`).then(r => r.json()),
-            fetch(`${MIHUB_API}/formazione/iscrizioni/stats`).then(r => r.json())
+            fetch(`${MIHUB_API}/formazione/iscrizioni/stats`).then(r =>
+              r.json()
+            ),
           ]);
-          
+
           setFormazioneStats({
             stats: data.data,
             enti: entiRes.success ? entiRes.data : [],
             corsi: corsiRes.success ? corsiRes.data : [],
-            iscrizioni: iscrizioniRes.success ? iscrizioniRes.data : null
+            iscrizioni: iscrizioniRes.success ? iscrizioniRes.data : null,
           });
         }
       })
-      .catch(err => console.error('Formazione stats fetch error:', err));
-    
+      .catch(err => console.error("Formazione stats fetch error:", err));
+
     // Fetch bandi stats (associazioni e catalogo bandi)
     fetch(`${MIHUB_API}/bandi/stats`)
       .then(res => res.json())
       .then(async data => {
         if (data.success) {
           // Fetch anche lista associazioni, bandi, servizi, richieste e regolarità
-          const [assocRes, catalogoRes, serviziRes, richiesteRes, regolaritaRes] = await Promise.all([
+          const [
+            assocRes,
+            catalogoRes,
+            serviziRes,
+            richiesteRes,
+            regolaritaRes,
+          ] = await Promise.all([
             fetch(`${MIHUB_API}/bandi/associazioni`).then(r => r.json()),
             fetch(`${MIHUB_API}/bandi/catalogo`).then(r => r.json()),
-            fetch(`${MIHUB_API}/bandi/servizi${assocFilter}`).then(r => r.json()),
+            fetch(`${MIHUB_API}/bandi/servizi${assocFilter}`).then(r =>
+              r.json()
+            ),
             fetch(`${MIHUB_API}/bandi/richieste/stats`).then(r => r.json()),
-            fetch(`${MIHUB_API}/bandi/regolarita/stats`).then(r => r.json())
+            fetch(`${MIHUB_API}/bandi/regolarita/stats`).then(r => r.json()),
           ]);
-          
+
           setBandiStats({
             stats: data.data,
             associazioni: assocRes.success ? assocRes.data : [],
             catalogo: catalogoRes.success ? catalogoRes.data : [],
             servizi: serviziRes.success ? serviziRes.data : [],
             richieste: richiesteRes.success ? richiesteRes.data : null,
-            regolarita: regolaritaRes.success ? regolaritaRes.data : null
+            regolarita: regolaritaRes.success ? regolaritaRes.data : null,
           });
         }
       })
-      .catch(err => console.error('Bandi stats fetch error:', err));
+      .catch(err => console.error("Bandi stats fetch error:", err));
   }, []);
 
   // Overview dai dati REST
@@ -242,7 +382,7 @@ function useDashboardData() {
         autorizzazioni: statsOverview.autorizzazioni || 0,
         domande_spunta: statsOverview.domande_spunta || 0,
         tcc: statsOverview.tcc || {},
-        today: statsOverview.today || {}
+        today: statsOverview.today || {},
       };
     }
     return null;
@@ -258,7 +398,7 @@ function useDashboardData() {
     statsGrowth: statsGrowth,
     statsQualificazione: statsQualificazione,
     formazioneStats: formazioneStats,
-    bandiStats: bandiStats
+    bandiStats: bandiStats,
   };
 }
 
@@ -272,52 +412,130 @@ const mockData = {
     totalTransactions: 24150,
     transactionGrowth: 12.3,
     sustainabilityRating: 7.8,
-    co2Saved: 4654
+    co2Saved: 4654,
   },
   usersGrowth: [
-    { date: '01 Gen', users: 14500, new: 120 },
-    { date: '08 Gen', users: 14850, new: 135 },
-    { date: '15 Gen', users: 15200, new: 148 },
-    { date: '22 Gen', users: 15550, new: 152 },
-    { date: '29 Gen', users: 15847, new: 165 }
+    { date: "01 Gen", users: 14500, new: 120 },
+    { date: "08 Gen", users: 14850, new: 135 },
+    { date: "15 Gen", users: 15200, new: 148 },
+    { date: "22 Gen", users: 15550, new: 152 },
+    { date: "29 Gen", users: 15847, new: 165 },
   ],
   transport: [
-    { mode: 'A piedi', count: 6500, percentage: 41.0, co2: 0, color: '#10b981' },
-    { mode: 'Bicicletta', count: 3200, percentage: 20.2, co2: 1280, color: '#14b8a6' },
-    { mode: 'Bus', count: 2800, percentage: 17.7, co2: 1680, color: '#06b6d4' },
-    { mode: 'Auto', count: 2500, percentage: 15.8, co2: 0, color: '#ef4444' },
-    { mode: 'Elettrico', count: 847, percentage: 5.3, co2: 1694, color: '#8b5cf6' }
+    {
+      mode: "A piedi",
+      count: 6500,
+      percentage: 41.0,
+      co2: 0,
+      color: "#10b981",
+    },
+    {
+      mode: "Bicicletta",
+      count: 3200,
+      percentage: 20.2,
+      co2: 1280,
+      color: "#14b8a6",
+    },
+    { mode: "Bus", count: 2800, percentage: 17.7, co2: 1680, color: "#06b6d4" },
+    { mode: "Auto", count: 2500, percentage: 15.8, co2: 0, color: "#ef4444" },
+    {
+      mode: "Elettrico",
+      count: 847,
+      percentage: 5.3,
+      co2: 1694,
+      color: "#8b5cf6",
+    },
   ],
   topMarkets: [
-    { name: 'Mercato Centrale Grosseto', visits: 12500, users: 4200, duration: 35, rank: 1 },
-    { name: 'Mercato Follonica Mare', visits: 8900, users: 3100, duration: 28, rank: 2 },
-    { name: 'Mercato Orbetello Centro', visits: 5200, users: 2100, duration: 32, rank: 3 },
-    { name: 'Mercato Castiglione', visits: 3800, users: 1500, duration: 25, rank: 4 },
-    { name: 'Mercato Marina di Grosseto', visits: 2900, users: 1200, duration: 22, rank: 5 }
+    {
+      name: "Mercato Centrale Grosseto",
+      visits: 12500,
+      users: 4200,
+      duration: 35,
+      rank: 1,
+    },
+    {
+      name: "Mercato Follonica Mare",
+      visits: 8900,
+      users: 3100,
+      duration: 28,
+      rank: 2,
+    },
+    {
+      name: "Mercato Orbetello Centro",
+      visits: 5200,
+      users: 2100,
+      duration: 32,
+      rank: 3,
+    },
+    {
+      name: "Mercato Castiglione",
+      visits: 3800,
+      users: 1500,
+      duration: 25,
+      rank: 4,
+    },
+    {
+      name: "Mercato Marina di Grosseto",
+      visits: 2900,
+      users: 1200,
+      duration: 22,
+      rank: 5,
+    },
   ],
   categories: [
-    { name: 'Frutta e Verdura', purchases: 8500, percentage: 35.2, bio: 68.5, color: '#10b981' },
-    { name: 'Formaggi e Latticini', purchases: 4200, percentage: 17.4, bio: 52.1, color: '#f59e0b' },
-    { name: 'Pane e Dolci', purchases: 3800, percentage: 15.7, bio: 41.2, color: '#ef4444' },
-    { name: 'Carne e Pesce', purchases: 2980, percentage: 12.3, bio: 38.5, color: '#ec4899' },
-    { name: 'Altro', purchases: 4670, percentage: 19.4, bio: 25.8, color: '#8b5cf6' }
+    {
+      name: "Frutta e Verdura",
+      purchases: 8500,
+      percentage: 35.2,
+      bio: 68.5,
+      color: "#10b981",
+    },
+    {
+      name: "Formaggi e Latticini",
+      purchases: 4200,
+      percentage: 17.4,
+      bio: 52.1,
+      color: "#f59e0b",
+    },
+    {
+      name: "Pane e Dolci",
+      purchases: 3800,
+      percentage: 15.7,
+      bio: 41.2,
+      color: "#ef4444",
+    },
+    {
+      name: "Carne e Pesce",
+      purchases: 2980,
+      percentage: 12.3,
+      bio: 38.5,
+      color: "#ec4899",
+    },
+    {
+      name: "Altro",
+      purchases: 4670,
+      percentage: 19.4,
+      bio: 25.8,
+      color: "#8b5cf6",
+    },
   ],
   certifications: [
-    { type: 'BIO', count: 12500, percentage: 51.8, color: '#10b981' },
-    { type: 'KM0', count: 9800, percentage: 40.6, color: '#14b8a6' },
-    { type: 'DOP/IGP', count: 4500, percentage: 18.6, color: '#f59e0b' },
-    { type: 'Fair Trade', count: 2100, percentage: 8.7, color: '#8b5cf6' }
+    { type: "BIO", count: 12500, percentage: 51.8, color: "#10b981" },
+    { type: "KM0", count: 9800, percentage: 40.6, color: "#14b8a6" },
+    { type: "DOP/IGP", count: 4500, percentage: 18.6, color: "#f59e0b" },
+    { type: "Fair Trade", count: 2100, percentage: 8.7, color: "#8b5cf6" },
   ],
   ecommerceVsPhysical: {
     ecommerce: { purchases: 18000, percentage: 40.0, co2: 54000, avgCo2: 3.0 },
     physical: { purchases: 27000, percentage: 60.0, co2: 8100, avgCo2: 0.3 },
-    co2Savings: 45900
+    co2Savings: 45900,
   },
   productOrigin: {
     local: { count: 75000, percentage: 60.0, avgDistance: 15, avgCo2: 0.2 },
     national: { count: 35000, percentage: 28.0, avgDistance: 450, avgCo2: 1.5 },
     eu: { count: 10000, percentage: 8.0, avgDistance: 1200, avgCo2: 3.5 },
-    extraEu: { count: 5000, percentage: 4.0, avgDistance: 8500, avgCo2: 12.0 }
+    extraEu: { count: 5000, percentage: 4.0, avgDistance: 8500, avgCo2: 12.0 },
   },
   realtime: {
     activeUsers: 342,
@@ -325,80 +543,134 @@ const mockData = {
     todayCheckins: 124,
     todayTransactions: 456,
     systemStatus: {
-      api: 'operational',
-      database: 'operational',
-      redis: 'operational',
-      tpas: 'standby'
-    }
+      api: "operational",
+      database: "operational",
+      redis: "operational",
+      tpas: "standby",
+    },
   },
   logs: [
-    { id: 1, timestamp: '2025-11-07 11:25:43', app: 'APP Clienti', type: 'check-in', level: 'info', user: 'mario.rossi@email.com', message: 'Check-in Mercato Centrale Grosseto', ip: '192.168.1.45' },
-    { id: 2, timestamp: '2025-11-07 11:24:12', app: 'APP Operatori', type: 'vendita', level: 'info', user: 'operatore.bio@dms.it', message: 'Vendita prodotto BIO - 50 carbon credits assegnati', ip: '192.168.1.102' },
-    { id: 3, timestamp: '2025-11-07 11:23:05', app: 'DMS Backend', type: 'error', level: 'error', user: 'system', message: 'Database connection timeout - retry 3/3', ip: '10.0.0.5' },
-    { id: 4, timestamp: '2025-11-07 11:22:18', app: 'WebApp PM', type: 'route', level: 'info', user: 'giulia.bianchi@email.com', message: 'Percorso ottimizzato calcolato: 3 stop, 2.5km', ip: '192.168.1.78' },
-    { id: 5, timestamp: '2025-11-07 11:21:30', app: 'APP Clienti', type: 'segnalazione', level: 'warning', user: 'luca.verdi@email.com', message: 'Segnalazione civica: Rifiuti non raccolti', ip: '192.168.1.92' }
+    {
+      id: 1,
+      timestamp: "2025-11-07 11:25:43",
+      app: "APP Clienti",
+      type: "check-in",
+      level: "info",
+      user: "mario.rossi@email.com",
+      message: "Check-in Mercato Centrale Grosseto",
+      ip: "192.168.1.45",
+    },
+    {
+      id: 2,
+      timestamp: "2025-11-07 11:24:12",
+      app: "APP Operatori",
+      type: "vendita",
+      level: "info",
+      user: "operatore.bio@dms.it",
+      message: "Vendita prodotto BIO - 50 carbon credits assegnati",
+      ip: "192.168.1.102",
+    },
+    {
+      id: 3,
+      timestamp: "2025-11-07 11:23:05",
+      app: "DMS Backend",
+      type: "error",
+      level: "error",
+      user: "system",
+      message: "Database connection timeout - retry 3/3",
+      ip: "10.0.0.5",
+    },
+    {
+      id: 4,
+      timestamp: "2025-11-07 11:22:18",
+      app: "WebApp PM",
+      type: "route",
+      level: "info",
+      user: "giulia.bianchi@email.com",
+      message: "Percorso ottimizzato calcolato: 3 stop, 2.5km",
+      ip: "192.168.1.78",
+    },
+    {
+      id: 5,
+      timestamp: "2025-11-07 11:21:30",
+      app: "APP Clienti",
+      type: "segnalazione",
+      level: "warning",
+      user: "luca.verdi@email.com",
+      message: "Segnalazione civica: Rifiuti non raccolti",
+      ip: "192.168.1.92",
+    },
   ],
   security: {
     totalAccesses: 15847,
     failedLogins: 23,
     activeUsers: 342,
     suspiciousActivity: 2,
-    lastAudit: '2025-11-06 23:00:00',
-    vulnerabilities: { critical: 0, high: 1, medium: 3, low: 5 }
+    lastAudit: "2025-11-06 23:00:00",
+    vulnerabilities: { critical: 0, high: 1, medium: 3, low: 5 },
   },
   debug: {
     errors: { total: 12, resolved: 8, pending: 4 },
     performance: { avgResponseTime: 145, p95: 320, p99: 580 },
-    healthChecks: { api: 'healthy', database: 'healthy', redis: 'healthy', storage: 'healthy' },
-    deployments: { lastDeploy: '2025-11-06 18:30:00', version: 'v2.1.3', status: 'stable' }
+    healthChecks: {
+      api: "healthy",
+      database: "healthy",
+      redis: "healthy",
+      storage: "healthy",
+    },
+    deployments: {
+      lastDeploy: "2025-11-06 18:30:00",
+      version: "v2.1.3",
+      status: "stable",
+    },
   },
   carbonCredits: {
     fund: {
       balance: 125000,
-      currency: 'EUR',
+      currency: "EUR",
       sources: [
-        { name: 'Regione Toscana', amount: 80000, date: '2025-10-01' },
-        { name: 'Comune Grosseto', amount: 30000, date: '2025-10-15' },
-        { name: 'Sponsor Privati', amount: 15000, date: '2025-11-01' }
+        { name: "Regione Toscana", amount: 80000, date: "2025-10-01" },
+        { name: "Comune Grosseto", amount: 30000, date: "2025-10-15" },
+        { name: "Sponsor Privati", amount: 15000, date: "2025-11-01" },
       ],
       expenses: { reimbursements: 45000, incentives: 12000, operations: 3000 },
       burnRate: 8500,
-      monthsRemaining: 7.8
+      monthsRemaining: 7.8,
     },
     value: {
-      current: 1.50,
+      current: 1.5,
       history: [
-        { date: '2025-09-01', value: 1.20 },
-        { date: '2025-10-01', value: 1.35 },
-        { date: '2025-11-01', value: 1.50 }
+        { date: "2025-09-01", value: 1.2 },
+        { date: "2025-10-01", value: 1.35 },
+        { date: "2025-11-01", value: 1.5 },
       ],
       byArea: [
-        { area: 'Grosseto', value: 1.50, boost: 0 },
-        { area: 'Follonica', value: 1.35, boost: -10 },
-        { area: 'Orbetello', value: 1.65, boost: +10 }
+        { area: "Grosseto", value: 1.5, boost: 0 },
+        { area: "Follonica", value: 1.35, boost: -10 },
+        { area: "Orbetello", value: 1.65, boost: +10 },
       ],
       byCategory: [
-        { category: 'BIO', boost: 20, finalValue: 1.80 },
-        { category: 'KM0', boost: 15, finalValue: 1.73 },
-        { category: 'DOP/IGP', boost: 10, finalValue: 1.65 },
-        { category: 'Standard', boost: 0, finalValue: 1.50 }
-      ]
+        { category: "BIO", boost: 20, finalValue: 1.8 },
+        { category: "KM0", boost: 15, finalValue: 1.73 },
+        { category: "DOP/IGP", boost: 10, finalValue: 1.65 },
+        { category: "Standard", boost: 0, finalValue: 1.5 },
+      ],
     },
     reimbursements: {
       pending: { count: 23, amount: 8450 },
       processed: { count: 156, amount: 45000 },
       topShops: [
-        { name: 'Bio Market Centrale', credits: 12500, euros: 18750 },
-        { name: 'Ortofrutta KM0', credits: 8900, euros: 13350 },
-        { name: 'Formaggi Toscani', credits: 6200, euros: 9300 }
-      ]
+        { name: "Bio Market Centrale", credits: 12500, euros: 18750 },
+        { name: "Ortofrutta KM0", credits: 8900, euros: 13350 },
+        { name: "Formaggi Toscani", credits: 6200, euros: 9300 },
+      ],
     },
     analytics: {
       issued: 125000,
       spent: 78000,
       velocity: 62.4,
-      roi: { invested: 125000, co2Saved: 4654, costPerKg: 26.85 }
-    }
+      roi: { invested: 125000, co2Saved: 4654, costPerKg: 26.85 },
+    },
   },
   businesses: {
     total: 450,
@@ -413,29 +685,39 @@ const mockData = {
       netGrowth: 33,
       growthRate: 7.9,
       byGender: { male: 280, female: 150, company: 20 },
-      byAge: { '18-30': 45, '31-45': 180, '46-60': 180, '60+': 45 },
-      byOrigin: { native: 380, italian: 50, foreign: 20 }
+      byAge: { "18-30": 45, "31-45": 180, "46-60": 180, "60+": 45 },
+      byOrigin: { native: 380, italian: 50, foreign: 20 },
     },
     indices: {
       requalification: 72.5,
       digitalization: 68.3,
-      sustainability: 75.8
+      sustainability: 75.8,
     },
     expiringDocs: [
-      { business: 'Bio Market Centrale', doc: 'DURC', days: 5, critical: true },
-      { business: 'Ortofrutta KM0', doc: 'HACCP', days: 12, critical: false },
-      { business: 'Formaggi Toscani', doc: 'Antincendio', days: 18, critical: false },
-      { business: 'Macelleria Grosseto', doc: 'Primo Soccorso', days: 25, critical: false }
+      { business: "Bio Market Centrale", doc: "DURC", days: 5, critical: true },
+      { business: "Ortofrutta KM0", doc: "HACCP", days: 12, critical: false },
+      {
+        business: "Formaggi Toscani",
+        doc: "Antincendio",
+        days: 18,
+        critical: false,
+      },
+      {
+        business: "Macelleria Grosseto",
+        doc: "Primo Soccorso",
+        days: 25,
+        critical: false,
+      },
     ],
     training: {
       completed: 285,
       scheduled: 45,
       avgCost: 350,
       topTrainers: [
-        { name: 'Safety Training Toscana', courses: 85, rating: 4.8 },
-        { name: 'Formazione Sicurezza SRL', courses: 62, rating: 4.6 },
-        { name: 'Academy HACCP', courses: 48, rating: 4.7 }
-      ]
+        { name: "Safety Training Toscana", courses: 85, rating: 4.8 },
+        { name: "Formazione Sicurezza SRL", courses: 62, rating: 4.6 },
+        { name: "Academy HACCP", courses: 48, rating: 4.7 },
+      ],
     },
     grants: {
       active: 8,
@@ -444,18 +726,58 @@ const mockData = {
       successRate: 62.2,
       avgAmount: 12500,
       topGrants: [
-        { title: 'Digitalizzazione PMI 2025', applicants: 15, approved: 10, amount: 150000 },
-        { title: 'Formazione Sicurezza', applicants: 12, approved: 9, amount: 45000 },
-        { title: 'Sostenibilità Imprese', applicants: 10, approved: 6, amount: 85000 }
-      ]
+        {
+          title: "Digitalizzazione PMI 2025",
+          applicants: 15,
+          approved: 10,
+          amount: 150000,
+        },
+        {
+          title: "Formazione Sicurezza",
+          applicants: 12,
+          approved: 9,
+          amount: 45000,
+        },
+        {
+          title: "Sostenibilità Imprese",
+          applicants: 10,
+          approved: 6,
+          amount: 85000,
+        },
+      ],
     },
     topScoring: [
-      { name: 'Bio Market Centrale', score: 98, sector: 'Alimentare', digitalization: 95 },
-      { name: 'Ortofrutta KM0', score: 96, sector: 'Alimentare', digitalization: 92 },
-      { name: 'Formaggi Toscani', score: 94, sector: 'Alimentare', digitalization: 88 },
-      { name: 'Artigianato Locale', score: 91, sector: 'Artigianato', digitalization: 85 },
-      { name: 'Macelleria Grosseto', score: 89, sector: 'Alimentare', digitalization: 82 }
-    ]
+      {
+        name: "Bio Market Centrale",
+        score: 98,
+        sector: "Alimentare",
+        digitalization: 95,
+      },
+      {
+        name: "Ortofrutta KM0",
+        score: 96,
+        sector: "Alimentare",
+        digitalization: 92,
+      },
+      {
+        name: "Formaggi Toscani",
+        score: 94,
+        sector: "Alimentare",
+        digitalization: 88,
+      },
+      {
+        name: "Artigianato Locale",
+        score: 91,
+        sector: "Artigianato",
+        digitalization: 85,
+      },
+      {
+        name: "Macelleria Grosseto",
+        score: 89,
+        sector: "Alimentare",
+        digitalization: 82,
+      },
+    ],
   },
   // Nuove sezioni
   civicReports: {
@@ -464,53 +786,89 @@ const mockData = {
     inProgress: 38,
     resolved: 44,
     byType: [
-      { type: 'Rifiuti', count: 35, percentage: 27.6 },
-      { type: 'Illuminazione', count: 28, percentage: 22.0 },
-      { type: 'Strade', count: 24, percentage: 18.9 },
-      { type: 'Verde pubblico', count: 22, percentage: 17.3 },
-      { type: 'Altro', count: 18, percentage: 14.2 }
+      { type: "Rifiuti", count: 35, percentage: 27.6 },
+      { type: "Illuminazione", count: 28, percentage: 22.0 },
+      { type: "Strade", count: 24, percentage: 18.9 },
+      { type: "Verde pubblico", count: 22, percentage: 17.3 },
+      { type: "Altro", count: 18, percentage: 14.2 },
     ],
     recent: [
-      { id: 1, type: 'Rifiuti', description: 'Cassonetti pieni', status: 'pending', date: '2025-11-07', user: 'Cliente', location: 'Via Roma' },
-      { id: 2, type: 'Illuminazione', description: 'Lampione rotto', status: 'in_progress', date: '2025-11-06', user: 'Commerciante', location: 'Piazza Dante' },
-      { id: 3, type: 'Strade', description: 'Buca pericolosa', status: 'pending', date: '2025-11-06', user: 'Cliente', location: 'Corso Italia' }
-    ]
+      {
+        id: 1,
+        type: "Rifiuti",
+        description: "Cassonetti pieni",
+        status: "pending",
+        date: "2025-11-07",
+        user: "Cliente",
+        location: "Via Roma",
+      },
+      {
+        id: 2,
+        type: "Illuminazione",
+        description: "Lampione rotto",
+        status: "in_progress",
+        date: "2025-11-06",
+        user: "Commerciante",
+        location: "Piazza Dante",
+      },
+      {
+        id: 3,
+        type: "Strade",
+        description: "Buca pericolosa",
+        status: "pending",
+        date: "2025-11-06",
+        user: "Cliente",
+        location: "Corso Italia",
+      },
+    ],
   },
   iotSensors: {
     airQuality: {
       pm10: 28.5,
       pm25: 15.2,
       no2: 35.8,
-      status: 'good',
-      lastUpdate: '2025-11-07 13:00'
+      status: "good",
+      lastUpdate: "2025-11-07 13:00",
     },
     weather: {
       temp: 18.5,
       humidity: 65,
       pressure: 1015,
-      wind: 12.5
+      wind: 12.5,
     },
     sensors: [
-      { id: 1, name: 'Centro Storico', type: 'Aria', status: 'online', pm10: 28.5 },
-      { id: 2, name: 'Mercato Centrale', type: 'Aria', status: 'online', pm10: 32.1 },
-      { id: 3, name: 'Marina', type: 'Aria', status: 'offline', pm10: null }
-    ]
+      {
+        id: 1,
+        name: "Centro Storico",
+        type: "Aria",
+        status: "online",
+        pm10: 28.5,
+      },
+      {
+        id: 2,
+        name: "Mercato Centrale",
+        type: "Aria",
+        status: "online",
+        pm10: 32.1,
+      },
+      { id: 3, name: "Marina", type: "Aria", status: "offline", pm10: null },
+    ],
   },
   businessUsers: {
     total: 156,
     active: 142,
     inactive: 14,
     byCategory: [
-      { category: 'Alimentari', count: 65, revenue: 125000 },
-      { category: 'Artigianato', count: 38, revenue: 85000 },
-      { category: 'Servizi', count: 28, revenue: 62000 },
-      { category: 'Altro', count: 25, revenue: 45000 }
+      { category: "Alimentari", count: 65, revenue: 125000 },
+      { category: "Artigianato", count: 38, revenue: 85000 },
+      { category: "Servizi", count: 28, revenue: 62000 },
+      { category: "Altro", count: 25, revenue: 45000 },
     ],
     topUsers: [
-      { name: 'Bio Market Centrale', sales: 2850, credits: 1250, rating: 4.9 },
-      { name: 'Ortofrutta KM0', sales: 2340, credits: 980, rating: 4.8 },
-      { name: 'Formaggi Toscani', sales: 1920, credits: 850, rating: 4.7 }
-    ]
+      { name: "Bio Market Centrale", sales: 2850, credits: 1250, rating: 4.9 },
+      { name: "Ortofrutta KM0", sales: 2340, credits: 980, rating: 4.8 },
+      { name: "Formaggi Toscani", sales: 1920, credits: 850, rating: 4.7 },
+    ],
   },
   inspections: {
     scheduled: 28,
@@ -519,14 +877,46 @@ const mockData = {
     fines: 8,
     totalFines: 15000,
     upcoming: [
-      { id: 1, business: 'Macelleria Rossi', type: 'HACCP', date: '2025-11-10', inspector: 'M. Bianchi' },
-      { id: 2, business: 'Panificio Centro', type: 'Sicurezza', date: '2025-11-12', inspector: 'L. Verdi' },
-      { id: 3, business: 'Bar Piazza', type: 'DURC', date: '2025-11-15', inspector: 'A. Rossi' }
+      {
+        id: 1,
+        business: "Macelleria Rossi",
+        type: "HACCP",
+        date: "2025-11-10",
+        inspector: "M. Bianchi",
+      },
+      {
+        id: 2,
+        business: "Panificio Centro",
+        type: "Sicurezza",
+        date: "2025-11-12",
+        inspector: "L. Verdi",
+      },
+      {
+        id: 3,
+        business: "Bar Piazza",
+        type: "DURC",
+        date: "2025-11-15",
+        inspector: "A. Rossi",
+      },
     ],
     violationsList: [
-      { id: 1, business: 'Ristorante Mare', type: 'HACCP', fine: 2000, status: 'paid', date: '2025-10-28' },
-      { id: 2, business: 'Negozio Abbigliamento', type: 'Sicurezza', fine: 1500, status: 'pending', date: '2025-11-02' }
-    ]
+      {
+        id: 1,
+        business: "Ristorante Mare",
+        type: "HACCP",
+        fine: 2000,
+        status: "paid",
+        date: "2025-10-28",
+      },
+      {
+        id: 2,
+        business: "Negozio Abbigliamento",
+        type: "Sicurezza",
+        fine: 1500,
+        status: "pending",
+        date: "2025-11-02",
+      },
+    ],
   },
   notifications: {
     sent: 2450,
@@ -536,10 +926,31 @@ const mockData = {
     openRate: 77.7,
     clickRate: 38.7,
     recent: [
-      { id: 1, title: 'Nuovo mercato aperto', type: 'push', sent: 1250, opened: 980, date: '2025-11-06' },
-      { id: 2, title: 'Scadenza DURC', type: 'email', sent: 45, opened: 38, date: '2025-11-05' },
-      { id: 3, title: 'Promozione carbon credits', type: 'sms', sent: 850, opened: 720, date: '2025-11-04' }
-    ]
+      {
+        id: 1,
+        title: "Nuovo mercato aperto",
+        type: "push",
+        sent: 1250,
+        opened: 980,
+        date: "2025-11-06",
+      },
+      {
+        id: 2,
+        title: "Scadenza DURC",
+        type: "email",
+        sent: 45,
+        opened: 38,
+        date: "2025-11-05",
+      },
+      {
+        id: 3,
+        title: "Promozione carbon credits",
+        type: "sms",
+        sent: 850,
+        opened: 720,
+        date: "2025-11-04",
+      },
+    ],
   },
   mobility: {
     busLines: 12,
@@ -550,16 +961,34 @@ const mockData = {
     parkingOccupied: 850,
     parkingAvailable: 350,
     stops: [
-      { id: 1, name: 'Stazione FS', line: '1, 3, 5', nextBus: '3 min', passengers: 15 },
-      { id: 2, name: 'Piazza Dante', line: '2, 4', nextBus: '8 min', passengers: 8 },
-      { id: 3, name: 'Mercato Centrale', line: '1, 2, 6', nextBus: '12 min', passengers: 22 }
+      {
+        id: 1,
+        name: "Stazione FS",
+        line: "1, 3, 5",
+        nextBus: "3 min",
+        passengers: 15,
+      },
+      {
+        id: 2,
+        name: "Piazza Dante",
+        line: "2, 4",
+        nextBus: "8 min",
+        passengers: 8,
+      },
+      {
+        id: 3,
+        name: "Mercato Centrale",
+        line: "1, 2, 6",
+        nextBus: "12 min",
+        passengers: 22,
+      },
     ],
     traffic: [
-      { road: 'Via Aurelia', status: 'heavy', incidents: 1 },
-      { road: 'Corso Carducci', status: 'moderate', incidents: 0 },
-      { road: 'Via Senese', status: 'light', incidents: 0 }
-    ]
-  }
+      { road: "Via Aurelia", status: "heavy", incidents: 1 },
+      { road: "Corso Carducci", status: "moderate", incidents: 0 },
+      { road: "Via Senese", status: "light", incidents: 0 },
+    ],
+  },
 };
 
 export default function DashboardPA() {
@@ -569,9 +998,9 @@ export default function DashboardPA() {
   // Guard: se i permessi sono caricati e l'utente non puo' vedere nemmeno il tab 'dashboard',
   // redirect alla home (e' un cittadino o utente senza permessi PA)
   useEffect(() => {
-    if (!permissionsLoading && !canViewTab('dashboard')) {
-      console.warn('[DashboardPA] Utente senza permessi PA — redirect a /');
-      setLocation('/');
+    if (!permissionsLoading && !canViewTab("dashboard")) {
+      console.warn("[DashboardPA] Utente senza permessi PA — redirect a /");
+      setLocation("/");
     }
   }, [permissionsLoading, canViewTab, setLocation]);
 
@@ -580,73 +1009,95 @@ export default function DashboardPA() {
     const MOBILE_BREAKPOINT = 768;
     if (window.innerWidth >= MOBILE_BREAKPOINT) return;
     try {
-      const userStr = localStorage.getItem('user');
+      const userStr = localStorage.getItem("user");
       if (!userStr) return;
       const user = JSON.parse(userStr);
-      if (user.email === 'chcndr@gmail.com') {
-        console.warn('[DashboardPA] MIO TEST: redirect mobile a /dashboard-impresa');
-        window.location.href = '/dashboard-impresa';
+      if (user.email === "chcndr@gmail.com") {
+        console.warn(
+          "[DashboardPA] MIO TEST: redirect mobile a /dashboard-impresa"
+        );
+        window.location.href = "/dashboard-impresa";
         return;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // Ripristino conversation_id storico (senza reload pagina)
   useEffect(() => {
-    const TARGET_ID = 'dfab3001-0969-4d6d-93b5-e6f69eecb794';
-    if (localStorage.getItem('mihub_global_conversation_id') !== TARGET_ID) {
-      localStorage.setItem('mihub_global_conversation_id', TARGET_ID);
+    const TARGET_ID = "dfab3001-0969-4d6d-93b5-e6f69eecb794";
+    if (localStorage.getItem("mihub_global_conversation_id") !== TARGET_ID) {
+      localStorage.setItem("mihub_global_conversation_id", TARGET_ID);
     }
   }, []);
 
   // Dati reali dal backend MIHUB
   const realData = useDashboardData();
-  
+
   // Dati GTFS reali dal TransportContext (MIHUB_API_BASE_URL/api/gtfs)
-  const { stops: gtfsStops, stats: gtfsStats, loadStats: loadGtfsStats, isLoading: gtfsLoading } = useTransport();
-  
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const {
+    stops: gtfsStops,
+    stats: gtfsStats,
+    loadStats: loadGtfsStats,
+    isLoading: gtfsLoading,
+  } = useTransport();
+
+  const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [realtimeData, setRealtimeData] = useState(mockData.realtime);
-   // Leggi tab da URL params (es. ?tab=mappa)
+  // Leggi tab da URL params (es. ?tab=mappa)
   const urlParams = new URLSearchParams(window.location.search);
-  const tabFromUrl = urlParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tabFromUrl || 'dashboard');
-  
+  const tabFromUrl = urlParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabFromUrl || "dashboard");
+
   // Modalità impersonificazione: nascondi tab admin
-  const isImpersonating = urlParams.get('impersonate') === 'true';
-  const comuneIdFromUrl = urlParams.get('comune_id');
-  const comuneNomeFromUrl = urlParams.get('comune_nome');
-  
-  const [dashboardSubTab, setDashboardSubTab] = useState<'overview' | 'mercati'>('overview');
-  const [sistemaSubTab, setSistemaSubTab] = useState<'logs' | 'debug'>('logs');
-  const [walletSubTab, setWalletSubTab] = useState<'wallet' | 'pagopa'>('wallet');
-  const [docsSubTab, setDocsSubTab] = useState<string>('formazione');
+  const isImpersonating = urlParams.get("impersonate") === "true";
+  const comuneIdFromUrl = urlParams.get("comune_id");
+  const comuneNomeFromUrl = urlParams.get("comune_nome");
+
+  const [dashboardSubTab, setDashboardSubTab] = useState<
+    "overview" | "mercati"
+  >("overview");
+  const [sistemaSubTab, setSistemaSubTab] = useState<"logs" | "debug">("logs");
+  const [walletSubTab, setWalletSubTab] = useState<"wallet" | "pagopa">(
+    "wallet"
+  );
+  const [docsSubTab, setDocsSubTab] = useState<string>("formazione");
 
   // Listener per navigazione dalla scheda associato alla pratica SCIA
   useEffect(() => {
     const handleNavigateToPratica = () => {
       // Switcha al tab Enti & Associazioni e al sotto-tab SCIA & Pratiche
-      setActiveTab('docs');
-      setDocsSubTab('scia-pratiche');
+      setActiveTab("docs");
+      setDocsSubTab("scia-pratiche");
     };
     const handleNavigateToConcessione = () => {
-      setActiveTab('docs');
-      setDocsSubTab('scia-pratiche');
+      setActiveTab("docs");
+      setDocsSubTab("scia-pratiche");
     };
-    window.addEventListener('navigate-to-pratica', handleNavigateToPratica);
-    window.addEventListener('navigate-to-concessione', handleNavigateToConcessione);
+    window.addEventListener("navigate-to-pratica", handleNavigateToPratica);
+    window.addEventListener(
+      "navigate-to-concessione",
+      handleNavigateToConcessione
+    );
     return () => {
-      window.removeEventListener('navigate-to-pratica', handleNavigateToPratica);
-      window.removeEventListener('navigate-to-concessione', handleNavigateToConcessione);
+      window.removeEventListener(
+        "navigate-to-pratica",
+        handleNavigateToPratica
+      );
+      window.removeEventListener(
+        "navigate-to-concessione",
+        handleNavigateToConcessione
+      );
     };
   }, []);
 
-  const [walletSearch, setWalletSearch] = useState('');
+  const [walletSearch, setWalletSearch] = useState("");
   const [selectedWallet, setSelectedWallet] = useState<number | null>(null);
 
   // Leva Politica: TCC assegnati per €10 spesi (range 0-30, default 10)
   const [tccValue, setTccValue] = useState(10); // Valore diretto: 10 = 10 TCC per €10
-  
+
   // Carbon Credits - Simulatore completo
   const [editableParams, setEditableParams] = useState({
     fundBalance: 0,
@@ -654,61 +1105,75 @@ export default function DashboardPA() {
     tccIssued: 0,
     tccSpent: 0,
     areaBoosts: [
-      { area: 'Grosseto', boost: 0 },
-      { area: 'Follonica', boost: -10 },
-      { area: 'Orbetello', boost: +10 }
+      { area: "Grosseto", boost: 0 },
+      { area: "Follonica", boost: -10 },
+      { area: "Orbetello", boost: +10 },
     ],
     categoryBoosts: [
-      { category: 'BIO', boost: 20 },
-      { category: 'KM0', boost: 15 },
-      { category: 'DOP/IGP', boost: 10 },
-      { category: 'Standard', boost: 0 }
-    ]
+      { category: "BIO", boost: 20 },
+      { category: "KM0", boost: 15 },
+      { category: "DOP/IGP", boost: 10 },
+      { category: "Standard", boost: 0 },
+    ],
   });
 
   // Calcola valori dinamici basati su slider e boost
   const calculateAreaValues = () => {
     return editableParams.areaBoosts.map(item => ({
       ...item,
-      value: tccValue * (1 + item.boost / 100)
+      value: tccValue * (1 + item.boost / 100),
     }));
   };
 
   const calculateCategoryValues = () => {
     return editableParams.categoryBoosts.map(item => ({
       ...item,
-      finalValue: tccValue * (1 + item.boost / 100)
+      finalValue: tccValue * (1 + item.boost / 100),
     }));
   };
 
   // Funzione per formattazione italiana numeri (punto migliaia, virgola decimali)
-  const formatNumberIT = (num: number | string | undefined | null, decimals: number = 0): string => {
-    if (num === undefined || num === null || isNaN(Number(num))) return '0';
-    const n = typeof num === 'string' ? parseFloat(num) : num;
-    return n.toLocaleString('it-IT', { 
-      minimumFractionDigits: decimals, 
-      maximumFractionDigits: decimals 
+  const formatNumberIT = (
+    num: number | string | undefined | null,
+    decimals: number = 0
+  ): string => {
+    if (num === undefined || num === null || isNaN(Number(num))) return "0";
+    const n = typeof num === "string" ? parseFloat(num) : num;
+    return n.toLocaleString("it-IT", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     });
   };
 
   // Funzione per formattazione euro
-  const formatEuroIT = (num: number | string | undefined | null, decimals: number = 2): string => {
-    if (num === undefined || num === null || isNaN(Number(num))) return '€0,00';
-    const n = typeof num === 'string' ? parseFloat(num) : num;
-    return '€' + n.toLocaleString('it-IT', { 
-      minimumFractionDigits: decimals, 
-      maximumFractionDigits: decimals 
-    });
+  const formatEuroIT = (
+    num: number | string | undefined | null,
+    decimals: number = 2
+  ): string => {
+    if (num === undefined || num === null || isNaN(Number(num))) return "€0,00";
+    const n = typeof num === "string" ? parseFloat(num) : num;
+    return (
+      "€" +
+      n.toLocaleString("it-IT", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })
+    );
   };
 
   const calculateMonthsRemaining = () => {
-    if (editableParams.burnRate === 0) return '999';
-    return formatNumberIT(editableParams.fundBalance / editableParams.burnRate, 1);
+    if (editableParams.burnRate === 0) return "999";
+    return formatNumberIT(
+      editableParams.fundBalance / editableParams.burnRate,
+      1
+    );
   };
 
   const calculateVelocity = () => {
     if (editableParams.tccIssued === 0) return 0;
-    return ((editableParams.tccSpent / editableParams.tccIssued) * 100).toFixed(1);
+    return ((editableParams.tccSpent / editableParams.tccIssued) * 100).toFixed(
+      1
+    );
   };
 
   const calculateReimbursementNeeded = () => {
@@ -732,35 +1197,47 @@ export default function DashboardPA() {
   };
 
   // Chat AI
-  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'ai', content: string}>>([]);
-  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<
+    Array<{ role: "user" | "ai"; content: string }>
+  >([]);
+  const [chatInput, setChatInput] = useState("");
   const [appliedTccValue, setAppliedTccValue] = useState(0.089); // Valore TCC in euro (€0,089 basato su EU ETS)
-  
+
   // Guardian Logs for MIO Agent tab
   const [guardianLogs, setGuardianLogs] = useState<any[]>([]);
-  
+
   // Fund TCC Stats - Dati reali dal backend
   const [fundStats, setFundStats] = useState<any>(null);
   const [fundLoading, setFundLoading] = useState(true);
-  const [fundMovementFilter, setFundMovementFilter] = useState<'all' | 'deposit' | 'reimbursement'>('all');
-  
+  const [fundMovementFilter, setFundMovementFilter] = useState<
+    "all" | "deposit" | "reimbursement"
+  >("all");
+
   // TCC v2.1 - Comuni e Regole
   const [tccComuni, setTccComuni] = useState<any[]>([]);
   const [selectedComuneId, setSelectedComuneId] = useState<number | null>(null);
   const [tccRules, setTccRules] = useState<any[]>([]);
   const [tccRulesLoading, setTccRulesLoading] = useState(false);
-  
+
   // TCC v2.1 - Environment Data (Meteo, Qualità Aria, ETS)
   const [envData, setEnvData] = useState<any>(null);
   const [envLoading, setEnvLoading] = useState(false);
   const [editableEtsPrice, setEditableEtsPrice] = useState<number>(89.56);
-  
+
   // Documentation Modal state
-  const [docModalContent, setDocModalContent] = useState<{ title: string; content: string } | null>(null);
-  
+  const [docModalContent, setDocModalContent] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
+
   // Statistiche Imprese
-  const [impreseStats, setImpreseStats] = useState({ total: 0, concessioni: 0, comuni: 0, media: '0' });
-  
+  const [impreseStats, setImpreseStats] = useState({
+    total: 0,
+    concessioni: 0,
+    comuni: 0,
+    media: "0",
+  });
+
   // Carica lista comuni con hub attivo (TCC v2.1)
   useEffect(() => {
     const loadComuni = async () => {
@@ -777,91 +1254,112 @@ export default function DashboardPA() {
           }
         }
       } catch (error) {
-        console.error('Error loading comuni:', error);
+        console.error("Error loading comuni:", error);
       }
     };
     loadComuni();
   }, []);
-  
+
   // Carica regole boost per il comune selezionato (TCC v2.1)
   useEffect(() => {
     const loadRules = async () => {
       if (!selectedComuneId) return;
       try {
         setTccRulesLoading(true);
-        const response = await fetch(`${TCC_API}/api/tcc/v2/rules?comune_id=${selectedComuneId}`);
+        const response = await fetch(
+          `${TCC_API}/api/tcc/v2/rules?comune_id=${selectedComuneId}`
+        );
         const data = await response.json();
         if (data.success && data.rules) {
           setTccRules(data.rules);
           // Aggiorna i boost editabili con i dati reali
-          const areaRules = data.rules.filter((r: any) => r.type === 'area');
-          const categoryRules = data.rules.filter((r: any) => r.type === 'category');
+          const areaRules = data.rules.filter((r: any) => r.type === "area");
+          const categoryRules = data.rules.filter(
+            (r: any) => r.type === "category"
+          );
           setEditableParams(prev => ({
             ...prev,
-            areaBoosts: areaRules.length > 0 
-              ? areaRules.map((r: any) => ({ area: r.name, boost: (parseFloat(r.multiplier_boost) - 1) * 100, ruleId: r.id }))
-              : prev.areaBoosts,
-            categoryBoosts: categoryRules.length > 0
-              ? categoryRules.map((r: any) => ({ category: r.value, boost: (parseFloat(r.multiplier_boost) - 1) * 100, ruleId: r.id }))
-              : prev.categoryBoosts
+            areaBoosts:
+              areaRules.length > 0
+                ? areaRules.map((r: any) => ({
+                    area: r.name,
+                    boost: (parseFloat(r.multiplier_boost) - 1) * 100,
+                    ruleId: r.id,
+                  }))
+                : prev.areaBoosts,
+            categoryBoosts:
+              categoryRules.length > 0
+                ? categoryRules.map((r: any) => ({
+                    category: r.value,
+                    boost: (parseFloat(r.multiplier_boost) - 1) * 100,
+                    ruleId: r.id,
+                  }))
+                : prev.categoryBoosts,
           }));
         }
       } catch (error) {
-        console.error('Error loading TCC rules:', error);
+        console.error("Error loading TCC rules:", error);
       } finally {
         setTccRulesLoading(false);
       }
     };
     loadRules();
   }, [selectedComuneId]);
-  
+
   // Carica dati ambientali per l'hub selezionato (TCC v2.1 - Environment)
   useEffect(() => {
     const fetchEnvironmentData = async () => {
       if (!selectedComuneId) return;
       setEnvLoading(true);
       try {
-        const response = await fetch(`${TCC_API}/api/tcc/v2/environment/${selectedComuneId}`);
+        const response = await fetch(
+          `${TCC_API}/api/tcc/v2/environment/${selectedComuneId}`
+        );
         const data = await response.json();
         if (data.success) {
           setEnvData(data);
           setEditableEtsPrice(data.ets?.price_per_tonne || 89.56);
         }
       } catch (error) {
-        console.error('Error fetching environment data:', error);
+        console.error("Error fetching environment data:", error);
       } finally {
         setEnvLoading(false);
       }
     };
     fetchEnvironmentData();
   }, [selectedComuneId]);
-  
+
   // Funzione per aggiornare il prezzo ETS
   const handleEtsPriceUpdate = async () => {
     if (!editableEtsPrice || editableEtsPrice <= 0) return;
     try {
-      const response = await authenticatedFetch(`${TCC_API}/api/tcc/v2/ets-price`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ets_price: editableEtsPrice,
-          notes: 'Aggiornamento manuale da dashboard'
-        })
-      });
+      const response = await authenticatedFetch(
+        `${TCC_API}/api/tcc/v2/ets-price`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ets_price: editableEtsPrice,
+            notes: "Aggiornamento manuale da dashboard",
+          }),
+        }
+      );
       const data = await response.json();
       if (data.success && selectedComuneId) {
         // Ricarica i dati ambientali per aggiornare il valore TCC
-        const envResponse = await fetch(`${TCC_API}/api/tcc/v2/environment/${selectedComuneId}`);
+        const envResponse = await fetch(
+          `${TCC_API}/api/tcc/v2/environment/${selectedComuneId}`
+        );
         const envData = await envResponse.json();
         if (envData.success) {
           setEnvData(envData);
         }
       }
     } catch (error) {
-      console.error('Error updating ETS price:', error);
+      console.error("Error updating ETS price:", error);
     }
   };
-  
+
   // Carica statistiche fondo TCC NAZIONALI (endpoint originale senza comune)
   useEffect(() => {
     const loadFundStats = async () => {
@@ -870,16 +1368,18 @@ export default function DashboardPA() {
         // Usa l'endpoint originale per le statistiche nazionali
         const [statsResponse, transactionsResponse] = await Promise.all([
           fetch(`${TCC_API}/api/tcc/v2/fund/stats`),
-          fetch(`${TCC_API}/api/tcc/v2/fund/transactions?limit=500`)
+          fetch(`${TCC_API}/api/tcc/v2/fund/transactions?limit=500`),
         ]);
         const statsData = await statsResponse.json();
         const transactionsData = await transactionsResponse.json();
-        
+
         if (statsData.success) {
           // Combina stats con transactions
           const fundWithTransactions = {
             ...statsData.fund,
-            transactions: transactionsData.success ? transactionsData.transactions : []
+            transactions: transactionsData.success
+              ? transactionsData.transactions
+              : [],
           };
           setFundStats(fundWithTransactions);
           // Aggiorna anche i parametri editabili con i dati reali
@@ -887,7 +1387,7 @@ export default function DashboardPA() {
             ...prev,
             tccIssued: statsData.fund.total_issued || 0,
             tccSpent: statsData.fund.total_redeemed || 0,
-            fundBalance: parseFloat(statsData.fund.fund_requirement_eur || '0') // Fabbisogno fondo in euro
+            fundBalance: parseFloat(statsData.fund.fund_requirement_eur || "0"), // Fabbisogno fondo in euro
           }));
           // Aggiorna il valore TCC applicato dalla config nazionale
           if (statsData.fund.config?.tcc_value) {
@@ -900,7 +1400,7 @@ export default function DashboardPA() {
           }
         }
       } catch (error) {
-        console.error('Error loading fund stats:', error);
+        console.error("Error loading fund stats:", error);
       } finally {
         setFundLoading(false);
       }
@@ -910,10 +1410,10 @@ export default function DashboardPA() {
     const interval = setInterval(loadFundStats, 30000);
     return () => clearInterval(interval);
   }, []); // Carica una volta all'avvio, non dipende dal comune selezionato
-  
+
   // Carica statistiche imprese (REST leggero + fallback tRPC)
   useEffect(() => {
-    fetch(addComuneIdToUrl('/api/imprese?stats_only=true'))
+    fetch(addComuneIdToUrl("/api/imprese?stats_only=true"))
       .then(r => r.json())
       .then(data => {
         if (data.success && data.stats) {
@@ -922,13 +1422,28 @@ export default function DashboardPA() {
         } else if (data.success && data.data) {
           // Fallback: se il backend non supporta stats_only, calcola client-side
           const imprese = data.data;
-          const totalConcessioni = imprese.reduce((acc: number, i: any) => acc + (i.concessioni_attive?.length || 0), 0);
-          const comuniUnici = Array.from(new Set(imprese.map((i: any) => i.comune).filter(Boolean))).length;
-          const media = imprese.length > 0 ? (totalConcessioni / imprese.length).toFixed(1) : '0';
-          setImpreseStats({ total: imprese.length, concessioni: totalConcessioni, comuni: comuniUnici, media });
+          const totalConcessioni = imprese.reduce(
+            (acc: number, i: any) => acc + (i.concessioni_attive?.length || 0),
+            0
+          );
+          const comuniUnici = Array.from(
+            new Set(imprese.map((i: any) => i.comune).filter(Boolean))
+          ).length;
+          const media =
+            imprese.length > 0
+              ? (totalConcessioni / imprese.length).toFixed(1)
+              : "0";
+          setImpreseStats({
+            total: imprese.length,
+            concessioni: totalConcessioni,
+            comuni: comuniUnici,
+            media,
+          });
         }
       })
-      .catch(err => console.error('Error loading imprese stats from REST:', err));
+      .catch(err =>
+        console.error("Error loading imprese stats from REST:", err)
+      );
   }, []);
 
   // Fallback: usa dati overview REST se la chiamata /api/imprese fallisce
@@ -938,23 +1453,26 @@ export default function DashboardPA() {
         total: realData.overview.imprese || realData.overview.totalShops || 0,
         concessioni: realData.overview.autorizzazioni || 0,
         comuni: realData.overview.comuni || 0,
-        media: '0',
+        media: "0",
       });
     }
   }, [realData.overview, impreseStats.total]);
-  
+
   // Multi-Agent Chat state
-  const [showMultiAgentChat, setShowMultiAgentChat] = useState(true);  // 🎯 FIX: Mostra Vista 4 Agenti di default
-  const [selectedAgent, setSelectedAgent] = useState<'mio' | 'gptdev' | 'manus' | 'abacus' | 'zapier'>('gptdev');
-  const [viewMode, setViewMode] = useState<'single' | 'quad'>('quad');  // 🎯 FIX: Vista 4 Agenti come default
-  
+  const [showMultiAgentChat, setShowMultiAgentChat] = useState(true); // 🎯 FIX: Mostra Vista 4 Agenti di default
+  const [selectedAgent, setSelectedAgent] = useState<
+    "mio" | "gptdev" | "manus" | "abacus" | "zapier"
+  >("gptdev");
+  const [viewMode, setViewMode] = useState<"single" | "quad">("quad"); // 🎯 FIX: Vista 4 Agenti come default
+
   // 🔥 MIO Agent Chat state - USA CONTEXT CONDIVISO!
-  const [mioInputValue, setMioInputValue] = useState('');
+  const [mioInputValue, setMioInputValue] = useState("");
   const [showMioScrollButton, setShowMioScrollButton] = useState(false);
   const mioMessagesRef = useRef<HTMLDivElement>(null);
-  const [showSingleChatScrollButton, setShowSingleChatScrollButton] = useState(false);
+  const [showSingleChatScrollButton, setShowSingleChatScrollButton] =
+    useState(false);
   const singleChatMessagesRef = useRef<HTMLDivElement>(null);
-  
+
   // 🔥 CONTEXT CONDIVISO: Stato MIO dal Context
   const {
     messages: mioMessages,
@@ -965,66 +1483,82 @@ export default function DashboardPA() {
     setConversationId: setMioMainConversationId,
     stopGeneration,
   } = useMio();
-  
+
   // 👥 DOPPIO CANALE - Vista Singola usa user-{agent}-direct
-  const { conversationId: manusConversationId, setConversationId: setManusConversationId } = useConversationPersistence('user-manus-direct');
-  const { conversationId: abacusConversationId, setConversationId: setAbacusConversationId } = useConversationPersistence('user-abacus-direct');
-  const { conversationId: zapierConversationId, setConversationId: setZapierConversationId } = useConversationPersistence('user-zapier-direct');
-  const { conversationId: gptdevConversationId, setConversationId: setGptdevConversationId } = useConversationPersistence('user-gptdev-direct');
-  
+  const {
+    conversationId: manusConversationId,
+    setConversationId: setManusConversationId,
+  } = useConversationPersistence("user-manus-direct");
+  const {
+    conversationId: abacusConversationId,
+    setConversationId: setAbacusConversationId,
+  } = useConversationPersistence("user-abacus-direct");
+  const {
+    conversationId: zapierConversationId,
+    setConversationId: setZapierConversationId,
+  } = useConversationPersistence("user-zapier-direct");
+  const {
+    conversationId: gptdevConversationId,
+    setConversationId: setGptdevConversationId,
+  } = useConversationPersistence("user-gptdev-direct");
+
   // 🔥 4 Conversazioni separate per MIO (una per ogni agente)
-  const { conversationId: mioManusConversationId, setConversationId: setMioManusConversationId } = useConversationPersistence('mio-manus-coordination');
-  const { conversationId: mioAbacusConversationId, setConversationId: setMioAbacusConversationId } = useConversationPersistence('mio-abacus-coordination');
-  const { conversationId: mioZapierConversationId, setConversationId: setMioZapierConversationId } = useConversationPersistence('mio-zapier-coordination');
-  const { conversationId: mioGptdevConversationId, setConversationId: setMioGptdevConversationId } = useConversationPersistence('mio-gptdev-coordination');
-  
+  const {
+    conversationId: mioManusConversationId,
+    setConversationId: setMioManusConversationId,
+  } = useConversationPersistence("mio-manus-coordination");
+  const {
+    conversationId: mioAbacusConversationId,
+    setConversationId: setMioAbacusConversationId,
+  } = useConversationPersistence("mio-abacus-coordination");
+  const {
+    conversationId: mioZapierConversationId,
+    setConversationId: setMioZapierConversationId,
+  } = useConversationPersistence("mio-zapier-coordination");
+  const {
+    conversationId: mioGptdevConversationId,
+    setConversationId: setMioGptdevConversationId,
+  } = useConversationPersistence("mio-gptdev-coordination");
+
   // Variabili di compatibilità per non rompere il resto del codice
   const mioLoading = false;
-  const mioError = null;  // Converti formato per compatibilità
+  const mioError = null; // Converti formato per compatibilità
   // Rimosso: vecchia conversione mioMessages da useAgentLogs
-  
+
   // ========== VISTA 4 AGENTI (READ-ONLY) - LAZY LOAD ==========
   // 🔥 CARICAMENTO CONDIZIONALE: Questi hook si attivano SOLO quando viewMode === 'quad'
   // Questo previene duplicati al refresh quando si è in vista singola
-  const {
-    messages: gptdevQuadMessages,
-    loading: gptdevQuadLoading,
-  } = useAgentLogs({
-    conversationId: viewMode === 'quad' ? mioGptdevConversationId : null, // 🔥 Chat MIO ↔ GPT Dev (isolata)
-    agentName: 'gptdev',
-    enablePolling: viewMode === 'quad',
-    excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ GPT Dev
-  });
+  const { messages: gptdevQuadMessages, loading: gptdevQuadLoading } =
+    useAgentLogs({
+      conversationId: viewMode === "quad" ? mioGptdevConversationId : null, // 🔥 Chat MIO ↔ GPT Dev (isolata)
+      agentName: "gptdev",
+      enablePolling: viewMode === "quad",
+      excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ GPT Dev
+    });
 
-  const {
-    messages: manusQuadMessages,
-    loading: manusQuadLoading,
-  } = useAgentLogs({
-    conversationId: viewMode === 'quad' ? mioManusConversationId : null, // 🔥 Chat MIO ↔ Manus (isolata)
-    agentName: 'manus',
-    enablePolling: viewMode === 'quad',
-    excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Manus
-  });
+  const { messages: manusQuadMessages, loading: manusQuadLoading } =
+    useAgentLogs({
+      conversationId: viewMode === "quad" ? mioManusConversationId : null, // 🔥 Chat MIO ↔ Manus (isolata)
+      agentName: "manus",
+      enablePolling: viewMode === "quad",
+      excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Manus
+    });
 
-  const {
-    messages: abacusQuadMessages,
-    loading: abacusQuadLoading,
-  } = useAgentLogs({
-    conversationId: viewMode === 'quad' ? mioAbacusConversationId : null, // 🔥 Chat MIO ↔ Abacus (isolata)
-    agentName: 'abacus',
-    enablePolling: viewMode === 'quad',
-    excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Abacus
-  });
+  const { messages: abacusQuadMessages, loading: abacusQuadLoading } =
+    useAgentLogs({
+      conversationId: viewMode === "quad" ? mioAbacusConversationId : null, // 🔥 Chat MIO ↔ Abacus (isolata)
+      agentName: "abacus",
+      enablePolling: viewMode === "quad",
+      excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Abacus
+    });
 
-  const {
-    messages: zapierQuadMessages,
-    loading: zapierQuadLoading,
-  } = useAgentLogs({
-    conversationId: viewMode === 'quad' ? mioZapierConversationId : null, // 🔥 Chat MIO ↔ Zapier (isolata)
-    agentName: 'zapier',
-    enablePolling: viewMode === 'quad',
-    excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Zapier
-  });
+  const { messages: zapierQuadMessages, loading: zapierQuadLoading } =
+    useAgentLogs({
+      conversationId: viewMode === "quad" ? mioZapierConversationId : null, // 🔥 Chat MIO ↔ Zapier (isolata)
+      agentName: "zapier",
+      enablePolling: viewMode === "quad",
+      excludeUserMessages: true, // 🔥 Solo coordinamento MIO ↔ Zapier
+    });
 
   // ========== VISTA SINGOLA AGENTI - Usa conversationId separati ==========
   // Questi hook gestiscono le 4 chat isolate (GPT Dev, Manus, Abacus, Zapier)
@@ -1039,16 +1573,16 @@ export default function DashboardPA() {
     // 🔥 FIX: Rimosso agentName per caricare TUTTI i messaggi (user + assistant)
     // Il conversation_id 'user-manus-direct' è già sufficiente
   });
-  
+
   const manusMessages = manusMessagesRaw.map(msg => ({
-    role: msg.role as 'user' | 'assistant' | 'system',
-    content: msg.content,  // Backend ora restituisce già 'content'
+    role: msg.role as "user" | "assistant" | "system",
+    content: msg.content, // Backend ora restituisce già 'content'
     agent: msg.agent_name,
-    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
-    created_at: msg.created_at,  // 🕒 FIX: Aggiungo timestamp per mostrare orario
-    pending: msg.pending  // Preserva flag pending per Optimistic UI
+    sender: msg.sender, // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
+    created_at: msg.created_at, // 🕒 FIX: Aggiungo timestamp per mostrare orario
+    pending: msg.pending, // Preserva flag pending per Optimistic UI
   }));
-  
+
   // Hook separato per Abacus (vista singola isolata)
   const {
     messages: abacusMessagesRaw,
@@ -1061,16 +1595,16 @@ export default function DashboardPA() {
     // 🔥 FIX: Rimosso agentName per caricare TUTTI i messaggi (user + assistant)
     // Il conversation_id 'user-abacus-direct' è già sufficiente
   });
-  
+
   const abacusMessages = abacusMessagesRaw.map(msg => ({
-    role: msg.role as 'user' | 'assistant' | 'system',
-    content: msg.content,  // Backend ora restituisce già 'content'
+    role: msg.role as "user" | "assistant" | "system",
+    content: msg.content, // Backend ora restituisce già 'content'
     agent: msg.agent_name,
-    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
-    created_at: msg.created_at,  // 🕒 FIX: Aggiungo timestamp per mostrare orario
-    pending: msg.pending  // Preserva flag pending per Optimistic UI
+    sender: msg.sender, // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
+    created_at: msg.created_at, // 🕒 FIX: Aggiungo timestamp per mostrare orario
+    pending: msg.pending, // Preserva flag pending per Optimistic UI
   }));
-  
+
   // Hook separato per Zapier (vista singola isolata)
   const {
     messages: zapierMessagesRaw,
@@ -1083,7 +1617,7 @@ export default function DashboardPA() {
     // 🔥 FIX: Rimosso agentName per caricare TUTTI i messaggi (user + assistant)
     // Il conversation_id 'user-zapier-direct' è già sufficiente
   });
-  
+
   // Hook separato per GPT Developer (vista singola isolata)
   const {
     messages: gptdevMessagesRaw,
@@ -1096,59 +1630,71 @@ export default function DashboardPA() {
     // 🔥 FIX: Rimosso agentName per caricare TUTTI i messaggi (user + assistant)
     // Il conversation_id 'user-gptdev-direct' è già sufficiente
   });
-  
+
   const gptdevMessages = gptdevMessagesRaw.map(msg => ({
-    role: msg.role as 'user' | 'assistant' | 'system',
-    content: msg.content,  // Backend ora restituisce già 'content'
+    role: msg.role as "user" | "assistant" | "system",
+    content: msg.content, // Backend ora restituisce già 'content'
     agent: msg.agent_name,
-    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
-    created_at: msg.created_at,  // 🕒 FIX: Aggiungo timestamp per mostrare orario
-    pending: msg.pending  // Preserva flag pending per Optimistic UI
+    sender: msg.sender, // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
+    created_at: msg.created_at, // 🕒 FIX: Aggiungo timestamp per mostrare orario
+    pending: msg.pending, // Preserva flag pending per Optimistic UI
   }));
-  
+
   const zapierMessages = zapierMessagesRaw.map(msg => ({
-    role: msg.role as 'user' | 'assistant' | 'system',
-    content: msg.content,  // Backend ora restituisce già 'content'
+    role: msg.role as "user" | "assistant" | "system",
+    content: msg.content, // Backend ora restituisce già 'content'
     agent: msg.agent_name,
-    sender: msg.sender,  // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
-    created_at: msg.created_at,  // 🕒 FIX: Aggiungo timestamp per mostrare orario
-    pending: msg.pending  // Preserva flag pending per Optimistic UI
+    sender: msg.sender, // 🔥 FIX: Aggiungo sender per distinguere MIO da Utente (rebuild 20/12/2024)
+    created_at: msg.created_at, // 🕒 FIX: Aggiungo timestamp per mostrare orario
+    pending: msg.pending, // Preserva flag pending per Optimistic UI
   }));
-  
-  const [gptdevInputValue, setGptdevInputValue] = useState('');
-  const [manusInputValue, setManusInputValue] = useState('');
-  const [abacusInputValue, setAbacusInputValue] = useState('');
-  const [zapierInputValue, setZapierInputValue] = useState('');
-  
+
+  const [gptdevInputValue, setGptdevInputValue] = useState("");
+  const [manusInputValue, setManusInputValue] = useState("");
+  const [abacusInputValue, setAbacusInputValue] = useState("");
+  const [zapierInputValue, setZapierInputValue] = useState("");
+
   // Stati di loading per invio messaggi agenti singoli
   const [gptdevSending, setGptdevSending] = useState(false);
   const [manusSending, setManusSending] = useState(false);
   const [abacusSending, setAbacusSending] = useState(false);
   const [zapierSending, setZapierSending] = useState(false);
-  
+
   // Rimosso: mioSendingLoading e mioSendingError (ora usati mioSending e mioSendError)
-  
+
   // Internal traces per Vista 4 agenti (dialoghi MIO ↔ Agenti)
-  const [internalTracesMessages, setInternalTracesMessages] = useState<Array<{ from: string; to: string; message: string; timestamp: string; meta?: any }>>([]);
-  
+  const [internalTracesMessages, setInternalTracesMessages] = useState<
+    Array<{
+      from: string;
+      to: string;
+      message: string;
+      timestamp: string;
+      meta?: any;
+    }>
+  >([]);
+
   // ♾️ CHAT ETERNA: Un UUID generato UNA VOLTA e salvato PER SEMPRE
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | null
+  >(null);
+
   // Carica o genera l'ID FISSO al mount
   useEffect(() => {
     // Helper: Valida UUID v4
     const isValidUUID = (uuid: string): boolean => {
-      return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        uuid
+      );
     };
 
     // 1. Cerca un ID esistente nel localStorage ("cassetto" del browser)
-    let storedId = localStorage.getItem('mihub_global_conversation_id');
+    let storedId = localStorage.getItem("mihub_global_conversation_id");
 
     // 2. Se non c'è (o è vecchio/invalido), ne crea uno NUOVO e lo salva PER SEMPRE
     if (!storedId || !isValidUUID(storedId)) {
       storedId = crypto.randomUUID(); // Genera UUID valido
-      localStorage.setItem('mihub_global_conversation_id', storedId);
-      console.warn('[DashboardPA] Nuovo conversation_id generato:', storedId);
+      localStorage.setItem("mihub_global_conversation_id", storedId);
+      console.warn("[DashboardPA] Nuovo conversation_id generato:", storedId);
     } else {
       // Conversation_id esistente caricato
     }
@@ -1160,23 +1706,30 @@ export default function DashboardPA() {
   // Hook per fetching automatico internalTraces
   // const { traces: fetchedTraces } = useInternalTraces(currentConversationId, 3000); // TODO: implementare hook
   const fetchedTraces: any[] = []; // Placeholder
-  
+
   // ELIMINATO: loadChatHistory() - causava 404 su endpoint inesistenti
   // useAgentLogs gestisce automaticamente il caricamento della cronologia
-  
+
   // Salva internalTraces in localStorage ogni volta che cambiano
   useEffect(() => {
     if (internalTracesMessages.length > 0) {
-      localStorage.setItem('mihub_internal_traces', JSON.stringify(internalTracesMessages));
+      localStorage.setItem(
+        "mihub_internal_traces",
+        JSON.stringify(internalTracesMessages)
+      );
     }
   }, [internalTracesMessages]);
-  
+
   // Merge fetchedTraces con internalTracesMessages
   useEffect(() => {
     if (fetchedTraces.length > 0) {
       setInternalTracesMessages(prev => {
-        const existingKeys = new Set(prev.map(t => `${t.timestamp}-${t.from}-${t.to}`));
-        const newTraces = fetchedTraces.filter(t => !existingKeys.has(`${t.timestamp}-${t.from}-${t.to}`));
+        const existingKeys = new Set(
+          prev.map(t => `${t.timestamp}-${t.from}-${t.to}`)
+        );
+        const newTraces = fetchedTraces.filter(
+          t => !existingKeys.has(`${t.timestamp}-${t.from}-${t.to}`)
+        );
         return [...prev, ...newTraces];
       });
     }
@@ -1186,15 +1739,21 @@ export default function DashboardPA() {
   const [notificheStats, setNotificheStats] = useState<any>(null);
   const [notificheRisposte, setNotificheRisposte] = useState<any[]>([]);
   const [notificheRisposteEnti, setNotificheRisposteEnti] = useState<any[]>([]);
-  const [notificheRisposteAssoc, setNotificheRisposteAssoc] = useState<any[]>([]);
+  const [notificheRisposteAssoc, setNotificheRisposteAssoc] = useState<any[]>(
+    []
+  );
   const [mercatiList, setMercatiList] = useState<any[]>([]);
   const [hubList, setHubList] = useState<any[]>([]);
   const [impreseList, setImpreseList] = useState<any[]>([]);
   const [invioNotificaLoading, setInvioNotificaLoading] = useState(false);
   const [selectedNotifica, setSelectedNotifica] = useState<any>(null);
   const [notificheNonLette, setNotificheNonLette] = useState(0);
-  const [filtroMessaggiEnti, setFiltroMessaggiEnti] = useState<'tutti' | 'inviati' | 'ricevuti'>('tutti');
-  const [filtroMessaggiAssoc, setFiltroMessaggiAssoc] = useState<'tutti' | 'inviati' | 'ricevuti'>('tutti');
+  const [filtroMessaggiEnti, setFiltroMessaggiEnti] = useState<
+    "tutti" | "inviati" | "ricevuti"
+  >("tutti");
+  const [filtroMessaggiAssoc, setFiltroMessaggiAssoc] = useState<
+    "tutti" | "inviati" | "ricevuti"
+  >("tutti");
   const [messaggiInviatiEnti, setMessaggiInviatiEnti] = useState<any[]>([]);
   const [messaggiInviatiAssoc, setMessaggiInviatiAssoc] = useState<any[]>([]);
 
@@ -1203,29 +1762,38 @@ export default function DashboardPA() {
   // Funzione per segnare una risposta come letta
   const segnaRispostaComeLetta = async (risposta: any) => {
     if (risposta.letta) return; // Già letta
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
+    const MIHUB_API =
+      import.meta.env.VITE_MIHUB_API_BASE_URL || "https://api.mio-hub.me/api";
     try {
-      await authenticatedFetch(`${MIHUB_API}/notifiche/risposte/${risposta.id}/letta`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      await authenticatedFetch(
+        `${MIHUB_API}/notifiche/risposte/${risposta.id}/letta`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
       // Aggiorna stato locale
-      if (risposta.target_tipo === 'ENTE_FORMATORE') {
-        setNotificheRisposteEnti(prev => prev.map(r => r.id === risposta.id ? { ...r, letta: true } : r));
+      if (risposta.target_tipo === "ENTE_FORMATORE") {
+        setNotificheRisposteEnti(prev =>
+          prev.map(r => (r.id === risposta.id ? { ...r, letta: true } : r))
+        );
       } else {
-        setNotificheRisposteAssoc(prev => prev.map(r => r.id === risposta.id ? { ...r, letta: true } : r));
+        setNotificheRisposteAssoc(prev =>
+          prev.map(r => (r.id === risposta.id ? { ...r, letta: true } : r))
+        );
       }
       // Aggiorna contatore non lette
       setNotificheNonLette(prev => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Errore segna come letta:', error);
+      console.error("Errore segna come letta:", error);
     }
   };
-  
+
   // Fetch notifiche stats e risposte
   useEffect(() => {
-    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
-    
+    const MIHUB_API =
+      import.meta.env.VITE_MIHUB_API_BASE_URL || "https://api.mio-hub.me/api";
+
     // Fetch stats notifiche (solo per statistiche generali, NON per badge)
     fetch(`${MIHUB_API}/notifiche/stats`)
       .then(res => res.json())
@@ -1235,8 +1803,8 @@ export default function DashboardPA() {
           // NON settare notificheNonLette qui - viene calcolato dalle risposte
         }
       })
-      .catch(err => console.error('Notifiche stats fetch error:', err));
-    
+      .catch(err => console.error("Notifiche stats fetch error:", err));
+
     // Fetch risposte (messaggi dalle imprese) - separate per Enti e Associazioni
     fetch(`${MIHUB_API}/notifiche/risposte`)
       .then(res => res.json())
@@ -1244,8 +1812,12 @@ export default function DashboardPA() {
         if (data.success && Array.isArray(data.data)) {
           setNotificheRisposte(data.data);
           // Filtra per target_tipo (chi era il destinatario originale della notifica)
-          const risposteEnti = data.data.filter((r: any) => r.target_tipo === 'ENTE_FORMATORE');
-          const risposteAssoc = data.data.filter((r: any) => r.target_tipo === 'ASSOCIAZIONE');
+          const risposteEnti = data.data.filter(
+            (r: any) => r.target_tipo === "ENTE_FORMATORE"
+          );
+          const risposteAssoc = data.data.filter(
+            (r: any) => r.target_tipo === "ASSOCIAZIONE"
+          );
           setNotificheRisposteEnti(risposteEnti);
           setNotificheRisposteAssoc(risposteAssoc);
           // Calcola totale risposte non lette per badge barra rapida
@@ -1253,48 +1825,54 @@ export default function DashboardPA() {
           setNotificheNonLette(totaleNonLette);
         }
       })
-      .catch(err => console.error('Notifiche risposte fetch error:', err));
-    
+      .catch(err => console.error("Notifiche risposte fetch error:", err));
+
     // Fetch messaggi inviati - Enti Formatori (ID=1)
     fetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/1?filtro=inviati`)
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
-          setMessaggiInviatiEnti(data.data.map((m: any) => ({
-            ...m,
-            destinatari: m.totale_destinatari || 0,
-            lette: m.letti || 0
-          })));
+          setMessaggiInviatiEnti(
+            data.data.map((m: any) => ({
+              ...m,
+              destinatari: m.totale_destinatari || 0,
+              lette: m.letti || 0,
+            }))
+          );
         }
       })
-      .catch(err => console.error('Messaggi inviati Enti fetch error:', err));
-    
+      .catch(err => console.error("Messaggi inviati Enti fetch error:", err));
+
     // Fetch messaggi inviati - Associazioni (ID=2)
     fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/2?filtro=inviati`)
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
-          setMessaggiInviatiAssoc(data.data.map((m: any) => ({
-            ...m,
-            destinatari: m.totale_destinatari || 0,
-            lette: m.letti || 0
-          })));
+          setMessaggiInviatiAssoc(
+            data.data.map((m: any) => ({
+              ...m,
+              destinatari: m.totale_destinatari || 0,
+              lette: m.letti || 0,
+            }))
+          );
         }
       })
-      .catch(err => console.error('Messaggi inviati Assoc fetch error:', err));
-    
+      .catch(err => console.error("Messaggi inviati Assoc fetch error:", err));
+
     // Fetch lista mercati
     fetch(`${MIHUB_API}/stats/overview`)
       .then(res => res.json())
       .then(async data => {
         // Fetch mercati separatamente
-        const mercatiRes = await fetch(`${MIHUB_API}/markets`).then(r => r.json()).catch(() => ({ data: [] }));
+        const mercatiRes = await fetch(`${MIHUB_API}/markets`)
+          .then(r => r.json())
+          .catch(() => ({ data: [] }));
         if (mercatiRes.data) {
           setMercatiList(mercatiRes.data);
         }
       })
-      .catch(err => console.error('Mercati fetch error:', err));
-    
+      .catch(err => console.error("Mercati fetch error:", err));
+
     // Fetch lista hub
     fetch(`${MIHUB_API}/tcc/v2/comuni`)
       .then(res => res.json())
@@ -1303,17 +1881,21 @@ export default function DashboardPA() {
           setHubList(data.comuni);
         }
       })
-      .catch(err => console.error('Hub fetch error:', err));
-    
+      .catch(err => console.error("Hub fetch error:", err));
+
     // Fetch lista imprese (con limit per ridurre payload)
-    fetch(addComuneIdToUrl('/api/imprese?limit=200&fields=id,denominazione,partita_iva,codice_fiscale,comune'))
+    fetch(
+      addComuneIdToUrl(
+        "/api/imprese?limit=200&fields=id,denominazione,partita_iva,codice_fiscale,comune"
+      )
+    )
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data) {
           setImpreseList(data.data);
         }
       })
-      .catch(err => console.error('Imprese fetch error:', err));
+      .catch(err => console.error("Imprese fetch error:", err));
 
     // Polling ogni 30 secondi per aggiornare notifiche
     const interval = setInterval(() => {
@@ -1324,43 +1906,49 @@ export default function DashboardPA() {
             setNotificheStats(data.data);
           }
         })
-        .catch(err => console.error('Notifiche stats poll error:', err));
+        .catch(err => console.error("Notifiche stats poll error:", err));
       // Aggiorna anche risposte non lette
       fetch(`${MIHUB_API}/notifiche/risposte`)
         .then(res => res.json())
         .then(data => {
           if (data.success && Array.isArray(data.data)) {
             setNotificheRisposte(data.data);
-            setNotificheRisposteEnti(data.data.filter((r: any) => r.target_tipo === 'ENTE_FORMATORE'));
-            setNotificheRisposteAssoc(data.data.filter((r: any) => r.target_tipo === 'ASSOCIAZIONE'));
+            setNotificheRisposteEnti(
+              data.data.filter((r: any) => r.target_tipo === "ENTE_FORMATORE")
+            );
+            setNotificheRisposteAssoc(
+              data.data.filter((r: any) => r.target_tipo === "ASSOCIAZIONE")
+            );
             setNotificheNonLette(data.data.filter((r: any) => !r.letta).length);
           }
         })
-        .catch(err => console.error('Notifiche risposte poll error:', err));
+        .catch(err => console.error("Notifiche risposte poll error:", err));
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
   // GIS Map state (blocco ufficiale da GestioneMercati)
   const [gisStalls, setGisStalls] = useState<any[]>([]);
   const [gisMapData, setGisMapData] = useState<any | null>(null);
-  const [gisMapCenter, setGisMapCenter] = useState<[number, number] | null>(null);
+  const [gisMapCenter, setGisMapCenter] = useState<[number, number] | null>(
+    null
+  );
   const [gisMapRefreshKey, setGisMapRefreshKey] = useState(0);
-  
+
   // GIS Map filters
-  const [gisSearchQuery, setGisSearchQuery] = useState('');
+  const [gisSearchQuery, setGisSearchQuery] = useState("");
   const [showBusHubEditor, setShowBusHubEditor] = useState(false);
-  const [gisStatusFilter, setGisStatusFilter] = useState<string>('all');
+  const [gisStatusFilter, setGisStatusFilter] = useState<string>("all");
   const gisMarketId = 1; // Mercato Grosseto ID=1 (default)
-  
+
   // Filtered stalls based on search and status
   const filteredGisStalls = gisStalls.filter(stall => {
     // Filter by status
-    if (gisStatusFilter !== 'all' && stall.status !== gisStatusFilter) {
+    if (gisStatusFilter !== "all" && stall.status !== gisStatusFilter) {
       return false;
     }
-    
+
     // Filter by search query
     if (gisSearchQuery) {
       const query = gisSearchQuery.toLowerCase();
@@ -1371,69 +1959,71 @@ export default function DashboardPA() {
         // Impresa
         stall.vendor_business_name?.toLowerCase().includes(query) ||
         // Mercato (hardcoded per ora - Grosseto)
-        'grosseto'.includes(query) ||
-        'mercato grosseto'.includes(query) ||
-        'toscana'.includes(query) ||
+        "grosseto".includes(query) ||
+        "mercato grosseto".includes(query) ||
+        "toscana".includes(query) ||
         // Giorno mercato
-        'giovedì'.includes(query) ||
-        'giovedi'.includes(query) ||
-        'thursday'.includes(query)
+        "giovedì".includes(query) ||
+        "giovedi".includes(query) ||
+        "thursday".includes(query)
       );
     }
-    
+
     return true;
   });
-  
+
   // Format timestamp for Guardian logs
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleString('it-IT', {
-      timeZone: 'Europe/Rome',
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }) + ' (ora locale)';
+    return (
+      date.toLocaleString("it-IT", {
+        timeZone: "Europe/Rome",
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }) + " (ora locale)"
+    );
   };
-  
+
   // 🔥 Handler per invio messaggio MIO - USA CONTEXT!
   // ---------------------------------------------------------
   const handleSendMio = async () => {
     const text = mioInputValue.trim();
     if (!text || mioSending) return;
 
-    setMioInputValue('');
+    setMioInputValue("");
 
     // Non cambiamo la vista quando si invia un messaggio
     // setViewMode('single');  // RIMOSSO: lasciamo la vista corrente
-    setSelectedAgent('mio');
+    setSelectedAgent("mio");
 
     // 🔥 USA LA FUNZIONE DEL CONTEXT!
     await sendMioMessage(text, { source: "dashboard_pa" });
-    
+
     // Forza scroll dopo invio messaggio
     setTimeout(() => scrollMioToBottom(), 100);
   };
   // ---------------------------------------------------------
   // FINE BLOCCO TABULA RASA
   // ---------------------------------------------------------
-  
+
   // ========== HANDLER VISTA SINGOLA AGENTI ==========
   // Ogni agente ha il suo handler che usa sendAgentMessage
-  
+
   const handleSendGptdev = async () => {
     const text = gptdevInputValue.trim();
     if (!text || gptdevSending) return;
-    setGptdevInputValue('');
+    setGptdevInputValue("");
     setGptdevSending(true);
 
     try {
       await sendToAgent({
-        targetAgent: 'gptdev',
+        targetAgent: "gptdev",
         message: text,
         conversationId: gptdevConversationId,
-        mode: 'direct',
+        mode: "direct",
         onUpdateMessages: () => {}, // 🔥 FIX: Non usare setMessages, usa refetch
         onUpdateConversationId: setGptdevConversationId,
       });
@@ -1447,15 +2037,15 @@ export default function DashboardPA() {
   const handleSendManus = async () => {
     const text = manusInputValue.trim();
     if (!text || manusSending) return;
-    setManusInputValue('');
+    setManusInputValue("");
     setManusSending(true);
 
     try {
       await sendToAgent({
-        targetAgent: 'manus',
+        targetAgent: "manus",
         message: text,
         conversationId: manusConversationId,
-        mode: 'direct',
+        mode: "direct",
         onUpdateMessages: () => {}, // 🔥 FIX: Non usare setMessages, usa refetch
         onUpdateConversationId: setManusConversationId,
       });
@@ -1469,15 +2059,15 @@ export default function DashboardPA() {
   const handleSendAbacus = async () => {
     const text = abacusInputValue.trim();
     if (!text || abacusSending) return;
-    setAbacusInputValue('');
+    setAbacusInputValue("");
     setAbacusSending(true);
 
     try {
       await sendToAgent({
-        targetAgent: 'abacus',
+        targetAgent: "abacus",
         message: text,
         conversationId: abacusConversationId,
-        mode: 'direct',
+        mode: "direct",
         onUpdateMessages: () => {}, // 🔥 FIX: Non usare setMessages, usa refetch
         onUpdateConversationId: setAbacusConversationId,
       });
@@ -1491,15 +2081,15 @@ export default function DashboardPA() {
   const handleSendZapier = async () => {
     const text = zapierInputValue.trim();
     if (!text || zapierSending) return;
-    setZapierInputValue('');
+    setZapierInputValue("");
     setZapierSending(true);
 
     try {
       await sendToAgent({
-        targetAgent: 'zapier',
+        targetAgent: "zapier",
         message: text,
         conversationId: zapierConversationId,
-        mode: 'direct',
+        mode: "direct",
         onUpdateMessages: () => {}, // 🔥 FIX: Non usare setMessages, usa refetch
         onUpdateConversationId: setZapierConversationId,
       });
@@ -1509,19 +2099,24 @@ export default function DashboardPA() {
       setZapierSending(false);
     }
   };
-  
+
   // ELIMINATO: loadConversationHistory() - causava 404 su endpoint inesistente
   // useAgentLogs per ogni agente gestisce automaticamente il caricamento
-  
+
   // Fetch GIS Map Data (blocco ufficiale da GestioneMercati)
   useEffect(() => {
-    const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
-    
+    const API_BASE_URL =
+      import.meta.env.VITE_MIHUB_API_URL || "https://api.mio-hub.me";
+
     const fetchGisData = async () => {
       try {
         const [stallsRes, mapRes] = await Promise.all([
-          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${gisMarketId}/stalls`)),
-          fetch(`${API_BASE_URL}/api/gis/market-map`)
+          fetch(
+            addComuneIdToUrl(
+              `${API_BASE_URL}/api/markets/${gisMarketId}/stalls`
+            )
+          ),
+          fetch(`${API_BASE_URL}/api/gis/market-map`),
         ]);
 
         const stallsData = await stallsRes.json();
@@ -1533,17 +2128,20 @@ export default function DashboardPA() {
         if (mapDataRes.success) {
           setGisMapData(mapDataRes.data);
           if (mapDataRes.data?.center) {
-            setGisMapCenter([mapDataRes.data.center.lat, mapDataRes.data.center.lng]);
+            setGisMapCenter([
+              mapDataRes.data.center.lat,
+              mapDataRes.data.center.lng,
+            ]);
           }
         }
       } catch (error) {
-        console.error('[GIS Map] Error fetching data:', error);
+        console.error("[GIS Map] Error fetching data:", error);
       }
     };
-    
+
     fetchGisData();
   }, [gisMarketId]);
-  
+
   // Fetch Guardian logs from Neon database via Abacus SQL
   // 🔥 FIX: Carica attività agenti da agent_messages invece di guardian_logs
   // 🔥 FIX 27/01/2026: Ridotto polling e aggiunto controllo visibilità tab per risparmiare CPU Vercel
@@ -1556,40 +2154,46 @@ export default function DashboardPA() {
       try {
         // Carica gli ultimi messaggi degli agenti da tutte le conversazioni di coordinamento
         const conversationIds = [
-          'mio-manus-coordination',
-          'mio-abacus-coordination', 
-          'mio-zapier-coordination',
-          'mio-gptdev-coordination',
-          'mio-main'
+          "mio-manus-coordination",
+          "mio-abacus-coordination",
+          "mio-zapier-coordination",
+          "mio-gptdev-coordination",
+          "mio-main",
         ];
-        
+
         const allLogs: any[] = [];
-        
+
         for (const convId of conversationIds) {
-          const response = await fetch(`/api/mihub/get-messages?conversation_id=${convId}&limit=20&order=desc`);
+          const response = await fetch(
+            `/api/mihub/get-messages?conversation_id=${convId}&limit=20&order=desc`
+          );
           const data = await response.json();
           if (data.success && Array.isArray(data.messages)) {
             // Trasforma i messaggi nel formato log
             const logs = data.messages.map((msg: any) => ({
               timestamp: msg.created_at,
-              agent: msg.agent || msg.sender || 'unknown',
-              status: 'allowed',
-              method: msg.meta?.tool || 'message',
-              path: msg.message?.substring(0, 100) + (msg.message?.length > 100 ? '...' : ''),
+              agent: msg.agent || msg.sender || "unknown",
+              status: "allowed",
+              method: msg.meta?.tool || "message",
+              path:
+                msg.message?.substring(0, 100) +
+                (msg.message?.length > 100 ? "..." : ""),
               reason: null,
               response_time_ms: null,
-              conversation_id: msg.conversation_id
+              conversation_id: msg.conversation_id,
             }));
             allLogs.push(...logs);
           }
         }
-        
+
         // Ordina per timestamp decrescente e prendi gli ultimi 50
-        allLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        allLogs.sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
         setGuardianLogs(allLogs.slice(0, 50));
-        
       } catch (error) {
-        console.error('Failed to fetch agent activity:', error);
+        console.error("Failed to fetch agent activity:", error);
         setGuardianLogs([]);
       }
     };
@@ -1598,7 +2202,7 @@ export default function DashboardPA() {
     const interval = setInterval(fetchAgentActivity, 30000);
     return () => clearInterval(interval);
   }, []);
-  
+
   // Simula aggiornamento real-time
   const { isAnimating } = useAnimation();
 
@@ -1610,7 +2214,7 @@ export default function DashboardPA() {
         activeUsers: realData.statsRealtime.activeUsers || 0,
         activeVendors: realData.statsRealtime.activeVendors || 0,
         todayCheckins: realData.statsRealtime.todayCheckins || 0,
-        todayTransactions: realData.statsRealtime.todayTransactions || 0
+        todayTransactions: realData.statsRealtime.todayTransactions || 0,
       }));
     }
   }, [realData.statsRealtime]);
@@ -1619,7 +2223,8 @@ export default function DashboardPA() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (isAnimating) return;
-      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
+      const MIHUB_API =
+        import.meta.env.VITE_MIHUB_API_BASE_URL || "https://api.mio-hub.me/api";
       fetch(`${MIHUB_API}/stats/realtime`)
         .then(res => res.json())
         .then(data => {
@@ -1629,11 +2234,11 @@ export default function DashboardPA() {
               activeUsers: data.data.activeUsers || 0,
               activeVendors: data.data.activeVendors || 0,
               todayCheckins: data.data.todayCheckins || 0,
-              todayTransactions: data.data.todayTransactions || 0
+              todayTransactions: data.data.todayTransactions || 0,
             }));
           }
         })
-        .catch(err => console.error('Realtime refresh error:', err));
+        .catch(err => console.error("Realtime refresh error:", err));
     }, 30000);
 
     return () => clearInterval(interval);
@@ -1642,7 +2247,7 @@ export default function DashboardPA() {
   // Read URL param ?tab=mio and set activeTab
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
+    const tab = params.get("tab");
     if (tab) {
       setActiveTab(tab);
     }
@@ -1653,7 +2258,7 @@ export default function DashboardPA() {
     if (mioMessagesRef.current) {
       mioMessagesRef.current.scrollTo({
         top: mioMessagesRef.current.scrollHeight,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
@@ -1661,17 +2266,17 @@ export default function DashboardPA() {
   // Scroll MIO quando cambiano messaggi
   useEffect(() => {
     if (!mioMessagesRef.current || mioMessages.length === 0) return;
-    
+
     // Timeout per assicurarsi che il DOM sia aggiornato
     const timeoutId = setTimeout(() => {
       if (mioMessagesRef.current) {
         mioMessagesRef.current.scrollTo({
           top: mioMessagesRef.current.scrollHeight,
-          behavior: 'smooth' // Animazione fluida
+          behavior: "smooth", // Animazione fluida
         });
       }
     }, 100);
-    
+
     return () => clearTimeout(timeoutId);
   }, [mioMessages]);
 
@@ -1686,8 +2291,8 @@ export default function DashboardPA() {
       setShowMioScrollButton(!isNearBottom);
     };
 
-    messagesDiv.addEventListener('scroll', handleScroll);
-    return () => messagesDiv.removeEventListener('scroll', handleScroll);
+    messagesDiv.addEventListener("scroll", handleScroll);
+    return () => messagesDiv.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Scroll chat singole to bottom
@@ -1695,7 +2300,7 @@ export default function DashboardPA() {
     if (singleChatMessagesRef.current) {
       singleChatMessagesRef.current.scrollTo({
         top: singleChatMessagesRef.current.scrollHeight,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
@@ -1704,30 +2309,39 @@ export default function DashboardPA() {
   useEffect(() => {
     const messagesDiv = singleChatMessagesRef.current;
     if (!messagesDiv) return;
-    
+
     const { scrollTop, scrollHeight, clientHeight } = messagesDiv;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-    
+
     // Scrolla SOLO se l'utente è già vicino al fondo (previene effetto molla)
     if (isNearBottom) {
       scrollSingleChatToBottom();
     }
-  }, [gptdevMessages, manusMessages, abacusMessages, zapierMessages, selectedAgent]);
+  }, [
+    gptdevMessages,
+    manusMessages,
+    abacusMessages,
+    zapierMessages,
+    selectedAgent,
+  ]);
 
   // Scroll iniziale chat singole al mount
   useEffect(() => {
-    const currentMessages = 
-      selectedAgent === 'gptdev' ? gptdevMessages :
-      selectedAgent === 'manus' ? manusMessages :
-      selectedAgent === 'abacus' ? abacusMessages :
-      zapierMessages;
+    const currentMessages =
+      selectedAgent === "gptdev"
+        ? gptdevMessages
+        : selectedAgent === "manus"
+          ? manusMessages
+          : selectedAgent === "abacus"
+            ? abacusMessages
+            : zapierMessages;
 
     if (currentMessages.length > 0 && singleChatMessagesRef.current) {
       setTimeout(() => {
         if (singleChatMessagesRef.current) {
           singleChatMessagesRef.current.scrollTo({
             top: singleChatMessagesRef.current.scrollHeight,
-            behavior: 'instant' as ScrollBehavior
+            behavior: "instant" as ScrollBehavior,
           });
         }
       }, 300);
@@ -1745,15 +2359,15 @@ export default function DashboardPA() {
       setShowSingleChatScrollButton(!isNearBottom);
     };
 
-    messagesDiv.addEventListener('scroll', handleScroll);
-    return () => messagesDiv.removeEventListener('scroll', handleScroll);
+    messagesDiv.addEventListener("scroll", handleScroll);
+    return () => messagesDiv.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Documentation Modal handler
   const openDocModal = (docKey: string) => {
     const content: Record<string, { title: string; content: string }> = {
       executive_summary: {
-        title: '🎯 Executive Summary',
+        title: "🎯 Executive Summary",
         content: `
           <p><b>Versione:</b> 3.1 (Fix Bug Critici) | <b>Ultimo Aggiornamento:</b> 7 Dicembre 2025</p>
           <p class="mt-3">Il DMS Hub è un ecosistema integrato <b>operativo</b> per la gestione dei mercati, della mobilità sostenibile e dei servizi civici. La piattaforma si compone di:</p>
@@ -1766,10 +2380,10 @@ export default function DashboardPA() {
             <li>⏳ <b>8 Applicazioni Web</b> (2 operative, 6 in sviluppo)</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Documentazione Completa su GitHub →</a></p>
-        `
+        `,
       },
       architettura_tecnica: {
-        title: '🏭 Architettura Tecnica',
+        title: "🏭 Architettura Tecnica",
         content: `
           <p><b>Stack Tecnologico Operativo:</b></p>
           <ul class="mt-2">
@@ -1787,10 +2401,10 @@ export default function DashboardPA() {
             <li>✅ <code>council-api.mio-hub.me</code> - LLM Council API (porta 8001)</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/orchestratore-multi-agente.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Architettura Completa su GitHub →</a></p>
-        `
+        `,
       },
       applicazioni_web: {
-        title: '📱 8 Applicazioni Web',
+        title: "📱 8 Applicazioni Web",
         content: `
           <p><b>Stato delle Applicazioni Web:</b></p>
           <p class="mt-2"><b class="text-green-400">✅ OPERATIVE (2/8):</b></p>
@@ -1808,10 +2422,10 @@ export default function DashboardPA() {
             <li><b>Gestionale DMS:</b> Backoffice completo</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Documentazione Completa su GitHub →</a></p>
-        `
+        `,
       },
       integrazioni: {
-        title: '⭐ Sistema Integrazioni',
+        title: "⭐ Sistema Integrazioni",
         content: `
           <p><b>Integrazioni Operative:</b></p>
           <ul class="mt-2">
@@ -1826,10 +2440,10 @@ export default function DashboardPA() {
             <li>⏳ <b>TPER:</b> Integrazione trasporto pubblico Bologna (Centro Mobilità)</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/tree/master/07_guide_operative" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Guide Operative su GitHub →</a></p>
-        `
+        `,
       },
       funzionalita_operative: {
-        title: '✅ Funzionalità Operative',
+        title: "✅ Funzionalità Operative",
         content: `
           <p><b>Funzionalità Operative (Aggiornato 07/12/2025):</b></p>
           <ul class="mt-2">
@@ -1851,10 +2465,10 @@ export default function DashboardPA() {
             <li>✅ Auto-scroll chat - RISOLTO</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Stato Completo su GitHub →</a></p>
-        `
+        `,
       },
       todo_prioritizzati: {
-        title: '📅 TODO Prioritizzati',
+        title: "📅 TODO Prioritizzati",
         content: `
           <p><b>Roadmap Sviluppo (Aggiornato 07/12/2025):</b></p>
           <h4 class="text-red-400 font-semibold mt-3 mb-2">🔴 Alta Priorità</h4>
@@ -1878,29 +2492,35 @@ export default function DashboardPA() {
             <li>Refactoring codice legacy</li>
           </ul>
           <p class="mt-4"><a href="https://github.com/Chcndr/dms-system-blueprint/blob/master/01_architettura/MASTER_SYSTEM_PLAN.md" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold">📖 Apri Roadmap Completa su GitHub →</a></p>
-        `
+        `,
       },
       stato_progetto: {
-        title: '📋 Stato Progetto Aggiornato',
-        content: `<p>Documento completo con stato attuale, architettura, funzionalità operative, TODO prioritizzati e guide.</p>`
+        title: "📋 Stato Progetto Aggiornato",
+        content: `<p>Documento completo con stato attuale, architettura, funzionalità operative, TODO prioritizzati e guide.</p>`,
       },
       resoconto_ecosistema: {
-        title: '📊 Resoconto Completo Ecosistema',
-        content: `<p>Resoconto originale completo dell'ecosistema DMS Hub con tutte le 8 applicazioni web integrate.</p>`
-      }
+        title: "📊 Resoconto Completo Ecosistema",
+        content: `<p>Resoconto originale completo dell'ecosistema DMS Hub con tutte le 8 applicazioni web integrate.</p>`,
+      },
     };
     setDocModalContent(content[docKey]);
   };
 
-  const QuickAccessButton = ({ href, icon, label, color = 'teal', badge = 0 }: any) => (
+  const QuickAccessButton = ({
+    href,
+    icon,
+    label,
+    color = "teal",
+    badge = 0,
+  }: any) => (
     <button
       onClick={() => setLocation(href)}
       className={`relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
-        color === 'orange'
-          ? 'bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]'
-          : color === 'yellow'
-          ? 'bg-[#eab308]/10 border-[#eab308]/30 hover:bg-[#eab308]/20 text-[#eab308]'
-          : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
+        color === "orange"
+          ? "bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]"
+          : color === "yellow"
+            ? "bg-[#eab308]/10 border-[#eab308]/30 hover:bg-[#eab308]/20 text-[#eab308]"
+            : "bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]"
       }`}
     >
       {icon}
@@ -1913,15 +2533,18 @@ export default function DashboardPA() {
     </button>
   );
 
-  const KPICard = ({ title, value, growth, icon: Icon, suffix = '' }: any) => (
+  const KPICard = ({ title, value, growth, icon: Icon, suffix = "" }: any) => (
     <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-[#e8fbff]/70">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium text-[#e8fbff]/70">
+          {title}
+        </CardTitle>
         <Icon className="h-5 w-5 text-[#14b8a6]" />
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold text-[#e8fbff]">
-          {value.toLocaleString()}{suffix}
+          {value.toLocaleString()}
+          {suffix}
         </div>
         {growth !== undefined && (
           <div className="flex items-center mt-2 text-sm">
@@ -1949,34 +2572,53 @@ export default function DashboardPA() {
 
     const getStatusColor = (status: string) => {
       switch (status) {
-        case 'online': return 'bg-green-400';
-        case 'offline': return 'bg-red-500';
-        case 'checking': return 'bg-yellow-400';
-        default: return 'bg-gray-400';
+        case "online":
+          return "bg-green-400";
+        case "offline":
+          return "bg-red-500";
+        case "checking":
+          return "bg-yellow-400";
+        default:
+          return "bg-gray-400";
       }
     };
 
     const getStatusText = (status: string) => {
       switch (status) {
-        case 'online': return 'Online';
-        case 'offline': return 'Offline';
-        case 'checking': return 'Check...';
-        default: return 'Unknown';
+        case "online":
+          return "Online";
+        case "offline":
+          return "Offline";
+        case "checking":
+          return "Check...";
+        default:
+          return "Unknown";
       }
     };
 
     return (
-      <div className="flex items-center gap-3" role="status" aria-live="polite" aria-label="Stato dei servizi">
+      <div
+        className="flex items-center gap-3"
+        role="status"
+        aria-live="polite"
+        aria-label="Stato dei servizi"
+      >
         {/* Backend API Indicator */}
         <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20">
-          <div className={`w-2 h-2 rounded-full ${getStatusColor(apiStatus)} ${apiStatus === 'online' ? 'animate-pulse' : ''}`} aria-hidden="true" />
+          <div
+            className={`w-2 h-2 rounded-full ${getStatusColor(apiStatus)} ${apiStatus === "online" ? "animate-pulse" : ""}`}
+            aria-hidden="true"
+          />
           <span className="text-xs font-medium">API</span>
           <span className="text-xs opacity-75">{getStatusText(apiStatus)}</span>
         </div>
 
         {/* PM2 Status Indicator */}
         <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20">
-          <div className={`w-2 h-2 rounded-full ${getStatusColor(pm2Status)} ${pm2Status === 'online' ? 'animate-pulse' : ''}`} aria-hidden="true" />
+          <div
+            className={`w-2 h-2 rounded-full ${getStatusColor(pm2Status)} ${pm2Status === "online" ? "animate-pulse" : ""}`}
+            aria-hidden="true"
+          />
           <span className="text-xs font-medium">PM2</span>
           <span className="text-xs opacity-75">{getStatusText(pm2Status)}</span>
         </div>
@@ -1991,14 +2633,20 @@ export default function DashboardPA() {
       <div className="min-h-screen bg-[#0b1220] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[#14b8a6]/30 border-t-[#14b8a6] rounded-full animate-spin" />
-          <span className="text-[#e8fbff]/60 text-sm">Caricamento permessi...</span>
+          <span className="text-[#e8fbff]/60 text-sm">
+            Caricamento permessi...
+          </span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0b1220] overflow-x-hidden" role="main" aria-label="Dashboard Pubblica Amministrazione">
+    <div
+      className="min-h-screen bg-[#0b1220] overflow-x-hidden"
+      role="main"
+      aria-label="Dashboard Pubblica Amministrazione"
+    >
       {/* Header */}
       <header className="bg-gradient-to-r from-[#8b5cf6] to-[#6d28d9] text-white py-3 px-6 sticky top-0 z-50 shadow-lg">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -2007,7 +2655,7 @@ export default function DashboardPA() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setLocation('/')}
+              onClick={() => setLocation("/")}
               className="bg-white/20 hover:bg-white/30 text-white border-none"
               title="Torna alla Home"
               aria-label="Torna alla Home"
@@ -2017,17 +2665,19 @@ export default function DashboardPA() {
             <BarChart3 className="h-6 w-6" />
             <div>
               <h1 className="text-xl font-bold">Dashboard PA - DMS HUB</h1>
-              <p className="text-xs opacity-90">Analytics e Monitoraggio Ecosistema</p>
+              <p className="text-xs opacity-90">
+                Analytics e Monitoraggio Ecosistema
+              </p>
             </div>
           </div>
-          
+
           {/* 🟢 Status Indicators */}
           <SystemStatusIndicators />
-          
+
           <div className="flex items-center gap-4">
             <select
               value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
+              onChange={e => setSelectedPeriod(e.target.value)}
               className="bg-white/20 text-white px-4 py-2 rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
               aria-label="Seleziona periodo di analisi"
             >
@@ -2036,7 +2686,10 @@ export default function DashboardPA() {
               <option value="month">Mese</option>
               <option value="year">Anno</option>
             </select>
-            <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
+            <Button
+              variant="outline"
+              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+            >
               <Download className="h-4 w-4 mr-2" />
               Esporta Report
             </Button>
@@ -2045,79 +2698,132 @@ export default function DashboardPA() {
       </header>
 
       {/* Quick Access Navigation */}
-      <nav className="bg-[#1a2332] border-b border-[#14b8a6]/30 py-4 px-6" aria-label="Accesso rapido applicativi">
+      <nav
+        className="bg-[#1a2332] border-b border-[#14b8a6]/30 py-4 px-6"
+        aria-label="Accesso rapido applicativi"
+      >
         <div className="max-w-7xl mx-auto">
-          <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">Accesso Rapido Applicativi</h3>
+          <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">
+            Accesso Rapido Applicativi
+          </h3>
           <div className="grid grid-cols-11 gap-2">
             <ProtectedQuickAccess quickId="home">
-              <QuickAccessButton href="/" icon={<Store className="h-5 w-5" />} label="Home" />
+              <QuickAccessButton
+                href="/"
+                icon={<Store className="h-5 w-5" />}
+                label="Home"
+              />
             </ProtectedQuickAccess>
             <ProtectedQuickAccess quickId="wallet">
-              <QuickAccessButton href="/wallet" icon={<Leaf className="h-5 w-5" />} label="Wallet" />
+              <QuickAccessButton
+                href="/wallet"
+                icon={<Leaf className="h-5 w-5" />}
+                label="Wallet"
+              />
             </ProtectedQuickAccess>
             <ProtectedQuickAccess quickId="route">
-              <QuickAccessButton href="/route" icon={<TrendingUp className="h-5 w-5" />} label="Route" />
+              <QuickAccessButton
+                href="/route"
+                icon={<TrendingUp className="h-5 w-5" />}
+                label="Route"
+              />
             </ProtectedQuickAccess>
             <ProtectedQuickAccess quickId="civic">
-              <QuickAccessButton href="/civic" icon={<AlertCircle className="h-5 w-5" />} label="Segnala" />
+              <QuickAccessButton
+                href="/civic"
+                icon={<AlertCircle className="h-5 w-5" />}
+                label="Segnala"
+              />
             </ProtectedQuickAccess>
             <ProtectedQuickAccess quickId="vetrine">
-              <QuickAccessButton href="/vetrine" icon={<Store className="h-5 w-5" />} label="Vetrine" />
+              <QuickAccessButton
+                href="/vetrine"
+                icon={<Store className="h-5 w-5" />}
+                label="Vetrine"
+              />
             </ProtectedQuickAccess>
             <ProtectedQuickAccess quickId="hub_operatore">
-              <QuickAccessButton href="/hub-operatore" icon={<Activity className="h-5 w-5" />} label="Hub Operatore" color="orange" />
+              <QuickAccessButton
+                href="/hub-operatore"
+                icon={<Activity className="h-5 w-5" />}
+                label="Hub Operatore"
+                color="orange"
+              />
             </ProtectedQuickAccess>
 
             <ProtectedQuickAccess quickId="bus_hub">
-            <button
-              onClick={() => window.open(`${MIHUB_API_BASE_URL}/tools/bus_hub.html`, '_blank')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
-            >
-              <Wrench className="h-5 w-5" />
-              <span className="text-sm font-medium">BUS HUB</span>
-            </button>
+              <button
+                onClick={() =>
+                  window.open(
+                    `${MIHUB_API_BASE_URL}/tools/bus_hub.html`,
+                    "_blank"
+                  )
+                }
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
+              >
+                <Wrench className="h-5 w-5" />
+                <span className="text-sm font-medium">BUS HUB</span>
+              </button>
             </ProtectedQuickAccess>
             <ProtectedQuickAccess quickId="core_map">
-            <button
-              onClick={() => window.open('https://chcndr.github.io/dms-gemello-core/index-grosseto.html', '_blank')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]"
-            >
-              <MapPin className="h-5 w-5" />
-              <span className="text-sm font-medium">Core Map</span>
-            </button>
+              <button
+                onClick={() =>
+                  window.open(
+                    "https://chcndr.github.io/dms-gemello-core/index-grosseto.html",
+                    "_blank"
+                  )
+                }
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]"
+              >
+                <MapPin className="h-5 w-5" />
+                <span className="text-sm font-medium">Core Map</span>
+              </button>
             </ProtectedQuickAccess>
             <ProtectedQuickAccess quickId="sito_pubblico">
-            <button
-              onClick={() => window.open('https://chcndr.github.io/dms-gemello-core/', '_blank')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/20 text-[#10b981]"
-            >
-              <Globe className="h-5 w-5" />
-              <span className="text-sm font-medium">Sito Pubblico</span>
-            </button>
+              <button
+                onClick={() =>
+                  window.open(
+                    "https://chcndr.github.io/dms-gemello-core/",
+                    "_blank"
+                  )
+                }
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/20 text-[#10b981]"
+              >
+                <Globe className="h-5 w-5" />
+                <span className="text-sm font-medium">Sito Pubblico</span>
+              </button>
             </ProtectedQuickAccess>
             <ProtectedQuickAccess quickId="dms_news">
-            <button
-              onClick={() => window.open('https://chcndr.github.io/dms-gemello-news/landing/home.html', '_blank')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/20 text-[#3b82f6]"
-            >
-              <Newspaper className="h-5 w-5" />
-              <span className="text-sm font-medium">DMS News</span>
-            </button>
+              <button
+                onClick={() =>
+                  window.open(
+                    "https://chcndr.github.io/dms-gemello-news/landing/home.html",
+                    "_blank"
+                  )
+                }
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/20 text-[#3b82f6]"
+              >
+                <Newspaper className="h-5 w-5" />
+                <span className="text-sm font-medium">DMS News</span>
+              </button>
             </ProtectedQuickAccess>
             <ProtectedQuickAccess quickId="gestionale">
-            <button
-              onClick={() => window.open('https://lapsy-dms.herokuapp.com/index.html', '_blank')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#ef4444]/10 border-[#ef4444]/30 hover:bg-[#ef4444]/20 text-[#ef4444]"
-            >
-              <Rocket className="h-5 w-5" />
-              <span className="text-sm font-medium">Gestionale DMS</span>
-            </button>
+              <button
+                onClick={() =>
+                  window.open(
+                    "https://lapsy-dms.herokuapp.com/index.html",
+                    "_blank"
+                  )
+                }
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all bg-[#ef4444]/10 border-[#ef4444]/30 hover:bg-[#ef4444]/20 text-[#ef4444]"
+              >
+                <Rocket className="h-5 w-5" />
+                <span className="text-sm font-medium">Gestionale DMS</span>
+              </button>
             </ProtectedQuickAccess>
           </div>
         </div>
       </nav>
-
-
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* KPI Overview */}
@@ -2149,413 +2855,421 @@ export default function DashboardPA() {
 
         {/* Loading State */}
         {realData.isLoading && (
-          <div className="flex items-center justify-center p-8" role="status" aria-live="polite" aria-busy="true">
-            <div className="text-[#14b8a6] animate-pulse">Caricamento dati dal backend MIHUB...</div>
+          <div
+            className="flex items-center justify-center p-8"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <div className="text-[#14b8a6] animate-pulse">
+              Caricamento dati dal backend MIHUB...
+            </div>
           </div>
         )}
 
         {/* Tabs Navigation - Stile Card */}
         <div className="bg-[#1a2332] border border-[#14b8a6]/30 p-4 rounded-lg">
-          <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">Sezioni Dashboard</h3>
+          <h3 className="text-sm font-semibold text-[#e8fbff]/70 mb-3">
+            Sezioni Dashboard
+          </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             <ProtectedTab tabId="dashboard">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'dashboard'
-                  ? 'bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg'
-                  : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
-              }`}
-            >
-              <BarChart3 className="h-6 w-6" />
-              <span className="text-xs font-medium">Dashboard</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("dashboard")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "dashboard"
+                    ? "bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg"
+                    : "bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]"
+                }`}
+              >
+                <BarChart3 className="h-6 w-6" />
+                <span className="text-xs font-medium">Dashboard</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="users">
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'users'
-                  ? 'bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg'
-                  : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
-              }`}
-            >
-              <Users className="h-6 w-6" />
-              <span className="text-xs font-medium">Clienti</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("users")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "users"
+                    ? "bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg"
+                    : "bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]"
+                }`}
+              >
+                <Users className="h-6 w-6" />
+                <span className="text-xs font-medium">Clienti</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="wallet">
-            <button
-              onClick={() => setActiveTab('wallet')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'wallet'
-                  ? 'bg-[#3b82f6] border-[#3b82f6] text-white shadow-lg'
-                  : 'bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/20 text-[#3b82f6]'
-              }`}
-            >
-              <Euro className="h-6 w-6" />
-              <span className="text-xs font-medium">Wallet/PagoPA</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("wallet")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "wallet"
+                    ? "bg-[#3b82f6] border-[#3b82f6] text-white shadow-lg"
+                    : "bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/20 text-[#3b82f6]"
+                }`}
+              >
+                <Euro className="h-6 w-6" />
+                <span className="text-xs font-medium">Wallet/PagoPA</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="gaming">
-            <button
-              onClick={() => setActiveTab('gaming')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'gaming'
-                  ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg'
-                  : 'bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]'
-              }`}
-            >
-              <Gamepad2 className="h-6 w-6" />
-              <span className="text-xs font-medium">Gaming & Rewards</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("gaming")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "gaming"
+                    ? "bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg"
+                    : "bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
+                }`}
+              >
+                <Gamepad2 className="h-6 w-6" />
+                <span className="text-xs font-medium">Gaming & Rewards</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="sustainability">
-            <button
-              onClick={() => setActiveTab('sustainability')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'sustainability'
-                  ? 'bg-[#10b981] border-[#10b981] text-white shadow-lg'
-                  : 'bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/20 text-[#10b981]'
-              }`}
-            >
-              <Leaf className="h-6 w-6" />
-              <span className="text-xs font-medium">Sostenibilità</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("sustainability")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "sustainability"
+                    ? "bg-[#10b981] border-[#10b981] text-white shadow-lg"
+                    : "bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/20 text-[#10b981]"
+                }`}
+              >
+                <Leaf className="h-6 w-6" />
+                <span className="text-xs font-medium">Sostenibilità</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="tpas">
-            <button
-              onClick={() => setActiveTab('tpas')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'tpas'
-                  ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg'
-                  : 'bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]'
-              }`}
-            >
-              <Briefcase className="h-6 w-6" />
-              <span className="text-xs font-medium">Associazioni</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("tpas")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "tpas"
+                    ? "bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg"
+                    : "bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
+                }`}
+              >
+                <Briefcase className="h-6 w-6" />
+                <span className="text-xs font-medium">Associazioni</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="carboncredits">
-            <button
-              onClick={() => setActiveTab('carboncredits')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'carboncredits'
-                  ? 'bg-[#f59e0b] border-[#f59e0b] text-white shadow-lg'
-                  : 'bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]'
-              }`}
-            >
-              <Coins className="h-6 w-6" />
-              <span className="text-xs font-medium">Carbon Credits</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("carboncredits")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "carboncredits"
+                    ? "bg-[#f59e0b] border-[#f59e0b] text-white shadow-lg"
+                    : "bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]"
+                }`}
+              >
+                <Coins className="h-6 w-6" />
+                <span className="text-xs font-medium">Carbon Credits</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="realtime">
-            <button
-              onClick={() => setActiveTab('realtime')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'realtime'
-                  ? 'bg-[#ef4444] border-[#ef4444] text-white shadow-lg'
-                  : 'bg-[#ef4444]/10 border-[#ef4444]/30 hover:bg-[#ef4444]/20 text-[#ef4444]'
-              }`}
-            >
-              <Activity className="h-6 w-6" />
-              <span className="text-xs font-medium">Real-time</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("realtime")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "realtime"
+                    ? "bg-[#ef4444] border-[#ef4444] text-white shadow-lg"
+                    : "bg-[#ef4444]/10 border-[#ef4444]/30 hover:bg-[#ef4444]/20 text-[#ef4444]"
+                }`}
+              >
+                <Activity className="h-6 w-6" />
+                <span className="text-xs font-medium">Real-time</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="sistema">
-            <button
-              onClick={() => setActiveTab('sistema')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'sistema'
-                  ? 'bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg'
-                  : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
-              }`}
-            >
-              <Terminal className="h-6 w-6" />
-              <span className="text-xs font-medium">Sistema</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("sistema")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "sistema"
+                    ? "bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg"
+                    : "bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]"
+                }`}
+              >
+                <Terminal className="h-6 w-6" />
+                <span className="text-xs font-medium">Sistema</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="ai">
-            <button
-              onClick={() => setActiveTab('ai')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'ai'
-                  ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg'
-                  : 'bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]'
-              }`}
-            >
-              <Bot className="h-6 w-6" />
-              <span className="text-xs font-medium">Agente AI</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("ai")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "ai"
+                    ? "bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg"
+                    : "bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
+                }`}
+              >
+                <Bot className="h-6 w-6" />
+                <span className="text-xs font-medium">Agente AI</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="security">
-            <button
-              onClick={() => setActiveTab('security')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'security'
-                  ? 'bg-[#ef4444] border-[#ef4444] text-white shadow-lg'
-                  : 'bg-[#ef4444]/10 border-[#ef4444]/30 hover:bg-[#ef4444]/20 text-[#ef4444]'
-              }`}
-            >
-              <Shield className="h-6 w-6" />
-              <span className="text-xs font-medium">Sicurezza</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("security")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "security"
+                    ? "bg-[#ef4444] border-[#ef4444] text-white shadow-lg"
+                    : "bg-[#ef4444]/10 border-[#ef4444]/30 hover:bg-[#ef4444]/20 text-[#ef4444]"
+                }`}
+              >
+                <Shield className="h-6 w-6" />
+                <span className="text-xs font-medium">Sicurezza</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="ssosuap">
-            <button
-              onClick={() => setActiveTab('ssosuap')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'ssosuap'
-                  ? 'bg-[#f59e0b] border-[#f59e0b] text-white shadow-lg'
-                  : 'bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]'
-              }`}
-            >
-              <FileText className="h-6 w-6" />
-              <span className="text-xs font-medium">SSO SUAP</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("ssosuap")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "ssosuap"
+                    ? "bg-[#f59e0b] border-[#f59e0b] text-white shadow-lg"
+                    : "bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]"
+                }`}
+              >
+                <FileText className="h-6 w-6" />
+                <span className="text-xs font-medium">SSO SUAP</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="businesses">
-            <button
-              onClick={() => setActiveTab('businesses')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'businesses'
-                  ? 'bg-[#10b981] border-[#10b981] text-white shadow-lg'
-                  : 'bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/20 text-[#10b981]'
-              }`}
-            >
-              <Building2 className="h-6 w-6" />
-              <span className="text-xs font-medium">Qualificazione</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("businesses")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "businesses"
+                    ? "bg-[#10b981] border-[#10b981] text-white shadow-lg"
+                    : "bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/20 text-[#10b981]"
+                }`}
+              >
+                <Building2 className="h-6 w-6" />
+                <span className="text-xs font-medium">Qualificazione</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="civic">
-            <button
-              onClick={() => setActiveTab('civic')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'civic'
-                  ? 'bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg'
-                  : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
-              }`}
-            >
-              <Radio className="h-6 w-6" />
-              <span className="text-xs font-medium">Segnalazioni & IoT</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("civic")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "civic"
+                    ? "bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg"
+                    : "bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]"
+                }`}
+              >
+                <Radio className="h-6 w-6" />
+                <span className="text-xs font-medium">Segnalazioni & IoT</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="comuni">
-            <button
-              onClick={() => setActiveTab('comuni')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'comuni'
-                  ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg'
-                  : 'bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]'
-              }`}
-            >
-              <Building2 className="h-6 w-6" />
-              <span className="text-xs font-medium">Comuni</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("comuni")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "comuni"
+                    ? "bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg"
+                    : "bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
+                }`}
+              >
+                <Building2 className="h-6 w-6" />
+                <span className="text-xs font-medium">Comuni</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="inspections">
-            <button
-              onClick={() => setActiveTab('inspections')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'inspections'
-                  ? 'bg-[#f59e0b] border-[#f59e0b] text-white shadow-lg'
-                  : 'bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]'
-              }`}
-            >
-              <Scale className="h-6 w-6" />
-              <span className="text-xs font-medium">Controlli/Sanzioni</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("inspections")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "inspections"
+                    ? "bg-[#f59e0b] border-[#f59e0b] text-white shadow-lg"
+                    : "bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]"
+                }`}
+              >
+                <Scale className="h-6 w-6" />
+                <span className="text-xs font-medium">Controlli/Sanzioni</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="notifications">
-            <button
-              onClick={() => setActiveTab('notifications')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'notifications'
-                  ? 'bg-[#ec4899] border-[#ec4899] text-white shadow-lg'
-                  : 'bg-[#ec4899]/10 border-[#ec4899]/30 hover:bg-[#ec4899]/20 text-[#ec4899]'
-              }`}
-            >
-              <Bell className="h-6 w-6" />
-              <span className="text-xs font-medium">Notifiche</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("notifications")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "notifications"
+                    ? "bg-[#ec4899] border-[#ec4899] text-white shadow-lg"
+                    : "bg-[#ec4899]/10 border-[#ec4899]/30 hover:bg-[#ec4899]/20 text-[#ec4899]"
+                }`}
+              >
+                <Bell className="h-6 w-6" />
+                <span className="text-xs font-medium">Notifiche</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="mobility">
-            <button
-              onClick={() => setActiveTab('mobility')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'mobility'
-                  ? 'bg-[#3b82f6] border-[#3b82f6] text-white shadow-lg'
-                  : 'bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/20 text-[#3b82f6]'
-              }`}
-            >
-              <Train className="h-6 w-6" />
-              <span className="text-xs font-medium">Centro Mobilità</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("mobility")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "mobility"
+                    ? "bg-[#3b82f6] border-[#3b82f6] text-white shadow-lg"
+                    : "bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/20 text-[#3b82f6]"
+                }`}
+              >
+                <Train className="h-6 w-6" />
+                <span className="text-xs font-medium">Centro Mobilità</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="reports">
-            <button
-              onClick={() => setActiveTab('reports')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'reports'
-                  ? 'bg-[#a855f7] border-[#a855f7] text-white shadow-lg'
-                  : 'bg-[#a855f7]/10 border-[#a855f7]/30 hover:bg-[#a855f7]/20 text-[#a855f7]'
-              }`}
-            >
-              <FileBarChart className="h-6 w-6" />
-              <span className="text-xs font-medium">Report</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("reports")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "reports"
+                    ? "bg-[#a855f7] border-[#a855f7] text-white shadow-lg"
+                    : "bg-[#a855f7]/10 border-[#a855f7]/30 hover:bg-[#a855f7]/20 text-[#a855f7]"
+                }`}
+              >
+                <FileBarChart className="h-6 w-6" />
+                <span className="text-xs font-medium">Report</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="integrations">
-            <button
-              onClick={() => setActiveTab('integrations')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'integrations'
-                  ? 'bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg'
-                  : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
-              }`}
-            >
-              <Plug className="h-6 w-6" />
-              <span className="text-xs font-medium">Integrazioni</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("integrations")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "integrations"
+                    ? "bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg"
+                    : "bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]"
+                }`}
+              >
+                <Plug className="h-6 w-6" />
+                <span className="text-xs font-medium">Integrazioni</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="settings">
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'settings'
-                  ? 'bg-[#0ea5e9] border-[#0ea5e9] text-white shadow-lg'
-                  : 'bg-[#0ea5e9]/10 border-[#0ea5e9]/30 hover:bg-[#0ea5e9]/20 text-[#0ea5e9]'
-              }`}
-            >
-              <Globe className="h-6 w-6" />
-              <span className="text-xs font-medium">Piattaforme PA</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "settings"
+                    ? "bg-[#0ea5e9] border-[#0ea5e9] text-white shadow-lg"
+                    : "bg-[#0ea5e9]/10 border-[#0ea5e9]/30 hover:bg-[#0ea5e9]/20 text-[#0ea5e9]"
+                }`}
+              >
+                <Globe className="h-6 w-6" />
+                <span className="text-xs font-medium">Piattaforme PA</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="mercati">
-            <button
-              onClick={() => setActiveTab('mercati')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'mercati'
-                  ? 'bg-[#f59e0b] border-[#f59e0b] text-white shadow-lg'
-                  : 'bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]'
-              }`}
-            >
-              <Building2 className="h-6 w-6" />
-              <span className="text-xs font-medium">Gestione Mercati</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("mercati")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "mercati"
+                    ? "bg-[#f59e0b] border-[#f59e0b] text-white shadow-lg"
+                    : "bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#f59e0b]"
+                }`}
+              >
+                <Building2 className="h-6 w-6" />
+                <span className="text-xs font-medium">Gestione Mercati</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="imprese">
-            <button
-              onClick={() => setActiveTab('imprese')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'imprese'
-                  ? 'bg-[#10b981] border-[#10b981] text-white shadow-lg'
-                  : 'bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/20 text-[#10b981]'
-              }`}
-            >
-              <Building2 className="h-6 w-6" />
-              <span className="text-xs font-medium">Imprese</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("imprese")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "imprese"
+                    ? "bg-[#10b981] border-[#10b981] text-white shadow-lg"
+                    : "bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/20 text-[#10b981]"
+                }`}
+              >
+                <Building2 className="h-6 w-6" />
+                <span className="text-xs font-medium">Imprese</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="docs">
-            <button
-              onClick={() => setActiveTab('docs')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'docs'
-                  ? 'bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg'
-                  : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
-              }`}
-            >
-              <FileText className="h-6 w-6" />
-              <span className="text-xs font-medium">Enti & Associazioni</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("docs")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "docs"
+                    ? "bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg"
+                    : "bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]"
+                }`}
+              >
+                <FileText className="h-6 w-6" />
+                <span className="text-xs font-medium">Enti & Associazioni</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="mio">
-            <button
-              onClick={() => {
-                setActiveTab('mio');
-                // Non impostiamo più viewMode qui, lasciamo il default 'quad'
-                setSelectedAgent('mio');
-                // Scroll automatico alla chat MIO dopo un breve delay
-                setTimeout(() => {
-                  if (mioMessagesRef.current) {
-                    mioMessagesRef.current.scrollTo({
-                      top: mioMessagesRef.current.scrollHeight,
-                      behavior: 'smooth'
-                    });
-                  }
-                }, 300);
-              }}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'mio'
-                  ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg'
-                  : 'bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]'
-              }`}
-            >
-              <Bot className="h-6 w-6" />
-              <span className="text-xs font-medium">MIO Agent</span>
-            </button>
+              <button
+                onClick={() => {
+                  setActiveTab("mio");
+                  // Non impostiamo più viewMode qui, lasciamo il default 'quad'
+                  setSelectedAgent("mio");
+                  // Scroll automatico alla chat MIO dopo un breve delay
+                  setTimeout(() => {
+                    if (mioMessagesRef.current) {
+                      mioMessagesRef.current.scrollTo({
+                        top: mioMessagesRef.current.scrollHeight,
+                        behavior: "smooth",
+                      });
+                    }
+                  }, 300);
+                }}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "mio"
+                    ? "bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg"
+                    : "bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
+                }`}
+              >
+                <Bot className="h-6 w-6" />
+                <span className="text-xs font-medium">MIO Agent</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="mappa">
-            <button
-              onClick={() => setActiveTab('mappa')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'mappa'
-                  ? 'bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg'
-                  : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
-              }`}
-            >
-              <MapPin className="h-6 w-6" />
-              <span className="text-xs font-medium">Mappa GIS</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("mappa")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "mappa"
+                    ? "bg-[#14b8a6] border-[#14b8a6] text-white shadow-lg"
+                    : "bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]"
+                }`}
+              >
+                <MapPin className="h-6 w-6" />
+                <span className="text-xs font-medium">Mappa GIS</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="workspace">
-            <button
-              onClick={() => setActiveTab('workspace')}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                activeTab === 'workspace'
-                  ? 'bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg'
-                  : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
-              }`}
-            >
-              <Globe className="h-6 w-6" />
-              <span className="text-xs font-medium">Gestione HUB</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("workspace")}
+                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                  activeTab === "workspace"
+                    ? "bg-[#06b6d4] border-[#06b6d4] text-white shadow-lg"
+                    : "bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]"
+                }`}
+              >
+                <Globe className="h-6 w-6" />
+                <span className="text-xs font-medium">Gestione HUB</span>
+              </button>
             </ProtectedTab>
             <ProtectedTab tabId="council">
-            <button
-              onClick={() => window.location.href = '/council'}
-              className="flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all bg-gradient-to-br from-[#a855f7]/10 to-[#ec4899]/10 border-[#a855f7]/30 hover:from-[#a855f7]/20 hover:to-[#ec4899]/20 text-[#a855f7] hover:scale-105"
-            >
-              <Scale className="h-6 w-6" />
-              <span className="text-xs font-medium">Concilio AI</span>
-            </button>
+              <button
+                onClick={() => (window.location.href = "/council")}
+                className="flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all bg-gradient-to-br from-[#a855f7]/10 to-[#ec4899]/10 border-[#a855f7]/30 hover:from-[#a855f7]/20 hover:to-[#ec4899]/20 text-[#a855f7] hover:scale-105"
+              >
+                <Scale className="h-6 w-6" />
+                <span className="text-xs font-medium">Concilio AI</span>
+              </button>
             </ProtectedTab>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-
           {/* TAB: DASHBOARD (Overview + Mercati unificati) */}
           <TabsContent value="dashboard" className="space-y-6">
             {/* Sotto-tab interni */}
             <div className="flex gap-2 mb-4">
               <button
-                onClick={() => setDashboardSubTab('overview')}
+                onClick={() => setDashboardSubTab("overview")}
                 className={`px-4 py-2 rounded-lg border transition-all ${
-                  dashboardSubTab === 'overview'
-                    ? 'bg-[#14b8a6] border-[#14b8a6] text-white'
-                    : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
+                  dashboardSubTab === "overview"
+                    ? "bg-[#14b8a6] border-[#14b8a6] text-white"
+                    : "bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]"
                 }`}
               >
                 <span className="text-sm font-medium">Overview</span>
               </button>
               <button
-                onClick={() => setDashboardSubTab('mercati')}
+                onClick={() => setDashboardSubTab("mercati")}
                 className={`px-4 py-2 rounded-lg border transition-all ${
-                  dashboardSubTab === 'mercati'
-                    ? 'bg-[#14b8a6] border-[#14b8a6] text-white'
-                    : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]'
+                  dashboardSubTab === "mercati"
+                    ? "bg-[#14b8a6] border-[#14b8a6] text-white"
+                    : "bg-[#14b8a6]/10 border-[#14b8a6]/30 hover:bg-[#14b8a6]/20 text-[#14b8a6]"
                 }`}
               >
                 <span className="text-sm font-medium">Mercati</span>
@@ -2563,56 +3277,86 @@ export default function DashboardPA() {
             </div>
 
             {/* Contenuto Overview */}
-            {dashboardSubTab === 'overview' && (
+            {dashboardSubTab === "overview" && (
               <div className="space-y-6">
-            {/* Crescita Utenti - Dati Reali dal Backend */}
-            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-[#14b8a6]" />
-                  Crescita Utenti
-                  {realData.statsGrowth?.growth && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {realData.statsGrowth?.growth && realData.statsGrowth.growth.length > 0 ? (
-                  <div className="h-64 flex items-end justify-between gap-2">
-                    {(realData.statsGrowth?.growth || []).map((item: any, i: number) => {
-                      const growthData = realData.statsGrowth?.growth || [];
-                      const maxUsers = Math.max(...growthData.map((d: any) => parseInt(d.new_users) || 0));
-                      const currentValue = parseInt(item.new_users) || 0;
-                      // Formatta la data della settimana
-                      const weekDate = new Date(item.week);
-                      const formattedDate = weekDate.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
-                      return (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                          <div className="w-full bg-[#14b8a6]/20 rounded-t-lg relative" style={{ height: `${maxUsers > 0 ? (currentValue / maxUsers) * 100 : 0}%`, minHeight: '20px' }}>
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#14b8a6] to-[#14b8a6]/50 rounded-t-lg"></div>
-                          </div>
-                          <span className="text-xs text-[#e8fbff]/70">{formattedDate}</span>
-                          <span className="text-sm font-semibold text-[#14b8a6]">{currentValue.toLocaleString()}</span>
+                {/* Crescita Utenti - Dati Reali dal Backend */}
+                <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-[#14b8a6]" />
+                      Crescita Utenti
+                      {realData.statsGrowth?.growth && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {realData.statsGrowth?.growth &&
+                    realData.statsGrowth.growth.length > 0 ? (
+                      <div className="h-64 flex items-end justify-between gap-2">
+                        {(realData.statsGrowth?.growth || []).map(
+                          (item: any, i: number) => {
+                            const growthData =
+                              realData.statsGrowth?.growth || [];
+                            const maxUsers = Math.max(
+                              ...growthData.map(
+                                (d: any) => parseInt(d.new_users) || 0
+                              )
+                            );
+                            const currentValue = parseInt(item.new_users) || 0;
+                            // Formatta la data della settimana
+                            const weekDate = new Date(item.week);
+                            const formattedDate = weekDate.toLocaleDateString(
+                              "it-IT",
+                              { day: "2-digit", month: "short" }
+                            );
+                            return (
+                              <div
+                                key={i}
+                                className="flex-1 flex flex-col items-center gap-2"
+                              >
+                                <div
+                                  className="w-full bg-[#14b8a6]/20 rounded-t-lg relative"
+                                  style={{
+                                    height: `${maxUsers > 0 ? (currentValue / maxUsers) * 100 : 0}%`,
+                                    minHeight: "20px",
+                                  }}
+                                >
+                                  <div className="absolute inset-0 bg-gradient-to-t from-[#14b8a6] to-[#14b8a6]/50 rounded-t-lg"></div>
+                                </div>
+                                <span className="text-xs text-[#e8fbff]/70">
+                                  {formattedDate}
+                                </span>
+                                <span className="text-sm font-semibold text-[#14b8a6]">
+                                  {currentValue.toLocaleString()}
+                                </span>
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    ) : (
+                      <div className="h-64 flex items-center justify-center">
+                        <div className="text-center">
+                          <TrendingUp className="h-12 w-12 text-[#14b8a6]/30 mx-auto mb-2" />
+                          <p className="text-[#e8fbff]/50">
+                            Caricamento dati crescita...
+                          </p>
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="h-64 flex items-center justify-center">
-                    <div className="text-center">
-                      <TrendingUp className="h-12 w-12 text-[#14b8a6]/30 mx-auto mb-2" />
-                      <p className="text-[#e8fbff]/50">Caricamento dati crescita...</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-            {/* Mappa Rete HUB Italia - Overview */}
-            <GestioneHubMapWrapper />
+                {/* Mappa Rete HUB Italia - Overview */}
+                <GestioneHubMapWrapper />
               </div>
             )}
 
             {/* Contenuto Mercati */}
-            {dashboardSubTab === 'mercati' && (
+            {dashboardSubTab === "mercati" && (
               <div className="space-y-6">
                 {/* Mappa Rete HUB Italia - Mercati */}
                 <GestioneHubMapWrapper />
@@ -2626,30 +3370,56 @@ export default function DashboardPA() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {mockData.topMarkets.map((market, i) => (
-                      <div key={i} className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 hover:border-[#14b8a6]/50 transition-colors">
+                      <div
+                        key={i}
+                        className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/20 hover:border-[#14b8a6]/50 transition-colors"
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl font-bold text-[#14b8a6]">#{market.rank}</span>
-                            <span className="text-[#e8fbff] font-semibold">{market.name}</span>
+                            <span className="text-2xl font-bold text-[#14b8a6]">
+                              #{market.rank}
+                            </span>
+                            <span className="text-[#e8fbff] font-semibold">
+                              {market.name}
+                            </span>
                           </div>
                           <div className="flex gap-1">
                             {[...Array(5)].map((_, j) => (
-                              <span key={j} className={j < market.rank ? 'text-[#f59e0b]' : 'text-[#e8fbff]/20'}>⭐</span>
+                              <span
+                                key={j}
+                                className={
+                                  j < market.rank
+                                    ? "text-[#f59e0b]"
+                                    : "text-[#e8fbff]/20"
+                                }
+                              >
+                                ⭐
+                              </span>
                             ))}
                           </div>
                         </div>
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div>
                             <span className="text-[#e8fbff]/70">Visite</span>
-                            <p className="text-[#14b8a6] font-semibold">{market.visits.toLocaleString()}</p>
+                            <p className="text-[#14b8a6] font-semibold">
+                              {market.visits.toLocaleString()}
+                            </p>
                           </div>
                           <div>
-                            <span className="text-[#e8fbff]/70">Utenti Unici</span>
-                            <p className="text-[#14b8a6] font-semibold">{market.users.toLocaleString()}</p>
+                            <span className="text-[#e8fbff]/70">
+                              Utenti Unici
+                            </span>
+                            <p className="text-[#14b8a6] font-semibold">
+                              {market.users.toLocaleString()}
+                            </p>
                           </div>
                           <div>
-                            <span className="text-[#e8fbff]/70">Durata Media</span>
-                            <p className="text-[#14b8a6] font-semibold">{market.duration} min</p>
+                            <span className="text-[#e8fbff]/70">
+                              Durata Media
+                            </span>
+                            <p className="text-[#14b8a6] font-semibold">
+                              {market.duration} min
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -2683,7 +3453,11 @@ export default function DashboardPA() {
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <Leaf className="h-5 w-5 text-[#14b8a6]" />
                   Rating Sostenibilità Popolazione
-                  {realData.statsOverview && <span className="text-xs text-[#10b981] ml-2">● Dati Reali</span>}
+                  {realData.statsOverview && (
+                    <span className="text-xs text-[#10b981] ml-2">
+                      ● Dati Reali
+                    </span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -2691,46 +3465,64 @@ export default function DashboardPA() {
                   <div className="text-6xl font-bold text-[#14b8a6] mb-2">
                     {realData.overview?.sustainabilityRating || 0}/10
                   </div>
-                  <p className="text-[#e8fbff]/70">Media popolazione basata su TCC</p>
+                  <p className="text-[#e8fbff]/70">
+                    Media popolazione basata su TCC
+                  </p>
                 </div>
-                
+
                 {/* Dati TCC Reali */}
                 {realData.statsOverview?.tcc && (
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="p-4 bg-[#0b1220] rounded-lg border border-[#10b981]/30">
                       <div className="flex items-center gap-2 mb-2">
                         <Leaf className="h-5 w-5 text-[#10b981]" />
-                        <span className="text-[#e8fbff]/70 text-sm">TCC in Circolazione</span>
+                        <span className="text-[#e8fbff]/70 text-sm">
+                          TCC in Circolazione
+                        </span>
                       </div>
                       <div className="text-3xl font-bold text-[#10b981]">
-                        {(realData.statsOverview.tcc.total_in_circulation || 0).toLocaleString('it-IT')}
+                        {(
+                          realData.statsOverview.tcc.total_in_circulation || 0
+                        ).toLocaleString("it-IT")}
                       </div>
                     </div>
                     <div className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/30">
                       <div className="flex items-center gap-2 mb-2">
                         <TrendingUp className="h-5 w-5 text-[#14b8a6]" />
-                        <span className="text-[#e8fbff]/70 text-sm">TCC Emessi Totali</span>
+                        <span className="text-[#e8fbff]/70 text-sm">
+                          TCC Emessi Totali
+                        </span>
                       </div>
                       <div className="text-3xl font-bold text-[#14b8a6]">
-                        {(realData.statsOverview.tcc.total_issued || 0).toLocaleString('it-IT')}
+                        {(
+                          realData.statsOverview.tcc.total_issued || 0
+                        ).toLocaleString("it-IT")}
                       </div>
                     </div>
                     <div className="p-4 bg-[#0b1220] rounded-lg border border-[#f59e0b]/30">
                       <div className="flex items-center gap-2 mb-2">
                         <Award className="h-5 w-5 text-[#f59e0b]" />
-                        <span className="text-[#e8fbff]/70 text-sm">TCC Riscattati</span>
+                        <span className="text-[#e8fbff]/70 text-sm">
+                          TCC Riscattati
+                        </span>
                       </div>
                       <div className="text-3xl font-bold text-[#f59e0b]">
-                        {(realData.statsOverview.tcc.total_redeemed || 0).toLocaleString('it-IT')}
+                        {(
+                          realData.statsOverview.tcc.total_redeemed || 0
+                        ).toLocaleString("it-IT")}
                       </div>
                     </div>
                     <div className="p-4 bg-[#0b1220] rounded-lg border border-[#8b5cf6]/30">
                       <div className="flex items-center gap-2 mb-2">
                         <Users className="h-5 w-5 text-[#8b5cf6]" />
-                        <span className="text-[#e8fbff]/70 text-sm">Utenti TCC</span>
+                        <span className="text-[#e8fbff]/70 text-sm">
+                          Utenti TCC
+                        </span>
                       </div>
                       <div className="text-3xl font-bold text-[#8b5cf6]">
-                        {(realData.statsOverview.tcc.active_users || 0).toLocaleString('it-IT')}
+                        {(
+                          realData.statsOverview.tcc.active_users || 0
+                        ).toLocaleString("it-IT")}
                       </div>
                     </div>
                   </div>
@@ -2742,10 +3534,19 @@ export default function DashboardPA() {
                     <span className="text-[#e8fbff]">Carbon Credits (TCC)</span>
                     <div className="flex items-center gap-2">
                       <div className="w-32 bg-[#14b8a6]/20 rounded-full h-2">
-                        <div className="bg-[#14b8a6] h-2 rounded-full" style={{ width: `${Math.min((realData.statsOverview?.tcc?.total_in_circulation || 0) / 20000 * 100, 100)}%` }}></div>
+                        <div
+                          className="bg-[#14b8a6] h-2 rounded-full"
+                          style={{
+                            width: `${Math.min(((realData.statsOverview?.tcc?.total_in_circulation || 0) / 20000) * 100, 100)}%`,
+                          }}
+                        ></div>
                       </div>
                       <span className="text-[#14b8a6] font-semibold">
-                        {((realData.statsOverview?.tcc?.total_in_circulation || 0) / 2000).toFixed(1)}/10
+                        {(
+                          (realData.statsOverview?.tcc?.total_in_circulation ||
+                            0) / 2000
+                        ).toFixed(1)}
+                        /10
                       </span>
                     </div>
                   </div>
@@ -2753,16 +3554,32 @@ export default function DashboardPA() {
                     <span className="text-[#e8fbff]">Tasso Riscatto TCC</span>
                     <div className="flex items-center gap-2">
                       <div className="w-32 bg-[#14b8a6]/20 rounded-full h-2">
-                        <div className="bg-[#10b981] h-2 rounded-full" style={{ 
-                          width: `${realData.statsOverview?.tcc?.total_issued > 0 
-                            ? ((realData.statsOverview?.tcc?.total_redeemed || 0) / (realData.statsOverview?.tcc?.total_issued || 1) * 100) 
-                            : 0}%` 
-                        }}></div>
+                        <div
+                          className="bg-[#10b981] h-2 rounded-full"
+                          style={{
+                            width: `${
+                              realData.statsOverview?.tcc?.total_issued > 0
+                                ? ((realData.statsOverview?.tcc
+                                    ?.total_redeemed || 0) /
+                                    (realData.statsOverview?.tcc
+                                      ?.total_issued || 1)) *
+                                  100
+                                : 0
+                            }%`,
+                          }}
+                        ></div>
                       </div>
                       <span className="text-[#10b981] font-semibold">
-                        {realData.statsOverview?.tcc?.total_issued > 0 
-                          ? (((realData.statsOverview?.tcc?.total_redeemed || 0) / (realData.statsOverview?.tcc?.total_issued || 1) * 10).toFixed(1))
-                          : '0.0'}/10
+                        {realData.statsOverview?.tcc?.total_issued > 0
+                          ? (
+                              ((realData.statsOverview?.tcc?.total_redeemed ||
+                                0) /
+                                (realData.statsOverview?.tcc?.total_issued ||
+                                  1)) *
+                              10
+                            ).toFixed(1)
+                          : "0.0"}
+                        /10
                       </span>
                     </div>
                   </div>
@@ -2770,7 +3587,10 @@ export default function DashboardPA() {
                     <span className="text-[#e8fbff]">CO₂ Risparmiata</span>
                     <div className="flex items-center gap-2">
                       <span className="text-[#10b981] font-semibold">
-                        {((realData.statsOverview?.tcc?.total_redeemed || 0)).toLocaleString('it-IT')} kg
+                        {(
+                          realData.statsOverview?.tcc?.total_redeemed || 0
+                        ).toLocaleString("it-IT")}{" "}
+                        kg
                       </span>
                     </div>
                   </div>
@@ -2778,7 +3598,11 @@ export default function DashboardPA() {
                     <span className="text-[#e8fbff]">Alberi Equivalenti</span>
                     <div className="flex items-center gap-2">
                       <span className="text-[#14b8a6] font-semibold">
-                        {Math.round((realData.statsOverview?.tcc?.total_redeemed || 0) / 22)} alberi
+                        {Math.round(
+                          (realData.statsOverview?.tcc?.total_redeemed || 0) /
+                            22
+                        )}{" "}
+                        alberi
                       </span>
                     </div>
                   </div>
@@ -2816,14 +3640,16 @@ export default function DashboardPA() {
               <CardContent>
                 <div className="flex items-center gap-4">
                   <select
-                    value={selectedComuneId || ''}
-                    onChange={(e) => setSelectedComuneId(parseInt(e.target.value))}
+                    value={selectedComuneId || ""}
+                    onChange={e =>
+                      setSelectedComuneId(parseInt(e.target.value))
+                    }
                     className="flex-1 p-3 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] focus:ring-2 focus:ring-[#14b8a6] focus:border-transparent"
                   >
                     {tccComuni.length === 0 && (
                       <option value="">Caricamento comuni...</option>
                     )}
-                    {tccComuni.map((comune) => (
+                    {tccComuni.map(comune => (
                       <option key={comune.hub_id} value={comune.hub_id}>
                         {comune.nome} ({comune.provincia}) - {comune.hub_name}
                       </option>
@@ -2831,25 +3657,31 @@ export default function DashboardPA() {
                   </select>
                   {tccComuni.length > 0 && (
                     <div className="text-sm text-[#e8fbff]/70">
-                      <span className="text-[#14b8a6] font-semibold">{tccComuni.length}</span> hub attivi
+                      <span className="text-[#14b8a6] font-semibold">
+                        {tccComuni.length}
+                      </span>{" "}
+                      hub attivi
                     </div>
                   )}
                 </div>
                 {tccComuni.length === 0 && (
                   <div className="mt-2 text-sm text-[#f59e0b]">
-                    Nessun comune con area geografica definita. Crea prima un'area hub.
+                    Nessun comune con area geografica definita. Crea prima
+                    un'area hub.
                   </div>
                 )}
               </CardContent>
             </Card>
-            
+
             {/* DATI AMBIENTALI IN TEMPO REALE */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
               <CardHeader className="pb-2">
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <Globe className="h-5 w-5 text-[#14b8a6]" />
                   Dati Ambientali in Tempo Reale
-                  {envLoading && <RefreshCw className="h-4 w-4 animate-spin text-[#14b8a6]" />}
+                  {envLoading && (
+                    <RefreshCw className="h-4 w-4 animate-spin text-[#14b8a6]" />
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -2858,87 +3690,149 @@ export default function DashboardPA() {
                   <div className="p-4 bg-gradient-to-br from-[#3b82f6]/20 to-[#3b82f6]/5 border border-[#3b82f6]/30 rounded-lg">
                     <div className="flex items-center gap-2 mb-3">
                       <CloudRain className="h-5 w-5 text-[#3b82f6]" />
-                      <span className="text-sm font-semibold text-[#e8fbff]">Meteo</span>
+                      <span className="text-sm font-semibold text-[#e8fbff]">
+                        Meteo
+                      </span>
                     </div>
                     {envData?.weather ? (
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-[#e8fbff]/70 text-sm">Temperatura</span>
-                          <span className="text-2xl font-bold text-[#3b82f6]">{envData.weather.temperature}°C</span>
+                          <span className="text-[#e8fbff]/70 text-sm">
+                            Temperatura
+                          </span>
+                          <span className="text-2xl font-bold text-[#3b82f6]">
+                            {envData.weather.temperature}°C
+                          </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[#e8fbff]/70 text-sm">Condizioni</span>
-                          <span className="text-sm text-[#e8fbff]">{envData.weather.weather_description}</span>
+                          <span className="text-[#e8fbff]/70 text-sm">
+                            Condizioni
+                          </span>
+                          <span className="text-sm text-[#e8fbff]">
+                            {envData.weather.weather_description}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[#e8fbff]/70 text-sm">Umidità</span>
-                          <span className="text-sm text-[#e8fbff]">{envData.weather.humidity}%</span>
+                          <span className="text-[#e8fbff]/70 text-sm">
+                            Umidità
+                          </span>
+                          <span className="text-sm text-[#e8fbff]">
+                            {envData.weather.humidity}%
+                          </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[#e8fbff]/70 text-sm">Vento</span>
-                          <span className="text-sm text-[#e8fbff]">{envData.weather.wind_speed} km/h</span>
+                          <span className="text-[#e8fbff]/70 text-sm">
+                            Vento
+                          </span>
+                          <span className="text-sm text-[#e8fbff]">
+                            {envData.weather.wind_speed} km/h
+                          </span>
                         </div>
                       </div>
                     ) : (
-                      <div className="text-[#e8fbff]/50 text-sm">Caricamento...</div>
+                      <div className="text-[#e8fbff]/50 text-sm">
+                        Caricamento...
+                      </div>
                     )}
                   </div>
-                  
+
                   {/* QUALITÀ ARIA */}
                   <div className="p-4 bg-gradient-to-br from-[#10b981]/20 to-[#10b981]/5 border border-[#10b981]/30 rounded-lg">
                     <div className="flex items-center gap-2 mb-3">
                       <Wind className="h-5 w-5 text-[#10b981]" />
-                      <span className="text-sm font-semibold text-[#e8fbff]">Qualità Aria</span>
+                      <span className="text-sm font-semibold text-[#e8fbff]">
+                        Qualità Aria
+                      </span>
                     </div>
                     {envData?.air_quality ? (
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-[#e8fbff]/70 text-sm">AQI Europeo</span>
+                          <span className="text-[#e8fbff]/70 text-sm">
+                            AQI Europeo
+                          </span>
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl font-bold" style={{ color: envData.air_quality.aqi_color }}>{envData.air_quality.european_aqi}</span>
-                            <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: envData.air_quality.aqi_color + '30', color: envData.air_quality.aqi_color }}>{envData.air_quality.aqi_label}</span>
+                            <span
+                              className="text-2xl font-bold"
+                              style={{ color: envData.air_quality.aqi_color }}
+                            >
+                              {envData.air_quality.european_aqi}
+                            </span>
+                            <span
+                              className="text-xs px-2 py-1 rounded"
+                              style={{
+                                backgroundColor:
+                                  envData.air_quality.aqi_color + "30",
+                                color: envData.air_quality.aqi_color,
+                              }}
+                            >
+                              {envData.air_quality.aqi_label}
+                            </span>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 mt-2">
                           <div className="text-center p-2 bg-[#0b1220] rounded">
-                            <div className="text-xs text-[#e8fbff]/50">PM10</div>
-                            <div className="text-sm font-semibold text-[#e8fbff]">{envData.air_quality.pm10?.toFixed(1)}</div>
+                            <div className="text-xs text-[#e8fbff]/50">
+                              PM10
+                            </div>
+                            <div className="text-sm font-semibold text-[#e8fbff]">
+                              {envData.air_quality.pm10?.toFixed(1)}
+                            </div>
                           </div>
                           <div className="text-center p-2 bg-[#0b1220] rounded">
-                            <div className="text-xs text-[#e8fbff]/50">PM2.5</div>
-                            <div className="text-sm font-semibold text-[#e8fbff]">{envData.air_quality.pm2_5?.toFixed(1)}</div>
+                            <div className="text-xs text-[#e8fbff]/50">
+                              PM2.5
+                            </div>
+                            <div className="text-sm font-semibold text-[#e8fbff]">
+                              {envData.air_quality.pm2_5?.toFixed(1)}
+                            </div>
                           </div>
                           <div className="text-center p-2 bg-[#0b1220] rounded">
                             <div className="text-xs text-[#e8fbff]/50">NO₂</div>
-                            <div className="text-sm font-semibold text-[#e8fbff]">{envData.air_quality.no2?.toFixed(1)}</div>
+                            <div className="text-sm font-semibold text-[#e8fbff]">
+                              {envData.air_quality.no2?.toFixed(1)}
+                            </div>
                           </div>
                           <div className="text-center p-2 bg-[#0b1220] rounded">
                             <div className="text-xs text-[#e8fbff]/50">O₃</div>
-                            <div className="text-sm font-semibold text-[#e8fbff]">{envData.air_quality.o3?.toFixed(1)}</div>
+                            <div className="text-sm font-semibold text-[#e8fbff]">
+                              {envData.air_quality.o3?.toFixed(1)}
+                            </div>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="text-[#e8fbff]/50 text-sm">Caricamento...</div>
+                      <div className="text-[#e8fbff]/50 text-sm">
+                        Caricamento...
+                      </div>
                     )}
                   </div>
-                  
+
                   {/* PREZZO ETS */}
                   <div className="p-4 bg-gradient-to-br from-[#f59e0b]/20 to-[#f59e0b]/5 border border-[#f59e0b]/30 rounded-lg">
                     <div className="flex items-center gap-2 mb-3">
                       <Euro className="h-5 w-5 text-[#f59e0b]" />
-                      <span className="text-sm font-semibold text-[#e8fbff]">Prezzo EU ETS</span>
+                      <span className="text-sm font-semibold text-[#e8fbff]">
+                        Prezzo EU ETS
+                      </span>
                     </div>
                     {envData?.ets ? (
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-[#e8fbff]/70 text-sm">€/tonnellata CO₂</span>
+                          <span className="text-[#e8fbff]/70 text-sm">
+                            €/tonnellata CO₂
+                          </span>
                           <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-[#f59e0b]">€</span>
+                            <span className="text-lg font-bold text-[#f59e0b]">
+                              €
+                            </span>
                             <input
                               type="number"
                               value={editableEtsPrice}
-                              onChange={(e) => setEditableEtsPrice(parseFloat(e.target.value) || 0)}
+                              onChange={e =>
+                                setEditableEtsPrice(
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
                               onBlur={handleEtsPriceUpdate}
                               className="w-20 text-2xl font-bold text-[#f59e0b] bg-transparent border-b border-[#f59e0b]/50 focus:border-[#f59e0b] outline-none text-right"
                               step="0.01"
@@ -2946,39 +3840,65 @@ export default function DashboardPA() {
                           </div>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[#e8fbff]/70 text-sm">Valore 1 TCC</span>
-                          <span className="text-lg font-semibold text-[#14b8a6]">€{(envData.tcc?.effective_value || 0).toLocaleString('it-IT', {minimumFractionDigits: 4, maximumFractionDigits: 4})}</span>
+                          <span className="text-[#e8fbff]/70 text-sm">
+                            Valore 1 TCC
+                          </span>
+                          <span className="text-lg font-semibold text-[#14b8a6]">
+                            €
+                            {(envData.tcc?.effective_value || 0).toLocaleString(
+                              "it-IT",
+                              {
+                                minimumFractionDigits: 4,
+                                maximumFractionDigits: 4,
+                              }
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[#e8fbff]/70 text-sm">Policy Multiplier</span>
-                          <span className="text-sm text-[#e8fbff]">{envData.tcc?.policy_multiplier}x</span>
+                          <span className="text-[#e8fbff]/70 text-sm">
+                            Policy Multiplier
+                          </span>
+                          <span className="text-sm text-[#e8fbff]">
+                            {envData.tcc?.policy_multiplier}x
+                          </span>
                         </div>
                         <div className="text-xs text-[#e8fbff]/50 mt-2 pt-2 border-t border-[#f59e0b]/20">
                           Formula: 1 TCC = 1 kg CO₂ = ETS/1000
                         </div>
                       </div>
                     ) : (
-                      <div className="text-[#e8fbff]/50 text-sm">Caricamento...</div>
+                      <div className="text-[#e8fbff]/50 text-sm">
+                        Caricamento...
+                      </div>
                     )}
                   </div>
                 </div>
-                
+
                 {/* Info Hub e Timestamp */}
                 {envData?.hub && (
                   <div className="mt-4 flex items-center justify-between text-xs text-[#e8fbff]/50">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-3 w-3" />
-                      <span>{envData.hub.city} ({envData.hub.coordinates.lat.toFixed(4)}, {envData.hub.coordinates.lon.toFixed(4)})</span>
+                      <span>
+                        {envData.hub.city} (
+                        {envData.hub.coordinates.lat.toFixed(4)},{" "}
+                        {envData.hub.coordinates.lon.toFixed(4)})
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3" />
-                      <span>Aggiornato: {new Date(envData.timestamp).toLocaleTimeString('it-IT')}</span>
+                      <span>
+                        Aggiornato:{" "}
+                        {new Date(envData.timestamp).toLocaleTimeString(
+                          "it-IT"
+                        )}
+                      </span>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-            
+
             {/* DATI REALI DAL DATABASE */}
             {fundStats && (
               <Card className="bg-[#1a2332] border-[#14b8a6]/30">
@@ -2986,49 +3906,87 @@ export default function DashboardPA() {
                   <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                     <Activity className="h-5 w-5 text-[#14b8a6]" />
                     Statistiche TCC in Tempo Reale
-                    {fundLoading && <RefreshCw className="h-4 w-4 animate-spin text-[#14b8a6]" />}
+                    {fundLoading && (
+                      <RefreshCw className="h-4 w-4 animate-spin text-[#14b8a6]" />
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="p-4 bg-gradient-to-br from-[#14b8a6]/20 to-[#14b8a6]/5 border border-[#14b8a6]/30 rounded-lg">
-                      <div className="text-sm text-[#e8fbff]/70 mb-1">TCC in Circolazione</div>
-                      <div className="text-3xl font-bold text-[#14b8a6]">{formatNumberIT(fundStats.total_circulation)}</div>
-                      <div className="text-xs text-[#e8fbff]/50">Nei wallet utenti</div>
+                      <div className="text-sm text-[#e8fbff]/70 mb-1">
+                        TCC in Circolazione
+                      </div>
+                      <div className="text-3xl font-bold text-[#14b8a6]">
+                        {formatNumberIT(fundStats.total_circulation)}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        Nei wallet utenti
+                      </div>
                     </div>
                     <div className="p-4 bg-[#0b1220] border border-[#10b981]/20 rounded-lg">
-                      <div className="text-sm text-[#e8fbff]/70 mb-1">TCC Totali Rilasciati</div>
-                      <div className="text-2xl font-bold text-[#10b981]">{formatNumberIT(fundStats.total_issued)}</div>
-                      <div className="text-xs text-[#e8fbff]/50">Dagli operatori</div>
+                      <div className="text-sm text-[#e8fbff]/70 mb-1">
+                        TCC Totali Rilasciati
+                      </div>
+                      <div className="text-2xl font-bold text-[#10b981]">
+                        {formatNumberIT(fundStats.total_issued)}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        Dagli operatori
+                      </div>
                     </div>
                     <div className="p-4 bg-[#0b1220] border border-[#f59e0b]/20 rounded-lg">
-                      <div className="text-sm text-[#e8fbff]/70 mb-1">TCC Totali Riscattati</div>
-                      <div className="text-2xl font-bold text-[#f59e0b]">{formatNumberIT(fundStats.total_redeemed)}</div>
-                      <div className="text-xs text-[#e8fbff]/50">Dai clienti</div>
+                      <div className="text-sm text-[#e8fbff]/70 mb-1">
+                        TCC Totali Riscattati
+                      </div>
+                      <div className="text-2xl font-bold text-[#f59e0b]">
+                        {formatNumberIT(fundStats.total_redeemed)}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        Dai clienti
+                      </div>
                     </div>
                     <div className="p-4 bg-gradient-to-br from-[#8b5cf6]/20 to-[#8b5cf6]/5 border border-[#8b5cf6]/30 rounded-lg">
-                      <div className="text-sm text-[#e8fbff]/70 mb-1">Fabbisogno Fondo</div>
-                      <div className="text-2xl font-bold text-[#8b5cf6]">{formatEuroIT(fundStats.fund_requirement_eur)}</div>
-                      <div className="text-xs text-[#e8fbff]/50">Per coprire circolazione</div>
+                      <div className="text-sm text-[#e8fbff]/70 mb-1">
+                        Fabbisogno Fondo
+                      </div>
+                      <div className="text-2xl font-bold text-[#8b5cf6]">
+                        {formatEuroIT(fundStats.fund_requirement_eur)}
+                      </div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        Per coprire circolazione
+                      </div>
                     </div>
                   </div>
-                  
+
                   {/* Statistiche Oggi */}
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="p-3 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
-                      <div className="text-xs text-[#e8fbff]/70">Rilasciati Oggi</div>
-                      <div className="text-xl font-bold text-[#10b981]">{formatNumberIT(fundStats.today?.issued || 0)} TCC</div>
+                      <div className="text-xs text-[#e8fbff]/70">
+                        Rilasciati Oggi
+                      </div>
+                      <div className="text-xl font-bold text-[#10b981]">
+                        {formatNumberIT(fundStats.today?.issued || 0)} TCC
+                      </div>
                     </div>
                     <div className="p-3 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
-                      <div className="text-xs text-[#e8fbff]/70">Riscattati Oggi</div>
-                      <div className="text-xl font-bold text-[#f59e0b]">{formatNumberIT(fundStats.today?.redeemed || 0)} TCC</div>
+                      <div className="text-xs text-[#e8fbff]/70">
+                        Riscattati Oggi
+                      </div>
+                      <div className="text-xl font-bold text-[#f59e0b]">
+                        {formatNumberIT(fundStats.today?.redeemed || 0)} TCC
+                      </div>
                     </div>
                     <div className="p-3 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-lg">
-                      <div className="text-xs text-[#e8fbff]/70">Vendite Oggi</div>
-                      <div className="text-xl font-bold text-[#14b8a6]">{formatEuroIT(fundStats.today?.sales_eur || 0)}</div>
+                      <div className="text-xs text-[#e8fbff]/70">
+                        Vendite Oggi
+                      </div>
+                      <div className="text-xl font-bold text-[#14b8a6]">
+                        {formatEuroIT(fundStats.today?.sales_eur || 0)}
+                      </div>
                     </div>
                   </div>
-                  
+
                   {/* Utenti */}
                   <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                     <div className="flex items-center gap-3">
@@ -3037,11 +3995,15 @@ export default function DashboardPA() {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-lg font-bold text-[#e8fbff]">{formatNumberIT(fundStats.users?.total || 0)}</div>
+                        <div className="text-lg font-bold text-[#e8fbff]">
+                          {formatNumberIT(fundStats.users?.total || 0)}
+                        </div>
                         <div className="text-xs text-[#e8fbff]/50">Totali</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-[#10b981]">{formatNumberIT(fundStats.users?.active || 0)}</div>
+                        <div className="text-lg font-bold text-[#10b981]">
+                          {formatNumberIT(fundStats.users?.active || 0)}
+                        </div>
                         <div className="text-xs text-[#e8fbff]/50">Con TCC</div>
                       </div>
                     </div>
@@ -3049,7 +4011,7 @@ export default function DashboardPA() {
                 </CardContent>
               </Card>
             )}
-            
+
             {/* Fondo Liquidità - SIMULATORE */}
             <Card className="bg-[#1a2332] border-[#14b8a6]/30">
               <CardHeader>
@@ -3061,41 +4023,59 @@ export default function DashboardPA() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                   <div className="p-4 bg-gradient-to-br from-[#10b981]/20 to-[#10b981]/5 border border-[#10b981]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Saldo Attuale (click to edit)</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Saldo Attuale (click to edit)
+                    </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-[#10b981]">€</span>
+                      <span className="text-lg font-bold text-[#10b981]">
+                        €
+                      </span>
                       <input
                         type="number"
                         value={editableParams.fundBalance}
-                        onChange={(e) => setEditableParams({ ...editableParams, fundBalance: parseFloat(e.target.value) || 0 })}
+                        onChange={e =>
+                          setEditableParams({
+                            ...editableParams,
+                            fundBalance: parseFloat(e.target.value) || 0,
+                          })
+                        }
                         className="text-3xl font-bold text-[#10b981] bg-transparent border-b-2 border-[#10b981]/50 focus:border-[#10b981] outline-none w-full"
                       />
                     </div>
                   </div>
                   <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Burn Rate (click to edit)</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Burn Rate (click to edit)
+                    </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-[#f59e0b]">€</span>
+                      <span className="text-lg font-bold text-[#f59e0b]">
+                        €
+                      </span>
                       <input
                         type="number"
                         value={editableParams.burnRate}
-                        onChange={(e) => setEditableParams({ ...editableParams, burnRate: parseFloat(e.target.value) || 0 })}
+                        onChange={e =>
+                          setEditableParams({
+                            ...editableParams,
+                            burnRate: parseFloat(e.target.value) || 0,
+                          })
+                        }
                         className="text-2xl font-bold text-[#f59e0b] bg-transparent border-b-2 border-[#f59e0b]/50 focus:border-[#f59e0b] outline-none w-full"
                       />
                       <span className="text-sm text-[#e8fbff]/70">/mese</span>
                     </div>
                   </div>
                   <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Mesi Rimanenti</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Mesi Rimanenti
+                    </div>
                     <div className="text-2xl font-bold text-[#14b8a6]">
                       {calculateMonthsRemaining()}
                     </div>
                   </div>
                   <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
                     <div className="text-sm text-[#e8fbff]/70 mb-1">Valuta</div>
-                    <div className="text-2xl font-bold text-[#e8fbff]">
-                      EUR
-                    </div>
+                    <div className="text-2xl font-bold text-[#e8fbff]">EUR</div>
                   </div>
                 </div>
 
@@ -3106,18 +4086,33 @@ export default function DashboardPA() {
                     Entrate Fondo
                   </h4>
                   <div className="space-y-2">
-                    {(fundStats?.sources || [
-                      { name: 'Fondo Comunale', amount: editableParams.fundBalance, date: new Date().toISOString().split('T')[0] }
-                    ]).map((source: any, idx: number) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
+                    {(
+                      fundStats?.sources || [
+                        {
+                          name: "Fondo Comunale",
+                          amount: editableParams.fundBalance,
+                          date: new Date().toISOString().split("T")[0],
+                        },
+                      ]
+                    ).map((source: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg"
+                      >
                         <div className="flex items-center gap-3">
                           <Coins className="h-5 w-5 text-[#10b981]" />
                           <div>
-                            <div className="text-[#e8fbff] font-medium">{source.name}</div>
-                            <div className="text-xs text-[#e8fbff]/50">{source.date}</div>
+                            <div className="text-[#e8fbff] font-medium">
+                              {source.name}
+                            </div>
+                            <div className="text-xs text-[#e8fbff]/50">
+                              {source.date}
+                            </div>
                           </div>
                         </div>
-                        <div className="text-[#10b981] font-semibold">+€{(source.amount || 0).toLocaleString()}</div>
+                        <div className="text-[#10b981] font-semibold">
+                          +€{(source.amount || 0).toLocaleString()}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -3131,21 +4126,37 @@ export default function DashboardPA() {
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-lg">
-                      <div className="text-xs text-[#e8fbff]/70 mb-1">Rimborsi</div>
+                      <div className="text-xs text-[#e8fbff]/70 mb-1">
+                        Rimborsi
+                      </div>
                       <div className="text-xl font-bold text-[#ef4444]">
-                        €{(fundStats?.expenses?.reimbursements || parseFloat(calculateReimbursementNeeded())).toLocaleString()}
+                        €
+                        {(
+                          fundStats?.expenses?.reimbursements ||
+                          parseFloat(calculateReimbursementNeeded())
+                        ).toLocaleString()}
                       </div>
                     </div>
                     <div className="p-3 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
-                      <div className="text-xs text-[#e8fbff]/70 mb-1">Incentivi</div>
+                      <div className="text-xs text-[#e8fbff]/70 mb-1">
+                        Incentivi
+                      </div>
                       <div className="text-xl font-bold text-[#f59e0b]">
-                        €{(fundStats?.expenses?.incentives || 0).toLocaleString()}
+                        €
+                        {(
+                          fundStats?.expenses?.incentives || 0
+                        ).toLocaleString()}
                       </div>
                     </div>
                     <div className="p-3 bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 rounded-lg">
-                      <div className="text-xs text-[#e8fbff]/70 mb-1">Operativi</div>
+                      <div className="text-xs text-[#e8fbff]/70 mb-1">
+                        Operativi
+                      </div>
                       <div className="text-xl font-bold text-[#8b5cf6]">
-                        €{(fundStats?.expenses?.operations || 0).toLocaleString()}
+                        €
+                        {(
+                          fundStats?.expenses?.operations || 0
+                        ).toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -3165,22 +4176,49 @@ export default function DashboardPA() {
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6">
-                    <div className="text-sm text-[#e8fbff]/70 mb-2">Valore Corrente</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-2">
+                      Valore Corrente
+                    </div>
                     <div className="text-5xl font-bold text-[#14b8a6] mb-1">
-                      €{appliedTccValue.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 4})}
+                      €
+                      {appliedTccValue.toLocaleString("it-IT", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 4,
+                      })}
                     </div>
                     <div className="text-sm text-[#e8fbff]/50">per 1 TCC</div>
                   </div>
 
                   <div className="mb-4">
-                    <div className="text-sm text-[#e8fbff]/70 mb-3">Storico Variazioni</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-3">
+                      Storico Variazioni
+                    </div>
                     <div className="space-y-2">
-                      {(fundStats?.value_history || [
-                        { date: new Date().toISOString().split('T')[0], value: appliedTccValue }
-                      ]).map((item: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-[#0b1220] rounded">
-                          <span className="text-xs text-[#e8fbff]/70">{item.date}</span>
-                          <span className="text-sm font-semibold text-[#14b8a6]">€{parseFloat(item.value || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span>
+                      {(
+                        fundStats?.value_history || [
+                          {
+                            date: new Date().toISOString().split("T")[0],
+                            value: appliedTccValue,
+                          },
+                        ]
+                      ).map((item: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-2 bg-[#0b1220] rounded"
+                        >
+                          <span className="text-xs text-[#e8fbff]/70">
+                            {item.date}
+                          </span>
+                          <span className="text-sm font-semibold text-[#14b8a6]">
+                            €
+                            {parseFloat(item.value || 0).toLocaleString(
+                              "it-IT",
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 4,
+                              }
+                            )}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -3198,14 +4236,16 @@ export default function DashboardPA() {
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6">
-                    <label className="text-sm text-[#e8fbff]/70 mb-2 block">TCC assegnati per €10 spesi</label>
+                    <label className="text-sm text-[#e8fbff]/70 mb-2 block">
+                      TCC assegnati per €10 spesi
+                    </label>
                     <input
                       type="range"
                       min="0"
                       max="30"
                       step="1"
                       value={tccValue}
-                      onChange={(e) => setTccValue(parseFloat(e.target.value))}
+                      onChange={e => setTccValue(parseFloat(e.target.value))}
                       className="w-full h-2 bg-[#0b1220] rounded-lg appearance-none cursor-pointer"
                     />
                     <div className="flex justify-between text-xs text-[#e8fbff]/50 mt-1">
@@ -3217,42 +4257,59 @@ export default function DashboardPA() {
                   </div>
 
                   <div className="p-4 bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 rounded-lg mb-4">
-                    <div className="text-sm text-[#e8fbff] font-semibold mb-2">Anteprima Assegnazione</div>
+                    <div className="text-sm text-[#e8fbff] font-semibold mb-2">
+                      Anteprima Assegnazione
+                    </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-[#e8fbff]/70">€10 spesi =</span>
-                        <span className="text-[#10b981] font-bold text-lg">{Math.round(tccValue)} TCC</span>
+                        <span className="text-[#10b981] font-bold text-lg">
+                          {Math.round(tccValue)} TCC
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[#e8fbff]/70">€50 spesi =</span>
-                        <span className="text-[#10b981] font-semibold">{Math.round(tccValue * 5)} TCC</span>
+                        <span className="text-[#10b981] font-semibold">
+                          {Math.round(tccValue * 5)} TCC
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[#e8fbff]/70">€100 spesi =</span>
-                        <span className="text-[#10b981] font-semibold">{Math.round(tccValue * 10)} TCC</span>
+                        <span className="text-[#10b981] font-semibold">
+                          {Math.round(tccValue * 10)} TCC
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="mb-4">
-                    <label className="text-sm text-[#e8fbff]/70 mb-2 block">Oppure inserisci manualmente:</label>
+                    <label className="text-sm text-[#e8fbff]/70 mb-2 block">
+                      Oppure inserisci manualmente:
+                    </label>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
                         min="0"
                         max="30"
                         value={Math.round(tccValue)}
-                        onChange={(e) => setTccValue(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))}
+                        onChange={e =>
+                          setTccValue(
+                            Math.min(
+                              30,
+                              Math.max(0, parseFloat(e.target.value) || 0)
+                            )
+                          )
+                        }
                         className="flex-1 px-3 py-2 bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg text-[#e8fbff] text-center text-lg font-bold focus:ring-2 focus:ring-[#8b5cf6]"
                       />
                       <span className="text-[#e8fbff]/70">TCC per €10</span>
                     </div>
                   </div>
 
-                  <Button 
+                  <Button
                     onClick={async () => {
                       if (!selectedComuneId) {
-                        alert('Seleziona prima un comune!');
+                        alert("Seleziona prima un comune!");
                         return;
                       }
                       try {
@@ -3260,26 +4317,33 @@ export default function DashboardPA() {
                         // policy_multiplier = tccValue direttamente
                         // Es: slider su 10 → policy_multiplier = 10 → €100 spesi = (100/10)*10 = 100 TCC
                         const policyMultiplier = tccValue;
-                        
-                        const response = await authenticatedFetch(`${TCC_API}/api/tcc/v2/config/update/${selectedComuneId}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            policy_multiplier: policyMultiplier,
-                            // NON sovrascrivere tcc_value - deve rimanere €0,089!
-                            policy_notes: `Leva: ${policyMultiplier} TCC per €10 - ${new Date().toLocaleDateString('it-IT')}`
-                          })
-                        });
+
+                        const response = await authenticatedFetch(
+                          `${TCC_API}/api/tcc/v2/config/update/${selectedComuneId}`,
+                          {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              policy_multiplier: policyMultiplier,
+                              // NON sovrascrivere tcc_value - deve rimanere €0,089!
+                              policy_notes: `Leva: ${policyMultiplier} TCC per €10 - ${new Date().toLocaleDateString("it-IT")}`,
+                            }),
+                          }
+                        );
                         const data = await response.json();
                         if (data.success) {
                           setAppliedTccValue(0.089); // Valore fisso EU ETS
-                          alert(`Leva politica salvata!\n\n€10 spesi = ${policyMultiplier} TCC assegnati`);
+                          alert(
+                            `Leva politica salvata!\n\n€10 spesi = ${policyMultiplier} TCC assegnati`
+                          );
                         } else {
-                          alert(`Errore: ${data.error || 'Impossibile salvare'}`);
+                          alert(
+                            `Errore: ${data.error || "Impossibile salvare"}`
+                          );
                         }
                       } catch (error) {
-                        console.error('Error updating TCC config:', error);
-                        alert('Errore di connessione');
+                        console.error("Error updating TCC config:", error);
+                        alert("Errore di connessione");
                       }
                     }}
                     className="w-full bg-[#8b5cf6] hover:bg-[#8b5cf6]/80"
@@ -3307,28 +4371,43 @@ export default function DashboardPA() {
                     {calculateAreaValues().map((area, idx) => (
                       <div key={idx} className="p-3 bg-[#0b1220] rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[#e8fbff] font-medium">{area.area}</span>
+                          <span className="text-[#e8fbff] font-medium">
+                            {area.area}
+                          </span>
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
                               value={area.boost}
-                              onChange={(e) => {
-                                const newBoosts = [...editableParams.areaBoosts];
-                                newBoosts[idx].boost = parseFloat(e.target.value) || 0;
-                                setEditableParams({ ...editableParams, areaBoosts: newBoosts });
+                              onChange={e => {
+                                const newBoosts = [
+                                  ...editableParams.areaBoosts,
+                                ];
+                                newBoosts[idx].boost =
+                                  parseFloat(e.target.value) || 0;
+                                setEditableParams({
+                                  ...editableParams,
+                                  areaBoosts: newBoosts,
+                                });
                               }}
                               className={`text-sm font-semibold px-2 py-1 rounded w-16 text-center ${
-                                area.boost > 0 ? 'bg-[#10b981]/20 text-[#10b981]' :
-                                area.boost < 0 ? 'bg-[#ef4444]/20 text-[#ef4444]' :
-                                'bg-[#14b8a6]/20 text-[#14b8a6]'
+                                area.boost > 0
+                                  ? "bg-[#10b981]/20 text-[#10b981]"
+                                  : area.boost < 0
+                                    ? "bg-[#ef4444]/20 text-[#ef4444]"
+                                    : "bg-[#14b8a6]/20 text-[#14b8a6]"
                               } border-none focus:ring-2 focus:ring-[#14b8a6]`}
                             />
                             <span className="text-xs text-[#e8fbff]/50">%</span>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-[#e8fbff]/50">€10 spesi =</span>
-                          <span className="text-lg font-bold text-[#10b981]">{Math.round(10 * tccValue * (1 + area.boost/100))} TCC</span>
+                          <span className="text-xs text-[#e8fbff]/50">
+                            €10 spesi =
+                          </span>
+                          <span className="text-lg font-bold text-[#10b981]">
+                            {Math.round(10 * tccValue * (1 + area.boost / 100))}{" "}
+                            TCC
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -3349,27 +4428,42 @@ export default function DashboardPA() {
                     {calculateCategoryValues().map((cat, idx) => (
                       <div key={idx} className="p-3 bg-[#0b1220] rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[#e8fbff] font-medium">{cat.category}</span>
+                          <span className="text-[#e8fbff] font-medium">
+                            {cat.category}
+                          </span>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-[#e8fbff]/50">+</span>
                             <input
                               type="number"
                               value={cat.boost}
-                              onChange={(e) => {
-                                const newBoosts = [...editableParams.categoryBoosts];
-                                newBoosts[idx].boost = parseFloat(e.target.value) || 0;
-                                setEditableParams({ ...editableParams, categoryBoosts: newBoosts });
+                              onChange={e => {
+                                const newBoosts = [
+                                  ...editableParams.categoryBoosts,
+                                ];
+                                newBoosts[idx].boost =
+                                  parseFloat(e.target.value) || 0;
+                                setEditableParams({
+                                  ...editableParams,
+                                  categoryBoosts: newBoosts,
+                                });
                               }}
                               className={`text-sm font-semibold px-2 py-1 rounded w-16 text-center ${
-                                cat.boost > 0 ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#14b8a6]/20 text-[#14b8a6]'
+                                cat.boost > 0
+                                  ? "bg-[#10b981]/20 text-[#10b981]"
+                                  : "bg-[#14b8a6]/20 text-[#14b8a6]"
                               } border-none focus:ring-2 focus:ring-[#14b8a6]`}
                             />
                             <span className="text-xs text-[#e8fbff]/50">%</span>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-[#e8fbff]/50">€10 spesi =</span>
-                          <span className="text-lg font-bold text-[#10b981]">{Math.round(10 * tccValue * (1 + cat.boost/100))} TCC</span>
+                          <span className="text-xs text-[#e8fbff]/50">
+                            €10 spesi =
+                          </span>
+                          <span className="text-lg font-bold text-[#10b981]">
+                            {Math.round(10 * tccValue * (1 + cat.boost / 100))}{" "}
+                            TCC
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -3391,100 +4485,151 @@ export default function DashboardPA() {
                   <div className="p-4 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <Clock className="h-5 w-5 text-[#f59e0b]" />
-                      <span className="text-[#e8fbff] font-semibold">Pending</span>
+                      <span className="text-[#e8fbff] font-semibold">
+                        Pending
+                      </span>
                     </div>
                     <div className="text-3xl font-bold text-[#f59e0b] mb-1">
                       {fundStats?.reimbursements?.pending?.count || 0}
                     </div>
                     <div className="text-sm text-[#e8fbff]/70">
-                      €{(fundStats?.reimbursements?.pending?.amount || 0).toLocaleString()} da processare
+                      €
+                      {(
+                        fundStats?.reimbursements?.pending?.amount || 0
+                      ).toLocaleString()}{" "}
+                      da processare
                     </div>
                   </div>
                   <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle className="h-5 w-5 text-[#10b981]" />
-                      <span className="text-[#e8fbff] font-semibold">Processati</span>
+                      <span className="text-[#e8fbff] font-semibold">
+                        Processati
+                      </span>
                     </div>
                     <div className="text-3xl font-bold text-[#10b981] mb-1">
                       {fundStats?.reimbursements?.processed?.count || 0}
                     </div>
                     <div className="text-sm text-[#e8fbff]/70">
-                      €{(fundStats?.reimbursements?.processed?.amount || 0).toLocaleString()} totali
+                      €
+                      {(
+                        fundStats?.reimbursements?.processed?.amount || 0
+                      ).toLocaleString()}{" "}
+                      totali
                     </div>
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <h4 className="text-[#e8fbff] font-semibold mb-3">Top Negozi per Crediti Incassati</h4>
+                  <h4 className="text-[#e8fbff] font-semibold mb-3">
+                    Top Negozi per Crediti Incassati
+                  </h4>
                   <div className="space-y-2">
-                    {(fundStats?.top_operators || []).map((shop: any, idx: number) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#14b8a6]/20 flex items-center justify-center">
-                            <span className="text-[#14b8a6] font-bold">#{idx + 1}</span>
+                    {(fundStats?.top_operators || []).map(
+                      (shop: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[#14b8a6]/20 flex items-center justify-center">
+                              <span className="text-[#14b8a6] font-bold">
+                                #{idx + 1}
+                              </span>
+                            </div>
+                            <span className="text-[#e8fbff]">
+                              {shop.name || shop.operator_name || "Operatore"}
+                            </span>
                           </div>
-                          <span className="text-[#e8fbff]">{shop.name || shop.operator_name || 'Operatore'}</span>
+                          <div className="text-right">
+                            <div className="text-[#14b8a6] font-semibold">
+                              {(
+                                shop.credits ||
+                                shop.total_issued ||
+                                0
+                              ).toLocaleString()}{" "}
+                              TCC
+                            </div>
+                            <div className="text-xs text-[#e8fbff]/50">
+                              €
+                              {(
+                                shop.euros ||
+                                shop.total_issued * appliedTccValue ||
+                                0
+                              ).toLocaleString()}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-[#14b8a6] font-semibold">{(shop.credits || shop.total_issued || 0).toLocaleString()} TCC</div>
-                          <div className="text-xs text-[#e8fbff]/50">€{(shop.euros || (shop.total_issued * appliedTccValue) || 0).toLocaleString()}</div>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <Button 
+                  <Button
                     className="flex-1 bg-[#14b8a6] hover:bg-[#14b8a6]/80"
                     onClick={() => {
                       // Export CSV dei rimborsi
                       const data = fundStats?.top_operators || [];
                       if (data.length === 0) {
-                        toast.info('Nessun dato da esportare');
+                        toast.info("Nessun dato da esportare");
                         return;
                       }
-                      const csv = 'Operatore,TCC Rilasciati,TCC Riscattati,Vendite EUR\n' + 
-                        data.map((op: any) => `${op.operator_name || op.operator_id},${op.total_issued || 0},${op.total_redeemed || 0},${op.total_sales || 0}`).join('\n');
-                      const blob = new Blob([csv], { type: 'text/csv' });
+                      const csv =
+                        "Operatore,TCC Rilasciati,TCC Riscattati,Vendite EUR\n" +
+                        data
+                          .map(
+                            (op: any) =>
+                              `${op.operator_name || op.operator_id},${op.total_issued || 0},${op.total_redeemed || 0},${op.total_sales || 0}`
+                          )
+                          .join("\n");
+                      const blob = new Blob([csv], { type: "text/csv" });
                       const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
+                      const a = document.createElement("a");
                       a.href = url;
-                      a.download = `rimborsi_tcc_${new Date().toISOString().split('T')[0]}.csv`;
+                      a.download = `rimborsi_tcc_${new Date().toISOString().split("T")[0]}.csv`;
                       a.click();
-                      toast.success('CSV esportato!');
+                      toast.success("CSV esportato!");
                     }}
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Export CSV
                   </Button>
-                  <Button 
+                  <Button
                     className="flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] active:bg-[#6d28d9] active:scale-95 transition-all duration-150 disabled:opacity-50"
                     id="processBatchBtn"
-                    onClick={async (e) => {
+                    onClick={async e => {
                       const btn = e.currentTarget;
                       const originalContent = btn.innerHTML;
                       btn.disabled = true;
-                      btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Elaborazione...';
+                      btn.innerHTML =
+                        '<svg class="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Elaborazione...';
                       try {
-                        const response = await authenticatedFetch(`${TCC_API}/api/tcc/v2/process-batch-reimbursements`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
+                        const response = await authenticatedFetch(
+                          `${TCC_API}/api/tcc/v2/process-batch-reimbursements`,
+                          {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                          }
+                        );
                         const data = await response.json();
                         if (data.success) {
                           if (data.processed === 0) {
-                            toast.info('Nessun rimborso pending da processare');
+                            toast.info("Nessun rimborso pending da processare");
                           } else {
-                            toast.success(`Processati ${data.processed} rimborsi per \u20ac${data.total_euro}`);
+                            toast.success(
+                              `Processati ${data.processed} rimborsi per \u20ac${data.total_euro}`
+                            );
                             window.location.reload();
                           }
                         } else {
-                          toast.error(data.error || 'Errore nel processare i rimborsi');
+                          toast.error(
+                            data.error || "Errore nel processare i rimborsi"
+                          );
                         }
                       } catch (error) {
-                        console.error('Errore:', error);
-                        toast.error('Errore di connessione');
+                        console.error("Errore:", error);
+                        toast.error("Errore di connessione");
                       } finally {
                         btn.disabled = false;
                         btn.innerHTML = originalContent;
@@ -3500,103 +4645,160 @@ export default function DashboardPA() {
 
             {/* Storico Movimenti Fondo */}
             {fundStats && (
-            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-[#14b8a6]" />
-                  Storico Movimenti Fondo
-                </CardTitle>
-                <CardDescription className="text-[#94a3b8]">
-                  Registro completo di tutte le operazioni del fondo TCC
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* Filtri Movimenti */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <Button
-                    size="sm"
-                    variant={fundMovementFilter === 'all' ? 'default' : 'outline'}
-                    onClick={() => setFundMovementFilter('all')}
-                    className={fundMovementFilter === 'all' ? 'bg-[#f97316]' : 'border-[#334155] text-[#94a3b8]'}
-                  >
-                    Tutti
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={fundMovementFilter === 'deposit' ? 'default' : 'outline'}
-                    onClick={() => setFundMovementFilter('deposit')}
-                    className={fundMovementFilter === 'deposit' ? 'bg-[#10b981]' : 'border-[#334155] text-[#94a3b8]'}
-                  >
-                    Entrate
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={fundMovementFilter === 'reimbursement' ? 'default' : 'outline'}
-                    onClick={() => setFundMovementFilter('reimbursement')}
-                    className={fundMovementFilter === 'reimbursement' ? 'bg-[#ef4444]' : 'border-[#334155] text-[#94a3b8]'}
-                  >
-                    Rimborsi
-                  </Button>
-                </div>
+              <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+                <CardHeader>
+                  <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-[#14b8a6]" />
+                    Storico Movimenti Fondo
+                  </CardTitle>
+                  <CardDescription className="text-[#94a3b8]">
+                    Registro completo di tutte le operazioni del fondo TCC
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* Filtri Movimenti */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <Button
+                      size="sm"
+                      variant={
+                        fundMovementFilter === "all" ? "default" : "outline"
+                      }
+                      onClick={() => setFundMovementFilter("all")}
+                      className={
+                        fundMovementFilter === "all"
+                          ? "bg-[#f97316]"
+                          : "border-[#334155] text-[#94a3b8]"
+                      }
+                    >
+                      Tutti
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={
+                        fundMovementFilter === "deposit" ? "default" : "outline"
+                      }
+                      onClick={() => setFundMovementFilter("deposit")}
+                      className={
+                        fundMovementFilter === "deposit"
+                          ? "bg-[#10b981]"
+                          : "border-[#334155] text-[#94a3b8]"
+                      }
+                    >
+                      Entrate
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={
+                        fundMovementFilter === "reimbursement"
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() => setFundMovementFilter("reimbursement")}
+                      className={
+                        fundMovementFilter === "reimbursement"
+                          ? "bg-[#ef4444]"
+                          : "border-[#334155] text-[#94a3b8]"
+                      }
+                    >
+                      Rimborsi
+                    </Button>
+                  </div>
 
-                {/* Lista Movimenti */}
-                <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {(!fundStats?.transactions || !Array.isArray(fundStats.transactions) || fundStats.transactions.length === 0) ? (
-                    <p className="text-center text-[#94a3b8] py-8">Nessun movimento registrato</p>
-                  ) : (
-                    fundStats.transactions.filter((tx: any) => {
-                      if (fundMovementFilter === 'all') return true;
-                      if (fundMovementFilter === 'deposit') return tx.type === 'deposit';
-                      if (fundMovementFilter === 'reimbursement') return tx.type === 'reimbursement' || tx.type === 'reimbursement_batch';
-                      return true;
-                    }).map((tx: any, i: number) => {
-                      const isDeposit = tx.type === 'deposit';
-                      const euroValue = tx.euro_value ? (tx.euro_value / 100) : (tx.amount || 0);
-                      return (
-                      <div key={tx.id || i} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                        <div className="flex items-center gap-3">
-                          {isDeposit ? (
-                            <div className="w-8 h-8 rounded-full bg-[#10b981]/20 flex items-center justify-center">
-                              <ArrowUpCircle className="w-4 h-4 text-[#10b981]" />
+                  {/* Lista Movimenti */}
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {!fundStats?.transactions ||
+                    !Array.isArray(fundStats.transactions) ||
+                    fundStats.transactions.length === 0 ? (
+                      <p className="text-center text-[#94a3b8] py-8">
+                        Nessun movimento registrato
+                      </p>
+                    ) : (
+                      fundStats.transactions
+                        .filter((tx: any) => {
+                          if (fundMovementFilter === "all") return true;
+                          if (fundMovementFilter === "deposit")
+                            return tx.type === "deposit";
+                          if (fundMovementFilter === "reimbursement")
+                            return (
+                              tx.type === "reimbursement" ||
+                              tx.type === "reimbursement_batch"
+                            );
+                          return true;
+                        })
+                        .map((tx: any, i: number) => {
+                          const isDeposit = tx.type === "deposit";
+                          const euroValue = tx.euro_value
+                            ? tx.euro_value / 100
+                            : tx.amount || 0;
+                          return (
+                            <div
+                              key={tx.id || i}
+                              className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg"
+                            >
+                              <div className="flex items-center gap-3">
+                                {isDeposit ? (
+                                  <div className="w-8 h-8 rounded-full bg-[#10b981]/20 flex items-center justify-center">
+                                    <ArrowUpCircle className="w-4 h-4 text-[#10b981]" />
+                                  </div>
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-[#ef4444]/20 flex items-center justify-center">
+                                    <ArrowDownCircle className="w-4 h-4 text-[#ef4444]" />
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-semibold text-[#e8fbff]">
+                                    {isDeposit
+                                      ? "Deposito Fondo"
+                                      : tx.type === "reimbursement_batch"
+                                        ? tx.description?.includes("[")
+                                          ? `Batch Rimborsi ${tx.description.match(/\[(.*?)\]/)?.[0] || ""}`
+                                          : "Batch Rimborsi"
+                                        : tx.description || "Rimborso"}
+                                  </p>
+                                  <p className="text-sm text-[#94a3b8]">
+                                    {new Date(tx.created_at).toLocaleDateString(
+                                      "it-IT"
+                                    )}{" "}
+                                    -{" "}
+                                    {new Date(tx.created_at).toLocaleTimeString(
+                                      "it-IT",
+                                      { hour: "2-digit", minute: "2-digit" }
+                                    )}
+                                  </p>
+                                  <Badge
+                                    className={`text-xs mt-1 ${isDeposit ? "bg-[#10b981]/20 text-[#10b981]" : tx.status === "completed" ? "bg-[#14b8a6]/20 text-[#14b8a6]" : "bg-[#f59e0b]/20 text-[#f59e0b]"}`}
+                                  >
+                                    {isDeposit
+                                      ? "Entrata"
+                                      : tx.status === "completed"
+                                        ? "Completato"
+                                        : "In Attesa"}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p
+                                  className={`font-semibold ${isDeposit ? "text-[#10b981]" : "text-[#ef4444]"}`}
+                                >
+                                  {isDeposit ? "+" : "-"}€
+                                  {euroValue.toLocaleString("it-IT", {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}
+                                </p>
+                                {tx.amount > 0 && (
+                                  <p className="text-sm text-[#94a3b8]">
+                                    {tx.amount} TCC
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#ef4444]/20 flex items-center justify-center">
-                              <ArrowDownCircle className="w-4 h-4 text-[#ef4444]" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-semibold text-[#e8fbff]">
-                              {isDeposit ? 'Deposito Fondo' : (tx.type === 'reimbursement_batch' ? (
-                                tx.description?.includes('[') 
-                                  ? `Batch Rimborsi ${tx.description.match(/\[(.*?)\]/)?.[0] || ''}`
-                                  : 'Batch Rimborsi'
-                              ) : tx.description || 'Rimborso')}
-                            </p>
-                            <p className="text-sm text-[#94a3b8]">
-                              {new Date(tx.created_at).toLocaleDateString('it-IT')} - {new Date(tx.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                            <Badge className={`text-xs mt-1 ${isDeposit ? 'bg-[#10b981]/20 text-[#10b981]' : tx.status === 'completed' ? 'bg-[#14b8a6]/20 text-[#14b8a6]' : 'bg-[#f59e0b]/20 text-[#f59e0b]'}`}>
-                              {isDeposit ? 'Entrata' : tx.status === 'completed' ? 'Completato' : 'In Attesa'}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-semibold ${isDeposit ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                            {isDeposit ? '+' : '-'}€{euroValue.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                          </p>
-                          {tx.amount > 0 && (
-                            <p className="text-sm text-[#94a3b8]">
-                              {tx.amount} TCC
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                    })
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                          );
+                        })
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Analytics Economici */}
@@ -3610,25 +4812,41 @@ export default function DashboardPA() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="p-4 bg-[#0b1220] rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">TCC Emessi (click to edit)</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      TCC Emessi (click to edit)
+                    </div>
                     <input
                       type="number"
                       value={editableParams.tccIssued}
-                      onChange={(e) => setEditableParams({ ...editableParams, tccIssued: parseFloat(e.target.value) || 0 })}
+                      onChange={e =>
+                        setEditableParams({
+                          ...editableParams,
+                          tccIssued: parseFloat(e.target.value) || 0,
+                        })
+                      }
                       className="text-3xl font-bold text-[#14b8a6] bg-transparent border-b-2 border-[#14b8a6]/50 focus:border-[#14b8a6] outline-none w-full"
                     />
                   </div>
                   <div className="p-4 bg-[#0b1220] rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">TCC Spesi (click to edit)</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      TCC Spesi (click to edit)
+                    </div>
                     <input
                       type="number"
                       value={editableParams.tccSpent}
-                      onChange={(e) => setEditableParams({ ...editableParams, tccSpent: parseFloat(e.target.value) || 0 })}
+                      onChange={e =>
+                        setEditableParams({
+                          ...editableParams,
+                          tccSpent: parseFloat(e.target.value) || 0,
+                        })
+                      }
                       className="text-3xl font-bold text-[#10b981] bg-transparent border-b-2 border-[#10b981]/50 focus:border-[#10b981] outline-none w-full"
                     />
                   </div>
                   <div className="p-4 bg-[#0b1220] rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Velocity (Utilizzo)</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Velocity (Utilizzo)
+                    </div>
                     <div className="text-3xl font-bold text-[#f59e0b]">
                       {calculateVelocity()}%
                     </div>
@@ -3642,22 +4860,31 @@ export default function DashboardPA() {
                   </h4>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <div className="text-xs text-[#e8fbff]/70 mb-1">Investito (Fondo)</div>
+                      <div className="text-xs text-[#e8fbff]/70 mb-1">
+                        Investito (Fondo)
+                      </div>
                       <div className="text-xl font-bold text-[#e8fbff]">
-                        €{editableParams.fundBalance.toLocaleString('it-IT')}
+                        €{editableParams.fundBalance.toLocaleString("it-IT")}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-[#e8fbff]/70 mb-1">CO₂ Risparmiata</div>
+                      <div className="text-xs text-[#e8fbff]/70 mb-1">
+                        CO₂ Risparmiata
+                      </div>
                       <div className="text-xl font-bold text-[#10b981]">
-                        {parseFloat(calculateCO2Saved()).toLocaleString('it-IT')} kg
+                        {parseFloat(calculateCO2Saved()).toLocaleString(
+                          "it-IT"
+                        )}{" "}
+                        kg
                       </div>
                       <div className="text-xs text-[#e8fbff]/50 mt-1">
                         (1 TCC = 1 kg CO₂)
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-[#e8fbff]/70 mb-1">Alberi Equivalenti</div>
+                      <div className="text-xs text-[#e8fbff]/70 mb-1">
+                        Alberi Equivalenti
+                      </div>
                       <div className="text-xl font-bold text-[#14b8a6]">
                         {calculateTreesEquivalent()} alberi
                       </div>
@@ -3676,37 +4903,67 @@ export default function DashboardPA() {
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-xs text-[#e8fbff]/70 mb-1">Rimborsi Necessari (TCC Spesi × Valore)</div>
+                      <div className="text-xs text-[#e8fbff]/70 mb-1">
+                        Rimborsi Necessari (TCC Spesi × Valore)
+                      </div>
                       <div className="text-xl font-bold text-[#f59e0b]">
-                        €{parseFloat(calculateReimbursementNeeded()).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        €
+                        {parseFloat(
+                          calculateReimbursementNeeded()
+                        ).toLocaleString("it-IT", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-[#e8fbff]/70 mb-1">Fondo Disponibile</div>
+                      <div className="text-xs text-[#e8fbff]/70 mb-1">
+                        Fondo Disponibile
+                      </div>
                       <div className="text-xl font-bold text-[#14b8a6]">
-                        €{editableParams.fundBalance.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        €
+                        {editableParams.fundBalance.toLocaleString("it-IT", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </div>
                     </div>
                   </div>
                   <div className="mt-3 p-3 bg-[#0b1220] rounded-lg">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-[#e8fbff]/70">Copertura Fondo</span>
+                      <span className="text-sm text-[#e8fbff]/70">
+                        Copertura Fondo
+                      </span>
                       <span className="text-lg font-bold text-[#10b981]">
                         {(() => {
-                          const reimbursement = parseFloat(calculateReimbursementNeeded()) || 0;
-                          if (reimbursement === 0) return '100.0';
-                          const coverage = (editableParams.fundBalance / reimbursement) * 100;
-                          return coverage > 1000 ? '>1000' : coverage.toFixed(1);
-                        })()}%
+                          const reimbursement =
+                            parseFloat(calculateReimbursementNeeded()) || 0;
+                          if (reimbursement === 0) return "100.0";
+                          const coverage =
+                            (editableParams.fundBalance / reimbursement) * 100;
+                          return coverage > 1000
+                            ? ">1000"
+                            : coverage.toFixed(1);
+                        })()}
+                        %
                       </span>
                     </div>
                     <div className="mt-2 h-2 bg-[#0b1220] rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-gradient-to-r from-[#10b981] to-[#14b8a6] transition-all duration-300"
-                        style={{ width: `${Math.min(100, (() => {
-                          const reimbursement = parseFloat(calculateReimbursementNeeded()) || 1;
-                          return (editableParams.fundBalance / reimbursement) * 100;
-                        })())}%` }}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            (() => {
+                              const reimbursement =
+                                parseFloat(calculateReimbursementNeeded()) || 1;
+                              return (
+                                (editableParams.fundBalance / reimbursement) *
+                                100
+                              );
+                            })()
+                          )}%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -3726,23 +4983,38 @@ export default function DashboardPA() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                     <span className="text-[#e8fbff]">Stub API TPAS</span>
-                    <span className="px-3 py-1 bg-[#f59e0b]/20 text-[#f59e0b] rounded-full text-sm font-semibold">Standby</span>
+                    <span className="px-3 py-1 bg-[#f59e0b]/20 text-[#f59e0b] rounded-full text-sm font-semibold">
+                      Standby
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                     <span className="text-[#e8fbff]">Mapping Ecocrediti</span>
-                    <span className="px-3 py-1 bg-[#10b981]/20 text-[#10b981] rounded-full text-sm font-semibold">Ready</span>
+                    <span className="px-3 py-1 bg-[#10b981]/20 text-[#10b981] rounded-full text-sm font-semibold">
+                      Ready
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                    <span className="text-[#e8fbff]">Conversione Automatica</span>
-                    <span className="px-3 py-1 bg-[#10b981]/20 text-[#10b981] rounded-full text-sm font-semibold">Ready</span>
+                    <span className="text-[#e8fbff]">
+                      Conversione Automatica
+                    </span>
+                    <span className="px-3 py-1 bg-[#10b981]/20 text-[#10b981] rounded-full text-sm font-semibold">
+                      Ready
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
-                    <span className="text-[#e8fbff]">Fondo TPAS → Fondo DMS</span>
-                    <span className="px-3 py-1 bg-[#8b5cf6]/20 text-[#8b5cf6] rounded-full text-sm font-semibold">2027+</span>
+                    <span className="text-[#e8fbff]">
+                      Fondo TPAS → Fondo DMS
+                    </span>
+                    <span className="px-3 py-1 bg-[#8b5cf6]/20 text-[#8b5cf6] rounded-full text-sm font-semibold">
+                      2027+
+                    </span>
                   </div>
                   <div className="p-4 bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 rounded-lg">
                     <p className="text-sm text-[#e8fbff]/70">
-                      Il sistema è predisposto per l'integrazione con TPAS. Quando attivo (2027+), i TCC saranno automaticamente convertiti in Ecocrediti ufficiali e il fondo sarà alimentato dal Fondo TPAS nazionale.
+                      Il sistema è predisposto per l'integrazione con TPAS.
+                      Quando attivo (2027+), i TCC saranno automaticamente
+                      convertiti in Ecocrediti ufficiali e il fondo sarà
+                      alimentato dal Fondo TPAS nazionale.
                     </p>
                   </div>
                 </div>
@@ -3765,30 +5037,46 @@ export default function DashboardPA() {
                   <div className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/20">
                     <div className="flex items-center gap-2 mb-2">
                       <Users className="h-5 w-5 text-[#14b8a6]" />
-                      <span className="text-[#e8fbff]/70 text-sm">Utenti Online</span>
+                      <span className="text-[#e8fbff]/70 text-sm">
+                        Utenti Online
+                      </span>
                     </div>
-                    <div className="text-3xl font-bold text-[#14b8a6]">{realtimeData.activeUsers}</div>
+                    <div className="text-3xl font-bold text-[#14b8a6]">
+                      {realtimeData.activeUsers}
+                    </div>
                   </div>
                   <div className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/20">
                     <div className="flex items-center gap-2 mb-2">
                       <Store className="h-5 w-5 text-[#14b8a6]" />
-                      <span className="text-[#e8fbff]/70 text-sm">Operatori Attivi</span>
+                      <span className="text-[#e8fbff]/70 text-sm">
+                        Operatori Attivi
+                      </span>
                     </div>
-                    <div className="text-3xl font-bold text-[#14b8a6]">{realtimeData.activeVendors}</div>
+                    <div className="text-3xl font-bold text-[#14b8a6]">
+                      {realtimeData.activeVendors}
+                    </div>
                   </div>
                   <div className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/20">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle className="h-5 w-5 text-[#10b981]" />
-                      <span className="text-[#e8fbff]/70 text-sm">Check-in Oggi</span>
+                      <span className="text-[#e8fbff]/70 text-sm">
+                        Check-in Oggi
+                      </span>
                     </div>
-                    <div className="text-3xl font-bold text-[#10b981]">{realtimeData.todayCheckins}</div>
+                    <div className="text-3xl font-bold text-[#10b981]">
+                      {realtimeData.todayCheckins}
+                    </div>
                   </div>
                   <div className="p-4 bg-[#0b1220] rounded-lg border border-[#14b8a6]/20">
                     <div className="flex items-center gap-2 mb-2">
                       <ShoppingCart className="h-5 w-5 text-[#14b8a6]" />
-                      <span className="text-[#e8fbff]/70 text-sm">Transazioni Oggi</span>
+                      <span className="text-[#e8fbff]/70 text-sm">
+                        Transazioni Oggi
+                      </span>
                     </div>
-                    <div className="text-3xl font-bold text-[#14b8a6]">{realtimeData.todayTransactions}</div>
+                    <div className="text-3xl font-bold text-[#14b8a6]">
+                      {realtimeData.todayTransactions}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -3807,28 +5095,36 @@ export default function DashboardPA() {
                   <span className="text-[#e8fbff]">API Backend</span>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-[#10b981]" />
-                    <span className="text-[#10b981] font-semibold">Operational</span>
+                    <span className="text-[#10b981] font-semibold">
+                      Operational
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                   <span className="text-[#e8fbff]">Database PostgreSQL</span>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-[#10b981]" />
-                    <span className="text-[#10b981] font-semibold">Operational</span>
+                    <span className="text-[#10b981] font-semibold">
+                      Operational
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                   <span className="text-[#e8fbff]">Redis Event Bus</span>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-[#10b981]" />
-                    <span className="text-[#10b981] font-semibold">Operational</span>
+                    <span className="text-[#10b981] font-semibold">
+                      Operational
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg">
                   <span className="text-[#e8fbff]">TPAS Integration</span>
                   <div className="flex items-center gap-2">
                     <Clock className="h-5 w-5 text-[#f59e0b]" />
-                    <span className="text-[#f59e0b] font-semibold">Standby (2027)</span>
+                    <span className="text-[#f59e0b] font-semibold">
+                      Standby (2027)
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -3840,21 +5136,21 @@ export default function DashboardPA() {
             {/* Sotto-tab interni */}
             <div className="flex gap-2 mb-4">
               <button
-                onClick={() => setSistemaSubTab('logs')}
+                onClick={() => setSistemaSubTab("logs")}
                 className={`px-4 py-2 rounded-lg border transition-all ${
-                  sistemaSubTab === 'logs'
-                    ? 'bg-[#06b6d4] border-[#06b6d4] text-white'
-                    : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
+                  sistemaSubTab === "logs"
+                    ? "bg-[#06b6d4] border-[#06b6d4] text-white"
+                    : "bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]"
                 }`}
               >
                 <span className="text-sm font-medium">Logs</span>
               </button>
               <button
-                onClick={() => setSistemaSubTab('debug')}
+                onClick={() => setSistemaSubTab("debug")}
                 className={`px-4 py-2 rounded-lg border transition-all ${
-                  sistemaSubTab === 'debug'
-                    ? 'bg-[#06b6d4] border-[#06b6d4] text-white'
-                    : 'bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]'
+                  sistemaSubTab === "debug"
+                    ? "bg-[#06b6d4] border-[#06b6d4] text-white"
+                    : "bg-[#06b6d4]/10 border-[#06b6d4]/30 hover:bg-[#06b6d4]/20 text-[#06b6d4]"
                 }`}
               >
                 <span className="text-sm font-medium">Debug</span>
@@ -3862,14 +5158,10 @@ export default function DashboardPA() {
             </div>
 
             {/* Contenuto Logs */}
-            {sistemaSubTab === 'logs' && (
-              <GuardianLogsSection />
-            )}
+            {sistemaSubTab === "logs" && <GuardianLogsSection />}
 
             {/* Contenuto Debug */}
-            {sistemaSubTab === 'debug' && (
-              <DebugSectionReal />
-            )}
+            {sistemaSubTab === "debug" && <DebugSectionReal />}
           </TabsContent>
 
           {/* TAB 9: AGENTE AI */}
@@ -3889,7 +5181,10 @@ export default function DashboardPA() {
                         <Bot className="h-5 w-5 text-[#14b8a6]" />
                       </div>
                       <div className="bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-lg p-3 max-w-[80%]">
-                        <p className="text-sm text-[#e8fbff]">Ciao! Sono l'Agente AI della Dashboard PA. Posso aiutarti con:</p>
+                        <p className="text-sm text-[#e8fbff]">
+                          Ciao! Sono l'Agente AI della Dashboard PA. Posso
+                          aiutarti con:
+                        </p>
                         <ul className="text-sm text-[#e8fbff]/70 mt-2 space-y-1 list-disc list-inside">
                           <li>Analytics e statistiche</li>
                           <li>Generazione report</li>
@@ -3899,18 +5194,25 @@ export default function DashboardPA() {
                       </div>
                     </div>
                     {chatMessages.map((msg, i) => (
-                      <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                        {msg.role === 'ai' && (
+                      <div
+                        key={i}
+                        className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}
+                      >
+                        {msg.role === "ai" && (
                           <div className="w-8 h-8 rounded-full bg-[#14b8a6]/20 flex items-center justify-center flex-shrink-0">
                             <Bot className="h-5 w-5 text-[#14b8a6]" />
                           </div>
                         )}
-                        <div className={`rounded-lg p-3 max-w-[80%] ${
-                          msg.role === 'user' 
-                            ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/30' 
-                            : 'bg-[#14b8a6]/10 border border-[#14b8a6]/30'
-                        }`}>
-                          <p className="text-sm text-[#e8fbff]">{msg.content}</p>
+                        <div
+                          className={`rounded-lg p-3 max-w-[80%] ${
+                            msg.role === "user"
+                              ? "bg-[#8b5cf6]/20 border border-[#8b5cf6]/30"
+                              : "bg-[#14b8a6]/10 border border-[#14b8a6]/30"
+                          }`}
+                        >
+                          <p className="text-sm text-[#e8fbff]">
+                            {msg.content}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -3920,34 +5222,46 @@ export default function DashboardPA() {
                   <input
                     type="text"
                     value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && chatInput.trim()) {
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyPress={e => {
+                      if (e.key === "Enter" && chatInput.trim()) {
                         const userMsg = chatInput.trim();
-                        setChatMessages(prev => [...prev, { role: 'user', content: userMsg }]);
-                        setChatInput('');
+                        setChatMessages(prev => [
+                          ...prev,
+                          { role: "user", content: userMsg },
+                        ]);
+                        setChatInput("");
                         setTimeout(() => {
-                          setChatMessages(prev => [...prev, { 
-                            role: 'ai', 
-                            content: `Ho ricevuto la tua richiesta: "${userMsg}". Questa è una risposta simulata. In produzione, qui ci sarà l'integrazione con un vero modello AI per analizzare i dati della Dashboard PA.`
-                          }]);
+                          setChatMessages(prev => [
+                            ...prev,
+                            {
+                              role: "ai",
+                              content: `Ho ricevuto la tua richiesta: "${userMsg}". Questa è una risposta simulata. In produzione, qui ci sarà l'integrazione con un vero modello AI per analizzare i dati della Dashboard PA.`,
+                            },
+                          ]);
                         }, 500);
                       }
                     }}
                     placeholder="Chiedi qualcosa... (es: Quanti utenti oggi?)"
                     className="flex-1 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder:text-[#e8fbff]/50 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/50"
                   />
-                  <Button 
+                  <Button
                     onClick={() => {
                       if (chatInput.trim()) {
                         const userMsg = chatInput.trim();
-                        setChatMessages(prev => [...prev, { role: 'user', content: userMsg }]);
-                        setChatInput('');
+                        setChatMessages(prev => [
+                          ...prev,
+                          { role: "user", content: userMsg },
+                        ]);
+                        setChatInput("");
                         setTimeout(() => {
-                          setChatMessages(prev => [...prev, { 
-                            role: 'ai', 
-                            content: `Ho ricevuto la tua richiesta: "${userMsg}". Questa è una risposta simulata. In produzione, qui ci sarà l'integrazione con un vero modello AI per analizzare i dati della Dashboard PA.`
-                          }]);
+                          setChatMessages(prev => [
+                            ...prev,
+                            {
+                              role: "ai",
+                              content: `Ho ricevuto la tua richiesta: "${userMsg}". Questa è una risposta simulata. In produzione, qui ci sarà l'integrazione con un vero modello AI per analizzare i dati della Dashboard PA.`,
+                            },
+                          ]);
                         }, 500);
                       }
                     }}
@@ -3982,51 +5296,84 @@ export default function DashboardPA() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm text-[#e8fbff]/70 flex items-center gap-2">
                     Pienamente Conformi
-                    {realData.statsQualificazione && <span className="text-xs text-[#10b981]">● Live</span>}
+                    {realData.statsQualificazione && (
+                      <span className="text-xs text-[#10b981]">● Live</span>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-[#10b981] mb-1">
-                    {realData.statsQualificazione?.overview?.conformi ?? mockData.businesses.fullyCompliant}
+                    {realData.statsQualificazione?.overview?.conformi ??
+                      mockData.businesses.fullyCompliant}
                   </div>
                   <div className="text-sm text-[#e8fbff]/50">
-                    {realData.statsQualificazione?.overview?.conformi_percentuale ?? ((mockData.businesses.fullyCompliant / mockData.businesses.total) * 100).toFixed(1)}% del totale
+                    {realData.statsQualificazione?.overview
+                      ?.conformi_percentuale ??
+                      (
+                        (mockData.businesses.fullyCompliant /
+                          mockData.businesses.total) *
+                        100
+                      ).toFixed(1)}
+                    % del totale
                   </div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-[#f59e0b]/20 to-[#f59e0b]/5 border-[#f59e0b]/30">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-[#e8fbff]/70">Con Riserva</CardTitle>
+                  <CardTitle className="text-sm text-[#e8fbff]/70">
+                    Con Riserva
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-[#f59e0b] mb-1">
-                    {realData.statsQualificazione?.overview?.con_riserva ?? mockData.businesses.partiallyCompliant}
+                    {realData.statsQualificazione?.overview?.con_riserva ??
+                      mockData.businesses.partiallyCompliant}
                   </div>
                   <div className="text-sm text-[#e8fbff]/50">
-                    {realData.statsQualificazione?.overview?.con_riserva_percentuale ?? ((mockData.businesses.partiallyCompliant / mockData.businesses.total) * 100).toFixed(1)}% del totale
+                    {realData.statsQualificazione?.overview
+                      ?.con_riserva_percentuale ??
+                      (
+                        (mockData.businesses.partiallyCompliant /
+                          mockData.businesses.total) *
+                        100
+                      ).toFixed(1)}
+                    % del totale
                   </div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-[#ef4444]/20 to-[#ef4444]/5 border-[#ef4444]/30">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-[#e8fbff]/70">Non Conformi</CardTitle>
+                  <CardTitle className="text-sm text-[#e8fbff]/70">
+                    Non Conformi
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-[#ef4444] mb-1">
-                    {realData.statsQualificazione?.overview?.non_conformi ?? mockData.businesses.nonCompliant}
+                    {realData.statsQualificazione?.overview?.non_conformi ??
+                      mockData.businesses.nonCompliant}
                   </div>
                   <div className="text-sm text-[#e8fbff]/50">
-                    {realData.statsQualificazione?.overview?.non_conformi_percentuale ?? ((mockData.businesses.nonCompliant / mockData.businesses.total) * 100).toFixed(1)}% del totale
+                    {realData.statsQualificazione?.overview
+                      ?.non_conformi_percentuale ??
+                      (
+                        (mockData.businesses.nonCompliant /
+                          mockData.businesses.total) *
+                        100
+                      ).toFixed(1)}
+                    % del totale
                   </div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-[#14b8a6]/20 to-[#14b8a6]/5 border-[#14b8a6]/30">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-[#e8fbff]/70">Totale Imprese</CardTitle>
+                  <CardTitle className="text-sm text-[#e8fbff]/70">
+                    Totale Imprese
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-[#14b8a6] mb-1">
-                    {realData.statsQualificazione?.overview?.totale ?? mockData.businesses.total}
+                    {realData.statsQualificazione?.overview?.totale ??
+                      mockData.businesses.total}
                   </div>
                   <div className="text-sm text-[#e8fbff]/50">nel sistema</div>
                 </CardContent>
@@ -4038,34 +5385,59 @@ export default function DashboardPA() {
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-[#ef4444]" />
-                  Scadenze Imminenti ({realData.statsQualificazione?.scadenze?.length ?? mockData.businesses.atRiskSuspension})
-                  {realData.statsQualificazione?.scadenze && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                  Scadenze Imminenti (
+                  {realData.statsQualificazione?.scadenze?.length ??
+                    mockData.businesses.atRiskSuspension}
+                  )
+                  {realData.statsQualificazione?.scadenze && (
+                    <span className="text-xs text-[#10b981] ml-2">● Live</span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {(realData.statsQualificazione?.scadenze || mockData.businesses.expiringDocs).map((item: any, idx: number) => {
+                  {(
+                    realData.statsQualificazione?.scadenze ||
+                    mockData.businesses.expiringDocs
+                  ).map((item: any, idx: number) => {
                     const isReal = realData.statsQualificazione?.scadenze;
-                    const isCritical = isReal ? item.giorni_rimanenti <= 15 : item.critical;
-                    const businessName = isReal ? item.impresa_nome : item.business;
+                    const isCritical = isReal
+                      ? item.giorni_rimanenti <= 15
+                      : item.critical;
+                    const businessName = isReal
+                      ? item.impresa_nome
+                      : item.business;
                     const docType = isReal ? item.tipo_qualifica : item.doc;
                     const daysLeft = isReal ? item.giorni_rimanenti : item.days;
-                    
+
                     return (
-                      <div key={idx} className={`flex items-center justify-between p-3 rounded-lg ${
-                        isCritical ? 'bg-[#ef4444]/10 border border-[#ef4444]/30' : 'bg-[#0b1220]'
-                      }`}>
+                      <div
+                        key={idx}
+                        className={`flex items-center justify-between p-3 rounded-lg ${
+                          isCritical
+                            ? "bg-[#ef4444]/10 border border-[#ef4444]/30"
+                            : "bg-[#0b1220]"
+                        }`}
+                      >
                         <div className="flex items-center gap-3">
-                          {isCritical && <AlertCircle className="h-5 w-5 text-[#ef4444]" />}
+                          {isCritical && (
+                            <AlertCircle className="h-5 w-5 text-[#ef4444]" />
+                          )}
                           <div>
-                            <div className="text-[#e8fbff] font-medium">{businessName}</div>
-                            <div className="text-sm text-[#e8fbff]/70">{docType}</div>
+                            <div className="text-[#e8fbff] font-medium">
+                              {businessName}
+                            </div>
+                            <div className="text-sm text-[#e8fbff]/70">
+                              {docType}
+                            </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className={`text-lg font-bold ${
-                            isCritical ? 'text-[#ef4444]' : 'text-[#f59e0b]'
-                          }`}>
+                          <div
+                            className={`text-lg font-bold ${
+                              isCritical ? "text-[#ef4444]" : "text-[#f59e0b]"
+                            }`}
+                          >
                             {daysLeft} giorni
                           </div>
                           <Button size="sm" variant="outline" className="mt-1">
@@ -4087,7 +5459,11 @@ export default function DashboardPA() {
                   <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                     <Users className="h-5 w-5 text-[#14b8a6]" />
                     Demografia Imprese
-                    {realData.statsQualificazione?.demografia && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                    {realData.statsQualificazione?.demografia && (
+                      <span className="text-xs text-[#10b981] ml-2">
+                        ● Live
+                      </span>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -4095,30 +5471,60 @@ export default function DashboardPA() {
                     <div className="p-4 bg-[#0b1220] rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[#e8fbff]/70">Aperture 2026</span>
-                        <span className="text-2xl font-bold text-[#10b981]">+{realData.statsQualificazione?.demografia?.aperture_anno ?? mockData.businesses.demographics.openings}</span>
+                        <span className="text-2xl font-bold text-[#10b981]">
+                          +
+                          {realData.statsQualificazione?.demografia
+                            ?.aperture_anno ??
+                            mockData.businesses.demographics.openings}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[#e8fbff]/70">Cessazioni 2026</span>
-                        <span className="text-2xl font-bold text-[#ef4444]">-{realData.statsQualificazione?.demografia?.cessazioni_anno ?? mockData.businesses.demographics.closures}</span>
+                        <span className="text-[#e8fbff]/70">
+                          Cessazioni 2026
+                        </span>
+                        <span className="text-2xl font-bold text-[#ef4444]">
+                          -
+                          {realData.statsQualificazione?.demografia
+                            ?.cessazioni_anno ??
+                            mockData.businesses.demographics.closures}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t border-[#14b8a6]/30">
-                        <span className="text-[#e8fbff] font-semibold">Crescita Netta</span>
-                        <span className="text-2xl font-bold text-[#14b8a6]">+{realData.statsQualificazione?.demografia?.crescita_netta ?? mockData.businesses.demographics.netGrowth}</span>
+                        <span className="text-[#e8fbff] font-semibold">
+                          Crescita Netta
+                        </span>
+                        <span className="text-2xl font-bold text-[#14b8a6]">
+                          +
+                          {realData.statsQualificazione?.demografia
+                            ?.crescita_netta ??
+                            mockData.businesses.demographics.netGrowth}
+                        </span>
                       </div>
                     </div>
 
                     {/* Per Settore - Dati Reali */}
                     <div className="p-3 bg-[#0b1220] rounded-lg">
-                      <div className="text-xs text-[#e8fbff]/70 mb-2">Per Settore (Top 5)</div>
+                      <div className="text-xs text-[#e8fbff]/70 mb-2">
+                        Per Settore (Top 5)
+                      </div>
                       <div className="text-sm space-y-1">
-                        {(realData.statsQualificazione?.demografia?.per_settore?.slice(0, 5) || [
-                          { settore: 'Alimentare', count: 180 },
-                          { settore: 'Abbigliamento', count: 95 },
-                          { settore: 'Artigianato', count: 75 }
-                        ]).map((s: any, i: number) => (
+                        {(
+                          realData.statsQualificazione?.demografia?.per_settore?.slice(
+                            0,
+                            5
+                          ) || [
+                            { settore: "Alimentare", count: 180 },
+                            { settore: "Abbigliamento", count: 95 },
+                            { settore: "Artigianato", count: 75 },
+                          ]
+                        ).map((s: any, i: number) => (
                           <div key={i} className="flex justify-between">
-                            <span className="text-[#e8fbff]/70 truncate max-w-[150px]">{s.settore}</span>
-                            <span className="text-[#14b8a6] font-semibold">{s.count}</span>
+                            <span className="text-[#e8fbff]/70 truncate max-w-[150px]">
+                              {s.settore}
+                            </span>
+                            <span className="text-[#14b8a6] font-semibold">
+                              {s.count}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -4133,7 +5539,11 @@ export default function DashboardPA() {
                   <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                     <Target className="h-5 w-5 text-[#14b8a6]" />
                     Indici Strategici
-                    {realData.statsQualificazione?.indici && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                    {realData.statsQualificazione?.indici && (
+                      <span className="text-xs text-[#10b981] ml-2">
+                        ● Live
+                      </span>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -4141,40 +5551,76 @@ export default function DashboardPA() {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[#e8fbff]">Riqualificazione</span>
-                        <span className="text-2xl font-bold text-[#14b8a6]">{realData.statsQualificazione?.indici?.riqualificazione ?? mockData.businesses.indices.requalification}</span>
+                        <span className="text-2xl font-bold text-[#14b8a6]">
+                          {realData.statsQualificazione?.indici
+                            ?.riqualificazione ??
+                            mockData.businesses.indices.requalification}
+                        </span>
                       </div>
                       <div className="w-full bg-[#0b1220] rounded-full h-3">
-                        <div className="bg-gradient-to-r from-[#14b8a6] to-[#10b981] h-3 rounded-full" style={{width: `${realData.statsQualificazione?.indici?.riqualificazione ?? mockData.businesses.indices.requalification}%`}}></div>
+                        <div
+                          className="bg-gradient-to-r from-[#14b8a6] to-[#10b981] h-3 rounded-full"
+                          style={{
+                            width: `${realData.statsQualificazione?.indici?.riqualificazione ?? mockData.businesses.indices.requalification}%`,
+                          }}
+                        ></div>
                       </div>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[#e8fbff]">Digitalizzazione</span>
-                        <span className="text-2xl font-bold text-[#8b5cf6]">{realData.statsQualificazione?.indici?.digitalizzazione ?? mockData.businesses.indices.digitalization}</span>
+                        <span className="text-2xl font-bold text-[#8b5cf6]">
+                          {realData.statsQualificazione?.indici
+                            ?.digitalizzazione ??
+                            mockData.businesses.indices.digitalization}
+                        </span>
                       </div>
                       <div className="w-full bg-[#0b1220] rounded-full h-3">
-                        <div className="bg-gradient-to-r from-[#8b5cf6] to-[#a78bfa] h-3 rounded-full" style={{width: `${mockData.businesses.indices.digitalization}%`}}></div>
+                        <div
+                          className="bg-gradient-to-r from-[#8b5cf6] to-[#a78bfa] h-3 rounded-full"
+                          style={{
+                            width: `${mockData.businesses.indices.digitalization}%`,
+                          }}
+                        ></div>
                       </div>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[#e8fbff]">Sostenibilità</span>
-                        <span className="text-2xl font-bold text-[#10b981]">{realData.statsQualificazione?.indici?.sostenibilita ?? mockData.businesses.indices.sustainability}</span>
+                        <span className="text-2xl font-bold text-[#10b981]">
+                          {realData.statsQualificazione?.indici
+                            ?.sostenibilita ??
+                            mockData.businesses.indices.sustainability}
+                        </span>
                       </div>
                       <div className="w-full bg-[#0b1220] rounded-full h-3">
-                        <div className="bg-gradient-to-r from-[#10b981] to-[#34d399] h-3 rounded-full" style={{width: `${realData.statsQualificazione?.indici?.sostenibilita ?? mockData.businesses.indices.sustainability}%`}}></div>
+                        <div
+                          className="bg-gradient-to-r from-[#10b981] to-[#34d399] h-3 rounded-full"
+                          style={{
+                            width: `${realData.statsQualificazione?.indici?.sostenibilita ?? mockData.businesses.indices.sustainability}%`,
+                          }}
+                        ></div>
                       </div>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[#e8fbff]">Conformità</span>
-                        <span className="text-2xl font-bold text-[#06b6d4]">{realData.statsQualificazione?.indici?.conformita?.toFixed(1) ?? '97.1'}</span>
+                        <span className="text-2xl font-bold text-[#06b6d4]">
+                          {realData.statsQualificazione?.indici?.conformita?.toFixed(
+                            1
+                          ) ?? "97.1"}
+                        </span>
                       </div>
                       <div className="w-full bg-[#0b1220] rounded-full h-3">
-                        <div className="bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] h-3 rounded-full" style={{width: `${realData.statsQualificazione?.indici?.conformita ?? 97}%`}}></div>
+                        <div
+                          className="bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] h-3 rounded-full"
+                          style={{
+                            width: `${realData.statsQualificazione?.indici?.conformita ?? 97}%`,
+                          }}
+                        ></div>
                       </div>
                     </div>
                   </div>
@@ -4195,36 +5641,61 @@ export default function DashboardPA() {
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="p-3 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
-                      <div className="text-sm text-[#e8fbff]/70 mb-1">Completati</div>
-                      <div className="text-3xl font-bold text-[#10b981]">{mockData.businesses.training.completed}</div>
+                      <div className="text-sm text-[#e8fbff]/70 mb-1">
+                        Completati
+                      </div>
+                      <div className="text-3xl font-bold text-[#10b981]">
+                        {mockData.businesses.training.completed}
+                      </div>
                     </div>
                     <div className="p-3 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
-                      <div className="text-sm text-[#e8fbff]/70 mb-1">Programmati</div>
-                      <div className="text-3xl font-bold text-[#f59e0b]">{mockData.businesses.training.scheduled}</div>
+                      <div className="text-sm text-[#e8fbff]/70 mb-1">
+                        Programmati
+                      </div>
+                      <div className="text-3xl font-bold text-[#f59e0b]">
+                        {mockData.businesses.training.scheduled}
+                      </div>
                     </div>
                   </div>
 
                   <div className="mb-4">
-                    <div className="text-sm text-[#e8fbff]/70 mb-2">Top Formatori</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-2">
+                      Top Formatori
+                    </div>
                     <div className="space-y-2">
-                      {mockData.businesses.training.topTrainers.map((trainer, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-[#0b1220] rounded">
-                          <div>
-                            <div className="text-[#e8fbff] text-sm">{trainer.name}</div>
-                            <div className="text-xs text-[#e8fbff]/50">{trainer.courses} corsi</div>
+                      {mockData.businesses.training.topTrainers.map(
+                        (trainer, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-2 bg-[#0b1220] rounded"
+                          >
+                            <div>
+                              <div className="text-[#e8fbff] text-sm">
+                                {trainer.name}
+                              </div>
+                              <div className="text-xs text-[#e8fbff]/50">
+                                {trainer.courses} corsi
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Award className="h-4 w-4 text-[#f59e0b]" />
+                              <span className="text-[#f59e0b] font-semibold">
+                                {trainer.rating}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Award className="h-4 w-4 text-[#f59e0b]" />
-                            <span className="text-[#f59e0b] font-semibold">{trainer.rating}</span>
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      )}
                     </div>
                   </div>
 
                   <div className="p-3 bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Costo Medio Corso</div>
-                    <div className="text-2xl font-bold text-[#14b8a6]">€{mockData.businesses.training.avgCost}</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Costo Medio Corso
+                    </div>
+                    <div className="text-2xl font-bold text-[#14b8a6]">
+                      €{mockData.businesses.training.avgCost}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -4240,28 +5711,51 @@ export default function DashboardPA() {
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="p-3 bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 rounded-lg">
-                      <div className="text-sm text-[#e8fbff]/70 mb-1">Bandi Aperti</div>
-                      <div className="text-3xl font-bold text-[#8b5cf6]">{mockData.businesses.grants.active}</div>
+                      <div className="text-sm text-[#e8fbff]/70 mb-1">
+                        Bandi Aperti
+                      </div>
+                      <div className="text-3xl font-bold text-[#8b5cf6]">
+                        {mockData.businesses.grants.active}
+                      </div>
                     </div>
                     <div className="p-3 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
-                      <div className="text-sm text-[#e8fbff]/70 mb-1">Success Rate</div>
-                      <div className="text-3xl font-bold text-[#10b981]">{mockData.businesses.grants.successRate}%</div>
+                      <div className="text-sm text-[#e8fbff]/70 mb-1">
+                        Success Rate
+                      </div>
+                      <div className="text-3xl font-bold text-[#10b981]">
+                        {mockData.businesses.grants.successRate}%
+                      </div>
                     </div>
                   </div>
 
                   <div className="mb-4">
-                    <div className="text-sm text-[#e8fbff]/70 mb-2">Top Bandi</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-2">
+                      Top Bandi
+                    </div>
                     <div className="space-y-2">
-                      {mockData.businesses.grants.topGrants.map((grant, idx) => (
-                        <div key={idx} className="p-3 bg-[#0b1220] rounded-lg">
-                          <div className="text-[#e8fbff] font-medium mb-1">{grant.title}</div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-[#e8fbff]/70">{grant.applicants} domande</span>
-                            <span className="text-[#10b981] font-semibold">{grant.approved} approvate</span>
+                      {mockData.businesses.grants.topGrants.map(
+                        (grant, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 bg-[#0b1220] rounded-lg"
+                          >
+                            <div className="text-[#e8fbff] font-medium mb-1">
+                              {grant.title}
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-[#e8fbff]/70">
+                                {grant.applicants} domande
+                              </span>
+                              <span className="text-[#10b981] font-semibold">
+                                {grant.approved} approvate
+                              </span>
+                            </div>
+                            <div className="text-xs text-[#14b8a6] mt-1">
+                              €{grant.amount.toLocaleString()} totali
+                            </div>
                           </div>
-                          <div className="text-xs text-[#14b8a6] mt-1">€{grant.amount.toLocaleString()} totali</div>
-                        </div>
-                      ))}
+                        )
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -4274,32 +5768,54 @@ export default function DashboardPA() {
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <Award className="h-5 w-5 text-[#f59e0b]" />
                   Top 5 Imprese per Score Qualificazione
-                  {realData.statsQualificazione?.topImprese && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                  {realData.statsQualificazione?.topImprese && (
+                    <span className="text-xs text-[#10b981] ml-2">● Live</span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {(realData.statsQualificazione?.topImprese || mockData.businesses.topScoring).map((business: any, idx: number) => {
+                  {(
+                    realData.statsQualificazione?.topImprese ||
+                    mockData.businesses.topScoring
+                  ).map((business: any, idx: number) => {
                     const isReal = realData.statsQualificazione?.topImprese;
-                    const name = isReal ? business.denominazione : business.name;
+                    const name = isReal
+                      ? business.denominazione
+                      : business.name;
                     const sector = isReal ? business.settore : business.sector;
                     const score = isReal ? business.score : business.score;
-                    const digitalization = isReal ? business.score_digitalizzazione : business.digitalization;
-                    
+                    const digitalization = isReal
+                      ? business.score_digitalizzazione
+                      : business.digitalization;
+
                     return (
-                      <div key={idx} className="flex items-center justify-between p-4 bg-[#0b1220] rounded-lg">
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-4 bg-[#0b1220] rounded-lg"
+                      >
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f59e0b] to-[#f97316] flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">#{idx + 1}</span>
+                            <span className="text-white font-bold text-lg">
+                              #{idx + 1}
+                            </span>
                           </div>
                           <div>
-                            <div className="text-[#e8fbff] font-semibold">{name}</div>
-                            <div className="text-sm text-[#e8fbff]/50">{sector}</div>
+                            <div className="text-[#e8fbff] font-semibold">
+                              {name}
+                            </div>
+                            <div className="text-sm text-[#e8fbff]/50">
+                              {sector}
+                            </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-3xl font-bold text-[#10b981] mb-1">{score}</div>
-                          <div className="text-xs text-[#e8fbff]/70">Digitalizzazione: {digitalization}%</div>
+                          <div className="text-3xl font-bold text-[#10b981] mb-1">
+                            {score}
+                          </div>
+                          <div className="text-xs text-[#e8fbff]/70">
+                            Digitalizzazione: {digitalization}%
+                          </div>
                         </div>
                       </div>
                     );
@@ -4332,23 +5848,35 @@ export default function DashboardPA() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                   <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
                     <div className="text-sm text-[#e8fbff]/70 mb-1">PM10</div>
-                    <div className="text-3xl font-bold text-[#10b981]">{mockData.iotSensors.airQuality.pm10}</div>
+                    <div className="text-3xl font-bold text-[#10b981]">
+                      {mockData.iotSensors.airQuality.pm10}
+                    </div>
                     <div className="text-xs text-[#e8fbff]/50 mt-1">µg/m³</div>
                   </div>
                   <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
                     <div className="text-sm text-[#e8fbff]/70 mb-1">PM2.5</div>
-                    <div className="text-3xl font-bold text-[#10b981]">{mockData.iotSensors.airQuality.pm25}</div>
+                    <div className="text-3xl font-bold text-[#10b981]">
+                      {mockData.iotSensors.airQuality.pm25}
+                    </div>
                     <div className="text-xs text-[#e8fbff]/50 mt-1">µg/m³</div>
                   </div>
                   <div className="p-4 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
                     <div className="text-sm text-[#e8fbff]/70 mb-1">NO₂</div>
-                    <div className="text-3xl font-bold text-[#f59e0b]">{mockData.iotSensors.airQuality.no2}</div>
+                    <div className="text-3xl font-bold text-[#f59e0b]">
+                      {mockData.iotSensors.airQuality.no2}
+                    </div>
                     <div className="text-xs text-[#e8fbff]/50 mt-1">µg/m³</div>
                   </div>
                   <div className="p-4 bg-[#06b6d4]/10 border border-[#06b6d4]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Temperatura</div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">{mockData.iotSensors.weather.temp}°C</div>
-                    <div className="text-xs text-[#e8fbff]/50 mt-1">Umidità: {mockData.iotSensors.weather.humidity}%</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Temperatura
+                    </div>
+                    <div className="text-3xl font-bold text-[#06b6d4]">
+                      {mockData.iotSensors.weather.temp}°C
+                    </div>
+                    <div className="text-xs text-[#e8fbff]/50 mt-1">
+                      Umidità: {mockData.iotSensors.weather.humidity}%
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -4375,69 +5903,122 @@ export default function DashboardPA() {
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                   <Train className="h-5 w-5 text-[#3b82f6]" />
                   Centro Mobilità GTFS - Rete Trasporti Italia
-                  {gtfsStats && <span className="text-xs text-[#10b981] ml-2">● Live API</span>}
+                  {gtfsStats && (
+                    <span className="text-xs text-[#10b981] ml-2">
+                      ● Live API
+                    </span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                   <div className="p-4 bg-[#3b82f6]/10 border border-[#3b82f6]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Totale Fermate</div>
-                    <div className="text-3xl font-bold text-[#3b82f6]">
-                      {gtfsStats?.totalStops?.toLocaleString() || '21.206'}
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Totale Fermate
                     </div>
-                    <div className="text-xs text-[#e8fbff]/50 mt-1">TPER + Trenitalia</div>
+                    <div className="text-3xl font-bold text-[#3b82f6]">
+                      {gtfsStats?.totalStops?.toLocaleString() || "21.206"}
+                    </div>
+                    <div className="text-xs text-[#e8fbff]/50 mt-1">
+                      TPER + Trenitalia
+                    </div>
                   </div>
                   <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Fermate Bus</div>
-                    <div className="text-3xl font-bold text-[#10b981]">
-                      {gtfsStats?.busStops?.toLocaleString() || '21.176'}
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Fermate Bus
                     </div>
-                    <div className="text-xs text-[#e8fbff]/50 mt-1">TPER Bologna/Ferrara</div>
+                    <div className="text-3xl font-bold text-[#10b981]">
+                      {gtfsStats?.busStops?.toLocaleString() || "21.176"}
+                    </div>
+                    <div className="text-xs text-[#e8fbff]/50 mt-1">
+                      TPER Bologna/Ferrara
+                    </div>
                   </div>
                   <div className="p-4 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Stazioni Treni</div>
-                    <div className="text-3xl font-bold text-[#f59e0b]">
-                      {gtfsStats?.trainStops?.toLocaleString() || '30'}
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Stazioni Treni
                     </div>
-                    <div className="text-xs text-[#e8fbff]/50 mt-1">Trenitalia</div>
+                    <div className="text-3xl font-bold text-[#f59e0b]">
+                      {gtfsStats?.trainStops?.toLocaleString() || "30"}
+                    </div>
+                    <div className="text-xs text-[#e8fbff]/50 mt-1">
+                      Trenitalia
+                    </div>
                   </div>
                   <div className="p-4 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Linee Totali</div>
-                    <div className="text-3xl font-bold text-[#e8fbff]">
-                      {gtfsStats?.totalRoutes || '37'}
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Linee Totali
                     </div>
-                    <div className="text-xs text-[#e8fbff]/50 mt-1">Bus + Treni</div>
+                    <div className="text-3xl font-bold text-[#e8fbff]">
+                      {gtfsStats?.totalRoutes || "37"}
+                    </div>
+                    <div className="text-xs text-[#e8fbff]/50 mt-1">
+                      Bus + Treni
+                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-[#e8fbff] font-semibold mb-3">Fermate Principali (da API GTFS)</h4>
+                  <h4 className="text-[#e8fbff] font-semibold mb-3">
+                    Fermate Principali (da API GTFS)
+                  </h4>
                   {gtfsLoading ? (
-                    <div className="text-center py-4 text-[#e8fbff]/50">Caricamento dati GTFS...</div>
+                    <div className="text-center py-4 text-[#e8fbff]/50">
+                      Caricamento dati GTFS...
+                    </div>
                   ) : gtfsStops.length > 0 ? (
                     <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
                       {/* Mescola fermate da tutti i provider: prendi alcune TPER, alcune Trenitalia, alcune Tiemme */}
                       {(() => {
-                        const tperStops = gtfsStops.filter((s: any) => s.provider === 'tper').slice(0, 10);
-                        const trainStops = gtfsStops.filter((s: any) => s.stop_type === 'train').slice(0, 5);
-                        const tiemmeStops = gtfsStops.filter((s: any) => s.provider === 'tiemme' && !s.stop_name?.includes('(Tmp)')).slice(0, 5);
+                        const tperStops = gtfsStops
+                          .filter((s: any) => s.provider === "tper")
+                          .slice(0, 10);
+                        const trainStops = gtfsStops
+                          .filter((s: any) => s.stop_type === "train")
+                          .slice(0, 5);
+                        const tiemmeStops = gtfsStops
+                          .filter(
+                            (s: any) =>
+                              s.provider === "tiemme" &&
+                              !s.stop_name?.includes("(Tmp)")
+                          )
+                          .slice(0, 5);
                         // Combina e ordina per numero di routes (decrescente)
-                        const mixedStops = [...tperStops, ...trainStops, ...tiemmeStops]
-                          .sort((a: any, b: any) => (b.routes?.length || 0) - (a.routes?.length || 0));
+                        const mixedStops = [
+                          ...tperStops,
+                          ...trainStops,
+                          ...tiemmeStops,
+                        ].sort(
+                          (a: any, b: any) =>
+                            (b.routes?.length || 0) - (a.routes?.length || 0)
+                        );
                         return mixedStops.map((stop: any, idx: number) => (
-                          <div key={stop.stop_id || idx} className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between hover:bg-[#0b1220]/80 transition-colors">
+                          <div
+                            key={stop.stop_id || idx}
+                            className="p-4 bg-[#0b1220] rounded-lg flex items-center justify-between hover:bg-[#0b1220]/80 transition-colors"
+                          >
                             <div className="flex-1">
-                              <div className="text-[#e8fbff] font-semibold">{stop.stop_name}</div>
+                              <div className="text-[#e8fbff] font-semibold">
+                                {stop.stop_name}
+                              </div>
                               <div className="text-sm text-[#e8fbff]/70 flex items-center gap-2">
-                                <span>{stop.stop_type === 'bus' ? '🚌' : '🚂'}</span>
-                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                  stop.provider === 'tper' ? 'bg-blue-500/20 text-blue-400' :
-                                  stop.provider === 'trenitalia' ? 'bg-green-500/20 text-green-400' :
-                                  'bg-orange-500/20 text-orange-400'
-                                }`}>
-                                  {stop.provider?.toUpperCase() || 'TPER'}
+                                <span>
+                                  {stop.stop_type === "bus" ? "🚌" : "🚂"}
                                 </span>
-                                <span className="text-[#e8fbff]/50">{stop.region}</span>
+                                <span
+                                  className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                    stop.provider === "tper"
+                                      ? "bg-blue-500/20 text-blue-400"
+                                      : stop.provider === "trenitalia"
+                                        ? "bg-green-500/20 text-green-400"
+                                        : "bg-orange-500/20 text-orange-400"
+                                  }`}
+                                >
+                                  {stop.provider?.toUpperCase() || "TPER"}
+                                </span>
+                                <span className="text-[#e8fbff]/50">
+                                  {stop.region}
+                                </span>
                               </div>
                             </div>
                             <div className="text-right">
@@ -4445,7 +6026,8 @@ export default function DashboardPA() {
                                 {stop.routes?.length || 0} linee
                               </div>
                               <div className="text-xs text-[#e8fbff]/50">
-                                {parseFloat(stop.stop_lat)?.toFixed(4)}, {parseFloat(stop.stop_lon)?.toFixed(4)}
+                                {parseFloat(stop.stop_lat)?.toFixed(4)},{" "}
+                                {parseFloat(stop.stop_lon)?.toFixed(4)}
                               </div>
                             </div>
                           </div>
@@ -4471,16 +6053,28 @@ export default function DashboardPA() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-[#0b1220] rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Posti Totali</div>
-                    <div className="text-3xl font-bold text-[#e8fbff]">{mockData.mobility.parkingSpots}</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Posti Totali
+                    </div>
+                    <div className="text-3xl font-bold text-[#e8fbff]">
+                      {mockData.mobility.parkingSpots}
+                    </div>
                   </div>
                   <div className="p-4 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Occupati</div>
-                    <div className="text-3xl font-bold text-[#ef4444]">{mockData.mobility.parkingOccupied}</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Occupati
+                    </div>
+                    <div className="text-3xl font-bold text-[#ef4444]">
+                      {mockData.mobility.parkingOccupied}
+                    </div>
                   </div>
                   <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
-                    <div className="text-sm text-[#e8fbff]/70 mb-1">Disponibili</div>
-                    <div className="text-3xl font-bold text-[#10b981]">{mockData.mobility.parkingAvailable}</div>
+                    <div className="text-sm text-[#e8fbff]/70 mb-1">
+                      Disponibili
+                    </div>
+                    <div className="text-3xl font-bold text-[#10b981]">
+                      {mockData.mobility.parkingAvailable}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -4497,20 +6091,37 @@ export default function DashboardPA() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={[
-                      { day: 'Lun', passeggeri: 3200 },
-                      { day: 'Mar', passeggeri: 3450 },
-                      { day: 'Mer', passeggeri: 3100 },
-                      { day: 'Gio', passeggeri: 3600 },
-                      { day: 'Ven', passeggeri: 3800 },
-                      { day: 'Sab', passeggeri: 2900 },
-                      { day: 'Dom', passeggeri: 2400 }
-                    ]}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#3b82f6" opacity={0.1} />
+                    <LineChart
+                      data={[
+                        { day: "Lun", passeggeri: 3200 },
+                        { day: "Mar", passeggeri: 3450 },
+                        { day: "Mer", passeggeri: 3100 },
+                        { day: "Gio", passeggeri: 3600 },
+                        { day: "Ven", passeggeri: 3800 },
+                        { day: "Sab", passeggeri: 2900 },
+                        { day: "Dom", passeggeri: 2400 },
+                      ]}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#3b82f6"
+                        opacity={0.1}
+                      />
                       <XAxis dataKey="day" stroke="#e8fbff" />
                       <YAxis stroke="#e8fbff" />
-                      <Tooltip contentStyle={{ backgroundColor: '#1a2332', border: '1px solid #3b82f6' }} />
-                      <Line type="monotone" dataKey="passeggeri" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6' }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#1a2332",
+                          border: "1px solid #3b82f6",
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="passeggeri"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={{ fill: "#3b82f6" }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -4525,17 +6136,28 @@ export default function DashboardPA() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={[
-                      { fascia: '6-9', bus: 850, tram: 420 },
-                      { fascia: '9-12', bus: 620, tram: 380 },
-                      { fascia: '12-15', bus: 480, tram: 290 },
-                      { fascia: '15-18', bus: 720, tram: 450 },
-                      { fascia: '18-21', bus: 890, tram: 520 }
-                    ]}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#10b981" opacity={0.1} />
+                    <BarChart
+                      data={[
+                        { fascia: "6-9", bus: 850, tram: 420 },
+                        { fascia: "9-12", bus: 620, tram: 380 },
+                        { fascia: "12-15", bus: 480, tram: 290 },
+                        { fascia: "15-18", bus: 720, tram: 450 },
+                        { fascia: "18-21", bus: 890, tram: 520 },
+                      ]}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#10b981"
+                        opacity={0.1}
+                      />
                       <XAxis dataKey="fascia" stroke="#e8fbff" />
                       <YAxis stroke="#e8fbff" />
-                      <Tooltip contentStyle={{ backgroundColor: '#1a2332', border: '1px solid #10b981' }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#1a2332",
+                          border: "1px solid #10b981",
+                        }}
+                      />
                       <Legend />
                       <Bar dataKey="bus" fill="#3b82f6" />
                       <Bar dataKey="tram" fill="#10b981" />
@@ -4546,27 +6168,27 @@ export default function DashboardPA() {
             </div>
 
             {/* Mappa Interattiva - Riusa la mappa del Gemello Digitale con HUB e Mercati */}
-              <Card className="bg-[#1a2332] border-[#3b82f6]/30">
-                <CardHeader>
-                  <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-[#3b82f6]" />
-                    Mappa Trasporti Pubblici - Rete HUB Italia
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-lg">
-                    {/* Riutilizzo del componente GestioneHubMapWrapper che mostra HUB, Mercati e layer Trasporti */}
-                    <GestioneHubMapWrapper />
-                  </div>
-                </CardContent>
-              </Card>
+            <Card className="bg-[#1a2332] border-[#3b82f6]/30">
+              <CardHeader>
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-[#3b82f6]" />
+                  Mappa Trasporti Pubblici - Rete HUB Italia
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-lg">
+                  {/* Riutilizzo del componente GestioneHubMapWrapper che mostra HUB, Mercati e layer Trasporti */}
+                  <GestioneHubMapWrapper />
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* TAB 19: REPORT & DOCUMENTAZIONE */}
           <TabsContent value="reports" className="space-y-6">
             {/* Sezione Originale Ripristinata: Card e Link Documentazione */}
             <LegacyReportCards />
-            
+
             {/* Nuova Sezione: Navigatore Interattivo (Append, non Replace) */}
             <div className="pt-8 border-t border-[#1e293b]">
               <h3 className="text-xl font-bold text-[#e8fbff] mb-4 flex items-center gap-2">
@@ -4602,7 +6224,9 @@ export default function DashboardPA() {
                     <Building2 className="w-4 h-4" />
                     Imprese Totali
                   </div>
-                  <div className="text-2xl font-bold text-white">{impreseStats.total}</div>
+                  <div className="text-2xl font-bold text-white">
+                    {impreseStats.total}
+                  </div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
@@ -4611,7 +6235,9 @@ export default function DashboardPA() {
                     <FileText className="w-4 h-4" />
                     Concessioni Attive
                   </div>
-                  <div className="text-2xl font-bold text-white">{impreseStats.concessioni}</div>
+                  <div className="text-2xl font-bold text-white">
+                    {impreseStats.concessioni}
+                  </div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
@@ -4620,7 +6246,9 @@ export default function DashboardPA() {
                     <Users className="w-4 h-4" />
                     Comuni Coperti
                   </div>
-                  <div className="text-2xl font-bold text-white">{impreseStats.comuni}</div>
+                  <div className="text-2xl font-bold text-white">
+                    {impreseStats.comuni}
+                  </div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20">
@@ -4629,7 +6257,9 @@ export default function DashboardPA() {
                     <TrendingUp className="w-4 h-4" />
                     Media Concess./Impresa
                   </div>
-                  <div className="text-2xl font-bold text-white">{impreseStats.media}</div>
+                  <div className="text-2xl font-bold text-white">
+                    {impreseStats.media}
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -4640,22 +6270,38 @@ export default function DashboardPA() {
           {/* TAB 24: DOCUMENTAZIONE - ENTI FORMATORI & BANDI */}
           <TabsContent value="docs" className="space-y-6">
             {/* Sotto-tab per Formazione e Bandi */}
-            <Tabs value={docsSubTab} onValueChange={setDocsSubTab} className="w-full">
+            <Tabs
+              value={docsSubTab}
+              onValueChange={setDocsSubTab}
+              className="w-full"
+            >
               <TabsList className="bg-[#1a2332] border border-[#3b82f6]/20 mb-6">
-                <TabsTrigger value="formazione" className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]">
+                <TabsTrigger
+                  value="formazione"
+                  className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]"
+                >
                   <GraduationCap className="w-4 h-4 mr-2" />
                   Enti Formatori
                 </TabsTrigger>
-                <TabsTrigger value="bandi" className="data-[state=active]:bg-[#10b981]/20 data-[state=active]:text-[#10b981]">
+                <TabsTrigger
+                  value="bandi"
+                  className="data-[state=active]:bg-[#10b981]/20 data-[state=active]:text-[#10b981]"
+                >
                   <Landmark className="w-4 h-4 mr-2" />
                   Associazioni & Bandi
                 </TabsTrigger>
-                <TabsTrigger value="scia-pratiche" className="data-[state=active]:bg-[#f59e0b]/20 data-[state=active]:text-[#f59e0b]">
+                <TabsTrigger
+                  value="scia-pratiche"
+                  className="data-[state=active]:bg-[#f59e0b]/20 data-[state=active]:text-[#f59e0b]"
+                >
                   <FileText className="w-4 h-4 mr-2" />
                   SCIA & Pratiche
                 </TabsTrigger>
                 {isAssociazioneImpersonation() && (
-                  <TabsTrigger value="associati" className="data-[state=active]:bg-[#8b5cf6]/20 data-[state=active]:text-[#8b5cf6]">
+                  <TabsTrigger
+                    value="associati"
+                    className="data-[state=active]:bg-[#8b5cf6]/20 data-[state=active]:text-[#8b5cf6]"
+                  >
                     <Users className="w-4 h-4 mr-2" />
                     Associati
                   </TabsTrigger>
@@ -4671,13 +6317,18 @@ export default function DashboardPA() {
                       <div className="flex items-center gap-2 text-blue-400 text-sm mb-1">
                         <Building2 className="w-4 h-4" />
                         Enti Accreditati
-                        {realData.formazioneStats && <span className="text-xs text-[#10b981]">● Live</span>}
+                        {realData.formazioneStats && (
+                          <span className="text-xs text-[#10b981]">● Live</span>
+                        )}
                       </div>
                       <div className="text-2xl font-bold text-white">
                         {realData.formazioneStats?.stats?.enti?.totale ?? 0}
                       </div>
                       <div className="text-xs text-[#e8fbff]/50">
-                        Rating medio: {realData.formazioneStats?.stats?.enti?.rating_medio ?? '-'}/5
+                        Rating medio:{" "}
+                        {realData.formazioneStats?.stats?.enti?.rating_medio ??
+                          "-"}
+                        /5
                       </div>
                     </CardContent>
                   </Card>
@@ -4688,10 +6339,13 @@ export default function DashboardPA() {
                         Corsi Programmati
                       </div>
                       <div className="text-2xl font-bold text-white">
-                        {realData.formazioneStats?.stats?.corsi?.programmati ?? 0}
+                        {realData.formazioneStats?.stats?.corsi?.programmati ??
+                          0}
                       </div>
                       <div className="text-xs text-[#e8fbff]/50">
-                        {realData.formazioneStats?.stats?.corsi?.iscritti_totali ?? 0} iscritti totali
+                        {realData.formazioneStats?.stats?.corsi
+                          ?.iscritti_totali ?? 0}{" "}
+                        iscritti totali
                       </div>
                     </CardContent>
                   </Card>
@@ -4700,13 +6354,18 @@ export default function DashboardPA() {
                       <div className="flex items-center gap-2 text-emerald-400 text-sm mb-1">
                         <FileCheck className="w-4 h-4" />
                         Attestati Registrati
-                        {realData.formazioneStats?.stats?.attestati && <span className="text-xs text-[#10b981]">● Live</span>}
+                        {realData.formazioneStats?.stats?.attestati && (
+                          <span className="text-xs text-[#10b981]">● Live</span>
+                        )}
                       </div>
                       <div className="text-2xl font-bold text-white">
-                        {realData.formazioneStats?.stats?.attestati?.totale ?? 0}
+                        {realData.formazioneStats?.stats?.attestati?.totale ??
+                          0}
                       </div>
                       <div className="text-xs text-[#e8fbff]/50">
-                        {realData.formazioneStats?.stats?.attestati?.attivi ?? 0} attivi
+                        {realData.formazioneStats?.stats?.attestati?.attivi ??
+                          0}{" "}
+                        attivi
                       </div>
                     </CardContent>
                   </Card>
@@ -4717,10 +6376,13 @@ export default function DashboardPA() {
                         In Scadenza
                       </div>
                       <div className="text-2xl font-bold text-white">
-                        {realData.formazioneStats?.stats?.attestati?.in_scadenza_30 ?? 0}
+                        {realData.formazioneStats?.stats?.attestati
+                          ?.in_scadenza_30 ?? 0}
                       </div>
                       <div className="text-xs text-[#e8fbff]/50">
-                        {realData.formazioneStats?.stats?.attestati?.scaduti ?? 0} scaduti
+                        {realData.formazioneStats?.stats?.attestati?.scaduti ??
+                          0}{" "}
+                        scaduti
                       </div>
                     </CardContent>
                   </Card>
@@ -4732,36 +6394,65 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <GraduationCap className="h-5 w-5 text-[#3b82f6]" />
                       Enti Formatori Accreditati
-                      {realData.formazioneStats?.enti && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                      {realData.formazioneStats?.enti && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {(realData.formazioneStats?.enti || []).map((ente: any, idx: number) => (
-                        <div key={ente.id || idx} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-[#3b82f6]/30'}`}>
-                              #{idx + 1}
+                      {(realData.formazioneStats?.enti || []).map(
+                        (ente: any, idx: number) => (
+                          <div
+                            key={ente.id || idx}
+                            className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${idx === 0 ? "bg-yellow-500" : idx === 1 ? "bg-gray-400" : idx === 2 ? "bg-amber-600" : "bg-[#3b82f6]/30"}`}
+                              >
+                                #{idx + 1}
+                              </div>
+                              <div>
+                                <div className="text-[#e8fbff] font-medium">
+                                  {ente.nome}
+                                </div>
+                                <div className="text-xs text-[#e8fbff]/50">
+                                  {(() => {
+                                    try {
+                                      const spec =
+                                        typeof ente.specializzazioni ===
+                                        "string"
+                                          ? JSON.parse(ente.specializzazioni)
+                                          : ente.specializzazioni;
+                                      return Array.isArray(spec)
+                                        ? spec.join(", ")
+                                        : "Formazione generale";
+                                    } catch {
+                                      return "Formazione generale";
+                                    }
+                                  })()}
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="text-[#e8fbff] font-medium">{ente.nome}</div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-1 text-yellow-400">
+                                <Star className="w-4 h-4 fill-current" />
+                                <span className="font-bold">
+                                  {ente.rating || "-"}
+                                </span>
+                              </div>
                               <div className="text-xs text-[#e8fbff]/50">
-                                {(() => { try { const spec = typeof ente.specializzazioni === 'string' ? JSON.parse(ente.specializzazioni) : ente.specializzazioni; return Array.isArray(spec) ? spec.join(', ') : 'Formazione generale'; } catch { return 'Formazione generale'; } })()}
+                                {ente.corsi_count || 0} corsi
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-1 text-yellow-400">
-                              <Star className="w-4 h-4 fill-current" />
-                              <span className="font-bold">{ente.rating || '-'}</span>
-                            </div>
-                            <div className="text-xs text-[#e8fbff]/50">
-                              {ente.corsi_count || 0} corsi
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {(!realData.formazioneStats?.enti || realData.formazioneStats.enti.length === 0) && (
+                        )
+                      )}
+                      {(!realData.formazioneStats?.enti ||
+                        realData.formazioneStats.enti.length === 0) && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <GraduationCap className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Caricamento enti formatori...</p>
@@ -4777,39 +6468,62 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <BookOpen className="h-5 w-5 text-[#3b82f6]" />
                       Corsi Disponibili
-                      {realData.formazioneStats?.corsi && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                      {realData.formazioneStats?.corsi && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {(realData.formazioneStats?.corsi || []).map((corso: any, idx: number) => (
-                        <div key={corso.id || idx} className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <div className="text-[#e8fbff] font-medium">{corso.titolo}</div>
-                              <div className="text-xs text-[#e8fbff]/50">{corso.ente_nome}</div>
+                      {(realData.formazioneStats?.corsi || []).map(
+                        (corso: any, idx: number) => (
+                          <div
+                            key={corso.id || idx}
+                            className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <div className="text-[#e8fbff] font-medium">
+                                  {corso.titolo}
+                                </div>
+                                <div className="text-xs text-[#e8fbff]/50">
+                                  {corso.ente_nome}
+                                </div>
+                              </div>
+                              <Badge
+                                className={`${corso.tipo_attestato === "HACCP" ? "bg-emerald-500/20 text-emerald-400" : corso.tipo_attestato === "Antincendio" ? "bg-red-500/20 text-red-400" : "bg-blue-500/20 text-blue-400"}`}
+                              >
+                                {corso.tipo_attestato}
+                              </Badge>
                             </div>
-                            <Badge className={`${corso.tipo_attestato === 'HACCP' ? 'bg-emerald-500/20 text-emerald-400' : corso.tipo_attestato === 'Antincendio' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                              {corso.tipo_attestato}
-                            </Badge>
+                            <div className="flex justify-between items-center text-sm">
+                              <div className="text-[#e8fbff]/70">
+                                <span className="text-cyan-400 font-bold">
+                                  €{corso.costo || 0}
+                                </span>{" "}
+                                · {corso.durata_ore || 0}h
+                              </div>
+                              <div className="text-[#e8fbff]/50">
+                                {corso.posti_disponibili || 0}/
+                                {corso.max_partecipanti || 0} posti
+                              </div>
+                            </div>
+                            {corso.data_inizio && (
+                              <div className="mt-2 text-xs text-[#e8fbff]/50">
+                                <Calendar className="w-3 h-3 inline mr-1" />
+                                Inizio:{" "}
+                                {new Date(corso.data_inizio).toLocaleDateString(
+                                  "it-IT"
+                                )}
+                              </div>
+                            )}
                           </div>
-                          <div className="flex justify-between items-center text-sm">
-                            <div className="text-[#e8fbff]/70">
-                              <span className="text-cyan-400 font-bold">€{corso.costo || 0}</span> · {corso.durata_ore || 0}h
-                            </div>
-                            <div className="text-[#e8fbff]/50">
-                              {corso.posti_disponibili || 0}/{corso.max_partecipanti || 0} posti
-                            </div>
-                          </div>
-                          {corso.data_inizio && (
-                            <div className="mt-2 text-xs text-[#e8fbff]/50">
-                              <Calendar className="w-3 h-3 inline mr-1" />
-                              Inizio: {new Date(corso.data_inizio).toLocaleDateString('it-IT')}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                      {(!realData.formazioneStats?.corsi || realData.formazioneStats.corsi.length === 0) && (
+                        )
+                      )}
+                      {(!realData.formazioneStats?.corsi ||
+                        realData.formazioneStats.corsi.length === 0) && (
                         <div className="col-span-2 text-center text-[#e8fbff]/50 py-8">
                           <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Caricamento corsi...</p>
@@ -4825,7 +6539,11 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-[#f59e0b]" />
                       Scadenze Attestati Imprese
-                      {realData.formazioneStats?.stats?.scadenze_imprese && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                      {realData.formazioneStats?.stats?.scadenze_imprese && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
                       Attestati in scadenza e scaduti ordinati per data
@@ -4833,17 +6551,27 @@ export default function DashboardPA() {
                   </CardHeader>
                   <CardContent>
                     <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
-                      {(realData.formazioneStats?.stats?.scadenze_imprese || []).map((item: any, idx: number) => (
-                        <div key={item.id || idx} className={`flex items-center justify-between p-3 rounded-lg border ${
-                          item.stato_scadenza === 'scaduto' ? 'bg-red-500/10 border-red-500/30' :
-                          item.stato_scadenza === 'urgente' ? 'bg-orange-500/10 border-orange-500/30' :
-                          item.stato_scadenza === 'in_scadenza' ? 'bg-yellow-500/10 border-yellow-500/30' :
-                          'bg-[#0b1220] border-[#3b82f6]/10'
-                        }`}>
+                      {(
+                        realData.formazioneStats?.stats?.scadenze_imprese || []
+                      ).map((item: any, idx: number) => (
+                        <div
+                          key={item.id || idx}
+                          className={`flex items-center justify-between p-3 rounded-lg border ${
+                            item.stato_scadenza === "scaduto"
+                              ? "bg-red-500/10 border-red-500/30"
+                              : item.stato_scadenza === "urgente"
+                                ? "bg-orange-500/10 border-orange-500/30"
+                                : item.stato_scadenza === "in_scadenza"
+                                  ? "bg-yellow-500/10 border-yellow-500/30"
+                                  : "bg-[#0b1220] border-[#3b82f6]/10"
+                          }`}
+                        >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <Building2 className="w-4 h-4 text-[#e8fbff]/50" />
-                              <span className="text-[#e8fbff] font-medium">{item.impresa_nome}</span>
+                              <span className="text-[#e8fbff] font-medium">
+                                {item.impresa_nome}
+                              </span>
                             </div>
                             <div className="flex items-center gap-4 mt-1 text-xs text-[#e8fbff]/50">
                               <span className="flex items-center gap-1">
@@ -4851,27 +6579,41 @@ export default function DashboardPA() {
                                 {item.tipo}
                               </span>
                               <span>{item.ente_rilascio}</span>
-                              {item.numero_certificato && <span>#{item.numero_certificato}</span>}
+                              {item.numero_certificato && (
+                                <span>#{item.numero_certificato}</span>
+                              )}
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className={`text-sm font-bold ${
-                              item.stato_scadenza === 'scaduto' ? 'text-red-400' :
-                              item.stato_scadenza === 'urgente' ? 'text-orange-400' :
-                              item.stato_scadenza === 'in_scadenza' ? 'text-yellow-400' :
-                              'text-emerald-400'
-                            }`}>
-                              {item.stato_scadenza === 'scaduto' ? `Scaduto da ${Math.abs(item.giorni_rimanenti)} gg` :
-                               item.giorni_rimanenti <= 0 ? 'Scaduto' :
-                               `${item.giorni_rimanenti} giorni`}
+                            <div
+                              className={`text-sm font-bold ${
+                                item.stato_scadenza === "scaduto"
+                                  ? "text-red-400"
+                                  : item.stato_scadenza === "urgente"
+                                    ? "text-orange-400"
+                                    : item.stato_scadenza === "in_scadenza"
+                                      ? "text-yellow-400"
+                                      : "text-emerald-400"
+                              }`}
+                            >
+                              {item.stato_scadenza === "scaduto"
+                                ? `Scaduto da ${Math.abs(item.giorni_rimanenti)} gg`
+                                : item.giorni_rimanenti <= 0
+                                  ? "Scaduto"
+                                  : `${item.giorni_rimanenti} giorni`}
                             </div>
                             <div className="text-xs text-[#e8fbff]/50">
-                              Scade: {new Date(item.data_scadenza).toLocaleDateString('it-IT')}
+                              Scade:{" "}
+                              {new Date(item.data_scadenza).toLocaleDateString(
+                                "it-IT"
+                              )}
                             </div>
                           </div>
                         </div>
                       ))}
-                      {(!realData.formazioneStats?.stats?.scadenze_imprese || realData.formazioneStats.stats.scadenze_imprese.length === 0) && (
+                      {(!realData.formazioneStats?.stats?.scadenze_imprese ||
+                        realData.formazioneStats.stats.scadenze_imprese
+                          .length === 0) && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <FileCheck className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Nessun attestato registrato</p>
@@ -4887,71 +6629,97 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <FileCheck className="h-5 w-5 text-[#10b981]" />
                       Registra Nuovo Attestato
-                      <Badge className="bg-emerald-500/20 text-emerald-400 ml-2">Nuovo</Badge>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 ml-2">
+                        Nuovo
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-                      const form = e.target as HTMLFormElement;
-                      const formData = new FormData(form);
-                      const data = {
-                        impresa_id: parseInt(formData.get('impresa_id') as string),
-                        tipo_qualifica: formData.get('tipo_qualifica'),
-                        ente_rilascio: formData.get('ente_rilascio'),
-                        numero_attestato: formData.get('numero_attestato'),
-                        data_rilascio: formData.get('data_rilascio'),
-                        data_scadenza: formData.get('data_scadenza'),
-                        ore_formazione: parseInt(formData.get('ore_formazione') as string) || null,
-                        docente: formData.get('docente'),
-                        note: formData.get('note')
-                      };
-                      try {
-                        const res = await authenticatedFetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/formazione/attestati`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(data)
-                        });
-                        const result = await res.json();
-                        if (result.success) {
-                          alert('✅ ' + result.message);
-                          form.reset();
-                        } else {
-                          alert('❌ Errore: ' + result.error);
+                    <form
+                      onSubmit={async e => {
+                        e.preventDefault();
+                        const form = e.target as HTMLFormElement;
+                        const formData = new FormData(form);
+                        const data = {
+                          impresa_id: parseInt(
+                            formData.get("impresa_id") as string
+                          ),
+                          tipo_qualifica: formData.get("tipo_qualifica"),
+                          ente_rilascio: formData.get("ente_rilascio"),
+                          numero_attestato: formData.get("numero_attestato"),
+                          data_rilascio: formData.get("data_rilascio"),
+                          data_scadenza: formData.get("data_scadenza"),
+                          ore_formazione:
+                            parseInt(
+                              formData.get("ore_formazione") as string
+                            ) || null,
+                          docente: formData.get("docente"),
+                          note: formData.get("note"),
+                        };
+                        try {
+                          const res = await authenticatedFetch(
+                            `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/formazione/attestati`,
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(data),
+                            }
+                          );
+                          const result = await res.json();
+                          if (result.success) {
+                            alert("✅ " + result.message);
+                            form.reset();
+                          } else {
+                            alert("❌ Errore: " + result.error);
+                          }
+                        } catch (err) {
+                          alert("❌ Errore di connessione");
                         }
-                      } catch (err) {
-                        alert('❌ Errore di connessione');
-                      }
-                    }} className="space-y-4">
+                      }}
+                      className="space-y-4"
+                    >
                       {/* Ricerca Impresa */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm text-[#e8fbff]/70">Cerca Impresa *</label>
+                          <label className="text-sm text-[#e8fbff]/70">
+                            Cerca Impresa *
+                          </label>
                           <div className="relative">
                             <input
                               type="text"
                               placeholder="Cerca per nome, P.IVA o CF..."
                               className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none"
-                              onChange={async (e) => {
+                              onChange={async e => {
                                 const q = e.target.value;
                                 if (q.length < 2) return;
                                 try {
-                                  const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/formazione/imprese/search?q=${encodeURIComponent(q)}`);
+                                  const res = await fetch(
+                                    `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/formazione/imprese/search?q=${encodeURIComponent(q)}`
+                                  );
                                   const data = await res.json();
-                                  const list = document.getElementById('imprese-list');
+                                  const list =
+                                    document.getElementById("imprese-list");
                                   if (list && data.success) {
                                     // Pulisci il contenuto precedente
-                                    list.textContent = '';
+                                    list.textContent = "";
                                     data.data.forEach((i: any) => {
-                                      const div = document.createElement('div');
-                                      div.className = 'p-2 hover:bg-[#3b82f6]/20 cursor-pointer rounded';
-                                      div.textContent = `${i.denominazione} - ${i.partita_iva} - ${i.comune || ''}`;
-                                      div.addEventListener('click', () => {
-                                        const idInput = document.getElementById('impresa_id') as HTMLInputElement;
-                                        const nomeInput = document.getElementById('impresa_nome') as HTMLInputElement;
-                                        if (idInput) idInput.value = String(i.id);
-                                        if (nomeInput) nomeInput.value = `${i.denominazione} (${i.partita_iva})`;
-                                        list.textContent = '';
+                                      const div = document.createElement("div");
+                                      div.className =
+                                        "p-2 hover:bg-[#3b82f6]/20 cursor-pointer rounded";
+                                      div.textContent = `${i.denominazione} - ${i.partita_iva} - ${i.comune || ""}`;
+                                      div.addEventListener("click", () => {
+                                        const idInput = document.getElementById(
+                                          "impresa_id"
+                                        ) as HTMLInputElement;
+                                        const nomeInput =
+                                          document.getElementById(
+                                            "impresa_nome"
+                                          ) as HTMLInputElement;
+                                        if (idInput)
+                                          idInput.value = String(i.id);
+                                        if (nomeInput)
+                                          nomeInput.value = `${i.denominazione} (${i.partita_iva})`;
+                                        list.textContent = "";
                                       });
                                       list.appendChild(div);
                                     });
@@ -4959,77 +6727,175 @@ export default function DashboardPA() {
                                 } catch {}
                               }}
                             />
-                            <div id="imprese-list" className="absolute z-10 w-full bg-[#1a2332] border border-[#3b82f6]/20 rounded-lg mt-1 max-h-40 overflow-y-auto text-[#e8fbff] text-sm"></div>
+                            <div
+                              id="imprese-list"
+                              className="absolute z-10 w-full bg-[#1a2332] border border-[#3b82f6]/20 rounded-lg mt-1 max-h-40 overflow-y-auto text-[#e8fbff] text-sm"
+                            ></div>
                           </div>
-                          <input type="hidden" name="impresa_id" id="impresa_id" required />
-                          <input type="text" id="impresa_nome" readOnly placeholder="Impresa selezionata" className="w-full p-2 bg-[#0b1220]/50 border border-[#10b981]/30 rounded text-[#10b981] text-sm" />
+                          <input
+                            type="hidden"
+                            name="impresa_id"
+                            id="impresa_id"
+                            required
+                          />
+                          <input
+                            type="text"
+                            id="impresa_nome"
+                            readOnly
+                            placeholder="Impresa selezionata"
+                            className="w-full p-2 bg-[#0b1220]/50 border border-[#10b981]/30 rounded text-[#10b981] text-sm"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm text-[#e8fbff]/70">Tipo Attestato *</label>
-                          <select name="tipo_qualifica" required className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] focus:border-[#10b981] focus:outline-none">
+                          <label className="text-sm text-[#e8fbff]/70">
+                            Tipo Attestato *
+                          </label>
+                          <select
+                            name="tipo_qualifica"
+                            required
+                            className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] focus:border-[#10b981] focus:outline-none"
+                          >
                             <option value="">Seleziona tipo...</option>
                             {/* Requisiti Obbligatori */}
-                            <option value="DURC">DURC - Regolarità Contributiva</option>
-                            <option value="ONORABILITA">ONORABILITA - Requisiti Morali (Art. 71 D.Lgs. 59/2010)</option>
-                            <option value="ANTIMAFIA">ANTIMAFIA - Dichiarazione (Art. 67 D.Lgs. 159/2011)</option>
+                            <option value="DURC">
+                              DURC - Regolarità Contributiva
+                            </option>
+                            <option value="ONORABILITA">
+                              ONORABILITA - Requisiti Morali (Art. 71 D.Lgs.
+                              59/2010)
+                            </option>
+                            <option value="ANTIMAFIA">
+                              ANTIMAFIA - Dichiarazione (Art. 67 D.Lgs.
+                              159/2011)
+                            </option>
                             {/* Certificazioni Alimentari */}
-                            <option value="HACCP">HACCP - Sicurezza Alimentare</option>
-                            <option value="SAB">SAB - Somministrazione Alimenti e Bevande</option>
-                            <option value="REC">REC - Registro Esercenti Commercio</option>
-                            <option value="CORSO_ALIMENTARE">CORSO ALIMENTARE - Formazione Regionale</option>
+                            <option value="HACCP">
+                              HACCP - Sicurezza Alimentare
+                            </option>
+                            <option value="SAB">
+                              SAB - Somministrazione Alimenti e Bevande
+                            </option>
+                            <option value="REC">
+                              REC - Registro Esercenti Commercio
+                            </option>
+                            <option value="CORSO_ALIMENTARE">
+                              CORSO ALIMENTARE - Formazione Regionale
+                            </option>
                             {/* Certificazioni Qualità */}
                             <option value="ISO 9001">ISO 9001 - Qualità</option>
-                            <option value="ISO 14001">ISO 14001 - Ambiente</option>
-                            <option value="ISO 22000">ISO 22000 - Sicurezza Alimentare</option>
+                            <option value="ISO 14001">
+                              ISO 14001 - Ambiente
+                            </option>
+                            <option value="ISO 22000">
+                              ISO 22000 - Sicurezza Alimentare
+                            </option>
                             {/* Altro */}
-                            <option value="CONCESSIONE MERCATO">CONCESSIONE MERCATO</option>
+                            <option value="CONCESSIONE MERCATO">
+                              CONCESSIONE MERCATO
+                            </option>
                             <option value="ALTRO">ALTRO</option>
                           </select>
                         </div>
                       </div>
-                      
+
                       {/* Date e Ente */}
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm text-[#e8fbff]/70">Data Rilascio *</label>
-                          <input type="date" name="data_rilascio" required className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] focus:border-[#10b981] focus:outline-none" />
+                          <label className="text-sm text-[#e8fbff]/70">
+                            Data Rilascio *
+                          </label>
+                          <input
+                            type="date"
+                            name="data_rilascio"
+                            required
+                            className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] focus:border-[#10b981] focus:outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm text-[#e8fbff]/70">Data Scadenza *</label>
-                          <input type="date" name="data_scadenza" required className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] focus:border-[#10b981] focus:outline-none" />
+                          <label className="text-sm text-[#e8fbff]/70">
+                            Data Scadenza *
+                          </label>
+                          <input
+                            type="date"
+                            name="data_scadenza"
+                            required
+                            className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] focus:border-[#10b981] focus:outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm text-[#e8fbff]/70">Ente Rilascio</label>
-                          <input type="text" name="ente_rilascio" placeholder="Nome ente formatore" className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none" />
+                          <label className="text-sm text-[#e8fbff]/70">
+                            Ente Rilascio
+                          </label>
+                          <input
+                            type="text"
+                            name="ente_rilascio"
+                            placeholder="Nome ente formatore"
+                            className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm text-[#e8fbff]/70">N. Attestato</label>
-                          <input type="text" name="numero_attestato" placeholder="Es: ATT-2026-001" className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none" />
+                          <label className="text-sm text-[#e8fbff]/70">
+                            N. Attestato
+                          </label>
+                          <input
+                            type="text"
+                            name="numero_attestato"
+                            placeholder="Es: ATT-2026-001"
+                            className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none"
+                          />
                         </div>
                       </div>
-                      
+
                       {/* Dettagli Corso */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm text-[#e8fbff]/70">Ore Formazione</label>
-                          <input type="number" name="ore_formazione" min="1" placeholder="Es: 8" className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none" />
+                          <label className="text-sm text-[#e8fbff]/70">
+                            Ore Formazione
+                          </label>
+                          <input
+                            type="number"
+                            name="ore_formazione"
+                            min="1"
+                            placeholder="Es: 8"
+                            className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm text-[#e8fbff]/70">Docente</label>
-                          <input type="text" name="docente" placeholder="Nome docente" className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none" />
+                          <label className="text-sm text-[#e8fbff]/70">
+                            Docente
+                          </label>
+                          <input
+                            type="text"
+                            name="docente"
+                            placeholder="Nome docente"
+                            className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm text-[#e8fbff]/70">Note</label>
-                          <input type="text" name="note" placeholder="Note aggiuntive" className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none" />
+                          <label className="text-sm text-[#e8fbff]/70">
+                            Note
+                          </label>
+                          <input
+                            type="text"
+                            name="note"
+                            placeholder="Note aggiuntive"
+                            className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none"
+                          />
                         </div>
                       </div>
-                      
+
                       {/* Submit */}
                       <div className="flex justify-end gap-3 pt-4">
-                        <button type="reset" className="px-6 py-3 bg-[#0b1220] border border-[#e8fbff]/20 rounded-lg text-[#e8fbff]/70 hover:bg-[#1a2332] transition-colors">
+                        <button
+                          type="reset"
+                          className="px-6 py-3 bg-[#0b1220] border border-[#e8fbff]/20 rounded-lg text-[#e8fbff]/70 hover:bg-[#1a2332] transition-colors"
+                        >
                           Annulla
                         </button>
-                        <button type="submit" className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#3b82f6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2">
+                        <button
+                          type="submit"
+                          className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#3b82f6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+                        >
                           <FileCheck className="w-4 h-4" />
                           Registra Attestato
                         </button>
@@ -5044,58 +6910,107 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <Users className="h-5 w-5 text-[#8b5cf6]" />
                       Imprese Iscritte ai Corsi
-                      {realData.formazioneStats?.iscrizioni && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
-                      <Badge className="bg-purple-500/20 text-purple-400 ml-2">Nuovo</Badge>
+                      {realData.formazioneStats?.iscrizioni && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
+                      <Badge className="bg-purple-500/20 text-purple-400 ml-2">
+                        Nuovo
+                      </Badge>
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
-                      Iscrizioni registrate dall'app imprese - {realData.formazioneStats?.iscrizioni?.conteggi?.totale || 0} totali
+                      Iscrizioni registrate dall'app imprese -{" "}
+                      {realData.formazioneStats?.iscrizioni?.conteggi?.totale ||
+                        0}{" "}
+                      totali
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {/* KPI Iscrizioni */}
                     <div className="grid grid-cols-4 gap-3 mb-4">
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#8b5cf6]/20 text-center">
-                        <div className="text-2xl font-bold text-[#8b5cf6]">{realData.formazioneStats?.iscrizioni?.conteggi?.iscritti || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">Iscritti</div>
+                        <div className="text-2xl font-bold text-[#8b5cf6]">
+                          {realData.formazioneStats?.iscrizioni?.conteggi
+                            ?.iscritti || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          Iscritti
+                        </div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#10b981]/20 text-center">
-                        <div className="text-2xl font-bold text-[#10b981]">{realData.formazioneStats?.iscrizioni?.conteggi?.confermati || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">Confermati</div>
+                        <div className="text-2xl font-bold text-[#10b981]">
+                          {realData.formazioneStats?.iscrizioni?.conteggi
+                            ?.confermati || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          Confermati
+                        </div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#3b82f6]/20 text-center">
-                        <div className="text-2xl font-bold text-[#3b82f6]">{realData.formazioneStats?.iscrizioni?.conteggi?.completati || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">Completati</div>
+                        <div className="text-2xl font-bold text-[#3b82f6]">
+                          {realData.formazioneStats?.iscrizioni?.conteggi
+                            ?.completati || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          Completati
+                        </div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#ef4444]/20 text-center">
-                        <div className="text-2xl font-bold text-[#ef4444]">{realData.formazioneStats?.iscrizioni?.conteggi?.annullati || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">Annullati</div>
+                        <div className="text-2xl font-bold text-[#ef4444]">
+                          {realData.formazioneStats?.iscrizioni?.conteggi
+                            ?.annullati || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          Annullati
+                        </div>
                       </div>
                     </div>
-                    
+
                     {/* Lista Iscrizioni */}
                     <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
-                      {(realData.formazioneStats?.iscrizioni?.iscrizioni_recenti || []).map((item: any, idx: number) => (
-                        <div key={item.id || idx} className={`flex items-center justify-between p-3 rounded-lg border ${
-                          item.stato === 'COMPLETATO' ? 'bg-blue-500/10 border-blue-500/30' :
-                          item.stato === 'CONFERMATO' ? 'bg-green-500/10 border-green-500/30' :
-                          item.stato === 'ANNULLATO' ? 'bg-red-500/10 border-red-500/30' :
-                          'bg-purple-500/10 border-purple-500/30'
-                        }`}>
+                      {(
+                        realData.formazioneStats?.iscrizioni
+                          ?.iscrizioni_recenti || []
+                      ).map((item: any, idx: number) => (
+                        <div
+                          key={item.id || idx}
+                          className={`flex items-center justify-between p-3 rounded-lg border ${
+                            item.stato === "COMPLETATO"
+                              ? "bg-blue-500/10 border-blue-500/30"
+                              : item.stato === "CONFERMATO"
+                                ? "bg-green-500/10 border-green-500/30"
+                                : item.stato === "ANNULLATO"
+                                  ? "bg-red-500/10 border-red-500/30"
+                                  : "bg-purple-500/10 border-purple-500/30"
+                          }`}
+                        >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-[#e8fbff]">{item.impresa_nome}</span>
-                              <Badge className={`text-xs ${
-                                item.stato === 'COMPLETATO' ? 'bg-blue-500/20 text-blue-400' :
-                                item.stato === 'CONFERMATO' ? 'bg-green-500/20 text-green-400' :
-                                item.stato === 'ANNULLATO' ? 'bg-red-500/20 text-red-400' :
-                                'bg-purple-500/20 text-purple-400'
-                              }`}>
+                              <span className="font-medium text-[#e8fbff]">
+                                {item.impresa_nome}
+                              </span>
+                              <Badge
+                                className={`text-xs ${
+                                  item.stato === "COMPLETATO"
+                                    ? "bg-blue-500/20 text-blue-400"
+                                    : item.stato === "CONFERMATO"
+                                      ? "bg-green-500/20 text-green-400"
+                                      : item.stato === "ANNULLATO"
+                                        ? "bg-red-500/20 text-red-400"
+                                        : "bg-purple-500/20 text-purple-400"
+                                }`}
+                              >
                                 {item.stato}
                               </Badge>
                             </div>
                             <div className="text-sm text-[#e8fbff]/60 mt-1">
-                              <span className="text-[#3b82f6]">{item.corso_titolo}</span>
-                              {item.ente_nome && <span className="ml-2">• {item.ente_nome}</span>}
+                              <span className="text-[#3b82f6]">
+                                {item.corso_titolo}
+                              </span>
+                              {item.ente_nome && (
+                                <span className="ml-2">• {item.ente_nome}</span>
+                              )}
                             </div>
                             {item.utente_nome && (
                               <div className="text-xs text-[#e8fbff]/40 mt-1">
@@ -5105,19 +7020,38 @@ export default function DashboardPA() {
                           </div>
                           <div className="text-right">
                             <div className="text-sm text-[#e8fbff]/70">
-                              {item.corso_data ? new Date(item.corso_data).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                              {item.corso_data
+                                ? new Date(item.corso_data).toLocaleDateString(
+                                    "it-IT",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    }
+                                  )
+                                : "-"}
                             </div>
                             <div className="text-xs text-[#e8fbff]/40">
-                              Iscritto: {item.data_iscrizione ? new Date(item.data_iscrizione).toLocaleDateString('it-IT') : '-'}
+                              Iscritto:{" "}
+                              {item.data_iscrizione
+                                ? new Date(
+                                    item.data_iscrizione
+                                  ).toLocaleDateString("it-IT")
+                                : "-"}
                             </div>
                           </div>
                         </div>
                       ))}
-                      {(!realData.formazioneStats?.iscrizioni?.iscrizioni_recenti || realData.formazioneStats.iscrizioni.iscrizioni_recenti.length === 0) && (
+                      {(!realData.formazioneStats?.iscrizioni
+                        ?.iscrizioni_recenti ||
+                        realData.formazioneStats.iscrizioni.iscrizioni_recenti
+                          .length === 0) && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <Users className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Nessuna iscrizione registrata</p>
-                          <p className="text-xs mt-1">Le imprese potranno iscriversi ai corsi dall'app</p>
+                          <p className="text-xs mt-1">
+                            Le imprese potranno iscriversi ai corsi dall'app
+                          </p>
                         </div>
                       )}
                     </div>
@@ -5132,130 +7066,204 @@ export default function DashboardPA() {
                       Invia Notifica alle Imprese
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
-                      Invia comunicazioni informative o promozionali alle imprese iscritte
+                      Invia comunicazioni informative o promozionali alle
+                      imprese iscritte
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-                      const form = e.target as HTMLFormElement;
-                      const formData = new FormData(form);
-                      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
-                      
-                      setInvioNotificaLoading(true);
-                      try {
-                        const targetTipo = formData.get('target_tipo');
-                        const targetId = formData.get('target_id');
-                        let targetNome = null;
-                        
-                        if (targetTipo === 'MERCATO' && targetId) {
-                          const mercato = mercatiList.find(m => m.id === parseInt(targetId as string));
-                          targetNome = mercato?.name || mercato?.nome;
-                        } else if (targetTipo === 'HUB' && targetId) {
-                          const hub = hubList.find(h => h.hub_id === parseInt(targetId as string));
-                          targetNome = hub?.comune_nome;
-                        } else if (targetTipo === 'IMPRESA' && targetId) {
-                          const impresa = impreseList.find(i => i.id === parseInt(targetId as string));
-                          targetNome = impresa?.denominazione;
+                    <form
+                      onSubmit={async e => {
+                        e.preventDefault();
+                        const form = e.target as HTMLFormElement;
+                        const formData = new FormData(form);
+                        const MIHUB_API =
+                          import.meta.env.VITE_MIHUB_API_BASE_URL ||
+                          "https://api.mio-hub.me/api";
+
+                        setInvioNotificaLoading(true);
+                        try {
+                          const targetTipo = formData.get("target_tipo");
+                          const targetId = formData.get("target_id");
+                          let targetNome = null;
+
+                          if (targetTipo === "MERCATO" && targetId) {
+                            const mercato = mercatiList.find(
+                              m => m.id === parseInt(targetId as string)
+                            );
+                            targetNome = mercato?.name || mercato?.nome;
+                          } else if (targetTipo === "HUB" && targetId) {
+                            const hub = hubList.find(
+                              h => h.hub_id === parseInt(targetId as string)
+                            );
+                            targetNome = hub?.comune_nome;
+                          } else if (targetTipo === "IMPRESA" && targetId) {
+                            const impresa = impreseList.find(
+                              i => i.id === parseInt(targetId as string)
+                            );
+                            targetNome = impresa?.denominazione;
+                          }
+
+                          const response = await authenticatedFetch(
+                            `${MIHUB_API}/notifiche/send`,
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                mittente_tipo: "ENTE_FORMATORE",
+                                mittente_id: 1,
+                                mittente_nome: "Ente Formatore",
+                                titolo: formData.get("titolo"),
+                                messaggio: formData.get("messaggio"),
+                                tipo_messaggio: formData.get("tipo_messaggio"),
+                                target_tipo: targetTipo,
+                                target_id: targetId || null,
+                                target_nome: targetNome,
+                              }),
+                            }
+                          );
+                          const data = await response.json();
+                          if (data.success) {
+                            alert(
+                              `✅ Notifica inviata con successo a ${data.data.destinatari_count} destinatari!`
+                            );
+                            form.reset();
+                          } else {
+                            alert("❌ Errore: " + data.error);
+                          }
+                        } catch (err) {
+                          alert("❌ Errore invio notifica");
+                        } finally {
+                          setInvioNotificaLoading(false);
                         }
-                        
-                        const response = await authenticatedFetch(`${MIHUB_API}/notifiche/send`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            mittente_tipo: 'ENTE_FORMATORE',
-                            mittente_id: 1,
-                            mittente_nome: 'Ente Formatore',
-                            titolo: formData.get('titolo'),
-                            messaggio: formData.get('messaggio'),
-                            tipo_messaggio: formData.get('tipo_messaggio'),
-                            target_tipo: targetTipo,
-                            target_id: targetId || null,
-                            target_nome: targetNome
-                          })
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                          alert(`✅ Notifica inviata con successo a ${data.data.destinatari_count} destinatari!`);
-                          form.reset();
-                        } else {
-                          alert('❌ Errore: ' + data.error);
-                        }
-                      } catch (err) {
-                        alert('❌ Errore invio notifica');
-                      } finally {
-                        setInvioNotificaLoading(false);
-                      }
-                    }} className="space-y-4">
+                      }}
+                      className="space-y-4"
+                    >
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm text-[#e8fbff]/70 mb-1">Destinatari</label>
-                          <select name="target_tipo" id="enti_target_tipo" className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]" required
-                            onChange={(e) => {
-                              const targetIdSelect = document.getElementById('enti_target_id') as HTMLSelectElement;
-                              const targetIdContainer = document.getElementById('enti_target_id_container');
+                          <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                            Destinatari
+                          </label>
+                          <select
+                            name="target_tipo"
+                            id="enti_target_tipo"
+                            className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                            required
+                            onChange={e => {
+                              const targetIdSelect = document.getElementById(
+                                "enti_target_id"
+                              ) as HTMLSelectElement;
+                              const targetIdContainer = document.getElementById(
+                                "enti_target_id_container"
+                              );
                               if (targetIdContainer) {
-                                targetIdContainer.style.display = ['MERCATO', 'HUB', 'IMPRESA'].includes(e.target.value) ? 'block' : 'none';
+                                targetIdContainer.style.display = [
+                                  "MERCATO",
+                                  "HUB",
+                                  "IMPRESA",
+                                ].includes(e.target.value)
+                                  ? "block"
+                                  : "none";
                               }
                               if (targetIdSelect) {
-                                targetIdSelect.innerHTML = '<option value="">Seleziona...</option>';
-                                if (e.target.value === 'MERCATO') {
+                                targetIdSelect.innerHTML =
+                                  '<option value="">Seleziona...</option>';
+                                if (e.target.value === "MERCATO") {
                                   mercatiList.forEach(m => {
-                                    const opt = document.createElement('option');
+                                    const opt =
+                                      document.createElement("option");
                                     opt.value = m.id;
                                     opt.textContent = m.name || m.nome;
                                     targetIdSelect.appendChild(opt);
                                   });
-                                } else if (e.target.value === 'HUB') {
+                                } else if (e.target.value === "HUB") {
                                   hubList.forEach(h => {
-                                    const opt = document.createElement('option');
+                                    const opt =
+                                      document.createElement("option");
                                     opt.value = h.hub_id;
                                     opt.textContent = h.comune_nome;
                                     targetIdSelect.appendChild(opt);
                                   });
-                                } else if (e.target.value === 'IMPRESA') {
+                                } else if (e.target.value === "IMPRESA") {
                                   impreseList.forEach(i => {
-                                    const opt = document.createElement('option');
+                                    const opt =
+                                      document.createElement("option");
                                     opt.value = i.id;
                                     opt.textContent = i.denominazione;
                                     targetIdSelect.appendChild(opt);
                                   });
                                 }
                               }
-                            }}>
+                            }}
+                          >
                             <option value="TUTTI">Tutte le Imprese</option>
-                            <option value="MERCATO">Imprese del Mercato...</option>
+                            <option value="MERCATO">
+                              Imprese del Mercato...
+                            </option>
                             <option value="HUB">Negozi dell'HUB...</option>
                             <option value="IMPRESA">Impresa Singola...</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm text-[#e8fbff]/70 mb-1">Tipo Messaggio</label>
-                          <select name="tipo_messaggio" className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]" required>
+                          <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                            Tipo Messaggio
+                          </label>
+                          <select
+                            name="tipo_messaggio"
+                            className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                            required
+                          >
                             <option value="INFORMATIVA">Informativa</option>
-                            <option value="PROMOZIONALE">Promozionale (Corsi)</option>
+                            <option value="PROMOZIONALE">
+                              Promozionale (Corsi)
+                            </option>
                           </select>
                         </div>
                       </div>
-                      <div id="enti_target_id_container" style={{ display: 'none' }}>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Seleziona Destinatario Specifico</label>
-                        <select name="target_id" id="enti_target_id" className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]">
+                      <div
+                        id="enti_target_id_container"
+                        style={{ display: "none" }}
+                      >
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                          Seleziona Destinatario Specifico
+                        </label>
+                        <select
+                          name="target_id"
+                          id="enti_target_id"
+                          className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                        >
                           <option value="">Seleziona...</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Titolo</label>
-                        <input type="text" name="titolo" placeholder="Es: Nuovo corso HACCP disponibile" 
-                          className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]" required />
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                          Titolo
+                        </label>
+                        <input
+                          type="text"
+                          name="titolo"
+                          placeholder="Es: Nuovo corso HACCP disponibile"
+                          className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                          required
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Messaggio</label>
-                        <textarea name="messaggio" rows={4} placeholder="Scrivi il messaggio da inviare alle imprese..."
-                          className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]" required />
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                          Messaggio
+                        </label>
+                        <textarea
+                          name="messaggio"
+                          rows={4}
+                          placeholder="Scrivi il messaggio da inviare alle imprese..."
+                          className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                          required
+                        />
                       </div>
                       <div className="flex justify-end">
-                        <button type="submit" disabled={invioNotificaLoading}
-                          className="px-6 py-3 bg-gradient-to-r from-[#3b82f6] to-[#8b5cf6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50">
+                        <button
+                          type="submit"
+                          disabled={invioNotificaLoading}
+                          className="px-6 py-3 bg-gradient-to-r from-[#3b82f6] to-[#8b5cf6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+                        >
                           {invioNotificaLoading ? (
                             <>
                               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -5279,9 +7287,16 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <MessageSquare className="h-5 w-5 text-[#3b82f6]" />
                       Messaggi
-                      {(notificheRisposteEnti || []).filter((r: any) => !r.letta).length > 0 && (
+                      {(notificheRisposteEnti || []).filter(
+                        (r: any) => !r.letta
+                      ).length > 0 && (
                         <Badge className="bg-red-500 text-white ml-2">
-                          {(notificheRisposteEnti || []).filter((r: any) => !r.letta).length} nuove
+                          {
+                            (notificheRisposteEnti || []).filter(
+                              (r: any) => !r.letta
+                            ).length
+                          }{" "}
+                          nuove
                         </Badge>
                       )}
                     </CardTitle>
@@ -5293,88 +7308,136 @@ export default function DashboardPA() {
                     {/* Filtri */}
                     <div className="flex gap-2 mb-4">
                       <button
-                        onClick={() => setFiltroMessaggiEnti('tutti')}
-                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiEnti === 'tutti' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20'}`}
+                        onClick={() => setFiltroMessaggiEnti("tutti")}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiEnti === "tutti" ? "bg-blue-500 text-white" : "bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20"}`}
                       >
                         Tutti
                       </button>
                       <button
-                        onClick={() => setFiltroMessaggiEnti('inviati')}
-                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiEnti === 'inviati' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20'}`}
+                        onClick={() => setFiltroMessaggiEnti("inviati")}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiEnti === "inviati" ? "bg-blue-500 text-white" : "bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20"}`}
                       >
                         Inviati ({(messaggiInviatiEnti || []).length})
                       </button>
                       <button
-                        onClick={() => setFiltroMessaggiEnti('ricevuti')}
-                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiEnti === 'ricevuti' ? 'bg-blue-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20'}`}
+                        onClick={() => setFiltroMessaggiEnti("ricevuti")}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiEnti === "ricevuti" ? "bg-blue-500 text-white" : "bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20"}`}
                       >
                         Ricevuti ({(notificheRisposteEnti || []).length})
                       </button>
                     </div>
                     <div className="max-h-[400px] overflow-y-auto space-y-3">
                       {/* Messaggi Inviati */}
-                      {(filtroMessaggiEnti === 'tutti' || filtroMessaggiEnti === 'inviati') && (messaggiInviatiEnti || []).map((msg: any, idx: number) => (
-                        <div key={`inv-${idx}`} className="p-3 rounded-lg border bg-blue-500/5 border-blue-500/20">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Send className="w-4 h-4 text-blue-400" />
-                              <span className="text-[#e8fbff] font-medium">Inviato</span>
-                              <Badge className="bg-blue-500/20 text-blue-400 text-xs">→ {msg.destinatari || 0} imprese</Badge>
+                      {(filtroMessaggiEnti === "tutti" ||
+                        filtroMessaggiEnti === "inviati") &&
+                        (messaggiInviatiEnti || []).map(
+                          (msg: any, idx: number) => (
+                            <div
+                              key={`inv-${idx}`}
+                              className="p-3 rounded-lg border bg-blue-500/5 border-blue-500/20"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Send className="w-4 h-4 text-blue-400" />
+                                  <span className="text-[#e8fbff] font-medium">
+                                    Inviato
+                                  </span>
+                                  <Badge className="bg-blue-500/20 text-blue-400 text-xs">
+                                    → {msg.destinatari || 0} imprese
+                                  </Badge>
+                                </div>
+                                <span className="text-xs text-[#e8fbff]/50">
+                                  {new Date(msg.created_at).toLocaleDateString(
+                                    "it-IT",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
+                                  )}
+                                </span>
+                              </div>
+                              <p className="text-sm text-[#e8fbff]/80">
+                                {msg.titolo}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-[#e8fbff]/50">
+                                  Letti: {msg.lette || 0}/{msg.destinatari || 0}
+                                </span>
+                              </div>
                             </div>
-                            <span className="text-xs text-[#e8fbff]/50">
-                              {new Date(msg.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p className="text-sm text-[#e8fbff]/80">{msg.titolo}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="text-xs text-[#e8fbff]/50">Letti: {msg.lette || 0}/{msg.destinatari || 0}</span>
-                          </div>
-                        </div>
-                      ))}
+                          )
+                        )}
                       {/* Messaggi Ricevuti */}
-                      {(filtroMessaggiEnti === 'tutti' || filtroMessaggiEnti === 'ricevuti') && (notificheRisposteEnti || []).map((risposta: any, idx: number) => (
-                        <div 
-                          key={`ric-${idx}`} 
-                          onClick={() => segnaRispostaComeLetta(risposta)}
-                          className={`p-3 rounded-lg border cursor-pointer transition-all hover:scale-[1.01] ${!risposta.letta ? 'bg-blue-500/10 border-blue-500/30' : 'bg-[#0b1220] border-[#3b82f6]/20'}`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              {risposta.letta ? (
-                                <MailOpen className="w-4 h-4 text-[#e8fbff]/40" />
-                              ) : (
-                                <Mail className="w-4 h-4 text-amber-400" />
-                              )}
-                              <span className="text-[#e8fbff] font-medium">{risposta.mittente_nome || 'Impresa'}</span>
-                              {!risposta.letta && <Badge className="bg-amber-500 text-white text-xs">Nuova</Badge>}
+                      {(filtroMessaggiEnti === "tutti" ||
+                        filtroMessaggiEnti === "ricevuti") &&
+                        (notificheRisposteEnti || []).map(
+                          (risposta: any, idx: number) => (
+                            <div
+                              key={`ric-${idx}`}
+                              onClick={() => segnaRispostaComeLetta(risposta)}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all hover:scale-[1.01] ${!risposta.letta ? "bg-blue-500/10 border-blue-500/30" : "bg-[#0b1220] border-[#3b82f6]/20"}`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  {risposta.letta ? (
+                                    <MailOpen className="w-4 h-4 text-[#e8fbff]/40" />
+                                  ) : (
+                                    <Mail className="w-4 h-4 text-amber-400" />
+                                  )}
+                                  <span className="text-[#e8fbff] font-medium">
+                                    {risposta.mittente_nome || "Impresa"}
+                                  </span>
+                                  {!risposta.letta && (
+                                    <Badge className="bg-amber-500 text-white text-xs">
+                                      Nuova
+                                    </Badge>
+                                  )}
+                                </div>
+                                <span className="text-xs text-[#e8fbff]/50">
+                                  {new Date(
+                                    risposta.created_at
+                                  ).toLocaleDateString("it-IT", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+                              <p className="text-sm text-[#e8fbff]/80">
+                                {risposta.titolo}
+                              </p>
+                              <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">
+                                {risposta.messaggio}
+                              </p>
                             </div>
-                            <span className="text-xs text-[#e8fbff]/50">
-                              {new Date(risposta.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p className="text-sm text-[#e8fbff]/80">{risposta.titolo}</p>
-                          <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{risposta.messaggio}</p>
-                        </div>
-                      ))}
+                          )
+                        )}
                       {/* Empty states */}
-                      {filtroMessaggiEnti === 'inviati' && (messaggiInviatiEnti || []).length === 0 && (
-                        <div className="text-center text-[#e8fbff]/50 py-8">
-                          <Send className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessun messaggio inviato</p>
-                        </div>
-                      )}
-                      {filtroMessaggiEnti === 'ricevuti' && (notificheRisposteEnti || []).length === 0 && (
-                        <div className="text-center text-[#e8fbff]/50 py-8">
-                          <Mail className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessuna risposta ricevuta</p>
-                        </div>
-                      )}
-                      {filtroMessaggiEnti === 'tutti' && (messaggiInviatiEnti || []).length === 0 && (notificheRisposteEnti || []).length === 0 && (
-                        <div className="text-center text-[#e8fbff]/50 py-8">
-                          <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessun messaggio</p>
-                        </div>
-                      )}
+                      {filtroMessaggiEnti === "inviati" &&
+                        (messaggiInviatiEnti || []).length === 0 && (
+                          <div className="text-center text-[#e8fbff]/50 py-8">
+                            <Send className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                            <p>Nessun messaggio inviato</p>
+                          </div>
+                        )}
+                      {filtroMessaggiEnti === "ricevuti" &&
+                        (notificheRisposteEnti || []).length === 0 && (
+                          <div className="text-center text-[#e8fbff]/50 py-8">
+                            <Mail className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                            <p>Nessuna risposta ricevuta</p>
+                          </div>
+                        )}
+                      {filtroMessaggiEnti === "tutti" &&
+                        (messaggiInviatiEnti || []).length === 0 &&
+                        (notificheRisposteEnti || []).length === 0 && (
+                          <div className="text-center text-[#e8fbff]/50 py-8">
+                            <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                            <p>Nessun messaggio</p>
+                          </div>
+                        )}
                     </div>
                   </CardContent>
                 </Card>
@@ -5389,13 +7452,18 @@ export default function DashboardPA() {
                       <div className="flex items-center gap-2 text-emerald-400 text-sm mb-1">
                         <Landmark className="w-4 h-4" />
                         Associazioni Partner
-                        {realData.bandiStats && <span className="text-xs text-[#10b981]">● Live</span>}
+                        {realData.bandiStats && (
+                          <span className="text-xs text-[#10b981]">● Live</span>
+                        )}
                       </div>
                       <div className="text-2xl font-bold text-white">
                         {realData.bandiStats?.stats?.associazioni?.totale ?? 0}
                       </div>
                       <div className="text-xs text-[#e8fbff]/50">
-                        Success rate: {realData.bandiStats?.stats?.associazioni?.success_rate_medio ?? '-'}%
+                        Success rate:{" "}
+                        {realData.bandiStats?.stats?.associazioni
+                          ?.success_rate_medio ?? "-"}
+                        %
                       </div>
                     </CardContent>
                   </Card>
@@ -5409,7 +7477,8 @@ export default function DashboardPA() {
                         {realData.bandiStats?.stats?.bandi?.aperti ?? 0}
                       </div>
                       <div className="text-xs text-[#e8fbff]/50">
-                        {realData.bandiStats?.stats?.bandi?.in_scadenza ?? 0} in scadenza
+                        {realData.bandiStats?.stats?.bandi?.in_scadenza ?? 0} in
+                        scadenza
                       </div>
                     </CardContent>
                   </Card>
@@ -5420,7 +7489,12 @@ export default function DashboardPA() {
                         Importo Totale
                       </div>
                       <div className="text-2xl font-bold text-white">
-                        €{((realData.bandiStats?.stats?.bandi?.importo_totale ?? 0) / 1000).toFixed(0)}K
+                        €
+                        {(
+                          (realData.bandiStats?.stats?.bandi?.importo_totale ??
+                            0) / 1000
+                        ).toFixed(0)}
+                        K
                       </div>
                     </CardContent>
                   </Card>
@@ -5431,7 +7505,9 @@ export default function DashboardPA() {
                         Rating Medio
                       </div>
                       <div className="text-2xl font-bold text-white">
-                        {realData.bandiStats?.stats?.associazioni?.rating_medio ?? '-'}/5
+                        {realData.bandiStats?.stats?.associazioni
+                          ?.rating_medio ?? "-"}
+                        /5
                       </div>
                     </CardContent>
                   </Card>
@@ -5443,36 +7519,66 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <Landmark className="h-5 w-5 text-[#10b981]" />
                       Associazioni Partner
-                      {realData.bandiStats?.associazioni && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                      {realData.bandiStats?.associazioni && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {(realData.bandiStats?.associazioni || []).map((assoc: any, idx: number) => (
-                        <div key={assoc.id || idx} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#10b981]/10">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-[#10b981]/30'}`}>
-                              #{idx + 1}
+                      {(realData.bandiStats?.associazioni || []).map(
+                        (assoc: any, idx: number) => (
+                          <div
+                            key={assoc.id || idx}
+                            className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#10b981]/10"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${idx === 0 ? "bg-yellow-500" : idx === 1 ? "bg-gray-400" : idx === 2 ? "bg-amber-600" : "bg-[#10b981]/30"}`}
+                              >
+                                #{idx + 1}
+                              </div>
+                              <div>
+                                <div className="text-[#e8fbff] font-medium">
+                                  {assoc.nome}
+                                </div>
+                                <div className="text-xs text-[#e8fbff]/50">
+                                  {assoc.tipo_ente} ·{" "}
+                                  {(() => {
+                                    try {
+                                      const spec =
+                                        typeof assoc.specializzazioni ===
+                                        "string"
+                                          ? JSON.parse(assoc.specializzazioni)
+                                          : assoc.specializzazioni;
+                                      return Array.isArray(spec)
+                                        ? spec.join(", ")
+                                        : "Generale";
+                                    } catch {
+                                      return "Generale";
+                                    }
+                                  })()}
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="text-[#e8fbff] font-medium">{assoc.nome}</div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-1 text-emerald-400">
+                                <TrendingUp className="w-4 h-4" />
+                                <span className="font-bold">
+                                  {assoc.success_rate || 0}%
+                                </span>
+                              </div>
                               <div className="text-xs text-[#e8fbff]/50">
-                                {assoc.tipo_ente} · {(() => { try { const spec = typeof assoc.specializzazioni === 'string' ? JSON.parse(assoc.specializzazioni) : assoc.specializzazioni; return Array.isArray(spec) ? spec.join(', ') : 'Generale'; } catch { return 'Generale'; } })()}
+                                {assoc.pratiche_gestite || 0} pratiche
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-1 text-emerald-400">
-                              <TrendingUp className="w-4 h-4" />
-                              <span className="font-bold">{assoc.success_rate || 0}%</span>
-                            </div>
-                            <div className="text-xs text-[#e8fbff]/50">
-                              {assoc.pratiche_gestite || 0} pratiche
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {(!realData.bandiStats?.associazioni || realData.bandiStats.associazioni.length === 0) && (
+                        )
+                      )}
+                      {(!realData.bandiStats?.associazioni ||
+                        realData.bandiStats.associazioni.length === 0) && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <Landmark className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Caricamento associazioni...</p>
@@ -5488,42 +7594,66 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <FileText className="h-5 w-5 text-[#10b981]" />
                       Catalogo Bandi Attivi
-                      {realData.bandiStats?.catalogo && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
+                      {realData.bandiStats?.catalogo && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {(realData.bandiStats?.catalogo || []).map((bando: any, idx: number) => (
-                        <div key={bando.id || idx} className="p-4 bg-[#0b1220] rounded-lg border border-[#10b981]/10">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <div className="text-[#e8fbff] font-medium">{bando.titolo}</div>
-                              <div className="text-xs text-[#e8fbff]/50">{bando.ente_erogatore}</div>
+                      {(realData.bandiStats?.catalogo || []).map(
+                        (bando: any, idx: number) => (
+                          <div
+                            key={bando.id || idx}
+                            className="p-4 bg-[#0b1220] rounded-lg border border-[#10b981]/10"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <div className="text-[#e8fbff] font-medium">
+                                  {bando.titolo}
+                                </div>
+                                <div className="text-xs text-[#e8fbff]/50">
+                                  {bando.ente_erogatore}
+                                </div>
+                              </div>
+                              <Badge
+                                className={`${bando.tipo_ente === "regionale" ? "bg-blue-500/20 text-blue-400" : bando.tipo_ente === "nazionale" ? "bg-purple-500/20 text-purple-400" : "bg-emerald-500/20 text-emerald-400"}`}
+                              >
+                                {bando.tipo_ente}
+                              </Badge>
                             </div>
-                            <Badge className={`${bando.tipo_ente === 'regionale' ? 'bg-blue-500/20 text-blue-400' : bando.tipo_ente === 'nazionale' ? 'bg-purple-500/20 text-purple-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                              {bando.tipo_ente}
-                            </Badge>
+                            <div className="flex justify-between items-center text-sm mb-2">
+                              <div className="text-yellow-400 font-bold">
+                                €{((bando.importo_max || 0) / 1000).toFixed(0)}K
+                                max
+                              </div>
+                              <div className="text-[#e8fbff]/50">
+                                Fondo: €
+                                {((bando.fondo_totale || 0) / 1000).toFixed(0)}K
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center text-xs text-[#e8fbff]/50">
+                              <div>
+                                <Calendar className="w-3 h-3 inline mr-1" />
+                                Scade:{" "}
+                                {bando.scadenza
+                                  ? new Date(bando.scadenza).toLocaleDateString(
+                                      "it-IT"
+                                    )
+                                  : "N/D"}
+                              </div>
+                              <div className="text-emerald-400">
+                                {bando.settori_target?.slice(0, 2).join(", ") ||
+                                  "Tutti i settori"}
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center text-sm mb-2">
-                            <div className="text-yellow-400 font-bold">
-                              €{((bando.importo_max || 0) / 1000).toFixed(0)}K max
-                            </div>
-                            <div className="text-[#e8fbff]/50">
-                              Fondo: €{((bando.fondo_totale || 0) / 1000).toFixed(0)}K
-                            </div>
-                          </div>
-                          <div className="flex justify-between items-center text-xs text-[#e8fbff]/50">
-                            <div>
-                              <Calendar className="w-3 h-3 inline mr-1" />
-                              Scade: {bando.scadenza ? new Date(bando.scadenza).toLocaleDateString('it-IT') : 'N/D'}
-                            </div>
-                            <div className="text-emerald-400">
-                              {bando.settori_target?.slice(0, 2).join(', ') || 'Tutti i settori'}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {(!realData.bandiStats?.catalogo || realData.bandiStats.catalogo.length === 0) && (
+                        )
+                      )}
+                      {(!realData.bandiStats?.catalogo ||
+                        realData.bandiStats.catalogo.length === 0) && (
                         <div className="col-span-2 text-center text-[#e8fbff]/50 py-8">
                           <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Caricamento bandi...</p>
@@ -5539,62 +7669,134 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <Briefcase className="h-5 w-5 text-[#8b5cf6]" />
                       Servizi Professionali
-                      {realData.bandiStats?.servizi && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
-                      <Badge className="bg-purple-500/20 text-purple-400 ml-2">Nuovo</Badge>
+                      {realData.bandiStats?.servizi && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
+                      <Badge className="bg-purple-500/20 text-purple-400 ml-2">
+                        Nuovo
+                      </Badge>
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
-                      DURC, SCIA, Contabilità, Paghe, Consulenza - {realData.bandiStats?.servizi?.length || 0} servizi disponibili
+                      DURC, SCIA, Contabilità, Paghe, Consulenza -{" "}
+                      {realData.bandiStats?.servizi?.length || 0} servizi
+                      disponibili
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
                       {[
-                        { cat: 'REGOLARIZZAZIONE', nome: 'DURC', icona: Shield, colore: 'red' },
-                        { cat: 'PRATICHE', nome: 'SCIA & Pratiche', icona: FileText, colore: 'blue' },
-                        { cat: 'CONTABILITA', nome: 'Contabilità', icona: Calculator, colore: 'green' },
-                        { cat: 'PAGHE', nome: 'Paghe', icona: Users, colore: 'yellow' },
-                        { cat: 'CONSULENZA', nome: 'Consulenza', icona: Briefcase, colore: 'purple' },
-                        { cat: 'ASSOCIATIVO', nome: 'Associativo', icona: Award, colore: 'cyan' }
+                        {
+                          cat: "REGOLARIZZAZIONE",
+                          nome: "DURC",
+                          icona: Shield,
+                          colore: "red",
+                        },
+                        {
+                          cat: "PRATICHE",
+                          nome: "SCIA & Pratiche",
+                          icona: FileText,
+                          colore: "blue",
+                        },
+                        {
+                          cat: "CONTABILITA",
+                          nome: "Contabilità",
+                          icona: Calculator,
+                          colore: "green",
+                        },
+                        {
+                          cat: "PAGHE",
+                          nome: "Paghe",
+                          icona: Users,
+                          colore: "yellow",
+                        },
+                        {
+                          cat: "CONSULENZA",
+                          nome: "Consulenza",
+                          icona: Briefcase,
+                          colore: "purple",
+                        },
+                        {
+                          cat: "ASSOCIATIVO",
+                          nome: "Associativo",
+                          icona: Award,
+                          colore: "cyan",
+                        },
                       ].map(({ cat, nome, icona: Icona, colore }) => {
-                        const count = (realData.bandiStats?.servizi || []).filter((s: any) => s.categoria === cat).length;
+                        const count = (
+                          realData.bandiStats?.servizi || []
+                        ).filter((s: any) => s.categoria === cat).length;
                         return (
-                          <div key={cat} className={`bg-[#0b1220] p-3 rounded-lg border border-${colore}-500/20 text-center`}>
-                            <Icona className={`w-6 h-6 mx-auto mb-1 text-${colore}-400`} />
-                            <div className="text-lg font-bold text-white">{count}</div>
-                            <div className="text-xs text-[#e8fbff]/50">{nome}</div>
+                          <div
+                            key={cat}
+                            className={`bg-[#0b1220] p-3 rounded-lg border border-${colore}-500/20 text-center`}
+                          >
+                            <Icona
+                              className={`w-6 h-6 mx-auto mb-1 text-${colore}-400`}
+                            />
+                            <div className="text-lg font-bold text-white">
+                              {count}
+                            </div>
+                            <div className="text-xs text-[#e8fbff]/50">
+                              {nome}
+                            </div>
                           </div>
                         );
                       })}
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2">
-                      {(realData.bandiStats?.servizi || []).slice(0, 12).map((servizio: any, idx: number) => (
-                        <div key={servizio.id || idx} className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#8b5cf6]/10">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-[#e8fbff]">{servizio.nome}</span>
-                              <Badge className={`text-xs ${
-                                servizio.categoria === 'REGOLARIZZAZIONE' ? 'bg-red-500/20 text-red-400' :
-                                servizio.categoria === 'PRATICHE' ? 'bg-blue-500/20 text-blue-400' :
-                                servizio.categoria === 'CONTABILITA' ? 'bg-green-500/20 text-green-400' :
-                                servizio.categoria === 'PAGHE' ? 'bg-yellow-500/20 text-yellow-400' :
-                                servizio.categoria === 'CONSULENZA' ? 'bg-purple-500/20 text-purple-400' :
-                                'bg-cyan-500/20 text-cyan-400'
-                              }`}>
-                                {servizio.categoria}
-                              </Badge>
+                      {(realData.bandiStats?.servizi || [])
+                        .slice(0, 12)
+                        .map((servizio: any, idx: number) => (
+                          <div
+                            key={servizio.id || idx}
+                            className="flex items-center justify-between p-3 bg-[#0b1220] rounded-lg border border-[#8b5cf6]/10"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-[#e8fbff]">
+                                  {servizio.nome}
+                                </span>
+                                <Badge
+                                  className={`text-xs ${
+                                    servizio.categoria === "REGOLARIZZAZIONE"
+                                      ? "bg-red-500/20 text-red-400"
+                                      : servizio.categoria === "PRATICHE"
+                                        ? "bg-blue-500/20 text-blue-400"
+                                        : servizio.categoria === "CONTABILITA"
+                                          ? "bg-green-500/20 text-green-400"
+                                          : servizio.categoria === "PAGHE"
+                                            ? "bg-yellow-500/20 text-yellow-400"
+                                            : servizio.categoria ===
+                                                "CONSULENZA"
+                                              ? "bg-purple-500/20 text-purple-400"
+                                              : "bg-cyan-500/20 text-cyan-400"
+                                  }`}
+                                >
+                                  {servizio.categoria}
+                                </Badge>
+                              </div>
+                              <div className="text-xs text-[#e8fbff]/50 mt-1">
+                                {servizio.associazione_nome ||
+                                  "Tutte le associazioni"}
+                              </div>
                             </div>
-                            <div className="text-xs text-[#e8fbff]/50 mt-1">
-                              {servizio.associazione_nome || 'Tutte le associazioni'}
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-[#10b981]">
+                                €
+                                {servizio.prezzo_associati ||
+                                  servizio.prezzo_base}
+                              </div>
+                              {servizio.prezzo_base !==
+                                servizio.prezzo_associati && (
+                                <div className="text-xs text-[#e8fbff]/30 line-through">
+                                  €{servizio.prezzo_base}
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-sm font-bold text-[#10b981]">€{servizio.prezzo_associati || servizio.prezzo_base}</div>
-                            {servizio.prezzo_base !== servizio.prezzo_associati && (
-                              <div className="text-xs text-[#e8fbff]/30 line-through">€{servizio.prezzo_base}</div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -5605,69 +7807,122 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <ClipboardCheck className="h-5 w-5 text-[#f59e0b]" />
                       Richieste Servizi
-                      {realData.bandiStats?.richieste && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
-                      <Badge className="bg-orange-500/20 text-orange-400 ml-2">Nuovo</Badge>
+                      {realData.bandiStats?.richieste && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
+                      <Badge className="bg-orange-500/20 text-orange-400 ml-2">
+                        Nuovo
+                      </Badge>
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
-                      Richieste dalle imprese - {realData.bandiStats?.richieste?.conteggi?.totale || 0} totali
+                      Richieste dalle imprese -{" "}
+                      {realData.bandiStats?.richieste?.conteggi?.totale || 0}{" "}
+                      totali
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {/* KPI Richieste */}
                     <div className="grid grid-cols-5 gap-3 mb-4">
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#f59e0b]/20 text-center">
-                        <div className="text-2xl font-bold text-[#f59e0b]">{realData.bandiStats?.richieste?.conteggi?.in_attesa || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">In Attesa</div>
+                        <div className="text-2xl font-bold text-[#f59e0b]">
+                          {realData.bandiStats?.richieste?.conteggi
+                            ?.in_attesa || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          In Attesa
+                        </div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#3b82f6]/20 text-center">
-                        <div className="text-2xl font-bold text-[#3b82f6]">{realData.bandiStats?.richieste?.conteggi?.in_lavorazione || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">In Lavorazione</div>
+                        <div className="text-2xl font-bold text-[#3b82f6]">
+                          {realData.bandiStats?.richieste?.conteggi
+                            ?.in_lavorazione || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          In Lavorazione
+                        </div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#10b981]/20 text-center">
-                        <div className="text-2xl font-bold text-[#10b981]">{realData.bandiStats?.richieste?.conteggi?.completate || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">Completate</div>
+                        <div className="text-2xl font-bold text-[#10b981]">
+                          {realData.bandiStats?.richieste?.conteggi
+                            ?.completate || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          Completate
+                        </div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#ef4444]/20 text-center">
-                        <div className="text-2xl font-bold text-[#ef4444]">{realData.bandiStats?.richieste?.conteggi?.urgenti || 0}</div>
+                        <div className="text-2xl font-bold text-[#ef4444]">
+                          {realData.bandiStats?.richieste?.conteggi?.urgenti ||
+                            0}
+                        </div>
                         <div className="text-xs text-[#e8fbff]/50">Urgenti</div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#e8fbff]/10 text-center">
-                        <div className="text-2xl font-bold text-[#e8fbff]">{realData.bandiStats?.richieste?.conteggi?.totale || 0}</div>
+                        <div className="text-2xl font-bold text-[#e8fbff]">
+                          {realData.bandiStats?.richieste?.conteggi?.totale ||
+                            0}
+                        </div>
                         <div className="text-xs text-[#e8fbff]/50">Totale</div>
                       </div>
                     </div>
-                    
+
                     {/* Lista Richieste */}
                     <div className="max-h-[350px] overflow-y-auto space-y-2 pr-2">
-                      {(realData.bandiStats?.richieste?.richieste_recenti || []).map((item: any, idx: number) => (
-                        <div key={item.id || idx} className={`flex items-center justify-between p-3 rounded-lg border ${
-                          item.priorita === 'URGENTE' ? 'bg-red-500/10 border-red-500/30' :
-                          item.priorita === 'ALTA' ? 'bg-orange-500/10 border-orange-500/30' :
-                          item.stato === 'COMPLETATA' ? 'bg-green-500/10 border-green-500/30' :
-                          item.stato === 'IN_LAVORAZIONE' ? 'bg-blue-500/10 border-blue-500/30' :
-                          'bg-[#0b1220] border-[#e8fbff]/10'
-                        }`}>
+                      {(
+                        realData.bandiStats?.richieste?.richieste_recenti || []
+                      ).map((item: any, idx: number) => (
+                        <div
+                          key={item.id || idx}
+                          className={`flex items-center justify-between p-3 rounded-lg border ${
+                            item.priorita === "URGENTE"
+                              ? "bg-red-500/10 border-red-500/30"
+                              : item.priorita === "ALTA"
+                                ? "bg-orange-500/10 border-orange-500/30"
+                                : item.stato === "COMPLETATA"
+                                  ? "bg-green-500/10 border-green-500/30"
+                                  : item.stato === "IN_LAVORAZIONE"
+                                    ? "bg-blue-500/10 border-blue-500/30"
+                                    : "bg-[#0b1220] border-[#e8fbff]/10"
+                          }`}
+                        >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-[#e8fbff]">{item.impresa_nome}</span>
-                              <Badge className={`text-xs ${
-                                item.stato === 'COMPLETATA' ? 'bg-green-500/20 text-green-400' :
-                                item.stato === 'IN_LAVORAZIONE' ? 'bg-blue-500/20 text-blue-400' :
-                                item.stato === 'ANNULLATA' ? 'bg-gray-500/20 text-gray-400' :
-                                'bg-orange-500/20 text-orange-400'
-                              }`}>
+                              <span className="font-medium text-[#e8fbff]">
+                                {item.impresa_nome}
+                              </span>
+                              <Badge
+                                className={`text-xs ${
+                                  item.stato === "COMPLETATA"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : item.stato === "IN_LAVORAZIONE"
+                                      ? "bg-blue-500/20 text-blue-400"
+                                      : item.stato === "ANNULLATA"
+                                        ? "bg-gray-500/20 text-gray-400"
+                                        : "bg-orange-500/20 text-orange-400"
+                                }`}
+                              >
                                 {item.stato}
                               </Badge>
-                              {item.priorita === 'URGENTE' && (
-                                <Badge className="bg-red-500/20 text-red-400 text-xs">URGENTE</Badge>
+                              {item.priorita === "URGENTE" && (
+                                <Badge className="bg-red-500/20 text-red-400 text-xs">
+                                  URGENTE
+                                </Badge>
                               )}
-                              {item.priorita === 'ALTA' && (
-                                <Badge className="bg-orange-500/20 text-orange-400 text-xs">ALTA</Badge>
+                              {item.priorita === "ALTA" && (
+                                <Badge className="bg-orange-500/20 text-orange-400 text-xs">
+                                  ALTA
+                                </Badge>
                               )}
                             </div>
                             <div className="text-sm text-[#e8fbff]/60 mt-1">
-                              <span className="text-[#8b5cf6]">{item.servizio_nome}</span>
-                              <span className="ml-2 text-[#e8fbff]/40">({item.servizio_categoria})</span>
+                              <span className="text-[#8b5cf6]">
+                                {item.servizio_nome}
+                              </span>
+                              <span className="ml-2 text-[#e8fbff]/40">
+                                ({item.servizio_categoria})
+                              </span>
                             </div>
                             {item.operatore_assegnato && (
                               <div className="text-xs text-[#e8fbff]/40 mt-1">
@@ -5677,12 +7932,18 @@ export default function DashboardPA() {
                           </div>
                           <div className="text-right">
                             <div className="text-xs text-[#e8fbff]/50">
-                              {item.data_richiesta ? new Date(item.data_richiesta).toLocaleDateString('it-IT') : '-'}
+                              {item.data_richiesta
+                                ? new Date(
+                                    item.data_richiesta
+                                  ).toLocaleDateString("it-IT")
+                                : "-"}
                             </div>
                           </div>
                         </div>
                       ))}
-                      {(!realData.bandiStats?.richieste?.richieste_recenti || realData.bandiStats.richieste.richieste_recenti.length === 0) && (
+                      {(!realData.bandiStats?.richieste?.richieste_recenti ||
+                        realData.bandiStats.richieste.richieste_recenti
+                          .length === 0) && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <ClipboardCheck className="w-12 h-12 mx-auto mb-2 opacity-30" />
                           <p>Nessuna richiesta registrata</p>
@@ -5698,8 +7959,14 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-[#ef4444]" />
                       Imprese con Problemi di Regolarità
-                      {realData.bandiStats?.regolarita && <span className="text-xs text-[#10b981] ml-2">● Live</span>}
-                      <Badge className="bg-red-500/20 text-red-400 ml-2">Attenzione</Badge>
+                      {realData.bandiStats?.regolarita && (
+                        <span className="text-xs text-[#10b981] ml-2">
+                          ● Live
+                        </span>
+                      )}
+                      <Badge className="bg-red-500/20 text-red-400 ml-2">
+                        Attenzione
+                      </Badge>
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
                       DURC irregolare, SCIA scaduta, Autorizzazioni mancanti
@@ -5709,58 +7976,108 @@ export default function DashboardPA() {
                     {/* KPI Regolarità */}
                     <div className="grid grid-cols-5 gap-3 mb-4">
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#ef4444]/20 text-center">
-                        <div className="text-2xl font-bold text-[#ef4444]">{realData.bandiStats?.regolarita?.conteggi?.irregolari || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">Irregolari</div>
+                        <div className="text-2xl font-bold text-[#ef4444]">
+                          {realData.bandiStats?.regolarita?.conteggi
+                            ?.irregolari || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          Irregolari
+                        </div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#f59e0b]/20 text-center">
-                        <div className="text-2xl font-bold text-[#f59e0b]">{realData.bandiStats?.regolarita?.conteggi?.scaduti || 0}</div>
+                        <div className="text-2xl font-bold text-[#f59e0b]">
+                          {realData.bandiStats?.regolarita?.conteggi?.scaduti ||
+                            0}
+                        </div>
                         <div className="text-xs text-[#e8fbff]/50">Scaduti</div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-yellow-500/20 text-center">
-                        <div className="text-2xl font-bold text-yellow-400">{realData.bandiStats?.regolarita?.conteggi?.in_scadenza || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">In Scadenza</div>
+                        <div className="text-2xl font-bold text-yellow-400">
+                          {realData.bandiStats?.regolarita?.conteggi
+                            ?.in_scadenza || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          In Scadenza
+                        </div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#8b5cf6]/20 text-center">
-                        <div className="text-2xl font-bold text-[#8b5cf6]">{realData.bandiStats?.regolarita?.conteggi?.da_verificare || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">Da Verificare</div>
+                        <div className="text-2xl font-bold text-[#8b5cf6]">
+                          {realData.bandiStats?.regolarita?.conteggi
+                            ?.da_verificare || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          Da Verificare
+                        </div>
                       </div>
                       <div className="bg-[#0b1220] p-3 rounded-lg border border-[#10b981]/20 text-center">
-                        <div className="text-2xl font-bold text-[#10b981]">{realData.bandiStats?.regolarita?.conteggi?.regolari || 0}</div>
-                        <div className="text-xs text-[#e8fbff]/50">Regolari</div>
+                        <div className="text-2xl font-bold text-[#10b981]">
+                          {realData.bandiStats?.regolarita?.conteggi
+                            ?.regolari || 0}
+                        </div>
+                        <div className="text-xs text-[#e8fbff]/50">
+                          Regolari
+                        </div>
                       </div>
                     </div>
 
                     {/* Conteggi per Tipo */}
                     <div className="grid grid-cols-5 gap-2 mb-4">
-                      {(realData.bandiStats?.regolarita?.per_tipo || []).map((tipo: any) => (
-                        <div key={tipo.tipo} className="bg-[#0b1220] p-2 rounded border border-[#e8fbff]/10 text-center">
-                          <div className="text-xs text-[#e8fbff]/50">{tipo.tipo}</div>
-                          <div className="text-sm font-bold text-white">{tipo.totale}</div>
-                          {tipo.problematici > 0 && (
-                            <div className="text-xs text-[#ef4444]">{tipo.problematici} problemi</div>
-                          )}
-                        </div>
-                      ))}
+                      {(realData.bandiStats?.regolarita?.per_tipo || []).map(
+                        (tipo: any) => (
+                          <div
+                            key={tipo.tipo}
+                            className="bg-[#0b1220] p-2 rounded border border-[#e8fbff]/10 text-center"
+                          >
+                            <div className="text-xs text-[#e8fbff]/50">
+                              {tipo.tipo}
+                            </div>
+                            <div className="text-sm font-bold text-white">
+                              {tipo.totale}
+                            </div>
+                            {tipo.problematici > 0 && (
+                              <div className="text-xs text-[#ef4444]">
+                                {tipo.problematici} problemi
+                              </div>
+                            )}
+                          </div>
+                        )
+                      )}
                     </div>
-                    
+
                     {/* Lista Imprese Problematiche */}
                     <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
-                      {(realData.bandiStats?.regolarita?.imprese_problematiche || []).map((item: any, idx: number) => (
-                        <div key={item.id || idx} className={`flex items-center justify-between p-3 rounded-lg border ${
-                          item.stato === 'IRREGOLARE' ? 'bg-red-500/10 border-red-500/30' :
-                          item.stato === 'SCADUTO' ? 'bg-orange-500/10 border-orange-500/30' :
-                          item.stato === 'IN_SCADENZA' ? 'bg-yellow-500/10 border-yellow-500/30' :
-                          'bg-purple-500/10 border-purple-500/30'
-                        }`}>
+                      {(
+                        realData.bandiStats?.regolarita
+                          ?.imprese_problematiche || []
+                      ).map((item: any, idx: number) => (
+                        <div
+                          key={item.id || idx}
+                          className={`flex items-center justify-between p-3 rounded-lg border ${
+                            item.stato === "IRREGOLARE"
+                              ? "bg-red-500/10 border-red-500/30"
+                              : item.stato === "SCADUTO"
+                                ? "bg-orange-500/10 border-orange-500/30"
+                                : item.stato === "IN_SCADENZA"
+                                  ? "bg-yellow-500/10 border-yellow-500/30"
+                                  : "bg-purple-500/10 border-purple-500/30"
+                          }`}
+                        >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-[#e8fbff]">{item.impresa_nome}</span>
-                              <Badge className={`text-xs ${
-                                item.stato === 'IRREGOLARE' ? 'bg-red-500/20 text-red-400' :
-                                item.stato === 'SCADUTO' ? 'bg-orange-500/20 text-orange-400' :
-                                item.stato === 'IN_SCADENZA' ? 'bg-yellow-500/20 text-yellow-400' :
-                                'bg-purple-500/20 text-purple-400'
-                              }`}>
+                              <span className="font-medium text-[#e8fbff]">
+                                {item.impresa_nome}
+                              </span>
+                              <Badge
+                                className={`text-xs ${
+                                  item.stato === "IRREGOLARE"
+                                    ? "bg-red-500/20 text-red-400"
+                                    : item.stato === "SCADUTO"
+                                      ? "bg-orange-500/20 text-orange-400"
+                                      : item.stato === "IN_SCADENZA"
+                                        ? "bg-yellow-500/20 text-yellow-400"
+                                        : "bg-purple-500/20 text-purple-400"
+                                }`}
+                              >
                                 {item.stato}
                               </Badge>
                               <Badge className="bg-[#e8fbff]/10 text-[#e8fbff]/70 text-xs">
@@ -5768,8 +8085,14 @@ export default function DashboardPA() {
                               </Badge>
                             </div>
                             <div className="text-sm text-[#e8fbff]/60 mt-1">
-                              {item.impresa_piva && <span>P.IVA: {item.impresa_piva}</span>}
-                              {item.impresa_comune && <span className="ml-2">• {item.impresa_comune}</span>}
+                              {item.impresa_piva && (
+                                <span>P.IVA: {item.impresa_piva}</span>
+                              )}
+                              {item.impresa_comune && (
+                                <span className="ml-2">
+                                  • {item.impresa_comune}
+                                </span>
+                              )}
                             </div>
                             {item.note && (
                               <div className="text-xs text-[#e8fbff]/40 mt-1">
@@ -5779,24 +8102,34 @@ export default function DashboardPA() {
                           </div>
                           <div className="text-right">
                             {item.data_scadenza && (
-                              <div className={`text-sm font-bold ${
-                                item.giorni_rimanenti < 0 ? 'text-[#ef4444]' :
-                                item.giorni_rimanenti <= 30 ? 'text-[#f59e0b]' :
-                                'text-yellow-400'
-                              }`}>
-                                {item.giorni_rimanenti < 0 
+                              <div
+                                className={`text-sm font-bold ${
+                                  item.giorni_rimanenti < 0
+                                    ? "text-[#ef4444]"
+                                    : item.giorni_rimanenti <= 30
+                                      ? "text-[#f59e0b]"
+                                      : "text-yellow-400"
+                                }`}
+                              >
+                                {item.giorni_rimanenti < 0
                                   ? `Scaduto da ${Math.abs(item.giorni_rimanenti)} gg`
-                                  : `${item.giorni_rimanenti} gg`
-                                }
+                                  : `${item.giorni_rimanenti} gg`}
                               </div>
                             )}
                             <div className="text-xs text-[#e8fbff]/50">
-                              {item.data_scadenza ? new Date(item.data_scadenza).toLocaleDateString('it-IT') : 'N/D'}
+                              {item.data_scadenza
+                                ? new Date(
+                                    item.data_scadenza
+                                  ).toLocaleDateString("it-IT")
+                                : "N/D"}
                             </div>
                           </div>
                         </div>
                       ))}
-                      {(!realData.bandiStats?.regolarita?.imprese_problematiche || realData.bandiStats.regolarita.imprese_problematiche.length === 0) && (
+                      {(!realData.bandiStats?.regolarita
+                        ?.imprese_problematiche ||
+                        realData.bandiStats.regolarita.imprese_problematiche
+                          .length === 0) && (
                         <div className="text-center text-[#e8fbff]/50 py-8">
                           <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-30 text-[#10b981]" />
                           <p>Tutte le imprese sono in regola!</p>
@@ -5818,126 +8151,199 @@ export default function DashboardPA() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-                      const form = e.target as HTMLFormElement;
-                      const formData = new FormData(form);
-                      const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
-                      
-                      setInvioNotificaLoading(true);
-                      try {
-                        const targetTipo = formData.get('target_tipo');
-                        const targetId = formData.get('target_id');
-                        let targetNome = null;
-                        
-                        if (targetTipo === 'MERCATO' && targetId) {
-                          const mercato = mercatiList.find(m => m.id === parseInt(targetId as string));
-                          targetNome = mercato?.name || mercato?.nome;
-                        } else if (targetTipo === 'HUB' && targetId) {
-                          const hub = hubList.find(h => h.hub_id === parseInt(targetId as string));
-                          targetNome = hub?.comune_nome;
-                        } else if (targetTipo === 'IMPRESA' && targetId) {
-                          const impresa = impreseList.find(i => i.id === parseInt(targetId as string));
-                          targetNome = impresa?.denominazione;
+                    <form
+                      onSubmit={async e => {
+                        e.preventDefault();
+                        const form = e.target as HTMLFormElement;
+                        const formData = new FormData(form);
+                        const MIHUB_API =
+                          import.meta.env.VITE_MIHUB_API_BASE_URL ||
+                          "https://api.mio-hub.me/api";
+
+                        setInvioNotificaLoading(true);
+                        try {
+                          const targetTipo = formData.get("target_tipo");
+                          const targetId = formData.get("target_id");
+                          let targetNome = null;
+
+                          if (targetTipo === "MERCATO" && targetId) {
+                            const mercato = mercatiList.find(
+                              m => m.id === parseInt(targetId as string)
+                            );
+                            targetNome = mercato?.name || mercato?.nome;
+                          } else if (targetTipo === "HUB" && targetId) {
+                            const hub = hubList.find(
+                              h => h.hub_id === parseInt(targetId as string)
+                            );
+                            targetNome = hub?.comune_nome;
+                          } else if (targetTipo === "IMPRESA" && targetId) {
+                            const impresa = impreseList.find(
+                              i => i.id === parseInt(targetId as string)
+                            );
+                            targetNome = impresa?.denominazione;
+                          }
+
+                          const response = await authenticatedFetch(
+                            `${MIHUB_API}/notifiche/send`,
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                mittente_tipo: "ASSOCIAZIONE",
+                                mittente_id: 2,
+                                mittente_nome: "Associazione di Categoria",
+                                titolo: formData.get("titolo"),
+                                messaggio: formData.get("messaggio"),
+                                tipo_messaggio: formData.get("tipo_messaggio"),
+                                target_tipo: targetTipo,
+                                target_id: targetId || null,
+                                target_nome: targetNome,
+                              }),
+                            }
+                          );
+                          const data = await response.json();
+                          if (data.success) {
+                            alert(
+                              `✅ Notifica inviata con successo a ${data.data.destinatari_count} destinatari!`
+                            );
+                            form.reset();
+                          } else {
+                            alert("❌ Errore: " + data.error);
+                          }
+                        } catch (err) {
+                          alert("❌ Errore invio notifica");
+                        } finally {
+                          setInvioNotificaLoading(false);
                         }
-                        
-                        const response = await authenticatedFetch(`${MIHUB_API}/notifiche/send`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            mittente_tipo: 'ASSOCIAZIONE',
-                            mittente_id: 2,
-                            mittente_nome: 'Associazione di Categoria',
-                            titolo: formData.get('titolo'),
-                            messaggio: formData.get('messaggio'),
-                            tipo_messaggio: formData.get('tipo_messaggio'),
-                            target_tipo: targetTipo,
-                            target_id: targetId || null,
-                            target_nome: targetNome
-                          })
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                          alert(`✅ Notifica inviata con successo a ${data.data.destinatari_count} destinatari!`);
-                          form.reset();
-                        } else {
-                          alert('❌ Errore: ' + data.error);
-                        }
-                      } catch (err) {
-                        alert('❌ Errore invio notifica');
-                      } finally {
-                        setInvioNotificaLoading(false);
-                      }
-                    }} className="space-y-4">
+                      }}
+                      className="space-y-4"
+                    >
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm text-[#e8fbff]/70 mb-1">Destinatari</label>
-                          <select name="target_tipo" id="assoc_target_tipo" className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]" required
-                            onChange={(e) => {
-                              const targetIdSelect = document.getElementById('assoc_target_id') as HTMLSelectElement;
-                              const targetIdContainer = document.getElementById('assoc_target_id_container');
+                          <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                            Destinatari
+                          </label>
+                          <select
+                            name="target_tipo"
+                            id="assoc_target_tipo"
+                            className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                            required
+                            onChange={e => {
+                              const targetIdSelect = document.getElementById(
+                                "assoc_target_id"
+                              ) as HTMLSelectElement;
+                              const targetIdContainer = document.getElementById(
+                                "assoc_target_id_container"
+                              );
                               if (targetIdContainer) {
-                                targetIdContainer.style.display = ['MERCATO', 'HUB', 'IMPRESA'].includes(e.target.value) ? 'block' : 'none';
+                                targetIdContainer.style.display = [
+                                  "MERCATO",
+                                  "HUB",
+                                  "IMPRESA",
+                                ].includes(e.target.value)
+                                  ? "block"
+                                  : "none";
                               }
                               if (targetIdSelect) {
-                                targetIdSelect.innerHTML = '<option value="">Seleziona...</option>';
-                                if (e.target.value === 'MERCATO') {
+                                targetIdSelect.innerHTML =
+                                  '<option value="">Seleziona...</option>';
+                                if (e.target.value === "MERCATO") {
                                   mercatiList.forEach(m => {
-                                    const opt = document.createElement('option');
+                                    const opt =
+                                      document.createElement("option");
                                     opt.value = m.id;
                                     opt.textContent = m.name || m.nome;
                                     targetIdSelect.appendChild(opt);
                                   });
-                                } else if (e.target.value === 'HUB') {
+                                } else if (e.target.value === "HUB") {
                                   hubList.forEach(h => {
-                                    const opt = document.createElement('option');
+                                    const opt =
+                                      document.createElement("option");
                                     opt.value = h.hub_id;
                                     opt.textContent = h.comune_nome;
                                     targetIdSelect.appendChild(opt);
                                   });
-                                } else if (e.target.value === 'IMPRESA') {
+                                } else if (e.target.value === "IMPRESA") {
                                   impreseList.forEach(i => {
-                                    const opt = document.createElement('option');
+                                    const opt =
+                                      document.createElement("option");
                                     opt.value = i.id;
                                     opt.textContent = i.denominazione;
                                     targetIdSelect.appendChild(opt);
                                   });
                                 }
                               }
-                            }}>
+                            }}
+                          >
                             <option value="TUTTI">Tutte le Imprese</option>
-                            <option value="MERCATO">Imprese del Mercato...</option>
+                            <option value="MERCATO">
+                              Imprese del Mercato...
+                            </option>
                             <option value="HUB">Negozi dell'HUB...</option>
                             <option value="IMPRESA">Impresa Singola...</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm text-[#e8fbff]/70 mb-1">Tipo Messaggio</label>
-                          <select name="tipo_messaggio" className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]" required>
+                          <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                            Tipo Messaggio
+                          </label>
+                          <select
+                            name="tipo_messaggio"
+                            className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                            required
+                          >
                             <option value="INFORMATIVA">Informativa</option>
-                            <option value="PROMOZIONALE">Promozionale (Bandi/Servizi)</option>
+                            <option value="PROMOZIONALE">
+                              Promozionale (Bandi/Servizi)
+                            </option>
                           </select>
                         </div>
                       </div>
-                      <div id="assoc_target_id_container" style={{ display: 'none' }}>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Seleziona Destinatario Specifico</label>
-                        <select name="target_id" id="assoc_target_id" className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]">
+                      <div
+                        id="assoc_target_id_container"
+                        style={{ display: "none" }}
+                      >
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                          Seleziona Destinatario Specifico
+                        </label>
+                        <select
+                          name="target_id"
+                          id="assoc_target_id"
+                          className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                        >
                           <option value="">Seleziona...</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Titolo</label>
-                        <input type="text" name="titolo" placeholder="Es: Nuovo bando contributi digitalizzazione" 
-                          className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]" required />
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                          Titolo
+                        </label>
+                        <input
+                          type="text"
+                          name="titolo"
+                          placeholder="Es: Nuovo bando contributi digitalizzazione"
+                          className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                          required
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Messaggio</label>
-                        <textarea name="messaggio" rows={4} placeholder="Scrivi il messaggio da inviare alle imprese..."
-                          className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]" required />
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                          Messaggio
+                        </label>
+                        <textarea
+                          name="messaggio"
+                          rows={4}
+                          placeholder="Scrivi il messaggio da inviare alle imprese..."
+                          className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                          required
+                        />
                       </div>
                       <div className="flex justify-end">
-                        <button type="submit" disabled={invioNotificaLoading}
-                          className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#3b82f6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50">
+                        <button
+                          type="submit"
+                          disabled={invioNotificaLoading}
+                          className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#3b82f6] rounded-lg text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+                        >
                           {invioNotificaLoading ? (
                             <>
                               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -5961,9 +8367,16 @@ export default function DashboardPA() {
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <MessageSquare className="h-5 w-5 text-[#10b981]" />
                       Messaggi
-                      {(notificheRisposteAssoc || []).filter((r: any) => !r.letta).length > 0 && (
+                      {(notificheRisposteAssoc || []).filter(
+                        (r: any) => !r.letta
+                      ).length > 0 && (
                         <Badge className="bg-red-500 text-white ml-2">
-                          {(notificheRisposteAssoc || []).filter((r: any) => !r.letta).length} nuove
+                          {
+                            (notificheRisposteAssoc || []).filter(
+                              (r: any) => !r.letta
+                            ).length
+                          }{" "}
+                          nuove
                         </Badge>
                       )}
                     </CardTitle>
@@ -5975,88 +8388,136 @@ export default function DashboardPA() {
                     {/* Filtri */}
                     <div className="flex gap-2 mb-4">
                       <button
-                        onClick={() => setFiltroMessaggiAssoc('tutti')}
-                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiAssoc === 'tutti' ? 'bg-emerald-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-emerald-500/20'}`}
+                        onClick={() => setFiltroMessaggiAssoc("tutti")}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiAssoc === "tutti" ? "bg-emerald-500 text-white" : "bg-[#0b1220] text-[#e8fbff]/70 hover:bg-emerald-500/20"}`}
                       >
                         Tutti
                       </button>
                       <button
-                        onClick={() => setFiltroMessaggiAssoc('inviati')}
-                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiAssoc === 'inviati' ? 'bg-emerald-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-emerald-500/20'}`}
+                        onClick={() => setFiltroMessaggiAssoc("inviati")}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiAssoc === "inviati" ? "bg-emerald-500 text-white" : "bg-[#0b1220] text-[#e8fbff]/70 hover:bg-emerald-500/20"}`}
                       >
                         Inviati ({(messaggiInviatiAssoc || []).length})
                       </button>
                       <button
-                        onClick={() => setFiltroMessaggiAssoc('ricevuti')}
-                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiAssoc === 'ricevuti' ? 'bg-emerald-500 text-white' : 'bg-[#0b1220] text-[#e8fbff]/70 hover:bg-emerald-500/20'}`}
+                        onClick={() => setFiltroMessaggiAssoc("ricevuti")}
+                        className={`px-3 py-1 rounded-full text-sm ${filtroMessaggiAssoc === "ricevuti" ? "bg-emerald-500 text-white" : "bg-[#0b1220] text-[#e8fbff]/70 hover:bg-emerald-500/20"}`}
                       >
                         Ricevuti ({(notificheRisposteAssoc || []).length})
                       </button>
                     </div>
                     <div className="max-h-[400px] overflow-y-auto space-y-3">
                       {/* Messaggi Inviati */}
-                      {(filtroMessaggiAssoc === 'tutti' || filtroMessaggiAssoc === 'inviati') && (messaggiInviatiAssoc || []).map((msg: any, idx: number) => (
-                        <div key={`inv-${idx}`} className="p-3 rounded-lg border bg-emerald-500/5 border-emerald-500/20">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Send className="w-4 h-4 text-emerald-400" />
-                              <span className="text-[#e8fbff] font-medium">Inviato</span>
-                              <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">→ {msg.destinatari || 0} imprese</Badge>
+                      {(filtroMessaggiAssoc === "tutti" ||
+                        filtroMessaggiAssoc === "inviati") &&
+                        (messaggiInviatiAssoc || []).map(
+                          (msg: any, idx: number) => (
+                            <div
+                              key={`inv-${idx}`}
+                              className="p-3 rounded-lg border bg-emerald-500/5 border-emerald-500/20"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Send className="w-4 h-4 text-emerald-400" />
+                                  <span className="text-[#e8fbff] font-medium">
+                                    Inviato
+                                  </span>
+                                  <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">
+                                    → {msg.destinatari || 0} imprese
+                                  </Badge>
+                                </div>
+                                <span className="text-xs text-[#e8fbff]/50">
+                                  {new Date(msg.created_at).toLocaleDateString(
+                                    "it-IT",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
+                                  )}
+                                </span>
+                              </div>
+                              <p className="text-sm text-[#e8fbff]/80">
+                                {msg.titolo}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-[#e8fbff]/50">
+                                  Letti: {msg.lette || 0}/{msg.destinatari || 0}
+                                </span>
+                              </div>
                             </div>
-                            <span className="text-xs text-[#e8fbff]/50">
-                              {new Date(msg.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p className="text-sm text-[#e8fbff]/80">{msg.titolo}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="text-xs text-[#e8fbff]/50">Letti: {msg.lette || 0}/{msg.destinatari || 0}</span>
-                          </div>
-                        </div>
-                      ))}
+                          )
+                        )}
                       {/* Messaggi Ricevuti */}
-                      {(filtroMessaggiAssoc === 'tutti' || filtroMessaggiAssoc === 'ricevuti') && (notificheRisposteAssoc || []).map((risposta: any, idx: number) => (
-                        <div 
-                          key={`ric-${idx}`} 
-                          onClick={() => segnaRispostaComeLetta(risposta)}
-                          className={`p-3 rounded-lg border cursor-pointer transition-all hover:scale-[1.01] ${!risposta.letta ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#0b1220] border-[#10b981]/20'}`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              {risposta.letta ? (
-                                <MailOpen className="w-4 h-4 text-[#e8fbff]/40" />
-                              ) : (
-                                <Mail className="w-4 h-4 text-amber-400" />
-                              )}
-                              <span className="text-[#e8fbff] font-medium">{risposta.mittente_nome || 'Impresa'}</span>
-                              {!risposta.letta && <Badge className="bg-amber-500 text-white text-xs">Nuova</Badge>}
+                      {(filtroMessaggiAssoc === "tutti" ||
+                        filtroMessaggiAssoc === "ricevuti") &&
+                        (notificheRisposteAssoc || []).map(
+                          (risposta: any, idx: number) => (
+                            <div
+                              key={`ric-${idx}`}
+                              onClick={() => segnaRispostaComeLetta(risposta)}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all hover:scale-[1.01] ${!risposta.letta ? "bg-emerald-500/10 border-emerald-500/30" : "bg-[#0b1220] border-[#10b981]/20"}`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  {risposta.letta ? (
+                                    <MailOpen className="w-4 h-4 text-[#e8fbff]/40" />
+                                  ) : (
+                                    <Mail className="w-4 h-4 text-amber-400" />
+                                  )}
+                                  <span className="text-[#e8fbff] font-medium">
+                                    {risposta.mittente_nome || "Impresa"}
+                                  </span>
+                                  {!risposta.letta && (
+                                    <Badge className="bg-amber-500 text-white text-xs">
+                                      Nuova
+                                    </Badge>
+                                  )}
+                                </div>
+                                <span className="text-xs text-[#e8fbff]/50">
+                                  {new Date(
+                                    risposta.created_at
+                                  ).toLocaleDateString("it-IT", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+                              <p className="text-sm text-[#e8fbff]/80">
+                                {risposta.titolo}
+                              </p>
+                              <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">
+                                {risposta.messaggio}
+                              </p>
                             </div>
-                            <span className="text-xs text-[#e8fbff]/50">
-                              {new Date(risposta.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p className="text-sm text-[#e8fbff]/80">{risposta.titolo}</p>
-                          <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{risposta.messaggio}</p>
-                        </div>
-                      ))}
+                          )
+                        )}
                       {/* Empty states */}
-                      {filtroMessaggiAssoc === 'inviati' && (messaggiInviatiAssoc || []).length === 0 && (
-                        <div className="text-center text-[#e8fbff]/50 py-8">
-                          <Send className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessun messaggio inviato</p>
-                        </div>
-                      )}
-                      {filtroMessaggiAssoc === 'ricevuti' && (notificheRisposteAssoc || []).length === 0 && (
-                        <div className="text-center text-[#e8fbff]/50 py-8">
-                          <Mail className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessuna risposta ricevuta</p>
-                        </div>
-                      )}
-                      {filtroMessaggiAssoc === 'tutti' && (messaggiInviatiAssoc || []).length === 0 && (notificheRisposteAssoc || []).length === 0 && (
-                        <div className="text-center text-[#e8fbff]/50 py-8">
-                          <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p>Nessun messaggio</p>
-                        </div>
-                      )}
+                      {filtroMessaggiAssoc === "inviati" &&
+                        (messaggiInviatiAssoc || []).length === 0 && (
+                          <div className="text-center text-[#e8fbff]/50 py-8">
+                            <Send className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                            <p>Nessun messaggio inviato</p>
+                          </div>
+                        )}
+                      {filtroMessaggiAssoc === "ricevuti" &&
+                        (notificheRisposteAssoc || []).length === 0 && (
+                          <div className="text-center text-[#e8fbff]/50 py-8">
+                            <Mail className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                            <p>Nessuna risposta ricevuta</p>
+                          </div>
+                        )}
+                      {filtroMessaggiAssoc === "tutti" &&
+                        (messaggiInviatiAssoc || []).length === 0 &&
+                        (notificheRisposteAssoc || []).length === 0 && (
+                          <div className="text-center text-[#e8fbff]/50 py-8">
+                            <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                            <p>Nessun messaggio</p>
+                          </div>
+                        )}
                     </div>
                   </CardContent>
                 </Card>
@@ -6073,156 +8534,13 @@ export default function DashboardPA() {
                   <PresenzeAssociatiPanel />
                 </TabsContent>
               )}
-
             </Tabs>
           </TabsContent>
 
           {/* TAB 25: MIO AGENT */}
           <TabsContent value="mio" className="space-y-6">
-            {/* SEZIONE A: Chat Principale MIO (sempre visibile) */}
-            <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-[#8b5cf6]" />
-                  MIO Agent - Chat Principale (GPT-5 Coordinatore)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-[#e8fbff]/70 text-sm">
-                    Chat principale con il "cervello" che coordina tutti gli agenti. QG strategico per ragionare sui progetti.
-                  </p>
-
-                  {/* Area chat principale MIO */}
-                  <div className="bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-4">
-                    <div className="space-y-4">
-                      {/* Header */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Brain className="h-5 w-5 text-purple-400" />
-                          <span className="text-[#e8fbff] font-medium">MIO</span>
-                          <span className="text-xs text-[#e8fbff]/50">GPT-5 Coordinatore</span>
-                          {mioMainConversationId && (
-                            <span className="text-xs text-[#e8fbff]/30">ID: {mioMainConversationId.slice(0, 8)}...</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-[#e8fbff]/50">{mioMessages.length} messaggi</span>
-                          {/* Pulsante STOP sempre visibile */}
-                          <button
-                            onClick={stopGeneration}
-                            disabled={!mioSending}
-                            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                              mioSending
-                                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse cursor-pointer'
-                                : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'
-                            }`}
-                            title={mioSending ? 'Interrompi tutti gli agenti' : 'Nessuna elaborazione in corso'}
-                          >
-                            <StopCircle className="h-4 w-4" />
-                            <span className="text-sm">STOP</span>
-                          </button>
-                        </div>
-                      </div>
-                      {/* Area messaggi */}
-                      <div className="relative">
-                        <div ref={mioMessagesRef} className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-scroll space-y-3 chat-messages-container">
-                        {mioMessages.length === 0 ? (
-                          <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
-                        ) : (
-                          mioMessages.map((msg) => (
-                            <div
-                              key={msg.id}
-                              className={`p-3 rounded-lg ${
-                                msg.role === 'user'
-                                  ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 ml-8'
-                                  : msg.role === 'assistant'
-                                  ? 'bg-[#10b981]/20 border border-[#10b981]/30 mr-8'
-                                  : 'bg-[#ef4444]/20 border border-[#ef4444]/30'
-                              }`}
-                            >
-                              <div className="flex items-start gap-2">
-                                {msg.role === 'assistant' && (
-                                  <Brain className="h-4 w-4 text-purple-400 mt-0.5" />
-                                )}
-                                <div className="flex-1">
-                                  <div className="text-xs text-[#e8fbff]/50 mb-1 flex items-center justify-between">
-                                    <span>
-                                      {msg.role === 'user' ? 'Tu' : msg.role === 'assistant' ? (
-                                        msg.agentName ? `${msg.agentName.toUpperCase()}` : 'MIO'
-                                      ) : 'Errore'}
-                                      {msg.source && <span className="ml-2 text-[#e8fbff]/30">({msg.source})</span>}
-                                    </span>
-                                    <span className="text-[#e8fbff]/30">
-                                      {new Date(msg.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <MessageContent content={msg.content} />
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                        {mioLoading && (
-                          <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                            <div className="flex items-center gap-2">
-                              <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                              <p className="text-[#e8fbff]/70 text-sm">MIO sta pensando...</p>
-                            </div>
-                          </div>
-                        )}
-                        </div>
-                        {/* Bottone Scroll to Bottom */}
-                        {showMioScrollButton && mioMessages.length > 0 && (
-                          <button
-                            onClick={() => scrollMioToBottom()}
-                            className="absolute bottom-2 right-2 z-10 size-10 rounded-full bg-[#8b5cf6] shadow-lg flex items-center justify-center hover:bg-[#8b5cf6]/90 transition-all"
-                            aria-label="Torna all'ultimo messaggio"
-                          >
-                            <ArrowDown className="size-5 text-white" />
-                          </button>
-                        )}
-                      </div>
-                      {/* Input */}
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={mioInputValue}
-                          onChange={(e) => setMioInputValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey && !mioSending) {
-                              e.preventDefault();
-                              handleSendMio();
-                            }
-                          }}
-                          placeholder="Messaggio a MIO..."
-                          className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
-                          disabled={mioSending}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleSendMio}
-                          disabled={mioSending}
-                          className="bg-[#10b981] hover:bg-[#059669] px-4 py-2 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {mioSending ? 'Invio...' : 'Invia'}
-                        </button>
-                      </div>
-                      {mioSendError && (
-                        <p className="text-xs text-[#ef4444] text-center">
-                          Errore MIO: {mioSendError}
-                        </p>
-                      )}
-                      {mioError && (
-                        <p className="text-xs text-[#ef4444] text-center">
-                          {mioError}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* SEZIONE A: AVA Chat AI con Streaming SSE */}
+            <AIChatPanel userRole="pa" />
 
             {/* SEZIONE B: Pannello Multi-Agente (sotto la chat principale) */}
             <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
@@ -6235,25 +8553,30 @@ export default function DashboardPA() {
               <CardContent>
                 <div className="space-y-4">
                   <p className="text-[#e8fbff]/70 text-sm">
-                    Sala controllo con 4 agenti specializzati. Visualizza singolarmente o tutti insieme.
+                    Sala controllo con 4 agenti specializzati. Visualizza
+                    singolarmente o tutti insieme.
                   </p>
 
                   {/* Barra toggle Vista singola / Vista 4 agenti */}
                   <div className="flex gap-3">
                     <Button
-                      onClick={() => setViewMode('single')}
-                      className={viewMode === 'single' 
-                        ? 'flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white' 
-                        : 'flex-1 bg-[#8b5cf6]/20 hover:bg-[#8b5cf6]/30 text-[#8b5cf6]'}
+                      onClick={() => setViewMode("single")}
+                      className={
+                        viewMode === "single"
+                          ? "flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white"
+                          : "flex-1 bg-[#8b5cf6]/20 hover:bg-[#8b5cf6]/30 text-[#8b5cf6]"
+                      }
                     >
                       <MessageSquare className="h-4 w-4 mr-2" />
                       Vista singola
                     </Button>
                     <Button
-                      onClick={() => setViewMode('quad')}
-                      className={viewMode === 'quad' 
-                        ? 'flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white' 
-                        : 'flex-1 bg-[#8b5cf6]/20 hover:bg-[#8b5cf6]/30 text-[#8b5cf6]'}
+                      onClick={() => setViewMode("quad")}
+                      className={
+                        viewMode === "quad"
+                          ? "flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white"
+                          : "flex-1 bg-[#8b5cf6]/20 hover:bg-[#8b5cf6]/30 text-[#8b5cf6]"
+                      }
                     >
                       <Users className="h-4 w-4 mr-2" />
                       Vista 4 agenti
@@ -6263,29 +8586,31 @@ export default function DashboardPA() {
                   {/* Bottoni agenti - Disabilitati in vista quadrants */}
                   <div className="grid grid-cols-4 gap-2">
                     <button
-                      onClick={() => setSelectedAgent('gptdev')}
-                      disabled={viewMode === 'quad'}
+                      onClick={() => setSelectedAgent("gptdev")}
+                      disabled={viewMode === "quad"}
                       className={`text-center p-3 rounded-lg border transition-all ${
-                        viewMode === 'quad' 
-                          ? 'opacity-50 cursor-not-allowed bg-[#6366f1]/5 border-[#6366f1]/20'
-                          : selectedAgent === 'gptdev'
-                          ? 'bg-[#6366f1]/20 border-[#6366f1] shadow-lg shadow-[#6366f1]/20'
-                          : 'bg-[#0a0f1a] border-[#6366f1]/30 hover:bg-[#6366f1]/10 hover:border-[#6366f1]/50'
+                        viewMode === "quad"
+                          ? "opacity-50 cursor-not-allowed bg-[#6366f1]/5 border-[#6366f1]/20"
+                          : selectedAgent === "gptdev"
+                            ? "bg-[#6366f1]/20 border-[#6366f1] shadow-lg shadow-[#6366f1]/20"
+                            : "bg-[#0a0f1a] border-[#6366f1]/30 hover:bg-[#6366f1]/10 hover:border-[#6366f1]/50"
                       }`}
                     >
                       <Brain className="h-5 w-5 text-indigo-400 mx-auto mb-1" />
                       <div className="text-xs text-[#e8fbff]/70">GPT Dev</div>
-                      <div className="text-xs text-[#e8fbff]/50">Sviluppatore</div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        Sviluppatore
+                      </div>
                     </button>
                     <button
-                      onClick={() => setSelectedAgent('manus')}
-                      disabled={viewMode === 'quad'}
+                      onClick={() => setSelectedAgent("manus")}
+                      disabled={viewMode === "quad"}
                       className={`text-center p-3 rounded-lg border transition-all ${
-                        viewMode === 'quad' 
-                          ? 'opacity-50 cursor-not-allowed bg-[#3b82f6]/5 border-[#3b82f6]/20'
-                          : selectedAgent === 'manus'
-                          ? 'bg-[#3b82f6]/20 border-[#3b82f6]'
-                          : 'bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/15'
+                        viewMode === "quad"
+                          ? "opacity-50 cursor-not-allowed bg-[#3b82f6]/5 border-[#3b82f6]/20"
+                          : selectedAgent === "manus"
+                            ? "bg-[#3b82f6]/20 border-[#3b82f6]"
+                            : "bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/15"
                       }`}
                     >
                       <Wrench className="h-5 w-5 text-blue-400 mx-auto mb-1" />
@@ -6293,14 +8618,14 @@ export default function DashboardPA() {
                       <div className="text-xs text-[#e8fbff]/50">Esecutivo</div>
                     </button>
                     <button
-                      onClick={() => setSelectedAgent('abacus')}
-                      disabled={viewMode === 'quad'}
+                      onClick={() => setSelectedAgent("abacus")}
+                      disabled={viewMode === "quad"}
                       className={`text-center p-3 rounded-lg border transition-all ${
-                        viewMode === 'quad' 
-                          ? 'opacity-50 cursor-not-allowed bg-[#10b981]/5 border-[#10b981]/20'
-                          : selectedAgent === 'abacus'
-                          ? 'bg-[#10b981]/20 border-[#10b981]'
-                          : 'bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/15'
+                        viewMode === "quad"
+                          ? "opacity-50 cursor-not-allowed bg-[#10b981]/5 border-[#10b981]/20"
+                          : selectedAgent === "abacus"
+                            ? "bg-[#10b981]/20 border-[#10b981]"
+                            : "bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/15"
                       }`}
                     >
                       <Calculator className="h-5 w-5 text-green-400 mx-auto mb-1" />
@@ -6308,77 +8633,94 @@ export default function DashboardPA() {
                       <div className="text-xs text-[#e8fbff]/50">Analisi</div>
                     </button>
                     <button
-                      onClick={() => setSelectedAgent('zapier')}
-                      disabled={viewMode === 'quad'}
+                      onClick={() => setSelectedAgent("zapier")}
+                      disabled={viewMode === "quad"}
                       className={`text-center p-3 rounded-lg border transition-all ${
-                        viewMode === 'quad' 
-                          ? 'opacity-50 cursor-not-allowed bg-[#f59e0b]/5 border-[#f59e0b]/20'
-                          : selectedAgent === 'zapier'
-                          ? 'bg-[#f59e0b]/20 border-[#f59e0b]'
-                          : 'bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/15'
+                        viewMode === "quad"
+                          ? "opacity-50 cursor-not-allowed bg-[#f59e0b]/5 border-[#f59e0b]/20"
+                          : selectedAgent === "zapier"
+                            ? "bg-[#f59e0b]/20 border-[#f59e0b]"
+                            : "bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/15"
                       }`}
                     >
                       <Zap className="h-5 w-5 text-orange-400 mx-auto mb-1" />
                       <div className="text-xs text-[#e8fbff]/70">Zapier</div>
-                      <div className="text-xs text-[#e8fbff]/50">Automazioni</div>
+                      <div className="text-xs text-[#e8fbff]/50">
+                        Automazioni
+                      </div>
                     </button>
                   </div>
 
                   {/* AREA CHAT - UN SOLO WRAPPER CON CONDITIONAL RENDERING */}
                   <div className="bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-4 min-h-[24rem]">
-                    {viewMode === 'single' && (
+                    {viewMode === "single" && (
                       <div className="space-y-4">
                         {/* Header chat singola */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            {selectedAgent === 'gptdev' && <Brain className="h-5 w-5 text-indigo-400" />}
-                            {selectedAgent === 'manus' && <Wrench className="h-5 w-5 text-blue-400" />}
-                            {selectedAgent === 'abacus' && <Calculator className="h-5 w-5 text-green-400" />}
-                            {selectedAgent === 'zapier' && <Zap className="h-5 w-5 text-orange-400" />}
+                            {selectedAgent === "gptdev" && (
+                              <Brain className="h-5 w-5 text-indigo-400" />
+                            )}
+                            {selectedAgent === "manus" && (
+                              <Wrench className="h-5 w-5 text-blue-400" />
+                            )}
+                            {selectedAgent === "abacus" && (
+                              <Calculator className="h-5 w-5 text-green-400" />
+                            )}
+                            {selectedAgent === "zapier" && (
+                              <Zap className="h-5 w-5 text-orange-400" />
+                            )}
                             <span className="text-[#e8fbff] font-medium">
-                              {selectedAgent === 'gptdev' && 'GPT Developer'}
-                              {selectedAgent === 'manus' && 'Manus'}
-                              {selectedAgent === 'abacus' && 'Abacus'}
-                              {selectedAgent === 'zapier' && 'Zapier'}
+                              {selectedAgent === "gptdev" && "GPT Developer"}
+                              {selectedAgent === "manus" && "Manus"}
+                              {selectedAgent === "abacus" && "Abacus"}
+                              {selectedAgent === "zapier" && "Zapier"}
                             </span>
                             <span className="text-xs text-[#e8fbff]/50">
-                              {selectedAgent === 'gptdev' && 'Sviluppatore AI'}
-                              {selectedAgent === 'manus' && 'Operatore Esecutivo'}
-                              {selectedAgent === 'abacus' && 'Analisi Dati'}
-                              {selectedAgent === 'zapier' && 'Automazioni'}
+                              {selectedAgent === "gptdev" && "Sviluppatore AI"}
+                              {selectedAgent === "manus" &&
+                                "Operatore Esecutivo"}
+                              {selectedAgent === "abacus" && "Analisi Dati"}
+                              {selectedAgent === "zapier" && "Automazioni"}
                             </span>
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-xs text-[#e8fbff]/50">
-                              {selectedAgent === 'gptdev' && `${gptdevMessages.length} messaggi`}
-                              {selectedAgent === 'manus' && `${manusMessages.length} messaggi`}
-                              {selectedAgent === 'abacus' && `${abacusMessages.length} messaggi`}
-                              {selectedAgent === 'zapier' && `${zapierMessages.length} messaggi`}
+                              {selectedAgent === "gptdev" &&
+                                `${gptdevMessages.length} messaggi`}
+                              {selectedAgent === "manus" &&
+                                `${manusMessages.length} messaggi`}
+                              {selectedAgent === "abacus" &&
+                                `${abacusMessages.length} messaggi`}
+                              {selectedAgent === "zapier" &&
+                                `${zapierMessages.length} messaggi`}
                             </span>
                             {/* 🛑 Pulsante STOP per Vista Singola Agente */}
                             <button
                               onClick={stopGeneration}
                               disabled={
-                                (selectedAgent === 'gptdev' && !gptdevSending) ||
-                                (selectedAgent === 'manus' && !manusSending) ||
-                                (selectedAgent === 'abacus' && !abacusSending) ||
-                                (selectedAgent === 'zapier' && !zapierSending)
+                                (selectedAgent === "gptdev" &&
+                                  !gptdevSending) ||
+                                (selectedAgent === "manus" && !manusSending) ||
+                                (selectedAgent === "abacus" &&
+                                  !abacusSending) ||
+                                (selectedAgent === "zapier" && !zapierSending)
                               }
                               className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-2 text-xs ${
-                                (selectedAgent === 'gptdev' && gptdevSending) ||
-                                (selectedAgent === 'manus' && manusSending) ||
-                                (selectedAgent === 'abacus' && abacusSending) ||
-                                (selectedAgent === 'zapier' && zapierSending)
-                                  ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse cursor-pointer'
-                                  : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'
+                                (selectedAgent === "gptdev" && gptdevSending) ||
+                                (selectedAgent === "manus" && manusSending) ||
+                                (selectedAgent === "abacus" && abacusSending) ||
+                                (selectedAgent === "zapier" && zapierSending)
+                                  ? "bg-red-600 hover:bg-red-700 text-white animate-pulse cursor-pointer"
+                                  : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
                               }`}
                               title={
-                                (selectedAgent === 'gptdev' && gptdevSending) ||
-                                (selectedAgent === 'manus' && manusSending) ||
-                                (selectedAgent === 'abacus' && abacusSending) ||
-                                (selectedAgent === 'zapier' && zapierSending)
-                                  ? 'Interrompi agente'
-                                  : 'Nessuna elaborazione in corso'
+                                (selectedAgent === "gptdev" && gptdevSending) ||
+                                (selectedAgent === "manus" && manusSending) ||
+                                (selectedAgent === "abacus" && abacusSending) ||
+                                (selectedAgent === "zapier" && zapierSending)
+                                  ? "Interrompi agente"
+                                  : "Nessuna elaborazione in corso"
                               }
                             >
                               <StopCircle className="h-3.5 w-3.5" />
@@ -6388,137 +8730,224 @@ export default function DashboardPA() {
                         </div>
                         {/* Area messaggi */}
                         <div className="relative">
-                          <div ref={singleChatMessagesRef} className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-scroll chat-messages-container">
-                          {selectedAgent === 'gptdev' && gptdevMessages.length === 0 && (
-                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
-                          )}
-                          {selectedAgent === 'manus' && manusMessages.length === 0 && (
-                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
-                          )}
-                          {selectedAgent === 'abacus' && abacusMessages.length === 0 && (
-                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
-                          )}
-                          {selectedAgent === 'zapier' && zapierMessages.length === 0 && (
-                            <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
-                          )}
-                          
-                          {/* Messaggi GPT Developer */}
-                          {selectedAgent === 'gptdev' && gptdevMessages.map((msg, idx) => (
-                            <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
-                              <div className={`p-3 rounded-lg ${
-                                msg.role === 'user' 
-                                  ? 'bg-indigo-500/20 border border-indigo-500/30 ml-auto' 
-                                  : msg.role === 'system'
-                                  ? 'bg-red-500/10 border border-red-500/30'
-                                  : 'bg-[#10b981]/10 border border-[#10b981]/20'
-                              }`}>
-                                <MessageContent content={msg.content} />
-                                <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
-                                  <span>da {msg.role === 'user' ? 'Tu' : (msg.agent || 'agente')}</span>
-                                  <span className="text-[#e8fbff]/30">
-                                    {new Date(msg.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
+                          <div
+                            ref={singleChatMessagesRef}
+                            className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-scroll chat-messages-container"
+                          >
+                            {selectedAgent === "gptdev" &&
+                              gptdevMessages.length === 0 && (
+                                <p className="text-[#e8fbff]/50 text-center text-sm">
+                                  Nessun messaggio
+                                </p>
+                              )}
+                            {selectedAgent === "manus" &&
+                              manusMessages.length === 0 && (
+                                <p className="text-[#e8fbff]/50 text-center text-sm">
+                                  Nessun messaggio
+                                </p>
+                              )}
+                            {selectedAgent === "abacus" &&
+                              abacusMessages.length === 0 && (
+                                <p className="text-[#e8fbff]/50 text-center text-sm">
+                                  Nessun messaggio
+                                </p>
+                              )}
+                            {selectedAgent === "zapier" &&
+                              zapierMessages.length === 0 && (
+                                <p className="text-[#e8fbff]/50 text-center text-sm">
+                                  Nessun messaggio
+                                </p>
+                              )}
+
+                            {/* Messaggi GPT Developer */}
+                            {selectedAgent === "gptdev" &&
+                              gptdevMessages.map((msg, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`mb-3 ${msg.role === "user" ? "ml-8" : "mr-8"}`}
+                                >
+                                  <div
+                                    className={`p-3 rounded-lg ${
+                                      msg.role === "user"
+                                        ? "bg-indigo-500/20 border border-indigo-500/30 ml-auto"
+                                        : msg.role === "system"
+                                          ? "bg-red-500/10 border border-red-500/30"
+                                          : "bg-[#10b981]/10 border border-[#10b981]/20"
+                                    }`}
+                                  >
+                                    <MessageContent content={msg.content} />
+                                    <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
+                                      <span>
+                                        da{" "}
+                                        {msg.role === "user"
+                                          ? "Tu"
+                                          : msg.agent || "agente"}
+                                      </span>
+                                      <span className="text-[#e8fbff]/30">
+                                        {new Date(
+                                          msg.created_at
+                                        ).toLocaleTimeString("it-IT", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+
+                            {/* Messaggi Manus */}
+                            {selectedAgent === "manus" &&
+                              manusMessages.map((msg, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`mb-3 ${msg.role === "user" ? "ml-8" : "mr-8"}`}
+                                >
+                                  <div
+                                    className={`p-3 rounded-lg ${
+                                      msg.role === "user"
+                                        ? "bg-[#3b82f6]/20 border border-[#3b82f6]/30 ml-auto"
+                                        : msg.role === "system"
+                                          ? "bg-red-500/10 border border-red-500/30"
+                                          : "bg-[#10b981]/10 border border-[#10b981]/20"
+                                    }`}
+                                  >
+                                    <MessageContent content={msg.content} />
+                                    <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
+                                      <span>
+                                        da{" "}
+                                        {msg.role === "user"
+                                          ? "Tu"
+                                          : msg.agent || "agente"}
+                                      </span>
+                                      <span className="text-[#e8fbff]/30">
+                                        {new Date(
+                                          msg.created_at
+                                        ).toLocaleTimeString("it-IT", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+
+                            {/* Messaggi Abacus */}
+                            {selectedAgent === "abacus" &&
+                              abacusMessages.map((msg, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`mb-3 ${msg.role === "user" ? "ml-8" : "mr-8"}`}
+                                >
+                                  <div
+                                    className={`p-3 rounded-lg ${
+                                      msg.role === "user"
+                                        ? "bg-[#10b981]/20 border border-[#10b981]/30 ml-auto"
+                                        : msg.role === "system"
+                                          ? "bg-red-500/10 border border-red-500/30"
+                                          : "bg-[#10b981]/10 border border-[#10b981]/20"
+                                    }`}
+                                  >
+                                    <MessageContent content={msg.content} />
+                                    <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
+                                      <span>
+                                        da{" "}
+                                        {msg.role === "user"
+                                          ? "Tu"
+                                          : msg.agent || "agente"}
+                                      </span>
+                                      <span className="text-[#e8fbff]/30">
+                                        {new Date(
+                                          msg.created_at
+                                        ).toLocaleTimeString("it-IT", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+
+                            {/* Messaggi Zapier */}
+                            {selectedAgent === "zapier" &&
+                              zapierMessages.map((msg, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`mb-3 ${msg.role === "user" ? "ml-8" : "mr-8"}`}
+                                >
+                                  <div
+                                    className={`p-3 rounded-lg ${
+                                      msg.role === "user"
+                                        ? "bg-[#f59e0b]/20 border border-[#f59e0b]/30 ml-auto"
+                                        : msg.role === "system"
+                                          ? "bg-red-500/10 border border-red-500/30"
+                                          : "bg-[#10b981]/10 border border-[#10b981]/20"
+                                    }`}
+                                  >
+                                    <MessageContent content={msg.content} />
+                                    <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
+                                      <span>
+                                        da{" "}
+                                        {msg.role === "user"
+                                          ? "Tu"
+                                          : msg.agent || "agente"}
+                                      </span>
+                                      <span className="text-[#e8fbff]/30">
+                                        {new Date(
+                                          msg.created_at
+                                        ).toLocaleTimeString("it-IT", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+
+                            {/* Loading indicator */}
+                            {selectedAgent === "gptdev" && gptdevSending && (
+                              <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                                <div className="flex items-center gap-2">
+                                  <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                                  <p className="text-[#e8fbff]/70 text-sm">
+                                    GPT Developer sta pensando...
+                                  </p>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                          
-                          {/* Messaggi Manus */}
-                          {selectedAgent === 'manus' && manusMessages.map((msg, idx) => (
-                            <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
-                              <div className={`p-3 rounded-lg ${
-                                msg.role === 'user' 
-                                  ? 'bg-[#3b82f6]/20 border border-[#3b82f6]/30 ml-auto' 
-                                  : msg.role === 'system'
-                                  ? 'bg-red-500/10 border border-red-500/30'
-                                  : 'bg-[#10b981]/10 border border-[#10b981]/20'
-                              }`}>
-                                <MessageContent content={msg.content} />
-                                <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
-                                  <span>da {msg.role === 'user' ? 'Tu' : (msg.agent || 'agente')}</span>
-                                  <span className="text-[#e8fbff]/30">
-                                    {new Date(msg.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
+                            )}
+                            {selectedAgent === "manus" && manusSending && (
+                              <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                                <div className="flex items-center gap-2">
+                                  <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                                  <p className="text-[#e8fbff]/70 text-sm">
+                                    Manus sta lavorando...
+                                  </p>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                          
-                          {/* Messaggi Abacus */}
-                          {selectedAgent === 'abacus' && abacusMessages.map((msg, idx) => (
-                            <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
-                              <div className={`p-3 rounded-lg ${
-                                msg.role === 'user' 
-                                  ? 'bg-[#10b981]/20 border border-[#10b981]/30 ml-auto' 
-                                  : msg.role === 'system'
-                                  ? 'bg-red-500/10 border border-red-500/30'
-                                  : 'bg-[#10b981]/10 border border-[#10b981]/20'
-                              }`}>
-                                <MessageContent content={msg.content} />
-                                <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
-                                  <span>da {msg.role === 'user' ? 'Tu' : (msg.agent || 'agente')}</span>
-                                  <span className="text-[#e8fbff]/30">
-                                    {new Date(msg.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
+                            )}
+                            {selectedAgent === "abacus" && abacusSending && (
+                              <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                                <div className="flex items-center gap-2">
+                                  <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                                  <p className="text-[#e8fbff]/70 text-sm">
+                                    Abacus sta analizzando...
+                                  </p>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                          
-                          {/* Messaggi Zapier */}
-                          {selectedAgent === 'zapier' && zapierMessages.map((msg, idx) => (
-                            <div key={idx} className={`mb-3 ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
-                              <div className={`p-3 rounded-lg ${
-                                msg.role === 'user' 
-                                  ? 'bg-[#f59e0b]/20 border border-[#f59e0b]/30 ml-auto' 
-                                  : msg.role === 'system'
-                                  ? 'bg-red-500/10 border border-red-500/30'
-                                  : 'bg-[#10b981]/10 border border-[#10b981]/20'
-                              }`}>
-                                <MessageContent content={msg.content} />
-                                <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
-                                  <span>da {msg.role === 'user' ? 'Tu' : (msg.agent || 'agente')}</span>
-                                  <span className="text-[#e8fbff]/30">
-                                    {new Date(msg.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
+                            )}
+                            {selectedAgent === "zapier" && zapierSending && (
+                              <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                                <div className="flex items-center gap-2">
+                                  <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                                  <p className="text-[#e8fbff]/70 text-sm">
+                                    Zapier sta elaborando...
+                                  </p>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                          
-                          {/* Loading indicator */}
-                          {selectedAgent === 'gptdev' && gptdevSending && (
-                            <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                              <div className="flex items-center gap-2">
-                                <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                                <p className="text-[#e8fbff]/70 text-sm">GPT Developer sta pensando...</p>
-                              </div>
-                            </div>
-                          )}
-                          {selectedAgent === 'manus' && manusSending && (
-                            <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                              <div className="flex items-center gap-2">
-                                <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                                <p className="text-[#e8fbff]/70 text-sm">Manus sta lavorando...</p>
-                              </div>
-                            </div>
-                          )}
-                          {selectedAgent === 'abacus' && abacusSending && (
-                            <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                              <div className="flex items-center gap-2">
-                                <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                                <p className="text-[#e8fbff]/70 text-sm">Abacus sta analizzando...</p>
-                              </div>
-                            </div>
-                          )}
-                          {selectedAgent === 'zapier' && zapierSending && (
-                            <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                              <div className="flex items-center gap-2">
-                                <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                                <p className="text-[#e8fbff]/70 text-sm">Zapier sta elaborando...</p>
-                              </div>
-                            </div>
-                          )}
+                            )}
                           </div>
                           {/* Bottone Scroll to Bottom */}
                           {showSingleChatScrollButton && (
@@ -6533,14 +8962,20 @@ export default function DashboardPA() {
                         </div>
                         {/* Input e bottone Invia per ogni agente */}
                         <div className="flex gap-2">
-                          {selectedAgent === 'gptdev' && (
+                          {selectedAgent === "gptdev" && (
                             <>
                               <input
                                 type="text"
                                 value={gptdevInputValue}
-                                onChange={(e) => setGptdevInputValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey && !gptdevSending) {
+                                onChange={e =>
+                                  setGptdevInputValue(e.target.value)
+                                }
+                                onKeyDown={e => {
+                                  if (
+                                    e.key === "Enter" &&
+                                    !e.shiftKey &&
+                                    !gptdevSending
+                                  ) {
                                     e.preventDefault();
                                     handleSendGptdev();
                                   }
@@ -6555,18 +8990,24 @@ export default function DashboardPA() {
                                 className="bg-[#10b981] hover:bg-[#059669] disabled:bg-[#10b981]/50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                               >
                                 <Send className="h-4 w-4" />
-                                {gptdevSending ? 'Invio...' : 'Invia'}
+                                {gptdevSending ? "Invio..." : "Invia"}
                               </button>
                             </>
                           )}
-                          {selectedAgent === 'manus' && (
+                          {selectedAgent === "manus" && (
                             <>
                               <input
                                 type="text"
                                 value={manusInputValue}
-                                onChange={(e) => setManusInputValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey && !manusSending) {
+                                onChange={e =>
+                                  setManusInputValue(e.target.value)
+                                }
+                                onKeyDown={e => {
+                                  if (
+                                    e.key === "Enter" &&
+                                    !e.shiftKey &&
+                                    !manusSending
+                                  ) {
                                     e.preventDefault();
                                     handleSendManus();
                                   }
@@ -6581,18 +9022,24 @@ export default function DashboardPA() {
                                 className="bg-[#10b981] hover:bg-[#059669] disabled:bg-[#10b981]/50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                               >
                                 <Send className="h-4 w-4" />
-                                {manusLoading ? 'Invio...' : 'Invia'}
+                                {manusLoading ? "Invio..." : "Invia"}
                               </button>
                             </>
                           )}
-                          {selectedAgent === 'abacus' && (
+                          {selectedAgent === "abacus" && (
                             <>
                               <input
                                 type="text"
                                 value={abacusInputValue}
-                                onChange={(e) => setAbacusInputValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey && !abacusSending) {
+                                onChange={e =>
+                                  setAbacusInputValue(e.target.value)
+                                }
+                                onKeyDown={e => {
+                                  if (
+                                    e.key === "Enter" &&
+                                    !e.shiftKey &&
+                                    !abacusSending
+                                  ) {
                                     e.preventDefault();
                                     handleSendAbacus();
                                   }
@@ -6607,18 +9054,24 @@ export default function DashboardPA() {
                                 className="bg-[#10b981] hover:bg-[#059669] disabled:bg-[#10b981]/50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                               >
                                 <Send className="h-4 w-4" />
-                                {abacusLoading ? 'Invio...' : 'Invia'}
+                                {abacusLoading ? "Invio..." : "Invia"}
                               </button>
                             </>
                           )}
-                          {selectedAgent === 'zapier' && (
+                          {selectedAgent === "zapier" && (
                             <>
                               <input
                                 type="text"
                                 value={zapierInputValue}
-                                onChange={(e) => setZapierInputValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey && !zapierSending) {
+                                onChange={e =>
+                                  setZapierInputValue(e.target.value)
+                                }
+                                onKeyDown={e => {
+                                  if (
+                                    e.key === "Enter" &&
+                                    !e.shiftKey &&
+                                    !zapierSending
+                                  ) {
                                     e.preventDefault();
                                     handleSendZapier();
                                   }
@@ -6633,7 +9086,7 @@ export default function DashboardPA() {
                                 className="bg-[#10b981] hover:bg-[#059669] disabled:bg-[#10b981]/50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                               >
                                 <Send className="h-4 w-4" />
-                                {zapierLoading ? 'Invio...' : 'Invia'}
+                                {zapierLoading ? "Invio..." : "Invia"}
                               </button>
                             </>
                           )}
@@ -6641,7 +9094,7 @@ export default function DashboardPA() {
                       </div>
                     )}
 
-                    {viewMode === 'quad' && (
+                    {viewMode === "quad" && (
                       <MultiAgentChatView
                         gptdevMessages={gptdevQuadMessages as AgentMessage[]}
                         manusMessages={manusQuadMessages as AgentMessage[]}
@@ -6668,11 +9121,12 @@ export default function DashboardPA() {
               </CardHeader>
               <CardContent>
                 <p className="text-[#e8fbff]/70 text-sm mb-4">
-                  Area di staging per output complessi, diagrammi e annotazioni. Gli agenti possono disegnare automaticamente schemi e report.
+                  Area di staging per output complessi, diagrammi e annotazioni.
+                  Gli agenti possono disegnare automaticamente schemi e report.
                 </p>
                 <SharedWorkspace
                   conversationId={mioMainConversationId ?? undefined}
-                  onSave={(_snapshot) => {
+                  onSave={_snapshot => {
                     // Workspace saved
                   }}
                 />
@@ -6692,11 +9146,17 @@ export default function DashboardPA() {
                   {guardianLogs
                     .filter(log => {
                       // Vista 4 agenti: mostra tutti gli agenti (mio, gptdev, manus, abacus, zapier)
-                      if (viewMode === 'quad') {
-                        return ['mio', 'gptdev', 'manus', 'abacus', 'zapier'].includes(log.agent);
+                      if (viewMode === "quad") {
+                        return [
+                          "mio",
+                          "gptdev",
+                          "manus",
+                          "abacus",
+                          "zapier",
+                        ].includes(log.agent);
                       }
                       // Vista singola: mostra solo l'agente selezionato
-                      if (viewMode === 'single' && selectedAgent) {
+                      if (viewMode === "single" && selectedAgent) {
                         return log.agent === selectedAgent;
                       }
                       // Default: mostra tutti
@@ -6704,39 +9164,70 @@ export default function DashboardPA() {
                     })
                     .slice(0, 50)
                     .map((log, idx) => {
-                    const statusColor = log.status === 'allowed' ? 'text-[#10b981]' : 'text-[#ef4444]';
-                    const statusBg = log.status === 'allowed' ? 'bg-[#10b981]/10 border-[#10b981]/30' : 'bg-[#ef4444]/10 border-[#ef4444]/30';
-                    const agentColor = 
-                      log.agent === 'mio' ? 'text-purple-400' :
-                      log.agent === 'manus' ? 'text-blue-400' :
-                      log.agent === 'abacus' ? 'text-green-400' :
-                      log.agent === 'zapier' ? 'text-orange-400' : 'text-gray-400';
-                    
-                    return (
-                      <div key={idx} className="p-3 bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 rounded text-xs font-medium border ${statusBg} ${statusColor}`}>
-                              {log.status.toUpperCase()}
+                      const statusColor =
+                        log.status === "allowed"
+                          ? "text-[#10b981]"
+                          : "text-[#ef4444]";
+                      const statusBg =
+                        log.status === "allowed"
+                          ? "bg-[#10b981]/10 border-[#10b981]/30"
+                          : "bg-[#ef4444]/10 border-[#ef4444]/30";
+                      const agentColor =
+                        log.agent === "mio"
+                          ? "text-purple-400"
+                          : log.agent === "manus"
+                            ? "text-blue-400"
+                            : log.agent === "abacus"
+                              ? "text-green-400"
+                              : log.agent === "zapier"
+                                ? "text-orange-400"
+                                : "text-gray-400";
+
+                      return (
+                        <div
+                          key={idx}
+                          className="p-3 bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-medium border ${statusBg} ${statusColor}`}
+                              >
+                                {log.status.toUpperCase()}
+                              </span>
+                              <span
+                                className={`text-sm font-medium ${agentColor}`}
+                              >
+                                {log.agent}
+                              </span>
+                              <span className="text-xs text-[#e8fbff]/50">
+                                •
+                              </span>
+                              <span className="text-xs text-[#e8fbff]/50">
+                                {log.method}
+                              </span>
+                            </div>
+                            <span className="text-xs text-[#e8fbff]/50">
+                              {formatTimestamp(log.timestamp)}
                             </span>
-                            <span className={`text-sm font-medium ${agentColor}`}>
-                              {log.agent}
-                            </span>
-                            <span className="text-xs text-[#e8fbff]/50">•</span>
-                            <span className="text-xs text-[#e8fbff]/50">{log.method}</span>
                           </div>
-                          <span className="text-xs text-[#e8fbff]/50">{formatTimestamp(log.timestamp)}</span>
+                          <p className="text-sm text-[#e8fbff] font-mono mb-1">
+                            {log.path}
+                          </p>
+                          {log.reason && (
+                            <p className="text-xs text-[#ef4444] mt-2">
+                              ⚠️ {log.reason}
+                            </p>
+                          )}
+                          {log.status === "allowed" &&
+                            log.response_time_ms !== undefined && (
+                              <p className="text-xs text-[#10b981] mt-2">
+                                ✓ Response time: {log.response_time_ms}ms
+                              </p>
+                            )}
                         </div>
-                        <p className="text-sm text-[#e8fbff] font-mono mb-1">{log.path}</p>
-                        {log.reason && (
-                          <p className="text-xs text-[#ef4444] mt-2">⚠️ {log.reason}</p>
-                        )}
-                        {log.status === 'allowed' && log.response_time_ms !== undefined && (
-                          <p className="text-xs text-[#10b981] mt-2">✓ Response time: {log.response_time_ms}ms</p>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
                 <div className="mt-4 pt-4 border-t border-[#8b5cf6]/20">
                   <p className="text-xs text-[#e8fbff]/50 text-center">
@@ -6754,36 +9245,50 @@ export default function DashboardPA() {
               <div className="fixed inset-0 z-[100] bg-[#0b1220]">
                 <BusHubEditor
                   onClose={() => setShowBusHubEditor(false)}
-                  onSave={async (data) => {
+                  onSave={async data => {
                     // Dati ricevuti da editor, processa salvataggio
                     try {
                       // Estrai i dati nel formato corretto per il backend
-                      const areaGeojson = data.hub_geojson?.area?.geometry || null;
+                      const areaGeojson =
+                        data.hub_geojson?.area?.geometry || null;
                       const cornerGeojson = data.hub_geojson?.corner || null;
-                      const centerCoords = data.hub_geojson?.center?.geometry?.coordinates || [data.center?.lng, data.center?.lat];
-                      
+                      const centerCoords = data.hub_geojson?.center?.geometry
+                        ?.coordinates || [data.center?.lng, data.center?.lat];
+
                       // Se abbiamo un hubId, aggiorna l'hub esistente
                       if (data.hubId) {
-                        const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
-                        const response = await authenticatedFetch(`${API_BASE_URL}/api/hub/locations/${data.hubId}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            areaGeojson: areaGeojson ? JSON.stringify(areaGeojson) : null,
-                            cornerGeojson: cornerGeojson ? JSON.stringify(cornerGeojson) : null,
-                            centerLat: centerCoords[1],
-                            centerLng: centerCoords[0],
-                          }),
-                        });
+                        const API_BASE_URL =
+                          import.meta.env.VITE_MIHUB_API_URL ||
+                          "https://api.mio-hub.me";
+                        const response = await authenticatedFetch(
+                          `${API_BASE_URL}/api/hub/locations/${data.hubId}`,
+                          {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              areaGeojson: areaGeojson
+                                ? JSON.stringify(areaGeojson)
+                                : null,
+                              cornerGeojson: cornerGeojson
+                                ? JSON.stringify(cornerGeojson)
+                                : null,
+                              centerLat: centerCoords[1],
+                              centerLng: centerCoords[0],
+                            }),
+                          }
+                        );
                         if (response.ok) {
                           // Hub aggiornato con successo
                         } else {
-                          console.error('Errore aggiornamento hub:', await response.text());
+                          console.error(
+                            "Errore aggiornamento hub:",
+                            await response.text()
+                          );
                         }
                       }
                       setShowBusHubEditor(false);
                     } catch (err) {
-                      console.error('Errore salvataggio:', err);
+                      console.error("Errore salvataggio:", err);
                     }
                   }}
                 />
@@ -6810,12 +9315,14 @@ export default function DashboardPA() {
           <TabsContent value="workspace" className="space-y-6">
             <GestioneHubPanel />
           </TabsContent>
-
         </Tabs>
       </div>
-      
+
       {/* Modale Documentazione */}
-      <DocModal content={docModalContent} onClose={() => setDocModalContent(null)} />
+      <DocModal
+        content={docModalContent}
+        onClose={() => setDocModalContent(null)}
+      />
     </div>
   );
 }
@@ -6836,7 +9343,7 @@ function LogsSection() {
         setGuardianLogs(response.logs);
         setLoading(false);
       } catch (err) {
-        console.error('Error loading Guardian logs:', err);
+        console.error("Error loading Guardian logs:", err);
         setLoading(false);
       }
     };
@@ -6850,41 +9357,69 @@ function LogsSection() {
   const stats = {
     total: guardianLogs.length,
     allowed: guardianLogs.filter(log => log.success === true).length,
-    denied: guardianLogs.filter(log => log.success === false && log.statusCode !== null).length,
-    error: guardianLogs.filter(log => log.success === false && log.statusCode === null).length,
+    denied: guardianLogs.filter(
+      log => log.success === false && log.statusCode !== null
+    ).length,
+    error: guardianLogs.filter(
+      log => log.success === false && log.statusCode === null
+    ).length,
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'allowed':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'denied':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'error':
-        return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+      case "allowed":
+        return "bg-green-500/20 text-green-400 border-green-500/30";
+      case "denied":
+        return "bg-red-500/20 text-red-400 border-red-500/30";
+      case "error":
+        return "bg-orange-500/20 text-orange-400 border-orange-500/30";
       default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
     }
   };
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleString('it-IT', {
-      timeZone: 'Europe/Rome',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
+    return date.toLocaleString("it-IT", {
+      timeZone: "Europe/Rome",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
     });
   };
 
   // Mock system logs
   const systemLogs = [
-    { id: 1, timestamp: new Date().toISOString(), level: 'info', app: 'DMS_HUB', type: 'API_CALL', message: 'GET /api/markets/list - 200 OK', userEmail: 'system' },
-    { id: 2, timestamp: new Date(Date.now() - 60000).toISOString(), level: 'info', app: 'DMS_HUB', type: 'DATABASE', message: 'Query executed successfully', userEmail: 'admin@dms.it' },
-    { id: 3, timestamp: new Date(Date.now() - 120000).toISOString(), level: 'warn', app: 'MIHUB', type: 'RATE_LIMIT', message: 'Rate limit approaching for agent: mio', userEmail: 'system' },
+    {
+      id: 1,
+      timestamp: new Date().toISOString(),
+      level: "info",
+      app: "DMS_HUB",
+      type: "API_CALL",
+      message: "GET /api/markets/list - 200 OK",
+      userEmail: "system",
+    },
+    {
+      id: 2,
+      timestamp: new Date(Date.now() - 60000).toISOString(),
+      level: "info",
+      app: "DMS_HUB",
+      type: "DATABASE",
+      message: "Query executed successfully",
+      userEmail: "admin@dms.it",
+    },
+    {
+      id: 3,
+      timestamp: new Date(Date.now() - 120000).toISOString(),
+      level: "warn",
+      app: "MIHUB",
+      type: "RATE_LIMIT",
+      message: "Rate limit approaching for agent: mio",
+      userEmail: "system",
+    },
   ];
 
   return (
@@ -6896,7 +9431,9 @@ function LogsSection() {
             <CardTitle className="text-[#e8fbff] text-sm">Totale Log</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-[#14b8a6]">{stats.total}</div>
+            <div className="text-4xl font-bold text-[#14b8a6]">
+              {stats.total}
+            </div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-[#10b981]/20 to-[#10b981]/5 border-[#10b981]/30">
@@ -6904,7 +9441,9 @@ function LogsSection() {
             <CardTitle className="text-[#e8fbff] text-sm">Allowed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-[#10b981]">{stats.allowed}</div>
+            <div className="text-4xl font-bold text-[#10b981]">
+              {stats.allowed}
+            </div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-[#ef4444]/20 to-[#ef4444]/5 border-[#ef4444]/30">
@@ -6912,7 +9451,9 @@ function LogsSection() {
             <CardTitle className="text-[#e8fbff] text-sm">Denied</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-[#ef4444]">{stats.denied}</div>
+            <div className="text-4xl font-bold text-[#ef4444]">
+              {stats.denied}
+            </div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-[#f59e0b]/20 to-[#f59e0b]/5 border-[#f59e0b]/30">
@@ -6920,7 +9461,9 @@ function LogsSection() {
             <CardTitle className="text-[#e8fbff] text-sm">Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-[#f59e0b]">{stats.error}</div>
+            <div className="text-4xl font-bold text-[#f59e0b]">
+              {stats.error}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -6928,10 +9471,16 @@ function LogsSection() {
       {/* Tabs: System Logs + Guardian Logs */}
       <Tabs defaultValue="guardian" className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-[#1a2332] border border-[#14b8a6]/30">
-          <TabsTrigger value="system" className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white">
+          <TabsTrigger
+            value="system"
+            className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white"
+          >
             System Logs
           </TabsTrigger>
-          <TabsTrigger value="guardian" className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white">
+          <TabsTrigger
+            value="guardian"
+            className="data-[state=active]:bg-[#14b8a6] data-[state=active]:text-white"
+          >
             Guardian Logs
           </TabsTrigger>
         </TabsList>
@@ -6947,28 +9496,42 @@ function LogsSection() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {systemLogs.map((log) => (
+                {systemLogs.map(log => (
                   <div
                     key={log.id}
                     className="p-3 rounded-lg border bg-[#0b1220] border-[#14b8a6]/20"
                   >
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${
-                          log.level === 'info' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                          log.level === 'warn' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                          'bg-red-500/20 text-red-400 border-red-500/30'
-                        }`}>
+                        <span
+                          className={`text-xs font-semibold px-2 py-0.5 rounded border ${
+                            log.level === "info"
+                              ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                              : log.level === "warn"
+                                ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                                : "bg-red-500/20 text-red-400 border-red-500/30"
+                          }`}
+                        >
                           {log.level.toUpperCase()}
                         </span>
-                        <span className="text-xs text-[#e8fbff]/70">{log.app}</span>
+                        <span className="text-xs text-[#e8fbff]/70">
+                          {log.app}
+                        </span>
                         <span className="text-xs text-[#e8fbff]/50">•</span>
-                        <span className="text-xs text-[#e8fbff]/50">{log.type}</span>
+                        <span className="text-xs text-[#e8fbff]/50">
+                          {log.type}
+                        </span>
                       </div>
-                      <span className="text-xs text-[#e8fbff]/50">{formatTimestamp(log.timestamp)}</span>
+                      <span className="text-xs text-[#e8fbff]/50">
+                        {formatTimestamp(log.timestamp)}
+                      </span>
                     </div>
-                    <p className="text-sm text-[#e8fbff] font-mono">{log.message}</p>
-                    <div className="text-xs text-[#e8fbff]/50 mt-1">User: {log.userEmail}</div>
+                    <p className="text-sm text-[#e8fbff] font-mono">
+                      {log.message}
+                    </p>
+                    <div className="text-xs text-[#e8fbff]/50 mt-1">
+                      User: {log.userEmail}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -6996,23 +9559,33 @@ function LogsSection() {
                     <div
                       key={idx}
                       className={`p-3 rounded-lg border ${
-                        log.status === 'denied' || log.status === 'error'
-                          ? 'bg-[#ef4444]/10 border-[#ef4444]/30'
-                          : 'bg-[#0b1220] border-[#14b8a6]/20'
+                        log.status === "denied" || log.status === "error"
+                          ? "bg-[#ef4444]/10 border-[#ef4444]/30"
+                          : "bg-[#0b1220] border-[#14b8a6]/20"
                       }`}
                     >
                       <div className="flex items-start justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${getStatusBadge(log.status)}`}>
+                          <span
+                            className={`text-xs font-semibold px-2 py-0.5 rounded border ${getStatusBadge(log.status)}`}
+                          >
                             {log.status.toUpperCase()}
                           </span>
-                          <span className="text-xs text-[#e8fbff]/70">{log.agent}</span>
+                          <span className="text-xs text-[#e8fbff]/70">
+                            {log.agent}
+                          </span>
                           <span className="text-xs text-[#e8fbff]/50">•</span>
-                          <span className="text-xs text-[#e8fbff]/50">{log.method}</span>
+                          <span className="text-xs text-[#e8fbff]/50">
+                            {log.method}
+                          </span>
                         </div>
-                        <span className="text-xs text-[#e8fbff]/50">{formatTimestamp(log.timestamp)}</span>
+                        <span className="text-xs text-[#e8fbff]/50">
+                          {formatTimestamp(log.timestamp)}
+                        </span>
                       </div>
-                      <p className="text-sm text-[#e8fbff] mb-1 font-mono">{log.path}</p>
+                      <p className="text-sm text-[#e8fbff] mb-1 font-mono">
+                        {log.path}
+                      </p>
                       {log.reason && (
                         <div className="flex items-center gap-2 text-xs text-[#e8fbff]/50">
                           <span>📝 {log.reason}</span>
@@ -7021,7 +9594,9 @@ function LogsSection() {
                       {log.risk_level && (
                         <div className="flex items-center gap-2 text-xs text-[#e8fbff]/50 mt-1">
                           <span>Risk: {log.risk_level}</span>
-                          {log.require_confirmation && <span>• Require Confirmation</span>}
+                          {log.require_confirmation && (
+                            <span>• Require Confirmation</span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -7031,94 +9606,127 @@ function LogsSection() {
             </CardContent>
           </Card>
         </TabsContent>
-          {/* TAB: MAPPA GIS - Ora usa GestioneHubMapWrapper (Vista Italia HUB) */}
-          <TabsContent value="mappa" className="space-y-4">
-            {/* BUS HUB Editor - Schermo Intero */}
-            {showBusHubEditor ? (
-              <div className="fixed inset-0 z-[100] bg-[#0b1220]">
-                <BusHubEditor
-                  onClose={() => setShowBusHubEditor(false)}
-                  onSave={async (data) => {
-                    // Dati ricevuti da editor, processa salvataggio
-                    try {
-                      // Estrai i dati nel formato corretto per il backend
-                      const areaGeojson = data.hub_geojson?.area?.geometry || null;
-                      const cornerGeojson = data.hub_geojson?.corner || null;
-                      const centerCoords = data.hub_geojson?.center?.geometry?.coordinates || [data.center?.lng, data.center?.lat];
-                      
-                      // Se abbiamo un hubId, aggiorna l'hub esistente
-                      if (data.hubId) {
-                        const API_BASE_URL = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
-                        const response = await authenticatedFetch(`${API_BASE_URL}/api/hub/locations/${data.hubId}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
+        {/* TAB: MAPPA GIS - Ora usa GestioneHubMapWrapper (Vista Italia HUB) */}
+        <TabsContent value="mappa" className="space-y-4">
+          {/* BUS HUB Editor - Schermo Intero */}
+          {showBusHubEditor ? (
+            <div className="fixed inset-0 z-[100] bg-[#0b1220]">
+              <BusHubEditor
+                onClose={() => setShowBusHubEditor(false)}
+                onSave={async data => {
+                  // Dati ricevuti da editor, processa salvataggio
+                  try {
+                    // Estrai i dati nel formato corretto per il backend
+                    const areaGeojson =
+                      data.hub_geojson?.area?.geometry || null;
+                    const cornerGeojson = data.hub_geojson?.corner || null;
+                    const centerCoords = data.hub_geojson?.center?.geometry
+                      ?.coordinates || [data.center?.lng, data.center?.lat];
+
+                    // Se abbiamo un hubId, aggiorna l'hub esistente
+                    if (data.hubId) {
+                      const API_BASE_URL =
+                        import.meta.env.VITE_MIHUB_API_URL ||
+                        "https://api.mio-hub.me";
+                      const response = await authenticatedFetch(
+                        `${API_BASE_URL}/api/hub/locations/${data.hubId}`,
+                        {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
-                            areaGeojson: areaGeojson ? JSON.stringify(areaGeojson) : null,
-                            cornerGeojson: cornerGeojson ? JSON.stringify(cornerGeojson) : null,
+                            areaGeojson: areaGeojson
+                              ? JSON.stringify(areaGeojson)
+                              : null,
+                            cornerGeojson: cornerGeojson
+                              ? JSON.stringify(cornerGeojson)
+                              : null,
                             centerLat: centerCoords[1],
                             centerLng: centerCoords[0],
                           }),
-                        });
-                        if (response.ok) {
-                          // Hub aggiornato con successo
-                        } else {
-                          console.error('Errore aggiornamento hub:', await response.text());
                         }
+                      );
+                      if (response.ok) {
+                        // Hub aggiornato con successo
+                      } else {
+                        console.error(
+                          "Errore aggiornamento hub:",
+                          await response.text()
+                        );
                       }
-                      setShowBusHubEditor(false);
-                    } catch (err) {
-                      console.error('Errore salvataggio:', err);
                     }
-                  }}
-                />
+                    setShowBusHubEditor(false);
+                  } catch (err) {
+                    console.error("Errore salvataggio:", err);
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Pulsante BUS HUB - Accesso rapido all'editor */}
+              <div className="flex justify-end px-4">
+                <Button
+                  onClick={() => setShowBusHubEditor(true)}
+                  className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-medium px-6"
+                >
+                  <Bus className="h-4 w-4 mr-2" />
+                  BUS HUB Editor
+                </Button>
               </div>
-            ) : (
-              <>
-                {/* Pulsante BUS HUB - Accesso rapido all'editor */}
-                <div className="flex justify-end px-4">
-                  <Button
-                    onClick={() => setShowBusHubEditor(true)}
-                    className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-medium px-6"
-                  >
-                    <Bus className="h-4 w-4 mr-2" />
-                    BUS HUB Editor
-                  </Button>
-                </div>
-                {/* Vista Italia HUB */}
-                <GestioneHubMapWrapper />
-              </>
-            )}
-          </TabsContent>
+              {/* Vista Italia HUB */}
+              <GestioneHubMapWrapper />
+            </>
+          )}
+        </TabsContent>
 
-          {/* TAB: GESTIONE HUB (placeholder vuoto) */}
-          <TabsContent value="workspace" className="space-y-6">
-            <Card className="bg-[#1a2332] border-[#06b6d4]/30">
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <Globe className="h-16 w-16 text-[#06b6d4]/40 mx-auto mb-4" />
-                  <p className="text-[#e8fbff]/60 text-lg">Gestione HUB</p>
-                  <p className="text-sm text-[#e8fbff]/40 mt-2">Contenuto da definire</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        {/* TAB: GESTIONE HUB (placeholder vuoto) */}
+        <TabsContent value="workspace" className="space-y-6">
+          <Card className="bg-[#1a2332] border-[#06b6d4]/30">
+            <CardContent className="pt-6">
+              <div className="text-center py-12">
+                <Globe className="h-16 w-16 text-[#06b6d4]/40 mx-auto mb-4" />
+                <p className="text-[#e8fbff]/60 text-lg">Gestione HUB</p>
+                <p className="text-sm text-[#e8fbff]/40 mt-2">
+                  Contenuto da definire
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
       <PanicButton />
-
     </>
   );
 }
 
-
-const DocModal: React.FC<{ content: { title: string; content: string } | null; onClose: () => void }> = ({ content, onClose }) => {
+const DocModal: React.FC<{
+  content: { title: string; content: string } | null;
+  onClose: () => void;
+}> = ({ content, onClose }) => {
   if (!content) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-[#1a2332] border border-[#06b6d4]/30 rounded-lg p-6 max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-2xl font-bold text-[#e8fbff] mb-4">{content.title}</h2>
-        <div className="text-[#e8fbff]/80 space-y-4" dangerouslySetInnerHTML={{ __html: content.content }} />
-        <Button onClick={onClose} className="mt-6 bg-[#06b6d4] hover:bg-[#06b6d4]/80">Chiudi</Button>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[#1a2332] border border-[#06b6d4]/30 rounded-lg p-6 max-w-2xl w-full"
+        onClick={e => e.stopPropagation()}
+      >
+        <h2 className="text-2xl font-bold text-[#e8fbff] mb-4">
+          {content.title}
+        </h2>
+        <div
+          className="text-[#e8fbff]/80 space-y-4"
+          dangerouslySetInnerHTML={{ __html: content.content }}
+        />
+        <Button
+          onClick={onClose}
+          className="mt-6 bg-[#06b6d4] hover:bg-[#06b6d4]/80"
+        >
+          Chiudi
+        </Button>
       </div>
     </div>
   );

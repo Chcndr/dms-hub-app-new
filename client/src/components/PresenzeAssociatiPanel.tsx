@@ -15,25 +15,50 @@
  *
  * @version 4.0.0
  */
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Users, CheckCircle, XCircle, CreditCard, Plus,
-  RefreshCw, Loader2, Search, Building2, Calendar,
-  UserMinus, X, Save, Eye, FileText, ShieldCheck,
-  MapPin, Phone, Mail, Store, Truck, AlertTriangle,
-  Clock
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { getImpersonationParams, addComuneIdToUrl, authenticatedFetch } from '@/hooks/useImpersonation';
-import { MIHUB_API_BASE_URL } from '@/config/api';
+  Users,
+  CheckCircle,
+  XCircle,
+  CreditCard,
+  Plus,
+  RefreshCw,
+  Loader2,
+  Search,
+  Building2,
+  Calendar,
+  UserMinus,
+  X,
+  Save,
+  Eye,
+  FileText,
+  ShieldCheck,
+  MapPin,
+  Phone,
+  Mail,
+  Store,
+  Truck,
+  AlertTriangle,
+  Clock,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle
-} from '@/components/ui/dialog';
+  getImpersonationParams,
+  addComuneIdToUrl,
+  authenticatedFetch,
+} from "@/hooks/useImpersonation";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -45,7 +70,7 @@ interface Tesseramento {
   data_tesseramento: string;
   data_scadenza?: string;
   quota_annuale?: number;
-  stato: 'attivo' | 'scaduto' | 'sospeso' | 'revocato';
+  stato: "attivo" | "scaduto" | "sospeso" | "revocato";
   note?: string;
   // Dati impresa dal JOIN
   impresa_nome?: string;
@@ -84,7 +109,7 @@ interface SchedaAssociato {
     impresa_comune: string;
     impresa_provincia: string;
     impresa_settore: string;
-    tipo_impresa: 'ambulante' | 'negozio_fisso';
+    tipo_impresa: "ambulante" | "negozio_fisso";
     descrizione_ateco: string;
     codice_ateco: string;
     hub_shop_id: number | null;
@@ -95,7 +120,7 @@ interface SchedaAssociato {
     importo_pagato: string;
     metodo_pagamento: string | null;
     stato: string;
-    stato_pagamento: 'pagato' | 'da_pagare' | 'non_definito';
+    stato_pagamento: "pagato" | "da_pagare" | "non_definito";
     tessera_scaduta: boolean;
     numero_tessera: string | null;
     categoria_associativa: string | null;
@@ -139,27 +164,50 @@ interface SchedaAssociato {
   }>;
 }
 
-const STATO_COLORS: Record<string, { text: string; border: string; bg: string }> = {
-  attivo: { text: 'text-[#10b981]', border: 'border-[#10b981]/50', bg: 'bg-[#10b981]' },
-  ATTIVO: { text: 'text-[#10b981]', border: 'border-[#10b981]/50', bg: 'bg-[#10b981]' },
-  scaduto: { text: 'text-[#ef4444]', border: 'border-[#ef4444]/50', bg: 'bg-[#ef4444]' },
-  sospeso: { text: 'text-[#f59e0b]', border: 'border-[#f59e0b]/50', bg: 'bg-[#f59e0b]' },
-  revocato: { text: 'text-[#6b7280]', border: 'border-[#6b7280]/50', bg: 'bg-[#6b7280]' },
+const STATO_COLORS: Record<
+  string,
+  { text: string; border: string; bg: string }
+> = {
+  attivo: {
+    text: "text-[#10b981]",
+    border: "border-[#10b981]/50",
+    bg: "bg-[#10b981]",
+  },
+  ATTIVO: {
+    text: "text-[#10b981]",
+    border: "border-[#10b981]/50",
+    bg: "bg-[#10b981]",
+  },
+  scaduto: {
+    text: "text-[#ef4444]",
+    border: "border-[#ef4444]/50",
+    bg: "bg-[#ef4444]",
+  },
+  sospeso: {
+    text: "text-[#f59e0b]",
+    border: "border-[#f59e0b]/50",
+    bg: "bg-[#f59e0b]",
+  },
+  revocato: {
+    text: "text-[#6b7280]",
+    border: "border-[#6b7280]/50",
+    bg: "bg-[#6b7280]",
+  },
 };
 
 const STATO_LABELS: Record<string, string> = {
-  attivo: 'Attivo',
-  ATTIVO: 'Attivo',
-  scaduto: 'Scaduto',
-  sospeso: 'Sospeso',
-  revocato: 'Revocato',
+  attivo: "Attivo",
+  ATTIVO: "Attivo",
+  scaduto: "Scaduto",
+  sospeso: "Sospeso",
+  revocato: "Revocato",
 };
 
 export default function PresenzeAssociatiPanel() {
   const [tesseramenti, setTesseramenti] = useState<Tesseramento[]>([]);
   const [stats, setStats] = useState<TesseramentiStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [addLoading, setSaving] = useState(false);
 
@@ -179,23 +227,27 @@ export default function PresenzeAssociatiPanel() {
     settore_merceologico: string;
     note: string;
   }>({
-    numero_tessera: '',
-    data_scadenza: '',
-    importo_annuale: '',
-    importo_pagato: '',
-    metodo_pagamento: '',
-    categoria_associativa: '',
-    settore_merceologico: '',
-    note: '',
+    numero_tessera: "",
+    data_scadenza: "",
+    importo_annuale: "",
+    importo_pagato: "",
+    metodo_pagamento: "",
+    categoria_associativa: "",
+    settore_merceologico: "",
+    note: "",
   });
 
   // Form nuovo tesseramento
-  const [impresaSearch, setImpresaSearch] = useState('');
-  const [impreseSuggestions, setImpreseSuggestions] = useState<ImpresaSearch[]>([]);
-  const [selectedImpresa, setSelectedImpresa] = useState<ImpresaSearch | null>(null);
+  const [impresaSearch, setImpresaSearch] = useState("");
+  const [impreseSuggestions, setImpreseSuggestions] = useState<ImpresaSearch[]>(
+    []
+  );
+  const [selectedImpresa, setSelectedImpresa] = useState<ImpresaSearch | null>(
+    null
+  );
   const [nuovoAnno, setNuovoAnno] = useState(new Date().getFullYear());
-  const [nuovaQuota, setNuovaQuota] = useState('');
-  const [nuoveNote, setNuoveNote] = useState('');
+  const [nuovaQuota, setNuovaQuota] = useState("");
+  const [nuoveNote, setNuoveNote] = useState("");
 
   const impState = getImpersonationParams();
   const associazioneId = impState.associazioneId;
@@ -227,7 +279,7 @@ export default function PresenzeAssociatiPanel() {
         setTesseramenti([]);
       }
     } catch (error) {
-      console.error('Errore caricamento tesseramenti:', error);
+      console.error("Errore caricamento tesseramenti:", error);
       setTesseramenti([]);
       setStats({
         totale_tesserati: 0,
@@ -245,43 +297,46 @@ export default function PresenzeAssociatiPanel() {
   }, [loadTesseramenti]);
 
   // Carica scheda associato
-  const loadSchedaAssociato = useCallback(async (tesseramentoId: number) => {
-    if (!associazioneId) return;
-    setSchedaLoading(true);
-    setSchedaOpen(true);
-    setSchedaData(null);
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti/${tesseramentoId}/scheda`
-      );
-      const data = await res.json();
-      if (data.success && data.data) {
-        setSchedaData(data.data);
-        setSchedaEditMode(false);
-        // Inizializza form edit con dati correnti
-        const t = data.data.tesseramento;
-        setEditForm({
-          numero_tessera: t.numero_tessera || '',
-          data_scadenza: t.data_scadenza ? t.data_scadenza.split('T')[0] : '',
-          importo_annuale: t.importo_annuale || '',
-          importo_pagato: t.importo_pagato || '',
-          metodo_pagamento: t.metodo_pagamento || '',
-          categoria_associativa: t.categoria_associativa || '',
-          settore_merceologico: t.settore_merceologico || '',
-          note: t.note || '',
-        });
-      } else {
-        toast.error('Errore caricamento scheda associato');
+  const loadSchedaAssociato = useCallback(
+    async (tesseramentoId: number) => {
+      if (!associazioneId) return;
+      setSchedaLoading(true);
+      setSchedaOpen(true);
+      setSchedaData(null);
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti/${tesseramentoId}/scheda`
+        );
+        const data = await res.json();
+        if (data.success && data.data) {
+          setSchedaData(data.data);
+          setSchedaEditMode(false);
+          // Inizializza form edit con dati correnti
+          const t = data.data.tesseramento;
+          setEditForm({
+            numero_tessera: t.numero_tessera || "",
+            data_scadenza: t.data_scadenza ? t.data_scadenza.split("T")[0] : "",
+            importo_annuale: t.importo_annuale || "",
+            importo_pagato: t.importo_pagato || "",
+            metodo_pagamento: t.metodo_pagamento || "",
+            categoria_associativa: t.categoria_associativa || "",
+            settore_merceologico: t.settore_merceologico || "",
+            note: t.note || "",
+          });
+        } else {
+          toast.error("Errore caricamento scheda associato");
+          setSchedaOpen(false);
+        }
+      } catch (error) {
+        console.error("Errore caricamento scheda:", error);
+        toast.error("Errore di connessione");
         setSchedaOpen(false);
+      } finally {
+        setSchedaLoading(false);
       }
-    } catch (error) {
-      console.error('Errore caricamento scheda:', error);
-      toast.error('Errore di connessione');
-      setSchedaOpen(false);
-    } finally {
-      setSchedaLoading(false);
-    }
-  }, [associazioneId]);
+    },
+    [associazioneId]
+  );
 
   // Salva modifiche scheda
   const handleSaveScheda = async () => {
@@ -291,13 +346,17 @@ export default function PresenzeAssociatiPanel() {
       const res = await authenticatedFetch(
         `${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti/${schedaData.tesseramento.id}`,
         {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             numero_tessera: editForm.numero_tessera || null,
             data_scadenza: editForm.data_scadenza || null,
-            importo_annuale: editForm.importo_annuale ? parseFloat(editForm.importo_annuale) : null,
-            importo_pagato: editForm.importo_pagato ? parseFloat(editForm.importo_pagato) : null,
+            importo_annuale: editForm.importo_annuale
+              ? parseFloat(editForm.importo_annuale)
+              : null,
+            importo_pagato: editForm.importo_pagato
+              ? parseFloat(editForm.importo_pagato)
+              : null,
             metodo_pagamento: editForm.metodo_pagamento || null,
             categoria_associativa: editForm.categoria_associativa || null,
             settore_merceologico: editForm.settore_merceologico || null,
@@ -307,17 +366,17 @@ export default function PresenzeAssociatiPanel() {
       );
       const data = await res.json();
       if (data.success) {
-        toast.success('Scheda aggiornata con successo');
+        toast.success("Scheda aggiornata con successo");
         setSchedaEditMode(false);
         // Ricarica scheda per aggiornare i dati
         loadSchedaAssociato(schedaData.tesseramento.id);
         loadTesseramenti();
       } else {
-        toast.error(data.error || 'Errore salvataggio');
+        toast.error(data.error || "Errore salvataggio");
       }
     } catch (error) {
-      console.error('Errore salvataggio scheda:', error);
-      toast.error('Errore di connessione');
+      console.error("Errore salvataggio scheda:", error);
+      toast.error("Errore di connessione");
     } finally {
       setSchedaSaving(false);
     }
@@ -330,13 +389,17 @@ export default function PresenzeAssociatiPanel() {
       return;
     }
     try {
-      const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese?search=${encodeURIComponent(query)}&limit=10`));
+      const res = await fetch(
+        addComuneIdToUrl(
+          `${API_BASE_URL}/api/imprese?search=${encodeURIComponent(query)}&limit=10`
+        )
+      );
       const data = await res.json();
       if (data.success && data.data) {
         setImpreseSuggestions(data.data);
       }
     } catch (error) {
-      console.error('Errore ricerca imprese:', error);
+      console.error("Errore ricerca imprese:", error);
     }
   }, []);
 
@@ -347,48 +410,56 @@ export default function PresenzeAssociatiPanel() {
 
   const handleAddTesseramento = async () => {
     if (!associazioneId || !selectedImpresa) {
-      toast.error('Seleziona un\'impresa');
+      toast.error("Seleziona un'impresa");
       return;
     }
     setSaving(true);
     try {
-      const res = await authenticatedFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          impresa_id: selectedImpresa.id,
-          anno: nuovoAnno,
-          quota_annuale: nuovaQuota ? parseFloat(nuovaQuota) : null,
-          note: nuoveNote || null,
-        }),
-      });
+      const res = await authenticatedFetch(
+        `${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            impresa_id: selectedImpresa.id,
+            anno: nuovoAnno,
+            quota_annuale: nuovaQuota ? parseFloat(nuovaQuota) : null,
+            note: nuoveNote || null,
+          }),
+        }
+      );
       const data = await res.json();
       if (data.success) {
-        toast.success(`Tesseramento aggiunto: ${selectedImpresa.denominazione}`);
+        toast.success(
+          `Tesseramento aggiunto: ${selectedImpresa.denominazione}`
+        );
         setShowAddForm(false);
         resetForm();
         loadTesseramenti();
       } else {
-        toast.error(data.error || 'Errore creazione tesseramento');
+        toast.error(data.error || "Errore creazione tesseramento");
       }
     } catch (error) {
-      console.error('Errore aggiunta tesseramento:', error);
-      toast.error('Errore di connessione');
+      console.error("Errore aggiunta tesseramento:", error);
+      toast.error("Errore di connessione");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleRevocaTesseramento = async (tesseramentoId: number, impresaNome: string) => {
+  const handleRevocaTesseramento = async (
+    tesseramentoId: number,
+    impresaNome: string
+  ) => {
     if (!associazioneId) return;
     if (!confirm(`Revocare il tesseramento di ${impresaNome}?`)) return;
     try {
       const res = await authenticatedFetch(
         `${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti/${tesseramentoId}`,
         {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ stato: 'revocato' }),
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stato: "revocato" }),
         }
       );
       const data = await res.json();
@@ -396,24 +467,24 @@ export default function PresenzeAssociatiPanel() {
         toast.success(`Tesseramento revocato: ${impresaNome}`);
         loadTesseramenti();
       } else {
-        toast.error(data.error || 'Errore revoca');
+        toast.error(data.error || "Errore revoca");
       }
     } catch (error) {
-      console.error('Errore revoca tesseramento:', error);
-      toast.error('Errore di connessione');
+      console.error("Errore revoca tesseramento:", error);
+      toast.error("Errore di connessione");
     }
   };
 
   const resetForm = () => {
-    setImpresaSearch('');
+    setImpresaSearch("");
     setImpreseSuggestions([]);
     setSelectedImpresa(null);
     setNuovoAnno(new Date().getFullYear());
-    setNuovaQuota('');
-    setNuoveNote('');
+    setNuovaQuota("");
+    setNuoveNote("");
   };
 
-  const filteredTesseramenti = tesseramenti.filter((t) => {
+  const filteredTesseramenti = tesseramenti.filter(t => {
     const query = searchQuery.toLowerCase();
     return (
       (t.impresa_nome?.toLowerCase().includes(query) ?? false) ||
@@ -424,9 +495,9 @@ export default function PresenzeAssociatiPanel() {
   });
 
   const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '—';
+    if (!dateStr) return "—";
     try {
-      return new Date(dateStr).toLocaleDateString('it-IT');
+      return new Date(dateStr).toLocaleDateString("it-IT");
     } catch {
       return dateStr;
     }
@@ -451,7 +522,10 @@ export default function PresenzeAssociatiPanel() {
             <Users className="h-5 w-5 text-[#3b82f6]" />
             Tesserati
             {associazioneNome && (
-              <Badge variant="outline" className="ml-2 text-[#3b82f6] border-[#3b82f6]/50">
+              <Badge
+                variant="outline"
+                className="ml-2 text-[#3b82f6] border-[#3b82f6]/50"
+              >
                 {associazioneNome}
               </Badge>
             )}
@@ -460,7 +534,10 @@ export default function PresenzeAssociatiPanel() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { setShowAddForm(true); resetForm(); }}
+              onClick={() => {
+                setShowAddForm(true);
+                resetForm();
+              }}
               className="border-[#10b981]/30 text-[#10b981]"
             >
               <Plus className="h-4 w-4 mr-1" />
@@ -487,7 +564,11 @@ export default function PresenzeAssociatiPanel() {
                 <Plus className="h-4 w-4" />
                 Nuovo Tesseramento
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAddForm(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -501,9 +582,20 @@ export default function PresenzeAssociatiPanel() {
                   <Building2 className="h-4 w-4 text-[#10b981]" />
                   <span className="text-[#e8fbff] flex-1">
                     {selectedImpresa.denominazione}
-                    {selectedImpresa.partita_iva && <span className="text-[#e8fbff]/50 ml-2">P.IVA {selectedImpresa.partita_iva}</span>}
+                    {selectedImpresa.partita_iva && (
+                      <span className="text-[#e8fbff]/50 ml-2">
+                        P.IVA {selectedImpresa.partita_iva}
+                      </span>
+                    )}
                   </span>
-                  <Button variant="ghost" size="sm" onClick={() => { setSelectedImpresa(null); setImpresaSearch(''); }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedImpresa(null);
+                      setImpresaSearch("");
+                    }}
+                  >
                     <X className="h-3 w-3 text-[#e8fbff]/50" />
                   </Button>
                 </div>
@@ -511,7 +603,7 @@ export default function PresenzeAssociatiPanel() {
                 <div className="relative">
                   <Input
                     value={impresaSearch}
-                    onChange={(e) => setImpresaSearch(e.target.value)}
+                    onChange={e => setImpresaSearch(e.target.value)}
                     placeholder="Cerca impresa per nome, CF o P.IVA..."
                     className="bg-[#0b1220] border-[#3b82f6]/20 text-[#e8fbff] placeholder-[#e8fbff]/30"
                   />
@@ -523,11 +615,13 @@ export default function PresenzeAssociatiPanel() {
                           onClick={() => {
                             setSelectedImpresa(imp);
                             setImpreseSuggestions([]);
-                            setImpresaSearch('');
+                            setImpresaSearch("");
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-[#3b82f6]/10 border-b border-[#334155] last:border-b-0"
                         >
-                          <p className="text-sm text-[#e8fbff]">{imp.denominazione}</p>
+                          <p className="text-sm text-[#e8fbff]">
+                            {imp.denominazione}
+                          </p>
                           <p className="text-xs text-[#e8fbff]/50">
                             {imp.partita_iva && `P.IVA ${imp.partita_iva}`}
                             {imp.comune && ` · ${imp.comune}`}
@@ -547,7 +641,11 @@ export default function PresenzeAssociatiPanel() {
                 <Input
                   type="number"
                   value={nuovoAnno}
-                  onChange={(e) => setNuovoAnno(parseInt(e.target.value) || new Date().getFullYear())}
+                  onChange={e =>
+                    setNuovoAnno(
+                      parseInt(e.target.value) || new Date().getFullYear()
+                    )
+                  }
                   className="bg-[#0b1220] border-[#3b82f6]/20 text-[#e8fbff]"
                 />
               </div>
@@ -557,7 +655,7 @@ export default function PresenzeAssociatiPanel() {
                   type="number"
                   step="0.01"
                   value={nuovaQuota}
-                  onChange={(e) => setNuovaQuota(e.target.value)}
+                  onChange={e => setNuovaQuota(e.target.value)}
                   placeholder="Es. 150.00"
                   className="bg-[#0b1220] border-[#3b82f6]/20 text-[#e8fbff] placeholder-[#e8fbff]/30"
                 />
@@ -569,7 +667,7 @@ export default function PresenzeAssociatiPanel() {
               <Label className="text-[#e8fbff]">Note</Label>
               <Input
                 value={nuoveNote}
-                onChange={(e) => setNuoveNote(e.target.value)}
+                onChange={e => setNuoveNote(e.target.value)}
                 placeholder="Note opzionali..."
                 className="bg-[#0b1220] border-[#3b82f6]/20 text-[#e8fbff] placeholder-[#e8fbff]/30"
               />
@@ -577,7 +675,12 @@ export default function PresenzeAssociatiPanel() {
 
             {/* Azioni */}
             <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowAddForm(false)} className="border-[#334155] text-[#e8fbff]/60">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddForm(false)}
+                className="border-[#334155] text-[#e8fbff]/60"
+              >
                 Annulla
               </Button>
               <Button
@@ -586,7 +689,11 @@ export default function PresenzeAssociatiPanel() {
                 disabled={!selectedImpresa || addLoading}
                 className="bg-[#10b981] text-black hover:bg-[#10b981]/90"
               >
-                {addLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                {addLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <Save className="h-4 w-4 mr-1" />
+                )}
                 Salva Tesseramento
               </Button>
             </div>
@@ -600,28 +707,36 @@ export default function PresenzeAssociatiPanel() {
           <Card className="bg-[#1a2332] border-[#3b82f6]/30">
             <CardContent className="pt-4 text-center">
               <Users className="h-6 w-6 mx-auto mb-2 text-[#3b82f6]" />
-              <p className="text-2xl font-bold text-[#e8fbff]">{stats.totale_tesserati}</p>
+              <p className="text-2xl font-bold text-[#e8fbff]">
+                {stats.totale_tesserati}
+              </p>
               <p className="text-xs text-[#e8fbff]/60">Tesserati Totali</p>
             </CardContent>
           </Card>
           <Card className="bg-[#1a2332] border-[#10b981]/30">
             <CardContent className="pt-4 text-center">
               <CheckCircle className="h-6 w-6 mx-auto mb-2 text-[#10b981]" />
-              <p className="text-2xl font-bold text-[#10b981]">{stats.attivi}</p>
+              <p className="text-2xl font-bold text-[#10b981]">
+                {stats.attivi}
+              </p>
               <p className="text-xs text-[#e8fbff]/60">Attivi</p>
             </CardContent>
           </Card>
           <Card className="bg-[#1a2332] border-[#ef4444]/30">
             <CardContent className="pt-4 text-center">
               <XCircle className="h-6 w-6 mx-auto mb-2 text-[#ef4444]" />
-              <p className="text-2xl font-bold text-[#ef4444]">{stats.scaduti}</p>
+              <p className="text-2xl font-bold text-[#ef4444]">
+                {stats.scaduti}
+              </p>
               <p className="text-xs text-[#e8fbff]/60">Scaduti</p>
             </CardContent>
           </Card>
           <Card className="bg-[#1a2332] border-[#f59e0b]/30">
             <CardContent className="pt-4 text-center">
               <CreditCard className="h-6 w-6 mx-auto mb-2 text-[#f59e0b]" />
-              <p className="text-2xl font-bold text-[#f59e0b]">{stats.sospesi}</p>
+              <p className="text-2xl font-bold text-[#f59e0b]">
+                {stats.sospesi}
+              </p>
               <p className="text-xs text-[#e8fbff]/60">Sospesi</p>
             </CardContent>
           </Card>
@@ -636,7 +751,7 @@ export default function PresenzeAssociatiPanel() {
             <Input
               placeholder="Cerca per nome impresa, CF, P.IVA o citta..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="bg-[#0b1220] border-[#3b82f6]/20 text-[#e8fbff] placeholder-[#e8fbff]/30"
             />
           </div>
@@ -653,8 +768,8 @@ export default function PresenzeAssociatiPanel() {
             </div>
           ) : (
             <div className="space-y-2">
-              {filteredTesseramenti.map((t) => {
-                const statoKey = t.stato?.toLowerCase() || 'attivo';
+              {filteredTesseramenti.map(t => {
+                const statoKey = t.stato?.toLowerCase() || "attivo";
                 const colors = STATO_COLORS[statoKey] ?? STATO_COLORS.attivo;
                 return (
                   <div
@@ -669,7 +784,7 @@ export default function PresenzeAssociatiPanel() {
                         </p>
                         <p className="text-xs text-[#e8fbff]/50 flex items-center gap-1">
                           <Building2 className="h-3 w-3" />
-                          {t.impresa_citta ?? '\u2014'}
+                          {t.impresa_citta ?? "\u2014"}
                           {t.impresa_partita_iva && (
                             <span>· P.IVA {t.impresa_partita_iva}</span>
                           )}
@@ -678,7 +793,9 @@ export default function PresenzeAssociatiPanel() {
                           <Calendar className="h-3 w-3" />
                           Anno {t.anno}
                           {t.quota_annuale != null && (
-                            <span>· Quota: {t.quota_annuale.toFixed(2)} EUR</span>
+                            <span>
+                              · Quota: {t.quota_annuale.toFixed(2)} EUR
+                            </span>
                           )}
                         </p>
                       </div>
@@ -700,11 +817,16 @@ export default function PresenzeAssociatiPanel() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      {(statoKey === 'attivo') && (
+                      {statoKey === "attivo" && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRevocaTesseramento(t.id, t.impresa_nome ?? `Impresa #${t.impresa_id}`)}
+                          onClick={() =>
+                            handleRevocaTesseramento(
+                              t.id,
+                              t.impresa_nome ?? `Impresa #${t.impresa_id}`
+                            )
+                          }
                           className="text-red-400 hover:bg-red-500/10"
                           title="Revoca tesseramento"
                         >
@@ -747,7 +869,11 @@ export default function PresenzeAssociatiPanel() {
                         onClick={handleSaveScheda}
                         disabled={schedaSaving}
                       >
-                        {schedaSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                        {schedaSaving ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-1" />
+                        )}
                         Salva
                       </Button>
                     </>
@@ -775,7 +901,7 @@ export default function PresenzeAssociatiPanel() {
             <div className="space-y-6">
               {/* Tipo Impresa Badge */}
               <div className="flex items-center gap-3">
-                {schedaData.tesseramento.tipo_impresa === 'ambulante' ? (
+                {schedaData.tesseramento.tipo_impresa === "ambulante" ? (
                   <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50 flex items-center gap-1">
                     <Truck className="h-3 w-3" />
                     Ambulante
@@ -789,9 +915,9 @@ export default function PresenzeAssociatiPanel() {
                 <Badge
                   variant="outline"
                   className={
-                    schedaData.tesseramento.stato?.toLowerCase() === 'attivo'
-                      ? 'text-[#10b981] border-[#10b981]/50'
-                      : 'text-[#ef4444] border-[#ef4444]/50'
+                    schedaData.tesseramento.stato?.toLowerCase() === "attivo"
+                      ? "text-[#10b981] border-[#10b981]/50"
+                      : "text-[#ef4444] border-[#ef4444]/50"
                   }
                 >
                   Tessera: {schedaData.tesseramento.stato}
@@ -810,49 +936,76 @@ export default function PresenzeAssociatiPanel() {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-[#e8fbff]/50 text-xs">Denominazione</p>
-                      <p className="text-[#e8fbff] font-medium">{schedaData.tesseramento.impresa_nome || '—'}</p>
+                      <p className="text-[#e8fbff] font-medium">
+                        {schedaData.tesseramento.impresa_nome || "—"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-[#e8fbff]/50 text-xs">Codice Fiscale</p>
-                      <p className="text-[#e8fbff]">{schedaData.tesseramento.impresa_cf || '—'}</p>
+                      <p className="text-[#e8fbff]/50 text-xs">
+                        Codice Fiscale
+                      </p>
+                      <p className="text-[#e8fbff]">
+                        {schedaData.tesseramento.impresa_cf || "—"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-[#e8fbff]/50 text-xs">Partita IVA</p>
-                      <p className="text-[#e8fbff]">{schedaData.tesseramento.impresa_piva || '—'}</p>
+                      <p className="text-[#e8fbff]">
+                        {schedaData.tesseramento.impresa_piva || "—"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-[#e8fbff]/50 text-xs">Settore</p>
-                      <p className="text-[#e8fbff]">{schedaData.tesseramento.impresa_settore || '—'}</p>
+                      <p className="text-[#e8fbff]">
+                        {schedaData.tesseramento.impresa_settore || "—"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-[#e8fbff]/50 text-xs flex items-center gap-1"><MapPin className="h-3 w-3" /> Indirizzo</p>
+                      <p className="text-[#e8fbff]/50 text-xs flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> Indirizzo
+                      </p>
                       <p className="text-[#e8fbff]">
-                        {schedaData.tesseramento.impresa_indirizzo || '—'}
-                        {schedaData.tesseramento.impresa_cap && `, ${schedaData.tesseramento.impresa_cap}`}
-                        {schedaData.tesseramento.impresa_comune && ` ${schedaData.tesseramento.impresa_comune}`}
-                        {schedaData.tesseramento.impresa_provincia && ` (${schedaData.tesseramento.impresa_provincia})`}
+                        {schedaData.tesseramento.impresa_indirizzo || "—"}
+                        {schedaData.tesseramento.impresa_cap &&
+                          `, ${schedaData.tesseramento.impresa_cap}`}
+                        {schedaData.tesseramento.impresa_comune &&
+                          ` ${schedaData.tesseramento.impresa_comune}`}
+                        {schedaData.tesseramento.impresa_provincia &&
+                          ` (${schedaData.tesseramento.impresa_provincia})`}
                       </p>
                     </div>
                     <div>
                       <p className="text-[#e8fbff]/50 text-xs">Codice ATECO</p>
-                      <p className="text-[#e8fbff]">{schedaData.tesseramento.codice_ateco || '—'}</p>
+                      <p className="text-[#e8fbff]">
+                        {schedaData.tesseramento.codice_ateco || "—"}
+                      </p>
                     </div>
                     {schedaData.tesseramento.impresa_telefono && (
                       <div>
-                        <p className="text-[#e8fbff]/50 text-xs flex items-center gap-1"><Phone className="h-3 w-3" /> Telefono</p>
-                        <p className="text-[#e8fbff]">{schedaData.tesseramento.impresa_telefono}</p>
+                        <p className="text-[#e8fbff]/50 text-xs flex items-center gap-1">
+                          <Phone className="h-3 w-3" /> Telefono
+                        </p>
+                        <p className="text-[#e8fbff]">
+                          {schedaData.tesseramento.impresa_telefono}
+                        </p>
                       </div>
                     )}
                     {schedaData.tesseramento.impresa_email && (
                       <div>
-                        <p className="text-[#e8fbff]/50 text-xs flex items-center gap-1"><Mail className="h-3 w-3" /> Email</p>
-                        <p className="text-[#e8fbff]">{schedaData.tesseramento.impresa_email}</p>
+                        <p className="text-[#e8fbff]/50 text-xs flex items-center gap-1">
+                          <Mail className="h-3 w-3" /> Email
+                        </p>
+                        <p className="text-[#e8fbff]">
+                          {schedaData.tesseramento.impresa_email}
+                        </p>
                       </div>
                     )}
                     {schedaData.tesseramento.impresa_pec && (
                       <div>
                         <p className="text-[#e8fbff]/50 text-xs">PEC</p>
-                        <p className="text-[#e8fbff]">{schedaData.tesseramento.impresa_pec}</p>
+                        <p className="text-[#e8fbff]">
+                          {schedaData.tesseramento.impresa_pec}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -860,93 +1013,159 @@ export default function PresenzeAssociatiPanel() {
               </Card>
 
               {/* Dati Tessera */}
-              <Card className={`bg-[#0b1220] ${schedaEditMode ? 'border-[#f59e0b]/40' : 'border-[#10b981]/20'}`}>
+              <Card
+                className={`bg-[#0b1220] ${schedaEditMode ? "border-[#f59e0b]/40" : "border-[#10b981]/20"}`}
+              >
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm text-[#10b981] flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
                     Dati Tessera
-                    {schedaEditMode && <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50 text-[10px]">Modifica</Badge>}
+                    {schedaEditMode && (
+                      <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50 text-[10px]">
+                        Modifica
+                      </Badge>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {schedaEditMode ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                       <div>
-                        <Label className="text-[#e8fbff]/50 text-xs">N. Tessera</Label>
+                        <Label className="text-[#e8fbff]/50 text-xs">
+                          N. Tessera
+                        </Label>
                         <Input
                           value={editForm.numero_tessera}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, numero_tessera: e.target.value }))}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              numero_tessera: e.target.value,
+                            }))
+                          }
                           className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
                           placeholder="Inserisci numero tessera"
                         />
                       </div>
                       <div>
-                        <Label className="text-[#e8fbff]/50 text-xs">Data Iscrizione</Label>
-                        <p className="text-[#e8fbff] text-sm py-1">{formatDate(schedaData.tesseramento.data_iscrizione)}</p>
+                        <Label className="text-[#e8fbff]/50 text-xs">
+                          Data Iscrizione
+                        </Label>
+                        <p className="text-[#e8fbff] text-sm py-1">
+                          {formatDate(schedaData.tesseramento.data_iscrizione)}
+                        </p>
                       </div>
                       <div>
-                        <Label className="text-[#e8fbff]/50 text-xs">Scadenza Tessera</Label>
+                        <Label className="text-[#e8fbff]/50 text-xs">
+                          Scadenza Tessera
+                        </Label>
                         <Input
                           type="date"
                           value={editForm.data_scadenza}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, data_scadenza: e.target.value }))}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              data_scadenza: e.target.value,
+                            }))
+                          }
                           className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
                         />
                       </div>
                       <div>
-                        <Label className="text-[#e8fbff]/50 text-xs">Importo Annuale (€)</Label>
+                        <Label className="text-[#e8fbff]/50 text-xs">
+                          Importo Annuale (€)
+                        </Label>
                         <Input
                           type="number"
                           step="0.01"
                           value={editForm.importo_annuale}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, importo_annuale: e.target.value }))}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              importo_annuale: e.target.value,
+                            }))
+                          }
                           className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
                           placeholder="0.00"
                         />
                       </div>
                       <div>
-                        <Label className="text-[#e8fbff]/50 text-xs">Importo Pagato (€)</Label>
+                        <Label className="text-[#e8fbff]/50 text-xs">
+                          Importo Pagato (€)
+                        </Label>
                         <Input
                           type="number"
                           step="0.01"
                           value={editForm.importo_pagato}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, importo_pagato: e.target.value }))}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              importo_pagato: e.target.value,
+                            }))
+                          }
                           className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
                           placeholder="0.00"
                         />
                       </div>
                       <div>
-                        <Label className="text-[#e8fbff]/50 text-xs">Metodo Pagamento</Label>
+                        <Label className="text-[#e8fbff]/50 text-xs">
+                          Metodo Pagamento
+                        </Label>
                         <Input
                           value={editForm.metodo_pagamento}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, metodo_pagamento: e.target.value }))}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              metodo_pagamento: e.target.value,
+                            }))
+                          }
                           className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
                           placeholder="Es. Bonifico, Contanti"
                         />
                       </div>
                       <div>
-                        <Label className="text-[#e8fbff]/50 text-xs">Categoria Associativa</Label>
+                        <Label className="text-[#e8fbff]/50 text-xs">
+                          Categoria Associativa
+                        </Label>
                         <Input
                           value={editForm.categoria_associativa}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, categoria_associativa: e.target.value }))}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              categoria_associativa: e.target.value,
+                            }))
+                          }
                           className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
                           placeholder="Es. Ordinario, Premium"
                         />
                       </div>
                       <div>
-                        <Label className="text-[#e8fbff]/50 text-xs">Settore Merceologico</Label>
+                        <Label className="text-[#e8fbff]/50 text-xs">
+                          Settore Merceologico
+                        </Label>
                         <Input
                           value={editForm.settore_merceologico}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, settore_merceologico: e.target.value }))}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              settore_merceologico: e.target.value,
+                            }))
+                          }
                           className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
                           placeholder="Es. Alimentare, Non Alimentare"
                         />
                       </div>
                       <div className="col-span-2 md:col-span-3">
-                        <Label className="text-[#e8fbff]/50 text-xs">Note</Label>
+                        <Label className="text-[#e8fbff]/50 text-xs">
+                          Note
+                        </Label>
                         <Input
                           value={editForm.note}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, note: e.target.value }))}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              note: e.target.value,
+                            }))
+                          }
                           className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
                           placeholder="Note aggiuntive"
                         />
@@ -956,88 +1175,125 @@ export default function PresenzeAssociatiPanel() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                       <div>
                         <p className="text-[#e8fbff]/50 text-xs">N. Tessera</p>
-                        <p className="text-[#e8fbff]">{schedaData.tesseramento.numero_tessera || '—'}</p>
+                        <p className="text-[#e8fbff]">
+                          {schedaData.tesseramento.numero_tessera || "—"}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-[#e8fbff]/50 text-xs">Data Iscrizione</p>
-                        <p className="text-[#e8fbff]">{formatDate(schedaData.tesseramento.data_iscrizione)}</p>
+                        <p className="text-[#e8fbff]/50 text-xs">
+                          Data Iscrizione
+                        </p>
+                        <p className="text-[#e8fbff]">
+                          {formatDate(schedaData.tesseramento.data_iscrizione)}
+                        </p>
                       </div>
                       <div>
                         <p className="text-[#e8fbff]/50 text-xs flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Scadenza Tessera
                         </p>
-                        <p className={`font-medium ${schedaData.tesseramento.tessera_scaduta ? 'text-[#ef4444]' : 'text-[#e8fbff]'}`}>
+                        <p
+                          className={`font-medium ${schedaData.tesseramento.tessera_scaduta ? "text-[#ef4444]" : "text-[#e8fbff]"}`}
+                        >
                           {formatDate(schedaData.tesseramento.data_scadenza)}
                           {schedaData.tesseramento.tessera_scaduta && (
                             <span className="ml-1 text-xs">
-                              <AlertTriangle className="h-3 w-3 inline" /> SCADUTA
+                              <AlertTriangle className="h-3 w-3 inline" />{" "}
+                              SCADUTA
                             </span>
                           )}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[#e8fbff]/50 text-xs">Importo Annuale</p>
+                        <p className="text-[#e8fbff]/50 text-xs">
+                          Importo Annuale
+                        </p>
                         <p className="text-[#e8fbff]">
-                          {parseFloat(schedaData.tesseramento.importo_annuale) > 0
+                          {parseFloat(schedaData.tesseramento.importo_annuale) >
+                          0
                             ? `€ ${parseFloat(schedaData.tesseramento.importo_annuale).toFixed(2)}`
-                            : '—'}
+                            : "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[#e8fbff]/50 text-xs">Importo Pagato</p>
+                        <p className="text-[#e8fbff]/50 text-xs">
+                          Importo Pagato
+                        </p>
                         <p className="text-[#e8fbff]">
-                          {parseFloat(schedaData.tesseramento.importo_pagato) > 0
+                          {parseFloat(schedaData.tesseramento.importo_pagato) >
+                          0
                             ? `€ ${parseFloat(schedaData.tesseramento.importo_pagato).toFixed(2)}`
-                            : '—'}
+                            : "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[#e8fbff]/50 text-xs">Stato Pagamento</p>
+                        <p className="text-[#e8fbff]/50 text-xs">
+                          Stato Pagamento
+                        </p>
                         <Badge
                           variant="outline"
                           className={
-                            schedaData.tesseramento.stato_pagamento === 'pagato'
-                              ? 'text-[#10b981] border-[#10b981]/50'
-                              : schedaData.tesseramento.stato_pagamento === 'da_pagare'
-                              ? 'text-[#ef4444] border-[#ef4444]/50'
-                              : 'text-[#e8fbff]/50 border-[#e8fbff]/20'
+                            schedaData.tesseramento.stato_pagamento === "pagato"
+                              ? "text-[#10b981] border-[#10b981]/50"
+                              : schedaData.tesseramento.stato_pagamento ===
+                                  "da_pagare"
+                                ? "text-[#ef4444] border-[#ef4444]/50"
+                                : "text-[#e8fbff]/50 border-[#e8fbff]/20"
                           }
                         >
-                          {schedaData.tesseramento.stato_pagamento === 'pagato'
-                            ? 'Pagato'
-                            : schedaData.tesseramento.stato_pagamento === 'da_pagare'
-                            ? 'Da Pagare'
-                            : 'Non definito'}
+                          {schedaData.tesseramento.stato_pagamento === "pagato"
+                            ? "Pagato"
+                            : schedaData.tesseramento.stato_pagamento ===
+                                "da_pagare"
+                              ? "Da Pagare"
+                              : "Non definito"}
                         </Badge>
                       </div>
                       {schedaData.tesseramento.data_rinnovo && (
                         <div>
-                          <p className="text-[#e8fbff]/50 text-xs">Data Rinnovo</p>
-                          <p className="text-[#e8fbff]">{formatDate(schedaData.tesseramento.data_rinnovo)}</p>
+                          <p className="text-[#e8fbff]/50 text-xs">
+                            Data Rinnovo
+                          </p>
+                          <p className="text-[#e8fbff]">
+                            {formatDate(schedaData.tesseramento.data_rinnovo)}
+                          </p>
                         </div>
                       )}
                       {schedaData.tesseramento.metodo_pagamento && (
                         <div>
-                          <p className="text-[#e8fbff]/50 text-xs">Metodo Pagamento</p>
-                          <p className="text-[#e8fbff]">{schedaData.tesseramento.metodo_pagamento}</p>
+                          <p className="text-[#e8fbff]/50 text-xs">
+                            Metodo Pagamento
+                          </p>
+                          <p className="text-[#e8fbff]">
+                            {schedaData.tesseramento.metodo_pagamento}
+                          </p>
                         </div>
                       )}
                       {schedaData.tesseramento.categoria_associativa && (
                         <div>
-                          <p className="text-[#e8fbff]/50 text-xs">Categoria Associativa</p>
-                          <p className="text-[#e8fbff]">{schedaData.tesseramento.categoria_associativa}</p>
+                          <p className="text-[#e8fbff]/50 text-xs">
+                            Categoria Associativa
+                          </p>
+                          <p className="text-[#e8fbff]">
+                            {schedaData.tesseramento.categoria_associativa}
+                          </p>
                         </div>
                       )}
                       {schedaData.tesseramento.settore_merceologico && (
                         <div>
-                          <p className="text-[#e8fbff]/50 text-xs">Settore Merceologico</p>
-                          <p className="text-[#e8fbff]">{schedaData.tesseramento.settore_merceologico}</p>
+                          <p className="text-[#e8fbff]/50 text-xs">
+                            Settore Merceologico
+                          </p>
+                          <p className="text-[#e8fbff]">
+                            {schedaData.tesseramento.settore_merceologico}
+                          </p>
                         </div>
                       )}
                       {schedaData.tesseramento.note && (
                         <div className="col-span-2 md:col-span-3">
                           <p className="text-[#e8fbff]/50 text-xs">Note</p>
-                          <p className="text-[#e8fbff]">{schedaData.tesseramento.note}</p>
+                          <p className="text-[#e8fbff]">
+                            {schedaData.tesseramento.note}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -1051,63 +1307,101 @@ export default function PresenzeAssociatiPanel() {
                   <CardTitle className="text-sm text-[#f59e0b] flex items-center gap-2">
                     <FileText className="h-4 w-4" />
                     Pratiche SCIA
-                    <Badge variant="outline" className="text-[#f59e0b] border-[#f59e0b]/50 text-xs">
+                    <Badge
+                      variant="outline"
+                      className="text-[#f59e0b] border-[#f59e0b]/50 text-xs"
+                    >
                       {schedaData.pratiche.length}
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {schedaData.pratiche.length === 0 ? (
-                    <p className="text-[#e8fbff]/40 text-sm text-center py-4">Nessuna pratica SCIA</p>
+                    <p className="text-[#e8fbff]/40 text-sm text-center py-4">
+                      Nessuna pratica SCIA
+                    </p>
                   ) : (
                     <div className="space-y-2">
-                      {schedaData.pratiche.map((p) => (
-                        <div key={p.id} className="flex items-center justify-between p-2 bg-[#1a2332] rounded border border-[#334155] hover:bg-[#1a2332]/80 hover:border-[#f59e0b]/40 cursor-pointer transition-colors" onClick={() => {
+                      {schedaData.pratiche.map(p => (
+                        <div
+                          key={p.id}
+                          className="flex items-center justify-between p-2 bg-[#1a2332] rounded border border-[#334155] hover:bg-[#1a2332]/80 hover:border-[#f59e0b]/40 cursor-pointer transition-colors"
+                          onClick={() => {
                             // Naviga al tab SCIA & Pratiche e apri il dettaglio pratica
                             setSchedaOpen(false);
                             // Dispatch evento custom per navigare al SuapPanel con la pratica selezionata
-                            window.dispatchEvent(new CustomEvent('navigate-to-pratica', { detail: { praticaId: p.id, cui: p.cui } }));
-                          }}>
+                            window.dispatchEvent(
+                              new CustomEvent("navigate-to-pratica", {
+                                detail: { praticaId: p.id, cui: p.cui },
+                              })
+                            );
+                          }}
+                        >
                           <div>
-                            <p className="text-sm text-[#e8fbff] font-medium">{p.cui}</p>
+                            <p className="text-sm text-[#e8fbff] font-medium">
+                              {p.cui}
+                            </p>
                             <p className="text-xs text-[#e8fbff]/50">
-                              {p.tipo_pratica} · {p.sub_ragione_sociale || '—'}
+                              {p.tipo_pratica} · {p.sub_ragione_sociale || "—"}
                               {p.mercato_nome && ` · ${p.mercato_nome}`}
-                              {p.posteggio_numero && ` Post. ${p.posteggio_numero}`}
+                              {p.posteggio_numero &&
+                                ` Post. ${p.posteggio_numero}`}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                              p.stato === 'APPROVED' ? 'bg-[#10b981]' :
-                              p.stato === 'REJECTED' ? 'bg-[#ef4444]' :
-                              p.stato === 'INTEGRATION_NEEDED' ? 'bg-[#f59e0b]' :
-                              p.stato === 'EVALUATED' ? 'bg-[#a855f7]' :
-                              p.stato === 'IN_LAVORAZIONE' ? 'bg-[#3b82f6]' :
-                              p.stato === 'RECEIVED' ? 'bg-[#06b6d4]' :
-                              'bg-[#6b7280]'
-                            }`} />
+                            <span
+                              className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                                p.stato === "APPROVED"
+                                  ? "bg-[#10b981]"
+                                  : p.stato === "REJECTED"
+                                    ? "bg-[#ef4444]"
+                                    : p.stato === "INTEGRATION_NEEDED"
+                                      ? "bg-[#f59e0b]"
+                                      : p.stato === "EVALUATED"
+                                        ? "bg-[#a855f7]"
+                                        : p.stato === "IN_LAVORAZIONE"
+                                          ? "bg-[#3b82f6]"
+                                          : p.stato === "RECEIVED"
+                                            ? "bg-[#06b6d4]"
+                                            : "bg-[#6b7280]"
+                              }`}
+                            />
                             <Badge
                               variant="outline"
                               className={
-                                p.stato === 'APPROVED' ? 'text-[#10b981] border-[#10b981]/50' :
-                                p.stato === 'REJECTED' ? 'text-[#ef4444] border-[#ef4444]/50' :
-                                p.stato === 'INTEGRATION_NEEDED' ? 'text-[#f59e0b] border-[#f59e0b]/50' :
-                                p.stato === 'EVALUATED' ? 'text-[#a855f7] border-[#a855f7]/50' :
-                                p.stato === 'IN_LAVORAZIONE' ? 'text-[#3b82f6] border-[#3b82f6]/50' :
-                                p.stato === 'RECEIVED' ? 'text-[#06b6d4] border-[#06b6d4]/50' :
-                                'text-[#e8fbff]/50 border-[#e8fbff]/20'
+                                p.stato === "APPROVED"
+                                  ? "text-[#10b981] border-[#10b981]/50"
+                                  : p.stato === "REJECTED"
+                                    ? "text-[#ef4444] border-[#ef4444]/50"
+                                    : p.stato === "INTEGRATION_NEEDED"
+                                      ? "text-[#f59e0b] border-[#f59e0b]/50"
+                                      : p.stato === "EVALUATED"
+                                        ? "text-[#a855f7] border-[#a855f7]/50"
+                                        : p.stato === "IN_LAVORAZIONE"
+                                          ? "text-[#3b82f6] border-[#3b82f6]/50"
+                                          : p.stato === "RECEIVED"
+                                            ? "text-[#06b6d4] border-[#06b6d4]/50"
+                                            : "text-[#e8fbff]/50 border-[#e8fbff]/20"
                               }
                             >
-                              {p.stato === 'APPROVED' ? 'Approvata' :
-                               p.stato === 'REJECTED' ? 'Negata' :
-                               p.stato === 'INTEGRATION_NEEDED' ? 'Regolarizzazione' :
-                               p.stato === 'EVALUATED' ? 'Valutata' :
-                               p.stato === 'IN_LAVORAZIONE' ? 'In Lavorazione' :
-                               p.stato === 'RECEIVED' ? 'Ricevuta' :
-                               p.stato}
+                              {p.stato === "APPROVED"
+                                ? "Approvata"
+                                : p.stato === "REJECTED"
+                                  ? "Negata"
+                                  : p.stato === "INTEGRATION_NEEDED"
+                                    ? "Regolarizzazione"
+                                    : p.stato === "EVALUATED"
+                                      ? "Valutata"
+                                      : p.stato === "IN_LAVORAZIONE"
+                                        ? "In Lavorazione"
+                                        : p.stato === "RECEIVED"
+                                          ? "Ricevuta"
+                                          : p.stato}
                             </Badge>
                             {p.score != null && (
-                              <span className="text-xs text-[#e8fbff]/50">{p.score}/100</span>
+                              <span className="text-xs text-[#e8fbff]/50">
+                                {p.score}/100
+                              </span>
                             )}
                           </div>
                         </div>
@@ -1123,49 +1417,78 @@ export default function PresenzeAssociatiPanel() {
                   <CardTitle className="text-sm text-[#8b5cf6] flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4" />
                     Concessioni
-                    <Badge variant="outline" className="text-[#8b5cf6] border-[#8b5cf6]/50 text-xs">
+                    <Badge
+                      variant="outline"
+                      className="text-[#8b5cf6] border-[#8b5cf6]/50 text-xs"
+                    >
                       {schedaData.concessioni.length}
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {schedaData.concessioni.length === 0 ? (
-                    <p className="text-[#e8fbff]/40 text-sm text-center py-4">Nessuna concessione</p>
+                    <p className="text-[#e8fbff]/40 text-sm text-center py-4">
+                      Nessuna concessione
+                    </p>
                   ) : (
                     <div className="space-y-2">
-                      {schedaData.concessioni.map((c) => (
-                        <div key={c.id} className="flex items-center justify-between p-2 bg-[#1a2332] rounded border border-[#334155] hover:bg-[#1a2332]/80 hover:border-[#8b5cf6]/40 cursor-pointer transition-colors" onClick={() => {
+                      {schedaData.concessioni.map(c => (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between p-2 bg-[#1a2332] rounded border border-[#334155] hover:bg-[#1a2332]/80 hover:border-[#8b5cf6]/40 cursor-pointer transition-colors"
+                          onClick={() => {
                             setSchedaOpen(false);
-                            window.dispatchEvent(new CustomEvent('navigate-to-concessione', { detail: { concessioneId: c.id, numero: c.numero_protocollo } }));
-                          }}>
+                            window.dispatchEvent(
+                              new CustomEvent("navigate-to-concessione", {
+                                detail: {
+                                  concessioneId: c.id,
+                                  numero: c.numero_protocollo,
+                                },
+                              })
+                            );
+                          }}
+                        >
                           <div>
-                            <p className="text-sm text-[#e8fbff] font-medium">#{c.numero_protocollo}</p>
+                            <p className="text-sm text-[#e8fbff] font-medium">
+                              #{c.numero_protocollo}
+                            </p>
                             <p className="text-xs text-[#e8fbff]/50">
-                              {c.tipo} · {c.concessionario_nome || '—'}
+                              {c.tipo} · {c.concessionario_nome || "—"}
                               {c.mercato_nome && ` · ${c.mercato_nome}`}
-                              {c.posteggio_numero && ` Post. ${c.posteggio_numero}`}
+                              {c.posteggio_numero &&
+                                ` Post. ${c.posteggio_numero}`}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                              c.stato === 'ATTIVA' ? 'bg-[#10b981]' :
-                              c.stato === 'CESSATA' ? 'bg-[#ef4444]' :
-                              c.stato === 'SOSPESA' ? 'bg-[#f59e0b]' :
-                              'bg-[#6b7280]'
-                            }`} />
+                            <span
+                              className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                                c.stato === "ATTIVA"
+                                  ? "bg-[#10b981]"
+                                  : c.stato === "CESSATA"
+                                    ? "bg-[#ef4444]"
+                                    : c.stato === "SOSPESA"
+                                      ? "bg-[#f59e0b]"
+                                      : "bg-[#6b7280]"
+                              }`}
+                            />
                             <Badge
                               variant="outline"
                               className={
-                                c.stato === 'ATTIVA' ? 'text-[#10b981] border-[#10b981]/50' :
-                                c.stato === 'CESSATA' ? 'text-[#ef4444] border-[#ef4444]/50' :
-                                c.stato === 'SOSPESA' ? 'text-[#f59e0b] border-[#f59e0b]/50' :
-                                'text-[#e8fbff]/50 border-[#e8fbff]/20'
+                                c.stato === "ATTIVA"
+                                  ? "text-[#10b981] border-[#10b981]/50"
+                                  : c.stato === "CESSATA"
+                                    ? "text-[#ef4444] border-[#ef4444]/50"
+                                    : c.stato === "SOSPESA"
+                                      ? "text-[#f59e0b] border-[#f59e0b]/50"
+                                      : "text-[#e8fbff]/50 border-[#e8fbff]/20"
                               }
                             >
                               {c.stato}
                             </Badge>
                             {c.data_scadenza && (
-                              <span className="text-xs text-[#e8fbff]/50">Scad. {formatDate(c.data_scadenza)}</span>
+                              <span className="text-xs text-[#e8fbff]/50">
+                                Scad. {formatDate(c.data_scadenza)}
+                              </span>
                             )}
                           </div>
                         </div>
@@ -1177,64 +1500,93 @@ export default function PresenzeAssociatiPanel() {
 
               {/* Domande Spunta */}
               {schedaData.domande_spunta && (
-              <Card className="bg-[#0b1220] border-[#14b8a6]/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-[#14b8a6] flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Domande Spunta
-                    <Badge variant="outline" className="text-[#14b8a6] border-[#14b8a6]/50 text-xs">
-                      {schedaData.domande_spunta.length}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {schedaData.domande_spunta.length === 0 ? (
-                    <p className="text-[#e8fbff]/40 text-sm text-center py-4">Nessuna domanda spunta</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {schedaData.domande_spunta.map((ds) => (
-                        <div key={ds.id} className="flex items-center justify-between p-2 bg-[#1a2332] rounded border border-[#334155] hover:bg-[#1a2332]/80 hover:border-[#14b8a6]/40 cursor-pointer transition-colors" onClick={() => {
-                            setSchedaOpen(false);
-                            window.dispatchEvent(new CustomEvent('navigate-to-domanda-spunta', { detail: { domandaId: ds.id } }));
-                          }}>
-                          <div>
-                            <p className="text-sm text-[#e8fbff] font-medium">Domanda #{ds.id}</p>
-                            <p className="text-xs text-[#e8fbff]/50">
-                              {ds.market_name || '—'}
-                              {ds.settore_richiesto && ` · ${ds.settore_richiesto}`}
-                              {ds.data_richiesta && ` · ${formatDate(ds.data_richiesta)}`}
-                            </p>
+                <Card className="bg-[#0b1220] border-[#14b8a6]/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-[#14b8a6] flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Domande Spunta
+                      <Badge
+                        variant="outline"
+                        className="text-[#14b8a6] border-[#14b8a6]/50 text-xs"
+                      >
+                        {schedaData.domande_spunta.length}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {schedaData.domande_spunta.length === 0 ? (
+                      <p className="text-[#e8fbff]/40 text-sm text-center py-4">
+                        Nessuna domanda spunta
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {schedaData.domande_spunta.map(ds => (
+                          <div
+                            key={ds.id}
+                            className="flex items-center justify-between p-2 bg-[#1a2332] rounded border border-[#334155] hover:bg-[#1a2332]/80 hover:border-[#14b8a6]/40 cursor-pointer transition-colors"
+                            onClick={() => {
+                              setSchedaOpen(false);
+                              window.dispatchEvent(
+                                new CustomEvent("navigate-to-domanda-spunta", {
+                                  detail: { domandaId: ds.id },
+                                })
+                              );
+                            }}
+                          >
+                            <div>
+                              <p className="text-sm text-[#e8fbff] font-medium">
+                                Domanda #{ds.id}
+                              </p>
+                              <p className="text-xs text-[#e8fbff]/50">
+                                {ds.market_name || "—"}
+                                {ds.settore_richiesto &&
+                                  ` · ${ds.settore_richiesto}`}
+                                {ds.data_richiesta &&
+                                  ` · ${formatDate(ds.data_richiesta)}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                                  ds.stato === "APPROVATA"
+                                    ? "bg-[#10b981]"
+                                    : ds.stato === "RIFIUTATA"
+                                      ? "bg-[#ef4444]"
+                                      : ds.stato === "DA_REVISIONARE"
+                                        ? "bg-[#f59e0b]"
+                                        : ds.stato === "IN_ATTESA"
+                                          ? "bg-[#eab308]"
+                                          : "bg-[#6b7280]"
+                                }`}
+                              />
+                              <Badge
+                                variant="outline"
+                                className={
+                                  ds.stato === "APPROVATA"
+                                    ? "text-[#10b981] border-[#10b981]/50"
+                                    : ds.stato === "RIFIUTATA"
+                                      ? "text-[#ef4444] border-[#ef4444]/50"
+                                      : ds.stato === "DA_REVISIONARE"
+                                        ? "text-[#f59e0b] border-[#f59e0b]/50"
+                                        : ds.stato === "IN_ATTESA"
+                                          ? "text-[#eab308] border-[#eab308]/50"
+                                          : "text-[#e8fbff]/50 border-[#e8fbff]/20"
+                                }
+                              >
+                                {ds.stato}
+                              </Badge>
+                              {ds.numero_presenze > 0 && (
+                                <span className="text-xs text-[#e8fbff]/50">
+                                  {ds.numero_presenze} pres.
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                              ds.stato === 'APPROVATA' ? 'bg-[#10b981]' :
-                              ds.stato === 'RIFIUTATA' ? 'bg-[#ef4444]' :
-                              ds.stato === 'DA_REVISIONARE' ? 'bg-[#f59e0b]' :
-                              ds.stato === 'IN_ATTESA' ? 'bg-[#eab308]' :
-                              'bg-[#6b7280]'
-                            }`} />
-                            <Badge
-                              variant="outline"
-                              className={
-                                ds.stato === 'APPROVATA' ? 'text-[#10b981] border-[#10b981]/50' :
-                                ds.stato === 'RIFIUTATA' ? 'text-[#ef4444] border-[#ef4444]/50' :
-                                ds.stato === 'DA_REVISIONARE' ? 'text-[#f59e0b] border-[#f59e0b]/50' :
-                                ds.stato === 'IN_ATTESA' ? 'text-[#eab308] border-[#eab308]/50' :
-                                'text-[#e8fbff]/50 border-[#e8fbff]/20'
-                              }
-                            >
-                              {ds.stato}
-                            </Badge>
-                            {ds.numero_presenze > 0 && (
-                              <span className="text-xs text-[#e8fbff]/50">{ds.numero_presenze} pres.</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               )}
             </div>
           ) : null}

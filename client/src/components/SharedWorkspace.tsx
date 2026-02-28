@@ -1,19 +1,38 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Tldraw, TLEditorComponents, TLUiOverrides, useEditor, exportToBlob, AssetRecordType, getSnapshot, loadSnapshot } from 'tldraw';
-import 'tldraw/tldraw.css';
-import { Maximize2, Minimize2, Save, Download, Upload, RefreshCw } from 'lucide-react';
-import { MIHUB_API_BASE_URL } from '@/config/api';
-import { authenticatedFetch } from '@/hooks/useImpersonation';
+import { useState, useRef, useCallback, useEffect } from "react";
+import {
+  Tldraw,
+  TLEditorComponents,
+  TLUiOverrides,
+  useEditor,
+  exportToBlob,
+  AssetRecordType,
+  getSnapshot,
+  loadSnapshot,
+} from "tldraw";
+import "tldraw/tldraw.css";
+import {
+  Maximize2,
+  Minimize2,
+  Save,
+  Download,
+  Upload,
+  RefreshCw,
+} from "lucide-react";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { authenticatedFetch } from "@/hooks/useImpersonation";
 
 interface SharedWorkspaceProps {
   conversationId?: string;
   onSave?: (snapshot: any) => void;
 }
 
-export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps) {
+export function SharedWorkspace({
+  conversationId,
+  onSave,
+}: SharedWorkspaceProps) {
   // 🔥 Genera un ID di default se conversationId è mancante
-  const effectiveConversationId = conversationId || 'default-workspace';
-  
+  const effectiveConversationId = conversationId || "default-workspace";
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -25,49 +44,66 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
   // Memoizza loadWorkspaceState per evitare re-render
   const loadWorkspaceState = useCallback(async () => {
     try {
-      const response = await fetch(`${MIHUB_API_BASE_URL}/api/workspace/load?conversationId=${effectiveConversationId}`);
+      const response = await fetch(
+        `${MIHUB_API_BASE_URL}/api/workspace/load?conversationId=${effectiveConversationId}`
+      );
       if (response.ok) {
         const data = await response.json();
         // Backend restituisce { success, data: { snapshot } }
         if (data.data?.snapshot && editorRef.current) {
           const snapshot = data.data.snapshot;
-          
+
           // 🔧 FIX: Converti dal vecchio formato {store, schema} al nuovo formato {document, session}
           // Il nuovo formato tldraw usa loadSnapshot(store, { document, session })
           if (snapshot.store && !snapshot.document) {
             // Filtra asset con dimensioni invalide
             const filteredStore: Record<string, any> = {};
             const assetsToRemove: string[] = [];
-            
+
             for (const [key, value] of Object.entries(snapshot.store)) {
-              if (key.startsWith('asset:')) {
+              if (key.startsWith("asset:")) {
                 const asset = value as any;
-                if (!asset.props?.w || !asset.props?.h || asset.props.w <= 0 || asset.props.h <= 0) {
-                  console.warn('[SharedWorkspace] Skipping invalid asset:', key, asset.props);
+                if (
+                  !asset.props?.w ||
+                  !asset.props?.h ||
+                  asset.props.w <= 0 ||
+                  asset.props.h <= 0
+                ) {
+                  console.warn(
+                    "[SharedWorkspace] Skipping invalid asset:",
+                    key,
+                    asset.props
+                  );
                   assetsToRemove.push(key);
                   continue;
                 }
               }
               filteredStore[key] = value;
             }
-            
+
             // Rimuovi shape che referenziano asset invalidi
             for (const [key, value] of Object.entries(filteredStore)) {
-              if (key.startsWith('shape:')) {
+              if (key.startsWith("shape:")) {
                 const shape = value as any;
-                if (shape.props?.assetId && assetsToRemove.includes(shape.props.assetId)) {
-                  console.warn('[SharedWorkspace] Skipping shape with invalid asset:', key);
+                if (
+                  shape.props?.assetId &&
+                  assetsToRemove.includes(shape.props.assetId)
+                ) {
+                  console.warn(
+                    "[SharedWorkspace] Skipping shape with invalid asset:",
+                    key
+                  );
                   delete filteredStore[key];
                 }
               }
             }
-            
+
             // Converti al nuovo formato
             const newSnapshot = {
               document: filteredStore,
-              session: undefined // Non abbiamo session state
+              session: undefined, // Non abbiamo session state
             };
-            
+
             // Usa la nuova API loadSnapshot
             loadSnapshot(editorRef.current.store, newSnapshot as any);
           } else if (snapshot.document) {
@@ -77,12 +113,11 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
             // Fallback al vecchio metodo
             editorRef.current.store.loadSnapshot(snapshot);
           }
-          
         } else {
         }
       }
     } catch (error) {
-      console.error('[SharedWorkspace] Failed to load state:', error);
+      console.error("[SharedWorkspace] Failed to load state:", error);
     }
   }, [effectiveConversationId]);
 
@@ -95,24 +130,30 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       // 🔧 FIX: Usa la nuova API getSnapshot per ottenere il formato corretto
       const { document, session } = getSnapshot(editorRef.current.store);
       const snapshot = { document, session };
-      
-      const response = await authenticatedFetch(`${MIHUB_API_BASE_URL}/api/workspace/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId: effectiveConversationId,
-          snapshot,
-        }),
-      });
+
+      const response = await authenticatedFetch(
+        `${MIHUB_API_BASE_URL}/api/workspace/save`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId: effectiveConversationId,
+            snapshot,
+          }),
+        }
+      );
 
       if (response.ok) {
         setLastSaved(new Date());
         onSave?.(snapshot);
       } else {
-        console.error('[SharedWorkspace] Save failed with status:', response.status);
+        console.error(
+          "[SharedWorkspace] Save failed with status:",
+          response.status
+        );
       }
     } catch (error) {
-      console.error('[SharedWorkspace] Auto-save failed:', error);
+      console.error("[SharedWorkspace] Auto-save failed:", error);
     } finally {
       setIsSaving(false);
     }
@@ -147,30 +188,31 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
 
     try {
       // 1. Seleziona tutte le shape per l'export
-      const shapeIds = Array.from(editorRef.current.getCurrentPageShapeIds()) as any;
+      const shapeIds = Array.from(
+        editorRef.current.getCurrentPageShapeIds()
+      ) as any;
       if (shapeIds.length === 0) {
         alert("La lavagna \u00e8 vuota!");
         return;
       }
-      
+
       // 2. Genera il Blob PNG usando exportToBlob da tldraw
       const blob = await exportToBlob({
         editor: editorRef.current,
         ids: shapeIds,
-        format: 'png',
+        format: "png",
         opts: { background: true },
       });
-      
+
       // 3. Scarica il file
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `shared-workspace-${new Date().toISOString().slice(0,10)}.png`;
+      a.download = `shared-workspace-${new Date().toISOString().slice(0, 10)}.png`;
       a.click();
       window.URL.revokeObjectURL(url);
-      
     } catch (error) {
-      console.error('[SharedWorkspace] Export failed:', error);
+      console.error("[SharedWorkspace] Export failed:", error);
       alert("Errore durante l'export dell'immagine.");
     }
   };
@@ -192,46 +234,48 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
     const reader = new FileReader();
     reader.onload = async () => {
       const src = reader.result as string;
-      
+
       // Crea l'asset
       const assetId = AssetRecordType.createId();
       const imageWidth = 200; // Default width
       const imageHeight = 200; // Default height
-      
-      editorRef.current.createAssets([{
-        id: assetId,
-        type: 'image',
-        typeName: 'asset',
-        props: {
-          name: file.name,
-          src: src, // Base64
-          w: imageWidth,
-          h: imageHeight,
-          mimeType: file.type,
-          isAnimated: false
+
+      editorRef.current.createAssets([
+        {
+          id: assetId,
+          type: "image",
+          typeName: "asset",
+          props: {
+            name: file.name,
+            src: src, // Base64
+            w: imageWidth,
+            h: imageHeight,
+            mimeType: file.type,
+            isAnimated: false,
+          },
+          meta: {},
         },
-        meta: {}
-      }]);
-      
+      ]);
+
       // Crea la shape che usa l'asset
       editorRef.current.createShape({
-        type: 'image',
+        type: "image",
         x: 100, // Posizione default
         y: 100,
         props: {
           assetId: assetId,
           w: imageWidth,
           h: imageHeight,
-        }
+        },
       });
-      
+
       // Salvataggio automatico
       await handleAutoSave();
     };
     reader.readAsDataURL(file);
-    
+
     // Reset input
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const toggleFullscreen = () => {
@@ -262,7 +306,9 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
       {/* Header con titolo e pulsanti - FUORI dalla lavagna */}
       <div className="flex items-center justify-between px-4 py-2 bg-[#0a0a0a]/50 rounded-lg border border-[#14b8a6]/20">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium text-[#14b8a6]">Shared Workspace</h3>
+          <h3 className="text-sm font-medium text-[#14b8a6]">
+            Shared Workspace
+          </h3>
           {/* Status indicator */}
           {isSaving && (
             <span className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 rounded text-[#14b8a6] text-xs">
@@ -275,7 +321,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
             </span>
           )}
         </div>
-        
+
         {/* Pulsanti azione */}
         <div className="flex items-center gap-2">
           <button
@@ -300,7 +346,7 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
             onChange={handleFileChange}
             accept="image/*"
             className="hidden"
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
           />
           <button
             onClick={handleExport}
@@ -323,21 +369,25 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
             className="px-3 py-1.5 bg-[#3b82f6]/20 hover:bg-[#3b82f6]/30 border border-[#3b82f6]/30 rounded-lg text-[#3b82f6] text-xs font-medium flex items-center gap-2 transition-colors"
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
           >
-            {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+            {isFullscreen ? (
+              <Minimize2 className="h-3.5 w-3.5" />
+            ) : (
+              <Maximize2 className="h-3.5 w-3.5" />
+            )}
             Fullscreen
           </button>
         </div>
       </div>
 
       {/* Canvas tldraw - SENZA pulsanti sovrapposti */}
-      <div 
+      <div
         ref={containerRef}
         className="relative w-full h-[600px] bg-[#0a0a0a] rounded-lg border border-[#14b8a6]/20 overflow-hidden"
       >
         <Tldraw
-          onMount={(editor) => {
+          onMount={editor => {
             editorRef.current = editor;
-            
+
             // Esponi API globale per gli agenti
             (window as any).sharedWorkspaceAPI = {
               addShape: async (shape: any) => {
@@ -355,47 +405,56 @@ export function SharedWorkspace({ conversationId, onSave }: SharedWorkspaceProps
                 editorRef.current.store.loadSnapshot(snapshot);
               },
             };
-            
+
             // Gestione upload immagini con Base64
-            editor.registerExternalAssetHandler('file', async ({ file }): Promise<any> => {
-              // Verifica che sia un'immagine
-              if (!file.type.startsWith('image/')) {
-                console.warn('[SharedWorkspace] File non supportato:', file.type);
-                return null;
+            editor.registerExternalAssetHandler(
+              "file",
+              async ({ file }): Promise<any> => {
+                // Verifica che sia un'immagine
+                if (!file.type.startsWith("image/")) {
+                  console.warn(
+                    "[SharedWorkspace] File non supportato:",
+                    file.type
+                  );
+                  return null;
+                }
+
+                // Limite 2MB
+                const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+                if (file.size > MAX_SIZE) {
+                  console.error(
+                    "[SharedWorkspace] Immagine troppo grande (max 2MB):",
+                    file.size
+                  );
+                  alert("Immagine troppo grande! Limite: 2MB");
+                  return null;
+                }
+
+                // Converti in Base64
+                return new Promise(resolve => {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const base64 = reader.result as string;
+                    resolve({
+                      id: `asset-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+                      type: "image",
+                      typeName: "asset",
+                      props: {
+                        name: file.name,
+                        src: base64, // Base64 data URL
+                        w: 0, // tldraw calcolerà automaticamente
+                        h: 0,
+                        mimeType: file.type,
+                        isAnimated: false,
+                      },
+                      meta: {},
+                    } as any);
+                  };
+                  reader.readAsDataURL(file);
+                });
               }
-              
-              // Limite 2MB
-              const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-              if (file.size > MAX_SIZE) {
-                console.error('[SharedWorkspace] Immagine troppo grande (max 2MB):', file.size);
-                alert('Immagine troppo grande! Limite: 2MB');
-                return null;
-              }
-              
-              // Converti in Base64
-              return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                  const base64 = reader.result as string;
-                  resolve({
-                    id: `asset-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-                    type: 'image',
-                    typeName: 'asset',
-                    props: {
-                      name: file.name,
-                      src: base64, // Base64 data URL
-                      w: 0, // tldraw calcolerà automaticamente
-                      h: 0,
-                      mimeType: file.type,
-                      isAnimated: false,
-                    },
-                    meta: {},
-                  } as any);
-                };
-                reader.readAsDataURL(file);
-              });
-            });
-            
+            );
+
             loadWorkspaceState();
           }}
           components={components}

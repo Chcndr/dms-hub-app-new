@@ -1,11 +1,21 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
-  FileText, Download, ExternalLink, Activity,
-  Database, Server, LayoutDashboard, Shield,
-  CheckCircle, AlertCircle, Clock, Calendar, Target
-} from 'lucide-react';
+  FileText,
+  Download,
+  ExternalLink,
+  Activity,
+  Database,
+  Server,
+  LayoutDashboard,
+  Shield,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Calendar,
+  Target,
+} from "lucide-react";
 
 export function LegacyReportCards() {
   return (
@@ -18,14 +28,14 @@ export function LegacyReportCards() {
             Documentazione Tecnica & Report
           </h2>
           <p className="text-[#e8fbff]/60 mt-1">
-            Dossier di sistema, blueprint architetturale, stato del progetto e resoconto ecosistema.
+            Dossier di sistema, blueprint architetturale, stato del progetto e
+            resoconto ecosistema.
           </p>
         </div>
       </div>
 
       {/* Main Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
         {/* Card 1: DOSSIER TECNICO (in evidenza) */}
         <Card className="bg-[#1a2332] border-[#a855f7]/40 hover:border-[#a855f7]/70 transition-colors ring-1 ring-[#a855f7]/10">
           <CardHeader>
@@ -36,7 +46,8 @@ export function LegacyReportCards() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-[#e8fbff]/70">
-              Analisi completa: architettura, sicurezza, conformità AGID/EU, integrazioni PA e valutazione economica.
+              Analisi completa: architettura, sicurezza, conformità AGID/EU,
+              integrazioni PA e valutazione economica.
             </p>
             <div className="flex items-center gap-2 text-xs text-[#e8fbff]/50">
               <CheckCircle className="h-3 w-3 text-[#a855f7]" />
@@ -44,7 +55,7 @@ export function LegacyReportCards() {
             </div>
             <Button
               className="w-full bg-[#a855f7] hover:bg-[#a855f7]/80 text-white"
-              onClick={() => window.open('/dossier/index.html', '_blank')}
+              onClick={() => window.open("/dossier/index.html", "_blank")}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Apri Dossier Interattivo
@@ -62,7 +73,8 @@ export function LegacyReportCards() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-[#e8fbff]/70">
-              Codice sorgente, schema DB, guida operativa CLAUDE.md e documentazione tecnica.
+              Codice sorgente, schema DB, guida operativa CLAUDE.md e
+              documentazione tecnica.
             </p>
             <div className="flex items-center gap-2 text-xs text-[#e8fbff]/50">
               <Server className="h-3 w-3" />
@@ -71,7 +83,12 @@ export function LegacyReportCards() {
             <div className="flex gap-2 pt-2">
               <Button
                 className="flex-1 bg-[#06b6d4] hover:bg-[#06b6d4]/80 text-white"
-                onClick={() => window.open('https://github.com/Chcndr/dms-hub-app-new', '_blank')}
+                onClick={() =>
+                  window.open(
+                    "https://github.com/Chcndr/dms-hub-app-new",
+                    "_blank"
+                  )
+                }
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Repo GitHub
@@ -79,7 +96,12 @@ export function LegacyReportCards() {
               <Button
                 variant="outline"
                 className="flex-1 border-[#a855f7] text-[#a855f7] hover:bg-[#a855f7]/10"
-                onClick={() => window.open('https://github.com/Chcndr/dms-hub-app-new/blob/master/CLAUDE.md', '_blank')}
+                onClick={() =>
+                  window.open(
+                    "https://github.com/Chcndr/dms-hub-app-new/blob/master/CLAUDE.md",
+                    "_blank"
+                  )
+                }
               >
                 <FileText className="h-4 w-4 mr-2" />
                 CLAUDE.md
@@ -98,7 +120,8 @@ export function LegacyReportCards() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-[#e8fbff]/70">
-              Documento completo con stato attuale, architettura, funzionalità operative e roadmap.
+              Documento completo con stato attuale, architettura, funzionalità
+              operative e roadmap.
             </p>
             <div className="flex items-center gap-2 text-xs text-[#e8fbff]/50">
               <Calendar className="h-3 w-3" />
@@ -106,7 +129,9 @@ export function LegacyReportCards() {
             </div>
             <Button
               className="w-full bg-[#06b6d4] hover:bg-[#06b6d4]/80 text-white"
-              onClick={() => window.open('/STATO_PROGETTO_AGGIORNATO.md', '_blank')}
+              onClick={() =>
+                window.open("/STATO_PROGETTO_AGGIORNATO.md", "_blank")
+              }
             >
               <Download className="h-4 w-4 mr-2" />
               Visualizza Documento
@@ -124,7 +149,8 @@ export function LegacyReportCards() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-[#e8fbff]/70">
-              Resoconto originale completo dell'ecosistema DMS Hub con tutte le 8 applicazioni web.
+              Resoconto originale completo dell'ecosistema DMS Hub con tutte le
+              8 applicazioni web.
             </p>
             <div className="flex items-center gap-2 text-xs text-[#e8fbff]/50">
               <Calendar className="h-3 w-3" />
@@ -132,14 +158,13 @@ export function LegacyReportCards() {
             </div>
             <Button
               className="w-full bg-[#06b6d4] hover:bg-[#06b6d4]/80 text-white"
-              onClick={() => window.open('/report/index.html', '_blank')}
+              onClick={() => window.open("/report/index.html", "_blank")}
             >
               <Download className="h-4 w-4 mr-2" />
               Visualizza Documento
             </Button>
           </CardContent>
         </Card>
-
       </div>
 
       {/* Secondary Section: Documentazione Tecnica */}
@@ -151,20 +176,55 @@ export function LegacyReportCards() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { title: 'Executive Summary', desc: 'Panoramica generale ecosistema DMS Hub', icon: Target, color: 'text-[#ef4444]' },
-            { title: 'Architettura Tecnica', desc: 'Stack, Database, API e Servizi', icon: Server, color: 'text-[#f59e0b]' },
-            { title: 'Applicazioni Web', desc: 'Stato e features di ogni app', icon: LayoutDashboard, color: 'text-[#10b981]' },
-            { title: 'Sistema Integrazioni', desc: 'LLM Council, GitHub, Zapier, Neon', icon: Activity, color: 'text-[#f59e0b]' },
-            { title: 'Funzionalità Operative', desc: 'Stato attuale delle funzionalità', icon: CheckCircle, color: 'text-[#10b981]' },
-            { title: 'TODO Prioritizzati', desc: 'Roadmap e prossimi passi', icon: AlertCircle, color: 'text-[#ef4444]' }
+            {
+              title: "Executive Summary",
+              desc: "Panoramica generale ecosistema DMS Hub",
+              icon: Target,
+              color: "text-[#ef4444]",
+            },
+            {
+              title: "Architettura Tecnica",
+              desc: "Stack, Database, API e Servizi",
+              icon: Server,
+              color: "text-[#f59e0b]",
+            },
+            {
+              title: "Applicazioni Web",
+              desc: "Stato e features di ogni app",
+              icon: LayoutDashboard,
+              color: "text-[#10b981]",
+            },
+            {
+              title: "Sistema Integrazioni",
+              desc: "LLM Council, GitHub, Zapier, Neon",
+              icon: Activity,
+              color: "text-[#f59e0b]",
+            },
+            {
+              title: "Funzionalità Operative",
+              desc: "Stato attuale delle funzionalità",
+              icon: CheckCircle,
+              color: "text-[#10b981]",
+            },
+            {
+              title: "TODO Prioritizzati",
+              desc: "Roadmap e prossimi passi",
+              icon: AlertCircle,
+              color: "text-[#ef4444]",
+            },
           ].map((item, idx) => (
-            <Card key={idx} className="bg-[#0b1220] border-[#1e293b] hover:border-[#06b6d4]/30 transition-colors cursor-pointer">
+            <Card
+              key={idx}
+              className="bg-[#0b1220] border-[#1e293b] hover:border-[#06b6d4]/30 transition-colors cursor-pointer"
+            >
               <CardContent className="p-4 flex items-start gap-3">
                 <div className={`p-2 rounded-md bg-[#1a2332] ${item.color}`}>
                   <item.icon className="h-4 w-4" />
                 </div>
                 <div>
-                  <h4 className="text-[#e8fbff] font-medium text-sm">{item.title}</h4>
+                  <h4 className="text-[#e8fbff] font-medium text-sm">
+                    {item.title}
+                  </h4>
                   <p className="text-xs text-[#e8fbff]/50 mt-1">{item.desc}</p>
                 </div>
               </CardContent>

@@ -34,7 +34,7 @@ export const mioAgentRouter = router({
   getLogs: protectedProcedure.query(async () => {
     try {
       const logs = await db.getMioAgentLogs();
-      
+
       // Trasforma il formato per compatibilità con il frontend
       return logs.map(log => ({
         id: log.id,
@@ -111,7 +111,7 @@ export const mioAgentRouter = router({
     .query(async ({ input: id }) => {
       try {
         const log = await db.getMioAgentLogById(id);
-        
+
         if (!log) {
           throw new Error("Log not found");
         }

@@ -157,7 +157,7 @@ export async function checkGPSPlausibility(
     return { plausible: true };
   }
 
-  const speedKmh = (distance / 1000) / timeDiffHours;
+  const speedKmh = distance / 1000 / timeDiffHours;
 
   if (speedKmh > IMPOSSIBLE_TRAVEL_SPEED_KMH) {
     return {
@@ -180,11 +180,18 @@ export async function checkGPSPlausibility(
  */
 export async function checkRateLimit(
   userId: number,
-  actionType: "checkin_culture" | "checkin_mobility" | "scan" | "referral" | "spend" | "issue",
+  actionType:
+    | "checkin_culture"
+    | "checkin_mobility"
+    | "scan"
+    | "referral"
+    | "spend"
+    | "issue",
   maxPerWindow: number = DEFAULT_MAX_DAILY_CHECKINS
 ): Promise<{ allowed: boolean; remaining: number; resetAt: Date }> {
   const db = await getDb();
-  if (!db) return { allowed: true, remaining: maxPerWindow, resetAt: new Date() };
+  if (!db)
+    return { allowed: true, remaining: maxPerWindow, resetAt: new Date() };
 
   const windowStart = new Date();
   windowStart.setHours(0, 0, 0, 0); // Inizio giornata
@@ -276,7 +283,8 @@ export async function checkDailyLimits(
   const maxTransactions = DEFAULT_MAX_DAILY_TRANSACTIONS;
 
   if (existing) {
-    const currentAmount = type === "earn" ? existing.tccEarned : existing.tccSpent;
+    const currentAmount =
+      type === "earn" ? existing.tccEarned : existing.tccSpent;
     const newAmount = currentAmount + tccAmount;
 
     if (newAmount > maxDaily) {
@@ -395,7 +403,14 @@ export async function saveIdempotencyKey(
  */
 export async function logFraudEvent(
   userId: number | null,
-  eventType: "gps_spoofing" | "rate_exceeded" | "duplicate_checkin" | "invalid_qr" | "amount_anomaly" | "impossible_travel" | "suspicious_pattern",
+  eventType:
+    | "gps_spoofing"
+    | "rate_exceeded"
+    | "duplicate_checkin"
+    | "invalid_qr"
+    | "amount_anomaly"
+    | "impossible_travel"
+    | "suspicious_pattern",
   severity: "low" | "medium" | "high" | "critical",
   details: Record<string, unknown>,
   ipAddress?: string,
@@ -454,7 +469,8 @@ export async function saveQRToken(
   const db = await getDb();
   if (!db) return null;
 
-  const expiry = expiresAt || new Date(Date.now() + DEFAULT_QR_EXPIRY_SECONDS * 1000);
+  const expiry =
+    expiresAt || new Date(Date.now() + DEFAULT_QR_EXPIRY_SECONDS * 1000);
 
   try {
     const [token] = await db
@@ -482,7 +498,12 @@ export async function saveQRToken(
 export async function useQRToken(
   tokenHash: string,
   operatorId?: number
-): Promise<{ valid: boolean; reason?: string; payload?: Record<string, unknown>; amount?: number }> {
+): Promise<{
+  valid: boolean;
+  reason?: string;
+  payload?: Record<string, unknown>;
+  amount?: number;
+}> {
   const db = await getDb();
   if (!db) return { valid: false, reason: "Database non disponibile" };
 

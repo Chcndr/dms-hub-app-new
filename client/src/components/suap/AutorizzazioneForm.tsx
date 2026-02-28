@@ -1,27 +1,39 @@
 /**
  * AutorizzazioneForm.tsx
- * 
+ *
  * Form per la creazione di Autorizzazioni commercio su aree pubbliche.
  * Design identico a ConcessioneForm.tsx con auto-popolamento dati.
- * 
+ *
  * Tipi di Autorizzazione (D.Lgs. 114/1998):
  * - Tipo A: Posteggio Fisso (10 anni, rinnovabile)
  * - Tipo B: Itinerante (illimitata)
  */
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Printer, Search, Loader2, FileCheck } from 'lucide-react';
-import { toast } from 'sonner';
-import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FileText, Printer, Search, Loader2, FileCheck } from "lucide-react";
+import { toast } from "sonner";
+import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 // API URL
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const API_URL = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
 
 // Tipi per i dati dal database
 interface Market {
@@ -75,12 +87,18 @@ interface AutorizzazioneFormProps {
   onSubmit: (data: any) => void;
   initialData?: any;
   autorizzazioneId?: number | null;
-  mode?: 'create' | 'view' | 'edit';
+  mode?: "create" | "view" | "edit";
 }
 
-export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, autorizzazioneId, mode = 'create' }: AutorizzazioneFormProps) {
-  const isViewMode = mode === 'view';
-  const isEditMode = mode === 'edit';
+export default function AutorizzazioneForm({
+  onCancel,
+  onSubmit,
+  initialData,
+  autorizzazioneId,
+  mode = "create",
+}: AutorizzazioneFormProps) {
+  const isViewMode = mode === "view";
+  const isEditMode = mode === "edit";
   // Stati per dati dal database
   const [markets, setMarkets] = useState<Market[]>([]);
   const [stalls, setStalls] = useState<Stall[]>([]);
@@ -91,69 +109,75 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
   const [loadingStalls, setLoadingStalls] = useState(false);
   const [loadingImpresa, setLoadingImpresa] = useState(false);
   const [selectedStallId, setSelectedStallId] = useState<number | null>(null);
-  const [selectedImpresaId, setSelectedImpresaId] = useState<number | null>(null);
-  
+  const [selectedImpresaId, setSelectedImpresaId] = useState<number | null>(
+    null
+  );
+
   // Stati per autocomplete
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredImprese, setFilteredImprese] = useState<Impresa[]>([]);
 
   const [formData, setFormData] = useState({
     // Dati Generali
-    numero_autorizzazione: '',
-    data_rilascio: new Date().toISOString().split('T')[0],
-    ente_rilascio: '',
-    tipo: 'A', // A = Posteggio, B = Itinerante
-    
+    numero_autorizzazione: "",
+    data_rilascio: new Date().toISOString().split("T")[0],
+    ente_rilascio: "",
+    tipo: "A", // A = Posteggio, B = Itinerante
+
     // Durata (solo per tipo A)
-    data_scadenza: (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 10); return d.toISOString().split('T')[0]; })(),
-    
+    data_scadenza: (() => {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 10);
+      return d.toISOString().split("T")[0];
+    })(),
+
     // Impresa
-    impresa_id: '',
-    cf_impresa: '',
-    partita_iva: '',
-    ragione_sociale: '',
-    qualita: 'legale rappresentante',
-    nome: '',
-    cognome: '',
-    data_nascita: '',
-    luogo_nascita: '',
-    residenza_via: '',
-    residenza_comune: '',
-    residenza_provincia: '',
-    residenza_cap: '',
-    sede_legale_via: '',
-    sede_legale_comune: '',
-    sede_legale_provincia: '',
-    sede_legale_cap: '',
-    
+    impresa_id: "",
+    cf_impresa: "",
+    partita_iva: "",
+    ragione_sociale: "",
+    qualita: "legale rappresentante",
+    nome: "",
+    cognome: "",
+    data_nascita: "",
+    luogo_nascita: "",
+    residenza_via: "",
+    residenza_comune: "",
+    residenza_provincia: "",
+    residenza_cap: "",
+    sede_legale_via: "",
+    sede_legale_comune: "",
+    sede_legale_provincia: "",
+    sede_legale_cap: "",
+
     // Posteggio (solo per tipo A)
-    mercato: '',
-    mercato_id: '',
-    ubicazione: '',
-    posteggio: '',
-    posteggio_id: '',
-    fila: '',
-    mq: '',
-    dimensioni_lineari: '',
-    giorno: '',
-    
+    mercato: "",
+    mercato_id: "",
+    ubicazione: "",
+    posteggio: "",
+    posteggio_id: "",
+    fila: "",
+    mq: "",
+    dimensioni_lineari: "",
+    giorno: "",
+
     // Settore Merceologico
-    settore: 'Non Alimentare',
-    sottosettore: '',
-    limitazioni: '',
-    
+    settore: "Non Alimentare",
+    sottosettore: "",
+    limitazioni: "",
+
     // DURC e Requisiti
-    durc_numero: '',
-    durc_data_rilascio: '',
-    durc_data_scadenza: '',
+    durc_numero: "",
+    durc_data_rilascio: "",
+    durc_data_scadenza: "",
     durc_valido: false,
     requisiti_morali: false,
     requisiti_professionali: false,
-    
+
     // Note
-    note: '',
-    stato: 'ATTIVA'
+    note: "",
+    stato: "ATTIVA",
   });
 
   // Carica mercati e imprese all'avvio
@@ -161,48 +185,54 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
     const fetchData = async () => {
       try {
         setLoadingMarkets(true);
-        
+
         // Carica il prossimo numero autorizzazione
         try {
-          const nextNumRes = await fetch(addComuneIdToUrl(`${API_URL}/api/autorizzazioni/next-number`));
+          const nextNumRes = await fetch(
+            addComuneIdToUrl(`${API_URL}/api/autorizzazioni/next-number`)
+          );
           const nextNumJson = await nextNumRes.json();
           if (nextNumJson.success && nextNumJson.data) {
             setFormData(prev => ({
               ...prev,
-              numero_autorizzazione: nextNumJson.data.next_number
+              numero_autorizzazione: nextNumJson.data.next_number,
             }));
           }
         } catch (err) {
-          console.warn('Errore nel caricare il prossimo numero:', err);
+          console.warn("Errore nel caricare il prossimo numero:", err);
           // Fallback: genera numero basato su timestamp
           const currentYear = new Date().getFullYear();
           setFormData(prev => ({
             ...prev,
-            numero_autorizzazione: `${currentYear}/${String(Date.now()).slice(-4)}`
+            numero_autorizzazione: `${currentYear}/${String(Date.now()).slice(-4)}`,
           }));
         }
-        
+
         // Carica mercati
-        const marketsRes = await fetch(addComuneIdToUrl(`${API_URL}/api/markets`));
+        const marketsRes = await fetch(
+          addComuneIdToUrl(`${API_URL}/api/markets`)
+        );
         const marketsJson = await marketsRes.json();
         if (marketsJson.success && marketsJson.data) {
           setMarkets(marketsJson.data);
         }
-        
+
         // Carica imprese
-        const impreseRes = await fetch(addComuneIdToUrl(`${API_URL}/api/imprese`));
+        const impreseRes = await fetch(
+          addComuneIdToUrl(`${API_URL}/api/imprese`)
+        );
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
         }
       } catch (err) {
-        console.error('Errore caricamento dati:', err);
-        toast.error('Errore nel caricamento dei dati');
+        console.error("Errore caricamento dati:", err);
+        toast.error("Errore nel caricamento dei dati");
       } finally {
         setLoadingMarkets(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
@@ -210,96 +240,116 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
   useEffect(() => {
     if (initialData) {
       setFormData(prev => ({ ...prev, ...initialData }));
-      toast.info('Form pre-compilato', { description: 'Verifica e completa i dati mancanti' });
+      toast.info("Form pre-compilato", {
+        description: "Verifica e completa i dati mancanti",
+      });
     }
   }, [initialData]);
 
   // Carica dati autorizzazione esistente in view/edit mode
   useEffect(() => {
-    if (autorizzazioneId && (mode === 'view' || mode === 'edit')) {
+    if (autorizzazioneId && (mode === "view" || mode === "edit")) {
       const fetchAutorizzazione = async () => {
         try {
-          const res = await fetch(addComuneIdToUrl(`${API_URL}/api/autorizzazioni/${autorizzazioneId}`));
+          const res = await fetch(
+            addComuneIdToUrl(
+              `${API_URL}/api/autorizzazioni/${autorizzazioneId}`
+            )
+          );
           const json = await res.json();
           if (json.success && json.data) {
             const aut = json.data;
-            
+
             // Imposta il searchQuery per mostrare il nome dell'impresa
             if (aut.company_name) {
               setSearchQuery(aut.company_name);
             }
-            
+
             // Imposta l'ID dell'impresa selezionata
             if (aut.vendor_id) {
               setSelectedImpresaId(aut.vendor_id);
             }
-            
+
             // Imposta il mercato selezionato
             if (aut.market_id) {
               setSelectedMarketId(aut.market_id);
             }
-            
+
             setFormData(prev => ({
               ...prev,
               // Dati Generali
-              numero_autorizzazione: aut.numero_autorizzazione || '',
-              data_rilascio: aut.data_rilascio ? new Date(aut.data_rilascio).toISOString().split('T')[0] : '',
-              data_scadenza: aut.data_scadenza ? new Date(aut.data_scadenza).toISOString().split('T')[0] : '',
-              ente_rilascio: aut.ente_rilascio || '',
-              tipo: aut.tipo || 'A',
-              
+              numero_autorizzazione: aut.numero_autorizzazione || "",
+              data_rilascio: aut.data_rilascio
+                ? new Date(aut.data_rilascio).toISOString().split("T")[0]
+                : "",
+              data_scadenza: aut.data_scadenza
+                ? new Date(aut.data_scadenza).toISOString().split("T")[0]
+                : "",
+              ente_rilascio: aut.ente_rilascio || "",
+              tipo: aut.tipo || "A",
+
               // Dati Impresa
-              impresa_id: aut.vendor_id?.toString() || aut.impresa_id?.toString() || '',
-              cf_impresa: aut.company_cf || aut.codice_fiscale || '',
-              partita_iva: aut.company_piva || aut.partita_iva || '',
-              ragione_sociale: aut.company_name || aut.ragione_sociale || '',
-              
+              impresa_id:
+                aut.vendor_id?.toString() || aut.impresa_id?.toString() || "",
+              cf_impresa: aut.company_cf || aut.codice_fiscale || "",
+              partita_iva: aut.company_piva || aut.partita_iva || "",
+              ragione_sociale: aut.company_name || aut.ragione_sociale || "",
+
               // Dati Rappresentante Legale
-              nome: aut.rappresentante_legale_nome || aut.nome || '',
-              cognome: aut.rappresentante_legale_cognome || aut.cognome || '',
-              data_nascita: aut.rappresentante_legale_data_nascita || '',
-              luogo_nascita: aut.rappresentante_legale_luogo_nascita || '',
-              residenza_via: aut.rappresentante_legale_residenza_via || '',
-              residenza_comune: aut.rappresentante_legale_residenza_comune || '',
-              residenza_provincia: aut.rappresentante_legale_residenza_provincia || '',
-              residenza_cap: aut.rappresentante_legale_residenza_cap || '',
-              
+              nome: aut.rappresentante_legale_nome || aut.nome || "",
+              cognome: aut.rappresentante_legale_cognome || aut.cognome || "",
+              data_nascita: aut.rappresentante_legale_data_nascita || "",
+              luogo_nascita: aut.rappresentante_legale_luogo_nascita || "",
+              residenza_via: aut.rappresentante_legale_residenza_via || "",
+              residenza_comune:
+                aut.rappresentante_legale_residenza_comune || "",
+              residenza_provincia:
+                aut.rappresentante_legale_residenza_provincia || "",
+              residenza_cap: aut.rappresentante_legale_residenza_cap || "",
+
               // Sede Legale
-              sede_legale_via: aut.sede_legale_via || aut.indirizzo_via || '',
-              sede_legale_comune: aut.sede_legale_comune || aut.comune || '',
-              sede_legale_provincia: aut.sede_legale_provincia || aut.indirizzo_provincia || '',
-              sede_legale_cap: aut.sede_legale_cap || aut.indirizzo_cap || '',
-              
+              sede_legale_via: aut.sede_legale_via || aut.indirizzo_via || "",
+              sede_legale_comune: aut.sede_legale_comune || aut.comune || "",
+              sede_legale_provincia:
+                aut.sede_legale_provincia || aut.indirizzo_provincia || "",
+              sede_legale_cap: aut.sede_legale_cap || aut.indirizzo_cap || "",
+
               // Mercato e Posteggio
-              mercato: aut.market_name || '',
-              mercato_id: aut.market_id?.toString() || '',
-              posteggio: aut.stall_number || '',
-              posteggio_id: aut.stall_id?.toString() || '',
-              ubicazione: aut.market_address || '',
-              giorno: aut.market_days || '',
-              
+              mercato: aut.market_name || "",
+              mercato_id: aut.market_id?.toString() || "",
+              posteggio: aut.stall_number || "",
+              posteggio_id: aut.stall_id?.toString() || "",
+              ubicazione: aut.market_address || "",
+              giorno: aut.market_days || "",
+
               // Settore
-              settore: aut.settore || 'Non Alimentare',
-              sottosettore: aut.sottosettore || '',
-              
+              settore: aut.settore || "Non Alimentare",
+              sottosettore: aut.sottosettore || "",
+
               // DURC e Requisiti
-              durc_numero: aut.durc_numero || '',
-              durc_data_rilascio: aut.durc_data_rilascio ? new Date(aut.durc_data_rilascio).toISOString().split('T')[0] : '',
-              durc_data_scadenza: aut.durc_data_scadenza ? new Date(aut.durc_data_scadenza).toISOString().split('T')[0] : '',
+              durc_numero: aut.durc_numero || "",
+              durc_data_rilascio: aut.durc_data_rilascio
+                ? new Date(aut.durc_data_rilascio).toISOString().split("T")[0]
+                : "",
+              durc_data_scadenza: aut.durc_data_scadenza
+                ? new Date(aut.durc_data_scadenza).toISOString().split("T")[0]
+                : "",
               durc_valido: aut.durc_valido || false,
               requisiti_morali: aut.requisiti_morali || false,
               requisiti_professionali: aut.requisiti_professionali || false,
-              
+
               // Note e Stato
-              note: aut.note || '',
-              stato: aut.stato || 'ATTIVA'
+              note: aut.note || "",
+              stato: aut.stato || "ATTIVA",
             }));
-            
-            toast.info('Dati autorizzazione caricati', { description: 'Modifica i campi necessari' });
+
+            toast.info("Dati autorizzazione caricati", {
+              description: "Modifica i campi necessari",
+            });
           }
         } catch (err) {
-          console.error('Errore caricamento autorizzazione:', err);
-          toast.error('Errore nel caricamento dell\'autorizzazione');
+          console.error("Errore caricamento autorizzazione:", err);
+          toast.error("Errore nel caricamento dell'autorizzazione");
         }
       };
       fetchAutorizzazione();
@@ -311,11 +361,14 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
   useEffect(() => {
     if (searchQuery.length >= 1) {
       const query = searchQuery.toLowerCase();
-      const filtered = allImprese.filter(imp => 
-        imp.denominazione?.toLowerCase().includes(query) ||
-        imp.codice_fiscale?.toLowerCase().includes(query) ||
-        imp.partita_iva?.includes(query)
-      ).slice(0, 15); // Max 15 suggerimenti per mostrare più risultati
+      const filtered = allImprese
+        .filter(
+          imp =>
+            imp.denominazione?.toLowerCase().includes(query) ||
+            imp.codice_fiscale?.toLowerCase().includes(query) ||
+            imp.partita_iva?.includes(query)
+        )
+        .slice(0, 15); // Max 15 suggerimenti per mostrare più risultati
       setFilteredImprese(filtered);
       setShowSuggestions(filtered.length > 0);
     } else {
@@ -329,102 +382,122 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
     setSelectedImpresaId(impresa.id);
     setSearchQuery(impresa.denominazione);
     setShowSuggestions(false);
-    
+
     setFormData(prev => ({
       ...prev,
       impresa_id: impresa.id.toString(),
-      cf_impresa: impresa.codice_fiscale || '',
-      partita_iva: impresa.partita_iva || '',
-      ragione_sociale: impresa.denominazione || '',
-      nome: impresa.rappresentante_legale_nome || '',
-      cognome: impresa.rappresentante_legale_cognome || '',
-      data_nascita: impresa.rappresentante_legale_data_nascita || '',
-      luogo_nascita: impresa.rappresentante_legale_luogo_nascita || '',
-      residenza_via: impresa.rappresentante_legale_residenza_via || '',
-      residenza_comune: impresa.rappresentante_legale_residenza_comune || '',
-      residenza_provincia: impresa.rappresentante_legale_residenza_provincia || '',
-      residenza_cap: impresa.rappresentante_legale_residenza_cap || '',
-      sede_legale_via: impresa.indirizzo_via || '',
-      sede_legale_comune: impresa.comune || '',
-      sede_legale_provincia: impresa.indirizzo_provincia || '',
-      sede_legale_cap: impresa.indirizzo_cap || ''
+      cf_impresa: impresa.codice_fiscale || "",
+      partita_iva: impresa.partita_iva || "",
+      ragione_sociale: impresa.denominazione || "",
+      nome: impresa.rappresentante_legale_nome || "",
+      cognome: impresa.rappresentante_legale_cognome || "",
+      data_nascita: impresa.rappresentante_legale_data_nascita || "",
+      luogo_nascita: impresa.rappresentante_legale_luogo_nascita || "",
+      residenza_via: impresa.rappresentante_legale_residenza_via || "",
+      residenza_comune: impresa.rappresentante_legale_residenza_comune || "",
+      residenza_provincia:
+        impresa.rappresentante_legale_residenza_provincia || "",
+      residenza_cap: impresa.rappresentante_legale_residenza_cap || "",
+      sede_legale_via: impresa.indirizzo_via || "",
+      sede_legale_comune: impresa.comune || "",
+      sede_legale_provincia: impresa.indirizzo_provincia || "",
+      sede_legale_cap: impresa.indirizzo_cap || "",
     }));
-    
-    toast.success('Dati impresa caricati');
-    
+
+    toast.success("Dati impresa caricati");
+
     // Carica qualifiche (DURC, Morali, Professionali) dalla tabella qualificazioni
     fetchQualificheData(impresa.id);
   };
-  
+
   // Funzione per caricare i dati delle qualifiche (DURC, Morali, Professionali)
   const fetchQualificheData = async (impresaId: number) => {
     try {
-      const res = await fetch(addComuneIdToUrl(`${API_URL}/api/qualificazioni/impresa/${impresaId}`));
+      const res = await fetch(
+        addComuneIdToUrl(`${API_URL}/api/qualificazioni/impresa/${impresaId}`)
+      );
       const json = await res.json();
-      
+
       if (json.success && json.data && json.data.length > 0) {
         const qualifiche = json.data;
         const oggi = new Date();
-        
+
         // Cerca DURC valido
         const durcQualifica = qualifiche.find((q: any) => {
-          const tipo = q.tipo_qualifica?.toUpperCase() || q.tipo?.toUpperCase() || '';
-          const stato = q.stato?.toUpperCase() || '';
+          const tipo =
+            q.tipo_qualifica?.toUpperCase() || q.tipo?.toUpperCase() || "";
+          const stato = q.stato?.toUpperCase() || "";
           const scadenza = new Date(q.data_scadenza);
-          return tipo.includes('DURC') && stato !== 'SCADUTO' && scadenza > oggi;
+          return (
+            tipo.includes("DURC") && stato !== "SCADUTO" && scadenza > oggi
+          );
         });
-        
+
         // Cerca Requisiti Morali (Onorabilità Morali)
         const moraliQualifica = qualifiche.find((q: any) => {
-          const tipo = q.tipo_qualifica?.toUpperCase() || q.tipo?.toUpperCase() || '';
-          const stato = q.stato?.toUpperCase() || '';
+          const tipo =
+            q.tipo_qualifica?.toUpperCase() || q.tipo?.toUpperCase() || "";
+          const stato = q.stato?.toUpperCase() || "";
           const scadenza = new Date(q.data_scadenza);
-          return (tipo.includes('MORAL') || tipo.includes('ONORABIL')) && stato !== 'SCADUTO' && scadenza > oggi;
+          return (
+            (tipo.includes("MORAL") || tipo.includes("ONORABIL")) &&
+            stato !== "SCADUTO" &&
+            scadenza > oggi
+          );
         });
-        
+
         // Cerca Requisiti Professionali (include REC, SAB, HACCP, Alimentare)
         const professionaliQualifica = qualifiche.find((q: any) => {
-          const tipo = q.tipo_qualifica?.toUpperCase() || q.tipo?.toUpperCase() || '';
-          const stato = q.stato?.toUpperCase() || '';
+          const tipo =
+            q.tipo_qualifica?.toUpperCase() || q.tipo?.toUpperCase() || "";
+          const stato = q.stato?.toUpperCase() || "";
           const scadenza = new Date(q.data_scadenza);
-          const isProfessionale = tipo.includes('PROFESS') || 
-                                  tipo.includes('REC') || 
-                                  tipo.includes('SAB') || 
-                                  tipo.includes('HACCP') || 
-                                  tipo.includes('ALIMENT') ||
-                                  tipo.includes('SOMMINISTR');
-          return isProfessionale && stato !== 'SCADUTO' && scadenza > oggi;
+          const isProfessionale =
+            tipo.includes("PROFESS") ||
+            tipo.includes("REC") ||
+            tipo.includes("SAB") ||
+            tipo.includes("HACCP") ||
+            tipo.includes("ALIMENT") ||
+            tipo.includes("SOMMINISTR");
+          return isProfessionale && stato !== "SCADUTO" && scadenza > oggi;
         });
-        
+
         // Aggiorna formData con i dati trovati
         setFormData(prev => ({
           ...prev,
-          durc_numero: durcQualifica?.numero_attestato || durcQualifica?.numero_certificato || '',
-          durc_data_rilascio: durcQualifica?.data_rilascio ? durcQualifica.data_rilascio.split('T')[0] : '',
-          durc_data_scadenza: durcQualifica?.data_scadenza ? durcQualifica.data_scadenza.split('T')[0] : '',
+          durc_numero:
+            durcQualifica?.numero_attestato ||
+            durcQualifica?.numero_certificato ||
+            "",
+          durc_data_rilascio: durcQualifica?.data_rilascio
+            ? durcQualifica.data_rilascio.split("T")[0]
+            : "",
+          durc_data_scadenza: durcQualifica?.data_scadenza
+            ? durcQualifica.data_scadenza.split("T")[0]
+            : "",
           durc_valido: !!durcQualifica,
           requisiti_morali: !!moraliQualifica,
-          requisiti_professionali: !!professionaliQualifica
+          requisiti_professionali: !!professionaliQualifica,
         }));
-        
+
         // Mostra toast informativo
         const requisiti = [];
-        if (durcQualifica) requisiti.push('DURC');
-        if (moraliQualifica) requisiti.push('Morali');
-        if (professionaliQualifica) requisiti.push('Professionali');
-        
+        if (durcQualifica) requisiti.push("DURC");
+        if (moraliQualifica) requisiti.push("Morali");
+        if (professionaliQualifica) requisiti.push("Professionali");
+
         if (requisiti.length > 0) {
-          toast.success('Requisiti verificati automaticamente', {
-            description: `Trovati: ${requisiti.join(', ')}`
+          toast.success("Requisiti verificati automaticamente", {
+            description: `Trovati: ${requisiti.join(", ")}`,
           });
         } else {
-          toast.warning('Nessun requisito valido trovato', {
-            description: 'Verificare le qualifiche dell\'impresa'
+          toast.warning("Nessun requisito valido trovato", {
+            description: "Verificare le qualifiche dell'impresa",
           });
         }
       }
     } catch (err) {
-      console.warn('Errore nel caricamento qualifiche:', err);
+      console.warn("Errore nel caricamento qualifiche:", err);
     }
   };
 
@@ -432,31 +505,35 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
   const handleMarketChange = async (marketId: string) => {
     const market = markets.find(m => m.id.toString() === marketId);
     if (!market) return;
-    
+
     setSelectedMarketId(market.id);
     setSelectedMarket(market);
     setLoadingStalls(true);
-    
+
     setFormData(prev => ({
       ...prev,
       mercato: market.name,
       mercato_id: market.id.toString(),
       ubicazione: market.municipality,
       giorno: market.days,
-      ente_rilascio: market.municipality // Auto-popola ente rilascio con comune
+      ente_rilascio: market.municipality, // Auto-popola ente rilascio con comune
     }));
-    
+
     // Carica posteggi del mercato
     try {
-      const stallsRes = await fetch(addComuneIdToUrl(`${API_URL}/api/stalls?market_id=${market.id}`));
+      const stallsRes = await fetch(
+        addComuneIdToUrl(`${API_URL}/api/stalls?market_id=${market.id}`)
+      );
       const stallsJson = await stallsRes.json();
       if (stallsJson.success && stallsJson.data) {
         // Filtra solo posteggi liberi
-        const freeStalls = stallsJson.data.filter((s: Stall) => s.status === 'free' || s.status === 'libero');
+        const freeStalls = stallsJson.data.filter(
+          (s: Stall) => s.status === "free" || s.status === "libero"
+        );
         setStalls(freeStalls);
       }
     } catch (err) {
-      console.error('Errore caricamento posteggi:', err);
+      console.error("Errore caricamento posteggi:", err);
     } finally {
       setLoadingStalls(false);
     }
@@ -466,15 +543,15 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
   const handleStallChange = (stallId: string) => {
     const stall = stalls.find(s => s.id.toString() === stallId);
     if (!stall) return;
-    
+
     setSelectedStallId(stall.id);
-    
+
     setFormData(prev => ({
       ...prev,
       posteggio: stall.number,
       posteggio_id: stall.id.toString(),
-      mq: stall.area_mq || '',
-      dimensioni_lineari: stall.dimensions || `${stall.width}x${stall.depth}`
+      mq: stall.area_mq || "",
+      dimensioni_lineari: stall.dimensions || `${stall.width}x${stall.depth}`,
     }));
   };
 
@@ -484,34 +561,45 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
     startDate.setFullYear(startDate.getFullYear() + parseInt(years));
     setFormData(prev => ({
       ...prev,
-      data_scadenza: startDate.toISOString().split('T')[0]
+      data_scadenza: startDate.toISOString().split("T")[0],
     }));
   };
 
   // Salva autorizzazione (POST per creazione, PUT per modifica)
   const handleSave = async () => {
     // Validazione
-    if (!formData.impresa_id || !formData.numero_autorizzazione || !formData.ente_rilascio) {
-      toast.error('Compila i campi obbligatori', { description: 'Impresa, Numero Autorizzazione e Ente Rilascio sono richiesti' });
+    if (
+      !formData.impresa_id ||
+      !formData.numero_autorizzazione ||
+      !formData.ente_rilascio
+    ) {
+      toast.error("Compila i campi obbligatori", {
+        description:
+          "Impresa, Numero Autorizzazione e Ente Rilascio sono richiesti",
+      });
       return;
     }
-    
-    if (formData.tipo === 'A' && !formData.mercato_id) {
-      toast.error('Seleziona un mercato', { description: 'Per autorizzazioni Tipo A è richiesto un mercato' });
+
+    if (formData.tipo === "A" && !formData.mercato_id) {
+      toast.error("Seleziona un mercato", {
+        description: "Per autorizzazioni Tipo A è richiesto un mercato",
+      });
       return;
     }
-    
+
     const payload = {
       impresa_id: parseInt(formData.impresa_id),
       numero_autorizzazione: formData.numero_autorizzazione,
       ente_rilascio: formData.ente_rilascio,
       data_rilascio: formData.data_rilascio,
-      data_scadenza: formData.tipo === 'A' ? formData.data_scadenza : null,
+      data_scadenza: formData.tipo === "A" ? formData.data_scadenza : null,
       tipo: formData.tipo,
       settore: formData.settore,
       sottosettore: formData.sottosettore,
       mercato_id: formData.mercato_id ? parseInt(formData.mercato_id) : null,
-      posteggio_id: formData.posteggio_id ? parseInt(formData.posteggio_id) : null,
+      posteggio_id: formData.posteggio_id
+        ? parseInt(formData.posteggio_id)
+        : null,
       durc_numero: formData.durc_numero,
       durc_data_rilascio: formData.durc_data_rilascio || null,
       durc_data_scadenza: formData.durc_data_scadenza || null,
@@ -519,39 +607,45 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
       requisiti_morali: formData.requisiti_morali,
       requisiti_professionali: formData.requisiti_professionali,
       stato: formData.stato,
-      note: formData.note
+      note: formData.note,
     };
-    
+
     try {
       // Se siamo in modalità edit e abbiamo un ID, usa PUT per aggiornare
       const isUpdate = isEditMode && autorizzazioneId;
-      const url = isUpdate 
+      const url = isUpdate
         ? `${API_URL}/api/autorizzazioni/${autorizzazioneId}`
         : `${API_URL}/api/autorizzazioni`;
-      const method = isUpdate ? 'PUT' : 'POST';
-      
+      const method = isUpdate ? "PUT" : "POST";
+
       const response = await fetch(addComuneIdToUrl(url), {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-      
+
       const json = await response.json();
-      
+
       if (!json.success) {
-        throw new Error(json.error || 'Errore durante il salvataggio');
+        throw new Error(json.error || "Errore durante il salvataggio");
       }
-      
-      toast.success(isUpdate ? 'Autorizzazione aggiornata con successo' : 'Autorizzazione creata con successo');
+
+      toast.success(
+        isUpdate
+          ? "Autorizzazione aggiornata con successo"
+          : "Autorizzazione creata con successo"
+      );
       onSubmit(json.data);
     } catch (err: any) {
-      console.error('Errore salvataggio:', err);
-      toast.error('Errore durante il salvataggio', { description: err.message });
+      console.error("Errore salvataggio:", err);
+      toast.error("Errore durante il salvataggio", {
+        description: err.message,
+      });
     }
   };
 
   // Mostra sezione posteggio solo per tipo A
-  const mostraPosteggio = formData.tipo === 'A';
+  const mostraPosteggio = formData.tipo === "A";
 
   return (
     <Card className="bg-[#0a1628] border-[#1e293b] text-[#e8fbff]">
@@ -559,49 +653,67 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
         <div className="flex items-center gap-2">
           <FileCheck className="w-5 h-5 text-purple-400" />
           <CardTitle className="text-[#e8fbff]">
-            {isViewMode ? 'Dettaglio Autorizzazione' : isEditMode ? 'Modifica Autorizzazione' : 'Generazione Autorizzazione Commercio'}
+            {isViewMode
+              ? "Dettaglio Autorizzazione"
+              : isEditMode
+                ? "Modifica Autorizzazione"
+                : "Generazione Autorizzazione Commercio"}
           </CardTitle>
         </div>
         <CardDescription className="text-gray-400">
           Autorizzazione per il commercio su aree pubbliche (D.Lgs. 114/1998)
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6 pt-6">
         {/* DATI GENERALI */}
         <div className="space-y-4 border-b border-[#1e293b] pb-6">
-          <h3 className="text-lg font-semibold text-[#e8fbff]">Dati Generali</h3>
+          <h3 className="text-lg font-semibold text-[#e8fbff]">
+            Dati Generali
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Numero Autorizzazione *</Label>
-              <Input 
+              <Input
                 value={formData.numero_autorizzazione}
-                onChange={(e) => setFormData({...formData, numero_autorizzazione: e.target.value})}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    numero_autorizzazione: e.target.value,
+                  })
+                }
                 placeholder="Es. 2026/001"
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Data Rilascio</Label>
-              <Input 
+              <Input
                 type="date"
                 value={formData.data_rilascio}
-                onChange={(e) => setFormData({...formData, data_rilascio: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, data_rilascio: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Ente Rilascio *</Label>
-              <Input 
+              <Input
                 value={formData.ente_rilascio}
-                onChange={(e) => setFormData({...formData, ente_rilascio: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, ente_rilascio: e.target.value })
+                }
                 placeholder="Es. Comune di Grosseto"
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Tipo Autorizzazione *</Label>
-              <Select value={formData.tipo} onValueChange={(val) => setFormData({...formData, tipo: val})}>
+              <Select
+                value={formData.tipo}
+                onValueChange={val => setFormData({ ...formData, tipo: val })}
+              >
                 <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
                   <SelectValue />
                 </SelectTrigger>
@@ -612,9 +724,9 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
               </Select>
             </div>
           </div>
-          
+
           {/* Scadenza solo per tipo A */}
-          {formData.tipo === 'A' && (
+          {formData.tipo === "A" && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Durata (Anni)</Label>
@@ -630,7 +742,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Data Scadenza (auto)</Label>
-                <Input 
+                <Input
                   type="date"
                   value={formData.data_scadenza}
                   readOnly
@@ -644,20 +756,22 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
         {/* DATI IMPRESA */}
         <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
           <h3 className="text-sm font-semibold text-[#e8fbff]">Dati Impresa</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2 relative">
               <Label className="text-[#e8fbff]">Cerca Impresa *</Label>
-              <Input 
+              <Input
                 placeholder="P.IVA / CF / Denominazione"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
+                onChange={e => setSearchQuery(e.target.value.toUpperCase())}
+                onFocus={() =>
+                  searchQuery.length >= 2 && setShowSuggestions(true)
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
               {showSuggestions && (
                 <div className="absolute z-50 w-full mt-1 bg-[#0a1628] border border-[#1e293b] rounded-md shadow-lg max-h-96 overflow-auto">
-                  {filteredImprese.map((impresa) => (
+                  {filteredImprese.map(impresa => (
                     <div
                       key={impresa.id}
                       className="px-3 py-2 cursor-pointer hover:bg-[#1e293b] text-[#e8fbff] text-sm"
@@ -665,7 +779,8 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
                     >
                       <div className="font-medium">{impresa.denominazione}</div>
                       <div className="text-xs text-gray-400">
-                        {impresa.codice_fiscale || impresa.partita_iva} • {impresa.comune}
+                        {impresa.codice_fiscale || impresa.partita_iva} •{" "}
+                        {impresa.comune}
                       </div>
                     </div>
                   ))}
@@ -674,7 +789,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Partita IVA</Label>
-              <Input 
+              <Input
                 value={formData.partita_iva}
                 readOnly
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
@@ -682,7 +797,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Codice Fiscale</Label>
-              <Input 
+              <Input
                 value={formData.cf_impresa}
                 readOnly
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
@@ -690,7 +805,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Ragione Sociale</Label>
-              <Input 
+              <Input
                 value={formData.ragione_sociale}
                 readOnly
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff] bg-[#0a1628]"
@@ -702,46 +817,61 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Qualità</Label>
-              <Select value={formData.qualita} onValueChange={(val) => setFormData({...formData, qualita: val})}>
+              <Select
+                value={formData.qualita}
+                onValueChange={val =>
+                  setFormData({ ...formData, qualita: val })
+                }
+              >
                 <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="titolare">Titolare</SelectItem>
-                  <SelectItem value="legale rappresentante">Legale Rappresentante</SelectItem>
+                  <SelectItem value="legale rappresentante">
+                    Legale Rappresentante
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Nome</Label>
-              <Input 
+              <Input
                 value={formData.nome}
-                onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, nome: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Cognome</Label>
-              <Input 
+              <Input
                 value={formData.cognome}
-                onChange={(e) => setFormData({...formData, cognome: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, cognome: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Data di Nascita</Label>
-              <Input 
+              <Input
                 type="date"
                 value={formData.data_nascita}
-                onChange={(e) => setFormData({...formData, data_nascita: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, data_nascita: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Luogo di Nascita</Label>
-              <Input 
+              <Input
                 value={formData.luogo_nascita}
-                onChange={(e) => setFormData({...formData, luogo_nascita: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, luogo_nascita: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
@@ -751,34 +881,45 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2 md:col-span-2">
               <Label className="text-[#e8fbff]">Residenza (Via/Piazza)</Label>
-              <Input 
+              <Input
                 value={formData.residenza_via}
-                onChange={(e) => setFormData({...formData, residenza_via: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, residenza_via: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Comune</Label>
-              <Input 
+              <Input
                 value={formData.residenza_comune}
-                onChange={(e) => setFormData({...formData, residenza_comune: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, residenza_comune: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Provincia</Label>
-              <Input 
+              <Input
                 value={formData.residenza_provincia}
-                onChange={(e) => setFormData({...formData, residenza_provincia: e.target.value})}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    residenza_provincia: e.target.value,
+                  })
+                }
                 placeholder="Es. GR"
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">CAP</Label>
-              <Input 
+              <Input
                 value={formData.residenza_cap}
-                onChange={(e) => setFormData({...formData, residenza_cap: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, residenza_cap: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
@@ -788,34 +929,48 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2 md:col-span-2">
               <Label className="text-[#e8fbff]">Sede Legale (Via)</Label>
-              <Input 
+              <Input
                 value={formData.sede_legale_via}
-                onChange={(e) => setFormData({...formData, sede_legale_via: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, sede_legale_via: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Comune</Label>
-              <Input 
+              <Input
                 value={formData.sede_legale_comune}
-                onChange={(e) => setFormData({...formData, sede_legale_comune: e.target.value})}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    sede_legale_comune: e.target.value,
+                  })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Provincia</Label>
-              <Input 
+              <Input
                 value={formData.sede_legale_provincia}
-                onChange={(e) => setFormData({...formData, sede_legale_provincia: e.target.value})}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    sede_legale_provincia: e.target.value,
+                  })
+                }
                 placeholder="Es. GR"
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">CAP</Label>
-              <Input 
+              <Input
                 value={formData.sede_legale_cap}
-                onChange={(e) => setFormData({...formData, sede_legale_cap: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, sede_legale_cap: e.target.value })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
@@ -825,8 +980,10 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
         {/* DATI POSTEGGIO (solo per tipo A) */}
         {mostraPosteggio && (
           <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
-            <h3 className="text-sm font-semibold text-[#e8fbff]">Dati Posteggio</h3>
-            
+            <h3 className="text-sm font-semibold text-[#e8fbff]">
+              Dati Posteggio
+            </h3>
+
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Mercato *</Label>
@@ -835,7 +992,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
                     <SelectValue placeholder="Seleziona Mercato" />
                   </SelectTrigger>
                   <SelectContent>
-                    {markets.map((market) => (
+                    {markets.map(market => (
                       <SelectItem key={market.id} value={market.id.toString()}>
                         {market.name} - {market.municipality}
                       </SelectItem>
@@ -845,7 +1002,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Ubicazione</Label>
-                <Input 
+                <Input
                   value={formData.ubicazione}
                   readOnly
                   placeholder="Auto-popolato dal mercato"
@@ -854,12 +1011,19 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Posteggio</Label>
-                <Select onValueChange={handleStallChange} disabled={loadingStalls || stalls.length === 0}>
+                <Select
+                  onValueChange={handleStallChange}
+                  disabled={loadingStalls || stalls.length === 0}
+                >
                   <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
-                    <SelectValue placeholder={loadingStalls ? "Caricamento..." : "Seleziona Posteggio"} />
+                    <SelectValue
+                      placeholder={
+                        loadingStalls ? "Caricamento..." : "Seleziona Posteggio"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {stalls.map((stall) => (
+                    {stalls.map(stall => (
                       <SelectItem key={stall.id} value={stall.id.toString()}>
                         {stall.number} - {stall.area_mq}mq
                       </SelectItem>
@@ -869,7 +1033,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">MQ</Label>
-                <Input 
+                <Input
                   value={formData.mq}
                   readOnly
                   placeholder="Auto-popolato"
@@ -878,7 +1042,7 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Giorno</Label>
-                <Input 
+                <Input
                   value={formData.giorno}
                   readOnly
                   placeholder="Auto-popolato"
@@ -891,12 +1055,19 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
 
         {/* SETTORE MERCEOLOGICO */}
         <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
-          <h3 className="text-sm font-semibold text-[#e8fbff]">Settore Merceologico</h3>
-          
+          <h3 className="text-sm font-semibold text-[#e8fbff]">
+            Settore Merceologico
+          </h3>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Settore *</Label>
-              <Select value={formData.settore} onValueChange={(val) => setFormData({...formData, settore: val})}>
+              <Select
+                value={formData.settore}
+                onValueChange={val =>
+                  setFormData({ ...formData, settore: val })
+                }
+              >
                 <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
                   <SelectValue />
                 </SelectTrigger>
@@ -908,18 +1079,22 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Sottosettore</Label>
-              <Input 
+              <Input
                 value={formData.sottosettore}
-                onChange={(e) => setFormData({...formData, sottosettore: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, sottosettore: e.target.value })
+                }
                 placeholder="Es. Frutta e Verdura, Abbigliamento"
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Limitazioni</Label>
-              <Input 
+              <Input
                 value={formData.limitazioni}
-                onChange={(e) => setFormData({...formData, limitazioni: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, limitazioni: e.target.value })
+                }
                 placeholder="Es. Esclusi prodotti ittici"
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
@@ -929,33 +1104,47 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
 
         {/* DURC */}
         <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
-          <h3 className="text-sm font-semibold text-[#e8fbff]">DURC (Documento Unico Regolarità Contributiva)</h3>
-          
+          <h3 className="text-sm font-semibold text-[#e8fbff]">
+            DURC (Documento Unico Regolarità Contributiva)
+          </h3>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Numero DURC</Label>
-              <Input 
+              <Input
                 value={formData.durc_numero}
-                onChange={(e) => setFormData({...formData, durc_numero: e.target.value})}
+                onChange={e =>
+                  setFormData({ ...formData, durc_numero: e.target.value })
+                }
                 placeholder="Es. INPS-2026-123456"
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Data Rilascio</Label>
-              <Input 
+              <Input
                 type="date"
                 value={formData.durc_data_rilascio}
-                onChange={(e) => setFormData({...formData, durc_data_rilascio: e.target.value})}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    durc_data_rilascio: e.target.value,
+                  })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#e8fbff]">Data Scadenza</Label>
-              <Input 
+              <Input
                 type="date"
                 value={formData.durc_data_scadenza}
-                onChange={(e) => setFormData({...formData, durc_data_scadenza: e.target.value})}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    durc_data_scadenza: e.target.value,
+                  })
+                }
                 className="bg-[#020817] border-[#1e293b] text-[#e8fbff]"
               />
             </div>
@@ -964,10 +1153,12 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
 
         {/* NOTE */}
         <div className="space-y-4 border p-4 rounded-lg border-[#1e293b]">
-          <h3 className="text-sm font-semibold text-[#e8fbff]">Note e Prescrizioni</h3>
-          <Textarea 
+          <h3 className="text-sm font-semibold text-[#e8fbff]">
+            Note e Prescrizioni
+          </h3>
+          <Textarea
             value={formData.note}
-            onChange={(e) => setFormData({...formData, note: e.target.value})}
+            onChange={e => setFormData({ ...formData, note: e.target.value })}
             placeholder="Eventuali prescrizioni o note..."
             className="bg-[#020817] border-[#1e293b] text-[#e8fbff] min-h-[80px]"
           />
@@ -975,20 +1166,20 @@ export default function AutorizzazioneForm({ onCancel, onSubmit, initialData, au
 
         {/* PULSANTI */}
         <div className="flex justify-end gap-3 pt-4 border-t border-[#1e293b]">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={onCancel}
             className="border-[#1e293b] text-[#e8fbff] hover:bg-[#1e293b]"
           >
             Annulla
           </Button>
           {!isViewMode && (
-            <Button 
+            <Button
               onClick={handleSave}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               <Printer className="w-4 h-4 mr-2" />
-              {isEditMode ? 'Salva Modifiche' : 'Genera Autorizzazione'}
+              {isEditMode ? "Salva Modifiche" : "Genera Autorizzazione"}
             </Button>
           )}
         </div>

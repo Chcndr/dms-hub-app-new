@@ -10,6 +10,7 @@
 ## CONTESTO
 
 Abbiamo due sessioni Claude Code parallele:
+
 - **Sessione Frontend** (questa repo: `dms-hub-app-new`) → inventario frontend COMPLETATO
 - **Sessione Backend** (tu) → devi fare l'inventario del backend su Hetzner e del database Neon
 
@@ -30,6 +31,7 @@ Path backend: /root/mihub-backend-rest
 ```
 
 Verifica:
+
 - [ ] **Lista tutti i file in routes/** — Il blueprint menziona:
   - `routes/gaming-rewards.js` — TCC rewards, heatmap, nearby-pois, trend
   - `routes/auth.js` (904 righe) — ARPA OAuth2 SPID/CIE/CNS
@@ -75,6 +77,7 @@ SSL: require
 ```
 
 Verifica:
+
 - [ ] **Lista TUTTE le tabelle** — `\dt` o `SELECT table_name FROM information_schema.tables WHERE table_schema='public'`
 
 - [ ] **Per ogni tabella**: conta righe (`SELECT count(*) FROM tabella`) e lista colonne
@@ -117,6 +120,7 @@ Verifica:
 ### 3. OUTPUT RICHIESTO
 
 Crea un file `SYSTEM_INVENTORY_BACKEND.md` con:
+
 1. Lista completa file route con conteggio endpoint
 2. Lista completa tabelle DB con conteggio righe e colonne
 3. Discrepanze rispetto al blueprint
@@ -132,6 +136,7 @@ Crea un file `SYSTEM_INVENTORY_BACKEND.md` con:
 L'inventario frontend è completato. Risultati principali:
 
 **Compliance blueprint: ~85%**
+
 - 36/37 file menzionati nel blueprint esistono
 - ~60 componenti extra non documentati (crescita organica)
 - 200+ file TypeScript/TSX totali
@@ -146,6 +151,7 @@ L'inventario frontend è completato. Risultati principali:
 ## OBIETTIVO FINALE
 
 Una volta che entrambi gli inventari sono completi, aggiorneremo il `MASTER_BLUEPRINT_MIOHUB.md` per:
+
 1. Documentare i ~60 componenti frontend non documentati
 2. Correggere le discrepanze trovate
 3. Aggiungere eventuali route/tabelle backend non documentate
@@ -153,4 +159,4 @@ Una volta che entrambi gli inventari sono completi, aggiorneremo il `MASTER_BLUE
 
 ---
 
-*Messaggio generato dalla sessione Claude Code Frontend — 14 Febbraio 2026*
+_Messaggio generato dalla sessione Claude Code Frontend — 14 Febbraio 2026_

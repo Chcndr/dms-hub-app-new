@@ -21,12 +21,13 @@ La mappa dei posteggi **non si aggiornava** quando si cambiava lo stato di un po
 **Problema:** `getStallColor()` usava `props.status` dal GeoJSON come fallback, quindi i colori rimanevano fissi.
 
 **Soluzione:**
+
 ```typescript
 // PRIMA
-const status = dbStall?.status || defaultStatus || 'libero';
+const status = dbStall?.status || defaultStatus || "libero";
 
 // DOPO
-const status = dbStall?.status || 'libero'; // ← Rimuovo defaultStatus!
+const status = dbStall?.status || "libero"; // ← Rimuovo defaultStatus!
 ```
 
 **Risultato:** La mappa ora usa **SOLO** i dati da `stallsData` (database), ignorando completamente il GeoJSON statico.
@@ -38,12 +39,13 @@ const status = dbStall?.status || 'libero'; // ← Rimuovo defaultStatus!
 **Problema:** Il pulsante portava a `/dashboard-pa#vetrine` invece che alla sezione Vetrine.
 
 **Soluzione:**
+
 ```typescript
 // PRIMA
-href="/dashboard-pa#vetrine"
+href = "/dashboard-pa#vetrine";
 
 // DOPO
-href="/vetrine"
+href = "/vetrine";
 ```
 
 **Risultato:** Il pulsante ora porta correttamente alla pagina `/vetrine`.
@@ -58,7 +60,6 @@ href="/vetrine"
 
 1. **Pulsante "✓ Spunta"** di fianco al badge "Riservati"
    - Toggle on/off (arancione quando attivo)
-   
 2. **Popup speciale** per posteggi riservati in modalità spunta:
    - **Dimensioni dettagliate:**
      - Larghezza (m)
@@ -70,6 +71,7 @@ href="/vetrine"
 3. **Popup normale** per tutti gli altri posteggi (liberi/occupati) o quando modalità spunta è disattivata
 
 **Codice:**
+
 ```typescript
 // GestioneMercati.tsx
 const [isSpuntaMode, setIsSpuntaMode] = useState(false);
@@ -94,7 +96,7 @@ const [isSpuntaMode, setIsSpuntaMode] = useState(false);
 ✅ **Colori corretti:** Verde (libero), Rosso (occupato), Arancione (riservato)  
 ✅ **Popup aggiornati** con dati dal database  
 ✅ **Pulsante "Visita Vetrina"** funzionante  
-✅ **Modalità Spunta** implementata per test dimensioni  
+✅ **Modalità Spunta** implementata per test dimensioni
 
 ---
 

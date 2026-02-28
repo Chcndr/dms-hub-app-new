@@ -3,11 +3,11 @@
  * Componente mappa semplificato per il Cruscotto della Gestione Hub Territoriale
  * Mostra solo la mappa Leaflet con i marker M dei mercati
  */
-import React, { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
-import { MarketMapComponent } from './MarketMapComponent';
-import { MIHUB_API_BASE_URL } from '@/config/api';
-import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import React, { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import { MarketMapComponent } from "./MarketMapComponent";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -37,14 +37,16 @@ export default function MappaHubMini({ onMarketClick }: MappaHubMiniProps) {
 
   const fetchMarkets = async () => {
     try {
-      const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets`));
+      const response = await fetch(
+        addComuneIdToUrl(`${API_BASE_URL}/api/markets`)
+      );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
       if (json.success && Array.isArray(json.data)) {
         setMarkets(json.data);
       }
     } catch (error) {
-      console.error('[MappaHubMini] Errore caricamento mercati:', error);
+      console.error("[MappaHubMini] Errore caricamento mercati:", error);
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,7 @@ export default function MappaHubMini({ onMarketClick }: MappaHubMiniProps) {
     id: m.id,
     name: m.name,
     latitude: parseFloat(m.latitude) || 42.5,
-    longitude: parseFloat(m.longitude) || 12.5
+    longitude: parseFloat(m.longitude) || 12.5,
   }));
 
   return (
@@ -71,7 +73,7 @@ export default function MappaHubMini({ onMarketClick }: MappaHubMiniProps) {
       <MarketMapComponent
         mapData={{
           center: { lat: 42.5, lng: 12.5 },
-          stalls_geojson: { type: 'FeatureCollection', features: [] }
+          stalls_geojson: { type: "FeatureCollection", features: [] },
         }}
         center={[42.5, 12.5]}
         zoom={6}

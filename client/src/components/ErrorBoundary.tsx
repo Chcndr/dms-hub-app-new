@@ -22,15 +22,16 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[ErrorBoundary] Errore non gestito:', error.message);
-    console.error('[ErrorBoundary] Component stack:', info.componentStack);
+    console.error("[ErrorBoundary] Errore non gestito:", error.message);
+    console.error("[ErrorBoundary] Component stack:", info.componentStack);
 
     // Invia errore al backend REST per monitoring persistente
     try {
-      const apiUrl = import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me';
+      const apiUrl =
+        import.meta.env.VITE_MIHUB_API_URL || "https://api.mio-hub.me";
       fetch(`${apiUrl}/api/logs/client-error`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: error.message,
           stack: error.stack?.slice(0, 2000),
@@ -59,7 +60,9 @@ class ErrorBoundary extends Component<Props, State> {
               aria-hidden="true"
             />
 
-            <h1 className="text-xl mb-4">Si e' verificato un errore imprevisto.</h1>
+            <h1 className="text-xl mb-4">
+              Si e' verificato un errore imprevisto.
+            </h1>
 
             <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
               <pre className="text-sm text-muted-foreground whitespace-break-spaces">

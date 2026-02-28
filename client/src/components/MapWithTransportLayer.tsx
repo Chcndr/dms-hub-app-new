@@ -1,26 +1,26 @@
 /**
  * MapWithTransportLayer.tsx
- * 
+ *
  * Wrapper che aggiunge il layer trasporti sopra qualsiasi mappa esistente.
  * NON modifica i componenti mappa originali - li avvolge semplicemente.
- * 
+ *
  * Uso:
  * <MapWithTransportLayer>
  *   <HubMarketMapComponent ... />
  * </MapWithTransportLayer>
  */
 
-import React, { useState, ReactNode } from 'react';
-import { TransportProvider, useTransport } from '@/contexts/TransportContext';
-import { TransportLayerToggle } from './TransportLayerToggle';
-import { NearbyStopsPanel } from './NearbyStopsPanel';
-import { TransportStop } from './TransportStopsLayer';
+import React, { useState, ReactNode } from "react";
+import { TransportProvider, useTransport } from "@/contexts/TransportContext";
+import { TransportLayerToggle } from "./TransportLayerToggle";
+import { NearbyStopsPanel } from "./NearbyStopsPanel";
+import { TransportStop } from "./TransportStopsLayer";
 
 interface ReferencePoint {
   lat: number;
   lng: number;
   name: string;
-  type: 'hub' | 'mercato';
+  type: "hub" | "mercato";
 }
 
 interface MapWithTransportLayerProps {
@@ -34,7 +34,7 @@ interface MapWithTransportLayerProps {
   // Callback quando si clicca su una fermata
   onStopClick?: (stop: TransportStop) => void;
   // Posizione del toggle
-  togglePosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  togglePosition?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
   // Classe CSS aggiuntiva
   className?: string;
 }
@@ -46,8 +46,8 @@ function MapWithTransportLayerInner({
   searchRadiusKm = 2,
   autoShowNearbyPanel = true,
   onStopClick,
-  togglePosition = 'top-right',
-  className = '',
+  togglePosition = "top-right",
+  className = "",
 }: MapWithTransportLayerProps) {
   const { transportLayerVisible, setTransportLayerVisible } = useTransport();
   const [showNearbyPanel, setShowNearbyPanel] = useState(false);
@@ -74,12 +74,18 @@ function MapWithTransportLayerInner({
   };
 
   // Configura routing se abbiamo sia punto di partenza che fermata selezionata
-  const routeConfig = (showRoute && referencePoint && selectedStop) ? {
-    enabled: true,
-    userLocation: { lat: referencePoint.lat, lng: referencePoint.lng },
-    destination: { lat: selectedStop.stop_lat, lng: selectedStop.stop_lon },
-    mode: 'walking' as const
-  } : undefined;
+  const routeConfig =
+    showRoute && referencePoint && selectedStop
+      ? {
+          enabled: true,
+          userLocation: { lat: referencePoint.lat, lng: referencePoint.lng },
+          destination: {
+            lat: selectedStop.stop_lat,
+            lng: selectedStop.stop_lon,
+          },
+          mode: "walking" as const,
+        }
+      : undefined;
 
   return (
     <div className={`relative ${className}`}>
@@ -90,7 +96,12 @@ function MapWithTransportLayerInner({
           // Usa routeConfig del trasporto se attivo, altrimenti mantieni quello del parent
           const finalRouteConfig = routeConfig || childProps.routeConfig;
           return React.cloneElement(child as React.ReactElement<any>, {
-            selectedStopCenter: selectedStop ? [selectedStop.stop_lat, selectedStop.stop_lon] as [number, number] : undefined,
+            selectedStopCenter: selectedStop
+              ? ([selectedStop.stop_lat, selectedStop.stop_lon] as [
+                  number,
+                  number,
+                ])
+              : undefined,
             selectedStopName: selectedStop?.stop_name,
             routeConfig: finalRouteConfig,
           });
@@ -127,7 +138,9 @@ function MapWithTransportLayerInner({
           <div className="flex items-center gap-2">
             <span className="text-xl">🚶</span>
             <div>
-              <p className="text-white text-sm font-medium">Percorso a piedi verso</p>
+              <p className="text-white text-sm font-medium">
+                Percorso a piedi verso
+              </p>
               <p className="text-[#14b8a6] text-xs">{selectedStop.stop_name}</p>
             </div>
           </div>
@@ -139,8 +152,18 @@ function MapWithTransportLayerInner({
             className="ml-2 p-1.5 bg-red-500/20 hover:bg-red-500/40 rounded-full transition-colors"
             title="Chiudi percorso"
           >
-            <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-4 h-4 text-red-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { MapView } from './Map';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
+import { MapView } from "./Map";
+import { Loader2 } from "lucide-react";
 
 declare global {
   interface Window {
@@ -8,11 +8,9 @@ declare global {
   }
 }
 
-
-
 interface MobilityStop {
   id: number;
-  type: 'bus' | 'tram' | 'parking';
+  type: "bus" | "tram" | "parking";
   stopName: string;
   lineNumber?: string;
   lineName?: string;
@@ -44,7 +42,7 @@ export default function MobilityMap({
   showDirections = false,
   origin,
   destination,
-  onDirectionsCalculated
+  onDirectionsCalculated,
 }: MobilityMapProps) {
   const [map, setMap] = useState<any>(null);
   const [directionsRenderer, setDirectionsRenderer] = useState<any>(null);
@@ -52,16 +50,16 @@ export default function MobilityMap({
 
   const handleMapReady = (mapInstance: any) => {
     setMap(mapInstance);
-    
+
     // Initialize DirectionsRenderer if needed
     if (showDirections) {
       const renderer = new window.google.maps.DirectionsRenderer({
         map: mapInstance,
         suppressMarkers: false,
         polylineOptions: {
-          strokeColor: '#10b981',
-          strokeWeight: 4
-        }
+          strokeColor: "#10b981",
+          strokeWeight: 4,
+        },
       });
       setDirectionsRenderer(renderer);
     }
@@ -79,17 +77,19 @@ export default function MobilityMap({
     stops.forEach(stop => {
       const position = {
         lat: parseFloat(stop.lat),
-        lng: parseFloat(stop.lng)
+        lng: parseFloat(stop.lng),
       };
 
       // Choose icon based on type
       let icon: any = {
-        url: '',
-        scaledSize: new window.google.maps.Size(32, 32)
+        url: "",
+        scaledSize: new window.google.maps.Size(32, 32),
       };
 
-      if (stop.type === 'bus') {
-        icon.url = 'data:image/svg+xml;base64,' + btoa(`
+      if (stop.type === "bus") {
+        icon.url =
+          "data:image/svg+xml;base64," +
+          btoa(`
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
             <rect x="3" y="6" width="18" height="12" rx="2"/>
             <path d="M3 10h18"/>
@@ -97,8 +97,10 @@ export default function MobilityMap({
             <circle cx="16" cy="16" r="1"/>
           </svg>
         `);
-      } else if (stop.type === 'tram') {
-        icon.url = 'data:image/svg+xml;base64,' + btoa(`
+      } else if (stop.type === "tram") {
+        icon.url =
+          "data:image/svg+xml;base64," +
+          btoa(`
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
             <rect x="4" y="4" width="16" height="16" rx="2"/>
             <path d="M4 11h16"/>
@@ -108,8 +110,10 @@ export default function MobilityMap({
             <path d="M16 4v3"/>
           </svg>
         `);
-      } else if (stop.type === 'parking') {
-        icon.url = 'data:image/svg+xml;base64,' + btoa(`
+      } else if (stop.type === "parking") {
+        icon.url =
+          "data:image/svg+xml;base64," +
+          btoa(`
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2"/>
             <path d="M8 7h5a3 3 0 0 1 0 6h-5"/>
@@ -122,26 +126,26 @@ export default function MobilityMap({
         position,
         map,
         title: stop.stopName,
-        icon
+        icon,
       });
 
       // Info window
       const infoContent = `
         <div style="padding: 8px; min-width: 200px;">
           <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${stop.stopName}</h3>
-          ${stop.lineNumber ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Linee:</strong> ${stop.lineNumber}</p>` : ''}
-          ${stop.nextArrival ? `<p style="margin: 4px 0; font-size: 12px; color: #10b981;"><strong>Prossimo arrivo:</strong> ${stop.nextArrival} min</p>` : ''}
-          ${stop.occupancy ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Occupazione:</strong> ${stop.occupancy}%</p>` : ''}
-          ${stop.totalSpots ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Posti:</strong> ${stop.availableSpots}/${stop.totalSpots}</p>` : ''}
-          ${stop.status ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Stato:</strong> <span style="color: ${stop.status === 'active' ? '#10b981' : '#ef4444'}">${stop.status === 'active' ? 'Attivo' : stop.status === 'delayed' ? 'Ritardo' : 'Sospeso'}</span></p>` : ''}
+          ${stop.lineNumber ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Linee:</strong> ${stop.lineNumber}</p>` : ""}
+          ${stop.nextArrival ? `<p style="margin: 4px 0; font-size: 12px; color: #10b981;"><strong>Prossimo arrivo:</strong> ${stop.nextArrival} min</p>` : ""}
+          ${stop.occupancy ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Occupazione:</strong> ${stop.occupancy}%</p>` : ""}
+          ${stop.totalSpots ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Posti:</strong> ${stop.availableSpots}/${stop.totalSpots}</p>` : ""}
+          ${stop.status ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Stato:</strong> <span style="color: ${stop.status === "active" ? "#10b981" : "#ef4444"}">${stop.status === "active" ? "Attivo" : stop.status === "delayed" ? "Ritardo" : "Sospeso"}</span></p>` : ""}
         </div>
       `;
 
       const infoWindow = new window.google.maps.InfoWindow({
-        content: infoContent
+        content: infoContent,
       });
 
-      marker.addListener('click', () => {
+      marker.addListener("click", () => {
         infoWindow.open(map, marker);
         if (onStopClick) {
           onStopClick(stop);
@@ -154,7 +158,14 @@ export default function MobilityMap({
 
   // Calculate and display directions
   useEffect(() => {
-    if (!map || !directionsRenderer || !showDirections || !origin || !destination) return;
+    if (
+      !map ||
+      !directionsRenderer ||
+      !showDirections ||
+      !origin ||
+      !destination
+    )
+      return;
 
     const directionsService = new window.google.maps.DirectionsService();
 
@@ -164,18 +175,22 @@ export default function MobilityMap({
         destination,
         travelMode: window.google.maps.TravelMode.TRANSIT,
         transitOptions: {
-          modes: [window.google.maps.TransitMode.BUS, window.google.maps.TransitMode.TRAIN],
-          routingPreference: window.google.maps.TransitRoutePreference.FEWER_TRANSFERS
-        }
+          modes: [
+            window.google.maps.TransitMode.BUS,
+            window.google.maps.TransitMode.TRAIN,
+          ],
+          routingPreference:
+            window.google.maps.TransitRoutePreference.FEWER_TRANSFERS,
+        },
       },
       (result: any, status: any) => {
-        if (status === 'OK' && result) {
+        if (status === "OK" && result) {
           directionsRenderer.setDirections(result);
           if (onDirectionsCalculated) {
             onDirectionsCalculated(result);
           }
         } else {
-          console.error('Directions request failed:', status);
+          console.error("Directions request failed:", status);
         }
       }
     );

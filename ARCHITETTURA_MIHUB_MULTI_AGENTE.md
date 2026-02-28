@@ -71,29 +71,34 @@
 **Componenti Trovati**:
 
 ##### a) **Task Engine** ✅ 70% Completo
+
 - File: `tasks/tasks-todo.json`, `tasks/tasks-done.json`
 - Struttura task ben definita
 - Tracking status funzionante
 - **Manca**: Esecuzione automatica (worker bloccato)
 
 ##### b) **Projects Registry** ✅ 80% Completo
+
 - File: `projects/index.json`
 - 10 progetti tracciati
 - Metadata completi
 - **Manca**: Integrazione con Dashboard PA
 
 ##### c) **Brain/Memory** ✅ 60% Completo
+
 - File: `brain/mio-context.json`, `brain/decisions.md`, `brain/history.md`
 - Memoria decisioni
 - Contesto moduli
 - **Manca**: Database persistente, API access
 
 ##### d) **Connectors** ✅ 50% Completo
+
 - File: `connectors/abacus.json`, `connectors/manus.json`, `connectors/github.json`
 - Config Abacus, Manus, GitHub
 - **Manca**: Implementazione API, autenticazione
 
 ##### e) **MIO Worker** ❌ 20% Completo (Bloccato)
+
 - File: `tools/mio-worker.js`
 - Codice corrotto
 - Errori SHA
@@ -104,16 +109,19 @@
 **Componenti Trovati**:
 
 ##### a) **Frontend Component** ✅ 100% UI
+
 - File: `client/src/components/MIOAgent.tsx`
 - UI completa
 - **Manca**: Integrazione dati reali
 
 ##### b) **API Routes** ✅ 100% Creati, ❌ 0% Funzionanti
+
 - File: `api/logs/initSchema.ts`, `api/logs/createLog.ts`, `api/logs/getLogs.ts`, `api/logs/test.ts`
 - 4 endpoint creati
 - **Blocco**: Database non connesso
 
 ##### c) **Database Schema** ✅ 100% Definito
+
 - File: `drizzle/schema.ts`
 - Tabella `mio_agent_logs` definita
 - **Manca**: Altre tabelle (tasks, projects, brain, events, bag)
@@ -125,9 +133,11 @@
 ### Layer 1: **Foundation** (NON ESISTE)
 
 #### 1.1 Database Completo
+
 **Status**: ❌ 5% (solo schema logs)
 
 **Tabelle Mancanti**:
+
 - `mio_tasks` - Task engine
 - `mio_projects` - Projects registry
 - `mio_brain` - Brain/Memory
@@ -142,9 +152,11 @@
 ---
 
 #### 1.2 Event Bus Centralizzato
+
 **Status**: ❌ 0%
 
 **Funzionalità Mancanti**:
+
 - Event emitter/listener
 - Event queue (Redis)
 - Event persistence (database)
@@ -156,9 +168,11 @@
 ---
 
 #### 1.3 Logging System Universale
+
 **Status**: ❌ 10% (solo API create)
 
 **Funzionalità Mancanti**:
+
 - Auto-tracking eventi frontend
 - Middleware logging backend
 - Log aggregation
@@ -170,9 +184,11 @@
 ---
 
 #### 1.4 Data Bag (Storage Condiviso)
+
 **Status**: ❌ 0%
 
 **Funzionalità Mancanti**:
+
 - Key-value store (Redis)
 - Shared state tra agenti
 - Cache layer
@@ -186,9 +202,11 @@
 ### Layer 2: **Multi-Agent System** (NON ESISTE)
 
 #### 2.1 MIO Agent (Coordinator)
+
 **Status**: ❌ 15% (solo UI + schema logs)
 
 **Funzionalità Mancanti**:
+
 - LLM integration (GPT-5)
 - Context injection
 - Task delegation
@@ -200,9 +218,11 @@
 ---
 
 #### 2.2 Manus Agent (Operator)
+
 **Status**: ❌ 0%
 
 **Funzionalità Mancanti**:
+
 - LLM integration (GPT-4)
 - Action execution
 - Tool calling
@@ -214,9 +234,11 @@
 ---
 
 #### 2.3 Abacus Agent (Analytics)
+
 **Status**: ❌ 5% (solo config in MIO-hub)
 
 **Funzionalità Mancanti**:
+
 - LLM integration (GPT-4)
 - Data analysis
 - Report generation
@@ -228,9 +250,11 @@
 ---
 
 #### 2.4 Zapier Agent (Automation)
+
 **Status**: ❌ 10% (MCP configurato)
 
 **Funzionalità Mancanti**:
+
 - MCP Zapier integration
 - Workflow triggers
 - Action execution
@@ -242,9 +266,11 @@
 ---
 
 #### 2.5 Shared Context System
+
 **Status**: ❌ 0%
 
 **Funzionalità Mancanti**:
+
 - Context synchronization
 - Cross-agent visibility
 - Message broadcasting
@@ -258,9 +284,11 @@
 ### Layer 3: **Integration Layer** (NON ESISTE)
 
 #### 3.1 API Gateway
+
 **Status**: ❌ 0%
 
 **Funzionalità Mancanti**:
+
 - Unified API endpoint
 - Request routing
 - Authentication/Authorization
@@ -272,9 +300,11 @@
 ---
 
 #### 3.2 Webhook System
+
 **Status**: ❌ 0%
 
 **Funzionalità Mancanti**:
+
 - Webhook receiver
 - Event validation
 - Payload transformation
@@ -286,9 +316,11 @@
 ---
 
 #### 3.3 Integrations Registry
+
 **Status**: ❌ 5% (solo config in MIO-hub)
 
 **Funzionalità Mancanti**:
+
 - Registry database
 - App registration
 - Health checks
@@ -482,17 +514,20 @@ CREATE TABLE data_bag (
 ### FASE 1: **Foundation Layer** (8-12 ore) ⭐⭐⭐⭐⭐
 
 #### Step 1.1: Database Setup (30 minuti)
+
 - [ ] Creare database PlanetScale
 - [ ] Configurare DATABASE_URL su Vercel
 - [ ] Testare connessione
 
 #### Step 1.2: Schema Database (2-3 ore)
+
 - [ ] Definire schema completo Drizzle ORM
 - [ ] Creare migration
 - [ ] Eseguire migration
 - [ ] Testare tutte le tabelle
 
 #### Step 1.3: Event Bus (3-4 ore)
+
 - [ ] Setup Redis (Upstash)
 - [ ] Implementare Event Emitter
 - [ ] Implementare Event Listener
@@ -500,12 +535,14 @@ CREATE TABLE data_bag (
 - [ ] Testare pub/sub
 
 #### Step 1.4: Logging System (2-3 ore)
+
 - [ ] Middleware logging backend
 - [ ] Hook logging frontend
 - [ ] Auto-tracking eventi
 - [ ] API logs (già creati, testare)
 
 #### Step 1.5: Data Bag (1-2 ore)
+
 - [ ] Redis key-value store
 - [ ] API get/set/delete
 - [ ] TTL management
@@ -518,6 +555,7 @@ CREATE TABLE data_bag (
 ### FASE 2: **Multi-Agent System** (16-24 ore) ⭐⭐⭐⭐⭐
 
 #### Step 2.1: MIO Agent (Coordinator) (6-8 ore)
+
 - [ ] LLM integration (GPT-5)
 - [ ] Context injection (dati Dashboard)
 - [ ] Task delegation system
@@ -527,6 +565,7 @@ CREATE TABLE data_bag (
 - [ ] Testare coordinamento
 
 #### Step 2.2: Manus Agent (Operator) (4-6 ore)
+
 - [ ] LLM integration (GPT-4)
 - [ ] Action execution engine
 - [ ] Tool calling (function calling)
@@ -536,6 +575,7 @@ CREATE TABLE data_bag (
 - [ ] Testare esecuzione
 
 #### Step 2.3: Abacus Agent (Analytics) (4-6 ore)
+
 - [ ] LLM integration (GPT-4)
 - [ ] Data analysis tools
 - [ ] Report generation
@@ -545,6 +585,7 @@ CREATE TABLE data_bag (
 - [ ] Testare analisi
 
 #### Step 2.4: Zapier Agent (Automation) (2-4 ore)
+
 - [ ] MCP Zapier integration
 - [ ] Workflow triggers
 - [ ] Action execution
@@ -559,6 +600,7 @@ CREATE TABLE data_bag (
 ### FASE 3: **Shared Context & Sync** (6-8 ore) ⭐⭐⭐⭐⭐
 
 #### Step 3.1: Shared Context System (3-4 ore)
+
 - [ ] Context database
 - [ ] Context API (get/set/update)
 - [ ] Visibility rules (chi vede cosa)
@@ -566,6 +608,7 @@ CREATE TABLE data_bag (
 - [ ] Testare sharing
 
 #### Step 3.2: Real-time Sync (3-4 ore)
+
 - [ ] WebSocket setup (Socket.IO)
 - [ ] Message broadcasting
 - [ ] Chat sync tra agenti
@@ -579,12 +622,14 @@ CREATE TABLE data_bag (
 ### FASE 4: **MIHUB Dashboard UI** (8-12 ore) ⭐⭐⭐⭐⭐
 
 #### Step 4.1: Layout 4-Panel (2-3 ore)
+
 - [ ] Grid layout 2x2
 - [ ] 4 chat panels (MIO, Manus, Abacus, Zapier)
 - [ ] Resize panels
 - [ ] Responsive design
 
 #### Step 4.2: Chat Components (3-4 ore)
+
 - [ ] Chat input/output
 - [ ] Message history
 - [ ] Typing indicators
@@ -592,12 +637,14 @@ CREATE TABLE data_bag (
 - [ ] Message formatting
 
 #### Step 4.3: Shared Context Panel (2-3 ore)
+
 - [ ] Context viewer
 - [ ] Event stream viewer
 - [ ] Task list viewer
 - [ ] Stats cards
 
 #### Step 4.4: Integration (1-2 ore)
+
 - [ ] WebSocket client
 - [ ] API integration
 - [ ] State management
@@ -610,6 +657,7 @@ CREATE TABLE data_bag (
 ### FASE 5: **Integration Layer** (8-12 ore) ⭐⭐⭐⭐
 
 #### Step 5.1: API Gateway (3-4 ore)
+
 - [ ] Unified endpoint
 - [ ] Request routing
 - [ ] Authentication
@@ -617,6 +665,7 @@ CREATE TABLE data_bag (
 - [ ] Documentation
 
 #### Step 5.2: Webhook System (3-4 ore)
+
 - [ ] Webhook receiver
 - [ ] Event validation
 - [ ] Payload transformation
@@ -624,6 +673,7 @@ CREATE TABLE data_bag (
 - [ ] Registry
 
 #### Step 5.3: Integrations Registry (2-4 ore)
+
 - [ ] Registry database
 - [ ] App registration API
 - [ ] Health checks
@@ -637,6 +687,7 @@ CREATE TABLE data_bag (
 ### FASE 6: **Testing & Stabilizzazione** (4-6 ore) ⭐⭐⭐
 
 #### Step 6.1: Testing Completo (2-3 ore)
+
 - [ ] Test multi-agent collaboration
 - [ ] Test event flow
 - [ ] Test real-time sync
@@ -644,6 +695,7 @@ CREATE TABLE data_bag (
 - [ ] Load testing
 
 #### Step 6.2: Documentazione (2-3 ore)
+
 - [ ] API documentation
 - [ ] Architecture diagram
 - [ ] User guide
@@ -655,15 +707,15 @@ CREATE TABLE data_bag (
 
 ## ⏱️ STIMA TEMPORALE TOTALE
 
-| Fase | Tempo | Priorità |
-|------|-------|----------|
-| **Fase 1**: Foundation Layer | 8-12 ore | ⭐⭐⭐⭐⭐ |
-| **Fase 2**: Multi-Agent System | 16-24 ore | ⭐⭐⭐⭐⭐ |
-| **Fase 3**: Shared Context & Sync | 6-8 ore | ⭐⭐⭐⭐⭐ |
-| **Fase 4**: MIHUB Dashboard UI | 8-12 ore | ⭐⭐⭐⭐⭐ |
-| **Fase 5**: Integration Layer | 8-12 ore | ⭐⭐⭐⭐ |
-| **Fase 6**: Testing & Stabilizzazione | 4-6 ore | ⭐⭐⭐ |
-| **TOTALE** | **50-74 ore** | - |
+| Fase                                  | Tempo         | Priorità   |
+| ------------------------------------- | ------------- | ---------- |
+| **Fase 1**: Foundation Layer          | 8-12 ore      | ⭐⭐⭐⭐⭐ |
+| **Fase 2**: Multi-Agent System        | 16-24 ore     | ⭐⭐⭐⭐⭐ |
+| **Fase 3**: Shared Context & Sync     | 6-8 ore       | ⭐⭐⭐⭐⭐ |
+| **Fase 4**: MIHUB Dashboard UI        | 8-12 ore      | ⭐⭐⭐⭐⭐ |
+| **Fase 5**: Integration Layer         | 8-12 ore      | ⭐⭐⭐⭐   |
+| **Fase 6**: Testing & Stabilizzazione | 4-6 ore       | ⭐⭐⭐     |
+| **TOTALE**                            | **50-74 ore** | -          |
 
 **Stima Realistica**: **60 ore** (1.5-2 settimane full-time)
 
@@ -674,6 +726,7 @@ CREATE TABLE data_bag (
 ### Step 1: Creare Database PlanetScale (ADESSO) ⏰ 30 minuti
 
 **Azioni**:
+
 1. ✅ Creare account PlanetScale
 2. ✅ Creare database `dms-hub-production`
 3. ✅ Copiare connection string
@@ -691,27 +744,29 @@ CREATE TABLE data_bag (
 ### Cosa Riutilizzare da MIO-hub
 
 ✅ **Da Mantenere**:
+
 - Task structure (tasks-todo.json format)
 - Projects structure (projects/index.json format)
 - Brain structure (brain/mio-context.json format)
-- Connectors config (connectors/*.json)
+- Connectors config (connectors/\*.json)
 
 ❌ **Da Rifare**:
+
 - MIO Worker (codice corrotto)
 - GitHub Actions (meglio Vercel Cron)
 - File-based storage (meglio database)
 
 ### Differenze Chiave MIHUB vs MIO-hub
 
-| Aspetto | MIO-hub | MIHUB |
-|---------|---------|-------|
-| **Storage** | File JSON | Database + Redis |
-| **Agenti** | 1 (MIO) | 4 (MIO, Manus, Abacus, Zapier) |
-| **UI** | Nessuna | Dashboard 4-panel |
-| **Real-time** | No | WebSocket |
-| **Event Bus** | No | Redis Pub/Sub |
-| **Shared Context** | No | Sì |
-| **Interoperabilità** | Limitata | Completa |
+| Aspetto              | MIO-hub   | MIHUB                          |
+| -------------------- | --------- | ------------------------------ |
+| **Storage**          | File JSON | Database + Redis               |
+| **Agenti**           | 1 (MIO)   | 4 (MIO, Manus, Abacus, Zapier) |
+| **UI**               | Nessuna   | Dashboard 4-panel              |
+| **Real-time**        | No        | WebSocket                      |
+| **Event Bus**        | No        | Redis Pub/Sub                  |
+| **Shared Context**   | No        | Sì                             |
+| **Interoperabilità** | Limitata  | Completa                       |
 
 ---
 

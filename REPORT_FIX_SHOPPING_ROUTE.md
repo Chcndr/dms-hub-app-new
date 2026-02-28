@@ -10,11 +10,13 @@
 ## 🐛 PROBLEMA RILEVATO
 
 ### Sintomi
+
 1. ❌ Click "Pianifica Percorso" → Toast errore "Errore calcolo percorso. Riprova."
 2. ❌ Secondo click → Crash totale applicazione (schermata bianca con stack trace)
 3. ❌ Google Maps mostra popup "Questa pagina non carica correttamente Google Maps"
 
 ### Causa Root
+
 Il componente `MobilityMap.tsx` utilizza **Google Maps JavaScript API** senza API key configurata:
 
 ```typescript
@@ -25,6 +27,7 @@ const directionsService = new window.google.maps.DirectionsService();
 ```
 
 Senza API key, `window.google` è `undefined`, causando:
+
 - `TypeError: Cannot read property 'maps' of undefined`
 - Crash dell'intera applicazione React
 - Stato corrotto al secondo tentativo
@@ -34,9 +37,11 @@ Senza API key, `window.google` è `undefined`, causando:
 ## ✅ SOLUZIONE IMPLEMENTATA
 
 ### 1. Rimozione Google Maps Embedded
+
 **File:** `client/src/pages/RoutePage.tsx` (righe 461-496)
 
 **Prima:**
+
 ```tsx
 <MobilityMap
   showDirections={true}
@@ -47,16 +52,25 @@ Senza API key, `window.google` è `undefined`, causando:
 ```
 
 **Dopo:**
+
 ```tsx
-{/* Mappa Percorso - TEMPORANEAMENTE DISABILITATA */}
-{/* TODO: Sostituire con Leaflet o configurare Google Maps API key */}
-{/* ... codice commentato ... */}
+{
+  /* Mappa Percorso - TEMPORANEAMENTE DISABILITATA */
+}
+{
+  /* TODO: Sostituire con Leaflet o configurare Google Maps API key */
+}
+{
+  /* ... codice commentato ... */
+}
 ```
 
 ### 2. Parsing Coordinate GPS dalla Destinazione
+
 **File:** `client/src/pages/RoutePage.tsx` (righe 112-130)
 
 **Aggiunto:**
+
 ```typescript
 // Parse destination (può essere coordinate GPS, stallId, o marketId)
 const coordMatch = destination.match(/\(([-\d.]+),\s*([-\d.]+)\)/);
@@ -68,7 +82,7 @@ if (coordMatch) {
   // Coordinate GPS dirette (es: "Frutta e Verdura (42.758, 11.112)")
   destinationPayload = {
     lat: parseFloat(coordMatch[1]),
-    lng: parseFloat(coordMatch[2])
+    lng: parseFloat(coordMatch[2]),
   };
 } else if (stallMatch) {
   // StallId (es: "Posteggio #1")
@@ -80,47 +94,51 @@ if (coordMatch) {
 ```
 
 **Supporta 3 formati:**
+
 - ✅ Coordinate GPS: `"Frutta e Verdura Rossi - Posteggio #1 (42.75892858, 11.11205399)"`
 - ✅ Stall ID: `"Posteggio #1"`
 - ✅ Market ID: fallback generico
 
 ### 3. Navigazione Nativa (Google/Apple Maps)
+
 **File:** `client/src/pages/RoutePage.tsx` (righe 228-262)
 
 **Nuovo codice:**
+
 ```typescript
 const handleStartNavigation = () => {
   if (!plan || !userLocation) {
-    toast.error('Calcola prima il percorso');
+    toast.error("Calcola prima il percorso");
     return;
   }
-  
+
   // Parse coordinate destinazione
   const coordMatch = destination.match(/\(([-\d.]+),\s*([-\d.]+)\)/);
   const destLat = parseFloat(coordMatch[1]);
   const destLng = parseFloat(coordMatch[2]);
-  
+
   // Mappa modalità per Google Maps
   const travelModeMap: Record<string, string> = {
-    'walk': 'walking',
-    'bike': 'bicycling',
-    'transit': 'transit',
-    'car': 'driving'
+    walk: "walking",
+    bike: "bicycling",
+    transit: "transit",
+    car: "driving",
   };
-  
-  const travelMode = travelModeMap[mode] || 'walking';
-  
+
+  const travelMode = travelModeMap[mode] || "walking";
+
   // URL Google Maps con navigazione attiva
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${destLat},${destLng}&travelmode=${travelMode}`;
-  
+
   // Apri Google Maps (o Apple Maps su iOS)
-  window.open(mapsUrl, '_blank');
-  
-  toast.success('🧭 Navigazione avviata! +' + plan.creditsEarned + ' crediti');
+  window.open(mapsUrl, "_blank");
+
+  toast.success("🧭 Navigazione avviata! +" + plan.creditsEarned + " crediti");
 };
 ```
 
 **URL Schema Google Maps:**
+
 ```
 https://www.google.com/maps/dir/?api=1
   &origin=44.489833,11.012278
@@ -129,14 +147,17 @@ https://www.google.com/maps/dir/?api=1
 ```
 
 **Comportamento:**
+
 - 📱 **Android:** Apre Google Maps app (se installata) o browser
 - 🍎 **iOS:** Apre Apple Maps app (default) o Google Maps se preferita
 - 💻 **Desktop:** Apre Google Maps web in nuova tab
 
 ### 4. Rimozione UI Turn-by-Turn
+
 **File:** `client/src/pages/RoutePage.tsx` (righe 555-603)
 
 **Rimosso:**
+
 - Card "Navigazione Attiva" con istruzioni passo-passo
 - State `navigationActive` e `currentStep`
 - Logica `navigator.geolocation.watchPosition()`
@@ -148,20 +169,23 @@ https://www.google.com/maps/dir/?api=1
 ## 📊 RISULTATI
 
 ### Codice Modificato
-| File | Righe Aggiunte | Righe Rimosse | Delta |
-|------|----------------|---------------|-------|
-| `RoutePage.tsx` | 52 | 72 | -20 |
+
+| File            | Righe Aggiunte | Righe Rimosse | Delta |
+| --------------- | -------------- | ------------- | ----- |
+| `RoutePage.tsx` | 52             | 72            | -20   |
 
 ### Funzionalità
-| Feature | Prima | Dopo |
-|---------|-------|------|
-| Calcolo percorso | ❌ Crash | ✅ Funzionante |
-| Visualizzazione risultati | ❌ Errore | ✅ OK |
-| Navigazione | ❌ Non disponibile | ✅ App nativa |
-| Secondo tentativo | ❌ Crash totale | ✅ Funzionante |
-| Mappa embedded | ❌ Errore Google | ⏸️ Disabilitata |
+
+| Feature                   | Prima              | Dopo            |
+| ------------------------- | ------------------ | --------------- |
+| Calcolo percorso          | ❌ Crash           | ✅ Funzionante  |
+| Visualizzazione risultati | ❌ Errore          | ✅ OK           |
+| Navigazione               | ❌ Non disponibile | ✅ App nativa   |
+| Secondo tentativo         | ❌ Crash totale    | ✅ Funzionante  |
+| Mappa embedded            | ❌ Errore Google   | ⏸️ Disabilitata |
 
 ### Test API Backend
+
 ```bash
 curl -X POST https://api.mio-hub.me/api/routing/calculate \
   -H "Content-Type: application/json" \
@@ -173,6 +197,7 @@ curl -X POST https://api.mio-hub.me/api/routing/calculate \
 ```
 
 **Response:** ✅ SUCCESS
+
 ```json
 {
   "success": true,
@@ -227,21 +252,27 @@ curl -X POST https://api.mio-hub.me/api/routing/calculate \
 ## 🔮 PROSSIMI STEP
 
 ### Priorità 1 (Opzionale)
+
 **Mappa Leaflet per Visualizzazione Percorso**
+
 - Sostituire `MobilityMap` con componente Leaflet
 - Mostrare tracciato percorso sulla mappa
 - Nessuna API key necessaria (open source)
 - Tempo stimato: 2-3 ore
 
 ### Priorità 2 (Raccomandato)
+
 **OpenRouteService API Key**
+
 - Configurare API key nel backend
 - Routing preciso con turn-by-turn
 - Rimuovere fallback Haversine
 - Tempo stimato: 30 minuti
 
 ### Priorità 3 (Futuro)
+
 **Google Maps API Key** (se necessario)
+
 - Configurare API key Google Maps
 - Riabilitare `MobilityMap` component
 - Visualizzazione avanzata con traffic layer
@@ -252,6 +283,7 @@ curl -X POST https://api.mio-hub.me/api/routing/calculate \
 ## 📝 NOTE TECNICHE
 
 ### Perché Google Maps URL invece di API?
+
 1. ✅ **Zero configurazione** - Nessuna API key necessaria
 2. ✅ **Universale** - Funziona su Android, iOS, Desktop
 3. ✅ **Affidabile** - App native sempre aggiornate
@@ -259,11 +291,13 @@ curl -X POST https://api.mio-hub.me/api/routing/calculate \
 5. ✅ **Gratuito** - Nessun costo per URL scheme
 
 ### Limitazioni
+
 - ⚠️ Nessuna mappa embedded nella pagina Shopping Route
 - ⚠️ Utente lascia l'app per navigare (esperienza frammentata)
 - ⚠️ Non possiamo tracciare completamento navigazione
 
 ### Alternative Considerate
+
 1. **Leaflet Routing Machine** - Open source, ma richiede server routing
 2. **Mapbox Directions** - API key a pagamento
 3. **HERE Maps** - API key gratuita limitata

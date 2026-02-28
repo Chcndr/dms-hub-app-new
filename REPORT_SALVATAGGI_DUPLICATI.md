@@ -11,27 +11,27 @@ Alcuni sono **DUPLICATI** che causano messaggi ripetuti.
 
 ### 1. SALVATAGGIO MESSAGGIO UTENTE (Linee 253-277)
 
-| Linea | Funzione | Destinazione | Condizione | Stato |
-|-------|----------|--------------|------------|-------|
-| 253 | `saveDirectMessage` | `mio-main` | `mode === 'auto'` | ✅ OK |
-| 265 | `saveDirectMessage` | `user-{agent}-direct` | `mode === 'direct'` | ✅ OK |
-| 277 | `saveAgentLog` | Vista 4 agenti | SEMPRE | ⚠️ Potrebbe duplicare |
+| Linea | Funzione            | Destinazione          | Condizione          | Stato                 |
+| ----- | ------------------- | --------------------- | ------------------- | --------------------- |
+| 253   | `saveDirectMessage` | `mio-main`            | `mode === 'auto'`   | ✅ OK                 |
+| 265   | `saveDirectMessage` | `user-{agent}-direct` | `mode === 'direct'` | ✅ OK                 |
+| 277   | `saveAgentLog`      | Vista 4 agenti        | SEMPRE              | ⚠️ Potrebbe duplicare |
 
 ---
 
 ### 2. RISPOSTA ABACUS SQL (Linea 532)
 
-| Linea | Funzione | Destinazione | Condizione | Stato |
-|-------|----------|--------------|------------|-------|
-| 532 | `saveDirectMessage` | `mio-abacus-coordination` o `user-abacus-direct` | Basato su mode | ✅ OK |
+| Linea | Funzione            | Destinazione                                     | Condizione     | Stato |
+| ----- | ------------------- | ------------------------------------------------ | -------------- | ----- |
+| 532   | `saveDirectMessage` | `mio-abacus-coordination` o `user-abacus-direct` | Basato su mode | ✅ OK |
 
 ---
 
 ### 3. TOOL EXECUTOR - RICHIESTA MIO → AGENTE (Linea 647)
 
-| Linea | Funzione | Destinazione | Condizione | Stato |
-|-------|----------|--------------|------------|-------|
-| 647 | `saveDirectMessage` | `user-{agent}-direct` o `mio-{agent}-coordination` | Basato su mode | ✅ OK |
+| Linea | Funzione            | Destinazione                                       | Condizione     | Stato |
+| ----- | ------------------- | -------------------------------------------------- | -------------- | ----- |
+| 647   | `saveDirectMessage` | `user-{agent}-direct` o `mio-{agent}-coordination` | Basato su mode | ✅ OK |
 
 **Problema**: Salva `taskDescription` che spesso è **VUOTO** → messaggi con solo puntino!
 
@@ -39,22 +39,23 @@ Alcuni sono **DUPLICATI** che causano messaggi ripetuti.
 
 ### 4. TOOL EXECUTOR - RISPOSTA AGENTE (Linea 913)
 
-| Linea | Funzione | Destinazione | Condizione | Stato |
-|-------|----------|--------------|------------|-------|
-| 913 | `saveDirectMessage` | `user-{agent}-direct` o `mio-{agent}-coordination` | Basato su mode | ✅ OK |
+| Linea | Funzione            | Destinazione                                       | Condizione     | Stato |
+| ----- | ------------------- | -------------------------------------------------- | -------------- | ----- |
+| 913   | `saveDirectMessage` | `user-{agent}-direct` o `mio-{agent}-coordination` | Basato su mode | ✅ OK |
 
 ---
 
 ### 5. 🔴 RISPOSTA FINALE AGENTE (Linee 1042-1062)
 
-| Linea | Funzione | Destinazione | Condizione | Stato |
-|-------|----------|--------------|------------|-------|
-| 1042 | `saveDirectMessage` | `agentIsland` (dinamico) | Basato su mode | ✅ OK |
-| **1054** | `saveDirectMessage` | **`mio-main` SEMPRE** | NESSUNA | 🔴 **DUPLICATO!** |
+| Linea    | Funzione            | Destinazione             | Condizione     | Stato             |
+| -------- | ------------------- | ------------------------ | -------------- | ----------------- |
+| 1042     | `saveDirectMessage` | `agentIsland` (dinamico) | Basato su mode | ✅ OK             |
+| **1054** | `saveDirectMessage` | **`mio-main` SEMPRE**    | NESSUNA        | 🔴 **DUPLICATO!** |
 
 **PROBLEMA CRITICO**: La linea 1054 salva la risposta dell'agente su `mio-main` **SEMPRE**, indipendentemente dal mode!
 
 Questo causa:
+
 - Risposte di ABACUS/MANUS/GPTDEV che appaiono nella chat principale di MIO
 - Duplicazione dei messaggi
 
@@ -68,10 +69,10 @@ Questo causa:
 // 🔴 DA RIMUOVERE O CONDIZIONARE
 // 🚀 DOPPIO CANALE - Salva risposta agente su mio-main SEMPRE (filtrato poi dal frontend)
 await saveDirectMessage(
-  'mio-main',
+  "mio-main",
   agent,
-  'user',
-  'assistant',
+  "user",
+  "assistant",
   responseMessage,
   agent,
   mode
@@ -100,11 +101,11 @@ Questo causa i messaggi "MIO" con solo puntino nelle mini-chat.
 
 ## 📊 RIEPILOGO
 
-| Problema | Linea | Gravità | Fix |
-|----------|-------|---------|-----|
-| Risposta agente duplicata su mio-main | 1054 | 🔴 CRITICO | Rimuovere blocco |
-| taskDescription vuoto | 652 | 🟡 MEDIO | Validare contenuto |
-| saveAgentLog sempre | 277 | 🟢 BASSO | Verificare se necessario |
+| Problema                              | Linea | Gravità    | Fix                      |
+| ------------------------------------- | ----- | ---------- | ------------------------ |
+| Risposta agente duplicata su mio-main | 1054  | 🔴 CRITICO | Rimuovere blocco         |
+| taskDescription vuoto                 | 652   | 🟡 MEDIO   | Validare contenuto       |
+| saveAgentLog sempre                   | 277   | 🟢 BASSO   | Verificare se necessario |
 
 ---
 

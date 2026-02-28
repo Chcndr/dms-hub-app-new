@@ -1,13 +1,13 @@
 /**
  * NearbyStopsPanel.tsx
- * 
+ *
  * Pannello che mostra le fermate bus/treni vicine a un HUB o Mercato selezionato.
  * Si apre come sidebar o modal quando l'utente clicca su un punto di interesse.
  */
 
-import React, { useEffect, useState } from 'react';
-import { useTransport } from '@/contexts/TransportContext';
-import { TransportStop } from '@/components/TransportStopsLayer';
+import React, { useEffect, useState } from "react";
+import { useTransport } from "@/contexts/TransportContext";
+import { TransportStop } from "@/components/TransportStopsLayer";
 
 interface NearbyStopsPanelProps {
   // Punto di riferimento (HUB o Mercato)
@@ -15,7 +15,7 @@ interface NearbyStopsPanelProps {
     lat: number;
     lng: number;
     name: string;
-    type: 'hub' | 'mercato';
+    type: "hub" | "mercato";
   };
   // Raggio di ricerca in km
   radiusKm?: number;
@@ -28,14 +28,21 @@ interface NearbyStopsPanelProps {
 }
 
 // Calcola distanza Haversine
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
   const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -51,7 +58,7 @@ const formatDistance = (km: number): string => {
 // Stima tempo a piedi (5 km/h media)
 const estimateWalkTime = (km: number): string => {
   const minutes = Math.round((km / 5) * 60);
-  if (minutes < 1) return '< 1 min';
+  if (minutes < 1) return "< 1 min";
   if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
@@ -59,9 +66,15 @@ const estimateWalkTime = (km: number): string => {
 };
 
 // Apre Google Maps con indicazioni a piedi verso la fermata
-const openGoogleMapsDirections = (fromLat: number, fromLng: number, toLat: number, toLng: number, stopName: string) => {
+const openGoogleMapsDirections = (
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number,
+  stopName: string
+) => {
   const url = `https://www.google.com/maps/dir/?api=1&origin=${fromLat},${fromLng}&destination=${toLat},${toLng}&travelmode=walking&destination_place_id=${encodeURIComponent(stopName)}`;
-  window.open(url, '_blank');
+  window.open(url, "_blank");
 };
 
 export function NearbyStopsPanel({
@@ -73,7 +86,9 @@ export function NearbyStopsPanel({
 }: NearbyStopsPanelProps) {
   const { stops, loadStopsNearPoint, isLoading } = useTransport();
   const [nearbyStops, setNearbyStops] = useState<TransportStop[]>([]);
-  const [selectedType, setSelectedType] = useState<'all' | 'bus' | 'train'>('all');
+  const [selectedType, setSelectedType] = useState<"all" | "bus" | "train">(
+    "all"
+  );
   const [expandedStopId, setExpandedStopId] = useState<string | null>(null);
 
   // Carica fermate vicine quando cambia il punto di riferimento
@@ -107,7 +122,7 @@ export function NearbyStopsPanel({
           }))
           .filter(stop => stop.distance <= radiusKm)
           .sort((a, b) => a.distance - b.distance);
-        
+
         setNearbyStops(filtered);
       }
     };
@@ -117,15 +132,18 @@ export function NearbyStopsPanel({
 
   // Filtra per tipo selezionato
   const filteredStops = nearbyStops.filter(stop => {
-    if (selectedType === 'all') return true;
-    if (selectedType === 'bus') return stop.stop_type === 'bus';
-    if (selectedType === 'train') return ['train', 'tram', 'metro'].includes(stop.stop_type);
+    if (selectedType === "all") return true;
+    if (selectedType === "bus") return stop.stop_type === "bus";
+    if (selectedType === "train")
+      return ["train", "tram", "metro"].includes(stop.stop_type);
     return true;
   });
 
   // Conta per tipo
-  const busCount = nearbyStops.filter(s => s.stop_type === 'bus').length;
-  const trainCount = nearbyStops.filter(s => ['train', 'tram', 'metro'].includes(s.stop_type)).length;
+  const busCount = nearbyStops.filter(s => s.stop_type === "bus").length;
+  const trainCount = nearbyStops.filter(s =>
+    ["train", "tram", "metro"].includes(s.stop_type)
+  ).length;
 
   if (!isOpen || !referencePoint) {
     return null;
@@ -138,10 +156,12 @@ export function NearbyStopsPanel({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="text-2xl">
-              {referencePoint.type === 'hub' ? '🏢' : '🏪'}
+              {referencePoint.type === "hub" ? "🏢" : "🏪"}
             </span>
             <div>
-              <h2 className="font-bold text-white text-lg">{referencePoint.name}</h2>
+              <h2 className="font-bold text-white text-lg">
+                {referencePoint.name}
+              </h2>
               <p className="text-xs text-gray-400">
                 Fermate nel raggio di {radiusKm} km
               </p>
@@ -151,8 +171,18 @@ export function NearbyStopsPanel({
             onClick={onClose}
             className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -160,31 +190,31 @@ export function NearbyStopsPanel({
         {/* Filtri tipo */}
         <div className="flex gap-2 mt-3">
           <button
-            onClick={() => setSelectedType('all')}
+            onClick={() => setSelectedType("all")}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              selectedType === 'all'
-                ? 'bg-[#14b8a6] text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              selectedType === "all"
+                ? "bg-[#14b8a6] text-white"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
             }`}
           >
             Tutti ({nearbyStops.length})
           </button>
           <button
-            onClick={() => setSelectedType('bus')}
+            onClick={() => setSelectedType("bus")}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
-              selectedType === 'bus'
-                ? 'bg-[#2196F3] text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              selectedType === "bus"
+                ? "bg-[#2196F3] text-white"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
             }`}
           >
             🚌 Bus ({busCount})
           </button>
           <button
-            onClick={() => setSelectedType('train')}
+            onClick={() => setSelectedType("train")}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
-              selectedType === 'train'
-                ? 'bg-[#4CAF50] text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              selectedType === "train"
+                ? "bg-[#4CAF50] text-white"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
             }`}
           >
             🚂 Treni ({trainCount})
@@ -196,9 +226,24 @@ export function NearbyStopsPanel({
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <svg className="animate-spin w-8 h-8 text-[#14b8a6]" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            <svg
+              className="animate-spin w-8 h-8 text-[#14b8a6]"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
             </svg>
           </div>
         ) : filteredStops.length === 0 ? (
@@ -228,17 +273,26 @@ export function NearbyStopsPanel({
                 >
                   <div className="flex items-start gap-3">
                     {/* Icona tipo */}
-                    <div 
+                    <div
                       className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
                       style={{
-                        background: stop.stop_type === 'train' ? '#E8F5E9' :
-                                   stop.stop_type === 'tram' ? '#FFF3E0' :
-                                   stop.stop_type === 'metro' ? '#F3E5F5' : '#E3F2FD',
+                        background:
+                          stop.stop_type === "train"
+                            ? "#E8F5E9"
+                            : stop.stop_type === "tram"
+                              ? "#FFF3E0"
+                              : stop.stop_type === "metro"
+                                ? "#F3E5F5"
+                                : "#E3F2FD",
                       }}
                     >
-                      {stop.stop_type === 'train' ? '🚂' :
-                       stop.stop_type === 'tram' ? '🚊' :
-                       stop.stop_type === 'metro' ? '🚇' : '🚌'}
+                      {stop.stop_type === "train"
+                        ? "🚂"
+                        : stop.stop_type === "tram"
+                          ? "🚊"
+                          : stop.stop_type === "metro"
+                            ? "🚇"
+                            : "🚌"}
                     </div>
 
                     {/* Info fermata */}
@@ -251,7 +305,7 @@ export function NearbyStopsPanel({
                           #{index + 1}
                         </span>
                       </div>
-                      
+
                       {stop.agency_name && (
                         <p className="text-xs text-gray-500 mb-2">
                           {stop.agency_name}
@@ -266,8 +320,10 @@ export function NearbyStopsPanel({
                               key={route.route_id}
                               className="px-1.5 py-0.5 rounded text-[10px] font-bold"
                               style={{
-                                background: route.route_color ? `#${route.route_color}` : '#374151',
-                                color: 'white',
+                                background: route.route_color
+                                  ? `#${route.route_color}`
+                                  : "#374151",
+                                color: "white",
                               }}
                             >
                               {route.route_short_name}
@@ -288,8 +344,18 @@ export function NearbyStopsPanel({
                     </div>
 
                     {/* Freccia */}
-                    <svg className="w-5 h-5 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-5 h-5 text-gray-600 shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </div>
                 </button>

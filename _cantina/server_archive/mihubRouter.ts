@@ -6,13 +6,13 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
-import { 
-  agentTasks, 
-  agentProjects, 
-  agentBrain, 
-  agentMessages, 
+import {
+  agentTasks,
+  agentProjects,
+  agentBrain,
+  agentMessages,
   agentContext,
-  dataBag 
+  dataBag,
 } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { emitEvent } from "./eventBus";
@@ -21,30 +21,35 @@ export const mihubRouter = router({
   // ============================================================================
   // AGENT TASKS
   // ============================================================================
-  
+
   createTask: protectedProcedure
-    .input(z.object({
-      agentAssigned: z.string().optional(),
-      taskType: z.string(),
-      priority: z.number().min(1).max(10).default(5),
-      input: z.any().optional(),
-      parentTaskId: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        agentAssigned: z.string().optional(),
+        taskType: z.string(),
+        priority: z.number().min(1).max(10).default(5),
+        input: z.any().optional(),
+        parentTaskId: z.string().optional(),
+      })
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
       const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      const [task] = await db.insert(agentTasks).values({
-        taskId,
-        agentAssigned: input.agentAssigned,
-        taskType: input.taskType,
-        priority: input.priority,
-        status: "pending",
-        input: input.input ? JSON.stringify(input.input) : null,
-        parentTaskId: input.parentTaskId,
-      }).returning();
+
+      const [task] = await db
+        .insert(agentTasks)
+        .values({
+          taskId,
+          agentAssigned: input.agentAssigned,
+          taskType: input.taskType,
+          priority: input.priority,
+          status: "pending",
+          input: input.input ? JSON.stringify(input.input) : null,
+          parentTaskId: input.parentTaskId,
+        })
+        .returning();
 
       // Emetti evento
       await emitEvent({
@@ -58,11 +63,13 @@ export const mihubRouter = router({
     }),
 
   getTasks: protectedProcedure
-    .input(z.object({
-      agentAssigned: z.string().optional(),
-      status: z.string().optional(),
-      limit: z.number().default(50),
-    }))
+    .input(
+      z.object({
+        agentAssigned: z.string().optional(),
+        status: z.string().optional(),
+        limit: z.number().default(50),
+      })
+    )
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
@@ -70,14 +77,18 @@ export const mihubRouter = router({
       let query = db.select().from(agentTasks);
 
       if (input.agentAssigned) {
-        query = query.where(eq(agentTasks.agentAssigned, input.agentAssigned)) as any;
+        query = query.where(
+          eq(agentTasks.agentAssigned, input.agentAssigned)
+        ) as any;
       }
       if (input.status) {
         query = query.where(eq(agentTasks.status, input.status)) as any;
       }
 
-      const tasks = await query.limit(input.limit).orderBy(desc(agentTasks.createdAt));
-      
+      const tasks = await query
+        .limit(input.limit)
+        .orderBy(desc(agentTasks.createdAt));
+
       return tasks.map(t => ({
         ...t,
         input: t.input ? JSON.parse(t.input) : null,
@@ -86,12 +97,14 @@ export const mihubRouter = router({
     }),
 
   updateTaskStatus: protectedProcedure
-    .input(z.object({
-      taskId: z.string(),
-      status: z.enum(["pending", "in_progress", "completed", "failed"]),
-      output: z.any().optional(),
-      error: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        taskId: z.string(),
+        status: z.enum(["pending", "in_progress", "completed", "failed"]),
+        output: z.any().optional(),
+        error: z.string().optional(),
+      })
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
@@ -134,49 +147,66 @@ export const mihubRouter = router({
   // ============================================================================
 
   sendMessage: protectedProcedure
-    .input(z.object({
-      conversationId: z.string(),
-      sender: z.string(),
-      content: z.string(),
-      recipients: z.array(z.string()).optional(),
-      messageType: z.enum(["text", "task", "notification", "error"]).default("text"),
-      attachments: z.any().optional(),
-      metadata: z.any().optional(),
-    }))
+    .input(
+      z.object({
+        conversationId: z.string(),
+        sender: z.string(),
+        content: z.string(),
+        recipients: z.array(z.string()).optional(),
+        messageType: z
+          .enum(["text", "task", "notification", "error"])
+          .default("text"),
+        attachments: z.any().optional(),
+        metadata: z.any().optional(),
+      })
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
       const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      const [message] = await db.insert(agentMessages).values({
-        messageId,
-        conversationId: input.conversationId,
-        sender: input.sender,
-        recipients: input.recipients ? JSON.stringify(input.recipients) : null,
-        messageType: input.messageType,
-        content: input.content,
-        attachments: input.attachments ? JSON.stringify(input.attachments) : null,
-        metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-        readBy: JSON.stringify([input.sender]), // Sender ha già letto
-      }).returning();
+      const [message] = await db
+        .insert(agentMessages)
+        .values({
+          messageId,
+          conversationId: input.conversationId,
+          sender: input.sender,
+          recipients: input.recipients
+            ? JSON.stringify(input.recipients)
+            : null,
+          messageType: input.messageType,
+          content: input.content,
+          attachments: input.attachments
+            ? JSON.stringify(input.attachments)
+            : null,
+          metadata: input.metadata ? JSON.stringify(input.metadata) : null,
+          readBy: JSON.stringify([input.sender]), // Sender ha già letto
+        })
+        .returning();
 
       // Emetti evento
       await emitEvent({
         eventType: "agent_message",
         source: input.sender,
         target: input.recipients ? input.recipients.join(",") : "all",
-        payload: { messageId, conversationId: input.conversationId, content: input.content },
+        payload: {
+          messageId,
+          conversationId: input.conversationId,
+          content: input.content,
+        },
       });
 
       return message;
     }),
 
   getMessages: protectedProcedure
-    .input(z.object({
-      conversationId: z.string(),
-      limit: z.number().default(100),
-    }))
+    .input(
+      z.object({
+        conversationId: z.string(),
+        limit: z.number().default(100),
+      })
+    )
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
@@ -198,10 +228,12 @@ export const mihubRouter = router({
     }),
 
   markMessageAsRead: protectedProcedure
-    .input(z.object({
-      messageId: z.string(),
-      agent: z.string(),
-    }))
+    .input(
+      z.object({
+        messageId: z.string(),
+        agent: z.string(),
+      })
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
@@ -233,48 +265,65 @@ export const mihubRouter = router({
   // ============================================================================
 
   setBagValue: protectedProcedure
-    .input(z.object({
-      key: z.string(),
-      value: z.any(),
-      valueType: z.enum(["json", "string", "number", "boolean"]).default("json"),
-      owner: z.string().optional(),
-      accessLevel: z.enum(["private", "shared", "public"]).default("shared"),
-      ttl: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        key: z.string(),
+        value: z.any(),
+        valueType: z
+          .enum(["json", "string", "number", "boolean"])
+          .default("json"),
+        owner: z.string().optional(),
+        accessLevel: z.enum(["private", "shared", "public"]).default("shared"),
+        ttl: z.number().optional(),
+      })
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      const expiresAt = input.ttl ? new Date(Date.now() + input.ttl * 1000) : null;
+      const expiresAt = input.ttl
+        ? new Date(Date.now() + input.ttl * 1000)
+        : null;
 
-      await db.insert(dataBag).values({
-        key: input.key,
-        value: typeof input.value === "string" ? input.value : JSON.stringify(input.value),
-        valueType: input.valueType,
-        owner: input.owner,
-        accessLevel: input.accessLevel,
-        ttl: input.ttl,
-        expiresAt,
-      }).onConflictDoUpdate({
-        target: dataBag.key,
-        set: {
-          value: typeof input.value === "string" ? input.value : JSON.stringify(input.value),
+      await db
+        .insert(dataBag)
+        .values({
+          key: input.key,
+          value:
+            typeof input.value === "string"
+              ? input.value
+              : JSON.stringify(input.value),
           valueType: input.valueType,
           owner: input.owner,
           accessLevel: input.accessLevel,
           ttl: input.ttl,
           expiresAt,
-          updatedAt: new Date(),
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: dataBag.key,
+          set: {
+            value:
+              typeof input.value === "string"
+                ? input.value
+                : JSON.stringify(input.value),
+            valueType: input.valueType,
+            owner: input.owner,
+            accessLevel: input.accessLevel,
+            ttl: input.ttl,
+            expiresAt,
+            updatedAt: new Date(),
+          },
+        });
 
       return { success: true };
     }),
 
   getBagValue: protectedProcedure
-    .input(z.object({
-      key: z.string(),
-    }))
+    .input(
+      z.object({
+        key: z.string(),
+      })
+    )
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return null;
@@ -304,7 +353,7 @@ export const mihubRouter = router({
       } else if (item.valueType === "number") {
         value = parseFloat(item.value);
       } else if (item.valueType === "boolean") {
-        value = (item.value === "true");
+        value = item.value === "true";
       }
 
       return {
@@ -314,9 +363,11 @@ export const mihubRouter = router({
     }),
 
   deleteBagValue: protectedProcedure
-    .input(z.object({
-      key: z.string(),
-    }))
+    .input(
+      z.object({
+        key: z.string(),
+      })
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
@@ -330,14 +381,16 @@ export const mihubRouter = router({
   // ============================================================================
 
   saveBrainMemory: protectedProcedure
-    .input(z.object({
-      agent: z.string(),
-      memoryType: z.enum(["decision", "context", "learning", "history"]),
-      key: z.string(),
-      value: z.any(),
-      confidence: z.number().min(0).max(100).default(100),
-      expiresAt: z.date().optional(),
-    }))
+    .input(
+      z.object({
+        agent: z.string(),
+        memoryType: z.enum(["decision", "context", "learning", "history"]),
+        key: z.string(),
+        value: z.any(),
+        confidence: z.number().min(0).max(100).default(100),
+        expiresAt: z.date().optional(),
+      })
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
@@ -355,11 +408,13 @@ export const mihubRouter = router({
     }),
 
   getBrainMemory: protectedProcedure
-    .input(z.object({
-      agent: z.string(),
-      memoryType: z.string().optional(),
-      key: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        agent: z.string(),
+        memoryType: z.string().optional(),
+        key: z.string().optional(),
+      })
+    )
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
@@ -373,7 +428,10 @@ export const mihubRouter = router({
         conditions.push(eq(agentBrain.key, input.key));
       }
 
-      const query = db.select().from(agentBrain).where(and(...conditions));
+      const query = db
+        .select()
+        .from(agentBrain)
+        .where(and(...conditions));
 
       const memories = await query.orderBy(desc(agentBrain.createdAt));
 

@@ -3,16 +3,27 @@
  * Gestione pratiche amministrative e integrazione PDND
  */
 
-import { addComuneIdToUrl, addAssociazioneIdToUrl, getImpersonationParams, isAssociazioneImpersonation } from '@/hooks/useImpersonation';
+import {
+  addComuneIdToUrl,
+  addAssociazioneIdToUrl,
+  getImpersonationParams,
+  isAssociazioneImpersonation,
+} from "@/hooks/useImpersonation";
 
-const baseUrl = import.meta.env.VITE_API_URL || 'https://api.mio-hub.me';
+const baseUrl = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
 
 export interface SuapPratica {
   id: number;
   ente_id: string;
   cui: string;
   tipo_pratica: string;
-  stato: 'RECEIVED' | 'PRECHECK' | 'EVALUATED' | 'APPROVED' | 'REJECTED' | 'INTEGRATION_NEEDED';
+  stato:
+    | "RECEIVED"
+    | "PRECHECK"
+    | "EVALUATED"
+    | "APPROVED"
+    | "REJECTED"
+    | "INTEGRATION_NEEDED";
   richiedente_cf: string;
   richiedente_nome: string;
   data_presentazione: string;
@@ -35,10 +46,10 @@ export interface SuapCheck {
   id: number;
   pratica_id: number;
   check_code: string;
-  tipo_check?: string;  // alias per check_code
-  esito: boolean | string;  // può essere boolean o 'PASS'/'FAIL'
+  tipo_check?: string; // alias per check_code
+  esito: boolean | string; // può essere boolean o 'PASS'/'FAIL'
   fonte: string;
-  data_check?: string;  // timestamp del controllo
+  data_check?: string; // timestamp del controllo
   created_at: string;
   dettaglio?: any;
 }
@@ -66,14 +77,14 @@ export async function getSuapStats(enteId: string): Promise<SuapStats> {
   // Aggiungi comune_id o associazione_id se in modalità impersonazione
   let url = addComuneIdToUrl(`${baseUrl}/api/suap/stats?ente_id=${enteId}`);
   url = addAssociazioneIdToUrl(url);
-  
+
   const res = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json'
-    }
+      "Content-Type": "application/json",
+    },
   });
-  
-  if (!res.ok) throw new Error('Failed to fetch SUAP stats');
+
+  if (!res.ok) throw new Error("Failed to fetch SUAP stats");
   const json = await res.json();
   return json.data;
 }
@@ -82,24 +93,29 @@ export async function getSuapStats(enteId: string): Promise<SuapStats> {
  * Recupera la lista delle pratiche con filtri opzionali
  * Filtrate per comune_id o associazione_id se in modalità impersonazione
  */
-export async function getSuapPratiche(enteId: string, filters: SuapFilters = {}): Promise<SuapPratica[]> {
+export async function getSuapPratiche(
+  enteId: string,
+  filters: SuapFilters = {}
+): Promise<SuapPratica[]> {
   const params = new URLSearchParams();
-  params.append('ente_id', enteId);
-  if (filters.stato) params.append('stato', filters.stato);
-  if (filters.search) params.append('search', filters.search);
-  if (filters.comune_nome) params.append('comune_nome', filters.comune_nome);
+  params.append("ente_id", enteId);
+  if (filters.stato) params.append("stato", filters.stato);
+  if (filters.search) params.append("search", filters.search);
+  if (filters.comune_nome) params.append("comune_nome", filters.comune_nome);
 
   // Aggiungi comune_id o associazione_id se in modalità impersonazione
-  let url = addComuneIdToUrl(`${baseUrl}/api/suap/pratiche?${params.toString()}`);
+  let url = addComuneIdToUrl(
+    `${baseUrl}/api/suap/pratiche?${params.toString()}`
+  );
   url = addAssociazioneIdToUrl(url);
 
   const res = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json'
-    }
+      "Content-Type": "application/json",
+    },
   });
 
-  if (!res.ok) throw new Error('Failed to fetch SUAP pratiche');
+  if (!res.ok) throw new Error("Failed to fetch SUAP pratiche");
   const json = await res.json();
   return json.data;
 }
@@ -107,14 +123,20 @@ export async function getSuapPratiche(enteId: string, filters: SuapFilters = {})
 /**
  * Recupera il dettaglio di una singola pratica inclusi eventi e check
  */
-export async function getSuapPraticaById(id: string, enteId: string): Promise<SuapPratica & { timeline: SuapEvento[], checks: SuapCheck[] }> {
-  const res = await fetch(`${baseUrl}/api/suap/pratiche/${id}?ente_id=${enteId}`, {
-    headers: {
-      'Content-Type': 'application/json'
+export async function getSuapPraticaById(
+  id: string,
+  enteId: string
+): Promise<SuapPratica & { timeline: SuapEvento[]; checks: SuapCheck[] }> {
+  const res = await fetch(
+    `${baseUrl}/api/suap/pratiche/${id}?ente_id=${enteId}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
     }
-  });
+  );
 
-  if (!res.ok) throw new Error('Failed to fetch SUAP pratica detail');
+  if (!res.ok) throw new Error("Failed to fetch SUAP pratica detail");
   const json = await res.json();
   return json.data;
 }
@@ -123,19 +145,22 @@ export async function getSuapPraticaById(id: string, enteId: string): Promise<Su
  * Crea una nuova pratica (simulazione ingestione)
  * Passa ente_id nel body per evitare problemi CORS con header custom
  */
-export async function createSuapPratica(enteId: string, data: Partial<SuapPratica>): Promise<SuapPratica> {
+export async function createSuapPratica(
+  enteId: string,
+  data: Partial<SuapPratica>
+): Promise<SuapPratica> {
   const res = await fetch(`${baseUrl}/api/suap/pratiche`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       ...data,
-      ente_id: enteId
-    })
+      ente_id: enteId,
+    }),
   });
 
-  if (!res.ok) throw new Error('Failed to create SUAP pratica');
+  if (!res.ok) throw new Error("Failed to create SUAP pratica");
   const json = await res.json();
   return json.data;
 }
@@ -143,16 +168,19 @@ export async function createSuapPratica(enteId: string, data: Partial<SuapPratic
 /**
  * Esegue la valutazione automatica di una pratica
  */
-export async function evaluateSuapPratica(id: string, enteId: string): Promise<any> {
+export async function evaluateSuapPratica(
+  id: string,
+  enteId: string
+): Promise<any> {
   const res = await fetch(`${baseUrl}/api/suap/pratiche/${id}/valuta`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ente_id: enteId })
+    body: JSON.stringify({ ente_id: enteId }),
   });
 
-  if (!res.ok) throw new Error('Failed to evaluate SUAP pratica');
+  if (!res.ok) throw new Error("Failed to evaluate SUAP pratica");
   const json = await res.json();
   return json.data;
 }
@@ -160,20 +188,25 @@ export async function evaluateSuapPratica(id: string, enteId: string): Promise<a
 /**
  * Aggiorna lo stato di una pratica (es. da EVALUATED a APPROVED dopo generazione concessione)
  */
-export async function updateSuapPraticaStato(id: string, enteId: string, nuovoStato: string, motivazione?: string): Promise<any> {
+export async function updateSuapPraticaStato(
+  id: string,
+  enteId: string,
+  nuovoStato: string,
+  motivazione?: string
+): Promise<any> {
   const res = await fetch(`${baseUrl}/api/suap/pratiche/${id}/stato`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ 
+    body: JSON.stringify({
       ente_id: enteId,
       nuovo_stato: nuovoStato,
-      motivazione: motivazione || `Stato aggiornato a ${nuovoStato}`
-    })
+      motivazione: motivazione || `Stato aggiornato a ${nuovoStato}`,
+    }),
   });
 
-  if (!res.ok) throw new Error('Failed to update SUAP pratica stato');
+  if (!res.ok) throw new Error("Failed to update SUAP pratica stato");
   const json = await res.json();
   return json.data;
 }

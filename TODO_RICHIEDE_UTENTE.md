@@ -12,15 +12,18 @@
 **Problema**: Upstash richiede carta di credito anche per piano gratuito
 
 **Opzioni**:
+
 - ✅ **Opzione A** (Implementata): Usare solo PostgreSQL con polling ogni 2s
 - ⏳ **Opzione B**: Aggiungere carta su Upstash per Redis gratuito
 - ⏳ **Opzione C**: Usare altro provider Redis (Railway, Render, ecc.)
 
 **Impatto**:
+
 - Opzione A: Polling invece di WebSocket (latenza ~2s accettabile)
 - Opzione B/C: WebSocket real-time (latenza <100ms)
 
 **Azione richiesta**:
+
 - [ ] Decidere se aggiungere carta su Upstash
 - [ ] Se sì, completare setup Redis
 - [ ] Se no, mantenere polling PostgreSQL
@@ -30,6 +33,7 @@
 ### 2. Test MIHUB Dashboard
 
 **Cosa fare**:
+
 1. Aprire https://dms-hub-app.vercel.app/mihub
 2. Testare invio messaggi da ogni agente
 3. Verificare che tutti vedano i messaggi (vista condivisa)
@@ -37,6 +41,7 @@
 5. Segnalare eventuali bug
 
 **Azione richiesta**:
+
 - [ ] Testare dashboard MIHUB
 - [ ] Confermare funzionamento o segnalare problemi
 
@@ -47,20 +52,24 @@
 ### 3. Connessione LLM per Auto-response Agenti
 
 **MIO Agent (GPT-5)**:
+
 - [ ] Configurare API key GPT-5
 - [ ] Implementare auto-response su messaggi
 - [ ] Testare coordinamento automatico
 
 **Manus Agent**:
+
 - [ ] Verificare se Manus API è disponibile
 - [ ] Connettere Manus Agent
 - [ ] Testare esecuzione task
 
 **Abacus Agent**:
+
 - [ ] Decidere quale LLM usare (GPT-4, Claude, ecc.)
 - [ ] Implementare analisi dati automatica
 
 **Zapier Agent**:
+
 - [ ] Configurare Zapier MCP server
 - [ ] Testare workflow automation
 
@@ -78,6 +87,7 @@
    - ✅ Risolto con Google login
 
 **Azione richiesta**:
+
 - [ ] Verificare se email Vercel è arrivata (controllare spam)
 - [ ] Se necessario, aggiungere vercel.com a whitelist email
 
@@ -88,6 +98,7 @@
 ### 5. UI/UX Enhancements
 
 **Funzionalità da aggiungere**:
+
 - [ ] Typing indicators ("MIO sta scrivendo...")
 - [ ] File attachments nelle chat
 - [ ] Emoji reactions ai messaggi
@@ -99,6 +110,7 @@
 ### 6. Analytics Dashboard
 
 **Metriche da visualizzare**:
+
 - [ ] Task completion rate per agente
 - [ ] Tempo medio risposta agenti
 - [ ] Event stream visualization
@@ -144,6 +156,7 @@
 ## 📝 Note Implementazione
 
 ### Cose già fatte in autonomia:
+
 - ✅ Database Neon Postgres creato
 - ✅ Schema PostgreSQL 47 tabelle
 - ✅ Event Bus implementato (PostgreSQL-based)
@@ -153,6 +166,7 @@
 - ✅ Documentazione completa
 
 ### Cose saltate (richiedono utente):
+
 - ⏸️ Redis Upstash (carta di credito)
 - ⏸️ Test dashboard (browser utente)
 - ⏸️ LLM integration (API keys)
@@ -164,6 +178,7 @@
 ## 🎯 Prossima Sessione
 
 **Quando torni, iniziamo con**:
+
 1. Test MIHUB Dashboard (/mihub)
 2. Decisione su Redis (carta o polling)
 3. Configurazione LLM per MIO Agent

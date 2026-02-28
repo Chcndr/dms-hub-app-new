@@ -1,4 +1,5 @@
 # PIANO DI IMPLEMENTAZIONE FINALE v2
+
 ## Collegamento Impersonificazione Associazioni
 
 **Data**: 22 Febbraio 2026
@@ -11,14 +12,14 @@
 
 Dopo il merge dei 4 commit (v8.11.1 → v8.11.3), il sistema ha GIA':
 
-| Componente | Stato | File |
-|------------|-------|------|
-| useImpersonation.ts v2.0 | FATTO | `entityType`, `associazioneId`, `associazioneNome` |
-| ImpersonationBanner.tsx v2.0 | FATTO | Icona Briefcase, label ASSOCIAZIONE |
-| PermissionsContext.tsx | FATTO | Ruolo ASSOCIATION=10 collegato |
-| AssociazioniPanel.tsx | FATTO | CRUD + bottone "Accedi come" con URL impersonificazione |
-| SuapPanel.tsx | FATTO | `mode='associazione'` con tab nascosti |
-| DashboardPA.tsx tab tpas | FATTO | Rinominato "Associazioni" con `<AssociazioniPanel />` |
+| Componente                   | Stato | File                                                    |
+| ---------------------------- | ----- | ------------------------------------------------------- |
+| useImpersonation.ts v2.0     | FATTO | `entityType`, `associazioneId`, `associazioneNome`      |
+| ImpersonationBanner.tsx v2.0 | FATTO | Icona Briefcase, label ASSOCIAZIONE                     |
+| PermissionsContext.tsx       | FATTO | Ruolo ASSOCIATION=10 collegato                          |
+| AssociazioniPanel.tsx        | FATTO | CRUD + bottone "Accedi come" con URL impersonificazione |
+| SuapPanel.tsx                | FATTO | `mode='associazione'` con tab nascosti                  |
+| DashboardPA.tsx tab tpas     | FATTO | Rinominato "Associazioni" con `<AssociazioniPanel />`   |
 
 **Cosa MANCA** (il problema reale):
 La DashboardPA NON legge `entityType`/`associazioneId` dall'URL. Tutti i tab caricano dati globali quando si impersonifica un'associazione. Mancano anche i tab `presenze` e `anagrafica`.
@@ -44,14 +45,24 @@ eval(code);
 
 // AFTER — Web Worker sandboxed
 try {
-  const blob = new Blob([`self.onmessage=function(e){try{eval(e.data)}catch(err){postMessage({error:err.message})}}`], { type: 'application/javascript' });
+  const blob = new Blob(
+    [
+      `self.onmessage=function(e){try{eval(e.data)}catch(err){postMessage({error:err.message})}}`,
+    ],
+    { type: "application/javascript" }
+  );
   const workerUrl = URL.createObjectURL(blob);
   const worker = new Worker(workerUrl);
   worker.postMessage(code);
-  worker.onmessage = (e) => { if (e.data?.error) console.error('Sandbox error:', e.data.error); };
-  setTimeout(() => { worker.terminate(); URL.revokeObjectURL(workerUrl); }, 5000);
+  worker.onmessage = e => {
+    if (e.data?.error) console.error("Sandbox error:", e.data.error);
+  };
+  setTimeout(() => {
+    worker.terminate();
+    URL.revokeObjectURL(workerUrl);
+  }, 5000);
 } catch (err) {
-  console.error('Code execution blocked:', err);
+  console.error("Code execution blocked:", err);
 }
 ```
 
@@ -119,18 +130,18 @@ export default useImpersonation;
 export function addAssociazioneIdToUrl(url: string): string {
   const { isImpersonating, entityType, associazioneId } = getCombinedState();
 
-  if (!isImpersonating || entityType !== 'associazione' || !associazioneId) {
+  if (!isImpersonating || entityType !== "associazione" || !associazioneId) {
     return url;
   }
 
-  const separator = url.includes('?') ? '&' : '?';
+  const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}associazione_id=${associazioneId}`;
 }
 
 // Helper per verificare se siamo in impersonificazione associazione
 export function isAssociazioneImpersonation(): boolean {
   const state = getCombinedState();
-  return state.isImpersonating && state.entityType === 'associazione';
+  return state.isImpersonating && state.entityType === "associazione";
 }
 
 export default useImpersonation;
@@ -229,52 +240,80 @@ export default useImpersonation;
 // =============================================
 // BEFORE (righe ~874-891)
 // =============================================
-  useEffect(() => {
-    fetch('/api/imprese?stats_only=true')
-      .then(r => r.json())
-      .then(data => {
-        if (data.success && data.stats) {
-          setImpreseStats(data.stats);
-        } else if (data.success && data.data) {
-          const imprese = data.data;
-          const totalConcessioni = imprese.reduce((acc: number, i: any) => acc + (i.concessioni_attive?.length || 0), 0);
-          const comuniUnici = Array.from(new Set(imprese.map((i: any) => i.comune).filter(Boolean))).length;
-          const media = imprese.length > 0 ? (totalConcessioni / imprese.length).toFixed(1) : '0';
-          setImpreseStats({ total: imprese.length, concessioni: totalConcessioni, comuni: comuniUnici, media });
-        }
-      })
-      .catch(err => console.error('Error loading imprese stats from REST:', err));
-  }, []);
+useEffect(() => {
+  fetch("/api/imprese?stats_only=true")
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.stats) {
+        setImpreseStats(data.stats);
+      } else if (data.success && data.data) {
+        const imprese = data.data;
+        const totalConcessioni = imprese.reduce(
+          (acc: number, i: any) => acc + (i.concessioni_attive?.length || 0),
+          0
+        );
+        const comuniUnici = Array.from(
+          new Set(imprese.map((i: any) => i.comune).filter(Boolean))
+        ).length;
+        const media =
+          imprese.length > 0
+            ? (totalConcessioni / imprese.length).toFixed(1)
+            : "0";
+        setImpreseStats({
+          total: imprese.length,
+          concessioni: totalConcessioni,
+          comuni: comuniUnici,
+          media,
+        });
+      }
+    })
+    .catch(err => console.error("Error loading imprese stats from REST:", err));
+}, []);
 
 // =============================================
 // AFTER
 // =============================================
-  useEffect(() => {
-    // Se associazione: stats imprese a zero
-    const urlParams = new URLSearchParams(window.location.search);
-    const isAssocImpersonation = urlParams.get('impersonate') === 'true' &&
-      (urlParams.get('role') === 'associazione' || urlParams.get('associazione_id'));
+useEffect(() => {
+  // Se associazione: stats imprese a zero
+  const urlParams = new URLSearchParams(window.location.search);
+  const isAssocImpersonation =
+    urlParams.get("impersonate") === "true" &&
+    (urlParams.get("role") === "associazione" ||
+      urlParams.get("associazione_id"));
 
-    if (isAssocImpersonation) {
-      setImpreseStats({ total: 0, concessioni: 0, comuni: 0, media: '0' });
-      return;
-    }
+  if (isAssocImpersonation) {
+    setImpreseStats({ total: 0, concessioni: 0, comuni: 0, media: "0" });
+    return;
+  }
 
-    fetch('/api/imprese?stats_only=true')
-      .then(r => r.json())
-      .then(data => {
-        if (data.success && data.stats) {
-          setImpreseStats(data.stats);
-        } else if (data.success && data.data) {
-          const imprese = data.data;
-          const totalConcessioni = imprese.reduce((acc: number, i: any) => acc + (i.concessioni_attive?.length || 0), 0);
-          const comuniUnici = Array.from(new Set(imprese.map((i: any) => i.comune).filter(Boolean))).length;
-          const media = imprese.length > 0 ? (totalConcessioni / imprese.length).toFixed(1) : '0';
-          setImpreseStats({ total: imprese.length, concessioni: totalConcessioni, comuni: comuniUnici, media });
-        }
-      })
-      .catch(err => console.error('Error loading imprese stats from REST:', err));
-  }, []);
+  fetch("/api/imprese?stats_only=true")
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.stats) {
+        setImpreseStats(data.stats);
+      } else if (data.success && data.data) {
+        const imprese = data.data;
+        const totalConcessioni = imprese.reduce(
+          (acc: number, i: any) => acc + (i.concessioni_attive?.length || 0),
+          0
+        );
+        const comuniUnici = Array.from(
+          new Set(imprese.map((i: any) => i.comune).filter(Boolean))
+        ).length;
+        const media =
+          imprese.length > 0
+            ? (totalConcessioni / imprese.length).toFixed(1)
+            : "0";
+        setImpreseStats({
+          total: imprese.length,
+          concessioni: totalConcessioni,
+          comuni: comuniUnici,
+          media,
+        });
+      }
+    })
+    .catch(err => console.error("Error loading imprese stats from REST:", err));
+}, []);
 ```
 
 ---
@@ -360,21 +399,25 @@ export default useImpersonation;
 // =============================================
 // BEFORE (righe 56-60)
 // =============================================
-  const { comuneId: impersonatedComuneId } = useImpersonation();
-  const { setSelectedReport } = useCivicReports();
-  // Se impersonato: filtra per comune. Se admin globale: mostra tutte le segnalazioni
-  const comuneId = impersonatedComuneId ? parseInt(impersonatedComuneId) : null;
-  const comuneParam = comuneId ? `comune_id=${comuneId}` : '';
+const { comuneId: impersonatedComuneId } = useImpersonation();
+const { setSelectedReport } = useCivicReports();
+// Se impersonato: filtra per comune. Se admin globale: mostra tutte le segnalazioni
+const comuneId = impersonatedComuneId ? parseInt(impersonatedComuneId) : null;
+const comuneParam = comuneId ? `comune_id=${comuneId}` : "";
 
 // =============================================
 // AFTER
 // =============================================
-  const { comuneId: impersonatedComuneId, isImpersonating, entityType } = useImpersonation();
-  const { setSelectedReport } = useCivicReports();
-  const isAssociazioneMode = isImpersonating && entityType === 'associazione';
-  // Se impersonato: filtra per comune. Se admin globale: mostra tutte le segnalazioni
-  const comuneId = impersonatedComuneId ? parseInt(impersonatedComuneId) : null;
-  const comuneParam = comuneId ? `comune_id=${comuneId}` : '';
+const {
+  comuneId: impersonatedComuneId,
+  isImpersonating,
+  entityType,
+} = useImpersonation();
+const { setSelectedReport } = useCivicReports();
+const isAssociazioneMode = isImpersonating && entityType === "associazione";
+// Se impersonato: filtra per comune. Se admin globale: mostra tutte le segnalazioni
+const comuneId = impersonatedComuneId ? parseInt(impersonatedComuneId) : null;
+const comuneParam = comuneId ? `comune_id=${comuneId}` : "";
 ```
 
 ```typescript
@@ -416,27 +459,33 @@ export default useImpersonation;
 // =============================================
 // BEFORE (riga 7)
 // =============================================
-import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 // =============================================
 // AFTER
 // =============================================
-import { addComuneIdToUrl, isAssociazioneImpersonation, addAssociazioneIdToUrl } from '@/hooks/useImpersonation';
+import {
+  addComuneIdToUrl,
+  isAssociazioneImpersonation,
+  addAssociazioneIdToUrl,
+} from "@/hooks/useImpersonation";
 ```
 
 ```typescript
 // =============================================
 // BEFORE (riga 69)
 // =============================================
-        const response = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese?limit=200`));
+const response = await fetch(
+  addComuneIdToUrl(`${API_BASE_URL}/api/imprese?limit=200`)
+);
 
 // =============================================
 // AFTER
 // =============================================
-        const impresaUrl = isAssociazioneImpersonation()
-          ? addAssociazioneIdToUrl(`${API_BASE_URL}/api/imprese?limit=200`)
-          : addComuneIdToUrl(`${API_BASE_URL}/api/imprese?limit=200`);
-        const response = await fetch(impresaUrl);
+const impresaUrl = isAssociazioneImpersonation()
+  ? addAssociazioneIdToUrl(`${API_BASE_URL}/api/imprese?limit=200`)
+  : addComuneIdToUrl(`${API_BASE_URL}/api/imprese?limit=200`);
+const response = await fetch(impresaUrl);
 ```
 
 **Nota backend**: L'endpoint `GET /api/imprese` deve supportare `?associazione_id=X`. Se non supportato, mostrare lista vuota.
@@ -506,15 +555,19 @@ import { addComuneIdToUrl, isAssociazioneImpersonation, addAssociazioneIdToUrl }
 // =============================================
 // BEFORE (riga 48)
 // =============================================
-import { addComuneIdToUrl } from '@/hooks/useImpersonation';
+import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 // =============================================
 // AFTER
 // =============================================
-import { addComuneIdToUrl, isAssociazioneImpersonation } from '@/hooks/useImpersonation';
+import {
+  addComuneIdToUrl,
+  isAssociazioneImpersonation,
+} from "@/hooks/useImpersonation";
 ```
 
 In ogni fetch che usa `addComuneIdToUrl()`, aggiungere il check:
+
 ```typescript
 // Pattern generico per ogni fetch nel GestioneHubPanel
 // BEFORE
@@ -564,8 +617,8 @@ Endpoint: `GET /api/associazioni/:id`, `GET /api/associazioni/:id/contratti`, `G
 
 ```typescript
 // Aggiungere import in cima (dopo riga 45)
-import PresenzeAssociatiPanel from '@/components/PresenzeAssociatiPanel';
-import AnagraficaAssociazionePanel from '@/components/AnagraficaAssociazionePanel';
+import PresenzeAssociatiPanel from "@/components/PresenzeAssociatiPanel";
+import AnagraficaAssociazionePanel from "@/components/AnagraficaAssociazionePanel";
 ```
 
 ```typescript
@@ -617,11 +670,11 @@ import AnagraficaAssociazionePanel from '@/components/AnagraficaAssociazionePane
 
 ### NativeReportComponent.tsx
 
-| Campo | Valore Attuale | Valore Corretto |
-|-------|---------------|-----------------|
-| Componenti React (riga 439) | '145' | '147' |
-| Componenti title (riga 669) | '145 React' | '147 React' |
-| Commento (riga 157) | '145 totali' | '147 totali' |
+| Campo                       | Valore Attuale | Valore Corretto |
+| --------------------------- | -------------- | --------------- |
+| Componenti React (riga 439) | '145'          | '147'           |
+| Componenti title (riga 669) | '145 React'    | '147 React'     |
+| Commento (riga 157)         | '145 totali'   | '147 totali'    |
 
 ### STATO_PROGETTO_AGGIORNATO.md
 
@@ -629,38 +682,39 @@ import AnagraficaAssociazionePanel from '@/components/AnagraficaAssociazionePane
 
 ### RELAZIONE_SISTEMA_COMPLETA_2026-02-22.md
 
-| Campo | Valore Scritto | Valore Corretto |
-|-------|---------------|-----------------|
-| Componenti React | 145 | 147 |
-| Righe DashboardPA | 7.482 | 7.080 |
-| Tipi any | 136 | 553 |
-| useMemo/useCallback | 0 | 122 (27+95) |
-| Tab DashboardPA | 28 | 32 |
+| Campo               | Valore Scritto | Valore Corretto |
+| ------------------- | -------------- | --------------- |
+| Componenti React    | 145            | 147             |
+| Righe DashboardPA   | 7.482          | 7.080           |
+| Tipi any            | 136            | 553             |
+| useMemo/useCallback | 0              | 122 (27+95)     |
+| Tab DashboardPA     | 28             | 32              |
 
 ---
 
 ## RIEPILOGO FILE
 
-| # | File | Azione | Rischio |
-|---|------|--------|---------|
-| 1 | MessageContent.tsx | Fix eval() | NESSUNO |
-| 2 | DashboardPA.tsx:~5042 | Fix innerHTML XSS | NESSUNO |
-| 3 | firebase.ts:~32 | Rimuovi fallback key | BASSO |
-| 4 | useImpersonation.ts | +2 helper standalone | NESSUNO |
-| 5 | DashboardPA.tsx:93 | Guard overview associazione | NESSUNO |
-| 6 | DashboardPA.tsx:~874 | Guard imprese stats | NESSUNO |
-| 7 | GamingRewardsPanel.tsx:631 | Card "Non applicabile" | NESSUNO |
-| 8 | CivicReportsPanel.tsx:56 | Guard loadStats | NESSUNO |
-| 9 | ImpreseQualificazioniPanel.tsx:7,69 | Filtro associazione_id | NESSUNO |
-| 10 | SuapPanel.tsx:271 | Guard loadData | NESSUNO |
-| 11 | GestioneHubPanel.tsx:48 | Guard fetch | NESSUNO |
-| 12 | PresenzeAssociatiPanel.tsx | **CREARE** | NESSUNO |
-| 13 | AnagraficaAssociazionePanel.tsx | **CREARE** | NESSUNO |
-| 14 | DashboardPA.tsx (import+mount) | Tab presenze/anagrafica | NESSUNO |
-| 15 | NativeReportComponent.tsx | Metriche 147 | NESSUNO |
-| 16 | STATO_PROGETTO + RELAZIONE | Metriche corrette | NESSUNO |
+| #   | File                                | Azione                      | Rischio |
+| --- | ----------------------------------- | --------------------------- | ------- |
+| 1   | MessageContent.tsx                  | Fix eval()                  | NESSUNO |
+| 2   | DashboardPA.tsx:~5042               | Fix innerHTML XSS           | NESSUNO |
+| 3   | firebase.ts:~32                     | Rimuovi fallback key        | BASSO   |
+| 4   | useImpersonation.ts                 | +2 helper standalone        | NESSUNO |
+| 5   | DashboardPA.tsx:93                  | Guard overview associazione | NESSUNO |
+| 6   | DashboardPA.tsx:~874                | Guard imprese stats         | NESSUNO |
+| 7   | GamingRewardsPanel.tsx:631          | Card "Non applicabile"      | NESSUNO |
+| 8   | CivicReportsPanel.tsx:56            | Guard loadStats             | NESSUNO |
+| 9   | ImpreseQualificazioniPanel.tsx:7,69 | Filtro associazione_id      | NESSUNO |
+| 10  | SuapPanel.tsx:271                   | Guard loadData              | NESSUNO |
+| 11  | GestioneHubPanel.tsx:48             | Guard fetch                 | NESSUNO |
+| 12  | PresenzeAssociatiPanel.tsx          | **CREARE**                  | NESSUNO |
+| 13  | AnagraficaAssociazionePanel.tsx     | **CREARE**                  | NESSUNO |
+| 14  | DashboardPA.tsx (import+mount)      | Tab presenze/anagrafica     | NESSUNO |
+| 15  | NativeReportComponent.tsx           | Metriche 147                | NESSUNO |
+| 16  | STATO_PROGETTO + RELAZIONE          | Metriche corrette           | NESSUNO |
 
 **Endpoint backend necessari** (da verificare):
+
 - `GET /api/imprese?associazione_id=X` — imprese associate
 - `GET /api/presenze?associazione_id=X&data=Y` — presenze operatori
 - `GET /api/associazioni/:id` — anagrafica (probabilmente esiste)

@@ -1,15 +1,15 @@
 /**
  * ProtectedTab Component - Wrapper per tab protetti da permessi
- * 
+ *
  * Questo componente nasconde i tab per cui l'utente non ha permesso.
  * Usato per implementare il controllo accessi nella DashboardPA.
- * 
+ *
  * @version 1.0.0
  * @date 23 Gennaio 2026
  */
 
-import React, { ReactNode } from 'react';
-import { usePermissions } from '@/contexts/PermissionsContext';
+import React, { ReactNode } from "react";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface ProtectedTabProps {
   /** ID del tab (es. 'dashboard', 'users', 'security') */
@@ -24,7 +24,7 @@ interface ProtectedTabProps {
 
 /**
  * Wrapper per proteggere i tab della sidebar in base ai permessi utente.
- * 
+ *
  * Esempio d'uso:
  * ```tsx
  * <ProtectedTab tabId="security">
@@ -38,7 +38,7 @@ export function ProtectedTab({
   tabId,
   children,
   showWhileLoading = false,
-  fallback = null
+  fallback = null,
 }: ProtectedTabProps) {
   const { canViewTab, loading } = usePermissions();
 
@@ -73,7 +73,7 @@ export function ProtectedQuickAccess({
   quickId,
   children,
   showWhileLoading = false,
-  fallback = null
+  fallback = null,
 }: ProtectedQuickAccessProps) {
   const { canViewQuickAccess, loading } = usePermissions();
 

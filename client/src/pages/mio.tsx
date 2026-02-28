@@ -1,14 +1,14 @@
 // Redirect to Dashboard PA MIO Agent tab
-import { useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useEffect } from "react";
+import { useLocation } from "wouter";
 
 export default function MIOPage() {
   const [, setLocation] = useLocation();
-  
+
   useEffect(() => {
-    setLocation('/dashboard-pa?tab=mio');
+    setLocation("/dashboard-pa?tab=mio");
   }, [setLocation]);
-  
+
   return (
     <div className="flex items-center justify-center h-screen bg-[#0a0f1a]">
       <div className="text-center">

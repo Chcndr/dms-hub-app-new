@@ -3,12 +3,12 @@
  * Dashboard dedicata per gli utenti con ruolo business_owner
  * Mostra i dati dell'impresa collegata all'utente loggato
  */
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Building2,
   User,
@@ -25,11 +25,11 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  Loader2
-} from 'lucide-react';
-import { getCachedUser, logout, type User as AuthUser } from '@/api/authClient';
-import { ORCHESTRATORE_API_BASE_URL, MIHUB_API_BASE_URL } from '@/config/api';
-import { toast } from 'sonner';
+  Loader2,
+} from "lucide-react";
+import { getCachedUser, logout, type User as AuthUser } from "@/api/authClient";
+import { ORCHESTRATORE_API_BASE_URL, MIHUB_API_BASE_URL } from "@/config/api";
+import { toast } from "sonner";
 
 /**
  * Recupera i dati utente da tutte le sorgenti localStorage disponibili.
@@ -38,42 +38,49 @@ import { toast } from 'sonner';
  * 2. user (legacy bridge - con impresa_id)
  * 3. miohub_user_info (ARPA auth - con fiscalCode)
  */
-function getEffectiveUser(): { user: AuthUser | null; impresaId: number | null } {
+function getEffectiveUser(): {
+  user: AuthUser | null;
+  impresaId: number | null;
+} {
   // 1. Firebase user (ha impresaId nel formato MioHubUser)
   try {
-    const firebaseRaw = localStorage.getItem('miohub_firebase_user');
+    const firebaseRaw = localStorage.getItem("miohub_firebase_user");
     if (firebaseRaw) {
       const fbUser = JSON.parse(firebaseRaw);
       return {
         user: {
           id: fbUser.miohubId || 0,
-          email: fbUser.email || '',
-          name: fbUser.displayName || fbUser.email || '',
+          email: fbUser.email || "",
+          name: fbUser.displayName || fbUser.email || "",
           fiscalCode: fbUser.fiscalCode,
           authMethod: fbUser.provider,
         },
         impresaId: fbUser.impresaId || null,
       };
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   // 2. Legacy bridge user (ha impresa_id dal bridge FirebaseAuthContext)
   try {
-    const legacyRaw = localStorage.getItem('user');
+    const legacyRaw = localStorage.getItem("user");
     if (legacyRaw) {
       const legacyUser = JSON.parse(legacyRaw);
       return {
         user: {
           id: legacyUser.id || 0,
-          email: legacyUser.email || '',
-          name: legacyUser.name || legacyUser.email || '',
+          email: legacyUser.email || "",
+          name: legacyUser.name || legacyUser.email || "",
           fiscalCode: legacyUser.fiscal_code || legacyUser.fiscalCode,
           authMethod: legacyUser.provider,
         },
         impresaId: legacyUser.impresa_id || null,
       };
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   // 3. ARPA auth user (getCachedUser da authClient.ts - legge miohub_user_info)
   const arpaUser = getCachedUser();
@@ -126,14 +133,14 @@ export default function DashboardImpresa() {
   const [impresa, setImpresa] = useState<Impresa | null>(null);
   const [pratiche, setPratiche] = useState<Pratica[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     const loadData = async () => {
       // Recupera utente da tutte le sorgenti (Firebase, bridge, ARPA)
       const { user: effectiveUser, impresaId } = getEffectiveUser();
       if (!effectiveUser) {
-        navigate('/login');
+        navigate("/login");
         return;
       }
       setUser(effectiveUser);
@@ -154,12 +161,16 @@ export default function DashboardImpresa() {
               if (raw && raw.id) {
                 impresaData = {
                   ...raw,
-                  denominazione: raw.denominazione || raw.ragione_sociale || 'N/D',
+                  denominazione:
+                    raw.denominazione || raw.ragione_sociale || "N/D",
                 };
               }
             }
           } catch (err) {
-            console.warn('[DashboardImpresa] Lookup per ID su MIHUB fallito:', err);
+            console.warn(
+              "[DashboardImpresa] Lookup per ID su MIHUB fallito:",
+              err
+            );
           }
         }
 
@@ -176,7 +187,10 @@ export default function DashboardImpresa() {
               }
             }
           } catch (err) {
-            console.warn('[DashboardImpresa] Lookup per ID su orchestratore fallito:', err);
+            console.warn(
+              "[DashboardImpresa] Lookup per ID su orchestratore fallito:",
+              err
+            );
           }
         }
 
@@ -200,7 +214,7 @@ export default function DashboardImpresa() {
               }
             }
           } catch (err) {
-            console.warn('[DashboardImpresa] Lookup per CF fallito:', err);
+            console.warn("[DashboardImpresa] Lookup per CF fallito:", err);
           }
         }
 
@@ -217,7 +231,7 @@ export default function DashboardImpresa() {
               }
             }
           } catch (err) {
-            console.warn('[DashboardImpresa] Lookup per user_id fallito:', err);
+            console.warn("[DashboardImpresa] Lookup per user_id fallito:", err);
           }
         }
 
@@ -236,12 +250,15 @@ export default function DashboardImpresa() {
               }
             }
           } catch (err) {
-            console.warn('[DashboardImpresa] Caricamento pratiche fallito:', err);
+            console.warn(
+              "[DashboardImpresa] Caricamento pratiche fallito:",
+              err
+            );
           }
         }
       } catch (error) {
-        console.error('Errore caricamento dati impresa:', error);
-        toast.error('Errore nel caricamento dei dati');
+        console.error("Errore caricamento dati impresa:", error);
+        toast.error("Errore nel caricamento dei dati");
       } finally {
         setLoading(false);
       }
@@ -252,7 +269,7 @@ export default function DashboardImpresa() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
+    navigate("/");
   };
 
   if (loading) {
@@ -274,9 +291,13 @@ export default function DashboardImpresa() {
           <div className="flex items-center gap-4">
             <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-teal-500" />
             <div>
-              <h1 className="text-base sm:text-xl font-bold text-white">Dashboard Impresa</h1>
+              <h1 className="text-base sm:text-xl font-bold text-white">
+                Dashboard Impresa
+              </h1>
               <p className="text-sm text-gray-400">
-                {impresa?.denominazione || impresa?.ragione_sociale || 'Nessuna impresa collegata'}
+                {impresa?.denominazione ||
+                  impresa?.ragione_sociale ||
+                  "Nessuna impresa collegata"}
               </p>
             </div>
           </div>
@@ -288,7 +309,7 @@ export default function DashboardImpresa() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/')}
+              onClick={() => navigate("/")}
               className="border-slate-600 text-gray-300 hover:bg-slate-700 px-2 sm:px-3"
             >
               <Home className="h-4 w-4 sm:mr-2" />
@@ -317,10 +338,11 @@ export default function DashboardImpresa() {
                 Nessuna impresa collegata
               </h2>
               <p className="text-gray-400 mb-6">
-                Il tuo account ({user?.email}) non è associato a nessuna impresa nel sistema.
+                Il tuo account ({user?.email}) non è associato a nessuna impresa
+                nel sistema.
               </p>
               <Button
-                onClick={() => navigate('/suap')}
+                onClick={() => navigate("/suap")}
                 className="bg-teal-500 hover:bg-teal-600"
               >
                 <FileText className="h-4 w-4 mr-2" />
@@ -353,9 +375,11 @@ export default function DashboardImpresa() {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs sm:text-sm text-gray-400">Stato Impresa</p>
+                        <p className="text-xs sm:text-sm text-gray-400">
+                          Stato Impresa
+                        </p>
                         <p className="text-lg sm:text-2xl font-bold text-white mt-1">
-                          {impresa.stato || 'Attiva'}
+                          {impresa.stato || "Attiva"}
                         </p>
                       </div>
                       <CheckCircle2 className="h-7 w-7 sm:h-10 sm:w-10 text-teal-500" />
@@ -367,9 +391,14 @@ export default function DashboardImpresa() {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs sm:text-sm text-gray-400">Pratiche Attive</p>
+                        <p className="text-xs sm:text-sm text-gray-400">
+                          Pratiche Attive
+                        </p>
                         <p className="text-lg sm:text-2xl font-bold text-white mt-1">
-                          {pratiche.filter(p => p.stato !== 'completata').length}
+                          {
+                            pratiche.filter(p => p.stato !== "completata")
+                              .length
+                          }
                         </p>
                       </div>
                       <FileText className="h-7 w-7 sm:h-10 sm:w-10 text-blue-500" />
@@ -381,7 +410,9 @@ export default function DashboardImpresa() {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs sm:text-sm text-gray-400">Dipendenti</p>
+                        <p className="text-xs sm:text-sm text-gray-400">
+                          Dipendenti
+                        </p>
                         <p className="text-lg sm:text-2xl font-bold text-white mt-1">
                           {impresa.numero_dipendenti || 0}
                         </p>
@@ -395,7 +426,9 @@ export default function DashboardImpresa() {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs sm:text-sm text-gray-400">Capitale Sociale</p>
+                        <p className="text-xs sm:text-sm text-gray-400">
+                          Capitale Sociale
+                        </p>
                         <p className="text-lg sm:text-2xl font-bold text-white mt-1">
                           €{(impresa.capitale_sociale || 0).toLocaleString()}
                         </p>
@@ -419,30 +452,44 @@ export default function DashboardImpresa() {
                     <div className="grid grid-cols-2 gap-2 sm:gap-4">
                       <div>
                         <p className="text-xs text-gray-500">Denominazione</p>
-                        <p className="text-white font-medium">{impresa.denominazione || impresa.ragione_sociale}</p>
+                        <p className="text-white font-medium">
+                          {impresa.denominazione || impresa.ragione_sociale}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Forma Giuridica</p>
-                        <p className="text-white">{impresa.forma_giuridica || 'N/D'}</p>
+                        <p className="text-white">
+                          {impresa.forma_giuridica || "N/D"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Partita IVA</p>
-                        <p className="text-white font-mono">{impresa.partita_iva}</p>
+                        <p className="text-white font-mono">
+                          {impresa.partita_iva}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Codice Fiscale</p>
-                        <p className="text-white font-mono">{impresa.codice_fiscale}</p>
+                        <p className="text-white font-mono">
+                          {impresa.codice_fiscale}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">ATECO</p>
-                        <p className="text-white">{impresa.ateco_primario || 'N/D'}</p>
+                        <p className="text-white">
+                          {impresa.ateco_primario || "N/D"}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Data Costituzione</p>
+                        <p className="text-xs text-gray-500">
+                          Data Costituzione
+                        </p>
                         <p className="text-white">
-                          {impresa.data_costituzione 
-                            ? new Date(impresa.data_costituzione).toLocaleDateString('it-IT')
-                            : 'N/D'}
+                          {impresa.data_costituzione
+                            ? new Date(
+                                impresa.data_costituzione
+                              ).toLocaleDateString("it-IT")
+                            : "N/D"}
                         </p>
                       </div>
                     </div>
@@ -460,10 +507,11 @@ export default function DashboardImpresa() {
                     <div>
                       <p className="text-xs text-gray-500">Sede Legale</p>
                       <p className="text-white">
-                        {impresa.sede_legale_indirizzo || 'N/D'}
+                        {impresa.sede_legale_indirizzo || "N/D"}
                       </p>
                       <p className="text-gray-400 text-sm">
-                        {impresa.sede_legale_cap} {impresa.sede_legale_comune} ({impresa.sede_legale_provincia})
+                        {impresa.sede_legale_cap} {impresa.sede_legale_comune} (
+                        {impresa.sede_legale_provincia})
                       </p>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:gap-4">
@@ -471,20 +519,28 @@ export default function DashboardImpresa() {
                         <p className="text-xs text-gray-500 flex items-center gap-1">
                           <Mail className="h-3 w-3" /> PEC
                         </p>
-                        <p className="text-white text-sm">{impresa.pec || 'N/D'}</p>
+                        <p className="text-white text-sm">
+                          {impresa.pec || "N/D"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
                           <Phone className="h-3 w-3" /> Telefono
                         </p>
-                        <p className="text-white text-sm">{impresa.telefono || 'N/D'}</p>
+                        <p className="text-white text-sm">
+                          {impresa.telefono || "N/D"}
+                        </p>
                       </div>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Rappresentante Legale</p>
-                      <p className="text-white">{impresa.rappresentante_legale_nome || 'N/D'}</p>
+                      <p className="text-xs text-gray-500">
+                        Rappresentante Legale
+                      </p>
+                      <p className="text-white">
+                        {impresa.rappresentante_legale_nome || "N/D"}
+                      </p>
                       <p className="text-gray-400 text-sm font-mono">
-                        CF: {impresa.rappresentante_legale_cf || 'N/D'}
+                        CF: {impresa.rappresentante_legale_cf || "N/D"}
                       </p>
                     </div>
                   </CardContent>
@@ -495,9 +551,11 @@ export default function DashboardImpresa() {
             {/* Pratiche Tab */}
             <TabsContent value="pratiche" className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-white">Pratiche SUAP</h2>
+                <h2 className="text-xl font-semibold text-white">
+                  Pratiche SUAP
+                </h2>
                 <Button
-                  onClick={() => navigate('/suap')}
+                  onClick={() => navigate("/suap")}
                   className="bg-teal-500 hover:bg-teal-600"
                 >
                   <FileText className="h-4 w-4 mr-2" />
@@ -514,9 +572,9 @@ export default function DashboardImpresa() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {pratiche.map((pratica) => (
-                    <Card 
-                      key={pratica.id} 
+                  {pratiche.map(pratica => (
+                    <Card
+                      key={pratica.id}
                       className="bg-slate-800/50 border-slate-700 hover:border-teal-500/50 transition-colors cursor-pointer"
                       onClick={() => navigate(`/suap/detail/${pratica.id}`)}
                     >
@@ -527,19 +585,23 @@ export default function DashboardImpresa() {
                               <FileText className="h-5 w-5 text-teal-500" />
                             </div>
                             <div>
-                              <p className="font-medium text-white">{pratica.numero_pratica}</p>
-                              <p className="text-sm text-gray-400">{pratica.tipo}</p>
+                              <p className="font-medium text-white">
+                                {pratica.numero_pratica}
+                              </p>
+                              <p className="text-sm text-gray-400">
+                                {pratica.tipo}
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
                             <Badge
                               variant="outline"
                               className={
-                                pratica.stato === 'completata'
-                                  ? 'border-green-500/50 text-green-400'
-                                  : pratica.stato === 'in_lavorazione'
-                                  ? 'border-blue-500/50 text-blue-400'
-                                  : 'border-yellow-500/50 text-yellow-400'
+                                pratica.stato === "completata"
+                                  ? "border-green-500/50 text-green-400"
+                                  : pratica.stato === "in_lavorazione"
+                                    ? "border-blue-500/50 text-blue-400"
+                                    : "border-yellow-500/50 text-yellow-400"
                               }
                             >
                               {pratica.stato}
@@ -547,7 +609,9 @@ export default function DashboardImpresa() {
                             <div className="text-right text-sm">
                               <p className="text-gray-400">
                                 <Clock className="h-3 w-3 inline mr-1" />
-                                {new Date(pratica.data_presentazione).toLocaleDateString('it-IT')}
+                                {new Date(
+                                  pratica.data_presentazione
+                                ).toLocaleDateString("it-IT")}
                               </p>
                             </div>
                           </div>

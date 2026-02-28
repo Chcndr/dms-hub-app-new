@@ -4,7 +4,7 @@
  */
 export interface MioChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   createdAt: string;
 }
@@ -17,15 +17,15 @@ export async function sendMioMessage(
   text: string,
   currentConversationId: string | null
 ): Promise<{ messages: MioChatMessage[]; conversationId: string }> {
-  const body: any = { message: text, mode: 'auto' };
+  const body: any = { message: text, mode: "auto" };
   if (currentConversationId) {
     body.conversationId = currentConversationId;
   }
 
   // DIRECT LINK: Bypassiamo il proxy Vercel e chiamiamo direttamente Hetzner
-  const res = await fetch('/api/mihub/orchestrator', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/mihub/orchestrator", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
@@ -37,13 +37,13 @@ export async function sendMioMessage(
 
   // Controlla se il backend ha restituito un errore nel JSON
   if (data.error || data.success === false) {
-    const errorMsg = data.error?.message || 'Unknown error';
+    const errorMsg = data.error?.message || "Unknown error";
     const errorCode = data.error?.statusCode || 500;
     throw new Error(`orchestrator error ${errorCode}: ${errorMsg}`);
   }
 
   // IMPORTANTISSIMO: usa SEMPRE il conversationId restituito dal backend
-  const newConversationId = data.conversationId ?? currentConversationId ?? '';
+  const newConversationId = data.conversationId ?? currentConversationId ?? "";
 
   // Trasforma la risposta in messaggi
   const messages: MioChatMessage[] = [];
@@ -51,7 +51,7 @@ export async function sendMioMessage(
   if (replyContent) {
     messages.push({
       id: crypto.randomUUID(),
-      role: 'assistant',
+      role: "assistant",
       content: replyContent,
       createdAt: new Date().toISOString(),
     });
@@ -68,7 +68,7 @@ export async function sendMioMessage(
  */
 export interface AgentChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   createdAt: string;
   agent?: string;
@@ -79,7 +79,7 @@ export interface AgentChatMessage {
  * Usato dalle chat singole (GPT Dev, Manus, Abacus, Zapier)
  */
 export async function sendAgentMessage(
-  agent: 'gptdev' | 'manus' | 'abacus' | 'zapier',
+  agent: "gptdev" | "manus" | "abacus" | "zapier",
   text: string,
   conversationId: string | null,
   setConversationId: (id: string) => void,
@@ -88,21 +88,21 @@ export async function sendAgentMessage(
   // 🔥 FIX ERRORE 400: Usa conversationId: null per reset
   const body: any = {
     message: text,
-    mode: 'manual',
+    mode: "manual",
     targetAgent: agent,
     conversationId: null, // 🔥 RESET: Forza nuova conversazione
   };
 
   // DIRECT LINK: Bypassiamo il proxy Vercel e chiamiamo direttamente Hetzner
-  const res = await fetch('/api/mihub/orchestrator', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/mihub/orchestrator", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
   if (!res.ok) {
     const errText = await res.text();
-    console.error('🔥 [sendAgentMessage] ERROR Response:', errText);
+    console.error("🔥 [sendAgentMessage] ERROR Response:", errText);
     throw new Error(`orchestrator HTTP ${res.status}: ${errText}`);
   }
 
@@ -110,13 +110,13 @@ export async function sendAgentMessage(
 
   // Controlla se il backend ha restituito un errore nel JSON
   if (data.error || data.success === false) {
-    const errorMsg = data.error?.message || 'Unknown error';
+    const errorMsg = data.error?.message || "Unknown error";
     const errorCode = data.error?.statusCode || 500;
     throw new Error(`orchestrator error ${errorCode}: ${errorMsg}`);
   }
 
   // Aggiorna conversationId se il backend ne ha restituito uno nuovo
-  const newConversationId = data.conversationId ?? conversationId ?? '';
+  const newConversationId = data.conversationId ?? conversationId ?? "";
   if (newConversationId && newConversationId !== conversationId) {
     setConversationId(newConversationId);
   }
@@ -126,7 +126,7 @@ export async function sendAgentMessage(
   if (replyContent) {
     pushMessage({
       id: crypto.randomUUID(),
-      role: 'assistant',
+      role: "assistant",
       content: replyContent,
       createdAt: new Date().toISOString(),
       agent,

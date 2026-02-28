@@ -14,28 +14,40 @@
  * venga correttamente riconosciuto e reindirizzato a /dashboard-pa.
  */
 
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { useFirebaseAuth, type UserRole } from '@/contexts/FirebaseAuthContext';
-import { startLogin } from '@/api/authClient';
-import { Loader2, Shield, CreditCard, Key, AlertCircle, Users, Building2, Landmark, Mail, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useFirebaseAuth, type UserRole } from "@/contexts/FirebaseAuthContext";
+import { startLogin } from "@/api/authClient";
+import {
+  Loader2,
+  Shield,
+  CreditCard,
+  Key,
+  AlertCircle,
+  Users,
+  Building2,
+  Landmark,
+  Mail,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
-type UserType = 'citizen' | 'business' | 'pa' | null;
-type CitizenMode = 'login' | 'register';
+type UserType = "citizen" | "business" | "pa" | null;
+type CitizenMode = "login" | "register";
 
 export default function Login() {
   const [, navigate] = useLocation();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
   const [userType, setUserType] = useState<UserType>(null);
-  const [citizenMode, setCitizenMode] = useState<CitizenMode>('login');
+  const [citizenMode, setCitizenMode] = useState<CitizenMode>("login");
 
   // Form fields
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [gdprConsent, setGdprConsent] = useState(false);
 
@@ -54,13 +66,15 @@ export default function Login() {
 
   // Leggi returnUrl dai query params
   const searchParams = new URLSearchParams(window.location.search);
-  const returnUrl = searchParams.get('returnUrl');
+  const returnUrl = searchParams.get("returnUrl");
 
   // Redirect dopo login Firebase riuscito - basato sul ruolo effettivo
   useEffect(() => {
     if (isAuthenticated && user) {
       const targetRoute = returnUrl || getRedirectForRole(user.role);
-      console.warn(`[Login] Autenticato come ${user.role} (admin=${user.isSuperAdmin}) → redirect a ${targetRoute}`);
+      console.warn(
+        `[Login] Autenticato come ${user.role} (admin=${user.isSuperAdmin}) → redirect a ${targetRoute}`
+      );
       navigate(targetRoute, { replace: true });
     }
   }, [isAuthenticated, user]);
@@ -75,10 +89,14 @@ export default function Login() {
 
   function getRedirectForRole(role: UserRole): string {
     switch (role) {
-      case 'pa': return '/dashboard-pa';
-      case 'business': return '/dashboard-impresa';
-      case 'citizen': return '/wallet';
-      default: return '/wallet';
+      case "pa":
+        return "/dashboard-pa";
+      case "business":
+        return "/dashboard-impresa";
+      case "citizen":
+        return "/wallet";
+      default:
+        return "/wallet";
     }
   }
 
@@ -96,15 +114,15 @@ export default function Login() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     if (!email.trim()) {
-      setError('Inserisci la tua email');
+      setError("Inserisci la tua email");
       return;
     }
     if (!password) {
-      setError('Inserisci la password');
+      setError("Inserisci la password");
       return;
     }
 
@@ -115,34 +133,34 @@ export default function Login() {
       // createFirebaseSession) è ancora in corso. Lo spinner resta visibile finché
       // isAuthenticated diventa true e il useEffect effettua il redirect.
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Credenziali non valide');
+      setError(err instanceof Error ? err.message : "Credenziali non valide");
       setLoading(false);
     }
   };
 
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     if (!name.trim()) {
-      setError('Inserisci il tuo nome');
+      setError("Inserisci il tuo nome");
       return;
     }
     if (!email.trim()) {
-      setError('Inserisci la tua email');
+      setError("Inserisci la tua email");
       return;
     }
     if (password.length < 6) {
-      setError('La password deve essere di almeno 6 caratteri');
+      setError("La password deve essere di almeno 6 caratteri");
       return;
     }
     if (password !== confirmPassword) {
-      setError('Le password non coincidono');
+      setError("Le password non coincidono");
       return;
     }
     if (!gdprConsent) {
-      setError('Devi accettare la Privacy Policy per registrarti');
+      setError("Devi accettare la Privacy Policy per registrarti");
       return;
     }
 
@@ -151,31 +169,39 @@ export default function Login() {
       await signUpWithEmail(email, password, name);
       // NON resettare loading: sync backend in corso (vedi handleEmailLogin)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore durante la registrazione');
+      setError(
+        err instanceof Error ? err.message : "Errore durante la registrazione"
+      );
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       await signInWithGoogle();
       // NON resettare loading: sync backend in corso
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore durante il login con Google');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Errore durante il login con Google"
+      );
       setLoading(false);
     }
   };
 
   const handleAppleLogin = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       await signInWithApple();
       // NON resettare loading: sync backend in corso
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore durante il login con Apple');
+      setError(
+        err instanceof Error ? err.message : "Errore durante il login con Apple"
+      );
       setLoading(false);
     }
   };
@@ -183,13 +209,13 @@ export default function Login() {
   // SPID/CIE/CNS: redirect a ARPA (non Firebase)
   const handleSPIDLogin = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const targetRoute = returnUrl || getRedirectForRole(userType as UserRole);
       const authUrl = await startLogin(targetRoute);
       window.location.href = authUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore durante il login');
+      setError(err instanceof Error ? err.message : "Errore durante il login");
       setLoading(false);
     }
   };
@@ -219,15 +245,18 @@ export default function Login() {
           <div className="grid md:grid-cols-3 gap-6">
             {/* Cittadino */}
             <button
-              onClick={() => handleSelectUserType('citizen')}
+              onClick={() => handleSelectUserType("citizen")}
               className="group p-8 bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl hover:border-teal-500 hover:bg-slate-800 transition-all text-left"
             >
               <div className="w-16 h-16 bg-teal-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-teal-500/30 transition-colors">
                 <Users className="w-8 h-8 text-teal-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Cittadino</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                Cittadino
+              </h3>
               <p className="text-gray-400 text-sm mb-4">
-                Scopri mercati, accumula carbon credits e fai shopping sostenibile
+                Scopri mercati, accumula carbon credits e fai shopping
+                sostenibile
               </p>
               <ul className="text-xs text-gray-500 space-y-1">
                 <li>✓ Mappa mercati e negozi</li>
@@ -238,7 +267,7 @@ export default function Login() {
 
             {/* Commerciante/Impresa */}
             <button
-              onClick={() => handleSelectUserType('business')}
+              onClick={() => handleSelectUserType("business")}
               className="group p-8 bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl hover:border-amber-500 hover:bg-slate-800 transition-all text-left"
             >
               <div className="w-16 h-16 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-500/30 transition-colors">
@@ -260,13 +289,15 @@ export default function Login() {
 
             {/* PA */}
             <button
-              onClick={() => handleSelectUserType('pa')}
+              onClick={() => handleSelectUserType("pa")}
               className="group p-8 bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl hover:border-purple-500 hover:bg-slate-800 transition-all text-left"
             >
               <div className="w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-500/30 transition-colors">
                 <Landmark className="w-8 h-8 text-purple-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">PA / Admin</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                PA / Admin
+              </h3>
               <p className="text-gray-400 text-sm mb-4">
                 Dashboard completa per monitorare e gestire il sistema
               </p>
@@ -296,7 +327,7 @@ export default function Login() {
   // RENDER: Login Cittadino (Email/Password + Social Login via Firebase)
   // ============================================
 
-  if (userType === 'citizen') {
+  if (userType === "citizen") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="max-w-md w-full mx-4">
@@ -306,10 +337,14 @@ export default function Login() {
               <Users className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white">
-              {citizenMode === 'login' ? 'Accesso Cittadino' : 'Registrazione Cittadino'}
+              {citizenMode === "login"
+                ? "Accesso Cittadino"
+                : "Registrazione Cittadino"}
             </h1>
             <p className="mt-2 text-gray-400">
-              {citizenMode === 'login' ? 'Accedi al tuo wallet TCC' : 'Crea il tuo account e wallet TCC'}
+              {citizenMode === "login"
+                ? "Accedi al tuo wallet TCC"
+                : "Crea il tuo account e wallet TCC"}
             </p>
           </div>
 
@@ -330,14 +365,21 @@ export default function Login() {
             )}
 
             {/* Form Email/Password */}
-            <form onSubmit={citizenMode === 'login' ? handleEmailLogin : handleEmailRegister} className="space-y-4">
-              {citizenMode === 'register' && (
+            <form
+              onSubmit={
+                citizenMode === "login" ? handleEmailLogin : handleEmailRegister
+              }
+              className="space-y-4"
+            >
+              {citizenMode === "register" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Nome</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Nome
+                  </label>
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={e => setName(e.target.value)}
                     placeholder="Il tuo nome"
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-teal-500 transition-colors"
                   />
@@ -345,13 +387,15 @@ export default function Login() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Email
+                </label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={e => setEmail(e.target.value)}
                     placeholder="la-tua@email.com"
                     className="w-full pl-12 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-teal-500 transition-colors"
                   />
@@ -359,13 +403,15 @@ export default function Login() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Password
+                </label>
                 <div className="relative">
                   <Key className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
                     className="w-full pl-12 pr-12 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-teal-500 transition-colors"
                   />
@@ -374,20 +420,26 @@ export default function Login() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
               </div>
 
-              {citizenMode === 'register' && (
+              {citizenMode === "register" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Conferma Password</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Conferma Password
+                  </label>
                   <div className="relative">
                     <Key className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={e => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
                       className="w-full pl-12 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-teal-500 transition-colors"
                     />
@@ -395,21 +447,27 @@ export default function Login() {
                 </div>
               )}
 
-              {citizenMode === 'register' && (
+              {citizenMode === "register" && (
                 <label className="flex items-start gap-2 text-xs text-gray-400 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={gdprConsent}
-                    onChange={(e) => setGdprConsent(e.target.checked)}
+                    onChange={e => setGdprConsent(e.target.checked)}
                     className="mt-0.5 accent-teal-500"
                     aria-required="true"
                   />
                   <span>
-                    Accetto la{' '}
-                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline">
+                    Accetto la{" "}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-teal-400 hover:underline"
+                    >
                       Privacy Policy
-                    </a>{' '}
-                    e il trattamento dei dati personali ai sensi del GDPR (Reg. UE 2016/679)
+                    </a>{" "}
+                    e il trattamento dei dati personali ai sensi del GDPR (Reg.
+                    UE 2016/679)
                   </span>
                 </label>
               )}
@@ -425,7 +483,7 @@ export default function Login() {
                   <>
                     <Mail className="w-5 h-5" />
                     <span className="font-medium">
-                      {citizenMode === 'login' ? 'Accedi' : 'Registrati'}
+                      {citizenMode === "login" ? "Accedi" : "Registrati"}
                     </span>
                   </>
                 )}
@@ -436,16 +494,18 @@ export default function Login() {
             <div className="mt-4 text-center">
               <button
                 onClick={() => {
-                  setCitizenMode(citizenMode === 'login' ? 'register' : 'login');
-                  setError('');
-                  setSuccess('');
+                  setCitizenMode(
+                    citizenMode === "login" ? "register" : "login"
+                  );
+                  setError("");
+                  setSuccess("");
                   clearError();
                 }}
                 className="text-teal-400 hover:text-teal-300 text-sm"
               >
-                {citizenMode === 'login'
-                  ? 'Non hai un account? Registrati'
-                  : 'Hai già un account? Accedi'}
+                {citizenMode === "login"
+                  ? "Non hai un account? Registrati"
+                  : "Hai già un account? Accedi"}
               </button>
             </div>
 
@@ -466,10 +526,22 @@ export default function Login() {
                 className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white text-gray-800 rounded-xl hover:bg-gray-100 transition-colors disabled:opacity-50"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
                 </svg>
                 <span className="font-medium text-sm">Continua con Google</span>
               </button>
@@ -480,8 +552,12 @@ export default function Login() {
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-50"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                 </svg>
                 <span className="font-medium text-sm">Continua con Apple</span>
               </button>
@@ -508,9 +584,9 @@ export default function Login() {
           <button
             onClick={() => {
               setUserType(null);
-              setCitizenMode('login');
-              setError('');
-              setSuccess('');
+              setCitizenMode("login");
+              setError("");
+              setSuccess("");
               clearError();
             }}
             className="mt-6 w-full text-center text-gray-400 hover:text-white transition-colors"
@@ -531,17 +607,19 @@ export default function Login() {
       <div className="max-w-md w-full mx-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
-            userType === 'business' ? 'bg-amber-500' : 'bg-purple-500'
-          }`}>
-            {userType === 'business' ? (
+          <div
+            className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
+              userType === "business" ? "bg-amber-500" : "bg-purple-500"
+            }`}
+          >
+            {userType === "business" ? (
               <Building2 className="w-8 h-8 text-white" />
             ) : (
               <Landmark className="w-8 h-8 text-white" />
             )}
           </div>
           <h1 className="text-2xl font-bold text-white">
-            {userType === 'business' ? 'Accesso Impresa' : 'Accesso PA'}
+            {userType === "business" ? "Accesso Impresa" : "Accesso PA"}
           </h1>
           <p className="mt-2 text-gray-400">
             Autenticazione con identità digitale
@@ -598,9 +676,9 @@ export default function Login() {
           {/* Info */}
           <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
             <p className="text-xs text-gray-400">
-              {userType === 'business'
-                ? 'Per accedere come impresa è necessaria l\'identità digitale (SPID, CIE o CNS). Il sistema verificherà automaticamente la tua associazione con l\'impresa.'
-                : 'Per accedere come operatore PA è necessaria l\'identità digitale e un ruolo assegnato dall\'amministratore.'}
+              {userType === "business"
+                ? "Per accedere come impresa è necessaria l'identità digitale (SPID, CIE o CNS). Il sistema verificherà automaticamente la tua associazione con l'impresa."
+                : "Per accedere come operatore PA è necessaria l'identità digitale e un ruolo assegnato dall'amministratore."}
             </p>
           </div>
         </div>
