@@ -10439,3 +10439,36 @@ AVA funziona ma è un modello generico — **non vede i dati della dashboard**, 
 3. **Claude**: Migliorare UI Chat (rendering tabelle, code blocks, suggerimenti contestuali)
 4. **Manus**: Creare tag `v9.2.0` dopo stabilizzazione
 5. **Entrambi**: Test con utente PA reale (Comune di Grosseto)
+
+
+---
+
+## 🚀 AGGIORNAMENTO v9.3.0 — 28 Febbraio 2026 (Sessione Manus)
+
+> **Obiettivo:** Upgrade AVA (AI Chat) al modello `qwen2.5:14b` e integrazione della knowledge base di MioHub per risposte specifiche e utili.
+
+### Changelog Sessione
+
+| Ora | Autore | Azione | Dettagli |
+|---|---|---|---|
+| 18:30 | Manus | **Inizio Sessione** | Obiettivo: Migliorare AVA, l'assistente AI di MioHub. |
+| 18:35 | Manus | **Analisi Modello Attuale** | AVA usa `qwen2.5:3b`. Decisione di upgrade a `qwen2.5:14b` per risposte più intelligenti. |
+| 18:40 | Manus | **Download Modello 14b** | Scaricato e installato `qwen2.5:14b` (9.6GB) sul server Hetzner CPX62. |
+| 18:45 | Manus | **Configurazione Ollama** | Impostato `qwen2.5:14b` come modello di default per AVA nel backend. |
+| 18:50 | Manus | **Test Iniziale (FALLITO)** | Primo test: il modello non risponde. Causa: il modello non era ancora completamente caricato in memoria. |
+| 19:00 | Manus | **Riavvio e Test (OK)** | Riavvio del servizio. Secondo test: **successo!** Risposta coerente e di alta qualità. |
+| 19:10 | Manus | **Analisi Performance** | La prima risposta richiede ~70s. Troppo lento per un'esperienza utente accettabile. |
+| 19:15 | Manus | **Analisi System Prompt** | Il system prompt è enorme (~25KB, ~6k token), causa principale della lentezza. |
+| 19:25 | Manus | **Ottimizzazione Ollama** | Aggiunte opzioni `keep_alive: '15m'` e `num_ctx: 4096` per mantenere il modello in RAM e aumentare il context window. |
+| 19:35 | Manus | **Ottimizzazione Backend** | Aggiunto un **warmup** all'avvio del server: una chiamata a vuoto per pre-caricare il modello. |
+| 19:45 | Manus | **Deploy Ottimizzazioni** | Commit e push delle modifiche. Deploy automatico su `api.mio-hub.me`. |
+| 20:00 | Manus | **Benchmark Post-Ottimizzazione** | Eseguiti test di carico. Risultati deludenti. |
+| 20:15 | Manus | **Diagnosi Problema** | Il 14b è **troppo pesante per la CPU del CPX62 senza GPU**. Causa timeout e risposte intermittenti. Le richieste concorrenti bloccano Ollama. |
+| 20:30 | Manus | **Analisi Soluzioni** | Valutate 4 opzioni: tornare al 3b, provare il 7b, upgrade a server con GPU, usare API esterne. |
+| 20:40 | Manus | **Raccomandazione** | **Scaricare `qwen2.5:7b`** come miglior compromesso tra intelligenza e velocità su hardware attuale. |
+
+### Conclusione e Prossimi Passi
+
+Il modello `qwen2.5:14b` è troppo esigente per l'infrastruttura attuale senza una GPU dedicata, portando a instabilità e performance inaccettabili. 
+
+**Decisione:** In attesa di un parere da Claude, la raccomandazione è di procedere con il test del modello intermedio `qwen2.5:7b`.
