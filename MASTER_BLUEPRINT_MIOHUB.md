@@ -10472,3 +10472,51 @@ AVA funziona ma è un modello generico — **non vede i dati della dashboard**, 
 Il modello `qwen2.5:14b` è troppo esigente per l'infrastruttura attuale senza una GPU dedicata, portando a instabilità e performance inaccettabili. 
 
 **Decisione:** In attesa di un parere da Claude, la raccomandazione è di procedere con il test del modello intermedio `qwen2.5:7b`.
+
+
+### Aggiornamento v9.3.1 — Switch a qwen2.5:7b-instruct-q4_K_M (28 Feb 2026)
+
+> **Analisi di Claude + Implementazione di Manus**
+
+**Contesto:** Dopo l'analisi di Claude (che ha letto il blueprint, i progetti CHAT_AI_STREAMING, A99X e ABBONAMENTO_AI_PA), la decisione condivisa è stata di passare al modello **qwen2.5:7b con quantizzazione Q4_K_M** come miglior compromesso.
+
+**Analisi di Claude — Punti chiave:**
+1. **7b è la scelta giusta** per il CPX62 — qualità sufficiente per PA, margine RAM sufficiente su 32GB
+2. **3b è un passo indietro** — risposte troppo superficiali per terminologia PA/normativa
+3. **Server GPU è Fase 2** — quando il revenue Starter copre il costo (~€200/mese per Hetzner GPU)
+4. **API esterne vietate** — violano il vincolo privacy PA definito in PROGETTO_A99X
+
+**Implementazione Manus (commit `55cdae4`):**
+- Scaricato `qwen2.5:7b-instruct-q4_K_M` (4.7 GB) sul server Hetzner
+- Aggiornato `DEFAULT_MODEL` e tutti i piani in `routes/ai-chat.js`
+- Deploy e restart PM2
+
+**Benchmark risultati (3 test consecutivi):**
+
+| Test | Domanda | Tempo | Token | Velocità | Qualità |
+|---|---|---|---|---|---|
+| 1 (cold) | "Presentati brevemente" | 64s | 156 | 2.4 t/s | Ottima, coerente con system prompt |
+| 2 (warm) | "Come funziona il sistema presenze?" | 99s | 594 | 6.0 t/s | Eccellente, con tabella dettagliata |
+| 3 (warm) | "Quanti mercati a Bologna?" | 65s | 182 | 2.7 t/s | Buona, ammette di non avere dati DB |
+
+**Valutazione:**
+- **Qualità risposte:** Molto buona. Il 7b capisce il contesto PA, usa terminologia corretta, genera tabelle.
+- **Stabilità:** 3/3 test completati con successo (vs 14b che falliva dopo il primo).
+- **Velocità:** Ancora lenta (~60-100s totali), ma lo streaming SSE maschera la latenza percepita dall'utente.
+- **Il collo di bottiglia è il system prompt enorme (~6k token)** che va processato ad ogni richiesta.
+
+**Cosa NON fare (vincoli negativi da Claude):**
+1. **NON tornare al 3b** — regressione di qualità inaccettabile per utenti PA
+2. **NON usare API esterne per dati PA** — vincolo privacy non negoziabile
+3. **NON usare il 14b su CPX62** — causa instabilità e timeout
+
+**Prossimi passi per ottimizzare ulteriormente:**
+1. **Ridurre il system prompt** — togliere le sezioni non necessarie per ogni richiesta, caricarle solo quando servono (RAG)
+2. **Implementare RAG** — dare ad AVA accesso ai dati reali del DB invece di descriverli nel prompt
+3. **Fase 2: GPU** — quando il revenue lo giustifica, passare a server con GPU per il 14b o Qwen3-30B-A3B
+
+**Stato attuale AVA:**
+- Modello: `qwen2.5:7b-instruct-q4_K_M` (4.7 GB)
+- Server: Hetzner CPX62 (16 vCPU, 32GB RAM, no GPU)
+- Stato: **PRODUZIONE** — funzionante e stabile
+- Modelli disponibili su Ollama: `qwen2.5:7b-instruct-q4_K_M`, `qwen2.5:14b`, `qwen2.5:3b`
