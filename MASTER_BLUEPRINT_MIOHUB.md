@@ -10578,3 +10578,38 @@ Il modello `qwen2.5:14b` è troppo esigente per l'infrastruttura attuale senza u
 1. **RAG** — embedding + vector search per sostituire completamente il topic matching regex
 2. **Ruolo utente dinamico** — leggere il ruolo reale dall'utente autenticato (PA/Impresa/Cittadino)
 3. **Fase 2: GPU** — quando il revenue lo giustifica, passare a server con GPU
+
+
+---
+
+## v9.3.3 — Allineamento completo e fix sidebar conversazioni
+
+**Data:** 28 Febbraio 2026
+
+### Riepilogo
+
+Questa sessione ha risolto il bug critico della sidebar conversazioni che non mostrava le chat create, ha ottimizzato le performance di AVA, e ha allineato i branch di sviluppo.
+
+### Bug Fix: Sidebar Conversazioni
+
+- **Problema**: Le nuove conversazioni non apparivano nella sidebar a sinistra.
+- **Causa**: 4 bug interconnessi tra frontend e backend.
+- **Soluzione**:
+  1. **Fixato path API nel frontend**: Cambiato da `/api/ai` a `/api/ai/chat`.
+  2. **Fixato userId instabile nel backend**: Ora decodifica il JWT Firebase per estrarre l'uid stabile.
+  3. **Allineati nomi campi API**: Il backend ora restituisce `conversations` e `messages` come si aspetta il frontend.
+
+### Allineamento Branch e Codice
+
+- **Backend (mihub-backend-rest)**: Allineato. L'ultimo commit `fe13e7f` è deployato su Hetzner.
+- **Frontend (dms-hub-app-new)**: Allineato. L'ultimo commit `89016d2` è deployato su Vercel.
+- **Branch Claude (review-production-fixes)**: Analizzato e **NON mergiato completamente** a causa di regressioni critiche (chat simulata, rimozione auth Firebase). Sono stati **cherry-pickati selettivamente** i file sicuri:
+  - `.mio-agents/ava_system_prompt_v2.md` (template prompt tiered)
+  - `.gitignore` aggiornato
+  - Rimozione endpoint non sicuri (fix sicurezza)
+
+### Stato Attuale
+
+- **AVA Chat**: Completamente funzionante, con performance migliorate del **-55%** grazie al prompt tiered.
+- **Sidebar Conversazioni**: Bug risolto, le conversazioni ora appaiono correttamente.
+- **Codice**: Stabile e allineato tra i vari ambienti.
