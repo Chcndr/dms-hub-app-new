@@ -5164,114 +5164,9 @@ export default function DashboardPA() {
             {sistemaSubTab === "debug" && <DebugSectionReal />}
           </TabsContent>
 
-          {/* TAB 9: AGENTE AI */}
+          {/* TAB 9: AGENTE AI — AVA Chat AI con Streaming SSE */}
           <TabsContent value="ai" className="space-y-6">
-            <Card className="bg-[#1a2332] border-[#14b8a6]/30 h-[600px] flex flex-col">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-[#14b8a6]" />
-                  Agente AI - Assistente PA
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <div className="flex-1 bg-[#0b1220] rounded-lg p-4 mb-4 overflow-y-auto">
-                  <div className="space-y-4">
-                    <div className="flex gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#14b8a6]/20 flex items-center justify-center flex-shrink-0">
-                        <Bot className="h-5 w-5 text-[#14b8a6]" />
-                      </div>
-                      <div className="bg-[#14b8a6]/10 border border-[#14b8a6]/30 rounded-lg p-3 max-w-[80%]">
-                        <p className="text-sm text-[#e8fbff]">
-                          Ciao! Sono l'Agente AI della Dashboard PA. Posso
-                          aiutarti con:
-                        </p>
-                        <ul className="text-sm text-[#e8fbff]/70 mt-2 space-y-1 list-disc list-inside">
-                          <li>Analytics e statistiche</li>
-                          <li>Generazione report</li>
-                          <li>Query dati in linguaggio naturale</li>
-                          <li>Alert e notifiche</li>
-                        </ul>
-                      </div>
-                    </div>
-                    {chatMessages.map((msg, i) => (
-                      <div
-                        key={i}
-                        className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}
-                      >
-                        {msg.role === "ai" && (
-                          <div className="w-8 h-8 rounded-full bg-[#14b8a6]/20 flex items-center justify-center flex-shrink-0">
-                            <Bot className="h-5 w-5 text-[#14b8a6]" />
-                          </div>
-                        )}
-                        <div
-                          className={`rounded-lg p-3 max-w-[80%] ${
-                            msg.role === "user"
-                              ? "bg-[#8b5cf6]/20 border border-[#8b5cf6]/30"
-                              : "bg-[#14b8a6]/10 border border-[#14b8a6]/30"
-                          }`}
-                        >
-                          <p className="text-sm text-[#e8fbff]">
-                            {msg.content}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={e => setChatInput(e.target.value)}
-                    onKeyPress={e => {
-                      if (e.key === "Enter" && chatInput.trim()) {
-                        const userMsg = chatInput.trim();
-                        setChatMessages(prev => [
-                          ...prev,
-                          { role: "user", content: userMsg },
-                        ]);
-                        setChatInput("");
-                        setTimeout(() => {
-                          setChatMessages(prev => [
-                            ...prev,
-                            {
-                              role: "ai",
-                              content: `Ho ricevuto la tua richiesta: "${userMsg}". Questa è una risposta simulata. In produzione, qui ci sarà l'integrazione con un vero modello AI per analizzare i dati della Dashboard PA.`,
-                            },
-                          ]);
-                        }, 500);
-                      }
-                    }}
-                    placeholder="Chiedi qualcosa... (es: Quanti utenti oggi?)"
-                    className="flex-1 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder:text-[#e8fbff]/50 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/50"
-                  />
-                  <Button
-                    onClick={() => {
-                      if (chatInput.trim()) {
-                        const userMsg = chatInput.trim();
-                        setChatMessages(prev => [
-                          ...prev,
-                          { role: "user", content: userMsg },
-                        ]);
-                        setChatInput("");
-                        setTimeout(() => {
-                          setChatMessages(prev => [
-                            ...prev,
-                            {
-                              role: "ai",
-                              content: `Ho ricevuto la tua richiesta: "${userMsg}". Questa è una risposta simulata. In produzione, qui ci sarà l'integrazione con un vero modello AI per analizzare i dati della Dashboard PA.`,
-                            },
-                          ]);
-                        }, 500);
-                      }
-                    }}
-                    className="bg-[#14b8a6] hover:bg-[#14b8a6]/80"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <AIChatPanel userRole="pa" />
           </TabsContent>
 
           {/* TAB 10: SICUREZZA */}
@@ -8539,8 +8434,150 @@ export default function DashboardPA() {
 
           {/* TAB 25: MIO AGENT */}
           <TabsContent value="mio" className="space-y-6">
-            {/* SEZIONE A: AVA Chat AI con Streaming SSE */}
-            <AIChatPanel userRole="pa" />
+            {/* SEZIONE A: Chat Principale MIO (sempre visibile) */}
+            <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+              <CardHeader>
+                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-[#8b5cf6]" />
+                  MIO Agent - Chat Principale (GPT-5 Coordinatore)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-[#e8fbff]/70 text-sm">
+                    Chat principale con il "cervello" che coordina tutti gli agenti. QG strategico per ragionare sui progetti.
+                  </p>
+
+                  {/* Area chat principale MIO */}
+                  <div className="bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-4">
+                    <div className="space-y-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Brain className="h-5 w-5 text-purple-400" />
+                          <span className="text-[#e8fbff] font-medium">MIO</span>
+                          <span className="text-xs text-[#e8fbff]/50">GPT-5 Coordinatore</span>
+                          {mioMainConversationId && (
+                            <span className="text-xs text-[#e8fbff]/30">ID: {mioMainConversationId.slice(0, 8)}...</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-[#e8fbff]/50">{mioMessages.length} messaggi</span>
+                          {/* Pulsante STOP sempre visibile */}
+                          <button
+                            onClick={stopGeneration}
+                            disabled={!mioSending}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                              mioSending
+                                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse cursor-pointer'
+                                : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'
+                            }`}
+                            title={mioSending ? 'Interrompi tutti gli agenti' : 'Nessuna elaborazione in corso'}
+                          >
+                            <StopCircle className="h-4 w-4" />
+                            <span className="text-sm">STOP</span>
+                          </button>
+                        </div>
+                      </div>
+                      {/* Area messaggi */}
+                      <div className="relative">
+                        <div ref={mioMessagesRef} className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-scroll space-y-3 chat-messages-container">
+                        {mioMessages.length === 0 ? (
+                          <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
+                        ) : (
+                          mioMessages.map((msg) => (
+                            <div
+                              key={msg.id}
+                              className={`p-3 rounded-lg ${
+                                msg.role === 'user'
+                                  ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 ml-8'
+                                  : msg.role === 'assistant'
+                                  ? 'bg-[#10b981]/20 border border-[#10b981]/30 mr-8'
+                                  : 'bg-[#ef4444]/20 border border-[#ef4444]/30'
+                              }`}
+                            >
+                              <div className="flex items-start gap-2">
+                                {msg.role === 'assistant' && (
+                                  <Brain className="h-4 w-4 text-purple-400 mt-0.5" />
+                                )}
+                                <div className="flex-1">
+                                  <div className="text-xs text-[#e8fbff]/50 mb-1 flex items-center justify-between">
+                                    <span>
+                                      {msg.role === 'user' ? 'Tu' : msg.role === 'assistant' ? (
+                                        msg.agentName ? `${msg.agentName.toUpperCase()}` : 'MIO'
+                                      ) : 'Errore'}
+                                      {msg.source && <span className="ml-2 text-[#e8fbff]/30">({msg.source})</span>}
+                                    </span>
+                                    <span className="text-[#e8fbff]/30">
+                                      {new Date(msg.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                  <MessageContent content={msg.content} />
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                        {mioLoading && (
+                          <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
+                            <div className="flex items-center gap-2">
+                              <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
+                              <p className="text-[#e8fbff]/70 text-sm">MIO sta pensando...</p>
+                            </div>
+                          </div>
+                        )}
+                        </div>
+                        {/* Bottone Scroll to Bottom */}
+                        {showMioScrollButton && mioMessages.length > 0 && (
+                          <button
+                            onClick={() => scrollMioToBottom()}
+                            className="absolute bottom-2 right-2 z-10 size-10 rounded-full bg-[#8b5cf6] shadow-lg flex items-center justify-center hover:bg-[#8b5cf6]/90 transition-all"
+                            aria-label="Torna all'ultimo messaggio"
+                          >
+                            <ArrowDown className="size-5 text-white" />
+                          </button>
+                        )}
+                      </div>
+                      {/* Input */}
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={mioInputValue}
+                          onChange={(e) => setMioInputValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey && !mioSending) {
+                              e.preventDefault();
+                              handleSendMio();
+                            }
+                          }}
+                          placeholder="Messaggio a MIO..."
+                          className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
+                          disabled={mioSending}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSendMio}
+                          disabled={mioSending}
+                          className="bg-[#10b981] hover:bg-[#059669] px-4 py-2 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {mioSending ? 'Invio...' : 'Invia'}
+                        </button>
+                      </div>
+                      {mioSendError && (
+                        <p className="text-xs text-[#ef4444] text-center">
+                          Errore MIO: {mioSendError}
+                        </p>
+                      )}
+                      {mioError && (
+                        <p className="text-xs text-[#ef4444] text-center">
+                          {mioError}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* SEZIONE B: Pannello Multi-Agente (sotto la chat principale) */}
             <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
