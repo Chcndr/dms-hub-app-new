@@ -17,7 +17,7 @@ async function authFetch(url: string, options?: RequestInit): Promise<Response> 
   return fetch(url, { ...options, headers });
 }
 
-const AI_API_BASE = `${MIHUB_API_BASE_URL}/api/ai`;
+const AI_API_BASE = `${MIHUB_API_BASE_URL}/api/ai/chat`;
 
 interface UseConversationsReturn {
   conversations: Conversation[];
