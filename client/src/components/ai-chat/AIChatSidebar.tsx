@@ -26,6 +26,8 @@ interface AIChatSidebarProps {
   onNew: () => void;
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
+  /** Se true, renderizza come pannello dropdown dall'alto (mobile) invece che colonna laterale */
+  isMobile?: boolean;
 }
 
 function groupByDate(
@@ -189,6 +191,7 @@ export function AIChatSidebar({
   onNew,
   onRename,
   onDelete,
+  isMobile,
 }: AIChatSidebarProps) {
   const grouped = groupByDate(conversations);
   const periodOrder = [
@@ -200,6 +203,8 @@ export function AIChatSidebar({
   ];
 
   if (!isOpen) {
+    // Su mobile la sidebar chiusa non mostra nulla (il toggle è nell'header)
+    if (isMobile) return null;
     return (
       <div className="flex flex-col items-center py-3 px-1 border-r border-slate-700/50 bg-[#0b1220]">
         <button
@@ -221,7 +226,7 @@ export function AIChatSidebar({
   }
 
   return (
-    <div className="w-64 border-r border-slate-700/50 flex flex-col bg-[#0b1220] shrink-0">
+    <div className={`${isMobile ? 'w-full max-h-[50vh] border-b' : 'w-64 border-r shrink-0'} border-slate-700/50 flex flex-col bg-[#0b1220]`}>
       {/* Header */}
       <div className="p-3 border-b border-slate-700/50 flex items-center gap-2">
         <Button
@@ -236,9 +241,9 @@ export function AIChatSidebar({
         <button
           onClick={onToggle}
           className="p-1.5 text-slate-400 hover:text-teal-400 transition-colors"
-          title="Chiudi sidebar"
+          title={isMobile ? "Chiudi" : "Chiudi sidebar"}
         >
-          <PanelLeftClose className="size-4" />
+          {isMobile ? <X className="size-4" /> : <PanelLeftClose className="size-4" />}
         </button>
       </div>
 
