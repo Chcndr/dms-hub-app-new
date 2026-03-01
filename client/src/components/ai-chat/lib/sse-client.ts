@@ -2,7 +2,7 @@
  * SSE Client for AI Chat Streaming
  * Handles Server-Sent Events with fetch + ReadableStream (native, no external libs)
  */
-import type { SSEEvent } from "../types";
+import type { SSEEvent, SSEDataEvent } from "../types";
 import { getIdToken } from "@/lib/firebase";
 
 interface SSEClientOptions {
@@ -10,6 +10,7 @@ interface SSEClientOptions {
   body: object;
   onToken: (token: string) => void;
   onStart?: (data: { conversation_id: string; model: string }) => void;
+  onData?: (data: SSEDataEvent) => void;
   onDone: (data: {
     message_id: string;
     tokens_used: number;
@@ -81,6 +82,9 @@ export async function streamChat(options: SSEClientOptions): Promise<void> {
                 conversation_id: data.conversation_id,
                 model: data.model,
               });
+              break;
+            case "data":
+              options.onData?.(data);
               break;
             case "done":
               options.onDone({

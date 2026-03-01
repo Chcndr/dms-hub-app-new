@@ -52,11 +52,34 @@ export interface SSEStartEvent {
   model: string;
 }
 
+export interface SSEDataEvent {
+  type: "data";
+  data_type: "table" | "stats" | "list";
+  title?: string;
+  content: StructuredData;
+}
+
+/** Dati strutturati da function calling backend */
+export interface StructuredData {
+  columns?: string[];
+  rows?: Record<string, string | number | boolean | null>[];
+  stats?: StatItem[];
+  items?: string[];
+}
+
+export interface StatItem {
+  label: string;
+  value: string | number;
+  trend?: "up" | "down" | "neutral";
+  icon?: string;
+}
+
 export type SSEEvent =
   | SSETokenEvent
   | SSEDoneEvent
   | SSEErrorEvent
-  | SSEStartEvent;
+  | SSEStartEvent
+  | SSEDataEvent;
 
 export interface StreamChatRequest {
   conversation_id: string | null;

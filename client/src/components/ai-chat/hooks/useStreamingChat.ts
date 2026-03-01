@@ -4,7 +4,7 @@
  */
 import { useState, useCallback, useRef } from "react";
 import { streamChat } from "../lib/sse-client";
-import type { ChatMessage, StreamChatRequest } from "../types";
+import type { ChatMessage, StreamChatRequest, SSEDataEvent } from "../types";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 
 const AI_STREAM_URL = `${MIHUB_API_BASE_URL}/api/ai/chat/stream`;
@@ -18,7 +18,9 @@ interface UseStreamingChatReturn {
   messages: ChatMessage[];
   streamingContent: string;
   isStreaming: boolean;
+  isLoadingData: boolean;
   error: string | null;
+  dataEvents: SSEDataEvent[];
   sendMessage: (text: string, conversationId: string | null) => Promise<void>;
   stopStreaming: () => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
@@ -31,7 +33,9 @@ export function useStreamingChat(
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamingContent, setStreamingContent] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dataEvents, setDataEvents] = useState<SSEDataEvent[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const tokenBufferRef = useRef("");
   const rafIdRef = useRef<number | undefined>(undefined);
@@ -46,8 +50,10 @@ export function useStreamingChat(
       };
       setMessages(prev => [...prev, userMessage]);
       setIsStreaming(true);
+      setIsLoadingData(false);
       setStreamingContent("");
       setError(null);
+      setDataEvents([]);
       tokenBufferRef.current = "";
 
       abortRef.current = new AbortController();
@@ -68,7 +74,13 @@ export function useStreamingChat(
             }
           },
 
+          onData: event => {
+            setIsLoadingData(false);
+            setDataEvents(prev => [...prev, event]);
+          },
+
           onToken: token => {
+            setIsLoadingData(false);
             tokenBufferRef.current += token;
             if (!rafIdRef.current) {
               rafIdRef.current = requestAnimationFrame(() => {
@@ -103,12 +115,14 @@ export function useStreamingChat(
                 return "";
               });
               setIsStreaming(false);
+              setIsLoadingData(false);
             }, 50);
           },
 
           onError: err => {
             setError(err.message);
             setIsStreaming(false);
+            setIsLoadingData(false);
             setStreamingContent("");
           },
         });
@@ -157,7 +171,9 @@ export function useStreamingChat(
     messages,
     streamingContent,
     isStreaming,
+    isLoadingData,
     error,
+    dataEvents,
     sendMessage,
     stopStreaming,
     setMessages,

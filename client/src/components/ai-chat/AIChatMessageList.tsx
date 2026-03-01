@@ -8,18 +8,28 @@ import { AIChatMessage } from "./AIChatMessage";
 import { AIChatTypingIndicator } from "./AIChatTypingIndicator";
 import { AIChatAvatar } from "./AIChatAvatar";
 import { AIChatMarkdown } from "./AIChatMarkdown";
-import type { ChatMessage } from "./types";
+import { AIChatDataTable } from "./AIChatDataTable";
+import { AIChatStatCard } from "./AIChatStatCard";
+import type { ChatMessage, SSEDataEvent } from "./types";
 
 interface AIChatMessageListProps {
   messages: ChatMessage[];
   streamingContent: string;
   isStreaming: boolean;
+  isLoadingData?: boolean;
+  dataEvents?: SSEDataEvent[];
+  onRetry?: () => void;
+  onFeedback?: (messageId: string, rating: "up" | "down") => void;
 }
 
 export function AIChatMessageList({
   messages,
   streamingContent,
   isStreaming,
+  isLoadingData,
+  dataEvents,
+  onRetry,
+  onFeedback,
 }: AIChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -74,9 +84,60 @@ export function AIChatMessageList({
       <div ref={scrollRef} className="h-full">
         <ScrollArea className="h-full">
           <div className="flex flex-col space-y-4 p-4 pb-2">
-            {displayMessages.map(message => (
-              <AIChatMessage key={message.id} message={message} />
-            ))}
+            {displayMessages.map((message, idx) => {
+              const isLastAssistant =
+                message.role === "assistant" &&
+                idx ===
+                  displayMessages.length -
+                    1 -
+                    [...displayMessages]
+                      .reverse()
+                      .findIndex(m => m.role === "assistant") &&
+                !isStreaming;
+              return (
+                <AIChatMessage
+                  key={message.id}
+                  message={message}
+                  isLastAssistant={isLastAssistant}
+                  onRetry={onRetry}
+                  onFeedback={onFeedback}
+                />
+              );
+            })}
+
+            {/* Data events from function calling */}
+            {dataEvents && dataEvents.length > 0 && (
+              <div className="flex items-start gap-3">
+                <AIChatAvatar role="assistant" />
+                <div className="flex flex-col gap-1 max-w-[85%] w-full">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-medium text-teal-400">
+                      AVA
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      dati consultati
+                    </span>
+                  </div>
+                  {dataEvents.map((event, idx) =>
+                    event.data_type === "table" ? (
+                      <AIChatDataTable key={idx} event={event} />
+                    ) : event.data_type === "stats" ? (
+                      <AIChatStatCard key={idx} event={event} />
+                    ) : null
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Loading data indicator */}
+            {isLoadingData && (
+              <div className="flex items-center gap-2 px-4 py-2">
+                <div className="size-2 rounded-full bg-teal-400 animate-pulse" />
+                <span className="text-xs text-teal-400/70">
+                  AVA sta consultando i dati...
+                </span>
+              </div>
+            )}
 
             {/* Streaming content (messaggio in arrivo) */}
             {isStreaming && streamingContent && (
@@ -96,7 +157,9 @@ export function AIChatMessageList({
             )}
 
             {/* Typing indicator when waiting for first token */}
-            {isStreaming && !streamingContent && <AIChatTypingIndicator />}
+            {isStreaming && !streamingContent && !isLoadingData && (
+              <AIChatTypingIndicator />
+            )}
 
             <div ref={endRef} />
           </div>

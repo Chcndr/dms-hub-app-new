@@ -6,7 +6,7 @@
  * Fase 2.1: Auto-detect ruolo utente da FirebaseAuth + comuneId da impersonazione
  */
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Download } from "lucide-react";
 import { AIChatSidebar } from "./AIChatSidebar";
 import { AIChatHeader } from "./AIChatHeader";
 import { AIChatMessageList } from "./AIChatMessageList";
@@ -16,6 +16,8 @@ import { AIChatQuotaBanner } from "./AIChatQuotaBanner";
 import { useStreamingChat } from "./hooks/useStreamingChat";
 import { useConversations } from "./hooks/useConversations";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { getIdToken } from "@/lib/firebase";
 import type { UserRoleType } from "./types";
 
 /** Mappa ruolo Firebase → ruolo AVA */
@@ -40,12 +42,15 @@ interface AIChatPanelProps {
   comuneId?: number;
   /** Tab corrente della dashboard (per contesto AVA) */
   currentTab?: string;
+  /** Se true, occupa tutta l'altezza disponibile (per uso fullscreen/widget) */
+  fullHeight?: boolean;
 }
 
 export function AIChatPanel({
   userRole,
   comuneId,
   currentTab,
+  fullHeight,
 }: AIChatPanelProps) {
   const { user } = useFirebaseAuth();
 
@@ -75,7 +80,9 @@ export function AIChatPanel({
     messages,
     streamingContent,
     isStreaming,
+    isLoadingData,
     error,
+    dataEvents,
     sendMessage,
     stopStreaming,
     setMessages,
@@ -153,10 +160,87 @@ export function AIChatPanel({
     [deleteConversation, activeConversationId, setMessages]
   );
 
+  // Retry: rigenera l'ultima risposta
+  const handleRetry = useCallback(async () => {
+    if (isStreaming) return;
+    // Trova l'ultimo messaggio utente
+    const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+    if (!lastUserMsg) return;
+    // Rimuovi l'ultimo messaggio assistente
+    setMessages(prev => {
+      const lastAssistantIdx = prev.findLastIndex(m => m.role === "assistant");
+      if (lastAssistantIdx >= 0) {
+        return prev.filter((_, i) => i !== lastAssistantIdx);
+      }
+      return prev;
+    });
+    // Reinvia il messaggio
+    clearError();
+    await sendMessage(lastUserMsg.content, activeConversationId);
+    fetchQuota();
+  }, [
+    messages,
+    isStreaming,
+    activeConversationId,
+    sendMessage,
+    setMessages,
+    clearError,
+    fetchQuota,
+  ]);
+
+  // Feedback: invia rating al backend
+  const handleFeedback = useCallback(
+    async (messageId: string, rating: "up" | "down") => {
+      try {
+        const token = await getIdToken();
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        await fetch(`${MIHUB_API_BASE_URL}/api/ai/chat/feedback`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ message_id: messageId, rating }),
+        });
+      } catch {
+        // Feedback silenzioso — non mostrare errori per il rating
+      }
+    },
+    []
+  );
+
+  // Export conversazione in testo
+  const handleExport = useCallback(() => {
+    const displayMsgs = messages.filter(m => m.role !== "system");
+    if (displayMsgs.length === 0) return;
+    const title =
+      activeConversation?.title || "Conversazione AVA";
+    const lines = [
+      `# ${title}`,
+      `Esportata il ${new Date().toLocaleString("it-IT")}`,
+      "",
+      ...displayMsgs.map(m => {
+        const role = m.role === "user" ? "Tu" : "AVA";
+        const time = new Date(m.created_at).toLocaleTimeString("it-IT", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        return `**${role}** [${time}]\n${m.content}\n`;
+      }),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ava-chat-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [messages, activeConversation]);
+
   const hasMessages = messages.filter(m => m.role !== "system").length > 0;
 
   return (
-    <div className="flex h-[calc(100vh-220px)] min-h-[500px] bg-[#0d1520] rounded-xl border border-slate-700/50 overflow-hidden">
+    <div className={`flex ${fullHeight ? "h-full" : "h-[calc(100vh-220px)] min-h-[500px]"} bg-[#0d1520] rounded-xl border border-slate-700/50 overflow-hidden`}>
       {/* Sidebar */}
       <AIChatSidebar
         conversations={conversations}
@@ -195,6 +279,7 @@ export function AIChatPanel({
         {!hasMessages && !isStreaming ? (
           <AIChatEmptyState
             userRole={effectiveRole}
+            currentTab={currentTab}
             onSuggestionClick={handleSend}
           />
         ) : (
@@ -202,16 +287,33 @@ export function AIChatPanel({
             messages={messages}
             streamingContent={streamingContent}
             isStreaming={isStreaming}
+            isLoadingData={isLoadingData}
+            dataEvents={dataEvents}
+            onRetry={handleRetry}
+            onFeedback={handleFeedback}
           />
         )}
 
-        {/* Input */}
-        <AIChatInput
-          onSend={handleSend}
-          onStop={stopStreaming}
-          isStreaming={isStreaming}
-          disabled={quotaExceeded}
-        />
+        {/* Input + Export */}
+        <div className="flex items-end gap-0">
+          <div className="flex-1 min-w-0">
+            <AIChatInput
+              onSend={handleSend}
+              onStop={stopStreaming}
+              isStreaming={isStreaming}
+              disabled={quotaExceeded}
+            />
+          </div>
+          {hasMessages && (
+            <button
+              onClick={handleExport}
+              className="shrink-0 p-3 mb-1 mr-1 text-slate-500 hover:text-teal-400 transition-colors"
+              title="Esporta conversazione"
+            >
+              <Download className="size-4" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

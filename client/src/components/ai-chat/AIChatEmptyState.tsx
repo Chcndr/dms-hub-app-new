@@ -1,5 +1,6 @@
 /**
  * AIChatEmptyState — Welcome screen con suggerimenti iniziali
+ * Fase 2.5: Suggerimenti contestuali per tab corrente della dashboard
  */
 import {
   Bot,
@@ -15,18 +16,23 @@ import {
   Clock,
   ShoppingBag,
   Car,
+  BarChart3,
+  Store,
+  Wallet,
+  Shield,
+  Activity,
 } from "lucide-react";
 import type { UserRoleType, SuggestionItem } from "./types";
 
 interface AIChatEmptyStateProps {
   userRole: UserRoleType;
+  currentTab?: string;
   onSuggestionClick: (prompt: string) => void;
 }
 
-const SUGGESTIONS_BY_ROLE: Record<
-  UserRoleType,
-  Array<SuggestionItem & { icon: typeof Bot }>
-> = {
+type SuggestionWithIcon = SuggestionItem & { icon: typeof Bot };
+
+const SUGGESTIONS_BY_ROLE: Record<UserRoleType, SuggestionWithIcon[]> = {
   pa: [
     {
       icon: Scale,
@@ -96,11 +102,89 @@ const SUGGESTIONS_BY_ROLE: Record<
   ],
 };
 
+/** Suggerimenti contestuali per tab della DashboardPA */
+const SUGGESTIONS_BY_TAB: Record<string, SuggestionWithIcon[]> = {
+  dashboard: [
+    {
+      icon: BarChart3,
+      label: "Panoramica",
+      prompt: "Dammi un riepilogo della situazione attuale dei mercati",
+    },
+    {
+      icon: Activity,
+      label: "Trend",
+      prompt: "Quali sono i trend di occupazione dell'ultimo mese?",
+    },
+  ],
+  mercati: [
+    {
+      icon: Store,
+      label: "Stato mercati",
+      prompt: "Quali mercati hanno il maggior numero di posteggi liberi?",
+    },
+    {
+      icon: MapPin,
+      label: "Dettagli mercato",
+      prompt: "Mostrami i dettagli del mercato principale del comune",
+    },
+  ],
+  imprese: [
+    {
+      icon: Users,
+      label: "Concessionari",
+      prompt: "Quali concessionari hanno la concessione in scadenza?",
+    },
+    {
+      icon: FileText,
+      label: "Situazione imprese",
+      prompt: "Quante imprese sono attive e quante in mora?",
+    },
+  ],
+  wallet: [
+    {
+      icon: Wallet,
+      label: "Incassi",
+      prompt: "Qual e' il totale degli incassi di questo mese?",
+    },
+    {
+      icon: CreditCard,
+      label: "Pagamenti in sospeso",
+      prompt: "Ci sono pagamenti in sospeso o canoni non pagati?",
+    },
+  ],
+  controlli: [
+    {
+      icon: Shield,
+      label: "Controlli",
+      prompt: "Quanti controlli sono stati effettuati questa settimana?",
+    },
+    {
+      icon: FileCheck,
+      label: "Irregolarita'",
+      prompt: "Ci sono operatori con irregolarita' da segnalare?",
+    },
+  ],
+};
+
 export function AIChatEmptyState({
   userRole,
+  currentTab,
   onSuggestionClick,
 }: AIChatEmptyStateProps) {
-  const suggestions = SUGGESTIONS_BY_ROLE[userRole] || SUGGESTIONS_BY_ROLE.pa;
+  const roleSuggestions =
+    SUGGESTIONS_BY_ROLE[userRole] || SUGGESTIONS_BY_ROLE.pa;
+
+  // Se c'e' un tab specifico con suggerimenti contestuali, li prioritizza
+  const tabSuggestions =
+    currentTab && SUGGESTIONS_BY_TAB[currentTab]
+      ? SUGGESTIONS_BY_TAB[currentTab]
+      : [];
+
+  // Combina: prima suggerimenti contestuali del tab, poi i generici del ruolo
+  const suggestions =
+    tabSuggestions.length > 0
+      ? [...tabSuggestions, ...roleSuggestions.slice(0, 2)]
+      : roleSuggestions;
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-6 gap-8">
