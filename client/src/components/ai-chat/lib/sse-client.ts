@@ -3,6 +3,7 @@
  * Handles Server-Sent Events with fetch + ReadableStream (native, no external libs)
  */
 import type { SSEEvent } from "../types";
+import { getIdToken } from "@/lib/firebase";
 
 interface SSEClientOptions {
   url: string;
@@ -19,15 +20,20 @@ interface SSEClientOptions {
 }
 
 export async function streamChat(options: SSEClientOptions): Promise<void> {
+  const token = await getIdToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "text/event-stream",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(options.url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "text/event-stream",
-    },
+    headers,
     body: JSON.stringify(options.body),
     signal: options.signal,
-    credentials: "include",
   });
 
   if (!response.ok) {

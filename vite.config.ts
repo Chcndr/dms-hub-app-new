@@ -1,6 +1,8 @@
+// Force rebuild with correct code - 2025-12-03 07:04
 import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import fs from "node:fs";
 import path from "path";
 import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
@@ -16,7 +18,7 @@ export default defineConfig({
   plugins,
   define: {
     "import.meta.env.VITE_TRPC_URL": JSON.stringify(
-      (process.env.VITE_TRPC_URL || "https://mihub.157-90-29-66.nip.io").trim()
+      (process.env.VITE_TRPC_URL || "https://orchestratore.mio-hub.me").trim()
     ),
   },
   resolve: {

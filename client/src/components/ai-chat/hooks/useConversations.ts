@@ -5,8 +5,19 @@
 import { useState, useCallback, useEffect } from "react";
 import type { Conversation, ChatMessage, QuotaInfo } from "../types";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { getIdToken } from "@/lib/firebase";
 
-const AI_API_BASE = `${MIHUB_API_BASE_URL}/api/ai`;
+// Helper: fetch con auth token Firebase
+async function authFetch(url: string, options?: RequestInit): Promise<Response> {
+  const token = await getIdToken();
+  const headers = new Headers(options?.headers);
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(url, { ...options, headers });
+}
+
+const AI_API_BASE = `${MIHUB_API_BASE_URL}/api/ai/chat`;
 
 interface UseConversationsReturn {
   conversations: Conversation[];
@@ -28,9 +39,7 @@ export function useConversations(): UseConversationsReturn {
   const fetchConversations = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${AI_API_BASE}/conversations`, {
-        credentials: "include",
-      });
+      const res = await authFetch(`${AI_API_BASE}/conversations`);
       if (!res.ok) throw new Error("Errore nel caricamento conversazioni");
       const data = await res.json();
       setConversations(data.conversations ?? []);
@@ -45,10 +54,9 @@ export function useConversations(): UseConversationsReturn {
   const createConversation =
     useCallback(async (): Promise<Conversation | null> => {
       try {
-        const res = await fetch(`${AI_API_BASE}/conversations`, {
+        const res = await authFetch(`${AI_API_BASE}/conversations`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({}),
         });
         if (!res.ok) throw new Error("Errore nella creazione conversazione");
@@ -62,10 +70,9 @@ export function useConversations(): UseConversationsReturn {
 
   const renameConversation = useCallback(async (id: string, title: string) => {
     try {
-      await fetch(`${AI_API_BASE}/conversations/${id}`, {
+      await authFetch(`${AI_API_BASE}/conversations/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ title }),
       });
       setConversations(prev =>
@@ -78,9 +85,8 @@ export function useConversations(): UseConversationsReturn {
 
   const deleteConversation = useCallback(async (id: string) => {
     try {
-      await fetch(`${AI_API_BASE}/conversations/${id}`, {
+      await authFetch(`${AI_API_BASE}/conversations/${id}`, {
         method: "DELETE",
-        credentials: "include",
       });
       setConversations(prev => prev.filter(c => c.id !== id));
     } catch {
@@ -91,11 +97,8 @@ export function useConversations(): UseConversationsReturn {
   const fetchMessages = useCallback(
     async (conversationId: string): Promise<ChatMessage[]> => {
       try {
-        const res = await fetch(
-          `${AI_API_BASE}/conversations/${conversationId}/messages`,
-          {
-            credentials: "include",
-          }
+        const res = await authFetch(
+          `${AI_API_BASE}/conversations/${conversationId}/messages`
         );
         if (!res.ok) return [];
         const data = await res.json();
@@ -109,9 +112,7 @@ export function useConversations(): UseConversationsReturn {
 
   const fetchQuota = useCallback(async () => {
     try {
-      const res = await fetch(`${AI_API_BASE}/quota`, {
-        credentials: "include",
-      });
+      const res = await authFetch(`${AI_API_BASE}/quota`);
       if (!res.ok) return;
       const data = await res.json();
       setQuota(data);

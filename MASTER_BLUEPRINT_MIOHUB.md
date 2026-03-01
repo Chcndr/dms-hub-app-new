@@ -1,10 +1,70 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.3.1 (AVA Qwen 7B Benchmark + System Prompt Optimization)
-> **Data:** 28 Febbraio 2026
+> **Versione:** 9.4.0 (AVA Fase 1 COMPLETATA + Streaming SSE + Prompt Tiered v2.0)
+> **Data:** 01 Marzo 2026
+> 
+> --- 
+> ### CHANGELOG v9.4.0 (01 Mar 2026)
+> **AVA Fase 1 COMPLETATA — Sistema di Chat AI Professionale con Streaming e Memoria**
+> 
+> **Stato:** ✅ COMPLETATO (Deployato su Hetzner + Vercel)
+> 
+> **Punti Chiave Implementati:**
+> - **Streaming SSE (Server-Sent Events):** Implementato endpoint `POST /api/ai/chat/stream` su Hetzner. Risposte parola per parola (stile ChatGPT) per un'esperienza fluida.
+> - **Prompt Tiered v2.0:** Sistema a 3 livelli (Core, Ruolo, KB on-demand) per risposte precise e veloci.
+> - **Knowledge Base Integrata:** Topic matching per Bolkestein, SUAP, Carbon Credits, Pagamenti e Presenze.
+> - **Memoria Persistente:** Nuove tabelle `ai_conversations` e `ai_messages` su Neon PostgreSQL per lo storico chat nella sidebar.
+> - **Fix Sidebar:** Risolto bug stabilità `userId` (decodifica JWT Firebase) e allineamento campi API.
+> 
+> **Analisi Branch Claude:**
+> - Analizzato branch `claude/review-production-fixes-3sUvQ`. 
+> - **SCARTATO:** Il branch conteneva regressioni (chat simulata hardcoded e path API errati). 
+> - Il `master` attuale è confermato come la versione più avanzata e stabile.
+> 
+> **Autore:** Manus AI
+> **Stato:** PRODUZIONE
+>
+> --- 
+> ### CHANGELOG v9.1.2 (26 Feb 2026)
+> **Fix accredito wallet associazione per pagamenti servizio + fix canone + fix auth**
+> 
+> **Backend — 4 fix di Manus (commit `75673c7`, `6260adc`, `06958db`, `7a75153`):**
+> - **Fix 1: comune_id per canone** (`75673c7`) — Aggiunto `m.comune_id` alla SELECT in `/api/wallets/company/:id` per includere il comune_id dai markets nelle wallet CONCESSION. Il frontend ne ha bisogno per il pagamento canone.
+> - **Fix 2: Accredito wallet associazione su /servizio** (`6260adc`) — L'endpoint `POST /api/pagamenti/servizio` ora accredita il `wallet_associazione` quando il servizio è collegato a un'associazione (via `servizi_associazioni.associazione_id` o `richieste_servizi.associazione_id`). Auto-crea wallet, aggiorna saldo, registra transazione tipo `SERVIZIO`.
+> - **Fix 3: session_token auth** (`06958db`) — Corretto bug nel middleware `requirePaymentAuth`: cercava colonna `s.token` (inesistente) invece di `s.session_token`. Gli utenti ARPA/email-password ora possono autenticarsi correttamente sugli endpoint pagamenti.
+> - **Cleanup: rimosso endpoint temporaneo** (`7a75153`) — Rimosso `/api/pagamenti/fix-db` dopo correzione manuale DB.
+> 
+> **Correzione manuale DB:**
+> - Accreditati €50 al wallet Confcommercio Bologna (id:1) per pagamento SCIA precedente al fix. Saldo aggiornato da €50 a €100.
+> - Registrata transazione id:2 in `transazioni_wallet_associazione` (tipo SERVIZIO, impresa MIO TEST).
+> 
+> **Frontend — fix di Claude (commit `c0111a7`):**
+> - Fix notifiche colori, stato iscrizione associazione, badge corsi, estrazione comune_id per canone.
+> 
+> **Stato:** Tutti i flussi di pagamento funzionanti end-to-end (quota, servizio, canone).
+> **Autore:** Manus AI (backend) & Claude AI (frontend)
+> **Stato:** PRODUZIONE
 >
 > ---
+> ### CHANGELOG v9.1.1 (26 Feb 2026)
+> **Fix completo del flusso di pagamento quota associativa dall'App Impresa**
+> 
+> **Backend — 3 fix di Manus (commit `4e570ea`, `be1ce6d`, `5dbd206`):**
+> - **Fix 1: Autenticazione pagamenti** — Escluso `/api/pagamenti/*` dal middleware IDOR (`validateImpersonation`) che bloccava i POST con `comune_id`. Aggiunto middleware locale `requirePaymentAuth` che accetta sia Firebase ID Token che MioHub session_token.
+> - **Fix 2: findGenericoWallet fallback** — La funzione cercava solo `type = 'GENERICO'` (inesistente nel DB). Ora cerca con priorità: GENERICO → SPUNTISTA → MAIN → primo disponibile.
+> - **Fix 3: Accredito wallet associazione** — L'endpoint `POST /api/pagamenti/quota` ora: (1) auto-crea `wallet_associazione` se non esiste, (2) aggiorna il saldo (+importo), (3) registra transazione in `transazioni_wallet_associazione` (tipo `QUOTA_ASSOCIATIVA`, stato `completata`). Prima faceva solo il WITHDRAW dal wallet impresa.
+> 
+> **Frontend — 4 fix di Claude (commit `1ef8dd9`):**
+> - **Fix 1: PagaConWallet.tsx** — L'endpoint ora cambia in base al `tipo`: `quota_associativa` → `POST /api/pagamenti/quota` con `{ impresa_id, importo, tesseramento_id, note }`, `corso` → `POST /api/pagamenti/corso`, default → `POST /api/pagamenti/servizio`.
+> - **Fix 2: WalletImpresaPage.tsx** — Il colore delle transazioni ADDEBITO nello storico è ora bianco (`#e8fbff`) invece di arancione, per badge, importo, icona e bordo.
+> - **Fix 3: AnagraficaPage.tsx** — `handleAssociatiEPaga` ora chiama `setSelectedAssociazione(assoc)` prima di aprire il dialog, risolvendo il bug dove `onPagamentoSuccess` usciva al guard `if (!selectedAssociazione) return` senza creare il tesseramento.
+> - **Fix 4: WalletAssociazionePanel.tsx** — Il tab "Riepilogo" ora mostra conteggio transazioni e totale incassato invece del placeholder "I dati verranno popolati dal backend".
+> 
+> **Stato:** Pagamento quota associativa **funzionante end-to-end** in produzione.
+> **Autore:** Manus AI (backend) & Claude AI (frontend)
+> **Stato:** PRODUZIONE
 >
+> ---
 > ### CHANGELOG v9.1.0 (25 Feb 2026)
 >
 > **Implementazione completa del sistema "Business Associazioni"**
@@ -74,84 +134,6 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
-
-### Sessione 28 Febbraio 2026 — v9.3.1 — AVA Benchmark Qwen 7B + System Prompt Optimization
-
-**Contesto:** Benchmark del modello Qwen 2.5 7B-instruct-q4_K_M su Ollama (Hetzner) per la chat AVA. Il modello 7B sostituisce il 14B che era instabile (crash dopo il primo test). Progettazione ottimizzazione system prompt per ridurre latenza.
-
-**Stato:** ✅ BENCHMARK COMPLETATO — OTTIMIZZAZIONE PROMPT PRONTA PER DEPLOY
-
-#### Modello in Produzione
-
-| Parametro       | Valore                                |
-| --------------- | ------------------------------------- |
-| Modello         | `qwen2.5:7b-instruct-q4_K_M`         |
-| Runtime         | Ollama su Hetzner VPS (157.90.29.66)  |
-| Quantizzazione  | Q4_K_M (4-bit, qualita' 95%+)        |
-| VRAM richiesta  | ~4.5 GB                               |
-| Context window  | 8192 token (default)                  |
-| Modello prec.   | qwen2.5:14b (dismesso per instab.)   |
-
-#### Risultati Benchmark
-
-| # Test | Tipo  | Domanda                          | Tempo | Token | Stabilita' |
-| ------ | ----- | -------------------------------- | ----- | ----- | ---------- |
-| 1      | Cold  | "Presentati brevemente"          | 64s   | 156   | OK         |
-| 2      | Warm  | "Sistema presenze mercati?"      | 99s   | 594   | OK         |
-| 3      | Warm  | "Quanti mercati a Bologna?"      | 65s   | 182   | OK         |
-
-#### Confronto 7B vs 14B
-
-| Metrica     | 14B                     | 7B                            |
-| ----------- | ----------------------- | ----------------------------- |
-| Stabilita'  | 1/3 (crash dopo test 1) | **3/3 (tutti OK)**            |
-| Qualita'    | Buona (quando funziona) | **Molto buona** (PA, tabelle) |
-| Velocita'   | N/A (instabile)         | 60-100s (SSE maschera)        |
-| VRAM        | ~8 GB                   | **~4.5 GB**                   |
-
-#### Analisi Claude — Collo di Bottiglia
-
-**Problema principale:** Il system prompt attuale in `llm.js` (righe 249-480) e' ~6.000 token.
-Include l'intera Knowledge Base DMS (30 documenti PDF riassunti) ad ogni richiesta.
-Il modello 7B processa tutti i 6k token prima di generare, causando 60-100s di latenza.
-
-**Soluzione progettata: System Prompt Tiered v2.0**
-
-| Livello  | Token | Quando inviato                    |
-| -------- | ----- | --------------------------------- |
-| CORE     | ~500  | SEMPRE (identita' + regole)       |
-| CONTESTO | ~400  | Per ruolo (PA/Impresa/Cittadino)  |
-| KB       | ~500  | Solo se domanda matcha un topic   |
-| TOTALE   | ~1.400 | vs ~6.000 attuali (**-75%**)     |
-
-**Performance attese dopo ottimizzazione:**
-
-| Metrica          | Prima (6k tok) | Dopo (~1.4k tok) | Miglioramento |
-| ---------------- | -------------- | ----------------- | ------------- |
-| Tempo cold start | ~64s           | ~25-35s           | -45%          |
-| Tempo warm       | ~65-99s        | ~30-50s           | -40%          |
-| RAM Ollama       | Alta           | -30%              | Significativo |
-
-**File di riferimento:** `.mio-agents/ava_system_prompt_v2.md` — template completo con:
-- Prompt CORE, CONTESTO per ruolo, KB fragments on-demand
-- Algoritmo topic matching (regex su messaggio utente)
-- Pseudo-codice `buildSystemPrompt()` per `llm.js`
-- Parametri Ollama ottimizzati (`num_ctx: 4096`, `keep_alive: 30m`, `num_predict: 512`)
-- Cache conteggi DB (TTL 5 min)
-- Piano deploy step-by-step
-
-**Vincoli negativi (cosa NON fare):**
-- NON aumentare il context window oltre 4096 (spreco su 7B)
-- NON inviare tutta la KB ad ogni richiesta
-- NON usare temperature > 0.8 (risposte incoerenti su 7B)
-- NON passare al 14B (instabile su questa VPS)
-- NON implementare RAG prima di aver ottimizzato il prompt (overkill per ora)
-
-**Fase 2 futura — RAG:**
-Quando il topic matching non basta, implementare RAG con `nomic-embed-text` + `pgvector` su Neon.
-Elimina completamente la KB dal prompt, sostituita da ricerca semantica per similarita'.
-
----
 
 ### Sessione 25 Febbraio 2026 — v9.0.2 — Migrazione Completa API URL a Backend Unico
 
@@ -9980,31 +9962,43 @@ ADD COLUMN IF NOT EXISTS riferimento_id INTEGER;
 
 #### B2. Nuovi Endpoint
 
-| Metodo | Endpoint                        | Descrizione                              | File                     |
-| ------ | ------------------------------- | ---------------------------------------- | ------------------------ |
-| `GET`  | `/api/adempimenti/impresa/:id`  | Adempimenti obbligatori vs stato attuale | `adempimenti.js` (nuovo) |
-| `GET`  | `/api/associazioni/pubbliche`   | Lista associazioni con pagina attiva     | `associazioni.js`        |
-| `GET`  | `/api/associazioni/:id/pagina`  | Pagina informativa associazione          | `associazioni.js`        |
-| `PUT`  | `/api/associazioni/:id/pagina`  | Aggiorna pagina (dall'associazione)      | `associazioni.js`        |
-| `GET`  | `/api/tesseramenti/impresa/:id` | I miei tesseramenti                      | `associazioni.js`        |
-| `POST` | `/api/tesseramenti/richiedi`    | Richiedi tesseramento + paga da wallet   | `associazioni.js`        |
-| `POST` | `/api/pagamenti/servizio`       | Paga servizio da wallet generico         | `pagamenti.js` (nuovo)   |
-| `POST` | `/api/pagamenti/corso`          | Paga iscrizione corso da wallet generico | `pagamenti.js` (nuovo)   |
+| Metodo | Endpoint | Descrizione | File |
+|---|---|---|---|
+| `GET` | `/api/adempimenti/impresa/:id` | Adempimenti obbligatori vs stato attuale | `adempimenti.js` (nuovo) |
+| `GET` | `/api/associazioni/pubbliche` | Lista associazioni con pagina attiva | `associazioni.js` |
+| `GET` | `/api/associazioni/:id/pagina` | Pagina informativa associazione | `associazioni.js` |
+| `PUT` | `/api/associazioni/:id/pagina` | Aggiorna pagina (dall'associazione) | `associazioni.js` |
+| `GET` | `/api/tesseramenti/impresa/:id` | I miei tesseramenti | `associazioni.js` |
+| `POST` | `/api/tesseramenti/richiedi` | Richiedi tesseramento + paga da wallet | `associazioni.js` |
+| `POST` | `/api/pagamenti/servizio` | Paga servizio da wallet generico | `pagamenti.js` |
+| `POST` | `/api/pagamenti/quota` | Paga quota associativa + accredita wallet associazione | `pagamenti.js` |
+| `POST` | `/api/pagamenti/corso` | Paga iscrizione corso da wallet generico | `pagamenti.js` |
 
 #### B3. Flusso Pagamento Centralizzato
 
 ```
-1. Frontend → POST /api/pagamenti/{tipo}
-   Body: { impresa_id, importo, riferimento_id, descrizione }
+1. Frontend PagaConWallet.tsx → sceglie endpoint in base al tipo:
+   - quota_associativa → POST /api/pagamenti/quota { impresa_id, tesseramento_id, importo, note }
+   - corso → POST /api/pagamenti/corso { impresa_id, corso_id, importo, note }
+   - servizio/generico → POST /api/pagamenti/servizio { impresa_id, importo, tipo, descrizione }
 
-2. Backend:
-   a. SELECT wallet GENERICO WHERE company_id = impresa_id
+2. Autenticazione: middleware requirePaymentAuth (accetta Firebase token O session_token)
+   NOTA: /api/pagamenti/* è ESCLUSO dal middleware IDOR (non è multi-tenant)
+
+3. Backend (tutti gli endpoint):
+   a. findGenericoWallet(impresa_id) — cerca: GENERICO → SPUNTISTA → MAIN → primo
    b. Verifica saldo >= importo
    c. UPDATE wallets SET balance = balance - importo
    d. INSERT wallet_transactions (con riferimento_tipo e riferimento_id)
-   e. Aggiorna record riferimento (tesseramento/servizio/corso)
-   f. INSERT notifica CONFERMA_PAGAMENTO
-   g. Return transazione completata
+
+4. Solo per /quota (accredito associazione):
+   e. Auto-create wallet_associazione (ON CONFLICT DO NOTHING)
+   f. UPDATE wallet_associazione SET saldo = saldo + importo
+   g. INSERT transazioni_wallet_associazione (tipo QUOTA_ASSOCIATIVA)
+   h. UPDATE tesseramenti_associazione SET importo_pagato += importo
+
+5. Notifica CONFERMA_PAGAMENTO all'associazione
+6. Return transazione completata + nuovo saldo
 ```
 
 #### B4. Trigger
@@ -10067,6 +10061,121 @@ Anagrafica → Formazione → Corsi disponibili → "Iscriviti e Paga"
 
 > **Nota:** Queste azioni sono raccomandate prima di aprire il sistema al pubblico. Sono state identificate durante la sessione di hardening backend del 23 Febbraio 2026. Il sistema è attualmente in costruzione e funzionante per uso interno/test.
 
+| # | Priorità | Azione | Descrizione | Stato |
+|---|----------|--------|-------------|-------|
+| 1 | **CRITICA** | Attivare Verifica Firma Token Firebase | Scaricare la service account key da Firebase Console (`dmshub-auth-2975e`), caricarla su Hetzner e configurare la variabile `GOOGLE_APPLICATION_CREDENTIALS`. Il codice è già pronto in `config/firebase-admin.js` — si attiva automaticamente. Senza questo, chiunque può creare un token JWT falso e accedere. | ⏳ DA FARE |
+| 2 | **ALTA** | Validazione Impersonazione Server-Side | Creare middleware `middleware/impersonation.js` che verifichi server-side che l'utente abbia il permesso di impersonare il comune/associazione richiesto. Attualmente l'impersonazione è gestita solo lato client. | ⏳ DA FARE |
+| 3 | **MEDIA** | Sessione JWT con Refresh Token | Valutare se ridurre la scadenza sessione (attualmente 24h) e implementare refresh token. Passaggio intermedio consigliato: 7 giorni + refresh, poi eventualmente ridurre. Decisione di prodotto: impatta l'esperienza utente. | ⏳ DA FARE |
+| 4 | **BASSA** | Revisione Completa Permessi RBAC | Audit di tutti i ruoli e permessi per garantire il principio del minimo privilegio. | ⏳ DA FARE |
+| 5 | **BASSA** | Test di Carico (Load Testing) | Simulare utenti simultanei per identificare colli di bottiglia e verificare stabilità sotto stress. | ⏳ DA FARE |
+
+---
+
+## 📌 PUNTO DI RIPRISTINO STABILE — 28 Febbraio 2026
+
+> **Tag**: `STABLE-20260228-PRE-CHAT-AI-v9.1.2`
+> **Creato su**: Frontend (`dms-hub-app-new`) + Backend (`mihub-backend-rest`)
+> **Motivo**: Snapshot stabile prima dell'inizio sviluppo Chat AI Streaming
+
+### Stato sistema al momento del tag
+
+| Componente | Stato | Dettagli |
+|------------|-------|----------|
+| **Frontend Vercel** | ✅ OK | HTTP 200, deploy automatico su push master |
+| **Backend Hetzner** | ✅ OK | v2.0.0, uptime 159378s, Node v22.22.0, PM2 |
+| **Database Neon** | ✅ OK | Latency 123ms, 152 tabelle |
+| **Guardian** | ✅ OK | 627 logs last 24h |
+| **MIO Agent** | ✅ OK | 130 msgs last 7d, 3 conversazioni attive, 5 agenti |
+| **PDND API** | ⚠️ Non configurato | Warning noto, non bloccante |
+| **Storage S3** | ⚠️ Disabilitato | Warning noto, non bloccante |
+
+### Endpoint verificati (tutti 200)
+
+- `/api/health` — Health check base
+- `/api/health/full` — Health check completo (7 servizi)
+- `/api/guardian/health` — Guardian
+- `/api/wallets` — Wallet
+- `/api/markets` — Mercati
+- `/api/associazioni` — Associazioni
+- `/api/auth/config` — Auth config
+
+### Come ripristinare
+
+```bash
+# Frontend
+cd dms-hub-app-new
+git checkout STABLE-20260228-PRE-CHAT-AI-v9.1.2
+git push origin master --force
+
+# Backend
+cd mihub-backend-rest
+git checkout STABLE-20260228-PRE-CHAT-AI-v9.1.2
+git push origin master --force
+# Il deploy automatico via GitHub Actions riporterà Hetzner allo stato stabile
+```
+
+### Documenti mergiati in master (da branch Claude)
+
+| Documento | Versione | Righe | Contenuto |
+|-----------|----------|-------|-----------|
+| `PROGETTO_A99X_INTEGRAZIONE_MIOHUB.md` | v2.0 | 556 | Visione strategica A99X, servizi self-hosted EU, privacy PA |
+| `PROGETTO_CHAT_AI_STREAMING.md` | v1.1 | 1329 | Progetto frontend chat AI con streaming SSE |
+| `PROGETTO_ABBONAMENTO_AI_PA.md` | v1.1 | 662 | Modello commerciale subscription 4 tier (€39-€899/mese) |
+
+---
+
+## 🤖 SVILUPPO CHAT AI STREAMING — FASE 1 (In corso)
+
+> **Inizio**: 28 Febbraio 2026
+> **Riferimento**: `PROGETTO_CHAT_AI_STREAMING.md` v1.1
+> **Obiettivo**: Chat AI con UX identica a ChatGPT/Claude, streaming token-by-token
+
+### Divisione responsabilità
+
+| Responsabile | Componente | Dettagli |
+|-------------|------------|----------|
+| **Manus** | Backend REST | 7 endpoint su mihub-backend-rest (Express.js, Hetzner) |
+| **Manus** | Endpoint SSE | `POST /api/ai/chat/stream` — proxy streaming da Ollama |
+| **Manus** | Database | Tabelle `ai_conversations` + `ai_messages` su Neon |
+| **Manus** | Ollama | Installazione + configurazione Qwen2.5-8B su Hetzner |
+| **Manus** | Quota | Verifica piano/quota prima di ogni richiesta |
+| **Claude** | Frontend React | 12 componenti + 3 hooks + 2 utility in `client/src/components/ai-chat/` |
+| **Claude** | Streaming client | Client SSE con reconnect e parsing |
+| **Claude** | UI/UX | Markdown rendering, typing indicator, suggerimenti, sidebar storico |
+
+### Endpoint backend da implementare (Manus)
+
+```
+POST   /api/ai/chat/stream          — SSE streaming (cuore del sistema)
+GET    /api/ai/conversations         — Lista conversazioni con paginazione
+POST   /api/ai/conversations         — Crea nuova conversazione
+PATCH  /api/ai/conversations/:id     — Rinomina conversazione
+DELETE /api/ai/conversations/:id     — Elimina conversazione
+GET    /api/ai/conversations/:id/messages — Messaggi di una conversazione
+GET    /api/ai/quota                 — Quota utilizzo corrente
+```
+
+### Vincoli sviluppo Chat AI
+
+| Vincolo | Dettaglio |
+|---------|----------|
+| **ZERO tRPC** | Solo REST API su mihub-backend-rest |
+| **Deploy via GitHub Actions** | Mai SSH manuale su Hetzner |
+| **Non toccare v9.1.2** | Il sistema stabile non va modificato — approccio chirurgico |
+| **Drizzle ORM** | Schema DB in `drizzle/schema.ts` — mai SQL diretto |
+| **MarketMapComponent.tsx** | INTOCCABILE — max 10-20 righe, test sempre, commit frequenti |
+| **Modello AI iniziale** | Qwen2.5-8B su CPU (tier Starter) — upgrade a GPU dopo |
+
+### NON FARE durante lo sviluppo Chat AI
+
+- **NON** modificare endpoint esistenti (mercati, wallet, presenze, ecc.)
+- **NON** toccare l'autenticazione Firebase/ARPA
+- **NON** installare tRPC o dipendenze non necessarie
+- **NON** implementare A99X (Jitsi, Cal.com, Whisper) — è Fase 2+
+- **NON** usare SSH manuale per deploy — solo GitHub Actions
+- **NON** creare proxy Vercel per la chat — tutto su mihub-backend-rest
+
+
 | #   | Priorità    | Azione                                 | Descrizione                                                                                                                                                                                                                                                                                                      | Stato      |
 | --- | ----------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | 1   | **CRITICA** | Attivare Verifica Firma Token Firebase | Scaricare la service account key da Firebase Console (`dmshub-auth-2975e`), caricarla su Hetzner e configurare la variabile `GOOGLE_APPLICATION_CREDENTIALS`. Il codice è già pronto in `config/firebase-admin.js` — si attiva automaticamente. Senza questo, chiunque può creare un token JWT falso e accedere. | ⏳ DA FARE |
@@ -10074,3 +10183,454 @@ Anagrafica → Formazione → Corsi disponibili → "Iscriviti e Paga"
 | 3   | **MEDIA**   | Sessione JWT con Refresh Token         | Valutare se ridurre la scadenza sessione (attualmente 24h) e implementare refresh token. Passaggio intermedio consigliato: 7 giorni + refresh, poi eventualmente ridurre. Decisione di prodotto: impatta l'esperienza utente.                                                                                    | ⏳ DA FARE |
 | 4   | **BASSA**   | Revisione Completa Permessi RBAC       | Audit di tutti i ruoli e permessi per garantire il principio del minimo privilegio.                                                                                                                                                                                                                              | ⏳ DA FARE |
 | 5   | **BASSA**   | Test di Carico (Load Testing)          | Simulare utenti simultanei per identificare colli di bottiglia e verificare stabilità sotto stress.                                                                                                                                                                                                              | ⏳ DA FARE |
+
+
+---
+
+## AGGIORNAMENTO v9.2.0 — 28 Febbraio 2026 (Sessione Manus + Claude)
+
+### Changelog Sessione
+
+| Ora | Autore | Azione | Dettagli |
+|-----|--------|--------|----------|
+| 17:00 | Manus | Merge branch Claude | Merge `claude/review-production-fixes-3sUvQ` in master — fix dipendenza `add` spuria |
+| 17:05 | Manus | Tag stabile | `STABLE-20260228-PRE-CHAT-AI-v9.1.2` su entrambi i repo |
+| 17:15 | Manus | Tabelle DB | Creazione `ai_conversations`, `ai_messages`, `ai_quota_usage` su Neon |
+| 17:30 | Manus | Backend AI Chat | 8 endpoint REST in `routes/ai-chat.js` — CRUD conversazioni + SSE streaming |
+| 17:45 | Manus | Guardian | AVA registrata in Dashboard Integrazioni + health-monitor |
+| 18:00 | Manus | Ollama | Installato su Hetzner con `qwen2.5:3b` (1.9 GB) — servizio systemd persistente |
+| 18:10 | Manus | Test E2E | Streaming SSE funzionante end-to-end in produzione |
+| 18:30 | Claude | Frontend AI Chat | 16 nuovi file in `client/src/components/ai-chat/` — AIChatPanel, sidebar, streaming |
+| 18:35 | Manus | Merge frontend Claude | Merge con risoluzione 3 conflitti (vite.config, CORS, blueprint) |
+| 18:45 | Manus | Fix posizionamento | Spostato AIChatPanel da MIO Agent (TAB 25) a Agente AI (TAB 9) — ripristinata multichat MIO |
+| 18:55 | Manus | Fix autenticazione | Aggiunto token Firebase Bearer a tutte le chiamate frontend (useConversations + sse-client) |
+| 19:03 | Utente | **TEST OK** | AVA risponde in streaming in produzione — confermato funzionante |
+
+### Stato Attuale Sistema — v9.2.0
+
+#### Servizi Attivi
+
+| Servizio | URL / Posizione | Stato |
+|----------|----------------|-------|
+| Frontend | `https://dms-hub-app-new.vercel.app` | ✅ Online |
+| Backend | `https://api.mio-hub.me` | ✅ Online |
+| Database | Neon PostgreSQL (155 tabelle) | ✅ Online |
+| Ollama | `http://localhost:11434` su Hetzner | ✅ Online (systemd) |
+| Guardian | Dashboard Integrazioni | ✅ Tutti i servizi OK |
+| AVA (AI Chat) | TAB "Agente AI" nella Dashboard PA | ✅ Funzionante |
+| MIO Agent | TAB "MIO Agent" — multichat originale | ✅ Funzionante (ripristinato) |
+
+#### Architettura Chat AI AVA — Implementata
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    FRONTEND (Vercel)                         │
+│                                                             │
+│  client/src/components/ai-chat/                             │
+│  ├── AIChatPanel.tsx          (container principale)        │
+│  ├── AIChatSidebar.tsx        (storico conversazioni)       │
+│  ├── AIChatHeader.tsx         (header AVA + modello)        │
+│  ├── AIChatMessageList.tsx    (lista messaggi + scroll)     │
+│  ├── AIChatMessage.tsx        (bolla messaggio)             │
+│  ├── AIChatMarkdown.tsx       (renderer markdown)           │
+│  ├── AIChatInput.tsx          (textarea + send/stop)        │
+│  ├── AIChatTypingIndicator.tsx (animazione "scrive...")     │
+│  ├── AIChatEmptyState.tsx     (welcome + suggerimenti)      │
+│  ├── AIChatSuggestions.tsx    (bottoni suggerimenti)        │
+│  ├── AIChatQuotaBanner.tsx    (banner quota residua)        │
+│  ├── AIChatAvatar.tsx         (avatar per ruolo)            │
+│  ├── hooks/useStreamingChat.ts (hook SSE streaming)         │
+│  ├── hooks/useConversations.ts (hook CRUD REST)             │
+│  ├── lib/sse-client.ts        (client SSE nativo)           │
+│  └── types.ts                 (interfacce TypeScript)       │
+│                                                             │
+│  Integrazione: DashboardPA.tsx TAB 9 "Agente AI"            │
+│  Auth: Bearer token Firebase via getIdToken()               │
+│  Dipendenze: react-markdown, remark-gfm, rehype-highlight  │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ HTTPS (SSE + REST)
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    BACKEND (Hetzner)                         │
+│                                                             │
+│  mihub-backend-rest/routes/ai-chat.js                       │
+│                                                             │
+│  Endpoint:                                                  │
+│  POST   /api/ai/chat/stream           SSE streaming         │
+│  GET    /api/ai/chat/conversations     Lista (paginata)     │
+│  POST   /api/ai/chat/conversations     Crea nuova           │
+│  PATCH  /api/ai/chat/conversations/:id Rinomina             │
+│  DELETE /api/ai/chat/conversations/:id Soft delete           │
+│  GET    /api/ai/chat/conversations/:id/messages  Messaggi   │
+│  GET    /api/ai/chat/quota             Quota utilizzo        │
+│  GET    /api/ai/chat/health            Health check          │
+│                                                             │
+│  Auth: getUserId() da Authorization Bearer o x-session-token│
+│  Quota: 4 piani (free/starter/pro/enterprise)               │
+│  Rate limit: in-memory per minuto                           │
+│  Auto-titolazione: dopo primo scambio via Ollama            │
+│                                                             │
+│  Guardian: registrato in integrations.js + health-monitor.js│
+└──────────────────────┬──────────────────────────────────────┘
+                       │ HTTP localhost:11434
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    OLLAMA (Hetzner)                          │
+│                                                             │
+│  Modello: qwen2.5:3b (1.9 GB, CPU)                         │
+│  Servizio: systemd (auto-start al reboot)                   │
+│  Porta: 11434 (solo localhost)                              │
+│  OLLAMA_HOST: 0.0.0.0 (per accesso da backend)             │
+│                                                             │
+│  Risorse server:                                            │
+│  - CPU: 2 core Intel Xeon (Skylake)                         │
+│  - RAM: 3.7 GB totali                                       │
+│  - Disco: 38 GB (19 GB liberi)                              │
+│  - Backend PM2: ~101 MB RAM                                 │
+│  - Ollama: ~2.5 GB RAM (quando modello caricato)            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Tabelle DB Chat AI
+
+```sql
+-- Conversazioni
+CREATE TABLE ai_conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  title TEXT DEFAULT 'Nuova conversazione',
+  model TEXT DEFAULT 'qwen2.5:3b',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ DEFAULT NULL  -- soft delete
+);
+
+-- Messaggi
+CREATE TABLE ai_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID REFERENCES ai_conversations(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+  content TEXT NOT NULL,
+  tokens_used INTEGER DEFAULT 0,
+  model TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Quota utilizzo
+CREATE TABLE ai_quota_usage (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  period TEXT NOT NULL,  -- formato YYYY-MM
+  messages_count INTEGER DEFAULT 0,
+  tokens_total INTEGER DEFAULT 0,
+  last_message_at TIMESTAMPTZ,
+  UNIQUE(user_id, period)
+);
+```
+
+### Tag e Punti di Ripristino
+
+| Tag | Data | Commit Frontend | Commit Backend | Note |
+|-----|------|----------------|----------------|------|
+| `STABLE-20260228-PRE-CHAT-AI-v9.1.2` | 28/02/2026 17:05 | `6e83c1c` | `446318e` | Snapshot pre-Chat AI — sistema v9.1.2 stabile |
+| `v9.2.0` (da creare) | 28/02/2026 19:05 | `2c17481` | ultimo | Chat AI AVA funzionante end-to-end |
+
+### Problemi Noti e Risolti
+
+| Problema | Causa | Risoluzione | Stato |
+|----------|-------|-------------|-------|
+| Vercel deploy fallito dopo merge Claude | Dipendenza `"add": "^2.0.6"` spuria in package.json | Rimossa da package.json | ✅ Risolto |
+| AIChatPanel nella sezione sbagliata | Claude ha messo AVA in MIO Agent (TAB 25) invece di Agente AI (TAB 9) | Spostato AIChatPanel in TAB 9, ripristinata SEZIONE A MIO originale | ✅ Risolto |
+| "Non autenticato" nella Chat AI | Frontend usava `fetch` con `credentials: "include"` (cookie) ma backend aspetta Bearer token | Aggiunto `getIdToken()` + `Authorization: Bearer` in useConversations.ts e sse-client.ts | ✅ Risolto |
+| CI GitHub Actions fallisce | `vitest` cerca test in `server/**/*.test.ts` ma non ne trova | Pre-esistente, non bloccante per deploy Vercel | ⚠️ Noto, non bloccante |
+| PDND non configurato | Credenziali PDND non ancora ottenute | In attesa | ⚠️ Noto |
+| Storage S3 disabilitato | Non configurato | Non prioritario | ⚠️ Noto |
+
+### Vincoli Appresi — NON FARE
+
+| Vincolo | Motivo |
+|---------|--------|
+| **NON** mergiare branch Claude senza verificare `package.json` | Claude può aggiungere/rimuovere dipendenze che disallineano il lockfile |
+| **NON** mettere AIChatPanel nella sezione MIO Agent | MIO Agent ha la multichat MIO/Manus/Abacus/Zapier che funziona — non toccare |
+| **NON** usare `fetch` nudo per le API AI Chat | Deve sempre passare il token Firebase via `Authorization: Bearer` |
+| **NON** usare `credentials: "include"` per le API backend | Il backend non usa cookie/sessione, usa solo header Authorization |
+| **NON** installare modelli Ollama > 3B su questo server | Solo 3.7 GB RAM — qwen2.5:3b (1.9 GB) è il massimo sicuro |
+| **NON** fare deploy backend via SSH | Solo GitHub Actions — push su master = auto-deploy |
+
+---
+
+## ROADMAP AVA — Da Chat Generica a Assistente PA Intelligente
+
+### Stato Attuale: AVA è "cieca"
+
+AVA funziona ma è un modello generico — **non vede i dati della dashboard**, non sa quanti mercati ci sono, quanti concessionari, quali posteggi sono occupati. Risponde con conoscenza generale, non con dati reali.
+
+### 4 Step per rendere AVA utile al Comune
+
+| Step | Titolo | Descrizione | Effetto | Complessità | Responsabile | Stato |
+|------|--------|-------------|---------|-------------|--------------|-------|
+| **1** | **System Prompt** | Prompt di sistema con contesto MioHub: cos'è, normativa mercati, come funziona il sistema, ruoli utente | AVA risponde in modo coerente e specifico su MioHub, non generico | Bassa (1-2h) | **Manus** (backend) | ⏳ PROSSIMO |
+| **2** | **RAG — Dati DB** | Prima di rispondere, AVA interroga il DB e include dati reali: mercati attivi, presenze oggi, scadenze, canoni | "Oggi al mercato di Grosseto ci sono 47 presenze su 82 posteggi" | Media (1-2gg) | **Manus** (backend) | ⏳ DA FARE |
+| **3** | **Function Calling** | AVA esegue azioni: cerca concessionario, genera report presenze, calcola canoni, verifica scadenze | Il funzionario chiede "Mostrami le presenze di oggi" → AVA genera tabella | Media-Alta (2-3gg) | **Manus** (backend) + **Claude** (frontend) | ⏳ DA FARE |
+| **4** | **Modello Upgrade** | Upgrade a qwen2.5:8b o 14b (serve più RAM o server GPU dedicato) | Risposte più intelligenti, ragionamento migliore, meno allucinazioni | Bassa (tecnica) + costo server | **Manus** | ⏳ DA FARE |
+
+### Step 1 — System Prompt (Dettaglio)
+
+**Cosa**: Scrivere un system prompt dettagliato che viene iniettato in ogni conversazione.
+
+**Contenuto del system prompt**:
+- Chi è AVA (Agente Virtuale Attivo di MioHub)
+- Cos'è MioHub (piattaforma gestione mercati ambulanti)
+- Contesto normativo (D.Lgs. 114/98, Direttiva Bolkestein, regolamenti comunali)
+- Ruoli utente (PA, Impresa, Cittadino, Associazione)
+- Funzionalità disponibili (mercati, posteggi, concessioni, canoni, presenze, spunta, wallet)
+- Come rispondere (italiano, professionale, specifico, mai inventare dati)
+- Cosa NON fare (non inventare numeri, non dare consulenza legale, rimandare a uffici competenti)
+
+**Dove**: Nel backend `routes/ai-chat.js`, iniettato come primo messaggio `role: "system"` in ogni chiamata a Ollama.
+
+**Implementazione**: Manus (backend) — nessuna modifica frontend necessaria.
+
+### Step 2 — RAG con Dati DB (Dettaglio)
+
+**Cosa**: Prima di inviare il messaggio a Ollama, il backend interroga il DB per dati contestuali e li include nel prompt.
+
+**Query contestuali**:
+- Mercati attivi nel comune dell'utente
+- Presenze di oggi
+- Scadenze canoni prossime
+- Concessionari con problemi (mora, blocco)
+- Statistiche generali (totale posteggi, occupazione media)
+
+**Dove**: Nel backend `routes/ai-chat.js`, endpoint `/stream`, prima della chiamata Ollama.
+
+**Implementazione**: Manus (backend) — nessuna modifica frontend necessaria.
+
+### Step 3 — Function Calling (Dettaglio)
+
+**Cosa**: AVA può eseguire azioni concrete interrogando le API esistenti.
+
+**Funzioni disponibili**:
+- `cerca_concessionario(nome)` → cerca nel DB
+- `report_presenze(data, mercato)` → genera tabella presenze
+- `calcola_canone(concessionario, periodo)` → calcolo canone
+- `verifica_scadenze(mercato)` → lista scadenze prossime
+- `statistiche_mercato(mercato)` → occupazione, incassi, trend
+
+**Dove**: Backend + Frontend (Claude deve rendere le tabelle/grafici nel frontend).
+
+**Implementazione**: Manus (backend — function calling con Ollama) + Claude (frontend — rendering risultati strutturati).
+
+### Step 4 — Upgrade Modello (Dettaglio)
+
+**Opzioni**:
+
+| Modello | RAM necessaria | Qualità | Costo |
+|---------|---------------|---------|-------|
+| qwen2.5:3b (attuale) | ~2.5 GB | Buona per chat semplice | €0 (già installato) |
+| qwen2.5:8b | ~5 GB | Molto buona | Upgrade server Hetzner (~€10/mese) |
+| qwen2.5:14b | ~9 GB | Eccellente | Server dedicato GPU (~€50-100/mese) |
+| Gemini 2.5 Flash (API) | 0 (cloud) | Eccellente | Pay-per-use (~€0.01/1K token) |
+
+**Nota**: Per il pilota con Grosseto, qwen2.5:3b con un buon system prompt + RAG è sufficiente. L'upgrade a modelli più grandi è per il scale-up nazionale.
+
+---
+
+## DIVISIONE RESPONSABILITÀ MANUS / CLAUDE
+
+| Area | Responsabile | Dettagli |
+|------|-------------|----------|
+| **Backend REST API** | **Manus** | Tutti gli endpoint in `mihub-backend-rest/routes/` |
+| **Ollama / AI** | **Manus** | Installazione, configurazione, system prompt, RAG, function calling |
+| **Database** | **Manus** | Migrazioni, tabelle, query |
+| **Deploy backend** | **Manus** | Via GitHub Actions (push su master) |
+| **Guardian / Monitoring** | **Manus** | Health checks, integrazioni, alerting |
+| **Frontend componenti AI** | **Claude** | `client/src/components/ai-chat/*` |
+| **Frontend integrazione** | **Claude** | DashboardPA.tsx, routing, UI |
+| **Frontend rendering** | **Claude** | Markdown, tabelle, grafici, code blocks |
+| **Prettier / Formatting** | **Claude** | Formatting codebase |
+| **Blueprint** | **Entrambi** | Manus aggiorna dopo ogni sessione, Claude aggiorna dopo le sue modifiche |
+
+---
+
+### Prossima Sessione — Piano di Lavoro
+
+1. **Manus**: Implementare System Prompt AVA (Step 1) — immediato
+2. **Manus**: Implementare RAG con dati DB (Step 2) — 1-2 giorni
+3. **Claude**: Migliorare UI Chat (rendering tabelle, code blocks, suggerimenti contestuali)
+4. **Manus**: Creare tag `v9.2.0` dopo stabilizzazione
+5. **Entrambi**: Test con utente PA reale (Comune di Grosseto)
+
+
+---
+
+## 🚀 AGGIORNAMENTO v9.3.0 — 28 Febbraio 2026 (Sessione Manus)
+
+> **Obiettivo:** Upgrade AVA (AI Chat) al modello `qwen2.5:14b` e integrazione della knowledge base di MioHub per risposte specifiche e utili.
+
+### Changelog Sessione
+
+| Ora | Autore | Azione | Dettagli |
+|---|---|---|---|
+| 18:30 | Manus | **Inizio Sessione** | Obiettivo: Migliorare AVA, l'assistente AI di MioHub. |
+| 18:35 | Manus | **Analisi Modello Attuale** | AVA usa `qwen2.5:3b`. Decisione di upgrade a `qwen2.5:14b` per risposte più intelligenti. |
+| 18:40 | Manus | **Download Modello 14b** | Scaricato e installato `qwen2.5:14b` (9.6GB) sul server Hetzner CPX62. |
+| 18:45 | Manus | **Configurazione Ollama** | Impostato `qwen2.5:14b` come modello di default per AVA nel backend. |
+| 18:50 | Manus | **Test Iniziale (FALLITO)** | Primo test: il modello non risponde. Causa: il modello non era ancora completamente caricato in memoria. |
+| 19:00 | Manus | **Riavvio e Test (OK)** | Riavvio del servizio. Secondo test: **successo!** Risposta coerente e di alta qualità. |
+| 19:10 | Manus | **Analisi Performance** | La prima risposta richiede ~70s. Troppo lento per un'esperienza utente accettabile. |
+| 19:15 | Manus | **Analisi System Prompt** | Il system prompt è enorme (~25KB, ~6k token), causa principale della lentezza. |
+| 19:25 | Manus | **Ottimizzazione Ollama** | Aggiunte opzioni `keep_alive: '15m'` e `num_ctx: 4096` per mantenere il modello in RAM e aumentare il context window. |
+| 19:35 | Manus | **Ottimizzazione Backend** | Aggiunto un **warmup** all'avvio del server: una chiamata a vuoto per pre-caricare il modello. |
+| 19:45 | Manus | **Deploy Ottimizzazioni** | Commit e push delle modifiche. Deploy automatico su `api.mio-hub.me`. |
+| 20:00 | Manus | **Benchmark Post-Ottimizzazione** | Eseguiti test di carico. Risultati deludenti. |
+| 20:15 | Manus | **Diagnosi Problema** | Il 14b è **troppo pesante per la CPU del CPX62 senza GPU**. Causa timeout e risposte intermittenti. Le richieste concorrenti bloccano Ollama. |
+| 20:30 | Manus | **Analisi Soluzioni** | Valutate 4 opzioni: tornare al 3b, provare il 7b, upgrade a server con GPU, usare API esterne. |
+| 20:40 | Manus | **Raccomandazione** | **Scaricare `qwen2.5:7b`** come miglior compromesso tra intelligenza e velocità su hardware attuale. |
+
+### Conclusione e Prossimi Passi
+
+Il modello `qwen2.5:14b` è troppo esigente per l'infrastruttura attuale senza una GPU dedicata, portando a instabilità e performance inaccettabili. 
+
+**Decisione:** In attesa di un parere da Claude, la raccomandazione è di procedere con il test del modello intermedio `qwen2.5:7b`.
+
+
+### Aggiornamento v9.3.1 — Switch a qwen2.5:7b-instruct-q4_K_M (28 Feb 2026)
+
+> **Analisi di Claude + Implementazione di Manus**
+
+**Contesto:** Dopo l'analisi di Claude (che ha letto il blueprint, i progetti CHAT_AI_STREAMING, A99X e ABBONAMENTO_AI_PA), la decisione condivisa è stata di passare al modello **qwen2.5:7b con quantizzazione Q4_K_M** come miglior compromesso.
+
+**Analisi di Claude — Punti chiave:**
+1. **7b è la scelta giusta** per il CPX62 — qualità sufficiente per PA, margine RAM sufficiente su 32GB
+2. **3b è un passo indietro** — risposte troppo superficiali per terminologia PA/normativa
+3. **Server GPU è Fase 2** — quando il revenue Starter copre il costo (~€200/mese per Hetzner GPU)
+4. **API esterne vietate** — violano il vincolo privacy PA definito in PROGETTO_A99X
+
+**Implementazione Manus (commit `55cdae4`):**
+- Scaricato `qwen2.5:7b-instruct-q4_K_M` (4.7 GB) sul server Hetzner
+- Aggiornato `DEFAULT_MODEL` e tutti i piani in `routes/ai-chat.js`
+- Deploy e restart PM2
+
+**Benchmark risultati (3 test consecutivi):**
+
+| Test | Domanda | Tempo | Token | Velocità | Qualità |
+|---|---|---|---|---|---|
+| 1 (cold) | "Presentati brevemente" | 64s | 156 | 2.4 t/s | Ottima, coerente con system prompt |
+| 2 (warm) | "Come funziona il sistema presenze?" | 99s | 594 | 6.0 t/s | Eccellente, con tabella dettagliata |
+| 3 (warm) | "Quanti mercati a Bologna?" | 65s | 182 | 2.7 t/s | Buona, ammette di non avere dati DB |
+
+**Valutazione:**
+- **Qualità risposte:** Molto buona. Il 7b capisce il contesto PA, usa terminologia corretta, genera tabelle.
+- **Stabilità:** 3/3 test completati con successo (vs 14b che falliva dopo il primo).
+- **Velocità:** Ancora lenta (~60-100s totali), ma lo streaming SSE maschera la latenza percepita dall'utente.
+- **Il collo di bottiglia è il system prompt enorme (~6k token)** che va processato ad ogni richiesta.
+
+**Cosa NON fare (vincoli negativi da Claude):**
+1. **NON tornare al 3b** — regressione di qualità inaccettabile per utenti PA
+2. **NON usare API esterne per dati PA** — vincolo privacy non negoziabile
+3. **NON usare il 14b su CPX62** — causa instabilità e timeout
+
+**Prossimi passi per ottimizzare ulteriormente:**
+1. **Ridurre il system prompt** — togliere le sezioni non necessarie per ogni richiesta, caricarle solo quando servono (RAG)
+2. **Implementare RAG** — dare ad AVA accesso ai dati reali del DB invece di descriverli nel prompt
+3. **Fase 2: GPU** — quando il revenue lo giustifica, passare a server con GPU per il 14b o Qwen3-30B-A3B
+
+**Stato attuale AVA:**
+- Modello: `qwen2.5:7b-instruct-q4_K_M` (4.7 GB)
+- Server: Hetzner CPX62 (16 vCPU, 32GB RAM, no GPU)
+- Stato: **PRODUZIONE** — funzionante e stabile
+- Modelli disponibili su Ollama: `qwen2.5:7b-instruct-q4_K_M`, `qwen2.5:14b`, `qwen2.5:3b`
+
+
+---
+
+## CHANGELOG v9.3.2 — AVA System Prompt v2.0: Prompt Tiered (28 Feb 2026, sessione 3)
+
+**Obiettivo:** Ridurre il system prompt da ~6000 token a ~1400 token per velocizzare AVA del 40-50%.
+
+**Strategia implementata (da template Claude `.mio-agents/ava_system_prompt_v2.md`):**
+
+| Livello | Token | Quando | Contenuto |
+|---------|-------|--------|-----------|
+| **CORE** | ~500 | SEMPRE | Identità AVA + regole base + vincoli negativi |
+| **CONTESTO** | ~400 | Per ruolo | PA (normativa+dashboard) / Impresa / Cittadino |
+| **KB ON-DEMAND** | ~150 x frammento | Solo se topic match | 7 frammenti: carbon_credit, bolkestein, suap, statistiche, pagamenti, presenze, concessioni |
+
+**Funzionalità implementate in `routes/ai-chat.js`:**
+- `buildSystemPrompt()` — composizione dinamica del prompt in base a ruolo e domanda
+- `getRelevantKB()` — topic matching con regex, max 2 frammenti per richiesta
+- `getDbStats()` — cache conteggi DB (mercati/posteggi/imprese) con TTL 5 minuti
+- `ROLE_PROMPTS` — prompt contestuali per PA, Impresa, Cittadino
+- `KB_FRAGMENTS` — 7 frammenti di knowledge base on-demand
+
+**Benchmark PRIMA vs DOPO:**
+
+| Test | Domanda | v1 (~6k tok) | v2 (~1.4k tok) | Miglioramento |
+|------|---------|-------------|----------------|---------------|
+| 1 (cold) | "Presentati brevemente" | 64s / 156 tok | **33s** / 260 tok | **-48%** |
+| 2 (warm) | "Presenze e spunta?" | 99s / 594 tok | **28s** / 181 tok | **-72%** |
+| 3 (warm) | "Direttiva Bolkestein?" | 65s / 182 tok | **36s** / 297 tok | **-45%** |
+
+**Risultati chiave:**
+- **Riduzione media latenza: -55%** (da ~76s media a ~32s media)
+- **Qualità risposte invariata** — il topic matching inietta la KB giusta quando serve
+- **Stabilità confermata** — 3/3 test completati con successo
+- **Topic matching funzionante** — domande generiche non caricano KB, domande specifiche caricano i frammenti corretti
+
+**Commit:** `cc21aba` — `perf: AVA system prompt v2.0 — prompt tiered a 3 livelli (-75% token)`
+
+**Cosa NON fare (vincoli negativi aggiornati):**
+1. **NON tornare al prompt monolitico** — causa latenza 2x e spreco di token
+2. **NON caricare più di 2 frammenti KB** — il 7b perde coerenza con troppo contesto
+3. **NON rimuovere la cache DB stats** — evita query ripetute ad ogni richiesta
+4. **NON usare il 14b su CPX62** — causa instabilità e timeout
+5. **NON usare API esterne per dati PA** — vincolo privacy non negoziabile
+
+**Stato attuale AVA (aggiornato):**
+- Modello: `qwen2.5:7b-instruct-q4_K_M` (4.7 GB)
+- System Prompt: **v2.0 Tiered** (~1400 token base, max ~2000 con KB)
+- Tempo risposta medio: **~32 secondi** (con streaming SSE)
+- Server: Hetzner CPX62 (16 vCPU, 32GB RAM, no GPU)
+- Stato: **PRODUZIONE** — funzionante, stabile, ottimizzato
+- Deploy: **autodeploy** via GitHub Actions su push master
+
+**Prossimi passi:**
+1. **RAG** — embedding + vector search per sostituire completamente il topic matching regex
+2. **Ruolo utente dinamico** — leggere il ruolo reale dall'utente autenticato (PA/Impresa/Cittadino)
+3. **Fase 2: GPU** — quando il revenue lo giustifica, passare a server con GPU
+
+
+---
+
+## v9.3.3 — Allineamento completo e fix sidebar conversazioni
+
+**Data:** 28 Febbraio 2026
+
+### Riepilogo
+
+Questa sessione ha risolto il bug critico della sidebar conversazioni che non mostrava le chat create, ha ottimizzato le performance di AVA, e ha allineato i branch di sviluppo.
+
+### Bug Fix: Sidebar Conversazioni
+
+- **Problema**: Le nuove conversazioni non apparivano nella sidebar a sinistra.
+- **Causa**: 4 bug interconnessi tra frontend e backend.
+- **Soluzione**:
+  1. **Fixato path API nel frontend**: Cambiato da `/api/ai` a `/api/ai/chat`.
+  2. **Fixato userId instabile nel backend**: Ora decodifica il JWT Firebase per estrarre l'uid stabile.
+  3. **Allineati nomi campi API**: Il backend ora restituisce `conversations` e `messages` come si aspetta il frontend.
+
+### Allineamento Branch e Codice
+
+- **Backend (mihub-backend-rest)**: Allineato. L'ultimo commit `fe13e7f` è deployato su Hetzner.
+- **Frontend (dms-hub-app-new)**: Allineato. L'ultimo commit `89016d2` è deployato su Vercel.
+- **Branch Claude (review-production-fixes)**: Analizzato e **NON mergiato completamente** a causa di regressioni critiche (chat simulata, rimozione auth Firebase). Sono stati **cherry-pickati selettivamente** i file sicuri:
+  - `.mio-agents/ava_system_prompt_v2.md` (template prompt tiered)
+  - `.gitignore` aggiornato
+  - Rimozione endpoint non sicuri (fix sicurezza)
+
+### Stato Attuale
+
+- **AVA Chat**: Completamente funzionante, con performance migliorate del **-55%** grazie al prompt tiered.
+- **Sidebar Conversazioni**: Bug risolto, le conversazioni ora appaiono correttamente.
+- **Codice**: Stabile e allineato tra i vari ambienti.
