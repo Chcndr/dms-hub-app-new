@@ -1,8 +1,29 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.1.2 (Fix Accredito Servizi + comune_id Canone + Auth session_token)
-> **Data:** 26 Febbraio 2026
+> **Versione:** 9.4.0 (AVA Fase 1 COMPLETATA + Streaming SSE + Prompt Tiered v2.0)
+> **Data:** 01 Marzo 2026
 > 
+> --- 
+> ### CHANGELOG v9.4.0 (01 Mar 2026)
+> **AVA Fase 1 COMPLETATA — Sistema di Chat AI Professionale con Streaming e Memoria**
+> 
+> **Stato:** ✅ COMPLETATO (Deployato su Hetzner + Vercel)
+> 
+> **Punti Chiave Implementati:**
+> - **Streaming SSE (Server-Sent Events):** Implementato endpoint `POST /api/ai/chat/stream` su Hetzner. Risposte parola per parola (stile ChatGPT) per un'esperienza fluida.
+> - **Prompt Tiered v2.0:** Sistema a 3 livelli (Core, Ruolo, KB on-demand) per risposte precise e veloci.
+> - **Knowledge Base Integrata:** Topic matching per Bolkestein, SUAP, Carbon Credits, Pagamenti e Presenze.
+> - **Memoria Persistente:** Nuove tabelle `ai_conversations` e `ai_messages` su Neon PostgreSQL per lo storico chat nella sidebar.
+> - **Fix Sidebar:** Risolto bug stabilità `userId` (decodifica JWT Firebase) e allineamento campi API.
+> 
+> **Analisi Branch Claude:**
+> - Analizzato branch `claude/review-production-fixes-3sUvQ`. 
+> - **SCARTATO:** Il branch conteneva regressioni (chat simulata hardcoded e path API errati). 
+> - Il `master` attuale è confermato come la versione più avanzata e stabile.
+> 
+> **Autore:** Manus AI
+> **Stato:** PRODUZIONE
+>
 > --- 
 > ### CHANGELOG v9.1.2 (26 Feb 2026)
 > **Fix accredito wallet associazione per pagamenti servizio + fix canone + fix auth**
