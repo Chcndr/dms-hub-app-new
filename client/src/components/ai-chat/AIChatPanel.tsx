@@ -2,8 +2,10 @@
  * AIChatPanel — Componente principale della chat AI AVA
  * Layout a 2 colonne: sidebar storico + area chat
  * Connesso al backend REST su api.mio-hub.me
+ *
+ * Fase 2.1: Auto-detect ruolo utente da FirebaseAuth + comuneId da impersonazione
  */
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { AlertCircle } from "lucide-react";
 import { AIChatSidebar } from "./AIChatSidebar";
 import { AIChatHeader } from "./AIChatHeader";
@@ -13,14 +15,45 @@ import { AIChatEmptyState } from "./AIChatEmptyState";
 import { AIChatQuotaBanner } from "./AIChatQuotaBanner";
 import { useStreamingChat } from "./hooks/useStreamingChat";
 import { useConversations } from "./hooks/useConversations";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import type { UserRoleType } from "./types";
 
-interface AIChatPanelProps {
-  userRole?: UserRoleType;
-  comuneId?: number;
+/** Mappa ruolo Firebase → ruolo AVA */
+function mapFirebaseRoleToAva(
+  firebaseRole: string | undefined
+): UserRoleType {
+  switch (firebaseRole) {
+    case "pa":
+      return "pa";
+    case "business":
+      return "impresa";
+    case "citizen":
+    default:
+      return "cittadino";
+  }
 }
 
-export function AIChatPanel({ userRole = "pa", comuneId }: AIChatPanelProps) {
+interface AIChatPanelProps {
+  /** Ruolo utente esplicito. Se omesso, viene auto-rilevato da FirebaseAuth */
+  userRole?: UserRoleType;
+  /** ID comune (da impersonazione o contesto) */
+  comuneId?: number;
+  /** Tab corrente della dashboard (per contesto AVA) */
+  currentTab?: string;
+}
+
+export function AIChatPanel({
+  userRole,
+  comuneId,
+  currentTab,
+}: AIChatPanelProps) {
+  const { user } = useFirebaseAuth();
+
+  // Auto-detect ruolo se non passato esplicitamente
+  const effectiveRole = useMemo<UserRoleType>(
+    () => userRole ?? mapFirebaseRoleToAva(user?.role),
+    [userRole, user?.role]
+  );
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
@@ -50,7 +83,8 @@ export function AIChatPanel({ userRole = "pa", comuneId }: AIChatPanelProps) {
   } = useStreamingChat({
     context: {
       comune_id: comuneId,
-      user_role: userRole,
+      user_role: effectiveRole,
+      current_tab: currentTab,
     },
     onConversationCreated: newId => {
       setActiveConversationId(newId);
@@ -160,7 +194,7 @@ export function AIChatPanel({ userRole = "pa", comuneId }: AIChatPanelProps) {
         {/* Messages or Empty State */}
         {!hasMessages && !isStreaming ? (
           <AIChatEmptyState
-            userRole={userRole}
+            userRole={effectiveRole}
             onSuggestionClick={handleSend}
           />
         ) : (
