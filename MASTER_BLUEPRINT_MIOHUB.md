@@ -1,8 +1,117 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.4.0 (AVA Fase 1 COMPLETATA + Streaming SSE + Prompt Tiered v2.0)
+> **Versione:** 9.5.1 (AVA Data Access Schema — Matrice Accesso Dati per Ruolo)
 > **Data:** 01 Marzo 2026
 > 
+> --- 
+> ### CHANGELOG v9.5.1 (01 Mar 2026)
+> **📊 AVA DATA ACCESS SCHEMA — Matrice di Accesso ai Dati per Ruolo Utente**
+> 
+> - Creato documento `AVA_DATA_ACCESS_SCHEMA.md` con categorizzazione completa di tutte le 171 tabelle DB Neon
+> - 16 aree funzionali mappate: Mercati, Imprese, Concessioni, Presenze, Wallet, Sanzioni, SUAP, Autorizzazioni, Notifiche, Associazioni, Formazione, Carbon Credit, Comuni, Utenti, Hub, Sistema
+> - Matrice di accesso per 3 ruoli: PA (filtro comune_id), Impresa (filtro impresa_id), Cittadino (filtro user_id)
+> - 14 tabelle VIETATE per AVA (sicurezza, credenziali, sessioni, log)
+> - Schema proposto per implementazione `getFilteredQuery()` nel backend
+> - Documento per revisione congiunta Manus + Claude
+> - Vedi: `AVA_DATA_ACCESS_SCHEMA.md` nella root del progetto
+> 
+> --- 
+> ### CHANGELOG v9.5.0 (01 Mar 2026)
+> **🎉 FASE 2 AVA COMPLETATA — Step 2.3 + 2.4 + 2.5 (Frontend + Backend)**
+> 
+> **Step 2.3 Backend — Function Calling (commit `36781a3`):**
+> - 4 AVA_TOOLS con keyword matching regex:
+>   1. `cerca_concessionario`: ricerca per nome/CF/PIVA con tabella risultati
+>   2. `report_presenze`: presenze di oggi per mercato con % occupazione
+>   3. `scadenze_canoni`: rate scadute/in scadenza con importi e dettaglio
+>   4. `dashboard_stats`: KPI card (mercati, posteggi, concessioni, imprese, presenze)
+> - `tryFunctionCalling()` esegue query DB e invia SSE event type "data" al frontend
+> - Integrato nel flusso /stream: tool eseguito PRIMA di Ollama
+> - Supporto data_type: table (colonne/righe) e stats (KPI con trend up/down)
+> 
+> **Step 2.3 Frontend (commit `2bd613b` — merge Claude):**
+> - types.ts: SSEDataEvent con data_type (table/stats/list) + StructuredData
+> - sse-client.ts: gestione event type "data" con callback onData
+> - useStreamingChat.ts: stato dataEvents[] e isLoadingData
+> - AIChatDataTable.tsx (NUOVO): tabella dati strutturati da function calling
+> - AIChatStatCard.tsx (NUOVO): card KPI con trend up/down
+> - AIChatMessageList.tsx: rendering data events + indicatore "AVA sta consultando i dati..."
+> 
+> **Step 2.4 Multi-Dashboard (commit `2bd613b` — merge Claude):**
+> - DashboardImpresa.tsx: nuovo tab "Assistente" con AIChatPanel userRole="impresa"
+> - ChatWidget.tsx: cerchietto flottante ora apre AVA a schermo intero
+> - AIChatPanel.tsx: prop fullHeight per modalità widget fullscreen
+> - Backend: ROLE_QUOTAS differenziate (PA: 100 msg/10 min, Impresa: 50/5, Cittadino: 20/3)
+> 
+> **Step 2.5 UX Polish (commit `2bd613b` frontend + `36781a3` backend):**
+> - Feedback: thumbs up/down su ogni risposta AVA (POST /api/ai/chat/feedback)
+> - Tabella ai_feedback con auto-migrate + UPSERT per cambio rating
+> - Retry: bottone "Rigenera" sull'ultimo messaggio assistente
+> - Suggerimenti contestuali: diversi per tab corrente (mercati, wallet, imprese, controlli)
+> - Export: bottone per esportare la conversazione in file .txt
+> 
+> **Piano Fase 2 AVA — COMPLETATA:**
+> - Step 2.1: Ruolo Dinamico ✅ COMPLETATO
+> - Step 2.2: RAG con Dati DB Reali ✅ COMPLETATO
+> - Step 2.3: Function Calling ✅ COMPLETATO
+> - Step 2.4: AVA Multi-Dashboard ✅ COMPLETATO
+> - Step 2.5: Miglioramenti UX Chat ✅ COMPLETATO
+> 
+> **Autore:** Manus AI + Claude AI (frontend)
+> **Stato:** PRODUZIONE
+>
+> --- 
+> ### CHANGELOG v9.4.2 (01 Mar 2026)
+> **Step 2.2 Fase 2 AVA — RAG con Dati DB Reali**
+> 
+> **Backend (commit `1004cc5`):**
+> - Nuova funzione `getContextualData(comuneId, userMessage, userRole)` in `routes/ai-chat.js`
+> - 5 query condizionali attivate dal topic matching sul messaggio utente:
+>   1. Mercati attivi nel comune (nome, giorni, posteggi, concessioni attive)
+>   2. Presenze di oggi (concessionari e spuntisti per mercato)
+>   3. Scadenze canoni (rate scadute, importo, prossime 30gg)
+>   4. Concessioni con problemi (scadute, sospese, cessate)
+>   5. Statistiche generali (occupazione %, imprese attive)
+> - Cache differenziata: 5 min per dati aggregati, 1 min per presenze live
+> - Filtro automatico per `comune_id` quando disponibile
+> - Limite max ~500 token (2000 char) per non sovraccaricare il modello 7B
+> - Iniettato come sezione `DATI REALI DAL DATABASE` nel system prompt
+> - AVA ora risponde con dati veri del comune, non più generici
+> 
+> **Frontend (commit `7bbd726` — merge Claude Step 2.1):**
+> - AIChatPanel.tsx: auto-detect ruolo da FirebaseAuth + passa `currentTab`
+> - DashboardPA.tsx: passa `comuneId` (da URL) e `activeTab` al componente
+> 
+> **Piano Fase 2 AVA (concordato con Claude):**
+> - Step 2.1: Ruolo Dinamico ✅ COMPLETATO
+> - Step 2.2: RAG con Dati DB Reali ✅ COMPLETATO
+> 
+> **Autore:** Manus AI
+> **Stato:** PRODUZIONE
+>
+> --- 
+> ### CHANGELOG v9.4.1 (01 Mar 2026)
+> **Step 2.1 Fase 2 AVA — Ruolo Utente Dinamico**
+> 
+> **Backend (commit `4e3f68e`):**
+> - Nuova funzione `resolveUserContext()` in `routes/ai-chat.js`
+> - Legge `user_role` e `comune_id` dal `context` della request (inviato dal frontend)
+> - Fallback: se il frontend non invia il ruolo, lo deriva dal DB (`user_role_assignments` + `user_roles`)
+> - Mappa codici ruolo DB → ruolo AVA: `super_admin/municipal_admin/suap_operator` → `pa`, `business_owner` → `impresa`, altri → `cittadino`
+> - Risolve `comuneNome` dalla tabella `comuni` per personalizzare il prompt (es. "Funzionario PA del Comune di Bologna")
+> - Cache con TTL 10 minuti per evitare query ripetute
+> - Rimosso hardcoded `userRole: 'pa'` e `comuneNome: null`
+> 
+> **Piano Fase 2 AVA (concordato con Claude):**
+> - Step 2.1: Ruolo Dinamico ✅ COMPLETATO
+> - Step 2.2: RAG con Dati DB Reali (prossimo)
+> - Step 2.3: Function Calling (AVA esegue azioni)
+> - Step 2.4: AVA Multi-Dashboard (Impresa + Cittadino)
+> - Step 2.5: Miglioramenti UX Chat
+> 
+> **Autore:** Manus AI
+> **Stato:** PRODUZIONE
+>
 > --- 
 > ### CHANGELOG v9.4.0 (01 Mar 2026)
 > **AVA Fase 1 COMPLETATA — Sistema di Chat AI Professionale con Streaming e Memoria**
