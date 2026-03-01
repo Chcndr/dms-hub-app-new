@@ -38,7 +38,7 @@ function CopyButton({ text }: { text: string }) {
 export function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
   return (
     <div
-      className="prose prose-invert prose-sm max-w-none
+      className="prose prose-invert prose-sm max-w-none break-words overflow-hidden
                     prose-p:my-1.5 prose-p:leading-relaxed
                     prose-li:my-0.5
                     prose-headings:text-teal-400 prose-headings:mt-3 prose-headings:mb-1.5
