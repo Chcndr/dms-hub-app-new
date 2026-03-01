@@ -10871,7 +10871,7 @@ Questa sessione ha risolto il bug critico della sidebar conversazioni che non mo
 
 ### STEP 3.1 — Frontend: Estendere context con impresa_id e user_id
 **Responsabile: Claude**
-**Stato: DA FARE**
+**Stato: ✅ COMPLETATO** (commit c02baa8, 1 Mar 2026)
 **Priorita': ALTA (prerequisito per tutti gli step backend)**
 
 **File da modificare:**
@@ -10941,7 +10941,7 @@ Verificare che `impresaId` venga passato come prop ad `AIChatPanel` nel tab "Ass
 
 ### STEP 3.2 — Backend: Validazione server-side dell'identita' utente
 **Responsabile: Manus**
-**Stato: DA FARE**
+**Stato: ✅ COMPLETATO** (commit 52272ca, 1 Mar 2026)
 **Priorita': CRITICA (sicurezza)**
 
 **File:** `routes/ai-chat.js` (Hetzner backend)
@@ -11068,7 +11068,7 @@ app.post('/api/ai/chat/stream', async (req, res) => {
 
 ### STEP 3.3 — Backend: Creare avaDataGateway.js
 **Responsabile: Manus**
-**Stato: DA FARE**
+**Stato: ✅ COMPLETATO** (commit 52272ca, 1 Mar 2026)
 **Priorita': ALTA**
 
 **File da creare:** `routes/ava-data-gateway.js` (o `lib/ava-data-gateway.js`)
@@ -11288,7 +11288,7 @@ module.exports = { createAvaGateway, BLOCKED_TABLES };
 
 ### STEP 3.4 — Backend: Aggiornare getContextualData() per multi-ruolo
 **Responsabile: Manus**
-**Stato: DA FARE**
+**Stato: ✅ COMPLETATO** (commit 52272ca, 1 Mar 2026)
 **Priorita': ALTA**
 
 **File:** `routes/ai-chat.js` (funzione `getContextualData()`)
@@ -11457,7 +11457,7 @@ async function getContextualData(verifiedUser, userMessage) {
 
 ### STEP 3.5 — Backend: Aggiornare i 4 AVA_TOOLS per multi-ruolo
 **Responsabile: Manus**
-**Stato: DA FARE**
+**Stato: ✅ COMPLETATO** (commit 52272ca, 1 Mar 2026)
 **Priorita': ALTA**
 
 **File:** `routes/ai-chat.js` (funzione `tryFunctionCalling()`)
@@ -11558,7 +11558,7 @@ async function dashboardStatsCittadino(userId) {
 
 ### STEP 3.6 — Backend: Prompt contestuale per Impresa e Cittadino
 **Responsabile: Manus**
-**Stato: DA FARE**
+**Stato: ✅ COMPLETATO** (commit 52272ca, 1 Mar 2026)
 **Priorita': MEDIA**
 
 **File:** `routes/ai-chat.js` (sezione system prompt injection) e `.mio-agents/ava_system_prompt_v2.md`
@@ -11596,7 +11596,7 @@ Rispondi in modo amichevole. NON hai accesso a dati di imprese o PA.
 
 ### STEP 3.7 — Backend: Indici DB per velocita' query AVA
 **Responsabile: Manus**
-**Stato: DA FARE**
+**Stato: ✅ COMPLETATO** (18 indici creati su Neon, 1 Mar 2026)
 **Priorita': MEDIA**
 
 **Obiettivo:** Creare indici composti sulle colonne usate piu' frequentemente dalle query AVA. Senza indici, le query con filtro `impresa_id` fanno full table scan.
@@ -11632,7 +11632,7 @@ CREATE INDEX IF NOT EXISTS idx_wallets_comune ON wallets(comune_id);
 
 ### STEP 3.8 — Frontend: Suggerimenti contestuali per ruolo
 **Responsabile: Claude**
-**Stato: DA FARE**
+**Stato: ✅ COMPLETATO** (commit c02baa8, 1 Mar 2026)
 **Priorita': BASSA**
 
 **File:** `client/src/components/ai-chat/AIChatEmptyState.tsx`
