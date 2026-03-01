@@ -6,6 +6,7 @@ import { useState } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { AIChatPanel } from "@/components/ai-chat/AIChatPanel";
 import type { UserRoleType } from "@/components/ai-chat/types";
+import { useImpersonation } from "@/hooks/useImpersonation";
 
 interface ChatWidgetProps {
   userRole?: "cliente" | "operatore" | "pa" | "super_admin" | "owner";
@@ -31,6 +32,8 @@ function mapWidgetRole(
 export default function ChatWidget({ userRole }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const avaRole = mapWidgetRole(userRole);
+  const { comuneId: impComuneId } = useImpersonation();
+  const comuneId = impComuneId ? parseInt(impComuneId, 10) : undefined;
 
   if (!isOpen) {
     return (
@@ -69,7 +72,7 @@ export default function ChatWidget({ userRole }: ChatWidgetProps) {
 
       {/* Chat AVA a schermo intero */}
       <div className="flex-1 min-h-0">
-        <AIChatPanel userRole={avaRole} fullHeight />
+        <AIChatPanel userRole={avaRole} comuneId={comuneId} fullHeight />
       </div>
     </div>
   );

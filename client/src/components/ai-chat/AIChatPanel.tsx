@@ -89,7 +89,12 @@ export function AIChatPanel({
     fetchMessages,
     fetchConversations,
     fetchQuota,
-  } = useConversations();
+  } = useConversations(comuneId);
+
+  // Reset conversazione attiva quando cambia il comune impersonato
+  useEffect(() => {
+    setActiveConversationId(null);
+  }, [comuneId]);
 
   const {
     messages,
