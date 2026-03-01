@@ -1,7 +1,8 @@
 /**
  * AIChatMessage — Singola bolla messaggio (user/assistant/system)
+ * Fase 2.5: Aggiunto feedback thumbs up/down + retry
  */
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, ThumbsUp, ThumbsDown, RotateCcw } from "lucide-react";
 import { useState, useCallback } from "react";
 import { AIChatAvatar } from "./AIChatAvatar";
 import { AIChatMarkdown } from "./AIChatMarkdown";
@@ -10,16 +11,34 @@ import type { ChatMessage } from "./types";
 interface AIChatMessageProps {
   message: ChatMessage;
   isStreaming?: boolean;
+  isLastAssistant?: boolean;
+  onRetry?: () => void;
+  onFeedback?: (messageId: string, rating: "up" | "down") => void;
 }
 
-export function AIChatMessage({ message, isStreaming }: AIChatMessageProps) {
+export function AIChatMessage({
+  message,
+  isStreaming,
+  isLastAssistant,
+  onRetry,
+  onFeedback,
+}: AIChatMessageProps) {
   const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [message.content]);
+
+  const handleFeedback = useCallback(
+    (rating: "up" | "down") => {
+      setFeedback(rating);
+      onFeedback?.(message.id, rating);
+    },
+    [message.id, onFeedback]
+  );
 
   const time = new Date(message.created_at).toLocaleTimeString("it-IT", {
     hour: "2-digit",
@@ -78,6 +97,48 @@ export function AIChatMessage({ message, isStreaming }: AIChatMessageProps) {
             )}
             {copied ? "Copiato" : "Copia"}
           </button>
+
+          {/* Feedback buttons */}
+          <span className="text-slate-600">|</span>
+          <button
+            onClick={() => handleFeedback("up")}
+            className={`flex items-center gap-1 text-xs transition-colors ${
+              feedback === "up"
+                ? "text-green-400"
+                : "text-slate-400 hover:text-green-400"
+            }`}
+            title="Risposta utile"
+            disabled={feedback !== null}
+          >
+            <ThumbsUp className="size-3" />
+          </button>
+          <button
+            onClick={() => handleFeedback("down")}
+            className={`flex items-center gap-1 text-xs transition-colors ${
+              feedback === "down"
+                ? "text-red-400"
+                : "text-slate-400 hover:text-red-400"
+            }`}
+            title="Risposta non utile"
+            disabled={feedback !== null}
+          >
+            <ThumbsDown className="size-3" />
+          </button>
+
+          {/* Retry button (solo per l'ultimo messaggio assistente) */}
+          {isLastAssistant && onRetry && (
+            <>
+              <span className="text-slate-600">|</span>
+              <button
+                onClick={onRetry}
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-teal-400 transition-colors"
+                title="Rigenera risposta"
+              >
+                <RotateCcw className="size-3" />
+                Rigenera
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

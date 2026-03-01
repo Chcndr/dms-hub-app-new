@@ -26,10 +26,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Bot,
 } from "lucide-react";
 import { getCachedUser, logout, type User as AuthUser } from "@/api/authClient";
 import { ORCHESTRATORE_API_BASE_URL, MIHUB_API_BASE_URL } from "@/config/api";
 import { toast } from "sonner";
+import { AIChatPanel } from "@/components/ai-chat/AIChatPanel";
 
 /**
  * Recupera i dati utente da tutte le sorgenti localStorage disponibili.
@@ -365,6 +367,10 @@ export default function DashboardImpresa() {
                 <Briefcase className="h-4 w-4 mr-2" />
                 Documenti
               </TabsTrigger>
+              <TabsTrigger value="assistente">
+                <Bot className="h-4 w-4 mr-2" />
+                Assistente
+              </TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
@@ -634,6 +640,14 @@ export default function DashboardImpresa() {
                   </p>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Assistente AI Tab */}
+            <TabsContent value="assistente">
+              <AIChatPanel
+                userRole="impresa"
+                currentTab={activeTab}
+              />
             </TabsContent>
           </Tabs>
         )}
