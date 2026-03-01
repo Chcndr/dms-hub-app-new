@@ -31,7 +31,7 @@ interface UseConversationsReturn {
   fetchQuota: () => Promise<void>;
 }
 
-export function useConversations(): UseConversationsReturn {
+export function useConversations(comuneId?: number): UseConversationsReturn {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quota, setQuota] = useState<QuotaInfo | null>(null);
@@ -39,7 +39,10 @@ export function useConversations(): UseConversationsReturn {
   const fetchConversations = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await authFetch(`${AI_API_BASE}/conversations`);
+      const url = comuneId
+        ? `${AI_API_BASE}/conversations?comune_id=${comuneId}`
+        : `${AI_API_BASE}/conversations`;
+      const res = await authFetch(url);
       if (!res.ok) throw new Error("Errore nel caricamento conversazioni");
       const data = await res.json();
       setConversations(data.conversations ?? []);
@@ -49,15 +52,17 @@ export function useConversations(): UseConversationsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [comuneId]);
 
   const createConversation =
     useCallback(async (): Promise<Conversation | null> => {
       try {
+        const body: Record<string, unknown> = {};
+        if (comuneId) body.comune_id = comuneId;
         const res = await authFetch(`${AI_API_BASE}/conversations`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
+          body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error("Errore nella creazione conversazione");
         const data = await res.json();
@@ -66,7 +71,7 @@ export function useConversations(): UseConversationsReturn {
       } catch {
         return null;
       }
-    }, [fetchConversations]);
+    }, [fetchConversations, comuneId]);
 
   const renameConversation = useCallback(async (id: string, title: string) => {
     try {
