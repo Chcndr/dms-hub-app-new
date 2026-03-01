@@ -1,8 +1,40 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.4.1 (AVA Step 2.1 — Ruolo Utente Dinamico)
+> **Versione:** 9.4.2 (AVA Step 2.2 — RAG con Dati DB Reali)
 > **Data:** 01 Marzo 2026
 > 
+> --- 
+> ### CHANGELOG v9.4.2 (01 Mar 2026)
+> **Step 2.2 Fase 2 AVA — RAG con Dati DB Reali**
+> 
+> **Backend (commit `1004cc5`):**
+> - Nuova funzione `getContextualData(comuneId, userMessage, userRole)` in `routes/ai-chat.js`
+> - 5 query condizionali attivate dal topic matching sul messaggio utente:
+>   1. Mercati attivi nel comune (nome, giorni, posteggi, concessioni attive)
+>   2. Presenze di oggi (concessionari e spuntisti per mercato)
+>   3. Scadenze canoni (rate scadute, importo, prossime 30gg)
+>   4. Concessioni con problemi (scadute, sospese, cessate)
+>   5. Statistiche generali (occupazione %, imprese attive)
+> - Cache differenziata: 5 min per dati aggregati, 1 min per presenze live
+> - Filtro automatico per `comune_id` quando disponibile
+> - Limite max ~500 token (2000 char) per non sovraccaricare il modello 7B
+> - Iniettato come sezione `DATI REALI DAL DATABASE` nel system prompt
+> - AVA ora risponde con dati veri del comune, non più generici
+> 
+> **Frontend (commit `7bbd726` — merge Claude Step 2.1):**
+> - AIChatPanel.tsx: auto-detect ruolo da FirebaseAuth + passa `currentTab`
+> - DashboardPA.tsx: passa `comuneId` (da URL) e `activeTab` al componente
+> 
+> **Piano Fase 2 AVA (concordato con Claude):**
+> - Step 2.1: Ruolo Dinamico ✅ COMPLETATO
+> - Step 2.2: RAG con Dati DB Reali ✅ COMPLETATO
+> - Step 2.3: Function Calling (AVA esegue azioni)
+> - Step 2.4: AVA Multi-Dashboard (Impresa + Cittadino)
+> - Step 2.5: Miglioramenti UX Chat
+> 
+> **Autore:** Manus AI
+> **Stato:** PRODUZIONE
+>
 > --- 
 > ### CHANGELOG v9.4.1 (01 Mar 2026)
 > **Step 2.1 Fase 2 AVA — Ruolo Utente Dinamico**
