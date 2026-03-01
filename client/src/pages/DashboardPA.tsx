@@ -5166,7 +5166,11 @@ export default function DashboardPA() {
 
           {/* TAB 9: AGENTE AI — AVA Chat AI con Streaming SSE */}
           <TabsContent value="ai" className="space-y-6">
-            <AIChatPanel userRole="pa" />
+            <AIChatPanel
+              userRole="pa"
+              comuneId={comuneIdFromUrl ? parseInt(comuneIdFromUrl, 10) : undefined}
+              currentTab={activeTab}
+            />
           </TabsContent>
 
           {/* TAB 10: SICUREZZA */}
