@@ -1,35 +1,48 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.6.0 (FASE 3 AVA — Piano Implementazione Data Access Gateway Multi-Ruolo)
+> **Versione:** 9.6.1 (FASE 3 AVA — COMPLETATA + Allineamento Completo)
 > **Data:** 01 Marzo 2026
 >
 > ---
+> ### CHANGELOG v9.6.1 (01 Mar 2026)
+> **✅ ALLINEAMENTO COMPLETO — Tutti i sistemi sincronizzati**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---------|--------|-------|
+> | GitHub `mihub-backend-rest` master | `52272ca` | ✅ Allineato |
+> | Hetzner backend (157.90.29.66:3000) | `52272ca` | ✅ Online, PM2 running |
+> | GitHub `dms-hub-app-new` master | `5b0ea60` | ✅ Allineato |
+> | Vercel frontend | `5b0ea60` | ✅ HTTP 200, auto-deploy |
+> | Neon DB (indici AVA) | 18 indici `idx_ava_*` | ✅ Attivi |
+> | Claude branch | Fully merged | ✅ 0 commit pendenti |
+>
+> **Merge effettuati:**
+> - `c02baa8` — Fase 3 Step 3.1 + 3.8 (context SSE + suggerimenti ruolo)
+> - `a5d87b8` — Fix chat AVA vista smartphone (sidebar toggle, mobile detection)
+> - `58495f0` — Fix text overflow smartphone (break-words, overflow-hidden)
+>
+> ---
 > ### CHANGELOG v9.6.0 (01 Mar 2026)
-> **🔐 FASE 3 AVA — PIANO IMPLEMENTAZIONE DATA ACCESS GATEWAY MULTI-RUOLO**
+> **🔐 FASE 3 AVA — DATA ACCESS GATEWAY MULTI-RUOLO — ✅ COMPLETATA**
 >
-> Piano completo per implementazione del sistema di accesso dati filtrato per ruolo in AVA.
+> **Stato:** ✅ COMPLETATO E DEPLOYATO (tutti 8 step)
+>
+> Implementazione completa del sistema di accesso dati filtrato per ruolo in AVA.
 > Basato sull'analisi di `AVA_DATA_ACCESS_SCHEMA.md` (Manus) e review architettura (Claude).
-> Vedi sezione dedicata: **"FASE 3 AVA — Data Access Gateway"** in fondo al blueprint.
 >
-> **Problema identificato:**
-> - Oggi AVA filtra SOLO per `comune_id` (logica PA-centrica)
-> - Un operatore impresa potrebbe ricevere dati di ALTRE imprese dello stesso comune
-> - Un cittadino potrebbe vedere dati non suoi
-> - Le 14 tabelle VIETATE non hanno blocco esplicito nel codice
->
-> **Soluzione: 8 step divisi tra Manus (backend) e Claude (frontend)**
-> - Step 3.1: Frontend — Estendere context con `impresa_id` + `user_id` (Claude)
-> - Step 3.2: Backend — Validazione server-side dell'identita' utente (Manus)
-> - Step 3.3: Backend — Creare `avaDataGateway.js` con filtri automatici (Manus)
-> - Step 3.4: Backend — Aggiornare `getContextualData()` multi-ruolo (Manus)
-> - Step 3.5: Backend — Aggiornare i 4 AVA_TOOLS multi-ruolo (Manus)
-> - Step 3.6: Backend — Prompt contestuale per Impresa e Cittadino (Manus)
-> - Step 3.7: Backend — Indici DB per velocita' query AVA (Manus)
-> - Step 3.8: Frontend — Suggerimenti contestuali per ruolo (Claude)
+> **8 step completati:**
+> - Step 3.1: ✅ Frontend — Context SSE con `impresa_id` + `user_id` (Claude, c02baa8)
+> - Step 3.2: ✅ Backend — `resolveAndValidateUser()` server-side (Manus, 52272ca)
+> - Step 3.3: ✅ Backend — `avaDataGateway.js` con filtri automatici (Manus, 52272ca)
+> - Step 3.4: ✅ Backend — `getContextualData()` multi-ruolo PA/Impresa/Cittadino (Manus, 52272ca)
+> - Step 3.5: ✅ Backend — 4 AVA_TOOLS multi-ruolo (Manus, 52272ca)
+> - Step 3.6: ✅ Backend — Prompt contestuale per ruolo (Manus, 52272ca)
+> - Step 3.7: ✅ Backend — 18 indici DB su Neon (Manus)
+> - Step 3.8: ✅ Frontend — Suggerimenti contestuali per ruolo (Claude, c02baa8)
 >
 > **Autore piano:** Claude AI (analisi architettura + coordinamento)
 > **Esecuzione:** Manus AI (backend Hetzner) + Claude AI (frontend)
-> **Stato:** PIANIFICATO — In attesa di implementazione
 > **Riferimento:** `AVA_DATA_ACCESS_SCHEMA.md` nella root del progetto
 >
 > ---
