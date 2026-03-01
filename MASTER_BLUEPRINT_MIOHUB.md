@@ -1,8 +1,31 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.4.0 (AVA Fase 1 COMPLETATA + Streaming SSE + Prompt Tiered v2.0)
+> **Versione:** 9.4.1 (AVA Step 2.1 — Ruolo Utente Dinamico)
 > **Data:** 01 Marzo 2026
 > 
+> --- 
+> ### CHANGELOG v9.4.1 (01 Mar 2026)
+> **Step 2.1 Fase 2 AVA — Ruolo Utente Dinamico**
+> 
+> **Backend (commit `4e3f68e`):**
+> - Nuova funzione `resolveUserContext()` in `routes/ai-chat.js`
+> - Legge `user_role` e `comune_id` dal `context` della request (inviato dal frontend)
+> - Fallback: se il frontend non invia il ruolo, lo deriva dal DB (`user_role_assignments` + `user_roles`)
+> - Mappa codici ruolo DB → ruolo AVA: `super_admin/municipal_admin/suap_operator` → `pa`, `business_owner` → `impresa`, altri → `cittadino`
+> - Risolve `comuneNome` dalla tabella `comuni` per personalizzare il prompt (es. "Funzionario PA del Comune di Bologna")
+> - Cache con TTL 10 minuti per evitare query ripetute
+> - Rimosso hardcoded `userRole: 'pa'` e `comuneNome: null`
+> 
+> **Piano Fase 2 AVA (concordato con Claude):**
+> - Step 2.1: Ruolo Dinamico ✅ COMPLETATO
+> - Step 2.2: RAG con Dati DB Reali (prossimo)
+> - Step 2.3: Function Calling (AVA esegue azioni)
+> - Step 2.4: AVA Multi-Dashboard (Impresa + Cittadino)
+> - Step 2.5: Miglioramenti UX Chat
+> 
+> **Autore:** Manus AI
+> **Stato:** PRODUZIONE
+>
 > --- 
 > ### CHANGELOG v9.4.0 (01 Mar 2026)
 > **AVA Fase 1 COMPLETATA — Sistema di Chat AI Professionale con Streaming e Memoria**
