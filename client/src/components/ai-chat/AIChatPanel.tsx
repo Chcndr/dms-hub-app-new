@@ -55,6 +55,18 @@ export function AIChatPanel({
 }: AIChatPanelProps) {
   const { user } = useFirebaseAuth();
 
+  // Mobile detection (< 768px = Tailwind md breakpoint)
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mql.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
   // Auto-detect ruolo se non passato esplicitamente
   const effectiveRole = useMemo<UserRoleType>(
     () => userRole ?? mapFirebaseRoleToAva(user?.role),
@@ -63,7 +75,9 @@ export function AIChatPanel({
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  );
 
   const {
     conversations,
@@ -141,15 +155,17 @@ export function AIChatPanel({
     const conv = await createConversation();
     if (conv) {
       setActiveConversationId(conv.id);
+      if (isMobile) setSidebarOpen(false);
     }
-  }, [createConversation]);
+  }, [createConversation, isMobile]);
 
   const handleSelectConversation = useCallback(
     (id: string) => {
       if (isStreaming) return; // Don't switch during streaming
       setActiveConversationId(id);
+      if (isMobile) setSidebarOpen(false);
     },
-    [isStreaming]
+    [isStreaming, isMobile]
   );
 
   const handleDeleteConversation = useCallback(
@@ -244,22 +260,44 @@ export function AIChatPanel({
 
   return (
     <div className={`flex ${fullHeight ? "h-full" : "h-[calc(100vh-220px)] min-h-[500px]"} bg-[#0d1520] rounded-xl border border-slate-700/50 overflow-hidden`}>
-      {/* Sidebar */}
-      <AIChatSidebar
-        conversations={conversations}
-        activeId={activeConversationId}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        onSelect={handleSelectConversation}
-        onNew={handleNewConversation}
-        onRename={renameConversation}
-        onDelete={handleDeleteConversation}
-      />
+      {/* Desktop sidebar (nascosta su mobile) */}
+      {!isMobile && (
+        <AIChatSidebar
+          conversations={conversations}
+          activeId={activeConversationId}
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          onSelect={handleSelectConversation}
+          onNew={handleNewConversation}
+          onRename={renameConversation}
+          onDelete={handleDeleteConversation}
+        />
+      )}
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <AIChatHeader conversation={activeConversation} quota={quota} />
+        {/* Header con toggle sidebar su mobile */}
+        <AIChatHeader
+          conversation={activeConversation}
+          quota={quota}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          showSidebarToggle={isMobile || !sidebarOpen}
+        />
+
+        {/* Mobile: dropdown conversazioni dall'alto */}
+        {isMobile && sidebarOpen && (
+          <AIChatSidebar
+            conversations={conversations}
+            activeId={activeConversationId}
+            isOpen={true}
+            onToggle={() => setSidebarOpen(false)}
+            onSelect={handleSelectConversation}
+            onNew={handleNewConversation}
+            onRename={renameConversation}
+            onDelete={handleDeleteConversation}
+            isMobile
+          />
+        )}
 
         {/* Quota banner */}
         {quota && <AIChatQuotaBanner quota={quota} />}
