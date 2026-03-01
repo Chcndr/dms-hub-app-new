@@ -1,7 +1,19 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.5.0 (AVA Fase 2 COMPLETATA — Function Calling + Multi-Dashboard + UX Polish)
+> **Versione:** 9.5.1 (AVA Data Access Schema — Matrice Accesso Dati per Ruolo)
 > **Data:** 01 Marzo 2026
+> 
+> --- 
+> ### CHANGELOG v9.5.1 (01 Mar 2026)
+> **📊 AVA DATA ACCESS SCHEMA — Matrice di Accesso ai Dati per Ruolo Utente**
+> 
+> - Creato documento `AVA_DATA_ACCESS_SCHEMA.md` con categorizzazione completa di tutte le 171 tabelle DB Neon
+> - 16 aree funzionali mappate: Mercati, Imprese, Concessioni, Presenze, Wallet, Sanzioni, SUAP, Autorizzazioni, Notifiche, Associazioni, Formazione, Carbon Credit, Comuni, Utenti, Hub, Sistema
+> - Matrice di accesso per 3 ruoli: PA (filtro comune_id), Impresa (filtro impresa_id), Cittadino (filtro user_id)
+> - 14 tabelle VIETATE per AVA (sicurezza, credenziali, sessioni, log)
+> - Schema proposto per implementazione `getFilteredQuery()` nel backend
+> - Documento per revisione congiunta Manus + Claude
+> - Vedi: `AVA_DATA_ACCESS_SCHEMA.md` nella root del progetto
 > 
 > --- 
 > ### CHANGELOG v9.5.0 (01 Mar 2026)
