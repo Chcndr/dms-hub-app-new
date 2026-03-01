@@ -1,8 +1,53 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.4.2 (AVA Step 2.2 — RAG con Dati DB Reali)
+> **Versione:** 9.5.0 (AVA Fase 2 COMPLETATA — Function Calling + Multi-Dashboard + UX Polish)
 > **Data:** 01 Marzo 2026
 > 
+> --- 
+> ### CHANGELOG v9.5.0 (01 Mar 2026)
+> **🎉 FASE 2 AVA COMPLETATA — Step 2.3 + 2.4 + 2.5 (Frontend + Backend)**
+> 
+> **Step 2.3 Backend — Function Calling (commit `36781a3`):**
+> - 4 AVA_TOOLS con keyword matching regex:
+>   1. `cerca_concessionario`: ricerca per nome/CF/PIVA con tabella risultati
+>   2. `report_presenze`: presenze di oggi per mercato con % occupazione
+>   3. `scadenze_canoni`: rate scadute/in scadenza con importi e dettaglio
+>   4. `dashboard_stats`: KPI card (mercati, posteggi, concessioni, imprese, presenze)
+> - `tryFunctionCalling()` esegue query DB e invia SSE event type "data" al frontend
+> - Integrato nel flusso /stream: tool eseguito PRIMA di Ollama
+> - Supporto data_type: table (colonne/righe) e stats (KPI con trend up/down)
+> 
+> **Step 2.3 Frontend (commit `2bd613b` — merge Claude):**
+> - types.ts: SSEDataEvent con data_type (table/stats/list) + StructuredData
+> - sse-client.ts: gestione event type "data" con callback onData
+> - useStreamingChat.ts: stato dataEvents[] e isLoadingData
+> - AIChatDataTable.tsx (NUOVO): tabella dati strutturati da function calling
+> - AIChatStatCard.tsx (NUOVO): card KPI con trend up/down
+> - AIChatMessageList.tsx: rendering data events + indicatore "AVA sta consultando i dati..."
+> 
+> **Step 2.4 Multi-Dashboard (commit `2bd613b` — merge Claude):**
+> - DashboardImpresa.tsx: nuovo tab "Assistente" con AIChatPanel userRole="impresa"
+> - ChatWidget.tsx: cerchietto flottante ora apre AVA a schermo intero
+> - AIChatPanel.tsx: prop fullHeight per modalità widget fullscreen
+> - Backend: ROLE_QUOTAS differenziate (PA: 100 msg/10 min, Impresa: 50/5, Cittadino: 20/3)
+> 
+> **Step 2.5 UX Polish (commit `2bd613b` frontend + `36781a3` backend):**
+> - Feedback: thumbs up/down su ogni risposta AVA (POST /api/ai/chat/feedback)
+> - Tabella ai_feedback con auto-migrate + UPSERT per cambio rating
+> - Retry: bottone "Rigenera" sull'ultimo messaggio assistente
+> - Suggerimenti contestuali: diversi per tab corrente (mercati, wallet, imprese, controlli)
+> - Export: bottone per esportare la conversazione in file .txt
+> 
+> **Piano Fase 2 AVA — COMPLETATA:**
+> - Step 2.1: Ruolo Dinamico ✅ COMPLETATO
+> - Step 2.2: RAG con Dati DB Reali ✅ COMPLETATO
+> - Step 2.3: Function Calling ✅ COMPLETATO
+> - Step 2.4: AVA Multi-Dashboard ✅ COMPLETATO
+> - Step 2.5: Miglioramenti UX Chat ✅ COMPLETATO
+> 
+> **Autore:** Manus AI + Claude AI (frontend)
+> **Stato:** PRODUZIONE
+>
 > --- 
 > ### CHANGELOG v9.4.2 (01 Mar 2026)
 > **Step 2.2 Fase 2 AVA — RAG con Dati DB Reali**
@@ -28,9 +73,6 @@
 > **Piano Fase 2 AVA (concordato con Claude):**
 > - Step 2.1: Ruolo Dinamico ✅ COMPLETATO
 > - Step 2.2: RAG con Dati DB Reali ✅ COMPLETATO
-> - Step 2.3: Function Calling (AVA esegue azioni)
-> - Step 2.4: AVA Multi-Dashboard (Impresa + Cittadino)
-> - Step 2.5: Miglioramenti UX Chat
 > 
 > **Autore:** Manus AI
 > **Stato:** PRODUZIONE
