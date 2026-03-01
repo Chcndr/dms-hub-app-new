@@ -4,6 +4,7 @@
  * Connesso al backend REST su api.mio-hub.me
  *
  * Fase 2.1: Auto-detect ruolo utente da FirebaseAuth + comuneId da impersonazione
+ * Fase 3.1: Aggiunto impresa_id e user_id nel context per Data Access Gateway multi-ruolo
  */
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { AlertCircle, Download } from "lucide-react";
@@ -92,6 +93,8 @@ export function AIChatPanel({
       comune_id: comuneId,
       user_role: effectiveRole,
       current_tab: currentTab,
+      impresa_id: user?.impresaId ?? undefined,
+      user_id: user?.uid ?? undefined,
     },
     onConversationCreated: newId => {
       setActiveConversationId(newId);

@@ -1,6 +1,7 @@
 /**
  * AIChatEmptyState — Welcome screen con suggerimenti iniziali
  * Fase 2.5: Suggerimenti contestuali per tab corrente della dashboard
+ * Fase 3.8: Suggerimenti multi-ruolo migliorati (impresa: dati reali, cittadino: TCC e civico)
  */
 import {
   Bot,
@@ -21,6 +22,9 @@ import {
   Wallet,
   Shield,
   Activity,
+  Leaf,
+  Flag,
+  AlertTriangle,
 } from "lucide-react";
 import type { UserRoleType, SuggestionItem } from "./types";
 
@@ -59,45 +63,45 @@ const SUGGESTIONS_BY_ROLE: Record<UserRoleType, SuggestionWithIcon[]> = {
   impresa: [
     {
       icon: Calendar,
-      label: "Presenze",
-      prompt: "Come registro la mia presenza al mercato?",
+      label: "Le mie presenze",
+      prompt: "Quante presenze ho registrato questo mese?",
     },
     {
-      icon: CreditCard,
-      label: "Pagamenti",
-      prompt: "Come pago il canone del posteggio?",
+      icon: AlertTriangle,
+      label: "Rate e scadenze",
+      prompt: "Ho rate scadute o canoni da pagare?",
     },
     {
-      icon: FileCheck,
-      label: "Documenti",
-      prompt: "Quali documenti devo tenere aggiornati?",
+      icon: FileText,
+      label: "Le mie concessioni",
+      prompt: "Qual e' lo stato delle mie concessioni?",
     },
     {
-      icon: HelpCircle,
-      label: "Assistenza",
-      prompt: "Ho un problema con la mia concessione, come faccio?",
+      icon: Shield,
+      label: "Sanzioni e pratiche",
+      prompt: "Ho sanzioni aperte o pratiche SUAP in corso?",
     },
   ],
   cittadino: [
     {
       icon: MapPin,
-      label: "Mercati vicini",
-      prompt: "Quali mercati ci sono nella mia zona?",
+      label: "Mercati aperti",
+      prompt: "Quali mercati sono aperti oggi?",
+    },
+    {
+      icon: Leaf,
+      label: "I miei crediti TCC",
+      prompt: "Quanti crediti TCC ho nel mio wallet?",
+    },
+    {
+      icon: Flag,
+      label: "Le mie segnalazioni",
+      prompt: "A che punto sono le mie segnalazioni civiche?",
     },
     {
       icon: Clock,
-      label: "Orari",
+      label: "Orari mercati",
       prompt: "Quali sono gli orari dei mercati questa settimana?",
-    },
-    {
-      icon: ShoppingBag,
-      label: "Cosa comprare",
-      prompt: "Che tipo di prodotti trovo al mercato?",
-    },
-    {
-      icon: Car,
-      label: "Come arrivare",
-      prompt: "Dove posso parcheggiare vicino al mercato?",
     },
   ],
 };

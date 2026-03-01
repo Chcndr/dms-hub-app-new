@@ -1,9 +1,38 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.5.1 (AVA Data Access Schema — Matrice Accesso Dati per Ruolo)
+> **Versione:** 9.6.0 (FASE 3 AVA — Piano Implementazione Data Access Gateway Multi-Ruolo)
 > **Data:** 01 Marzo 2026
-> 
-> --- 
+>
+> ---
+> ### CHANGELOG v9.6.0 (01 Mar 2026)
+> **🔐 FASE 3 AVA — PIANO IMPLEMENTAZIONE DATA ACCESS GATEWAY MULTI-RUOLO**
+>
+> Piano completo per implementazione del sistema di accesso dati filtrato per ruolo in AVA.
+> Basato sull'analisi di `AVA_DATA_ACCESS_SCHEMA.md` (Manus) e review architettura (Claude).
+> Vedi sezione dedicata: **"FASE 3 AVA — Data Access Gateway"** in fondo al blueprint.
+>
+> **Problema identificato:**
+> - Oggi AVA filtra SOLO per `comune_id` (logica PA-centrica)
+> - Un operatore impresa potrebbe ricevere dati di ALTRE imprese dello stesso comune
+> - Un cittadino potrebbe vedere dati non suoi
+> - Le 14 tabelle VIETATE non hanno blocco esplicito nel codice
+>
+> **Soluzione: 8 step divisi tra Manus (backend) e Claude (frontend)**
+> - Step 3.1: Frontend — Estendere context con `impresa_id` + `user_id` (Claude)
+> - Step 3.2: Backend — Validazione server-side dell'identita' utente (Manus)
+> - Step 3.3: Backend — Creare `avaDataGateway.js` con filtri automatici (Manus)
+> - Step 3.4: Backend — Aggiornare `getContextualData()` multi-ruolo (Manus)
+> - Step 3.5: Backend — Aggiornare i 4 AVA_TOOLS multi-ruolo (Manus)
+> - Step 3.6: Backend — Prompt contestuale per Impresa e Cittadino (Manus)
+> - Step 3.7: Backend — Indici DB per velocita' query AVA (Manus)
+> - Step 3.8: Frontend — Suggerimenti contestuali per ruolo (Claude)
+>
+> **Autore piano:** Claude AI (analisi architettura + coordinamento)
+> **Esecuzione:** Manus AI (backend Hetzner) + Claude AI (frontend)
+> **Stato:** PIANIFICATO — In attesa di implementazione
+> **Riferimento:** `AVA_DATA_ACCESS_SCHEMA.md` nella root del progetto
+>
+> ---
 > ### CHANGELOG v9.5.1 (01 Mar 2026)
 > **📊 AVA DATA ACCESS SCHEMA — Matrice di Accesso ai Dati per Ruolo Utente**
 > 
@@ -10743,3 +10772,955 @@ Questa sessione ha risolto il bug critico della sidebar conversazioni che non mo
 - **AVA Chat**: Completamente funzionante, con performance migliorate del **-55%** grazie al prompt tiered.
 - **Sidebar Conversazioni**: Bug risolto, le conversazioni ora appaiono correttamente.
 - **Codice**: Stabile e allineato tra i vari ambienti.
+
+---
+
+# 🔐 FASE 3 AVA — Data Access Gateway Multi-Ruolo
+
+> **Piano completo di implementazione**
+> **Autore piano:** Claude AI (analisi architettura + coordinamento)
+> **Data:** 01 Marzo 2026
+> **Riferimento:** `AVA_DATA_ACCESS_SCHEMA.md` (Manus, commit `6f58247`)
+> **Stato:** PIANIFICATO
+
+---
+
+## 1. PROBLEMA ATTUALE
+
+### 1.1 Cosa funziona (Fase 2 completata)
+- AVA ha 4 tools con function calling (`cerca_concessionario`, `report_presenze`, `scadenze_canoni`, `dashboard_stats`)
+- RAG con `getContextualData()` che inietta dati reali nel prompt
+- Prompt tiered a 3 livelli (Core + Role Context + KB on-demand)
+- Il frontend passa `{ comune_id, user_role, current_tab }` nel context della request SSE
+
+### 1.2 Cosa NON funziona (problema sicurezza + completezza)
+
+**SICUREZZA:**
+- Le query AVA filtrano SOLO per `comune_id` → logica PA-centrica
+- Quando un **operatore impresa** usa AVA, le query restituiscono dati di TUTTE le imprese del comune
+- Quando un **cittadino** usa AVA, potrebbe ricevere dati non suoi
+- Le **14 tabelle VIETATE** (secrets, sessions, security_events...) non hanno blocco esplicito nel codice backend
+- Il backend si fida del `user_role` mandato dal frontend senza validazione server-side
+
+**COMPLETEZZA:**
+- I 4 AVA_TOOLS funzionano solo per PA, non per Impresa/Cittadino
+- `getContextualData()` ha solo query per contesto PA
+- Il system prompt Impresa e Cittadino e' generico, senza dati reali
+- I suggerimenti nella empty state sono solo per PA
+
+**VELOCITA':**
+- Mancano indici DB dedicati per le query di AVA
+- Nessun pre-calcolo del contesto utente per impresa/cittadino
+- Le query fanno JOIN multipli senza ottimizzazione
+
+---
+
+## 2. ARCHITETTURA SOLUZIONE
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  FRONTEND (Claude — dms-hub-app-new)                             │
+│                                                                   │
+│  AIChatPanel.tsx manda al backend:                                │
+│  {                                                                │
+│    message: "quante presenze ho oggi?",                           │
+│    context: {                                                     │
+│      user_role: "impresa",          ← auto-detect da Firebase     │
+│      comune_id: 96,                 ← da impersonazione/RBAC      │
+│      impresa_id: 34,                ← NUOVO: da user.impresaId    │
+│      user_id: "firebase_uid_xxx",   ← NUOVO: da user.uid          │
+│      current_tab: "presenze"        ← tab corrente dashboard      │
+│    }                                                              │
+│  }                                                                │
+└──────────────────┬────────────────────────────────────────────────┘
+                   │ POST /api/ai/chat/stream (SSE)
+                   │
+┌──────────────────▼────────────────────────────────────────────────┐
+│  BACKEND HETZNER (Manus — mihub-backend-rest)                      │
+│                                                                     │
+│  STEP A: resolveAndValidateUser()  ← NUOVO                         │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ 1. Decodifica Firebase JWT dal header Authorization          │   │
+│  │ 2. Lookup user in DB: users.id, impresa_id, ruolo RBAC      │   │
+│  │ 3. IGNORA user_role/impresa_id dal context frontend          │   │
+│  │ 4. Usa SOLO i valori verificati dal DB                       │   │
+│  │ 5. Risultato: { userId, impresaId, comuneId, role }         │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  STEP B: avaDataGateway.query()  ← NUOVO                           │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ - Blacklist 14 tabelle VIETATE                               │   │
+│  │ - Applica filtro automatico per ruolo:                       │   │
+│  │   PA → WHERE comune_id = X                                   │   │
+│  │   Impresa → WHERE impresa_id = X                             │   │
+│  │   Cittadino → WHERE user_id = X                              │   │
+│  │ - Super Admin → nessun filtro                                │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  STEP C: tryFunctionCalling() (aggiornato multi-ruolo)              │
+│  STEP D: getContextualData() (aggiornato multi-ruolo)               │
+│  STEP E: Ollama genera risposta con dati filtrati                   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. PIANO DI IMPLEMENTAZIONE — 8 STEP
+
+---
+
+### STEP 3.1 — Frontend: Estendere context con impresa_id e user_id
+**Responsabile: Claude**
+**Stato: DA FARE**
+**Priorita': ALTA (prerequisito per tutti gli step backend)**
+
+**File da modificare:**
+
+**1. `client/src/components/ai-chat/types.ts`**
+```typescript
+// PRIMA (oggi):
+export interface StreamChatRequest {
+  conversation_id: string | null;
+  message: string;
+  context?: {
+    comune_id?: number;
+    user_role?: string;
+    current_tab?: string;
+  };
+}
+
+// DOPO:
+export interface StreamChatRequest {
+  conversation_id: string | null;
+  message: string;
+  context?: {
+    comune_id?: number;
+    user_role?: string;
+    current_tab?: string;
+    impresa_id?: number;     // NUOVO: ID impresa per operatori
+    user_id?: string;        // NUOVO: Firebase UID per cittadini
+  };
+}
+```
+
+**2. `client/src/components/ai-chat/AIChatPanel.tsx`**
+```typescript
+// Nella sezione useStreamingChat, aggiungere impresa_id e user_id:
+const {
+  messages, streamingContent, isStreaming, /* ... */
+} = useStreamingChat({
+  context: {
+    comune_id: comuneId,
+    user_role: effectiveRole,
+    current_tab: currentTab,
+    impresa_id: user?.impresaId ?? undefined,   // NUOVO
+    user_id: user?.uid ?? undefined,             // NUOVO
+  },
+  onConversationCreated: newId => { /* ... */ },
+});
+```
+
+**3. `client/src/pages/DashboardImpresa.tsx`**
+Verificare che `impresaId` venga passato come prop ad `AIChatPanel` nel tab "Assistente":
+```typescript
+<AIChatPanel
+  userRole="impresa"
+  comuneId={comuneId}        // Se disponibile
+  currentTab={activeTab}
+  fullHeight
+/>
+// impresa_id viene preso automaticamente da useFirebaseAuth() dentro AIChatPanel
+```
+
+**Dove prendere i dati:**
+- `impresa_id`: da `useFirebaseAuth()` → `user?.impresaId` (gia' in localStorage come `miohub_firebase_user.impresaId`)
+- `user_id`: da `useFirebaseAuth()` → `user?.uid` (Firebase UID)
+- `comune_id`: da `useImpersonation()` → `impersonation.comuneId` oppure da `user.assigned_roles[0].territory_id`
+
+---
+
+### STEP 3.2 — Backend: Validazione server-side dell'identita' utente
+**Responsabile: Manus**
+**Stato: DA FARE**
+**Priorita': CRITICA (sicurezza)**
+
+**File:** `routes/ai-chat.js` (Hetzner backend)
+
+**Obiettivo:** NON fidarsi dei valori `user_role`, `impresa_id`, `comune_id` inviati dal frontend. Verificarli server-side dal DB.
+
+**Funzione da creare: `resolveAndValidateUser(firebaseUid)`**
+
+```javascript
+/**
+ * Risolve e valida l'identita' utente dal DB.
+ * NON si fida del context frontend — usa solo dati verificati.
+ *
+ * @param {string} firebaseUid - UID dal token Firebase decodificato
+ * @returns {{ userId, impresaId, comuneId, comuneNome, role, email }}
+ */
+async function resolveAndValidateUser(firebaseUid) {
+  // 1. Trova utente nel DB
+  const user = await db.query(`
+    SELECT u.id, u.email, u."impresa_id"
+    FROM users u
+    WHERE u."openId" = $1 OR u."firebaseUid" = $1
+    LIMIT 1
+  `, [firebaseUid]);
+
+  if (!user) throw new Error('Utente non trovato');
+
+  // 2. Trova ruolo RBAC e territorio
+  const roleAssignment = await db.query(`
+    SELECT ura.role_id, ur.code as role_code, ur.sector,
+           ura.territory_type, ura.territory_id
+    FROM user_role_assignments ura
+    JOIN user_roles ur ON ur.id = ura.role_id
+    WHERE ura.user_id = $1 AND ura.is_active = true
+    ORDER BY ur.level ASC
+    LIMIT 1
+  `, [user.id]);
+
+  // 3. Determina ruolo AVA
+  let role = 'cittadino';
+  let comuneId = null;
+  let comuneNome = null;
+  let impresaId = null;
+
+  if (roleAssignment) {
+    const code = roleAssignment.role_code;
+
+    if (['super_admin'].includes(code)) {
+      role = 'super_admin';
+    } else if (['admin_pa', 'municipal_admin', 'suap_operator'].includes(code)) {
+      role = 'pa';
+      comuneId = roleAssignment.territory_id;
+    } else if (['business_owner', 'business_operator'].includes(code)) {
+      role = 'impresa';
+      impresaId = user.impresa_id;
+    }
+  } else if (user.impresa_id) {
+    // Fallback: ha impresa_id ma nessun ruolo RBAC assegnato
+    role = 'impresa';
+    impresaId = user.impresa_id;
+  }
+
+  // 4. Risolvi nome comune (se PA)
+  if (comuneId) {
+    const comune = await db.query(
+      'SELECT nome FROM comuni WHERE id = $1', [comuneId]
+    );
+    comuneNome = comune?.nome || null;
+  }
+
+  // 5. Per impresa, trova anche il comune (per contesto)
+  if (impresaId && !comuneId) {
+    const impresa = await db.query(
+      'SELECT comune_id FROM imprese WHERE id = $1', [impresaId]
+    );
+    comuneId = impresa?.comune_id || null;
+    if (comuneId) {
+      const comune = await db.query(
+        'SELECT nome FROM comuni WHERE id = $1', [comuneId]
+      );
+      comuneNome = comune?.nome || null;
+    }
+  }
+
+  return {
+    userId: user.id,
+    email: user.email,
+    impresaId,
+    comuneId,
+    comuneNome,
+    role,  // 'super_admin' | 'pa' | 'impresa' | 'cittadino'
+  };
+}
+```
+
+**Integrazione nell'endpoint /stream:**
+```javascript
+app.post('/api/ai/chat/stream', async (req, res) => {
+  // 1. Decodifica JWT Firebase
+  const firebaseUid = decodeFirebaseToken(req.headers.authorization);
+
+  // 2. Valida identita' server-side (NON usare req.body.context.user_role!)
+  const verifiedUser = await resolveAndValidateUser(firebaseUid);
+
+  // 3. OVERRIDE: usa i dati verificati, non quelli del frontend
+  // Eccezione: per super_admin in impersonazione, accetta comune_id dal frontend
+  const effectiveUser = {
+    ...verifiedUser,
+    comuneId: verifiedUser.role === 'super_admin'
+      ? (req.body.context?.comune_id || verifiedUser.comuneId)
+      : verifiedUser.comuneId,
+  };
+
+  // 4. Passa effectiveUser a tutte le funzioni successive
+  const contextData = await getContextualData(effectiveUser, req.body.message);
+  const toolResult = await tryFunctionCalling(effectiveUser, req.body.message);
+  // ...
+});
+```
+
+**Cache:** Cachare il risultato di `resolveAndValidateUser()` per 10 minuti per Firebase UID, per evitare query ripetute ad ogni messaggio.
+
+---
+
+### STEP 3.3 — Backend: Creare avaDataGateway.js
+**Responsabile: Manus**
+**Stato: DA FARE**
+**Priorita': ALTA**
+
+**File da creare:** `routes/ava-data-gateway.js` (o `lib/ava-data-gateway.js`)
+
+**Obiettivo:** Un modulo centralizzato che applica automaticamente i filtri di accesso per ruolo a TUTTE le query di AVA. Impedisce l'accesso alle tabelle vietate.
+
+```javascript
+/**
+ * AVA Data Access Gateway
+ * Centralizza i filtri di accesso per ruolo per tutte le query AI.
+ *
+ * Uso:
+ *   const gateway = createAvaGateway(verifiedUser);
+ *   const mercati = await gateway.query('markets', { where: { active: true } });
+ *   // Automaticamente aggiunge: AND comune_id = X (per PA)
+ *   //                          AND impresa_id = X (per Impresa, via concessions JOIN)
+ */
+
+// ============================================
+// TABELLE VIETATE — AVA non puo' MAI leggerle
+// ============================================
+const BLOCKED_TABLES = new Set([
+  'secrets', 'secrets_meta', 'secure_credentials',
+  'user_sessions', 'login_attempts', 'security_events',
+  'access_logs', 'ip_blacklist', 'api_keys', 'api_metrics',
+  'agent_brain', 'agent_context', 'agent_conversations',
+  'agent_messages', 'agent_projects', 'agent_screenshots',
+  'agent_tasks', 'agents',
+  'webhook_logs', 'webhooks', 'zapier_webhook_logs',
+  'system_events', 'system_logs', 'mio_agent_logs',
+  'workspace_snapshots', 'data_bag', 'chat_messages_old',
+  // Backup tables
+  'agent_logs_backup', 'agent_messages_backup',
+  'carbon_credits_config_backup', 'civic_config_backup',
+]);
+
+// Colonne MAI esposte da AVA
+const BLOCKED_COLUMNS = new Set([
+  'password_hash', 'openId', 'firebaseUid', 'session_token',
+]);
+
+// ============================================
+// MAPPA FILTRI PER TABELLA E RUOLO
+// ============================================
+// Per ogni tabella, specifica COME filtrare per ogni ruolo.
+// 'direct:campo' = filtra direttamente sulla colonna
+// 'join:tabella.campo' = filtra via JOIN
+// 'none' = nessun accesso
+// 'public' = accesso libero (tabelle lookup)
+// ============================================
+const TABLE_ACCESS_MAP = {
+  // AREA 1: Mercati
+  markets:          { pa: 'direct:comune_id', impresa: 'join:concessions.impresa_id', cittadino: 'public_limited' },
+  stalls:           { pa: 'join:markets.comune_id', impresa: 'join:concessions.impresa_id', cittadino: 'none' },
+  market_settings:  { pa: 'join:markets.comune_id', impresa: 'none', cittadino: 'none' },
+  market_tariffs:   { pa: 'join:markets.comune_id', impresa: 'join:concessions.impresa_id', cittadino: 'none' },
+
+  // AREA 2: Imprese
+  imprese:          { pa: 'direct:comune_id', impresa: 'direct:id=impresa_id', cittadino: 'none' },
+  vendors:          { pa: 'direct:comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+
+  // AREA 3: Concessioni
+  concessions:      { pa: 'direct:comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+  domande_spunta:   { pa: 'join:markets.comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+
+  // AREA 4: Presenze
+  market_sessions:        { pa: 'join:markets.comune_id', impresa: 'join:markets.comune_id', cittadino: 'none' },
+  market_session_details: { pa: 'join:market_sessions.market_id→markets.comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+  vendor_presences:       { pa: 'join:markets.comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+  graduatoria_presenze:   { pa: 'join:markets.comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+
+  // AREA 5: Wallet
+  wallets:              { pa: 'direct:comune_id', impresa: 'direct:company_id=impresa_id', cittadino: 'none' },
+  wallet_scadenze:      { pa: 'join:wallets.comune_id', impresa: 'join:wallets.company_id=impresa_id', cittadino: 'none' },
+  wallet_transactions:  { pa: 'join:wallets.comune_id', impresa: 'join:wallets.company_id=impresa_id', cittadino: 'none' },
+
+  // AREA 6: Sanzioni
+  sanctions:            { pa: 'join:markets.comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+  market_transgressions:{ pa: 'join:markets.comune_id', impresa: 'direct:business_id=impresa_id', cittadino: 'none' },
+
+  // AREA 7: SUAP
+  suap_pratiche:    { pa: 'join:markets.comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+  suap_checks:      { pa: 'join:suap_pratiche→markets.comune_id', impresa: 'join:suap_pratiche.impresa_id', cittadino: 'none' },
+  suap_decisioni:   { pa: 'join:suap_pratiche→markets.comune_id', impresa: 'join:suap_pratiche.impresa_id', cittadino: 'none' },
+
+  // AREA 8: Autorizzazioni
+  autorizzazioni:   { pa: 'direct:comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+  qualificazioni:   { pa: 'join:imprese.comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+  regolarita_imprese:{ pa: 'join:imprese.comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+
+  // AREA 9: Notifiche
+  notifiche:        { pa: 'direct:comune_id', impresa: 'direct:impresa_id', cittadino: 'direct:user_id' },
+
+  // AREA 10: Associazioni
+  associazioni:     { pa: 'public', impresa: 'public', cittadino: 'none' },
+  tesseramenti_associazione: { pa: 'direct:comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+
+  // AREA 11: Formazione
+  formazione_corsi: { pa: 'public', impresa: 'public', cittadino: 'public' },
+  formazione_iscrizioni: { pa: 'direct:comune_id', impresa: 'direct:impresa_id', cittadino: 'none' },
+
+  // AREA 12: Carbon Credit / Civico
+  civic_reports:       { pa: 'direct:comune_id', impresa: 'none', cittadino: 'direct:user_id' },
+  mobility_checkins:   { pa: 'direct:comune_id', impresa: 'none', cittadino: 'direct:user_id' },
+  cultural_visits:     { pa: 'direct:comune_id', impresa: 'none', cittadino: 'direct:user_id' },
+  gaming_challenges:   { pa: 'direct:comune_id', impresa: 'none', cittadino: 'public' },
+
+  // AREA 13: Comuni
+  comuni:           { pa: 'direct:id=comune_id', impresa: 'public_limited', cittadino: 'public_limited' },
+  province:         { pa: 'public', impresa: 'public', cittadino: 'public' },
+  regioni:          { pa: 'public', impresa: 'public', cittadino: 'public' },
+
+  // AREA 14: Utenti (ATTENZIONE: colonne sensibili bloccate)
+  users:            { pa: 'direct:comune_id', impresa: 'direct:id=user_id', cittadino: 'direct:id=user_id' },
+  extended_users:   { pa: 'direct:comune_id', impresa: 'direct:user_id', cittadino: 'direct:user_id' },
+
+  // AREA 15: Hub
+  hub_locations:    { pa: 'direct:comune_id', impresa: 'public', cittadino: 'public' },
+  hub_shops:        { pa: 'direct:comune_id', impresa: 'direct:impresa_id', cittadino: 'public' },
+
+  // AREA 16: Viste aggregate (solo PA)
+  v_burn_rate_by_comune:       { pa: 'direct:comune_id', impresa: 'none', cittadino: 'none' },
+  v_enterprise_compliance:     { pa: 'direct:comune_id', impresa: 'none', cittadino: 'none' },
+  v_fund_stats_by_comune:      { pa: 'direct:comune_id', impresa: 'none', cittadino: 'none' },
+  v_tcc_circulation_by_comune: { pa: 'direct:comune_id', impresa: 'none', cittadino: 'none' },
+  v_top_merchants_by_comune:   { pa: 'direct:comune_id', impresa: 'none', cittadino: 'none' },
+
+  // Audit (solo PA)
+  audit_logs:       { pa: 'direct:comune_id', impresa: 'none', cittadino: 'none' },
+};
+
+// ============================================
+// FACTORY: crea gateway con filtri per utente
+// ============================================
+function createAvaGateway(verifiedUser) {
+  const { userId, impresaId, comuneId, role } = verifiedUser;
+
+  return {
+    /**
+     * Verifica se AVA puo' accedere a una tabella per il ruolo corrente
+     */
+    canAccess(tableName) {
+      if (BLOCKED_TABLES.has(tableName)) return false;
+      const access = TABLE_ACCESS_MAP[tableName];
+      if (!access) return false;
+      if (role === 'super_admin') return true;
+      const rule = access[role];
+      return rule && rule !== 'none';
+    },
+
+    /**
+     * Restituisce la clausola WHERE da aggiungere alla query
+     * @returns {string} SQL WHERE condition (senza WHERE keyword)
+     */
+    getFilter(tableName) {
+      if (!this.canAccess(tableName)) {
+        throw new Error(`AVA: accesso negato a tabella '${tableName}' per ruolo '${role}'`);
+      }
+      if (role === 'super_admin') return '1=1'; // nessun filtro
+
+      const rule = TABLE_ACCESS_MAP[tableName]?.[role];
+      if (!rule || rule === 'none') throw new Error('Accesso negato');
+      if (rule === 'public' || rule === 'public_limited') return '1=1';
+
+      // direct:campo → WHERE campo = valore
+      if (rule.startsWith('direct:')) {
+        const field = rule.replace('direct:', '');
+        if (field.includes('=')) {
+          // direct:id=impresa_id → WHERE id = impresaId
+          const [col, filterType] = field.split('=');
+          const value = filterType === 'impresa_id' ? impresaId
+                      : filterType === 'user_id' ? userId
+                      : filterType === 'comune_id' ? comuneId : null;
+          return `${col} = ${value}`;
+        }
+        // direct:comune_id → WHERE comune_id = comuneId
+        const value = field === 'comune_id' ? comuneId
+                    : field === 'impresa_id' ? impresaId
+                    : field === 'user_id' ? userId : null;
+        return `${field} = ${value}`;
+      }
+
+      // join:tabella.campo → richiede JOIN (gestito dalla query specifica)
+      if (rule.startsWith('join:')) {
+        return rule; // Restituisce la regola, la query la interpreta
+      }
+
+      return '1=1';
+    },
+
+    /**
+     * Lista delle colonne da ESCLUDERE dalla risposta
+     */
+    getBlockedColumns() {
+      return [...BLOCKED_COLUMNS];
+    },
+
+    /**
+     * Sanitizza il risultato rimuovendo colonne sensibili
+     */
+    sanitize(rows) {
+      return rows.map(row => {
+        const clean = { ...row };
+        for (const col of BLOCKED_COLUMNS) {
+          delete clean[col];
+        }
+        return clean;
+      });
+    },
+  };
+}
+
+module.exports = { createAvaGateway, BLOCKED_TABLES };
+```
+
+---
+
+### STEP 3.4 — Backend: Aggiornare getContextualData() per multi-ruolo
+**Responsabile: Manus**
+**Stato: DA FARE**
+**Priorita': ALTA**
+
+**File:** `routes/ai-chat.js` (funzione `getContextualData()`)
+
+**Oggi (solo PA):**
+```javascript
+async function getContextualData(comuneId, userMessage, userRole) {
+  // 5 query tutte filtrate per comune_id
+  if (topic.match(/mercati/)) → query mercati WHERE comune_id = X
+  if (topic.match(/presenze/)) → query presenze WHERE market.comune_id = X
+  // ecc.
+}
+```
+
+**Domani (multi-ruolo):**
+```javascript
+async function getContextualData(verifiedUser, userMessage) {
+  const { role, comuneId, impresaId, userId } = verifiedUser;
+  const gateway = createAvaGateway(verifiedUser);
+  const msg = userMessage.toLowerCase();
+
+  let contextData = '';
+
+  // ──────────────────────────────────────────
+  // CONTESTO PER PA (Funzionario Comunale)
+  // ──────────────────────────────────────────
+  if (role === 'pa' || role === 'super_admin') {
+    // Stesso codice di oggi, gia' funzionante
+    if (msg.match(/mercati|posteggi|mercato/)) {
+      const mercati = await db.query(`
+        SELECT nome, giorni, COUNT(s.id) as posteggi
+        FROM markets m LEFT JOIN stalls s ON s.market_id = m.id
+        WHERE m.comune_id = $1 AND m.active = true
+        GROUP BY m.id
+      `, [comuneId]);
+      contextData += formatMercati(mercati);
+    }
+    // ... altre 4 query PA esistenti ...
+  }
+
+  // ──────────────────────────────────────────
+  // CONTESTO PER IMPRESA (Operatore Ambulante)
+  // ──────────────────────────────────────────
+  if (role === 'impresa') {
+    // Sempre: contesto base dell'impresa
+    const impresa = await db.query(`
+      SELECT i.denominazione, i.codice_fiscale, i.piva,
+             COUNT(c.id) as concessioni_attive
+      FROM imprese i
+      LEFT JOIN concessions c ON c.impresa_id = i.id AND c.stato = 'attiva'
+      WHERE i.id = $1
+      GROUP BY i.id
+    `, [impresaId]);
+
+    contextData += `\nIMPRESA: ${impresa.denominazione} (CF: ${impresa.codice_fiscale})\n`;
+    contextData += `Concessioni attive: ${impresa.concessioni_attive}\n`;
+
+    // Topic: Concessioni proprie
+    if (msg.match(/concessione|concessioni|posteggio|rinnovo|scadenza/)) {
+      const concessioni = await db.query(`
+        SELECT c.numero, m.nome as mercato, s.numero as posteggio,
+               c.stato, c.data_scadenza, c.superficie_mq
+        FROM concessions c
+        JOIN markets m ON m.id = c.market_id
+        JOIN stalls s ON s.id = c.stall_id
+        WHERE c.impresa_id = $1
+        ORDER BY c.data_scadenza ASC
+      `, [impresaId]);
+      contextData += formatConcessioni(concessioni);
+    }
+
+    // Topic: Presenze proprie
+    if (msg.match(/presenze|presenz|assenz|giustificazion/)) {
+      const presenze = await db.query(`
+        SELECT vp.data, m.nome as mercato, vp.tipo, vp.orario_ingresso,
+               vp.orario_uscita
+        FROM vendor_presences vp
+        JOIN markets m ON m.id = vp.market_id
+        WHERE vp.impresa_id = $1
+        ORDER BY vp.data DESC LIMIT 30
+      `, [impresaId]);
+      contextData += formatPresenze(presenze);
+    }
+
+    // Topic: Wallet e pagamenti propri
+    if (msg.match(/wallet|pagament|saldo|rata|canone|mora|scadenz/)) {
+      const wallet = await db.query(`
+        SELECT w.saldo, w.tipo,
+               COUNT(ws.id) FILTER (WHERE ws.stato = 'scaduta') as rate_scadute,
+               SUM(ws.importo) FILTER (WHERE ws.stato = 'scaduta') as totale_scaduto
+        FROM wallets w
+        LEFT JOIN wallet_scadenze ws ON ws.wallet_id = w.id
+        WHERE w.company_id = $1
+        GROUP BY w.id
+      `, [impresaId]);
+      contextData += formatWallet(wallet);
+    }
+
+    // Topic: Sanzioni proprie
+    if (msg.match(/sanzione|sanzioni|multa|verbale|infrazione/)) {
+      const sanzioni = await db.query(`
+        SELECT s.tipo, s.importo, s.data_emissione, s.stato, m.nome as mercato
+        FROM sanctions s
+        JOIN markets m ON m.id = s.market_id
+        WHERE s.impresa_id = $1
+        ORDER BY s.data_emissione DESC LIMIT 10
+      `, [impresaId]);
+      contextData += formatSanzioni(sanzioni);
+    }
+
+    // Topic: Pratiche SUAP proprie
+    if (msg.match(/suap|scia|pratica|autorizzazione/)) {
+      const pratiche = await db.query(`
+        SELECT sp.numero, sp.tipo, sp.stato, sp.data_presentazione,
+               m.nome as mercato
+        FROM suap_pratiche sp
+        JOIN markets m ON m.id = sp.mercato_id
+        WHERE sp.impresa_id = $1
+        ORDER BY sp.data_presentazione DESC LIMIT 10
+      `, [impresaId]);
+      contextData += formatPratiche(pratiche);
+    }
+  }
+
+  // ──────────────────────────────────────────
+  // CONTESTO PER CITTADINO
+  // ──────────────────────────────────────────
+  if (role === 'cittadino') {
+    // Topic: Mercati (solo dati pubblici)
+    if (msg.match(/mercato|mercati|dove|quando|orari/)) {
+      const mercati = await db.query(`
+        SELECT nome, giorni, indirizzo, orario_apertura, orario_chiusura
+        FROM markets WHERE active = true
+        ORDER BY nome
+      `);
+      contextData += formatMercatiPubblici(mercati);
+    }
+
+    // Topic: Segnalazioni civiche proprie
+    if (msg.match(/segnalazione|segnalazioni|civic|problema/)) {
+      const reports = await db.query(`
+        SELECT cr.tipo, cr.descrizione, cr.stato, cr.created_at
+        FROM civic_reports cr
+        WHERE cr.user_id = $1
+        ORDER BY cr.created_at DESC LIMIT 10
+      `, [userId]);
+      contextData += formatSegnalazioni(reports);
+    }
+
+    // Topic: TCC / Carbon credits propri
+    if (msg.match(/tcc|crediti|carbon|wallet|punti|saldo/)) {
+      const tcc = await db.query(`
+        SELECT SUM(amount) as saldo_tcc
+        FROM operator_transactions
+        WHERE user_id = $1
+      `, [userId]);
+      contextData += `\nSaldo TCC: ${tcc.saldo_tcc || 0} crediti\n`;
+    }
+  }
+
+  return contextData;
+}
+```
+
+---
+
+### STEP 3.5 — Backend: Aggiornare i 4 AVA_TOOLS per multi-ruolo
+**Responsabile: Manus**
+**Stato: DA FARE**
+**Priorita': ALTA**
+
+**File:** `routes/ai-chat.js` (funzione `tryFunctionCalling()`)
+
+**Per ogni tool, aggiungere la logica multi-ruolo:**
+
+#### Tool 1: `cerca_concessionario`
+```javascript
+// PA: cerca tra tutte le imprese del comune
+// OGGI:  WHERE imprese.comune_id = comuneId AND (nome ILIKE ...)
+// OK, resta uguale per PA
+
+// IMPRESA: cerca solo nei propri dati
+// NUOVO:  WHERE imprese.id = impresaId (mostra solo i propri dati)
+// Oppure: non disponibile per impresa (non ha senso cercare se stessi)
+
+// CITTADINO: non disponibile
+```
+
+#### Tool 2: `report_presenze`
+```javascript
+// PA: presenze di oggi per TUTTI i mercati del comune (come oggi)
+
+// IMPRESA: presenze di oggi SOLO dell'impresa
+async function reportPresenzeImpresa(impresaId) {
+  return db.query(`
+    SELECT m.nome as mercato, vp.orario_ingresso, vp.tipo
+    FROM vendor_presences vp
+    JOIN markets m ON m.id = vp.market_id
+    WHERE vp.impresa_id = $1 AND vp.data = CURRENT_DATE
+  `, [impresaId]);
+}
+
+// CITTADINO: non disponibile
+```
+
+#### Tool 3: `scadenze_canoni`
+```javascript
+// PA: tutte le scadenze del comune (come oggi)
+
+// IMPRESA: solo le proprie scadenze
+async function scadenzeCanoniImpresa(impresaId) {
+  return db.query(`
+    SELECT ws.importo, ws.data_scadenza, ws.stato, w.tipo
+    FROM wallet_scadenze ws
+    JOIN wallets w ON w.id = ws.wallet_id
+    WHERE w.company_id = $1
+      AND (ws.stato = 'scaduta' OR ws.data_scadenza <= CURRENT_DATE + INTERVAL '30 days')
+    ORDER BY ws.data_scadenza ASC
+  `, [impresaId]);
+}
+
+// CITTADINO: non disponibile
+```
+
+#### Tool 4: `dashboard_stats`
+```javascript
+// PA: KPI del comune (come oggi: tot mercati, posteggi, concessioni, imprese, presenze)
+
+// IMPRESA: KPI personali
+async function dashboardStatsImpresa(impresaId) {
+  const stats = await db.query(`
+    SELECT
+      (SELECT COUNT(*) FROM concessions WHERE impresa_id = $1 AND stato = 'attiva') as concessioni_attive,
+      (SELECT COUNT(*) FROM vendor_presences WHERE impresa_id = $1 AND data >= CURRENT_DATE - INTERVAL '30 days') as presenze_ultimo_mese,
+      (SELECT COALESCE(SUM(saldo), 0) FROM wallets WHERE company_id = $1) as saldo_wallet,
+      (SELECT COUNT(*) FROM wallet_scadenze ws JOIN wallets w ON w.id = ws.wallet_id WHERE w.company_id = $1 AND ws.stato = 'scaduta') as rate_scadute,
+      (SELECT COUNT(*) FROM sanctions WHERE impresa_id = $1 AND stato = 'non_pagata') as sanzioni_aperte
+  `, [impresaId]);
+  return [
+    { label: 'Concessioni attive', value: stats.concessioni_attive, icon: 'FileText' },
+    { label: 'Presenze (30gg)', value: stats.presenze_ultimo_mese, icon: 'Calendar' },
+    { label: 'Saldo wallet', value: `€${stats.saldo_wallet}`, icon: 'Wallet' },
+    { label: 'Rate scadute', value: stats.rate_scadute, trend: stats.rate_scadute > 0 ? 'down' : 'neutral', icon: 'AlertTriangle' },
+    { label: 'Sanzioni aperte', value: stats.sanzioni_aperte, trend: stats.sanzioni_aperte > 0 ? 'down' : 'neutral', icon: 'Shield' },
+  ];
+}
+
+// CITTADINO: KPI personali
+async function dashboardStatsCittadino(userId) {
+  const stats = await db.query(`
+    SELECT
+      (SELECT COALESCE(SUM(amount), 0) FROM operator_transactions WHERE user_id = $1) as saldo_tcc,
+      (SELECT COUNT(*) FROM civic_reports WHERE user_id = $1) as segnalazioni,
+      (SELECT COUNT(*) FROM mobility_checkins WHERE user_id = $1) as checkin_mobilita,
+      (SELECT COUNT(*) FROM cultural_visits WHERE user_id = $1) as visite_culturali
+  `, [userId]);
+  return [
+    { label: 'Saldo TCC', value: stats.saldo_tcc, icon: 'Leaf' },
+    { label: 'Segnalazioni', value: stats.segnalazioni, icon: 'Flag' },
+    { label: 'Check-in mobilita', value: stats.checkin_mobilita, icon: 'Bus' },
+    { label: 'Visite culturali', value: stats.visite_culturali, icon: 'Landmark' },
+  ];
+}
+```
+
+---
+
+### STEP 3.6 — Backend: Prompt contestuale per Impresa e Cittadino
+**Responsabile: Manus**
+**Stato: DA FARE**
+**Priorita': MEDIA**
+
+**File:** `routes/ai-chat.js` (sezione system prompt injection) e `.mio-agents/ava_system_prompt_v2.md`
+
+**Obiettivo:** Personalizzare la sezione "DATI REALI DAL DATABASE" del prompt in base al ruolo.
+
+**Per PA (gia' funzionante):**
+```
+RUOLO: Funzionario PA del Comune di Grosseto (ID: 96)
+DATI REALI: 3 mercati attivi, 583 posteggi, 34 imprese, 43 concessioni.
+Puoi chiedere informazioni su: mercati, posteggi, imprese, concessioni, presenze,
+wallet, pagamenti, sanzioni, SUAP, autorizzazioni, notifiche, formazione.
+```
+
+**Per IMPRESA (NUOVO):**
+```
+RUOLO: Operatore commerciale di [DENOMINAZIONE] (CF: [CF], P.IVA: [PIVA])
+DATI REALI: [N] concessioni attive, saldo wallet €[X], [N] rate scadute.
+Operi nei mercati: [lista mercati con giorni].
+Puoi chiedere informazioni su: le tue concessioni, presenze, wallet e rate,
+sanzioni, pratiche SUAP, autorizzazioni e qualifiche, corsi di formazione.
+NON hai accesso ai dati di altre imprese o dati amministrativi del comune.
+```
+
+**Per CITTADINO (NUOVO):**
+```
+RUOLO: Cittadino.
+DATI REALI: Saldo TCC [X] crediti, [N] segnalazioni civiche.
+Puoi chiedere informazioni su: mercati (orari, posizioni), le tue segnalazioni civiche,
+i tuoi check-in mobilita', le sfide attive, i tuoi crediti TCC.
+Rispondi in modo amichevole. NON hai accesso a dati di imprese o PA.
+```
+
+---
+
+### STEP 3.7 — Backend: Indici DB per velocita' query AVA
+**Responsabile: Manus**
+**Stato: DA FARE**
+**Priorita': MEDIA**
+
+**Obiettivo:** Creare indici composti sulle colonne usate piu' frequentemente dalle query AVA. Senza indici, le query con filtro `impresa_id` fanno full table scan.
+
+**SQL da eseguire su Neon:**
+```sql
+-- Indici per filtro impresa_id (NUOVI — per AVA Impresa)
+CREATE INDEX IF NOT EXISTS idx_concessions_impresa_id ON concessions(impresa_id);
+CREATE INDEX IF NOT EXISTS idx_concessions_impresa_stato ON concessions(impresa_id, stato);
+CREATE INDEX IF NOT EXISTS idx_vendor_presences_impresa_data ON vendor_presences(impresa_id, data DESC);
+CREATE INDEX IF NOT EXISTS idx_wallets_company_id ON wallets(company_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_scadenze_stato ON wallet_scadenze(wallet_id, stato);
+CREATE INDEX IF NOT EXISTS idx_sanctions_impresa_id ON sanctions(impresa_id);
+CREATE INDEX IF NOT EXISTS idx_suap_pratiche_impresa ON suap_pratiche(impresa_id);
+CREATE INDEX IF NOT EXISTS idx_autorizzazioni_impresa ON autorizzazioni(impresa_id);
+CREATE INDEX IF NOT EXISTS idx_notifiche_impresa ON notifiche(impresa_id);
+
+-- Indici per filtro user_id (NUOVI — per AVA Cittadino)
+CREATE INDEX IF NOT EXISTS idx_civic_reports_user ON civic_reports(user_id);
+CREATE INDEX IF NOT EXISTS idx_mobility_checkins_user ON mobility_checkins(user_id);
+CREATE INDEX IF NOT EXISTS idx_cultural_visits_user ON cultural_visits(user_id);
+CREATE INDEX IF NOT EXISTS idx_operator_transactions_user ON operator_transactions(user_id);
+
+-- Indici per filtro comune_id (verificare che esistano gia')
+CREATE INDEX IF NOT EXISTS idx_markets_comune_active ON markets(comune_id, active);
+CREATE INDEX IF NOT EXISTS idx_imprese_comune ON imprese(comune_id);
+CREATE INDEX IF NOT EXISTS idx_wallets_comune ON wallets(comune_id);
+```
+
+**Stima impatto:** Le query AVA con filtro `impresa_id` passeranno da ~50-200ms (full scan) a ~1-5ms (index seek) sulle tabelle piu' grandi (concessions: 43 righe oggi, scalera' a migliaia).
+
+---
+
+### STEP 3.8 — Frontend: Suggerimenti contestuali per ruolo
+**Responsabile: Claude**
+**Stato: DA FARE**
+**Priorita': BASSA**
+
+**File:** `client/src/components/ai-chat/AIChatEmptyState.tsx`
+
+**Oggi:** I suggerimenti nella empty state sono gia' differenziati per `userRole`, ma quelli per impresa e cittadino sono generici.
+
+**Miglioramento proposto:**
+
+Per **Impresa**, suggerimenti pratici:
+- "Quante presenze ho fatto questo mese?"
+- "Ho rate scadute da pagare?"
+- "Qual e' lo stato delle mie concessioni?"
+- "Ho sanzioni aperte?"
+- "A che punto sono le mie pratiche SUAP?"
+
+Per **Cittadino**, suggerimenti amichevoli:
+- "Quali mercati sono aperti oggi?"
+- "Quanti crediti TCC ho?"
+- "Come va la mia segnalazione?"
+- "Quali sfide posso completare?"
+
+---
+
+## 4. ORDINE DI IMPLEMENTAZIONE E DIPENDENZE
+
+```
+SETTIMANA 1:
+  Claude: Step 3.1 (frontend context)  ──→  commit + merge su master
+  Manus:  Step 3.2 (validazione server)  ──→  deploy su Hetzner
+  Manus:  Step 3.7 (indici DB)           ──→  eseguire su Neon
+
+SETTIMANA 2 (dopo che 3.1 e 3.2 sono in produzione):
+  Manus:  Step 3.3 (avaDataGateway)      ──→  modulo backend
+  Manus:  Step 3.4 (getContextualData)   ──→  aggiornare multi-ruolo
+  Manus:  Step 3.5 (AVA_TOOLS)           ──→  aggiornare multi-ruolo
+  Manus:  Step 3.6 (prompt per ruolo)    ──→  aggiornare system prompt
+
+SETTIMANA 3 (polish):
+  Claude: Step 3.8 (suggerimenti UX)     ──→  commit + merge
+  Test:   Verifiche end-to-end per tutti i ruoli
+```
+
+**Dipendenze:**
+```
+3.1 (frontend) ─────────────────────────────┐
+                                              ├──→ 3.4, 3.5, 3.6 (usano i nuovi campi)
+3.2 (validazione server) ───┐                │
+                             ├──→ 3.3 (gateway usa utente verificato)
+3.7 (indici DB) ────────────┘                │
+                                              │
+3.3 (gateway) ──→ 3.4 (contextual data usa gateway)
+                ──→ 3.5 (tools usano gateway)
+```
+
+---
+
+## 5. TEST E VERIFICA
+
+### Matrice di test per ruolo:
+
+| Scenario | PA | Impresa | Cittadino | Super Admin |
+|----------|-----|---------|-----------|-------------|
+| "Quanti mercati ci sono?" | Vede mercati del suo comune | Vede solo mercati dove opera | Vede lista pubblica | Vede tutto |
+| "Cerca concessionario Rossi" | Trova tra imprese del comune | NON disponibile | NON disponibile | Trova tutto |
+| "Le mie presenze" | N/A | Vede solo le sue | N/A | N/A |
+| "Saldo wallet" | Vede tutti i wallet del comune | Vede solo il suo | N/A | Vede tutto |
+| "Rate scadute" | Vede tutte le rate del comune | Vede solo le sue | N/A | Vede tutto |
+| "Le mie segnalazioni" | N/A | N/A | Vede solo le sue | N/A |
+| "Dati sensibili/sessioni/password" | BLOCCATO | BLOCCATO | BLOCCATO | BLOCCATO |
+
+### Test di sicurezza critici:
+1. Un'impresa NON deve MAI vedere dati di un'altra impresa
+2. Un cittadino NON deve MAI vedere dati di imprese o PA
+3. Nessun ruolo deve MAI accedere alle 14 tabelle VIETATE
+4. Il backend deve IGNORARE `user_role` e `impresa_id` dal frontend e usare solo valori verificati dal DB
+5. Un super_admin in impersonazione deve vedere solo i dati del comune impersonato
+
+---
+
+## 6. RIFERIMENTI
+
+| Documento | Contenuto |
+|-----------|-----------|
+| `AVA_DATA_ACCESS_SCHEMA.md` | Matrice accesso 171 tabelle per ruolo (Manus) |
+| `MASTER_BLUEPRINT_MIOHUB.md` | Questo piano (sezione Fase 3 AVA) |
+| `.mio-agents/ava_system_prompt_v2.md` | System prompt attuale AVA |
+| `.mio-agents/tools_definition.json` | Definizione tools AVA |
+| `client/src/components/ai-chat/types.ts` | Tipi TypeScript chat AVA |
+| `client/src/components/ai-chat/AIChatPanel.tsx` | Componente principale chat |
+| `client/src/contexts/FirebaseAuthContext.tsx` | Contesto autenticazione |
+| `client/src/contexts/PermissionsContext.tsx` | Contesto permessi RBAC |

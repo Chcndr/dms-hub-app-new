@@ -88,6 +88,8 @@ export interface StreamChatRequest {
     comune_id?: number;
     user_role?: string;
     current_tab?: string;
+    impresa_id?: number;
+    user_id?: string;
   };
 }
 
