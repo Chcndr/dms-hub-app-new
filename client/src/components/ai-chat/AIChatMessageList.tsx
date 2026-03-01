@@ -83,7 +83,7 @@ export function AIChatMessageList({
     <div className="relative flex-1 overflow-hidden">
       <div ref={scrollRef} className="h-full">
         <ScrollArea className="h-full">
-          <div className="flex flex-col space-y-4 p-4 pb-2">
+          <div className="flex flex-col space-y-4 p-4 pb-2 min-w-0">
             {displayMessages.map((message, idx) => {
               const isLastAssistant =
                 message.role === "assistant" &&
@@ -107,9 +107,9 @@ export function AIChatMessageList({
 
             {/* Data events from function calling */}
             {dataEvents && dataEvents.length > 0 && (
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3 min-w-0">
                 <AIChatAvatar role="assistant" />
-                <div className="flex flex-col gap-1 max-w-[85%] w-full">
+                <div className="flex flex-col gap-1 max-w-[85%] w-full min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-xs font-medium text-teal-400">
                       AVA
@@ -141,15 +141,15 @@ export function AIChatMessageList({
 
             {/* Streaming content (messaggio in arrivo) */}
             {isStreaming && streamingContent && (
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3 min-w-0">
                 <AIChatAvatar role="assistant" />
-                <div className="flex flex-col gap-1 max-w-[85%]">
+                <div className="flex flex-col gap-1 max-w-[85%] min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-xs font-medium text-teal-400">
                       AVA
                     </span>
                   </div>
-                  <div className="rounded-2xl rounded-tl-sm bg-[#1a2332] border border-teal-500/20 px-4 py-3">
+                  <div className="rounded-2xl rounded-tl-sm bg-[#1a2332] border border-teal-500/20 px-4 py-3 overflow-hidden">
                     <AIChatMarkdown content={streamingContent} isStreaming />
                   </div>
                 </div>

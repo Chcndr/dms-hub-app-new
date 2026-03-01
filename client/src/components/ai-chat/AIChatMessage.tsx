@@ -58,10 +58,10 @@ export function AIChatMessage({
 
   if (message.role === "user") {
     return (
-      <div className="flex items-start gap-3 justify-end group">
-        <div className="flex flex-col items-end gap-1 max-w-[80%]">
-          <div className="rounded-2xl rounded-tr-sm bg-purple-600/20 border border-purple-500/30 px-4 py-2.5">
-            <p className="whitespace-pre-wrap text-sm text-[#e8fbff] leading-relaxed">
+      <div className="flex items-start gap-3 justify-end group min-w-0">
+        <div className="flex flex-col items-end gap-1 max-w-[80%] min-w-0">
+          <div className="rounded-2xl rounded-tr-sm bg-purple-600/20 border border-purple-500/30 px-4 py-2.5 overflow-hidden">
+            <p className="whitespace-pre-wrap break-words text-sm text-[#e8fbff] leading-relaxed">
               {message.content}
             </p>
           </div>
@@ -74,14 +74,14 @@ export function AIChatMessage({
 
   // Assistant
   return (
-    <div className="flex items-start gap-3 group">
+    <div className="flex items-start gap-3 group min-w-0">
       <AIChatAvatar role="assistant" />
-      <div className="flex flex-col gap-1 max-w-[85%]">
+      <div className="flex flex-col gap-1 max-w-[85%] min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <span className="text-xs font-medium text-teal-400">AVA</span>
           <span className="text-xs text-slate-500">{time}</span>
         </div>
-        <div className="rounded-2xl rounded-tl-sm bg-[#1a2332] border border-teal-500/20 px-4 py-3">
+        <div className="rounded-2xl rounded-tl-sm bg-[#1a2332] border border-teal-500/20 px-4 py-3 overflow-hidden">
           <AIChatMarkdown content={message.content} isStreaming={isStreaming} />
         </div>
         <div className="flex items-center gap-2 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
