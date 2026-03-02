@@ -477,9 +477,9 @@ export default function ControlliSanzioniPanel() {
         setDomandeSpunta(sorted);
       }
 
-      // Fetch imprese list - filtrato per comune se in impersonificazione
+      // Fetch imprese list - TUTTE le imprese senza filtro comune (serve per assegnare nuove concessioni a qualsiasi impresa)
       const impreseRes = await fetch(
-        addComuneIdToUrl(`${MIHUB_API}/imprese?limit=100`)
+        `${MIHUB_API}/imprese?limit=500`
       );
       const impreseData = await impreseRes.json();
       if (impreseData.success) setImpreseList(impreseData.data || []);
