@@ -419,8 +419,9 @@ export default function ConcessioneForm({
         // Carica tutte le imprese per autocomplete (versione leggera senza immagini/subquery)
         const lightFields =
           "id,denominazione,partita_iva,codice_fiscale,comune,indirizzo_via,indirizzo_civico,indirizzo_cap,indirizzo_provincia,stato_impresa,pec,telefono,email,rappresentante_legale,rappresentante_legale_cognome,rappresentante_legale_nome,rappresentante_legale_cf,rappresentante_legale_data_nascita,rappresentante_legale_luogo_nascita,rappresentante_legale_residenza_via,rappresentante_legale_residenza_civico,rappresentante_legale_residenza_cap,rappresentante_legale_residenza_comune,rappresentante_legale_residenza_provincia";
+        // Carica TUTTE le imprese senza filtro comune (serve per assegnare concessioni a qualsiasi impresa)
         const impreseRes = await fetch(
-          addComuneIdToUrl(`${API_URL}/api/imprese?fields=${lightFields}`)
+          `${API_URL}/api/imprese?fields=${lightFields}&limit=500`
         );
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
