@@ -6,8 +6,9 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { Copy, Check } from "lucide-react";
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, useMemo, type ReactNode } from "react";
 
 interface AIChatMarkdownProps {
   content: string;
@@ -18,9 +19,15 @@ function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => {
+        // Clipboard non disponibile (es. contesto non sicuro)
+      }
+    );
   }, [text]);
 
   return (
@@ -35,7 +42,22 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+// Schema di sanitizzazione: permette Markdown standard + classi hljs per syntax highlight
+const sanitizeSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    code: [...(defaultSchema.attributes?.code ?? []), "className"],
+    span: [...(defaultSchema.attributes?.span ?? []), "className"],
+  },
+};
+
 export function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
+  const rehypePlugins = useMemo(
+    () => [[rehypeSanitize, sanitizeSchema], rehypeHighlight] as never[],
+    []
+  );
+
   return (
     <div
       className="prose prose-invert prose-sm max-w-none break-words overflow-hidden
@@ -50,7 +72,7 @@ export function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        rehypePlugins={rehypePlugins}
         components={{
           table: ({ children }: { children?: ReactNode }) => (
             <div className="overflow-x-auto my-2 rounded-lg border border-slate-600">

@@ -7,14 +7,38 @@ import type { Conversation, ChatMessage, QuotaInfo } from "../types";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { getIdToken } from "@/lib/firebase";
 
-// Helper: fetch con auth token Firebase
+// Helper: fetch con auth token Firebase (token obbligatorio)
 async function authFetch(url: string, options?: RequestInit): Promise<Response> {
   const token = await getIdToken();
-  const headers = new Headers(options?.headers);
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+  if (!token) {
+    throw new Error("Autenticazione richiesta");
   }
+  const headers = new Headers(options?.headers);
+  headers.set("Authorization", `Bearer ${token}`);
   return fetch(url, { ...options, headers });
+}
+
+// Retry con exponential backoff per errori di rete
+async function authFetchWithRetry(
+  url: string,
+  options?: RequestInit,
+  maxRetries = 2,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await authFetch(url, options);
+      return res;
+    } catch (err) {
+      lastError = err;
+      // Retry solo su errori di rete, non su errori di auth
+      if (err instanceof Error && err.message === "Autenticazione richiesta") throw err;
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000 * 2 ** attempt));
+      }
+    }
+  }
+  throw lastError;
 }
 
 const AI_API_BASE = `${MIHUB_API_BASE_URL}/api/ai/chat`;
@@ -42,7 +66,7 @@ export function useConversations(comuneId?: number): UseConversationsReturn {
       const url = comuneId
         ? `${AI_API_BASE}/conversations?comune_id=${comuneId}`
         : `${AI_API_BASE}/conversations`;
-      const res = await authFetch(url);
+      const res = await authFetchWithRetry(url);
       if (!res.ok) throw new Error("Errore nel caricamento conversazioni");
       const data = await res.json();
       setConversations(data.conversations ?? []);
@@ -102,7 +126,7 @@ export function useConversations(comuneId?: number): UseConversationsReturn {
   const fetchMessages = useCallback(
     async (conversationId: string): Promise<ChatMessage[]> => {
       try {
-        const res = await authFetch(
+        const res = await authFetchWithRetry(
           `${AI_API_BASE}/conversations/${conversationId}/messages`
         );
         if (!res.ok) return [];
@@ -117,7 +141,7 @@ export function useConversations(comuneId?: number): UseConversationsReturn {
 
   const fetchQuota = useCallback(async () => {
     try {
-      const res = await authFetch(`${AI_API_BASE}/quota`);
+      const res = await authFetchWithRetry(`${AI_API_BASE}/quota`);
       if (!res.ok) return;
       const data = await res.json();
       setQuota(data);

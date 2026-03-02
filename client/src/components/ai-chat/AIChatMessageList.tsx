@@ -1,7 +1,7 @@
 /**
  * AIChatMessageList — Lista messaggi con auto-scroll
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ArrowDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AIChatMessage } from "./AIChatMessage";
@@ -32,49 +32,68 @@ export function AIChatMessageList({
   onFeedback,
 }: AIChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const isUserScrolledUp = useRef(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-    const viewport = scrollRef.current?.querySelector(
-      "[data-radix-scroll-area-viewport]"
-    ) as HTMLDivElement;
+  // Cache the viewport element after first render
+  const getViewport = useCallback(() => {
+    if (!viewportRef.current) {
+      viewportRef.current = scrollRef.current?.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      ) as HTMLDivElement | null;
+    }
+    return viewportRef.current;
+  }, []);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const viewport = getViewport();
     if (viewport) {
       viewport.scrollTo({ top: viewport.scrollHeight, behavior });
     }
-  };
+  }, [getViewport]);
 
   // Auto-scroll when new messages or streaming content arrives
   useEffect(() => {
     if (!isUserScrolledUp.current) {
       scrollToBottom();
     }
-  }, [messages, streamingContent]);
+  }, [messages, streamingContent, scrollToBottom]);
 
   // Initial scroll on mount
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => scrollToBottom("instant"), 100);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Detect user scroll
+  // Detect user scroll — attach listener once, clean up on unmount
   useEffect(() => {
-    const viewport = scrollRef.current?.querySelector(
-      "[data-radix-scroll-area-viewport]"
-    ) as HTMLDivElement;
-    if (!viewport) return;
+    // Small delay to ensure radix ScrollArea has rendered its viewport
+    const timer = setTimeout(() => {
+      const viewport = getViewport();
+      if (!viewport) return;
 
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = viewport;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      isUserScrolledUp.current = !isNearBottom;
-      setShowScrollButton(!isNearBottom);
+      const handleScroll = () => {
+        const { scrollTop, scrollHeight, clientHeight } = viewport;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        isUserScrolledUp.current = !isNearBottom;
+        setShowScrollButton(!isNearBottom);
+      };
+
+      viewport.addEventListener("scroll", handleScroll);
+      // Store cleanup in ref for unmount
+      cleanupRef.current = () => viewport.removeEventListener("scroll", handleScroll);
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      cleanupRef.current?.();
     };
-
-    viewport.addEventListener("scroll", handleScroll);
-    return () => viewport.removeEventListener("scroll", handleScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const displayMessages = messages.filter(m => m.role !== "system");

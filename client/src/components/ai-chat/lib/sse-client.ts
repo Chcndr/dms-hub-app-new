@@ -22,13 +22,15 @@ interface SSEClientOptions {
 
 export async function streamChat(options: SSEClientOptions): Promise<void> {
   const token = await getIdToken();
+  if (!token) {
+    options.onError({ code: "NO_AUTH", message: "Autenticazione richiesta" });
+    return;
+  }
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "text/event-stream",
+    Authorization: `Bearer ${token}`,
   };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
 
   const response = await fetch(options.url, {
     method: "POST",
