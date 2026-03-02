@@ -1,59 +1,166 @@
 /**
  * DMS-BUS: Sistema di trasferimento dati tra editor (IndexedDB + fallback localStorage)
  * Convertito da vanilla JS a TypeScript per integrazione React
+ *
+ * v2.0 — Aggiunta gestione automatica riconnessione IndexedDB:
+ * - Auto-reconnect su "Connection to Indexed Database server lost"
+ * - Retry con backoff su operazioni fallite
+ * - Fallback automatico su localStorage se IndexedDB non disponibile
  */
 
 const DBNAME = "dms-bus";
 const STORE = "kv";
+const MAX_RETRIES = 2;
+
 let db: IDBDatabase | null = null;
+let dbFailed = false; // Se true, usa solo localStorage (IndexedDB non disponibile)
+
+function resetDB(): void {
+  if (db) {
+    try { db.close(); } catch {}
+  }
+  db = null;
+}
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
+    if (dbFailed) return reject(new Error("IndexedDB non disponibile"));
     if (db) return resolve(db);
-    const request = indexedDB.open(DBNAME, 1);
-    request.onupgradeneeded = () => request.result.createObjectStore(STORE);
-    request.onsuccess = () => {
-      db = request.result;
-      resolve(db);
-    };
-    request.onerror = () => reject(request.error);
+
+    try {
+      const request = indexedDB.open(DBNAME, 1);
+
+      request.onupgradeneeded = () => {
+        try {
+          request.result.createObjectStore(STORE);
+        } catch (e) {
+          console.warn("[DMS-BUS] Errore creazione store:", e);
+        }
+      };
+
+      request.onsuccess = () => {
+        db = request.result;
+
+        // Gestisci chiusura inaspettata della connessione (es. Safari standby)
+        db.onclose = () => {
+          console.warn("[DMS-BUS] IndexedDB connessione chiusa, reset per riconnessione");
+          resetDB();
+        };
+
+        // Gestisci errori generici del database
+        db.onerror = (event) => {
+          console.warn("[DMS-BUS] IndexedDB errore:", event);
+        };
+
+        // Gestisci version change (altro tab ha cancellato/aggiornato il DB)
+        db.onversionchange = () => {
+          console.warn("[DMS-BUS] IndexedDB version change, chiudo connessione");
+          resetDB();
+        };
+
+        resolve(db);
+      };
+
+      request.onerror = () => {
+        console.warn("[DMS-BUS] IndexedDB apertura fallita:", request.error);
+        resetDB();
+        reject(request.error);
+      };
+
+      request.onblocked = () => {
+        console.warn("[DMS-BUS] IndexedDB bloccato da altra connessione");
+        reject(new Error("IndexedDB blocked"));
+      };
+    } catch (e) {
+      // indexedDB.open() può lanciare eccezione se IndexedDB non è disponibile
+      console.warn("[DMS-BUS] IndexedDB non disponibile:", e);
+      dbFailed = true;
+      reject(e);
+    }
   });
 }
 
-async function put(key: string, val: any): Promise<void> {
-  try {
-    const d = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = d.transaction(STORE, "readwrite");
-      tx.objectStore(STORE).put(val, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  } catch {
-    localStorage.setItem(
-      key,
-      typeof val === "string" ? val : JSON.stringify(val)
-    );
+/**
+ * Esegue un'operazione IndexedDB con retry automatico.
+ * Se IndexedDB fallisce dopo i retry, usa il fallback localStorage.
+ */
+async function withRetry<T>(
+  idbOperation: () => Promise<T>,
+  fallback: () => T
+): Promise<T> {
+  if (dbFailed) return fallback();
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await idbOperation();
+    } catch (e: any) {
+      const msg = e?.message || e?.name || String(e);
+      const isConnectionLost =
+        msg.includes("connection") ||
+        msg.includes("Connection") ||
+        msg.includes("closed") ||
+        msg.includes("not found") ||
+        msg.includes("InvalidStateError") ||
+        msg.includes("TransactionInactiveError");
+
+      if (isConnectionLost && attempt < MAX_RETRIES) {
+        console.warn(`[DMS-BUS] Tentativo ${attempt + 1}/${MAX_RETRIES} fallito, riconnessione...`);
+        resetDB();
+        // Breve pausa prima del retry
+        await new Promise(r => setTimeout(r, 100 * (attempt + 1)));
+        continue;
+      }
+
+      // Tutti i retry esauriti o errore non recuperabile
+      console.warn("[DMS-BUS] IndexedDB fallito, uso localStorage:", msg);
+      return fallback();
+    }
   }
+
+  return fallback();
+}
+
+async function put(key: string, val: any): Promise<void> {
+  return withRetry(
+    async () => {
+      const d = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = d.transaction(STORE, "readwrite");
+        tx.objectStore(STORE).put(val, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
+      });
+    },
+    () => {
+      localStorage.setItem(
+        key,
+        typeof val === "string" ? val : JSON.stringify(val)
+      );
+    }
+  );
 }
 
 async function get<T = any>(key: string): Promise<T | null> {
-  try {
-    const d = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = d.transaction(STORE, "readonly");
-      const req = tx.objectStore(STORE).get(key);
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => reject(req.error);
-    });
-  } catch {
-    const v = localStorage.getItem(key);
-    try {
-      return v ? JSON.parse(v) : null;
-    } catch {
-      return v as any;
+  return withRetry(
+    async () => {
+      const d = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = d.transaction(STORE, "readonly");
+        const req = tx.objectStore(STORE).get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    },
+    () => {
+      const v = localStorage.getItem(key);
+      try {
+        return v ? JSON.parse(v) : null;
+      } catch {
+        return v as any;
+      }
     }
-  }
+  );
 }
 
 export interface PngMeta {
@@ -131,25 +238,28 @@ export const DMSBUS = {
 
   // Delete key
   async deleteKey(key: string): Promise<void> {
-    try {
-      const d = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = d.transaction(STORE, "readwrite");
-        tx.objectStore(STORE).delete(key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-    } catch {
-      localStorage.removeItem(key);
-    }
+    return withRetry(
+      async () => {
+        const d = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = d.transaction(STORE, "readwrite");
+          tx.objectStore(STORE).delete(key);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      },
+      () => {
+        localStorage.removeItem(key);
+      }
+    );
   },
 
   // Clear all data
   async clear(): Promise<void> {
     try {
-      const d = await openDB();
-      d.close();
+      resetDB();
       indexedDB.deleteDatabase(DBNAME);
+      dbFailed = false; // Reset flag per permettere riconnessione futura
     } catch {}
     localStorage.clear();
   },
@@ -266,22 +376,25 @@ export const DMSBUS = {
 
   // Get all keys in the store
   async getAllKeys(): Promise<string[]> {
-    try {
-      const d = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = d.transaction(STORE, "readonly");
-        const req = tx.objectStore(STORE).getAllKeys();
-        req.onsuccess = () => resolve(req.result as string[]);
-        req.onerror = () => reject(req.error);
-      });
-    } catch {
-      const keys: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key) keys.push(key);
+    return withRetry(
+      async () => {
+        const d = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = d.transaction(STORE, "readonly");
+          const req = tx.objectStore(STORE).getAllKeys();
+          req.onsuccess = () => resolve(req.result as string[]);
+          req.onerror = () => reject(req.error);
+        });
+      },
+      () => {
+        const keys: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key) keys.push(key);
+        }
+        return keys;
       }
-      return keys;
-    }
+    );
   },
 };
 
