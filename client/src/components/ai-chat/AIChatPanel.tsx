@@ -217,13 +217,13 @@ export function AIChatPanel({
     async (messageId: string, rating: "up" | "down") => {
       try {
         const token = await getIdToken();
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        if (!token) return; // Non inviare feedback senza autenticazione
         await fetch(`${MIHUB_API_BASE_URL}/api/ai/chat/feedback`, {
           method: "POST",
-          headers,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ message_id: messageId, rating }),
         });
       } catch {

@@ -92,34 +92,41 @@ export function useStreamingChat(
           },
 
           onDone: data => {
-            // Flush remaining buffer
-            if (tokenBufferRef.current) {
-              setStreamingContent(prev => prev + tokenBufferRef.current);
-              tokenBufferRef.current = "";
+            // Cancel any pending RAF to avoid stale flush
+            if (rafIdRef.current) {
+              cancelAnimationFrame(rafIdRef.current);
+              rafIdRef.current = undefined;
             }
 
-            // Use a small timeout to ensure the last streamingContent is read
-            setTimeout(() => {
-              setStreamingContent(prev => {
-                const finalContent = prev;
-                if (finalContent) {
-                  const assistantMessage: ChatMessage = {
-                    id: data.message_id,
-                    role: "assistant",
-                    content: finalContent,
-                    tokens_used: data.tokens_used,
-                    created_at: new Date().toISOString(),
-                  };
-                  setMessages(msgs => [...msgs, assistantMessage]);
-                }
-                return "";
-              });
-              setIsStreaming(false);
-              setIsLoadingData(false);
-            }, 50);
+            // Flush remaining buffer synchronously into final content
+            const remainingTokens = tokenBufferRef.current;
+            tokenBufferRef.current = "";
+
+            setStreamingContent(prev => {
+              const finalContent = prev + remainingTokens;
+              if (finalContent) {
+                const assistantMessage: ChatMessage = {
+                  id: data.message_id,
+                  role: "assistant",
+                  content: finalContent,
+                  tokens_used: data.tokens_used,
+                  created_at: new Date().toISOString(),
+                };
+                setMessages(msgs => [...msgs, assistantMessage]);
+              }
+              return "";
+            });
+            setIsStreaming(false);
+            setIsLoadingData(false);
           },
 
           onError: err => {
+            // Cancel any pending RAF
+            if (rafIdRef.current) {
+              cancelAnimationFrame(rafIdRef.current);
+              rafIdRef.current = undefined;
+            }
+            tokenBufferRef.current = "";
             setError(err.message);
             setIsStreaming(false);
             setIsLoadingData(false);
@@ -144,18 +151,23 @@ export function useStreamingChat(
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
 
-    // Flush buffer
-    if (tokenBufferRef.current) {
-      setStreamingContent(prev => prev + tokenBufferRef.current);
-      tokenBufferRef.current = "";
+    // Cancel any pending RAF
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = undefined;
     }
 
+    // Flush buffer
+    const remaining = tokenBufferRef.current;
+    tokenBufferRef.current = "";
+
     setStreamingContent(prev => {
-      if (prev) {
+      const full = prev + remaining;
+      if (full) {
         const partialMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: prev + "\n\n*[Risposta interrotta]*",
+          content: full + "\n\n*[Risposta interrotta]*",
           created_at: new Date().toISOString(),
         };
         setMessages(msgs => [...msgs, partialMessage]);
