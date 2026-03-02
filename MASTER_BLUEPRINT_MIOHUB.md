@@ -1,7 +1,43 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.6.1 (FASE 3 AVA — COMPLETATA + Allineamento Completo)
-> **Data:** 01 Marzo 2026
+> **Versione:** 9.6.2 (Bug Fix Post-FASE 3 + Allineamento Completo)
+> **Data:** 02 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.6.2 (02 Mar 2026)
+> **🔧 BUG FIX POST-FASE 3 AVA + ALLINEAMENTO COMPLETO**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---------|--------|-------|
+> | GitHub `mihub-backend-rest` master | `96359ea` | ✅ Allineato |
+> | Hetzner backend (157.90.29.66:3000) | `96359ea` | ✅ Online (HTTP 200), PM2 running |
+> | GitHub `dms-hub-app-new` master | `a3d9369` | ✅ Allineato |
+> | Vercel frontend | `a3d9369` | ✅ HTTP 200, auto-deploy |
+> | Neon DB (indici AVA) | 18 indici `idx_ava_*` | ✅ Attivi |
+> | Claude branch | `a3d9369` (force-pushed) | ✅ Allineato a master |
+>
+> **Bug fix backend (Hetzner — 6 commit dopo v9.6.0):**
+> - `96359ea` — Inietta risultati tool nel prompt LLM per risposte coerenti (anti-hallucination)
+> - `756c922` — `report_presenze` usa `graduatoria_presenze` per storico completo (non solo `vendor_presences` che viene svuotata al reset mercato)
+> - `9f59331` — Fix priorità tool: `report_presenze` non bloccato da `cerca_concessionario`
+> - `0d5e94f` — `report_presenze` per PA cerca presenze per impresa specifica
+> - `7a1a323` — Isolamento completo conversazioni per `comune_id`
+> - `7005d92` — Colonna `comune_id` in `ai_conversations` + filtro backend
+>
+> **Bug fix frontend (Vercel — 5 commit dopo v9.6.0):**
+> - `a3d9369` — SUAP ConcessioneForm: rimosso filtro `addComuneIdToUrl` → mostra TUTTE le imprese nel DB (non solo quelle con concessioni nel comune)
+> - `782b688` — (Commit intermedio, poi corretto in a3d9369)
+> - `b38b080` — IndexedDB auto-reconnect e fallback localStorage su connection lost (Safari/iOS)
+> - `90b5ea8` — Merge: conversazioni AVA isolate per comune impersonato
+> - `7236131` — Fix: `useConversations` filtra per `comune_id`, `ChatWidget` legge impersonation
+>
+> **Problemi noti e mitigazioni:**
+> - LLM qwen2.5:7b a volte ignora i risultati tool e inventa dati → mitigato con iniezione summary nel system prompt
+> - `vendor_presences` viene svuotata al reset mercato test → usata `graduatoria_presenze` per dati storici
+> - IndexedDB perde connessione su Safari/iOS → auto-retry con fallback localStorage
+>
+> **Map Viewer GIS:** ✅ Verificato funzionante (Grosseto, Novi Sad Modena, Cervia Demo)
 >
 > ---
 > ### CHANGELOG v9.6.1 (01 Mar 2026)
