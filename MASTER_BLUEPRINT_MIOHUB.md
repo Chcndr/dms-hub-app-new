@@ -11492,16 +11492,38 @@ async function getContextualData(verifiedUser, userMessage) {
 
 #### Tool 2: `report_presenze`
 ```javascript
-// PA: presenze di oggi per TUTTI i mercati del comune (come oggi)
+// PA: presenze di oggi per TUTTI i mercati del comune
+// NOTA: I valori tipo_presenza nel DB sono 'CONCESSION' e 'SPUNTA' (NON 'CONCESSIONARIO'/'SPUNTISTA')
+// La colonna data si chiama 'giorno_mercato' (NON 'data')
+// La colonna orario si chiama 'checkin_time' (NON 'orario_ingresso')
+// La colonna nome mercato si chiama 'name' (NON 'nome')
 
 // IMPRESA: presenze di oggi SOLO dell'impresa
 async function reportPresenzeImpresa(impresaId) {
   return db.query(`
-    SELECT m.nome as mercato, vp.orario_ingresso, vp.tipo
+    SELECT m.name as mercato, vp.checkin_time, vp.checkout_time,
+           vp.tipo_presenza, vp.importo_addebitato, vp.giorno_mercato
     FROM vendor_presences vp
     JOIN markets m ON m.id = vp.market_id
-    WHERE vp.impresa_id = $1 AND vp.data = CURRENT_DATE
+    WHERE vp.impresa_id = $1 AND vp.giorno_mercato = CURRENT_DATE
+    ORDER BY vp.checkin_time DESC
   `, [impresaId]);
+}
+
+// PA: report generale con conteggi per tipo
+// IMPORTANTE: usare 'CONCESSION' e 'SPUNTA' (non 'CONCESSIONARIO'/'SPUNTISTA')
+async function reportPresenzePA(comuneId) {
+  return db.query(`
+    SELECT m.name as mercato, COUNT(vp.id) as totale,
+      COUNT(CASE WHEN vp.tipo_presenza = 'CONCESSION' THEN 1 END) as concessionari,
+      COUNT(CASE WHEN vp.tipo_presenza = 'SPUNTA' THEN 1 END) as spuntisti,
+      m.total_stalls,
+      ROUND(COUNT(vp.id)::numeric / NULLIF(m.total_stalls, 0) * 100, 1) as percentuale_occupazione
+    FROM markets m
+    LEFT JOIN vendor_presences vp ON vp.market_id = m.id AND vp.giorno_mercato = CURRENT_DATE
+    WHERE m.comune_id = $1
+    GROUP BY m.id, m.name, m.total_stalls
+  `, [comuneId]);
 }
 
 // CITTADINO: non disponibile
@@ -11535,7 +11557,7 @@ async function dashboardStatsImpresa(impresaId) {
   const stats = await db.query(`
     SELECT
       (SELECT COUNT(*) FROM concessions WHERE impresa_id = $1 AND stato = 'attiva') as concessioni_attive,
-      (SELECT COUNT(*) FROM vendor_presences WHERE impresa_id = $1 AND data >= CURRENT_DATE - INTERVAL '30 days') as presenze_ultimo_mese,
+      (SELECT COUNT(*) FROM vendor_presences WHERE impresa_id = $1 AND giorno_mercato >= CURRENT_DATE - INTERVAL '30 days') as presenze_ultimo_mese,
       (SELECT COALESCE(SUM(saldo), 0) FROM wallets WHERE company_id = $1) as saldo_wallet,
       (SELECT COUNT(*) FROM wallet_scadenze ws JOIN wallets w ON w.id = ws.wallet_id WHERE w.company_id = $1 AND ws.stato = 'scaduta') as rate_scadute,
       (SELECT COUNT(*) FROM sanctions WHERE impresa_id = $1 AND stato = 'non_pagata') as sanzioni_aperte

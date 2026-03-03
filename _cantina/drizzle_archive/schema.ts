@@ -489,7 +489,7 @@ export const vendorPresences = pgTable(
     // Campi interoperabilità DMS Legacy
     legacyPreId: integer("legacy_pre_id"), // Map a presenza DMS Legacy (tabella presenze.pre_id)
     rifiutata: boolean("rifiutata").default(false), // Presenza rifiutata dal sistema Legacy
-    tipoPresenza: varchar("tipo_presenza", { length: 50 }), // CONCESSIONARIO, SPUNTISTA, ABUSIVO
+    tipoPresenza: varchar("tipo_presenza", { length: 50 }), // CONCESSION, SPUNTA (Legacy: CONCESSIONARIO, SPUNTISTA → trasformati in ingresso)
     orarioDepositoRifiuti: timestamp("orario_deposito_rifiuti"), // Timestamp deposito spazzatura (da tablet Legacy)
     importoAddebitato: numeric("importo_addebitato", {
       precision: 10,
