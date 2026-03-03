@@ -39,6 +39,7 @@ export function useStreamingChat(
   const abortRef = useRef<AbortController | null>(null);
   const tokenBufferRef = useRef("");
   const rafIdRef = useRef<number | undefined>(undefined);
+  const dataEventsRef = useRef<SSEDataEvent[]>([]);
 
   const sendMessage = useCallback(
     async (text: string, conversationId: string | null) => {
@@ -54,6 +55,7 @@ export function useStreamingChat(
       setStreamingContent("");
       setError(null);
       setDataEvents([]);
+      dataEventsRef.current = [];
       tokenBufferRef.current = "";
 
       abortRef.current = new AbortController();
@@ -76,6 +78,7 @@ export function useStreamingChat(
 
           onData: event => {
             setIsLoadingData(false);
+            dataEventsRef.current = [...dataEventsRef.current, event];
             setDataEvents(prev => [...prev, event]);
           },
 
@@ -111,6 +114,7 @@ export function useStreamingChat(
                   content: finalContent,
                   tokens_used: data.tokens_used,
                   created_at: new Date().toISOString(),
+                  data_events: dataEventsRef.current.length > 0 ? dataEventsRef.current : undefined,
                 };
                 setMessages(msgs => [...msgs, assistantMessage]);
               }
@@ -169,6 +173,7 @@ export function useStreamingChat(
           role: "assistant",
           content: full + "\n\n*[Risposta interrotta]*",
           created_at: new Date().toISOString(),
+          data_events: dataEventsRef.current.length > 0 ? dataEventsRef.current : undefined,
         };
         setMessages(msgs => [...msgs, partialMessage]);
       }
