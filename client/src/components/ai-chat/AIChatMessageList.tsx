@@ -1,7 +1,7 @@
 /**
  * AIChatMessageList — Lista messaggi con auto-scroll
  */
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, Fragment } from "react";
 import { ArrowDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AIChatMessage } from "./AIChatMessage";
@@ -114,18 +114,42 @@ export function AIChatMessageList({
                       .findIndex(m => m.role === "assistant") &&
                 !isStreaming;
               return (
-                <AIChatMessage
-                  key={message.id}
-                  message={message}
-                  isLastAssistant={isLastAssistant}
-                  onRetry={onRetry}
-                  onFeedback={onFeedback}
-                />
+                <Fragment key={message.id}>
+                  {/* Data events attached to this assistant message */}
+                  {message.role === "assistant" && message.data_events && message.data_events.length > 0 && (
+                    <div className="flex items-start gap-3 min-w-0">
+                      <AIChatAvatar role="assistant" />
+                      <div className="flex flex-col gap-1 max-w-[85%] w-full min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-xs font-medium text-teal-400">
+                            AVA
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            dati consultati
+                          </span>
+                        </div>
+                        {message.data_events.map((event, evIdx) =>
+                          event.data_type === "table" ? (
+                            <AIChatDataTable key={evIdx} event={event} />
+                          ) : event.data_type === "stats" ? (
+                            <AIChatStatCard key={evIdx} event={event} />
+                          ) : null
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <AIChatMessage
+                    message={message}
+                    isLastAssistant={isLastAssistant}
+                    onRetry={onRetry}
+                    onFeedback={onFeedback}
+                  />
+                </Fragment>
               );
             })}
 
-            {/* Data events from function calling */}
-            {dataEvents && dataEvents.length > 0 && (
+            {/* Live data events during active streaming (not yet finalized into a message) */}
+            {isStreaming && dataEvents && dataEvents.length > 0 && (
               <div className="flex items-start gap-3 min-w-0">
                 <AIChatAvatar role="assistant" />
                 <div className="flex flex-col gap-1 max-w-[85%] w-full min-w-0">

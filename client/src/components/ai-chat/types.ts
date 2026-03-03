@@ -9,6 +9,8 @@ export interface ChatMessage {
   content: string;
   tokens_used?: number | null;
   created_at: string;
+  /** Data events from function calling (tables, stats) attached to this message */
+  data_events?: SSEDataEvent[];
 }
 
 export interface Conversation {
