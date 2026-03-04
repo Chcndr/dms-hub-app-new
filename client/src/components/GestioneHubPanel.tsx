@@ -775,9 +775,12 @@ export default function GestioneHubPanel() {
           {/* Stats Cards - Filtrate in base al tipo impresa selezionato */}
           {(() => {
             // Filtra imprese in base al filtro selezionato
+            // Dopo abilitazione Hub TCC, TUTTE le imprese ricevono hub_shop,
+            // quindi si usa concessioni_attive per distinguere ambulanti da negozi
             const filteredImprese = imprese.filter(i => {
-              if (impresaFilter === "negozi_hub") return i.hub_shop_id;
-              if (impresaFilter === "ambulanti") return !i.hub_shop_id;
+              const hasConcessioni = i.concessioni_attive && i.concessioni_attive.length > 0;
+              if (impresaFilter === "negozi_hub") return i.hub_shop_id && !hasConcessioni;
+              if (impresaFilter === "ambulanti") return hasConcessioni;
               return true;
             });
 
