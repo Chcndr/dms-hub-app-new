@@ -1125,8 +1125,10 @@ export default function ControlliSanzioniPanel() {
     const description = formData.get("description");
     const luogoAccertamento = formData.get("luogo_accertamento");
 
-    // Genera codice verbale
-    const verbaleCode = `PM-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    // Genera codice verbale univoco con crypto random
+    const randomBytes = crypto.getRandomValues(new Uint8Array(6));
+    const randomHex = Array.from(randomBytes, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const verbaleCode = `PM-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}-${randomHex}`;
 
     const data = {
       impresa_id: impresaId,
