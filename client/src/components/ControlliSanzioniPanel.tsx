@@ -1126,7 +1126,7 @@ export default function ControlliSanzioniPanel() {
     const luogoAccertamento = formData.get("luogo_accertamento");
 
     // Genera codice verbale
-    const verbaleCode = `PM-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+    const verbaleCode = `PM-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     const data = {
       impresa_id: impresaId,
