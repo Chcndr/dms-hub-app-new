@@ -1125,62 +1125,83 @@ export default function ControlliSanzioniPanel() {
     const description = formData.get("description");
     const luogoAccertamento = formData.get("luogo_accertamento");
 
-    // Genera codice verbale univoco con crypto random
-    const randomBytes = crypto.getRandomValues(new Uint8Array(6));
-    const randomHex = Array.from(randomBytes, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-    const verbaleCode = `PM-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}-${randomHex}`;
-
-    const data = {
-      impresa_id: impresaId,
-      infraction_code: infractionCode,
-      verbale_code: verbaleCode,
-      amount: parseFloat(amount as string) || 0,
-      description: description || `Verbale per ${infractionCode}`,
-      luogo_accertamento: luogoAccertamento || "Non specificato",
-    };
-
     try {
-      const response = await authenticatedFetch(`${MIHUB_API}/sanctions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json();
+      // Retry automatico per collisioni duplicate key sul verbale_code
+      let lastError = "";
+      let successResult: { success: boolean; data?: { verbale_code?: string } } | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        // Genera codice verbale univoco ad ogni tentativo
+        const randomBytes = crypto.getRandomValues(new Uint8Array(8));
+        const randomHex = Array.from(randomBytes, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+        const verbaleCode = `PM-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}-${randomHex}`;
 
-      if (result.success) {
-        // v5.9.0: Invio automatico notifica all'impresa quando viene creato un verbale
-        if (impresaId) {
-          const impresaNome =
-            impreseList.find(i => i.id === parseInt(impresaId as string))
-              ?.denominazione || "";
-          try {
-            await authenticatedFetch(`${MIHUB_API}/notifiche/send`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                mittente_tipo: "POLIZIA_MUNICIPALE",
-                mittente_id: 1,
-                mittente_nome: "Polizia Municipale",
-                titolo: `Verbale ${verbaleCode} emesso`,
-                messaggio:
-                  `È stato emesso il verbale ${verbaleCode} per infrazione ${infractionCode}. Importo: €${parseFloat((amount as string) || "0").toFixed(2)}. ${description || ""}`.trim(),
-                tipo_messaggio: "SANZIONE",
-                target_tipo: "IMPRESA",
-                target_id: impresaId,
-                target_nome: impresaNome,
-              }),
-            });
-          } catch (notifErr) {
-            console.error("Errore invio notifica automatica:", notifErr);
-          }
+        const data = {
+          impresa_id: impresaId,
+          infraction_code: infractionCode,
+          verbale_code: verbaleCode,
+          amount: parseFloat(amount as string) || 0,
+          description: description || `Verbale per ${infractionCode}`,
+          luogo_accertamento: luogoAccertamento || "Non specificato",
+        };
+
+        if (attempt > 0) {
+          await new Promise(r => setTimeout(r, 500 * attempt));
         }
-        alert(
-          `✅ Verbale ${verbaleCode} emesso con successo! Notifica inviata all'impresa.`
-        );
-        setShowNuovoVerbaleModal(false);
-        fetchAllData();
-      } else {
-        alert("❌ Errore: " + (result.error || "Errore sconosciuto"));
+
+        const response = await authenticatedFetch(`${MIHUB_API}/sanctions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          successResult = result;
+          // v5.9.0: Invio automatico notifica all'impresa quando viene creato un verbale
+          const finalCode = result.data?.verbale_code || verbaleCode;
+          if (impresaId) {
+            const impresaNome =
+              impreseList.find(i => i.id === parseInt(impresaId as string))
+                ?.denominazione || "";
+            try {
+              await authenticatedFetch(`${MIHUB_API}/notifiche/send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  mittente_tipo: "POLIZIA_MUNICIPALE",
+                  mittente_id: 1,
+                  mittente_nome: "Polizia Municipale",
+                  titolo: `Verbale ${finalCode} emesso`,
+                  messaggio:
+                    `È stato emesso il verbale ${finalCode} per infrazione ${infractionCode}. Importo: €${parseFloat((amount as string) || "0").toFixed(2)}. ${description || ""}`.trim(),
+                  tipo_messaggio: "SANZIONE",
+                  target_tipo: "IMPRESA",
+                  target_id: impresaId,
+                  target_nome: impresaNome,
+                }),
+              });
+            } catch (notifErr) {
+              console.error("Errore invio notifica automatica:", notifErr);
+            }
+          }
+          alert(
+            `✅ Verbale ${finalCode} emesso con successo! Notifica inviata all'impresa.`
+          );
+          setShowNuovoVerbaleModal(false);
+          fetchAllData();
+          lastError = "";
+          break;
+        } else {
+          lastError = result.error || "Errore sconosciuto";
+          if (lastError.includes("duplicate key") || lastError.includes("unique constraint")) {
+            console.warn(`Tentativo ${attempt + 1}/3: collisione verbale_code, ritento...`);
+            continue;
+          }
+          break;
+        }
+      }
+      if (lastError) {
+        alert("❌ Errore: " + lastError);
       }
     } catch (err) {
       alert("❌ Errore nella creazione del verbale");
@@ -1984,39 +2005,59 @@ export default function ControlliSanzioniPanel() {
                                         )
                                           return;
                                         try {
-                                          const res = await authenticatedFetch(
-                                            `${MIHUB_API}/market-settings/transgressions/${t.id}/sanction`,
-                                            {
-                                              method: "POST",
-                                              headers: {
-                                                "Content-Type":
-                                                  "application/json",
-                                              },
-                                              body: JSON.stringify({}),
+                                          // Retry automatico per errori duplicate key (backend genera verbale_code)
+                                          let lastError = "";
+                                          for (let attempt = 0; attempt < 3; attempt++) {
+                                            if (attempt > 0) {
+                                              // Breve attesa prima del retry
+                                              await new Promise(r => setTimeout(r, 500 * attempt));
                                             }
-                                          );
-                                          const data = await res.json();
-                                          if (res.ok && data.success) {
-                                            alert(
-                                              `Verbale ${data.data?.verbale_code || ""} creato con successo!`
+                                            const res = await authenticatedFetch(
+                                              `${MIHUB_API}/market-settings/transgressions/${t.id}/sanction`,
+                                              {
+                                                method: "POST",
+                                                headers: {
+                                                  "Content-Type":
+                                                    "application/json",
+                                                },
+                                                body: JSON.stringify({ _retry: attempt }),
+                                              }
                                             );
-                                            setTransgressions(prev =>
-                                              prev.map(tr =>
-                                                tr.id === t.id
-                                                  ? {
-                                                      ...tr,
-                                                      status: "SANCTIONED",
-                                                      justification_display_status:
-                                                        "VERBALE_AUTOMATICO",
-                                                      sanction_id:
-                                                        data.data?.id || -1,
-                                                    }
-                                                  : tr
-                                              )
-                                            );
-                                          } else {
+                                            const data = await res.json();
+                                            if (res.ok && data.success) {
+                                              alert(
+                                                `Verbale ${data.data?.verbale_code || ""} creato con successo!`
+                                              );
+                                              setTransgressions(prev =>
+                                                prev.map(tr =>
+                                                  tr.id === t.id
+                                                    ? {
+                                                        ...tr,
+                                                        status: "SANCTIONED",
+                                                        justification_display_status:
+                                                          "VERBALE_AUTOMATICO",
+                                                        sanction_id:
+                                                          data.data?.id || -1,
+                                                      }
+                                                    : tr
+                                                )
+                                              );
+                                              lastError = "";
+                                              break;
+                                            } else {
+                                              lastError = data.error || "Errore sconosciuto";
+                                              // Se l'errore è duplicate key, ritenta
+                                              if (lastError.includes("duplicate key") || lastError.includes("unique constraint")) {
+                                                console.warn(`Tentativo ${attempt + 1}/3: collisione verbale_code, ritento...`);
+                                                continue;
+                                              }
+                                              // Altro errore: non ritentare
+                                              break;
+                                            }
+                                          }
+                                          if (lastError) {
                                             alert(
-                                              `Errore: ${data.error || "Errore sconosciuto"}`
+                                              `Errore: ${lastError}`
                                             );
                                           }
                                         } catch (err) {
