@@ -346,6 +346,9 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // TCC Wallet status map: impresa_id → { wallet_id, wallet_status }
+  const [tccWalletMap, setTccWalletMap] = useState<Map<string, { wallet_id: number; wallet_status: string }>>(new Map());
+
   // Modal state
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showConcessionModal, setShowConcessionModal] = useState(false);
@@ -379,14 +382,17 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   // Filtered data
   const filteredCompanies = companies.filter(c => {
     // Filtro per tipo impresa:
-    // - negozi_hub = imprese con hub_shop_id (hanno un negozio HUB collegato)
-    // - ambulanti = imprese SENZA hub_shop_id (sono ambulanti di mercato)
+    // Dopo abilitazione Hub TCC, TUTTE le imprese ricevono hub_shop_id automaticamente,
+    // quindi non è più un criterio valido. Si distingue tramite concessioni:
+    // - ambulanti = imprese con concessioni attive (collegati al mercato)
+    // - negozi_hub = imprese con hub_shop ma SENZA concessioni attive (negozi fissi indipendenti)
+    const hasActiveConcessioni = c.concessioni && c.concessioni.length > 0;
     if (impresaFilter === "negozi_hub") {
-      // Negozi HUB: imprese che hanno un hub_shop collegato
-      if (!c.hub_shop_id) return false;
+      // Negozi HUB: hanno hub_shop ma nessuna concessione attiva nel mercato
+      if (hasActiveConcessioni || !c.hub_shop_id) return false;
     } else if (impresaFilter === "ambulanti") {
-      // Ambulanti: imprese che NON hanno un hub_shop collegato
-      if (c.hub_shop_id) return false;
+      // Ambulanti: hanno concessioni attive (operano nel mercato)
+      if (!hasActiveConcessioni) return false;
     }
 
     // Filtro per ricerca testuale
@@ -454,13 +460,35 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
     setLoading(true);
     setError(null);
     try {
-      // Prima carichiamo companies e concessions
-      await Promise.all([fetchCompanies(), fetchConcessions()]);
+      // Carichiamo companies, concessions e wallet TCC in parallelo
+      await Promise.all([fetchCompanies(), fetchConcessions(), fetchTccWallets()]);
       // fetchQualificazioni viene chiamata separatamente dopo che companies è stato aggiornato
     } catch (err: any) {
       setError(err.message || "Errore durante il caricamento dei dati");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch batch TCC wallets from operator_daily_wallet via /api/tcc/v2/wallets/all
+  const fetchTccWallets = async () => {
+    try {
+      const response = await fetch(`${TCC_API_BASE}/api/tcc/v2/wallets/all`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.wallets)) {
+          const map = new Map<string, { wallet_id: number; wallet_status: string }>();
+          for (const w of data.wallets) {
+            map.set(String(w.impresa_id), {
+              wallet_id: w.wallet_id,
+              wallet_status: w.wallet_status,
+            });
+          }
+          setTccWalletMap(map);
+        }
+      }
+    } catch (error) {
+      console.error("[MarketCompaniesTab] fetchTccWallets error:", error);
     }
   };
 
@@ -1029,6 +1057,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                       setSelectedCompanyForQualif(company);
                       // Scroll to qualifications section if needed, or just switch tab
                     }}
+                    tccWalletData={tccWalletMap.get(company.id) ?? null}
                   />
                 ))}
               </div>
@@ -2178,13 +2207,15 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
 interface WalletTCCBadgeProps {
   impresaId: string | number;
   qualificazioni: any[];
+  /** Pre-fetched TCC wallet data from batch /api/tcc/v2/wallets/all (operator_daily_wallet) */
+  tccWalletData?: { wallet_id: number; wallet_status: string } | null;
 }
 
-function WalletTCCBadge({ impresaId, qualificazioni }: WalletTCCBadgeProps) {
+function WalletTCCBadge({ impresaId, qualificazioni, tccWalletData }: WalletTCCBadgeProps) {
   const [walletStatus, setWalletStatus] = useState<
     "loading" | "active" | "suspended" | "none"
-  >("loading");
-  const [walletId, setWalletId] = useState<number | null>(null);
+  >(tccWalletData === undefined ? "loading" : tccWalletData ? (tccWalletData.wallet_status === "active" ? "active" : "suspended") : "none");
+  const [walletId, setWalletId] = useState<number | null>(tccWalletData?.wallet_id ?? null);
 
   // Calcola stato wallet basato su qualifiche locali
   const qualificationStatus = React.useMemo(() => {
@@ -2213,8 +2244,22 @@ function WalletTCCBadge({ impresaId, qualificazioni }: WalletTCCBadgeProps) {
     return { color: "green", label: "Qualificato", enabled: true };
   }, [qualificazioni]);
 
-  // Fetch wallet status from backend
+  // Aggiorna stato quando arrivano dati batch TCC wallet (da operator_daily_wallet)
   useEffect(() => {
+    if (tccWalletData !== undefined) {
+      if (tccWalletData) {
+        setWalletId(tccWalletData.wallet_id);
+        setWalletStatus(tccWalletData.wallet_status === "active" ? "active" : "suspended");
+      } else {
+        setWalletStatus("none");
+      }
+    }
+  }, [tccWalletData]);
+
+  // Fallback: fetch individuale solo se dati batch non disponibili
+  useEffect(() => {
+    if (tccWalletData !== undefined) return; // Skip se abbiamo dati batch
+
     const fetchWalletStatus = async () => {
       try {
         const response = await fetch(
@@ -2242,7 +2287,7 @@ function WalletTCCBadge({ impresaId, qualificazioni }: WalletTCCBadgeProps) {
     if (impresaId) {
       fetchWalletStatus();
     }
-  }, [impresaId]);
+  }, [impresaId, tccWalletData]);
 
   // Determina colore finale basato su qualifiche E stato wallet
   const finalStatus = React.useMemo(() => {
@@ -2585,6 +2630,7 @@ interface CompanyCardProps {
   marketId: string | number;
   onEdit: () => void;
   onViewQualificazioni?: () => void;
+  tccWalletData?: { wallet_id: number; wallet_status: string } | null;
 }
 
 function CompanyCard({
@@ -2593,6 +2639,7 @@ function CompanyCard({
   marketId,
   onEdit,
   onViewQualificazioni,
+  tccWalletData,
 }: CompanyCardProps) {
   // Usiamo le qualificazioni passate come prop (dal fetch dettagliato) se presenti,
   // altrimenti usiamo quelle incorporate nell'oggetto company (dal fetch lista)
@@ -2799,10 +2846,11 @@ function CompanyCard({
             </button>
           )}
 
-          {/* Semaforo WALLET TCC (v5.7.0) */}
+          {/* Semaforo WALLET TCC (v5.7.0) - usa dati batch da operator_daily_wallet */}
           <WalletTCCBadge
             impresaId={company.id}
             qualificazioni={displayQualificazioni}
+            tccWalletData={tccWalletData}
           />
 
           {company.autorizzazioni && company.autorizzazioni.length > 0 && (
