@@ -1057,7 +1057,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
                       setSelectedCompanyForQualif(company);
                       // Scroll to qualifications section if needed, or just switch tab
                     }}
-                    tccWalletData={tccWalletMap.get(company.id) ?? null}
+                    tccWalletData={tccWalletMap.has(String(company.id)) ? tccWalletMap.get(String(company.id)) : undefined}
                   />
                 ))}
               </div>
