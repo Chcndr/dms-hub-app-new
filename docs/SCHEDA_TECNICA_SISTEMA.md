@@ -51,19 +51,24 @@ Il sistema e' progettato per scalare da ~60 mercati attuali a **8.000 mercati** 
 | date-fns | 4.1 | Manipolazione date |
 | Sonner | 2.0 | Notifiche toast |
 
-### 2.2 Backend
+### 2.2 Backend (mihub-backend-rest)
+
+Il backend e' un'applicazione REST separata deployata su Hetzner (`api.mio-hub.me`).
+Il vecchio backend tRPC e' stato archiviato in `_cantina/server_archive/`.
 
 | Tecnologia | Versione | Funzione |
 |---|---|---|
 | Node.js | 18+ | Runtime server |
 | Express | 4.x | Web framework HTTP |
-| tRPC | 11.x | API type-safe (RPC over HTTP) |
 | Drizzle ORM | 0.44 | ORM per PostgreSQL |
 | postgres-js | Latest | Driver PostgreSQL nativo |
-| SuperJSON | Latest | Serializzazione (Date, BigInt, etc.) |
-| Zod | 4.1 | Validazione input API |
+| Zod | Latest | Validazione input API |
 | JWT | Custom | Sessioni utente (cookie `session`) |
 | Firebase Admin SDK | Latest | Verifica token autenticazione |
+| PM2 | Latest | Process manager (max 512MB, auto-restart) |
+
+**Repository backend:** `mihub-backend-rest` (separato da questo repo)
+**Base URL:** `https://api.mio-hub.me`
 
 ### 2.3 Database
 
@@ -84,12 +89,13 @@ Il sistema e' progettato per scalare da ~60 mercati attuali a **8.000 mercati** 
 | Componente | Provider | Dettagli |
 |---|---|---|
 | Frontend hosting | Vercel | Auto-deploy su push a `master`, CDN globale |
-| Backend hosting | Hetzner VPS | IP: 157.90.29.66, PM2 process manager |
+| Backend REST | Hetzner VPS | IP: 157.90.29.66, PM2, `api.mio-hub.me` |
 | Database | Neon | PostgreSQL serverless, EU region |
 | Autenticazione | Firebase | Progetto `dmshub-auth-2975e` |
 | OAuth/SPID/CIE | ARPA Toscana | OpenID Connect callback |
-| DNS Backend | nip.io | mihub.157-90-29-66.nip.io |
 | Orchestratore AI | Hetzner | orchestratore.mio-hub.me |
+
+Il frontend su Vercel fa **proxy trasparente** di tutte le chiamate `/api/*` verso `api.mio-hub.me` tramite 33 regole di rewrite in `vercel.json`.
 
 ### 2.5 Tool di Sviluppo
 
@@ -117,10 +123,10 @@ Il sistema e' progettato per scalare da ~60 mercati attuali a **8.000 mercati** 
         |  HTTP/HTTPS (fetch + React Query)
         v
 +-------------------------------------------------------+
-|  LAYER 2 - API                                        |
-|  tRPC 11 (type-safe) + Express REST (legacy)          |
-|  ~90 procedure tRPC | 4 endpoint REST legacy          |
-|  Auth: Cookie JWT | Middleware: logging + RBAC         |
+|  LAYER 2 - BACKEND REST (api.mio-hub.me)              |
+|  Express 4.x + 730+ endpoint REST                     |
+|  33 gruppi API | Proxy via Vercel rewrite              |
+|  Auth: Cookie JWT + Firebase | RBAC middleware         |
 +-------------------------------------------------------+
         |  Drizzle ORM (postgres-js driver)
         v
@@ -135,16 +141,16 @@ Il sistema e' progettato per scalare da ~60 mercati attuali a **8.000 mercati** 
 ### 3.2 Flusso di una Richiesta
 
 ```
-Browser -> GET/POST /api/trpc/{router.procedure}
-  -> Express middleware (logging, body parse 50MB limit)
-  -> tRPC adapter (createExpressMiddleware)
-  -> Context creation (user da cookie JWT)
-  -> Logging middleware (endpoint, tempo, status)
-  -> Auth middleware (public/protected/admin)
-  -> Procedure handler (logica business)
+Browser -> GET/POST /api/{gruppo}/{risorsa}
+  -> Vercel rewrite -> api.mio-hub.me/api/{gruppo}/{risorsa}
+  -> Express middleware (CORS, body parse, rate limiting)
+  -> Auth middleware (cookie JWT / Firebase token / API key)
+  -> RBAC middleware (verifica permessi per ruolo)
+  -> Route handler (logica business)
   -> Drizzle ORM query -> PostgreSQL (Neon)
-  -> Response (superjson serializzato)
+  -> JSON response
   -> Metrica salvata in api_metrics
+  -> Log salvato per Guardian monitoring
 ```
 
 ### 3.3 Provider Stack Frontend (ordine nesting)
@@ -305,40 +311,89 @@ ErrorBoundary
 
 | Tipo | Quantita' |
 |---|---|
-| Procedure tRPC totali | ~90 |
-| Endpoint REST legacy | 4 |
-| Router tRPC | 14 |
+| **Endpoint REST totali** | **730+** |
+| Gruppi API (rewrite Vercel) | 33 |
+| Endpoint documentati nel frontend | 107 (realEndpoints.ts) |
+| API Serverless Vercel | 8 |
 | Livelli accesso | 3 (public, protected, admin) |
 
-### 6.2 Router tRPC
+**Backend REST:** `api.mio-hub.me` (Hetzner VPS, repo `mihub-backend-rest`)
+**Registro ufficiale:** `MIO-hub/api/index.json` su GitHub (single source of truth)
+**Conteggio dinamico:** La tab Integrazioni della DashboardPA carica il conteggio in tempo reale dal backend via `/api/dashboard/integrations/endpoint-count`
 
-| Router | Prefisso | Procedure | Descrizione |
-|---|---|---|---|
-| system | system.* | 1 | Health check |
-| auth | auth.* | 2 | Login/logout, sessione corrente |
-| analytics | analytics.* | 7 | Dashboard PA (overview, mercati, negozi, transazioni) |
-| dmsHub | dmsHub.* | 17 | Mercati, posteggi, operatori, concessioni, presenze |
-| wallet | wallet.* | 10 | Borsellino elettronico, ricariche, PagoPA |
-| integrations | integrations.* | 10 | API keys, webhooks, connessioni esterne |
-| mihub | mihub.* | 9 | Sistema multi-agente: tasks, projects, brain, messages |
-| mioAgent | mioAgent.* | 5 | Log agenti AI |
-| guardian | guardian.* | 3 | Monitoring API, debug, logs |
-| tper | tper.* | 2 | Integrazione trasporto TPER Bologna |
-| logs | logs.* | 1 | System logs |
-| carbonCredits | carbonCredits.* | 3 | Crediti carbonio TCC |
-| users | users.* | 1 | Analytics utenti |
-| sustainability | sustainability.* | 1 | Metriche sostenibilita' |
+> **Nota:** Il vecchio backend tRPC (~171 procedure) e' stato archiviato in `_cantina/server_archive/`. Il sistema attuale usa esclusivamente API REST.
 
-### 6.3 Endpoint REST Legacy (non tRPC)
+### 6.2 Gruppi API REST (33 domini)
 
-| Path | Metodo | Descrizione |
+Tutte le chiamate `/api/*` dal frontend sono proxate a `api.mio-hub.me` tramite 33 regole di rewrite in `vercel.json`:
+
+| Gruppo API | Path | Descrizione |
 |---|---|---|
-| `/api/oauth/callback` | GET | OAuth callback handler (SPID/CIE) |
-| `/api/auth/firebase/verify` | POST | Verifica token Firebase |
-| `/api/auth/firebase/sync` | POST | Sync utente Firebase con DB |
-| `/api/import-from-slot-editor` | POST | Import GeoJSON da Slot Editor v3 |
+| auth | `/api/auth/*` | Autenticazione Firebase + OAuth SPID/CIE |
+| markets | `/api/markets/*` | Gestione mercati |
+| stalls | `/api/stalls/*` | Gestione posteggi |
+| wallets | `/api/wallets/*` | Borsellino elettronico |
+| wallet-history | `/api/wallet-history` | Storico transazioni wallet |
+| canone-unico | `/api/canone-unico/*` | Canone unico mercatale |
+| imprese | `/api/imprese/*` | Anagrafica imprese |
+| sanctions | `/api/sanctions/*` | Sanzioni e verbali |
+| verbali | `/api/verbali/*` | Verbali polizia municipale |
+| notifiche | `/api/notifiche/*` | Sistema notifiche |
+| civic-reports | `/api/civic-reports/*` | Segnalazioni civiche |
+| citizens | `/api/citizens/*` | Anagrafica cittadini |
+| gaming-rewards | `/api/gaming-rewards/*` | Gamification e premi |
+| tcc | `/api/tcc/*` | Token Crediti Carbonio |
+| tesseramenti | `/api/tesseramenti/*` | Tesseramenti operatori |
+| associazioni | `/api/associazioni/*` | Gestione associazioni |
+| bandi | `/api/bandi/*` | Bandi e graduatorie |
+| formazione | `/api/formazione/*` | Formazione e corsi |
+| pagamenti | `/api/pagamenti/*` | Pagamenti e PagoPA |
+| collaboratori | `/api/collaboratori/*` | Gestione collaboratori |
+| dashboard | `/api/dashboard/*` | Dati dashboard PA |
+| integrations | `/api/integrations/*` | API keys, webhooks, monitoring |
+| routing | `/api/routing/*` | Calcolo percorsi |
+| hub | `/api/hub/*` | Gestione hub fisici |
+| mihub | `/api/mihub/*` | Sistema multi-agente AI |
+| guardian | `/api/guardian/*` | Monitoring e debug |
+| mio | `/api/mio/*` | Agente AI MIO |
+| abacus | `/api/abacus/*` | Query SQL e analisi dati |
+| logs | `/api/logs/*` | Logging sistema |
+| system | `/api/system/*` | Health check e sistema |
+| github | `/api/github/*` | Integrazione GitHub |
 
-### 6.4 API Serverless (Vercel Functions in `/api/`)
+### 6.3 Endpoint Documentati nel Frontend (107 in realEndpoints.ts)
+
+| Categoria | Endpoint | Descrizione |
+|---|---|---|
+| marketsEndpoints | 7 | CRUD mercati |
+| stallsEndpoints | 4 | CRUD posteggi |
+| vendorsEndpoints | 5 | Gestione operatori |
+| dmsHubEndpoints | 6 | Funzioni core DMS |
+| concessionsEndpoints | 8 | Gestione concessioni |
+| suapEndpoints | 15 | Pratiche SUAP (SCIA, autorizzazioni, spunta) |
+| walletsEndpoints | 18 | Wallet, ricariche, PagoPA, tariffe |
+| tariffsEndpoints | 2 | Tariffe posteggio |
+| impreseEndpoints | 9 | Anagrafica imprese |
+| qualificazioniEndpoints | 6 | Qualificazioni e documenti |
+| gisEndpoints | 5 | Mappe GIS |
+| mobilityEndpoints | 6 | Mobilita' e trasporti |
+| abacusSqlEndpoints | 8 | Query SQL analisi dati |
+| abacusGithubEndpoints | 6 | Integrazione GitHub |
+| tccWalletImpresaEndpoints | 13 | Wallet impresa e TCC |
+| firebaseAuthEndpoints | 9 | Autenticazione Firebase |
+
+### 6.4 Client API nel Frontend
+
+| Client | File | Endpoint principali |
+|---|---|---|
+| mihubAPI | `utils/mihubAPI.ts` | Logs, guardian, mihub tasks, imprese, deploy |
+| securityClient | `api/securityClient.ts` | RBAC, ruoli, permessi, matrice, IP blacklist, utenti |
+| orchestratorClient | `api/orchestratorClient.ts` | Comunicazione multi-agente |
+| authClient | `api/authClient.ts` | Autenticazione Firebase |
+| logsClient | `api/logsClient.ts` | Logging |
+| suapClient | `api/suap.ts` | Pratiche SUAP |
+
+### 6.5 API Serverless (Vercel Functions in `/api/`)
 
 | Path | Descrizione |
 |---|---|
@@ -460,7 +515,7 @@ ErrorBoundary
 5. Backend crea/aggiorna utente nel DB
 6. Backend setta cookie JWT (scadenza 1 anno)
 7. Ogni richiesta porta il cookie
-8. tRPC middleware estrae user dal cookie
+8. Backend REST estrae user dal cookie JWT
 ```
 
 ### 8.3 Sistema RBAC
@@ -699,7 +754,7 @@ VITE_TRPC_URL, VITE_API_URL, VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, V
 | Audit | Tabelle access_logs, audit_logs, security_events |
 | Login monitoring | Tabella login_attempts con tracking tentativi falliti |
 | IP Blacklist | Blocco IP dalla tab Sicurezza |
-| Input validation | Zod su tutti gli input tRPC |
+| Input validation | Zod su tutti gli input API REST |
 | CORS | Configurato per dominio produzione |
 | Body limit | 50MB max (per upload file) |
 
