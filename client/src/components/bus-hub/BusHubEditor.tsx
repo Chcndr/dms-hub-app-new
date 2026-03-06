@@ -34,7 +34,45 @@ export function BusHubEditor({
       // Verifica origine
       if (!event.origin.includes("api.mio-hub.me")) return;
 
-      const { type, data } = event.data || {};
+      const { type, data, payload } = event.data || {};
+
+      // === BRIDGE: iframe salva dati → li mettiamo nel localStorage Vercel (first-party, Safari-safe) ===
+      if (type === 'DMS_BRIDGE_SAVE') {
+        try {
+          const store = JSON.parse(localStorage.getItem('dms_bridge') || '{}');
+          store[payload.key] = payload.value;
+          store._ts = Date.now();
+          localStorage.setItem('dms_bridge', JSON.stringify(store));
+        } catch(e) { console.warn('Bridge save err:', e); }
+        return;
+      }
+      if (type === 'DMS_BRIDGE_SAVE_BLOB') {
+        try {
+          const blobs = JSON.parse(localStorage.getItem('dms_bridge_blobs') || '{}');
+          blobs[payload.key] = payload.value;
+          localStorage.setItem('dms_bridge_blobs', JSON.stringify(blobs));
+        } catch(e) { console.warn('Bridge blob save err:', e); }
+        return;
+      }
+      if (type === 'DMS_BRIDGE_REQUEST') {
+        // iframe chiede i dati salvati → glieli mandiamo
+        try {
+          const store = JSON.parse(localStorage.getItem('dms_bridge') || '{}');
+          const blobs = JSON.parse(localStorage.getItem('dms_bridge_blobs') || '{}');
+          if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage(
+              { type: 'DMS_BRIDGE_RESTORE', state: store, blobs: blobs },
+              'https://api.mio-hub.me'
+            );
+          }
+        } catch(e) { console.warn('Bridge restore err:', e); }
+        return;
+      }
+      if (type === 'DMS_BRIDGE_CLEAR') {
+        localStorage.removeItem('dms_bridge');
+        localStorage.removeItem('dms_bridge_blobs');
+        return;
+      }
 
       if (type === "BUS_PNG_READY") {
         // PNG trasparente pronto, passa a Slot Editor
