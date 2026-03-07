@@ -1,11 +1,15 @@
 /**
  * BUS HUB Editor - Integra gli editor originali via iframe
  * Usa i tool completi hostati su api.mio-hub.me
+ * 
+ * IMPORTANTE: L'iframe naviga internamente tra bus_hub e slot_editor
+ * per preservare IndexedDB su Safari/iPad. Il parent (questo componente)
+ * aggiorna solo il tab indicator, NON cambia mai l'iframe src.
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Bus, Map, X } from "lucide-react";
+import { ArrowLeft, Bus, Map, X, RotateCw } from "lucide-react";
 
 interface BusHubEditorProps {
   marketName?: string;
@@ -23,10 +27,8 @@ export function BusHubEditor({
   const [currentStep, setCurrentStep] = useState<EditorStep>("bus");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // URL degli editor originali sul server Hetzner
+  // URL iniziale - l'iframe parte sempre dal bus_hub
   const BUS_HUB_URL = "https://api.mio-hub.me/tools/bus_hub.html";
-  const SLOT_EDITOR_URL =
-    "https://api.mio-hub.me/tools/slot_editor_v3_unified.html";
 
   // Ascolta messaggi dagli iframe (per comunicazione postMessage)
   useEffect(() => {
@@ -74,26 +76,21 @@ export function BusHubEditor({
         return;
       }
 
-      if (type === "BUS_PNG_READY") {
-        // PNG trasparente pronto, passa a Slot Editor
-        console.log("PNG pronto dal BUS HUB:", data);
-        setCurrentStep("editor");
-      }
-
-      if (type === "EDITOR_SAVE") {
-        // Dati GeoJSON pronti dall'editor
-        console.log("Dati salvati da Slot Editor:", data);
-        if (onSave) {
-          onSave(data);
-        }
-      }
-
-      if (type === "GO_TO_EDITOR") {
+      // Aggiorna solo il tab indicator - NON cambiare iframe src!
+      // L'iframe naviga internamente con window.location.href
+      if (type === "GO_TO_EDITOR" || type === "BUS_PNG_READY") {
         setCurrentStep("editor");
       }
 
       if (type === "GO_TO_BUS") {
         setCurrentStep("bus");
+      }
+
+      if (type === "EDITOR_SAVE") {
+        console.log("Dati salvati da Slot Editor:", data);
+        if (onSave) {
+          onSave(data);
+        }
       }
     };
 
@@ -101,9 +98,23 @@ export function BusHubEditor({
     return () => window.removeEventListener("message", handleMessage);
   }, [onSave]);
 
-  const getCurrentUrl = () => {
-    return currentStep === "bus" ? BUS_HUB_URL : SLOT_EDITOR_URL;
-  };
+  // Navigazione tramite tab buttons - naviga l'iframe internamente
+  const navigateToStep = useCallback((step: EditorStep) => {
+    if (iframeRef.current?.contentWindow) {
+      const url = step === "bus" 
+        ? "https://api.mio-hub.me/tools/bus_hub.html"
+        : "https://api.mio-hub.me/tools/slot_editor_v3_unified.html";
+      iframeRef.current.contentWindow.location.href = url;
+    }
+    setCurrentStep(step);
+  }, []);
+
+  // Refresh dell'iframe senza uscire
+  const refreshIframe = useCallback(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.location.reload();
+    }
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[100] bg-[#0b1220] flex flex-col">
@@ -131,12 +142,12 @@ export function BusHubEditor({
           </div>
         </div>
 
-        {/* Step indicator */}
+        {/* Step indicator + Refresh */}
         <div className="flex items-center gap-2">
           <Button
             variant={currentStep === "bus" ? "default" : "outline"}
             size="sm"
-            onClick={() => setCurrentStep("bus")}
+            onClick={() => navigateToStep("bus")}
             className={
               currentStep === "bus"
                 ? "bg-[#14b8a6] text-white"
@@ -150,7 +161,7 @@ export function BusHubEditor({
           <Button
             variant={currentStep === "editor" ? "default" : "outline"}
             size="sm"
-            onClick={() => setCurrentStep("editor")}
+            onClick={() => navigateToStep("editor")}
             className={
               currentStep === "editor"
                 ? "bg-[#f59e0b] text-white"
@@ -159,6 +170,17 @@ export function BusHubEditor({
           >
             <Map className="h-4 w-4 mr-1" />
             2. Slot Editor
+          </Button>
+          
+          {/* Refresh button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={refreshIframe}
+            className="text-[#e8fbff]/50 hover:text-[#e8fbff] hover:bg-[#14b8a6]/20 ml-1"
+            title="Ricarica pagina"
+          >
+            <RotateCw className="h-4 w-4" />
           </Button>
         </div>
 
@@ -173,16 +195,13 @@ export function BusHubEditor({
       </div>
 
       {/* Iframe container - occupa tutto lo spazio */}
+      {/* L'iframe src è FISSO a bus_hub.html - la navigazione avviene internamente */}
       <div className="flex-1 relative">
         <iframe
           ref={iframeRef}
-          src={getCurrentUrl()}
+          src={BUS_HUB_URL}
           className="absolute inset-0 w-full h-full border-0"
-          title={
-            currentStep === "bus"
-              ? "BUS HUB - PNG Transparent Tool"
-              : "Slot Editor v3"
-          }
+          title="BUS HUB Editor"
           allow="clipboard-read; clipboard-write"
         />
       </div>
