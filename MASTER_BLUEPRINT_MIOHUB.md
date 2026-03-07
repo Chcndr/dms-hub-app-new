@@ -1,7 +1,55 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.6.2 (Bug Fix Post-FASE 3 + Allineamento Completo)
-> **Data:** 02 Marzo 2026
+> **Versione:** 9.7.0 (Fix Persistenza Dati Safari/iPad + Salvataggio GIS Completo)
+> **Data:** 07 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.7.0 (07 Mar 2026)
+> **🔧 FIX CRITICO — PERSISTENZA DATI SLOT EDITOR SU SAFARI/IPAD + SALVATAGGIO GIS COMPLETO**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `e39a8ba` | ✅ Allineato |
+> | Hetzner backend (157.90.29.66:3000) | `e39a8ba` | ✅ Online, checksum file verificato |
+> | GitHub `dms-hub-app-new` master | `910c7c6` | ✅ Allineato |
+> | Vercel frontend | `910c7c6` | ✅ HTTP 200, auto-deploy |
+> | Neon DB | 4 mercati, 600 stalls | ✅ Mercato La Piazzola (ID 14) con 17 stalls Polygon |
+>
+> **Problema risolto (Safari/iPad ITP):**
+> Safari ITP cancella localStorage/IndexedDB degli iframe cross-origin (Hetzner dentro Vercel). Tutti i dati non salvati nel DB (posteggi, pianta, marker) venivano persi alla navigazione.
+>
+> **Soluzione: postMessage Bridge bidirezionale**
+> - `dms-bus.js` (iframe Hetzner): wrappa `DMSBUS.putJSON/putBlob/deleteKey/clear` per inviare copia dati al parent via `postMessage`
+> - `BusHubEditor.tsx` (parent Vercel): riceve e salva in `localStorage` first-party (non soggetto a ITP)
+> - Al ricaricamento, iframe chiede `DMS_BRIDGE_REQUEST` → parent risponde con `DMS_BRIDGE_RESTORE` → iframe ripristina dati
+> - Evento `dms-bridge-restored` notifica lo Slot Editor per riposizionare la pianta trasparente
+>
+> **Modifiche Backend (mihub-backend-rest — 5 commit dopo v9.6.2):**
+> - `e39a8ba` — Fix pianta trasparente: `plant_marker_position` salvato nel DMSBUS + listener `dms-bridge-restored`
+> - `0d11381` — Fix geometria posteggi: `stallsGeoJSON` ora crea Polygon (4 corner) + `geometry_geojson` in import-market
+> - `d7a359d` — Fix salvataggio mercato: bottone "Salva nel Database" ora chiama anche `/api/gis/import-market` (crea markets + stalls + market_geometry)
+> - `2539b8b` — Bridge postMessage in `dms-bus.js` (wrapper DMSBUS → parent)
+> - `6a0664a` — DMSBUS fallback robusto per Safari/iPad (blob↔base64, timeout IndexedDB)
+>
+> **Modifiche Frontend (dms-hub-app-new — 1 commit dopo v9.6.2):**
+> - `910c7c6` — Bridge postMessage in `BusHubEditor.tsx` (listener DMS_BRIDGE_SAVE/REQUEST/CLEAR)
+>
+> **Modifiche Route Backend:**
+> - `routes/gis.js` — import-market ora salva `geometry_geojson`, `rotation`, `dimensions`, `width`, `depth`, `area_mq` per ogni stall
+> - `routes/hub.js` — PUT hub/locations ora accetta campo `tipo`
+> - `routes/markets.js` — PATCH markets/:id ora accetta `hub_location_id`
+>
+> **Modifiche Database (Neon):**
+> - Mercato La Piazzola (ID 14): creato con 17 stalls Polygon, `comune_id = 6` (Bologna), `market_geometry` con PNG metadata
+> - Hub La Piazzola (ID 108): cancellato record duplicato da `hub_locations`
+>
+> **Verifica allineamento (07 Mar 2026):**
+> - `dms-bus.js`: checksum GitHub = checksum Hetzner ✅
+> - `slot_editor_v3_unified.html`: checksum GitHub = checksum Hetzner ✅
+> - `bus_hub.html`: checksum GitHub = checksum Hetzner ✅
+> - API `/api/gis/market-map/14`: 17 stalls Polygon ✅
+> - Neon DB: 4 mercati, 600 stalls totali, 3 market_geometry ✅
 >
 > ---
 > ### CHANGELOG v9.6.2 (02 Mar 2026)
@@ -4039,14 +4087,25 @@ La versione su GitHub Pages (chcndr.github.io) è **DEPRECATA** e fa redirect au
 - **HUB:** Crea HUB indipendenti con centro e area poligonale
 - **Esporta:** GeoJSON, Dashboard Admin, Database PostgreSQL
 
-### Storage Dati
+### Storage Dati (v9.7.0 — con postMessage Bridge per Safari/iPad)
 
-| Tipo               | Storage      | Chiave                  |
-| ------------------ | ------------ | ----------------------- |
-| Autosave completo  | localStorage | `v3_autosave`           |
-| Dati HUB           | localStorage | `dms_hub_data`          |
-| Posizione pianta   | localStorage | `plant_marker_position` |
-| Posizioni posteggi | localStorage | `slots_positions`       |
+| Tipo | Storage Primario | Bridge Safari | Chiave DMSBUS | Note |
+|---|---|---|---|---|
+| Autosave completo | DMSBUS (IndexedDB) | ✅ postMessage → Vercel localStorage | `v3_autosave` | Ripristinato via `dms-bridge-restored` |
+| Dati HUB | DMSBUS (IndexedDB) | ✅ postMessage → Vercel localStorage | `dms_hub_data` | Ripristinato via `dms-bridge-restored` |
+| Posizione pianta | DMSBUS + localStorage | ✅ postMessage → Vercel localStorage | `plant_marker_position` | Listener `dms-bridge-restored` riposiziona overlay |
+| Posizioni posteggi | DMSBUS (IndexedDB) | ✅ postMessage → Vercel localStorage | `stalls_geojson` | Ripristinato via `dms-bridge-restored` |
+| PNG Pianta | DMSBUS (IndexedDB) | ✅ postMessage → Vercel localStorage | `png_transparent` | Blob convertito in base64 per bridge |
+
+**Architettura Bridge:**
+```
+┌─────────────────────────────────┐     postMessage      ┌──────────────────────────────┐
+│  Slot Editor (iframe Hetzner)   │ ──────────────────→  │  BusHubEditor (parent Vercel) │
+│  dms-bus.js wrapper             │                      │  localStorage first-party     │
+│  DMSBUS.putJSON/putBlob         │ ←──────────────────  │  dms_bridge / dms_bridge_blobs│
+│  evento: dms-bridge-restored    │     RESTORE data     │                              │
+└─────────────────────────────────┘                      └──────────────────────────────┘
+```
 
 ### Accesso dalla Dashboard PA
 
