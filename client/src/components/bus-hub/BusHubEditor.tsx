@@ -175,6 +175,7 @@ export function BusHubEditor({
       {/* Iframe container - occupa tutto lo spazio */}
       <div className="flex-1 relative">
         <iframe
+          key={currentStep}
           ref={iframeRef}
           src={getCurrentUrl()}
           className="absolute inset-0 w-full h-full border-0"
