@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scheda Tecnica - DMS Hub</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm 18mm 20mm 18mm;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 10pt;
+      line-height: 1.5;
+      color: #1a1a2e;
+      background: #fff;
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 20mm 18mm;
+    }
+    @media print {
+      body { padding: 0; max-width: none; }
+    }
+
+    /* Header / Cover */
+    .cover {
+      text-align: center;
+      padding: 40px 0 30px;
+      border-bottom: 3px solid #0d9488;
+      margin-bottom: 30px;
+    }
+    .cover .logo-text {
+      font-size: 36pt;
+      font-weight: 800;
+      color: #0d9488;
+      letter-spacing: 2px;
+    }
+    .cover .subtitle {
+      font-size: 14pt;
+      color: #475569;
+      margin-top: 8px;
+    }
+    .cover .doc-title {
+      font-size: 20pt;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-top: 24px;
+    }
+    .cover .meta {
+      margin-top: 20px;
+      font-size: 9pt;
+      color: #64748b;
+    }
+    .cover .meta-table {
+      margin: 16px auto 0;
+      border-collapse: collapse;
+      font-size: 9pt;
+    }
+    .cover .meta-table td {
+      padding: 4px 12px;
+      text-align: left;
+    }
+    .cover .meta-table td:first-child {
+      font-weight: 600;
+      color: #334155;
+    }
+
+    /* Sections */
+    h2 {
+      font-size: 14pt;
+      color: #0d9488;
+      border-bottom: 2px solid #0d9488;
+      padding-bottom: 4px;
+      margin: 28px 0 12px;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 11pt;
+      color: #1e293b;
+      margin: 16px 0 8px;
+      page-break-after: avoid;
+    }
+    h4 {
+      font-size: 10pt;
+      color: #334155;
+      margin: 12px 0 6px;
+      font-weight: 600;
+    }
+    p, li {
+      font-size: 10pt;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+    ul { padding-left: 20px; margin-bottom: 8px; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 16px;
+      font-size: 9pt;
+      page-break-inside: auto;
+    }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+    th {
+      background: #0d9488;
+      color: #fff;
+      font-weight: 600;
+      padding: 6px 8px;
+      text-align: left;
+      font-size: 8.5pt;
+    }
+    td {
+      padding: 5px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    tr:nth-child(even) { background: #f8fafc; }
+    tr:hover { background: #f1f5f9; }
+    td strong { color: #0f172a; }
+    .total-row td { font-weight: 700; background: #e0f2fe; }
+
+    /* Code blocks */
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 8.5pt;
+      line-height: 1.6;
+      overflow-x: auto;
+      margin: 8px 0 16px;
+      page-break-inside: avoid;
+    }
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 8.5pt;
+    }
+    td code {
+      background: #f1f5f9;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: #0d9488;
+    }
+
+    /* Note / callout */
+    .note {
+      background: #f0fdfa;
+      border-left: 4px solid #0d9488;
+      padding: 8px 12px;
+      margin: 8px 0 16px;
+      font-size: 9pt;
+      color: #134e4a;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 8pt;
+      color: #94a3b8;
+    }
+
+    /* Page break helpers */
+    .page-break { page-break-before: always; }
+
+    /* Print button */
+    .print-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #0d9488;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(13,148,136,0.4);
+      z-index: 1000;
+    }
+    .print-btn:hover { background: #0f766e; }
+    @media print { .print-btn { display: none; } }
+  </style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">Stampa / Salva PDF</button>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="logo-text">DMS Hub</div>
+  <div class="subtitle">Digital Market System Hub</div>
+  <div class="doc-title">Scheda Tecnica del Sistema</div>
+  <div class="meta">Piattaforma per la Gestione Digitale dei Mercati su Area Pubblica</div>
+  <table class="meta-table">
+    <tr><td>Versione</td><td>v3.80.0+</td></tr>
+    <tr><td>Data Documento</td><td>5 Marzo 2026</td></tr>
+    <tr><td>URL Produzione</td><td>dms-hub-app-new.vercel.app</td></tr>
+    <tr><td>Tipo</td><td>Web Application SPA (Single Page Application)</td></tr>
+    <tr><td>Licenza</td><td>MIT</td></tr>
+  </table>
+</div>
+
+<!-- 1. DESCRIZIONE GENERALE -->
+<h2>1. Descrizione Generale</h2>
+<p>DMS Hub e' una piattaforma web unificata per la digitalizzazione e la gestione dei mercati ambulanti italiani. Il sistema serve contemporaneamente quattro tipologie di utenti dalla stessa applicazione web, differenziando l'esperienza tramite un sistema RBAC (Role-Based Access Control):</p>
+<ul>
+  <li><strong>Pubblica Amministrazione (PA)</strong> &mdash; Dashboard amministrativa con 14+ tab per gestione mercati, operatori, concessioni, wallet, controlli, report</li>
+  <li><strong>Imprese/Operatori</strong> &mdash; Dashboard impresa, wallet, registrazione presenze, anagrafica</li>
+  <li><strong>Cittadini</strong> &mdash; Mappa interattiva, segnalazioni civiche, percorsi, wallet</li>
+  <li><strong>Pubblico</strong> &mdash; Home page, mappa pubblica, vetrine, presentazione</li>
+</ul>
+<p>Il sistema e' progettato per scalare da ~60 mercati attuali a <strong>8.000 mercati</strong> sull'intero territorio nazionale.</p>
+
+<!-- 2. STACK TECNOLOGICO -->
+<h2>2. Stack Tecnologico</h2>
+
+<h3>2.1 Frontend</h3>
+<table>
+  <thead><tr><th>Tecnologia</th><th>Versione</th><th>Funzione</th></tr></thead>
+  <tbody>
+    <tr><td>React</td><td>19.2</td><td>Framework UI</td></tr>
+    <tr><td>Vite</td><td>7.1</td><td>Build tool &amp; dev server</td></tr>
+    <tr><td>TypeScript</td><td>5.9.3</td><td>Linguaggio (strict mode)</td></tr>
+    <tr><td>Wouter</td><td>3.3.5</td><td>Router SPA (client-side)</td></tr>
+    <tr><td>Tailwind CSS</td><td>4.1</td><td>Styling utility-first</td></tr>
+    <tr><td>shadcn/ui (Radix)</td><td>Latest</td><td>Design system (53 componenti UI)</td></tr>
+    <tr><td>Lucide React</td><td>0.453</td><td>Iconografia</td></tr>
+    <tr><td>React Query (TanStack)</td><td>5.90</td><td>Async state management &amp; caching</td></tr>
+    <tr><td>React Hook Form</td><td>7.64</td><td>Gestione form</td></tr>
+    <tr><td>Zod</td><td>4.1</td><td>Validazione schema</td></tr>
+    <tr><td>Recharts</td><td>2.15</td><td>Grafici e visualizzazioni dati</td></tr>
+    <tr><td>Leaflet / React-Leaflet</td><td>1.9 / 4.2</td><td>Mappe interattive</td></tr>
+    <tr><td>MapLibre GL</td><td>5.13</td><td>Mappe vettoriali GIS</td></tr>
+    <tr><td>Framer Motion</td><td>12.23</td><td>Animazioni</td></tr>
+    <tr><td>Firebase</td><td>12.9</td><td>Autenticazione (Google, Apple, Email, SPID/CIE)</td></tr>
+    <tr><td>tldraw</td><td>2.4</td><td>Editor visuale (Bus Hub / Slot Editor)</td></tr>
+    <tr><td>date-fns</td><td>4.1</td><td>Manipolazione date</td></tr>
+    <tr><td>Sonner</td><td>2.0</td><td>Notifiche toast</td></tr>
+  </tbody>
+</table>
+
+<h3>2.2 Backend (mihub-backend-rest)</h3>
+<p>Il backend e' un'applicazione REST separata deployata su Hetzner (<code>api.mio-hub.me</code>). Il vecchio backend tRPC e' stato archiviato in <code>_cantina/server_archive/</code>.</p>
+<table>
+  <thead><tr><th>Tecnologia</th><th>Versione</th><th>Funzione</th></tr></thead>
+  <tbody>
+    <tr><td>Node.js</td><td>18+</td><td>Runtime server</td></tr>
+    <tr><td>Express</td><td>4.x</td><td>Web framework HTTP</td></tr>
+    <tr><td>Drizzle ORM</td><td>0.44</td><td>ORM per PostgreSQL</td></tr>
+    <tr><td>postgres-js</td><td>Latest</td><td>Driver PostgreSQL nativo</td></tr>
+    <tr><td>Zod</td><td>Latest</td><td>Validazione input API</td></tr>
+    <tr><td>JWT</td><td>Custom</td><td>Sessioni utente (cookie <code>session</code>)</td></tr>
+    <tr><td>Firebase Admin SDK</td><td>Latest</td><td>Verifica token autenticazione</td></tr>
+    <tr><td>PM2</td><td>Latest</td><td>Process manager (max 512MB, auto-restart)</td></tr>
+  </tbody>
+</table>
+<p><strong>Repository backend:</strong> <code>mihub-backend-rest</code> (separato) &nbsp;|&nbsp; <strong>Base URL:</strong> <code>https://api.mio-hub.me</code></p>
+
+<h3>2.3 Database</h3>
+<table>
+  <thead><tr><th>Campo</th><th>Valore</th></tr></thead>
+  <tbody>
+    <tr><td>DBMS</td><td>PostgreSQL 16</td></tr>
+    <tr><td>Provider</td><td>Neon (serverless)</td></tr>
+    <tr><td>Regione</td><td>EU Central (Frankfurt)</td></tr>
+    <tr><td>Tipo connessione</td><td>Serverless (auto-suspend dopo 5 min)</td></tr>
+    <tr><td>ORM</td><td>Drizzle 0.44</td></tr>
+    <tr><td>Driver</td><td>postgres-js (NON pg/node-postgres)</td></tr>
+    <tr><td>Schema source of truth</td><td><code>drizzle/schema.ts</code></td></tr>
+    <tr><td>Cold start</td><td>2-3 secondi</td></tr>
+  </tbody>
+</table>
+
+<h3>2.4 Infrastruttura</h3>
+<table>
+  <thead><tr><th>Componente</th><th>Provider</th><th>Dettagli</th></tr></thead>
+  <tbody>
+    <tr><td>Frontend hosting</td><td>Vercel</td><td>Auto-deploy su push a <code>master</code>, CDN globale</td></tr>
+    <tr><td>Backend REST</td><td>Hetzner VPS</td><td>IP: 157.90.29.66, PM2, <code>api.mio-hub.me</code></td></tr>
+    <tr><td>Database</td><td>Neon</td><td>PostgreSQL serverless, EU region</td></tr>
+    <tr><td>Autenticazione</td><td>Firebase</td><td>Progetto <code>dmshub-auth-2975e</code></td></tr>
+    <tr><td>OAuth/SPID/CIE</td><td>ARPA Toscana</td><td>OpenID Connect callback</td></tr>
+    <tr><td>Orchestratore AI</td><td>Hetzner</td><td><code>orchestratore.mio-hub.me</code></td></tr>
+  </tbody>
+</table>
+<p>Il frontend su Vercel fa <strong>proxy trasparente</strong> di tutte le chiamate <code>/api/*</code> verso <code>api.mio-hub.me</code> tramite 33 regole di rewrite in <code>vercel.json</code>.</p>
+
+<h3>2.5 Tool di Sviluppo</h3>
+<table>
+  <thead><tr><th>Tool</th><th>Versione</th><th>Funzione</th></tr></thead>
+  <tbody>
+    <tr><td>pnpm</td><td>10.4.1</td><td>Package manager</td></tr>
+    <tr><td>Prettier</td><td>3.6</td><td>Code formatter</td></tr>
+    <tr><td>Vitest</td><td>2.1</td><td>Test framework</td></tr>
+    <tr><td>esbuild</td><td>(via Vite)</td><td>Bundling backend</td></tr>
+    <tr><td>PostCSS</td><td>8.4</td><td>Processing CSS</td></tr>
+    <tr><td>Autoprefixer</td><td>10.4</td><td>Browser prefix CSS</td></tr>
+  </tbody>
+</table>
+
+<!-- 3. ARCHITETTURA -->
+<div class="page-break"></div>
+<h2>3. Architettura del Sistema</h2>
+
+<h3>3.1 Layer Architecture</h3>
+<pre><code>+-------------------------------------------------------+
+|  LAYER 1 - CLIENT (SPA)                               |
+|  React 19 + Vite 7 + Wouter + Tailwind 4 + shadcn/ui  |
+|  37 pagine | 170 componenti | 7 context | 11 hooks    |
++-------------------------------------------------------+
+        |  HTTP/HTTPS (fetch + React Query)
+        v
++-------------------------------------------------------+
+|  LAYER 2 - BACKEND REST (api.mio-hub.me)              |
+|  Express 4.x + 730+ endpoint REST                     |
+|  33 gruppi API | Proxy via Vercel rewrite              |
+|  Auth: Cookie JWT + Firebase | RBAC middleware         |
++-------------------------------------------------------+
+        |  Drizzle ORM (postgres-js driver)
+        v
++-------------------------------------------------------+
+|  LAYER 3 - DATABASE                                   |
+|  PostgreSQL 16 su Neon (serverless)                   |
+|  48+ tabelle operative | ~370K righe totali           |
+|  PITR backup automatico | EU Central (Frankfurt)      |
++-------------------------------------------------------+</code></pre>
+
+<h3>3.2 Flusso di una Richiesta</h3>
+<pre><code>Browser -> GET/POST /api/{gruppo}/{risorsa}
+  -> Vercel rewrite -> api.mio-hub.me/api/{gruppo}/{risorsa}
+  -> Express middleware (CORS, body parse, rate limiting)
+  -> Auth middleware (cookie JWT / Firebase token / API key)
+  -> RBAC middleware (verifica permessi per ruolo)
+  -> Route handler (logica business)
+  -> Drizzle ORM query -> PostgreSQL (Neon)
+  -> JSON response
+  -> Metrica salvata in api_metrics
+  -> Log salvato per Guardian monitoring</code></pre>
+
+<h3>3.3 Provider Stack Frontend (ordine nesting)</h3>
+<pre><code>ErrorBoundary
+  ThemeProvider (dark/light mode, default: dark)
+    FirebaseAuthProvider (autenticazione)
+      AnimationProvider (stato animazioni)
+        MioProvider (chat AI)
+          PermissionsProvider (RBAC)
+            TransportProvider (dati mobilita')
+              TooltipProvider (UI)
+                Router (Wouter) + ChatWidget + Toaster + Footer</code></pre>
+
+<!-- 4. METRICHE -->
+<h2>4. Metriche del Codebase</h2>
+
+<h3>4.1 Dimensioni</h3>
+<table>
+  <thead><tr><th>Metrica</th><th>Valore</th></tr></thead>
+  <tbody>
+    <tr><td>Linee di codice totali</td><td><strong>~147.500 LOC</strong></td></tr>
+    <tr><td>File TypeScript/TSX</td><td>283</td></tr>
+    <tr><td>Componenti React</td><td>170</td></tr>
+    <tr><td>Pagine</td><td>37</td></tr>
+    <tr><td>Custom Hooks</td><td>11</td></tr>
+    <tr><td>Context Providers</td><td>7</td></tr>
+    <tr><td>Componenti UI (shadcn)</td><td>53</td></tr>
+    <tr><td>Componenti business</td><td>80+</td></tr>
+    <tr><td>Componenti AI chat</td><td>15</td></tr>
+    <tr><td>Componenti SUAP</td><td>11</td></tr>
+    <tr><td>Componenti mercati</td><td>4</td></tr>
+  </tbody>
+</table>
+
+<h3>4.2 Componenti piu' grandi (per dimensione file)</h3>
+<table>
+  <thead><tr><th>Componente</th><th>Dimensione</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td>DashboardPA.tsx</td><td>~383 KB</td><td>Dashboard amministrativa (14+ tab)</td></tr>
+    <tr><td>GestioneMercati.tsx</td><td>~202 KB</td><td>Gestione completa mercati</td></tr>
+    <tr><td>ControlliSanzioniPanel.tsx</td><td>~163 KB</td><td>Controlli e sanzioni</td></tr>
+    <tr><td>ComuniPanel.tsx</td><td>~119 KB</td><td>Gestione comuni</td></tr>
+    <tr><td>GamingRewardsPanel.tsx</td><td>~118 KB</td><td>Sistema gamification</td></tr>
+    <tr><td>Integrazioni.tsx</td><td>~112 KB</td><td>Pannello integrazioni</td></tr>
+  </tbody>
+</table>
+
+<h3>4.3 Dipendenze</h3>
+<table>
+  <thead><tr><th>Tipo</th><th>Conteggio</th></tr></thead>
+  <tbody>
+    <tr><td>Dependencies (produzione)</td><td>43</td></tr>
+    <tr><td>DevDependencies</td><td>12</td></tr>
+    <tr><td>Radix UI primitives</td><td>23</td></tr>
+    <tr class="total-row"><td>Totale pacchetti</td><td>55</td></tr>
+  </tbody>
+</table>
+
+<!-- 5. DATABASE -->
+<div class="page-break"></div>
+<h2>5. Database &mdash; Schema</h2>
+
+<h3>5.1 Riepilogo</h3>
+<table>
+  <thead><tr><th>Dominio</th><th>Tabelle</th><th>Righe stimate</th></tr></thead>
+  <tbody>
+    <tr><td>Autenticazione &amp; Utenti</td><td>10</td><td>~820</td></tr>
+    <tr><td>Mercati &amp; Operazioni</td><td>15</td><td>~2.600</td></tr>
+    <tr><td>Wallet &amp; Pagamenti</td><td>6</td><td>~1.130</td></tr>
+    <tr><td>Hub Locations</td><td>3</td><td>~100</td></tr>
+    <tr><td>Multi-Agent System</td><td>6</td><td>~430</td></tr>
+    <tr><td>Monitoring &amp; Analytics</td><td>8</td><td>~334K</td></tr>
+    <tr class="total-row"><td><strong>Totale</strong></td><td><strong>48+</strong></td><td><strong>~370.000</strong></td></tr>
+  </tbody>
+</table>
+
+<h4>Autenticazione &amp; Utenti (10 tabelle)</h4>
+<table>
+  <thead><tr><th>Tabella</th><th>Righe</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td><code>users</code></td><td>~50</td><td>Utenti core (openId, email, ruolo)</td></tr>
+    <tr><td><code>extended_users</code></td><td>~10</td><td>Profilo esteso (wallet, rating)</td></tr>
+    <tr><td><code>user_roles</code></td><td>~6</td><td>Definizioni ruoli sistema</td></tr>
+    <tr><td><code>permissions</code></td><td>~30</td><td>Permessi granulari (modulo.azione)</td></tr>
+    <tr><td><code>role_permissions</code></td><td>~50</td><td>Matrice RBAC ruolo-permesso</td></tr>
+    <tr><td><code>user_role_assignments</code></td><td>~10</td><td>Assegnazione ruoli a utenti</td></tr>
+    <tr><td><code>user_sessions</code></td><td>~20</td><td>Sessioni attive</td></tr>
+    <tr><td><code>login_attempts</code></td><td>~100</td><td>Tentativi login</td></tr>
+    <tr><td><code>access_logs</code></td><td>~500</td><td>Audit accessi</td></tr>
+    <tr><td><code>security_events</code></td><td>~50</td><td>Eventi sicurezza</td></tr>
+  </tbody>
+</table>
+
+<h4>Mercati &amp; Operazioni (15 tabelle)</h4>
+<table>
+  <thead><tr><th>Tabella</th><th>Righe</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td><code>markets</code></td><td>~60</td><td>Mercati (nome, indirizzo, coordinate)</td></tr>
+    <tr><td><code>market_geometry</code></td><td>~12</td><td>Geometria GeoJSON per mappa</td></tr>
+    <tr><td><code>stalls</code></td><td>~900</td><td>Posteggi (numero, area, stato, categoria)</td></tr>
+    <tr><td><code>vendors</code></td><td>~150</td><td>Operatori ambulanti</td></tr>
+    <tr><td><code>concessions</code></td><td>~80</td><td>Concessioni (giornaliera/mensile/annuale)</td></tr>
+    <tr><td><code>vendor_documents</code></td><td>~200</td><td>Documenti operatori</td></tr>
+    <tr><td><code>vendor_presences</code></td><td>~1.000</td><td>Check-in/check-out giornalieri</td></tr>
+    <tr><td><code>bookings</code></td><td>0</td><td>Prenotazioni posteggio (predisposta)</td></tr>
+    <tr><td><code>inspections_detailed</code></td><td>~30</td><td>Ispezioni polizia municipale</td></tr>
+    <tr><td><code>violations</code></td><td>~20</td><td>Sanzioni e verbali</td></tr>
+    <tr><td><code>concession_payments</code></td><td>~50</td><td>Pagamenti concessioni</td></tr>
+    <tr><td><code>custom_markers</code></td><td>~30</td><td>POI sulla mappa (ingressi, servizi)</td></tr>
+    <tr><td><code>custom_areas</code></td><td>~10</td><td>Zone mercato per categoria</td></tr>
+    <tr><td><code>autorizzazioni</code></td><td>~40</td><td>Licenze commerciali</td></tr>
+    <tr><td><code>comuni</code></td><td>~50</td><td>Anagrafica comuni</td></tr>
+  </tbody>
+</table>
+
+<h4>Wallet &amp; Pagamenti (6 tabelle)</h4>
+<table>
+  <thead><tr><th>Tabella</th><th>Righe</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td><code>operatore_wallet</code></td><td>~80</td><td>Borsellini operatori (saldo, stato)</td></tr>
+    <tr><td><code>wallet_transazioni</code></td><td>~500</td><td>Transazioni wallet</td></tr>
+    <tr><td><code>wallet_history</code></td><td>~500</td><td>Storico transazioni</td></tr>
+    <tr><td><code>tariffe_posteggio</code></td><td>~20</td><td>Tariffe per tipo posteggio</td></tr>
+    <tr><td><code>avvisi_pagopa</code></td><td>~30</td><td>Avvisi di pagamento PagoPA</td></tr>
+    <tr><td><code>wallet_balance_snapshots</code></td><td>0</td><td>Snapshot saldi (predisposta)</td></tr>
+  </tbody>
+</table>
+
+<h4>Hub Locations (3 tabelle)</h4>
+<table>
+  <thead><tr><th>Tabella</th><th>Righe</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td><code>hub_locations</code></td><td>~20</td><td>Hub fisici collegati ai mercati</td></tr>
+    <tr><td><code>hub_shops</code></td><td>~50</td><td>Negozi dentro gli hub</td></tr>
+    <tr><td><code>hub_services</code></td><td>~30</td><td>Servizi hub (parcheggio, bike, ricarica)</td></tr>
+  </tbody>
+</table>
+
+<h4>Multi-Agent System (6 tabelle)</h4>
+<table>
+  <thead><tr><th>Tabella</th><th>Righe</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td><code>agent_tasks</code></td><td>~100</td><td>Task engine per agenti AI</td></tr>
+    <tr><td><code>agent_projects</code></td><td>~10</td><td>Progetti registrati</td></tr>
+    <tr><td><code>agent_brain</code></td><td>~50</td><td>Memoria agenti (decisioni, learning)</td></tr>
+    <tr><td><code>agent_messages</code></td><td>~200</td><td>Chat tra agenti</td></tr>
+    <tr><td><code>agent_context</code></td><td>~50</td><td>Contesto condiviso</td></tr>
+    <tr><td><code>data_bag</code></td><td>~20</td><td>Storage key-value con TTL</td></tr>
+  </tbody>
+</table>
+
+<h4>Monitoring &amp; Analytics (8 tabelle)</h4>
+<table>
+  <thead><tr><th>Tabella</th><th>Righe</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td><code>mio_agent_logs</code></td><td>~326.000</td><td>Log azioni agenti AI (88% dei dati DB)</td></tr>
+    <tr><td><code>api_metrics</code></td><td>~5.000</td><td>Metriche performance API</td></tr>
+    <tr><td><code>system_logs</code></td><td>~2.000</td><td>Log di sistema applicativo</td></tr>
+    <tr><td><code>audit_logs</code></td><td>~500</td><td>Audit trail compliance</td></tr>
+    <tr><td><code>api_keys</code></td><td>~10</td><td>Chiavi API generate</td></tr>
+    <tr><td><code>webhooks</code></td><td>~5</td><td>Configurazioni webhook</td></tr>
+    <tr><td><code>webhook_logs</code></td><td>~50</td><td>Log esecuzione webhook</td></tr>
+    <tr><td><code>external_connections</code></td><td>~5</td><td>Stato servizi esterni</td></tr>
+  </tbody>
+</table>
+
+<!-- 6. API -->
+<div class="page-break"></div>
+<h2>6. API &mdash; Endpoint</h2>
+
+<h3>6.1 Riepilogo</h3>
+<table>
+  <thead><tr><th>Tipo</th><th>Quantita'</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Endpoint REST totali</strong></td><td><strong>730+</strong></td></tr>
+    <tr><td>Gruppi API (rewrite Vercel)</td><td>33</td></tr>
+    <tr><td>Endpoint documentati nel frontend</td><td>107 (realEndpoints.ts)</td></tr>
+    <tr><td>API Serverless Vercel</td><td>8</td></tr>
+    <tr><td>Livelli accesso</td><td>3 (public, protected, admin)</td></tr>
+  </tbody>
+</table>
+<p><strong>Backend REST:</strong> <code>api.mio-hub.me</code> (Hetzner VPS, repo <code>mihub-backend-rest</code>)</p>
+<p><strong>Registro ufficiale:</strong> <code>MIO-hub/api/index.json</code> su GitHub (single source of truth)</p>
+<p><strong>Conteggio dinamico:</strong> La tab Integrazioni della DashboardPA carica il conteggio in tempo reale dal backend via <code>/api/dashboard/integrations/endpoint-count</code></p>
+<div class="note">Il vecchio backend tRPC (~171 procedure) e' stato archiviato in <code>_cantina/server_archive/</code>. Il sistema attuale usa esclusivamente API REST.</div>
+
+<h3>6.2 Gruppi API REST (33 domini)</h3>
+<p>Tutte le chiamate <code>/api/*</code> dal frontend sono proxate a <code>api.mio-hub.me</code> tramite 33 regole di rewrite in <code>vercel.json</code>:</p>
+<table>
+  <thead><tr><th>Gruppo API</th><th>Path</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td>auth</td><td><code>/api/auth/*</code></td><td>Autenticazione Firebase + OAuth SPID/CIE</td></tr>
+    <tr><td>markets</td><td><code>/api/markets/*</code></td><td>Gestione mercati</td></tr>
+    <tr><td>stalls</td><td><code>/api/stalls/*</code></td><td>Gestione posteggi</td></tr>
+    <tr><td>wallets</td><td><code>/api/wallets/*</code></td><td>Borsellino elettronico</td></tr>
+    <tr><td>wallet-history</td><td><code>/api/wallet-history</code></td><td>Storico transazioni wallet</td></tr>
+    <tr><td>canone-unico</td><td><code>/api/canone-unico/*</code></td><td>Canone unico mercatale</td></tr>
+    <tr><td>imprese</td><td><code>/api/imprese/*</code></td><td>Anagrafica imprese</td></tr>
+    <tr><td>sanctions</td><td><code>/api/sanctions/*</code></td><td>Sanzioni e verbali</td></tr>
+    <tr><td>verbali</td><td><code>/api/verbali/*</code></td><td>Verbali polizia municipale</td></tr>
+    <tr><td>notifiche</td><td><code>/api/notifiche/*</code></td><td>Sistema notifiche</td></tr>
+    <tr><td>civic-reports</td><td><code>/api/civic-reports/*</code></td><td>Segnalazioni civiche</td></tr>
+    <tr><td>citizens</td><td><code>/api/citizens/*</code></td><td>Anagrafica cittadini</td></tr>
+    <tr><td>gaming-rewards</td><td><code>/api/gaming-rewards/*</code></td><td>Gamification e premi</td></tr>
+    <tr><td>tcc</td><td><code>/api/tcc/*</code></td><td>Token Crediti Carbonio</td></tr>
+    <tr><td>tesseramenti</td><td><code>/api/tesseramenti/*</code></td><td>Tesseramenti operatori</td></tr>
+    <tr><td>associazioni</td><td><code>/api/associazioni/*</code></td><td>Gestione associazioni</td></tr>
+    <tr><td>bandi</td><td><code>/api/bandi/*</code></td><td>Bandi e graduatorie</td></tr>
+    <tr><td>formazione</td><td><code>/api/formazione/*</code></td><td>Formazione e corsi</td></tr>
+    <tr><td>pagamenti</td><td><code>/api/pagamenti/*</code></td><td>Pagamenti e PagoPA</td></tr>
+    <tr><td>collaboratori</td><td><code>/api/collaboratori/*</code></td><td>Gestione collaboratori</td></tr>
+    <tr><td>dashboard</td><td><code>/api/dashboard/*</code></td><td>Dati dashboard PA</td></tr>
+    <tr><td>integrations</td><td><code>/api/integrations/*</code></td><td>API keys, webhooks, monitoring</td></tr>
+    <tr><td>routing</td><td><code>/api/routing/*</code></td><td>Calcolo percorsi</td></tr>
+    <tr><td>hub</td><td><code>/api/hub/*</code></td><td>Gestione hub fisici</td></tr>
+    <tr><td>mihub</td><td><code>/api/mihub/*</code></td><td>Sistema multi-agente AI</td></tr>
+    <tr><td>guardian</td><td><code>/api/guardian/*</code></td><td>Monitoring e debug</td></tr>
+    <tr><td>mio</td><td><code>/api/mio/*</code></td><td>Agente AI MIO</td></tr>
+    <tr><td>abacus</td><td><code>/api/abacus/*</code></td><td>Query SQL e analisi dati</td></tr>
+    <tr><td>logs</td><td><code>/api/logs/*</code></td><td>Logging sistema</td></tr>
+    <tr><td>system</td><td><code>/api/system/*</code></td><td>Health check e sistema</td></tr>
+    <tr><td>github</td><td><code>/api/github/*</code></td><td>Integrazione GitHub</td></tr>
+  </tbody>
+</table>
+
+<h3>6.3 Endpoint Documentati nel Frontend (107 in realEndpoints.ts)</h3>
+<table>
+  <thead><tr><th>Categoria</th><th>Endpoint</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td>marketsEndpoints</td><td>7</td><td>CRUD mercati</td></tr>
+    <tr><td>stallsEndpoints</td><td>4</td><td>CRUD posteggi</td></tr>
+    <tr><td>vendorsEndpoints</td><td>5</td><td>Gestione operatori</td></tr>
+    <tr><td>dmsHubEndpoints</td><td>6</td><td>Funzioni core DMS</td></tr>
+    <tr><td>concessionsEndpoints</td><td>8</td><td>Gestione concessioni</td></tr>
+    <tr><td>suapEndpoints</td><td>15</td><td>Pratiche SUAP (SCIA, autorizzazioni, spunta)</td></tr>
+    <tr><td>walletsEndpoints</td><td>18</td><td>Wallet, ricariche, PagoPA, tariffe</td></tr>
+    <tr><td>tariffsEndpoints</td><td>2</td><td>Tariffe posteggio</td></tr>
+    <tr><td>impreseEndpoints</td><td>9</td><td>Anagrafica imprese</td></tr>
+    <tr><td>qualificazioniEndpoints</td><td>6</td><td>Qualificazioni e documenti</td></tr>
+    <tr><td>gisEndpoints</td><td>5</td><td>Mappe GIS</td></tr>
+    <tr><td>mobilityEndpoints</td><td>6</td><td>Mobilita' e trasporti</td></tr>
+    <tr><td>abacusSqlEndpoints</td><td>8</td><td>Query SQL analisi dati</td></tr>
+    <tr><td>abacusGithubEndpoints</td><td>6</td><td>Integrazione GitHub</td></tr>
+    <tr><td>tccWalletImpresaEndpoints</td><td>13</td><td>Wallet impresa e TCC</td></tr>
+    <tr><td>firebaseAuthEndpoints</td><td>9</td><td>Autenticazione Firebase</td></tr>
+  </tbody>
+</table>
+
+<h3>6.4 Client API nel Frontend</h3>
+<table>
+  <thead><tr><th>Client</th><th>File</th><th>Endpoint principali</th></tr></thead>
+  <tbody>
+    <tr><td>mihubAPI</td><td><code>utils/mihubAPI.ts</code></td><td>Logs, guardian, mihub tasks, imprese, deploy</td></tr>
+    <tr><td>securityClient</td><td><code>api/securityClient.ts</code></td><td>RBAC, ruoli, permessi, matrice, IP blacklist, utenti</td></tr>
+    <tr><td>orchestratorClient</td><td><code>api/orchestratorClient.ts</code></td><td>Comunicazione multi-agente</td></tr>
+    <tr><td>authClient</td><td><code>api/authClient.ts</code></td><td>Autenticazione Firebase</td></tr>
+    <tr><td>logsClient</td><td><code>api/logsClient.ts</code></td><td>Logging</td></tr>
+    <tr><td>suapClient</td><td><code>api/suap.ts</code></td><td>Pratiche SUAP</td></tr>
+  </tbody>
+</table>
+
+<h3>6.5 API Serverless (Vercel Functions in /api/)</h3>
+<table>
+  <thead><tr><th>Path</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td><code>/api/auth/firebase/sync</code></td><td>Sincronizzazione utente Firebase</td></tr>
+    <tr><td><code>/api/db/init-agent-messages</code></td><td>Inizializzazione tabella messaggi agenti</td></tr>
+    <tr><td><code>/api/logs/createLog</code></td><td>Creazione log</td></tr>
+    <tr><td><code>/api/logs/getLogs</code></td><td>Lettura log</td></tr>
+    <tr><td><code>/api/logs/initSchema</code></td><td>Inizializzazione schema log</td></tr>
+    <tr><td><code>/api/mihub/get-messages</code></td><td>Lettura messaggi multi-agente</td></tr>
+    <tr><td><code>/api/mihub/orchestrator-proxy</code></td><td>Proxy verso orchestratore AI</td></tr>
+    <tr><td><code>/api/mio/agent-logs</code></td><td>Log agenti MIO</td></tr>
+  </tbody>
+</table>
+
+<!-- 7. PAGINE -->
+<div class="page-break"></div>
+<h2>7. Pagine e Rotte Frontend</h2>
+
+<h3>7.1 Riepilogo Rotte</h3>
+<table>
+  <thead><tr><th>Categoria</th><th>Rotte</th><th>Protezione</th></tr></thead>
+  <tbody>
+    <tr><td>Pubbliche</td><td>14</td><td>Nessuna</td></tr>
+    <tr><td>Protette (auth)</td><td>8</td><td>Login richiesto</td></tr>
+    <tr><td>Admin only</td><td>8</td><td>Login + ruolo admin</td></tr>
+    <tr class="total-row"><td><strong>Totale</strong></td><td><strong>30</strong></td><td></td></tr>
+  </tbody>
+</table>
+
+<h3>7.2 Pagine Pubbliche</h3>
+<table>
+  <thead><tr><th>Rotta</th><th>Componente</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td><code>/</code></td><td>HomePage</td><td>Home con ricerca e accesso rapido</td></tr>
+    <tr><td><code>/mappa</code></td><td>MapPage</td><td>Mappa interattiva mercati</td></tr>
+    <tr><td><code>/mappa-italia</code></td><td>MappaItaliaPage</td><td>Mappa nazionale mercati</td></tr>
+    <tr><td><code>/civic</code></td><td>CivicPage</td><td>Segnalazioni civiche</td></tr>
+    <tr><td><code>/route</code></td><td>RoutePage</td><td>Percorso ottimale</td></tr>
+    <tr><td><code>/vetrine</code></td><td>VetrinePage</td><td>Vetrine negozi</td></tr>
+    <tr><td><code>/presentazione</code></td><td>PresentazionePage</td><td>Presentazione pubblica</td></tr>
+    <tr><td><code>/market-gis</code></td><td>MarketGISPage</td><td>Mappa GIS mercati</td></tr>
+    <tr><td><code>/login</code></td><td>Login</td><td>Pagina login</td></tr>
+    <tr><td><code>/auth/callback</code></td><td>AuthCallback</td><td>Callback OAuth SPID/CIE</td></tr>
+    <tr><td><code>/privacy</code></td><td>PrivacyPolicyPage</td><td>Privacy policy</td></tr>
+    <tr><td><code>/accessibilita</code></td><td>AccessibilityPage</td><td>Dichiarazione accessibilita'</td></tr>
+  </tbody>
+</table>
+
+<h3>7.3 Pagine Protette (autenticazione richiesta)</h3>
+<table>
+  <thead><tr><th>Rotta</th><th>Componente</th><th>Admin Only</th></tr></thead>
+  <tbody>
+    <tr><td><code>/dashboard-pa</code></td><td>DashboardPA</td><td>Si</td></tr>
+    <tr><td><code>/dashboard-impresa</code></td><td>DashboardImpresa</td><td>No</td></tr>
+    <tr><td><code>/app/impresa/wallet</code></td><td>WalletImpresaPage</td><td>No</td></tr>
+    <tr><td><code>/app/impresa/presenze</code></td><td>PresenzePage</td><td>No</td></tr>
+    <tr><td><code>/app/impresa/anagrafica</code></td><td>AnagraficaPage</td><td>No</td></tr>
+    <tr><td><code>/wallet</code></td><td>WalletPage</td><td>No</td></tr>
+    <tr><td><code>/mio</code></td><td>MioPage</td><td>Si</td></tr>
+    <tr><td><code>/guardian/*</code></td><td>Guardian*</td><td>Si</td></tr>
+    <tr><td><code>/council</code></td><td>CouncilPage</td><td>Si</td></tr>
+    <tr><td><code>/pm/nuovo-verbale</code></td><td>NuovoVerbalePage</td><td>Si</td></tr>
+  </tbody>
+</table>
+
+<h3>7.4 Tab della DashboardPA (protetti da RBAC)</h3>
+<table>
+  <thead><tr><th>Tab ID</th><th>Nome</th><th>Nascosto in impersonazione</th></tr></thead>
+  <tbody>
+    <tr><td>dashboard</td><td>Overview</td><td>No</td></tr>
+    <tr><td>mercati</td><td>Mercati</td><td>No</td></tr>
+    <tr><td>imprese</td><td>Imprese</td><td>No</td></tr>
+    <tr><td>commercio</td><td>Commercio</td><td>No</td></tr>
+    <tr><td>wallet</td><td>Wallet</td><td>No</td></tr>
+    <tr><td>hub</td><td>Hub</td><td>No</td></tr>
+    <tr><td>controlli</td><td>Controlli</td><td>No</td></tr>
+    <tr><td>comuni</td><td>Comuni</td><td>Si</td></tr>
+    <tr><td>security</td><td>Sicurezza (RBAC)</td><td>Si</td></tr>
+    <tr><td>sistema</td><td>Sistema</td><td>Si</td></tr>
+    <tr><td>ai</td><td>MIO Agent</td><td>Si</td></tr>
+    <tr><td>integrations</td><td>Integrazioni</td><td>Si</td></tr>
+    <tr><td>reports</td><td>Report</td><td>Si</td></tr>
+    <tr><td>workspace</td><td>Workspace</td><td>Si</td></tr>
+  </tbody>
+</table>
+
+<!-- 8. AUTH & RBAC -->
+<div class="page-break"></div>
+<h2>8. Sistema di Autenticazione e RBAC</h2>
+
+<h3>8.1 Metodi di Autenticazione</h3>
+<table>
+  <thead><tr><th>Metodo</th><th>Provider</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td>Google</td><td>Firebase</td><td>Login con account Google</td></tr>
+    <tr><td>Apple</td><td>Firebase</td><td>Login con Apple ID</td></tr>
+    <tr><td>Email/Password</td><td>Firebase</td><td>Registrazione con email</td></tr>
+    <tr><td>SPID</td><td>ARPA Toscana OAuth</td><td>Identita' digitale italiana</td></tr>
+    <tr><td>CIE</td><td>ARPA Toscana OAuth</td><td>Carta d'Identita' Elettronica</td></tr>
+    <tr><td>CNS</td><td>ARPA Toscana OAuth</td><td>Carta Nazionale Servizi</td></tr>
+  </tbody>
+</table>
+
+<h3>8.2 Flusso Autenticazione</h3>
+<pre><code>1. Utente clicca Login -> Firebase popup (Google/Apple/Email)
+                       -> oppure redirect SPID/CIE (ARPA Toscana)
+2. Provider ritorna token
+3. Frontend invia token al backend
+4. Backend verifica con Firebase Admin SDK / OAuth
+5. Backend crea/aggiorna utente nel DB
+6. Backend setta cookie JWT (scadenza 1 anno)
+7. Ogni richiesta porta il cookie
+8. Backend REST estrae user dal cookie JWT</code></pre>
+
+<h3>8.3 Sistema RBAC</h3>
+<p><strong>Struttura tabelle:</strong></p>
+<pre><code>users -> user_role_assignments -> user_roles -> role_permissions -> permissions</code></pre>
+
+<p><strong>Settori ruoli:</strong> sistema, pa, mercato, impresa, esterno, pubblico</p>
+
+<table>
+  <thead><tr><th>ID</th><th>Codice</th><th>Settore</th><th>Livello</th><th>Chi e'</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>super_admin</td><td>sistema</td><td>0</td><td>Admin globale</td></tr>
+    <tr><td>2</td><td>admin_pa</td><td>pa</td><td>10</td><td>Amministratore PA</td></tr>
+    <tr><td>-</td><td>operatore</td><td>pa</td><td>20</td><td>Operatore PA</td></tr>
+    <tr><td>-</td><td>viewer</td><td>pa</td><td>30</td><td>PA sola lettura</td></tr>
+    <tr><td>-</td><td>manager</td><td>mercato</td><td>40</td><td>Gestore mercato</td></tr>
+    <tr><td>-</td><td>owner</td><td>impresa</td><td>50</td><td>Titolare impresa</td></tr>
+    <tr><td>-</td><td>dipendente</td><td>impresa</td><td>60</td><td>Dipendente impresa</td></tr>
+    <tr><td>13</td><td>cittadino</td><td>pubblico</td><td>99</td><td>Cittadino</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Scope permessi:</strong> all, territory, market, own, delegated, none</p>
+<p><strong>Formato permessi:</strong></p>
+<ul>
+  <li><code>tab.view.{tabId}</code> &mdash; visibilita' tab (es. <code>tab.view.security</code>)</li>
+  <li><code>quick.view.{quickId}</code> &mdash; accesso rapido sidebar</li>
+  <li><code>modulo.azione</code> &mdash; operazioni (es. <code>dmsHub.markets.read</code>)</li>
+</ul>
+
+<h3>8.4 Sistema Impersonazione per Comune</h3>
+<p>Il super admin puo' visualizzare l'applicazione come un PA di un comune specifico:</p>
+<pre><code>URL: /dashboard-pa?impersonate=true&comune_id=96&comune_nome=Grosseto</code></pre>
+<p><strong>Effetti:</strong></p>
+<ul>
+  <li>PermissionsContext usa ruolo admin_pa (ID=2)</li>
+  <li>Header X-Comune-Id aggiunto a tutte le fetch</li>
+  <li>Tab nascosti: security, sistema, ai, integrations, comuni, reports, workspace</li>
+  <li>Banner giallo "MODALITA' VISUALIZZAZIONE"</li>
+  <li>Persistenza: sessionStorage (sopravvive alla navigazione, muore col tab)</li>
+</ul>
+
+<!-- 9. INTEGRAZIONI -->
+<h2>9. Integrazioni Esterne</h2>
+
+<h3>9.1 Integrazioni Attive</h3>
+<table>
+  <thead><tr><th>Servizio</th><th>Protocollo</th><th>Stato</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td>Firebase Auth</td><td>SDK</td><td>Attivo</td><td>Autenticazione utenti</td></tr>
+    <tr><td>SPID/CIE/CNS (ARPA Toscana)</td><td>OAuth/OIDC</td><td>Attivo</td><td>Identita' digitale</td></tr>
+    <tr><td>TPER Bologna</td><td>REST + SOAP</td><td>Attivo</td><td>Fermate bus, orari real-time</td></tr>
+    <tr><td>E-FIL PagoPA</td><td>SOAP</td><td>Attivo</td><td>Pagamenti PagoPA</td></tr>
+    <tr><td>Neon PostgreSQL</td><td>TCP/SSL</td><td>Attivo</td><td>Database serverless</td></tr>
+    <tr><td>Slot Editor v3</td><td>REST/JSON</td><td>Parziale</td><td>Import piante mercato</td></tr>
+    <tr><td>GIS Grosseto</td><td>REST</td><td>Parziale</td><td>Mappa GIS standalone</td></tr>
+    <tr><td>Orchestratore AI (MIO-hub)</td><td>REST/SSE</td><td>Attivo</td><td>Multi-agent system</td></tr>
+  </tbody>
+</table>
+
+<h3>9.2 Integrazioni Pianificate</h3>
+<table>
+  <thead><tr><th>Servizio</th><th>Piattaforma</th><th>Priorita'</th><th>Descrizione</th></tr></thead>
+  <tbody>
+    <tr><td>SUAP/SSET (InfoCamere)</td><td>SSET API</td><td>Alta</td><td>Pratiche SCIA, subingressi, allegati</td></tr>
+    <tr><td>Domicilio Digitale (INAD/INI-PEC)</td><td>PDND</td><td>Alta</td><td>PEC ufficiale imprese</td></tr>
+    <tr><td>Anagrafica Imprese completa</td><td>PDND</td><td>Media</td><td>Visura InfoCamere, ATECO, cariche</td></tr>
+    <tr><td>DURC Online</td><td>PDND</td><td>Media</td><td>Regolarita' contributiva</td></tr>
+    <tr><td>Pagamenti Canone (Maggioli)</td><td>REST</td><td>Media</td><td>Posizioni tributarie, avvisi pagoPA</td></tr>
+    <tr><td>Casellario Giudiziale</td><td>PDND</td><td>Bassa</td><td>Requisiti morali operatori</td></tr>
+  </tbody>
+</table>
+
+<h3>9.3 Ecosistema Repository (18 repository)</h3>
+<table>
+  <thead><tr><th>Repository</th><th>Funzione</th></tr></thead>
+  <tbody>
+    <tr><td>dms-hub-app-new</td><td>Applicazione principale (questo repo)</td></tr>
+    <tr><td>mihub-backend</td><td>Backend REST su Hetzner</td></tr>
+    <tr><td>MIO-hub</td><td>Sistema multi-agente AI</td></tr>
+    <tr><td>mio-runner</td><td>Runner agenti AI</td></tr>
+    <tr><td>dms-gemello-core</td><td>BUS HUB + Slot Editor v3 + PNG Tool</td></tr>
+    <tr><td>dms-gis-grosseto</td><td>Mappa GIS standalone Grosseto</td></tr>
+    <tr><td>dms-site</td><td>Sito pubblico DMS</td></tr>
+    <tr><td>+ altri 11 repo</td><td>Servizi ausiliari</td></tr>
+  </tbody>
+</table>
+
+<!-- 10. MULTI-AGENT -->
+<h2>10. Sistema Multi-Agente (MIHUB)</h2>
+
+<h3>10.1 Agenti Attivi</h3>
+<table>
+  <thead><tr><th>Agente</th><th>Ruolo</th></tr></thead>
+  <tbody>
+    <tr><td>MIO</td><td>Agente principale, interfaccia utente, chat</td></tr>
+    <tr><td>Manus</td><td>Backend/infrastruttura, deploy</td></tr>
+    <tr><td>Dev/GPTDev</td><td>Sviluppo codice</td></tr>
+    <tr><td>Abacus</td><td>Query SQL e analisi dati</td></tr>
+    <tr><td>Zapier</td><td>Automazioni e integrazioni</td></tr>
+    <tr><td>Gemini Architect</td><td>Architettura e design</td></tr>
+  </tbody>
+</table>
+
+<h3>10.2 Comunicazione</h3>
+<pre><code>Frontend -> orchestratore.mio-hub.me/api/mihub/orchestrator
+{
+  "targetAgent": "mio|dev|gptdev|manus|zapier|abacus|gemini_arch",
+  "message": "...",
+  "context": {}
+}
+Timeout: 60 secondi per risposta agente</code></pre>
+<p><strong>Tabelle dedicate:</strong> agent_tasks, agent_messages, agent_brain, agent_context, data_bag, system_events</p>
+
+<!-- 11. DEPLOY -->
+<div class="page-break"></div>
+<h2>11. Deploy e Operations</h2>
+
+<h3>11.1 Pipeline di Deploy</h3>
+<pre><code>GitHub Repository (master branch)
+  |
+  +-- Push -> Vercel (frontend auto-deploy, ~2 min)
+  |           dms-hub-app-new.vercel.app
+  |           Static files + CDN globale
+  |
+  +-- Webhook -> Hetzner VPS (backend PM2 restart, ~2 min)
+                 mihub.157-90-29-66.nip.io
+                 orchestratore.mio-hub.me</code></pre>
+
+<h3>11.2 Monitoring Integrato (Guardian)</h3>
+<table>
+  <thead><tr><th>Pagina</th><th>Funzione</th></tr></thead>
+  <tbody>
+    <tr><td><code>/guardian/endpoints</code></td><td>Inventario completo API</td></tr>
+    <tr><td><code>/guardian/logs</code></td><td>Log real-time centralizzati</td></tr>
+    <tr><td><code>/guardian/debug</code></td><td>Proxy test endpoint</td></tr>
+  </tbody>
+</table>
+<p><strong>Metriche tracciate automaticamente:</strong> Tutti gli endpoint chiamati, response time, status code, errori con stack trace</p>
+
+<h3>11.3 Comandi Operativi</h3>
+<pre><code>pnpm dev          # Avvia dev server (Vite + hot reload)
+pnpm build        # Build produzione (frontend Vite + backend esbuild)
+pnpm check        # TypeScript type check (tsc --noEmit)
+pnpm test         # Test (vitest)
+pnpm format       # Prettier
+pnpm db:push      # Genera e applica migrazioni Drizzle
+pnpm docs:update  # Sincronizza docs API + blueprint</code></pre>
+
+<h3>11.4 Variabili d'Ambiente</h3>
+<p><strong>Backend (8 variabili):</strong> DATABASE_URL, JWT_SECRET, VITE_APP_ID, OAUTH_SERVER_URL, OWNER_OPEN_ID, BUILT_IN_FORGE_API_URL, BUILT_IN_FORGE_API_KEY, EFIL_USERNAME, EFIL_PASSWORD</p>
+<p><strong>Frontend (5 variabili VITE_*):</strong> VITE_TRPC_URL, VITE_API_URL, VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID</p>
+
+<!-- 12. SCALABILITA -->
+<h2>12. Scalabilita'</h2>
+
+<h3>12.1 Stato Attuale</h3>
+<table>
+  <thead><tr><th>Metrica</th><th>Valore</th></tr></thead>
+  <tbody>
+    <tr><td>Mercati</td><td>~60</td></tr>
+    <tr><td>Posteggi</td><td>~900</td></tr>
+    <tr><td>Operatori</td><td>~150</td></tr>
+    <tr><td>Concessioni</td><td>~80</td></tr>
+    <tr><td>Presenze/giorno</td><td>~100</td></tr>
+    <tr><td>Utenti</td><td>~50</td></tr>
+    <tr><td>Righe totali DB</td><td>~370.000 (88% log)</td></tr>
+  </tbody>
+</table>
+
+<h3>12.2 Target di Scaling (8.000 mercati)</h3>
+<table>
+  <thead><tr><th>Metrica</th><th>Proiezione</th></tr></thead>
+  <tbody>
+    <tr><td>Mercati</td><td>8.000</td></tr>
+    <tr><td>Posteggi</td><td>120.000</td></tr>
+    <tr><td>Operatori</td><td>40.000</td></tr>
+    <tr><td>Concessioni</td><td>100.000</td></tr>
+    <tr><td>Presenze/giorno</td><td>80.000</td></tr>
+    <tr><td>Presenze/anno</td><td>~24 milioni</td></tr>
+    <tr><td>Utenti totali</td><td>~50.000</td></tr>
+  </tbody>
+</table>
+
+<h3>12.3 Piano di Scaling in 4 Fasi</h3>
+<table>
+  <thead><tr><th>Fase</th><th>Range Mercati</th><th>Costo/mese</th><th>Interventi principali</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>0-500</td><td>0 EUR</td><td>Indici DB, paginazione, retention log, query N+1</td></tr>
+    <tr><td>2</td><td>500-2.000</td><td>~50 EUR</td><td>Neon Pro, RLS, caching React Query, schema territory</td></tr>
+    <tr><td>3</td><td>2.000-5.000</td><td>~200 EUR</td><td>Read replicas, batch processing, partitioning, CDN S3</td></tr>
+    <tr><td>4</td><td>5.000-8.000</td><td>~500 EUR</td><td>Docker + horizontal scaling, sharding, Redis, WebSocket</td></tr>
+  </tbody>
+</table>
+
+<h3>12.4 Metriche Target</h3>
+<table>
+  <thead><tr><th>Metrica</th><th>Fase 1</th><th>Fase 2</th><th>Fase 3</th><th>Fase 4</th></tr></thead>
+  <tbody>
+    <tr><td>Latenza media</td><td>&lt;200ms</td><td>&lt;200ms</td><td>&lt;150ms</td><td>&lt;100ms</td></tr>
+    <tr><td>Uptime</td><td>99%</td><td>99.5%</td><td>99.9%</td><td>99.9%</td></tr>
+    <tr><td>Cold start</td><td>3s</td><td>0s</td><td>0s</td><td>0s</td></tr>
+  </tbody>
+</table>
+
+<!-- 13. SICUREZZA -->
+<h2>13. Sicurezza</h2>
+
+<h3>13.1 Misure Implementate</h3>
+<table>
+  <thead><tr><th>Misura</th><th>Dettaglio</th></tr></thead>
+  <tbody>
+    <tr><td>Autenticazione</td><td>Firebase + OAuth SPID/CIE (multi-provider)</td></tr>
+    <tr><td>Sessioni</td><td>Cookie JWT httpOnly, scadenza 1 anno</td></tr>
+    <tr><td>RBAC</td><td>4 tabelle, 6 settori, scope granulari</td></tr>
+    <tr><td>Audit</td><td>Tabelle access_logs, audit_logs, security_events</td></tr>
+    <tr><td>Login monitoring</td><td>Tabella login_attempts con tracking tentativi falliti</td></tr>
+    <tr><td>IP Blacklist</td><td>Blocco IP dalla tab Sicurezza</td></tr>
+    <tr><td>Input validation</td><td>Zod su tutti gli input API REST</td></tr>
+    <tr><td>CORS</td><td>Configurato per dominio produzione</td></tr>
+    <tr><td>Body limit</td><td>50MB max (per upload file)</td></tr>
+  </tbody>
+</table>
+
+<h3>13.2 Gestione Sicurezza (Tab SecurityTab)</h3>
+<ul>
+  <li>Matrice RBAC completa (ruoli &harr; permessi)</li>
+  <li>Blocco/sblocco account utenti</li>
+  <li>Registro eventi sicurezza</li>
+  <li>Monitoraggio tentativi login falliti</li>
+  <li>Gestione IP Blacklist</li>
+  <li>Permessi tab per ruolo</li>
+  <li>Permessi quick access per ruolo</li>
+</ul>
+
+<!-- 14. ACCESSIBILITA -->
+<h2>14. Accessibilita' e Compliance</h2>
+<table>
+  <thead><tr><th>Requisito</th><th>Stato</th></tr></thead>
+  <tbody>
+    <tr><td>Dark mode default</td><td>Attivo (tema teal #14b8a6)</td></tr>
+    <tr><td>Skip to content</td><td>Implementato (SkipToContent.tsx)</td></tr>
+    <tr><td>ARIA roles</td><td>Implementati (role="main", aria-live, etc.)</td></tr>
+    <tr><td>Cookie consent banner</td><td>Attivo (CookieConsentBanner.tsx)</td></tr>
+    <tr><td>Privacy policy</td><td>Pagina dedicata (/privacy)</td></tr>
+    <tr><td>Dichiarazione accessibilita'</td><td>Pagina dedicata (/accessibilita)</td></tr>
+    <tr><td>Lazy loading pagine</td><td>Tutte le pagine non-critiche</td></tr>
+    <tr><td>Error boundary</td><td>Globale (ErrorBoundary.tsx)</td></tr>
+    <tr><td>Zoom font</td><td>Supportato (ZoomFontUpdater.tsx)</td></tr>
+  </tbody>
+</table>
+
+<!-- 15. DOCUMENTAZIONE -->
+<h2>15. Documentazione di Riferimento</h2>
+<table>
+  <thead><tr><th>Documento</th><th>Percorso</th><th>Contenuto</th></tr></thead>
+  <tbody>
+    <tr><td>Guida Operativa</td><td>CLAUDE.md</td><td>Regole e convenzioni per agenti AI</td></tr>
+    <tr><td>Architettura</td><td>docs/ARCHITECTURE.md</td><td>Architettura sistema dettagliata</td></tr>
+    <tr><td>Database</td><td>docs/DATABASE.md</td><td>Schema DB, convenzioni, regole</td></tr>
+    <tr><td>API</td><td>docs/API.md</td><td>Registro endpoint e convenzioni</td></tr>
+    <tr><td>Operations</td><td>docs/OPERATIONS.md</td><td>Deploy, monitoring, troubleshooting</td></tr>
+    <tr><td>Scaling</td><td>docs/SCALING.md</td><td>Strategia di scaling a 8.000 mercati</td></tr>
+    <tr><td>Blueprint</td><td>docs/BLUEPRINT_*.md</td><td>Audit e piano implementazione</td></tr>
+    <tr><td>Integrazioni</td><td>docs/INTEGRATION_SUMMARY.md</td><td>Riepilogo integrazioni PDND/SUAP</td></tr>
+    <tr><td>Security Audit</td><td>docs/SECURITY_AUDIT_REPORT.md</td><td>Report audit sicurezza</td></tr>
+    <tr><td>Report Interattivo</td><td>client/public/report/index.html</td><td>Presentazione audit interattiva</td></tr>
+  </tbody>
+</table>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>Documento generato il 5 Marzo 2026 &mdash; DMS Hub v3.80.0+ &mdash; Digital Market System Hub</p>
+  <p>Piattaforma per la Gestione Digitale dei Mercati su Area Pubblica</p>
+</div>
+
+</body>
+</html>
