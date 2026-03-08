@@ -1,7 +1,68 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.7.0 (Fix Persistenza Dati Safari/iPad + Salvataggio GIS Completo)
-> **Data:** 07 Marzo 2026
+> **Versione:** 9.8.0 (Fix Salvataggio GIS UPSERT + FK Cascade + Audit Completo)
+> **Data:** 08 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.8.0 (08 Mar 2026)
+> **🔧 FIX CRITICO — SALVATAGGIO GIS UPSERT + FK CASCADE + AUDIT ALLINEAMENTO COMPLETO**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `7fb51fb` | ✅ Allineato |
+> | Hetzner backend (api.mio-hub.me) | `7fb51fb` | ✅ Online, autodeploy attivo |
+> | GitHub `dms-hub-app-new` master | `3e83b4a` | ✅ Allineato |
+> | Vercel frontend | `3e83b4a` | ✅ HTTP 200, auto-deploy |
+> | Neon DB | 4 mercati, **820 stalls** | ✅ Mercato La Piazzola (ID 14) con **237 stalls** Polygon |
+>
+> **Problema risolto (Salvataggio GIS da Slot Editor):**
+> Il salvataggio dei posteggi dallo Slot Editor falliva silenziosamente per una combinazione di fattori:
+> 1. **Foreign Key Cascade non gestita:** `DELETE FROM stalls` falliva per FK chain: `wallet_transactions → vendor_presences → graduatoria_presenze → wallets → suap_* → concessions → autorizzazioni → stalls`
+> 2. **FileReader Promise bloccante:** La conversione PNG in base64 si bloccava indefinitamente nell'iframe cross-origin su Safari/iPad (ITP)
+> 3. **Prompt Hub ID errato:** Il prompt chiedeva l'Hub ID invece del Market ID, creando record orfani
+>
+> **Soluzione implementata (mihub-backend-rest — 7 commit dopo v9.7.0):**
+> - `7fb51fb` — Timeout 5s su conversione PNG base64 (`Promise.race`) per evitare blocco su Safari/iPad
+> - `7c1b902` — Messaggi di stato visibili durante salvataggio `[1/4] [2/4] [3/4] [4/4]`
+> - `03ae915` — Prompt ora chiede **Market ID** (non Hub ID), pre-compilato dal BUS, con lista mercati esistenti
+> - `04d55a5` — FK cascade completa: cancella tutte le tabelle dipendenti nell'ordine corretto prima degli stalls
+> - `ead798d` — FK cascade intermedia (vendor_presences, wallets, suap_pratiche)
+> - `14e57cb` — FK cascade base (graduatoria_presenze, concessions, autorizzazioni)
+> - `707849b` — UPSERT `import-market`: se riceve `market_id`, aggiorna il mercato esistente invece di crearne uno nuovo
+>
+> **Soluzione frontend (dms-hub-app-new — 3 commit dopo v9.7.0):**
+> - `3e83b4a` — Fix key prop iframe per forzare re-render al cambio step
+> - `c71789c` — Ripristino BusHubEditor.tsx originale
+> - `1b17163` — Navigazione interna iframe per preservare IndexedDB su Safari/iPad
+>
+> **Modifiche Route Backend:**
+> - `routes/gis.js` — `import-market` ora supporta UPSERT con `market_id`, FK cascade delete completa, ricerca per nome come fallback
+> - `slot_editor_v3_unified.html` — Prompt Market ID, timeout PNG 5s, messaggi di stato step-by-step
+>
+> **Stato Database (Neon) — 08 Mar 2026:**
+> | Tabella | Conteggio | Note |
+> |---|---|---|
+> | `markets` | 4 | Grosseto (160), Modena (382), Cervia (41), **Bologna (237)** |
+> | `stalls` | 820 | +220 rispetto a v9.7.0 |
+> | `hub_locations` | 84 | Hub 109 orfano da pulire |
+> | `market_geometry` | 3 | Manca Grosseto (ID 1) |
+> | `concessions` | 51 | Invariato |
+> | `users` | 11 | Invariato |
+>
+> **Audit Branch GitHub:**
+> | Repo | Branch | Stato | Azione |
+> |---|---|---|---|
+> | `mihub-backend-rest` | `claude/paste-operational-message-VkUsh` | Completamente dietro master | Cancellare |
+> | `mihub-backend-rest` | `feature/guardian-blueprint-sync` | 1029 commit dietro master | Cancellare |
+> | `dms-hub-app-new` | `claude/review-production-fixes-3sUvQ` | 2 commit docs ahead, 14 behind | Merge docs o cancellare |
+> | `dms-hub-app-new` | 10+ branch `feature/*` e `fix/*` | Tutti stale | Cancellare |
+>
+> **Azioni raccomandate:**
+> 1. Cancellare Hub 109 orfano: `DELETE FROM hub_locations WHERE id = 109`
+> 2. Generare geometria per Mercato Grosseto (ID 1) via Slot Editor
+> 3. Pulire branch obsoleti da entrambi i repository
+> 4. Ottimizzare `import-market` (attualmente ~90s per 237 stalls)
 >
 > ---
 > ### CHANGELOG v9.7.0 (07 Mar 2026)
