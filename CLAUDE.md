@@ -23,11 +23,19 @@ l'app come un PA di uno specifico comune.
 
 **Stack tecnologico:**
 
-- Frontend: React 19 + Vite 7 + Wouter + Tailwind 4 + shadcn/ui
-- Backend: Express 4 + tRPC 11 + Drizzle ORM 0.44
+- Frontend: React 19 + Vite 7 + Wouter + Tailwind 4 + shadcn/ui (Vercel)
+- Backend: Express 4 + 730+ endpoint REST (repo separato `mihub-backend-rest` su Hetzner)
 - Database: PostgreSQL su Neon (serverless)
 - Auth: Firebase + OAuth (SPID/CIE/CNS)
-- Runtime: Node.js 18+ / pnpm 10.4+
+- AI: AVA (assistente AI) con Ollama qwen2.5:7b + SSE streaming
+- Runtime frontend: Node.js 18+ / pnpm 10.4+
+
+**Architettura a 2 repository:**
+
+- **`dms-hub-app-new`** (questo repo) = Frontend React + proxy Vercel
+- **`mihub-backend-rest`** (repo separato) = Backend Express REST su Hetzner (`api.mio-hub.me`)
+- Il vecchio backend tRPC e' archiviato in `_cantina/server_archive/` — NON usare
+- Il frontend chiama il backend REST via `client/src/lib/trpcHttp.ts` (adapter che traduce le vecchie chiamate tRPC in REST)
 
 ## Comandi essenziali
 
@@ -57,56 +65,54 @@ pnpm docs:update            # Sincronizza docs API + blueprint
 │   ├── components/         # Componenti UI (GestioneMercati, WalletPanel, etc.)
 │   ├── pages/              # Pagine (DashboardPA e' la principale)
 │   ├── contexts/           # State management (Firebase Auth, Permissions, MIO)
-│   ├── api/                # Client API (orchestrator, auth, logs)
-│   ├── hooks/              # Custom hooks (useAuth, usePermissions, etc.)
-│   └── lib/                # Utilities (trpc client, firebase config)
-├── server/                 # Backend Express + tRPC
-│   ├── _core/              # Core: index.ts (entry), trpc.ts, oauth.ts, env.ts
-│   ├── services/           # Servizi: TPER, E-FIL PagoPA, API logs
-│   ├── routers.ts          # Router principale tRPC (appRouter)
-│   ├── db.ts               # Connessione DB + query helpers
-│   ├── dmsHubRouter.ts     # Mercati, posteggi, operatori, concessioni
-│   ├── walletRouter.ts     # Borsellino elettronico + PagoPA
-│   ├── integrationsRouter.ts # API keys, webhooks, monitoring
-│   ├── mihubRouter.ts      # Sistema multi-agente
-│   ├── mioAgentRouter.ts   # Log agenti AI
-│   └── guardianRouter.ts   # Monitoring e debug
+│   ├── api/                # Client API (orchestratorClient, auth, logs)
+│   ├── hooks/              # Custom hooks (useAuth, usePermissions, useImpersonation)
+│   ├── lib/                # Utilities (trpcHttp.ts = adapter REST, firebase config)
+│   └── config/             # Configurazione (api.ts = URL backend)
+├── api/                    # Vercel serverless functions (auth, db, logs, mihub, mio)
+├── src/                    # Componenti e pagine extra (assets, components, lib, pages)
 ├── drizzle/                # Schema DB (schema.ts = source of truth)
 │   └── schema.ts           # Tutte le definizioni delle tabelle
-├── shared/                 # Costanti e tipi condivisi frontend/backend
+├── shared/                 # Costanti e tipi condivisi
 ├── migrations/             # Migrazioni SQL manuali
 ├── scripts/                # Script di utility e manutenzione
 ├── docs/                   # Documentazione dettagliata per dominio
-└── .mio-agents/            # Configurazione agenti AI
+├── _cantina/               # Codice archiviato (NON usare)
+│   └── server_archive/     # Vecchio backend tRPC (dismesso)
+├── vercel.json             # Rewrites proxy: /api/* → api.mio-hub.me
+└── MASTER_BLUEPRINT_MIOHUB.md  # Blueprint di sistema (v9.8.0)
 ```
+
+**NOTA:** Il backend e' nel repo separato `mihub-backend-rest` su GitHub.
+Questo repo contiene SOLO il frontend + proxy Vercel.
 
 ## REGOLE INVIOLABILI
 
 ### 1. Database
 
 - **Schema source of truth**: `drizzle/schema.ts` - MAI creare tabelle direttamente via SQL
-- **ORM obbligatorio**: Usa sempre Drizzle ORM, mai raw SQL (tranne per migrazioni)
-- **Connessione lazy**: La connessione DB e' in `server/db.ts` via `getDb()` - e' singleton e lazy
-- **Driver**: `postgres` (postgres-js) - NON `pg` - sono driver diversi
 - **Neon serverless**: Il DB si spegne dopo 5 min di inattivita'. Gestisci i timeout
 - **Naming convention**: Tabelle in `snake_case`, colonne in `camelCase` nel codice TypeScript
 - **MAI droppare tabelle** in produzione senza backup e approvazione esplicita
 - **MAI modificare colonne esistenti** che contengono dati - aggiungi nuove colonne
+- **FK cascade**: Attenzione alle catene FK (stalls → concessions → autorizzazioni → wallets → etc.)
 
 ### 2. API
 
-- **Tutte le API passano per tRPC**: Endpoint base `/api/trpc/{router.procedure}`
-- **Router registry**: Ogni nuovo router va registrato in `server/routers.ts`
-- **Procedure types**: `publicProcedure` (aperta), `protectedProcedure` (auth), `adminProcedure` (admin)
-- **Validazione**: Usa sempre Zod per input validation nelle procedure tRPC
-- **Logging automatico**: Ogni chiamata viene loggata in `api_metrics` automaticamente
-- **MAI creare endpoint Express separati** - usa sempre tRPC
-- **SuperJSON**: Il transformer gestisce Date, BigInt, etc. - non serializzare manualmente
+- **Backend REST separato**: Repo `mihub-backend-rest` su Hetzner (`api.mio-hub.me`)
+- **730+ endpoint REST**: Tutti prefissati con `/api/` (es. `/api/markets`, `/api/wallets`, `/api/stalls`)
+- **Proxy Vercel**: `vercel.json` contiene i rewrites `/api/*` → `api.mio-hub.me`
+- **Adapter frontend**: `client/src/lib/trpcHttp.ts` traduce le vecchie chiamate tRPC in REST
+- **Per nuovi endpoint**: Chiedere a Manus di aggiungerli nel backend REST, poi aggiungere il rewrite in `vercel.json`
+- **MAI creare endpoint tRPC** — il backend tRPC e' dismesso e archiviato in `_cantina/`
+- **Auth backend**: Session token via cookie JWT, middleware `requirePaymentAuth` su Hetzner
 
 ### 3. Frontend
 
 - **Router**: Wouter (NON React Router, NON Next.js)
-- **State**: React Context + React Query (via tRPC) - NON Redux, NON Zustand
+- **State**: React Context - NON Redux, NON Zustand
+- **Chiamate API**: `trpcQuery()` / `trpcMutate()` da `client/src/lib/trpcHttp.ts` (sono fetch REST, non tRPC vero)
+- **Config URL**: `client/src/config/api.ts` — tutte le URL base (`MIHUB_API_BASE_URL = api.mio-hub.me`)
 - **UI components**: shadcn/ui (in `client/src/components/ui/`) - NON Material UI, NON Chakra
 - **Styling**: Tailwind CSS 4 - NON CSS modules, NON styled-components
 - **Icons**: Lucide React - NON altre librerie di icone
@@ -117,9 +123,9 @@ pnpm docs:update            # Sincronizza docs API + blueprint
 ### 4. Autenticazione e RBAC
 
 - **Firebase** e' il provider primario (progetto `dmshub-auth-2975e`)
-- **OAuth/SPID** via callback in `server/_core/oauth.ts`
+- **OAuth/SPID** via callback gestito dal backend REST su Hetzner
 - **Session**: Cookie JWT (`session`) con scadenza 1 anno
-- **Context**: `FirebaseAuthContext` sul frontend, `ctx.user` nel backend tRPC
+- **Context frontend**: `FirebaseAuthContext` per lo stato auth sul client
 
 **Sistema RBAC (Role-Based Access Control):**
 
@@ -146,7 +152,7 @@ pnpm docs:update            # Sincronizza docs API + blueprint
 - **ESM modules** (`"type": "module"` in package.json)
 - **Path aliases**: `@/` = `client/src/`, `@shared/` = `shared/`
 - **Formatter**: Prettier (esegui `pnpm format` prima di committare)
-- **Import pattern**: Dynamic imports per le funzioni DB nei router (vedi `routers.ts`)
+- **Import pattern**: Dynamic imports dove necessario
 - **MAI duplicare logica** - se esiste gia' una funzione, usala
 - **MAI creare file .md** di documentazione senza richiesta esplicita
 
@@ -161,47 +167,42 @@ pnpm docs:update            # Sincronizza docs API + blueprint
 
 ## Infrastruttura
 
-| Servizio      | URL                        | Dettagli              |
-| ------------- | -------------------------- | --------------------- |
-| Frontend      | dms-hub-app-new.vercel.app | Vercel auto-deploy    |
-| Backend tRPC  | mihub.157-90-29-66.nip.io  | Hetzner + PM2         |
-| Orchestratore | orchestratore.mio-hub.me   | Legacy REST backend   |
-| DB Neon       | ep-bold-silence-adftsojg   | PostgreSQL serverless |
-| Firebase      | dmshub-auth-2975e          | Auth provider         |
+| Servizio     | URL                        | Dettagli                            |
+| ------------ | -------------------------- | ----------------------------------- |
+| Frontend     | dms-hub-app-new.vercel.app | Vercel auto-deploy                  |
+| Backend REST | api.mio-hub.me             | Hetzner VPS + autodeploy (unico!)   |
+| DB Neon      | ep-bold-silence-adftsojg   | PostgreSQL serverless               |
+| Firebase     | dmshub-auth-2975e          | Auth provider                       |
+
+**Backend dismessi (NON usare):**
+- `orchestratore.mio-hub.me` — dismesso, riferimenti rimossi
+- `mihub.157-90-29-66.nip.io` — dismesso, riferimenti rimossi
+- `manusvm.computer` — morto, riferimenti rimossi
 
 ## Variabili d'ambiente richieste
-
-### Backend (server)
-
-```
-DATABASE_URL          # PostgreSQL connection string (Neon)
-JWT_SECRET            # Chiave per firmare i token di sessione
-VITE_APP_ID           # OAuth app identifier
-OAUTH_SERVER_URL      # URL del server OAuth Manus
-OWNER_OPEN_ID         # OpenID dell'utente admin
-BUILT_IN_FORGE_API_URL # Forge API endpoint
-BUILT_IN_FORGE_API_KEY # Forge API key
-```
 
 ### Frontend (VITE\_\*)
 
 ```
-VITE_TRPC_URL         # URL del backend tRPC
-VITE_API_URL          # URL base API
+VITE_MIHUB_API_URL    # URL backend REST (default: https://api.mio-hub.me)
+VITE_API_URL          # URL base API (alias, default: https://api.mio-hub.me)
 VITE_FIREBASE_API_KEY # Firebase Web API Key
 VITE_FIREBASE_AUTH_DOMAIN
 VITE_FIREBASE_PROJECT_ID
 ```
 
+**Nota:** Le variabili backend (DATABASE_URL, JWT_SECRET, etc.) sono nel repo `mihub-backend-rest`, non qui.
+
 ## Flusso di una nuova feature
 
 1. **Schema**: Aggiungi la tabella in `drizzle/schema.ts`
 2. **Migrazione**: Esegui `pnpm db:push`
-3. **Query helpers**: Aggiungi funzioni in `server/db.ts` (pattern `getDb()` + query)
-4. **Router tRPC**: Aggiungi procedure nel router appropriato (o creane uno nuovo + registra in `routers.ts`)
-5. **Frontend**: Usa `trpc.routerName.procedureName.useQuery()` o `.useMutation()`
-6. **UI**: Usa componenti shadcn/ui + Tailwind
-7. **Test**: Verifica con `pnpm check` (types) + `pnpm test`
+3. **Backend** (repo `mihub-backend-rest`): Chiedi a Manus di creare gli endpoint REST
+4. **Proxy**: Aggiungi il rewrite in `vercel.json` se serve un nuovo path `/api/nuovorisorsa/*`
+5. **Frontend**: Usa `trpcQuery("dmsHub.xxx")` o `trpcMutate("dmsHub.xxx")` da `trpcHttp.ts`
+6. **Mapping** (se necessario): Aggiungi la procedura in `PROCEDURE_MAP` in `trpcHttp.ts`
+7. **UI**: Usa componenti shadcn/ui + Tailwind
+8. **Test**: Verifica con `pnpm check` (types) + `pnpm test`
 
 ## Flusso di un bug fix
 
@@ -211,22 +212,30 @@ VITE_FIREBASE_PROJECT_ID
 4. **Verifica** con `pnpm check`
 5. **NON** aggiungere feature, refactoring o "miglioramenti" al fix
 
-## Router tRPC disponibili
+## Aree API backend REST (api.mio-hub.me)
 
-| Router        | Prefisso         | Responsabilita'                                       |
-| ------------- | ---------------- | ----------------------------------------------------- |
-| system        | system.\*        | Health check                                          |
-| auth          | auth.\*          | Login/logout, sessione corrente                       |
-| analytics     | analytics.\*     | Dashboard PA (overview, markets, shops, transactions) |
-| dmsHub        | dmsHub.\*        | Mercati, posteggi, operatori, concessioni, presenze   |
-| wallet        | wallet.\*        | Borsellino elettronico, ricariche, PagoPA             |
-| integrations  | integrations.\*  | API keys, webhooks, connessioni esterne               |
-| mihub         | mihub.\*         | Multi-agente: tasks, projects, brain, messages        |
-| mioAgent      | mioAgent.\*      | Log agenti AI                                         |
-| guardian      | guardian.\*      | Monitoring API, debug, logs                           |
-| tper          | tper.\*          | Integrazione trasporto TPER Bologna                   |
-| logs          | logs.\*          | System logs                                           |
-| carbonCredits | carbonCredits.\* | Crediti carbonio TCC                                  |
+| Area             | Path REST              | Responsabilita'                                       |
+| ---------------- | ---------------------- | ----------------------------------------------------- |
+| Markets          | /api/markets/*         | Mercati, posteggi, concessioni, presenze              |
+| Stalls           | /api/stalls/*          | Posteggi singoli                                      |
+| GIS              | /api/gis/*             | Mappe, geometrie, slot editor                         |
+| Wallets          | /api/wallets/*         | Borsellino elettronico, ricariche                     |
+| Canone Unico     | /api/canone-unico/*    | Rate, more, semaforo                                  |
+| Sanctions        | /api/sanctions/*       | Sanzioni e verbali                                    |
+| Imprese          | /api/imprese/*         | Anagrafica imprese                                    |
+| SUAP             | /api/suap/*            | Pratiche SCIA, autorizzazioni                         |
+| Associazioni     | /api/associazioni/*    | Gestione associazioni di categoria                    |
+| Tesseramenti     | /api/tesseramenti/*    | Tesseramenti associativi                              |
+| Pagamenti        | /api/pagamenti/*       | Quote, servizi, corsi                                 |
+| Hub              | /api/hub/*             | Hub locations                                         |
+| Guardian         | /api/guardian/*        | Monitoring API, debug, logs                           |
+| AI Chat (AVA)    | /api/ai/chat/*         | Assistente AI con SSE streaming                       |
+| Integrations     | /api/integrations/*    | API keys, webhooks, connessioni                       |
+| Dashboard        | /api/dashboard/*       | Statistiche aggregate                                 |
+| Auth             | /api/auth/*            | Login/logout, sessione                                |
+| TCC              | /api/tcc/*             | Crediti carbonio                                      |
+| Civic            | /api/civic-reports/*   | Segnalazioni civiche                                  |
+| Logs             | /api/logs/*            | System logs                                           |
 
 ## Pagine frontend e accesso per ruolo
 
@@ -310,17 +319,18 @@ se il ruolo dell'utente ha il permesso `tab.view.{tabId}`.
 - [ ] Nessun `console.log` di debug rimasto (usa `console.warn` o `console.error` se necessario)
 - [ ] Schema DB aggiornato se hai aggiunto tabelle/colonne
 - [ ] Nessun segreto o credenziale nel codice
-- [ ] Le nuove route tRPC sono registrate in `routers.ts`
+- [ ] Nuovi path API hanno il rewrite in `vercel.json`
 - [ ] Le nuove pagine sono registrate in `App.tsx`
 
 ## Errori comuni da evitare
 
-| Errore                                            | Soluzione                                                     |
-| ------------------------------------------------- | ------------------------------------------------------------- |
-| "Connection terminated due to connection timeout" | Neon cold start. Ritenta dopo 3 secondi                       |
-| Tabella non trovata                               | Controlla `drizzle/schema.ts`, poi `pnpm db:push`             |
-| CORS error                                        | Le API devono passare per `/api/trpc` - non usare URL diretti |
-| `any` type error                                  | Importa il tipo corretto da `drizzle/schema.ts`               |
-| Import non trovato                                | Usa `@/` per frontend, import relativo per backend            |
-| Firebase auth fallisce                            | Verifica `VITE_FIREBASE_*` env vars nel `.env`                |
-| PM2 restart loop                                  | Controlla i log: `pm2 logs --lines 50` su Hetzner             |
+| Errore                                            | Soluzione                                                          |
+| ------------------------------------------------- | ------------------------------------------------------------------ |
+| "Connection terminated due to connection timeout" | Neon cold start. Ritenta dopo 3 secondi                            |
+| Tabella non trovata                               | Controlla `drizzle/schema.ts`, poi `pnpm db:push`                  |
+| CORS error                                        | Le API devono passare per il proxy Vercel (`vercel.json` rewrites) |
+| 404 su /api/xxx                                   | Manca il rewrite in `vercel.json` per quel path                    |
+| `any` type error                                  | Importa il tipo corretto da `drizzle/schema.ts`                    |
+| Import non trovato                                | Usa `@/` per frontend, import relativo per backend                 |
+| Firebase auth fallisce                            | Verifica `VITE_FIREBASE_*` env vars nel `.env`                     |
+| FK constraint violation                           | Attenzione alle catene FK — vedi blueprint v9.8.0 per l'ordine     |
