@@ -1,7 +1,49 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.8.0 (Fix Salvataggio GIS UPSERT + FK Cascade + Audit Completo)
-> **Data:** 08 Marzo 2026
+> **Versione:** 9.8.1 (Merge Fix Claude + Pulizia Produzione)
+> **Data:** 10 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.8.1 (10 Mar 2026)
+> **🧹 MERGE FIX CLAUDE — PULIZIA PRODUZIONE + SICUREZZA + DOCUMENTAZIONE**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `8220688` | ✅ Allineato |
+> | Hetzner backend (api.mio-hub.me) | `8220688` | ✅ Online, autodeploy attivo |
+> | GitHub `dms-hub-app-new` master | `d771733` | ✅ Allineato |
+> | Vercel frontend | `d771733` | ✅ HTTP 200, auto-deploy |
+> | Neon DB | 4 mercati, **820 stalls** | ✅ Stabile |
+>
+> **Merge da branch `claude/review-production-fixes-3sUvQ` (7 commit):**
+>
+> *Fix sicurezza:*
+> - `1db5bbf` — Hardening `new Function()` in MessageContent.tsx: blocca pattern pericolosi (fetch, eval, document.cookie, localStorage, WebSocket) prima dell'esecuzione
+>
+> *Pulizia produzione:*
+> - `56d6842` — Rimossi **87 righe** di console.log di debug da: ConcessioneForm.tsx (17), SciaForm.tsx (2), BusHubEditor.tsx (2), PngTransparentTool.tsx, SlotEditorV3.tsx
+> - `56d6842` — Aggiunto `loading="lazy"` su **13 immagini**: VetrinePage (5), NativeReportComponent (2), SystemBlueprintNavigator (2), CivicReportsLayer (1), AnagraficaPage (1), SlotEditorV3 (1)
+> - `56d6842` — Guardian refetchInterval da 10s → 30s (allineato a GuardianLogsSection)
+>
+> *Documentazione:*
+> - `74f91e3` + `9d375c8` + `bb5d08f` — Aggiunta Scheda Tecnica del Sistema (HTML + Markdown)
+> - `d04ef40` — CLAUDE.md aggiornato per architettura REST (rimossi riferimenti tRPC)
+> - `404f29c` — Blueprint v9.8.0 allineato da master
+>
+> **Altre modifiche backend (Manus):**
+> - `8220688` — Fix DMSBUS 404: `/api/tmp/json/:key` ritorna 200 con `null` invece di 404 per chiavi inesistenti
+> - `71b8e7a` — Import-market ottimizzato: batch INSERT con `unnest()`, CTE cascade DELETE, UPSERT geometry (da 90s a 1.5s per 237 stalls)
+> - Pulizia log errori: azzerati 14.426 errori accumulati (di cui 5.262 falsi 404 DMSBUS)
+> - Cancellato Hub 109 orfano, hub_locations: 83
+> - Puliti tutti i branch obsoleti da entrambi i repo
+>
+> **Problemi noti (da pianificare separatamente):**
+> - DashboardPA.tsx = 9.775 righe (mega-componente, richiede refactor)
+> - Zero `React.memo` nel codebase (performance)
+> - Missing `AbortController` su fetch (memory leak)
+> - API keys in `VITE_*` (MercaWeb, Forge) visibili nel bundle
+> - Auth tokens in localStorage (valutare httpOnly cookies)
 >
 > ---
 > ### CHANGELOG v9.8.0 (08 Mar 2026)
@@ -45,7 +87,7 @@
 > |---|---|---|
 > | `markets` | 4 | Grosseto (160), Modena (382), Cervia (41), **Bologna (237)** |
 > | `stalls` | 820 | +220 rispetto a v9.7.0 |
-> | `hub_locations` | 84 | Hub 109 orfano da pulire |
+> | `hub_locations` | 83 | Hub 109 orfano cancellato |
 > | `market_geometry` | 3 | Manca Grosseto (ID 1) |
 > | `concessions` | 51 | Invariato |
 > | `users` | 11 | Invariato |
@@ -53,10 +95,10 @@
 > **Audit Branch GitHub:**
 > | Repo | Branch | Stato | Azione |
 > |---|---|---|---|
-> | `mihub-backend-rest` | `claude/paste-operational-message-VkUsh` | Completamente dietro master | Cancellare |
-> | `mihub-backend-rest` | `feature/guardian-blueprint-sync` | 1029 commit dietro master | Cancellare |
-> | `dms-hub-app-new` | `claude/review-production-fixes-3sUvQ` | 2 commit docs ahead, 14 behind | Merge docs o cancellare |
-> | `dms-hub-app-new` | 10+ branch `feature/*` e `fix/*` | Tutti stale | Cancellare |
+> | `mihub-backend-rest` | `claude/paste-operational-message-VkUsh` | ✅ Cancellato | — |
+> | `mihub-backend-rest` | `feature/guardian-blueprint-sync` | ✅ Cancellato | — |
+> | `dms-hub-app-new` | `claude/review-production-fixes-3sUvQ` | ✅ Mergiato in master | Cancellato |
+> | `dms-hub-app-new` | 10+ branch `feature/*` e `fix/*` | ✅ Tutti cancellati | — |
 >
 > **Azioni raccomandate:**
 > 1. Cancellare Hub 109 orfano: `DELETE FROM hub_locations WHERE id = 109`
