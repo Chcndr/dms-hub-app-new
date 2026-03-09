@@ -405,9 +405,6 @@ export default function SciaForm({
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
-          console.log(
-            `[SciaForm] Caricate ${impreseJson.data.length} imprese (modalità leggera)`
-          );
         }
       } catch (error) {
         console.error("Errore fetch dati:", error);
@@ -737,9 +734,6 @@ export default function SciaForm({
             scia_precedente_comune:
               sciaPrec.comune_presentazione || prev.scia_precedente_comune,
           }));
-          console.log(
-            `[SciaForm] SCIA precedente trovata: ${sciaPrec.numero_protocollo}`
-          );
         }
       }
     } catch (error) {

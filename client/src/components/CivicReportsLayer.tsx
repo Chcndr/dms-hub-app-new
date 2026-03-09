@@ -296,6 +296,7 @@ export function CivicReportsLayer({
                       src={report.photoUrl}
                       alt="Foto segnalazione"
                       className="w-full h-20 object-cover rounded"
+                      loading="lazy"
                     />
                   </div>
                 )}

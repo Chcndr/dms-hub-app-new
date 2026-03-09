@@ -32,7 +32,7 @@ export default function GuardianDebugSection() {
     queryKey: ["guardian-errors"],
     queryFn: () => logsAPI.getLogs({ success: false, limit: 50 }),
     retry: 1,
-    refetchInterval: 10000, // Refresh ogni 10 secondi
+    refetchInterval: 30000, // Refresh ogni 30 secondi
   });
 
   // Query per tutti i log per calcolare le statistiche
@@ -40,7 +40,7 @@ export default function GuardianDebugSection() {
     queryKey: ["guardian-logs-all"],
     queryFn: () => logsAPI.getLogs({ limit: 100 }),
     retry: 1,
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   const errorLogs = errorLogsData?.logs || [];

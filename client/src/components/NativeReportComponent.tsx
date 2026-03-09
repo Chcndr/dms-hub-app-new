@@ -595,6 +595,7 @@ export function NativeReportComponent() {
                       src={activeModule.image}
                       alt={activeModule.title}
                       className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-[1.02]"
+                      loading="lazy"
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0b1220] via-[#0b1220]/90 to-transparent p-6 pt-12">
                       <div className="flex items-center gap-3 mb-2">
@@ -719,6 +720,7 @@ export function NativeReportComponent() {
                       src={slide.image}
                       alt={slide.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332] to-transparent" />
                   </div>
