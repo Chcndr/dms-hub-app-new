@@ -279,18 +279,6 @@ export default function ConcessioneForm({
       try {
         setLoadingMarkets(true);
 
-        // DEBUG: Mostra initialData
-        console.log(
-          "[ConcessioneForm] DEBUG initialData:",
-          JSON.stringify(initialData, null, 2)
-        );
-        console.log(
-          "[ConcessioneForm] DEBUG mercato_id:",
-          initialData?.mercato_id,
-          "tipo:",
-          typeof initialData?.mercato_id
-        );
-
         // Carica il prossimo numero di concessione disponibile
         try {
           const concessionsRes = await fetch(
@@ -312,10 +300,6 @@ export default function ConcessioneForm({
                 ...prev,
                 numero_protocollo: `#${nextNumber}`,
               }));
-              console.log(
-                "[ConcessioneForm] Numero progressivo proposto:",
-                `#${nextNumber}`
-              );
             }
           }
         } catch (err) {
@@ -332,22 +316,10 @@ export default function ConcessioneForm({
         const marketsJson = await marketsRes.json();
         if (marketsJson.success && marketsJson.data) {
           setMarkets(marketsJson.data);
-          console.log(
-            "[ConcessioneForm] Mercati caricati:",
-            marketsJson.data.length
-          );
-          console.log(
-            "[ConcessioneForm] initialData.mercato_id:",
-            initialData?.mercato_id
-          );
 
           // Se c'è mercato_id da initialData, trova e seleziona il mercato
           if (initialData?.mercato_id) {
             const mercatoIdNum = Number(initialData.mercato_id);
-            console.log(
-              "[ConcessioneForm] Cercando mercato con ID:",
-              mercatoIdNum
-            );
 
             // Cerca sia per ID numerico che per stringa
             const targetMarket = marketsJson.data.find(
@@ -355,13 +327,7 @@ export default function ConcessioneForm({
                 m.id === mercatoIdNum ||
                 m.id.toString() === String(initialData.mercato_id)
             );
-            console.log("[ConcessioneForm] Mercato trovato:", targetMarket);
-
             if (targetMarket) {
-              console.log(
-                "[ConcessioneForm] Mercato trovato! Chiamando handleMarketChange con ID:",
-                targetMarket.id.toString()
-              );
 
               // Setta gli state per il Select
               setSelectedMarketId(targetMarket.id);
@@ -379,12 +345,6 @@ export default function ConcessioneForm({
                   initialData?.tipo_posteggio || prev.tipo_posteggio,
               }));
 
-              console.log(
-                "[ConcessioneForm] Mercato pre-selezionato:",
-                targetMarket.name,
-                "ID:",
-                targetMarket.id
-              );
             } else {
               console.warn(
                 "[ConcessioneForm] Mercato non trovato con ID:",
@@ -406,10 +366,6 @@ export default function ConcessioneForm({
                     ubicazione: marketByName.municipality,
                     giorno: marketByName.days,
                   }));
-                  console.log(
-                    "[ConcessioneForm] Mercato trovato per nome:",
-                    marketByName.name
-                  );
                 }
               }
             }
@@ -434,11 +390,6 @@ export default function ConcessioneForm({
               initialData.partita_iva ||
               ""
             ).toUpperCase();
-            console.log(
-              "[ConcessioneForm] Cercando impresa con CF/PIVA:",
-              searchValue
-            );
-
             const foundImpresa = impreseJson.data.find(
               (i: Impresa) =>
                 i.codice_fiscale?.toUpperCase() === searchValue ||
@@ -448,10 +399,6 @@ export default function ConcessioneForm({
             );
 
             if (foundImpresa) {
-              console.log(
-                "[ConcessioneForm] Impresa trovata:",
-                foundImpresa.denominazione
-              );
               // Popola i campi con i dati dell'impresa (inclusi provincia e CAP)
               setFormData(prev => ({
                 ...prev,
@@ -501,8 +448,6 @@ export default function ConcessioneForm({
               toast.success("Impresa trovata e dati completati", {
                 description: foundImpresa.denominazione,
               });
-            } else {
-              console.log("[ConcessioneForm] Impresa non trovata nel database");
             }
           }
         }
@@ -630,25 +575,9 @@ export default function ConcessioneForm({
                   parseFloat(selectedMarket.cost_per_sqm) *
                   selectedMarket.annual_market_days;
                 canone = canoneAnnuo.toFixed(2);
-                console.log(
-                  "[ConcessioneForm] Canone calcolato:",
-                  canone,
-                  "(",
-                  targetStall.area_mq,
-                  "mq x",
-                  selectedMarket.cost_per_sqm,
-                  "€/mq x",
-                  selectedMarket.annual_market_days,
-                  "giorni)"
-                );
               } else {
-                console.log(
-                  "[ConcessioneForm] Canone non calcolato - dati mancanti:",
-                  {
-                    cost_per_sqm: selectedMarket?.cost_per_sqm,
-                    annual_market_days: selectedMarket?.annual_market_days,
-                    area_mq: targetStall.area_mq,
-                  }
+                console.warn(
+                  "[ConcessioneForm] Canone non calcolato - dati mancanti"
                 );
               }
 
@@ -870,14 +799,6 @@ export default function ConcessioneForm({
         ? Number(initialData?.posteggio_id || initialData?.stall_id)
         : null);
 
-    console.log(
-      "[ConcessioneForm] Submit - effectiveMarketId:",
-      effectiveMarketId,
-      "effectiveStallId:",
-      effectiveStallId
-    );
-    console.log("[ConcessioneForm] Submit - initialData:", initialData);
-
     // Validazione campi obbligatori
     if (!effectiveMarketId) {
       toast.error("Seleziona un mercato");
@@ -979,14 +900,6 @@ export default function ConcessioneForm({
         ? `${API_URL}/api/concessions/${editId}`
         : `${API_URL}/api/concessions`;
 
-      console.log("[ConcessioneForm] Salvataggio concessione:", {
-        isEditMode,
-        editId,
-        url,
-        method: isEditMode ? "PUT" : "POST",
-        dataToSave,
-      });
-
       const response = await authenticatedFetch(url, {
         method: isEditMode ? "PUT" : "POST",
         headers: {
@@ -994,8 +907,6 @@ export default function ConcessioneForm({
         },
         body: JSON.stringify(dataToSave),
       });
-
-      console.log("[ConcessioneForm] Response status:", response.status);
 
       // Verifica status HTTP prima di parsare JSON
       if (!response.ok) {
@@ -1030,8 +941,6 @@ export default function ConcessioneForm({
         setSaving(false);
         return;
       }
-
-      console.log("[ConcessioneForm] Response body:", result);
 
       if (result.success) {
         // Toast progressivi: mostra ogni step con delay sequenziale (v8.1.4)

@@ -33,14 +33,25 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
 
   const executeCode = (code: string, blockIndex: number) => {
     try {
-      // Validazione: permetti solo codice che chiama window.sharedWorkspaceAPI
       const trimmed = code.trim();
+      // Validazione rigorosa: permetti SOLO chiamate a window.sharedWorkspaceAPI
       if (!trimmed.includes("window.sharedWorkspaceAPI")) {
         throw new Error(
           "Codice non autorizzato: deve usare window.sharedWorkspaceAPI"
         );
       }
-      // Usa Function constructor invece di eval() per isolare dallo scope locale
+      // Blocca pattern pericolosi: fetch, import, eval, Function, document.cookie, etc.
+      const forbidden =
+        /\b(fetch|import|require|eval|Function|XMLHttpRequest|document\.(cookie|write|location)|window\.(open|location)|localStorage|sessionStorage|indexedDB|WebSocket|Worker|navigator\.sendBeacon)\b/;
+      if (forbidden.test(trimmed)) {
+        throw new Error(
+          "Codice non autorizzato: contiene operazioni vietate"
+        );
+      }
+      // Verifica che la lavagna sia disponibile
+      if (!(window as unknown as Record<string, unknown>).sharedWorkspaceAPI) {
+        throw new Error("Lavagna non disponibile");
+      }
       new Function(trimmed)();
 
       // Marca come eseguito

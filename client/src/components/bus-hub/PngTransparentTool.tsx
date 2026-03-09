@@ -89,7 +89,7 @@ export function PngTransparentTool({
     (message: string, type: "info" | "success" | "error" = "info") => {
       const prefix = type === "success" ? "✅" : type === "error" ? "❌" : "📝";
       setLogs(prev => [...prev.slice(-9), `${prefix} ${message}`]);
-      console.log(`[PngTool] ${prefix} ${message}`);
+      if (type === "error") console.warn(`[PngTool] ${prefix} ${message}`);
     },
     []
   );

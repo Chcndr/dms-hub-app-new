@@ -3783,6 +3783,7 @@ function GiustificazioniSection({
                         src={previewUrl}
                         alt="Preview"
                         className="w-full h-32 object-cover rounded-lg mb-2"
+                        loading="lazy"
                       />
                     )}
                     <div className="flex items-center justify-between">

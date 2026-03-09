@@ -349,7 +349,7 @@ export function SlotEditorV3({
     (message: string, type: "info" | "success" | "error" = "info") => {
       const prefix = type === "success" ? "✅" : type === "error" ? "❌" : "📝";
       setLogs(prev => [...prev.slice(-9), `${prefix} ${message}`]);
-      console.log(`[SlotEditor] ${prefix} ${message}`);
+      if (type === "error") console.warn(`[SlotEditor] ${prefix} ${message}`);
     },
     []
   );
@@ -1173,6 +1173,7 @@ export function SlotEditorV3({
               src={pngOriginalUrl}
               alt="Originale"
               className="w-full h-auto"
+              loading="lazy"
             />
           </div>
         </div>

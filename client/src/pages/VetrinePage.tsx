@@ -533,6 +533,7 @@ export default function VetrinePage() {
                 src={selectedImpresa.vetrina_immagine_principale}
                 alt={selectedImpresa.denominazione}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
               />
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -804,6 +805,7 @@ export default function VetrinePage() {
                               src={imageUrl}
                               alt={`Prodotto ${index + 1}`}
                               className="w-full h-72 object-cover"
+                              loading="lazy"
                             />
                           </div>
                         )
@@ -830,6 +832,7 @@ export default function VetrinePage() {
                           src={imageUrl}
                           alt={`Prodotto ${index + 1}`}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          loading="lazy"
                         />
                         {/* Overlay on hover */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -985,6 +988,7 @@ export default function VetrinePage() {
                             src={selectedImpresa.vetrina_immagine_principale}
                             alt="Copertina"
                             className="w-full h-full object-cover"
+                            loading="lazy"
                           />
                           <button
                             onClick={() => {
@@ -1036,6 +1040,7 @@ export default function VetrinePage() {
                               src={img}
                               alt={`Gallery ${index + 1}`}
                               className="w-full h-full object-cover"
+                              loading="lazy"
                             />
                             <button
                               onClick={() => handleRemoveGalleryImage(index)}

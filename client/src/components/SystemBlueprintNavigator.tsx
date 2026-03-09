@@ -164,6 +164,7 @@ export function SystemBlueprintNavigator() {
                 src={activeModule.image}
                 alt={activeModule.title}
                 className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-[1.02]"
+                loading="lazy"
               />
 
               {/* Overlay Info */}
@@ -199,6 +200,7 @@ export function SystemBlueprintNavigator() {
                 src={slide.image}
                 alt={slide.title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332] to-transparent" />
             </div>

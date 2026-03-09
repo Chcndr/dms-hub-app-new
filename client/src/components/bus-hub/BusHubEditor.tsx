@@ -76,13 +76,11 @@ export function BusHubEditor({
 
       if (type === "BUS_PNG_READY") {
         // PNG trasparente pronto, passa a Slot Editor
-        console.log("PNG pronto dal BUS HUB:", data);
         setCurrentStep("editor");
       }
 
       if (type === "EDITOR_SAVE") {
         // Dati GeoJSON pronti dall'editor
-        console.log("Dati salvati da Slot Editor:", data);
         if (onSave) {
           onSave(data);
         }
