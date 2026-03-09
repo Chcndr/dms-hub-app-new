@@ -1,7 +1,152 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.6.1 (FASE 3 AVA — COMPLETATA + Allineamento Completo)
-> **Data:** 01 Marzo 2026
+> **Versione:** 9.8.0 (Fix Salvataggio GIS UPSERT + FK Cascade + Audit Completo)
+> **Data:** 08 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.8.0 (08 Mar 2026)
+> **🔧 FIX CRITICO — SALVATAGGIO GIS UPSERT + FK CASCADE + AUDIT ALLINEAMENTO COMPLETO**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `7fb51fb` | ✅ Allineato |
+> | Hetzner backend (api.mio-hub.me) | `7fb51fb` | ✅ Online, autodeploy attivo |
+> | GitHub `dms-hub-app-new` master | `3e83b4a` | ✅ Allineato |
+> | Vercel frontend | `3e83b4a` | ✅ HTTP 200, auto-deploy |
+> | Neon DB | 4 mercati, **820 stalls** | ✅ Mercato La Piazzola (ID 14) con **237 stalls** Polygon |
+>
+> **Problema risolto (Salvataggio GIS da Slot Editor):**
+> Il salvataggio dei posteggi dallo Slot Editor falliva silenziosamente per una combinazione di fattori:
+> 1. **Foreign Key Cascade non gestita:** `DELETE FROM stalls` falliva per FK chain: `wallet_transactions → vendor_presences → graduatoria_presenze → wallets → suap_* → concessions → autorizzazioni → stalls`
+> 2. **FileReader Promise bloccante:** La conversione PNG in base64 si bloccava indefinitamente nell'iframe cross-origin su Safari/iPad (ITP)
+> 3. **Prompt Hub ID errato:** Il prompt chiedeva l'Hub ID invece del Market ID, creando record orfani
+>
+> **Soluzione implementata (mihub-backend-rest — 7 commit dopo v9.7.0):**
+> - `7fb51fb` — Timeout 5s su conversione PNG base64 (`Promise.race`) per evitare blocco su Safari/iPad
+> - `7c1b902` — Messaggi di stato visibili durante salvataggio `[1/4] [2/4] [3/4] [4/4]`
+> - `03ae915` — Prompt ora chiede **Market ID** (non Hub ID), pre-compilato dal BUS, con lista mercati esistenti
+> - `04d55a5` — FK cascade completa: cancella tutte le tabelle dipendenti nell'ordine corretto prima degli stalls
+> - `ead798d` — FK cascade intermedia (vendor_presences, wallets, suap_pratiche)
+> - `14e57cb` — FK cascade base (graduatoria_presenze, concessions, autorizzazioni)
+> - `707849b` — UPSERT `import-market`: se riceve `market_id`, aggiorna il mercato esistente invece di crearne uno nuovo
+>
+> **Soluzione frontend (dms-hub-app-new — 3 commit dopo v9.7.0):**
+> - `3e83b4a` — Fix key prop iframe per forzare re-render al cambio step
+> - `c71789c` — Ripristino BusHubEditor.tsx originale
+> - `1b17163` — Navigazione interna iframe per preservare IndexedDB su Safari/iPad
+>
+> **Modifiche Route Backend:**
+> - `routes/gis.js` — `import-market` ora supporta UPSERT con `market_id`, FK cascade delete completa, ricerca per nome come fallback
+> - `slot_editor_v3_unified.html` — Prompt Market ID, timeout PNG 5s, messaggi di stato step-by-step
+>
+> **Stato Database (Neon) — 08 Mar 2026:**
+> | Tabella | Conteggio | Note |
+> |---|---|---|
+> | `markets` | 4 | Grosseto (160), Modena (382), Cervia (41), **Bologna (237)** |
+> | `stalls` | 820 | +220 rispetto a v9.7.0 |
+> | `hub_locations` | 84 | Hub 109 orfano da pulire |
+> | `market_geometry` | 3 | Manca Grosseto (ID 1) |
+> | `concessions` | 51 | Invariato |
+> | `users` | 11 | Invariato |
+>
+> **Audit Branch GitHub:**
+> | Repo | Branch | Stato | Azione |
+> |---|---|---|---|
+> | `mihub-backend-rest` | `claude/paste-operational-message-VkUsh` | Completamente dietro master | Cancellare |
+> | `mihub-backend-rest` | `feature/guardian-blueprint-sync` | 1029 commit dietro master | Cancellare |
+> | `dms-hub-app-new` | `claude/review-production-fixes-3sUvQ` | 2 commit docs ahead, 14 behind | Merge docs o cancellare |
+> | `dms-hub-app-new` | 10+ branch `feature/*` e `fix/*` | Tutti stale | Cancellare |
+>
+> **Azioni raccomandate:**
+> 1. Cancellare Hub 109 orfano: `DELETE FROM hub_locations WHERE id = 109`
+> 2. Generare geometria per Mercato Grosseto (ID 1) via Slot Editor
+> 3. Pulire branch obsoleti da entrambi i repository
+> 4. Ottimizzare `import-market` (attualmente ~90s per 237 stalls)
+>
+> ---
+> ### CHANGELOG v9.7.0 (07 Mar 2026)
+> **🔧 FIX CRITICO — PERSISTENZA DATI SLOT EDITOR SU SAFARI/IPAD + SALVATAGGIO GIS COMPLETO**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `e39a8ba` | ✅ Allineato |
+> | Hetzner backend (157.90.29.66:3000) | `e39a8ba` | ✅ Online, checksum file verificato |
+> | GitHub `dms-hub-app-new` master | `910c7c6` | ✅ Allineato |
+> | Vercel frontend | `910c7c6` | ✅ HTTP 200, auto-deploy |
+> | Neon DB | 4 mercati, 600 stalls | ✅ Mercato La Piazzola (ID 14) con 17 stalls Polygon |
+>
+> **Problema risolto (Safari/iPad ITP):**
+> Safari ITP cancella localStorage/IndexedDB degli iframe cross-origin (Hetzner dentro Vercel). Tutti i dati non salvati nel DB (posteggi, pianta, marker) venivano persi alla navigazione.
+>
+> **Soluzione: postMessage Bridge bidirezionale**
+> - `dms-bus.js` (iframe Hetzner): wrappa `DMSBUS.putJSON/putBlob/deleteKey/clear` per inviare copia dati al parent via `postMessage`
+> - `BusHubEditor.tsx` (parent Vercel): riceve e salva in `localStorage` first-party (non soggetto a ITP)
+> - Al ricaricamento, iframe chiede `DMS_BRIDGE_REQUEST` → parent risponde con `DMS_BRIDGE_RESTORE` → iframe ripristina dati
+> - Evento `dms-bridge-restored` notifica lo Slot Editor per riposizionare la pianta trasparente
+>
+> **Modifiche Backend (mihub-backend-rest — 5 commit dopo v9.6.2):**
+> - `e39a8ba` — Fix pianta trasparente: `plant_marker_position` salvato nel DMSBUS + listener `dms-bridge-restored`
+> - `0d11381` — Fix geometria posteggi: `stallsGeoJSON` ora crea Polygon (4 corner) + `geometry_geojson` in import-market
+> - `d7a359d` — Fix salvataggio mercato: bottone "Salva nel Database" ora chiama anche `/api/gis/import-market` (crea markets + stalls + market_geometry)
+> - `2539b8b` — Bridge postMessage in `dms-bus.js` (wrapper DMSBUS → parent)
+> - `6a0664a` — DMSBUS fallback robusto per Safari/iPad (blob↔base64, timeout IndexedDB)
+>
+> **Modifiche Frontend (dms-hub-app-new — 1 commit dopo v9.6.2):**
+> - `910c7c6` — Bridge postMessage in `BusHubEditor.tsx` (listener DMS_BRIDGE_SAVE/REQUEST/CLEAR)
+>
+> **Modifiche Route Backend:**
+> - `routes/gis.js` — import-market ora salva `geometry_geojson`, `rotation`, `dimensions`, `width`, `depth`, `area_mq` per ogni stall
+> - `routes/hub.js` — PUT hub/locations ora accetta campo `tipo`
+> - `routes/markets.js` — PATCH markets/:id ora accetta `hub_location_id`
+>
+> **Modifiche Database (Neon):**
+> - Mercato La Piazzola (ID 14): creato con 17 stalls Polygon, `comune_id = 6` (Bologna), `market_geometry` con PNG metadata
+> - Hub La Piazzola (ID 108): cancellato record duplicato da `hub_locations`
+>
+> **Verifica allineamento (07 Mar 2026):**
+> - `dms-bus.js`: checksum GitHub = checksum Hetzner ✅
+> - `slot_editor_v3_unified.html`: checksum GitHub = checksum Hetzner ✅
+> - `bus_hub.html`: checksum GitHub = checksum Hetzner ✅
+> - API `/api/gis/market-map/14`: 17 stalls Polygon ✅
+> - Neon DB: 4 mercati, 600 stalls totali, 3 market_geometry ✅
+>
+> ---
+> ### CHANGELOG v9.6.2 (02 Mar 2026)
+> **🔧 BUG FIX POST-FASE 3 AVA + ALLINEAMENTO COMPLETO**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---------|--------|-------|
+> | GitHub `mihub-backend-rest` master | `96359ea` | ✅ Allineato |
+> | Hetzner backend (157.90.29.66:3000) | `96359ea` | ✅ Online (HTTP 200), PM2 running |
+> | GitHub `dms-hub-app-new` master | `a3d9369` | ✅ Allineato |
+> | Vercel frontend | `a3d9369` | ✅ HTTP 200, auto-deploy |
+> | Neon DB (indici AVA) | 18 indici `idx_ava_*` | ✅ Attivi |
+> | Claude branch | `a3d9369` (force-pushed) | ✅ Allineato a master |
+>
+> **Bug fix backend (Hetzner — 6 commit dopo v9.6.0):**
+> - `96359ea` — Inietta risultati tool nel prompt LLM per risposte coerenti (anti-hallucination)
+> - `756c922` — `report_presenze` usa `graduatoria_presenze` per storico completo (non solo `vendor_presences` che viene svuotata al reset mercato)
+> - `9f59331` — Fix priorità tool: `report_presenze` non bloccato da `cerca_concessionario`
+> - `0d5e94f` — `report_presenze` per PA cerca presenze per impresa specifica
+> - `7a1a323` — Isolamento completo conversazioni per `comune_id`
+> - `7005d92` — Colonna `comune_id` in `ai_conversations` + filtro backend
+>
+> **Bug fix frontend (Vercel — 5 commit dopo v9.6.0):**
+> - `a3d9369` — SUAP ConcessioneForm: rimosso filtro `addComuneIdToUrl` → mostra TUTTE le imprese nel DB (non solo quelle con concessioni nel comune)
+> - `782b688` — (Commit intermedio, poi corretto in a3d9369)
+> - `b38b080` — IndexedDB auto-reconnect e fallback localStorage su connection lost (Safari/iOS)
+> - `90b5ea8` — Merge: conversazioni AVA isolate per comune impersonato
+> - `7236131` — Fix: `useConversations` filtra per `comune_id`, `ChatWidget` legge impersonation
+>
+> **Problemi noti e mitigazioni:**
+> - LLM qwen2.5:7b a volte ignora i risultati tool e inventa dati → mitigato con iniezione summary nel system prompt
+> - `vendor_presences` viene svuotata al reset mercato test → usata `graduatoria_presenze` per dati storici
+> - IndexedDB perde connessione su Safari/iOS → auto-retry con fallback localStorage
+>
+> **Map Viewer GIS:** ✅ Verificato funzionante (Grosseto, Novi Sad Modena, Cervia Demo)
 >
 > ---
 > ### CHANGELOG v9.6.1 (01 Mar 2026)
@@ -4003,14 +4148,25 @@ La versione su GitHub Pages (chcndr.github.io) è **DEPRECATA** e fa redirect au
 - **HUB:** Crea HUB indipendenti con centro e area poligonale
 - **Esporta:** GeoJSON, Dashboard Admin, Database PostgreSQL
 
-### Storage Dati
+### Storage Dati (v9.7.0 — con postMessage Bridge per Safari/iPad)
 
-| Tipo               | Storage      | Chiave                  |
-| ------------------ | ------------ | ----------------------- |
-| Autosave completo  | localStorage | `v3_autosave`           |
-| Dati HUB           | localStorage | `dms_hub_data`          |
-| Posizione pianta   | localStorage | `plant_marker_position` |
-| Posizioni posteggi | localStorage | `slots_positions`       |
+| Tipo | Storage Primario | Bridge Safari | Chiave DMSBUS | Note |
+|---|---|---|---|---|
+| Autosave completo | DMSBUS (IndexedDB) | ✅ postMessage → Vercel localStorage | `v3_autosave` | Ripristinato via `dms-bridge-restored` |
+| Dati HUB | DMSBUS (IndexedDB) | ✅ postMessage → Vercel localStorage | `dms_hub_data` | Ripristinato via `dms-bridge-restored` |
+| Posizione pianta | DMSBUS + localStorage | ✅ postMessage → Vercel localStorage | `plant_marker_position` | Listener `dms-bridge-restored` riposiziona overlay |
+| Posizioni posteggi | DMSBUS (IndexedDB) | ✅ postMessage → Vercel localStorage | `stalls_geojson` | Ripristinato via `dms-bridge-restored` |
+| PNG Pianta | DMSBUS (IndexedDB) | ✅ postMessage → Vercel localStorage | `png_transparent` | Blob convertito in base64 per bridge |
+
+**Architettura Bridge:**
+```
+┌─────────────────────────────────┐     postMessage      ┌──────────────────────────────┐
+│  Slot Editor (iframe Hetzner)   │ ──────────────────→  │  BusHubEditor (parent Vercel) │
+│  dms-bus.js wrapper             │                      │  localStorage first-party     │
+│  DMSBUS.putJSON/putBlob         │ ←──────────────────  │  dms_bridge / dms_bridge_blobs│
+│  evento: dms-bridge-restored    │     RESTORE data     │                              │
+└─────────────────────────────────┘                      └──────────────────────────────┘
+```
 
 ### Accesso dalla Dashboard PA
 
