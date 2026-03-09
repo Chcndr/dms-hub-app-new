@@ -151,8 +151,10 @@ export function useConversations(comuneId?: number): UseConversationsReturn {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
     fetchConversations();
     fetchQuota();
+    return () => controller.abort();
   }, [fetchConversations, fetchQuota]);
 
   return {

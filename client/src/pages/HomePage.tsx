@@ -103,37 +103,44 @@ export default function HomePage() {
 
   // Fetch notifiche non lette per l'impresa dell'utente
   useEffect(() => {
-    const fetchUnreadNotifications = async () => {
-      try {
-        const userStr = localStorage.getItem("user");
-        if (!userStr) return;
-        const user = JSON.parse(userStr);
-        const impresaId = user.impresa_id;
-        if (!impresaId) return;
+    if (isAuthenticated) {
+      const controller = new AbortController();
+      const fetchUnreadNotifications = async () => {
+        try {
+          const userStr = localStorage.getItem("user");
+          if (!userStr) return;
+          const user = JSON.parse(userStr);
+          const impresaId = user.impresa_id;
+          if (!impresaId) return;
 
-        const API_BASE_URL = MIHUB_API_BASE_URL;
-        const response = await fetch(
-          addComuneIdToUrl(
-            `${API_BASE_URL}/api/notifiche/impresa/${impresaId}?limit=100`
-          )
-        );
-        if (response.ok) {
-          const data = await response.json();
-          // v3.73.0: Usa il conteggio non_lette dal backend invece di filtrare
-          if (data.success && data.data) {
-            setUnreadNotifications(data.data.non_lette || 0);
+          const API_BASE_URL = MIHUB_API_BASE_URL;
+          const response = await fetch(
+            addComuneIdToUrl(
+              `${API_BASE_URL}/api/notifiche/impresa/${impresaId}?limit=100`
+            ),
+            { signal: controller.signal }
+          );
+          if (response.ok) {
+            const data = await response.json();
+            // v3.73.0: Usa il conteggio non_lette dal backend invece di filtrare
+            if (data.success && data.data) {
+              setUnreadNotifications(data.data.non_lette || 0);
+            }
+          }
+        } catch (error: any) {
+          if (error.name !== 'AbortError') {
+            console.error("Errore fetch notifiche:", error);
           }
         }
-      } catch (error) {
-        console.error("Errore fetch notifiche:", error);
-      }
-    };
+      };
 
-    if (isAuthenticated) {
       fetchUnreadNotifications();
       // Aggiorna ogni 60 secondi
       const interval = setInterval(fetchUnreadNotifications, 60000);
-      return () => clearInterval(interval);
+      return () => {
+        controller.abort();
+        clearInterval(interval);
+      };
     }
   }, [isAuthenticated]);
 

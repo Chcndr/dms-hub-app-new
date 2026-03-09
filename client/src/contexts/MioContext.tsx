@@ -50,6 +50,8 @@ export function MioProvider({ children }: { children: ReactNode }) {
 
   // 🔥 PERSISTENZA: Carica cronologia al mount
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadHistory = async () => {
       // 🔥 SVUOTA messaggi all'inizio per evitare duplicati al refresh
       setMessages([]);
@@ -60,7 +62,8 @@ export function MioProvider({ children }: { children: ReactNode }) {
       try {
         // 🚀 TUBO DRITTO - Connessione diretta database → frontend (via Vercel API)
         const response = await fetch(
-          `/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}`
+          `/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}`,
+          { signal: controller.signal }
         );
         if (!response.ok) {
           console.error("🔥 [MioContext] Errore API:", response.status);
@@ -86,12 +89,16 @@ export function MioProvider({ children }: { children: ReactNode }) {
             "messaggi"
           );
         }
-      } catch (err) {
-        console.error("🔥 [MioContext] Errore caricamento cronologia:", err);
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("🔥 [MioContext] Errore caricamento cronologia:", err);
+        }
       }
     };
 
     loadHistory();
+
+    return () => controller.abort();
   }, []);
 
   // 🔥 TABULA RASA: Funzione sendMessage condivisa

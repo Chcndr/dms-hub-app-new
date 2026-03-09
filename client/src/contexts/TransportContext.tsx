@@ -51,7 +51,7 @@ interface TransportContextType {
   setTransportLayerVisible: (visible: boolean) => void;
 
   // Funzioni
-  loadStops: (region?: string) => Promise<void>;
+  loadStops: (region?: string, signal?: AbortSignal) => Promise<void>;
   loadStopsNearPoint: (
     lat: number,
     lng: number,
@@ -59,7 +59,7 @@ interface TransportContextType {
   ) => Promise<TransportStop[]>;
   getNextDepartures: (stopId: string, limit?: number) => Promise<StopTime[]>;
   getRoutesForStop: (stopId: string) => Promise<TransportRoute[]>;
-  loadStats: () => Promise<void>;
+  loadStats: (signal?: AbortSignal) => Promise<void>;
 }
 
 const TransportContext = createContext<TransportContextType | undefined>(
@@ -142,9 +142,9 @@ export function TransportProvider({ children }: TransportProviderProps) {
   const [transportLayerVisible, setTransportLayerVisible] = useState(false);
 
   // Carica statistiche
-  const loadStats = useCallback(async () => {
+  const loadStats = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch(`${API_BASE}/stats`);
+      const response = await fetch(`${API_BASE}/stats`, { signal });
       if (!response.ok) throw new Error(`Errore: ${response.status}`);
 
       const data = await response.json();
@@ -164,13 +164,14 @@ export function TransportProvider({ children }: TransportProviderProps) {
         });
         console.warn("[TransportContext] Stats caricate:", data.stats);
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
       console.error("[TransportContext] Errore caricamento stats:", err);
     }
   }, []);
 
   // Carica fermate per regione/tipo - Carica sia bus che treni
-  const loadStops = useCallback(async (region?: string) => {
+  const loadStops = useCallback(async (region?: string, signal?: AbortSignal) => {
     setIsLoading(true);
     setError(null);
 
@@ -186,8 +187,8 @@ export function TransportProvider({ children }: TransportProviderProps) {
       trainParams.append("limit", "500"); // Tutte le stazioni treni
 
       const [busResponse, trainResponse] = await Promise.all([
-        fetch(`${API_BASE}/stops?${busParams}`),
-        fetch(`${API_BASE}/stops?${trainParams}`),
+        fetch(`${API_BASE}/stops?${busParams}`, { signal }),
+        fetch(`${API_BASE}/stops?${trainParams}`, { signal }),
       ]);
 
       let allStops: TransportStop[] = [];
@@ -229,7 +230,8 @@ export function TransportProvider({ children }: TransportProviderProps) {
       } else {
         throw new Error("Nessuna fermata trovata");
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
       const message = err instanceof Error ? err.message : "Errore sconosciuto";
       setError(message);
       console.error("[TransportContext] Errore:", message);
@@ -417,11 +419,15 @@ export function TransportProvider({ children }: TransportProviderProps) {
 
   // Carica dati iniziali dalle API reali
   useEffect(() => {
+    const controller = new AbortController();
+
     // Carica statistiche
-    loadStats();
+    loadStats(controller.signal);
 
     // Carica tutte le fermate dalle API reali
-    loadStops();
+    loadStops(undefined, controller.signal);
+
+    return () => controller.abort();
   }, [loadStats, loadStops]);
 
   const value: TransportContextType = {

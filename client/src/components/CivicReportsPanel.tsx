@@ -78,7 +78,7 @@ export default function CivicReportsPanel() {
   const comuneParam = comuneId ? `comune_id=${comuneId}` : "";
 
   // Carica statistiche + lista completa segnalazioni
-  const loadStats = async () => {
+  const loadStats = async (signal?: AbortSignal) => {
     // Dati civici: caricare sempre (anche per impersonificazione associazione)
     try {
       // Usa comuneParam diretto - NON addComuneIdToUrl per evitare duplicazione comune_id
@@ -89,8 +89,8 @@ export default function CivicReportsPanel() {
         ? `${API_BASE_URL}/api/civic-reports?${comuneParam}&limit=200`
         : `${API_BASE_URL}/api/civic-reports?limit=200`;
       const [statsRes, reportsRes] = await Promise.all([
-        fetch(statsUrl),
-        fetch(reportsUrl),
+        fetch(statsUrl, { signal }),
+        fetch(reportsUrl, { signal }),
       ]);
       const data = await statsRes.json();
       if (data.success) {
@@ -102,24 +102,26 @@ export default function CivicReportsPanel() {
       } else if (data.success && data.data?.recent) {
         setAllReports(data.data.recent);
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === "AbortError") return;
       console.error("Errore caricamento stats:", error);
     }
   };
 
   // Carica configurazione TCC
-  const loadConfig = async () => {
+  const loadConfig = async (signal?: AbortSignal) => {
     try {
       // Usa comune_id diretto - NON addComuneIdToUrl per evitare duplicazione
       const configUrl = comuneId
         ? `${API_BASE_URL}/api/civic-reports/config?comune_id=${comuneId}`
         : `${API_BASE_URL}/api/civic-reports/config?comune_id=1`;
-      const response = await fetch(configUrl);
+      const response = await fetch(configUrl, { signal });
       const data = await response.json();
       if (data.success) {
         setConfig(data.data);
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === "AbortError") return;
       console.error("Errore caricamento config:", error);
     }
   };
@@ -155,12 +157,14 @@ export default function CivicReportsPanel() {
 
   // Carica dati all'avvio e quando cambia il comune
   useEffect(() => {
+    const controller = new AbortController();
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([loadStats(), loadConfig()]);
+      await Promise.all([loadStats(controller.signal), loadConfig(controller.signal)]);
       setLoading(false);
     };
     loadData();
+    return () => controller.abort();
   }, [comuneId]);
 
   if (loading) {

@@ -48,21 +48,26 @@ export function CompanyWallet({ companyId, companyName }: CompanyWalletProps) {
 
   useEffect(() => {
     if (companyId) {
-      fetchWallets();
+      const controller = new AbortController();
+      fetchWallets(controller.signal);
+      return () => controller.abort();
     }
   }, [companyId]);
 
   useEffect(() => {
     if (selectedWallet) {
-      fetchTransactions(selectedWallet.id);
+      const controller = new AbortController();
+      fetchTransactions(selectedWallet.id, controller.signal);
+      return () => controller.abort();
     }
   }, [selectedWallet]);
 
-  const fetchWallets = async () => {
+  const fetchWallets = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const response = await fetch(
-        `${API_URL}/api/wallets/company/${companyId}`
+        `${API_URL}/api/wallets/company/${companyId}`,
+        { signal }
       );
       const data = await response.json();
       if (data.success) {
@@ -71,7 +76,8 @@ export function CompanyWallet({ companyId, companyName }: CompanyWalletProps) {
           setSelectedWallet(data.data[0]);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === "AbortError") return;
       console.error("Error fetching wallets:", error);
       toast.error("Errore caricamento wallet");
     } finally {
@@ -79,17 +85,19 @@ export function CompanyWallet({ companyId, companyName }: CompanyWalletProps) {
     }
   };
 
-  const fetchTransactions = async (walletId: number) => {
+  const fetchTransactions = async (walletId: number, signal?: AbortSignal) => {
     try {
       setLoadingTx(true);
       const response = await fetch(
-        `${API_URL}/api/wallets/${walletId}/transactions`
+        `${API_URL}/api/wallets/${walletId}/transactions`,
+        { signal }
       );
       const data = await response.json();
       if (data.success) {
         setTransactions(data.data);
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === "AbortError") return;
       console.error("Error fetching transactions:", error);
     } finally {
       setLoadingTx(false);

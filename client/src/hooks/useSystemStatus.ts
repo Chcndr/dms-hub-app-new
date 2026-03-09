@@ -84,13 +84,21 @@ export function useSystemStatus(
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    const safePerformCheck = async () => {
+      if (controller.signal.aborted) return;
+      await performCheck();
+    };
+
     // Primo check immediato
-    performCheck();
+    safePerformCheck();
 
     // Polling periodico
-    intervalRef.current = window.setInterval(performCheck, pollInterval);
+    intervalRef.current = window.setInterval(safePerformCheck, pollInterval);
 
     return () => {
+      controller.abort();
       if (intervalRef.current) {
         window.clearInterval(intervalRef.current);
       }

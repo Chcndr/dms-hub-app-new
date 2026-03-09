@@ -28,12 +28,15 @@ export default function GuardianLogs() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
+    const controller = new AbortController();
     // Load logs from MIO-hub GitHub repository
-    fetch(
-      "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/logs/api-guardian.log"
-    )
-      .then(r => r.text())
-      .then(text => {
+    const loadLogs = async () => {
+      try {
+        const r = await fetch(
+          "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/logs/api-guardian.log",
+          { signal: controller.signal }
+        );
+        const text = await r.text();
         const logLines = text
           .trim()
           .split("\n")
@@ -41,11 +44,15 @@ export default function GuardianLogs() {
         const parsedLogs = logLines.map(line => JSON.parse(line) as LogEntry);
         setLogs(parsedLogs);
         setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error loading Guardian logs:", err);
-        setLoading(false);
-      });
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error("Error loading Guardian logs:", err);
+          setLoading(false);
+        }
+      }
+    };
+    loadLogs();
+    return () => controller.abort();
   }, []);
 
   const getStatusBadge = (status: string) => {

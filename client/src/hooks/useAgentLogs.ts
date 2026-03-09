@@ -52,6 +52,7 @@ export function useAgentLogs({
     // 🔥 SVUOTA messaggi IMMEDIATAMENTE al cambio conversationId per evitare duplicati
     setMessages([]);
 
+    const controller = new AbortController();
     let cancelled = false;
     let intervalId: number | undefined;
     let isFirstLoad = true;
@@ -76,7 +77,7 @@ export function useAgentLogs({
 
         // 🚀 TUBO DIRETTO DATABASE→FRONTEND (bypassa Hetzner)
         const url = `/api/mihub/get-messages?${params.toString()}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
@@ -109,6 +110,7 @@ export function useAgentLogs({
           setError(null);
         }
       } catch (err: any) {
+        if (err?.name === "AbortError") return;
         if (!cancelled) {
           setError(err?.message ?? "Errore caricamento log");
         }
@@ -225,6 +227,7 @@ export function useAgentLogs({
 
     return () => {
       cancelled = true;
+      controller.abort();
       loadRef.current = null;
       if (fallbackTimeout) window.clearTimeout(fallbackTimeout);
       if (intervalId) window.clearInterval(intervalId);

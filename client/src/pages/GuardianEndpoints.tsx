@@ -67,24 +67,34 @@ export default function GuardianEndpoints() {
   const [selectedAgent, setSelectedAgent] = useState<string>("mio");
 
   useEffect(() => {
+    const controller = new AbortController();
     // Load data from MIO-hub GitHub repository
-    Promise.all([
-      fetch(
-        "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/api/index.json"
-      ).then(r => r.json()),
-      fetch(
-        "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/agents/permissions.json"
-      ).then(r => r.json()),
-    ])
-      .then(([endpoints, permissions]) => {
+    const loadData = async () => {
+      try {
+        const [endpointsRes, permissionsRes] = await Promise.all([
+          fetch(
+            "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/api/index.json",
+            { signal: controller.signal }
+          ),
+          fetch(
+            "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/agents/permissions.json",
+            { signal: controller.signal }
+          ),
+        ]);
+        const endpoints = await endpointsRes.json();
+        const permissions = await permissionsRes.json();
         setEndpointsData(endpoints);
         setPermissionsData(permissions);
         setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error loading Guardian data:", err);
-        setLoading(false);
-      });
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error("Error loading Guardian data:", err);
+          setLoading(false);
+        }
+      }
+    };
+    loadData();
+    return () => controller.abort();
   }, []);
 
   const getRiskBadgeColor = (risk: string) => {

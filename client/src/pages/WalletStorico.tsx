@@ -96,9 +96,11 @@ export default function WalletStorico() {
   // Carica transazioni e dati wallet
   useEffect(() => {
     if (currentUser?.id) {
+      const controller = new AbortController();
       // Carica transazioni
       const txPromise = fetch(
-        `${API_BASE}/api/tcc/wallet/${currentUser.id}/transactions?limit=500`
+        `${API_BASE}/api/tcc/wallet/${currentUser.id}/transactions?limit=500`,
+        { signal: controller.signal }
       )
         .then(res => res.json())
         .then(data => {
@@ -108,7 +110,8 @@ export default function WalletStorico() {
         });
       // Carica wallet stats (total_earned reale dal backend)
       const walletPromise = fetch(
-        `${API_BASE}/api/tcc/wallet/${currentUser.id}`
+        `${API_BASE}/api/tcc/wallet/${currentUser.id}`,
+        { signal: controller.signal }
       )
         .then(res => res.json())
         .then(data => {
@@ -122,8 +125,13 @@ export default function WalletStorico() {
           }
         });
       Promise.all([txPromise, walletPromise])
-        .catch(console.error)
+        .catch(err => {
+          if (err.name !== 'AbortError') {
+            console.error(err);
+          }
+        })
         .finally(() => setLoading(false));
+      return () => controller.abort();
     }
   }, [currentUser?.id]);
 

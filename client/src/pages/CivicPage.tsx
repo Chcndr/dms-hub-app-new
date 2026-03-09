@@ -82,21 +82,26 @@ export default function CivicPage() {
 
   // Carica config TCC per il comune
   useEffect(() => {
+    const controller = new AbortController();
     const loadConfig = async () => {
       const currentComuneId = comuneId ? parseInt(comuneId) : 1;
       try {
         const response = await fetch(
-          addComuneIdToUrl(`${API_BASE_URL}/api/civic-reports/config`)
+          addComuneIdToUrl(`${API_BASE_URL}/api/civic-reports/config`),
+          { signal: controller.signal }
         );
         const data = await response.json();
         if (data.success && data.data) {
           setTccReward(data.data.tcc_reward_default || 20);
         }
-      } catch (error) {
-        console.error("Errore caricamento config TCC:", error);
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error("Errore caricamento config TCC:", error);
+        }
       }
     };
     loadConfig();
+    return () => controller.abort();
   }, [comuneId]);
 
   // GPS automatico all'apertura pagina - usa popup nativo del browser

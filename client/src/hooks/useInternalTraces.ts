@@ -43,6 +43,8 @@ export function useInternalTraces(
       return;
     }
 
+    const controller = new AbortController();
+
     // Funzione per fetchare i log
     const fetchLogs = async () => {
       try {
@@ -52,7 +54,8 @@ export function useInternalTraces(
         const apiBaseUrl =
           import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
         const response = await fetch(
-          `${apiBaseUrl}/api/mio/agent-logs?conversation_id=${conversationId}&limit=100`
+          `${apiBaseUrl}/api/mio/agent-logs?conversation_id=${conversationId}&limit=100`,
+          { signal: controller.signal }
         );
 
         if (!response.ok) {
@@ -92,6 +95,7 @@ export function useInternalTraces(
           setTraces(transformedTraces);
         }
       } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
         console.error("[useInternalTraces] Error fetching logs:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -107,6 +111,7 @@ export function useInternalTraces(
 
     // Cleanup
     return () => {
+      controller.abort();
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }

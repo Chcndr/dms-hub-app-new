@@ -65,12 +65,13 @@ export default function MapPage() {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
     // Carica dati mappa mercato da API reali
     const loadMapData = async () => {
       try {
         const [mapRes, stallsRes] = await Promise.all([
-          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map`)),
-          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/1/stalls`)),
+          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map`), { signal: controller.signal }),
+          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/1/stalls`), { signal: controller.signal }),
         ]);
 
         const mapJson = await mapRes.json();
@@ -97,14 +98,17 @@ export default function MapPage() {
             stallsJson
           );
         }
-      } catch (error) {
-        console.error("[MapPage] Error loading map data:", error);
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error("[MapPage] Error loading map data:", error);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadMapData();
+    return () => controller.abort();
   }, []);
 
   if (loading) {

@@ -94,15 +94,17 @@ export default function APITokensPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadSecretsMetadata();
+    const controller = new AbortController();
+    loadSecretsMetadata(controller.signal);
+    return () => controller.abort();
   }, []);
 
-  const loadSecretsMetadata = async () => {
+  const loadSecretsMetadata = async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/mihub/secrets-meta");
+      const response = await fetch("/api/mihub/secrets-meta", { signal });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -121,6 +123,7 @@ export default function APITokensPage() {
         throw new Error("Failed to load secrets metadata");
       }
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
       console.error("Error loading secrets metadata:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {

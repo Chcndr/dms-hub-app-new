@@ -322,7 +322,7 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
   const [isImpersonating, setIsImpersonating] = useState(false);
 
   // Carica i permessi dell'utente
-  const loadUserPermissions = useCallback(async () => {
+  const loadUserPermissions = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
 
@@ -339,7 +339,8 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
 
       // Carica i permessi del ruolo
       const response = await fetch(
-        `${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${roleId}/permissions`
+        `${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${roleId}/permissions`,
+        { signal }
       );
       const data = await response.json();
 
@@ -384,6 +385,7 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
       setPermissions(allPerms);
       setPermissionCodes(allPerms.map((p: Permission) => p.code));
     } catch (err: any) {
+      if (err.name === "AbortError") return;
       console.error("[PermissionsContext] Errore:", err);
       setError(err.message);
       // In caso di errore, usa solo permessi client-side basati su dati utente
@@ -412,6 +414,8 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
   // per evitare il flicker (doppio loading) quando FirebaseAuthContext
   // aggiorna localStorage.user dopo il sync.
   useEffect(() => {
+    const controller = new AbortController();
+
     // Salva il ruolo iniziale per confronto
     const userStr = localStorage.getItem("user");
     if (userStr) {
@@ -425,7 +429,7 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
         /* ignore */
       }
     }
-    loadUserPermissions();
+    loadUserPermissions(controller.signal);
 
     const handleUrlChange = () => {
       loadUserPermissions();
@@ -451,6 +455,7 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
     window.addEventListener("popstate", handleUrlChange);
     window.addEventListener("storage", handleStorageChange);
     return () => {
+      controller.abort();
       window.removeEventListener("popstate", handleUrlChange);
       window.removeEventListener("storage", handleStorageChange);
       if (storageTimer) clearTimeout(storageTimer);

@@ -313,7 +313,9 @@ export default function WalletPanel() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     ensureWalletTablesExist().then(() => fetchWallets());
+    return () => controller.abort();
   }, []);
 
   // --- CANONE UNICO ---
@@ -687,6 +689,7 @@ export default function WalletPanel() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     if (subTab === "canone") {
       fetchCanoneScadenze();
       fetchMercatiList();
@@ -701,6 +704,7 @@ export default function WalletPanel() {
         setRicaricheSpunta([]);
       }
     }
+    return () => controller.abort();
   }, [subTab, canoneFilters]);
 
   // --- LISTA IMPRESE/CONCESSIONI (v8.3.0 - auto-load senza selettore mercato) ---
@@ -766,13 +770,16 @@ export default function WalletPanel() {
 
   // v8.3.0: Ricarica imprese quando cambiano filtri secondari (search, tipo operatore)
   useEffect(() => {
+    const controller = new AbortController();
     if (selectedMercatoId) {
       fetchImpreseConcessioni(selectedMercatoId, impreseTipoOperatore);
     }
+    return () => controller.abort();
   }, [selectedMercatoId, impreseSearch, impreseTipoOperatore]);
 
   // Carica posteggi automaticamente quando cambiano mercato o impresa (v3.52.0)
   useEffect(() => {
+    const controller = new AbortController();
     if (straordinarioMercatoId && straordinarioMercatoId !== "all") {
       loadPosteggiMercato(
         straordinarioMercatoId,
@@ -784,6 +791,7 @@ export default function WalletPanel() {
         altri_posteggi: [],
       });
     }
+    return () => controller.abort();
   }, [straordinarioMercatoId, straordinarioImpresaId]);
 
   // --- TRANSACTIONS ---
@@ -840,9 +848,11 @@ export default function WalletPanel() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     if (subTab === "pagopa") {
       fetchAllTransactions();
     }
+    return () => controller.abort();
   }, [subTab, companies]);
 
   // Fetch storico wallet
@@ -866,9 +876,11 @@ export default function WalletPanel() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     if (subTab === "storico") {
       fetchWalletHistory();
     }
+    return () => controller.abort();
   }, [subTab]);
 
   // v3.53.0: Carica sanzioni quando si seleziona il subtab
@@ -902,16 +914,20 @@ export default function WalletPanel() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     if (subTab === "sanzioni") {
       fetchSanzioni();
     }
+    return () => controller.abort();
   }, [subTab, sanzioniFilters]);
 
   // v3.54.1: Carica sanzioni anche nel tab PagoPA per mostrare lo storico pagamenti
   useEffect(() => {
+    const controller = new AbortController();
     if (subTab === "pagopa" && sanzioniList.length === 0) {
       fetchSanzioni();
     }
+    return () => controller.abort();
   }, [subTab]);
 
   // v3.53.0: Registra pagamento manuale sanzione
@@ -974,7 +990,9 @@ export default function WalletPanel() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     loadNotificheCount();
+    return () => controller.abort();
   }, []);
 
   // --- ACTIONS ---
