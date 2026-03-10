@@ -1,7 +1,32 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.8.4 (Filtro bot/scanner + rate limit log)
+> **Versione:** 9.8.5 (IndexedDB reconnect robusto per Safari)
 > **Data:** 11 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.8.5 (11 Mar 2026)
+> **🔄 INDEXEDDB RECONNECT ROBUSTO PER SAFARI**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `dms-hub-app-new` master | `1506893` | ✅ Allineato |
+> | Vercel frontend | `1506893` | ✅ Auto-deploy attivo |
+> | GitHub `mihub-backend-rest` master | `8a93c1a` | ✅ Allineato |
+> | Hetzner backend | `de45517` | ✅ Online |
+>
+> **Fix frontend (`dmsBus.ts` v3.0):**
+> - Backoff esponenziale sui retry: 1s → 2s → 4s (max 30s) invece di 100-200ms
+> - 3 tentativi invece di 2 prima del fallback localStorage
+> - `rateLimitedWarn()`: max 1 warning per tipo ogni 60 secondi (elimina il flood nel Guardian)
+> - `scheduleReconnect()`: auto-reconnect proattivo su evento `onclose` (Safari standby/background)
+> - Fallback silenzioso permanente (`dbFailed = true`) dopo 3 failure consecutive
+> - `consecutiveFailures` counter per tracking failure progressive
+> - Nessun `console.warn` ripetitivo durante il fallback
+>
+> **Combinato con v9.8.4 backend:** il flood IndexedDB è ora gestito su entrambi i lati:
+> - Frontend: rate-limit log + reconnect automatico
+> - Backend: rate-limit su `createLog` + filtro bot/scanner
 >
 > ---
 > ### CHANGELOG v9.8.4 (11 Mar 2026)
