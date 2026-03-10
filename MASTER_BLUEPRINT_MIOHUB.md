@@ -1,7 +1,44 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.8.1 (Merge Fix Claude + Pulizia Produzione)
+> **Versione:** 9.8.2 (AbortController su tutti i fetch)
 > **Data:** 10 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.8.2 (10 Mar 2026)
+> **🛡️ ABORTCONTROLLER — PREVENZIONE MEMORY LEAK SU TUTTI I FETCH**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `8220688` | ✅ Allineato |
+> | Hetzner backend (api.mio-hub.me) | `8220688` | ✅ Online, autodeploy attivo |
+> | GitHub `dms-hub-app-new` master | `87cefbd` | ✅ Allineato |
+> | Vercel frontend | `87cefbd` | ✅ Auto-deploy attivo |
+> | Neon DB | 4 mercati, **820 stalls** | ✅ Stabile |
+>
+> **Cherry-pick da branch `claude/review-production-fixes-3sUvQ`:**
+>
+> - `87cefbd` (cherry-pick di `a50d76d`) — Aggiunto `AbortController` a tutti i `useEffect` con fetch call
+>
+> **18 file modificati:**
+> - **Contexts:** MioContext, PermissionsContext, TransportContext
+> - **Hooks:** useAgentLogs, useInternalTraces, useSystemStatus, useConversations
+> - **Pages:** APITokensPage, CivicPage, GuardianDebug, GuardianEndpoints, GuardianLogs, HomePage, MapPage, WalletStorico
+> - **Components:** CivicReportsPanel, WalletPanel, CompanyWallet
+>
+> **Pattern applicato in ogni file:**
+> 1. `AbortController` creato all'inizio dell'`useEffect`
+> 2. `signal` passato a `fetch()` come opzione
+> 3. `controller.abort()` nel cleanup return dell'`useEffect`
+> 4. `AbortError` ignorato nel catch block
+>
+> **Problemi noti risolti:** ~~Missing AbortController su fetch (memory leak)~~
+>
+> **Problemi noti rimanenti (da pianificare):**
+> - DashboardPA.tsx = 9.775 righe (mega-componente, richiede refactor)
+> - Zero `React.memo` nel codebase (performance)
+> - API keys in `VITE_*` (MercaWeb, Forge) visibili nel bundle
+> - Auth tokens in localStorage (valutare httpOnly cookies)
 >
 > ---
 > ### CHANGELOG v9.8.1 (10 Mar 2026)
@@ -41,7 +78,7 @@
 > **Problemi noti (da pianificare separatamente):**
 > - DashboardPA.tsx = 9.775 righe (mega-componente, richiede refactor)
 > - Zero `React.memo` nel codebase (performance)
-> - Missing `AbortController` su fetch (memory leak)
+> - ~~Missing `AbortController` su fetch (memory leak)~~ → Risolto in v9.8.2
 > - API keys in `VITE_*` (MercaWeb, Forge) visibili nel bundle
 > - Auth tokens in localStorage (valutare httpOnly cookies)
 >
