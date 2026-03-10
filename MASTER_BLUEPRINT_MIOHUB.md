@@ -1,7 +1,40 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.8.3 (React.memo su 54 componenti)
-> **Data:** 10 Marzo 2026
+> **Versione:** 9.8.4 (Filtro bot/scanner + rate limit log)
+> **Data:** 11 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.8.4 (11 Mar 2026)
+> **🛡️ FILTRO BOT/SCANNER + RATE LIMIT LOG RIPETITIVI**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `de45517` | ✅ Allineato |
+> | Hetzner backend (api.mio-hub.me) | `de45517` | ✅ Online, autodeploy attivo |
+> | GitHub `dms-hub-app-new` master | `1284f8c` | ✅ Allineato |
+> | Vercel frontend | `1284f8c` | ✅ Auto-deploy attivo |
+> | Neon DB | 4 mercati, **820 stalls** | ✅ Stabile, errori: 885 → 59 |
+>
+> **Analisi errori (indagine diretta su DB):**
+> - 787 errori (92%) erano **flood IndexedDB** da Safari Mac ("Connection to Indexed Database server lost")
+> - ~30 errori erano **bot/scanner** (LeakIX, l9explore, silver.inc) che probing `/.env`, `/.git/config`, `/swagger.json`, `/gql`
+> - 8 errori `POST /api/route` da IP polacco (195.3.221.86, MEVSPACE) con 6 user-agent diversi = bot che ruota UA
+> - Errori reali rimanenti: 59 (legittimi: fraud endpoint 404, integrations 404, wallets 400, map removeLayer)
+>
+> **Fix backend (mihub-backend-rest):**
+> - `apiLogger.js` v1.3.1: aggiunto `/.env`, `/.git/`, `/swagger.json`, `/gql` ai `SCAN_PATTERNS`
+> - `apiLogger.js` v1.3.1: aggiunto filtro `BOT_USER_AGENTS` (l9scan, l9explore, leakix, silver.inc, zgrab, masscan, censys, shodan)
+> - `logs.js` v1.3.1: rate limit su `createLog` per errori frontend ripetitivi (finestra 5 minuti)
+> - Rate limit previene flood: da 400 errori/ora a max 12/ora per lo stesso errore identico
+> - Pulizia periodica mappa rate limit ogni 10 minuti
+>
+> **Pulizia DB:**
+> - Eliminati 826 errori spazzatura (bot + flood IndexedDB)
+> - Mantenuto 1 errore IndexedDB rappresentativo
+> - Errori rimanenti: 59 (tutti legittimi o da investigare)
+>
+> **Problema aperto:** Safari perde connessione IndexedDB quando la pagina resta in background → richiede fix frontend (reconnect automatico o fallback server)
 >
 > ---
 > ### CHANGELOG v9.8.3 (10 Mar 2026)
