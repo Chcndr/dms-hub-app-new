@@ -2,18 +2,33 @@
  * DMS-BUS: Sistema di trasferimento dati tra editor (IndexedDB + fallback localStorage)
  * Convertito da vanilla JS a TypeScript per integrazione React
  *
- * v2.0 — Aggiunta gestione automatica riconnessione IndexedDB:
- * - Auto-reconnect su "Connection to Indexed Database server lost"
- * - Retry con backoff su operazioni fallite
- * - Fallback automatico su localStorage se IndexedDB non disponibile
+ * v3.0 — Riconnessione robusta per Safari:
+ * - Auto-reconnect con backoff esponenziale (1s, 2s, 4s, max 30s)
+ * - Fallback silenzioso su localStorage dopo 3 tentativi falliti
+ * - Rate-limit sui log per evitare flood nel Guardian
+ * - Gestione "Connection to Indexed Database server lost" (Safari background tab)
  */
 
 const DBNAME = "dms-bus";
 const STORE = "kv";
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 3;
+const BACKOFF_BASE_MS = 1000;
+const BACKOFF_MAX_MS = 30000;
 
 let db: IDBDatabase | null = null;
-let dbFailed = false; // Se true, usa solo localStorage (IndexedDB non disponibile)
+let dbFailed = false;
+let reconnecting = false;
+let reconnectPromise: Promise<IDBDatabase | null> | null = null;
+let consecutiveFailures = 0;
+
+// Rate-limit logging: max 1 warning per tipo ogni 60 secondi
+const lastLogTime: Record<string, number> = {};
+function rateLimitedWarn(key: string, ...args: unknown[]): void {
+  const now = Date.now();
+  if (now - (lastLogTime[key] || 0) < 60_000) return;
+  lastLogTime[key] = now;
+  console.warn(...args);
+}
 
 function resetDB(): void {
   if (db) {
@@ -22,11 +37,39 @@ function resetDB(): void {
   db = null;
 }
 
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (dbFailed) return reject(new Error("IndexedDB non disponibile"));
-    if (db) return resolve(db);
+function backoffDelay(attempt: number): number {
+  return Math.min(BACKOFF_BASE_MS * Math.pow(2, attempt), BACKOFF_MAX_MS);
+}
 
+function scheduleReconnect(): void {
+  if (reconnecting || dbFailed) return;
+  reconnecting = true;
+  reconnectPromise = (async () => {
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const delay = backoffDelay(attempt);
+      await new Promise(r => setTimeout(r, delay));
+      try {
+        const result = await openDBInternal();
+        consecutiveFailures = 0;
+        reconnecting = false;
+        reconnectPromise = null;
+        rateLimitedWarn("reconnect-ok", "[DMS-BUS] IndexedDB riconnesso dopo", attempt + 1, "tentativi");
+        return result;
+      } catch {
+        // continue to next attempt
+      }
+    }
+    // All retries exhausted — switch to silent localStorage fallback
+    dbFailed = true;
+    reconnecting = false;
+    reconnectPromise = null;
+    rateLimitedWarn("reconnect-fail", "[DMS-BUS] IndexedDB non recuperabile dopo", MAX_RETRIES, "tentativi, fallback localStorage");
+    return null;
+  })();
+}
+
+function openDBInternal(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
     try {
       const request = indexedDB.open(DBNAME, 1);
 
@@ -34,27 +77,25 @@ function openDB(): Promise<IDBDatabase> {
         try {
           request.result.createObjectStore(STORE);
         } catch (e) {
-          console.warn("[DMS-BUS] Errore creazione store:", e);
+          rateLimitedWarn("create-store", "[DMS-BUS] Errore creazione store:", e);
         }
       };
 
       request.onsuccess = () => {
         db = request.result;
 
-        // Gestisci chiusura inaspettata della connessione (es. Safari standby)
         db.onclose = () => {
-          console.warn("[DMS-BUS] IndexedDB connessione chiusa, reset per riconnessione");
+          rateLimitedWarn("onclose", "[DMS-BUS] IndexedDB connessione chiusa, avvio riconnessione");
           resetDB();
+          scheduleReconnect();
         };
 
-        // Gestisci errori generici del database
-        db.onerror = (event) => {
-          console.warn("[DMS-BUS] IndexedDB errore:", event);
+        db.onerror = () => {
+          rateLimitedWarn("onerror", "[DMS-BUS] IndexedDB errore sulla connessione");
         };
 
-        // Gestisci version change (altro tab ha cancellato/aggiornato il DB)
         db.onversionchange = () => {
-          console.warn("[DMS-BUS] IndexedDB version change, chiudo connessione");
+          rateLimitedWarn("versionchange", "[DMS-BUS] IndexedDB version change, chiudo connessione");
           resetDB();
         };
 
@@ -62,27 +103,38 @@ function openDB(): Promise<IDBDatabase> {
       };
 
       request.onerror = () => {
-        console.warn("[DMS-BUS] IndexedDB apertura fallita:", request.error);
+        rateLimitedWarn("open-error", "[DMS-BUS] IndexedDB apertura fallita:", request.error);
         resetDB();
         reject(request.error);
       };
 
       request.onblocked = () => {
-        console.warn("[DMS-BUS] IndexedDB bloccato da altra connessione");
+        rateLimitedWarn("blocked", "[DMS-BUS] IndexedDB bloccato da altra connessione");
         reject(new Error("IndexedDB blocked"));
       };
     } catch (e) {
-      // indexedDB.open() può lanciare eccezione se IndexedDB non è disponibile
-      console.warn("[DMS-BUS] IndexedDB non disponibile:", e);
+      rateLimitedWarn("not-available", "[DMS-BUS] IndexedDB non disponibile:", e);
       dbFailed = true;
       reject(e);
     }
   });
 }
 
+function openDB(): Promise<IDBDatabase> {
+  if (dbFailed) return Promise.reject(new Error("IndexedDB non disponibile"));
+  if (db) return Promise.resolve(db);
+  if (reconnecting && reconnectPromise) {
+    return reconnectPromise.then(result => {
+      if (result) return result;
+      throw new Error("IndexedDB non disponibile");
+    });
+  }
+  return openDBInternal();
+}
+
 /**
- * Esegue un'operazione IndexedDB con retry automatico.
- * Se IndexedDB fallisce dopo i retry, usa il fallback localStorage.
+ * Esegue un'operazione IndexedDB con retry automatico e backoff esponenziale.
+ * Se IndexedDB fallisce dopo i retry, fallback silenzioso su localStorage.
  */
 async function withRetry<T>(
   idbOperation: () => Promise<T>,
@@ -92,7 +144,9 @@ async function withRetry<T>(
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      return await idbOperation();
+      const result = await idbOperation();
+      consecutiveFailures = 0;
+      return result;
     } catch (e: any) {
       const msg = e?.message || e?.name || String(e);
       const isConnectionLost =
@@ -104,15 +158,19 @@ async function withRetry<T>(
         msg.includes("TransactionInactiveError");
 
       if (isConnectionLost && attempt < MAX_RETRIES) {
-        console.warn(`[DMS-BUS] Tentativo ${attempt + 1}/${MAX_RETRIES} fallito, riconnessione...`);
+        rateLimitedWarn("retry", `[DMS-BUS] Tentativo ${attempt + 1}/${MAX_RETRIES} fallito, riconnessione...`);
         resetDB();
-        // Breve pausa prima del retry
-        await new Promise(r => setTimeout(r, 100 * (attempt + 1)));
+        await new Promise(r => setTimeout(r, backoffDelay(attempt)));
         continue;
       }
 
-      // Tutti i retry esauriti o errore non recuperabile
-      console.warn("[DMS-BUS] IndexedDB fallito, uso localStorage:", msg);
+      consecutiveFailures++;
+      if (consecutiveFailures >= MAX_RETRIES) {
+        dbFailed = true;
+        rateLimitedWarn("permanent-fail", "[DMS-BUS] IndexedDB fallito permanentemente, uso localStorage");
+      } else {
+        rateLimitedWarn("fallback", "[DMS-BUS] IndexedDB fallito, uso localStorage");
+      }
       return fallback();
     }
   }
