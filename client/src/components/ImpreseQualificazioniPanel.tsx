@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo} from "react";
 import {
   Card,
   CardContent,
@@ -79,7 +79,7 @@ const API_BASE_URL = MIHUB_API_BASE_URL;
 // COMPONENTE PRINCIPALE
 // ============================================================================
 
-export default function ImpreseQualificazioniPanel() {
+const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
   const [imprese, setImprese] = useState<ImpresaDTO[]>([]);
   const [selectedImpresa, setSelectedImpresa] = useState<ImpresaDTO | null>(
     null
@@ -474,4 +474,6 @@ export default function ImpreseQualificazioniPanel() {
       </div>
     </div>
   );
-}
+});
+
+export default ImpreseQualificazioniPanel;

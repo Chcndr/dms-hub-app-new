@@ -2,6 +2,7 @@
  * AIChatStatCard — Card statistiche strutturate da function calling backend
  * Renderizza KPI come occupazione, incassi, trend
  */
+import { memo } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { SSEDataEvent, StatItem } from "./types";
 
@@ -37,7 +38,7 @@ function StatCard({ stat }: { stat: StatItem }) {
   );
 }
 
-export function AIChatStatCard({ event }: AIChatStatCardProps) {
+export const AIChatStatCard = memo(function AIChatStatCard({ event }: AIChatStatCardProps) {
   const { title, content } = event;
   const { stats } = content;
 
@@ -57,4 +58,4 @@ export function AIChatStatCard({ event }: AIChatStatCardProps) {
       </div>
     </div>
   );
-}
+});

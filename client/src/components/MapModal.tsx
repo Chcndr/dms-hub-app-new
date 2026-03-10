@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo} from "react";
 import {
   X,
   MapPin,
@@ -17,7 +17,7 @@ interface MapModalProps {
   onClose: () => void;
 }
 
-export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
+export const MapModal: React.FC<MapModalProps> = memo(({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<
     "all" | "free" | "occupied" | "reserved"
@@ -238,4 +238,4 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
       </div>
     </div>
   );
-};
+});

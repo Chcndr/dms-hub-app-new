@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,7 @@ import {
   Target,
 } from "lucide-react";
 
-export function LegacyReportCards() {
+export const LegacyReportCards = memo(function LegacyReportCards() {
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -234,4 +234,4 @@ export function LegacyReportCards() {
       </div>
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ import {
   type EndpointConfig,
 } from "@/config/realEndpoints";
 
-export default function APIDashboardV2() {
+const APIDashboardV2 = memo(function APIDashboardV2() {
   const [selectedEndpoint, setSelectedEndpoint] =
     useState<EndpointConfig | null>(null);
   const [testResult, setTestResult] = useState<any>(null);
@@ -494,4 +494,6 @@ export default function APIDashboardV2() {
       </div>
     </div>
   );
-}
+});
+
+export default APIDashboardV2;

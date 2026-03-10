@@ -5,7 +5,7 @@
  * Usa tRPC tccSecurity.* per i dati.
  */
 
-import { useState } from "react";
+import { useState, memo} from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { TCC_API_BASE } from "@/config/api";
 import {
@@ -435,7 +435,7 @@ function AuditTrailSearch() {
 // MAIN COMPONENT
 // ============================================================================
 
-export default function FraudMonitorPanel() {
+const FraudMonitorPanel = memo(function FraudMonitorPanel() {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -459,4 +459,6 @@ export default function FraudMonitorPanel() {
       <AuditTrailSearch />
     </div>
   );
-}
+});
+
+export default FraudMonitorPanel;

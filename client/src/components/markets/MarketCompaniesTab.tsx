@@ -10,7 +10,7 @@
  * @date 25 novembre 2025
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo} from "react";
 import { ConcessionForm } from "./ConcessionForm";
 import {
   Building2,
@@ -329,7 +329,7 @@ export const STATO_IMPRESA_OPTIONS = [
 // MAIN COMPONENT
 // ============================================================================
 
-export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
+export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: MarketCompaniesTabProps) {
   const {
     marketId,
     marketName,
@@ -2193,7 +2193,7 @@ export function MarketCompaniesTab(props: MarketCompaniesTabProps) {
       )}
     </div>
   );
-}
+});
 
 // ============================================================================
 // QUALIFICAZIONE MODAL

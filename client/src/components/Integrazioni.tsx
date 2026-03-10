@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import GuardianIntegrations from "./GuardianIntegrations";
 import ConnessioniV2 from "./ConnessioniV2";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,7 +44,7 @@ import { trpcQuery, trpcMutate } from "@/lib/trpcHttp";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
 
-export default function Integrazioni() {
+const Integrazioni = memo(function Integrazioni() {
   const [activeTab, setActiveTab] = useState("api-dashboard");
 
   return (
@@ -122,7 +122,7 @@ export default function Integrazioni() {
       </Tabs>
     </div>
   );
-}
+});
 
 // ============================================================================
 // TAB 1: API DASHBOARD
@@ -3410,3 +3410,5 @@ function SecretsManager() {
     </div>
   );
 }
+
+export default Integrazioni;

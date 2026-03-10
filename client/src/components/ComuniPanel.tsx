@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import {
   Building2,
   Plus,
@@ -186,7 +186,7 @@ interface IPAResult {
   titolo_responsabile: string;
 }
 
-export default function ComuniPanel() {
+const ComuniPanel = memo(function ComuniPanel() {
   const [comuni, setComuni] = useState<Comune[]>([]);
   const [selectedComune, setSelectedComune] = useState<Comune | null>(null);
   const [settori, setSettori] = useState<Settore[]>([]);
@@ -3593,4 +3593,6 @@ export default function ComuniPanel() {
       )}
     </div>
   );
-}
+});
+
+export default ComuniPanel;

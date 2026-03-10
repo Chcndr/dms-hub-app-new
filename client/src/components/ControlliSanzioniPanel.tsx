@@ -12,7 +12,7 @@
  * 6. Notifiche PM - Sistema invio notifiche
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import { useImpersonation, authenticatedFetch } from "@/hooks/useImpersonation";
 import {
   Shield,
@@ -301,7 +301,7 @@ interface GiustificazioneManuale {
   created_at: string;
 }
 
-export default function ControlliSanzioniPanel() {
+const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
   // Hook per impersonificazione - legge comune_id dall'URL
   const {
     isImpersonating,
@@ -4301,7 +4301,7 @@ export default function ControlliSanzioniPanel() {
       )}
     </div>
   );
-}
+});
 
 /**
  * SegnalazioniPMSubtab - Subtab per visualizzare segnalazioni civiche per PM
@@ -4665,3 +4665,5 @@ function SegnalazioniPMSubtab({ comuneId }: { comuneId: number }) {
     </div>
   );
 }
+
+export default ControlliSanzioniPanel;

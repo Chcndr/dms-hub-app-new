@@ -3,7 +3,7 @@
  * Fase 2.5: Aggiunto feedback thumbs up/down + retry
  */
 import { Copy, Check, ThumbsUp, ThumbsDown, RotateCcw } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import { AIChatAvatar } from "./AIChatAvatar";
 import { AIChatMarkdown } from "./AIChatMarkdown";
 import type { ChatMessage } from "./types";
@@ -16,7 +16,7 @@ interface AIChatMessageProps {
   onFeedback?: (messageId: string, rating: "up" | "down") => void;
 }
 
-export function AIChatMessage({
+export const AIChatMessage = memo(function AIChatMessage({
   message,
   isStreaming,
   isLastAssistant,
@@ -143,4 +143,4 @@ export function AIChatMessage({
       </div>
     </div>
   );
-}
+});

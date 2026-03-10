@@ -2,7 +2,7 @@
 // Componente REALE per Logs e Debug (NO MOCK)
 // Collegato al backend mihub-backend-rest
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -24,7 +24,7 @@ import {
 // LOGS SECTION (System + Guardian) - REAL
 // ============================================================================
 
-export function LogsSectionReal() {
+export const LogsSectionReal = memo(function LogsSectionReal() {
   const [guardianLogs, setGuardianLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -222,13 +222,13 @@ export function LogsSectionReal() {
       </Card>
     </>
   );
-}
+});
 
 // ============================================================================
 // DEBUG SECTION - REAL
 // ============================================================================
 
-export function DebugSectionReal() {
+export const DebugSectionReal = memo(function DebugSectionReal() {
   const [stats, setStats] = useState<any>(null);
   const [health, setHealth] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -447,4 +447,4 @@ export function DebugSectionReal() {
       )}
     </>
   );
-}
+});

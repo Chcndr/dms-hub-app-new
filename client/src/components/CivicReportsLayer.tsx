@@ -8,7 +8,7 @@
  * @version 1.2.0 - Interfaccia allineata a schema Drizzle (camelCase)
  * @date 30 Gennaio 2026
  */
-import React, { useMemo } from "react";
+import React, { useMemo, memo} from "react";
 import { CircleMarker, Popup } from "react-leaflet";
 
 // ============================================================
@@ -309,4 +309,4 @@ export function CivicReportsLayer({
   );
 }
 
-export default CivicReportsLayer;
+export default memo(CivicReportsLayer);

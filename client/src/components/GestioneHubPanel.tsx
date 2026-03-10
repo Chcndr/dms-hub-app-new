@@ -9,7 +9,7 @@
  * @version 2.0 - Con dati reali dalle API
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo} from "react";
 import {
   Globe,
   MapPin,
@@ -152,7 +152,7 @@ interface HubData {
 // COMPONENTE PRINCIPALE
 // ============================================================================
 
-export default function GestioneHubPanel() {
+const GestioneHubPanel = memo(function GestioneHubPanel() {
   // Leggi subtab da URL params (es. ?subtab=rete-hub)
   const urlParams = new URLSearchParams(window.location.search);
   const subtabFromUrl = urlParams.get("subtab");
@@ -1828,4 +1828,6 @@ export default function GestioneHubPanel() {
       </Tabs>
     </div>
   );
-}
+});
+
+export default GestioneHubPanel;

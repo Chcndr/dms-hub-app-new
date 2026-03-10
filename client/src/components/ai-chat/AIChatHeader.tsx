@@ -1,6 +1,7 @@
 /**
  * AIChatHeader — Header con titolo conversazione + info modello
  */
+import { memo } from "react";
 import { Bot, Sparkles, PanelLeft } from "lucide-react";
 import type { Conversation, QuotaInfo } from "./types";
 
@@ -13,7 +14,7 @@ interface AIChatHeaderProps {
   showSidebarToggle?: boolean;
 }
 
-export function AIChatHeader({
+export const AIChatHeader = memo(function AIChatHeader({
   conversation,
   quota,
   onToggleSidebar,
@@ -58,4 +59,4 @@ export function AIChatHeader({
       </div>
     </div>
   );
-}
+});

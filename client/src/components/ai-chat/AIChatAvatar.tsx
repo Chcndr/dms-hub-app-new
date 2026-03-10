@@ -1,13 +1,14 @@
 /**
  * AIChatAvatar — Avatar per messaggi chat
  */
+import { memo } from "react";
 import { Bot, User, AlertCircle } from "lucide-react";
 
 interface AIChatAvatarProps {
   role: "user" | "assistant" | "system";
 }
 
-export function AIChatAvatar({ role }: AIChatAvatarProps) {
+export const AIChatAvatar = memo(function AIChatAvatar({ role }: AIChatAvatarProps) {
   if (role === "user") {
     return (
       <div className="size-8 shrink-0 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
@@ -29,4 +30,4 @@ export function AIChatAvatar({ role }: AIChatAvatarProps) {
       <AlertCircle className="size-4 text-red-400" />
     </div>
   );
-}
+});

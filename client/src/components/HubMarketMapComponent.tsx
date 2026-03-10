@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, memo} from "react";
 import {
   MapContainer,
   TileLayer,
@@ -247,7 +247,7 @@ function StallCenterController({
  * @param selectedStallNumber - Numero posteggio selezionato (evidenziato)
  * @param stallsData - Dati aggiornati dei posteggi dal database (per override colori/stato)
  */
-export function HubMarketMapComponent({
+export const HubMarketMapComponent = memo(function HubMarketMapComponent({
   mapData,
   center,
   zoom = 17,
@@ -1646,4 +1646,4 @@ export function HubMarketMapComponent({
       </div>
     </>
   );
-}
+});

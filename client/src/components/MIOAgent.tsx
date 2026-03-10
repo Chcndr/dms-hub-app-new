@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo} from "react";
 interface Task {
   id: string;
   title: string;
@@ -58,4 +58,4 @@ const MIOAgent = () => {
   );
 };
 
-export default MIOAgent;
+export default memo(MIOAgent);

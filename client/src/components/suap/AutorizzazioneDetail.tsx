@@ -5,7 +5,7 @@
  * Design identico a quello delle Concessioni.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ interface AutorizzazioneDetailProps {
   onBack: () => void;
 }
 
-export default function AutorizzazioneDetail({
+const AutorizzazioneDetail = memo(function AutorizzazioneDetail({
   autorizzazioneId,
   onBack,
 }: AutorizzazioneDetailProps) {
@@ -491,4 +491,6 @@ Documento generato il ${new Date().toLocaleDateString("it-IT")} alle ${new Date(
       </Card>
     </div>
   );
-}
+});
+
+export default AutorizzazioneDetail;

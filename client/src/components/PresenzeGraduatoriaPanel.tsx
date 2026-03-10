@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -1318,4 +1318,4 @@ export function PresenzeGraduatoriaPanel({
   );
 }
 
-export default PresenzeGraduatoriaPanel;
+export default memo(PresenzeGraduatoriaPanel);

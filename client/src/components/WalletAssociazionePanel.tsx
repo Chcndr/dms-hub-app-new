@@ -8,7 +8,7 @@
  *
  * @version 1.0.0
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,7 +72,7 @@ const TIPO_LABELS: Record<
   ALTRO: { label: "Altro", color: "#8b5cf6" },
 };
 
-export default function WalletAssociazionePanel() {
+const WalletAssociazionePanel = memo(function WalletAssociazionePanel() {
   const [wallet, setWallet] = useState<WalletData>(EMPTY_WALLET);
   const [transazioni, setTransazioni] = useState<Transazione[]>([]);
   const [loading, setLoading] = useState(true);
@@ -420,4 +420,6 @@ export default function WalletAssociazionePanel() {
       </Tabs>
     </div>
   );
-}
+});
+
+export default WalletAssociazionePanel;

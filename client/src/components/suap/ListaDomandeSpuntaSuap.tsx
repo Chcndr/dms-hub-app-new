@@ -5,7 +5,7 @@
  * Design coerente con ListaConcessioni (sfondo grigio, righe verdi).
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +77,7 @@ interface ListaDomandeSpuntaSuapProps {
   isAssociazione?: boolean;
 }
 
-export default function ListaDomandeSpuntaSuap({
+const ListaDomandeSpuntaSuap = memo(function ListaDomandeSpuntaSuap({
   onNuovaDomanda,
   onViewDomanda,
   onEditDomanda,
@@ -511,4 +511,6 @@ export default function ListaDomandeSpuntaSuap({
       </Card>
     </div>
   );
-}
+});
+
+export default ListaDomandeSpuntaSuap;

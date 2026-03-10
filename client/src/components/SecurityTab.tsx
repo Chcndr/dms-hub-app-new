@@ -7,7 +7,7 @@
  * @date 9 Gennaio 2026
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -86,7 +86,7 @@ import {
 import { ORCHESTRATORE_API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
 
-export default function SecurityTab() {
+const SecurityTab = memo(function SecurityTab() {
   const [activeSubTab, setActiveSubTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -2248,4 +2248,6 @@ export default function SecurityTab() {
       </Tabs>
     </div>
   );
-}
+});
+
+export default SecurityTab;

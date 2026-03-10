@@ -1,9 +1,10 @@
 /**
  * AIChatTypingIndicator — Animazione "sta scrivendo..."
  */
+import { memo } from "react";
 import { AIChatAvatar } from "./AIChatAvatar";
 
-export function AIChatTypingIndicator() {
+export const AIChatTypingIndicator = memo(function AIChatTypingIndicator() {
   return (
     <div className="flex items-start gap-3">
       <AIChatAvatar role="assistant" />
@@ -28,4 +29,4 @@ export function AIChatTypingIndicator() {
       </div>
     </div>
   );
-}
+});

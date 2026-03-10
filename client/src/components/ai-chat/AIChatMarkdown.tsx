@@ -8,7 +8,7 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { Copy, Check } from "lucide-react";
-import { useState, useCallback, useMemo, type ReactNode } from "react";
+import { useState, useCallback, useMemo, memo, type ReactNode } from "react";
 
 interface AIChatMarkdownProps {
   content: string;
@@ -52,7 +52,7 @@ const sanitizeSchema = {
   },
 };
 
-export function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
+export const AIChatMarkdown = memo(function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
   const rehypePlugins = useMemo(
     () => [[rehypeSanitize, sanitizeSchema], rehypeHighlight] as never[],
     []
@@ -154,4 +154,4 @@ export function AIChatMarkdown({ content, isStreaming }: AIChatMarkdownProps) {
       )}
     </div>
   );
-}
+});

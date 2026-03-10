@@ -12,7 +12,7 @@
  *
  * @version 1.0.0
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,7 +93,7 @@ const STATO_COLORS: Record<RichiestaServizio["stato"], string> = {
   rifiutata: "#ef4444",
 };
 
-export default function GestioneServiziAssociazionePanel() {
+const GestioneServiziAssociazionePanel = memo(function GestioneServiziAssociazionePanel() {
   const [servizi, setServizi] = useState<Servizio[]>([]);
   const [richieste, setRichieste] = useState<RichiestaServizio[]>([]);
   const [loading, setLoading] = useState(true);
@@ -622,4 +622,6 @@ export default function GestioneServiziAssociazionePanel() {
       </Tabs>
     </div>
   );
-}
+});
+
+export default GestioneServiziAssociazionePanel;

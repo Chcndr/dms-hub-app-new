@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo} from "react";
 import {
   Card,
   CardContent,
@@ -274,7 +274,7 @@ interface SuapPanelProps {
   mode?: "suap" | "associazione";
 }
 
-export default function SuapPanel({ mode = "suap" }: SuapPanelProps) {
+const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
   const isAssociazione = mode === "associazione";
   // State
   const [activeTab, setActiveTab] = useState<
@@ -4104,4 +4104,6 @@ Documento generato il ${new Date().toLocaleDateString("it-IT")} alle ${new Date(
       )}
     </div>
   );
-}
+});
+
+export default SuapPanel;

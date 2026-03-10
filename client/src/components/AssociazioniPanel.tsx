@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import {
   Building2,
   Plus,
@@ -124,7 +124,7 @@ interface UtenteAssociazione {
   created_at: string;
 }
 
-export default function AssociazioniPanel() {
+const AssociazioniPanel = memo(function AssociazioniPanel() {
   const [associazioni, setAssociazioni] = useState<Associazione[]>([]);
   const [selectedAssociazione, setSelectedAssociazione] =
     useState<Associazione | null>(null);
@@ -2283,4 +2283,6 @@ export default function AssociazioniPanel() {
       )}
     </div>
   );
-}
+});
+
+export default AssociazioniPanel;

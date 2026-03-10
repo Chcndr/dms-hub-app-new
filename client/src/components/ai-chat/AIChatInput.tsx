@@ -1,7 +1,7 @@
 /**
  * AIChatInput — Area input con invio + stop streaming
  */
-import { useState, useRef } from "react";
+import { useState, useRef, memo } from "react";
 import { Send, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +13,7 @@ interface AIChatInputProps {
   disabled?: boolean;
 }
 
-export function AIChatInput({
+export const AIChatInput = memo(function AIChatInput({
   onSend,
   onStop,
   isStreaming,
@@ -81,4 +81,4 @@ export function AIChatInput({
       )}
     </form>
   );
-}
+});

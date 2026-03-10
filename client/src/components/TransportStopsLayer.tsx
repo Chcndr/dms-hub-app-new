@@ -11,7 +11,7 @@
  * - Filtro per fermate vicine a un punto (HUB/Mercato)
  */
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, memo} from "react";
 import { Marker, Popup, LayerGroup, useMap } from "react-leaflet";
 import L from "leaflet";
 
@@ -369,4 +369,4 @@ export function TransportStopsLayer({
   );
 }
 
-export default TransportStopsLayer;
+export default memo(TransportStopsLayer);

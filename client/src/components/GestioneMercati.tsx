@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo} from "react";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -211,7 +211,7 @@ interface CompanyDetails {
  * Componente Gestione Mercati
  * Sistema completo per gestione mercati, posteggi e concessioni
  */
-export default function GestioneMercati() {
+const GestioneMercati = memo(function GestioneMercati() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [loading, setLoading] = useState(true);
@@ -483,7 +483,7 @@ export default function GestioneMercati() {
       {/* Pannello Presenze e Graduatoria RIMOSSO - ora integrato nella lista posteggi superiore */}
     </div>
   );
-}
+});
 
 /**
  * Dettaglio mercato con tab
@@ -6258,3 +6258,5 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
     </div>
   );
 }
+
+export default GestioneMercati;

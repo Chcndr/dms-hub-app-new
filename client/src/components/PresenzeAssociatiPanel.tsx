@@ -15,7 +15,7 @@
  *
  * @version 4.0.0
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -203,7 +203,7 @@ const STATO_LABELS: Record<string, string> = {
   revocato: "Revocato",
 };
 
-export default function PresenzeAssociatiPanel() {
+const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
   const [tesseramenti, setTesseramenti] = useState<Tesseramento[]>([]);
   const [stats, setStats] = useState<TesseramentiStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1594,4 +1594,6 @@ export default function PresenzeAssociatiPanel() {
       </Dialog>
     </div>
   );
-}
+});
+
+export default PresenzeAssociatiPanel;

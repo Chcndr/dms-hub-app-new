@@ -9,7 +9,7 @@
  *
  * @version 1.0.0
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,7 @@ const EMPTY_SCHEDA: SchedaPubblica = {
   tesserati_count: 0,
 };
 
-export default function SchedaPubblicaPanel() {
+const SchedaPubblicaPanel = memo(function SchedaPubblicaPanel() {
   const [scheda, setScheda] = useState<SchedaPubblica>(EMPTY_SCHEDA);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -607,4 +607,6 @@ export default function SchedaPubblicaPanel() {
       </Tabs>
     </div>
   );
-}
+});
+
+export default SchedaPubblicaPanel;

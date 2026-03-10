@@ -3,7 +3,7 @@
  * Mostra la lista dei cittadini registrati con wallet TCC
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
@@ -45,7 +45,7 @@ interface CitizenStats {
   avg_balance: number;
 }
 
-export default function ClientiTab() {
+const ClientiTab = memo(function ClientiTab() {
   const [citizens, setCitizens] = useState<Citizen[]>([]);
   const [stats, setStats] = useState<CitizenStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -378,4 +378,6 @@ export default function ClientiTab() {
       </Card>
     </div>
   );
-}
+});
+
+export default ClientiTab;

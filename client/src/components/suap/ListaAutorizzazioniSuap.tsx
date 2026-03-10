@@ -5,7 +5,7 @@
  * Design coerente con ListaConcessioni (sfondo grigio, righe verdi).
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,7 +65,7 @@ interface ListaAutorizzazioniSuapProps {
   onEditAutorizzazione?: (id: number) => void;
 }
 
-export default function ListaAutorizzazioniSuap({
+const ListaAutorizzazioniSuap = memo(function ListaAutorizzazioniSuap({
   onNuovaAutorizzazione,
   onViewAutorizzazione,
   onEditAutorizzazione,
@@ -378,4 +378,6 @@ export default function ListaAutorizzazioniSuap({
       </Card>
     </div>
   );
-}
+});
+
+export default ListaAutorizzazioniSuap;

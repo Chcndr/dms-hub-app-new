@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import {
   Wallet,
   Euro,
@@ -110,7 +110,7 @@ interface AnnualFeeCalculation {
   total_amount: number;
 }
 
-export default function WalletPanel() {
+const WalletPanel = memo(function WalletPanel() {
   const [subTab, setSubTab] = useState<
     | "wallet"
     | "pagopa"
@@ -4056,4 +4056,6 @@ export default function WalletPanel() {
       </Dialog>
     </div>
   );
-}
+});
+
+export default WalletPanel;

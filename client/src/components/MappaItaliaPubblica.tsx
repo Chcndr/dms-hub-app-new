@@ -15,7 +15,7 @@
  * - Statistiche posteggi (occupati/liberi/riservati)
  * - Lista posteggi in sola lettura
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo} from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -109,7 +109,7 @@ interface MarketMapData {
  * Componente Mappa Italia Pubblica
  * Versione semplificata per utenti pubblici
  */
-export default function MappaItaliaPubblica({
+const MappaItaliaPubblica = memo(function MappaItaliaPubblica({
   preselectedMarketId,
 }: { preselectedMarketId?: number } = {}) {
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -308,7 +308,7 @@ export default function MappaItaliaPubblica({
       )}
     </div>
   );
-}
+});
 
 /**
  * Dettaglio mercato PUBBLICO - solo mappa e statistiche
@@ -620,3 +620,5 @@ function PosteggiTabPubblica({
     </div>
   );
 }
+
+export default MappaItaliaPubblica;

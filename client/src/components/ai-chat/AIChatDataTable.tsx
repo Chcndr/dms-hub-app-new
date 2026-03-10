@@ -2,13 +2,14 @@
  * AIChatDataTable — Tabella dati strutturati da function calling backend
  * Renderizza dati di presenze, scadenze, concessionari, etc.
  */
+import { memo } from "react";
 import type { SSEDataEvent } from "./types";
 
 interface AIChatDataTableProps {
   event: SSEDataEvent;
 }
 
-export function AIChatDataTable({ event }: AIChatDataTableProps) {
+export const AIChatDataTable = memo(function AIChatDataTable({ event }: AIChatDataTableProps) {
   const { title, content } = event;
   const { columns, rows } = content;
 
@@ -63,4 +64,4 @@ export function AIChatDataTable({ event }: AIChatDataTableProps) {
       </div>
     </div>
   );
-}
+});

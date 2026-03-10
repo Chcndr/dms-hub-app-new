@@ -1,7 +1,7 @@
 /**
  * AIChatMessageList — Lista messaggi con auto-scroll
  */
-import { useEffect, useRef, useState, useCallback, Fragment } from "react";
+import { useEffect, useRef, useState, useCallback, Fragment, memo } from "react";
 import { ArrowDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AIChatMessage } from "./AIChatMessage";
@@ -22,7 +22,7 @@ interface AIChatMessageListProps {
   onFeedback?: (messageId: string, rating: "up" | "down") => void;
 }
 
-export function AIChatMessageList({
+export const AIChatMessageList = memo(function AIChatMessageList({
   messages,
   streamingContent,
   isStreaming,
@@ -224,4 +224,4 @@ export function AIChatMessageList({
       )}
     </div>
   );
-}
+});

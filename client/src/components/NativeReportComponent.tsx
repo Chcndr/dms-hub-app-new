@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -520,7 +520,7 @@ function ScoreBar({
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-export function NativeReportComponent() {
+export const NativeReportComponent = memo(function NativeReportComponent() {
   const [activeTab, setActiveTab] = useState("architecture");
   const [activeModule, setActiveModule] = useState(BLUEPRINT_SLIDES.modules[0]);
 
@@ -1386,4 +1386,4 @@ export function NativeReportComponent() {
       </div>
     </div>
   );
-}
+});

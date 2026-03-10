@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, memo} from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -226,7 +226,7 @@ const groupByCoordinates = (
   return groups;
 };
 
-export default function CivicReportsHeatmap() {
+const CivicReportsHeatmap = memo(function CivicReportsHeatmap() {
   const [reports, setReports] = useState<CivicReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -430,4 +430,6 @@ export default function CivicReportsHeatmap() {
       )}
     </div>
   );
-}
+});
+
+export default CivicReportsHeatmap;

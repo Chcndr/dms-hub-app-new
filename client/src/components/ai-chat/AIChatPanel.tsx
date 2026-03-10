@@ -233,6 +233,10 @@ export function AIChatPanel({
     []
   );
 
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => !prev);
+  }, []);
+
   // Export conversazione in testo
   const handleExport = useCallback(() => {
     const displayMsgs = messages.filter(m => m.role !== "system");
@@ -285,7 +289,7 @@ export function AIChatPanel({
         <AIChatHeader
           conversation={activeConversation}
           quota={quota}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onToggleSidebar={handleToggleSidebar}
           showSidebarToggle={isMobile || !sidebarOpen}
         />
 

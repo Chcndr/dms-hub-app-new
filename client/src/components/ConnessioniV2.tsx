@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ import {
 } from "@/config/realEndpoints";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
 
-export default function ConnessioniV2() {
+const ConnessioniV2 = memo(function ConnessioniV2() {
   const [testingIntegration, setTestingIntegration] = useState<string | null>(
     null
   );
@@ -550,4 +550,6 @@ export default function ConnessioniV2() {
       </Card>
     </div>
   );
-}
+});
+
+export default ConnessioniV2;

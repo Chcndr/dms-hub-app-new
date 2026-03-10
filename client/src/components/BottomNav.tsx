@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   Home,
   Navigation,
@@ -9,7 +10,7 @@ import {
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 
-export default function BottomNav() {
+const BottomNav = memo(function BottomNav() {
   const [location] = useLocation();
 
   const navItems = [
@@ -50,4 +51,6 @@ export default function BottomNav() {
       </div>
     </nav>
   );
-}
+});
+
+export default BottomNav;

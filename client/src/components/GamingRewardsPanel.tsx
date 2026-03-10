@@ -8,7 +8,7 @@
  *
  * NOTA: Usa REST API invece di tRPC per compatibilità con Vercel static deployment
  */
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, memo} from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -700,7 +700,7 @@ function ParamInput({
 }
 
 // Componente Principale
-export default function GamingRewardsPanel() {
+const GamingRewardsPanel = memo(function GamingRewardsPanel() {
   const [config, setConfig] = useState<GamingConfig>(DEFAULT_CONFIG);
   const [stats, setStats] = useState<GamingStats | null>(null);
   const [heatmapPoints, setHeatmapPoints] = useState<HeatmapPoint[]>([]);
@@ -3442,4 +3442,6 @@ export default function GamingRewardsPanel() {
       </Dialog>
     </div>
   );
-}
+});
+
+export default GamingRewardsPanel;

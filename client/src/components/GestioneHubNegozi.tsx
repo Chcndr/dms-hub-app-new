@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo} from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpcQuery, trpcMutate } from "@/lib/trpcHttp";
 import {
@@ -64,7 +64,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export default function GestioneHubNegozi() {
+const GestioneHubNegozi = memo(function GestioneHubNegozi() {
   const [selectedTab, setSelectedTab] = useState("anagrafica");
 
   // MAP STATE - Unified Logic
@@ -1784,4 +1784,6 @@ export default function GestioneHubNegozi() {
       </AlertDialog>
     </div>
   );
-}
+});
+
+export default GestioneHubNegozi;

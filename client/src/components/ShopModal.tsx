@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo} from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,7 +24,7 @@ interface ShopModalProps {
   onClose: () => void;
 }
 
-export default function ShopModal({ shop, onClose }: ShopModalProps) {
+const ShopModal = memo(function ShopModal({ shop, onClose }: ShopModalProps) {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<
     "home" | "prodotti" | "info" | "contatti"
@@ -404,4 +404,6 @@ export default function ShopModal({ shop, onClose }: ShopModalProps) {
       </div>
     </div>
   );
-}
+});
+
+export default ShopModal;

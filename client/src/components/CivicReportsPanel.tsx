@@ -5,7 +5,7 @@
  *
  * Mostra segnalazioni civiche con dati reali dall'API e configurazione TCC.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +58,7 @@ interface CivicConfig {
   notify_pa_enabled: boolean;
 }
 
-export default function CivicReportsPanel() {
+const CivicReportsPanel = memo(function CivicReportsPanel() {
   const [stats, setStats] = useState<CivicStats | null>(null);
   const [allReports, setAllReports] = useState<any[]>([]);
   const [config, setConfig] = useState<CivicConfig | null>(null);
@@ -419,4 +419,6 @@ export default function CivicReportsPanel() {
       )}
     </div>
   );
-}
+});
+
+export default CivicReportsPanel;

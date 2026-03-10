@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -18,7 +18,7 @@ type LogFile = {
   modified: string;
 };
 
-export default function MIOLogs() {
+const MIOLogs = memo(function MIOLogs() {
   const [selectedLog, setSelectedLog] = useState<LogFile | null>(null);
 
   // Query REST per recuperare i log agente
@@ -185,4 +185,6 @@ export default function MIOLogs() {
       </Dialog>
     </>
   );
-}
+});
+
+export default MIOLogs;

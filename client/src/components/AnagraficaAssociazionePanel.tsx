@@ -5,7 +5,7 @@
  *
  * @version 1.0.0
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ interface Fattura {
   descrizione?: string;
 }
 
-export default function AnagraficaAssociazionePanel() {
+const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() {
   const [associazione, setAssociazione] = useState<AssociazioneData | null>(
     null
   );
@@ -378,7 +378,7 @@ export default function AnagraficaAssociazionePanel() {
       </Tabs>
     </div>
   );
-}
+});
 
 function InfoRow({
   icon: Icon,
@@ -399,3 +399,5 @@ function InfoRow({
     </div>
   );
 }
+
+export default AnagraficaAssociazionePanel;

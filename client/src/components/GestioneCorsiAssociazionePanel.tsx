@@ -12,7 +12,7 @@
  *
  * @version 1.0.0
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,7 +93,7 @@ const CATEGORIE_CORSI = [
   "altro",
 ];
 
-export default function GestioneCorsiAssociazionePanel() {
+const GestioneCorsiAssociazionePanel = memo(function GestioneCorsiAssociazionePanel() {
   const [corsi, setCorsi] = useState<Corso[]>([]);
   const [iscrizioni, setIscrizioni] = useState<IscrizioneCorso[]>([]);
   const [loading, setLoading] = useState(true);
@@ -669,4 +669,6 @@ export default function GestioneCorsiAssociazionePanel() {
       </Tabs>
     </div>
   );
-}
+});
+
+export default GestioneCorsiAssociazionePanel;
