@@ -1,7 +1,48 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.8.2 (AbortController su tutti i fetch)
+> **Versione:** 9.8.3 (React.memo su 54 componenti)
 > **Data:** 10 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.8.3 (10 Mar 2026)
+> **⚡ REACT.MEMO — OTTIMIZZAZIONE RE-RENDER SU 54 COMPONENTI**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `8220688` | ✅ Allineato |
+> | Hetzner backend (api.mio-hub.me) | `8220688` | ✅ Online, autodeploy attivo |
+> | GitHub `dms-hub-app-new` master | `a993e05` | ✅ Allineato |
+> | Vercel frontend | `a993e05` | ✅ Auto-deploy attivo |
+> | Neon DB | 4 mercati, **820 stalls** | ✅ Stabile |
+>
+> **Cherry-pick da branch `claude/review-production-fixes-3sUvQ`:**
+>
+> - `a993e05` (cherry-pick di `982eac7`) — Aggiunto `React.memo()` a 54 componenti + `useCallback` in AIChatPanel
+>
+> **54 componenti wrappati con React.memo, organizzati in 3 tier:**
+>
+> *Tier 1 — Critical (DashboardPA tabs + AI chat):*
+> - GestioneMercati, WalletPanel, ControlliSanzioniPanel, CivicReportsPanel, ClientiTab, SecurityTab
+> - Tutti i 9 componenti AI chat: AIChatMessage, AIChatMessageList, AIChatInput, AIChatHeader, AIChatMarkdown, AIChatDataTable, AIChatAvatar, AIChatTypingIndicator, AIChatStatCard
+>
+> *Tier 2 — High (liste, tabelle, pannelli):*
+> - SUAP: ListaAutorizzazioniSuap, ListaDomandeSpuntaSuap, AutorizzazioneDetail, DomandaSpuntaDetail, SuapPanel
+> - MarketCompaniesTab, AssociazioniPanel, ComuniPanel, PresenzeGraduatoriaPanel, ImpreseQualificazioniPanel, Integrazioni, FraudMonitorPanel, NotificationsPanel
+> - Association panels: AnagraficaAssociazionePanel, WalletAssociazionePanel, PresenzeAssociatiPanel, GestioneCorsiAssociazionePanel, GestioneServiziAssociazionePanel, SchedaPubblicaPanel
+>
+> *Tier 3 — Medium (mappe, layer, modali):*
+> - HubMarketMapComponent, TransportStopsLayer, CivicReportsLayer, CivicReportsHeatmap, MapModal, ShopModal, MappaItaliaPubblica, NativeReportComponent, GamingRewardsPanel, GestioneHubPanel, GestioneHubNegozi
+> - APIDashboardV2, BottomNav, ConnessioniV2, LegacyReportCards, LogDebug, LogsDebugReal, MIOAgent, MIOLogs
+>
+> **useCallback fix:** `handleToggleSidebar` in AIChatPanel wrappato con `useCallback` per non invalidare memo su AIChatHeader
+>
+> **Problemi noti risolti:** ~~Zero React.memo nel codebase (performance)~~
+>
+> **Problemi noti rimanenti (da pianificare):**
+> - DashboardPA.tsx = 9.775 righe (mega-componente, richiede refactor)
+> - API keys in `VITE_*` (MercaWeb, Forge) visibili nel bundle
+> - Auth tokens in localStorage (valutare httpOnly cookies)
 >
 > ---
 > ### CHANGELOG v9.8.2 (10 Mar 2026)
@@ -36,7 +77,7 @@
 >
 > **Problemi noti rimanenti (da pianificare):**
 > - DashboardPA.tsx = 9.775 righe (mega-componente, richiede refactor)
-> - Zero `React.memo` nel codebase (performance)
+> - ~~Zero `React.memo` nel codebase (performance)~~ → Risolto in v9.8.3
 > - API keys in `VITE_*` (MercaWeb, Forge) visibili nel bundle
 > - Auth tokens in localStorage (valutare httpOnly cookies)
 >
