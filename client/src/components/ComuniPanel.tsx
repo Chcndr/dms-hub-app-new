@@ -2866,7 +2866,66 @@ const ComuniPanel = memo(function ComuniPanel() {
                                               </tr>
                                             ))}
                                           </tbody>
+                                          {/* Riga totali */}
+                                          <tfoot>
+                                            {(() => {
+                                              const imponibile = fatturaDettaglio.dettagli.reduce((sum, v) => sum + (v.subtotale || 0), 0);
+                                              const iva = imponibile * 0.22;
+                                              const totale = imponibile + iva;
+                                              return (
+                                                <>
+                                                  <tr className="border-t border-gray-600">
+                                                    <td colSpan={3} className="text-right py-1 px-1 text-gray-400 font-medium">Imponibile:</td>
+                                                    <td className="text-right py-1 px-1 text-white font-medium">
+                                                      € {imponibile.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </td>
+                                                  </tr>
+                                                  <tr>
+                                                    <td colSpan={3} className="text-right py-1 px-1 text-gray-400 font-medium">IVA (22%):</td>
+                                                    <td className="text-right py-1 px-1 text-white font-medium">
+                                                      € {iva.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </td>
+                                                  </tr>
+                                                  <tr className="border-t border-cyan-500/30">
+                                                    <td colSpan={3} className="text-right py-1.5 px-1 text-cyan-400 font-bold text-sm">TOTALE:</td>
+                                                    <td className="text-right py-1.5 px-1 text-cyan-400 font-bold text-sm">
+                                                      € {totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </td>
+                                                  </tr>
+                                                </>
+                                              );
+                                            })()}
+                                          </tfoot>
                                         </table>
+                                        {/* Pulsante Scarica PDF */}
+                                        <div className="mt-3 flex justify-end">
+                                          <button
+                                            onClick={async () => {
+                                              try {
+                                                const response = await authenticatedFetch(
+                                                  `${API_BASE_URL}/api/comuni/fatture/${fattura.id}/pdf`
+                                                );
+                                                if (!response.ok) throw new Error('Errore generazione PDF');
+                                                const blob = await response.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `Fattura_${fattura.numero_fattura}.pdf`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                window.URL.revokeObjectURL(url);
+                                                document.body.removeChild(a);
+                                              } catch (err) {
+                                                console.error('Errore download PDF:', err);
+                                                alert('Errore durante la generazione del PDF');
+                                              }
+                                            }}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs rounded-lg transition-colors"
+                                          >
+                                            <Download className="w-3.5 h-3.5" />
+                                            Scarica PDF
+                                          </button>
+                                        </div>
                                       </div>
                                     ) : (
                                       <p className="text-xs text-gray-500 text-center py-2">Nessun dettaglio disponibile</p>
