@@ -1,11 +1,26 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.9.0 (Sistema Fatturazione Automatica per Comuni)
+> **Versione:** 9.9.1 (Frontend Fatturazione + Fix Mismatch API)
 > **Data:** 11 Marzo 2026
 >
 > ---
+> ### CHANGELOG v9.9.1 (11 Mar 2026)
+> **💰 FRONTEND FATTURAZIONE + FIX MISMATCH API**
+>
+> **Frontend (ComuniPanel.tsx):**
+> - Dashboard Conteggio Operazioni: selettore periodo + tabella voci + totali + IVA + genera fattura
+> - Configurazione Tariffe: tabella editabile con toggle attiva/disattiva + inizializza default
+> - Dettaglio fattura espandibile con breakdown voci
+> - Badge "Auto" per fatture generate automaticamente
+> - Fix mismatch interfacce TypeScript (voce, riepilogo.imponibile, dettagli)
+> - Fix URL PUT tariffe → `/api/comuni/billing-tariffe/:id`
+> - Fix genera fattura → `/api/comuni/:id/billing-genera-fattura`
+> - pnpm check zero errori
+>
+> ---
+>
 > ### CHANGELOG v9.9.0 (11 Mar 2026)
-> **💰 SISTEMA FATTURAZIONE AUTOMATICA PER COMUNI**
+> **💰 SISTEMA FATTURAZIONE AUTOMATICA PER COMUNI (BACKEND)**
 >
 > **Progetto:** Sistema di conteggio operazioni e fatturazione automatica per ogni Comune.
 > Il sistema calcola automaticamente il costo del servizio MioHub basandosi sulle operazioni effettivamente svolte.
