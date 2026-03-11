@@ -2470,16 +2470,17 @@ const ComuniPanel = memo(function ComuniPanel() {
                                   </thead>
                                   <tbody>
                                     {billingSummary.voci.map((voce, idx) => (
-                                      <tr key={idx} className="border-b border-gray-700/50">
+                                      <tr key={idx} className={`border-b border-gray-700/50 ${!voce.attiva ? 'opacity-40' : ''}`}>
                                         <td className="py-2 px-2">
-                                          <span className="text-white">{voce.descrizione}</span>
+                                          <span className={voce.attiva ? 'text-white' : 'text-gray-500 line-through'}>{voce.descrizione}</span>
                                           <span className="text-xs text-gray-500 ml-2">({voce.voce})</span>
+                                          {!voce.attiva && <span className="text-xs text-red-400 ml-2">disattivata</span>}
                                         </td>
-                                        <td className="text-right py-2 px-2 text-gray-300">{voce.quantita}</td>
-                                        <td className="text-right py-2 px-2 text-gray-300">
+                                        <td className={`text-right py-2 px-2 ${voce.attiva ? 'text-gray-300' : 'text-gray-600'}`}>{voce.quantita}</td>
+                                        <td className={`text-right py-2 px-2 ${voce.attiva ? 'text-gray-300' : 'text-gray-600'}`}>
                                           € {voce.tariffa_unitaria.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
-                                        <td className="text-right py-2 px-2 text-white font-medium">
+                                        <td className={`text-right py-2 px-2 font-medium ${voce.attiva ? 'text-white' : 'text-gray-600'}`}>
                                           € {voce.subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
                                       </tr>
