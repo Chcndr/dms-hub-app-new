@@ -1,7 +1,27 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.9.1 (Frontend Fatturazione + Fix Mismatch API)
+> **Versione:** 9.9.2 (Fix Fatturazione: decimali, input, SQL)
 > **Data:** 11 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.9.2 (11 Mar 2026)
+> **🔧 FIX FATTURAZIONE: DECIMALI, INPUT FOCUS, SQL QUERY**
+>
+> **Backend (billing.js):**
+> - Fix critico: `c.business_id` → `c.impresa_id` nella query qualificazioni (causava 500 su billing-summary)
+> - Rimossa JOIN duplicata `stalls` → usa `c.market_id` diretto da concessions
+> - billing-summary ora funzionante e testato end-to-end
+>
+> **Database:**
+> - `billing_tariffe.tariffa_unitaria`: NUMERIC(10,4) → NUMERIC(10,2)
+> - `billing_dettaglio_fattura.tariffa_unitaria`: NUMERIC(10,4) → NUMERIC(10,2)
+> - `billing_dettaglio_fattura.subtotale`: NUMERIC(10,4) → NUMERIC(10,2)
+>
+> **Frontend (ComuniPanel.tsx):**
+> - Tutti i valori monetari ora mostrano 2 decimali (`maximumFractionDigits: 2`)
+> - Input tariffe: cambiato da `onChange` (salva ad ogni tasto, causa perdita focus) a `onBlur` (salva quando esci dal campo)
+> - Aggiunto `key` dinamico su input per forzare re-render dopo salvataggio API
+> - `defaultValue` invece di `value` per permettere editing libero
 >
 > ---
 > ### CHANGELOG v9.9.1 (11 Mar 2026)
