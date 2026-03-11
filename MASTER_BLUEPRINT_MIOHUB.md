@@ -1,9 +1,136 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.8.5 (IndexedDB reconnect robusto per Safari)
+> **Versione:** 9.9.0 (Sistema Fatturazione Automatica per Comuni)
 > **Data:** 11 Marzo 2026
 >
 > ---
+> ### CHANGELOG v9.9.0 (11 Mar 2026)
+> **💰 SISTEMA FATTURAZIONE AUTOMATICA PER COMUNI**
+>
+> **Progetto:** Sistema di conteggio operazioni e fatturazione automatica per ogni Comune.
+> Il sistema calcola automaticamente il costo del servizio MioHub basandosi sulle operazioni effettivamente svolte.
+>
+> ---
+>
+> #### MODELLO DI PRICING (3 livelli)
+>
+> **LIVELLO 1 — Canoni Base (fissi annuali)**
+>
+> | Servizio | Formula | Fonte dati DB |
+> |---|---|---|
+> | Gestione Mercati (include DMS Legacy) | Tariffa x posteggi x gg_mercato/anno | `markets.total_stalls` x `markets.annual_market_days` x tariffa |
+> | Servizio HUB | Canone base HUB + (tariffa/negozio x negozi) | `hub_locations` (attivi) + `hub_shops` per hub |
+> | AVA AI Chat | Canone fisso | `ai_conversations`, `ai_messages` |
+>
+> **LIVELLO 2 — Voci a Consumo (per operazione)**
+>
+> | Voce | Tabella DB | Tariffa default |
+> |---|---|---|
+> | Verbali emessi | `sanctions` | 5,00/verbale |
+> | Pratiche SCIA verificate | `suap_pratiche` + `suap_checks` | 10,00/pratica |
+> | Giornate mercato gestite | `market_sessions` | 2,00/giornata |
+> | Transazioni wallet | `wallet_transactions` | 0,50/transazione |
+> | Segnalazioni civiche | `civic_reports` | 2,00/segnalazione |
+> | Notifiche inviate | `notifiche_destinatari` | 0,10/notifica |
+> | Qualificazioni imprese | `qualificazioni` | 3,00/verifica |
+>
+> **LIVELLO 3 — Servizi Premium (opzionali)**
+>
+> | Servizio | Tariffa default |
+> |---|---|
+> | MIO Agent (Orchestratore AI) | 2.400,00/anno |
+> | Mobilità e Trasporti | 600,00/anno |
+> | Gaming/Rewards | 800,00/anno |
+> | Carbon Credits | 400,00/anno |
+>
+> **NOTA:** Il servizio DMS Legacy (bridge bidirezionale) è COMPRESO nella gestione mercati.
+>
+> ---
+>
+> #### NUOVE TABELLE DB
+>
+> **`billing_tariffe`** — Tariffe configurabili per comune
+> | Colonna | Tipo | Descrizione |
+> |---|---|---|
+> | id | SERIAL PK | ID univoco |
+> | comune_id | INTEGER FK | Riferimento al comune |
+> | voce | VARCHAR | Codice voce: `mercati`, `hub`, `hub_negozio`, `ava`, `verbali`, `suap`, `giornate`, `wallet`, `civic`, `notifiche`, `qualificazioni`, `mio_agent`, `mobilita`, `gaming`, `carbon` |
+> | tariffa_unitaria | NUMERIC(10,4) | Importo per unità |
+> | unita | VARCHAR | Descrizione unità: `posteggio/giornata`, `hub/anno`, `negozio/anno`, `verbale`, `pratica`, `giornata`, `transazione`, `segnalazione`, `notifica`, `verifica`, `anno` |
+> | attiva | BOOLEAN | Se la voce è attiva per questo comune |
+> | created_at | TIMESTAMP | Data creazione |
+> | updated_at | TIMESTAMP | Data aggiornamento |
+>
+> **`billing_dettaglio_fattura`** — Dettaglio voci per ogni fattura generata
+> | Colonna | Tipo | Descrizione |
+> |---|---|---|
+> | id | SERIAL PK | ID univoco |
+> | fattura_id | INTEGER FK | Riferimento a `comune_fatture.id` |
+> | voce | VARCHAR | Codice voce (come sopra) |
+> | descrizione | TEXT | Descrizione leggibile della voce |
+> | quantita | INTEGER | Numero operazioni nel periodo |
+> | tariffa_unitaria | NUMERIC(10,4) | Tariffa applicata |
+> | subtotale | NUMERIC(10,2) | quantita x tariffa_unitaria |
+> | periodo_da | DATE | Inizio periodo di riferimento |
+> | periodo_a | DATE | Fine periodo di riferimento |
+>
+> ---
+>
+> #### NUOVI ENDPOINT API (Backend)
+>
+> | Metodo | Endpoint | Descrizione |
+> |---|---|---|
+> | GET | `/api/comuni/:id/billing-tariffe` | Lista tariffe configurate per il comune |
+> | POST | `/api/comuni/:id/billing-tariffe` | Crea/aggiorna tariffa per il comune |
+> | PUT | `/api/comuni/billing-tariffe/:id` | Modifica tariffa specifica |
+> | DELETE | `/api/comuni/billing-tariffe/:id` | Elimina tariffa |
+> | POST | `/api/comuni/:id/billing-tariffe/init-defaults` | Inizializza tariffe default per il comune |
+> | GET | `/api/comuni/:id/billing-summary?da=YYYY-MM-DD&a=YYYY-MM-DD` | Calcolo automatico conteggio operazioni e importi per periodo |
+> | POST | `/api/comuni/:id/billing-genera-fattura` | Genera fattura automatica dal billing summary |
+> | GET | `/api/comuni/fatture/:id/dettaglio` | Dettaglio voci di una fattura |
+>
+> ---
+>
+> #### ISTRUZIONI FRONTEND (per Claude)
+>
+> **TASK:** Aggiornare il tab "Fatturazione" in `ComuniPanel.tsx` per integrare il nuovo sistema di billing.
+>
+> **Il tab Fatturazione deve avere 3 sezioni:**
+>
+> **Sezione 1 — Dashboard Conteggio Operazioni (NUOVA)**
+> - Selettore periodo: Mese / Trimestre / Anno (date picker da-a)
+> - Chiama `GET /api/comuni/:id/billing-summary?da=...&a=...`
+> - Mostra tabella con colonne: Voce | Quantità | Tariffa | Subtotale
+> - Riga totale in fondo con somma subtotali
+> - Riga IVA 22%
+> - Riga TOTALE IVA inclusa
+> - Pulsante "Genera Fattura" che chiama `POST /api/comuni/:id/billing-genera-fattura`
+> - Le voci con quantità 0 vanno mostrate in grigio
+> - Le voci canone (mercati, hub, ava) mostrano il calcolo annuale proporzionato al periodo
+>
+> **Sezione 2 — Configurazione Tariffe (NUOVA)**
+> - Chiama `GET /api/comuni/:id/billing-tariffe`
+> - Tabella editabile: Voce | Tariffa unitaria | Unità | Attiva (toggle)
+> - Pulsante "Inizializza Tariffe Default" che chiama `POST /api/comuni/:id/billing-tariffe/init-defaults`
+> - Ogni modifica chiama `PUT /api/comuni/billing-tariffe/:id`
+> - Design: card compatta con input inline, toggle per attiva/disattiva
+>
+> **Sezione 3 — Contratti e Fatture (ESISTENTE, da mantenere)**
+> - Mantieni tutto il codice esistente di contratti e fatture
+> - Aggiungi: quando si clicca su una fattura, mostra il dettaglio voci (`GET /api/comuni/fatture/:id/dettaglio`)
+> - Le fatture generate automaticamente dal billing devono avere un badge "Auto" per distinguerle
+>
+> **REGOLE:**
+> - NON cancellare file
+> - NON modificare file .md
+> - NON toccare BusHubEditor.tsx
+> - NON rimuovere codice esistente nel tab Fatturazione
+> - Aggiungi le 2 nuove sezioni SOPRA la sezione Contratti/Fatture esistente
+> - Usa lo stesso design system del resto dell'app (bg-gray-800/50, border-gray-700, text-cyan-400, etc.)
+> - Un unico commit, pusha sul branch
+>
+> ---
+>
 > ### CHANGELOG v9.8.5 (11 Mar 2026)
 > **🔄 INDEXEDDB RECONNECT ROBUSTO PER SAFARI**
 >
