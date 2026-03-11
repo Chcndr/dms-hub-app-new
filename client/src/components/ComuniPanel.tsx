@@ -2477,10 +2477,10 @@ const ComuniPanel = memo(function ComuniPanel() {
                                         </td>
                                         <td className="text-right py-2 px-2 text-gray-300">{voce.quantita}</td>
                                         <td className="text-right py-2 px-2 text-gray-300">
-                                          € {voce.tariffa_unitaria.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                          € {voce.tariffa_unitaria.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
                                         <td className="text-right py-2 px-2 text-white font-medium">
-                                          € {voce.subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                          € {voce.subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
                                       </tr>
                                     ))}
@@ -2493,19 +2493,19 @@ const ComuniPanel = memo(function ComuniPanel() {
                                 <div className="flex justify-between text-sm">
                                   <span className="text-gray-400">Totale Imponibile:</span>
                                   <span className="text-white">
-                                    € {billingSummary.riepilogo.imponibile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                    € {billingSummary.riepilogo.imponibile.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <span className="text-gray-400">IVA (22%):</span>
                                   <span className="text-white">
-                                    € {billingSummary.riepilogo.iva.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                    € {billingSummary.riepilogo.iva.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </span>
                                 </div>
                                 <div className="flex justify-between text-base font-semibold border-t border-gray-600 pt-2 mt-2">
                                   <span className="text-gray-300">Totale con IVA:</span>
                                   <span className="text-emerald-400">
-                                    € {billingSummary.riepilogo.totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                    € {billingSummary.riepilogo.totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </span>
                                 </div>
                               </div>
@@ -2591,8 +2591,14 @@ const ComuniPanel = memo(function ComuniPanel() {
                                         <input
                                           type="number"
                                           step="0.01"
-                                          value={tariffa.tariffa_unitaria}
-                                          onChange={e => handleUpdateTariffa(tariffa.id, { tariffa_unitaria: parseFloat(e.target.value) || 0 })}
+                                          key={`${tariffa.id}-${tariffa.tariffa_unitaria}`}
+                                          defaultValue={tariffa.tariffa_unitaria}
+                                          onBlur={e => {
+                                            const val = parseFloat(e.target.value) || 0;
+                                            if (val !== tariffa.tariffa_unitaria) {
+                                              handleUpdateTariffa(tariffa.id, { tariffa_unitaria: val });
+                                            }
+                                          }}
                                           className="w-24 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-right text-sm"
                                         />
                                       </td>
@@ -2851,10 +2857,10 @@ const ComuniPanel = memo(function ComuniPanel() {
                                                 <td className="py-1 px-1 text-gray-300">{voce.descrizione}</td>
                                                 <td className="text-right py-1 px-1 text-gray-400">{voce.quantita}</td>
                                                 <td className="text-right py-1 px-1 text-gray-400">
-                                                  € {voce.tariffa_unitaria.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                                  € {voce.tariffa_unitaria.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </td>
                                                 <td className="text-right py-1 px-1 text-white">
-                                                  € {voce.subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                                  € {voce.subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </td>
                                               </tr>
                                             ))}
