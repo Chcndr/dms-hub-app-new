@@ -1531,7 +1531,6 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                       onClick={handleRichiediRegolarizzazione}
                       disabled={
                         loading ||
-                        selectedPratica.stato === "APPROVED" ||
                         selectedPratica.stato === "REJECTED"
                       }
                       className="bg-orange-500 text-white hover:bg-orange-600"
@@ -1547,7 +1546,6 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                       onClick={handleNegaPratica}
                       disabled={
                         loading ||
-                        selectedPratica.stato === "APPROVED" ||
                         selectedPratica.stato === "REJECTED"
                       }
                       className="bg-red-600 text-white hover:bg-red-700"
