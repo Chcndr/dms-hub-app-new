@@ -22,6 +22,14 @@ import {
   CreditCard,
   Eye,
   ExternalLink,
+  BarChart3,
+  Settings,
+  Calendar,
+  ToggleLeft,
+  ToggleRight,
+  RefreshCw,
+  Zap,
+  ChevronRight,
 } from "lucide-react";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
 
@@ -156,6 +164,48 @@ interface Fattura {
   tipo_contratto?: string;
 }
 
+interface BillingSummaryVoce {
+  codice: string;
+  descrizione: string;
+  quantita: number;
+  tariffa_unitaria: number;
+  subtotale: number;
+}
+
+interface BillingSummary {
+  comune_id: number;
+  periodo: { da: string; a: string };
+  voci: BillingSummaryVoce[];
+  totale_imponibile: number;
+  iva: number;
+  totale_con_iva: number;
+}
+
+interface BillingTariffa {
+  id: number;
+  comune_id: number;
+  codice_voce: string;
+  descrizione: string;
+  tariffa_unitaria: number;
+  attiva: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FatturaDettaglioVoce {
+  codice: string;
+  descrizione: string;
+  quantita: number;
+  tariffa_unitaria: number;
+  subtotale: number;
+}
+
+interface FatturaDettaglio {
+  fattura: Fattura;
+  voci: FatturaDettaglioVoce[];
+  generata_automaticamente: boolean;
+}
+
 interface UtenteComune {
   id: number;
   comune_id: number;
@@ -241,6 +291,23 @@ const ComuniPanel = memo(function ComuniPanel() {
     stato: "emessa",
     note: "",
   });
+
+  // Stato per billing summary e tariffe
+  const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
+  const [loadingBillingSummary, setLoadingBillingSummary] = useState(false);
+  const [billingPeriodDa, setBillingPeriodDa] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString().split("T")[0];
+  });
+  const [billingPeriodA, setBillingPeriodA] = useState(() => new Date().toISOString().split("T")[0]);
+  const [billingTariffe, setBillingTariffe] = useState<BillingTariffa[]>([]);
+  const [loadingTariffe, setLoadingTariffe] = useState(false);
+  const [generatingFattura, setGeneratingFattura] = useState(false);
+  const [initializingTariffe, setInitializingTariffe] = useState(false);
+  const [fatturaDettaglio, setFatturaDettaglio] = useState<FatturaDettaglio | null>(null);
+  const [selectedFatturaId, setSelectedFatturaId] = useState<number | null>(null);
+  const [loadingDettaglio, setLoadingDettaglio] = useState(false);
 
   // Stato per permessi
   const [utentiComune, setUtentiComune] = useState<UtenteComune[]>([]);
@@ -519,6 +586,136 @@ const ComuniPanel = memo(function ComuniPanel() {
       }
     } catch (error) {
       console.error("Error deleting contratto:", error);
+    }
+  };
+
+  // Carica billing summary
+  const fetchBillingSummary = async (comuneId: number, da: string, a: string) => {
+    setLoadingBillingSummary(true);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/comuni/${comuneId}/billing-summary?da=${da}&a=${a}`
+      );
+      const data = await res.json();
+      if (data.success) {
+        setBillingSummary(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching billing summary:", error);
+    } finally {
+      setLoadingBillingSummary(false);
+    }
+  };
+
+  // Carica billing tariffe
+  const fetchBillingTariffe = async (comuneId: number) => {
+    setLoadingTariffe(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/comuni/${comuneId}/billing-tariffe`);
+      const data = await res.json();
+      if (data.success) {
+        setBillingTariffe(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching billing tariffe:", error);
+    } finally {
+      setLoadingTariffe(false);
+    }
+  };
+
+  // Aggiorna tariffa (attiva/disattiva o modifica importo)
+  const handleUpdateTariffa = async (tariffaId: number, updates: Partial<BillingTariffa>) => {
+    if (!selectedComune) return;
+    try {
+      const res = await authenticatedFetch(
+        `${API_BASE_URL}/api/comuni/${selectedComune.id}/billing-tariffe`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: tariffaId, ...updates }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        fetchBillingTariffe(selectedComune.id);
+      }
+    } catch (error) {
+      console.error("Error updating tariffa:", error);
+    }
+  };
+
+  // Inizializza tariffe default
+  const handleInitDefaultTariffe = async () => {
+    if (!selectedComune) return;
+    if (!confirm("Vuoi inizializzare le tariffe con i valori default?")) return;
+    setInitializingTariffe(true);
+    try {
+      const res = await authenticatedFetch(
+        `${API_BASE_URL}/api/comuni/${selectedComune.id}/billing-tariffe/init-defaults`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (data.success) {
+        fetchBillingTariffe(selectedComune.id);
+      }
+    } catch (error) {
+      console.error("Error initializing tariffe:", error);
+    } finally {
+      setInitializingTariffe(false);
+    }
+  };
+
+  // Genera fattura da billing summary
+  const handleGeneraFatturaDaSummary = async () => {
+    if (!selectedComune || !billingSummary) return;
+    if (!confirm(`Generare fattura per il periodo ${billingPeriodDa} - ${billingPeriodA}?\nTotale: € ${billingSummary.totale_con_iva.toLocaleString("it-IT", { minimumFractionDigits: 2 })}`)) return;
+    setGeneratingFattura(true);
+    try {
+      const res = await authenticatedFetch(
+        `${API_BASE_URL}/api/comuni/${selectedComune.id}/fatture`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            numero_fattura: `AUTO-${Date.now()}`,
+            data_emissione: new Date().toISOString().split("T")[0],
+            data_scadenza: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+            importo: billingSummary.totale_imponibile,
+            iva: billingSummary.iva,
+            totale: billingSummary.totale_con_iva,
+            stato: "emessa",
+            note: `Fattura automatica periodo ${billingPeriodDa} - ${billingPeriodA}`,
+            generata_automaticamente: true,
+            voci: billingSummary.voci,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        fetchFatturazione(selectedComune.id);
+        fetchBillingSummary(selectedComune.id, billingPeriodDa, billingPeriodA);
+      }
+    } catch (error) {
+      console.error("Error generating fattura:", error);
+    } finally {
+      setGeneratingFattura(false);
+    }
+  };
+
+  // Carica dettaglio fattura
+  const fetchFatturaDettaglio = async (fatturaId: number) => {
+    setLoadingDettaglio(true);
+    setSelectedFatturaId(fatturaId);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/comuni/fatture/${fatturaId}/dettaglio`);
+      const data = await res.json();
+      if (data.success) {
+        setFatturaDettaglio(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching fattura dettaglio:", error);
+    } finally {
+      setLoadingDettaglio(false);
     }
   };
 
@@ -1006,6 +1203,8 @@ const ComuniPanel = memo(function ComuniPanel() {
       fetchMercati(selectedComune.id);
       fetchHub(selectedComune.id);
       fetchFatturazione(selectedComune.id);
+      fetchBillingTariffe(selectedComune.id);
+      fetchBillingSummary(selectedComune.id, billingPeriodDa, billingPeriodA);
       fetchPermessi(selectedComune.id);
     }
   }, [selectedComune]);
@@ -2202,6 +2401,217 @@ const ComuniPanel = memo(function ComuniPanel() {
                     </div>
                   ) : (
                     <>
+                      {/* Sezione 1: Dashboard Conteggio Operazioni */}
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-medium text-white flex items-center gap-2">
+                            <BarChart3 className="w-4 h-4 text-cyan-400" />
+                            Dashboard Conteggio Operazioni
+                          </h4>
+                        </div>
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          {/* Selettore periodo */}
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-gray-400" />
+                              <label className="text-sm text-gray-400">Da:</label>
+                              <input
+                                type="date"
+                                value={billingPeriodDa}
+                                onChange={e => setBillingPeriodDa(e.target.value)}
+                                className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label className="text-sm text-gray-400">A:</label>
+                              <input
+                                type="date"
+                                value={billingPeriodA}
+                                onChange={e => setBillingPeriodA(e.target.value)}
+                                className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                              />
+                            </div>
+                            <button
+                              onClick={() => selectedComune && fetchBillingSummary(selectedComune.id, billingPeriodDa, billingPeriodA)}
+                              disabled={loadingBillingSummary}
+                              className="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                            >
+                              {loadingBillingSummary ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <RefreshCw className="w-3 h-3" />
+                              )}
+                              Aggiorna
+                            </button>
+                          </div>
+
+                          {loadingBillingSummary ? (
+                            <div className="text-center py-6">
+                              <Loader2 className="w-6 h-6 animate-spin mx-auto text-cyan-400" />
+                              <p className="text-gray-400 text-sm mt-2">Calcolo in corso...</p>
+                            </div>
+                          ) : billingSummary && billingSummary.voci.length > 0 ? (
+                            <>
+                              {/* Tabella voci */}
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="border-b border-gray-700">
+                                      <th className="text-left text-gray-400 py-2 px-2">Voce</th>
+                                      <th className="text-right text-gray-400 py-2 px-2">Quantità</th>
+                                      <th className="text-right text-gray-400 py-2 px-2">Tariffa Unit.</th>
+                                      <th className="text-right text-gray-400 py-2 px-2">Subtotale</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {billingSummary.voci.map((voce, idx) => (
+                                      <tr key={idx} className="border-b border-gray-700/50">
+                                        <td className="py-2 px-2">
+                                          <span className="text-white">{voce.descrizione}</span>
+                                          <span className="text-xs text-gray-500 ml-2">({voce.codice})</span>
+                                        </td>
+                                        <td className="text-right py-2 px-2 text-gray-300">{voce.quantita}</td>
+                                        <td className="text-right py-2 px-2 text-gray-300">
+                                          € {voce.tariffa_unitaria.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td className="text-right py-2 px-2 text-white font-medium">
+                                          € {voce.subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+
+                              {/* Totali */}
+                              <div className="mt-4 pt-3 border-t border-gray-700 space-y-1">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-400">Totale Imponibile:</span>
+                                  <span className="text-white">
+                                    € {billingSummary.totale_imponibile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-400">IVA (22%):</span>
+                                  <span className="text-white">
+                                    € {billingSummary.iva.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-base font-semibold border-t border-gray-600 pt-2 mt-2">
+                                  <span className="text-gray-300">Totale con IVA:</span>
+                                  <span className="text-emerald-400">
+                                    € {billingSummary.totale_con_iva.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Pulsante Genera Fattura */}
+                              <div className="mt-4 flex justify-end">
+                                <button
+                                  onClick={handleGeneraFatturaDaSummary}
+                                  disabled={generatingFattura}
+                                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+                                >
+                                  {generatingFattura ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Zap className="w-4 h-4" />
+                                  )}
+                                  Genera Fattura
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-center py-6 text-gray-400">
+                              <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">Nessuna operazione nel periodo selezionato</p>
+                              <p className="text-xs mt-1">Seleziona un periodo e clicca Aggiorna</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Sezione 2: Configurazione Tariffe */}
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-medium text-white flex items-center gap-2">
+                            <Settings className="w-4 h-4 text-cyan-400" />
+                            Configurazione Tariffe
+                          </h4>
+                          <button
+                            onClick={handleInitDefaultTariffe}
+                            disabled={initializingTariffe}
+                            className="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                          >
+                            {initializingTariffe ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <RefreshCw className="w-3 h-3" />
+                            )}
+                            Inizializza Tariffe Default
+                          </button>
+                        </div>
+
+                        <div className="bg-gray-800/50 rounded-lg border border-gray-700">
+                          {loadingTariffe ? (
+                            <div className="text-center py-6">
+                              <Loader2 className="w-6 h-6 animate-spin mx-auto text-cyan-400" />
+                              <p className="text-gray-400 text-sm mt-2">Caricamento tariffe...</p>
+                            </div>
+                          ) : billingTariffe.length === 0 ? (
+                            <div className="text-center py-6 text-gray-400">
+                              <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">Nessuna tariffa configurata</p>
+                              <p className="text-xs mt-1">Clicca "Inizializza Tariffe Default" per iniziare</p>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-gray-700">
+                                    <th className="text-left text-gray-400 py-3 px-4">Codice</th>
+                                    <th className="text-left text-gray-400 py-3 px-4">Descrizione</th>
+                                    <th className="text-right text-gray-400 py-3 px-4">Tariffa (€)</th>
+                                    <th className="text-center text-gray-400 py-3 px-4">Attiva</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {billingTariffe.map(tariffa => (
+                                    <tr key={tariffa.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
+                                      <td className="py-3 px-4">
+                                        <span className="text-cyan-400 font-mono text-xs">{tariffa.codice_voce}</span>
+                                      </td>
+                                      <td className="py-3 px-4 text-white">{tariffa.descrizione}</td>
+                                      <td className="py-3 px-4 text-right">
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          value={tariffa.tariffa_unitaria}
+                                          onChange={e => handleUpdateTariffa(tariffa.id, { tariffa_unitaria: parseFloat(e.target.value) || 0 })}
+                                          className="w-24 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-right text-sm"
+                                        />
+                                      </td>
+                                      <td className="py-3 px-4 text-center">
+                                        <button
+                                          onClick={() => handleUpdateTariffa(tariffa.id, { attiva: !tariffa.attiva })}
+                                          className="inline-flex items-center"
+                                        >
+                                          {tariffa.attiva ? (
+                                            <ToggleRight className="w-6 h-6 text-emerald-400" />
+                                          ) : (
+                                            <ToggleLeft className="w-6 h-6 text-gray-500" />
+                                          )}
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       {/* Sezione Contratti */}
                       <div className="mb-6">
                         <div className="flex items-center justify-between mb-4">
@@ -2333,65 +2743,124 @@ const ComuniPanel = memo(function ComuniPanel() {
                         ) : (
                           <div className="space-y-2">
                             {fatture.map(fattura => (
-                              <div
-                                key={fattura.id}
-                                className="bg-gray-800/50 rounded-lg p-3 border border-gray-700"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-4">
-                                    <div>
-                                      <span className="font-medium text-white">
-                                        #{fattura.numero_fattura}
-                                      </span>
-                                      <p className="text-xs text-gray-500">
-                                        {fattura.data_emissione
-                                          ? new Date(
-                                              fattura.data_emissione
-                                            ).toLocaleDateString("it-IT")
-                                          : "-"}
-                                      </p>
+                              <div key={fattura.id}>
+                                <div
+                                  className="bg-gray-800/50 rounded-lg p-3 border border-gray-700 cursor-pointer hover:bg-gray-700/50 transition-colors"
+                                  onClick={() => {
+                                    if (selectedFatturaId === fattura.id) {
+                                      setSelectedFatturaId(null);
+                                      setFatturaDettaglio(null);
+                                    } else {
+                                      fetchFatturaDettaglio(fattura.id);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium text-white">
+                                            #{fattura.numero_fattura}
+                                          </span>
+                                          {fattura.numero_fattura?.startsWith("AUTO-") && (
+                                            <span className="px-1.5 py-0.5 text-[10px] rounded bg-cyan-500/20 text-cyan-400 font-medium">
+                                              Auto
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                          {fattura.data_emissione
+                                            ? new Date(
+                                                fattura.data_emissione
+                                              ).toLocaleDateString("it-IT")
+                                            : "-"}
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-sm font-medium text-white">
+                                          €{" "}
+                                          {Number(
+                                            fattura.totale || 0
+                                          ).toLocaleString("it-IT", {
+                                            minimumFractionDigits: 2,
+                                          })}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          IVA incl.
+                                        </p>
+                                      </div>
                                     </div>
-                                    <div className="text-right">
-                                      <p className="text-sm font-medium text-white">
-                                        €{" "}
-                                        {Number(
-                                          fattura.totale || 0
-                                        ).toLocaleString("it-IT", {
-                                          minimumFractionDigits: 2,
-                                        })}
-                                      </p>
-                                      <p className="text-xs text-gray-500">
-                                        IVA incl.
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`px-2 py-1 text-xs rounded-full ${
-                                        fattura.stato === "pagata"
-                                          ? "bg-emerald-500/20 text-emerald-400"
-                                          : fattura.stato === "scaduta"
-                                            ? "bg-red-500/20 text-red-400"
-                                            : "bg-yellow-500/20 text-yellow-400"
-                                      }`}
-                                    >
-                                      {fattura.stato}
-                                    </span>
-                                    {fattura.stato !== "pagata" && (
-                                      <button
-                                        onClick={() =>
-                                          handleUpdateFatturaStato(
-                                            fattura.id,
-                                            "pagata"
-                                          )
-                                        }
-                                        className="text-xs text-emerald-400 hover:underline"
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className={`px-2 py-1 text-xs rounded-full ${
+                                          fattura.stato === "pagata"
+                                            ? "bg-emerald-500/20 text-emerald-400"
+                                            : fattura.stato === "scaduta"
+                                              ? "bg-red-500/20 text-red-400"
+                                              : "bg-yellow-500/20 text-yellow-400"
+                                        }`}
                                       >
-                                        Segna pagata
-                                      </button>
-                                    )}
+                                        {fattura.stato}
+                                      </span>
+                                      {fattura.stato !== "pagata" && (
+                                        <button
+                                          onClick={e => {
+                                            e.stopPropagation();
+                                            handleUpdateFatturaStato(
+                                              fattura.id,
+                                              "pagata"
+                                            );
+                                          }}
+                                          className="text-xs text-emerald-400 hover:underline"
+                                        >
+                                          Segna pagata
+                                        </button>
+                                      )}
+                                      <ChevronRight className={`w-4 h-4 text-gray-500 transition-transform ${selectedFatturaId === fattura.id ? "rotate-90" : ""}`} />
+                                    </div>
                                   </div>
                                 </div>
+
+                                {/* Dettaglio voci fattura */}
+                                {selectedFatturaId === fattura.id && (
+                                  <div className="ml-4 mt-1 bg-gray-900/50 rounded-lg p-3 border border-gray-700/50">
+                                    {loadingDettaglio ? (
+                                      <div className="text-center py-3">
+                                        <Loader2 className="w-5 h-5 animate-spin mx-auto text-cyan-400" />
+                                      </div>
+                                    ) : fatturaDettaglio && fatturaDettaglio.voci.length > 0 ? (
+                                      <div>
+                                        <p className="text-xs text-gray-400 mb-2 font-medium">Dettaglio voci:</p>
+                                        <table className="w-full text-xs">
+                                          <thead>
+                                            <tr className="border-b border-gray-700">
+                                              <th className="text-left text-gray-500 py-1 px-1">Voce</th>
+                                              <th className="text-right text-gray-500 py-1 px-1">Qtà</th>
+                                              <th className="text-right text-gray-500 py-1 px-1">Tariffa</th>
+                                              <th className="text-right text-gray-500 py-1 px-1">Subtotale</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {fatturaDettaglio.voci.map((voce, idx) => (
+                                              <tr key={idx} className="border-b border-gray-800">
+                                                <td className="py-1 px-1 text-gray-300">{voce.descrizione}</td>
+                                                <td className="text-right py-1 px-1 text-gray-400">{voce.quantita}</td>
+                                                <td className="text-right py-1 px-1 text-gray-400">
+                                                  € {voce.tariffa_unitaria.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="text-right py-1 px-1 text-white">
+                                                  € {voce.subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-gray-500 text-center py-2">Nessun dettaglio disponibile</p>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
