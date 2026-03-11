@@ -1,7 +1,47 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.9.2 (Fix Fatturazione: decimali, input, SQL)
+> **Versione:** 9.9.4 (PDF Fatture + Totali Dettaglio)
 > **Data:** 11 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.9.4 (11 Mar 2026)
+> **📄 GENERAZIONE PDF FATTURE + TOTALI NEL DETTAGLIO**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `9b5edee` | ✅ Allineato |
+> | Hetzner backend (api.mio-hub.me) | `9b5edee` | ✅ Autodeploy |
+> | GitHub `dms-hub-app-new` master | `6a5c76a` | ✅ Allineato |
+> | Vercel frontend | `6a5c76a` | ✅ Autodeploy |
+>
+> **Backend (billing.js):**
+> - Nuovo endpoint `GET /api/comuni/fatture/:fatturaId/pdf` per generazione PDF professionale
+> - PDF include: intestazione MIO HUB, dati destinatario (Comune, provincia, PEC, CF, codice IPA), tabella dettaglio voci (descrizione, quantità, tariffa, subtotale), sezione totali (Imponibile + IVA 22% + Totale), footer con timestamp
+> - Content-Disposition attachment per download diretto
+> - Gestione paginazione automatica per fatture con molte voci
+> - Aggiunta dipendenza `pdfkit` v0.17.2
+>
+> **Frontend (ComuniPanel.tsx):**
+> - Aggiunta riga totali nel pannello dettaglio fattura espandibile: **Imponibile → IVA (22%) → TOTALE**
+> - Calcolo totali dinamico dalla somma dei subtotali delle voci
+> - Stile coerente con il tema cyan del dashboard
+> - Aggiunto pulsante **"Scarica PDF"** con icona Download nel pannello dettaglio
+> - Download PDF tramite `authenticatedFetch` + blob download
+> - Gestione errori con alert utente
+>
+> ---
+> ### CHANGELOG v9.9.3 (11 Mar 2026)
+> **🎨 VOCI DISATTIVATE: STILE VISIVO + SUBTOTALE ZERO**
+>
+> **Backend (billing.js):**
+> - Fix: voci con tariffa disattivata (`attiva = false`) ora restituiscono `subtotale: 0` nel billing-summary
+> - Le voci disattivate vengono comunque incluse nel riepilogo ma con importo azzerato
+>
+> **Frontend (ComuniPanel.tsx):**
+> - Voci disattivate mostrate in grigio con testo barrato e label rossa "disattivata"
+> - Subtotale delle voci disattivate mostra €0.00
+> - Distinzione visiva chiara tra voci attive e disattivate nel conteggio operazioni
 >
 > ---
 > ### CHANGELOG v9.9.2 (11 Mar 2026)
