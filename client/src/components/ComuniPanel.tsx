@@ -162,38 +162,51 @@ interface Fattura {
   note: string;
   contratto_descrizione?: string;
   tipo_contratto?: string;
+  tipo?: string;
 }
 
 interface BillingSummaryVoce {
-  codice: string;
+  voce: string;
   descrizione: string;
   quantita: number;
   tariffa_unitaria: number;
   subtotale: number;
+  attiva: boolean;
+  tipo: string;
+  unita: string;
+  quantita_periodo: string | number;
 }
 
 interface BillingSummary {
   comune_id: number;
-  periodo: { da: string; a: string };
+  periodo_da: string;
+  periodo_a: string;
+  proporzione_periodo: number;
   voci: BillingSummaryVoce[];
-  totale_imponibile: number;
-  iva: number;
-  totale_con_iva: number;
+  riepilogo: {
+    imponibile: number;
+    iva_percentuale: number;
+    iva: number;
+    totale: number;
+    voci_attive: number;
+    voci_totali: number;
+  };
 }
 
 interface BillingTariffa {
   id: number;
   comune_id: number;
-  codice_voce: string;
+  voce: string;
   descrizione: string;
   tariffa_unitaria: number;
+  unita: string;
   attiva: boolean;
   created_at: string;
   updated_at: string;
 }
 
 interface FatturaDettaglioVoce {
-  codice: string;
+  voce: string;
   descrizione: string;
   quantita: number;
   tariffa_unitaria: number;
@@ -202,8 +215,7 @@ interface FatturaDettaglioVoce {
 
 interface FatturaDettaglio {
   fattura: Fattura;
-  voci: FatturaDettaglioVoce[];
-  generata_automaticamente: boolean;
+  dettagli: FatturaDettaglioVoce[];
 }
 
 interface UtenteComune {
@@ -628,11 +640,11 @@ const ComuniPanel = memo(function ComuniPanel() {
     if (!selectedComune) return;
     try {
       const res = await authenticatedFetch(
-        `${API_BASE_URL}/api/comuni/${selectedComune.id}/billing-tariffe`,
+        `${API_BASE_URL}/api/comuni/billing-tariffe/${tariffaId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: tariffaId, ...updates }),
+          body: JSON.stringify(updates),
         }
       );
       const data = await res.json();
@@ -668,25 +680,18 @@ const ComuniPanel = memo(function ComuniPanel() {
   // Genera fattura da billing summary
   const handleGeneraFatturaDaSummary = async () => {
     if (!selectedComune || !billingSummary) return;
-    if (!confirm(`Generare fattura per il periodo ${billingPeriodDa} - ${billingPeriodA}?\nTotale: € ${billingSummary.totale_con_iva.toLocaleString("it-IT", { minimumFractionDigits: 2 })}`)) return;
+    if (!confirm(`Generare fattura per il periodo ${billingPeriodDa} - ${billingPeriodA}?\nTotale: € ${billingSummary.riepilogo.totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}`)) return;
     setGeneratingFattura(true);
     try {
       const res = await authenticatedFetch(
-        `${API_BASE_URL}/api/comuni/${selectedComune.id}/fatture`,
+        `${API_BASE_URL}/api/comuni/${selectedComune.id}/billing-genera-fattura`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            numero_fattura: `AUTO-${Date.now()}`,
-            data_emissione: new Date().toISOString().split("T")[0],
-            data_scadenza: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
-            importo: billingSummary.totale_imponibile,
-            iva: billingSummary.iva,
-            totale: billingSummary.totale_con_iva,
-            stato: "emessa",
+            periodo_da: billingPeriodDa,
+            periodo_a: billingPeriodA,
             note: `Fattura automatica periodo ${billingPeriodDa} - ${billingPeriodA}`,
-            generata_automaticamente: true,
-            voci: billingSummary.voci,
           }),
         }
       );
@@ -2468,7 +2473,7 @@ const ComuniPanel = memo(function ComuniPanel() {
                                       <tr key={idx} className="border-b border-gray-700/50">
                                         <td className="py-2 px-2">
                                           <span className="text-white">{voce.descrizione}</span>
-                                          <span className="text-xs text-gray-500 ml-2">({voce.codice})</span>
+                                          <span className="text-xs text-gray-500 ml-2">({voce.voce})</span>
                                         </td>
                                         <td className="text-right py-2 px-2 text-gray-300">{voce.quantita}</td>
                                         <td className="text-right py-2 px-2 text-gray-300">
@@ -2488,19 +2493,19 @@ const ComuniPanel = memo(function ComuniPanel() {
                                 <div className="flex justify-between text-sm">
                                   <span className="text-gray-400">Totale Imponibile:</span>
                                   <span className="text-white">
-                                    € {billingSummary.totale_imponibile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                    € {billingSummary.riepilogo.imponibile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
                                   </span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <span className="text-gray-400">IVA (22%):</span>
                                   <span className="text-white">
-                                    € {billingSummary.iva.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                    € {billingSummary.riepilogo.iva.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
                                   </span>
                                 </div>
                                 <div className="flex justify-between text-base font-semibold border-t border-gray-600 pt-2 mt-2">
                                   <span className="text-gray-300">Totale con IVA:</span>
                                   <span className="text-emerald-400">
-                                    € {billingSummary.totale_con_iva.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                                    € {billingSummary.riepilogo.totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
                                   </span>
                                 </div>
                               </div>
@@ -2579,7 +2584,7 @@ const ComuniPanel = memo(function ComuniPanel() {
                                   {billingTariffe.map(tariffa => (
                                     <tr key={tariffa.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
                                       <td className="py-3 px-4">
-                                        <span className="text-cyan-400 font-mono text-xs">{tariffa.codice_voce}</span>
+                                        <span className="text-cyan-400 font-mono text-xs">{tariffa.voce}</span>
                                       </td>
                                       <td className="py-3 px-4 text-white">{tariffa.descrizione}</td>
                                       <td className="py-3 px-4 text-right">
@@ -2762,7 +2767,7 @@ const ComuniPanel = memo(function ComuniPanel() {
                                           <span className="font-medium text-white">
                                             #{fattura.numero_fattura}
                                           </span>
-                                          {fattura.numero_fattura?.startsWith("AUTO-") && (
+                                          {fattura.tipo === "automatica" && (
                                             <span className="px-1.5 py-0.5 text-[10px] rounded bg-cyan-500/20 text-cyan-400 font-medium">
                                               Auto
                                             </span>
@@ -2828,7 +2833,7 @@ const ComuniPanel = memo(function ComuniPanel() {
                                       <div className="text-center py-3">
                                         <Loader2 className="w-5 h-5 animate-spin mx-auto text-cyan-400" />
                                       </div>
-                                    ) : fatturaDettaglio && fatturaDettaglio.voci.length > 0 ? (
+                                    ) : fatturaDettaglio && fatturaDettaglio.dettagli.length > 0 ? (
                                       <div>
                                         <p className="text-xs text-gray-400 mb-2 font-medium">Dettaglio voci:</p>
                                         <table className="w-full text-xs">
@@ -2841,7 +2846,7 @@ const ComuniPanel = memo(function ComuniPanel() {
                                             </tr>
                                           </thead>
                                           <tbody>
-                                            {fatturaDettaglio.voci.map((voce, idx) => (
+                                            {fatturaDettaglio.dettagli.map((voce, idx) => (
                                               <tr key={idx} className="border-b border-gray-800">
                                                 <td className="py-1 px-1 text-gray-300">{voce.descrizione}</td>
                                                 <td className="text-right py-1 px-1 text-gray-400">{voce.quantita}</td>
