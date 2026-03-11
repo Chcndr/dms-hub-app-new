@@ -1275,11 +1275,12 @@ export default function SciaForm({
                 </div>
                 {/* Dropdown autocomplete Subentrante */}
                 {showSuggestions && filteredImprese.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-96 overflow-y-auto">
+                  <div className="absolute z-[9999] w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-96 overflow-y-auto" style={{ top: '100%' }}>
                     {filteredImprese.map(impresa => (
                       <button
                         key={impresa.id}
                         type="button"
+                        onMouseDown={e => e.preventDefault()}
                         onClick={() => {
                           populateSubentranteData(impresa);
                           setSelectedImpresa(impresa);
@@ -1575,19 +1576,21 @@ export default function SciaForm({
                 {/* Dropdown autocomplete Cedente */}
                 {showCedenteSuggestions &&
                   filteredCedenteImprese.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-96 overflow-y-auto">
+                    <div className="absolute z-[9999] w-full mt-1 bg-[#0f172a] border border-[#334155] rounded-lg shadow-xl max-h-96 overflow-y-auto" style={{ top: '100%' }}>
                       {filteredCedenteImprese.map(impresa => (
                         <button
                           key={impresa.id}
                           type="button"
+                          onMouseDown={e => e.preventDefault()}
                           onClick={() => {
                             populateCedenteData(impresa);
+                            setCedenteSearchQuery(impresa.denominazione || '');
                             setShowCedenteSuggestions(false);
                             toast.success("Cedente selezionato!", {
                               description: impresa.denominazione,
                             });
                           }}
-                          className="w-full px-4 py-3 text-left hover:bg-[#1e293b] border-b border-[#334155] last:border-b-0 transition-colors"
+                          className="w-full px-4 py-3 text-left hover:bg-[#1e293b] border-b border-[#334155] last:border-b-0 transition-colors cursor-pointer"
                         >
                           <p className="font-medium text-[#e8fbff]">
                             {impresa.denominazione}
