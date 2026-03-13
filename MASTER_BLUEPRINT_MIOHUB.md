@@ -1,7 +1,36 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.9.4 (PDF Fatture + Totali Dettaglio)
-> **Data:** 11 Marzo 2026
+> **Versione:** 9.9.5 (Bugfix Billing, SCIA, iPad)
+> **Data:** 13 Marzo 2026
+>
+> ---
+> ### CHANGELOG v9.9.5 (13 Mar 2026)
+> **🔧 BUGFIX: BILLING NEGOZI, VALORI MONETARI, SCIA DROPDOWN, SUAP AZIONI**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `dfe49af` | ✅ Allineato |
+> | Hetzner backend (api.mio-hub.me) | `dfe49af` | ✅ Autodeploy |
+> | GitHub `dms-hub-app-new` master | `5f71027` | ✅ Allineato |
+> | Vercel frontend | `5f71027` | ✅ Autodeploy |
+>
+> **Backend (billing.js) — 3 fix:**
+> - Fix conteggio negozi: match via `hub_locations.city` con `LIKE` per gestire suffisso provincia (es. "Vignola MO" → match "Vignola")
+> - Fix conteggio negozi: esclusi hub di mercato (`market_id IS NOT NULL`) dal conteggio vetrine — solo hub urbani/vetrina vengono contati
+> - Fix errore SQL `billing-summary`: rimosso parametro `comuneId` extra dalla query negozi (causava "bind message supplies 2 parameters, but prepared statement requires 1")
+>
+> **Frontend (ComuniPanel.tsx) — 1 fix:**
+> - Fix `parseFloat` su tutti i valori monetari dal backend (PostgreSQL restituisce NUMERIC come stringhe, causava concatenazione invece di somma nei totali fattura)
+>
+> **Frontend (SciaForm.tsx) — 1 fix:**
+> - Fix dropdown cedente/subentrante su iPad/Safari: aggiunto `onMouseDown={e => e.preventDefault()}` sui bottoni dropdown per impedire al listener globale di chiudere la lista prima del click + z-index 9999
+>
+> **Frontend (SuapPanel.tsx) — 1 fix:**
+> - Abilitati pulsanti "Richiedi Regolarizzazione" e "Nega Pratica" anche su pratiche con stato APPROVED (prima erano disabilitati, impedendo al Comune di agire dopo approvazione automatica)
+>
+> **Database — fix dati:**
+> - Corretto `comune_id` del negozio "DUGONI calzature" (id=17): da 1 (Grosseto) a 8 (Modena)
 >
 > ---
 > ### CHANGELOG v9.9.4 (11 Mar 2026)
