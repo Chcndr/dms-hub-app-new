@@ -4677,18 +4677,23 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 
 ### 📊 Punti di Ripristino Stabili
 
-| Repository         | Tag                | Data       | Descrizione                                                  |
-| ------------------ | ------------------ | ---------- | ------------------------------------------------------------ |
-| dms-hub-app-new    | **v3.35.1-stable** | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
-| dms-hub-app-new    | v3.32.0-stable     | 13/01/2026 | TCC transaction numbers, QR validation                       |
-| mihub-backend-rest | **v3.32.0-stable** | 13/01/2026 | TCC transaction numbers, QR validation                       |
-| **miohub-backups** | **v3.32.0-stable** | 13/01/2026 | Database dump SQL (29 MB)                                    |
-| MIO-hub            | v16.0.0-stable     | 12/01/2026 | 353 endpoints                                                |
+| Repository         | Tag                    | Data       | Descrizione                                                  |
+| ------------------ | ---------------------- | ---------- | ------------------------------------------------------------ |
+| dms-hub-app-new    | **v9.9.5-stable**      | 24/04/2026 | Fatturazione + PDF + Bugfix billing/SCIA/SUAP (173 tabelle)  |
+| mihub-backend-rest | **v9.9.5-stable**      | 24/04/2026 | Fatturazione + PDF + Bugfix billing/SCIA/SUAP (173 tabelle)  |
+| dms-hub-app-new    | v9.8.5-stable          | 11/03/2026 | Pre-fatturazione, pulizia produzione, 156 tabelle            |
+| mihub-backend-rest | v9.8.5-stable          | 11/03/2026 | Pre-fatturazione, pulizia produzione, 156 tabelle            |
+| dms-hub-app-new    | v9.8.0-stable          | ~Mar 2026  | Pre-hardening, base stabile                                  |
+| mihub-backend-rest | v9.8.0-stable          | ~Mar 2026  | Pre-hardening, base stabile                                  |
+| dms-hub-app-new    | v3.35.1-stable         | 17/01/2026 | Gestione Mercati Posteggi Tab (Vista Italia, Prepara Spunta) |
+| **miohub-backups** | **v3.32.0-stable**     | 13/01/2026 | Database dump SQL (29 MB)                                    |
+| MIO-hub            | v16.0.0-stable         | 12/01/2026 | 353 endpoints                                                |
 
 #### Storico Punti di Ripristino
 
 | Repository         | Tag            | Data       | Note               |
 | ------------------ | -------------- | ---------- | ------------------ |
+| dms-hub-app-new    | v3.32.0-stable | 13/01/2026 | TCC transaction    |
 | dms-hub-app-new    | v3.29.0-stable | 12/01/2026 | Settlement numbers |
 | mihub-backend-rest | v5.7.0-stable  | 12/01/2026 | Wallet-Impresa     |
 
@@ -4697,24 +4702,23 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 ```bash
 # Frontend (Vercel si aggiorna automaticamente)
 cd dms-hub-app-new
-git checkout v3.32.0-stable
-git push origin v3.32.0-stable:master --force
+git checkout v9.9.5-stable
+git push origin v9.9.5-stable:master --force
 
 # Backend (Hetzner)
 ssh root@157.90.29.66
 cd /root/mihub-backend-rest
 git fetch --tags
-git checkout v3.32.0-stable
+git checkout v9.9.5-stable
 pm2 restart mihub-backend
 
-# Database - Opzione 1: Da backup SQL (consigliato)
-# 1. Scarica backup da https://github.com/Chcndr/miohub-backups
-# 2. gunzip backup_miohub_v3.32.0_*.sql.gz
-# 3. psql "postgresql://..." < backup_miohub_v3.32.0_*.sql
-
-# Database - Opzione 2: Neon Point-in-Time (max 6 ore)
+# Database - Opzione 1: Neon Point-in-Time
 # 1. Vai su https://console.neon.tech
-# 2. Branches > Create Branch > Past data
+# 2. Branches > Create Branch > Past data > 24 Apr 2026
+
+# Database - Opzione 2: Da backup SQL
+# 1. Scarica backup da https://github.com/Chcndr/miohub-backups
+# 2. psql "postgresql://..." < backup_miohub_v9.9.5_*.sql
 ```
 
 ---
