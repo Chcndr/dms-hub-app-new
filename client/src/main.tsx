@@ -44,13 +44,22 @@ createRoot(document.getElementById("root")!).render(
 // Global error monitoring — cattura errori non gestiti e li invia al backend REST
 const API_ERROR_URL = `${import.meta.env.VITE_MIHUB_API_URL || "https://api.mio-hub.me"}/api/logs/client-error`;
 
+// Errori gestiti internamente da DMS-BUS (IndexedDB Safari background tab) — non loggare
+const isIndexedDBError = (msg: string): boolean =>
+  msg.includes("Indexed Database") ||
+  msg.includes("IndexedDB") ||
+  msg.includes("IDBDatabase") ||
+  msg.includes("InvalidStateError");
+
 window.addEventListener("error", event => {
   if (event.error) {
+    const msg = event.error?.message || event.message || "";
+    if (isIndexedDBError(msg)) return; // Gestito da DMS-BUS con fallback localStorage
     fetch(API_ERROR_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: event.error?.message || event.message,
+        message: msg,
         stack: event.error?.stack?.slice(0, 2000),
         url: window.location.href,
         userAgent: navigator.userAgent,
@@ -61,11 +70,13 @@ window.addEventListener("error", event => {
 
 window.addEventListener("unhandledrejection", event => {
   const reason = event.reason;
+  const msg = reason?.message || String(reason);
+  if (isIndexedDBError(msg)) return; // Gestito da DMS-BUS con fallback localStorage
   fetch(API_ERROR_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      message: reason?.message || String(reason),
+      message: msg,
       stack: reason?.stack?.slice(0, 2000),
       url: window.location.href,
       userAgent: navigator.userAgent,
