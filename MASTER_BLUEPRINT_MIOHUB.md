@@ -2335,6 +2335,15 @@ Il modulo **SSO SUAP** (Sportello Unico Attività Produttive) gestisce le pratic
 
 All'interno del tab **Pratiche SUAP** nel pannello Controlli/Sanzioni è stato aggiunto un sottotab **"Graduatoria Spunta"** che mostra la graduatoria degli spuntisti per il mercato del comune corrente. I dati vengono caricati dall'endpoint esistente `GET /api/presenze/graduatoria?market_id={id}` e mostrano per ogni spuntista: posizione in graduatoria, nome impresa, codice fiscale, presenze totali, assenze non giustificate e punteggio.
 
+### Modulo Bandi Bolkestein (Novità)
+
+Il sistema include un modulo dedicato alla gestione dei **Bandi Bolkestein** (Art. 11, L. 214/2023).
+L'architettura prevede:
+1. **Tabelle DB:** `suap_bandi` (anagrafica bando) e `suap_dati_bolkestein` (dati quantitativi domanda, 1:1 con `suap_pratiche`).
+2. **Form SCIA:** Esteso con il tipo segnalazione "Partecipazione Bando Bolkestein" che mostra campi aggiuntivi (dipendenti, anni impresa, microimpresa, impegni, formazione).
+3. **Motore Graduatoria:** Calcolo basato su proporzionalità lineare `(Valore / MAX) * Punteggio Max` su 100 punti totali (60 obbligatori + 40 integrativi).
+4. **Dashboard:** Nuovo componente `BandiBolkesteinPanel` per gestire bandi aperti e visualizzare graduatorie.
+
 ### Form SCIA - Sezioni
 
 1. **Dati Pratica SCIA** - Numero protocollo (auto-generato SCIA-YYYY-NNNN), data e comune presentazione
