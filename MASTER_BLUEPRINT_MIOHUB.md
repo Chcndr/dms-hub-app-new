@@ -2344,7 +2344,7 @@ Il sistema include un modulo completo per la gestione dei **Bandi Bolkestein** p
 | Tabella | Funzione | Campi Chiave |
 |---------|----------|---------------|
 | `suap_bandi` | Ciclo di vita bando (BOZZA → APERTO → CHIUSO → GRADUATORIA_PUBBLICATA) | `id`, `comune_id`, `mercato_id`, `titolo`, `stato`, `data_apertura`, `data_chiusura`, `posteggi_disponibili` |
-| `suap_dati_bolkestein` | Dati quantitativi domanda (1:1 con `suap_pratiche`) | `pratica_id`, `bando_id`, `num_dipendenti`, `anni_impresa`, `is_microimpresa`, `impegno_prodotti_tipici`, `impegno_consegna_domicilio`, `impegno_progetti_innovativi`, `impegno_mezzi_green`, `ore_formazione`, `punteggio_calcolato`, `posizione_graduatoria` |
+| `suap_dati_bolkestein` | Dati quantitativi domanda (1:1 con `suap_pratiche`) | `pratica_id`, `bando_id`, `num_dipendenti`, `anni_impresa`, `is_microimpresa`, `is_settore_analogo`, `impegno_prodotti_tipici`, `impegno_consegna_domicilio`, `impegno_progetti_innovativi`, `impegno_mezzi_green`, `ore_formazione`, `punteggio_calcolato`, `posizione_graduatoria` |
 
 #### Endpoint API Backend
 
@@ -2364,7 +2364,7 @@ Il calcolo implementa fedelmente le Linee Guida MIMIT con 11 criteri:
 | Criterio | Descrizione | Max Pt | Tipo Calcolo | Note Implementative |
 |----------|-------------|--------|--------------|---------------------|
 | **Cr.6** | Stabilità occupazionale (dipendenti) | 5 | Proporzionale `(val/MAX)*5` | MAX calcolato tra tutti i partecipanti |
-| **Cr.7a** | Anzianità impresa (anni attività) | 35 | Proporzionale `(val/MAX)*35` | MAX calcolato tra tutti i partecipanti |
+| **Cr.7a** | Anzianità impresa (anni attività) | 35 | Proporzionale `(val/MAX)*35` | MAX calcolato tra tutti i partecipanti. Se `is_settore_analogo = true` (provenienza da settore diverso dal commercio su area pubblica), il punteggio viene **ridotto del 30%** (moltiplicato per 0.70) |
 | **Cr.7b** | Possesso concessione sul posteggio | 15 | Fisso (sì/no) | Verifica automatica: `concessions → vendors → imprese` con match per **Codice Fiscale** del richiedente |
 | **Cr.8** | Microimpresa | 5 | Fisso (sì/no) | Dichiarazione dell'impresa |
 | **Cr.9.1a** | Anzianità spunta nel mercato | 5 | Scaglioni | Lookup CF su `vendor_presences`: <50gg=1pt, 51-150=2pt, 151-300=3pt, 301-450=4pt, >450=5pt |
@@ -2379,7 +2379,7 @@ Spareggi risolti per anzianità d'impresa documentata (punto 11 Linee Guida).
 
 #### Form SCIA Bolkestein (`SciaForm.tsx`)
 
-Il tipo segnalazione "Partecipazione Bando Bolkestein" nasconde automaticamente le sezioni irrilevanti ("Dati Cedente", "Estremi Atto Notarile") e mostra la sezione dinamica **"Criteri Bolkestein"** con: dropdown bando APERTO, input numerici (dipendenti, anni, ore formazione), checkbox impegni, aree di testo per dettagli progetti.
+Il tipo segnalazione "Partecipazione Bando Bolkestein" nasconde automaticamente le sezioni irrilevanti ("Dati Cedente", "Estremi Atto Notarile") e mostra la sezione dinamica **"Criteri Bolkestein"** con: dropdown bando APERTO, input numerici (dipendenti, anni, ore formazione), checkbox impegni (incluso "Settore Analogo" per la riduzione 30% su Cr.7a), aree di testo per dettagli progetti.
 
 #### Dashboard PA (`BandiBolkesteinPanel.tsx`)
 
@@ -2392,7 +2392,11 @@ Il componente `BandiBolkesteinPanel` offre tre tab:
 
 #### Vista Dettaglio Pratica (`SuapPanel.tsx`)
 
-Nelle pratiche Bolkestein, viene mostrata una sezione dedicata (icona Trofeo) con il riepilogo in sola lettura di tutti i parametri dichiarati e i punteggi calcolati.
+Nelle pratiche Bolkestein, viene mostrata una sezione dedicata (icona Trofeo) con il riepilogo in sola lettura di tutti i parametri dichiarati e i punteggi calcolati, inclusi:
+- **Cr.7b** (Possesso Concessione): verifica automatica da sistema tramite match CF su tabella `concessions → vendors → imprese`
+- **Cr.9.1a** (Anzianità Spunta): verifica automatica da sistema tramite lookup CF su `vendor_presences`
+- **Settore Analogo**: se dichiarato, mostra la riduzione 30% applicata su Cr.7a
+- **Punteggio Totale Calcolato** e **Posizione in Graduatoria**
 
 ### Form SCIA - Sezioni
 
@@ -2414,6 +2418,12 @@ Il motore di verifica esegue **23 controlli automatici** su dati reali del siste
 | **Subentrante** | DURC, Onorabilità, Antimafia, Impresa Attiva, Limite Posteggi, Alimentare, HACCP | qualificazioni, imprese, concessions |
 | **Cedente**     | DURC, Onorabilità, Antimafia, Canone Unico                                       | qualificazioni, wallets              |
 | **Pratica**     | Dati Completi, PEC, Atto Notarile                                                | suap_pratiche                        |
+
+**Esclusioni per SCIA Bolkestein** (`skipIfBolkestein: true`): Per le pratiche con `tipo_segnalazione = 'bolkestein'`, il motore **salta automaticamente** i seguenti controlli non applicabili:
+- **Cedente**: DURC, Onorabilità, Antimafia, Canone Unico (nella Bolkestein non esiste un cedente)
+- **Pratica**: Atto Notarile (nella Bolkestein non serve l'atto notarile)
+
+I controlli del Subentrante e gli altri controlli Pratica (PEC, Dati Completi) restano attivi.
 
 **Logica Limite Posteggi:**
 
