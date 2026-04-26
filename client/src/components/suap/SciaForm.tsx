@@ -233,6 +233,17 @@ export default function SciaForm({
     bollo_2_numero: "",
     bollo_2_data: "",
     bollo_dichiarazione_sostitutiva: false as boolean,
+
+    // Sezione Bolkestein (visibile solo se motivazione_scia = bolkestein)
+    bando_id: "",
+    bolkestein_anni_impresa: "",
+    bolkestein_num_dipendenti: "",
+    bolkestein_is_microimpresa: false as boolean,
+    bolkestein_impegno_prodotti_tipici: false as boolean,
+    bolkestein_impegno_consegna_domicilio: false as boolean,
+    bolkestein_impegno_mezzi_green: false as boolean,
+    bolkestein_ore_formazione: "",
+    bolkestein_impegno_progetti_innovativi: false as boolean,
   });
 
   // Chiudi suggerimenti quando si clicca fuori (Subentrante e Cedente)
@@ -894,6 +905,12 @@ export default function SciaForm({
                   Variazione
                 </Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="bolkestein" id="bolkestein" />
+                <Label htmlFor="bolkestein" className="text-[#e8fbff] font-semibold">
+                  Bando Bolkestein
+                </Label>
+              </div>
             </RadioGroup>
           </div>
 
@@ -933,6 +950,152 @@ export default function SciaForm({
                     </SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+          )}
+
+          {/* SEZIONE BOLKESTEIN - Visibile solo se motivazione è bolkestein */}
+          {formData.motivazione_scia === "bolkestein" && (
+            <div className="space-y-4 p-4 bg-[#0f172a] rounded-lg border border-[#f59e0b]/40">
+              <h3 className="text-lg font-semibold text-[#f59e0b]">
+                Dati per Bando Bolkestein (D.Lgs. 59/2010)
+              </h3>
+              <p className="text-sm text-[#e8fbff]/60">
+                Compila i dati richiesti per la partecipazione al bando di assegnazione posteggi.
+                I punteggi verranno calcolati automaticamente secondo i criteri delle Linee Guida nazionali (100 punti totali).
+              </p>
+
+              {/* Bando di riferimento */}
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Bando di Riferimento *</Label>
+                <Input
+                  type="number"
+                  value={formData.bando_id}
+                  onChange={e => setFormData({ ...formData, bando_id: e.target.value })}
+                  placeholder="ID del bando aperto"
+                  className="bg-[#0b1220] border-[#f59e0b]/50 text-[#e8fbff]"
+                />
+                <p className="text-xs text-[#e8fbff]/40">Inserire l'ID del bando a cui si intende partecipare</p>
+              </div>
+
+              {/* Criterio 6: Stabilità Occupazionale */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">N. Dipendenti Stabili (almeno triennio) *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.bolkestein_num_dipendenti}
+                    onChange={e => setFormData({ ...formData, bolkestein_num_dipendenti: e.target.value })}
+                    placeholder="0"
+                    className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                  />
+                  <p className="text-xs text-[#e8fbff]/40">Criterio 6: max 5 punti (proporzionalità lineare)</p>
+                </div>
+
+                {/* Criterio 7a: Anzianità Impresa */}
+                <div className="space-y-2">
+                  <Label className="text-[#e8fbff]">Anni Iscrizione Registro Imprese *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.bolkestein_anni_impresa}
+                    onChange={e => setFormData({ ...formData, bolkestein_anni_impresa: e.target.value })}
+                    placeholder="0"
+                    className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                  />
+                  <p className="text-xs text-[#e8fbff]/40">Criterio 7a: max 35 punti (proporzionalità lineare)</p>
+                </div>
+              </div>
+
+              {/* Criterio 8: Microimpresa */}
+              <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="bolkestein_microimpresa"
+                    checked={formData.bolkestein_is_microimpresa}
+                    onCheckedChange={checked => setFormData({ ...formData, bolkestein_is_microimpresa: checked as boolean })}
+                    className="border-[#14b8a6] data-[state=checked]:bg-[#14b8a6] data-[state=checked]:text-black mt-1"
+                  />
+                  <Label htmlFor="bolkestein_microimpresa" className="text-[#e8fbff] text-sm cursor-pointer">
+                    <strong>Microimpresa</strong> — Meno di 10 occupati e fatturato annuo &le; 2 milioni di euro (Criterio 8: 5 punti fissi)
+                  </Label>
+                </div>
+              </div>
+
+              {/* Criteri 9.1: Impegni e Progetti */}
+              <h4 className="text-md font-semibold text-[#14b8a6] pt-2">Impegni e Progetti (Criterio 9.1)</h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="bolkestein_prodotti_tipici"
+                      checked={formData.bolkestein_impegno_prodotti_tipici}
+                      onCheckedChange={checked => setFormData({ ...formData, bolkestein_impegno_prodotti_tipici: checked as boolean })}
+                      className="border-[#14b8a6] data-[state=checked]:bg-[#14b8a6] data-[state=checked]:text-black mt-1"
+                    />
+                    <Label htmlFor="bolkestein_prodotti_tipici" className="text-[#e8fbff] text-sm cursor-pointer">
+                      <strong>Prodotti Tipici/Qualità</strong> — Almeno 50% merce di produzione locale (8 punti)
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="bolkestein_consegna"
+                      checked={formData.bolkestein_impegno_consegna_domicilio}
+                      onCheckedChange={checked => setFormData({ ...formData, bolkestein_impegno_consegna_domicilio: checked as boolean })}
+                      className="border-[#14b8a6] data-[state=checked]:bg-[#14b8a6] data-[state=checked]:text-black mt-1"
+                    />
+                    <Label htmlFor="bolkestein_consegna" className="text-[#e8fbff] text-sm cursor-pointer">
+                      <strong>Consegna a Domicilio</strong> — Impegno triennale (7 punti)
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="bolkestein_progetti"
+                      checked={formData.bolkestein_impegno_progetti_innovativi}
+                      onCheckedChange={checked => setFormData({ ...formData, bolkestein_impegno_progetti_innovativi: checked as boolean })}
+                      className="border-[#14b8a6] data-[state=checked]:bg-[#14b8a6] data-[state=checked]:text-black mt-1"
+                    />
+                    <Label htmlFor="bolkestein_progetti" className="text-[#e8fbff] text-sm cursor-pointer">
+                      <strong>Progetti Innovativi</strong> — Compatibilità architettonica banchi (2 punti)
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="bolkestein_green"
+                      checked={formData.bolkestein_impegno_mezzi_green}
+                      onCheckedChange={checked => setFormData({ ...formData, bolkestein_impegno_mezzi_green: checked as boolean })}
+                      className="border-[#14b8a6] data-[state=checked]:bg-[#14b8a6] data-[state=checked]:text-black mt-1"
+                    />
+                    <Label htmlFor="bolkestein_green" className="text-[#e8fbff] text-sm cursor-pointer">
+                      <strong>Mezzi Basso Impatto Ambientale</strong> — Veicoli green (6 punti)
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ore Formazione */}
+              <div className="space-y-2">
+                <Label className="text-[#e8fbff]">Ore di Formazione Documentate</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.bolkestein_ore_formazione}
+                  onChange={e => setFormData({ ...formData, bolkestein_ore_formazione: e.target.value })}
+                  placeholder="0"
+                  className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                />
+                <p className="text-xs text-[#e8fbff]/40">Criterio 9.1f: max 7 punti (proporzionalità lineare). Norme di settore, regole professionali, lingue straniere.</p>
               </div>
             </div>
           )}

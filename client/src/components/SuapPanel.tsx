@@ -54,6 +54,7 @@ import {
   History,
   Ban,
   ShieldAlert,
+  Trophy,
 } from "lucide-react";
 import {
   getSuapStats,
@@ -84,6 +85,7 @@ import NotificationManager from "@/components/suap/NotificationManager";
 import NotificheAssociazionePanel from "@/components/suap/NotificheAssociazionePanel";
 import MessaggiPraticaPanel from "@/components/suap/MessaggiPraticaPanel";
 import StoricoTitolarita from "@/components/suap/StoricoTitolarita";
+import BandiBolkesteinPanel from "@/components/suap/BandiBolkesteinPanel";
 import { toast } from "sonner";
 import { getImpersonationParams } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
@@ -285,6 +287,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
     | "autorizzazioni"
     | "domandespunta"
     | "notifiche"
+    | "bolkestein"
   >("dashboard");
   const [stats, setStats] = useState<SuapStats | null>(null);
   const [pratiche, setPratiche] = useState<SuapPratica[]>([]);
@@ -680,6 +683,18 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
         del_residenza_comune: formData.delegato_residenza_comune,
         del_residenza_cap: formData.delegato_residenza_cap,
         del_pec: formData.pec_del,
+        // Dati Bolkestein (solo se tipo segnalazione è bolkestein)
+        ...(formData.motivazione_scia === "bolkestein" ? {
+          bolkestein_bando_id: formData.bando_id ? parseInt(formData.bando_id) : null,
+          bolkestein_anni_impresa: formData.bolkestein_anni_impresa ? parseInt(formData.bolkestein_anni_impresa) : 0,
+          bolkestein_num_dipendenti: formData.bolkestein_num_dipendenti ? parseInt(formData.bolkestein_num_dipendenti) : 0,
+          bolkestein_is_microimpresa: formData.bolkestein_is_microimpresa || false,
+          bolkestein_impegno_prodotti_tipici: formData.bolkestein_impegno_prodotti_tipici || false,
+          bolkestein_impegno_consegna_domicilio: formData.bolkestein_impegno_consegna_domicilio || false,
+          bolkestein_impegno_mezzi_green: formData.bolkestein_impegno_mezzi_green || false,
+          bolkestein_ore_formazione: formData.bolkestein_ore_formazione ? parseInt(formData.bolkestein_ore_formazione) : 0,
+          bolkestein_impegno_progetti_innovativi: formData.bolkestein_impegno_progetti_innovativi || false,
+        } : {}),
       };
 
       // Se in impersonazione associazione, aggiungi associazione_id
@@ -887,11 +902,12 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
               | "autorizzazioni"
               | "domandespunta"
               | "notifiche"
+              | "bolkestein"
           )
         }
       >
         <TabsList
-          className={`grid w-full ${isAssociazione ? "grid-cols-5" : "grid-cols-7"} bg-[#0b1220]/50`}
+          className={`grid w-full ${isAssociazione ? "grid-cols-5" : "grid-cols-9"} bg-[#0b1220]/50`}
         >
           <TabsTrigger
             value="dashboard"
@@ -957,6 +973,15 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
             >
               <History className="mr-2 h-4 w-4" />
               Storico Titolarità
+            </TabsTrigger>
+          )}
+          {!isAssociazione && (
+            <TabsTrigger
+              value="bolkestein"
+              className="data-[state=active]:bg-[#f59e0b]/20 data-[state=active]:text-[#f59e0b]"
+            >
+              <Trophy className="mr-2 h-4 w-4" />
+              Bandi Bolkestein
             </TabsTrigger>
           )}
         </TabsList>
@@ -3992,6 +4017,16 @@ Documento generato il ${new Date().toLocaleDateString("it-IT")} alle ${new Date(
         {/* ================================================================== */}
         <TabsContent value="storico-titolarita" className="space-y-6 mt-6">
           <StoricoTitolarita comuneId={comuneData?.id} />
+        </TabsContent>
+
+        {/* ================================================================== */}
+        {/* TAB BANDI BOLKESTEIN */}
+        {/* ================================================================== */}
+        <TabsContent value="bolkestein" className="space-y-6 mt-6">
+          <BandiBolkesteinPanel
+            comuneId={comuneData?.id}
+            comuneNome={comuneData?.nome}
+          />
         </TabsContent>
       </Tabs>
 
