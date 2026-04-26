@@ -12377,7 +12377,18 @@ Gli endpoint sono protetti dal middleware `validateImpersonation` per garantire 
   * Estrae tutte le pratiche in stato `APPROVED` collegate al bando.
   * Calcola il punteggio proporzionale: `(Valore / MAX) * Punteggio Massimo`.
   * Risolve gli spareggi tramite l'anzianità d'impresa documentata.
+* `GET /api/suap/bandi/:id/graduatoria` - Endpoint GET aggiunto per recuperare la graduatoria salvata senza ricalcolarla, supportando anche la suddivisione `graduatoria_per_posteggio`.
 * `GET /api/suap/pratiche/:id` - L'endpoint di dettaglio pratica esegue un `LEFT JOIN` con `suap_dati_bolkestein` per restituire tutti i 15 parametri dichiarati, mappandoli nel formato `bolkestein_*` atteso dal frontend.
+
+### 2.3 Motore di Calcolo Punteggi (Regole di Business)
+Il calcolo dei punteggi implementa fedelmente le Linee Guida MIMIT:
+* **Cr.6 (Stabilità Occupazionale, max 5pt)**: Proporzionale al numero massimo di dipendenti tra i partecipanti.
+* **Cr.7a (Anzianità Impresa, max 35pt)**: Proporzionale agli anni di attività massimi tra i partecipanti.
+* **Cr.7b (Possesso Concessione, 15pt)**: Assegnati automaticamente se l'impresa richiedente (match tramite Codice Fiscale o P.IVA) risulta titolare di una concessione attiva sul posteggio per cui concorre, verificando la tabella `concessions`.
+* **Cr.8 (Microimpresa, 5pt)**: Assegnati se l'impresa dichiara di essere microimpresa.
+* **Cr.9.1a (Anzianità Spunta, max 5pt)**: Calcolato a scaglioni in base alle presenze registrate in `vendor_presences` per il mercato (match tramite Codice Fiscale): <50gg=1pt, 51-150gg=2pt, 151-300gg=3pt, 301-450gg=4pt, >450gg=5pt.
+* **Cr.9.1b-e (Impegni Qualitativi, max 23pt)**: Punti fissi assegnati per impegni dichiarati (Prodotti tipici 8pt, Consegna domicilio 7pt, Progetti innovativi 2pt, Mezzi green 6pt).
+* **Cr.9.1f (Formazione, 7pt)**: Punti fissi assegnati se l'impresa dichiara di aver partecipato a corsi di formazione.
 
 ## 3. INTERFACCIA FRONTEND E MODIFICHE UI
 
@@ -12394,8 +12405,11 @@ L'interfaccia è stata adeguata per supportare il doppio ruolo (Associazione che
 
 ### 3.2 Dashboard PA (`BandiBolkesteinPanel.tsx` e `SuapPanel.tsx`)
 * **Nuovo Tab Bandi Bolkestein**: Permette ai comuni di creare bandi, monitorare le domande e generare la graduatoria finale.
+* **Auto-caricamento Graduatorie**: Il sistema carica automaticamente le graduatorie dei bandi chiusi senza richiedere un ricalcolo manuale.
 * **Vista Dettaglio Pratica**: Nelle pratiche Bolkestein, viene mostrata una sezione dedicata (icona Trofeo) con il riepilogo in sola lettura di tutti i parametri dichiarati.
-* **Graduatoria**: Tabella interattiva che mostra il punteggio totale (su 100) e il dettaglio dei singoli criteri (Cr.6, Cr.7a, ecc.) per ogni partecipante. È presente un'icona "Occhio" su ogni riga per aprire direttamente la pratica SCIA associata.
+* **Graduatoria**: Tabella interattiva che mostra il punteggio totale (su 100) e il dettaglio di tutti gli 11 criteri (Cr.6, Cr.7a, Cr.7b, Cr.8, Cr.9.1a-g) per ogni partecipante. 
+  * Include un toggle per passare dalla **"Classifica Generale"** alla vista **"Per Posteggio"**, raggruppando i candidati per il singolo stallo richiesto.
+  * È presente un'icona "Occhio" su ogni riga per aprire direttamente la pratica SCIA associata.
 
 ## 4. PROGETTO FLUSSO INOPPUGNABILE (Firma Digitale e Delega)
 
