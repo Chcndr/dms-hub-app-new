@@ -103,6 +103,7 @@ export default function SciaForm({
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [allImprese, setAllImprese] = useState<Impresa[]>([]);
   const [bandiAperti, setBandiAperti] = useState<any[]>([]);
+  const [comuniRegistrati, setComuniRegistrati] = useState<{id: number; nome: string}[]>([]);
   const [selectedMarketId, setSelectedMarketId] = useState<number | null>(null);
   const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [loadingStalls, setLoadingStalls] = useState(false);
@@ -421,6 +422,13 @@ export default function SciaForm({
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
+        }
+
+        // Carica lista comuni registrati nel sistema
+        const comuniRes = await fetch(`${API_URL}/api/comuni`);
+        const comuniJson = await comuniRes.json();
+        if (comuniJson.success && comuniJson.data) {
+          setComuniRegistrati(comuniJson.data.map((c: any) => ({ id: c.id, nome: c.nome })));
         }
 
         // Carica bandi aperti
@@ -858,16 +866,30 @@ export default function SciaForm({
               </div>
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Comune Presentazione</Label>
-                <Input
+                <Select
                   value={formData.comune_presentazione}
-                  onChange={e =>
+                  onValueChange={(value) =>
                     setFormData({
                       ...formData,
-                      comune_presentazione: e.target.value,
+                      comune_presentazione: value,
                     })
                   }
-                  className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
-                />
+                >
+                  <SelectTrigger className="bg-[#0b1220] border-[#334155] text-[#e8fbff]">
+                    <SelectValue placeholder="Seleziona comune..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1a2332] border-[#334155]">
+                    {comuniRegistrati.map((comune) => (
+                      <SelectItem
+                        key={comune.id}
+                        value={comune.nome.toUpperCase()}
+                        className="text-[#e8fbff] hover:bg-[#14b8a6]/20"
+                      >
+                        {comune.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

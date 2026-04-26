@@ -1767,10 +1767,12 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   label="Tipo Segnalazione"
                   value={selectedPratica.tipo_segnalazione}
                 />
+                {selectedPratica.tipo_segnalazione?.toLowerCase() !== 'bolkestein' && (
                 <DataField
                   label="Motivo Subingresso"
                   value={selectedPratica.motivo_subingresso}
                 />
+                )}
                 <DataField
                   label="Settore Merceologico"
                   value={selectedPratica.settore_merceologico}
@@ -1891,6 +1893,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
               </DataSection>
 
               {/* 4. Dati Cedente (Sezione B) - Anagrafica + Residenza + SCIA Precedente */}
+              {selectedPratica.tipo_segnalazione?.toLowerCase() !== 'bolkestein' && (
               <DataSection title="B. Dati Cedente" icon={Users}>
                 <DataField
                   label="Partita IVA"
@@ -1943,6 +1946,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   value={selectedPratica.ced_comune_presentazione}
                 />
               </DataSection>
+              )}
 
               {/* 5. Dati Posteggio e Mercato (Sezione C) */}
               <DataSection title="C. Dati Posteggio e Mercato" icon={MapPin}>
@@ -2001,6 +2005,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
               </DataSection>
 
               {/* 6. Estremi Atto Notarile (Sezione D) */}
+              {selectedPratica.tipo_segnalazione?.toLowerCase() !== 'bolkestein' && (
               <DataSection title="D. Estremi Atto Notarile" icon={FileCheck}>
                 <DataField
                   label="Notaio Rogante"
@@ -2015,6 +2020,73 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   value={formatDate(selectedPratica.data_atto)}
                 />
               </DataSection>
+              )}
+
+              {/* 7. Dati Bando Bolkestein - visibile solo per pratiche bolkestein */}
+              {selectedPratica.tipo_segnalazione?.toLowerCase() === 'bolkestein' && (
+              <DataSection title="Dati Bando Bolkestein (D.Lgs. 59/2010)" icon={Trophy}>
+                <DataField
+                  label="Bando di Riferimento"
+                  value={selectedPratica.bolkestein_bando_id ? `Bando #${selectedPratica.bolkestein_bando_id}` : '-'}
+                />
+                <DataField
+                  label="N. Dipendenti Stabili"
+                  value={selectedPratica.bolkestein_dipendenti ?? '-'}
+                />
+                <DataField
+                  label="Anni Iscrizione Registro Imprese"
+                  value={selectedPratica.bolkestein_anni_impresa ?? '-'}
+                />
+                <DataField
+                  label="Microimpresa (Cr.8)"
+                  value={selectedPratica.bolkestein_microimpresa ? 'Si (5 pt)' : 'No'}
+                />
+                <DataField
+                  label="Prodotti Tipici/Qualita (Cr.9.1b)"
+                  value={selectedPratica.bolkestein_prodotti_tipici ? 'Si (8 pt)' : 'No'}
+                />
+                {selectedPratica.bolkestein_dettagli_prodotti_tipici && (
+                <DataField
+                  label="Dettagli Prodotti Tipici"
+                  value={selectedPratica.bolkestein_dettagli_prodotti_tipici}
+                />
+                )}
+                <DataField
+                  label="Consegna a Domicilio (Cr.9.1c)"
+                  value={selectedPratica.bolkestein_consegna_domicilio ? 'Si (7 pt)' : 'No'}
+                />
+                {selectedPratica.bolkestein_dettagli_consegna_domicilio && (
+                <DataField
+                  label="Dettagli Consegna a Domicilio"
+                  value={selectedPratica.bolkestein_dettagli_consegna_domicilio}
+                />
+                )}
+                <DataField
+                  label="Progetti Innovativi (Cr.9.1d)"
+                  value={selectedPratica.bolkestein_progetti_innovativi ? 'Si (2 pt)' : 'No'}
+                />
+                {selectedPratica.bolkestein_dettagli_progetti_innovativi && (
+                <DataField
+                  label="Dettagli Progetti Innovativi"
+                  value={selectedPratica.bolkestein_dettagli_progetti_innovativi}
+                />
+                )}
+                <DataField
+                  label="Mezzi Basso Impatto Ambientale (Cr.9.1e)"
+                  value={selectedPratica.bolkestein_mezzi_green ? 'Si (6 pt)' : 'No'}
+                />
+                {selectedPratica.bolkestein_dettagli_mezzi_green && (
+                <DataField
+                  label="Dettagli Mezzi Green"
+                  value={selectedPratica.bolkestein_dettagli_mezzi_green}
+                />
+                )}
+                <DataField
+                  label="Ore Formazione Documentate (Cr.9.1f)"
+                  value={selectedPratica.bolkestein_ore_formazione ?? '-'}
+                />
+              </DataSection>
+              )}
 
               {/* Controlli e Punteggio */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
