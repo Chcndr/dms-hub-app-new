@@ -12337,3 +12337,96 @@ SETTIMANA 3 (polish):
 | `client/src/components/ai-chat/AIChatPanel.tsx` | Componente principale chat |
 | `client/src/contexts/FirebaseAuthContext.tsx` | Contesto autenticazione |
 | `client/src/contexts/PermissionsContext.tsx` | Contesto permessi RBAC |
+
+---
+
+# 📜 MODULO BOLKESTEIN E FLUSSO INOPPUGNABILE (D.Lgs. 59/2010 e L. 214/2023)
+
+## 1. RIFERIMENTI NORMATIVI
+
+L'architettura del modulo Bolkestein è progettata per garantire la totale conformità legale alle normative italiane ed europee, assicurando che le graduatorie generate siano inoppugnabili in caso di ricorsi amministrativi (TAR).
+
+* **Legge 30 dicembre 2023, n. 214 (Art. 11)** [1]: Stabilisce che le concessioni per il commercio su aree pubbliche devono avere durata decennale e devono essere assegnate tramite procedure selettive basate su criteri di imparzialità e trasparenza, secondo le linee guida del Ministero delle Imprese e del Made in Italy (MIMIT). L'anzianità non può più essere il criterio predominante.
+* **D.Lgs. 26 marzo 2010, n. 59** [2]: Recepimento italiano della Direttiva 2006/123/CE (Bolkestein), che impone l'apertura del mercato e il divieto di rinnovi automatici per le concessioni di beni pubblici.
+* **D.Lgs. 7 marzo 2005, n. 82 (CAD - Codice Amministrazione Digitale)** [3]:
+  * **Art. 20, comma 1-bis**: Riconosce piena efficacia probatoria (pari alla scrittura privata ex art. 2702 c.c.) al documento informatico sottoscritto con firma elettronica qualificata o firma digitale.
+  * **Art. 24**: Stabilisce che la firma digitale garantisce l'identificazione univoca del firmatario e l'integrità del documento.
+* **DPR 28 dicembre 2000, n. 445 (Testo Unico Documentazione Amministrativa)** [4]: 
+  * **Art. 38 e 47**: Disciplinano le dichiarazioni sostitutive di atto di notorietà.
+  * **Art. 76**: Prevede sanzioni penali per dichiarazioni mendaci, elemento fondamentale per responsabilizzare le imprese sui dati dichiarati nel form SCIA.
+* **Regolamento UE 910/2014 (eIDAS)** [5]: L'articolo 25 garantisce che la firma elettronica qualificata (FEQ) abbia in tutta Europa lo stesso valore legale di una firma autografa.
+
+## 2. ARCHITETTURA DATI E BACKEND
+
+Il sistema MIO-hub è stato esteso con un'architettura dedicata alla gestione dei bandi e alla raccolta strutturata dei dati.
+
+### 2.1 Tabelle Database (Neon PostgreSQL)
+
+| Tabella | Funzione | Campi Chiave |
+|---------|----------|--------------|
+| `suap_bandi` | Gestione ciclo di vita dei bandi | `id`, `comune_id`, `mercato_id`, `titolo`, `stato` (BOZZA, APERTO, CHIUSO), `data_apertura`, `data_chiusura` |
+| `suap_dati_bolkestein` | Dati quantitativi per graduatoria (1:1 con `suap_pratiche`) | `pratica_id`, `num_dipendenti`, `anni_impresa`, `is_microimpresa`, `impegno_prodotti_tipici`, `impegno_consegna_domicilio`, `impegno_progetti_innovativi`, `impegno_mezzi_green`, `ore_formazione`, `punteggio_calcolato`, `posizione_graduatoria` |
+
+### 2.2 Endpoint API Backend
+
+Gli endpoint sono protetti dal middleware `validateImpersonation` per garantire la segregazione dei dati tra comuni.
+
+* `GET /api/suap/bandi` - Lista bandi per il comune corrente.
+* `POST /api/suap/bandi` - Creazione nuovo bando.
+* `POST /api/suap/bandi/:id/graduatoria` - Motore di calcolo:
+  * Estrae tutte le pratiche in stato `APPROVED` collegate al bando.
+  * Calcola il punteggio proporzionale: `(Valore / MAX) * Punteggio Massimo`.
+  * Risolve gli spareggi tramite l'anzianità d'impresa documentata.
+* `GET /api/suap/pratiche/:id` - L'endpoint di dettaglio pratica esegue un `LEFT JOIN` con `suap_dati_bolkestein` per restituire tutti i 15 parametri dichiarati, mappandoli nel formato `bolkestein_*` atteso dal frontend.
+
+## 3. INTERFACCIA FRONTEND E MODIFICHE UI
+
+L'interfaccia è stata adeguata per supportare il doppio ruolo (Associazione che presenta, PA che valuta).
+
+### 3.1 Form di Presentazione (`SciaForm.tsx`)
+* Aggiunta l'opzione **"Bando Bolkestein"** come tipo di segnalazione.
+* Nasconde automaticamente le sezioni irrilevanti ("Dati Cedente", "Estremi Atto Notarile").
+* Mostra la nuova sezione dinamica **"Criteri Bolkestein"** con:
+  * Dropdown per selezionare il bando `APERTO`.
+  * Input numerici per dipendenti, anni impresa, ore formazione.
+  * Checkbox per le dichiarazioni di impegno (microimpresa, prodotti tipici, mezzi green, ecc.).
+  * Aree di testo per i dettagli dei progetti innovativi.
+
+### 3.2 Dashboard PA (`BandiBolkesteinPanel.tsx` e `SuapPanel.tsx`)
+* **Nuovo Tab Bandi Bolkestein**: Permette ai comuni di creare bandi, monitorare le domande e generare la graduatoria finale.
+* **Vista Dettaglio Pratica**: Nelle pratiche Bolkestein, viene mostrata una sezione dedicata (icona Trofeo) con il riepilogo in sola lettura di tutti i parametri dichiarati.
+* **Graduatoria**: Tabella interattiva che mostra il punteggio totale (su 100) e il dettaglio dei singoli criteri (Cr.6, Cr.7a, ecc.) per ogni partecipante. È presente un'icona "Occhio" su ogni riga per aprire direttamente la pratica SCIA associata.
+
+## 4. PROGETTO FLUSSO INOPPUGNABILE (Firma Digitale e Delega)
+
+Per garantire che la graduatoria resista a qualsiasi ricorso al TAR, è necessario implementare un flusso di "congelamento" e firma digitale della pratica, basato sulle normative CAD e DPR 445/2000.
+
+### 4.1 Il Problema Attuale
+Attualmente, l'associazione di categoria compila il form per conto dell'impresa. Tuttavia, trattandosi di dichiarazioni sostitutive (art. 47 DPR 445/2000) che concorrono a formare una graduatoria competitiva, la semplice "delega" all'associazione non è sufficiente a garantire la paternità della dichiarazione in caso di contenzioso, se manca la firma digitale del titolare dell'impresa [4].
+
+### 4.2 Il Nuovo Flusso Progettato (Step-by-Step)
+
+1. **Compilazione (Associazione)**: L'associazione accede in impersonificazione, seleziona il bando, compila tutti i campi quantitativi e allega i documenti probatori (visure, UNILAV, ecc.).
+2. **Generazione PDF (Backend)**: Al click su "Genera Pratica", il sistema *non* invia la SCIA al protocollo, ma:
+   * Salva la pratica in stato `DRAFT_WAITING_SIGNATURE`.
+   * Genera un PDF inoppugnabile contenente tutti i dati inseriti, la dichiarazione ex art. 76 DPR 445/2000 sulle responsabilità penali, e i riferimenti normativi del bando.
+   * Calcola l'hash SHA-256 del PDF e lo salva a database.
+3. **Invio all'Impresa (MIO-hub App)**: Il PDF viene inviato automaticamente (via notifica/email) all'app dell'impresa titolare.
+4. **Firma Digitale (Impresa)**: Il titolare dell'impresa scarica il PDF, lo firma digitalmente con la propria Smart Card / Token (generando un file `.p7m` o PAdES) [3] [5].
+5. **Caricamento e Chiusura (Associazione)**:
+   * L'associazione riapre la pratica in stato di standby.
+   * Carica il file PDF firmato digitalmente.
+   * Il sistema verifica che l'hash del file firmato corrisponda all'hash originale (garantendo che l'associazione non abbia alterato i dati dopo la firma).
+   * La pratica passa in stato `SUBMITTED`, viene protocollata e partecipa alla graduatoria.
+
+Questo flusso garantisce la totale inoppugnabilità della domanda, poiché il documento informatico reca la firma elettronica qualificata del diretto interessato, assumendo piena efficacia probatoria ex art. 20 CAD [3].
+
+---
+
+## Riferimenti
+
+[1] Legge 30 dicembre 2023, n. 214 - Normattiva. https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2023;214~art11-com8
+[2] D.Lgs. 26 marzo 2010, n. 59 (Attuazione Direttiva Bolkestein). https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2010-03-26;59!vig=
+[3] Codice dell'Amministrazione Digitale (D.Lgs. 82/2005) - Artt. 20 e 24. https://docs.italia.it/italia/piano-triennale-ict/codice-amministrazione-digitale-docs/it/v2018-09-28/_rst/capo2_sezione2_art24.html
+[4] DPR 28 dicembre 2000, n. 445 - Testo Unico Documentazione Amministrativa. https://www.normattiva.it/atto/caricaDettaglioAtto?atto.dataPubblicazioneGazzetta=2001-02-20&atto.codiceRedazionale=001G0049
+[5] Regolamento (UE) n. 910/2014 (eIDAS) - Validità firma elettronica. https://geometri.mi.it/la-firma-elettronica-avanzata/
