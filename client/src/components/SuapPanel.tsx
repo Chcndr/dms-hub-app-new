@@ -690,10 +690,14 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
           bolkestein_num_dipendenti: formData.bolkestein_num_dipendenti ? parseInt(formData.bolkestein_num_dipendenti) : 0,
           bolkestein_is_microimpresa: formData.bolkestein_is_microimpresa || false,
           bolkestein_impegno_prodotti_tipici: formData.bolkestein_impegno_prodotti_tipici || false,
+          bolkestein_dettagli_prodotti_tipici: formData.bolkestein_dettagli_prodotti_tipici || "",
           bolkestein_impegno_consegna_domicilio: formData.bolkestein_impegno_consegna_domicilio || false,
+          bolkestein_dettagli_consegna_domicilio: formData.bolkestein_dettagli_consegna_domicilio || "",
           bolkestein_impegno_mezzi_green: formData.bolkestein_impegno_mezzi_green || false,
+          bolkestein_dettagli_mezzi_green: formData.bolkestein_dettagli_mezzi_green || "",
           bolkestein_ore_formazione: formData.bolkestein_ore_formazione ? parseInt(formData.bolkestein_ore_formazione) : 0,
           bolkestein_impegno_progetti_innovativi: formData.bolkestein_impegno_progetti_innovativi || false,
+          bolkestein_dettagli_progetti_innovativi: formData.bolkestein_dettagli_progetti_innovativi || "",
         } : {}),
       };
 

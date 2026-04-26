@@ -102,6 +102,7 @@ export default function SciaForm({
   const [markets, setMarkets] = useState<Market[]>([]);
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [allImprese, setAllImprese] = useState<Impresa[]>([]);
+  const [bandiAperti, setBandiAperti] = useState<any[]>([]);
   const [selectedMarketId, setSelectedMarketId] = useState<number | null>(null);
   const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [loadingStalls, setLoadingStalls] = useState(false);
@@ -240,10 +241,14 @@ export default function SciaForm({
     bolkestein_num_dipendenti: "",
     bolkestein_is_microimpresa: false as boolean,
     bolkestein_impegno_prodotti_tipici: false as boolean,
+    bolkestein_dettagli_prodotti_tipici: "",
     bolkestein_impegno_consegna_domicilio: false as boolean,
+    bolkestein_dettagli_consegna_domicilio: "",
     bolkestein_impegno_mezzi_green: false as boolean,
+    bolkestein_dettagli_mezzi_green: "",
     bolkestein_ore_formazione: "",
     bolkestein_impegno_progetti_innovativi: false as boolean,
+    bolkestein_dettagli_progetti_innovativi: "",
   });
 
   // Chiudi suggerimenti quando si clicca fuori (Subentrante e Cedente)
@@ -416,6 +421,16 @@ export default function SciaForm({
         const impreseJson = await impreseRes.json();
         if (impreseJson.success && impreseJson.data) {
           setAllImprese(impreseJson.data);
+        }
+
+        // Carica bandi aperti
+        const bandiUrl = comuneId
+          ? `${API_URL}/api/suap/bandi?comune_id=${comuneId}&stato=APERTO`
+          : `${API_URL}/api/suap/bandi?stato=APERTO`;
+        const bandiRes = await fetch(addComuneIdToUrl(bandiUrl));
+        const bandiJson = await bandiRes.json();
+        if (bandiJson.success && bandiJson.data) {
+          setBandiAperti(bandiJson.data);
         }
       } catch (error) {
         console.error("Errore fetch dati:", error);
@@ -968,14 +983,28 @@ export default function SciaForm({
               {/* Bando di riferimento */}
               <div className="space-y-2">
                 <Label className="text-[#e8fbff]">Bando di Riferimento *</Label>
-                <Input
-                  type="number"
+                <Select
                   value={formData.bando_id}
-                  onChange={e => setFormData({ ...formData, bando_id: e.target.value })}
-                  placeholder="ID del bando aperto"
-                  className="bg-[#0b1220] border-[#f59e0b]/50 text-[#e8fbff]"
-                />
-                <p className="text-xs text-[#e8fbff]/40">Inserire l'ID del bando a cui si intende partecipare</p>
+                  onValueChange={value => setFormData({ ...formData, bando_id: value })}
+                >
+                  <SelectTrigger className="bg-[#0b1220] border-[#f59e0b]/50 text-[#e8fbff]">
+                    <SelectValue placeholder="Seleziona un bando aperto..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0b1220] border-[#1e293b] text-[#e8fbff]">
+                    {bandiAperti.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        Nessun bando aperto disponibile
+                      </SelectItem>
+                    ) : (
+                      bandiAperti.map(bando => (
+                        <SelectItem key={bando.id} value={bando.id.toString()}>
+                          {bando.titolo} (Scadenza: {new Date(bando.data_chiusura).toLocaleDateString()})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-[#e8fbff]/40">Seleziona il bando a cui si intende partecipare</p>
               </div>
 
               {/* Criterio 6: Stabilità Occupazionale */}
@@ -1027,7 +1056,7 @@ export default function SciaForm({
               <h4 className="text-md font-semibold text-[#14b8a6] pt-2">Impegni e Progetti (Criterio 9.1)</h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155] flex flex-col gap-3">
                   <div className="flex items-start space-x-3">
                     <Checkbox
                       id="bolkestein_prodotti_tipici"
@@ -1039,9 +1068,26 @@ export default function SciaForm({
                       <strong>Prodotti Tipici/Qualità</strong> — Almeno 50% merce di produzione locale (8 punti)
                     </Label>
                   </div>
+                  {formData.bolkestein_impegno_prodotti_tipici && (
+                    <div className="ml-7 space-y-3 mt-2 border-t border-[#334155] pt-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-[#e8fbff]/70">Dettagli Impegno (specificare i prodotti)</Label>
+                        <textarea 
+                          className="w-full bg-[#020817] border border-[#334155] rounded-md p-2 text-sm text-[#e8fbff] min-h-[60px]"
+                          placeholder="Es: Impegno a vendere Parmigiano Reggiano DOP e Aceto Balsamico Tradizionale per almeno il 50% del volume d'affari..."
+                          value={formData.bolkestein_dettagli_prodotti_tipici}
+                          onChange={e => setFormData({ ...formData, bolkestein_dettagli_prodotti_tipici: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-[#e8fbff]/70">Allega Documentazione (Autocertificazione/Contratti)</Label>
+                        <Input type="file" className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155] flex flex-col gap-3">
                   <div className="flex items-start space-x-3">
                     <Checkbox
                       id="bolkestein_consegna"
@@ -1053,9 +1099,26 @@ export default function SciaForm({
                       <strong>Consegna a Domicilio</strong> — Impegno triennale (7 punti)
                     </Label>
                   </div>
+                  {formData.bolkestein_impegno_consegna_domicilio && (
+                    <div className="ml-7 space-y-3 mt-2 border-t border-[#334155] pt-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-[#e8fbff]/70">Dettagli Servizio di Consegna</Label>
+                        <textarea 
+                          className="w-full bg-[#020817] border border-[#334155] rounded-md p-2 text-sm text-[#e8fbff] min-h-[60px]"
+                          placeholder="Es: Servizio attivo per il comune di riferimento con consegne garantite entro 24h tramite furgone aziendale..."
+                          value={formData.bolkestein_dettagli_consegna_domicilio}
+                          onChange={e => setFormData({ ...formData, bolkestein_dettagli_consegna_domicilio: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-[#e8fbff]/70">Allega Dichiarazione d'Impegno</Label>
+                        <Input type="file" className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155] flex flex-col gap-3">
                   <div className="flex items-start space-x-3">
                     <Checkbox
                       id="bolkestein_progetti"
@@ -1067,9 +1130,26 @@ export default function SciaForm({
                       <strong>Progetti Innovativi</strong> — Compatibilità architettonica banchi (2 punti)
                     </Label>
                   </div>
+                  {formData.bolkestein_impegno_progetti_innovativi && (
+                    <div className="ml-7 space-y-3 mt-2 border-t border-[#334155] pt-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-[#e8fbff]/70">Descrizione Progetto Innovativo/Architettonico</Label>
+                        <textarea 
+                          className="w-full bg-[#020817] border border-[#334155] rounded-md p-2 text-sm text-[#e8fbff] min-h-[60px]"
+                          placeholder="Es: Banco vendita con struttura in legno locale, pannelli solari integrati per l'illuminazione LED..."
+                          value={formData.bolkestein_dettagli_progetti_innovativi}
+                          onChange={e => setFormData({ ...formData, bolkestein_dettagli_progetti_innovativi: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-[#e8fbff]/70">Allega Relazione Tecnica/Bozzetto</Label>
+                        <Input type="file" className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+                <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155] flex flex-col gap-3">
                   <div className="flex items-start space-x-3">
                     <Checkbox
                       id="bolkestein_green"
@@ -1081,6 +1161,23 @@ export default function SciaForm({
                       <strong>Mezzi Basso Impatto Ambientale</strong> — Veicoli green (6 punti)
                     </Label>
                   </div>
+                  {formData.bolkestein_impegno_mezzi_green && (
+                    <div className="ml-7 space-y-3 mt-2 border-t border-[#334155] pt-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-[#e8fbff]/70">Dettagli Veicolo (Targa, Modello, Alimentazione)</Label>
+                        <textarea 
+                          className="w-full bg-[#020817] border border-[#334155] rounded-md p-2 text-sm text-[#e8fbff] min-h-[60px]"
+                          placeholder="Es: Furgone Fiat e-Ducato Elettrico, Targa AB123CD, utilizzato per il trasporto merci al mercato..."
+                          value={formData.bolkestein_dettagli_mezzi_green}
+                          onChange={e => setFormData({ ...formData, bolkestein_dettagli_mezzi_green: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-[#e8fbff]/70">Allega Libretto di Circolazione</Label>
+                        <Input type="file" className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1397,7 +1494,7 @@ export default function SciaForm({
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* SEZIONE A: SUBENTRANTE */}
           <div className="space-y-4">
@@ -1695,6 +1792,7 @@ export default function SciaForm({
           </div>
 
           {/* SEZIONE B: CEDENTE */}
+          {formData.motivazione_scia !== "bolkestein" && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-[#e8fbff] border-b border-[#1e293b] pb-2">
               B. Dati Cedente
@@ -1968,6 +2066,7 @@ export default function SciaForm({
               </div>
             </div>
           </div>
+          )}
 
           {/* SEZIONE C: POSTEGGIO E MERCATO */}
           <div className="space-y-4">
