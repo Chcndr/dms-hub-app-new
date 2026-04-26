@@ -2225,6 +2225,7 @@ export default function SciaForm({
           </div>
 
           {/* SEZIONE D: ATTO NOTARILE */}
+          {formData.motivazione_scia !== "bolkestein" && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-[#e8fbff] border-b border-[#1e293b] pb-2">
               D. Estremi Atto Notarile
@@ -2264,6 +2265,7 @@ export default function SciaForm({
               </div>
             </div>
           </div>
+          )}
 
           {/* SEZIONE E: IMPOSTA DI BOLLO */}
           <div className="space-y-4">
