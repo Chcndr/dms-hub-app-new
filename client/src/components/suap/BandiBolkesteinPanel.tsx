@@ -214,8 +214,47 @@ export default function BandiBolkesteinPanel({
     }
   };
 
+  // Auto-carica graduatoria del primo bando CHIUSO
+  const autoLoadGraduatoria = async (bandiList: Bando[]) => {
+    const bandoChiuso = bandiList.find(b => b.stato === "CHIUSO" || b.stato === "GRADUATORIA_PUBBLICATA");
+    if (bandoChiuso && !graduatoria) {
+      setLoadingGraduatoria(true);
+      setSelectedBandoId(bandoChiuso.id);
+      try {
+        const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi/${bandoChiuso.id}/graduatoria`);
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.success && data.data.graduatoria && data.data.graduatoria.length > 0) {
+          setGraduatoria(data.data);
+        }
+      } catch (error) {
+        console.error("Error auto-loading graduatoria:", error);
+      } finally {
+        setLoadingGraduatoria(false);
+      }
+    }
+  };
+
   useEffect(() => {
-    loadBandi();
+    const init = async () => {
+      setLoading(true);
+      try {
+        const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi`);
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.success) {
+          const bandiList = data.data || [];
+          setBandi(bandiList);
+          await autoLoadGraduatoria(bandiList);
+        }
+      } catch (error) {
+        console.error("Error loading bandi:", error);
+        toast.error("Errore nel caricamento dei bandi");
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
     loadMarkets();
   }, [comuneId]);
 
