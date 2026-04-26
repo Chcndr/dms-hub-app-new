@@ -2335,14 +2335,64 @@ Il modulo **SSO SUAP** (Sportello Unico Attività Produttive) gestisce le pratic
 
 All'interno del tab **Pratiche SUAP** nel pannello Controlli/Sanzioni è stato aggiunto un sottotab **"Graduatoria Spunta"** che mostra la graduatoria degli spuntisti per il mercato del comune corrente. I dati vengono caricati dall'endpoint esistente `GET /api/presenze/graduatoria?market_id={id}` e mostrano per ogni spuntista: posizione in graduatoria, nome impresa, codice fiscale, presenze totali, assenze non giustificate e punteggio.
 
-### Modulo Bandi Bolkestein (Novità)
+### Modulo Bandi Bolkestein (D.Lgs. 59/2010 e L. 214/2023)
 
-Il sistema include un modulo dedicato alla gestione dei **Bandi Bolkestein** (Art. 11, L. 214/2023).
-L'architettura prevede:
-1. **Tabelle DB:** `suap_bandi` (anagrafica bando) e `suap_dati_bolkestein` (dati quantitativi domanda, 1:1 con `suap_pratiche`).
-2. **Form SCIA:** Esteso con il tipo segnalazione "Partecipazione Bando Bolkestein" che mostra campi aggiuntivi (dipendenti, anni impresa, microimpresa, impegni, formazione).
-3. **Motore Graduatoria:** Calcolo basato su proporzionalità lineare `(Valore / MAX) * Punteggio Max` su 100 punti totali (60 obbligatori + 40 integrativi).
-4. **Dashboard:** Nuovo componente `BandiBolkesteinPanel` per gestire bandi aperti e visualizzare graduatorie.
+Il sistema include un modulo completo per la gestione dei **Bandi Bolkestein** per l'assegnazione di concessioni decennali di posteggio su aree pubbliche, conforme alle Linee Guida MIMIT del 15 aprile 2026.
+
+#### Architettura Dati
+
+| Tabella | Funzione | Campi Chiave |
+|---------|----------|---------------|
+| `suap_bandi` | Ciclo di vita bando (BOZZA → APERTO → CHIUSO → GRADUATORIA_PUBBLICATA) | `id`, `comune_id`, `mercato_id`, `titolo`, `stato`, `data_apertura`, `data_chiusura`, `posteggi_disponibili` |
+| `suap_dati_bolkestein` | Dati quantitativi domanda (1:1 con `suap_pratiche`) | `pratica_id`, `bando_id`, `num_dipendenti`, `anni_impresa`, `is_microimpresa`, `impegno_prodotti_tipici`, `impegno_consegna_domicilio`, `impegno_progetti_innovativi`, `impegno_mezzi_green`, `ore_formazione`, `punteggio_calcolato`, `posizione_graduatoria` |
+
+#### Endpoint API Backend
+
+| Metodo | Endpoint | Funzione |
+|--------|----------|----------|
+| `GET` | `/api/suap/bandi` | Lista bandi per il comune corrente |
+| `POST` | `/api/suap/bandi` | Creazione nuovo bando |
+| `PUT` | `/api/suap/bandi/:id` | Aggiornamento bando (stato, date, ecc.) |
+| `POST` | `/api/suap/bandi/:id/graduatoria` | Calcolo graduatoria con tutti gli 11 criteri |
+| `GET` | `/api/suap/bandi/:id/graduatoria` | Recupero graduatoria già calcolata (senza ricalcolo) |
+| `GET` | `/api/suap/pratiche/:id` | Dettaglio pratica con LEFT JOIN su `suap_dati_bolkestein` |
+
+#### Motore di Calcolo Punteggi (100 punti totali)
+
+Il calcolo implementa fedelmente le Linee Guida MIMIT con 11 criteri:
+
+| Criterio | Descrizione | Max Pt | Tipo Calcolo | Note Implementative |
+|----------|-------------|--------|--------------|---------------------|
+| **Cr.6** | Stabilità occupazionale (dipendenti) | 5 | Proporzionale `(val/MAX)*5` | MAX calcolato tra tutti i partecipanti |
+| **Cr.7a** | Anzianità impresa (anni attività) | 35 | Proporzionale `(val/MAX)*35` | MAX calcolato tra tutti i partecipanti |
+| **Cr.7b** | Possesso concessione sul posteggio | 15 | Fisso (sì/no) | Verifica automatica: `concessions → vendors → imprese` con match per **Codice Fiscale** del richiedente |
+| **Cr.8** | Microimpresa | 5 | Fisso (sì/no) | Dichiarazione dell'impresa |
+| **Cr.9.1a** | Anzianità spunta nel mercato | 5 | Scaglioni | Lookup CF su `vendor_presences`: <50gg=1pt, 51-150=2pt, 151-300=3pt, 301-450=4pt, >450=5pt |
+| **Cr.9.1b** | Prodotti tipici ≥50% | 8 | Fisso (sì/no) | Impegno dichiarato |
+| **Cr.9.1c** | Consegna a domicilio | 7 | Fisso (sì/no) | Impegno dichiarato |
+| **Cr.9.1d** | Progetti innovativi | 2 | Fisso (sì/no) | Impegno dichiarato |
+| **Cr.9.1e** | Mezzi green | 6 | Fisso (sì/no) | Impegno dichiarato |
+| **Cr.9.1f** | Formazione professionale | 7 | Fisso (sì/no) | Attestato di partecipazione |
+| **Cr.9.1g** | Criteri comunali aggiuntivi | 5 | Riservato | Da implementare per singolo comune |
+
+Spareggi risolti per anzianità d'impresa documentata (punto 11 Linee Guida).
+
+#### Form SCIA Bolkestein (`SciaForm.tsx`)
+
+Il tipo segnalazione "Partecipazione Bando Bolkestein" nasconde automaticamente le sezioni irrilevanti ("Dati Cedente", "Estremi Atto Notarile") e mostra la sezione dinamica **"Criteri Bolkestein"** con: dropdown bando APERTO, input numerici (dipendenti, anni, ore formazione), checkbox impegni, aree di testo per dettagli progetti.
+
+#### Dashboard PA (`BandiBolkesteinPanel.tsx`)
+
+Il componente `BandiBolkesteinPanel` offre tre tab:
+1. **Bandi**: Lista bandi con stato, date, numero domande, pulsante "Graduatoria" per ogni bando chiuso.
+2. **Crea Bando**: Form per creare nuovi bandi con selezione mercato e posteggi.
+3. **Graduatorie**: Auto-caricamento delle graduatorie dei bandi chiusi. Due viste disponibili:
+   - **Classifica Generale**: Tabella con tutti i partecipanti ordinati per punteggio, colonne per tutti gli 11 criteri, numero posteggio, icona Occhio per aprire la SCIA.
+   - **Per Posteggio**: Card separate per ogni posteggio con la propria sub-graduatoria e numero candidati.
+
+#### Vista Dettaglio Pratica (`SuapPanel.tsx`)
+
+Nelle pratiche Bolkestein, viene mostrata una sezione dedicata (icona Trofeo) con il riepilogo in sola lettura di tutti i parametri dichiarati e i punteggi calcolati.
 
 ### Form SCIA - Sezioni
 
