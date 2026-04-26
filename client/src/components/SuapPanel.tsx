@@ -2030,16 +2030,24 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   value={selectedPratica.bolkestein_bando_id ? `Bando #${selectedPratica.bolkestein_bando_id}` : '-'}
                 />
                 <DataField
-                  label="N. Dipendenti Stabili"
-                  value={selectedPratica.bolkestein_dipendenti ?? '-'}
+                  label="N. Dipendenti Stabili (Cr.6)"
+                  value={selectedPratica.bolkestein_dipendenti != null ? `${selectedPratica.bolkestein_dipendenti} (max 5 pt)` : '-'}
                 />
                 <DataField
-                  label="Anni Iscrizione Registro Imprese"
-                  value={selectedPratica.bolkestein_anni_impresa ?? '-'}
+                  label="Anni Iscrizione Registro Imprese (Cr.7a)"
+                  value={selectedPratica.bolkestein_anni_impresa != null ? `${selectedPratica.bolkestein_anni_impresa} (max 35 pt)` : '-'}
+                />
+                <DataField
+                  label="Possesso Concessione Posteggio (Cr.7b)"
+                  value={selectedPratica.bolkestein_is_titolare ? 'Si (15 pt)' : 'No (0 pt) - Verifica automatica da sistema'}
                 />
                 <DataField
                   label="Microimpresa (Cr.8)"
                   value={selectedPratica.bolkestein_microimpresa ? 'Si (5 pt)' : 'No'}
+                />
+                <DataField
+                  label="Anzianita Spunta nel Mercato (Cr.9.1a)"
+                  value={selectedPratica.bolkestein_giorni_spunta != null ? `${selectedPratica.bolkestein_giorni_spunta} giorni (max 5 pt)` : 'Verifica automatica da sistema'}
                 />
                 <DataField
                   label="Prodotti Tipici/Qualita (Cr.9.1b)"
@@ -2082,8 +2090,17 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                 />
                 )}
                 <DataField
-                  label="Ore Formazione Documentate (Cr.9.1f)"
-                  value={selectedPratica.bolkestein_ore_formazione ?? '-'}
+                  label="Formazione Professionale (Cr.9.1f)"
+                  value={selectedPratica.bolkestein_ore_formazione && selectedPratica.bolkestein_ore_formazione > 0 ? `Si - ${selectedPratica.bolkestein_ore_formazione} ore (7 pt)` : 'No (0 pt)'}
+                />
+                {/* Riepilogo Punteggio */}
+                <DataField
+                  label="Punteggio Totale Calcolato"
+                  value={selectedPratica.bolkestein_punteggio_totale != null ? `${selectedPratica.bolkestein_punteggio_totale} / 100 punti` : 'Non ancora calcolato'}
+                />
+                <DataField
+                  label="Posizione in Graduatoria"
+                  value={selectedPratica.bolkestein_posizione_graduatoria != null ? `#${selectedPratica.bolkestein_posizione_graduatoria}` : 'Non ancora calcolata'}
                 />
               </DataSection>
               )}
