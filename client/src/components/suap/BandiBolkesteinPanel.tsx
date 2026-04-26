@@ -154,9 +154,11 @@ function formatDate(dateStr: string | null) {
 export default function BandiBolkesteinPanel({
   comuneId,
   comuneNome,
+  onViewPratica,
 }: {
   comuneId?: number;
   comuneNome?: string;
+  onViewPratica?: (praticaId: string) => void;
 }) {
   const [activeTab, setActiveTab] = useState("lista");
   const [bandi, setBandi] = useState<Bando[]>([]);
@@ -693,6 +695,7 @@ export default function BandiBolkesteinPanel({
                             <TableHead className="text-[#14b8a6] text-center">Cr.9.1e</TableHead>
                             <TableHead className="text-[#14b8a6] text-center">Cr.9.1f</TableHead>
                             <TableHead className="text-[#f59e0b] text-center font-bold">TOTALE</TableHead>
+                            <TableHead className="text-[#14b8a6] text-center">SCIA</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -746,6 +749,17 @@ export default function BandiBolkesteinPanel({
                               </TableCell>
                               <TableCell className="text-center font-bold text-[#f59e0b] text-lg">
                                 {entry.punteggio_totale}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-[#14b8a6] hover:text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                                  onClick={() => onViewPratica?.(entry.pratica_id)}
+                                  title="Visualizza SCIA"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))}

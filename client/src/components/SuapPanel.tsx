@@ -4102,6 +4102,7 @@ Documento generato il ${new Date().toLocaleDateString("it-IT")} alle ${new Date(
           <BandiBolkesteinPanel
             comuneId={comuneData?.id}
             comuneNome={comuneData?.nome}
+            onViewPratica={(praticaId: string) => loadPraticaDetail(praticaId as any)}
           />
         </TabsContent>
       </Tabs>
