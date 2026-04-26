@@ -1494,7 +1494,7 @@ export default function SciaForm({
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* SEZIONE A: SUBENTRANTE */}
           <div className="space-y-4">
