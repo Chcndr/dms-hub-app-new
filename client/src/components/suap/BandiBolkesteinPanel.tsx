@@ -75,6 +75,7 @@ interface Bando {
 
 interface GraduatoriaEntry {
   posizione: number;
+  posizione_posteggio?: number;
   pratica_id: string;
   richiedente_nome: string;
   richiedente_cf: string;
@@ -82,6 +83,10 @@ interface GraduatoriaEntry {
   anni_impresa: number;
   num_dipendenti: number;
   is_microimpresa: boolean;
+  is_titolare_concessione?: boolean;
+  posteggio_id?: number | null;
+  posteggio_numero?: string | null;
+  giorni_spunta?: number;
   punteggio_totale: number;
   dettaglio_punteggi: {
     criterio_6: number;
@@ -98,6 +103,13 @@ interface GraduatoriaEntry {
   };
 }
 
+interface PosteggioGraduatoria {
+  posteggio_id: number | null;
+  posteggio_numero: string | null;
+  num_candidati: number;
+  candidati: GraduatoriaEntry[];
+}
+
 interface GraduatoriaResult {
   bando_id: number;
   bando_titolo: string;
@@ -106,9 +118,10 @@ interface GraduatoriaResult {
   max_values?: {
     max_dipendenti: number;
     max_anni_impresa: number;
-    max_ore_formazione: number;
   };
   graduatoria: GraduatoriaEntry[];
+  graduatoria_per_posteggio?: Record<string, PosteggioGraduatoria>;
+  calculated?: boolean;
 }
 
 interface Market {
@@ -181,6 +194,7 @@ export default function BandiBolkesteinPanel({
   const [selectedBandoId, setSelectedBandoId] = useState<number | null>(null);
   const [graduatoria, setGraduatoria] = useState<GraduatoriaResult | null>(null);
   const [loadingGraduatoria, setLoadingGraduatoria] = useState(false);
+  const [gradView, setGradView] = useState<'generale' | 'posteggio'>('generale');
 
   // Carica bandi
   const loadBandi = async () => {
@@ -708,105 +722,250 @@ export default function BandiBolkesteinPanel({
                 </CardContent>
               </Card>
 
-              {/* Tabella graduatoria */}
-              {graduatoria.graduatoria.length === 0 ? (
-                <Card className="bg-[#0a1628] border-[#1e293b]">
-                  <CardContent className="py-8 text-center">
-                    <AlertCircle className="h-8 w-8 text-yellow-500/60 mx-auto mb-3" />
-                    <p className="text-[#e8fbff]/60">{graduatoria.graduatoria.length === 0 ? "Nessuna domanda presentata per questo bando" : ""}</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="bg-[#0a1628] border-[#1e293b]">
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-[#1e293b]">
-                            <TableHead className="text-[#14b8a6]">#</TableHead>
-                            <TableHead className="text-[#14b8a6]">Richiedente</TableHead>
-                            <TableHead className="text-[#14b8a6] text-center">Cr.6</TableHead>
-                            <TableHead className="text-[#14b8a6] text-center">Cr.7a</TableHead>
-                            <TableHead className="text-[#14b8a6] text-center">Cr.8</TableHead>
-                            <TableHead className="text-[#14b8a6] text-center">Cr.9.1b</TableHead>
-                            <TableHead className="text-[#14b8a6] text-center">Cr.9.1c</TableHead>
-                            <TableHead className="text-[#14b8a6] text-center">Cr.9.1d</TableHead>
-                            <TableHead className="text-[#14b8a6] text-center">Cr.9.1e</TableHead>
-                            <TableHead className="text-[#14b8a6] text-center">Cr.9.1f</TableHead>
-                            <TableHead className="text-[#f59e0b] text-center font-bold">TOTALE</TableHead>
-                            <TableHead className="text-[#14b8a6] text-center">SCIA</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {graduatoria.graduatoria.map((entry, idx) => (
-                            <TableRow
-                              key={entry.pratica_id}
-                              className={`border-[#1e293b] ${idx === 0 ? "bg-[#f59e0b]/5" : ""}`}
-                            >
-                              <TableCell className="font-bold text-[#e8fbff]">
-                                {idx === 0 ? (
-                                  <span className="flex items-center gap-1">
-                                    <Trophy className="h-4 w-4 text-[#f59e0b]" />
-                                    {entry.posizione}
-                                  </span>
-                                ) : (
-                                  entry.posizione
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div>
-                                  <p className="text-[#e8fbff] font-medium">{entry.richiedente_nome}</p>
-                                  <p className="text-xs text-[#e8fbff]/40">
-                                    {entry.richiedente_cf} | Anni: {entry.anni_impresa} | Dip: {entry.num_dipendenti}
-                                    {entry.is_microimpresa && " | Micro"}
-                                  </p>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center text-[#e8fbff]">
-                                {entry.dettaglio_punteggi.criterio_6}
-                              </TableCell>
-                              <TableCell className="text-center text-[#e8fbff]">
-                                {entry.dettaglio_punteggi.criterio_7a}
-                              </TableCell>
-                              <TableCell className="text-center text-[#e8fbff]">
-                                {entry.dettaglio_punteggi.criterio_8}
-                              </TableCell>
-                              <TableCell className="text-center text-[#e8fbff]">
-                                {entry.dettaglio_punteggi.criterio_9_1b}
-                              </TableCell>
-                              <TableCell className="text-center text-[#e8fbff]">
-                                {entry.dettaglio_punteggi.criterio_9_1c}
-                              </TableCell>
-                              <TableCell className="text-center text-[#e8fbff]">
-                                {entry.dettaglio_punteggi.criterio_9_1d}
-                              </TableCell>
-                              <TableCell className="text-center text-[#e8fbff]">
-                                {entry.dettaglio_punteggi.criterio_9_1e}
-                              </TableCell>
-                              <TableCell className="text-center text-[#e8fbff]">
-                                {entry.dettaglio_punteggi.criterio_9_1f}
-                              </TableCell>
-                              <TableCell className="text-center font-bold text-[#f59e0b] text-lg">
-                                {entry.punteggio_totale}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-[#14b8a6] hover:text-[#14b8a6] hover:bg-[#14b8a6]/10"
-                                  onClick={() => onViewPratica?.(entry.pratica_id)}
-                                  title="Visualizza SCIA"
+              {/* Toggle vista: Generale / Per Posteggio */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={gradView === 'generale' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setGradView('generale')}
+                  className={gradView === 'generale' ? 'bg-[#14b8a6] text-black' : 'border-[#334155] text-[#e8fbff]'}
+                >
+                  <List className="h-4 w-4 mr-1" /> Classifica Generale
+                </Button>
+                <Button
+                  variant={gradView === 'posteggio' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setGradView('posteggio')}
+                  className={gradView === 'posteggio' ? 'bg-[#14b8a6] text-black' : 'border-[#334155] text-[#e8fbff]'}
+                >
+                  <MapPin className="h-4 w-4 mr-1" /> Per Posteggio
+                </Button>
+              </div>
+
+              {/* ============ VISTA GENERALE ============ */}
+              {gradView === 'generale' && (
+                <>
+                  {graduatoria.graduatoria.length === 0 ? (
+                    <Card className="bg-[#0a1628] border-[#1e293b]">
+                      <CardContent className="py-8 text-center">
+                        <AlertCircle className="h-8 w-8 text-yellow-500/60 mx-auto mb-3" />
+                        <p className="text-[#e8fbff]/60">Nessuna domanda presentata per questo bando</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="bg-[#0a1628] border-[#1e293b]">
+                      <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="border-[#1e293b]">
+                                <TableHead className="text-[#14b8a6]">#</TableHead>
+                                <TableHead className="text-[#14b8a6]">Richiedente</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Post.</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.6</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.7a</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.7b</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.8</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.9.1a</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.9.1b</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.9.1c</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.9.1d</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.9.1e</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">Cr.9.1f</TableHead>
+                                <TableHead className="text-[#f59e0b] text-center font-bold">TOTALE</TableHead>
+                                <TableHead className="text-[#14b8a6] text-center">SCIA</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {graduatoria.graduatoria.map((entry, idx) => (
+                                <TableRow
+                                  key={entry.pratica_id}
+                                  className={`border-[#1e293b] ${idx === 0 ? "bg-[#f59e0b]/5" : ""}`}
                                 >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                                  <TableCell className="font-bold text-[#e8fbff]">
+                                    {idx === 0 ? (
+                                      <span className="flex items-center gap-1">
+                                        <Trophy className="h-4 w-4 text-[#f59e0b]" />
+                                        {entry.posizione}
+                                      </span>
+                                    ) : (
+                                      entry.posizione
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div>
+                                      <p className="text-[#e8fbff] font-medium">{entry.richiedente_nome}</p>
+                                      <p className="text-xs text-[#e8fbff]/40">
+                                        {entry.richiedente_cf} | Anni: {entry.anni_impresa} | Dip: {entry.num_dipendenti}
+                                        {entry.is_microimpresa && " | Micro"}
+                                        {entry.is_titolare_concessione && " | Conc."}
+                                      </p>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]/60 text-xs">
+                                    {entry.posteggio_numero || '-'}
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]">
+                                    {entry.dettaglio_punteggi.criterio_6}
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]">
+                                    {entry.dettaglio_punteggi.criterio_7a}
+                                  </TableCell>
+                                  <TableCell className={`text-center ${entry.dettaglio_punteggi.criterio_7b > 0 ? 'text-[#f59e0b] font-bold' : 'text-[#e8fbff]'}`}>
+                                    {entry.dettaglio_punteggi.criterio_7b}
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]">
+                                    {entry.dettaglio_punteggi.criterio_8}
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]">
+                                    {entry.dettaglio_punteggi.criterio_9_1a}
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]">
+                                    {entry.dettaglio_punteggi.criterio_9_1b}
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]">
+                                    {entry.dettaglio_punteggi.criterio_9_1c}
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]">
+                                    {entry.dettaglio_punteggi.criterio_9_1d}
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]">
+                                    {entry.dettaglio_punteggi.criterio_9_1e}
+                                  </TableCell>
+                                  <TableCell className="text-center text-[#e8fbff]">
+                                    {entry.dettaglio_punteggi.criterio_9_1f}
+                                  </TableCell>
+                                  <TableCell className="text-center font-bold text-[#f59e0b] text-lg">
+                                    {entry.punteggio_totale}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-[#14b8a6] hover:text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                                      onClick={() => onViewPratica?.(entry.pratica_id)}
+                                      title="Visualizza SCIA"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              {/* ============ VISTA PER POSTEGGIO ============ */}
+              {gradView === 'posteggio' && (
+                <>
+                  {!graduatoria.graduatoria_per_posteggio || Object.keys(graduatoria.graduatoria_per_posteggio).length === 0 ? (
+                    <Card className="bg-[#0a1628] border-[#1e293b]">
+                      <CardContent className="py-8 text-center">
+                        <MapPin className="h-8 w-8 text-yellow-500/60 mx-auto mb-3" />
+                        <p className="text-[#e8fbff]/60">Nessun dato per posteggio disponibile</p>
+                        <p className="text-sm text-[#e8fbff]/40 mt-1">Ricalcola la graduatoria per generare la vista per posteggio</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      {Object.entries(graduatoria.graduatoria_per_posteggio).map(([key, pg]) => (
+                        <Card key={key} className="bg-[#0a1628] border-[#1e293b]">
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-sm text-[#14b8a6] flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                Posteggio {pg.posteggio_numero || key}
+                              </CardTitle>
+                              <Badge className="bg-purple-500/20 text-purple-400 border-0">
+                                {pg.num_candidati} candidat{pg.num_candidati === 1 ? 'o' : 'i'}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="border-[#1e293b]">
+                                    <TableHead className="text-[#14b8a6]">#</TableHead>
+                                    <TableHead className="text-[#14b8a6]">Richiedente</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.6</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.7a</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.7b</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.8</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.9.1a</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.9.1b</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.9.1c</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.9.1d</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.9.1e</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">Cr.9.1f</TableHead>
+                                    <TableHead className="text-[#f59e0b] text-center font-bold">TOTALE</TableHead>
+                                    <TableHead className="text-[#14b8a6] text-center">SCIA</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {pg.candidati.map((entry, idx) => (
+                                    <TableRow
+                                      key={entry.pratica_id}
+                                      className={`border-[#1e293b] ${idx === 0 ? "bg-[#f59e0b]/5" : ""}`}
+                                    >
+                                      <TableCell className="font-bold text-[#e8fbff]">
+                                        {idx === 0 ? (
+                                          <span className="flex items-center gap-1">
+                                            <Trophy className="h-4 w-4 text-[#f59e0b]" />
+                                            {entry.posizione_posteggio || idx + 1}
+                                          </span>
+                                        ) : (
+                                          entry.posizione_posteggio || idx + 1
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <div>
+                                          <p className="text-[#e8fbff] font-medium">{entry.richiedente_nome}</p>
+                                          <p className="text-xs text-[#e8fbff]/40">
+                                            {entry.richiedente_cf} | Anni: {entry.anni_impresa} | Dip: {entry.num_dipendenti}
+                                            {entry.is_microimpresa && " | Micro"}
+                                            {entry.is_titolare_concessione && " | Conc."}
+                                          </p>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className="text-center text-[#e8fbff]">{entry.dettaglio_punteggi.criterio_6}</TableCell>
+                                      <TableCell className="text-center text-[#e8fbff]">{entry.dettaglio_punteggi.criterio_7a}</TableCell>
+                                      <TableCell className={`text-center ${entry.dettaglio_punteggi.criterio_7b > 0 ? 'text-[#f59e0b] font-bold' : 'text-[#e8fbff]'}`}>{entry.dettaglio_punteggi.criterio_7b}</TableCell>
+                                      <TableCell className="text-center text-[#e8fbff]">{entry.dettaglio_punteggi.criterio_8}</TableCell>
+                                      <TableCell className="text-center text-[#e8fbff]">{entry.dettaglio_punteggi.criterio_9_1a}</TableCell>
+                                      <TableCell className="text-center text-[#e8fbff]">{entry.dettaglio_punteggi.criterio_9_1b}</TableCell>
+                                      <TableCell className="text-center text-[#e8fbff]">{entry.dettaglio_punteggi.criterio_9_1c}</TableCell>
+                                      <TableCell className="text-center text-[#e8fbff]">{entry.dettaglio_punteggi.criterio_9_1d}</TableCell>
+                                      <TableCell className="text-center text-[#e8fbff]">{entry.dettaglio_punteggi.criterio_9_1e}</TableCell>
+                                      <TableCell className="text-center text-[#e8fbff]">{entry.dettaglio_punteggi.criterio_9_1f}</TableCell>
+                                      <TableCell className="text-center font-bold text-[#f59e0b] text-lg">{entry.punteggio_totale}</TableCell>
+                                      <TableCell className="text-center">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="text-[#14b8a6] hover:text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                                          onClick={() => onViewPratica?.(entry.pratica_id)}
+                                          title="Visualizza SCIA"
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
+                  )}
+                </>
               )}
 
               {/* Legenda criteri */}
@@ -818,12 +977,15 @@ export default function BandiBolkesteinPanel({
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-[#e8fbff]/50">
                     <span><strong className="text-[#14b8a6]">Cr.6</strong> Stabilita occ. (max 5pt)</span>
                     <span><strong className="text-[#14b8a6]">Cr.7a</strong> Anzianita impresa (max 35pt)</span>
+                    <span><strong className="text-[#f59e0b]">Cr.7b</strong> Concessione posteggio (15pt)</span>
                     <span><strong className="text-[#14b8a6]">Cr.8</strong> Microimpresa (5pt)</span>
+                    <span><strong className="text-[#14b8a6]">Cr.9.1a</strong> Anzianita spunta (max 5pt)</span>
                     <span><strong className="text-[#14b8a6]">Cr.9.1b</strong> Prodotti tipici (8pt)</span>
                     <span><strong className="text-[#14b8a6]">Cr.9.1c</strong> Consegna domicilio (7pt)</span>
                     <span><strong className="text-[#14b8a6]">Cr.9.1d</strong> Progetti innovativi (2pt)</span>
                     <span><strong className="text-[#14b8a6]">Cr.9.1e</strong> Mezzi green (6pt)</span>
-                    <span><strong className="text-[#14b8a6]">Cr.9.1f</strong> Formazione (max 7pt)</span>
+                    <span><strong className="text-[#14b8a6]">Cr.9.1f</strong> Formazione (7pt)</span>
+                    <span><strong className="text-[#14b8a6]">Cr.9.1g</strong> Criteri comunali (max 5pt)</span>
                   </div>
                 </CardContent>
               </Card>
