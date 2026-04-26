@@ -689,6 +689,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
           bolkestein_anni_impresa: formData.bolkestein_anni_impresa ? parseInt(formData.bolkestein_anni_impresa) : 0,
           bolkestein_num_dipendenti: formData.bolkestein_num_dipendenti ? parseInt(formData.bolkestein_num_dipendenti) : 0,
           bolkestein_is_microimpresa: formData.bolkestein_is_microimpresa || false,
+          bolkestein_is_settore_analogo: formData.bolkestein_is_settore_analogo || false,
           bolkestein_impegno_prodotti_tipici: formData.bolkestein_impegno_prodotti_tipici || false,
           bolkestein_dettagli_prodotti_tipici: formData.bolkestein_dettagli_prodotti_tipici || "",
           bolkestein_impegno_consegna_domicilio: formData.bolkestein_impegno_consegna_domicilio || false,
@@ -2036,6 +2037,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                 <DataField
                   label="Anni Iscrizione Registro Imprese (Cr.7a)"
                   value={selectedPratica.bolkestein_anni_impresa != null ? `${selectedPratica.bolkestein_anni_impresa} (max 35 pt)` : '-'}
+                />
+                <DataField
+                  label="Settore Analogo (riduzione 30% su Cr.7a)"
+                  value={selectedPratica.bolkestein_is_settore_analogo ? 'Si - Punteggio Cr.7a ridotto del 30%' : 'No - Commercio su area pubblica diretto'}
                 />
                 <DataField
                   label="Possesso Concessione Posteggio (Cr.7b)"

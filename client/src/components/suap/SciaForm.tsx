@@ -241,6 +241,7 @@ export default function SciaForm({
     bolkestein_anni_impresa: "",
     bolkestein_num_dipendenti: "",
     bolkestein_is_microimpresa: false as boolean,
+    bolkestein_is_settore_analogo: false as boolean,
     bolkestein_impegno_prodotti_tipici: false as boolean,
     bolkestein_dettagli_prodotti_tipici: "",
     bolkestein_impegno_consegna_domicilio: false as boolean,
@@ -1070,6 +1071,21 @@ export default function SciaForm({
                   />
                   <Label htmlFor="bolkestein_microimpresa" className="text-[#e8fbff] text-sm cursor-pointer">
                     <strong>Microimpresa</strong> — Meno di 10 occupati e fatturato annuo &le; 2 milioni di euro (Criterio 8: 5 punti fissi)
+                  </Label>
+                </div>
+              </div>
+
+              {/* Settore Analogo - riduzione 30% su Cr.7a */}
+              <div className="p-3 bg-[#0b1220] rounded-lg border border-[#f59e0b]/50">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="bolkestein_settore_analogo"
+                    checked={formData.bolkestein_is_settore_analogo}
+                    onCheckedChange={checked => setFormData({ ...formData, bolkestein_is_settore_analogo: checked as boolean })}
+                    className="border-[#f59e0b] data-[state=checked]:bg-[#f59e0b] data-[state=checked]:text-black mt-1"
+                  />
+                  <Label htmlFor="bolkestein_settore_analogo" className="text-[#e8fbff] text-sm cursor-pointer">
+                    <strong>Settore Analogo</strong> — L'impresa proviene da un settore analogo ma non dal commercio su area pubblica diretto. Il punteggio del Criterio 7a (Anzianit\u00e0 impresa) verr\u00e0 ridotto del 30%.
                   </Label>
                 </div>
               </div>
