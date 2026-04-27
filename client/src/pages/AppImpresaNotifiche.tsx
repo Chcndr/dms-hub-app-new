@@ -35,6 +35,9 @@ import {
   FileCheck,
   CreditCard,
   PenTool,
+  Upload,
+  Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import {
   Card,
@@ -84,6 +87,9 @@ export default function AppImpresaNotifiche() {
   const [messaggiInviati, setMessaggiInviati] = useState<any[]>([]);
   const [rispostaText, setRispostaText] = useState("");
   const [invioRisposta, setInvioRisposta] = useState(false);
+  const [uploadingFirmato, setUploadingFirmato] = useState(false);
+  const [firmatoSuccess, setFirmatoSuccess] = useState(false);
+  const firmatoFileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ID impresa demo (in produzione verrà dall'autenticazione)
@@ -236,6 +242,61 @@ export default function AppImpresaNotifiche() {
       }
     } catch (error) {
       console.error("Errore archiviazione:", error);
+    }
+  };
+
+  // Estrai ID pratica dal link_riferimento della notifica
+  const extractPraticaId = (link: string | null): string | null => {
+    if (!link) return null;
+    // Formato: https://api.mio-hub.me/api/suap/pratiche/:id/download-pdf
+    const match = link.match(/\/pratiche\/([a-f0-9-]+)\//i);
+    return match ? match[1] : null;
+  };
+
+  // Upload PDF firmato dall'impresa
+  const handleUploadFirmato = async (file: File) => {
+    if (!notificaSelezionata) return;
+    const praticaId = extractPraticaId(notificaSelezionata.link_riferimento);
+    if (!praticaId) {
+      alert('Errore: impossibile identificare la pratica dal link.');
+      return;
+    }
+
+    setUploadingFirmato(true);
+    setFirmatoSuccess(false);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (IMPRESA_ID) formData.append('impresa_id', String(IMPRESA_ID));
+
+      // Chiama l'endpoint upload-firmato del backend SUAP
+      const suapBase = import.meta.env.DEV
+        ? (import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me')
+        : '';
+      const uploadUrl = `${suapBase}/api/suap/pratiche/${praticaId}/upload-firmato`;
+
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setFirmatoSuccess(true);
+        alert(
+          `PDF firmato caricato con successo!\n\n` +
+          `Tipo firma: ${data.data?.tipo_firma || 'N/D'}\n` +
+          `Stato: ${data.data?.firma_stato || 'SIGNED'}\n\n` +
+          `La pratica è stata aggiornata. L'associazione e il SUAP riceveranno una notifica.`
+        );
+      } else {
+        alert('Errore nel caricamento: ' + (data.error || 'Errore sconosciuto'));
+      }
+    } catch (error: any) {
+      console.error('Errore upload firmato:', error);
+      alert('Errore di rete nel caricamento del PDF firmato. Riprova.');
+    } finally {
+      setUploadingFirmato(false);
     }
   };
 
@@ -541,14 +602,14 @@ export default function AppImpresaNotifiche() {
             {notificaSelezionata ? (
               <Card className="bg-[#1a2332] border-[#3b82f6]/20 py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
                 <CardHeader className="px-3 sm:px-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      {getMittenteIcon(notificaSelezionata.mittente_tipo)}
-                      <div>
-                        <CardTitle className="text-[#e8fbff]">
+                  <div className="flex items-start justify-between gap-2 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className="flex-shrink-0">{getMittenteIcon(notificaSelezionata.mittente_tipo)}</div>
+                      <div className="min-w-0">
+                        <CardTitle className="text-[#e8fbff] text-sm sm:text-base truncate">
                           {notificaSelezionata.titolo}
                         </CardTitle>
-                        <CardDescription className="text-[#e8fbff]/50">
+                        <CardDescription className="text-[#e8fbff]/50 text-xs truncate">
                           Da: {notificaSelezionata.mittente_nome} •{" "}
                           {new Date(
                             notificaSelezionata.data_invio
@@ -556,19 +617,19 @@ export default function AppImpresaNotifiche() {
                         </CardDescription>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                       <Badge
-                        className={getTipoColor(
+                        className={`text-[10px] sm:text-xs ${getTipoColor(
                           notificaSelezionata.tipo_messaggio
-                        )}
+                        )}`}
                       >
-                        {notificaSelezionata.tipo_messaggio}
+                        {notificaSelezionata.tipo_messaggio.replace('RICHIESTA_', 'R.')}
                       </Badge>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => archiviaNotifica(notificaSelezionata)}
-                        className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+                        className="text-[#e8fbff]/50 hover:text-[#e8fbff] px-1 sm:px-2"
                       >
                         <Archive className="w-4 h-4" />
                       </Button>
@@ -601,25 +662,26 @@ export default function AppImpresaNotifiche() {
                   {/* Bottone Visualizza Verbale per notifiche NOTIFICA_VERBALE */}
                   {notificaSelezionata.tipo_messaggio === "NOTIFICA_VERBALE" &&
                     notificaSelezionata.link_riferimento && (
-                      <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/30 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                      <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/30 rounded-lg p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
                               <FileText className="w-5 h-5 text-red-400" />
                             </div>
-                            <div>
-                              <p className="text-[#e8fbff] font-medium">
+                            <div className="min-w-0">
+                              <p className="text-[#e8fbff] font-medium text-sm sm:text-base">
                                 Verbale di Contestazione
                               </p>
-                              <p className="text-[#e8fbff]/50 text-sm">
+                              <p className="text-[#e8fbff]/50 text-xs sm:text-sm">
                                 Clicca per visualizzare il documento completo
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 w-full sm:w-auto">
                             <Button
                               variant="outline"
-                              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                              size="sm"
+                              className="border-red-500/30 text-red-400 hover:bg-red-500/10 w-full sm:w-auto"
                               onClick={() =>
                                 window.open(
                                   notificaSelezionata.link_riferimento!,
@@ -640,23 +702,24 @@ export default function AppImpresaNotifiche() {
                     notificaSelezionata.link_riferimento && (
                       <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/30 rounded-lg p-4">
                         <div className="flex flex-col gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
-                              <PenTool className="w-5 h-5 text-violet-400" />
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                              <PenTool className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
                             </div>
-                            <div>
-                              <p className="text-[#e8fbff] font-medium">
-                                Firma Digitale Richiesta - Domanda Bolkestein
+                            <div className="min-w-0">
+                              <p className="text-[#e8fbff] font-medium text-sm sm:text-base">
+                                Firma Digitale Richiesta
                               </p>
-                              <p className="text-[#e8fbff]/50 text-sm">
-                                Visualizza il PDF, firmalo digitalmente e restituiscilo all'associazione
+                              <p className="text-[#e8fbff]/50 text-xs sm:text-sm">
+                                Firma il PDF e caricalo qui sotto
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-2 ml-13">
+                          <div className="flex flex-wrap gap-2 ml-0 sm:ml-13">
                             <Button
                               variant="outline"
-                              className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10"
+                              size="sm"
+                              className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10 text-xs sm:text-sm"
                               onClick={() =>
                                 window.open(
                                   notificaSelezionata.link_riferimento!,
@@ -664,12 +727,13 @@ export default function AppImpresaNotifiche() {
                                 )
                               }
                             >
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Visualizza PDF da Firmare
+                              <ExternalLink className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                              <span className="truncate">Visualizza PDF</span>
                             </Button>
                             <Button
                               variant="outline"
-                              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                              size="sm"
+                              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs sm:text-sm"
                               onClick={() =>
                                 window.open(
                                   notificaSelezionata.link_riferimento!,
@@ -677,13 +741,64 @@ export default function AppImpresaNotifiche() {
                                 )
                               }
                             >
-                              <Download className="w-4 h-4 mr-2" />
-                              Scarica PDF
+                              <Download className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                              <span className="truncate">Scarica PDF</span>
                             </Button>
                           </div>
                           <div className="bg-amber-500/10 border border-amber-500/20 rounded p-2 text-xs text-amber-300">
                             <strong>Istruzioni:</strong> Scarica il PDF, apponi la tua firma digitale qualificata (PAdES o CAdES/.p7m), 
-                            poi restituisci il documento firmato all'associazione di categoria.
+                            poi carica il documento firmato usando il pulsante qui sotto.
+                          </div>
+
+                          {/* UPLOAD PDF FIRMATO */}
+                          <div className="bg-[#0b1220] rounded-lg p-3 border border-emerald-500/30">
+                            <input
+                              type="file"
+                              ref={firmatoFileInputRef}
+                              className="hidden"
+                              accept=".pdf,.p7m,application/pdf,application/pkcs7-mime,application/octet-stream"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleUploadFirmato(file);
+                                e.target.value = '';
+                              }}
+                            />
+                            {firmatoSuccess ? (
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                                </div>
+                                <div>
+                                  <p className="text-emerald-400 font-medium text-sm">PDF Firmato Caricato con Successo</p>
+                                  <p className="text-emerald-300/60 text-xs">La pratica e' stata aggiornata. L'associazione e il SUAP sono stati notificati.</p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                                    <Upload className="w-5 h-5 text-emerald-400" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[#e8fbff] font-medium text-sm">Carica PDF Firmato</p>
+                                    <p className="text-[#e8fbff]/50 text-xs">PDF firmato (.pdf) o busta CAdES (.p7m)</p>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
+                                  disabled={uploadingFirmato}
+                                  onClick={() => firmatoFileInputRef.current?.click()}
+                                >
+                                  {uploadingFirmato ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Upload className="w-4 h-4 mr-2" />
+                                  )}
+                                  {uploadingFirmato ? 'Caricamento...' : 'Seleziona File Firmato'}
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

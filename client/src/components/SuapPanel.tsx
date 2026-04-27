@@ -2354,10 +2354,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                 )}
                 {(() => { const doc = selectedPratica.documenti?.find((d: any) => { try { const m = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : d.metadata; return m?.tipo_documento === 'PRODOTTI_TIPICI'; } catch { return false; } }); return doc ? (
                   <div className="ml-1 mb-2">
-                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all">
-                      <Paperclip className="w-3.5 h-3.5" />
-                      Apri Allegato: {doc.file_name}
-                      <ExternalLink className="w-3 h-3" />
+                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all max-w-full overflow-hidden">
+                      <Paperclip className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate">Apri Allegato: {doc.file_name}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     </button>
                   </div>
                 ) : null; })()}
@@ -2373,10 +2373,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                 )}
                 {(() => { const doc = selectedPratica.documenti?.find((d: any) => { try { const m = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : d.metadata; return m?.tipo_documento === 'CONSEGNA_DOMICILIO'; } catch { return false; } }); return doc ? (
                   <div className="ml-1 mb-2">
-                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all">
-                      <Paperclip className="w-3.5 h-3.5" />
-                      Apri Allegato: {doc.file_name}
-                      <ExternalLink className="w-3 h-3" />
+                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all max-w-full overflow-hidden">
+                      <Paperclip className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate">Apri Allegato: {doc.file_name}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     </button>
                   </div>
                 ) : null; })()}
@@ -2392,10 +2392,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                 )}
                 {(() => { const doc = selectedPratica.documenti?.find((d: any) => { try { const m = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : d.metadata; return m?.tipo_documento === 'PROGETTI_INNOVATIVI'; } catch { return false; } }); return doc ? (
                   <div className="ml-1 mb-2">
-                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all">
-                      <Paperclip className="w-3.5 h-3.5" />
-                      Apri Allegato: {doc.file_name}
-                      <ExternalLink className="w-3 h-3" />
+                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all max-w-full overflow-hidden">
+                      <Paperclip className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate">Apri Allegato: {doc.file_name}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     </button>
                   </div>
                 ) : null; })()}
@@ -2411,10 +2411,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                 )}
                 {(() => { const doc = selectedPratica.documenti?.find((d: any) => { try { const m = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : d.metadata; return m?.tipo_documento === 'MEZZI_GREEN'; } catch { return false; } }); return doc ? (
                   <div className="ml-1 mb-2">
-                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all">
-                      <Paperclip className="w-3.5 h-3.5" />
-                      Apri Allegato: {doc.file_name}
-                      <ExternalLink className="w-3 h-3" />
+                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all max-w-full overflow-hidden">
+                      <Paperclip className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate">Apri Allegato: {doc.file_name}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     </button>
                   </div>
                 ) : null; })()}
@@ -2438,14 +2438,14 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
               {selectedPratica.tipo_segnalazione?.toLowerCase() === 'bolkestein' && (
               <Card className="bg-gradient-to-br from-[#1a1a3e] to-[#0b1220] border-[#8b5cf6]/40">
                 <CardHeader>
-                  <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-[#8b5cf6]" />
-                    Flusso Firma Digitale Inoppugnabile
-                    <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] text-xs border border-[#8b5cf6]/30">
+                  <CardTitle className="text-[#e8fbff] flex items-center gap-2 flex-wrap min-w-0">
+                    <Shield className="w-5 h-5 text-[#8b5cf6] flex-shrink-0" />
+                    <span className="truncate">Flusso Firma Digitale Inoppugnabile</span>
+                    <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] text-xs border border-[#8b5cf6]/30 flex-shrink-0">
                       L.214/2023
                     </Badge>
                     {selectedPratica.firma_stato && (
-                      <Badge className={`ml-2 text-xs border ${getFirmaStatoBadge(selectedPratica.firma_stato).color}`}>
+                      <Badge className={`text-xs border flex-shrink-0 ${getFirmaStatoBadge(selectedPratica.firma_stato).color}`}>
                         {getFirmaStatoBadge(selectedPratica.firma_stato).label}
                       </Badge>
                     )}
@@ -2456,7 +2456,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Stepper visivo */}
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-4 overflow-x-auto pb-1">
                     {[
                       { step: 1, label: 'Genera PDF', stato: null },
                       { step: 2, label: 'Invia all\'Impresa', stato: 'WAITING_SIGNATURE' },
@@ -2472,7 +2472,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                       const isCurrent = s.step === currentStep + 1;
                       return (
                         <React.Fragment key={s.step}>
-                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                             isCompleted ? 'bg-[#8b5cf6]/30 text-[#c4b5fd] border border-[#8b5cf6]/50' 
                             : isCurrent ? 'bg-[#8b5cf6]/10 text-[#8b5cf6] border border-[#8b5cf6]/30 animate-pulse'
                             : 'bg-gray-800/50 text-gray-500 border border-gray-700/30'
