@@ -62,6 +62,8 @@ import {
   FileSignature,
   Hash,
   Timer,
+  Paperclip,
+  ExternalLink,
 } from "lucide-react";
 import {
   getSuapStats,
@@ -198,6 +200,16 @@ interface SuapPraticaFull extends SuapPratica {
   bolkestein_ore_formazione?: number;
   bolkestein_punteggio_totale?: number;
   bolkestein_posizione_graduatoria?: number;
+  // Documenti allegati
+  documenti?: Array<{
+    id: string;
+    pratica_id: string;
+    file_name: string;
+    file_hash: string;
+    storage_path: string;
+    metadata?: string;
+    created_at: string;
+  }>;
 }
 
 // ============================================================================
@@ -363,6 +375,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
   const [showAllChecks, setShowAllChecks] = useState(false); // false = solo ultima verifica, true = storico completo
   // Flusso Firma Digitale Inoppugnabile
   const [firmaLoading, setFirmaLoading] = useState(false);
+  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
   const [firmaAction, setFirmaAction] = useState<string | null>(null); // 'genera' | 'invia' | 'upload'
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedConcessione, setSelectedConcessione] = useState<any | null>(
@@ -1036,6 +1049,56 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
         return { label: 'Verificato', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
       default:
         return { label: 'Non avviato', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
+    }
+  };
+
+  // Download documento allegato
+  const handleDownloadDocumento = async (docId: string, fileName: string) => {
+    setDownloadingDocId(docId);
+    try {
+      const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/documenti/${docId}/download`);
+      const res = await authenticatedFetch(url);
+      const data = await res.json();
+      if (data.success && data.data?.url) {
+        // Apri il presigned URL in una nuova tab
+        window.open(data.data.url, '_blank', 'noopener,noreferrer');
+        toast.success(`Documento "${fileName}" aperto`);
+      } else {
+        toast.error(data.error || 'Errore nel download del documento');
+      }
+    } catch (error: any) {
+      console.error('Error downloading document:', error);
+      toast.error('Errore nel download del documento');
+    } finally {
+      setDownloadingDocId(null);
+    }
+  };
+
+  // Helper per ottenere icona e colore in base al tipo di file
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (['pdf'].includes(ext || '')) return { icon: FileText, color: 'text-red-400', bg: 'bg-red-500/10' };
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) return { icon: Eye, color: 'text-blue-400', bg: 'bg-blue-500/10' };
+    if (['doc', 'docx'].includes(ext || '')) return { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10' };
+    if (['p7m', 'p7s'].includes(ext || '')) return { icon: FileSignature, color: 'text-purple-400', bg: 'bg-purple-500/10' };
+    return { icon: FileText, color: 'text-gray-400', bg: 'bg-gray-500/10' };
+  };
+
+  // Helper per formattare la dimensione del file
+  const formatFileSize = (bytes: number | undefined) => {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Helper per parsare metadata del documento
+  const parseDocMetadata = (metadata: string | undefined) => {
+    if (!metadata) return {};
+    try {
+      return JSON.parse(metadata);
+    } catch {
+      return {};
     }
   };
 
@@ -2497,6 +2560,78 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   </div>
                 </CardContent>
               </Card>
+              )}
+
+              {/* Documenti Allegati alla Pratica */}
+              {selectedPratica?.documenti && selectedPratica.documenti.length > 0 && (
+                <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#14b8a6]/30">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-lg">
+                      <Paperclip className="h-5 w-5 text-[#14b8a6]" />
+                      Documenti Allegati
+                      <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] text-xs border-0 ml-2">
+                        {selectedPratica.documenti.length} file
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-gray-400 text-xs">
+                      Documenti caricati a corredo della pratica. Clicca per aprire e verificare.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {selectedPratica.documenti.map((doc) => {
+                        const meta = parseDocMetadata(doc.metadata);
+                        const fileInfo = getFileIcon(doc.file_name);
+                        const FileIcon = fileInfo.icon;
+                        const tipoDoc = meta.tipo_documento || 'ALLEGATO';
+                        const sizeStr = formatFileSize(meta.size_bytes);
+                        const dataUpload = new Date(doc.created_at).toLocaleDateString('it-IT', {
+                          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        });
+                        return (
+                          <div
+                            key={doc.id}
+                            className="flex items-center gap-3 p-3 rounded-lg border border-[#1e293b] hover:border-[#14b8a6]/50 hover:bg-[#14b8a6]/5 transition-all cursor-pointer group"
+                            onClick={() => handleDownloadDocumento(doc.id, doc.file_name)}
+                          >
+                            {/* Icona file */}
+                            <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${fileInfo.bg} flex items-center justify-center`}>
+                              {downloadingDocId === doc.id ? (
+                                <Loader2 className="w-5 h-5 animate-spin text-[#14b8a6]" />
+                              ) : (
+                                <FileIcon className={`w-5 h-5 ${fileInfo.color}`} />
+                              )}
+                            </div>
+                            {/* Info file */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#e8fbff] truncate group-hover:text-[#14b8a6] transition-colors">
+                                {doc.file_name}
+                              </p>
+                              <div className="flex items-center gap-3 text-xs text-[#e8fbff]/40">
+                                <Badge className="bg-gray-700/50 text-gray-300 text-[10px] border-0 px-1.5 py-0">
+                                  {tipoDoc}
+                                </Badge>
+                                {sizeStr && <span>{sizeStr}</span>}
+                                <span>{dataUpload}</span>
+                              </div>
+                            </div>
+                            {/* Pulsante apri */}
+                            <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <ExternalLink className="w-4 h-4 text-[#14b8a6]" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Hash di integrita */}
+                    <div className="mt-3 pt-3 border-t border-[#1e293b]">
+                      <p className="text-[10px] text-[#e8fbff]/30 flex items-center gap-1">
+                        <Shield className="w-3 h-3" />
+                        Ogni documento e' verificato tramite hash SHA-256 al momento del caricamento.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Controlli e Punteggio */}
