@@ -269,13 +269,10 @@ export default function AppImpresaNotifiche() {
       formData.append('file', file);
       if (IMPRESA_ID) formData.append('impresa_id', String(IMPRESA_ID));
 
-      // Chiama l'endpoint upload-firmato del backend SUAP
-      const suapBase = import.meta.env.DEV
-        ? (import.meta.env.VITE_MIHUB_API_URL || 'https://api.mio-hub.me')
-        : '';
-      const uploadUrl = `${suapBase}/api/suap/pratiche/${praticaId}/upload-firmato`;
+      // Usa API_BASE_URL + authenticatedFetch come tutte le altre chiamate
+      const uploadUrl = `${API_BASE_URL}/suap/pratiche/${praticaId}/upload-firmato`;
 
-      const response = await fetch(uploadUrl, {
+      const response = await authenticatedFetch(uploadUrl, {
         method: 'POST',
         body: formData,
       });
@@ -597,10 +594,10 @@ export default function AppImpresaNotifiche() {
 
           {/* Dettaglio Notifica - su mobile occupa tutto lo schermo */}
           <div
-            className={`lg:col-span-2 ${!notificaSelezionata ? "hidden sm:block" : ""}`}
+            className={`lg:col-span-2 overflow-hidden min-w-0 ${!notificaSelezionata ? "hidden sm:block" : ""}`}
           >
             {notificaSelezionata ? (
-              <Card className="bg-[#1a2332] border-[#3b82f6]/20 py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x">
+              <Card className="bg-[#1a2332] border-[#3b82f6]/20 py-0 sm:py-6 gap-0 sm:gap-6 rounded-none sm:rounded-xl border-x-0 sm:border-x overflow-hidden max-w-full">
                 <CardHeader className="px-3 sm:px-6">
                   <div className="flex items-start justify-between gap-2 min-w-0">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -636,20 +633,20 @@ export default function AppImpresaNotifiche() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4 px-2 sm:px-6">
+                <CardContent className="space-y-4 px-2 sm:px-6 overflow-hidden">
                   {/* Messaggio */}
-                  <div className="bg-[#0b1220] rounded-lg p-4 border border-[#3b82f6]/10">
-                    <div className="prose prose-invert max-w-none">
+                  <div className="bg-[#0b1220] rounded-lg p-3 sm:p-4 border border-[#3b82f6]/10 overflow-hidden">
+                    <div className="prose prose-invert max-w-none break-words overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                       {notificaSelezionata.messaggio
                         .split("\n")
                         .map((line, idx) => (
-                          <p key={idx} className="text-[#e8fbff]/80 mb-2">
+                          <p key={idx} className="text-[#e8fbff]/80 mb-2 text-sm sm:text-base break-words" style={{ overflowWrap: 'anywhere' }}>
                             {line.startsWith("**") && line.endsWith("**") ? (
                               <strong>{line.replace(/\*\*/g, "")}</strong>
                             ) : line.startsWith("- ") ? (
                               <span className="flex items-start gap-2">
-                                <span className="text-[#3b82f6]">•</span>
-                                {line.substring(2)}
+                                <span className="text-[#3b82f6] flex-shrink-0">•</span>
+                                <span className="break-words" style={{ overflowWrap: 'anywhere' }}>{line.substring(2)}</span>
                               </span>
                             ) : (
                               line
