@@ -2595,7 +2595,8 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                               size="sm"
                               className="bg-green-600 hover:bg-green-700 text-white gap-2"
                               onClick={() => {
-                                window.open(selectedPratica.documento_firmato_url!, '_blank', 'noopener,noreferrer');
+                                const firmatoUrl = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/pratiche/${selectedPratica.id}/download-firmato`);
+                                window.open(firmatoUrl, '_blank', 'noopener,noreferrer');
                                 toast.success('PDF firmato aperto in nuova tab');
                               }}
                             >
