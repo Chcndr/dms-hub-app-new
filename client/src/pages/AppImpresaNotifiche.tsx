@@ -34,6 +34,7 @@ import {
   Wallet,
   FileCheck,
   CreditCard,
+  PenTool,
 } from "lucide-react";
 import {
   Card,
@@ -275,6 +276,8 @@ export default function AppImpresaNotifiche() {
         return "bg-orange-500/20 text-orange-400";
       case "NOTIFICA_VERBALE":
         return "bg-red-500/20 text-red-400";
+      case "RICHIESTA_FIRMA":
+        return "bg-violet-500/20 text-violet-400";
       default:
         return "bg-gray-500/20 text-gray-400";
     }
@@ -295,6 +298,10 @@ export default function AppImpresaNotifiche() {
         return <FileCheck className="w-4 h-4 text-green-400" />;
       case "RINNOVO_TESSERA":
         return <CreditCard className="w-4 h-4 text-orange-400" />;
+      case "RICHIESTA_FIRMA":
+        return <PenTool className="w-4 h-4 text-violet-400" />;
+      case "NOTIFICA_VERBALE":
+        return <FileText className="w-4 h-4 text-red-400" />;
       default:
         return null;
     }
@@ -623,6 +630,60 @@ export default function AppImpresaNotifiche() {
                               <ExternalLink className="w-4 h-4 mr-2" />
                               Visualizza Verbale
                             </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Bottone Visualizza PDF da Firmare per notifiche RICHIESTA_FIRMA */}
+                  {notificaSelezionata.tipo_messaggio === "RICHIESTA_FIRMA" &&
+                    notificaSelezionata.link_riferimento && (
+                      <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/30 rounded-lg p-4">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
+                              <PenTool className="w-5 h-5 text-violet-400" />
+                            </div>
+                            <div>
+                              <p className="text-[#e8fbff] font-medium">
+                                Firma Digitale Richiesta - Domanda Bolkestein
+                              </p>
+                              <p className="text-[#e8fbff]/50 text-sm">
+                                Visualizza il PDF, firmalo digitalmente e restituiscilo all'associazione
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 ml-13">
+                            <Button
+                              variant="outline"
+                              className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10"
+                              onClick={() =>
+                                window.open(
+                                  notificaSelezionata.link_riferimento!,
+                                  "_blank"
+                                )
+                              }
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Visualizza PDF da Firmare
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                              onClick={() =>
+                                window.open(
+                                  notificaSelezionata.link_riferimento!,
+                                  "_blank"
+                                )
+                              }
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Scarica PDF
+                            </Button>
+                          </div>
+                          <div className="bg-amber-500/10 border border-amber-500/20 rounded p-2 text-xs text-amber-300">
+                            <strong>Istruzioni:</strong> Scarica il PDF, apponi la tua firma digitale qualificata (PAdES o CAdES/.p7m), 
+                            poi restituisci il documento firmato all'associazione di categoria.
                           </div>
                         </div>
                       </div>
