@@ -55,6 +55,13 @@ import {
   Ban,
   ShieldAlert,
   Trophy,
+  Download,
+  Upload,
+  Send,
+  Shield,
+  FileSignature,
+  Hash,
+  Timer,
 } from "lucide-react";
 import {
   getSuapStats,
@@ -165,6 +172,32 @@ interface SuapPraticaFull extends SuapPratica {
   // Collegamento Concessione
   concessione_id?: number;
   concessione_numero?: string;
+  // Flusso Firma Digitale Inoppugnabile
+  firma_stato?: string | null;
+  hash_documento_originale?: string | null;
+  documento_pdf_url?: string | null;
+  documento_firmato_url?: string | null;
+  firma_verificata_at?: string | null;
+  firma_cf_firmatario?: string | null;
+  // Bolkestein extra
+  bolkestein_bando_id?: number;
+  bolkestein_dipendenti?: number;
+  bolkestein_anni_impresa?: number;
+  bolkestein_is_settore_analogo?: boolean;
+  bolkestein_is_titolare?: boolean;
+  bolkestein_microimpresa?: boolean;
+  bolkestein_giorni_spunta?: number;
+  bolkestein_prodotti_tipici?: boolean;
+  bolkestein_dettagli_prodotti_tipici?: string;
+  bolkestein_consegna_domicilio?: boolean;
+  bolkestein_dettagli_consegna_domicilio?: string;
+  bolkestein_progetti_innovativi?: boolean;
+  bolkestein_dettagli_progetti_innovativi?: string;
+  bolkestein_mezzi_green?: boolean;
+  bolkestein_dettagli_mezzi_green?: string;
+  bolkestein_ore_formazione?: number;
+  bolkestein_punteggio_totale?: number;
+  bolkestein_posizione_graduatoria?: number;
 }
 
 // ============================================================================
@@ -328,6 +361,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
   const [concessioniFilterMercato, setConcessioniFilterMercato] =
     useState<string>("all");
   const [showAllChecks, setShowAllChecks] = useState(false); // false = solo ultima verifica, true = storico completo
+  // Flusso Firma Digitale Inoppugnabile
+  const [firmaLoading, setFirmaLoading] = useState(false);
+  const [firmaAction, setFirmaAction] = useState<string | null>(null); // 'genera' | 'invia' | 'upload'
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedConcessione, setSelectedConcessione] = useState<any | null>(
     null
   );
@@ -839,6 +876,147 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
       toast.error("Errore nella richiesta di regolarizzazione");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ============================================================================
+  // FLUSSO FIRMA DIGITALE INOPPUGNABILE
+  // ============================================================================
+
+  // Genera PDF domanda Bolkestein
+  const handleGeneraPdf = async () => {
+    if (!selectedPratica) return;
+    setFirmaLoading(true);
+    setFirmaAction('genera');
+    try {
+      const API_URL = MIHUB_API_BASE_URL;
+      const response = await fetch(
+        `${API_URL}/api/suap/pratiche/${selectedPratica.id}/genera-pdf`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ente_id: ENTE_ID }),
+        }
+      );
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Errore generazione PDF');
+
+      // Se c'e' il PDF in base64, scaricalo
+      if (data.data.pdf_base64) {
+        const byteCharacters = atob(data.data.pdf_base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Domanda_Bolkestein_${selectedPratica.cui || selectedPratica.id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else if (data.data.pdf_url) {
+        window.open(data.data.pdf_url, '_blank');
+      }
+
+      toast.success(`PDF generato con successo! Hash SHA-256: ${data.data.hash_sha256?.substring(0, 16)}...`);
+      // Ricarica la pratica per aggiornare lo stato firma
+      await loadPraticaDetail(selectedPratica.id);
+    } catch (error: any) {
+      console.error('Error generating PDF:', error);
+      toast.error(`Errore: ${error.message}`);
+    } finally {
+      setFirmaLoading(false);
+      setFirmaAction(null);
+    }
+  };
+
+  // Invia PDF all'impresa
+  const handleInviaFirma = async () => {
+    if (!selectedPratica) return;
+    if (!confirm('Confermi l\'invio del PDF all\'impresa per la firma digitale?')) return;
+    setFirmaLoading(true);
+    setFirmaAction('invia');
+    try {
+      const API_URL = MIHUB_API_BASE_URL;
+      const response = await fetch(
+        `${API_URL}/api/suap/pratiche/${selectedPratica.id}/invia-firma`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ente_id: ENTE_ID }),
+        }
+      );
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Errore invio PDF');
+
+      const canali: string[] = [];
+      if (data.data.notifica_inapp) canali.push('Notifica in-app');
+      if (data.data.email_pec?.inviata) canali.push(`Email PEC (${data.data.email_pec.destinatario})`);
+      if (canali.length === 0) canali.push('Nessun canale automatico - consegnare manualmente');
+
+      toast.success(`PDF inviato all'impresa! Canali: ${canali.join(', ')}`);
+      await loadPraticaDetail(selectedPratica.id);
+    } catch (error: any) {
+      console.error('Error sending PDF:', error);
+      toast.error(`Errore: ${error.message}`);
+    } finally {
+      setFirmaLoading(false);
+      setFirmaAction(null);
+    }
+  };
+
+  // Upload PDF firmato
+  const handleUploadFirmato = async (file: File) => {
+    if (!selectedPratica) return;
+    setFirmaLoading(true);
+    setFirmaAction('upload');
+    try {
+      const API_URL = MIHUB_API_BASE_URL;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('ente_id', ENTE_ID);
+
+      const response = await fetch(
+        `${API_URL}/api/suap/pratiche/${selectedPratica.id}/upload-firmato`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Errore upload PDF firmato');
+
+      toast.success(
+        `PDF firmato caricato con successo! Tipo firma: ${data.data.tipo_firma}. ` +
+        `CF firmatario: ${data.data.cf_firmatario}`
+      );
+      await loadPraticaDetail(selectedPratica.id);
+    } catch (error: any) {
+      console.error('Error uploading signed PDF:', error);
+      toast.error(`Errore: ${error.message}`);
+    } finally {
+      setFirmaLoading(false);
+      setFirmaAction(null);
+    }
+  };
+
+  // Helper: colore badge stato firma
+  const getFirmaStatoBadge = (stato: string | null | undefined) => {
+    switch (stato) {
+      case 'WAITING_SIGNATURE':
+        return { label: 'PDF Generato', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
+      case 'SENT_TO_IMPRESA':
+        return { label: 'Inviato all\'Impresa', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' };
+      case 'SIGNED':
+        return { label: 'Firmato', color: 'bg-green-500/20 text-green-400 border-green-500/30' };
+      case 'VERIFIED':
+        return { label: 'Verificato', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
+      default:
+        return { label: 'Non avviato', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
     }
   };
 
@@ -2108,6 +2286,198 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   value={selectedPratica.bolkestein_posizione_graduatoria != null ? `#${selectedPratica.bolkestein_posizione_graduatoria}` : 'Non ancora calcolata'}
                 />
               </DataSection>
+              )}
+
+              {/* 8. Flusso Firma Digitale Inoppugnabile - solo per pratiche Bolkestein */}
+              {selectedPratica.tipo_segnalazione?.toLowerCase() === 'bolkestein' && (
+              <Card className="bg-gradient-to-br from-[#1a1a3e] to-[#0b1220] border-[#8b5cf6]/40">
+                <CardHeader>
+                  <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-[#8b5cf6]" />
+                    Flusso Firma Digitale Inoppugnabile
+                    <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] text-xs border border-[#8b5cf6]/30">
+                      L.214/2023
+                    </Badge>
+                    {selectedPratica.firma_stato && (
+                      <Badge className={`ml-2 text-xs border ${getFirmaStatoBadge(selectedPratica.firma_stato).color}`}>
+                        {getFirmaStatoBadge(selectedPratica.firma_stato).label}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription className="text-gray-400 text-xs">
+                    Art. 20 e 24 D.Lgs. 82/2005 (CAD) - Art. 76 DPR 445/2000 - Reg. UE 910/2014 (eIDAS)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Stepper visivo */}
+                  <div className="flex items-center gap-2 mb-4">
+                    {[
+                      { step: 1, label: 'Genera PDF', stato: null },
+                      { step: 2, label: 'Invia all\'Impresa', stato: 'WAITING_SIGNATURE' },
+                      { step: 3, label: 'Firma Digitale', stato: 'SENT_TO_IMPRESA' },
+                      { step: 4, label: 'Verificato', stato: 'SIGNED' },
+                    ].map((s, i) => {
+                      const currentStep = !selectedPratica.firma_stato ? 0 
+                        : selectedPratica.firma_stato === 'WAITING_SIGNATURE' ? 1
+                        : selectedPratica.firma_stato === 'SENT_TO_IMPRESA' ? 2
+                        : selectedPratica.firma_stato === 'SIGNED' ? 3
+                        : selectedPratica.firma_stato === 'VERIFIED' ? 4 : 0;
+                      const isCompleted = s.step <= currentStep;
+                      const isCurrent = s.step === currentStep + 1;
+                      return (
+                        <React.Fragment key={s.step}>
+                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            isCompleted ? 'bg-[#8b5cf6]/30 text-[#c4b5fd] border border-[#8b5cf6]/50' 
+                            : isCurrent ? 'bg-[#8b5cf6]/10 text-[#8b5cf6] border border-[#8b5cf6]/30 animate-pulse'
+                            : 'bg-gray-800/50 text-gray-500 border border-gray-700/30'
+                          }`}>
+                            {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : <span className="w-3.5 h-3.5 flex items-center justify-center">{s.step}</span>}
+                            {s.label}
+                          </div>
+                          {i < 3 && <div className={`flex-1 h-0.5 ${isCompleted ? 'bg-[#8b5cf6]/50' : 'bg-gray-700/30'}`} />}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+
+                  {/* Info hash e stato */}
+                  {selectedPratica.hash_documento_originale && (
+                    <div className="bg-[#0b1220] rounded-lg p-3 border border-[#8b5cf6]/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Hash className="w-4 h-4 text-[#8b5cf6]" />
+                        <span className="text-xs text-gray-400 font-medium">Hash SHA-256 Documento Originale</span>
+                      </div>
+                      <code className="text-[10px] text-[#c4b5fd] font-mono break-all">
+                        {selectedPratica.hash_documento_originale}
+                      </code>
+                    </div>
+                  )}
+
+                  {/* Info firma verificata */}
+                  {selectedPratica.firma_verificata_at && (
+                    <div className="bg-green-900/20 rounded-lg p-3 border border-green-500/30">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-400" />
+                        <span className="text-xs text-green-300 font-medium">Firma Digitale Verificata</span>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-gray-500">Data verifica:</span>
+                          <span className="ml-1 text-gray-300">{formatDateTime(selectedPratica.firma_verificata_at)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">CF Firmatario:</span>
+                          <span className="ml-1 text-gray-300 font-mono">{selectedPratica.firma_cf_firmatario || '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Banner stato SENT_TO_IMPRESA */}
+                  {selectedPratica.firma_stato === 'SENT_TO_IMPRESA' && (
+                    <div className="bg-yellow-900/20 rounded-lg p-3 border border-yellow-500/30">
+                      <div className="flex items-center gap-2">
+                        <Timer className="w-4 h-4 text-yellow-400 animate-pulse" />
+                        <span className="text-xs text-yellow-300 font-medium">
+                          In attesa di firma digitale da parte dell'impresa
+                        </span>
+                      </div>
+                      <p className="text-xs text-yellow-200/60 mt-1">
+                        Il PDF e' stato inviato all'impresa. Il legale rappresentante deve firmare digitalmente 
+                        il documento (PAdES o CAdES) e restituirlo all'associazione per il caricamento.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Pulsanti azione */}
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    {/* Step 1: Genera PDF - visibile se firma_stato e' null */}
+                    {(!selectedPratica.firma_stato) && (
+                      <Button
+                        onClick={handleGeneraPdf}
+                        disabled={firmaLoading}
+                        className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white"
+                      >
+                        {firmaLoading && firmaAction === 'genera' ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <FileText className="w-4 h-4 mr-2" />
+                        )}
+                        Genera PDF Domanda
+                      </Button>
+                    )}
+
+                    {/* Step 2: Invia all'Impresa - visibile se firma_stato = WAITING_SIGNATURE */}
+                    {selectedPratica.firma_stato === 'WAITING_SIGNATURE' && (
+                      <>
+                        <Button
+                          onClick={handleInviaFirma}
+                          disabled={firmaLoading}
+                          className="bg-[#f59e0b] hover:bg-[#d97706] text-black"
+                        >
+                          {firmaLoading && firmaAction === 'invia' ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4 mr-2" />
+                          )}
+                          Invia all'Impresa
+                        </Button>
+                        <Button
+                          onClick={handleGeneraPdf}
+                          disabled={firmaLoading}
+                          variant="outline"
+                          className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Ri-scarica PDF
+                        </Button>
+                      </>
+                    )}
+
+                    {/* Step 3: Carica PDF Firmato - visibile se firma_stato = SENT_TO_IMPRESA */}
+                    {selectedPratica.firma_stato === 'SENT_TO_IMPRESA' && (
+                      <>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          className="hidden"
+                          accept=".pdf,.p7m,application/pdf,application/pkcs7-mime"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadFirmato(file);
+                            e.target.value = ''; // reset
+                          }}
+                        />
+                        <Button
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={firmaLoading}
+                          className="bg-[#14b8a6] hover:bg-[#0d9488] text-white"
+                        >
+                          {firmaLoading && firmaAction === 'upload' ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Upload className="w-4 h-4 mr-2" />
+                          )}
+                          Carica PDF Firmato
+                        </Button>
+                        <span className="text-xs text-gray-500 self-center">
+                          Formati accettati: PDF firmato (PAdES) o .p7m (CAdES)
+                        </span>
+                      </>
+                    )}
+
+                    {/* Step 4: Firmato - mostra info */}
+                    {(selectedPratica.firma_stato === 'SIGNED' || selectedPratica.firma_stato === 'VERIFIED') && (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-green-900/20 rounded-lg border border-green-500/30">
+                        <FileSignature className="w-5 h-5 text-green-400" />
+                        <span className="text-sm text-green-300 font-medium">
+                          Domanda firmata digitalmente - Pratica protocollabile
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
               )}
 
               {/* Controlli e Punteggio */}
