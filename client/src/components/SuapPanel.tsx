@@ -430,6 +430,20 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
     }
   }, [comuneDataLoaded, comuneData]);
 
+  // Ricarica la pratica quando l'utente torna alla pagina (es. dopo aver aperto il PDF in un nuovo tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && selectedPratica?.id) {
+        // Ricarica silenziosamente la pratica per aggiornare lo stato firma
+        loadPraticaDetail(selectedPratica.id);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [selectedPratica?.id]);
+
   // Ascolta eventi di navigazione dalla scheda associato
   useEffect(() => {
     const handleNavigateToPratica = (e: CustomEvent) => {
@@ -901,7 +915,12 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
       const data = await response.json();
       if (!data.success) throw new Error(data.error || 'Errore generazione PDF');
 
-      // Se c'e' il PDF in base64, scaricalo
+      toast.success(`PDF generato con successo! Hash SHA-256: ${data.data.hash_sha256?.substring(0, 16)}...`);
+
+      // PRIMA aggiorna lo stato della pratica (cosi' lo stepper avanza subito)
+      await loadPraticaDetail(selectedPratica.id);
+
+      // POI scarica il PDF (dopo che lo stato e' aggiornato)
       if (data.data.pdf_base64) {
         const byteCharacters = atob(data.data.pdf_base64);
         const byteNumbers = new Array(byteCharacters.length);
@@ -914,17 +933,17 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
         const a = document.createElement('a');
         a.href = url;
         a.download = `Domanda_Bolkestein_${selectedPratica.cui || selectedPratica.id}.pdf`;
+        // Safari iOS: usa target _blank per evitare navigazione dalla pagina corrente
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        // Revoca il blob URL dopo un breve delay (Safari necessita tempo per iniziare il download)
+        setTimeout(() => window.URL.revokeObjectURL(url), 5000);
       } else if (data.data.pdf_url) {
         window.open(data.data.pdf_url, '_blank');
       }
-
-      toast.success(`PDF generato con successo! Hash SHA-256: ${data.data.hash_sha256?.substring(0, 16)}...`);
-      // Ricarica la pratica per aggiornare lo stato firma
-      await loadPraticaDetail(selectedPratica.id);
     } catch (error: any) {
       console.error('Error generating PDF:', error);
       toast.error(`Errore: ${error.message}`);
