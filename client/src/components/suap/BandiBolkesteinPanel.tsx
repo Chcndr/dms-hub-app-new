@@ -43,6 +43,8 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Send,
+  Megaphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -195,6 +197,7 @@ export default function BandiBolkesteinPanel({
   const [graduatoria, setGraduatoria] = useState<GraduatoriaResult | null>(null);
   const [loadingGraduatoria, setLoadingGraduatoria] = useState(false);
   const [gradView, setGradView] = useState<'generale' | 'posteggio'>('generale');
+  const [publishingGraduatoria, setPublishingGraduatoria] = useState(false);
 
   // Carica bandi
   const loadBandi = async () => {
@@ -228,14 +231,36 @@ export default function BandiBolkesteinPanel({
     }
   };
 
-  // Auto-carica graduatoria del primo bando CHIUSO
+  // Carica graduatoria salvata di un bando (GET, senza ricalcolare)
+  const loadGraduatoriaSalvata = async (bandoId: number) => {
+    setLoadingGraduatoria(true);
+    setSelectedBandoId(bandoId);
+    try {
+      const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi/${bandoId}/graduatoria`);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success && data.data.graduatoria && data.data.graduatoria.length > 0) {
+        setGraduatoria(data.data);
+        setActiveTab("graduatorie");
+      } else {
+        toast.info("Nessuna graduatoria calcolata per questo bando. Calcola prima la graduatoria.");
+      }
+    } catch (error) {
+      console.error("Error loading graduatoria:", error);
+      toast.error("Errore nel caricamento della graduatoria");
+    } finally {
+      setLoadingGraduatoria(false);
+    }
+  };
+
+  // Auto-carica graduatoria del primo bando CHIUSO o PUBBLICATO
   const autoLoadGraduatoria = async (bandiList: Bando[]) => {
-    const bandoChiuso = bandiList.find(b => b.stato === "CHIUSO" || b.stato === "GRADUATORIA_PUBBLICATA");
-    if (bandoChiuso && !graduatoria) {
+    const bandoConGrad = bandiList.find(b => b.stato === "GRADUATORIA_PUBBLICATA" || b.stato === "CHIUSO");
+    if (bandoConGrad && !graduatoria) {
       setLoadingGraduatoria(true);
-      setSelectedBandoId(bandoChiuso.id);
+      setSelectedBandoId(bandoConGrad.id);
       try {
-        const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi/${bandoChiuso.id}/graduatoria`);
+        const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi/${bandoConGrad.id}/graduatoria`);
         const res = await fetch(url);
         const data = await res.json();
         if (data.success && data.data.graduatoria && data.data.graduatoria.length > 0) {
@@ -360,7 +385,7 @@ export default function BandiBolkesteinPanel({
     }
   };
 
-  // Calcola graduatoria
+  // Calcola graduatoria (POST - ricalcola i punteggi)
   const handleCalcolaGraduatoria = async (bandoId: number) => {
     setLoadingGraduatoria(true);
     setSelectedBandoId(bandoId);
@@ -383,6 +408,35 @@ export default function BandiBolkesteinPanel({
       toast.error(error.message || "Errore nel calcolo della graduatoria");
     } finally {
       setLoadingGraduatoria(false);
+    }
+  };
+
+  // Pubblica graduatoria (POST - fissa e notifica imprese)
+  const handlePubblicaGraduatoria = async (bandoId: number) => {
+    if (!confirm("Sei sicuro di voler pubblicare la graduatoria? Questa azione invierà una notifica a tutte le imprese partecipanti con la loro posizione in graduatoria.")) return;
+    
+    setPublishingGraduatoria(true);
+    try {
+      const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi/${bandoId}/pubblica-graduatoria`);
+      const res = await authenticatedFetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comune_id: comuneId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || "Graduatoria pubblicata con successo!");
+        // Ricarica bandi per aggiornare lo stato
+        loadBandi();
+        // Ricarica la graduatoria per aggiornare il badge stato
+        await loadGraduatoriaSalvata(bandoId);
+      } else {
+        toast.error(data.error || "Errore nella pubblicazione della graduatoria");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Errore nella pubblicazione della graduatoria");
+    } finally {
+      setPublishingGraduatoria(false);
     }
   };
 
@@ -503,7 +557,8 @@ export default function BandiBolkesteinPanel({
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex gap-2 ml-4 flex-wrap justify-end">
+                        {/* BOZZA: Pubblica + Elimina */}
                         {bando.stato === "BOZZA" && (
                           <>
                             <Button
@@ -524,22 +579,82 @@ export default function BandiBolkesteinPanel({
                             </Button>
                           </>
                         )}
+                        {/* APERTO: Chiudi Bando + Calcola Graduatoria */}
                         {bando.stato === "APERTO" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                            onClick={() => handleCambiaStato(bando.id, "CHIUSO")}
-                          >
-                            Chiudi Bando
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                              onClick={() => handleCambiaStato(bando.id, "CHIUSO")}
+                            >
+                              Chiudi Bando
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                              onClick={() => handleCalcolaGraduatoria(bando.id)}
+                              disabled={loadingGraduatoria}
+                            >
+                              {loadingGraduatoria && selectedBandoId === bando.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                              ) : (
+                                <BarChart3 className="h-4 w-4 mr-1" />
+                              )}
+                              Calcola Graduatoria
+                            </Button>
+                          </>
                         )}
-                        {(bando.stato === "CHIUSO" || bando.stato === "APERTO") && (
+                        {/* CHIUSO: Calcola Graduatoria + Vedi Graduatoria + Pubblica Graduatoria */}
+                        {bando.stato === "CHIUSO" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                              onClick={() => handleCalcolaGraduatoria(bando.id)}
+                              disabled={loadingGraduatoria}
+                            >
+                              {loadingGraduatoria && selectedBandoId === bando.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                              ) : (
+                                <BarChart3 className="h-4 w-4 mr-1" />
+                              )}
+                              Ricalcola
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                              onClick={() => loadGraduatoriaSalvata(bando.id)}
+                              disabled={loadingGraduatoria}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Vedi Graduatoria
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="bg-purple-600 text-white hover:bg-purple-700"
+                              onClick={() => handlePubblicaGraduatoria(bando.id)}
+                              disabled={publishingGraduatoria}
+                            >
+                              {publishingGraduatoria ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                              ) : (
+                                <Megaphone className="h-4 w-4 mr-1" />
+                              )}
+                              Pubblica Graduatoria
+                            </Button>
+                          </>
+                        )}
+                        {/* GRADUATORIA_PUBBLICATA: solo Vedi Graduatoria */}
+                        {bando.stato === "GRADUATORIA_PUBBLICATA" && (
                           <Button
                             size="sm"
                             variant="outline"
                             className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
-                            onClick={() => handleCalcolaGraduatoria(bando.id)}
+                            onClick={() => loadGraduatoriaSalvata(bando.id)}
                             disabled={loadingGraduatoria}
                           >
                             {loadingGraduatoria && selectedBandoId === bando.id ? (
@@ -547,7 +662,7 @@ export default function BandiBolkesteinPanel({
                             ) : (
                               <Trophy className="h-4 w-4 mr-1" />
                             )}
-                            Graduatoria
+                            Vedi Graduatoria
                           </Button>
                         )}
                       </div>
@@ -599,7 +714,7 @@ export default function BandiBolkesteinPanel({
                   <Label className="text-[#e8fbff]">Mercato</Label>
                   <Select
                     value={formBando.mercato_id}
-                    onValueChange={value => setFormBando({ ...formBando, mercato_id: value })}
+                    onValueChange={v => setFormBando({ ...formBando, mercato_id: v })}
                   >
                     <SelectTrigger className="bg-[#0b1220] border-[#334155] text-[#e8fbff]">
                       <SelectValue placeholder="Seleziona mercato..." />
@@ -607,21 +722,19 @@ export default function BandiBolkesteinPanel({
                     <SelectContent>
                       {markets.map(m => (
                         <SelectItem key={m.id} value={String(m.id)}>
-                          {m.name} ({m.code})
+                          {m.name} ({m.municipality})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">Posteggi Disponibili</Label>
                   <Input
                     type="number"
-                    min="0"
                     value={formBando.posteggi_disponibili}
                     onChange={e => setFormBando({ ...formBando, posteggi_disponibili: e.target.value })}
-                    placeholder="0"
+                    placeholder="es. 10"
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
                   />
                 </div>
@@ -631,7 +744,7 @@ export default function BandiBolkesteinPanel({
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">Data Apertura *</Label>
                   <Input
-                    type="datetime-local"
+                    type="date"
                     value={formBando.data_apertura}
                     onChange={e => setFormBando({ ...formBando, data_apertura: e.target.value })}
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
@@ -640,7 +753,7 @@ export default function BandiBolkesteinPanel({
                 <div className="space-y-2">
                   <Label className="text-[#e8fbff]">Data Chiusura *</Label>
                   <Input
-                    type="datetime-local"
+                    type="date"
                     value={formBando.data_chiusura}
                     onChange={e => setFormBando({ ...formBando, data_chiusura: e.target.value })}
                     className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
@@ -691,9 +804,9 @@ export default function BandiBolkesteinPanel({
             <Card className="bg-[#0a1628] border-[#1e293b]">
               <CardContent className="py-12 text-center">
                 <Trophy className="h-12 w-12 text-[#e8fbff]/20 mx-auto mb-4" />
-                <p className="text-[#e8fbff]/60">Nessuna graduatoria calcolata</p>
+                <p className="text-[#e8fbff]/60">Nessuna graduatoria disponibile</p>
                 <p className="text-sm text-[#e8fbff]/40 mt-1">
-                  Seleziona un bando dalla lista e clicca "Graduatoria" per calcolarla
+                  Seleziona un bando dalla lista e clicca "Vedi Graduatoria" per visualizzarla
                 </p>
               </CardContent>
             </Card>
@@ -717,8 +830,39 @@ export default function BandiBolkesteinPanel({
                         )}
                       </div>
                     </div>
-                    {getStatoBadge(graduatoria.bando_stato)}
+                    <div className="flex items-center gap-2">
+                      {getStatoBadge(graduatoria.bando_stato)}
+                      {/* Pulsante Pubblica Graduatoria nel tab graduatorie (solo se CHIUSO) */}
+                      {graduatoria.bando_stato === "CHIUSO" && selectedBandoId && (
+                        <Button
+                          size="sm"
+                          className="bg-purple-600 text-white hover:bg-purple-700"
+                          onClick={() => handlePubblicaGraduatoria(selectedBandoId)}
+                          disabled={publishingGraduatoria}
+                        >
+                          {publishingGraduatoria ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                          ) : (
+                            <Megaphone className="h-4 w-4 mr-1" />
+                          )}
+                          Pubblica Graduatoria
+                        </Button>
+                      )}
+                    </div>
                   </div>
+                  {/* Banner graduatoria pubblicata */}
+                  {graduatoria.bando_stato === "GRADUATORIA_PUBBLICATA" && (
+                    <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-purple-400 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-purple-300">Graduatoria Pubblicata</p>
+                        <p className="text-xs text-purple-300/60">
+                          Le notifiche con la posizione in graduatoria sono state inviate a tutte le imprese partecipanti.
+                          Termine ricorsi: 60 giorni dalla pubblicazione (Art. 29 D.Lgs. 104/2010).
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
