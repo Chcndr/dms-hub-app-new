@@ -1,19 +1,58 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.0.0 (Flusso Inoppugnabile Bolkestein, Bandi, Documenti)
-> **Data:** 27 Aprile 2026
+> **Versione:** 10.0.1 (Fix Flusso Firma, Upload Impresa, Responsive Mobile)
+> **Data:** 28 Aprile 2026
 >
 > ---
-> ### CHANGELOG v10.0.0 (27 Apr 2026)
-> **Flusso Firma Digitale Inoppugnabile + Pubblicazione Graduatoria + Documenti Allegati + Notifiche Impresa**
+> ### CHANGELOG v10.0.1 (28 Apr 2026)
+> **Upload PDF firmato da Impresa + Fix Nomi File + Responsive Mobile + Auto-avanzamento Verificato**
 >
 > **Stato deploy:**
 > | Sistema | Commit | Stato |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `4087fd9` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `4087fd9` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `d3dd634` | Allineato |
-> | Vercel frontend | `d3dd634` | Autodeploy |
+> | GitHub `mihub-backend-rest` master | `1e3deed` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `1e3deed` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `5368910` | Allineato |
+> | Vercel frontend | `5368910` | Autodeploy |
+>
+> **BACKEND — 11 commit (da `4087fd9` a `1e3deed`):**
+>
+> **Fix Flusso Firma e Documenti:**
+> - `POST /pratiche/:id/upload-firmato` — Auto-avanzamento stato a `VERIFIED` (invece di `SIGNED`). Aggiunto `SIGNED` tra gli stati validi per consentire il re-upload. Auto-lookup `impresa_id` dal CF.
+> - `GET /pratiche/:id/download-pdf` — Fix `Content-Disposition` con `filename*=UTF-8''` (RFC 6266) per servire il file come `Domanda_Bolkestein_SCIA-XXXX.pdf` (CUI della pratica) invece del nome URL. Fallback DB storage se S3 non configurato.
+> - `GET /pratiche/:id/download-firmato` — Nuovo endpoint dedicato. Serve il file come `FIRMATO_Domanda_Bolkestein_SCIA-XXXX.pdf` invece del nome errato `FIRMATO_download-pdf.pdf`.
+> - `POST /pratiche/:id/invia-firma` — Permette il re-invio anche dagli stati `SENT_TO_IMPRESA` e `SIGNED`.
+>
+> **Fix Generali API:**
+> - Rimosso filtro `ente_id` UUID dalle query critiche (`getPraticaById`, `getDocumentoById`, `getPratiche`, `getStats`). Il sistema ora usa `comune_id` intero.
+> - Fix `getEnteId` per gestire stringhe non-UUID (es. `ente_modena`) convertendole al default UUID, risolvendo crash in upload documenti, genera-pdf e download.
+> - Aggiunto `x-ente-id` a CORS `allowedHeaders` per risolvere blocchi upload documenti dal browser.
+>
+> **FRONTEND — 6 commit (da `d3dd634` a `5368910`):**
+>
+> **Upload PDF firmato da Impresa (`AppImpresaNotifiche.tsx`):**
+> - Aggiunto pulsante "Carica PDF Firmato" (icona Upload verde) nella notifica `RICHIESTA_FIRMA`.
+> - Estrazione ID pratica dal `link_riferimento` della notifica e chiamata a `POST /api/suap/pratiche/:id/upload-firmato`.
+> - Stato success con conferma visiva ("PDF Firmato Caricato con Successo") dopo l'upload.
+> - Accetta PDF firmato (`.pdf` PAdES) e busta CAdES (`.p7m`).
+>
+> **Fix Responsive Mobile (`SuapPanel.tsx` e `AppImpresaNotifiche.tsx`):**
+> - Stepper firma: `overflow-x-auto`, testo ridotto a `text-[10px]` su mobile, `whitespace-nowrap` e `flex-shrink-0`.
+> - Titolo firma: `flex-wrap`, `truncate`, `min-w-0`.
+> - Header notifica impresa: titolo `truncate`, badge ridotto, gap ridotti.
+> - Pulsanti firma (Visualizza/Scarica): `flex-wrap`, `size="sm"`, testo abbreviato su mobile.
+> - Allegato buttons (Dati Bando): `max-w-full overflow-hidden` e `truncate` sul nome file.
+> - Sezione verbale notifica: `flex-col sm:flex-row` per wrap corretto su schermi piccoli.
+>
+> **Fix API Calls e Link Allegati:**
+> - Tutte le chiamate API SUAP ora usano `authenticatedFetch` + `addComuneIdToUrl` (risolve 401 Unauthorized su upload documenti, genera-pdf, invia-firma, download).
+> - Aggiunti link "Apri Allegato" accanto a ogni criterio Bolkestein nel dettaglio pratica.
+> - "Visualizza PDF Firmato" ora usa il nuovo endpoint `download-firmato`.
+> - Form SCIA Bolkestein collegato al backend per upload documenti allegati dopo creazione pratica.
+>
+> ---
+> ### CHANGELOG v10.0.0 (27 Apr 2026)
+> **Flusso Firma Digitale Inoppugnabile + Pubblicazione Graduatoria + Documenti Allegati + Notifiche Impresa**
 >
 > **BACKEND — 8 commit (da `64b83e7` a `4087fd9`):**
 >
