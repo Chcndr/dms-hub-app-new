@@ -791,7 +791,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
             uploadFormData.append('file', file);
             uploadFormData.append('tipo_documento', tipo);
             const uploadRes = await fetch(
-              `${MIHUB_API_BASE_URL}/suap/pratiche/${createdPratica.id}/documenti`,
+              `${MIHUB_API_BASE_URL}/api/suap/pratiche/${createdPratica.id}/documenti`,
               {
                 method: 'POST',
                 headers: { 'x-ente-id': ENTE_ID },
