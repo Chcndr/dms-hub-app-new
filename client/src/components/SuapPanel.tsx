@@ -2352,6 +2352,15 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   value={selectedPratica.bolkestein_dettagli_prodotti_tipici}
                 />
                 )}
+                {(() => { const doc = selectedPratica.documenti?.find((d: any) => { try { const m = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : d.metadata; return m?.tipo_documento === 'PRODOTTI_TIPICI'; } catch { return false; } }); return doc ? (
+                  <div className="ml-1 mb-2">
+                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all">
+                      <Paperclip className="w-3.5 h-3.5" />
+                      Apri Allegato: {doc.file_name}
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : null; })()}
                 <DataField
                   label="Consegna a Domicilio (Cr.9.1c)"
                   value={selectedPratica.bolkestein_consegna_domicilio ? 'Si (7 pt)' : 'No'}
@@ -2362,6 +2371,15 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   value={selectedPratica.bolkestein_dettagli_consegna_domicilio}
                 />
                 )}
+                {(() => { const doc = selectedPratica.documenti?.find((d: any) => { try { const m = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : d.metadata; return m?.tipo_documento === 'CONSEGNA_DOMICILIO'; } catch { return false; } }); return doc ? (
+                  <div className="ml-1 mb-2">
+                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all">
+                      <Paperclip className="w-3.5 h-3.5" />
+                      Apri Allegato: {doc.file_name}
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : null; })()}
                 <DataField
                   label="Progetti Innovativi (Cr.9.1d)"
                   value={selectedPratica.bolkestein_progetti_innovativi ? 'Si (2 pt)' : 'No'}
@@ -2372,6 +2390,15 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   value={selectedPratica.bolkestein_dettagli_progetti_innovativi}
                 />
                 )}
+                {(() => { const doc = selectedPratica.documenti?.find((d: any) => { try { const m = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : d.metadata; return m?.tipo_documento === 'PROGETTI_INNOVATIVI'; } catch { return false; } }); return doc ? (
+                  <div className="ml-1 mb-2">
+                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all">
+                      <Paperclip className="w-3.5 h-3.5" />
+                      Apri Allegato: {doc.file_name}
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : null; })()}
                 <DataField
                   label="Mezzi Basso Impatto Ambientale (Cr.9.1e)"
                   value={selectedPratica.bolkestein_mezzi_green ? 'Si (6 pt)' : 'No'}
@@ -2382,6 +2409,15 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                   value={selectedPratica.bolkestein_dettagli_mezzi_green}
                 />
                 )}
+                {(() => { const doc = selectedPratica.documenti?.find((d: any) => { try { const m = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : d.metadata; return m?.tipo_documento === 'MEZZI_GREEN'; } catch { return false; } }); return doc ? (
+                  <div className="ml-1 mb-2">
+                    <button onClick={() => handleDownloadDocumento(doc.id, doc.file_name)} className="flex items-center gap-2 text-xs text-[#14b8a6] hover:text-[#14b8a6]/80 bg-[#14b8a6]/10 hover:bg-[#14b8a6]/20 px-3 py-1.5 rounded-lg transition-all">
+                      <Paperclip className="w-3.5 h-3.5" />
+                      Apri Allegato: {doc.file_name}
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : null; })()}
                 <DataField
                   label="Formazione Professionale (Cr.9.1f)"
                   value={selectedPratica.bolkestein_ore_formazione && selectedPratica.bolkestein_ore_formazione > 0 ? `Si - ${selectedPratica.bolkestein_ore_formazione} ore (7 pt)` : 'No (0 pt)'}
