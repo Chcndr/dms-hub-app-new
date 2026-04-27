@@ -2548,13 +2548,54 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                       </>
                     )}
 
-                    {/* Step 4: Firmato - mostra info */}
+                    {/* Step 4: Firmato - mostra info + pulsanti download */}
                     {(selectedPratica.firma_stato === 'SIGNED' || selectedPratica.firma_stato === 'VERIFIED') && (
-                      <div className="flex items-center gap-2 px-4 py-2 bg-green-900/20 rounded-lg border border-green-500/30">
-                        <FileSignature className="w-5 h-5 text-green-400" />
-                        <span className="text-sm text-green-300 font-medium">
-                          Domanda firmata digitalmente - Pratica protocollabile
-                        </span>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-green-900/20 rounded-lg border border-green-500/30">
+                          <FileSignature className="w-5 h-5 text-green-400" />
+                          <span className="text-sm text-green-300 font-medium">
+                            Domanda firmata digitalmente - Pratica protocollabile
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {/* Pulsante Visualizza PDF Firmato */}
+                          {selectedPratica.documento_firmato_url && (
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white gap-2"
+                              onClick={() => {
+                                window.open(selectedPratica.documento_firmato_url!, '_blank', 'noopener,noreferrer');
+                                toast.success('PDF firmato aperto in nuova tab');
+                              }}
+                            >
+                              <FileSignature className="w-4 h-4" />
+                              Visualizza PDF Firmato
+                              <ExternalLink className="w-3 h-3" />
+                            </Button>
+                          )}
+                          {/* Pulsante Visualizza PDF Originale */}
+                          {selectedPratica.documento_pdf_url && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-[#8b5cf6]/30 text-[#c4b5fd] hover:bg-[#8b5cf6]/10 gap-2"
+                              onClick={() => {
+                                window.open(selectedPratica.documento_pdf_url!, '_blank', 'noopener,noreferrer');
+                                toast.success('PDF originale aperto in nuova tab');
+                              }}
+                            >
+                              <FileText className="w-4 h-4" />
+                              Visualizza PDF Originale
+                              <ExternalLink className="w-3 h-3" />
+                            </Button>
+                          )}
+                          {/* Fallback: se non ci sono URL salvati, scarica tramite genera-pdf */}
+                          {!selectedPratica.documento_firmato_url && !selectedPratica.documento_pdf_url && (
+                            <p className="text-xs text-[#e8fbff]/40 italic">
+                              I documenti PDF sono disponibili nella sezione Documenti Allegati sottostante.
+                            </p>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
