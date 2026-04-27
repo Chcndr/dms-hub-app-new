@@ -12495,6 +12495,69 @@ Attualmente, l'associazione di categoria compila il form per conto dell'impresa.
 
 Questo flusso garantisce la totale inoppugnabilità della domanda, poiché il documento informatico reca la firma elettronica qualificata del diretto interessato, assumendo piena efficacia probatoria ex art. 20 CAD [3].
 
+### 4.3 Implementazione Tecnica Completata (27 Aprile 2026)
+
+#### 4.3.1 Database - Migration Inoppugnabilità
+Sono stati aggiunti 6 campi alla tabella `suap_pratiche` per supportare il flusso firma:
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `hash_documento_originale` | VARCHAR(64) | Hash SHA-256 del PDF generato |
+| `documento_pdf_url` | TEXT | URL/key del PDF originale (S3 o local) |
+| `documento_firmato_url` | TEXT | URL/key del PDF firmato digitalmente |
+| `firma_stato` | VARCHAR(32) | Stato del flusso firma (NULL → WAITING_SIGNATURE → SENT_TO_IMPRESA → SIGNED → VERIFIED) |
+| `firma_verificata_at` | TIMESTAMP | Data/ora della verifica firma |
+| `firma_cf_firmatario` | VARCHAR(16) | Codice fiscale estratto dal certificato di firma |
+
+#### 4.3.2 Backend - Endpoint Implementati
+
+| Endpoint | Metodo | Descrizione | Commit |
+|----------|--------|-------------|--------|
+| `/api/suap/pratiche/:id/genera-pdf` | POST | Genera PDF 3 pagine con PDFKit (Sezioni A-F), calcola hash SHA-256, upload S3 (fallback base64), stato → WAITING_SIGNATURE | `110cb95` |
+| `/api/suap/pratiche/:id/invia-firma` | POST | Invio PDF via notifica in-app + email PEC (nodemailer), stato → SENT_TO_IMPRESA | `473bbd8` |
+| `/api/suap/pratiche/:id/upload-firmato` | POST | Upload PDF firmato (PAdES/CAdES), calcolo hash, verifica integrità, stato → SIGNED | `473bbd8` |
+| `/api/suap/pratiche/:id/stato-firma` | GET | Stato corrente del flusso firma con label/colore/step per il frontend | `473bbd8` |
+
+**Struttura PDF Generato (3 pagine):**
+* **Pagina 1**: Intestazione MIO HUB, dati bando, Sezione A (Dati Impresa), Sezione B (Dati Quantitativi - tutti gli 11 criteri)
+* **Pagina 2**: Sezione C (Documenti Allegati), Sezione D (Dichiarazione ex Art. 76 DPR 445/2000), Sezione E (Delega all'Associazione - Procura Speciale ex Art. 1392 c.c.)
+* **Pagina 3**: Sezione F (Spazio Firma Digitale), Footer con hash SHA-256, timestamp, riferimenti normativi
+
+**Macchina a stati del flusso firma:**
+```
+NULL → [genera-pdf] → WAITING_SIGNATURE → [invia-firma] → SENT_TO_IMPRESA → [upload-firmato] → SIGNED → [verifica futura] → VERIFIED
+```
+
+#### 4.3.3 Frontend - Sezione Flusso Firma Digitale (`SuapPanel.tsx`)
+
+Nel dettaglio pratica Bolkestein è stata aggiunta una nuova Card "Flusso Firma Digitale Inoppugnabile" (commit `fb89534`) con:
+
+* **Stepper visivo a 4 step**: Genera PDF → Invia all'Impresa → Firma Digitale → Verificato. Ogni step cambia colore (viola) man mano che il flusso avanza.
+* **Badge stato firma**: Colorato dinamicamente (blu = PDF generato, giallo = inviato, verde = firmato/verificato).
+* **Box hash SHA-256**: Mostra l'hash del documento originale in font monospace.
+* **Banner "In attesa di firma"**: Visibile quando stato = SENT_TO_IMPRESA, con animazione pulse.
+* **Pulsanti contestuali**:
+  * "Genera PDF Domanda" (stato null) → genera e scarica automaticamente il PDF
+  * "Invia all'Impresa" (stato WAITING_SIGNATURE) → invio via notifica + PEC
+  * "Ri-scarica PDF" (stato WAITING_SIGNATURE) → rigenerazione/download
+  * "Carica PDF Firmato" (stato SENT_TO_IMPRESA) → file picker per .pdf e .p7m
+* **Info firma verificata**: Data verifica e CF firmatario quando disponibili.
+* **Riferimenti normativi**: L.214/2023, CAD (D.Lgs. 82/2005), DPR 445/2000, eIDAS.
+
+#### 4.3.4 Test End-to-End Verificato
+Il flusso completo è stato testato con successo sulla pratica "Alimentari Rossi & C." (bando 7):
+1. Generazione PDF → hash SHA-256 calcolato e salvato
+2. Stato → WAITING_SIGNATURE (step 1)
+3. Invio all'impresa → stato SENT_TO_IMPRESA (step 2)
+4. Upload PDF firmato → stato SIGNED, CF firmatario estratto, firma_verificata_at registrata (step 3)
+5. Tutti gli endpoint restituiscono i dati corretti e coerenti
+
+#### 4.3.5 Evoluzione Futura
+* **Verifica firma digitale completa**: Integrazione con node-forge o DSS (Digital Signature Service UE) per validare la firma CAdES/PAdES, verificare la catena di certificati e il CRL/OCSP.
+* **Tabella documenti per criterio** (`suap_documenti_bolkestein`): Upload e gestione dei documenti probatori per ciascun criterio.
+* **Configurazione SMTP/PEC**: Integrazione con provider PEC certificato per l'invio automatico.
+* **Marca temporale**: Apposizione e verifica della marca temporale (art. 41 CAD) per certificare la data di firma.
+
 ---
 
 ## Riferimenti
