@@ -663,7 +663,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
     }
   };
 
-  const handleSciaSubmit = async (formData: any) => {
+  const handleSciaSubmit = async (formData: any, files?: {file: File, tipo: string}[]) => {
     setLoading(true);
     try {
       // Mappa i nomi dei campi dal form SciaForm ai nomi del backend
@@ -774,7 +774,44 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
         }
       }
 
-      await createSuapPratica(ENTE_ID, praticaData);
+      const createdPratica = await createSuapPratica(ENTE_ID, praticaData);
+      
+      // Upload documenti allegati (se presenti)
+      if (files && files.length > 0 && createdPratica?.id) {
+        const TIPO_LABELS: Record<string, string> = {
+          'PRODOTTI_TIPICI': 'Documentazione Prodotti Tipici',
+          'CONSEGNA_DOMICILIO': 'Dichiarazione Impegno Consegna Domicilio',
+          'PROGETTI_INNOVATIVI': 'Relazione Tecnica Progetti Innovativi',
+          'MEZZI_GREEN': 'Libretto Circolazione Mezzi Green',
+        };
+        let uploadedCount = 0;
+        for (const { file, tipo } of files) {
+          try {
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+            uploadFormData.append('tipo_documento', tipo);
+            const uploadRes = await fetch(
+              `${MIHUB_API_BASE_URL}/suap/pratiche/${createdPratica.id}/documenti`,
+              {
+                method: 'POST',
+                headers: { 'x-ente-id': ENTE_ID },
+                body: uploadFormData,
+              }
+            );
+            if (uploadRes.ok) {
+              uploadedCount++;
+            } else {
+              console.error(`Errore upload ${tipo}:`, await uploadRes.text());
+            }
+          } catch (uploadErr) {
+            console.error(`Errore upload file ${tipo}:`, uploadErr);
+          }
+        }
+        if (uploadedCount > 0) {
+          toast.success(`${uploadedCount} documento/i allegato/i caricato/i con successo`);
+        }
+      }
+      
       toast.success("SCIA creata con successo!");
       setShowSciaForm(false);
       loadData();

@@ -94,7 +94,7 @@ export default function SciaForm({
   comuneId,
 }: {
   onCancel: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any, files?: {file: File, tipo: string}[]) => void;
   comuneNome?: string;
   comuneId?: number;
 }) {
@@ -252,6 +252,17 @@ export default function SciaForm({
     bolkestein_impegno_progetti_innovativi: false as boolean,
     bolkestein_dettagli_progetti_innovativi: "",
   });
+
+  // File allegati per criteri Bolkestein
+  const [allegatiFiles, setAllegatiFiles] = useState<{file: File, tipo: string}[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, tipo: string) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Rimuovi file precedente dello stesso tipo e aggiungi il nuovo
+      setAllegatiFiles(prev => [...prev.filter(f => f.tipo !== tipo), { file, tipo }]);
+    }
+  };
 
   // Chiudi suggerimenti quando si clicca fuori (Subentrante e Cedente)
   useEffect(() => {
@@ -816,7 +827,7 @@ export default function SciaForm({
       return;
     }
 
-    onSubmit(formData);
+    onSubmit(formData, allegatiFiles.length > 0 ? allegatiFiles : undefined);
   };
 
   return (
@@ -1119,7 +1130,8 @@ export default function SciaForm({
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-[#e8fbff]/70">Allega Documentazione (Autocertificazione/Contratti)</Label>
-                        <Input type="file" className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                        <Input type="file" accept=".pdf,.jpg,.jpeg,.png,.p7m" onChange={(e) => handleFileChange(e, 'PRODOTTI_TIPICI')} className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                        {allegatiFiles.find(f => f.tipo === 'PRODOTTI_TIPICI') && <p className="text-xs text-[#14b8a6]">File selezionato: {allegatiFiles.find(f => f.tipo === 'PRODOTTI_TIPICI')?.file.name}</p>}
                       </div>
                     </div>
                   )}
@@ -1150,7 +1162,8 @@ export default function SciaForm({
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-[#e8fbff]/70">Allega Dichiarazione d'Impegno</Label>
-                        <Input type="file" className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                        <Input type="file" accept=".pdf,.jpg,.jpeg,.png,.p7m" onChange={(e) => handleFileChange(e, 'CONSEGNA_DOMICILIO')} className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                        {allegatiFiles.find(f => f.tipo === 'CONSEGNA_DOMICILIO') && <p className="text-xs text-[#14b8a6]">File selezionato: {allegatiFiles.find(f => f.tipo === 'CONSEGNA_DOMICILIO')?.file.name}</p>}
                       </div>
                     </div>
                   )}
@@ -1181,7 +1194,8 @@ export default function SciaForm({
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-[#e8fbff]/70">Allega Relazione Tecnica/Bozzetto</Label>
-                        <Input type="file" className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                        <Input type="file" accept=".pdf,.jpg,.jpeg,.png,.p7m" onChange={(e) => handleFileChange(e, 'PROGETTI_INNOVATIVI')} className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                        {allegatiFiles.find(f => f.tipo === 'PROGETTI_INNOVATIVI') && <p className="text-xs text-[#14b8a6]">File selezionato: {allegatiFiles.find(f => f.tipo === 'PROGETTI_INNOVATIVI')?.file.name}</p>}
                       </div>
                     </div>
                   )}
@@ -1212,7 +1226,8 @@ export default function SciaForm({
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-[#e8fbff]/70">Allega Libretto di Circolazione</Label>
-                        <Input type="file" className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                        <Input type="file" accept=".pdf,.jpg,.jpeg,.png,.p7m" onChange={(e) => handleFileChange(e, 'MEZZI_GREEN')} className="text-xs bg-[#020817] border-[#334155] text-[#e8fbff] file:text-[#14b8a6]" />
+                        {allegatiFiles.find(f => f.tipo === 'MEZZI_GREEN') && <p className="text-xs text-[#14b8a6]">File selezionato: {allegatiFiles.find(f => f.tipo === 'MEZZI_GREEN')?.file.name}</p>}
                       </div>
                     </div>
                   )}
