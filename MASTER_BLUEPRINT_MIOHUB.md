@@ -1,7 +1,67 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 9.9.5 (Bugfix Billing, SCIA, iPad)
-> **Data:** 13 Marzo 2026
+> **Versione:** 10.0.0 (Flusso Inoppugnabile Bolkestein, Bandi, Documenti)
+> **Data:** 27 Aprile 2026
+>
+> ---
+> ### CHANGELOG v10.0.0 (27 Apr 2026)
+> **Flusso Firma Digitale Inoppugnabile + Pubblicazione Graduatoria + Documenti Allegati + Notifiche Impresa**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `4087fd9` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `4087fd9` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `d3dd634` | Allineato |
+> | Vercel frontend | `d3dd634` | Autodeploy |
+>
+> **BACKEND — 8 commit (da `64b83e7` a `4087fd9`):**
+>
+> **Flusso Firma Digitale Inoppugnabile (4 endpoint):**
+> - `POST /pratiche/:id/genera-pdf` — Genera PDF 3 pagine (Sezioni A-F) con PDFKit, calcola hash SHA-256, upload S3 (fallback base64), stato → WAITING_SIGNATURE
+> - `POST /pratiche/:id/invia-firma` — INSERT diretto in tabella `notifiche` con `link_riferimento` al PDF (pattern identico a verbali.js), tipo `RICHIESTA_FIRMA`, `comune_id` recuperato automaticamente dal mercato della pratica
+> - `POST /pratiche/:id/upload-firmato` — Upload PDF firmato (PAdES/CAdES), calcolo hash SHA-256, verifica integrità, stato → SIGNED, estrazione CF firmatario
+> - `GET /pratiche/:id/stato-firma` — Stato corrente del flusso firma con label/colore/step per il frontend
+>
+> **Pubblicazione Graduatoria Bandi (1 endpoint):**
+> - `POST /bandi/:id/pubblica-graduatoria` — Verifica bando CHIUSO + graduatoria calcolata, cambia stato a GRADUATORIA_PUBBLICATA, invia notifica a ogni impresa partecipante con posizione, punteggio, posteggio richiesto e info ricorsi (60gg ex Art. 29 D.Lgs. 104/2010)
+>
+> **Fix PDF:**
+> - SEZIONE D: tabella documenti allegati con colonne #/Nome/Tipo/Dim/Data + hash SHA-256 sotto ogni file (elimina spazio vuoto)
+> - Tutte le date nel PDF usano `timeZone: 'Europe/Rome'` (fuso orario italiano)
+> - SEZIONE E non forza più `addPage()` — page break solo se necessario
+> - Fix layout campi (nomi corretti `sub_*`), spaziatura righe, page break condizionali
+>
+> **Fix notifica invia-firma:**
+> - `comune_id` recuperato dal mercato della pratica nel DB (non dal body) per evitare blocco middleware `validateImpersonation`
+>
+> **FRONTEND — 9 commit (da `fb89534` a `d3dd634`):**
+>
+> **Sezione Flusso Firma Digitale Inoppugnabile (`SuapPanel.tsx`):**
+> - Stepper visivo 4 step (Genera PDF → Invia all'Impresa → Firma Digitale → Verificato) con colori viola
+> - Badge stato firma dinamico, box hash SHA-256, banner "In attesa di firma" con pulse
+> - Pulsanti contestuali: Genera PDF, Invia, Ri-scarica, Carica PDF Firmato
+> - Pulsanti "Visualizza PDF Firmato" (verde) e "Visualizza PDF Originale" (viola) quando firma completata
+> - Fix stepper non aggiornato dopo genera-pdf + errore caricamento pratica al ritorno da Safari
+> - `useEffect` con `visibilitychange` per ricaricare pratica al ritorno dalla tab PDF
+>
+> **Sezione Documenti Allegati (`SuapPanel.tsx`):**
+> - Nuova card tra Firma Digitale e Controlli Automatici
+> - Ogni documento cliccabile: apre presigned URL S3 in nuova tab
+> - Icone differenziate per tipo (PDF rosso, immagini blu, .p7m viola)
+> - Nome file, tipo, dimensione (KB/MB), data upload
+>
+> **Pubblicazione Graduatoria (`BandiBolkesteinPanel.tsx`):**
+> - Pulsante "Pubblica Graduatoria" (viola, icona megafono) per bandi CHIUSO
+> - "Vedi Graduatoria" usa GET (dati salvati, non ricalcola)
+> - "Ricalcola" usa POST (solo per bandi CHIUSO)
+> - Banner viola "Graduatoria Pubblicata" con info ricorsi nel tab Graduatorie
+> - Pulsanti differenziati per stato bando (BOZZA/APERTO/CHIUSO/GRADUATORIA_PUBBLICATA)
+>
+> **Notifiche Impresa (`AppImpresaNotifiche.tsx`):**
+> - Nuovo tipo `RICHIESTA_FIRMA` con badge viola e icona PenTool
+> - Sezione dedicata con pulsante "Visualizza PDF da Firmare" + "Scarica PDF"
+> - Box istruzioni per l'impresa (scarica → firma → restituisci)
 >
 > ---
 > ### CHANGELOG v9.9.5 (13 Mar 2026)
@@ -2355,7 +2415,12 @@ Il sistema include un modulo completo per la gestione dei **Bandi Bolkestein** p
 | `PUT` | `/api/suap/bandi/:id` | Aggiornamento bando (stato, date, ecc.) |
 | `POST` | `/api/suap/bandi/:id/graduatoria` | Calcolo graduatoria con tutti gli 11 criteri |
 | `GET` | `/api/suap/bandi/:id/graduatoria` | Recupero graduatoria già calcolata (senza ricalcolo) |
+| `POST` | `/api/suap/bandi/:id/pubblica-graduatoria` | Fissa graduatoria, stato bando → GRADUATORIA_PUBBLICATA, invia notifica a ogni impresa con posizione e punteggio |
 | `GET` | `/api/suap/pratiche/:id` | Dettaglio pratica con LEFT JOIN su `suap_dati_bolkestein` |
+| `POST` | `/api/suap/pratiche/:id/genera-pdf` | Genera PDF domanda inoppugnabile (3 pagine, Sezioni A-F), hash SHA-256, stato → WAITING_SIGNATURE |
+| `POST` | `/api/suap/pratiche/:id/invia-firma` | Invia PDF all'impresa via notifica in-app con `link_riferimento`, stato → SENT_TO_IMPRESA |
+| `POST` | `/api/suap/pratiche/:id/upload-firmato` | Upload PDF firmato (PAdES/CAdES), verifica hash, stato → SIGNED |
+| `GET` | `/api/suap/pratiche/:id/stato-firma` | Stato corrente flusso firma (label, colore, step) |
 
 #### Motore di Calcolo Punteggi (100 punti totali)
 
@@ -2384,19 +2449,43 @@ Il tipo segnalazione "Partecipazione Bando Bolkestein" nasconde automaticamente 
 #### Dashboard PA (`BandiBolkesteinPanel.tsx`)
 
 Il componente `BandiBolkesteinPanel` offre tre tab:
-1. **Bandi**: Lista bandi con stato, date, numero domande, pulsante "Graduatoria" per ogni bando chiuso.
+1. **Bandi**: Lista bandi con stato, date, numero domande. Pulsanti differenziati per stato:
+   - **BOZZA**: Pubblica + Elimina
+   - **APERTO**: Chiudi Bando + Calcola Graduatoria
+   - **CHIUSO**: Ricalcola + Vedi Graduatoria + **Pubblica Graduatoria** (pulsante viola con icona megafono)
+   - **GRADUATORIA_PUBBLICATA**: Vedi Graduatoria (sola lettura)
 2. **Crea Bando**: Form per creare nuovi bandi con selezione mercato e posteggi.
-3. **Graduatorie**: Auto-caricamento delle graduatorie dei bandi chiusi. Due viste disponibili:
+3. **Graduatorie**: Visualizzazione graduatorie dei bandi chiusi/pubblicati. Due viste disponibili:
    - **Classifica Generale**: Tabella con tutti i partecipanti ordinati per punteggio, colonne per tutti gli 11 criteri, numero posteggio, icona Occhio per aprire la SCIA.
    - **Per Posteggio**: Card separate per ogni posteggio con la propria sub-graduatoria e numero candidati.
+   - **Banner viola** "Graduatoria Pubblicata" per bandi con stato GRADUATORIA_PUBBLICATA, con info sui termini di ricorso (60gg ex Art. 29 D.Lgs. 104/2010).
+
+**Nota importante**: "Vedi Graduatoria" usa `GET` (carica dati salvati dal DB, non ricalcola). "Ricalcola" usa `POST` (ricalcola punteggi, disponibile solo per bandi CHIUSO, non per GRADUATORIA_PUBBLICATA).
 
 #### Vista Dettaglio Pratica (`SuapPanel.tsx`)
 
-Nelle pratiche Bolkestein, viene mostrata una sezione dedicata (icona Trofeo) con il riepilogo in sola lettura di tutti i parametri dichiarati e i punteggi calcolati, inclusi:
+Nelle pratiche Bolkestein, il dettaglio pratica mostra le seguenti sezioni aggiuntive:
+
+**Sezione Dati Bando Bolkestein** (icona Trofeo): riepilogo in sola lettura di tutti i parametri dichiarati e i punteggi calcolati, inclusi:
 - **Cr.7b** (Possesso Concessione): verifica automatica da sistema tramite match CF su tabella `concessions → vendors → imprese`
 - **Cr.9.1a** (Anzianità Spunta): verifica automatica da sistema tramite lookup CF su `vendor_presences`
 - **Settore Analogo**: se dichiarato, mostra la riduzione 30% applicata su Cr.7a
 - **Punteggio Totale Calcolato** e **Posizione in Graduatoria**
+
+**Sezione Flusso Firma Digitale Inoppugnabile** (L.214/2023):
+- Stepper visivo a 4 step: Genera PDF → Invia all'Impresa → Firma Digitale → Verificato
+- Badge stato firma dinamico (blu/giallo/verde), box hash SHA-256 monospace
+- Pulsanti contestuali per ogni stato del flusso
+- Pulsanti "Visualizza PDF Firmato" e "Visualizza PDF Originale" quando firma completata
+- Info firma verificata: data verifica e CF firmatario
+- Riferimenti normativi: L.214/2023, CAD (D.Lgs. 82/2005), DPR 445/2000, eIDAS
+
+**Sezione Documenti Allegati** (icona Paperclip):
+- Lista cliccabile di tutti i documenti allegati alla pratica
+- Click apre presigned URL S3 (valido 1 ora) in nuova tab
+- Icone differenziate per tipo file: PDF (rosso), immagini (blu), Word (blu), .p7m firma digitale (viola)
+- Per ogni documento: nome file, tipo (badge), dimensione (KB/MB), data upload
+- Accesso loggato nell'audit trail (`DOCUMENT_ACCESS`)
 
 ### Form SCIA - Sezioni
 
@@ -12509,28 +12598,41 @@ Sono stati aggiunti 6 campi alla tabella `suap_pratiche` per supportare il fluss
 | `firma_verificata_at` | TIMESTAMP | Data/ora della verifica firma |
 | `firma_cf_firmatario` | VARCHAR(16) | Codice fiscale estratto dal certificato di firma |
 
-#### 4.3.2 Backend - Endpoint Implementati
+#### 4.3.2 Backend - Endpoint Flusso Firma (5 endpoint)
 
 | Endpoint | Metodo | Descrizione | Commit |
 |----------|--------|-------------|--------|
 | `/api/suap/pratiche/:id/genera-pdf` | POST | Genera PDF 3 pagine con PDFKit (Sezioni A-F), calcola hash SHA-256, upload S3 (fallback base64), stato → WAITING_SIGNATURE | `110cb95` |
-| `/api/suap/pratiche/:id/invia-firma` | POST | Invio PDF via notifica in-app + email PEC (nodemailer), stato → SENT_TO_IMPRESA | `473bbd8` |
+| `/api/suap/pratiche/:id/invia-firma` | POST | INSERT diretto in tabella `notifiche` con `link_riferimento` al PDF e `comune_id` recuperato dal mercato (pattern identico a `verbali.js`), tipo `RICHIESTA_FIRMA`, stato → SENT_TO_IMPRESA | `00ce540` |
 | `/api/suap/pratiche/:id/upload-firmato` | POST | Upload PDF firmato (PAdES/CAdES), calcolo hash, verifica integrità, stato → SIGNED | `473bbd8` |
 | `/api/suap/pratiche/:id/stato-firma` | GET | Stato corrente del flusso firma con label/colore/step per il frontend | `473bbd8` |
+| `/api/suap/bandi/:id/pubblica-graduatoria` | POST | Fissa graduatoria, stato bando → GRADUATORIA_PUBBLICATA, notifica a ogni impresa con posizione/punteggio/info ricorsi | `0ba5cc3` |
 
-**Struttura PDF Generato (3 pagine):**
-* **Pagina 1**: Intestazione MIO HUB, dati bando, Sezione A (Dati Impresa), Sezione B (Dati Quantitativi - tutti gli 11 criteri)
-* **Pagina 2**: Sezione C (Documenti Allegati), Sezione D (Dichiarazione ex Art. 76 DPR 445/2000), Sezione E (Delega all'Associazione - Procura Speciale ex Art. 1392 c.c.)
-* **Pagina 3**: Sezione F (Spazio Firma Digitale), Footer con hash SHA-256, timestamp, riferimenti normativi
+**Struttura PDF Generato (Sezioni A-F):**
+* **Sezione A**: Dati Impresa Richiedente (ragione sociale, CF, P.IVA, legale rappresentante, residenza, sede, PEC)
+* **Sezione A-bis**: Dati Delegato/Procuratore (condizionale, se presente)
+* **Sezione B**: Dati Quantitativi Bolkestein (tutti gli 11 criteri con valori dichiarati)
+* **Sezione C**: Dati Posteggio e Mercato (mercato, posteggio, ubicazione, dimensioni, attrezzature)
+* **Sezione D**: Documenti Allegati - **Tabella** con colonne #/Nome/Tipo/Dim/Data + hash SHA-256 sotto ogni file
+* **Sezione E**: Dichiarazione Sostitutiva ex Art. 76 DPR 445/2000
+* **Sezione F**: Delega all'Associazione - Procura Speciale ex Art. 1392 c.c.
+* **Footer**: Spazio firma digitale, hash SHA-256 del documento, timestamp, riferimenti normativi
+
+**Date nel PDF**: Tutte le date usano `timeZone: 'Europe/Rome'` (fuso orario italiano CEST/CET).
 
 **Macchina a stati del flusso firma:**
 ```
 NULL → [genera-pdf] → WAITING_SIGNATURE → [invia-firma] → SENT_TO_IMPRESA → [upload-firmato] → SIGNED → [verifica futura] → VERIFIED
 ```
 
+**Macchina a stati del bando:**
+```
+BOZZA → [pubblica] → APERTO → [chiudi] → CHIUSO → [calcola graduatoria] → [pubblica graduatoria] → GRADUATORIA_PUBBLICATA
+```
+
 #### 4.3.3 Frontend - Sezione Flusso Firma Digitale (`SuapPanel.tsx`)
 
-Nel dettaglio pratica Bolkestein è stata aggiunta una nuova Card "Flusso Firma Digitale Inoppugnabile" (commit `fb89534`) con:
+Nel dettaglio pratica Bolkestein è stata aggiunta una nuova Card "Flusso Firma Digitale Inoppugnabile" con:
 
 * **Stepper visivo a 4 step**: Genera PDF → Invia all'Impresa → Firma Digitale → Verificato. Ogni step cambia colore (viola) man mano che il flusso avanza.
 * **Badge stato firma**: Colorato dinamicamente (blu = PDF generato, giallo = inviato, verde = firmato/verificato).
@@ -12538,25 +12640,59 @@ Nel dettaglio pratica Bolkestein è stata aggiunta una nuova Card "Flusso Firma 
 * **Banner "In attesa di firma"**: Visibile quando stato = SENT_TO_IMPRESA, con animazione pulse.
 * **Pulsanti contestuali**:
   * "Genera PDF Domanda" (stato null) → genera e scarica automaticamente il PDF
-  * "Invia all'Impresa" (stato WAITING_SIGNATURE) → invio via notifica + PEC
+  * "Invia all'Impresa" (stato WAITING_SIGNATURE) → invio via notifica con `link_riferimento`
   * "Ri-scarica PDF" (stato WAITING_SIGNATURE) → rigenerazione/download
   * "Carica PDF Firmato" (stato SENT_TO_IMPRESA) → file picker per .pdf e .p7m
+* **Pulsanti post-firma**:
+  * "Visualizza PDF Firmato" (verde) → apre il PDF firmato in nuova tab
+  * "Visualizza PDF Originale" (viola outline) → apre il PDF originale in nuova tab
 * **Info firma verificata**: Data verifica e CF firmatario quando disponibili.
 * **Riferimenti normativi**: L.214/2023, CAD (D.Lgs. 82/2005), DPR 445/2000, eIDAS.
+* **Fix Safari**: `useEffect` con `visibilitychange` per ricaricare pratica al ritorno dalla tab PDF. Download con `target='_blank'` per evitare navigazione SPA.
 
-#### 4.3.4 Test End-to-End Verificato
-Il flusso completo è stato testato con successo sulla pratica "Alimentari Rossi & C." (bando 7):
-1. Generazione PDF → hash SHA-256 calcolato e salvato
+#### 4.3.4 Frontend - Sezione Documenti Allegati (`SuapPanel.tsx`)
+
+Nuova card posizionata tra la sezione Firma Digitale e i Controlli Automatici:
+* Visibile solo quando la pratica ha documenti allegati
+* Ogni documento è una riga cliccabile con hover effect
+* Click genera presigned URL S3 (valido 1 ora) e apre in nuova tab
+* Icone differenziate per tipo: PDF (rosso), immagini (blu), Word (blu), .p7m firma digitale (viola)
+* Per ogni documento: nome file (troncato se lungo), tipo (badge), dimensione (KB/MB), data upload
+* Accesso loggato nell'audit trail (`DOCUMENT_ACCESS`)
+
+#### 4.3.5 Frontend - Notifiche Impresa (`AppImpresaNotifiche.tsx`)
+
+Nuovo tipo di notifica `RICHIESTA_FIRMA` per il flusso firma digitale:
+* Badge viola e icona PenTool per il tipo
+* Sezione dedicata con sfondo viola/purple gradient
+* Pulsante "Visualizza PDF da Firmare" (viola) che apre il PDF tramite `link_riferimento`
+* Pulsante "Scarica PDF" (verde) per il download
+* Box istruzioni (ambra) con i passaggi: scarica → firma con dispositivo qualificato → restituisci all'associazione
+
+#### 4.3.6 Frontend - Pubblicazione Graduatoria (`BandiBolkesteinPanel.tsx`)
+
+Miglioramenti al pannello Bandi Bolkestein:
+* Pulsanti differenziati per stato bando (BOZZA/APERTO/CHIUSO/GRADUATORIA_PUBBLICATA)
+* "Vedi Graduatoria" usa GET (dati salvati dal DB, non ricalcola)
+* "Ricalcola" usa POST (solo per bandi CHIUSO)
+* Pulsante "Pubblica Graduatoria" (viola, icona megafono) con dialog di conferma
+* Banner viola "Graduatoria Pubblicata" nel tab Graduatorie con info ricorsi (60gg)
+* Alla pubblicazione, notifica automatica a ogni impresa partecipante
+
+#### 4.3.7 Test End-to-End Verificato
+Il flusso completo è stato testato con successo:
+1. Generazione PDF → hash SHA-256 calcolato e salvato, SEZIONE D con tabella documenti
 2. Stato → WAITING_SIGNATURE (step 1)
-3. Invio all'impresa → stato SENT_TO_IMPRESA (step 2)
+3. Invio all'impresa → notifica con `link_riferimento` al PDF, stato SENT_TO_IMPRESA (step 2)
 4. Upload PDF firmato → stato SIGNED, CF firmatario estratto, firma_verificata_at registrata (step 3)
-5. Tutti gli endpoint restituiscono i dati corretti e coerenti
+5. Pubblicazione graduatoria → stato bando GRADUATORIA_PUBBLICATA, notifiche inviate a tutte le imprese
+6. Tutti gli endpoint restituiscono i dati corretti e coerenti
 
-#### 4.3.5 Evoluzione Futura
+#### 4.3.8 Evoluzione Futura
 * **Verifica firma digitale completa**: Integrazione con node-forge o DSS (Digital Signature Service UE) per validare la firma CAdES/PAdES, verificare la catena di certificati e il CRL/OCSP.
-* **Tabella documenti per criterio** (`suap_documenti_bolkestein`): Upload e gestione dei documenti probatori per ciascun criterio.
 * **Configurazione SMTP/PEC**: Integrazione con provider PEC certificato per l'invio automatico.
 * **Marca temporale**: Apposizione e verifica della marca temporale (art. 41 CAD) per certificare la data di firma.
+* **Assegnazione automatica concessioni**: Endpoint per assegnare automaticamente le concessioni ai vincitori della graduatoria alla chiusura del bando (attualmente manuale).
 
 ---
 
