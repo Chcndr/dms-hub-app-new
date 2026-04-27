@@ -790,11 +790,9 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
             const uploadFormData = new FormData();
             uploadFormData.append('file', file);
             uploadFormData.append('tipo_documento', tipo);
-            const uploadRes = await fetch(
-              `${MIHUB_API_BASE_URL}/api/suap/pratiche/${createdPratica.id}/documenti`,
-              {
+            const uploadUrl = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/pratiche/${createdPratica.id}/documenti`);
+            const uploadRes = await authenticatedFetch(uploadUrl, {
                 method: 'POST',
-                headers: { 'x-ente-id': ENTE_ID },
                 body: uploadFormData,
               }
             );
@@ -953,13 +951,11 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
     setFirmaLoading(true);
     setFirmaAction('genera');
     try {
-      const API_URL = MIHUB_API_BASE_URL;
-      const response = await fetch(
-        `${API_URL}/api/suap/pratiche/${selectedPratica.id}/genera-pdf`,
-        {
+      const generaPdfUrl = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/pratiche/${selectedPratica.id}/genera-pdf`);
+      const response = await authenticatedFetch(generaPdfUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ente_id: ENTE_ID }),
+          body: JSON.stringify({}),
         }
       );
       const data = await response.json();
@@ -1010,13 +1006,11 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
     setFirmaLoading(true);
     setFirmaAction('invia');
     try {
-      const API_URL = MIHUB_API_BASE_URL;
-      const response = await fetch(
-        `${API_URL}/api/suap/pratiche/${selectedPratica.id}/invia-firma`,
-        {
+      const inviaFirmaUrl = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/pratiche/${selectedPratica.id}/invia-firma`);
+      const response = await authenticatedFetch(inviaFirmaUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ente_id: ENTE_ID }),
+          body: JSON.stringify({}),
         }
       );
       const data = await response.json();
@@ -1044,14 +1038,11 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
     setFirmaLoading(true);
     setFirmaAction('upload');
     try {
-      const API_URL = MIHUB_API_BASE_URL;
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('ente_id', ENTE_ID);
 
-      const response = await fetch(
-        `${API_URL}/api/suap/pratiche/${selectedPratica.id}/upload-firmato`,
-        {
+      const uploadFirmatoUrl = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/pratiche/${selectedPratica.id}/upload-firmato`);
+      const response = await authenticatedFetch(uploadFirmatoUrl, {
           method: 'POST',
           body: formData,
         }
@@ -2542,7 +2533,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                           Invia all'Impresa
                         </Button>
                         <Button
-                          onClick={handleGeneraPdf}
+                          onClick={() => {
+                            const pdfUrl = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/pratiche/${selectedPratica.id}/download-pdf`);
+                            window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+                          }}
                           disabled={firmaLoading}
                           variant="outline"
                           className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
@@ -2610,28 +2604,21 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                               <ExternalLink className="w-3 h-3" />
                             </Button>
                           )}
-                          {/* Pulsante Visualizza PDF Originale */}
-                          {selectedPratica.documento_pdf_url && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-[#8b5cf6]/30 text-[#c4b5fd] hover:bg-[#8b5cf6]/10 gap-2"
-                              onClick={() => {
-                                window.open(selectedPratica.documento_pdf_url!, '_blank', 'noopener,noreferrer');
-                                toast.success('PDF originale aperto in nuova tab');
-                              }}
-                            >
-                              <FileText className="w-4 h-4" />
-                              Visualizza PDF Originale
-                              <ExternalLink className="w-3 h-3" />
-                            </Button>
-                          )}
-                          {/* Fallback: se non ci sono URL salvati, scarica tramite genera-pdf */}
-                          {!selectedPratica.documento_firmato_url && !selectedPratica.documento_pdf_url && (
-                            <p className="text-xs text-[#e8fbff]/40 italic">
-                              I documenti PDF sono disponibili nella sezione Documenti Allegati sottostante.
-                            </p>
-                          )}
+                          {/* Pulsante Visualizza PDF Originale - usa endpoint download-pdf */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-[#8b5cf6]/30 text-[#c4b5fd] hover:bg-[#8b5cf6]/10 gap-2"
+                            onClick={() => {
+                              const pdfUrl = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/pratiche/${selectedPratica.id}/download-pdf`);
+                              window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+                              toast.success('PDF originale aperto in nuova tab');
+                            }}
+                          >
+                            <FileText className="w-4 h-4" />
+                            Visualizza PDF Originale
+                            <ExternalLink className="w-3 h-3" />
+                          </Button>
                         </div>
                       </div>
                     )}
