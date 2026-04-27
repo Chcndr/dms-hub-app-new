@@ -979,7 +979,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ente_id: ENTE_ID, comune_id: comuneData?.id || 0, comune_nome: comuneData?.nome || 'Comune' }),
+          body: JSON.stringify({ ente_id: ENTE_ID }),
         }
       );
       const data = await response.json();
