@@ -1,7 +1,44 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.0.1 (Fix Flusso Firma, Upload Impresa, Responsive Mobile)
+> **Versione:** 10.0.2 (Fix Bolkestein, Notifiche Associazione, PDF e Valutazione)
 > **Data:** 28 Aprile 2026
+>
+> ---
+> ### CHANGELOG v10.0.2 (28 Apr 2026)
+> **Fix Logica Bolkestein + Notifiche Associazione + PDF Allegati + Diciture**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `612dbcb` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `612dbcb` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `46f8171` | Allineato |
+> | Vercel frontend | `46f8171` | Autodeploy |
+>
+> **BACKEND — 6 commit (da `1e3deed` a `612dbcb`):**
+>
+> **Fix Logica Valutazione Bolkestein (`suap/service.js`):**
+> - Aggiunto `CHECK_CANONE_UNICO_BOLKESTEIN` (onlyIfBolkestein): verifica che il wallet dell'impresa subentrante abbia saldo positivo. Se non ha wallet (prima concessione), passa OK.
+> - Rollback di `CHECK_LIMITE_POSTEGGI` per prevenire crash in valutazione (SyntaxError da const in switch case). Il controllo resta attivo con la logica originale (limite posteggi nel mercato).
+>
+> **Fix Notifiche e Diciture (`concessions.js`, `associazioni.js`):**
+> - Diciture notifiche corrette per Bolkestein: "Bando Bolkestein Completato" invece di "Subingresso Completato".
+> - Aggiunto invio automatico notifica all'Associazione (nella tabella `notifiche` con `target_tipo = 'ASSOCIAZIONE'`) quando viene rilasciata una concessione collegata a una pratica gestita dall'associazione.
+> - Fix endpoint `GET /associazioni/:id/notifiche`: ora restituisce sia le notifiche ricevute (`target_tipo`) che quelle inviate (`mittente_tipo`) dall'associazione.
+>
+> **FRONTEND — 4 commit (da `5368910` a `46f8171`):**
+>
+> **Fix UI Notifiche Associazione (`NotificheAssociazionePanel.tsx`):**
+> - Modificati i filtri da "Tutte/Non lette/Lette" a "Tutti/Inviati/Ricevuti" per distinguere i messaggi in entrata e uscita.
+> - Fix mapping campi backend: usa `titolo` invece di `oggetto`, `data_invio` invece di `created_at`, e mappa correttamente `tipo` invece di `tipo_messaggio`.
+> - Supporto per i nuovi tipi di notifica `CONCESSIONE` e `INFORMATIVA`.
+>
+> **Fix PDF Allegati e Diciture Bolkestein:**
+> - Fix blocco popup browser: i PDF allegati ora si aprono tramite blob URL (se da DB) o programmatic click (se S3 presigned URL) invece di `window.open()`.
+> - Diciture App Impresa (`AnagraficaPage.tsx`): La label della concessione ora mostra "BANDO BOLKESTEIN" invece del valore raw "subingresso" o "bando_bolkestein".
+> - Diciture SUAP (`SuapPanel.tsx`, `ConcessioneForm.tsx`): Il form di generazione concessione pre-imposta correttamente tipo `bando_bolkestein` e oggetto "Bando Bolkestein..." in base al `tipo_segnalazione` della SCIA.
+> - Fix errore di rete in upload PDF firmato: aggiunto rewrite `/api/suap/:path*` in `vercel.json` e usato `authenticatedFetch`.
+> - Fix overflow testo notifica su mobile: aggiunti `overflow-hidden`, `break-words` e `overflowWrap` per contenere l'hash SHA-256 lungo.
 >
 > ---
 > ### CHANGELOG v10.0.1 (28 Apr 2026)
