@@ -288,7 +288,7 @@ export default function NotificheAssociazionePanel({
           </div>
 
           {/* Lista */}
-          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+          <div className="space-y-2 max-h-[800px] overflow-y-auto">
             {loading && notifiche.length === 0 ? (
               <div className="text-center py-8 text-[#e8fbff]/50">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
