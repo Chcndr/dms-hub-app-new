@@ -5,6 +5,8 @@
  * - Inviati: notifiche dove mittente_tipo = 'ASSOCIAZIONE' (inviate dall'associazione al SUAP/imprese)
  * - Ricevuti: notifiche dove target_tipo = 'ASSOCIAZIONE' (ricevute dal SUAP)
  *
+ * Click su una notifica apre il dettaglio completo in un pannello espandibile.
+ *
  * Endpoint backend:
  *   GET /api/associazioni/:id/notifiche → lista notifiche
  *   PUT /api/associazioni/:id/notifiche/:notificaId/letta → segna come letta
@@ -24,6 +26,9 @@ import {
   Eye,
   Send,
   Inbox,
+  ChevronRight,
+  X,
+  ArrowLeft,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +126,8 @@ export default function NotificheAssociazionePanel({
   const [filter, setFilter] = useState<"tutti" | "inviati" | "ricevuti">(
     "tutti"
   );
+  const [selectedNotifica, setSelectedNotifica] =
+    useState<NotificaAssociazione | null>(null);
 
   const { associazioneId } = getImpersonationParams();
 
@@ -185,9 +192,17 @@ export default function NotificheAssociazionePanel({
     }
   };
 
+  // Handler click su notifica: apre il dettaglio e segna come letta
+  const handleNotificaClick = (notifica: NotificaAssociazione) => {
+    setSelectedNotifica(notifica);
+    if (!notifica.letta) {
+      markAsRead(notifica.id);
+    }
+  };
+
   // Determina se una notifica è "inviata" dall'associazione o "ricevuta"
   const isInviata = (n: NotificaAssociazione) => {
-    return n.mittente_tipo === 'ASSOCIAZIONE';
+    return n.mittente_tipo === "ASSOCIAZIONE";
   };
 
   const filteredNotifiche = notifiche.filter(n => {
@@ -210,6 +225,150 @@ export default function NotificheAssociazionePanel({
     );
   }
 
+  // ============================================
+  // VISTA DETTAGLIO NOTIFICA SELEZIONATA
+  // ============================================
+  if (selectedNotifica) {
+    const config =
+      TIPO_CONFIG[selectedNotifica.tipo] ??
+      TIPO_CONFIG[selectedNotifica.tipo_messaggio || ""] ??
+      TIPO_CONFIG.MESSAGGIO;
+    const Icon = config.icon;
+    const inviato = isInviata(selectedNotifica);
+
+    return (
+      <div className="space-y-4">
+        {/* Barra superiore con tasto Indietro */}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedNotifica(null)}
+            className="border-[#3b82f6]/30 text-[#3b82f6] hover:bg-[#3b82f6]/10"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Torna alla lista
+          </Button>
+        </div>
+
+        {/* Card dettaglio */}
+        <Card className="bg-[#1a2332] border-[#3b82f6]/20 overflow-hidden">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div
+                  className={`mt-0.5 flex-shrink-0 ${inviato ? "text-green-400" : "text-purple-400"}`}
+                >
+                  {inviato ? (
+                    <Send className="h-5 w-5" />
+                  ) : (
+                    <Inbox className="h-5 w-5" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <CardTitle className="text-[#e8fbff] text-base sm:text-lg break-words">
+                    {selectedNotifica.titolo ||
+                      selectedNotifica.oggetto ||
+                      "Notifica"}
+                  </CardTitle>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <Badge
+                      className={`${inviato ? "text-green-400 border-green-400/30" : "text-purple-400 border-purple-400/30"} bg-transparent border text-xs`}
+                    >
+                      {inviato ? "Inviato" : "Ricevuto"}
+                    </Badge>
+                    <Badge
+                      className={`${config.color} bg-transparent border ${config.color.replace("text-", "border-")}/30 text-xs`}
+                    >
+                      <Icon className="h-3 w-3 mr-1" />
+                      {config.label}
+                    </Badge>
+                    {selectedNotifica.pratica_id && (
+                      <span className="text-xs text-[#e8fbff]/40">
+                        Pratica #{selectedNotifica.pratica_id}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedNotifica(null)}
+                className="text-[#e8fbff]/50 hover:text-[#e8fbff] flex-shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Info mittente/destinatario e data */}
+            <div className="flex items-center gap-3 text-xs text-[#e8fbff]/50 flex-wrap">
+              {inviato && selectedNotifica.target_nome && (
+                <span>
+                  Destinatario: <strong className="text-[#e8fbff]/70">{selectedNotifica.target_nome}</strong>
+                </span>
+              )}
+              {!inviato && selectedNotifica.mittente_nome && (
+                <span>
+                  Da: <strong className="text-[#e8fbff]/70">{selectedNotifica.mittente_nome}</strong>
+                </span>
+              )}
+              <span>
+                {formatDate(
+                  selectedNotifica.data_invio || selectedNotifica.created_at
+                )}
+              </span>
+            </div>
+
+            {/* Corpo del messaggio */}
+            <div className="bg-[#0b1220] rounded-lg p-4 border border-[#3b82f6]/10 overflow-hidden">
+              <div
+                className="prose prose-invert max-w-none break-words overflow-hidden"
+                style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+              >
+                {selectedNotifica.messaggio
+                  ? selectedNotifica.messaggio.split("\n").map((line, idx) => (
+                      <p
+                        key={idx}
+                        className="text-[#e8fbff]/80 mb-2 text-sm sm:text-base break-words"
+                        style={{ overflowWrap: "anywhere" }}
+                      >
+                        {line.startsWith("**") && line.endsWith("**") ? (
+                          <strong>{line.replace(/\*\*/g, "")}</strong>
+                        ) : line.startsWith("- ") ? (
+                          <span className="flex items-start gap-2">
+                            <span className="text-[#3b82f6] flex-shrink-0">
+                              •
+                            </span>
+                            <span
+                              className="break-words"
+                              style={{ overflowWrap: "anywhere" }}
+                            >
+                              {line.substring(2)}
+                            </span>
+                          </span>
+                        ) : (
+                          line || "\u00A0"
+                        )}
+                      </p>
+                    ))
+                  : (
+                    <p className="text-[#e8fbff]/50 italic">
+                      Nessun contenuto
+                    </p>
+                  )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ============================================
+  // VISTA LISTA NOTIFICHE
+  // ============================================
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -310,18 +469,24 @@ export default function NotificheAssociazionePanel({
       ) : (
         <div className="space-y-2">
           {filteredNotifiche.map(notifica => {
-            const config = TIPO_CONFIG[notifica.tipo] ?? TIPO_CONFIG[notifica.tipo_messaggio || ''] ?? TIPO_CONFIG.MESSAGGIO;
+            const config =
+              TIPO_CONFIG[notifica.tipo] ??
+              TIPO_CONFIG[notifica.tipo_messaggio || ""] ??
+              TIPO_CONFIG.MESSAGGIO;
             const Icon = config.icon;
             const inviato = isInviata(notifica);
             return (
               <Card
                 key={notifica.id}
-                className={`bg-[#1a2332] border-[#334155] ${!notifica.letta ? "border-l-4 border-l-blue-500" : ""}`}
+                onClick={() => handleNotificaClick(notifica)}
+                className={`bg-[#1a2332] border-[#334155] cursor-pointer transition-all hover:border-[#3b82f6]/50 hover:bg-[#1a2332]/80 ${!notifica.letta ? "border-l-4 border-l-blue-500" : ""}`}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
-                      <div className={`mt-0.5 ${inviato ? 'text-green-400' : 'text-purple-400'}`}>
+                      <div
+                        className={`mt-0.5 ${inviato ? "text-green-400" : "text-purple-400"}`}
+                      >
                         {inviato ? (
                           <Send className="h-5 w-5" />
                         ) : (
@@ -331,9 +496,9 @@ export default function NotificheAssociazionePanel({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <Badge
-                            className={`${inviato ? 'text-green-400 border-green-400/30' : 'text-purple-400 border-purple-400/30'} bg-transparent border text-xs`}
+                            className={`${inviato ? "text-green-400 border-green-400/30" : "text-purple-400 border-purple-400/30"} bg-transparent border text-xs`}
                           >
-                            {inviato ? 'Inviato' : 'Ricevuto'}
+                            {inviato ? "Inviato" : "Ricevuto"}
                           </Badge>
                           <Badge
                             className={`${config.color} bg-transparent border ${config.color.replace("text-", "border-")}/30 text-xs`}
@@ -350,13 +515,17 @@ export default function NotificheAssociazionePanel({
                         <p
                           className={`text-sm font-medium ${!notifica.letta ? "text-[#e8fbff]" : "text-[#e8fbff]/70"}`}
                         >
-                          {notifica.titolo || notifica.oggetto || 'Notifica'}
+                          {notifica.titolo || notifica.oggetto || "Notifica"}
                         </p>
                         <p className="text-xs text-[#e8fbff]/50 mt-1 line-clamp-2">
                           {notifica.messaggio}
                         </p>
                         <div className="flex items-center gap-3 mt-1 text-xs text-[#e8fbff]/30">
-                          <span>{formatDate(notifica.data_invio || notifica.created_at)}</span>
+                          <span>
+                            {formatDate(
+                              notifica.data_invio || notifica.created_at
+                            )}
+                          </span>
                           {inviato && notifica.target_nome && (
                             <span>A: {notifica.target_nome}</span>
                           )}
@@ -366,17 +535,23 @@ export default function NotificheAssociazionePanel({
                         </div>
                       </div>
                     </div>
-                    {!notifica.letta && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => markAsRead(notifica.id)}
-                        className="text-blue-400 hover:bg-blue-500/10"
-                        title="Segna come letta"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {!notifica.letta && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={e => {
+                            e.stopPropagation();
+                            markAsRead(notifica.id);
+                          }}
+                          className="text-blue-400 hover:bg-blue-500/10"
+                          title="Segna come letta"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <ChevronRight className="h-4 w-4 text-[#e8fbff]/30" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
