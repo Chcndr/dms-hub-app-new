@@ -1088,8 +1088,37 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
       const res = await authenticatedFetch(url);
       const data = await res.json();
       if (data.success && data.data?.url) {
-        // Apri il presigned URL in una nuova tab
-        window.open(data.data.url, '_blank', 'noopener,noreferrer');
+        const docUrl = data.data.url;
+        if (docUrl.startsWith('data:')) {
+          // Data URL (DB fallback) - crea un link e clicca per evitare popup blocker
+          const a = document.createElement('a');
+          a.href = docUrl;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          // Per PDF data URL, crea un blob per aprirlo correttamente
+          if (docUrl.startsWith('data:application/pdf')) {
+            const byteString = atob(docUrl.split(',')[1]);
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+            const blob = new Blob([ab], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+          } else {
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+        } else {
+          // S3 presigned URL - apri direttamente
+          const a = document.createElement('a');
+          a.href = docUrl;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
         toast.success(`Documento "${fileName}" aperto`);
       } else {
         toast.error(data.error || 'Errore nel download del documento');
@@ -1752,8 +1781,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                             .split("T")[0],
                           comune_rilascio:
                             selectedPratica.comune_presentazione || "",
-                          oggetto: `Subingresso ${selectedPratica.sub_ragione_sociale || selectedPratica.richiedente_nome || ""} - Posteggio ${selectedPratica.posteggio_numero || ""}`,
-                          tipo_concessione: "subingresso",
+                          oggetto: selectedPratica.tipo_segnalazione?.toLowerCase() === 'bolkestein'
+                            ? `Bando Bolkestein ${selectedPratica.sub_ragione_sociale || selectedPratica.richiedente_nome || ""} - Posteggio ${selectedPratica.posteggio_numero || ""}`
+                            : `Subingresso ${selectedPratica.sub_ragione_sociale || selectedPratica.richiedente_nome || ""} - Posteggio ${selectedPratica.posteggio_numero || ""}`,
+                          tipo_concessione: selectedPratica.tipo_segnalazione?.toLowerCase() === 'bolkestein' ? "bando_bolkestein" : "subingresso",
                           cf_concessionario:
                             selectedPratica.richiedente_cf || "",
                           partita_iva: selectedPratica.sub_partita_iva || "",
@@ -3326,9 +3357,9 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
                     </Badge>
                   </h3>
                   <p className="text-gray-400">
-                    {(
-                      selectedConcessione.tipo_concessione || "FISSO"
-                    ).toUpperCase()}{" "}
+                    {selectedConcessione.tipo_concessione === 'bando_bolkestein'
+                      ? 'BANDO BOLKESTEIN'
+                      : (selectedConcessione.tipo_concessione || 'FISSO').toUpperCase()}{" "}
                     - {selectedConcessione.ragione_sociale || "N/A"} (
                     {selectedConcessione.partita_iva || "N/A"})
                   </p>
@@ -4365,7 +4396,7 @@ Documento generato il ${new Date().toLocaleDateString("it-IT")} alle ${new Date(
                               </TableCell>
                               <TableCell>
                                 <Badge className="bg-[#14b8a6]/20 text-[#14b8a6]">
-                                  {conc.tipo_concessione || "nuova"}
+                                  {conc.tipo_concessione === 'bando_bolkestein' ? 'Bando Bolkestein' : (conc.tipo_concessione || 'nuova')}
                                 </Badge>
                               </TableCell>
                               <TableCell>

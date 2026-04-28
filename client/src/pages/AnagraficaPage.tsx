@@ -531,7 +531,7 @@ function ConcessioniSection({
                     </div>
                     <p className="text-xs sm:text-sm text-gray-400 mt-1 truncate">
                       {c.tipo_concessione
-                        ? c.tipo_concessione.toUpperCase()
+                        ? (c.tipo_concessione === 'bando_bolkestein' ? 'BANDO BOLKESTEIN' : c.tipo_concessione.toUpperCase())
                         : ""}{" "}
                       \u2014{" "}
                       {c.ragione_sociale || c.impresa_denominazione || "N/A"}
@@ -588,7 +588,7 @@ function ConcessioneDetailView({
           <Badge className={getStatoBadgeClass(stato)}>{stato}</Badge>
         </h3>
         <p className="text-xs sm:text-sm text-gray-400 mt-1">
-          {concessione.tipo_concessione?.toUpperCase() || ""} \u2014{" "}
+          {concessione.tipo_concessione === 'bando_bolkestein' ? 'BANDO BOLKESTEIN' : (concessione.tipo_concessione?.toUpperCase() || '')} \u2014{" "}
           {concessione.ragione_sociale ||
             concessione.impresa_denominazione ||
             "N/A"}{" "}
@@ -611,7 +611,7 @@ function ConcessioneDetailView({
           />
           <InfoField
             label="Tipo Concessione"
-            value={concessione.tipo_concessione}
+            value={concessione.tipo_concessione === 'bando_bolkestein' ? 'Bando Bolkestein' : concessione.tipo_concessione}
           />
           <InfoField
             label="Durata"

@@ -1125,6 +1125,7 @@ export default function ConcessioneForm({
                   <SelectContent>
                     <SelectItem value="nuova">Nuova Autorizzazione</SelectItem>
                     <SelectItem value="subingresso">Subingresso</SelectItem>
+                    <SelectItem value="bando_bolkestein">Bando Bolkestein</SelectItem>
                     <SelectItem value="conversione">Conversione</SelectItem>
                     <SelectItem value="rinnovo">Rinnovo</SelectItem>
                     <SelectItem value="voltura">Voltura</SelectItem>

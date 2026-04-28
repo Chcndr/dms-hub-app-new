@@ -39,16 +39,23 @@ const API_BASE_URL = MIHUB_API_BASE_URL;
 
 interface NotificaAssociazione {
   id: number;
-  associazione_id: number;
+  associazione_id?: number;
+  target_id?: number;
   pratica_id?: number;
   tipo:
     | "CONCESSIONE_EMESSA"
+    | "CONCESSIONE"
     | "REGOLARIZZAZIONE_RICHIESTA"
     | "PRATICA_RIFIUTATA"
-    | "MESSAGGIO";
-  oggetto: string;
+    | "MESSAGGIO"
+    | string;
+  tipo_messaggio?: string;
+  titolo?: string;
+  oggetto?: string;
   messaggio: string;
+  mittente_nome?: string;
   letta: boolean;
+  data_invio?: string;
   created_at: string;
 }
 
@@ -60,6 +67,16 @@ const TIPO_CONFIG: Record<
     icon: CheckCircle,
     color: "text-green-400",
     label: "Concessione Emessa",
+  },
+  CONCESSIONE: {
+    icon: CheckCircle,
+    color: "text-green-400",
+    label: "Concessione",
+  },
+  INFORMATIVA: {
+    icon: Bell,
+    color: "text-blue-400",
+    label: "Informativa",
   },
   REGOLARIZZAZIONE_RICHIESTA: {
     icon: AlertTriangle,
@@ -258,7 +275,7 @@ export default function NotificheAssociazionePanel({
       ) : (
         <div className="space-y-2">
           {filteredNotifiche.map(notifica => {
-            const config = TIPO_CONFIG[notifica.tipo] ?? TIPO_CONFIG.MESSAGGIO;
+            const config = TIPO_CONFIG[notifica.tipo] ?? TIPO_CONFIG[notifica.tipo_messaggio || ''] ?? TIPO_CONFIG.MESSAGGIO;
             const Icon = config.icon;
             return (
               <Card
@@ -292,14 +309,19 @@ export default function NotificheAssociazionePanel({
                         <p
                           className={`text-sm font-medium ${!notifica.letta ? "text-[#e8fbff]" : "text-[#e8fbff]/70"}`}
                         >
-                          {notifica.oggetto}
+                          {notifica.titolo || notifica.oggetto || 'Notifica'}
                         </p>
                         <p className="text-xs text-[#e8fbff]/50 mt-1 line-clamp-2">
                           {notifica.messaggio}
                         </p>
                         <p className="text-xs text-[#e8fbff]/30 mt-1">
-                          {formatDate(notifica.created_at)}
+                          {formatDate(notifica.data_invio || notifica.created_at)}
                         </p>
+                        {notifica.mittente_nome && (
+                          <p className="text-xs text-[#e8fbff]/30">
+                            Da: {notifica.mittente_nome}
+                          </p>
+                        )}
                       </div>
                     </div>
                     {!notifica.letta && (
