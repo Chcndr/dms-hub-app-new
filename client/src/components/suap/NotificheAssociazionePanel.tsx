@@ -1,11 +1,9 @@
 /**
- * NotificheAssociazionePanel - Notifiche SUAP ricevute dall'associazione
+ * NotificheAssociazionePanel - Notifiche SUAP inviate e ricevute dall'associazione
  *
- * Mostra le notifiche inviate dal SUAP all'associazione:
- * - Concessioni emesse
- * - Regolarizzazioni richieste
- * - Pratiche rifiutate
- * - Messaggi generici
+ * Mostra le notifiche con filtri Tutti / Inviati / Ricevuti:
+ * - Inviati: notifiche dove mittente_tipo = 'ASSOCIAZIONE' (inviate dall'associazione al SUAP/imprese)
+ * - Ricevuti: notifiche dove target_tipo = 'ASSOCIAZIONE' (ricevute dal SUAP)
  *
  * Endpoint backend:
  *   GET /api/associazioni/:id/notifiche → lista notifiche
@@ -24,6 +22,8 @@ import {
   RefreshCw,
   Loader2,
   Eye,
+  Send,
+  Inbox,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +41,8 @@ interface NotificaAssociazione {
   id: number;
   associazione_id?: number;
   target_id?: number;
+  target_tipo?: string;
+  target_nome?: string;
   pratica_id?: number;
   tipo:
     | "CONCESSIONE_EMESSA"
@@ -48,11 +50,13 @@ interface NotificaAssociazione {
     | "REGOLARIZZAZIONE_RICHIESTA"
     | "PRATICA_RIFIUTATA"
     | "MESSAGGIO"
+    | "INFORMATIVA"
     | string;
   tipo_messaggio?: string;
   titolo?: string;
   oggetto?: string;
   messaggio: string;
+  mittente_tipo?: string;
   mittente_nome?: string;
   letta: boolean;
   data_invio?: string;
@@ -88,6 +92,16 @@ const TIPO_CONFIG: Record<
     color: "text-red-400",
     label: "Pratica Rifiutata",
   },
+  RICHIESTA_FIRMA: {
+    icon: Mail,
+    color: "text-purple-400",
+    label: "Richiesta Firma",
+  },
+  ESITO_BANDO: {
+    icon: CheckCircle,
+    color: "text-emerald-400",
+    label: "Esito Bando",
+  },
   MESSAGGIO: {
     icon: MessageSquare,
     color: "text-blue-400",
@@ -104,8 +118,8 @@ export default function NotificheAssociazionePanel({
 }: NotificheAssociazionePanelProps) {
   const [notifiche, setNotifiche] = useState<NotificaAssociazione[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"tutte" | "non_lette" | "lette">(
-    "tutte"
+  const [filter, setFilter] = useState<"tutti" | "inviati" | "ricevuti">(
+    "tutti"
   );
 
   const { associazioneId } = getImpersonationParams();
@@ -171,13 +185,20 @@ export default function NotificheAssociazionePanel({
     }
   };
 
+  // Determina se una notifica è "inviata" dall'associazione o "ricevuta"
+  const isInviata = (n: NotificaAssociazione) => {
+    return n.mittente_tipo === 'ASSOCIAZIONE';
+  };
+
   const filteredNotifiche = notifiche.filter(n => {
-    if (filter === "non_lette") return !n.letta;
-    if (filter === "lette") return n.letta;
+    if (filter === "inviati") return isInviata(n);
+    if (filter === "ricevuti") return !isInviata(n);
     return true;
   });
 
   const nonLetteCount = notifiche.filter(n => !n.letta).length;
+  const inviatiCount = notifiche.filter(n => isInviata(n)).length;
+  const ricevutiCount = notifiche.filter(n => !isInviata(n)).length;
 
   if (!associazioneId) {
     return (
@@ -227,32 +248,46 @@ export default function NotificheAssociazionePanel({
         </div>
       </div>
 
-      {/* Filtri */}
+      {/* Filtri: Tutti / Inviati / Ricevuti */}
       <div className="flex gap-2">
-        {(["tutte", "non_lette", "lette"] as const).map(f => (
-          <Button
-            key={f}
-            variant={filter === f ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter(f)}
-            className={
-              filter === f
-                ? "bg-blue-500/20 text-blue-400 border-blue-500/50"
-                : "border-[#334155] text-[#e8fbff]/60"
-            }
-          >
-            {f === "tutte"
-              ? "Tutte"
-              : f === "non_lette"
-                ? "Non lette"
-                : "Lette"}
-            {f === "non_lette" && nonLetteCount > 0 && (
-              <Badge className="ml-1 bg-red-500 text-white text-xs px-1">
-                {nonLetteCount}
-              </Badge>
-            )}
-          </Button>
-        ))}
+        <Button
+          variant={filter === "tutti" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("tutti")}
+          className={
+            filter === "tutti"
+              ? "bg-blue-500/20 text-blue-400 border-blue-500/50"
+              : "border-[#334155] text-[#e8fbff]/60"
+          }
+        >
+          Tutti
+        </Button>
+        <Button
+          variant={filter === "inviati" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("inviati")}
+          className={
+            filter === "inviati"
+              ? "bg-green-500/20 text-green-400 border-green-500/50"
+              : "border-[#334155] text-[#e8fbff]/60"
+          }
+        >
+          <Send className="h-3 w-3 mr-1" />
+          Inviati ({inviatiCount})
+        </Button>
+        <Button
+          variant={filter === "ricevuti" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("ricevuti")}
+          className={
+            filter === "ricevuti"
+              ? "bg-purple-500/20 text-purple-400 border-purple-500/50"
+              : "border-[#334155] text-[#e8fbff]/60"
+          }
+        >
+          <Inbox className="h-3 w-3 mr-1" />
+          Ricevuti ({ricevutiCount})
+        </Button>
       </div>
 
       {/* Lista */}
@@ -266,8 +301,8 @@ export default function NotificheAssociazionePanel({
             <Bell className="h-8 w-8 mb-2 opacity-40" />
             <p>
               Nessuna notifica{" "}
-              {filter !== "tutte"
-                ? `(${filter === "non_lette" ? "non letta" : "letta"})`
+              {filter !== "tutti"
+                ? `(${filter === "inviati" ? "inviata" : "ricevuta"})`
                 : ""}
             </p>
           </CardContent>
@@ -277,6 +312,7 @@ export default function NotificheAssociazionePanel({
           {filteredNotifiche.map(notifica => {
             const config = TIPO_CONFIG[notifica.tipo] ?? TIPO_CONFIG[notifica.tipo_messaggio || ''] ?? TIPO_CONFIG.MESSAGGIO;
             const Icon = config.icon;
+            const inviato = isInviata(notifica);
             return (
               <Card
                 key={notifica.id}
@@ -285,15 +321,20 @@ export default function NotificheAssociazionePanel({
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
-                      <div className={`mt-0.5 ${config.color}`}>
-                        {notifica.letta ? (
-                          <MailOpen className="h-5 w-5" />
+                      <div className={`mt-0.5 ${inviato ? 'text-green-400' : 'text-purple-400'}`}>
+                        {inviato ? (
+                          <Send className="h-5 w-5" />
                         ) : (
-                          <Mail className="h-5 w-5" />
+                          <Inbox className="h-5 w-5" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <Badge
+                            className={`${inviato ? 'text-green-400 border-green-400/30' : 'text-purple-400 border-purple-400/30'} bg-transparent border text-xs`}
+                          >
+                            {inviato ? 'Inviato' : 'Ricevuto'}
+                          </Badge>
                           <Badge
                             className={`${config.color} bg-transparent border ${config.color.replace("text-", "border-")}/30 text-xs`}
                           >
@@ -314,14 +355,15 @@ export default function NotificheAssociazionePanel({
                         <p className="text-xs text-[#e8fbff]/50 mt-1 line-clamp-2">
                           {notifica.messaggio}
                         </p>
-                        <p className="text-xs text-[#e8fbff]/30 mt-1">
-                          {formatDate(notifica.data_invio || notifica.created_at)}
-                        </p>
-                        {notifica.mittente_nome && (
-                          <p className="text-xs text-[#e8fbff]/30">
-                            Da: {notifica.mittente_nome}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-3 mt-1 text-xs text-[#e8fbff]/30">
+                          <span>{formatDate(notifica.data_invio || notifica.created_at)}</span>
+                          {inviato && notifica.target_nome && (
+                            <span>A: {notifica.target_nome}</span>
+                          )}
+                          {!inviato && notifica.mittente_nome && (
+                            <span>Da: {notifica.mittente_nome}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     {!notifica.letta && (
