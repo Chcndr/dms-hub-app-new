@@ -63,6 +63,10 @@ interface NotificaAssociazione {
   letta: boolean;
   data_invio?: string;
   created_at: string;
+  direzione?: string;
+  totale_destinatari?: number;
+  letti?: number;
+  non_letti?: number;
 }
 
 interface NotificheAssociazionePanelProps {
@@ -146,12 +150,10 @@ export default function NotificheAssociazionePanel({
     }
   };
 
-  // Determina direzione
+  // Determina direzione (usa campo dal backend se disponibile)
   const getDirezione = (n: NotificaAssociazione): "INVIATO" | "RICEVUTO" => {
-    if (
-      n.mittente_tipo?.toUpperCase() === "ASSOCIAZIONE"
-    )
-      return "INVIATO";
+    if (n.direzione) return n.direzione.toUpperCase() as "INVIATO" | "RICEVUTO";
+    if (n.mittente_tipo?.toUpperCase() === "ASSOCIAZIONE") return "INVIATO";
     return "RICEVUTO";
   };
 
@@ -373,6 +375,12 @@ export default function NotificheAssociazionePanel({
                         <p className="text-xs text-[#e8fbff]/50">
                           {formatDate(msg.data_invio || msg.created_at)}
                         </p>
+                        {direzione === "INVIATO" && msg.totale_destinatari != null && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-[#e8fbff]/50 justify-end">
+                            <CheckCircle className="w-3 h-3" />
+                            {msg.letti ?? 0}/{msg.totale_destinatari}
+                          </div>
+                        )}
                         {!msg.letta && direzione === "RICEVUTO" && (
                           <div className="flex items-center gap-1 mt-1 justify-end">
                             <span className="w-2 h-2 rounded-full bg-blue-400" />
@@ -448,6 +456,22 @@ export default function NotificheAssociazionePanel({
               <div className="bg-[#0b1220] rounded-lg p-4 text-[#e8fbff]/90 whitespace-pre-wrap">
                 {selectedNotifica.messaggio || "Nessun contenuto"}
               </div>
+              {getDirezione(selectedNotifica) === "INVIATO" && selectedNotifica.totale_destinatari != null && (
+                <div className="mt-4 flex items-center gap-4 text-sm text-[#e8fbff]/50">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    {selectedNotifica.totale_destinatari} destinatari
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" />
+                    {selectedNotifica.letti ?? 0} letti
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {selectedNotifica.non_letti ?? 0} non letti
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -630,7 +630,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
           );
           const data = await response.json();
           if (data.success) {
-            setNotificheNonLette(data.count || data.non_letti || 0);
+            setNotificheNonLette(data.non_letti ?? data.count ?? 0);
           }
         }
       } else {
