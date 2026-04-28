@@ -1,7 +1,37 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.0.2 (Fix Bolkestein, Notifiche Associazione, PDF e Valutazione)
-> **Data:** 28 Aprile 2026
+> **Versione:** 10.0.3 (Autocompilazione Bolkestein + Popolamento Dati Imprese)
+> **Data:** 29 Aprile 2026
+>
+> ---
+> ### CHANGELOG v10.0.3 (29 Apr 2026)
+> **Autocompilazione Campi Bolkestein da Database + Popolamento Dati Imprese**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `f06054b` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `f06054b` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `4832763` | Allineato |
+> | Vercel frontend | `4832763` | Autodeploy |
+>
+> **BACKEND — 1 commit (`f06054b`):**
+>
+> **Nuovo Endpoint Autocompilazione Bolkestein (`routes/imprese.js`):**
+> - `GET /api/imprese/:id/bolkestein-data` — Restituisce dati per autocompilazione form SCIA Bolkestein: `numero_addetti`, `anni_iscrizione_ri` (calcolato), `codice_ateco`, `descrizione_ateco`, `is_settore_analogo` (derivato da ATECO), `ore_formazione` (SUM da formazione_iscrizioni + formazione_corsi completati), `num_qualificazioni` (attive), `ore_formazione_totali` (ore + qualificazioni × 8).
+>
+> **Popolamento Dati Database (Neon):**
+> - Aggiornate 34 imprese con `numero_addetti` (casuali 1-24), `data_iscrizione_ri` (1990-2022), `codice_ateco` (corretti per settore) e `descrizione_ateco`. 8 imprese con settore analogo (46.xx, 10.xx, 56.xx), 6 con >10 dipendenti (Microimpresa = NO).
+>
+> **FRONTEND — 3 commit (da `8316c6d` a `4832763`):**
+>
+> **Autocompilazione Form SCIA Bolkestein (`SciaForm.tsx`):**
+> - Nuova funzione `fetchBolkesteinData(impresaId)`: chiama endpoint backend e popola automaticamente 5 campi (N. Dipendenti, Anni RI, Microimpresa, Settore Analogo, Ore Formazione).
+> - Trigger in 3 punti: dropdown autocomplete impresa, pulsante lente (handleLookupSubentrante), cambio motivazione RadioGroup a "bolkestein".
+> - Indicatori visivi: bordo verde (`border-emerald-500/60`) + badge inline "Autocompilato" con icona `CheckCircle2` su tutti i campi autocompilati.
+> - Checkbox Microimpresa: spuntato automaticamente se `numero_addetti < 10`.
+> - Toast feedback: "Bolkestein: X campi autocompilati" con descrizione.
+> - Fix: aggiunto trigger anche nel click handler del dropdown autocomplete (il percorso più comune usato dagli utenti).
 >
 > ---
 > ### CHANGELOG v10.0.2 (28 Apr 2026)
@@ -2225,7 +2255,7 @@ La sezione `Integrazioni → API Dashboard` del frontend Vercel è stata potenzi
 | **Logs**         | `/api/logs/*`                    | createLog, getLogs, stats                                                                        |
 | **Health**       | `/api/health/*`                  | full, history, alerts                                                                            |
 | **GIS**          | `/api/gis/*`                     | market-map                                                                                       |
-| **Imprese**      | `/api/imprese/*`                 | qualificazioni, rating                                                                           |
+| **Imprese**      | `/api/imprese/*`                 | qualificazioni, rating, bolkestein-data                                                          |
 | **SUAP**         | `/api/suap/*`                    | pratiche, stats, evaluate, notifiche-pm                                                          |
 | **Test Mercato** | `/api/test-mercato/*`            | inizia-mercato, avvia-spunta, assegna-posteggio, chiudi-spunta, registra-rifiuti, chiudi-mercato |
 | **TCC v2**       | `/api/tcc/v2/*`                  | wallet-impresa, qualifiche, settlement                                                           |
@@ -2522,6 +2552,25 @@ Spareggi risolti per anzianità d'impresa documentata (punto 11 Linee Guida).
 
 Il tipo segnalazione "Partecipazione Bando Bolkestein" nasconde automaticamente le sezioni irrilevanti ("Dati Cedente", "Estremi Atto Notarile") e mostra la sezione dinamica **"Criteri Bolkestein"** con: dropdown bando APERTO, input numerici (dipendenti, anni, ore formazione), checkbox impegni (incluso "Settore Analogo" per la riduzione 30% su Cr.7a), aree di testo per dettagli progetti.
 
+**Autocompilazione Campi Bolkestein (v10.0.3):**
+
+Quando l'associazione seleziona un'impresa nel form SCIA con motivazione "bolkestein", i campi Bolkestein si autocompilano dai dati nel database tramite l'endpoint `GET /api/imprese/:id/bolkestein-data`. Se i campi sono vuoti nel DB, l'utente può inserirli manualmente.
+
+| Campo Form | Sorgente Dati | Logica |
+|---|---|---|
+| N. Dipendenti Stabili | `imprese.numero_addetti` | Valore diretto |
+| Anni Iscrizione Registro Imprese | `imprese.data_iscrizione_ri` | Calcolato: `anno_corrente - anno_iscrizione` |
+| Microimpresa (checkbox) | `imprese.numero_addetti` | Spuntato automaticamente se `< 10` |
+| Settore Analogo (checkbox) | `imprese.codice_ateco` | Spuntato se prefisso `47.xx/46.xx/10.xx/56.xx` ma NON `47.81/47.82/47.89` |
+| Ore Formazione Documentate | `formazione_iscrizioni` + `formazione_corsi` + `qualificazioni` | SUM `durata_ore` (corsi completati) + conteggio qualificazioni attive × 8 |
+
+**Trigger autocompilazione** (funzione `fetchBolkesteinData`):
+1. **Dropdown autocomplete**: quando l'utente seleziona un'impresa dal dropdown suggerimenti (se motivazione = bolkestein)
+2. **Pulsante lente** (`handleLookupSubentrante`): quando si cerca un'impresa per CF/P.IVA (se motivazione = bolkestein)
+3. **Cambio motivazione**: quando si cambia il RadioGroup a "bolkestein" e c'è già un'impresa selezionata (`selectedImpresa`)
+
+**Indicatori visivi**: i campi autocompilati mostrano bordo verde (`border-emerald-500/60`) e badge inline "Autocompilato" con icona `CheckCircle2` in verde. L'utente può comunque modificare i valori manualmente.
+
 #### Dashboard PA (`BandiBolkesteinPanel.tsx`)
 
 Il componente `BandiBolkesteinPanel` offre tre tab:
@@ -2544,7 +2593,7 @@ Nelle pratiche Bolkestein, il dettaglio pratica mostra le seguenti sezioni aggiu
 
 **Sezione Dati Bando Bolkestein** (icona Trofeo): riepilogo in sola lettura di tutti i parametri dichiarati e i punteggi calcolati, inclusi:
 - **Cr.7b** (Possesso Concessione): verifica automatica da sistema tramite match CF su tabella `concessions → vendors → imprese`
-- **Cr.9.1a** (Anzianità Spunta): verifica automatica da sistema tramite lookup CF su `vendor_presences`
+- **Cr.9.1a** (Anzianità Spunta): verifica automatica da sistema tramite lookup CF su `graduatoria_presenze` (NON `vendor_presences`)
 - **Settore Analogo**: se dichiarato, mostra la riduzione 30% applicata su Cr.7a
 - **Punteggio Totale Calcolato** e **Posizione in Graduatoria**
 
@@ -2621,11 +2670,12 @@ I controlli del Subentrante e gli altri controlli Pratica (PEC, Dati Completi) r
 | `client/src/pages/suap/SuapDashboard.tsx`        | Dashboard principale SUAP                   |
 | `client/src/pages/suap/SuapDetail.tsx`           | Dettaglio pratica con tutti i dati          |
 | `client/src/pages/suap/SuapList.tsx`             | Lista pratiche con filtri                   |
-| `client/src/components/suap/SciaForm.tsx`        | Form compilazione SCIA guidato              |
+| `client/src/components/suap/SciaForm.tsx`        | Form compilazione SCIA guidato + autocompilazione Bolkestein |
 | `client/src/components/SuapPanel.tsx`            | Pannello SUAP con controlli v2.0            |
 | `client/src/api/suap.ts`                         | Client API SUAP                             |
 | `mihub-backend-rest/src/modules/suap/service.js` | Service backend SUAP + Motore Verifica v2.0 |
 | `mihub-backend-rest/routes/suap.js`              | Routes API SUAP                             |
+| `mihub-backend-rest/routes/imprese.js`           | Routes API Imprese + endpoint bolkestein-data |
 
 ### API Endpoints Concessioni (v2.0 - 3 Gennaio 2026)
 
@@ -3258,6 +3308,7 @@ La nuova pagina è organizzata in 6 tab principali, ognuno corrispondente a una 
 | Sezione             | Endpoint                             | Metodo | Descrizione                                                     |
 | ------------------- | ------------------------------------ | ------ | --------------------------------------------------------------- |
 | **Impresa**         | `/api/imprese/:id`                   | GET    | Recupera i dati anagrafici completi dell'impresa.               |
+| **Bolkestein Data** | `/api/imprese/:id/bolkestein-data`   | GET    | Dati autocompilazione Bolkestein (addetti, anni RI, ATECO, ore formazione, qualificazioni). |
 | **Concessioni**     | `/api/concessions?vendor_id=:id`     | GET    | Lista delle concessioni associate all'impresa (tramite vendor). |
 | **Qualificazioni**  | `/api/qualificazioni/impresa/:id`    | GET    | Lista di tutte le qualifiche dell'impresa.                      |
 | **Autorizzazioni**  | `/api/autorizzazioni?impresa_id=:id` | GET    | Lista delle autorizzazioni commerciali.                         |
