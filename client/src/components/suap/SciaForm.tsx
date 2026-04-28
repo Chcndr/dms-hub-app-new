@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, FileText, Loader2, Building2, X, Stamp } from "lucide-react";
+import { Search, FileText, Loader2, Building2, X, Stamp, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getImpersonationParams,
@@ -255,6 +255,19 @@ export default function SciaForm({
 
   // File allegati per criteri Bolkestein
   const [allegatiFiles, setAllegatiFiles] = useState<{file: File, tipo: string}[]>([]);
+
+  // Stato autocompilazione Bolkestein
+  const [bolkesteinAutocompilato, setBolkesteinAutocompilato] = useState<{
+    num_dipendenti: boolean;
+    anni_impresa: boolean;
+    settore_analogo: boolean;
+    ore_formazione: boolean;
+  }>({
+    num_dipendenti: false,
+    anni_impresa: false,
+    settore_analogo: false,
+    ore_formazione: false,
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, tipo: string) => {
     if (e.target.files && e.target.files[0]) {
@@ -594,6 +607,67 @@ export default function SciaForm({
     }));
   };
 
+  // Fetch dati Bolkestein per autocompilazione campi
+  const fetchBolkesteinData = async (impresaId: number) => {
+    try {
+      const res = await fetch(
+        addComuneIdToUrl(`${API_URL}/api/imprese/${impresaId}/bolkestein-data`)
+      );
+      const json = await res.json();
+      if (json.success && json.data) {
+        const d = json.data;
+        const autoFields: typeof bolkesteinAutocompilato = {
+          num_dipendenti: false,
+          anni_impresa: false,
+          settore_analogo: false,
+          ore_formazione: false,
+        };
+
+        setFormData(prev => {
+          const updates: Record<string, any> = {};
+
+          // N. Dipendenti Stabili
+          if (d.numero_addetti && d.numero_addetti > 0) {
+            updates.bolkestein_num_dipendenti = String(d.numero_addetti);
+            autoFields.num_dipendenti = true;
+          }
+
+          // Anni Iscrizione Registro Imprese
+          if (d.anni_iscrizione_ri && d.anni_iscrizione_ri > 0) {
+            updates.bolkestein_anni_impresa = String(d.anni_iscrizione_ri);
+            autoFields.anni_impresa = true;
+          }
+
+          // Settore Analogo
+          if (d.is_settore_analogo) {
+            updates.bolkestein_is_settore_analogo = true;
+            autoFields.settore_analogo = true;
+          }
+
+          // Ore Formazione Documentate
+          if (d.ore_formazione_totali && d.ore_formazione_totali > 0) {
+            updates.bolkestein_ore_formazione = String(d.ore_formazione_totali);
+            autoFields.ore_formazione = true;
+          }
+
+          return { ...prev, ...updates };
+        });
+
+        setBolkesteinAutocompilato(autoFields);
+
+        // Feedback utente
+        const campiCompilati = Object.values(autoFields).filter(Boolean).length;
+        if (campiCompilati > 0) {
+          toast.success(`Bolkestein: ${campiCompilati} campi autocompilati`, {
+            description: "I dati sono stati recuperati dal database. Puoi modificarli se necessario.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Errore fetch bolkestein-data:", error);
+    }
+  };
+
   // Seleziona impresa dall'autocomplete
   const handleSelectImpresa = (impresa: Impresa) => {
     setSelectedImpresa(impresa);
@@ -603,6 +677,10 @@ export default function SciaForm({
     toast.success("Impresa selezionata!", {
       description: impresa.denominazione,
     });
+    // Autocompila dati Bolkestein se motivazione è bolkestein
+    if (formData.motivazione_scia === "bolkestein") {
+      fetchBolkesteinData(impresa.id);
+    }
   };
 
   // Reset impresa selezionata
@@ -639,8 +717,13 @@ export default function SciaForm({
     const impresa = searchImpresa(formData.cf_subentrante);
 
     if (impresa) {
+      setSelectedImpresa(impresa);
       populateSubentranteData(impresa);
       toast.success("Impresa trovata!", { description: impresa.denominazione });
+      // Autocompila dati Bolkestein se motivazione è bolkestein
+      if (formData.motivazione_scia === "bolkestein") {
+        fetchBolkesteinData(impresa.id);
+      }
     } else {
       toast.error("Impresa non trovata", {
         description: "Inserire i dati manualmente",
@@ -913,9 +996,13 @@ export default function SciaForm({
             </h3>
             <RadioGroup
               value={formData.motivazione_scia}
-              onValueChange={value =>
-                setFormData({ ...formData, motivazione_scia: value })
-              }
+              onValueChange={value => {
+                setFormData({ ...formData, motivazione_scia: value });
+                // Quando si cambia a bolkestein e c'è un'impresa selezionata, autocompila
+                if (value === "bolkestein" && selectedImpresa) {
+                  fetchBolkesteinData(selectedImpresa.id);
+                }
+              }}
               className="grid grid-cols-2 md:grid-cols-3 gap-4"
             >
               <div className="flex items-center space-x-2">
@@ -1044,28 +1131,42 @@ export default function SciaForm({
               {/* Criterio 6: Stabilità Occupazionale */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[#e8fbff]">N. Dipendenti Stabili (almeno triennio) *</Label>
+                  <Label className="text-[#e8fbff] flex items-center gap-2">
+                    N. Dipendenti Stabili (almeno triennio) *
+                    {bolkesteinAutocompilato.num_dipendenti && (
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                        <CheckCircle2 className="w-3 h-3" /> Autocompilato
+                      </span>
+                    )}
+                  </Label>
                   <Input
                     type="number"
                     min="0"
                     value={formData.bolkestein_num_dipendenti}
                     onChange={e => setFormData({ ...formData, bolkestein_num_dipendenti: e.target.value })}
                     placeholder="0"
-                    className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                    className={`bg-[#0b1220] text-[#e8fbff] ${bolkesteinAutocompilato.num_dipendenti ? "border-emerald-500/60" : "border-[#334155]"}`}
                   />
                   <p className="text-xs text-[#e8fbff]/40">Criterio 6: max 5 punti (proporzionalità lineare)</p>
                 </div>
 
                 {/* Criterio 7a: Anzianità Impresa */}
                 <div className="space-y-2">
-                  <Label className="text-[#e8fbff]">Anni Iscrizione Registro Imprese *</Label>
+                  <Label className="text-[#e8fbff] flex items-center gap-2">
+                    Anni Iscrizione Registro Imprese *
+                    {bolkesteinAutocompilato.anni_impresa && (
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                        <CheckCircle2 className="w-3 h-3" /> Autocompilato
+                      </span>
+                    )}
+                  </Label>
                   <Input
                     type="number"
                     min="0"
                     value={formData.bolkestein_anni_impresa}
                     onChange={e => setFormData({ ...formData, bolkestein_anni_impresa: e.target.value })}
                     placeholder="0"
-                    className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                    className={`bg-[#0b1220] text-[#e8fbff] ${bolkesteinAutocompilato.anni_impresa ? "border-emerald-500/60" : "border-[#334155]"}`}
                   />
                   <p className="text-xs text-[#e8fbff]/40">Criterio 7a: max 35 punti (proporzionalità lineare)</p>
                 </div>
@@ -1087,7 +1188,7 @@ export default function SciaForm({
               </div>
 
               {/* Settore Analogo - riduzione 30% su Cr.7a */}
-              <div className="p-3 bg-[#0b1220] rounded-lg border border-[#f59e0b]/50">
+              <div className={`p-3 bg-[#0b1220] rounded-lg border ${bolkesteinAutocompilato.settore_analogo ? "border-emerald-500/60" : "border-[#f59e0b]/50"}`}>
                 <div className="flex items-start space-x-3">
                   <Checkbox
                     id="bolkestein_settore_analogo"
@@ -1097,6 +1198,11 @@ export default function SciaForm({
                   />
                   <Label htmlFor="bolkestein_settore_analogo" className="text-[#e8fbff] text-sm cursor-pointer">
                     <strong>Settore Analogo</strong> — L'impresa proviene da un settore analogo ma non dal commercio su area pubblica diretto. Il punteggio del Criterio 7a (Anzianit\u00e0 impresa) verr\u00e0 ridotto del 30%.
+                    {bolkesteinAutocompilato.settore_analogo && (
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-400 ml-2">
+                        <CheckCircle2 className="w-3 h-3" /> Autocompilato
+                      </span>
+                    )}
                   </Label>
                 </div>
               </div>
@@ -1236,14 +1342,21 @@ export default function SciaForm({
 
               {/* Ore Formazione */}
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Ore di Formazione Documentate</Label>
+                <Label className="text-[#e8fbff] flex items-center gap-2">
+                  Ore di Formazione Documentate
+                  {bolkesteinAutocompilato.ore_formazione && (
+                    <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                      <CheckCircle2 className="w-3 h-3" /> Autocompilato
+                    </span>
+                  )}
+                </Label>
                 <Input
                   type="number"
                   min="0"
                   value={formData.bolkestein_ore_formazione}
                   onChange={e => setFormData({ ...formData, bolkestein_ore_formazione: e.target.value })}
                   placeholder="0"
-                  className="bg-[#0b1220] border-[#334155] text-[#e8fbff]"
+                  className={`bg-[#0b1220] text-[#e8fbff] ${bolkesteinAutocompilato.ore_formazione ? "border-emerald-500/60" : "border-[#334155]"}`}
                 />
                 <p className="text-xs text-[#e8fbff]/40">Criterio 9.1f: max 7 punti (proporzionalità lineare). Norme di settore, regole professionali, lingue straniere.</p>
               </div>
