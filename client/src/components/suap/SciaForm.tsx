@@ -262,11 +262,13 @@ export default function SciaForm({
     anni_impresa: boolean;
     settore_analogo: boolean;
     ore_formazione: boolean;
+    microimpresa: boolean;
   }>({
     num_dipendenti: false,
     anni_impresa: false,
     settore_analogo: false,
     ore_formazione: false,
+    microimpresa: false,
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, tipo: string) => {
@@ -621,6 +623,7 @@ export default function SciaForm({
           anni_impresa: false,
           settore_analogo: false,
           ore_formazione: false,
+          microimpresa: false,
         };
 
         setFormData(prev => {
@@ -648,6 +651,12 @@ export default function SciaForm({
           if (d.ore_formazione_totali && d.ore_formazione_totali > 0) {
             updates.bolkestein_ore_formazione = String(d.ore_formazione_totali);
             autoFields.ore_formazione = true;
+          }
+
+          // Microimpresa: meno di 10 occupati
+          if (d.numero_addetti !== null && d.numero_addetti !== undefined && d.numero_addetti < 10) {
+            updates.bolkestein_is_microimpresa = true;
+            autoFields.microimpresa = true;
           }
 
           return { ...prev, ...updates };
@@ -1173,7 +1182,7 @@ export default function SciaForm({
               </div>
 
               {/* Criterio 8: Microimpresa */}
-              <div className="p-3 bg-[#0b1220] rounded-lg border border-[#334155]">
+              <div className={`p-3 bg-[#0b1220] rounded-lg border ${bolkesteinAutocompilato.microimpresa ? "border-emerald-500/60" : "border-[#334155]"}`}>
                 <div className="flex items-start space-x-3">
                   <Checkbox
                     id="bolkestein_microimpresa"
@@ -1183,6 +1192,11 @@ export default function SciaForm({
                   />
                   <Label htmlFor="bolkestein_microimpresa" className="text-[#e8fbff] text-sm cursor-pointer">
                     <strong>Microimpresa</strong> — Meno di 10 occupati e fatturato annuo &le; 2 milioni di euro (Criterio 8: 5 punti fissi)
+                    {bolkesteinAutocompilato.microimpresa && (
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-400 ml-2">
+                        <CheckCircle2 className="w-3 h-3" /> Autocompilato
+                      </span>
+                    )}
                   </Label>
                 </div>
               </div>
