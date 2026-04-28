@@ -1710,10 +1710,15 @@ export default function SciaForm({
                         onClick={() => {
                           populateSubentranteData(impresa);
                           setSelectedImpresa(impresa);
+                          setSearchQuery(impresa.denominazione);
                           setShowSuggestions(false);
                           toast.success("Impresa selezionata!", {
                             description: impresa.denominazione,
                           });
+                          // Autocompila dati Bolkestein se motivazione è bolkestein
+                          if (formData.motivazione_scia === "bolkestein") {
+                            fetchBolkesteinData(impresa.id);
+                          }
                         }}
                         className="w-full px-4 py-3 text-left hover:bg-[#1e293b] border-b border-[#334155] last:border-b-0 transition-colors"
                       >
