@@ -193,7 +193,7 @@ export default function NotificheAssociazionePanel({
   const countRicevuti = notifiche.filter(
     n => getDirezione(n) === "RICEVUTO"
   ).length;
-  const nonLetti = notifiche.filter(n => !n.letta).length;
+  const nonLetti = notifiche.filter(n => !n.letta && getDirezione(n) === "RICEVUTO").length;
 
   if (!associazioneId) {
     return (
