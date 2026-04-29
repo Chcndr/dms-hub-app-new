@@ -33,6 +33,12 @@
 > - Toast feedback: "Bolkestein: X campi autocompilati" con descrizione.
 > - Fix: aggiunto trigger anche nel click handler del dropdown autocomplete (il percorso più comune usato dagli utenti).
 >
+> **REGISTRO ENDPOINT (MIO-hub/api/index.json → v42):**
+> - Aggiunti **216 endpoint REST** mancanti al registro Guardian/Integrazioni (da `routes/*.js` del backend REST).
+> - Categorie principali: TCC v2 (33), Associazioni (32+16), Gaming Rewards (32), DMS Legacy (24), SUAP (11), MercaWeb (9), Billing (9), AI Chat (9), Imprese (6), GTFS (6), Mercati (4), e altre.
+> - Totale endpoint registrati: da 782 a **998** (inventario index.json).
+> - Nessun endpoint TRPC/SPQL dismesso incluso — tutti verificati come REST attivi su Hetzner.
+>
 > ---
 > ### CHANGELOG v10.0.2 (28 Apr 2026)
 > **Fix Logica Bolkestein + Notifiche Associazione + PDF Allegati + Diciture**
@@ -2225,7 +2231,7 @@ Includono: `agent_brain`, `agent_context`, `agent_projects`, `agent_tasks`, `api
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (799 endpoint totali)
+### Endpoint Index (998 endpoint totali)
 
 Gli endpoint sono documentati in:
 
