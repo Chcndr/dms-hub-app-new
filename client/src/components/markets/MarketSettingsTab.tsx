@@ -32,6 +32,8 @@ import {
   Trash2,
   Calendar,
   FileText,
+  Zap,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MIHUB_API_BASE_URL } from "@/config/api";
@@ -53,6 +55,7 @@ interface MarketSettings {
     SPAZZATURA_TARDIVA: boolean;
     USCITA_ANTICIPATA: boolean;
   };
+  auto_start_enabled: boolean;
 }
 
 interface MarketSettingsTabProps {
@@ -203,6 +206,20 @@ export function MarketSettingsTab({
                 setSettings({ ...settings, is_active: checked })
               }
               className="data-[state=checked]:bg-[#14b8a6]"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="auto-start" className="text-gray-300 flex items-center gap-1">
+              <Zap className="h-3 w-3 text-yellow-400" />
+              Avvio Automatico
+            </Label>
+            <Switch
+              id="auto-start"
+              checked={settings.auto_start_enabled}
+              onCheckedChange={checked =>
+                setSettings({ ...settings, auto_start_enabled: checked })
+              }
+              className="data-[state=checked]:bg-yellow-500"
             />
           </div>
         </div>
@@ -369,6 +386,48 @@ export function MarketSettingsTab({
         </Card>
       </div>
 
+      {/* Card Automazione Fasi (visibile solo se auto_start_enabled) */}
+      {settings.auto_start_enabled && (
+        <Card className="bg-yellow-500/5 border-yellow-500/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-white flex items-center gap-2">
+              <Zap className="h-4 w-4 text-yellow-400" />
+              Automazione Fasi Mercato
+            </CardTitle>
+            <CardDescription className="text-xs text-yellow-400/80">
+              Il sistema avvierà automaticamente le fasi nei giorni di mercato
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2 text-gray-300">
+                <div className="w-2 h-2 rounded-full bg-green-400" />
+                <span>Apertura sessione alle <span className="text-white font-semibold">{settings.presence_start_time || '06:00'}</span></span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-300">
+                <div className="w-2 h-2 rounded-full bg-blue-400" />
+                <span>Avvio spunta alle <span className="text-white font-semibold">{settings.spunta_presence_start_time || '07:30'}</span></span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-300">
+                <div className="w-2 h-2 rounded-full bg-purple-400" />
+                <span>Registrazione rifiuti alle <span className="text-white font-semibold">{settings.waste_disposal_end_time || '13:00'}</span></span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-300">
+                <div className="w-2 h-2 rounded-full bg-red-400" />
+                <span>Chiusura mercato alle <span className="text-white font-semibold">{settings.exit_market_end_time || '14:00'}</span></span>
+              </div>
+            </div>
+            <div className="mt-3 p-2 bg-yellow-500/10 rounded-md flex items-start gap-2">
+              <Info className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-yellow-400/80">
+                Assicurati che gli orari sopra siano corretti prima di attivare l'automazione.
+                Il sistema eseguirà le fasi automaticamente solo nei giorni programmati per questo mercato.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Impostazioni Giustifiche */}
       <Card className="bg-[#0b1220]/50 border-[#14b8a6]/20">
         <CardHeader className="pb-3">
@@ -441,6 +500,14 @@ export function MarketSettingsTab({
                   ).length
                 }{" "}
                 / 3 attivi
+                {settings.auto_start_enabled && (
+                  <span className="ml-2">
+                    <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                      <Zap className="h-3 w-3 mr-1" />
+                      Automazione ON
+                    </Badge>
+                  </span>
+                )}
               </p>
             </div>
             <Button
