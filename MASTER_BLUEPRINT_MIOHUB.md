@@ -4,14 +4,14 @@
 > **Data:** 29 Aprile 2026
 >
 > ---
-> ### CHANGELOG v10.0.3 (29 Apr 2026)
-> **Autocompilazione Campi Bolkestein da Database + Popolamento Dati Imprese**
+> ### CHANGELOG v10.0.3 (29-30 Apr 2026)
+> **Autocompilazione Campi Bolkestein da Database + Popolamento Dati Imprese + Filtri Anti-Scan v1.4.0**
 >
 > **Stato deploy:**
 > | Sistema | Commit | Stato |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `f06054b` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `f06054b` | Autodeploy |
+> | GitHub `mihub-backend-rest` master | `ec2ba0e` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `ec2ba0e` | Autodeploy |
 > | GitHub `dms-hub-app-new` master | `4832763` | Allineato |
 > | Vercel frontend | `4832763` | Autodeploy |
 >
@@ -38,6 +38,11 @@
 > - Categorie principali: TCC v2 (33), Associazioni (32+16), Gaming Rewards (32), DMS Legacy (24), SUAP (11), MercaWeb (9), Billing (9), AI Chat (9), Imprese (6), GTFS (6), Mercati (4), e altre.
 > - Totale endpoint registrati: da 782 a **998** (inventario index.json).
 > - Nessun endpoint TRPC/SPQL dismesso incluso — tutti verificati come REST attivi su Hetzner.
+>
+> **MIDDLEWARE ANTI-SCAN — apiLogger.js v1.4.0 (`ec2ba0e`):**
+> - Aggiornati `SCAN_PATTERNS` con **30+ nuovi pattern** identificati dall'analisi dei 14.961 errori 404 nei log del 30/04/2026.
+> - Nuove categorie bloccate: Database enumeration (`/v1/database/`), Home Assistant path traversal (`/hassio/`), HashiCorp Vault (`/sys/login`), Server fingerprinting (`/server/version`), Kubernetes/ES (`/clusters`), RCE (`/runscript`), MLflow (`/mlflow/`), AWS Cognito (`/auth/cognito/`), Mastodon (`/remotefollow`), XSS base64 (`data:text`), TOTP traversal (`/totp/`), Job scheduler (`/jobs/`), Router/Mesh (`/router/mesh/`), Sentry (`/site/url/transform`), CMS probing (`/v2/parameters/`), User enumeration (`/v1/users`), CORS bypass (`/cors/`).
+> - Aggiornati `BOT_USER_AGENTS` con **14 scanner aggiuntivi**: nmap, nikto, nuclei, httpx, gobuster, dirbuster, wfuzz, sqlmap, burpsuite, acunetix, nessus, qualys, openvas, arachni, skipfish, python-requests, go-http-client, curl/, wget/.
 >
 > ---
 > ### CHANGELOG v10.0.2 (28 Apr 2026)
@@ -453,6 +458,7 @@
 > **Fix backend (mihub-backend-rest):**
 > - `apiLogger.js` v1.3.1: aggiunto `/.env`, `/.git/`, `/swagger.json`, `/gql` ai `SCAN_PATTERNS`
 > - `apiLogger.js` v1.3.1: aggiunto filtro `BOT_USER_AGENTS` (l9scan, l9explore, leakix, silver.inc, zgrab, masscan, censys, shodan)
+> - `apiLogger.js` v1.4.0 (30 Apr 2026): aggiornati `SCAN_PATTERNS` con 30+ nuovi pattern (database enum, path traversal, RCE, XSS, CMS/scheduler/mesh probing) e `BOT_USER_AGENTS` con 14 scanner aggiuntivi
 > - `logs.js` v1.3.1: rate limit su `createLog` per errori frontend ripetitivi (finestra 5 minuti)
 > - Rate limit previene flood: da 400 errori/ora a max 12/ora per lo stesso errore identico
 > - Pulizia periodica mappa rate limit ogni 10 minuti
