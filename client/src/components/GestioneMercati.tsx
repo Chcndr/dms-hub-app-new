@@ -2300,12 +2300,38 @@ function PosteggiTab({
     fetchData();
   }, [marketId]);
 
-  // Auto-refresh: polling ogni 10 secondi per aggiornare la mappa in tempo reale
+  // Funzione leggera: aggiorna SOLO lo stato dei posteggi e le presenze
+  // senza ricaricare la scheda anagrafica, mappa GIS, concessioni, ecc.
+  const fetchStallsAndPresenzeOnly = async () => {
+    try {
+      const [stallsRes, presenzeRes] = await Promise.all([
+        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)),
+        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/presenze/mercato/${marketId}`)).catch(() => ({ json: () => ({ success: false }) })),
+      ]);
+      const stallsData = await stallsRes.json();
+      const presenzeData = await presenzeRes.json();
+      if (stallsData.success) {
+        const normalizedStalls = stallsData.data.map((s: Stall) => ({
+          ...s,
+          number: String(s.number),
+          status: normalizeStallStatus(s.status),
+        }));
+        setStalls(normalizedStalls);
+      }
+      if (presenzeData.success && Array.isArray(presenzeData.data)) {
+        setPresenze(presenzeData.data);
+      }
+    } catch (error) {
+      // Silenzioso: non mostrare errori per il polling
+    }
+  };
+
+  // Auto-refresh: polling ogni 10 secondi per aggiornare solo stato posteggi
   // (es. quando un'impresa fa checkin dall'app, la PA vede il posteggio occupato)
   useEffect(() => {
     if (!marketId) return;
     const interval = setInterval(() => {
-      fetchData();
+      fetchStallsAndPresenzeOnly();
     }, 10000); // 10 secondi
     return () => clearInterval(interval);
   }, [marketId]);

@@ -62,6 +62,8 @@ interface ConcessioneInfo {
   wallet_status: string | null;
   durc_valido: boolean;
   gia_presente_oggi: boolean;
+  deposito_rifiuti_fatto: boolean;
+  uscita_registrata: boolean;
 }
 
 type SchermataCorrente = 
@@ -419,37 +421,50 @@ export default function PresenzePage() {
     setLoadingAzione(false);
   };
 
-  const eseguiDepositoRifiuti = async () => {
+  const eseguiDepositoRifiuti = async (concessione: ConcessioneInfo) => {
     if (!mercatoSelezionato || !impresaId) return;
+
+    if (concessione.deposito_rifiuti_fatto) {
+      setPopup({
+        tipo: "avviso",
+        titolo: "GIÀ REGISTRATO",
+        messaggio: `Il deposito rifiuti per il posteggio ${concessione.stall_number} è già stato registrato oggi.`,
+      });
+      return;
+    }
+
     setLoadingAzione(true);
     try {
       const res = await authenticatedFetch(
-        `${MIHUB_API_BASE_URL}/api/presenze-live/rifiuti`,
+        `${MIHUB_API_BASE_URL}/api/presenze-live/deposito-rifiuti`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             impresa_id: impresaId,
-            session_id: mercatoSelezionato.session_id,
-            latitude: gpsPosition?.lat,
-            longitude: gpsPosition?.lng,
+            market_id: mercatoSelezionato.market_id,
+            stall_id: concessione.stall_id,
           }),
         }
       );
 
       const data = await res.json();
       if (data.success) {
+        // Aggiorna lo stato locale
+        concessione.deposito_rifiuti_fatto = true;
         setPopup({
           tipo: "successo",
-          titolo: "DEPOSITO IMMONDIZIA REGISTRATO",
-          messaggio: "Il deposito dei rifiuti è stato registrato con successo.",
+          titolo: "DEPOSITO RIFIUTI REGISTRATO",
+          messaggio: `Posteggio ${concessione.stall_number} — Deposito registrato.`,
           sottomessaggio: "RICORDATI DI ESEGUIRE L'USCITA DAL MERCATO!",
         });
+        // Refresh dati mercato
+        cercaMercati();
       } else {
         setPopup({
           tipo: "errore",
           titolo: "ERRORE",
-          messaggio: data.error || "Si è verificato un errore.",
+          messaggio: data.messaggio || data.error || "Si è verificato un errore.",
         });
       }
     } catch {
@@ -462,37 +477,50 @@ export default function PresenzePage() {
     setLoadingAzione(false);
   };
 
-  const eseguiUscita = async () => {
+  const eseguiUscita = async (concessione: ConcessioneInfo) => {
     if (!mercatoSelezionato || !impresaId) return;
+
+    if (concessione.uscita_registrata) {
+      setPopup({
+        tipo: "avviso",
+        titolo: "GIÀ REGISTRATA",
+        messaggio: `L'uscita per il posteggio ${concessione.stall_number} è già stata registrata oggi.`,
+      });
+      return;
+    }
+
     setLoadingAzione(true);
     try {
       const res = await authenticatedFetch(
-        `${MIHUB_API_BASE_URL}/api/presenze-live/checkout`,
+        `${MIHUB_API_BASE_URL}/api/presenze-live/uscita-mercato`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             impresa_id: impresaId,
-            session_id: mercatoSelezionato.session_id,
-            latitude: gpsPosition?.lat,
-            longitude: gpsPosition?.lng,
+            market_id: mercatoSelezionato.market_id,
+            stall_id: concessione.stall_id,
           }),
         }
       );
 
       const data = await res.json();
       if (data.success) {
+        // Aggiorna lo stato locale
+        concessione.uscita_registrata = true;
         setPopup({
           tipo: "successo",
           titolo: "USCITA REGISTRATA CON SUCCESSO",
-          messaggio: "Hai completato la giornata di mercato.",
+          messaggio: `Posteggio ${concessione.stall_number} — Uscita registrata.`,
           sottomessaggio: "Grazie e buona giornata!",
         });
+        // Refresh dati mercato
+        cercaMercati();
       } else {
         setPopup({
           tipo: "errore",
           titolo: "ERRORE",
-          messaggio: data.error || "Si è verificato un errore.",
+          messaggio: data.messaggio || data.error || "Si è verificato un errore.",
         });
       }
     } catch {
@@ -778,76 +806,112 @@ export default function PresenzePage() {
             )}
           </div>
 
-          {/* Pulsante PRESENZA POSTEGGIO */}
-          <button
-            onClick={() => setSchermata("presenza_posteggio")}
-            className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
-          >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                <LogIn className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-black text-white truncate">PRESENZA POSTEGGIO</p>
-                <p className="text-sm sm:text-base text-white/70 mt-1 truncate">
-                  Registra la presenza al posteggio
-                </p>
-              </div>
-            </div>
-          </button>
+          {(() => {
+            // Calcola stati per logica contestuale
+            const concessioni = mercatoSelezionato.concessions.filter(c => c.tipo_posteggio !== 'Spunta');
+            const spuntisti = mercatoSelezionato.concessions.filter(c => c.tipo_posteggio === 'Spunta');
+            const haConcessioni = concessioni.length > 0;
+            const haSpunta = spuntisti.length > 0;
+            const tuttiPresenti = haConcessioni && concessioni.every(c => c.gia_presente_oggi);
+            const qualcunoPresente = haConcessioni && concessioni.some(c => c.gia_presente_oggi);
+            const tuttiDepositoFatto = haConcessioni && concessioni.filter(c => c.gia_presente_oggi).every(c => c.deposito_rifiuti_fatto);
+            const qualcunoDepositoDaFare = haConcessioni && concessioni.some(c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto);
+            const qualcunoUscitaDaFare = haConcessioni && concessioni.some(c => c.gia_presente_oggi && !c.uscita_registrata);
 
-          {/* Pulsante PRESENZA SPUNTA */}
-          <button
-            onClick={() => setSchermata("presenza_spunta")}
-            className="w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#8b5cf6]/20"
-          >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                <Users className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-black text-white truncate">PRESENZA SPUNTA</p>
-                <p className="text-sm sm:text-base text-white/70 mt-1 truncate">
-                  Graduatoria spuntisti
-                </p>
-              </div>
-            </div>
-          </button>
+            return (
+              <>
+                {/* PRESENZA POSTEGGIO: visibile se ha concessioni e non tutti hanno fatto presenza */}
+                {haConcessioni && !tuttiPresenti && (
+                  <button
+                    onClick={() => setSchermata("presenza_posteggio")}
+                    className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <LogIn className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-lg sm:text-2xl font-black text-white truncate">PRESENZA POSTEGGIO</p>
+                        <p className="text-sm sm:text-base text-white/70 mt-1 truncate">
+                          Registra la presenza al posteggio
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                )}
 
-          {/* Separatore */}
-          <div className="border-t border-[#e8fbff]/10 my-2" />
+                {/* PRESENZA SPUNTA: visibile solo se ha wallet spunta */}
+                {haSpunta && (
+                  <button
+                    onClick={() => setSchermata("presenza_spunta")}
+                    className="w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#8b5cf6]/20"
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <Users className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-lg sm:text-2xl font-black text-white truncate">PRESENZA SPUNTA</p>
+                        <p className="text-sm sm:text-base text-white/70 mt-1 truncate">
+                          Graduatoria spuntisti
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                )}
 
-          {/* Pulsante DEPOSITO IMMONDIZIA */}
-          <button
-            onClick={() => eseguiDepositoRifiuti()}
-            className="w-full bg-[#1a2332] border-2 border-yellow-500/30 hover:border-yellow-500 rounded-2xl p-4 sm:p-5 text-left transition-all active:scale-[0.98]"
-          >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                <Trash2 className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-400" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-xl font-bold text-[#e8fbff] truncate">DEPOSITO RIFIUTI</p>
-                <p className="text-xs sm:text-sm text-[#e8fbff]/50 truncate">Registra il deposito</p>
-              </div>
-            </div>
-          </button>
+                {/* Separatore se ci sono azioni post-presenza */}
+                {qualcunoPresente && (qualcunoDepositoDaFare || qualcunoUscitaDaFare) && (
+                  <div className="border-t border-[#e8fbff]/10 my-2" />
+                )}
 
-          {/* Pulsante USCITA MERCATO */}
-          <button
-            onClick={() => eseguiUscita()}
-            className="w-full bg-[#1a2332] border-2 border-red-500/30 hover:border-red-500 rounded-2xl p-4 sm:p-5 text-left transition-all active:scale-[0.98]"
-          >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                <LogOut className="w-6 h-6 sm:w-7 sm:h-7 text-red-400" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-xl font-bold text-[#e8fbff] truncate">USCITA MERCATO</p>
-                <p className="text-xs sm:text-sm text-[#e8fbff]/50 truncate">Registra l'uscita</p>
-              </div>
-            </div>
-          </button>
+                {/* DEPOSITO RIFIUTI: visibile se almeno uno ha fatto presenza e non ha depositato */}
+                {qualcunoDepositoDaFare && (
+                  <button
+                    onClick={() => setSchermata("deposito_rifiuti")}
+                    className="w-full bg-[#1a2332] border-2 border-yellow-500/30 hover:border-yellow-500 rounded-2xl p-4 sm:p-5 text-left transition-all active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                        <Trash2 className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-lg sm:text-xl font-bold text-[#e8fbff] truncate">DEPOSITO RIFIUTI</p>
+                        <p className="text-xs sm:text-sm text-[#e8fbff]/50 truncate">Registra il deposito</p>
+                      </div>
+                    </div>
+                  </button>
+                )}
+
+                {/* USCITA MERCATO: visibile se almeno uno ha fatto presenza e non ha registrato uscita */}
+                {qualcunoUscitaDaFare && (
+                  <button
+                    onClick={() => setSchermata("uscita_mercato")}
+                    className="w-full bg-[#1a2332] border-2 border-red-500/30 hover:border-red-500 rounded-2xl p-4 sm:p-5 text-left transition-all active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                        <LogOut className="w-6 h-6 sm:w-7 sm:h-7 text-red-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-lg sm:text-xl font-bold text-[#e8fbff] truncate">USCITA MERCATO</p>
+                        <p className="text-xs sm:text-sm text-[#e8fbff]/50 truncate">Registra l'uscita</p>
+                      </div>
+                    </div>
+                  </button>
+                )}
+
+                {/* Messaggio se tutto completato */}
+                {tuttiPresenti && tuttiDepositoFatto && !qualcunoUscitaDaFare && (
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center">
+                    <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
+                    <p className="text-lg font-bold text-green-400">Giornata completata!</p>
+                    <p className="text-sm text-[#e8fbff]/50 mt-1">Tutte le operazioni sono state registrate.</p>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
     );
@@ -932,29 +996,69 @@ export default function PresenzePage() {
                 </div>
               </button>
 
-              {/* Pulsanti azione sotto ogni posteggio */}
-              {!conc.gia_presente_oggi && (
-                <div className="flex gap-2 px-1">
-                  <Button
-                    onClick={() => eseguiPresenzaPosteggio(conc)}
-                    disabled={loadingAzione}
-                    className="flex-1 bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
-                  >
-                    <LogIn className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
-                    <span className="truncate">PRESENZA</span>
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setPosteggioSelezionato(conc);
-                      setSchermata("vista_mappa");
-                    }}
-                    variant="outline"
-                    className="border-[#14b8a6]/40 text-[#14b8a6] py-5 sm:py-6 rounded-xl px-4 flex-shrink-0"
-                  >
-                    <MapIcon className="w-5 h-5" />
-                  </Button>
-                </div>
-              )}
+              {/* Tab azione dinamico sotto ogni posteggio */}
+              {(() => {
+                // PRESENZA → DEPOSITO → USCITA → COMPLETATO
+                if (!conc.gia_presente_oggi) {
+                  return (
+                    <div className="flex gap-2 px-1">
+                      <Button
+                        onClick={() => eseguiPresenzaPosteggio(conc)}
+                        disabled={loadingAzione}
+                        className="flex-1 bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
+                      >
+                        <LogIn className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                        <span className="truncate">PRESENZA</span>
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setPosteggioSelezionato(conc);
+                          setSchermata("vista_mappa");
+                        }}
+                        variant="outline"
+                        className="border-[#14b8a6]/40 text-[#14b8a6] py-5 sm:py-6 rounded-xl px-4 flex-shrink-0"
+                      >
+                        <MapIcon className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  );
+                }
+                if (!conc.deposito_rifiuti_fatto) {
+                  return (
+                    <div className="flex gap-2 px-1">
+                      <Button
+                        onClick={() => eseguiDepositoRifiuti(conc)}
+                        disabled={loadingAzione}
+                        className="flex-1 bg-yellow-500 hover:bg-yellow-500/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
+                      >
+                        <Trash2 className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                        <span className="truncate">DEPOSITO RIFIUTI</span>
+                      </Button>
+                    </div>
+                  );
+                }
+                if (!conc.uscita_registrata) {
+                  return (
+                    <div className="flex gap-2 px-1">
+                      <Button
+                        onClick={() => eseguiUscita(conc)}
+                        disabled={loadingAzione}
+                        className="flex-1 bg-red-500 hover:bg-red-500/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
+                      >
+                        <LogOut className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                        <span className="truncate">USCITA MERCATO</span>
+                      </Button>
+                    </div>
+                  );
+                }
+                // Tutto completato
+                return (
+                  <div className="flex items-center gap-2 px-3 py-3 bg-green-500/10 border border-green-500/30 rounded-xl">
+                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                    <span className="text-base font-semibold text-green-400">Giornata completata</span>
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>
@@ -1004,11 +1108,149 @@ export default function PresenzePage() {
           <Button
             onClick={eseguiPresenzaSpunta}
             disabled={loadingAzione}
-            className="w-full max-w-sm bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#6d28d9] text-white text-2xl py-8 rounded-2xl font-black shadow-xl shadow-[#8b5cf6]/20"
+            className="w-full max-w-sm bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#6d28d9] text-white text-lg sm:text-xl py-8 rounded-2xl font-black shadow-xl shadow-[#8b5cf6]/20"
           >
-            <Users className="w-7 h-7 mr-3" />
-            REGISTRA PRESENZA SPUNTA
+            <Users className="w-6 h-6 mr-2 flex-shrink-0" />
+            REGISTRA SPUNTA
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── SCHERMATA: DEPOSITO RIFIUTI ────────────────────────────────────────
+  if (schermata === "deposito_rifiuti" && mercatoSelezionato) {
+    const concPresenti = mercatoSelezionato.concessions.filter(
+      c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto && c.tipo_posteggio !== 'Spunta'
+    );
+
+    return (
+      <div className="min-h-screen bg-[#0b1220] flex flex-col">
+        {renderHeader("Deposito Rifiuti", () => setSchermata("scelta_tipo"))}
+
+        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+          <h2 className="text-xl font-bold text-[#e8fbff] px-1">
+            Registra il deposito rifiuti
+          </h2>
+          <p className="text-base text-[#e8fbff]/50 px-1">
+            Clicca sul posteggio per registrare il deposito
+          </p>
+
+          {concPresenti.length === 0 && (
+            <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-8 text-center">
+              <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
+              <p className="text-lg text-green-400 font-bold">Tutti i depositi sono stati registrati!</p>
+              <p className="text-sm text-[#e8fbff]/50 mt-1">Non ci sono posteggi in attesa di deposito rifiuti.</p>
+            </div>
+          )}
+
+          {concPresenti.map((conc) => (
+            <div key={conc.concession_id} className="space-y-2">
+              <div className="w-full bg-[#1a2332] border-2 border-yellow-500/30 rounded-2xl p-5 text-left">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl font-black text-[#e8fbff]">{conc.stall_number}</span>
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-[#e8fbff]">
+                        Posteggio {conc.stall_number}
+                      </p>
+                      <p className="text-base text-[#e8fbff]/50">
+                        {conc.area_mq} mq
+                      </p>
+                      <Badge className="mt-1 bg-green-500/20 text-green-400 border-green-500/30 text-sm">
+                        <CheckCircle className="w-3 h-3 mr-1" /> Presente oggi
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 px-1">
+                <Button
+                  onClick={() => eseguiDepositoRifiuti(conc)}
+                  disabled={loadingAzione}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-500/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
+                >
+                  <Trash2 className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                  <span className="truncate">DEPOSITO RIFIUTI</span>
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── SCHERMATA: USCITA MERCATO ──────────────────────────────────────────
+  if (schermata === "uscita_mercato" && mercatoSelezionato) {
+    const concPresenti = mercatoSelezionato.concessions.filter(
+      c => c.gia_presente_oggi && !c.uscita_registrata && c.tipo_posteggio !== 'Spunta'
+    );
+
+    return (
+      <div className="min-h-screen bg-[#0b1220] flex flex-col">
+        {renderHeader("Uscita Mercato", () => setSchermata("scelta_tipo"))}
+
+        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+          <h2 className="text-xl font-bold text-[#e8fbff] px-1">
+            Registra l'uscita dal mercato
+          </h2>
+          <p className="text-base text-[#e8fbff]/50 px-1">
+            Clicca sul posteggio per registrare l'uscita
+          </p>
+
+          {concPresenti.length === 0 && (
+            <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-8 text-center">
+              <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
+              <p className="text-lg text-green-400 font-bold">Tutte le uscite sono state registrate!</p>
+              <p className="text-sm text-[#e8fbff]/50 mt-1">Non ci sono posteggi in attesa di uscita.</p>
+            </div>
+          )}
+
+          {concPresenti.map((conc) => (
+            <div key={conc.concession_id} className="space-y-2">
+              <div className="w-full bg-[#1a2332] border-2 border-red-500/30 rounded-2xl p-5 text-left">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl font-black text-[#e8fbff]">{conc.stall_number}</span>
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-[#e8fbff]">
+                        Posteggio {conc.stall_number}
+                      </p>
+                      <p className="text-base text-[#e8fbff]/50">
+                        {conc.area_mq} mq
+                      </p>
+                      {conc.deposito_rifiuti_fatto ? (
+                        <Badge className="mt-1 bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-sm">
+                          <Trash2 className="w-3 h-3 mr-1" /> Rifiuti depositati
+                        </Badge>
+                      ) : (
+                        <Badge className="mt-1 bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-sm">
+                          <AlertTriangle className="w-3 h-3 mr-1" /> Rifiuti NON depositati
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 px-1">
+                <Button
+                  onClick={() => eseguiUscita(conc)}
+                  disabled={loadingAzione}
+                  className="flex-1 bg-red-500 hover:bg-red-500/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
+                >
+                  <LogOut className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                  <span className="truncate">USCITA MERCATO</span>
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
