@@ -12,8 +12,8 @@
 > |---|---|---|
 > | GitHub `mihub-backend-rest` master | `384e15a` | Allineato |
 > | Hetzner backend (api.mio-hub.me) | `384e15a` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `bf743f4` | Allineato |
-> | Vercel frontend | `bf743f4` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `e5df541` | Allineato |
+> | Vercel frontend | `e5df541` | Autodeploy |
 >
 > **BACKEND — 5 commit (da `ec2ba0e` a `384e15a`):**
 >
@@ -35,6 +35,11 @@
 >   - Rimossi i `truncate` che tagliavano i testi dei pulsanti principali (PRESENZA POSTEGGIO, PRESENZA SPUNTA, DEPOSITO RIFIUTI, USCITA MERCATO).
 >   - Risolto l'overflow del testo nel pulsante `CONFERMA PRESENZA` nella vista mappa, adattando il font per schermi piccoli.
 > - **Orologio Real-Time:** Aggiunto un orologio digitale in tempo reale (formato `HH:MM:SS`, timezone Europe/Rome) tra la card del mercato e i pulsanti di azione, aggiornato ogni secondo.
+>
+> **Fix Wallet Impresa (`WalletImpresaPage.tsx`):**
+> - **Ripristinato Pulsante Ricarica Wallet SPUNTA:** La condizione del pulsante "+ Ricarica" era limitata a `wallet.type === "GENERICO"`. Estesa a `GENERICO || SPUNTA` per permettere la ricarica PagoPA anche sui wallet spunta.
+> - **Dialog Contestuale:** Il dialog di ricarica mostra titolo e descrizione differenziati: "Ricarica Wallet Spunta" con nome mercato per wallet SPUNTA, "Ricarica Wallet Generico" per wallet GENERICO.
+> - **Descrizione Transazione:** La descrizione PagoPA è differenziata per tipo wallet.
 >
 > ---
 > ### CHANGELOG v10.0.3 (29-30 Apr 2026)
