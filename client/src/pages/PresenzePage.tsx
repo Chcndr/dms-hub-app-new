@@ -548,16 +548,35 @@ export default function PresenzePage() {
 
       const data = await res.json();
       if (data.success) {
+        // Aggiorna localmente lo stato della concessione
+        if (mercatoSelezionato) {
+          setMercatoSelezionato(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              concessions: prev.concessions.map(c =>
+                c.concession_id === concessione.concession_id && c.wallet_id === concessione.wallet_id
+                  ? { ...c, gia_presente_oggi: true }
+                  : c
+              )
+            };
+          });
+        }
+
         if (isSpuntaConc) {
-          // Popup specifico per spunta con info graduatoria
+          // Per la spunta: connetti SSE e mostra schermata attesa
           const posizioneGrad = data.posizione_graduatoria || '-';
           const presenzeTotali = data.presenze_totali || 0;
-          setPopup({
-            tipo: "successo",
-            titolo: "PRESENZA SPUNTA EFFETTUATA",
-            messaggio: `Posizione in graduatoria: ${posizioneGrad}° — Presenze accumulate: ${presenzeTotali}`,
-            sottomessaggio: "ATTENDI IL TUO TURNO, VERRAI AVVISATO CON MESSAGGIO IN APP!",
+          setSpuntaTurno({
+            stato: 'IN_ATTESA',
+            posizione: posizioneGrad,
+            totale_in_coda: data.totale_in_coda || 0,
+            posteggi_disponibili: 0,
           });
+          if (mercatoSelezionato?.session_id) {
+            connettiSSESpunta(mercatoSelezionato.session_id);
+          }
+          setSchermata('spunta_attesa');
         } else {
           setPopup({
             tipo: "successo",
@@ -616,11 +635,23 @@ export default function PresenzePage() {
           connettiSSESpunta(mercatoSelezionato.session_id);
         }
         setSchermata('spunta_attesa');
+      } else if (data.errore === 'GIA_IN_CODA') {
+        // Già in coda: connetti SSE e mostra schermata attesa
+        setSpuntaTurno({
+          stato: 'IN_ATTESA',
+          posizione: 0,
+          totale_in_coda: 0,
+          posteggi_disponibili: 0,
+        });
+        if (mercatoSelezionato?.session_id) {
+          connettiSSESpunta(mercatoSelezionato.session_id);
+        }
+        setSchermata('spunta_attesa');
       } else {
         setPopup({
           tipo: "errore",
           titolo: "ERRORE",
-          messaggio: data.error || "Si è verificato un errore.",
+          messaggio: data.messaggio || data.error || "Si è verificato un errore.",
         });
       }
     } catch {
