@@ -551,29 +551,37 @@ export default function PresenzePage() {
   const renderHeader = (titolo: string, onBack?: () => void) => (
     <div className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-b border-[#14b8a6]/30 px-4 py-3 flex-shrink-0">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
-            onClick={onBack || (() => setLocation("/dashboard-impresa"))}
-            className="text-[#e8fbff]/70 hover:text-[#e8fbff] h-10 px-3"
+            onClick={onBack || (() => {
+              // Torna alla pagina precedente (HomePage)
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                setLocation("/");
+              }
+            })}
+            className="text-[#e8fbff]/70 hover:text-[#e8fbff] h-10 px-2"
           >
-            <ArrowLeft className="w-5 h-5 mr-1" />
-            <span className="text-base">Indietro</span>
+            <ArrowLeft className="w-5 h-5" />
           </Button>
         </div>
-        <div className="flex items-center gap-2">
-          <Store className="w-6 h-6 text-[#14b8a6]" />
-          <h1 className="text-lg font-bold text-[#e8fbff]">{titolo}</h1>
+        <div className="flex items-center gap-2 flex-1 justify-center min-w-0">
+          <Store className="w-5 h-5 text-[#14b8a6] flex-shrink-0" />
+          <h1 className="text-base font-bold text-[#e8fbff] truncate">{titolo}</h1>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={cercaMercati}
-          className="text-[#14b8a6] hover:text-[#14b8a6]/80 h-10 px-3"
-        >
-          <RefreshCw className="w-5 h-5" />
-        </Button>
+        <div className="flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={cercaMercati}
+            className="text-[#14b8a6] hover:text-[#14b8a6]/80 h-10 px-2"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -772,16 +780,16 @@ export default function PresenzePage() {
           {/* Pulsante PRESENZA POSTEGGIO */}
           <button
             onClick={() => setSchermata("presenza_posteggio")}
-            className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
+            className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                <LogIn className="w-9 h-9 text-white" />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                <LogIn className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
               </div>
-              <div>
-                <p className="text-2xl font-black text-white">PRESENZA POSTEGGIO</p>
-                <p className="text-base text-white/70 mt-1">
-                  Registra la presenza sul tuo posteggio assegnato
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-black text-white truncate">PRESENZA POSTEGGIO</p>
+                <p className="text-sm sm:text-base text-white/70 mt-1 truncate">
+                  Registra la presenza al posteggio
                 </p>
               </div>
             </div>
@@ -790,16 +798,16 @@ export default function PresenzePage() {
           {/* Pulsante PRESENZA SPUNTA */}
           <button
             onClick={() => setSchermata("presenza_spunta")}
-            className="w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] rounded-2xl p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#8b5cf6]/20"
+            className="w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#8b5cf6]/20"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                <Users className="w-9 h-9 text-white" />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                <Users className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
               </div>
-              <div>
-                <p className="text-2xl font-black text-white">PRESENZA SPUNTA</p>
-                <p className="text-base text-white/70 mt-1">
-                  Registrati nella graduatoria spuntisti
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-black text-white truncate">PRESENZA SPUNTA</p>
+                <p className="text-sm sm:text-base text-white/70 mt-1 truncate">
+                  Graduatoria spuntisti
                 </p>
               </div>
             </div>
@@ -811,15 +819,15 @@ export default function PresenzePage() {
           {/* Pulsante DEPOSITO IMMONDIZIA */}
           <button
             onClick={() => eseguiDepositoRifiuti()}
-            className="w-full bg-[#1a2332] border-2 border-yellow-500/30 hover:border-yellow-500 rounded-2xl p-5 text-left transition-all active:scale-[0.98]"
+            className="w-full bg-[#1a2332] border-2 border-yellow-500/30 hover:border-yellow-500 rounded-2xl p-4 sm:p-5 text-left transition-all active:scale-[0.98]"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                <Trash2 className="w-7 h-7 text-yellow-400" />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-400" />
               </div>
-              <div>
-                <p className="text-xl font-bold text-[#e8fbff]">DEPOSITO IMMONDIZIA</p>
-                <p className="text-sm text-[#e8fbff]/50">Registra il deposito rifiuti</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-xl font-bold text-[#e8fbff] truncate">DEPOSITO RIFIUTI</p>
+                <p className="text-xs sm:text-sm text-[#e8fbff]/50 truncate">Registra il deposito</p>
               </div>
             </div>
           </button>
@@ -827,15 +835,15 @@ export default function PresenzePage() {
           {/* Pulsante USCITA MERCATO */}
           <button
             onClick={() => eseguiUscita()}
-            className="w-full bg-[#1a2332] border-2 border-red-500/30 hover:border-red-500 rounded-2xl p-5 text-left transition-all active:scale-[0.98]"
+            className="w-full bg-[#1a2332] border-2 border-red-500/30 hover:border-red-500 rounded-2xl p-4 sm:p-5 text-left transition-all active:scale-[0.98]"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                <LogOut className="w-7 h-7 text-red-400" />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                <LogOut className="w-6 h-6 sm:w-7 sm:h-7 text-red-400" />
               </div>
-              <div>
-                <p className="text-xl font-bold text-[#e8fbff]">USCITA MERCATO</p>
-                <p className="text-sm text-[#e8fbff]/50">Registra l'uscita dal mercato</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-xl font-bold text-[#e8fbff] truncate">USCITA MERCATO</p>
+                <p className="text-xs sm:text-sm text-[#e8fbff]/50 truncate">Registra l'uscita</p>
               </div>
             </div>
           </button>
