@@ -10,12 +10,12 @@
 > **Stato deploy:**
 > | Sistema | Commit | Stato |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `384e15a` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `384e15a` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `e5df541` | Allineato |
-> | Vercel frontend | `e5df541` | Autodeploy |
+> | GitHub `mihub-backend-rest` master | `936d716` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `936d716` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `79a2cf0` | Allineato |
+> | Vercel frontend | `79a2cf0` | Autodeploy |
 >
-> **BACKEND — 5 commit (da `ec2ba0e` a `384e15a`):**
+> **BACKEND — 7 commit (da `ec2ba0e` a `936d716`):**
 >
 > **Endpoint Gestione Presenze Live (`routes/presenze-live.js`):**
 > - **Nuovi Endpoint:** Creati `POST /deposito-rifiuti` e `POST /uscita-mercato` per completare il flusso di presenza. Aggiornano rispettivamente `orario_deposito_rifiuti` e `checkout_time` in `vendor_presences` per la sessione corrente, e liberano lo stallo in uscita.
@@ -24,8 +24,9 @@
 >   - Aggiunti i flag booleani `deposito_rifiuti_fatto` e `uscita_registrata` al payload di risposta.
 >   - Aggiunte le colonne booleane fittizie al blocco `UNION ALL` per gli spuntisti per risolvere l'errore SQL.
 >   - **Fix Logica Spunta:** Rimossa la clausola `NOT EXISTS` che impediva alle imprese di vedere i mercati spunta se possedevano già una concessione nello stesso mercato. Ora un'impresa può partecipare sia come concessionario che come spuntista.
+> - **Fix Checkin Saldo:** Rimosso il blocco `WALLET_INSUFFICIENTE` per i concessionari nell'endpoint checkin. La presenza passa sempre e il saldo va in negativo. Il blocco saldo resta solo per gli spuntisti alla scelta del posteggio.
 >
-> **FRONTEND — 4 commit (da `4832763` a `bf743f4`):**
+> **FRONTEND — 7 commit (da `4832763` a `79a2cf0`):**
 >
 > **Flusso Operativo Presenze App Impresa (`PresenzePage.tsx`):**
 > - **Tab Dinamici (Posteggi):** I pulsanti sotto ogni posteggio cambiano stato dinamicamente in base alle azioni completate: `PRESENZA` (Verde) → `DEPOSITO RIFIUTI` (Giallo) → `USCITA MERCATO` (Rosso).
@@ -40,6 +41,11 @@
 > - **Ripristinato Pulsante Ricarica Wallet SPUNTA:** La condizione del pulsante "+ Ricarica" era limitata a `wallet.type === "GENERICO"`. Estesa a `GENERICO || SPUNTA` per permettere la ricarica PagoPA anche sui wallet spunta.
 > - **Dialog Contestuale:** Il dialog di ricarica mostra titolo e descrizione differenziati: "Ricarica Wallet Spunta" con nome mercato per wallet SPUNTA, "Ricarica Wallet Generico" per wallet GENERICO.
 > - **Descrizione Transazione:** La descrizione PagoPA è differenziata per tipo wallet.
+>
+> **Card Autorizzazione Spunta (`PresenzePage.tsx`):**
+> - **Card Differenziata:** La concessione spunta ora mostra "Autorizzazione Spunta" con icona Ticket arancione, invece di "Posteggio - / 0 mq / Canone €0.00".
+> - **Sottotitolo Contestuale:** Mostra il nome del mercato + "Spuntista" invece dei dati mq/canone.
+> - **Logica Saldo Frontend:** Il controllo saldo negativo (bordo rosso + blocco presenza) si applica solo alle concessioni (posteggi fisici), non alle spunte. La presenza spunta passa sempre anche con saldo €0.00.
 >
 > ---
 > ### CHANGELOG v10.0.3 (29-30 Apr 2026)
