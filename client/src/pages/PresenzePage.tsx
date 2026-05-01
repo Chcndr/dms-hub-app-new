@@ -376,9 +376,9 @@ export default function PresenzePage() {
           const presenzeTotali = data.presenze_totali || 0;
           setPopup({
             tipo: "successo",
-            titolo: "PRESENZA SPUNTA REGISTRATA",
-            messaggio: `${mercatoSelezionato?.market_name || 'Mercato'} — Spuntista`,
-            sottomessaggio: `Posizione in graduatoria: ${posizioneGrad} — Presenze accumulate: ${presenzeTotali}`,
+            titolo: "PRESENZA SPUNTA EFFETTUATA",
+            messaggio: `Posizione in graduatoria: ${posizioneGrad}° — Presenze accumulate: ${presenzeTotali}`,
+            sottomessaggio: "ATTENDI IL TUO TURNO, VERRAI AVVISATO CON MESSAGGIO IN APP!",
           });
         } else {
           setPopup({

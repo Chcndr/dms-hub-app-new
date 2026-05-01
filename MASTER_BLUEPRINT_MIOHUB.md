@@ -10,12 +10,12 @@
 > **Stato deploy:**
 > | Sistema | Commit | Stato |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `936d716` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `936d716` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `79a2cf0` | Allineato |
-> | Vercel frontend | `79a2cf0` | Autodeploy |
+> | GitHub `mihub-backend-rest` master | `6998982` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `6998982` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `50ebe00` | Allineato |
+> | Vercel frontend | `50ebe00` | Autodeploy |
 >
-> **BACKEND — 7 commit (da `ec2ba0e` a `936d716`):**
+> **BACKEND — 9 commit (da `ec2ba0e` a `6998982`):**
 >
 > **Endpoint Gestione Presenze Live (`routes/presenze-live.js`):**
 > - **Nuovi Endpoint:** Creati `POST /deposito-rifiuti` e `POST /uscita-mercato` per completare il flusso di presenza. Aggiornano rispettivamente `orario_deposito_rifiuti` e `checkout_time` in `vendor_presences` per la sessione corrente, e liberano lo stallo in uscita.
@@ -25,8 +25,12 @@
 >   - Aggiunte le colonne booleane fittizie al blocco `UNION ALL` per gli spuntisti per risolvere l'errore SQL.
 >   - **Fix Logica Spunta:** Rimossa la clausola `NOT EXISTS` che impediva alle imprese di vedere i mercati spunta se possedevano già una concessione nello stesso mercato. Ora un'impresa può partecipare sia come concessionario che come spuntista.
 > - **Fix Checkin Saldo:** Rimosso il blocco `WALLET_INSUFFICIENTE` per i concessionari nell'endpoint checkin. La presenza passa sempre e il saldo va in negativo. Il blocco saldo resta solo per gli spuntisti alla scelta del posteggio.
+> - **Graduatoria in Risposta Checkin:** La risposta JSON del checkin ora include `posizione_graduatoria` e `presenze_totali` per il popup spunta.
 >
-> **FRONTEND — 7 commit (da `4832763` a `79a2cf0`):**
+> **Lista Spuntisti PA (`routes/presenze.js`):**
+> - **Fix NOT EXISTS:** Rimossa la clausola `NOT EXISTS` in `GET /spuntisti/mercato/:id` che escludeva le imprese con concessione ATTIVA dalla lista spuntisti. Ora un'impresa con concessione appare anche nel tab Spunta di Gestione Mercati.
+>
+> **FRONTEND — 9 commit (da `4832763` a `50ebe00`):**
 >
 > **Flusso Operativo Presenze App Impresa (`PresenzePage.tsx`):**
 > - **Tab Dinamici (Posteggi):** I pulsanti sotto ogni posteggio cambiano stato dinamicamente in base alle azioni completate: `PRESENZA` (Verde) → `DEPOSITO RIFIUTI` (Giallo) → `USCITA MERCATO` (Rosso).
@@ -46,6 +50,9 @@
 > - **Card Differenziata:** La concessione spunta ora mostra "Autorizzazione Spunta" con icona Ticket arancione, invece di "Posteggio - / 0 mq / Canone €0.00".
 > - **Sottotitolo Contestuale:** Mostra il nome del mercato + "Spuntista" invece dei dati mq/canone.
 > - **Logica Saldo Frontend:** Il controllo saldo negativo (bordo rosso + blocco presenza) si applica solo alle concessioni (posteggi fisici), non alle spunte. La presenza spunta passa sempre anche con saldo €0.00.
+>
+> **Popup Successo Spunta (`PresenzePage.tsx`):**
+> - **Popup Differenziato:** Il popup successo dopo la presenza spunta mostra "PRESENZA SPUNTA REGISTRATA" con nome mercato, posizione in graduatoria e presenze accumulate, invece del generico "Posteggio - — Canone: €0.00".
 >
 > ---
 > ### CHANGELOG v10.0.3 (29-30 Apr 2026)
