@@ -370,12 +370,24 @@ export default function PresenzePage() {
 
       const data = await res.json();
       if (data.success) {
-        setPopup({
-          tipo: "successo",
-          titolo: "PRESENZA EFFETTUATA CON SUCCESSO",
-          messaggio: `Posteggio ${concessione.stall_number} — Canone: €${concessione.canone_giornaliero.toFixed(2)}`,
-          sottomessaggio: "RICORDATI DI DEPOSITARE L'IMMONDIZIA E DI ESEGUIRE L'USCITA!",
-        });
+        if (isSpuntaConc) {
+          // Popup specifico per spunta con info graduatoria
+          const posizioneGrad = data.posizione_graduatoria || '-';
+          const presenzeTotali = data.presenze_totali || 0;
+          setPopup({
+            tipo: "successo",
+            titolo: "PRESENZA SPUNTA REGISTRATA",
+            messaggio: `${mercatoSelezionato?.market_name || 'Mercato'} — Spuntista`,
+            sottomessaggio: `Posizione in graduatoria: ${posizioneGrad} — Presenze accumulate: ${presenzeTotali}`,
+          });
+        } else {
+          setPopup({
+            tipo: "successo",
+            titolo: "PRESENZA EFFETTUATA CON SUCCESSO",
+            messaggio: `Posteggio ${concessione.stall_number} — Canone: €${concessione.canone_giornaliero.toFixed(2)}`,
+            sottomessaggio: "RICORDATI DI DEPOSITARE L'IMMONDIZIA E DI ESEGUIRE L'USCITA!",
+          });
+        }
       } else {
         setPopup({
           tipo: "errore",
