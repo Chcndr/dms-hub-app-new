@@ -30,6 +30,7 @@ import {
   Map as MapIcon,
   ChevronRight,
   Info,
+  Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -314,8 +315,9 @@ export default function PresenzePage() {
   const eseguiPresenzaPosteggio = async (concessione: ConcessioneInfo) => {
     if (!mercatoSelezionato || !impresaId) return;
 
-    // Verifica wallet
-    if (concessione.wallet_balance !== null && concessione.wallet_balance < 0) {
+    // Verifica wallet — solo per concessioni (posteggi fisici), NON per spunta
+    const isSpuntaConc = concessione.tipo_posteggio === 'Spunta';
+    if (!isSpuntaConc && concessione.wallet_balance !== null && concessione.wallet_balance < 0) {
       setPopup({
         tipo: "errore",
         titolo: "SALDO INSUFFICIENTE",
@@ -959,8 +961,10 @@ export default function PresenzePage() {
             </div>
           )}
 
-          {concessioni.map((conc) => (
-            <div key={conc.concession_id} className="space-y-2">
+          {concessioni.map((conc) => {
+            const isSpunta = conc.tipo_posteggio === 'Spunta';
+            return (
+            <div key={conc.concession_id || `spunta-${conc.wallet_id}`} className="space-y-2">
               <button
                 onClick={() => {
                   setPosteggioSelezionato(conc);
@@ -968,7 +972,7 @@ export default function PresenzePage() {
                 className={`w-full bg-[#1a2332] border-2 rounded-2xl p-5 text-left transition-all active:scale-[0.98] ${
                   conc.gia_presente_oggi
                     ? "border-green-500/40 opacity-70"
-                    : conc.wallet_balance !== null && conc.wallet_balance < 0
+                    : !isSpunta && conc.wallet_balance !== null && conc.wallet_balance < 0
                       ? "border-red-500/40"
                       : "border-[#14b8a6]/30 hover:border-[#14b8a6]"
                 }`}
@@ -978,16 +982,24 @@ export default function PresenzePage() {
                     <div className={`w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0 ${
                       conc.gia_presente_oggi
                         ? "bg-green-500/20"
-                        : "bg-gradient-to-br from-[#14b8a6]/30 to-[#3b82f6]/30"
+                        : isSpunta
+                          ? "bg-gradient-to-br from-[#f59e0b]/30 to-[#eab308]/30"
+                          : "bg-gradient-to-br from-[#14b8a6]/30 to-[#3b82f6]/30"
                     }`}>
-                      <span className="text-2xl font-black text-[#e8fbff]">{conc.stall_number}</span>
+                      {isSpunta
+                        ? <Ticket className="w-8 h-8 text-[#f59e0b]" />
+                        : <span className="text-2xl font-black text-[#e8fbff]">{conc.stall_number}</span>
+                      }
                     </div>
                     <div>
                       <p className="text-xl font-bold text-[#e8fbff]">
-                        Posteggio {conc.stall_number}
+                        {isSpunta ? "Autorizzazione Spunta" : `Posteggio ${conc.stall_number}`}
                       </p>
                       <p className="text-base text-[#e8fbff]/50">
-                        {conc.area_mq} mq — Canone: €{conc.canone_giornaliero.toFixed(2)}/giorno
+                        {isSpunta
+                          ? `${mercatoSelezionato?.market_name || 'Mercato'} — Spuntista`
+                          : `${conc.area_mq} mq — Canone: €${conc.canone_giornaliero.toFixed(2)}/giorno`
+                        }
                       </p>
                       {conc.gia_presente_oggi && (
                         <Badge className="mt-1 bg-green-500/20 text-green-400 border-green-500/30 text-sm">
@@ -1000,15 +1012,15 @@ export default function PresenzePage() {
 
                 {/* Wallet */}
                 <div className={`mt-3 flex items-center gap-2 px-3 py-2 rounded-xl ${
-                  conc.wallet_balance !== null && conc.wallet_balance < 0
+                  !isSpunta && conc.wallet_balance !== null && conc.wallet_balance < 0
                     ? "bg-red-500/10"
                     : "bg-[#14b8a6]/10"
                 }`}>
                   <Wallet className={`w-5 h-5 ${
-                    conc.wallet_balance !== null && conc.wallet_balance < 0 ? "text-red-400" : "text-[#14b8a6]"
+                    !isSpunta && conc.wallet_balance !== null && conc.wallet_balance < 0 ? "text-red-400" : "text-[#14b8a6]"
                   }`} />
                   <span className={`text-lg font-bold ${
-                    conc.wallet_balance !== null && conc.wallet_balance < 0 ? "text-red-400" : "text-[#14b8a6]"
+                    !isSpunta && conc.wallet_balance !== null && conc.wallet_balance < 0 ? "text-red-400" : "text-[#14b8a6]"
                   }`}>
                     Saldo: €{conc.wallet_balance?.toFixed(2) ?? "N/D"}
                   </span>
@@ -1079,13 +1091,13 @@ export default function PresenzePage() {
                 );
               })()}
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
     );
   }
-
-  // ─── SCHERMATA: PRESENZA SPUNTA ─────────────────────────────────────────
+  // ─── SCHERMATA: PRESENZA SPUNTAA ─────────────────────────────────────────
   if (schermata === "presenza_spunta" && mercatoSelezionato) {
     return (
       <div className="min-h-screen bg-[#0b1220] flex flex-col">
